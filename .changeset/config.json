@@ -74,6 +74,7 @@
       "@voyantjs/verify",
       "@voyantjs/voyant-cloud",
       "@voyantjs/voyant-storage",
+      "@voyantjs/voyant-ui",
       "@voyantjs/workflows",
       "@voyantjs/workflows-bindings",
       "@voyantjs/workflows-config",
@@ -87,7 +88,6 @@
   "linked": [],
   "ignore": [
     "@voyantjs/voyant-admin",
-    "@voyantjs/voyant-ui",
     "@voyantjs/voyant-test-utils",
     "@voyantjs/voyant-typescript-config"
   ],
