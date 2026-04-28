@@ -6,7 +6,7 @@
 import { json } from "@codemirror/lang-json"
 import { oneDark } from "@codemirror/theme-one-dark"
 import CodeMirror, { EditorView } from "@uiw/react-codemirror"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { cn } from "@voyantjs/ui/lib/utils"
 
 const theme = EditorView.theme(
   {

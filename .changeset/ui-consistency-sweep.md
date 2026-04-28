@@ -1,5 +1,5 @@
 ---
-"@voyantjs/voyant-ui": minor
+"@voyantjs/ui": minor
 ---
 
 UI consistency sweep across every registry dialog and form:

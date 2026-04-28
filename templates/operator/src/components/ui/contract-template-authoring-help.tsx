@@ -3,4 +3,4 @@ export {
   type TemplateAuthoringSnippet,
   type TemplateAuthoringVariable,
   type TemplateAuthoringVariableGroup,
-} from "@voyantjs/voyant-ui/components/contract-template-authoring-help"
+} from "@voyantjs/ui/components/contract-template-authoring-help"

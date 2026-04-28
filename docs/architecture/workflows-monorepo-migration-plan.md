@@ -119,7 +119,7 @@ instead of preserving temporary naming debt.
 | `@voyant/orchestrator-cloudflare` | `@voyantjs/workflows-orchestrator-cloudflare` |
 | `@voyant/orchestrator-node` | `@voyantjs/workflows-orchestrator-node` |
 | `@voyant/cli` | merge into `@voyantjs/cli` |
-| `@voyant/ui` | merge into `@voyantjs/voyant-ui` |
+| `@voyant/ui` | merge into `@voyantjs/ui` |
 | `@voyant/tsconfig` | merge into `@voyantjs/voyant-typescript-config` |
 
 Reasoning:
@@ -290,14 +290,14 @@ Use `packages/ui` in the main repo as the canonical UI surface.
 1. diff the component sets between the two repos
 2. add any missing primitives needed by the workflows dashboard into the main
    repo `packages/ui`
-3. adapt the workflows dashboard app to import from `@voyantjs/voyant-ui`
+3. adapt the workflows dashboard app to import from `@voyantjs/ui`
 4. delete the imported workflows `packages/ui` copy
 
 ### Important rule
 
 Avoid a long-lived state where both of these exist:
 
-- `@voyantjs/voyant-ui`
+- `@voyantjs/ui`
 - a second workflows-only UI package
 
 If the dashboard truly needs dashboard-specific presentation helpers, create a

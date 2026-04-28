@@ -80,7 +80,7 @@
     "@voyantjs/verify": "workspace:*",
     "@voyantjs/voyant-admin": "workspace:*",
     "@voyantjs/voyant-cloud": "workspace:*",
-    "@voyantjs/voyant-ui": "workspace:*",
+    "@voyantjs/ui": "workspace:*",
     "@voyantjs/voyant-storage": "workspace:*",
     "@voyantjs/workflows": "workspace:*",
     "better-auth": "^1.5.6",

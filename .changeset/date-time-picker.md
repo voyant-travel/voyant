@@ -1,5 +1,5 @@
 ---
-"@voyantjs/voyant-ui": minor
+"@voyantjs/ui": minor
 ---
 
 Add `DateTimePicker` primitive (`@/components/ui/date-time-picker`) and migrate every remaining `<Input type="datetime-local">` in the registry.

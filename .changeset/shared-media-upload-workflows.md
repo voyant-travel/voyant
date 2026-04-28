@@ -1,5 +1,5 @@
 ---
-"@voyantjs/voyant-ui": patch
+"@voyantjs/ui": patch
 ---
 
 Add shared upload-aware media workflows to the product registry components.

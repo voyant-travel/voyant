@@ -1,10 +1,14 @@
 {
-  "name": "@voyantjs/voyant-ui",
-  "version": "0.6.7",
-  "private": true,
+  "name": "@voyantjs/ui",
+  "version": "0.14.0",
   "license": "FSL-1.1-Apache-2.0",
   "type": "module",
+  "sideEffects": false,
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
     "lint": "biome check registry/",
     "registry:build": "pnpm -C ../.. registry:build"
   },
@@ -14,6 +18,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@voyantjs/notifications": "workspace:*",
     "@voyantjs/notifications-react": "workspace:*",
+    "@voyantjs/utils": "workspace:*",
     "@tiptap/core": "^3.7.2",
     "@tiptap/extensions": "^3.7.2",
     "@tiptap/pm": "^3.7.2",
@@ -66,6 +71,34 @@
     "./components/notification-template-authoring-help": "./src/components/notification-template-authoring-help.tsx",
     "./components/rich-text-variable-extension": "./src/components/rich-text-variable-extension.ts",
     "./hooks/*": "./src/hooks/*.ts"
+  },
+  "files": [
+    "dist",
+    "src/styles",
+    "postcss.config.mjs"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      "./globals.css": "./src/styles/globals.css",
+      "./postcss.config": "./postcss.config.mjs",
+      "./lib/*": {
+        "types": "./dist/lib/*.d.ts",
+        "import": "./dist/lib/*.js"
+      },
+      "./components": {
+        "types": "./dist/components/index.d.ts",
+        "import": "./dist/components/index.js"
+      },
+      "./components/*": {
+        "types": "./dist/components/*.d.ts",
+        "import": "./dist/components/*.js"
+      },
+      "./hooks/*": {
+        "types": "./dist/hooks/*.d.ts",
+        "import": "./dist/hooks/*.js"
+      }
+    }
   },
   "repository": {
     "type": "git",

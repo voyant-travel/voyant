@@ -1,5 +1,5 @@
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { cn } from "@voyantjs/ui/lib/utils"
 
 // Tailwind utility classes keyed by run-status. Keeps the status tone
 // consistent wherever it's rendered (runs table, detail header,

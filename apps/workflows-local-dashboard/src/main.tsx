@@ -2,14 +2,14 @@
 // dev` out of `apps/workflows-local-dashboard/dist/`, same-origin with the run
 // API.
 
-import "@voyantjs/voyant-ui/globals.css"
+import "@voyantjs/ui/globals.css"
 
-import { Alert, AlertDescription, AlertTitle } from "@voyantjs/voyant-ui/components/alert"
+import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@voyantjs/voyant-ui/components/resizable"
+} from "@voyantjs/ui/components/resizable"
 import { StrictMode, useEffect, useMemo, useState } from "react"
 import { createRoot } from "react-dom/client"
 import { AppHeader } from "@/components/app-header"
