@@ -1,5 +1,12 @@
 # @voyantjs/verify
 
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [a4bc773]
+  - @voyantjs/voyant-cloud@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

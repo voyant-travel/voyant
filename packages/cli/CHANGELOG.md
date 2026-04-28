@@ -1,5 +1,14 @@
 # @voyantjs/cli
 
+## 0.16.0
+
+### Patch Changes
+
+- @voyantjs/core@0.16.0
+- @voyantjs/workflows@0.16.0
+- @voyantjs/workflows-orchestrator@0.16.0
+- @voyantjs/workflows-orchestrator-node@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

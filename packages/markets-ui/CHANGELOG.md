@@ -1,5 +1,12 @@
 # @voyantjs/markets-ui
 
+## 0.16.0
+
+### Patch Changes
+
+- @voyantjs/markets-react@0.16.0
+- @voyantjs/ui@0.16.0
+
 ## 0.15.0
 
 ### Minor Changes
