@@ -18,6 +18,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@voyantjs/notifications": "workspace:*",
     "@voyantjs/notifications-react": "workspace:*",
+    "@voyantjs/utils": "workspace:*",
     "@tiptap/core": "^3.7.2",
     "@tiptap/extensions": "^3.7.2",
     "@tiptap/pm": "^3.7.2",
