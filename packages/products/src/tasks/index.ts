@@ -1,4 +1,5 @@
 export {
+  brochureBodyToHtml,
   type CloudflareBrowserBrochurePrinterOptions,
   createBasicPdfProductBrochurePrinter,
   createCloudflareBrowserProductBrochurePrinter,
