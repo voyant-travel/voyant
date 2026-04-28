@@ -1,5 +1,12 @@
 # @voyantjs/extras-react
 
+## 0.15.0
+
+### Patch Changes
+
+- @voyantjs/extras@0.15.0
+- @voyantjs/react@0.15.0
+
 ## 0.14.0
 
 ### Patch Changes
