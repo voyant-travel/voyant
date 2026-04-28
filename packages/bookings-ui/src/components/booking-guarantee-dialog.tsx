@@ -17,10 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/voyant-ui/components"
-import { CurrencyCombobox } from "@voyantjs/voyant-ui/components/currency-combobox"
-import { DateTimePicker } from "@voyantjs/voyant-ui/components/date-time-picker"
-import { zodResolver } from "@voyantjs/voyant-ui/lib/zod-resolver"
+} from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"

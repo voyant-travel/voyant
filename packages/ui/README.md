@@ -1,4 +1,4 @@
-# @voyantjs/voyant-ui
+# @voyantjs/ui
 
 Private workspace package that holds the shadcn registry source for Voyant UI blocks.
 

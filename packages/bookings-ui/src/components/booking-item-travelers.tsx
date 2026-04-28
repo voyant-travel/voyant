@@ -15,7 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/voyant-ui/components"
+} from "@voyantjs/ui/components"
 import { Plus, Trash2, UserCheck } from "lucide-react"
 import * as React from "react"
 

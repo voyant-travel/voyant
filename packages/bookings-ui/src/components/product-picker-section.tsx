@@ -9,7 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/voyant-ui/components"
+} from "@voyantjs/ui/components"
 import * as React from "react"
 
 const OPTION_NONE = "__none__"

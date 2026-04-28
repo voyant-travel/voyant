@@ -6,9 +6,9 @@ import {
   formatBookingStatus,
   useBookings,
 } from "@voyantjs/bookings-react"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Button } from "@voyantjs/voyant-ui/components/button"
-import { Input } from "@voyantjs/voyant-ui/components/input"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
+import { Input } from "@voyantjs/ui/components/input"
 import {
   Table,
   TableBody,
@@ -16,7 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/voyant-ui/components/table"
+} from "@voyantjs/ui/components/table"
 import { Loader2, Plus, Search } from "lucide-react"
 import * as React from "react"
 

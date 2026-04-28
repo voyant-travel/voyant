@@ -5,14 +5,7 @@ import {
   useBookingPaymentScheduleMutation,
   useBookingPaymentSchedules,
 } from "@voyantjs/finance-react"
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@voyantjs/voyant-ui/components"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 

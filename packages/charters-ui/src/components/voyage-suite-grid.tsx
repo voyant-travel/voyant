@@ -1,10 +1,10 @@
 "use client"
 
 import type { CharterSuiteRecord } from "@voyantjs/charters-react"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Button } from "@voyantjs/voyant-ui/components/button"
-import { Card, CardContent, CardHeader } from "@voyantjs/voyant-ui/components/card"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
 export interface VoyageSuiteGridProps extends React.HTMLAttributes<HTMLDivElement> {

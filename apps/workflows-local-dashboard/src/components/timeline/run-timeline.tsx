@@ -6,7 +6,7 @@
 // open spans visually extend. A live-run root span has no `endAt`, so
 // we clamp the scale to `now`.
 
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { useEffect, useMemo, useState } from "react"
 
 import type { StoredRun } from "@/lib/api"

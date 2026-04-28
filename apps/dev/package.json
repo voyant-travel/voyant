@@ -83,7 +83,7 @@
     "@voyantjs/vault": "workspace:*",
     "@voyantjs/verify": "workspace:*",
     "@voyantjs/voyant-cloud": "workspace:*",
-    "@voyantjs/voyant-ui": "workspace:*",
+    "@voyantjs/ui": "workspace:*",
     "@voyantjs/workflows": "workspace:*",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query": "^5.96.2",

@@ -19,7 +19,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/voyant-ui/components"
+} from "@voyantjs/ui/components"
 import { CalendarDays, ExternalLink, Search, Users, Wrench } from "lucide-react"
 
 export function ResourcesOverview({

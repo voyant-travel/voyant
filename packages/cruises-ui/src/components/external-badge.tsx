@@ -1,7 +1,7 @@
 "use client"
 
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
 export interface ExternalCruiseBadgeProps extends React.ComponentPropsWithoutRef<typeof Badge> {

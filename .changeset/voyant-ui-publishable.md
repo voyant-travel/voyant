@@ -1,8 +1,8 @@
 ---
-"@voyantjs/voyant-ui": minor
+"@voyantjs/ui": minor
 ---
 
-`@voyantjs/voyant-ui` is now publishable. Consumers can `pnpm add @voyantjs/voyant-ui` and import primitives directly instead of copying them via the shadcn registry — updates flow with version bumps. The registry path remains for components you intend to fork.
+`@voyantjs/ui` is now publishable. Consumers can `pnpm add @voyantjs/ui` and import primitives directly instead of copying them via the shadcn registry — updates flow with version bumps. The registry path remains for components you intend to fork.
 
 **What changed:**
 

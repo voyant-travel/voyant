@@ -31,7 +31,7 @@
       "@voyantjs/markets-react": ["../../packages/markets-react/src/index.ts"],
       "@voyantjs/sellability-react": ["../../packages/sellability-react/src/index.ts"],
       "@voyantjs/transactions-react": ["../../packages/transactions-react/src/index.ts"],
-      "@voyantjs/voyant-ui/*": ["../../packages/ui/src/*"]
+      "@voyantjs/ui/*": ["../../packages/ui/src/*"]
     }
   }
 }

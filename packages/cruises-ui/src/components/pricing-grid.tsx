@@ -1,7 +1,7 @@
 "use client"
 
 import type { PriceRecord } from "@voyantjs/cruises-react"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
+import { Badge } from "@voyantjs/ui/components/badge"
 import {
   Table,
   TableBody,
@@ -9,8 +9,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/voyant-ui/components/table"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+} from "@voyantjs/ui/components/table"
+import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
 export interface PricingGridProps extends React.HTMLAttributes<HTMLDivElement> {

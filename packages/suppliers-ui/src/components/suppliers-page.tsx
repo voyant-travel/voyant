@@ -1,9 +1,9 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import type { Supplier } from "@voyantjs/suppliers-react"
 import { statusVariant } from "@voyantjs/suppliers-react"
-import { Badge, Button, Input } from "@voyantjs/voyant-ui/components"
-import { DataTable } from "@voyantjs/voyant-ui/components/data-table"
-import { DataTableColumnHeader } from "@voyantjs/voyant-ui/components/data-table-column-header"
+import { Badge, Button, Input } from "@voyantjs/ui/components"
+import { DataTable } from "@voyantjs/ui/components/data-table"
+import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { Loader2, Plus, Search } from "lucide-react"
 
 const columns: ColumnDef<Supplier>[] = [

@@ -4,10 +4,10 @@
 // waitpoints, shows the child workflow id; parent resumes when the
 // child reaches a terminal status.
 
-import { Alert, AlertDescription } from "@voyantjs/voyant-ui/components/alert"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Button } from "@voyantjs/voyant-ui/components/button"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Alert, AlertDescription } from "@voyantjs/ui/components/alert"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { Clock, GitBranch, Pause, Tag, Webhook, XCircle } from "lucide-react"
 import { useState } from "react"
 import { JsonEditor } from "@/components/json-editor"

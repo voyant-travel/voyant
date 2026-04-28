@@ -5,10 +5,10 @@ Importable React UI components for Voyant legal. Bundler-consumed (Vite, Next.js
 ## Install
 
 ```bash
-pnpm add @voyantjs/legal-ui @voyantjs/legal-react @voyantjs/voyant-ui @tanstack/react-query react react-dom
+pnpm add @voyantjs/legal-ui @voyantjs/legal-react @voyantjs/ui @tanstack/react-query react react-dom
 ```
 
-`@voyantjs/voyant-ui` provides the design-system primitives. `@voyantjs/legal-react` provides the data-layer hooks. Both are required peers.
+`@voyantjs/ui` provides the design-system primitives. `@voyantjs/legal-react` provides the data-layer hooks. Both are required peers.
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 

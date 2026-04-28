@@ -7,7 +7,7 @@ import {
 import {
   insertPlainText,
   insertVariableToken,
-} from "@voyantjs/voyant-ui/components/rich-text-variable-extension"
+} from "@voyantjs/ui/components/rich-text-variable-extension"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"

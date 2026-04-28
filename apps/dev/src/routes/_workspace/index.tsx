@@ -6,7 +6,7 @@ import {
   MonthlyBookingsWidget,
   OutstandingInvoicesWidget,
   RevenueWidget,
-} from "@voyantjs/voyant-ui/components/dashboard-widgets"
+} from "@voyantjs/ui/components/dashboard-widgets"
 import {
   BarChart3,
   Building2,

@@ -5,19 +5,19 @@ import {
   type ProductOptionRecord,
   useProductOptionMutation,
 } from "@voyantjs/products-react"
-import { Button } from "@voyantjs/voyant-ui/components/button"
-import { DatePicker } from "@voyantjs/voyant-ui/components/date-picker"
-import { Input } from "@voyantjs/voyant-ui/components/input"
-import { Label } from "@voyantjs/voyant-ui/components/label"
+import { Button } from "@voyantjs/ui/components/button"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/voyant-ui/components/select"
-import { Switch } from "@voyantjs/voyant-ui/components/switch"
-import { Textarea } from "@voyantjs/voyant-ui/components/textarea"
+} from "@voyantjs/ui/components/select"
+import { Switch } from "@voyantjs/ui/components/switch"
+import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 

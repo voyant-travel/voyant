@@ -5,9 +5,9 @@ import {
   type ProductTagRecord,
   useProductTagMutation,
 } from "@voyantjs/products-react"
-import { Button } from "@voyantjs/voyant-ui/components/button"
-import { Input } from "@voyantjs/voyant-ui/components/input"
-import { Label } from "@voyantjs/voyant-ui/components/label"
+import { Button } from "@voyantjs/ui/components/button"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 

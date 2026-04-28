@@ -13,8 +13,8 @@ import {
   getPriceCatalogQueryOptions,
   useVoyantPricingContext,
 } from "@voyantjs/pricing-react"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Button } from "@voyantjs/voyant-ui/components/button"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 

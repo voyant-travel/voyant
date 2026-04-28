@@ -9,7 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/voyant-ui/components"
+} from "@voyantjs/ui/components"
 import { Trash2 } from "lucide-react"
 
 export type PassengerRole = "lead" | "adult" | "child" | "infant"

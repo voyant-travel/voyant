@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/voyant-ui/components"
+} from "@voyantjs/ui/components"
 import { Loader2, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
 

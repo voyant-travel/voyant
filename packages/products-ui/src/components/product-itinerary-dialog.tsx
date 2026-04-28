@@ -1,17 +1,17 @@
 "use client"
 
 import { useProductItineraryMutation } from "@voyantjs/products-react"
-import { Button } from "@voyantjs/voyant-ui/components/button"
-import { Checkbox } from "@voyantjs/voyant-ui/components/checkbox"
+import { Button } from "@voyantjs/ui/components/button"
+import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/voyant-ui/components/dialog"
-import { Input } from "@voyantjs/voyant-ui/components/input"
-import { Label } from "@voyantjs/voyant-ui/components/label"
+} from "@voyantjs/ui/components/dialog"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 

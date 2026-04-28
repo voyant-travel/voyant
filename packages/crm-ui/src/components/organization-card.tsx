@@ -1,9 +1,9 @@
 "use client"
 
 import type { OrganizationRecord } from "@voyantjs/crm-react"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Card, CardContent, CardHeader } from "@voyantjs/voyant-ui/components/card"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { Building2, Globe } from "lucide-react"
 import type * as React from "react"
 

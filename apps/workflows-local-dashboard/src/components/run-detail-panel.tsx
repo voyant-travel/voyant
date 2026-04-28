@@ -12,16 +12,16 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@voyantjs/voyant-ui/components/breadcrumb"
-import { Button } from "@voyantjs/voyant-ui/components/button"
-import { Kbd } from "@voyantjs/voyant-ui/components/kbd"
+} from "@voyantjs/ui/components/breadcrumb"
+import { Button } from "@voyantjs/ui/components/button"
+import { Kbd } from "@voyantjs/ui/components/kbd"
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@voyantjs/voyant-ui/components/resizable"
-import { ScrollArea } from "@voyantjs/voyant-ui/components/scroll-area"
-import { Separator } from "@voyantjs/voyant-ui/components/separator"
+} from "@voyantjs/ui/components/resizable"
+import { ScrollArea } from "@voyantjs/ui/components/scroll-area"
+import { Separator } from "@voyantjs/ui/components/separator"
 import { History, RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 

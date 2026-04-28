@@ -1,14 +1,14 @@
 "use client"
 
 import { useProductVersions } from "@voyantjs/products-react"
-import { Button } from "@voyantjs/voyant-ui/components/button"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@voyantjs/voyant-ui/components/card"
+} from "@voyantjs/ui/components/card"
 import { FileText, Loader2, Plus } from "lucide-react"
 import * as React from "react"
 

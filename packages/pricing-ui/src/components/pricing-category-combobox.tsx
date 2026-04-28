@@ -9,7 +9,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@voyantjs/voyant-ui/components/combobox"
+} from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
 type PricingCategoryComboboxProps = {

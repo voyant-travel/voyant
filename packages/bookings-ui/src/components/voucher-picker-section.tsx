@@ -1,7 +1,7 @@
 "use client"
 
 import { usePublicVoucherValidationMutation } from "@voyantjs/finance-react"
-import { Button, Input, Label } from "@voyantjs/voyant-ui/components"
+import { Button, Input, Label } from "@voyantjs/ui/components"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
 
 /** Details of a successfully-validated voucher. */

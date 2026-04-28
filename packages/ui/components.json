@@ -11,10 +11,10 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@voyantjs/voyant-ui/components",
-    "utils": "@voyantjs/voyant-ui/lib/utils",
-    "hooks": "@voyantjs/voyant-ui/hooks",
-    "lib": "@voyantjs/voyant-ui/lib",
-    "ui": "@voyantjs/voyant-ui/components"
+    "components": "@voyantjs/ui/components",
+    "utils": "@voyantjs/ui/lib/utils",
+    "hooks": "@voyantjs/ui/hooks",
+    "lib": "@voyantjs/ui/lib",
+    "ui": "@voyantjs/ui/components"
   }
 }

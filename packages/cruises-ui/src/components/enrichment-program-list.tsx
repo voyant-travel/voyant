@@ -1,10 +1,10 @@
 "use client"
 
 import { type EnrichmentProgramRecord, useEnrichmentPrograms } from "@voyantjs/cruises-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@voyantjs/voyant-ui/components/avatar"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Card, CardContent } from "@voyantjs/voyant-ui/components/card"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@voyantjs/ui/components/avatar"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Card, CardContent } from "@voyantjs/ui/components/card"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { Camera, Compass, GraduationCap, Mic, ScrollText, Sparkles } from "lucide-react"
 import type * as React from "react"
 

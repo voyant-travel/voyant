@@ -8,7 +8,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/voyant-ui/components/dialog"
+} from "@voyantjs/ui/components/dialog"
 
 import { OrganizationForm } from "./organization-form"
 

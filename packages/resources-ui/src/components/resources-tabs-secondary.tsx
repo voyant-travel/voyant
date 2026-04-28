@@ -10,15 +10,10 @@ import {
   type SlotOption,
   slotLabel,
 } from "@voyantjs/resources-react"
-import {
-  Badge,
-  Button,
-  ConfirmActionButton,
-  SelectionActionBar,
-} from "@voyantjs/voyant-ui/components"
-import { DataTable } from "@voyantjs/voyant-ui/components/data-table"
-import { DataTableColumnHeader } from "@voyantjs/voyant-ui/components/data-table-column-header"
-import { TabsContent } from "@voyantjs/voyant-ui/components/tabs"
+import { Badge, Button, ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
+import { DataTable } from "@voyantjs/ui/components/data-table"
+import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
+import { TabsContent } from "@voyantjs/ui/components/tabs"
 import { ExternalLink } from "lucide-react"
 import { ResourcesSectionHeader } from "./resources-section-header"
 

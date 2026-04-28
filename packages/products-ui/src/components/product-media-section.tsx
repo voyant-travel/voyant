@@ -5,15 +5,15 @@ import {
   useProductMedia,
   useProductMediaMutation,
 } from "@voyantjs/products-react"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Button } from "@voyantjs/voyant-ui/components/button"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@voyantjs/voyant-ui/components/card"
+} from "@voyantjs/ui/components/card"
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/voyant-ui/components/table"
+} from "@voyantjs/ui/components/table"
 import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2, Upload } from "lucide-react"
 import * as React from "react"
 

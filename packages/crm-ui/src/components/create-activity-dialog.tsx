@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@voyantjs/voyant-ui/components"
+} from "@voyantjs/ui/components"
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@voyantjs/voyant-ui/components/dialog"
+} from "@voyantjs/ui/components/dialog"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 

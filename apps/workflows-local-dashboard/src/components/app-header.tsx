@@ -1,7 +1,7 @@
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Button } from "@voyantjs/voyant-ui/components/button"
-import { Kbd } from "@voyantjs/voyant-ui/components/kbd"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
+import { Kbd } from "@voyantjs/ui/components/kbd"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { Plus, Radio, Zap } from "lucide-react"
 
 export function AppHeader({

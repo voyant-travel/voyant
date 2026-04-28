@@ -1,7 +1,7 @@
 "use client"
 
 import { useSlotUnitAvailability } from "@voyantjs/availability-react"
-import { Button, Label } from "@voyantjs/voyant-ui/components"
+import { Button, Label } from "@voyantjs/ui/components"
 import { Minus, Plus } from "lucide-react"
 
 /** Quantity per option_unit id; omitted ids are treated as 0. */

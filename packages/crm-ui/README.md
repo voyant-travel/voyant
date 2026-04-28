@@ -5,10 +5,10 @@ Importable React UI components for Voyant CRM — person/organization cards, dia
 ## Install
 
 ```bash
-pnpm add @voyantjs/crm-ui @voyantjs/crm-react @voyantjs/voyant-ui @tanstack/react-query react react-dom
+pnpm add @voyantjs/crm-ui @voyantjs/crm-react @voyantjs/ui @tanstack/react-query react react-dom
 ```
 
-`@voyantjs/voyant-ui` provides the design-system primitives (Button, Card, Dialog, etc.). `@voyantjs/crm-react` provides the data-layer hooks. Both are required peers.
+`@voyantjs/ui` provides the design-system primitives (Button, Card, Dialog, etc.). `@voyantjs/crm-react` provides the data-layer hooks. Both are required peers.
 
 ## Usage
 

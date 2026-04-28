@@ -8,7 +8,7 @@ New package `@voyantjs/crm-ui` — importable React components for Voyant CRM. F
 
 **Components NOT included** (registry-only for now): `quotes-page`, `create-quote-dialog`, `quote-detail-sections`, `opportunities-board`, `opportunity-summary-card`, `organization-detail-page`, `organization-detail-sections`. These either hard-couple to `@tanstack/react-router` or depend on template-local helpers (`@/components/voyant/crm/inline-*`, `crm-constants`, etc.) that aren't part of the registry surface. They remain consumable via `npx shadcn add @voyant/...` and can be promoted to the package when the couplings are factored out.
 
-**Peers:** `@voyantjs/crm-react`, `@voyantjs/voyant-ui`, `@tanstack/react-query`, `react`, `react-dom`.
+**Peers:** `@voyantjs/crm-react`, `@voyantjs/ui`, `@tanstack/react-query`, `react`, `react-dom`.
 
 **Two distribution modes for CRM components going forward:**
 - Use as-is or extend via composition → `pnpm add @voyantjs/crm-ui`

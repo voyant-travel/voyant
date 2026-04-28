@@ -10,15 +10,15 @@ import {
   useProductOptionMutation,
   useProductOptions,
 } from "@voyantjs/products-react"
-import { Badge } from "@voyantjs/voyant-ui/components/badge"
-import { Button } from "@voyantjs/voyant-ui/components/button"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@voyantjs/voyant-ui/components/card"
+} from "@voyantjs/ui/components/card"
 import {
   Table,
   TableBody,
@@ -26,7 +26,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/voyant-ui/components/table"
+} from "@voyantjs/ui/components/table"
 import { ChevronDown, ChevronRight, Copy, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 

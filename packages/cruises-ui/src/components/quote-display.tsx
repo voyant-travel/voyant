@@ -1,8 +1,8 @@
 "use client"
 
 import type { Quote } from "@voyantjs/cruises-react"
-import { Card, CardContent, CardHeader } from "@voyantjs/voyant-ui/components/card"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
 type QuoteComponent = Quote["components"][number]

@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@voyantjs/voyant-ui/components"
+} from "@voyantjs/ui/components"
 import { DollarSign, ExternalLink, Link2, Search, Webhook } from "lucide-react"
 import type {
   ChannelContractRow,

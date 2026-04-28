@@ -11,8 +11,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/voyant-ui/components/table"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+} from "@voyantjs/ui/components/table"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { Workflow } from "lucide-react"
 import { useMemo } from "react"
 

@@ -4,7 +4,7 @@ import {
   type SupplierRate,
   type SupplierService,
 } from "@voyantjs/suppliers-react"
-import { Badge, Button } from "@voyantjs/voyant-ui/components"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 
 export function SupplierServiceRow({

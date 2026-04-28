@@ -259,6 +259,9 @@ importers:
       '@voyantjs/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -274,9 +277,6 @@ importers:
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../../packages/workflows
@@ -483,7 +483,7 @@ importers:
       '@uiw/react-codemirror':
         specifier: ^4.23.6
         version: 4.25.9(@babel/runtime@7.29.2)(@codemirror/autocomplete@6.20.1)(@codemirror/language@6.12.3)(@codemirror/lint@6.9.5)(@codemirror/search@6.6.0)(@codemirror/state@6.6.0)(@codemirror/theme-one-dark@6.1.3)(@codemirror/view@6.41.1)(codemirror@6.0.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@voyantjs/voyant-ui':
+      '@voyantjs/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@voyantjs/workflows':
@@ -947,12 +947,12 @@ importers:
       '@voyantjs/booking-requirements-react':
         specifier: workspace:*
         version: link:../booking-requirements-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -1072,12 +1072,12 @@ importers:
       '@voyantjs/products-react':
         specifier: workspace:*
         version: link:../products-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -1188,12 +1188,12 @@ importers:
       '@voyantjs/charters-react':
         specifier: workspace:*
         version: link:../charters-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -1376,12 +1376,12 @@ importers:
       '@voyantjs/crm-react':
         specifier: workspace:*
         version: link:../crm-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -1486,12 +1486,12 @@ importers:
       '@voyantjs/cruises-react':
         specifier: workspace:*
         version: link:../cruises-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -1719,12 +1719,12 @@ importers:
       '@voyantjs/distribution-react':
         specifier: workspace:*
         version: link:../distribution-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -1823,12 +1823,12 @@ importers:
       '@voyantjs/external-refs-react':
         specifier: workspace:*
         version: link:../external-refs-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -1942,12 +1942,12 @@ importers:
       '@voyantjs/products-react':
         specifier: workspace:*
         version: link:../products-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -2126,12 +2126,12 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../finance-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -2359,12 +2359,12 @@ importers:
       '@voyantjs/pricing-react':
         specifier: workspace:*
         version: link:../pricing-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -2490,12 +2490,12 @@ importers:
       '@voyantjs/identity-react':
         specifier: workspace:*
         version: link:../identity-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -2618,12 +2618,12 @@ importers:
       '@voyantjs/legal-react':
         specifier: workspace:*
         version: link:../legal-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -2734,12 +2734,12 @@ importers:
       '@voyantjs/markets-react':
         specifier: workspace:*
         version: link:../markets-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -3092,12 +3092,12 @@ importers:
       '@voyantjs/products-react':
         specifier: workspace:*
         version: link:../products-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -3217,12 +3217,12 @@ importers:
       '@voyantjs/suppliers-react':
         specifier: workspace:*
         version: link:../suppliers-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -3351,12 +3351,12 @@ importers:
       '@voyantjs/resources-react':
         specifier: workspace:*
         version: link:../resources-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -3482,12 +3482,12 @@ importers:
       '@voyantjs/sellability-react':
         specifier: workspace:*
         version: link:../sellability-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -3727,12 +3727,12 @@ importers:
       '@voyantjs/suppliers-react':
         specifier: workspace:*
         version: link:../suppliers-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -4373,6 +4373,9 @@ importers:
       '@voyantjs/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -4391,9 +4394,6 @@ importers:
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../../packages/workflows
@@ -4689,6 +4689,9 @@ importers:
       '@voyantjs/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -4707,9 +4710,6 @@ importers:
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@voyantjs/voyant-ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../../packages/workflows

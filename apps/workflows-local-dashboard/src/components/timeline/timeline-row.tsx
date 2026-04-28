@@ -2,7 +2,7 @@
 // column has a horizontal bar or dot positioned via percentages from
 // the shared `Scale`.
 
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { cn } from "@voyantjs/ui/lib/utils"
 import {
   Clock,
   Code2,

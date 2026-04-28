@@ -23,9 +23,9 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@voyantjs/voyant-ui/components"
-import { CountryCombobox } from "@voyantjs/voyant-ui/components/country-combobox"
-import { zodResolver } from "@voyantjs/voyant-ui/lib/zod-resolver"
+} from "@voyantjs/ui/components"
+import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"

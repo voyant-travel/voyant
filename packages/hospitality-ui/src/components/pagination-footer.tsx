@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@voyantjs/voyant-ui/components/button"
+import { Button } from "@voyantjs/ui/components/button"
 
 type PaginationFooterProps = {
   pageIndex: number

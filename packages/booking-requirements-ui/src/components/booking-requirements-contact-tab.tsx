@@ -1,5 +1,5 @@
 import type { ContactRequirement } from "@voyantjs/booking-requirements-react"
-import { Badge, Button } from "@voyantjs/voyant-ui/components"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 
 export function BookingRequirementsContactTab({

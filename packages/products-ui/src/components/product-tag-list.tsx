@@ -5,15 +5,15 @@ import {
   useProductTagMutation,
   useProductTags,
 } from "@voyantjs/products-react"
-import { Button } from "@voyantjs/voyant-ui/components/button"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@voyantjs/voyant-ui/components/dropdown-menu"
-import { Input } from "@voyantjs/voyant-ui/components/input"
+} from "@voyantjs/ui/components/dropdown-menu"
+import { Input } from "@voyantjs/ui/components/input"
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@voyantjs/voyant-ui/components/table"
+} from "@voyantjs/ui/components/table"
 import { Loader2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 

@@ -1,8 +1,8 @@
 "use client"
 
 import type { PerSuiteQuote, WholeYachtQuote } from "@voyantjs/charters-react"
-import { Card, CardContent, CardHeader } from "@voyantjs/voyant-ui/components/card"
-import { cn } from "@voyantjs/voyant-ui/lib/utils"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
 export interface WholeYachtQuoteCardProps extends React.ComponentPropsWithoutRef<typeof Card> {

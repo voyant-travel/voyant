@@ -16,7 +16,7 @@
 "@voyantjs/resources-ui": minor
 "@voyantjs/sellability-ui": minor
 "@voyantjs/suppliers-ui": minor
-"@voyantjs/voyant-ui": patch
+"@voyantjs/ui": patch
 ---
 
 Bulk-extract per-domain importable UI packages, mirroring the `*-react` split. 17 new `*-ui` packages shipping a combined 137 components; primitives package `voyant-ui` gains 3 promoted shared primitives (`currency-combobox`, `date-time-picker`, `country-combobox`).
