@@ -1,6 +1,17 @@
 "use client"
 
 import { useMutation } from "@tanstack/react-query"
+import { Button } from "@voyantjs/ui/components"
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@voyantjs/ui/components/carousel"
+import { Dialog, DialogContent, DialogTitle } from "@voyantjs/ui/components/dialog"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { formatMessage } from "@voyantjs/voyant-admin"
 import {
   ChevronLeft,
@@ -14,19 +25,8 @@ import {
 } from "lucide-react"
 import { Reorder } from "motion/react"
 import { useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui"
-import {
-  Carousel,
-  type CarouselApi,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
-import { cn } from "@/lib/utils"
 import type { ProductMediaItem } from "./product-detail-shared"
 
 interface ProductMediaGalleryProps {

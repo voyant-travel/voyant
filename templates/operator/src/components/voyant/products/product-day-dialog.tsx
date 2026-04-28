@@ -1,4 +1,4 @@
-import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@/components/ui"
+import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { type DayData, DayForm } from "./product-day-form"

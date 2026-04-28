@@ -1,11 +1,6 @@
 "use client"
 
 import { type BookingGuaranteeRecord, useBookingGuaranteeMutation } from "@voyantjs/finance-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
 import {
   Button,
   Dialog,
@@ -22,9 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
-import { CurrencyCombobox } from "@/components/ui/currency-combobox"
-import { DateTimePicker } from "@/components/ui/date-time-picker"
+} from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 

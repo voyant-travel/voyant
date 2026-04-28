@@ -1,7 +1,5 @@
 "use client"
 
-import { Loader2, MapPin, Pencil, Plus } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
 import {
   Badge,
   Button,
@@ -18,8 +16,8 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
-import { CountryCombobox } from "@/components/ui/country-combobox"
+} from "@voyantjs/ui/components"
+import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
 import {
   Dialog,
   DialogContent,
@@ -27,9 +25,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "@voyantjs/ui/components/dialog"
+import { Label } from "@voyantjs/ui/components/label"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Loader2, MapPin, Pencil, Plus } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 const ADDRESS_LABELS = [

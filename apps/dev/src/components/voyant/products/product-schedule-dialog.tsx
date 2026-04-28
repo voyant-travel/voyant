@@ -1,7 +1,3 @@
-import { Loader2 } from "lucide-react"
-import { useEffect, useMemo } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -18,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -27,8 +23,12 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+} from "@voyantjs/ui/components/combobox"
+import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-group"
+import { Loader2 } from "lucide-react"
+import { useEffect, useMemo } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { api } from "@/lib/api-client"
 import { getTimezoneLabel, TIMEZONE_IDS, TIMEZONE_OPTIONS } from "@/lib/timezone-options"
 import { zodResolver } from "@/lib/zod-resolver"

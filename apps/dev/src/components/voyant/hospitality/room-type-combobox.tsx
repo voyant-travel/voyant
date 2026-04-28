@@ -1,6 +1,4 @@
 import { type RoomTypeRecord, useRoomType, useRoomTypes } from "@voyantjs/hospitality-react"
-import * as React from "react"
-
 import {
   Combobox,
   ComboboxCollection,
@@ -9,7 +7,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import * as React from "react"
 
 type Props = {
   propertyId: string

@@ -1,8 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useOptionPriceRuleMutation, useOptionUnitPriceRuleMutation } from "@voyantjs/pricing-react"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Badge, Button } from "@/components/ui"
 import { type OptionPriceRuleData, OptionPriceRuleDialog } from "./product-option-price-rule-dialog"
 import {
   getOptionPriceRulesQueryOptions,

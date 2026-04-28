@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@voyantjs/ui/components"
 import { ProductMediaForm } from "./product-media-form"
 
 type ProductMediaDialogProps = {

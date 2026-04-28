@@ -1,6 +1,3 @@
-import { currencies } from "@voyantjs/utils/currencies"
-import { Pencil } from "lucide-react"
-import { useState } from "react"
 import {
   Combobox,
   ComboboxCollection,
@@ -9,8 +6,11 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
-import { cn } from "@/lib/utils"
+} from "@voyantjs/ui/components/combobox"
+import { cn } from "@voyantjs/ui/lib/utils"
+import { currencies } from "@voyantjs/utils/currencies"
+import { Pencil } from "lucide-react"
+import { useState } from "react"
 
 const CURRENCY_CODES = Object.keys(currencies).sort()
 

@@ -11,9 +11,9 @@ import {
   useQuotes,
   useStages,
 } from "@voyantjs/crm-react"
+import { Button, Card, CardTitle, ConfirmActionButton } from "@voyantjs/ui/components"
 import { ArrowLeft, Ban, CheckCircle2, Loader2, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
-import { Button, Card, CardTitle, ConfirmActionButton } from "@/components/ui"
 import {
   OpportunityActivitiesCard,
   OpportunityDetailsCard,

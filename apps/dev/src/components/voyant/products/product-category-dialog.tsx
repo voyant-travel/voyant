@@ -8,7 +8,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@voyantjs/ui/components/dialog"
 
 import { ProductCategoryForm } from "./product-category-form"
 

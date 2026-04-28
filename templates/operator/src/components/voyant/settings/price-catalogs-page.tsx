@@ -5,11 +5,6 @@ import {
   usePriceCatalogMutation,
   usePriceCatalogs,
 } from "@voyantjs/pricing-react"
-import { currencies } from "@voyantjs/utils/currencies"
-import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Badge,
   Button,
@@ -32,7 +27,7 @@ import {
   SheetHeader,
   SheetTitle,
   Switch,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Combobox,
   ComboboxContent,
@@ -40,7 +35,12 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import { currencies } from "@voyantjs/utils/currencies"
+import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { SettingsListSkeleton } from "@/components/voyant/settings/settings-list-skeleton"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"

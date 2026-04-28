@@ -10,8 +10,6 @@ import {
   useLegalContractTemplateMutation,
   useLegalContractTemplateVersions,
 } from "@voyantjs/legal-react"
-import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
-import { useMemo, useState } from "react"
 import {
   Badge,
   Button,
@@ -20,7 +18,9 @@ import {
   CardHeader,
   CardTitle,
   ContractTemplateAuthoringHelp,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import { useMemo, useState } from "react"
 import { legalQueryClient } from "./legal-query-client"
 import { TemplateDialog } from "./template-dialog"
 import { TemplateVersionDialog } from "./template-version-dialog"

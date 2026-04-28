@@ -1,9 +1,7 @@
 "use client"
 
 import { useProductMedia, useProductMediaMutation } from "@voyantjs/products-react"
-import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2 } from "lucide-react"
-import * as React from "react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
   Table,
   TableBody,
@@ -11,7 +9,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@voyantjs/ui/components/table"
+import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2 } from "lucide-react"
+import * as React from "react"
 import { ProductMediaDialog } from "./product-media-dialog"
 
 export function ProductMediaSection({ productId }: { productId: string }) {

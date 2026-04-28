@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router"
 import { usePropertyGroup } from "@voyantjs/facilities-react"
+import { Badge } from "@voyantjs/ui/components"
+import { buttonVariants } from "@voyantjs/ui/components/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { ArrowLeft, Building, Loader2 } from "lucide-react"
-import { Badge } from "@/components/ui"
-import { buttonVariants } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MembersTab } from "./members-tab"
 
 type Props = { id: string }

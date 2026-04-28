@@ -3,8 +3,6 @@ import {
   useProductCategories,
   useProductCategory,
 } from "@voyantjs/products-react"
-import * as React from "react"
-
 import {
   Combobox,
   ComboboxCollection,
@@ -13,7 +11,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import * as React from "react"
 
 type Props = {
   value: string | null | undefined

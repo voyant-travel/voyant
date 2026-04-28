@@ -1,8 +1,5 @@
 import { useOptionUnitPriceRuleMutation } from "@voyantjs/pricing-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
+import { PricingCategoryCombobox } from "@voyantjs/pricing-ui/components/pricing-category-combobox"
 import {
   Button,
   Dialog,
@@ -20,8 +17,11 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
-import { PricingCategoryCombobox } from "@/components/voyant/pricing/pricing-category-combobox"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 import type { OptionUnitData } from "./product-unit-dialog"
 

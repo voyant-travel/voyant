@@ -8,9 +8,9 @@ import {
   useVoyantHospitalityContext,
 } from "@voyantjs/hospitality-react"
 import { getPriceScheduleQueryOptions, useVoyantPricingContext } from "@voyantjs/pricing-react"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Badge, Button } from "@/components/ui"
 import { PaginationFooter } from "./pagination-footer"
 import { RatePlanCombobox } from "./rate-plan-combobox"
 import { RoomTypeCombobox } from "./room-type-combobox"

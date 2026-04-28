@@ -1,7 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
 import { type QuoteRecord, useQuotes } from "@voyantjs/crm-react"
-import { Loader2, Plus } from "lucide-react"
-import { useState } from "react"
 import {
   Badge,
   Button,
@@ -10,7 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Table,
   TableBody,
@@ -18,7 +16,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@voyantjs/ui/components/table"
+import { Loader2, Plus } from "lucide-react"
+import { useState } from "react"
 import {
   formatDate,
   formatMoney,

@@ -1,9 +1,9 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { VoyantReactProvider } from "@voyantjs/react"
+import { SidebarProvider } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
 import { AppSidebar } from "@/components/navigation/app-sidebar"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
-import { SidebarProvider } from "@/components/ui"
 import { getCurrentUser } from "@/lib/current-user"
 import { getApiUrl } from "@/lib/env"
 

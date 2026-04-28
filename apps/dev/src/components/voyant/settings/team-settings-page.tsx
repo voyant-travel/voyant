@@ -1,6 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Copy, Loader2, Mail, Trash2, UserPlus } from "lucide-react"
-import { useState } from "react"
 import {
   Button,
   Card,
@@ -16,7 +14,9 @@ import {
   DialogTitle,
   Input,
   Label,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Copy, Loader2, Mail, Trash2, UserPlus } from "lucide-react"
+import { useState } from "react"
 import { api } from "@/lib/api-client"
 
 type Invitation = {

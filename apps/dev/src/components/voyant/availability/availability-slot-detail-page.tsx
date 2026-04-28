@@ -14,8 +14,8 @@ import {
   getSlotResourcesQueryOptions as getSlotResourcesQueryOptionsBase,
   slotStatusVariant,
 } from "@voyantjs/availability-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, CalendarDays, Loader2, Package, Trash2, Truck, Wrench } from "lucide-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { api } from "@/lib/api-client"
 
 const client = { baseUrl: "", fetcher: defaultFetcher }

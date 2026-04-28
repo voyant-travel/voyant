@@ -1,5 +1,21 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@voyantjs/ui/components"
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@voyantjs/ui/components/chart"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   ArrowDownRight,
@@ -22,15 +38,6 @@ import {
   YAxis,
 } from "recharts"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
-import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import {
   deriveMonthlyBookingCounts,

@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query"
-import { ClipboardList } from "lucide-react"
-import { useState } from "react"
-import { Label } from "@/components/ui"
+import { Label } from "@voyantjs/ui/components"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "@voyantjs/ui/components/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { ClipboardList } from "lucide-react"
+import { useState } from "react"
 import { BookingRequirementsContactTab } from "./booking-requirements-contact-tab"
 import { BookingRequirementsQuestionsTab } from "./booking-requirements-questions-tab"
 import { getBookingRequirementProductsQueryOptions } from "./booking-requirements-shared"

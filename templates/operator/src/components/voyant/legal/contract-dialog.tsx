@@ -16,11 +16,6 @@ import {
   useLegalContractTemplateVersions,
 } from "@voyantjs/legal-react"
 import { useSupplier, useSuppliers } from "@voyantjs/suppliers-react"
-import { languages } from "@voyantjs/utils/languages"
-import { Loader2, Plus, Trash2 } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { type UseFormSetValue, type UseFormWatch, useFieldArray, useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -36,7 +31,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -45,8 +40,13 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
-import { DateTimePicker } from "@/components/ui/date-time-picker"
+} from "@voyantjs/ui/components/combobox"
+import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
+import { languages } from "@voyantjs/utils/languages"
+import { Loader2, Plus, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { type UseFormSetValue, type UseFormWatch, useFieldArray, useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 import { legalQueryClient } from "./legal-query-client"
 

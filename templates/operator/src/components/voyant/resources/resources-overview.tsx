@@ -1,4 +1,3 @@
-import { CalendarDays, ExternalLink, Search, Users, Wrench } from "lucide-react"
 import {
   Button,
   Card,
@@ -12,7 +11,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { CalendarDays, ExternalLink, Search, Users, Wrench } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import type {
   BookingOption,

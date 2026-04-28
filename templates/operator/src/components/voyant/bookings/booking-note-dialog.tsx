@@ -1,9 +1,6 @@
 "use client"
 
 import { useBookingNoteMutation } from "@voyantjs/bookings-react"
-import { Loader2 } from "lucide-react"
-import * as React from "react"
-
 import {
   Button,
   Dialog,
@@ -14,7 +11,9 @@ import {
   DialogTitle,
   Label,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export interface BookingNoteDialogProps {

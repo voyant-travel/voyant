@@ -6,7 +6,6 @@ import {
   useQuoteLines,
   useQuoteMutation,
 } from "@voyantjs/crm-react"
-import { ArrowLeft, Loader2 } from "lucide-react"
 import {
   Badge,
   Button,
@@ -15,7 +14,8 @@ import {
   CardHeader,
   CardTitle,
   ConfirmActionButton,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { ArrowLeft, Loader2 } from "lucide-react"
 import {
   formatDate,
   formatMoney,

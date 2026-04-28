@@ -6,8 +6,8 @@ import {
   Scripts,
   useRouteContext,
 } from "@tanstack/react-router"
+import { Toaster } from "@voyantjs/ui/components"
 import type { ReactNode } from "react"
-import { Toaster } from "@/components/ui"
 
 import { Providers } from "../components/providers"
 import appCss from "../styles.css?url"

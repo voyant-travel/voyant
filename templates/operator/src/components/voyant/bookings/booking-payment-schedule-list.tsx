@@ -5,11 +5,10 @@ import {
   useBookingPaymentScheduleMutation,
   useBookingPaymentSchedules,
 } from "@voyantjs/finance-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { useLocale } from "@voyantjs/voyant-admin"
 import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { BookingPaymentScheduleDialog } from "./booking-payment-schedule-dialog"

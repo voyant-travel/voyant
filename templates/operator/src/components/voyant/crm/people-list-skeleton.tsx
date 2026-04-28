@@ -1,6 +1,6 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
 import { SkeletonTableRows } from "@/components/ui/skeletons"
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 /**
  * Route-level placeholder for /people. Mirrors PeoplePage + PersonList:

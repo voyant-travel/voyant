@@ -1,12 +1,9 @@
 "use client"
 
 import { type ProductRecord, useProducts } from "@voyantjs/products-react"
-import { Loader2, Plus, Search } from "lucide-react"
-import * as React from "react"
-
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
+import { Input } from "@voyantjs/ui/components/input"
 import {
   Table,
   TableBody,
@@ -14,7 +11,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@voyantjs/ui/components/table"
+import { Loader2, Plus, Search } from "lucide-react"
+import * as React from "react"
 
 import { ProductDialog } from "./product-dialog"
 

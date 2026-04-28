@@ -7,10 +7,9 @@ import {
   useBooking,
   useBookingMutation,
 } from "@voyantjs/bookings-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Ban, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react"
 import { useState } from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 import { BookingActivityTimeline } from "./booking-activity-timeline"
 import { BookingCancellationDialog } from "./booking-cancellation-dialog"

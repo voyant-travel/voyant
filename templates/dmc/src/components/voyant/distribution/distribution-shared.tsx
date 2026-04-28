@@ -27,9 +27,9 @@ import {
   toLocalDateTimeInput,
   webhookStatusOptions,
 } from "@voyantjs/distribution-react"
+import { Badge, Button } from "@voyantjs/ui/components"
+import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { ExternalLink } from "lucide-react"
-import { Badge, Button } from "@/components/ui"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
 export type BatchMutationResponse<T = unknown> = {

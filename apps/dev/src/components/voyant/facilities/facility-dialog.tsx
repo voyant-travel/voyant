@@ -3,10 +3,6 @@ import {
   type UpdateFacilityInput,
   useFacilityMutation,
 } from "@voyantjs/facilities-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -23,8 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
-import { CountryCombobox } from "@/components/ui/country-combobox"
+} from "@voyantjs/ui/components"
+import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 import { FACILITY_KINDS, FACILITY_STATUSES, type FacilityData } from "./facility-shared"
 

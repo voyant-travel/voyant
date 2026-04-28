@@ -8,10 +8,6 @@ import {
   useProductItineraryDays,
   useProductItineraryMutation,
 } from "@voyantjs/products-react"
-import { formatMessage } from "@voyantjs/voyant-admin"
-import { Copy, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
-
 import {
   Badge,
   Button,
@@ -20,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +26,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@voyantjs/ui/components/alert-dialog"
+import { formatMessage } from "@voyantjs/voyant-admin"
+import { Copy, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 

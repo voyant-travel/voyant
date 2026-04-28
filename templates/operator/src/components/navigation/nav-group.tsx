@@ -1,6 +1,4 @@
 import { Link, useRouterState } from "@tanstack/react-router"
-import { BETA, COMING_SOON, type NavItem } from "@voyantjs/voyant-admin"
-import * as React from "react"
 import {
   Badge,
   cn,
@@ -13,7 +11,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   useSidebar,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { BETA, COMING_SOON, type NavItem } from "@voyantjs/voyant-admin"
+import * as React from "react"
 
 export function NavGroup({
   items,

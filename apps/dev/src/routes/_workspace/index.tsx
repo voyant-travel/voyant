@@ -7,6 +7,7 @@ import {
   OutstandingInvoicesWidget,
   RevenueWidget,
 } from "@voyantjs/ui/components/dashboard-widgets"
+import { TypographyH1, TypographyLead } from "@voyantjs/ui/components/typography"
 import {
   BarChart3,
   Building2,
@@ -19,9 +20,7 @@ import {
   UserRound,
   Users,
 } from "lucide-react"
-
 import type { DashboardSummary } from "@/api/dashboard-summary"
-import { TypographyH1, TypographyLead } from "@/components/ui/typography"
 import { api } from "@/lib/api-client"
 
 export const Route = createFileRoute("/_workspace/")({

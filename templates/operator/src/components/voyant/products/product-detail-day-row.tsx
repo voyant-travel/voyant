@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
+import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyantjs/ui/components"
 import { formatMessage } from "@voyantjs/voyant-admin"
 import { ChevronDown, ChevronRight, Image as ImageIcon, Pencil, Plus, Trash2 } from "lucide-react"
-
-import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { ActionMenu } from "./product-detail-sections"
 import {

@@ -1,7 +1,7 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
-import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
-import { DataTable } from "@/components/ui/data-table"
-import { TabsContent } from "@/components/ui/tabs"
+import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
+import { DataTable } from "@voyantjs/ui/components/data-table"
+import { TabsContent } from "@voyantjs/ui/components/tabs"
 import { SectionHeader } from "./availability-dialogs"
 import type {
   AvailabilityCloseoutRow,

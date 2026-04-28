@@ -8,9 +8,7 @@ import {
   useSlots,
 } from "@voyantjs/availability-react"
 import { useProductItineraries } from "@voyantjs/products-react"
-import { CalendarClock, Loader2, Pencil, Plus, Repeat, Trash2 } from "lucide-react"
-import * as React from "react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
   Table,
   TableBody,
@@ -18,7 +16,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@voyantjs/ui/components/table"
+import { CalendarClock, Loader2, Pencil, Plus, Repeat, Trash2 } from "lucide-react"
+import * as React from "react"
 import { DepartureDialog } from "./product-departure-dialog"
 import {
   formatCapacity,

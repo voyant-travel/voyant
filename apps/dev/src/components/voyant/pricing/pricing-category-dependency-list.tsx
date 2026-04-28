@@ -8,17 +8,15 @@ import {
   usePricingCategoryDependencyMutation,
   useVoyantPricingContext,
 } from "@voyantjs/pricing-react"
-import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
-import * as React from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@voyantjs/ui/components/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -26,7 +24,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@voyantjs/ui/components/table"
+import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import * as React from "react"
 
 import { PricingCategoryDependencyDialog } from "./pricing-category-dependency-dialog"
 

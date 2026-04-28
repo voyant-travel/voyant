@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { cn } from "@voyantjs/ui/lib/utils"
 
 import { Skeleton } from "./skeleton"
 import { TableBody, TableCell, TableRow } from "./table"

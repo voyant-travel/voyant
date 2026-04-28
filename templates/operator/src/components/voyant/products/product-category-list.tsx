@@ -5,21 +5,16 @@ import {
   useProductCategories,
   useProductCategoryMutation,
 } from "@voyantjs/products-react"
-import { formatMessage } from "@voyantjs/voyant-admin"
-import { CheckCircle2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
-import * as React from "react"
-
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { SkeletonTableRows } from "@/components/ui/skeletons"
+} from "@voyantjs/ui/components/dropdown-menu"
+import { Input } from "@voyantjs/ui/components/input"
 import {
   Table,
   TableBody,
@@ -27,7 +22,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@voyantjs/ui/components/table"
+import { formatMessage } from "@voyantjs/voyant-admin"
+import { CheckCircle2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import * as React from "react"
+import { SkeletonTableRows } from "@/components/ui/skeletons"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { ProductCategoryDialog } from "./product-category-dialog"

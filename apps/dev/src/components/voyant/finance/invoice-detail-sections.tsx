@@ -1,6 +1,13 @@
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Textarea,
+} from "@voyantjs/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from "@/components/ui"
 
 import {
   type CreditNoteRow,

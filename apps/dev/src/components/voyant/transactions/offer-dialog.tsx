@@ -6,11 +6,6 @@ import {
   type UpdateOfferInput,
   useOfferMutation,
 } from "@voyantjs/transactions-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
 import {
   Button,
   Dialog,
@@ -28,9 +23,13 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
-import { CurrencyCombobox } from "@/components/ui/currency-combobox"
-import { DatePicker } from "@/components/ui/date-picker"
+} from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
 

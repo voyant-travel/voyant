@@ -1,4 +1,3 @@
-import { CalendarDays, Clock3, Package, Search, Truck } from "lucide-react"
 import {
   Button,
   Card,
@@ -12,7 +11,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { CalendarDays, Clock3, Package, Search, Truck } from "lucide-react"
 import type {
   AvailabilityPickupPointRow,
   AvailabilityRuleRow,

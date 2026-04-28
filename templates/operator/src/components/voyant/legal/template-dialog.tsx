@@ -5,14 +5,6 @@ import {
   useLegalContractTemplateMutation,
 } from "@voyantjs/legal-react"
 import {
-  insertPlainText,
-  insertVariableToken,
-} from "@voyantjs/ui/components/rich-text-variable-extension"
-import { Loader2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-import {
   Button,
   ContractTemplateAuthoringHelp,
   Dialog,
@@ -30,8 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
-import { Switch } from "@/components/ui/switch"
+} from "@voyantjs/ui/components"
+import {
+  insertPlainText,
+  insertVariableToken,
+} from "@voyantjs/ui/components/rich-text-variable-extension"
+import { Switch } from "@voyantjs/ui/components/switch"
+import { Loader2 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const templateFormSchema = z.object({

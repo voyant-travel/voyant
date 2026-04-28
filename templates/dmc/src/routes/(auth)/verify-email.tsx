@@ -1,8 +1,4 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { formatMessage } from "@voyantjs/voyant-admin"
-import { Loader2 } from "lucide-react"
-import { useState } from "react"
-import { z } from "zod"
 import {
   Button,
   Card,
@@ -13,7 +9,11 @@ import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { formatMessage } from "@voyantjs/voyant-admin"
+import { Loader2 } from "lucide-react"
+import { useState } from "react"
+import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { authClient } from "@/lib/auth"
 import { getCurrentUser } from "@/lib/current-user"

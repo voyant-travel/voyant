@@ -1,9 +1,9 @@
 "use client"
 
 import { useProductVersions } from "@voyantjs/products-react"
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { FileText, Loader2, Plus } from "lucide-react"
 import * as React from "react"
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { VersionDialog } from "./product-version-dialog"
 
 export function ProductVersionsSection({ productId }: { productId: string }) {

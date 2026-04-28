@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
 
 /**
  * Layout-matched placeholder for OrganizationDetailPage.

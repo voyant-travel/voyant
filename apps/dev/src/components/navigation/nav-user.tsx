@@ -1,5 +1,3 @@
-import { BadgeCheck, Bell, Check, ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react"
-import { useTheme } from "@/components/providers/theme-provider"
 import {
   Avatar,
   AvatarFallback,
@@ -15,7 +13,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { BadgeCheck, Bell, Check, ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react"
+import { useTheme } from "@/components/providers/theme-provider"
 import { useSignOut } from "@/lib/auth"
 import { getInitials } from "@/lib/utils/initials"
 

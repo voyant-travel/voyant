@@ -1,10 +1,4 @@
 import { useQuery } from "@tanstack/react-query"
-import { currencies } from "@voyantjs/utils/currencies"
-import { Loader2, X } from "lucide-react"
-import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
 import {
   Badge,
   Button,
@@ -16,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Combobox,
   ComboboxContent,
@@ -24,7 +18,12 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import { currencies } from "@voyantjs/utils/currencies"
+import { Loader2, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"

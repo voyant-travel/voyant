@@ -8,7 +8,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
 import { api } from "@/lib/api-client"
 
 type ListResponse<T> = { data: T[]; total?: number; limit?: number; offset?: number }

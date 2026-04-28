@@ -1,4 +1,18 @@
 import type { UpdateOrganizationInput } from "@voyantjs/crm-react"
+import {
+  Avatar,
+  AvatarFallback,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ConfirmActionButton,
+} from "@voyantjs/ui/components"
+import { Separator } from "@voyantjs/ui/components/separator"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   ArrowLeft,
@@ -13,20 +27,6 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react"
-import {
-  Avatar,
-  AvatarFallback,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  ConfirmActionButton,
-} from "@/components/ui"
-import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatMoney, initialsFrom } from "@/components/voyant/crm/crm-constants"
 import { InlineCurrencyField } from "@/components/voyant/crm/inline-currency-field"
 import { InlineField } from "@/components/voyant/crm/inline-field"

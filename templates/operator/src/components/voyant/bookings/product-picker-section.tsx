@@ -1,8 +1,6 @@
 "use client"
 
 import { useProductOptions, useProducts } from "@voyantjs/products-react"
-import * as React from "react"
-
 import {
   Input,
   Label,
@@ -11,7 +9,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import * as React from "react"
 
 const OPTION_NONE = "__none__"
 

@@ -1,8 +1,7 @@
 "use client"
 
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { AlertCircle } from "lucide-react"
-
-import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 type DashboardOutstandingInvoicesWidgetProps = {
   metrics?: {

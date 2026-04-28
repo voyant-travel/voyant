@@ -1,6 +1,4 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
 import {
   Button,
   Card,
@@ -10,7 +8,9 @@ import {
   CardTitle,
   Input,
   Label,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import { useEffect, useState } from "react"
 
 import { getCurrentUser } from "@/lib/current-user"
 import { getCurrentWorkspace } from "@/lib/current-workspace"

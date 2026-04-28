@@ -1,7 +1,7 @@
+import { Button, Input } from "@voyantjs/ui/components"
 import { formatMessage } from "@voyantjs/voyant-admin"
 import { Check, Loader2, Pencil, X } from "lucide-react"
 import { useState } from "react"
-import { Button, Input } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 interface InlineNumberFieldProps {

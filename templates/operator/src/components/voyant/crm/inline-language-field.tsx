@@ -1,7 +1,3 @@
-import { languages } from "@voyantjs/utils/languages"
-import { formatMessage } from "@voyantjs/voyant-admin"
-import { Pencil } from "lucide-react"
-import { useState } from "react"
 import {
   Combobox,
   ComboboxCollection,
@@ -10,9 +6,13 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import { cn } from "@voyantjs/ui/lib/utils"
+import { languages } from "@voyantjs/utils/languages"
+import { formatMessage } from "@voyantjs/voyant-admin"
+import { Pencil } from "lucide-react"
+import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { cn } from "@/lib/utils"
 
 const LANGUAGE_CODES = Object.keys(languages).sort()
 

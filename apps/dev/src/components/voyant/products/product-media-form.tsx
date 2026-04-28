@@ -1,8 +1,6 @@
 "use client"
 
 import { useProductMediaMutation } from "@voyantjs/products-react"
-import { Loader2 } from "lucide-react"
-import * as React from "react"
 import {
   Button,
   Input,
@@ -14,7 +12,9 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import * as React from "react"
 
 type ProductMediaMode =
   | { kind: "create"; productId: string; dayId?: string }

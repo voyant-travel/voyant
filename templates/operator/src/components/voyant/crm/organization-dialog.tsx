@@ -7,7 +7,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@voyantjs/ui/components/dialog"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { OrganizationForm } from "./organization-form"

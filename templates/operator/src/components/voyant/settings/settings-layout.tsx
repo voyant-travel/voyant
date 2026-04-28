@@ -1,9 +1,8 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router"
+import { cn } from "@voyantjs/ui/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { Hash, Layers, Package, Tag, Tags, Users } from "lucide-react"
-
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { cn } from "@/lib/utils"
 
 type NavItem = { label: string; href: string; icon: LucideIcon }
 type NavGroup = { group: string; items: NavItem[] }

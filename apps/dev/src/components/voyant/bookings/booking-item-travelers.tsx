@@ -6,9 +6,6 @@ import {
   useBookingItemTravelers,
   useTravelers,
 } from "@voyantjs/bookings-react"
-import { Plus, Trash2, UserCheck } from "lucide-react"
-import * as React from "react"
-
 import {
   Badge,
   Button,
@@ -17,7 +14,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Plus, Trash2, UserCheck } from "lucide-react"
+import * as React from "react"
 
 const roles = [
   "traveler",

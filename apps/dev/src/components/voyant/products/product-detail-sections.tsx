@@ -1,6 +1,14 @@
 import { describeRRule } from "@voyantjs/availability/rrule"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Textarea,
+} from "@voyantjs/ui/components"
 import { CalendarClock, FileText, Loader2, Pencil, Plus, Repeat, Trash2 } from "lucide-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from "@/components/ui"
 import type { DepartureSlot } from "./product-departure-dialog"
 import { DayRow } from "./product-detail-day-row"
 import {

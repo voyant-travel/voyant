@@ -11,10 +11,9 @@ import {
   useLegalContractMutation,
   useLegalContractSignatures,
 } from "@voyantjs/legal-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { AttachmentDialog } from "./attachment-dialog"
 import { ContractDialog } from "./contract-dialog"
 import { legalQueryClient } from "./legal-query-client"

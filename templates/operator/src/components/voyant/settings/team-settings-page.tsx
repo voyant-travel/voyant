@@ -1,7 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
-import { Copy, Loader2, Mail, Trash2, UserPlus } from "lucide-react"
-import { useState } from "react"
 import {
   Button,
   Card,
@@ -17,8 +14,11 @@ import {
   DialogTitle,
   Input,
   Label,
-} from "@/components/ui"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "@voyantjs/ui/components"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
+import { Copy, Loader2, Mail, Trash2, UserPlus } from "lucide-react"
+import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 

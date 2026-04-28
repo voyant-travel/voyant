@@ -6,10 +6,18 @@ import {
   useSupplierRateMutation,
   useSupplierServiceMutation,
 } from "@voyantjs/suppliers-react"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Textarea,
+} from "@voyantjs/ui/components"
 import { useLocale } from "@voyantjs/voyant-admin"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { RateDialog } from "./rate-dialog"
 import { ServiceDialog } from "./service-dialog"

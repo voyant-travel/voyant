@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
+import { Input, Label } from "@voyantjs/ui/components"
 import { Link2 } from "lucide-react"
-import { Input, Label } from "@/components/ui"
 import { ExternalRefsTab } from "./external-refs-tab"
 
 type Props = {

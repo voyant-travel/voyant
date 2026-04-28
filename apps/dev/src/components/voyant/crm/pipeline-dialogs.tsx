@@ -1,6 +1,4 @@
 import { type StageRecord, usePipelineMutation } from "@voyantjs/crm-react"
-import { Loader2, Plus, Trash2 } from "lucide-react"
-import { useEffect, useState } from "react"
 import {
   Button,
   Checkbox,
@@ -11,7 +9,9 @@ import {
   DialogTitle,
   Input,
   Label,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2, Plus, Trash2 } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export function CreatePipelineDialog({
   open,

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui"
+import { Button } from "@voyantjs/ui/components"
 
 type PaginationFooterProps = {
   pageIndex: number

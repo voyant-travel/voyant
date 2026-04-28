@@ -1,7 +1,6 @@
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { TooltipProvider } from "@voyantjs/ui/components/tooltip"
 import type * as React from "react"
-
-import { TooltipProvider } from "@/components/ui/tooltip"
 
 import { ThemeProvider } from "./providers/theme-provider"
 

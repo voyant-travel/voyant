@@ -1,6 +1,4 @@
 import { type PricingCategoryRecord, usePricingCategories } from "@voyantjs/pricing-react"
-import * as React from "react"
-
 import {
   Combobox,
   ComboboxCollection,
@@ -9,7 +7,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import * as React from "react"
 
 type PricingCategoryComboboxProps = {
   value: string | null | undefined

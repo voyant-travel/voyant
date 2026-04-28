@@ -1,10 +1,9 @@
 "use client"
 
 import { useBookingNoteMutation, useBookingNotes } from "@voyantjs/bookings-react"
+import { Button, Card, CardContent, CardHeader, CardTitle, Textarea } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
-
-import { Button, Card, CardContent, CardHeader, CardTitle, Textarea } from "@/components/ui"
 
 export interface BookingNotesProps {
   bookingId: string

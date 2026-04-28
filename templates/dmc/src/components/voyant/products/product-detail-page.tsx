@@ -1,5 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Textarea,
+} from "@voyantjs/ui/components"
 import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   ArrowLeft,
@@ -12,7 +21,6 @@ import {
   Trash2,
 } from "lucide-react"
 import { useState } from "react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { DayDialog } from "./product-day-dialog"

@@ -1,9 +1,8 @@
 "use client"
 
 import { usePublicBookingPayments } from "@voyantjs/finance-react"
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { CreditCard } from "lucide-react"
-
-import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   pending: "outline",

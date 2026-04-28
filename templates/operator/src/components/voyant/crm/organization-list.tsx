@@ -1,13 +1,9 @@
 "use client"
 
 import { type OrganizationRecord, useOrganizations } from "@voyantjs/crm-react"
-import { formatMessage } from "@voyantjs/voyant-admin"
-import { Plus, Search } from "lucide-react"
-import * as React from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { SkeletonTableRows } from "@/components/ui/skeletons"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
+import { Input } from "@voyantjs/ui/components/input"
 import {
   Table,
   TableBody,
@@ -15,7 +11,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@voyantjs/ui/components/table"
+import { formatMessage } from "@voyantjs/voyant-admin"
+import { Plus, Search } from "lucide-react"
+import * as React from "react"
+import { SkeletonTableRows } from "@/components/ui/skeletons"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { OrganizationDialog } from "./organization-dialog"

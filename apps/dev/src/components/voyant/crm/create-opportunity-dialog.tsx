@@ -4,9 +4,6 @@ import {
   useOrganizations,
   usePeople,
 } from "@voyantjs/crm-react"
-import { currencies } from "@voyantjs/utils/currencies"
-import { Loader2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
 import {
   Button,
   Dialog,
@@ -21,7 +18,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -30,8 +27,11 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
-import { DatePicker } from "@/components/ui/date-picker"
+} from "@voyantjs/ui/components/combobox"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { currencies } from "@voyantjs/utils/currencies"
+import { Loader2 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 const CURRENCY_CODES = Object.keys(currencies).sort()
 

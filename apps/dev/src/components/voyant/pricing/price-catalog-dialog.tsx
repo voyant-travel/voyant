@@ -1,12 +1,6 @@
 "use client"
 
 import { type PriceCatalogRecord, usePriceCatalogMutation } from "@voyantjs/pricing-react"
-import { currencies } from "@voyantjs/utils/currencies"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
 import {
   Button,
   Dialog,
@@ -24,7 +18,7 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -33,7 +27,12 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import { currencies } from "@voyantjs/utils/currencies"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const CURRENCY_CODES = Object.keys(currencies).sort()

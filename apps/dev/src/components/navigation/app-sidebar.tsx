@@ -1,4 +1,11 @@
 import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+} from "@voyantjs/ui/components"
+import {
   Building,
   Building2,
   Bus,
@@ -27,7 +34,6 @@ import {
 import type * as React from "react"
 import { NavGroup } from "@/components/navigation/nav-group"
 import { NavUser } from "@/components/navigation/nav-user"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui"
 
 export const COMING_SOON = "COMING_SOON" as const
 export const BETA = "BETA" as const

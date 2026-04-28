@@ -1,7 +1,5 @@
 "use client"
 
-import { Trash2 } from "lucide-react"
-
 import {
   Button,
   Input,
@@ -11,7 +9,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Trash2 } from "lucide-react"
 
 export type PassengerRole = "lead" | "adult" | "child" | "infant"
 

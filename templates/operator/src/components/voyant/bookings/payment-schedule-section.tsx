@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, Input, Label } from "@/components/ui"
+import { Button, Input, Label } from "@voyantjs/ui/components"
 
 export type PaymentScheduleMode = "unpaid" | "full" | "advance" | "split"
 

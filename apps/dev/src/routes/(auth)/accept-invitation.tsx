@@ -1,8 +1,15 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { z } from "zod"
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui"
 
 import { authClient } from "@/lib/auth"
 import { getCurrentUser } from "@/lib/current-user"

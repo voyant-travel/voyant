@@ -11,9 +11,6 @@ import {
   useBookingStatusByIdMutation,
 } from "@voyantjs/bookings-react"
 import { usePersonMutation } from "@voyantjs/crm-react"
-import { Loader2 } from "lucide-react"
-import * as React from "react"
-
 import {
   Button,
   Checkbox,
@@ -30,7 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import {

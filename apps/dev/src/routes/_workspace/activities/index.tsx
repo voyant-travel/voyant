@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getActivitiesQueryOptions } from "@voyantjs/crm-react"
-import { ActivitiesPage } from "@/components/voyant/crm/activities-page"
+import { ActivitiesPage } from "@voyantjs/crm-ui/components/activities-page"
 
 const routeClient = {
   baseUrl: "",

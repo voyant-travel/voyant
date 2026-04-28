@@ -1,6 +1,6 @@
+import { Badge, Input } from "@voyantjs/ui/components"
 import { X } from "lucide-react"
 import { useState } from "react"
-import { Badge, Input } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 interface TagsEditorProps {

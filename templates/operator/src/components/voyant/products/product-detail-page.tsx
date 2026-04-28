@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 
-import { Button } from "@/components/ui"
+import { Button } from "@voyantjs/ui/components"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { BookingDialog } from "../bookings/booking-dialog"

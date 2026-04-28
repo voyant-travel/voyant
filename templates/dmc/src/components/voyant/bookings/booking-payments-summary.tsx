@@ -1,10 +1,9 @@
 "use client"
 
 import { usePublicBookingPayments } from "@voyantjs/finance-react"
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { useLocale } from "@voyantjs/voyant-admin"
 import { CreditCard } from "lucide-react"
-
-import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {

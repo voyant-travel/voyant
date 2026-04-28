@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { getLegalPolicyRulesQueryOptions, useLegalPolicyRuleMutation } from "@voyantjs/legal-react"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
-import { Badge, Button } from "@/components/ui"
 import { legalQueryClient } from "./legal-query-client"
 import { type PolicyVersion, versionStatusVariant } from "./policy-detail-shared"
 import type { RuleData } from "./policy-rule-dialog"
