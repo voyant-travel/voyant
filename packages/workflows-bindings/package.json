@@ -30,7 +30,7 @@
     "dev": "tsc -w -p tsconfig.json"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240524.0",
+    "@cloudflare/workers-types": "^4.20260426.1",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "typescript": "^5.9.2"
   },
