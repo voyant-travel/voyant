@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-orchestrator-node",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Node/Docker runtime primitives for @voyantjs/workflows-orchestrator, including a file-backed run store and local scheduler.",
   "license": "Apache-2.0",
   "repository": {

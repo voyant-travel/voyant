@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-orchestrator-cloudflare",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Cloudflare Worker + Durable Object adapter for @voyantjs/workflows-orchestrator. Dispatches workflow-step requests to tenant Workers via a Workers-for-Platforms dispatch namespace.",
   "license": "Apache-2.0",
   "repository": {

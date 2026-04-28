@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-config",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Types and `defineConfig` helper for `voyant.config.ts`.",
   "license": "Apache-2.0",
   "repository": {

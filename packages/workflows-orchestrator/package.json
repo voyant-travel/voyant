@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-orchestrator",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Reference orchestrator core for Voyant Workflows — drives runs through the tenant step handler over the v1 wire protocol.",
   "license": "Apache-2.0",
   "repository": {
