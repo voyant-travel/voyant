@@ -42,7 +42,11 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;")
 }
 
-function brochureBodyToHtml(body: string, bodyFormat: StructuredTemplateBodyFormat, title: string) {
+export function brochureBodyToHtml(
+  body: string,
+  bodyFormat: StructuredTemplateBodyFormat,
+  title: string,
+) {
   const content =
     bodyFormat === "html"
       ? body

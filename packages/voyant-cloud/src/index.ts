@@ -5,7 +5,22 @@ import {
 } from "@voyantjs/cloud-sdk"
 
 export type {
+  BrowserCommand,
+  BrowserCommandResult,
+  BrowserGoToOptions,
+  BrowserJsonInput,
+  BrowserPdfInput,
+  BrowserPdfOptions,
+  BrowserRenderInput,
+  BrowserScrapeInput,
+  BrowserScrapeResult,
+  BrowserScreenshotInput,
+  BrowserScreenshotOptions,
+  BrowserSnapshotResult,
+  BrowserViewport,
   CheckVerificationInput,
+  CreateVideoFromUrlInput,
+  CreateVideoUploadInput,
   EmailMessageStatus,
   EmailMessageSummary,
   PhoneNumberCapabilities,
@@ -16,6 +31,8 @@ export type {
   SmsMessageStatus,
   SmsMessageSummary,
   StartVerificationInput,
+  UpdateVideoInput,
+  UploadVideoCaptionInput,
   VaultSecretSummary,
   VaultSecretValue,
   VaultSummary,
@@ -23,6 +40,8 @@ export type {
   VerificationAttemptSummary,
   VerificationChannel,
   VerificationCheckResult,
+  VideoSummary,
+  VideoUploadTicket,
 } from "@voyantjs/cloud-sdk"
 export {
   createVoyantCloudClient,

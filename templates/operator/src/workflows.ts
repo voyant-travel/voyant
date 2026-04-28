@@ -4,10 +4,15 @@ import {
   deliverQueuedNotificationReminder,
   sendDueNotificationReminders,
 } from "@voyantjs/notifications/tasks"
-import { generateProductPdf } from "@voyantjs/products/tasks"
+import {
+  createDefaultProductBrochureTemplate,
+  loadProductBrochureTemplateContext,
+  renderProductBrochureTemplate,
+} from "@voyantjs/products/tasks"
 import { workflow } from "@voyantjs/workflows"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { createProductBrochurePrinter } from "./lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "./lib/notifications.js"
 
 function getDb() {
@@ -18,11 +23,18 @@ workflow<{ productId: string }, { base64: string; filename: string; sizeBytes: n
   id: "products.generate-pdf",
   defaultRuntime: "node",
   async run(input) {
-    const result = await generateProductPdf(getDb(), input.productId)
+    const db = getDb()
+    const printer = createProductBrochurePrinter(process.env)
+    const context = await loadProductBrochureTemplateContext(db, input.productId)
+    const rendered = await renderProductBrochureTemplate(
+      createDefaultProductBrochureTemplate(),
+      context,
+    )
+    const printed = await printer({ template: rendered, context })
     return {
-      base64: Buffer.from(result.pdfBytes).toString("base64"),
-      filename: result.filename,
-      sizeBytes: result.sizeBytes,
+      base64: Buffer.from(printed.body).toString("base64"),
+      filename: rendered.filename,
+      sizeBytes: printed.fileSize ?? printed.body.byteLength,
     }
   },
 })

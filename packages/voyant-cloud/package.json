@@ -15,7 +15,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/cloud-sdk": "^0.1.0"
+    "@voyantjs/cloud-sdk": "^0.4.0"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",

@@ -25,6 +25,7 @@ import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-ver
 import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
 import { resolveNotificationProviders } from "../lib/notifications"
+import { createVideoUploadTicket } from "../lib/video-uploads"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
 import { createInvitationsRoutes } from "./invitations"
 import { getDbFromHyperdrive } from "./lib/db"
@@ -209,6 +210,22 @@ export const app = createApp<CloudflareBindings>({
         mimeType: file.type,
         size: file.size,
       })
+    })
+
+    // POST /v1/uploads/video — request a one-shot upload ticket for video
+    // bytes. The client uploads the video directly to `uploadUrl` (TUS
+    // protocol). See `src/lib/video-uploads.ts` to swap providers.
+    hono.post("/v1/uploads/video", async (c) => {
+      const body = await c.req.json<{
+        maxDurationSeconds: number
+        name?: string | null
+        requireSignedUrls?: boolean
+        allowedOrigins?: string[]
+        thumbnailTimestampPct?: number | null
+        meta?: Record<string, string>
+      }>()
+      const ticket = await createVideoUploadTicket(c.env as Record<string, unknown>, body)
+      return c.json(ticket)
     })
 
     // GET /v1/media/* — serve public media via the configured media storage provider.
