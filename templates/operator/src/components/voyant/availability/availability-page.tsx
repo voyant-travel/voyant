@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { RowSelectionState } from "@tanstack/react-table"
+import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { formatMessage } from "@voyantjs/voyant-admin"
 import { useState } from "react"
 import { toast } from "sonner"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type {
   AvailabilityCloseoutRow,
   AvailabilityPickupPointRow,

@@ -1,9 +1,4 @@
 import { useProductOptionMutation } from "@voyantjs/products-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
 import {
   Button,
   Input,
@@ -15,8 +10,12 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
-import { DatePicker } from "@/components/ui/date-picker"
+} from "@voyantjs/ui/components"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 

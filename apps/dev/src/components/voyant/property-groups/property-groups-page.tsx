@@ -5,11 +5,11 @@ import {
   usePropertyGroupMutation,
   usePropertyGroups,
 } from "@voyantjs/facilities-react"
+import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { Building, Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge, Button, Input, Label } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import {
   Select,
   SelectContent,

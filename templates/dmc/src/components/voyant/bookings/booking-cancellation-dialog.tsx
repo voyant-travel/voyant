@@ -6,10 +6,6 @@ import {
   useBookingPrimaryProduct,
 } from "@voyantjs/bookings-react"
 import { useEvaluateCancellation, useResolvePolicy } from "@voyantjs/legal-react"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
-import { AlertTriangle, Loader2 } from "lucide-react"
-import * as React from "react"
-
 import {
   Badge,
   Button,
@@ -21,7 +17,10 @@ import {
   DialogTitle,
   Label,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
+import { AlertTriangle, Loader2 } from "lucide-react"
+import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 function formatAmount(cents: number, currency: string): string {

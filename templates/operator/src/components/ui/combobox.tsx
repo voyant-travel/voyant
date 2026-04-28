@@ -1,14 +1,14 @@
 import { Combobox as ComboboxPrimitive } from "@base-ui/react"
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react"
 import * as React from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group"
-import { cn } from "@/lib/utils"
+} from "@voyantjs/ui/components/input-group"
+import { cn } from "@voyantjs/ui/lib/utils"
 
 const Combobox = ComboboxPrimitive.Root
 

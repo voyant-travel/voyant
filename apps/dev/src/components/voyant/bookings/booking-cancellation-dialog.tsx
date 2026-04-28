@@ -6,9 +6,6 @@ import {
   useBookingPrimaryProduct,
 } from "@voyantjs/bookings-react"
 import { useEvaluateCancellation, useResolvePolicy } from "@voyantjs/legal-react"
-import { AlertTriangle, Loader2 } from "lucide-react"
-import * as React from "react"
-
 import {
   Badge,
   Button,
@@ -20,7 +17,9 @@ import {
   DialogTitle,
   Label,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { AlertTriangle, Loader2 } from "lucide-react"
+import * as React from "react"
 
 function formatAmount(cents: number, currency: string): string {
   return `${(cents / 100).toFixed(2)} ${currency}`

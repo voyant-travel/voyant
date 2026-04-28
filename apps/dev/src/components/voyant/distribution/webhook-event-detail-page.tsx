@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { formatDateTime } from "@voyantjs/distribution-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Link2, Loader2, Trash2, Webhook } from "lucide-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { api } from "@/lib/api-client"
 import {
   getDistributionWebhookEventChannelQueryOptions,

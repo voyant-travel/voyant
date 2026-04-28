@@ -5,10 +5,9 @@ import {
   useBookingGuaranteeMutation,
   useBookingGuarantees,
 } from "@voyantjs/finance-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react"
 import * as React from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 import { BookingGuaranteeDialog } from "./booking-guarantee-dialog"
 

@@ -2,10 +2,6 @@ import {
   type LegalContractNumberSeriesRecord,
   useLegalContractNumberSeriesMutation,
 } from "@voyantjs/legal-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -21,8 +17,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
-import { Switch } from "@/components/ui/switch"
+} from "@voyantjs/ui/components"
+import { Switch } from "@voyantjs/ui/components/switch"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const seriesFormSchema = z.object({

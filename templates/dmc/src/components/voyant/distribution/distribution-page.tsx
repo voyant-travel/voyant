@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { RowSelectionState } from "@tanstack/react-table"
+import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   getDistributionBookingLinksQueryOptions,
   getDistributionBookingsQueryOptions,

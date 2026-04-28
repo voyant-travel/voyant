@@ -6,10 +6,9 @@ import {
   useBookingGroupMemberMutation,
   useBookingPrimaryProduct,
 } from "@voyantjs/bookings-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Link2, Unlink, Users } from "lucide-react"
 import * as React from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 import { BookingGroupLinkDialog } from "./booking-group-link-dialog"
 

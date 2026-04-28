@@ -1,14 +1,13 @@
 "use client"
 
 import type { PersonRecord } from "@voyantjs/crm-react"
+import { Avatar, AvatarFallback } from "@voyantjs/ui/components/avatar"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { Mail, Phone } from "lucide-react"
 import type * as React from "react"
-
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { cn } from "@/lib/utils"
 
 export interface PersonCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
   person: PersonRecord

@@ -2,10 +2,6 @@ import {
   type LegalContractTemplateRecord,
   useLegalContractTemplateMutation,
 } from "@voyantjs/legal-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -22,8 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
-import { Switch } from "@/components/ui/switch"
+} from "@voyantjs/ui/components"
+import { Switch } from "@voyantjs/ui/components/switch"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const templateFormSchema = z.object({

@@ -6,6 +6,7 @@ import {
   type LegalContractRecord,
   useLegalContracts,
 } from "@voyantjs/legal-react"
+import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { Loader2, Plus, Search } from "lucide-react"
 import { useMemo, useState } from "react"
 import {
@@ -19,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ContractDialog } from "./contract-dialog"
 import { legalQueryClient } from "./legal-query-client"
 

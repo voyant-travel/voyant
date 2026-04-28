@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router"
+import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyantjs/ui/components"
 import { CalendarPlus, ChevronRight, Pencil, Trash2 } from "lucide-react"
-
-import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { ActionMenu } from "./product-detail-sections"

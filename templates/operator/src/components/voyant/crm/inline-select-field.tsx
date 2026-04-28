@@ -1,5 +1,3 @@
-import { Check, Loader2, Pencil, X } from "lucide-react"
-import { useState } from "react"
 import {
   Button,
   Select,
@@ -7,7 +5,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Check, Loader2, Pencil, X } from "lucide-react"
+import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 interface InlineSelectFieldOption {

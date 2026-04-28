@@ -1,3 +1,10 @@
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+} from "@voyantjs/ui/components"
 import { type NavItem, resolveAdminNavigation } from "@voyantjs/voyant-admin"
 import {
   Building,
@@ -16,7 +23,6 @@ import {
 import type * as React from "react"
 import { NavGroup } from "@/components/navigation/nav-group"
 import { NavUser } from "@/components/navigation/nav-user"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui"
 import { adminExtensions } from "@/lib/admin-extensions"
 import { useAdminMessages } from "@/lib/admin-i18n"
 

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { TypographyH1, TypographyLead } from "@/components/ui/typography"
+import { TypographyH1, TypographyLead } from "@voyantjs/ui/components/typography"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export const Route = createFileRoute("/_workspace/")({

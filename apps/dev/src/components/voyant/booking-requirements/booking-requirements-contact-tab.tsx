@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-import { Badge, Button } from "@/components/ui"
 import { api } from "@/lib/api-client"
 import {
   type ContactRequirementData,

@@ -1,6 +1,6 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
 import { SkeletonTableRows } from "@/components/ui/skeletons"
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 const COLUMN_WIDTHS = ["w-40", "w-20", "w-16", "w-24", "w-20", "w-12"]
 const COLUMN_TITLES = ["Name", "Type", "Status", "City", "Country", "Currency"]

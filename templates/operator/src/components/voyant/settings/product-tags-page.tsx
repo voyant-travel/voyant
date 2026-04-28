@@ -1,4 +1,4 @@
-import { ProductTagList } from "@/components/voyant/products/product-tag-list"
+import { ProductTagList } from "@voyantjs/products-ui/components/product-tag-list"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export function ProductTagsPage() {

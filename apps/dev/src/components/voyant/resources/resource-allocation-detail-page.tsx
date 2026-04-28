@@ -1,8 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2, Package, Trash2, Wrench } from "lucide-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { api } from "@/lib/api-client"
 
 type AllocationDetail = {

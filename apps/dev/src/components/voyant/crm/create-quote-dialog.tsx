@@ -1,8 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
 import { type OpportunityRecord, useOpportunities, useQuoteMutation } from "@voyantjs/crm-react"
-import { currencies } from "@voyantjs/utils/currencies"
-import { Loader2 } from "lucide-react"
-import { useMemo, useState } from "react"
 import {
   Button,
   Dialog,
@@ -11,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   Label,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -20,8 +17,11 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
-import { DatePicker } from "@/components/ui/date-picker"
+} from "@voyantjs/ui/components/combobox"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { currencies } from "@voyantjs/utils/currencies"
+import { Loader2 } from "lucide-react"
+import { useMemo, useState } from "react"
 import { formatMoney } from "@/components/voyant/crm/crm-constants"
 
 const CURRENCY_CODES = Object.keys(currencies).sort()

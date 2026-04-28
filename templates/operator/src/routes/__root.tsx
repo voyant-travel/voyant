@@ -6,12 +6,18 @@ import {
   Scripts,
   useRouteContext,
 } from "@tanstack/react-router"
+import { Button, Toaster } from "@voyantjs/ui/components"
+import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@voyantjs/ui/components/empty"
 import { ThemeProvider } from "@voyantjs/voyant-admin"
 import { RefreshCcw } from "lucide-react"
 import type { ReactNode } from "react"
-import { Button, Toaster } from "@/components/ui"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 
 import { Providers } from "../components/providers"
 import { ApiError } from "../lib/api-client"

@@ -9,9 +9,6 @@ import {
 } from "@voyantjs/bookings-react"
 import { useOrganizations, usePeople, usePersonMutation } from "@voyantjs/crm-react"
 import { useProductOptions, useProducts } from "@voyantjs/products-react"
-import { Loader2, UserPlus } from "lucide-react"
-import * as React from "react"
-
 import {
   Button,
   Dialog,
@@ -28,7 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2, UserPlus } from "lucide-react"
+import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 function generateBookingNumber(): string {

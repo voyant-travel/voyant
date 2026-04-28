@@ -1,10 +1,9 @@
 "use client"
 
 import { type BookingSupplierStatusRecord, useSupplierStatuses } from "@voyantjs/bookings-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Pencil, Plus } from "lucide-react"
 import * as React from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 import { SupplierStatusDialog } from "./supplier-status-dialog"
 

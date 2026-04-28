@@ -5,9 +5,6 @@ import {
   useBookingGroupMutation,
   useBookingGroups,
 } from "@voyantjs/bookings-react"
-import { useLocale } from "@voyantjs/voyant-admin"
-import { Loader2 } from "lucide-react"
-import * as React from "react"
 import {
   Button,
   Dialog,
@@ -23,7 +20,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { useLocale } from "@voyantjs/voyant-admin"
+import { Loader2 } from "lucide-react"
+import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export interface BookingGroupLinkDialogProps {

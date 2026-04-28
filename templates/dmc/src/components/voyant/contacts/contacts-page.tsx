@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import { PersonList } from "@/components/voyant/crm/person-list"
+import { PersonList } from "@voyantjs/crm-ui/components/person-list"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export function ContactsPage() {

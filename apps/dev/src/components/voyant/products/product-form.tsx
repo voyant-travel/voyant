@@ -5,22 +5,21 @@ import {
   type ProductRecord,
   useProductMutation,
 } from "@voyantjs/products-react"
-import { currencies } from "@voyantjs/utils/currencies"
-import { Loader2, X } from "lucide-react"
-import * as React from "react"
-
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+} from "@voyantjs/ui/components/select"
+import { Textarea } from "@voyantjs/ui/components/textarea"
+import { currencies } from "@voyantjs/utils/currencies"
+import { Loader2, X } from "lucide-react"
+import * as React from "react"
 import { ProductTypeCombobox } from "./product-type-combobox"
 
 type Mode = { kind: "create" } | { kind: "edit"; product: ProductRecord }

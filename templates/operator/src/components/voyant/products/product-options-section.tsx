@@ -5,9 +5,6 @@ import {
   useOptionUnitMutation,
   useProductOptionMutation,
 } from "@voyantjs/products-react"
-import { formatMessage } from "@voyantjs/voyant-admin"
-import { ChevronDown, ChevronRight, Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
 import {
   Badge,
   Button,
@@ -16,8 +13,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui"
-import { Separator } from "@/components/ui/separator"
+} from "@voyantjs/ui/components"
+import { Separator } from "@voyantjs/ui/components/separator"
+import { formatMessage } from "@voyantjs/voyant-admin"
+import { ChevronDown, ChevronRight, Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { OptionDialog, type ProductOptionData } from "./product-option-dialog"
 import { PricingPanel } from "./product-options-pricing"

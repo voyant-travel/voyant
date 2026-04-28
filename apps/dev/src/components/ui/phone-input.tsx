@@ -3,7 +3,7 @@ import * as React from "react"
 import * as RPNInput from "react-phone-number-input"
 import flags from "react-phone-number-input/flags"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   Command,
   CommandEmpty,
@@ -11,11 +11,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
+} from "@voyantjs/ui/components/command"
+import { Input } from "@voyantjs/ui/components/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import { ScrollArea } from "@voyantjs/ui/components/scroll-area"
+import { cn } from "@voyantjs/ui/lib/utils"
 
 type PhoneInputProps = Omit<React.ComponentProps<"input">, "onChange" | "value" | "ref"> &
   Omit<RPNInput.Props<typeof RPNInput.default>, "onChange"> & {

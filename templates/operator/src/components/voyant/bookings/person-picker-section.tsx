@@ -1,9 +1,6 @@
 "use client"
 
 import { useOrganizations, usePeople } from "@voyantjs/crm-react"
-import { UserPlus } from "lucide-react"
-import * as React from "react"
-
 import {
   Button,
   Input,
@@ -13,7 +10,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { UserPlus } from "lucide-react"
+import * as React from "react"
 
 const ORG_NONE = "__none__"
 

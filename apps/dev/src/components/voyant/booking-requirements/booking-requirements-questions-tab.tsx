@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { Button } from "@voyantjs/ui/components"
 import { Loader2, Plus } from "lucide-react"
 import * as React from "react"
-import { Button } from "@/components/ui"
 import { api } from "@/lib/api-client"
 import { BookingQuestionDialog } from "./booking-question-dialog"
 import { BookingRequirementsQuestionRow } from "./booking-requirements-question-row"

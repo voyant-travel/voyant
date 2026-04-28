@@ -1,8 +1,5 @@
 import { Link } from "@tanstack/react-router"
 import { describeRRule } from "@voyantjs/availability/rrule"
-import { formatMessage } from "@voyantjs/voyant-admin"
-import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
-import type { ReactNode } from "react"
 import {
   Badge,
   Button,
@@ -11,8 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui"
-import { Separator } from "@/components/ui/separator"
+} from "@voyantjs/ui/components"
+import { Separator } from "@voyantjs/ui/components/separator"
+import { formatMessage } from "@voyantjs/voyant-admin"
+import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import type { ReactNode } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import type { DepartureSlot } from "./product-departure-dialog"
 import {

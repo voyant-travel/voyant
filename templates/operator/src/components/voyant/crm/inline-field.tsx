@@ -1,8 +1,8 @@
+import { Button, Input, Textarea } from "@voyantjs/ui/components"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, Loader2, Pencil, X } from "lucide-react"
 import { useState } from "react"
-import { Button, Input, Textarea } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { cn } from "@/lib/utils"
 
 export type InlineFieldKind = "text" | "email" | "url" | "textarea"
 

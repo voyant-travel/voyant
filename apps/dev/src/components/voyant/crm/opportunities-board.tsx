@@ -15,11 +15,11 @@ import type {
   OpportunityRecord as OpportunityData,
   StageRecord as StageData,
 } from "@voyantjs/crm-react"
+import { Card } from "@voyantjs/ui/components"
+import { ScrollArea, ScrollBar } from "@voyantjs/ui/components/scroll-area"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { TrendingUp } from "lucide-react"
-import { Card } from "@/components/ui"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { formatDate, formatMoney } from "@/components/voyant/crm/crm-constants"
-import { cn } from "@/lib/utils"
 
 export function OpportunitiesBoard({
   stages,

@@ -4,11 +4,11 @@ import {
   useFacilityFeatureMutation,
   useFacilityFeatures,
 } from "@voyantjs/facilities-react"
+import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { FacilityFeatureDialog } from "./facility-feature-dialog"
 
 const PAGE_SIZE = 10

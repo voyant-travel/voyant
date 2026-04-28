@@ -1,12 +1,11 @@
 import { useNavigate } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import { useInvoices, useSupplierPayments } from "@voyantjs/finance-react"
+import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { Plus, Search } from "lucide-react"
 import { useMemo, useState } from "react"
-
 import { Badge, Button, Input } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
 import { InvoicesTableSkeleton, SupplierPaymentsTableSkeleton } from "./finance-page-skeleton"
 import {

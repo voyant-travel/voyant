@@ -1,8 +1,3 @@
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
-import { Loader2 } from "lucide-react"
-import { useMemo, useState } from "react"
-import { toast } from "sonner"
-import { useUser } from "@/components/providers/user-provider"
 import {
   Button,
   Card,
@@ -12,7 +7,12 @@ import {
   CardTitle,
   Input,
   Label,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
+import { Loader2 } from "lucide-react"
+import { useMemo, useState } from "react"
+import { toast } from "sonner"
+import { useUser } from "@/components/providers/user-provider"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { authClient } from "@/lib/auth"
 

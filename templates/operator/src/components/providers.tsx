@@ -1,8 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query"
+import { TooltipProvider } from "@voyantjs/ui/components/tooltip"
 import { AdminProvider } from "@voyantjs/voyant-admin"
 import type * as React from "react"
-
-import { TooltipProvider } from "@/components/ui/tooltip"
 import { AdminI18nProvider } from "@/lib/admin-i18n"
 
 export function Providers({

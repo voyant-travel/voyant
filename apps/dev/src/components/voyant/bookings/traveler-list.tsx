@@ -5,10 +5,9 @@ import {
   useTravelerMutation,
   useTravelers,
 } from "@voyantjs/bookings-react"
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
-
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 import { TravelerDialog } from "./traveler-dialog"
 

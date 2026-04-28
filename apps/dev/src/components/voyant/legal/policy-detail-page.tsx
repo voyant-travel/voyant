@@ -10,9 +10,9 @@ import {
   useLegalPolicyVersionMutation,
   useLegalPolicyVersions,
 } from "@voyantjs/legal-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { type AssignmentData, PolicyAssignmentDialog } from "./policy-assignment-dialog"
 import {
   type Acceptance,

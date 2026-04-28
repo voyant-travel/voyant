@@ -8,9 +8,7 @@ import {
   useOrganizations,
   usePersonMutation,
 } from "@voyantjs/crm-react"
-import { Loader2 } from "lucide-react"
-import * as React from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@voyantjs/ui/components/button"
 import {
   Combobox,
   ComboboxCollection,
@@ -19,9 +17,11 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@voyantjs/ui/components/combobox"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
+import { Loader2 } from "lucide-react"
+import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 type Mode = { kind: "create" } | { kind: "edit"; person: PersonRecord }

@@ -1,9 +1,7 @@
 import { useOptionPriceRuleMutation } from "@voyantjs/pricing-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
+import { CancellationPolicyCombobox } from "@voyantjs/pricing-ui/components/cancellation-policy-combobox"
+import { PriceCatalogCombobox } from "@voyantjs/pricing-ui/components/price-catalog-combobox"
+import { PriceScheduleCombobox } from "@voyantjs/pricing-ui/components/price-schedule-combobox"
 import {
   Button,
   Input,
@@ -15,10 +13,11 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
-import { CancellationPolicyCombobox } from "@/components/voyant/pricing/cancellation-policy-combobox"
-import { PriceCatalogCombobox } from "@/components/voyant/pricing/price-catalog-combobox"
-import { PriceScheduleCombobox } from "@/components/voyant/pricing/price-schedule-combobox"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 

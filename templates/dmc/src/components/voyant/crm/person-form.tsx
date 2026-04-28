@@ -1,12 +1,11 @@
 "use client"
 
 import { type CreatePersonInput, type PersonRecord, usePersonMutation } from "@voyantjs/crm-react"
+import { Button } from "@voyantjs/ui/components/button"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 type Mode = { kind: "create" } | { kind: "edit"; person: PersonRecord }

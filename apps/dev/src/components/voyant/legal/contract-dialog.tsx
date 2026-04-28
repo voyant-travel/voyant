@@ -1,8 +1,4 @@
 import { type LegalContractRecord, useLegalContractMutation } from "@voyantjs/legal-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -19,8 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
-import { DateTimePicker } from "@/components/ui/date-time-picker"
+} from "@voyantjs/ui/components"
+import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const contractFormSchema = z.object({

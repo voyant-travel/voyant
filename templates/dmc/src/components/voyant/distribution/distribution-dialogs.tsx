@@ -8,7 +8,7 @@ import type {
   ChannelWebhookEventRow,
   ProductOption,
   SupplierOption,
-} from "@/components/voyant/distribution/distribution-shared"
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import {
   ChannelBookingLinkDialog,
   ChannelCommissionRuleDialog,

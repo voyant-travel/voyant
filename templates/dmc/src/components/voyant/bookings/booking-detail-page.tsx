@@ -2,6 +2,15 @@
 
 import { Link, useNavigate } from "@tanstack/react-router"
 import { bookingStatusBadgeVariant, useBooking, useBookingMutation } from "@voyantjs/bookings-react"
+import { Badge, Button, Card, CardContent } from "@voyantjs/ui/components"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@voyantjs/ui/components/dropdown-menu"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { useLocale } from "@voyantjs/voyant-admin"
 import {
   Ban,
@@ -15,16 +24,6 @@ import {
 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
-
-import { Badge, Button, Card, CardContent } from "@/components/ui"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { BookingActivityTimeline } from "./booking-activity-timeline"

@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { ChartConfig } from "@/components/ui/chart"
+import type { ChartConfig } from "@voyantjs/ui/components/chart"
 import { api } from "@/lib/api-client"
 
 export type BookingRow = {

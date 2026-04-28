@@ -1,9 +1,4 @@
 import { type StayRuleRecord, useStayRuleMutation } from "@voyantjs/hospitality-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
 import {
   Button,
   Dialog,
@@ -16,8 +11,12 @@ import {
   Label,
   Switch,
   Textarea,
-} from "@/components/ui"
-import { DatePicker } from "@/components/ui/date-picker"
+} from "@voyantjs/ui/components"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 import { RatePlanCombobox } from "./rate-plan-combobox"
 import { RoomTypeCombobox } from "./room-type-combobox"

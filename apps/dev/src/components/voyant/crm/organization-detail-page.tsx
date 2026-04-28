@@ -7,9 +7,9 @@ import {
   useOrganizationMutation,
   usePeople,
 } from "@voyantjs/crm-react"
+import { Button } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
-import { Button } from "@/components/ui"
 import {
   OrganizationMain,
   OrganizationSidebar,

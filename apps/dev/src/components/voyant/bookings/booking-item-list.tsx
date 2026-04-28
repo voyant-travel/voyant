@@ -5,10 +5,9 @@ import {
   useBookingItemMutation,
   useBookingItems,
 } from "@voyantjs/bookings-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Package, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 import { BookingItemDialog } from "./booking-item-dialog"
 import { BookingItemTravelers } from "./booking-item-travelers"

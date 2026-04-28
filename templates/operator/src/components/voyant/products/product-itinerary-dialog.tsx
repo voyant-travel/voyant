@@ -1,4 +1,10 @@
-import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from "@/components/ui"
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@voyantjs/ui/components"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { type ItineraryData, ProductItineraryForm } from "./product-itinerary-form"

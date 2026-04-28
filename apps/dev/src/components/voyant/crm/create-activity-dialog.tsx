@@ -1,7 +1,4 @@
 import { type CreateActivityInput, useActivityMutation } from "@voyantjs/crm-react"
-import { Loader2 } from "lucide-react"
-import { useState } from "react"
-
 import {
   Button,
   Input,
@@ -11,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Dialog,
   DialogContent,
@@ -19,7 +16,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@voyantjs/ui/components/dialog"
+import { Loader2 } from "lucide-react"
+import { useState } from "react"
 import {
   ACTIVITY_STATUS_OPTIONS,
   ACTIVITY_TYPE_OPTIONS,

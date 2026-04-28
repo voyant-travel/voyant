@@ -7,9 +7,8 @@ import {
   useLegalContractMutation,
   useLegalContracts,
 } from "@voyantjs/legal-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Download, FileText, Loader2, RotateCw } from "lucide-react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
 /**
  * Status → badge style map. Keeps the card visually in sync with the

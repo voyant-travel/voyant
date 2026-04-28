@@ -1,6 +1,3 @@
-import { languages } from "@voyantjs/utils/languages"
-import { Pencil } from "lucide-react"
-import { useState } from "react"
 import {
   Combobox,
   ComboboxCollection,
@@ -9,8 +6,11 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
-import { cn } from "@/lib/utils"
+} from "@voyantjs/ui/components/combobox"
+import { cn } from "@voyantjs/ui/lib/utils"
+import { languages } from "@voyantjs/utils/languages"
+import { Pencil } from "lucide-react"
+import { useState } from "react"
 
 const LANGUAGE_CODES = Object.keys(languages).sort()
 

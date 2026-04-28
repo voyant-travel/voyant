@@ -4,10 +4,6 @@ import {
   type UpdateFacilityFeatureInput,
   useFacilityFeatureMutation,
 } from "@voyantjs/facilities-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -25,7 +21,11 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const CATEGORIES = ["amenity", "accessibility", "security", "service", "policy", "other"] as const

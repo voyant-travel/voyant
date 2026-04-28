@@ -1,8 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
-import { z } from "zod"
 import {
   Button,
   Card,
@@ -12,7 +9,10 @@ import {
   CardTitle,
   Input,
   Label,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { z } from "zod"
 import { api } from "@/lib/api-client"
 import { authClient } from "@/lib/auth"
 

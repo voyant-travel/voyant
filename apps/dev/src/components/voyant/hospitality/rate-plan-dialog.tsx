@@ -1,9 +1,4 @@
 import { type RatePlanRecord, useRatePlanMutation } from "@voyantjs/hospitality-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
 import {
   Button,
   Dialog,
@@ -21,8 +16,12 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
-import { CurrencyCombobox } from "@/components/ui/currency-combobox"
+} from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 import { CancellationPolicyCombobox } from "./cancellation-policy-combobox"
 import { MealPlanCombobox } from "./meal-plan-combobox"

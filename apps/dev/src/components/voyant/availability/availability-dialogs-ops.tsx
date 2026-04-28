@@ -1,8 +1,3 @@
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-import { useUser } from "@/components/providers/user-provider"
 import {
   Button,
   Dialog,
@@ -20,8 +15,13 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
-import { DatePicker } from "@/components/ui/date-picker"
+} from "@voyantjs/ui/components"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
+import { useUser } from "@/components/providers/user-provider"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
 import type {

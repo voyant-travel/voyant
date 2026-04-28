@@ -1,6 +1,4 @@
 import { Link, useRouterState } from "@tanstack/react-router"
-import { ChevronRight, type LucideIcon } from "lucide-react"
-import * as React from "react"
 import {
   Badge,
   Collapsible,
@@ -16,7 +14,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   useSidebar,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { ChevronRight, type LucideIcon } from "lucide-react"
+import * as React from "react"
 
 import { BETA, COMING_SOON } from "./app-sidebar"
 

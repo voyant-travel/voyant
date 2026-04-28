@@ -1,4 +1,11 @@
 import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+} from "@voyantjs/ui/components"
+import {
   Building2,
   CalendarCheck,
   CalendarDays,
@@ -13,7 +20,6 @@ import {
 import type * as React from "react"
 import { NavGroup } from "@/components/navigation/nav-group"
 import { NavUser } from "@/components/navigation/nav-user"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export const COMING_SOON = "COMING_SOON" as const

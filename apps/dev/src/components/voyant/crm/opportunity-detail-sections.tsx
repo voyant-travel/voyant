@@ -1,4 +1,5 @@
 import type { StageRecord } from "@voyantjs/crm-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
   Calendar,
   CircleDot,
@@ -11,7 +12,6 @@ import {
   TrendingUp,
   User,
 } from "lucide-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import {
   formatDate,
   formatMoney,

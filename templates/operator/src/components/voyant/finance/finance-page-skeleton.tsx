@@ -1,6 +1,6 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
 import { SkeletonTableRows } from "@/components/ui/skeletons"
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 const INVOICE_TITLES = ["Invoice", "Status", "Total", "Paid", "Balance", "Due Date"]
 const INVOICE_WIDTHS = ["w-28", "w-16", "w-20", "w-20", "w-20", "w-24"]

@@ -6,9 +6,9 @@ import {
   useHousekeepingTasks,
   useVoyantHospitalityContext,
 } from "@voyantjs/hospitality-react"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Badge, Button } from "@/components/ui"
 import { type HousekeepingTaskData, HousekeepingTaskDialog } from "./housekeeping-task-dialog"
 import { PaginationFooter } from "./pagination-footer"
 

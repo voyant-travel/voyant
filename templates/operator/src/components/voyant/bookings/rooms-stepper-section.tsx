@@ -1,9 +1,8 @@
 "use client"
 
 import { useSlotUnitAvailability } from "@voyantjs/availability-react"
+import { Button, Label } from "@voyantjs/ui/components"
 import { Minus, Plus } from "lucide-react"
-
-import { Button, Label } from "@/components/ui"
 
 /** Quantity per option_unit id; omitted ids are treated as 0. */
 export interface RoomsStepperValue {

@@ -7,8 +7,8 @@ import {
   useOrganizationMutation,
   usePeople,
 } from "@voyantjs/crm-react"
+import { Button } from "@voyantjs/ui/components"
 import { useState } from "react"
-import { Button } from "@/components/ui"
 import { OrganizationDetailSkeleton } from "@/components/voyant/crm/organization-detail-skeleton"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import {

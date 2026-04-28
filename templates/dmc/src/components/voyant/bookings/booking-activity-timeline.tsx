@@ -2,6 +2,7 @@
 
 import { useBookingActivity, useBookingTravelerDocuments } from "@voyantjs/bookings-react"
 import { usePublicBookingPayments } from "@voyantjs/finance-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   Activity,
@@ -16,8 +17,6 @@ import {
   UserPlus,
 } from "lucide-react"
 import * as React from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export interface BookingActivityTimelineProps {

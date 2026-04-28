@@ -1,5 +1,5 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { Bus } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DriversTab } from "./drivers-tab"
 import { OperatorsTab } from "./operators-tab"
 import { VehiclesTab } from "./vehicles-tab"

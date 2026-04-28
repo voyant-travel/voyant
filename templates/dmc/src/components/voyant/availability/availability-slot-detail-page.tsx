@@ -14,9 +14,9 @@ import {
   getSlotResourcesQueryOptions as getSlotResourcesQueryOptionsBase,
   slotStatusVariant,
 } from "@voyantjs/availability-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { useLocale } from "@voyantjs/voyant-admin"
 import { ArrowLeft, CalendarDays, Loader2, Package, Trash2, Truck, Wrench } from "lucide-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { getSlotStatusLabel } from "./availability-shared"

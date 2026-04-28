@@ -1,7 +1,3 @@
-import { currencies } from "@voyantjs/utils/currencies"
-import { formatMessage } from "@voyantjs/voyant-admin"
-import { Pencil } from "lucide-react"
-import { useState } from "react"
 import {
   Combobox,
   ComboboxCollection,
@@ -10,9 +6,13 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import { cn } from "@voyantjs/ui/lib/utils"
+import { currencies } from "@voyantjs/utils/currencies"
+import { formatMessage } from "@voyantjs/voyant-admin"
+import { Pencil } from "lucide-react"
+import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { cn } from "@/lib/utils"
 
 const CURRENCY_CODES = Object.keys(currencies).sort()
 

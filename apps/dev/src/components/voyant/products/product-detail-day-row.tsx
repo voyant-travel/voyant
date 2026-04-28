@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
-import { Badge, Button } from "@/components/ui"
 import {
   type DayService,
   getProductDayServicesQueryOptions,

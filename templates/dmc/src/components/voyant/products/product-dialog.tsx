@@ -1,7 +1,3 @@
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -18,8 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
-import { DateRangePicker } from "@/components/ui/date-picker"
+} from "@voyantjs/ui/components"
+import { DateRangePicker } from "@voyantjs/ui/components/date-picker"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"

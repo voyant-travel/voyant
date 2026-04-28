@@ -1,34 +1,34 @@
 import { useQuery } from "@tanstack/react-query"
-import { BedDouble } from "lucide-react"
-import { useState } from "react"
-import { Label } from "@/components/ui"
+import { MaintenanceBlocksTab } from "@voyantjs/hospitality-ui/components/maintenance-blocks-tab"
+import { MealPlansTab } from "@voyantjs/hospitality-ui/components/meal-plans-tab"
+import { RatePlansTab } from "@voyantjs/hospitality-ui/components/rate-plans-tab"
+import { RoomBlocksTab } from "@voyantjs/hospitality-ui/components/room-blocks-tab"
+import { RoomInventoryTab } from "@voyantjs/hospitality-ui/components/room-inventory-tab"
+import { RoomTypesTab } from "@voyantjs/hospitality-ui/components/room-types-tab"
+import { RoomUnitsTab } from "@voyantjs/hospitality-ui/components/room-units-tab"
+import { StayRulesTab } from "@voyantjs/hospitality-ui/components/stay-rules-tab"
+import { Label } from "@voyantjs/ui/components"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "@voyantjs/ui/components/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { BedDouble } from "lucide-react"
+import { useState } from "react"
 import {
   getHospitalityFacilitiesQueryOptions,
   getHospitalityPropertiesQueryOptions,
 } from "@/components/voyant/hospitality/hospitality-shared"
 import { HousekeepingTasksTab } from "@/components/voyant/hospitality/housekeeping-tasks-tab"
-import { MaintenanceBlocksTab } from "@/components/voyant/hospitality/maintenance-blocks-tab"
-import { MealPlansTab } from "@/components/voyant/hospitality/meal-plans-tab"
 import { RatePlanInventoryOverridesTab } from "@/components/voyant/hospitality/rate-plan-inventory-overrides-tab"
 import { RatePlanRoomTypesTab } from "@/components/voyant/hospitality/rate-plan-room-types-tab"
-import { RatePlansTab } from "@/components/voyant/hospitality/rate-plans-tab"
-import { RoomBlocksTab } from "@/components/voyant/hospitality/room-blocks-tab"
-import { RoomInventoryTab } from "@/components/voyant/hospitality/room-inventory-tab"
 import { RoomTypeRatesTab } from "@/components/voyant/hospitality/room-type-rates-tab"
-import { RoomTypesTab } from "@/components/voyant/hospitality/room-types-tab"
-import { RoomUnitsTab } from "@/components/voyant/hospitality/room-units-tab"
 import { StayBookingItemsTab } from "@/components/voyant/hospitality/stay-booking-items-tab"
 import { StayFoliosTab } from "@/components/voyant/hospitality/stay-folios-tab"
 import { StayOperationsTab } from "@/components/voyant/hospitality/stay-operations-tab"
-import { StayRulesTab } from "@/components/voyant/hospitality/stay-rules-tab"
 
 export function HospitalityPage() {
   const [propertyId, setPropertyId] = useState<string>("")

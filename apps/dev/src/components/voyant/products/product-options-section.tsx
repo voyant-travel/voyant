@@ -6,9 +6,7 @@ import {
   useProductOptionMutation,
   useProductOptions,
 } from "@voyantjs/products-react"
-import { ChevronDown, ChevronRight, Copy, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
-import { useMemo, useState } from "react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
   Table,
   TableBody,
@@ -16,7 +14,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@voyantjs/ui/components/table"
+import { ChevronDown, ChevronRight, Copy, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import { useMemo, useState } from "react"
 import { OptionDialog } from "./product-option-dialog"
 import { PricingPanel } from "./product-options-pricing"
 import { UnitDialog } from "./product-unit-dialog"

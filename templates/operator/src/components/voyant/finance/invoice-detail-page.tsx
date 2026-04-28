@@ -9,11 +9,10 @@ import {
   useInvoiceNotes,
   useInvoicePayments,
 } from "@voyantjs/finance-react"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
-
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
-import { Badge, Button } from "@/components/ui"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
 
 import { CreditNoteDialog } from "./credit-note-dialog"

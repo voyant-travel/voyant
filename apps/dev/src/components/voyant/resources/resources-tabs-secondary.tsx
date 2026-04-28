@@ -1,7 +1,7 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
+import { TabsContent } from "@voyantjs/ui/components/tabs"
 import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { TabsContent } from "@/components/ui/tabs"
 import { SectionHeader } from "@/components/voyant/resources/resources-section-header"
 import type {
   BookingOption,

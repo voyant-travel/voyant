@@ -1,9 +1,8 @@
 "use client"
 
 import { usePricingPreview } from "@voyantjs/bookings-react"
+import { Label } from "@voyantjs/ui/components"
 import * as React from "react"
-
-import { Label } from "@/components/ui"
 
 export interface PriceBreakdownLine {
   unitId: string

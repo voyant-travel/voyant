@@ -7,9 +7,6 @@ import {
   useLegalContractTemplateMutation,
   useLegalContractTemplates,
 } from "@voyantjs/legal-react"
-import { ChevronDown, ChevronRight, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react"
-import { useState } from "react"
-
 import {
   Badge,
   Button,
@@ -19,7 +16,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { ChevronDown, ChevronRight, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { useState } from "react"
 import { TemplateDialog } from "./template-dialog"
 import { TemplateVersionDialog } from "./template-version-dialog"
 

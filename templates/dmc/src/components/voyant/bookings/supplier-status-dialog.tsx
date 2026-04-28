@@ -4,10 +4,6 @@ import {
   type BookingSupplierStatusRecord,
   useSupplierStatusMutation,
 } from "@voyantjs/bookings-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -24,8 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
-import { CurrencyCombobox } from "@/components/ui/currency-combobox"
+} from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 

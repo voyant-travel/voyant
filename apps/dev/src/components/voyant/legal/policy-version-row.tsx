@@ -4,8 +4,8 @@ import {
   getLegalPolicyRulesQueryOptions,
   useLegalPolicyRuleMutation,
 } from "@voyantjs/legal-react"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
-import { Badge, Button } from "@/components/ui"
 import { type PolicyVersion, versionStatusVariant } from "./policy-detail-shared"
 import type { RuleData } from "./policy-rule-dialog"
 

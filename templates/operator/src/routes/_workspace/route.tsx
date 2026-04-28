@@ -1,11 +1,11 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { VoyantReactProvider } from "@voyantjs/react"
+import { SidebarProvider } from "@voyantjs/ui/components"
 import { useLocale } from "@voyantjs/voyant-admin"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { AppSidebar } from "@/components/navigation/app-sidebar"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
-import { SidebarProvider } from "@/components/ui"
 import {
   AdminI18nProvider,
   getAdminMessageOverridesFromUiPrefs,

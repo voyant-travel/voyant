@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
 import { SkeletonTableRows } from "@/components/ui/skeletons"
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 /** Body-only placeholder used inside the live page while queries load. */
 export function ResourcesBodySkeleton() {

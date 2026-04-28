@@ -1,5 +1,18 @@
 import type { UpdateOrganizationInput } from "@voyantjs/crm-react"
 import {
+  Avatar,
+  AvatarFallback,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ConfirmActionButton,
+} from "@voyantjs/ui/components"
+import { Separator } from "@voyantjs/ui/components/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import {
   ArrowLeft,
   Building,
   Calendar,
@@ -13,19 +26,6 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react"
-import {
-  Avatar,
-  AvatarFallback,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  ConfirmActionButton,
-} from "@/components/ui"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   formatDate,
   formatMoney,

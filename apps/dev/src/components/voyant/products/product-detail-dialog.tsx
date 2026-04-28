@@ -1,8 +1,3 @@
-import { currencies } from "@voyantjs/utils/currencies"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -19,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
 import {
   Combobox,
   ComboboxCollection,
@@ -28,7 +23,12 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@voyantjs/ui/components/combobox"
+import { currencies } from "@voyantjs/utils/currencies"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
 

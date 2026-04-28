@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
 
 /**
  * List placeholder shared by the simple settings CRUD pages (channels,

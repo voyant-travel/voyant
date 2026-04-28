@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router"
+import { cn } from "@voyantjs/ui/lib/utils"
 import {
   CalendarClock,
   FolderKanban,
@@ -7,7 +8,6 @@ import {
   Users,
   XCircle,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_workspace/settings")({
   component: SettingsLayout,

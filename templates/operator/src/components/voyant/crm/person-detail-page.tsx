@@ -6,10 +6,10 @@ import {
   usePerson,
   usePersonMutation,
 } from "@voyantjs/crm-react"
+import { PersonDialog } from "@voyantjs/crm-ui/components/person-dialog"
+import { Button } from "@voyantjs/ui/components"
 import { useState } from "react"
-import { Button } from "@/components/ui"
 import { PersonDetailSkeleton } from "@/components/voyant/crm/person-detail-skeleton"
-import { PersonDialog } from "@/components/voyant/crm/person-dialog"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import type { AddressRecord, AddressUpsertInput } from "./person-addresses"

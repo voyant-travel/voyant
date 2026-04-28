@@ -78,7 +78,7 @@ importers:
         version: 1.5.6(@better-auth/core@1.5.6(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(@cloudflare/workers-types@4.20260403.1)(@opentelemetry/api@1.9.0)(better-call@1.3.2(zod@4.3.6))(jose@6.2.2)(kysely@0.28.15)(nanostores@1.2.0))(@better-auth/utils@0.3.1)(better-auth@1.5.6(147937edba8663fd99b9bdbfb02e61a0))
       '@cloudflare/vite-plugin':
         specifier: ^1.31.0
-        version: 1.31.0(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260401.1)(wrangler@4.80.0(@cloudflare/workers-types@4.20260403.1))
+        version: 1.31.0(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260415.1)(wrangler@4.80.0(@cloudflare/workers-types@4.20260403.1))
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -142,6 +142,9 @@ importers:
       '@voyantjs/crm-react':
         specifier: workspace:*
         version: link:../../packages/crm-react
+      '@voyantjs/crm-ui':
+        specifier: workspace:*
+        version: link:../../packages/crm-ui
       '@voyantjs/customer-portal':
         specifier: workspace:*
         version: link:../../packages/customer-portal
@@ -193,6 +196,9 @@ importers:
       '@voyantjs/hospitality-react':
         specifier: workspace:*
         version: link:../../packages/hospitality-react
+      '@voyantjs/hospitality-ui':
+        specifier: workspace:*
+        version: link:../../packages/hospitality-ui
       '@voyantjs/identity':
         specifier: workspace:*
         version: link:../../packages/identity
@@ -220,6 +226,9 @@ importers:
       '@voyantjs/pricing-react':
         specifier: workspace:*
         version: link:../../packages/pricing-react
+      '@voyantjs/pricing-ui':
+        specifier: workspace:*
+        version: link:../../packages/pricing-ui
       '@voyantjs/products':
         specifier: workspace:*
         version: link:../../packages/products
@@ -235,6 +244,9 @@ importers:
       '@voyantjs/resources-react':
         specifier: workspace:*
         version: link:../../packages/resources-react
+      '@voyantjs/resources-ui':
+        specifier: workspace:*
+        version: link:../../packages/resources-ui
       '@voyantjs/sellability':
         specifier: workspace:*
         version: link:../../packages/sellability
@@ -250,6 +262,9 @@ importers:
       '@voyantjs/suppliers-react':
         specifier: workspace:*
         version: link:../../packages/suppliers-react
+      '@voyantjs/suppliers-ui':
+        specifier: workspace:*
+        version: link:../../packages/suppliers-ui
       '@voyantjs/transactions':
         specifier: workspace:*
         version: link:../../packages/transactions
@@ -4280,6 +4295,9 @@ importers:
       '@voyantjs/crm-react':
         specifier: workspace:*
         version: link:../../packages/crm-react
+      '@voyantjs/crm-ui':
+        specifier: workspace:*
+        version: link:../../packages/crm-ui
       '@voyantjs/customer-portal':
         specifier: workspace:*
         version: link:../../packages/customer-portal
@@ -4292,6 +4310,9 @@ importers:
       '@voyantjs/distribution-react':
         specifier: workspace:*
         version: link:../../packages/distribution-react
+      '@voyantjs/distribution-ui':
+        specifier: workspace:*
+        version: link:../../packages/distribution-ui
       '@voyantjs/external-refs':
         specifier: workspace:*
         version: link:../../packages/external-refs
@@ -4352,6 +4373,9 @@ importers:
       '@voyantjs/resources-react':
         specifier: workspace:*
         version: link:../../packages/resources-react
+      '@voyantjs/resources-ui':
+        specifier: workspace:*
+        version: link:../../packages/resources-ui
       '@voyantjs/sellability':
         specifier: workspace:*
         version: link:../../packages/sellability
@@ -4367,6 +4391,9 @@ importers:
       '@voyantjs/suppliers-react':
         specifier: workspace:*
         version: link:../../packages/suppliers-react
+      '@voyantjs/suppliers-ui':
+        specifier: workspace:*
+        version: link:../../packages/suppliers-ui
       '@voyantjs/transactions':
         specifier: workspace:*
         version: link:../../packages/transactions
@@ -4599,6 +4626,9 @@ importers:
       '@voyantjs/crm-react':
         specifier: workspace:*
         version: link:../../packages/crm-react
+      '@voyantjs/crm-ui':
+        specifier: workspace:*
+        version: link:../../packages/crm-ui
       '@voyantjs/customer-portal':
         specifier: workspace:*
         version: link:../../packages/customer-portal
@@ -4653,12 +4683,18 @@ importers:
       '@voyantjs/pricing-react':
         specifier: workspace:*
         version: link:../../packages/pricing-react
+      '@voyantjs/pricing-ui':
+        specifier: workspace:*
+        version: link:../../packages/pricing-ui
       '@voyantjs/products':
         specifier: workspace:*
         version: link:../../packages/products
       '@voyantjs/products-react':
         specifier: workspace:*
         version: link:../../packages/products-react
+      '@voyantjs/products-ui':
+        specifier: workspace:*
+        version: link:../../packages/products-ui
       '@voyantjs/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -4668,6 +4704,9 @@ importers:
       '@voyantjs/resources-react':
         specifier: workspace:*
         version: link:../../packages/resources-react
+      '@voyantjs/resources-ui':
+        specifier: workspace:*
+        version: link:../../packages/resources-ui
       '@voyantjs/sellability':
         specifier: workspace:*
         version: link:../../packages/sellability
@@ -4683,6 +4722,9 @@ importers:
       '@voyantjs/suppliers-react':
         specifier: workspace:*
         version: link:../../packages/suppliers-react
+      '@voyantjs/suppliers-ui':
+        specifier: workspace:*
+        version: link:../../packages/suppliers-ui
       '@voyantjs/transactions':
         specifier: workspace:*
         version: link:../../packages/transactions
@@ -12424,19 +12466,6 @@ snapshots:
       unenv: 2.0.0-rc.24
     optionalDependencies:
       workerd: 1.20260415.1
-
-  '@cloudflare/vite-plugin@1.31.0(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260401.1)(wrangler@4.80.0(@cloudflare/workers-types@4.20260403.1))':
-    dependencies:
-      '@cloudflare/unenv-preset': 2.16.0(unenv@2.0.0-rc.24)(workerd@1.20260401.1)
-      miniflare: 4.20260401.0
-      unenv: 2.0.0-rc.24
-      vite: 8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
-      wrangler: 4.80.0(@cloudflare/workers-types@4.20260403.1)
-      ws: 8.18.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - workerd
 
   '@cloudflare/vite-plugin@1.31.0(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260415.1)(wrangler@4.80.0(@cloudflare/workers-types@4.20260403.1))':
     dependencies:

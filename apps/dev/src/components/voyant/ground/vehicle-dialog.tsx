@@ -4,10 +4,6 @@ import {
   type UpdateGroundVehicleInput,
   useGroundVehicleMutation,
 } from "@voyantjs/ground-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
 import {
   Button,
   Dialog,
@@ -25,7 +21,11 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
 import { GROUND_VEHICLE_CATEGORIES, GROUND_VEHICLE_CLASSES } from "./ground-shared"

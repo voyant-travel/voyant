@@ -1,4 +1,4 @@
-import { PricingCategoryList } from "@/components/voyant/pricing/pricing-category-list"
+import { PricingCategoryList } from "@voyantjs/pricing-ui/components/pricing-category-list"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export function PricingCategoriesPage() {

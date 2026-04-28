@@ -6,11 +6,6 @@ import {
   type UpdateMarketInput,
   useMarketMutation,
 } from "@voyantjs/markets-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
 import {
   Button,
   Dialog,
@@ -26,9 +21,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
-import { CountryCombobox } from "@/components/ui/country-combobox"
-import { CurrencyCombobox } from "@/components/ui/currency-combobox"
+} from "@voyantjs/ui/components"
+import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const MARKET_STATUSES = ["active", "inactive", "archived"] as const

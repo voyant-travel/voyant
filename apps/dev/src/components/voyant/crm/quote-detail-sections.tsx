@@ -1,7 +1,7 @@
 import type { QuoteLineRecord } from "@voyantjs/crm-react"
+import { Button, Card, CardContent, CardHeader, CardTitle, Input } from "@voyantjs/ui/components"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/components/ui"
 import { formatMoney } from "@/components/voyant/crm/crm-constants"
 
 export interface QuoteLinesCardProps {

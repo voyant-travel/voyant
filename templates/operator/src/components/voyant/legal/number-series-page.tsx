@@ -4,9 +4,9 @@ import {
   useLegalContractNumberSeries,
   useLegalContractNumberSeriesMutation,
 } from "@voyantjs/legal-react"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Badge, Button } from "@/components/ui"
 import { legalQueryClient } from "./legal-query-client"
 import { type NumberSeriesData, NumberSeriesDialog } from "./number-series-dialog"
 

@@ -1,4 +1,4 @@
-import { cn, SidebarInset, SidebarTrigger } from "@/components/ui"
+import { cn, SidebarInset, SidebarTrigger } from "@voyantjs/ui/components"
 
 export const AppSidebarInset = ({
   children,

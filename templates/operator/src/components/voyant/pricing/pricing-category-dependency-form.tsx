@@ -5,21 +5,20 @@ import {
   type PricingCategoryDependencyRecord,
   usePricingCategoryDependencyMutation,
 } from "@voyantjs/pricing-react"
-import { Loader2 } from "lucide-react"
-import * as React from "react"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@voyantjs/ui/components/button"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
+} from "@voyantjs/ui/components/select"
+import { Switch } from "@voyantjs/ui/components/switch"
+import { Textarea } from "@voyantjs/ui/components/textarea"
+import { Loader2 } from "lucide-react"
+import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { PricingCategoryCombobox } from "./pricing-category-combobox"
 
