@@ -20,11 +20,11 @@ import {
   userInvitationsTable,
   userProfilesTable,
 } from "@voyantjs/db/schema/iam"
-import { tryGetVoyantCloudClient } from "@voyantjs/voyant-cloud"
 import { hashPassword } from "better-auth/crypto"
 import { and, desc, eq, gt, isNull } from "drizzle-orm"
 import { Hono } from "hono"
 import { z } from "zod"
+import { tryGetVoyantCloudClient } from "../lib/cloud-client.js"
 
 import { getDbFromHyperdrive } from "./lib/db"
 

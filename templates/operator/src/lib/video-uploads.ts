@@ -1,9 +1,5 @@
-import {
-  type CreateVideoUploadInput,
-  getVoyantCloudClient,
-  type VideoUploadTicket,
-  type VoyantCloudEnv,
-} from "@voyantjs/voyant-cloud"
+import type { CreateVideoUploadInput, VideoUploadTicket } from "@voyantjs/cloud-sdk"
+import { getVoyantCloudClient, type VoyantCloudEnv } from "./cloud-client.js"
 
 /**
  * Default video upload handler for this template.

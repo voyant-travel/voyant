@@ -4286,6 +4286,9 @@ importers:
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
+      '@voyantjs/cloud-sdk':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -4415,9 +4418,6 @@ importers:
       '@voyantjs/voyant-admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@voyantjs/voyant-cloud':
-        specifier: workspace:*
-        version: link:../../packages/voyant-cloud
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -4617,6 +4617,9 @@ importers:
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
+      '@voyantjs/cloud-sdk':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -4746,9 +4749,6 @@ importers:
       '@voyantjs/voyant-admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@voyantjs/voyant-cloud':
-        specifier: workspace:*
-        version: link:../../packages/voyant-cloud
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage

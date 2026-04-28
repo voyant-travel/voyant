@@ -1,5 +1,5 @@
 import { brochureBodyToHtml, type ProductBrochurePrinter } from "@voyantjs/products/tasks"
-import { getVoyantCloudClient, type VoyantCloudEnv } from "@voyantjs/voyant-cloud"
+import { getVoyantCloudClient, type VoyantCloudEnv } from "./cloud-client.js"
 
 /**
  * Default brochure printer for this template.

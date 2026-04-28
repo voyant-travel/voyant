@@ -6,7 +6,7 @@ import {
   type NotificationProvider,
   type NotificationTaskRuntimeOptions,
 } from "@voyantjs/notifications"
-import { getVoyantCloudClient } from "@voyantjs/voyant-cloud"
+import { getVoyantCloudClient } from "./cloud-client.js"
 
 export const resolveNotificationProviders = (
   env: Record<string, unknown>,
