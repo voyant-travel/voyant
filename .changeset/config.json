@@ -19,6 +19,7 @@
       "@voyantjs/core",
       "@voyantjs/crm",
       "@voyantjs/crm-react",
+      "@voyantjs/crm-ui",
       "@voyantjs/cruises",
       "@voyantjs/cruises-react",
       "@voyantjs/customer-portal",
