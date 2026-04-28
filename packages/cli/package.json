@@ -37,7 +37,7 @@
     "@voyantjs/workflows": "workspace:*",
     "@voyantjs/workflows-orchestrator": "workspace:*",
     "@voyantjs/workflows-orchestrator-node": "workspace:*",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.28.0",
     "tar": "^7.4.3"
   },
   "devDependencies": {
