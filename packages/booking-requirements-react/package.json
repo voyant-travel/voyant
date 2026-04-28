@@ -8,6 +8,7 @@
     "directory": "packages/booking-requirements-react"
   },
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
     "./provider": "./src/provider.tsx",
