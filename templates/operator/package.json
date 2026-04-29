@@ -120,7 +120,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260403.1",
+    "@cloudflare/workers-types": "^4.20260426.1",
     "@tanstack/devtools-vite": "^0.6.0",
     "@types/node": "^25.5.2",
     "@types/pg": "^8.15.6",
