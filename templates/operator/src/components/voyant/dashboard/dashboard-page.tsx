@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
+import { formatMessage, useLocale } from "@voyantjs/admin"
 import {
   Badge,
   Card,
@@ -16,7 +17,6 @@ import {
   ChartTooltipContent,
 } from "@voyantjs/ui/components/chart"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   ArrowDownRight,
   ArrowUpRight,

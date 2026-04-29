@@ -1,3 +1,4 @@
+import { useLocale } from "@voyantjs/admin"
 import {
   Badge,
   Button,
@@ -7,7 +8,6 @@ import {
   CardTitle,
   Textarea,
 } from "@voyantjs/ui/components"
-import { useLocale } from "@voyantjs/voyant-admin"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
 

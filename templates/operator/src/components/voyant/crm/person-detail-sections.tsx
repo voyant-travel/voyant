@@ -1,3 +1,4 @@
+import { formatMessage, useLocale } from "@voyantjs/admin"
 import { type OrganizationRecord, useOrganizations } from "@voyantjs/crm-react"
 import {
   Avatar,
@@ -44,7 +45,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/component
 import { cn } from "@voyantjs/ui/lib/utils"
 import { currencies } from "@voyantjs/utils/currencies"
 import { languages } from "@voyantjs/utils/languages"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   ArrowLeft,
   Building2,

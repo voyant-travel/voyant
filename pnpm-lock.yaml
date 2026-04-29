@@ -4429,7 +4429,7 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/voyant-admin':
+      '@voyantjs/admin':
         specifier: workspace:*
         version: link:../../packages/admin
       '@voyantjs/voyant-storage':
@@ -4754,7 +4754,7 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/voyant-admin':
+      '@voyantjs/admin':
         specifier: workspace:*
         version: link:../../packages/admin
       '@voyantjs/voyant-storage':

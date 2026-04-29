@@ -1,4 +1,4 @@
-import { useTheme } from "@voyantjs/voyant-admin"
+import { useTheme } from "@voyantjs/admin"
 import {
   CircleCheckIcon,
   InfoIcon,

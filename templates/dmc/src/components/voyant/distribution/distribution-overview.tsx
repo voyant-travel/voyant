@@ -1,4 +1,4 @@
-import { useLocale } from "@voyantjs/voyant-admin"
+import { useLocale } from "@voyantjs/admin"
 import { DollarSign, ExternalLink, Link2, Search, Webhook } from "lucide-react"
 import {
   Button,

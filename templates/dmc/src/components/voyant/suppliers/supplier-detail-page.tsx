@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { useLocale } from "@voyantjs/admin"
 import {
   useSupplierMutation,
   useSupplierNoteMutation,
@@ -15,7 +16,6 @@ import {
   CardTitle,
   Textarea,
 } from "@voyantjs/ui/components"
-import { useLocale } from "@voyantjs/voyant-admin"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

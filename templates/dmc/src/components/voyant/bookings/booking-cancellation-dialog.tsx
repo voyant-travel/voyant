@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage, useLocale } from "@voyantjs/admin"
 import {
   type BookingRecord,
   useBookingCancelMutation,
@@ -18,7 +19,6 @@ import {
   Label,
   Textarea,
 } from "@voyantjs/ui/components"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

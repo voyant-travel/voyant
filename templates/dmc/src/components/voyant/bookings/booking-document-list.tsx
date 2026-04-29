@@ -1,5 +1,6 @@
 "use client"
 
+import { useLocale } from "@voyantjs/admin"
 import {
   type BookingTravelerRecord,
   useBookingTravelerDocumentMutation,
@@ -7,7 +8,6 @@ import {
   useTravelers,
 } from "@voyantjs/bookings-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { useLocale } from "@voyantjs/voyant-admin"
 import { ExternalLink, FileText, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

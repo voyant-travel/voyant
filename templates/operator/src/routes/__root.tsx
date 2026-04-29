@@ -6,6 +6,7 @@ import {
   Scripts,
   useRouteContext,
 } from "@tanstack/react-router"
+import { ThemeProvider } from "@voyantjs/admin"
 import { Button, Toaster } from "@voyantjs/ui/components"
 import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
 import {
@@ -15,7 +16,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@voyantjs/ui/components/empty"
-import { ThemeProvider } from "@voyantjs/voyant-admin"
 import { RefreshCcw } from "lucide-react"
 import type { ReactNode } from "react"
 

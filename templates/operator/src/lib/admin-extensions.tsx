@@ -1,4 +1,4 @@
-import { type AdminExtension, createAdminExtensionRegistry } from "@voyantjs/voyant-admin"
+import { type AdminExtension, createAdminExtensionRegistry } from "@voyantjs/admin"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.

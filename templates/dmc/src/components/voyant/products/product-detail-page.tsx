@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { formatMessage, useLocale } from "@voyantjs/admin"
 import {
   Badge,
   Button,
@@ -9,7 +10,6 @@ import {
   CardTitle,
   Textarea,
 } from "@voyantjs/ui/components"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   ArrowLeft,
   CalendarCheck,

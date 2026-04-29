@@ -1,5 +1,5 @@
 /**
- * @voyantjs/voyant-admin — shared admin-dashboard shell for Voyant templates.
+ * @voyantjs/admin — shared admin-dashboard shell for Voyant templates.
  *
  * Exports:
  * - Theme provider: zero-dependency ThemeProvider + useTheme that toggles

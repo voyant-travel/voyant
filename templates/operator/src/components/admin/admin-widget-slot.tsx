@@ -1,4 +1,4 @@
-import { type AdminWidgetSlot, resolveAdminWidgets } from "@voyantjs/voyant-admin"
+import { type AdminWidgetSlot, resolveAdminWidgets } from "@voyantjs/admin"
 import type { ComponentType } from "react"
 import { Fragment } from "react"
 import { adminExtensions } from "@/lib/admin-extensions"

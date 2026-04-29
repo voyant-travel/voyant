@@ -1,6 +1,7 @@
 "use client"
 
 import { Link, useNavigate } from "@tanstack/react-router"
+import { useLocale } from "@voyantjs/admin"
 import { bookingStatusBadgeVariant, useBooking, useBookingMutation } from "@voyantjs/bookings-react"
 import { Badge, Button, Card, CardContent } from "@voyantjs/ui/components"
 import {
@@ -11,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@voyantjs/ui/components/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { useLocale } from "@voyantjs/voyant-admin"
 import {
   Ban,
   Calendar,

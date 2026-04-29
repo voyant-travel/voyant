@@ -1,8 +1,8 @@
 "use client"
 
+import { useLocale } from "@voyantjs/admin"
 import { type BookingSupplierStatusRecord, useSupplierStatuses } from "@voyantjs/bookings-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { useLocale } from "@voyantjs/voyant-admin"
 import { Pencil, Plus } from "lucide-react"
 import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

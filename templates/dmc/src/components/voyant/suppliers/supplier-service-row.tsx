@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/admin"
 import { Badge, Button } from "@voyantjs/ui/components"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import {

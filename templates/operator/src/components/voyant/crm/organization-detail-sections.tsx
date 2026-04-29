@@ -1,3 +1,4 @@
+import { formatMessage, useLocale } from "@voyantjs/admin"
 import type { UpdateOrganizationInput } from "@voyantjs/crm-react"
 import {
   Avatar,
@@ -13,7 +14,6 @@ import {
 import { Separator } from "@voyantjs/ui/components/separator"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   ArrowLeft,
   Building,

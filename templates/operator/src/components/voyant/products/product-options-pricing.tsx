@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/admin"
 import { useOptionPriceRuleMutation, useOptionUnitPriceRuleMutation } from "@voyantjs/pricing-react"
 import {
   Badge,
@@ -9,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage } from "@voyantjs/admin"
 import { type PersonRecord, usePeople } from "@voyantjs/crm-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
@@ -12,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { Plus, Search } from "lucide-react"
 import * as React from "react"
 import { SkeletonTableRows } from "@/components/ui/skeletons"

@@ -76,7 +76,7 @@
     "@voyantjs/types": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@voyantjs/utils": "workspace:*",
-    "@voyantjs/voyant-admin": "workspace:*",
+    "@voyantjs/admin": "workspace:*",
     "@voyantjs/cloud-sdk": "^0.6.0",
     "@voyantjs/voyant-storage": "workspace:*",
     "@voyantjs/workflows": "workspace:*",

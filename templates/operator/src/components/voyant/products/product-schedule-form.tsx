@@ -1,3 +1,4 @@
+import { formatMessage } from "@voyantjs/admin"
 import {
   Button,
   Input,
@@ -19,7 +20,6 @@ import {
   ComboboxList,
 } from "@voyantjs/ui/components/combobox"
 import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-group"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"

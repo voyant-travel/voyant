@@ -1,6 +1,7 @@
 "use client"
 
 import { useMutation } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/admin"
 import { Button } from "@voyantjs/ui/components"
 import {
   Carousel,
@@ -12,7 +13,6 @@ import {
 } from "@voyantjs/ui/components/carousel"
 import { Dialog, DialogContent, DialogTitle } from "@voyantjs/ui/components/dialog"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import {
   ChevronLeft,
   ChevronRight,

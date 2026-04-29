@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage } from "@voyantjs/admin"
 import {
   useBookingGroup,
   useBookingGroupForBooking,
@@ -7,7 +8,6 @@ import {
   useBookingPrimaryProduct,
 } from "@voyantjs/bookings-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { Link2, Unlink, Users } from "lucide-react"
 import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

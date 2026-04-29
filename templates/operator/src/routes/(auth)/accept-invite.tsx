@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { formatMessage } from "@voyantjs/admin"
 import {
   Button,
   Card,
@@ -10,7 +11,6 @@ import {
   Input,
   Label,
 } from "@voyantjs/ui/components"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { z } from "zod"

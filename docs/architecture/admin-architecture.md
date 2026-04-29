@@ -139,7 +139,7 @@ do not use blocks as a substitute for explicit admin extension points.
 Voyant should keep:
 
 - `@voyantjs/*-react`
-- `@voyantjs/voyant-admin`
+- `@voyantjs/admin`
 - the registry/source-installed UI approach
 
 That strategy gives teams editable UI while the framework still owns the runtime

@@ -225,7 +225,7 @@ Examples:
 
 - `@voyantjs/bookings`
 - `@voyantjs/storefront-react`
-- `@voyantjs/voyant-admin`
+- `@voyantjs/admin`
 - `@voyantjs/plugin-netopia`
 
 The package name does not have to carry the full taxonomy, but it should not
