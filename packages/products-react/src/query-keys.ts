@@ -4,6 +4,9 @@ export interface ProductsListFilters {
   visibility?: string | undefined
   activated?: boolean | undefined
   facilityId?: string | undefined
+  productTypeId?: string | undefined
+  categoryId?: string | undefined
+  tag?: string | undefined
   search?: string | undefined
   limit?: number | undefined
   offset?: number | undefined
