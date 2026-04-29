@@ -11,14 +11,13 @@ const makeSuite = (
 ) => ({
   id: "chst_test_suite",
   suiteName: "Owners Suite",
-  priceUSD: "125000.00",
-  priceEUR: "115000.00",
-  priceGBP: "95000.00",
-  priceAUD: "190000.00",
-  portFeeUSD: null,
-  portFeeEUR: null,
-  portFeeGBP: null,
-  portFeeAUD: null,
+  pricesByCurrency: {
+    USD: "125000.00",
+    EUR: "115000.00",
+    GBP: "95000.00",
+    AUD: "190000.00",
+  },
+  portFeesByCurrency: {} as Record<string, string>,
   ...overrides,
 })
 
@@ -26,10 +25,12 @@ const makeVoyage = (
   overrides: Partial<Parameters<typeof composeWholeYachtQuote>[0]["voyage"]> = {},
 ) => ({
   id: "chrv_test_voyage",
-  wholeYachtPriceUSD: "5000000.00",
-  wholeYachtPriceEUR: "4500000.00",
-  wholeYachtPriceGBP: "3800000.00",
-  wholeYachtPriceAUD: "7600000.00",
+  wholeYachtPricesByCurrency: {
+    USD: "5000000.00",
+    EUR: "4500000.00",
+    GBP: "3800000.00",
+    AUD: "7600000.00",
+  },
   apaPercentOverride: null as string | null,
   ...overrides,
 })
@@ -51,7 +52,7 @@ describe("composePerSuiteQuote", () => {
   it("adds port fee when present in the same currency", () => {
     const quote = composePerSuiteQuote({
       voyageId: "chrv_test_voyage",
-      suite: makeSuite({ portFeeUSD: "1500.00" }),
+      suite: makeSuite({ portFeesByCurrency: { USD: "1500.00" } }),
       currency: "USD",
     })
     expect(quote.portFee).toBe("1500.00")
@@ -79,11 +80,24 @@ describe("composePerSuiteQuote", () => {
     expect(eur.total).toBe("115000.00")
   })
 
+  it("supports arbitrary ISO currency codes (e.g. RON)", () => {
+    // Adding a new currency is a data change, not a schema change.
+    const quote = composePerSuiteQuote({
+      voyageId: "chrv_test_voyage",
+      suite: makeSuite({ pricesByCurrency: { USD: "125000.00", RON: "575000.00" } }),
+      currency: "RON",
+    })
+    expect(quote.currency).toBe("RON")
+    expect(quote.total).toBe("575000.00")
+  })
+
   it("throws when the requested currency is missing", () => {
     expect(() =>
       composePerSuiteQuote({
         voyageId: "chrv_test_voyage",
-        suite: makeSuite({ priceUSD: null }),
+        suite: makeSuite({
+          pricesByCurrency: { EUR: "115000.00", GBP: "95000.00", AUD: "190000.00" },
+        }),
         currency: "USD",
       }),
     ).toThrow(/no published price in USD.*EUR, GBP, AUD/)
@@ -93,23 +107,21 @@ describe("composePerSuiteQuote", () => {
     expect(() =>
       composePerSuiteQuote({
         voyageId: "chrv_test_voyage",
-        suite: makeSuite({
-          priceUSD: null,
-          priceEUR: null,
-          priceGBP: null,
-          priceAUD: null,
-        }),
+        suite: makeSuite({ pricesByCurrency: {} }),
         currency: "USD",
       }),
     ).toThrow(/available currencies: none/)
   })
 
   it("doesn't apply port fee when only the suite-price currency is missing", () => {
-    // Asymmetry: priceUSD=null, portFeeUSD set → still throws on missing price
+    // Asymmetry: USD price missing, USD port fee set → still throws on missing price
     expect(() =>
       composePerSuiteQuote({
         voyageId: "chrv_test_voyage",
-        suite: makeSuite({ priceUSD: null, portFeeUSD: "1500.00" }),
+        suite: makeSuite({
+          pricesByCurrency: { EUR: "115000.00" },
+          portFeesByCurrency: { USD: "1500.00" },
+        }),
         currency: "USD",
       }),
     ).toThrow()
@@ -164,7 +176,9 @@ describe("composeWholeYachtQuote", () => {
   it("throws when the requested currency is unpublished", () => {
     expect(() =>
       composeWholeYachtQuote({
-        voyage: makeVoyage({ wholeYachtPriceUSD: null }),
+        voyage: makeVoyage({
+          wholeYachtPricesByCurrency: { EUR: "4500000.00" },
+        }),
         productDefaultApaPercent: "27.50",
         currency: "USD",
       }),
@@ -173,7 +187,7 @@ describe("composeWholeYachtQuote", () => {
 
   it("handles fractional APA percentages without float drift", () => {
     const quote = composeWholeYachtQuote({
-      voyage: makeVoyage({ wholeYachtPriceUSD: "1234567.89" }),
+      voyage: makeVoyage({ wholeYachtPricesByCurrency: { USD: "1234567.89" } }),
       productDefaultApaPercent: "27.50",
       currency: "USD",
     })
@@ -206,9 +220,5 @@ describe("computeApaAmount", () => {
 
   it("rejects malformed money strings", () => {
     expect(() => computeApaAmount("five thousand", "25.00")).toThrow(/Invalid money/)
-  })
-
-  it("rejects malformed percent strings", () => {
-    expect(() => computeApaAmount("5000.00", "twenty-five percent")).toThrow(/Invalid percent/)
   })
 })

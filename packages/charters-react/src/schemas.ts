@@ -47,7 +47,16 @@ export const suiteAvailabilitySchema = z.enum([
   "wait_list",
   "sold_out",
 ])
-export const firstClassCurrencySchema = z.enum(["USD", "EUR", "GBP", "AUD"])
+/**
+ * ISO-4217 currency code (three uppercase letters). Charter pricing stores
+ * per-currency amounts in `pricesByCurrency: Record<code, amount>` maps,
+ * so adding a new currency is a content change — no client-schema bump.
+ */
+export const currencyCodeSchema = z
+  .string()
+  .regex(/^[A-Z]{3}$/, "Expected ISO-4217 currency code (e.g. 'USD', 'RON')")
+
+const pricesByCurrencySchema = z.record(currencyCodeSchema, z.string())
 
 const isoDateString = z.string()
 const timestampString = z.string()
@@ -70,7 +79,8 @@ export const charterProductRecordSchema = z.object({
   defaultBookingModes: z.array(charterBookingModeSchema).nullable(),
   defaultMybaTemplateId: z.string().nullable(),
   defaultApaPercent: z.string().nullable(),
-  lowestPriceCachedUSD: z.string().nullable(),
+  lowestPriceCachedAmount: z.string().nullable(),
+  lowestPriceCachedCurrency: z.string().nullable(),
   earliestVoyageCached: isoDateString.nullable(),
   latestVoyageCached: isoDateString.nullable(),
   externalRefs: z.record(z.string(), z.string()).nullable(),
@@ -95,10 +105,7 @@ export const charterVoyageRecordSchema = z.object({
   nights: z.number().int(),
   bookingModes: z.array(charterBookingModeSchema),
   appointmentOnly: z.boolean(),
-  wholeYachtPriceUSD: z.string().nullable(),
-  wholeYachtPriceEUR: z.string().nullable(),
-  wholeYachtPriceGBP: z.string().nullable(),
-  wholeYachtPriceAUD: z.string().nullable(),
+  wholeYachtPricesByCurrency: pricesByCurrencySchema,
   apaPercentOverride: z.string().nullable(),
   mybaTemplateIdOverride: z.string().nullable(),
   charterAreaOverride: z.string().nullable(),
@@ -157,14 +164,8 @@ export const charterSuiteRecordSchema = z.object({
   images: z.array(z.string()).nullable(),
   floorplanImages: z.array(z.string()).nullable(),
   maxGuests: z.number().int().nullable(),
-  priceUSD: z.string().nullable(),
-  priceEUR: z.string().nullable(),
-  priceGBP: z.string().nullable(),
-  priceAUD: z.string().nullable(),
-  portFeeUSD: z.string().nullable(),
-  portFeeEUR: z.string().nullable(),
-  portFeeGBP: z.string().nullable(),
-  portFeeAUD: z.string().nullable(),
+  pricesByCurrency: pricesByCurrencySchema,
+  portFeesByCurrency: pricesByCurrencySchema,
   availability: suiteAvailabilitySchema,
   unitsAvailable: z.number().int().nullable(),
   appointmentOnly: z.boolean(),
@@ -203,7 +204,7 @@ export const perSuiteQuoteSchema = z.object({
   voyageId: z.string(),
   suiteId: z.string(),
   suiteName: z.string(),
-  currency: firstClassCurrencySchema,
+  currency: currencyCodeSchema,
   suitePrice: z.string(),
   portFee: z.string().nullable(),
   total: z.string(),
@@ -214,7 +215,7 @@ export type PerSuiteQuote = z.infer<typeof perSuiteQuoteSchema>
 export const wholeYachtQuoteSchema = z.object({
   mode: z.literal("whole_yacht"),
   voyageId: z.string(),
-  currency: firstClassCurrencySchema,
+  currency: currencyCodeSchema,
   charterFee: z.string(),
   apaPercent: z.string(),
   apaAmount: z.string(),

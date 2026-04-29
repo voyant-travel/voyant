@@ -133,15 +133,16 @@ export class MockCharterAdapter implements CharterAdapter {
     return this.yachtsByRef.get(refKey(yachtRef))?.name ?? null
   }
 
-  private lowestSuitePriceUSDFor(productKey: string): string | null {
+  private lowestSuitePriceFor(productKey: string, currency: string): string | null {
     const seeded = this.productsByRef.get(productKey)
     if (!seeded) return null
     let lowest: number | null = null
     for (const voyage of seeded.voyages) {
       const suites = seeded.suitesByVoyage.get(refKey(voyage.sourceRef)) ?? []
       for (const suite of suites) {
-        if (!suite.priceUSD) continue
-        const value = Number.parseFloat(suite.priceUSD)
+        const amount = suite.pricesByCurrency?.[currency]
+        if (!amount) continue
+        const value = Number.parseFloat(amount)
         if (!Number.isFinite(value)) continue
         if (lowest === null || value < lowest) lowest = value
       }
@@ -155,6 +156,10 @@ export class MockCharterAdapter implements CharterAdapter {
     const all: ExternalCharterProductSummary[] = []
     for (const [key, seeded] of this.productsByRef.entries()) {
       const sortedDates = seeded.voyages.map((v) => v.departureDate).sort()
+      // Mock browse currency is USD by default; real adapters can publish
+      // any currency the operator markets in.
+      const browseCurrency = "USD"
+      const lowest = this.lowestSuitePriceFor(key, browseCurrency)
       all.push({
         sourceRef: seeded.product.sourceRef,
         name: seeded.product.name,
@@ -165,7 +170,8 @@ export class MockCharterAdapter implements CharterAdapter {
           : null,
         earliestVoyage: sortedDates.at(0) ?? null,
         latestVoyage: sortedDates.at(-1) ?? null,
-        lowestPriceUSD: this.lowestSuitePriceUSDFor(key),
+        lowestPriceAmount: lowest,
+        lowestPriceCurrency: lowest ? browseCurrency : null,
         heroImageUrl: seeded.product.heroImageUrl ?? null,
       })
     }

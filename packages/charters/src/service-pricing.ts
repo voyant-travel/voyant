@@ -3,7 +3,6 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { type CharterVoyage, charterProducts, charterVoyages } from "./schema-core.js"
 import { type CharterSuite, charterSuites } from "./schema-pricing.js"
-import { FIRST_CLASS_CURRENCIES, type FirstClassCurrency } from "./validation-shared.js"
 
 // ---------- money helpers ----------
 // All math is performed in integer cents to avoid float drift.
@@ -51,76 +50,18 @@ function percentOf(cents: bigint, percentString: string): bigint {
 
 // ---------- currency resolution (pure) ----------
 
-type WithSuitePriceFields = {
-  priceUSD: string | null
-  priceEUR: string | null
-  priceGBP: string | null
-  priceAUD: string | null
-}
-type WithSuitePortFeeFields = {
-  portFeeUSD: string | null
-  portFeeEUR: string | null
-  portFeeGBP: string | null
-  portFeeAUD: string | null
-}
-type WithVoyageWholePriceFields = {
-  wholeYachtPriceUSD: string | null
-  wholeYachtPriceEUR: string | null
-  wholeYachtPriceGBP: string | null
-  wholeYachtPriceAUD: string | null
+/**
+ * Per-currency price lookup against a `Record<currency, amount>` map.
+ * Returns `null` when the entity isn't priced in that currency. Callers
+ * decide whether that's an error (quote composition) or a soft miss
+ * (browse aggregates).
+ */
+function priceForCurrency(map: Record<string, string>, currency: string): string | null {
+  return map[currency] ?? null
 }
 
-function suitePriceForCurrency(
-  row: WithSuitePriceFields,
-  currency: FirstClassCurrency,
-): string | null {
-  switch (currency) {
-    case "USD":
-      return row.priceUSD ?? null
-    case "EUR":
-      return row.priceEUR ?? null
-    case "GBP":
-      return row.priceGBP ?? null
-    case "AUD":
-      return row.priceAUD ?? null
-  }
-}
-function suitePortFeeForCurrency(
-  row: WithSuitePortFeeFields,
-  currency: FirstClassCurrency,
-): string | null {
-  switch (currency) {
-    case "USD":
-      return row.portFeeUSD ?? null
-    case "EUR":
-      return row.portFeeEUR ?? null
-    case "GBP":
-      return row.portFeeGBP ?? null
-    case "AUD":
-      return row.portFeeAUD ?? null
-  }
-}
-function voyageWholePriceForCurrency(
-  row: WithVoyageWholePriceFields,
-  currency: FirstClassCurrency,
-): string | null {
-  switch (currency) {
-    case "USD":
-      return row.wholeYachtPriceUSD ?? null
-    case "EUR":
-      return row.wholeYachtPriceEUR ?? null
-    case "GBP":
-      return row.wholeYachtPriceGBP ?? null
-    case "AUD":
-      return row.wholeYachtPriceAUD ?? null
-  }
-}
-
-function listSuitePriceCurrencies(row: WithSuitePriceFields): FirstClassCurrency[] {
-  return FIRST_CLASS_CURRENCIES.filter((c) => suitePriceForCurrency(row, c) !== null)
-}
-function listVoyageWholePriceCurrencies(row: WithVoyageWholePriceFields): FirstClassCurrency[] {
-  return FIRST_CLASS_CURRENCIES.filter((c) => voyageWholePriceForCurrency(row, c) !== null)
+function listPriceCurrencies(map: Record<string, string>): string[] {
+  return Object.keys(map).filter((code) => map[code] != null && map[code] !== "")
 }
 
 // ---------- per-suite quote (pure function) ----------
@@ -130,7 +71,7 @@ export type PerSuiteQuote = {
   voyageId: string
   suiteId: string
   suiteName: string
-  currency: FirstClassCurrency
+  currency: string
   suitePrice: string
   portFee: string | null
   total: string
@@ -138,30 +79,18 @@ export type PerSuiteQuote = {
 
 export type ComposePerSuiteQuoteInput = {
   voyageId: string
-  suite: Pick<
-    CharterSuite,
-    | "id"
-    | "suiteName"
-    | "priceUSD"
-    | "priceEUR"
-    | "priceGBP"
-    | "priceAUD"
-    | "portFeeUSD"
-    | "portFeeEUR"
-    | "portFeeGBP"
-    | "portFeeAUD"
-  >
-  currency: FirstClassCurrency
+  suite: Pick<CharterSuite, "id" | "suiteName" | "pricesByCurrency" | "portFeesByCurrency">
+  currency: string
 }
 
 export function composePerSuiteQuote(input: ComposePerSuiteQuoteInput): PerSuiteQuote {
-  const suitePrice = suitePriceForCurrency(input.suite, input.currency)
+  const suitePrice = priceForCurrency(input.suite.pricesByCurrency, input.currency)
   if (!suitePrice) {
     throw new Error(
-      `Suite ${input.suite.id} has no published price in ${input.currency}; available currencies: ${listSuitePriceCurrencies(input.suite).join(", ") || "none"}`,
+      `Suite ${input.suite.id} has no published price in ${input.currency}; available currencies: ${listPriceCurrencies(input.suite.pricesByCurrency).join(", ") || "none"}`,
     )
   }
-  const portFee = suitePortFeeForCurrency(input.suite, input.currency)
+  const portFee = priceForCurrency(input.suite.portFeesByCurrency, input.currency)
   const suiteCents = decimalStringToCents(suitePrice)
   const portFeeCents = portFee ? decimalStringToCents(portFee) : 0n
   const totalCents = suiteCents + portFeeCents
@@ -182,7 +111,7 @@ export function composePerSuiteQuote(input: ComposePerSuiteQuoteInput): PerSuite
 export type WholeYachtQuote = {
   mode: "whole_yacht"
   voyageId: string
-  currency: FirstClassCurrency
+  currency: string
   charterFee: string
   apaPercent: string
   apaAmount: string
@@ -195,28 +124,20 @@ export type WholeYachtQuote = {
 }
 
 export type ComposeWholeYachtQuoteInput = {
-  voyage: Pick<
-    CharterVoyage,
-    | "id"
-    | "wholeYachtPriceUSD"
-    | "wholeYachtPriceEUR"
-    | "wholeYachtPriceGBP"
-    | "wholeYachtPriceAUD"
-    | "apaPercentOverride"
-  >
+  voyage: Pick<CharterVoyage, "id" | "wholeYachtPricesByCurrency" | "apaPercentOverride">
   /**
    * The product's defaultApaPercent — passed in by the caller so this stays
    * a pure function. Voyage-level override takes precedence.
    */
   productDefaultApaPercent: string | null
-  currency: FirstClassCurrency
+  currency: string
 }
 
 export function composeWholeYachtQuote(input: ComposeWholeYachtQuoteInput): WholeYachtQuote {
-  const charterFee = voyageWholePriceForCurrency(input.voyage, input.currency)
+  const charterFee = priceForCurrency(input.voyage.wholeYachtPricesByCurrency, input.currency)
   if (!charterFee) {
     throw new Error(
-      `Voyage ${input.voyage.id} has no published whole-yacht price in ${input.currency}; available currencies: ${listVoyageWholePriceCurrencies(input.voyage).join(", ") || "none"}`,
+      `Voyage ${input.voyage.id} has no published whole-yacht price in ${input.currency}; available currencies: ${listPriceCurrencies(input.voyage.wholeYachtPricesByCurrency).join(", ") || "none"}`,
     )
   }
   const apaPercent = input.voyage.apaPercentOverride ?? input.productDefaultApaPercent
@@ -257,7 +178,7 @@ export function computeApaAmount(charterFee: string, apaPercent: string): string
 export const pricingService = {
   async quotePerSuite(
     db: PostgresJsDatabase,
-    args: { suiteId: string; currency: FirstClassCurrency },
+    args: { suiteId: string; currency: string },
   ): Promise<PerSuiteQuote> {
     const [suite] = await db
       .select()
@@ -274,7 +195,7 @@ export const pricingService = {
 
   async quoteWholeYacht(
     db: PostgresJsDatabase,
-    args: { voyageId: string; currency: FirstClassCurrency },
+    args: { voyageId: string; currency: string },
   ): Promise<WholeYachtQuote> {
     const [voyage] = await db
       .select()
@@ -296,26 +217,33 @@ export const pricingService = {
     })
   },
 
-  async lowestSuitePriceUSD(
+  /**
+   * Lowest published per-suite price for a voyage, in the requested currency.
+   * Returns `null` when no available suite has that currency. The previous
+   * `lowestSuitePriceUSD` shape was renamed and generalized as part of #355
+   * (browse-currency policy is a deployment choice, not a hardcoded USD).
+   */
+  async lowestSuitePriceForCurrency(
     db: PostgresJsDatabase,
     voyageId: string,
+    currency: string,
   ): Promise<{ suiteId: string; price: string } | null> {
     const [row] = await db
-      .select({ suiteId: charterSuites.id, price: charterSuites.priceUSD })
+      .select({
+        suiteId: charterSuites.id,
+        price: sql<string | null>`(${charterSuites.pricesByCurrency} ->> ${currency})`,
+      })
       .from(charterSuites)
       .where(
         and(
           eq(charterSuites.voyageId, voyageId),
           sql`${charterSuites.availability} <> 'sold_out'`,
-          sql`${charterSuites.priceUSD} IS NOT NULL`,
+          sql`(${charterSuites.pricesByCurrency} ? ${currency})`,
         ),
       )
-      .orderBy(asc(sql`${charterSuites.priceUSD}::numeric`))
+      .orderBy(asc(sql`((${charterSuites.pricesByCurrency} ->> ${currency})::numeric)`))
       .limit(1)
     if (!row?.price) return null
     return { suiteId: row.suiteId, price: row.price }
   },
 }
-
-// Re-export for callers
-export { FIRST_CLASS_CURRENCIES, type FirstClassCurrency } from "./validation-shared.js"

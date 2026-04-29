@@ -24,7 +24,7 @@ import {
 } from "./validation-core.js"
 import { replaceVoyageScheduleSchema } from "./validation-itinerary.js"
 import { replaceVoyageSuitesSchema } from "./validation-pricing.js"
-import { firstClassCurrencySchema } from "./validation-shared.js"
+import { currencyCodeSchema } from "./validation-shared.js"
 import { insertYachtSchema, updateYachtSchema, yachtListQuerySchema } from "./validation-yachts.js"
 
 // ---------- Hono env ----------
@@ -102,7 +102,7 @@ const contactSchema = z.object({
 const createPerSuiteBookingPayload = z.object({
   voyageId: z.string(),
   suiteId: z.string(),
-  currency: firstClassCurrencySchema,
+  currency: currencyCodeSchema,
   personId: z.string().optional().nullable(),
   organizationId: z.string().optional().nullable(),
   contact: contactSchema,
@@ -112,7 +112,7 @@ const createPerSuiteBookingPayload = z.object({
 
 const createWholeYachtBookingPayload = z.object({
   voyageId: z.string(),
-  currency: firstClassCurrencySchema,
+  currency: currencyCodeSchema,
   personId: z.string().optional().nullable(),
   organizationId: z.string().optional().nullable(),
   contact: contactSchema,
@@ -130,11 +130,11 @@ const generateMybaPayload = z.object({
 const perSuiteQuotePayload = z.object({
   /** For local voyages, a `chst_…` TypeID. For external voyages, the upstream suite externalId. */
   suiteId: z.string(),
-  currency: firstClassCurrencySchema,
+  currency: currencyCodeSchema,
 })
 
 const wholeYachtQuotePayload = z.object({
-  currency: firstClassCurrencySchema,
+  currency: currencyCodeSchema,
 })
 
 // ---------- routes ----------
@@ -398,14 +398,8 @@ export const chartersAdminRoutes = new Hono<Env>()
         suite: {
           id: matching.sourceRef.externalId,
           suiteName: matching.suiteName,
-          priceUSD: matching.priceUSD ?? null,
-          priceEUR: matching.priceEUR ?? null,
-          priceGBP: matching.priceGBP ?? null,
-          priceAUD: matching.priceAUD ?? null,
-          portFeeUSD: matching.portFeeUSD ?? null,
-          portFeeEUR: matching.portFeeEUR ?? null,
-          portFeeGBP: matching.portFeeGBP ?? null,
-          portFeeAUD: matching.portFeeAUD ?? null,
+          pricesByCurrency: matching.pricesByCurrency ?? {},
+          portFeesByCurrency: matching.portFeesByCurrency ?? {},
         },
         currency: payload.currency,
       })
@@ -469,10 +463,7 @@ export const chartersAdminRoutes = new Hono<Env>()
       const quote = composeWholeYachtQuote({
         voyage: {
           id: voyage.sourceRef.externalId,
-          wholeYachtPriceUSD: voyage.wholeYachtPriceUSD ?? null,
-          wholeYachtPriceEUR: voyage.wholeYachtPriceEUR ?? null,
-          wholeYachtPriceGBP: voyage.wholeYachtPriceGBP ?? null,
-          wholeYachtPriceAUD: voyage.wholeYachtPriceAUD ?? null,
+          wholeYachtPricesByCurrency: voyage.wholeYachtPricesByCurrency ?? {},
           apaPercentOverride: voyage.apaPercentOverride ?? null,
         },
         productDefaultApaPercent: product?.defaultApaPercent ?? null,

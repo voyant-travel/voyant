@@ -14,8 +14,6 @@
  * See docs/architecture/charters-module.md §10 for the full design.
  */
 
-import type { FirstClassCurrency } from "../validation-shared.js"
-
 // ---------- pointers + provenance ----------
 
 /**
@@ -73,11 +71,12 @@ export type ExternalCharterVoyage = {
   bookingModes: Array<"per_suite" | "whole_yacht">
   appointmentOnly?: boolean
 
-  // Whole-yacht pricing — only relevant when 'whole_yacht' in bookingModes.
-  wholeYachtPriceUSD?: string | null
-  wholeYachtPriceEUR?: string | null
-  wholeYachtPriceGBP?: string | null
-  wholeYachtPriceAUD?: string | null
+  /**
+   * Whole-yacht pricing — only relevant when 'whole_yacht' in bookingModes.
+   * `{ "<ISO-4217>": "<numeric-string>" }` map. Adapters can publish any
+   * subset of currencies; consumers ask for the one they need at quote time.
+   */
+  wholeYachtPricesByCurrency?: Record<string, string>
 
   apaPercentOverride?: string | null
   mybaTemplateRefOverride?: string | null
@@ -99,15 +98,18 @@ export type ExternalCharterSuite = {
   floorplanImages?: string[]
   maxGuests?: number | null
 
-  priceUSD?: string | null
-  priceEUR?: string | null
-  priceGBP?: string | null
-  priceAUD?: string | null
+  /**
+   * Per-currency suite price map. Adapters can publish any subset of
+   * currencies (e.g. `{ USD: "1500.00", EUR: "1380.00" }`); consumers
+   * resolve the one they need at quote time.
+   */
+  pricesByCurrency?: Record<string, string>
 
-  portFeeUSD?: string | null
-  portFeeEUR?: string | null
-  portFeeGBP?: string | null
-  portFeeAUD?: string | null
+  /**
+   * Optional per-currency port fee map, separate from the suite price.
+   * Same shape as `pricesByCurrency`.
+   */
+  portFeesByCurrency?: Record<string, string>
 
   availability: "available" | "limited" | "on_request" | "wait_list" | "sold_out"
   unitsAvailable?: number | null
@@ -157,9 +159,14 @@ export type ExternalCharterProductSummary = {
   yachtName?: string | null
   earliestVoyage?: string | null
   latestVoyage?: string | null
-  /** Lowest published USD per-suite price; if the operator only publishes other
-      currencies, the adapter can leave this null and the UI hides the price. */
-  lowestPriceUSD?: string | null
+  /**
+   * Lowest published per-suite price for the deployment's chosen browse
+   * currency. The adapter is free to compute this in any currency it
+   * publishes — `lowestPriceCurrency` records which one. UI hides the
+   * price when the adapter doesn't publish anything in that currency.
+   */
+  lowestPriceAmount?: string | null
+  lowestPriceCurrency?: string | null
   heroImageUrl?: string | null
 }
 
@@ -203,7 +210,7 @@ export type ExternalContactInput = {
 export type CreateExternalPerSuiteBookingInput = {
   voyageRef: SourceRef
   suiteRef: SourceRef
-  currency: FirstClassCurrency
+  currency: string
   guests: ExternalGuestInput[]
   contact: ExternalContactInput
   notes?: string | null
@@ -211,7 +218,7 @@ export type CreateExternalPerSuiteBookingInput = {
 
 export type CreateExternalWholeYachtBookingInput = {
   voyageRef: SourceRef
-  currency: FirstClassCurrency
+  currency: string
   guests?: ExternalGuestInput[]
   contact: ExternalContactInput
   notes?: string | null
@@ -245,7 +252,7 @@ export type ExternalBookingResult = {
   /** Final total — always provided by the adapter when set; route uses it as
       the authoritative booking sell amount. */
   finalTotal?: string | null
-  finalCurrency?: FirstClassCurrency | null
+  finalCurrency?: string | null
 }
 
 // ---------- the contract itself ----------

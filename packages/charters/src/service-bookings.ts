@@ -13,7 +13,6 @@ import {
   type PerSuiteQuote,
   type WholeYachtQuote,
 } from "./service-pricing.js"
-import type { FirstClassCurrency } from "./validation-shared.js"
 
 // ---------- shared shapes ----------
 
@@ -48,7 +47,7 @@ export type CharterContact = {
 export type CreatePerSuiteBookingInput = {
   voyageId: string
   suiteId: string
-  currency: FirstClassCurrency
+  currency: string
   personId?: string | null
   organizationId?: string | null
   contact: CharterContact
@@ -67,7 +66,7 @@ export type CreatePerSuiteBookingResult = {
 
 export type CreateWholeYachtBookingInput = {
   voyageId: string
-  currency: FirstClassCurrency
+  currency: string
   personId?: string | null
   organizationId?: string | null
   contact: CharterContact
@@ -451,14 +450,8 @@ export const chartersBookingService = {
       suite: {
         id: suite.sourceRef.externalId,
         suiteName: suite.suiteName,
-        priceUSD: suite.priceUSD ?? null,
-        priceEUR: suite.priceEUR ?? null,
-        priceGBP: suite.priceGBP ?? null,
-        priceAUD: suite.priceAUD ?? null,
-        portFeeUSD: suite.portFeeUSD ?? null,
-        portFeeEUR: suite.portFeeEUR ?? null,
-        portFeeGBP: suite.portFeeGBP ?? null,
-        portFeeAUD: suite.portFeeAUD ?? null,
+        pricesByCurrency: suite.pricesByCurrency ?? {},
+        portFeesByCurrency: suite.portFeesByCurrency ?? {},
       },
       currency: input.currency,
     })
@@ -480,7 +473,7 @@ export const chartersBookingService = {
       suitePrice: upstream.finalSuitePrice ?? composed.suitePrice,
       portFee: upstream.finalPortFee !== undefined ? upstream.finalPortFee : composed.portFee,
       total: upstream.finalTotal ?? composed.total,
-      currency: (upstream.finalCurrency ?? composed.currency) as FirstClassCurrency,
+      currency: (upstream.finalCurrency ?? composed.currency) as string,
     }
 
     return db.transaction(async (tx) => {
@@ -623,10 +616,7 @@ export const chartersBookingService = {
     const composed = composeWholeYachtQuote({
       voyage: {
         id: voyage.sourceRef.externalId,
-        wholeYachtPriceUSD: voyage.wholeYachtPriceUSD ?? null,
-        wholeYachtPriceEUR: voyage.wholeYachtPriceEUR ?? null,
-        wholeYachtPriceGBP: voyage.wholeYachtPriceGBP ?? null,
-        wholeYachtPriceAUD: voyage.wholeYachtPriceAUD ?? null,
+        wholeYachtPricesByCurrency: voyage.wholeYachtPricesByCurrency ?? {},
         apaPercentOverride: voyage.apaPercentOverride ?? null,
       },
       productDefaultApaPercent: product?.defaultApaPercent ?? null,
@@ -650,7 +640,7 @@ export const chartersBookingService = {
       apaPercent: upstream.finalApaPercent ?? composed.apaPercent,
       apaAmount: upstream.finalApaAmount ?? composed.apaAmount,
       total: upstream.finalTotal ?? composed.total,
-      currency: (upstream.finalCurrency ?? composed.currency) as FirstClassCurrency,
+      currency: (upstream.finalCurrency ?? composed.currency) as string,
     }
 
     const guestCount = Math.max(1, input.guests?.length ?? 1)
@@ -762,7 +752,7 @@ export type CreateExternalPerSuiteBookingInput = {
   adapter: CharterAdapter
   voyageRef: SourceRef
   suiteRef: SourceRef
-  currency: FirstClassCurrency
+  currency: string
   personId?: string | null
   organizationId?: string | null
   contact: CharterContact
@@ -778,7 +768,7 @@ export type CreateExternalPerSuiteBookingResult = CreatePerSuiteBookingResult & 
 export type CreateExternalWholeYachtBookingInput = {
   adapter: CharterAdapter
   voyageRef: SourceRef
-  currency: FirstClassCurrency
+  currency: string
   personId?: string | null
   organizationId?: string | null
   contact: CharterContact

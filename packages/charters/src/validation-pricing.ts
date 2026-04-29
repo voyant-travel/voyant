@@ -1,6 +1,6 @@
 import {
   externalRefsSchema,
-  moneyStringSchema,
+  pricesByCurrencySchema,
   suiteAvailabilitySchema,
   suiteCategorySchema,
   z,
@@ -17,15 +17,10 @@ const suiteCoreSchema = z.object({
   floorplanImages: z.array(z.string()).default([]),
   maxGuests: z.number().int().min(1).max(20).optional().nullable(),
 
-  priceUSD: moneyStringSchema.optional().nullable(),
-  priceEUR: moneyStringSchema.optional().nullable(),
-  priceGBP: moneyStringSchema.optional().nullable(),
-  priceAUD: moneyStringSchema.optional().nullable(),
-
-  portFeeUSD: moneyStringSchema.optional().nullable(),
-  portFeeEUR: moneyStringSchema.optional().nullable(),
-  portFeeGBP: moneyStringSchema.optional().nullable(),
-  portFeeAUD: moneyStringSchema.optional().nullable(),
+  /** Per-currency suite price map. Adding a new currency is data-only. */
+  pricesByCurrency: pricesByCurrencySchema.default({}),
+  /** Optional per-currency port fee map, separate from suite price. */
+  portFeesByCurrency: pricesByCurrencySchema.default({}),
 
   availability: suiteAvailabilitySchema.default("available"),
   unitsAvailable: z.number().int().nonnegative().optional().nullable(),

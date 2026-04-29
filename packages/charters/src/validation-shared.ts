@@ -57,7 +57,11 @@ export const percentStringSchema = z
 
 export const externalRefsSchema = z.record(z.string(), z.string()).default({})
 
-/** First-class currencies stored as explicit columns. */
-export const FIRST_CLASS_CURRENCIES = ["USD", "EUR", "GBP", "AUD"] as const
-export type FirstClassCurrency = (typeof FIRST_CLASS_CURRENCIES)[number]
-export const firstClassCurrencySchema = z.enum(FIRST_CLASS_CURRENCIES)
+/**
+ * Per-currency amount map: `{ "USD": "1500.00", "EUR": "1380.00" }`. Empty
+ * map / missing key means the entity is not priced in that currency.
+ * Charter pricing stores per-currency amounts as data (this map) rather
+ * than encoding currencies as schema columns, so adding a new currency
+ * is a content change, not a migration. See #355.
+ */
+export const pricesByCurrencySchema = z.record(currencyCodeSchema, moneyStringSchema)
