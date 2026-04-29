@@ -34,7 +34,7 @@ const seedVoyage: ExternalCharterVoyage = {
   returnDate: "2026-04-19",
   nights: 7,
   bookingModes: ["per_suite", "whole_yacht"],
-  wholeYachtPriceUSD: "5000000.00",
+  wholeYachtPricesByCurrency: { USD: "5000000.00" },
   apaPercentOverride: "30.00",
 }
 const seedSuite: ExternalCharterSuite = {
@@ -42,7 +42,7 @@ const seedSuite: ExternalCharterSuite = {
   voyageRef: seedVoyage.sourceRef,
   suiteCode: "OS-1",
   suiteName: "Owners Suite",
-  priceUSD: "150000.00",
+  pricesByCurrency: { USD: "150000.00" },
   availability: "available",
   maxGuests: 4,
 }

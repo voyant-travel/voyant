@@ -37,17 +37,25 @@ export const charterSuites = pgTable(
     /** Used at booking time to validate party size; not used for pricing math. */
     maxGuests: smallint("max_guests"),
 
-    // Multi-currency flat pricing
-    priceUSD: numeric("price_usd", { precision: 12, scale: 2 }),
-    priceEUR: numeric("price_eur", { precision: 12, scale: 2 }),
-    priceGBP: numeric("price_gbp", { precision: 12, scale: 2 }),
-    priceAUD: numeric("price_aud", { precision: 12, scale: 2 }),
+    /**
+     * Per-currency flat suite price as a `{ "<ISO-4217>": "<numeric-string>" }`
+     * map. Numeric strings preserve trailing zeroes and dodge floating-point
+     * drift. Missing key means the suite isn't priced in that currency.
+     * Adding a new currency is a data-only change — no schema migration.
+     */
+    pricesByCurrency: jsonb("prices_by_currency")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
 
-    // Optional per-currency port fees (separate from price)
-    portFeeUSD: numeric("port_fee_usd", { precision: 12, scale: 2 }),
-    portFeeEUR: numeric("port_fee_eur", { precision: 12, scale: 2 }),
-    portFeeGBP: numeric("port_fee_gbp", { precision: 12, scale: 2 }),
-    portFeeAUD: numeric("port_fee_aud", { precision: 12, scale: 2 }),
+    /**
+     * Optional per-currency port fee, separate from suite price. Same shape
+     * as `pricesByCurrency`.
+     */
+    portFeesByCurrency: jsonb("port_fees_by_currency")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
 
     availability: suiteAvailabilityEnum("availability").notNull().default("available"),
     unitsAvailable: smallint("units_available"),
@@ -64,11 +72,12 @@ export const charterSuites = pgTable(
   (table) => [
     uniqueIndex("uidx_charter_suites_voyage_code").on(table.voyageId, table.suiteCode),
     index("idx_charter_suites_voyage_availability").on(table.voyageId, table.availability),
-    index("idx_charter_suites_voyage_cat_price").on(
-      table.voyageId,
-      table.suiteCategory,
-      table.priceUSD,
-    ),
+    // Note: removed the previous (voyage_id, category, price_usd) composite
+    // index when prices moved into a jsonb map. Sort-by-price queries on
+    // the deployment's browse currency now use the GIN index implicitly via
+    // jsonb operators; if a per-currency btree becomes a hot path we can
+    // add an expression index on `(prices_by_currency ->> 'USD')::numeric`.
+    index("idx_charter_suites_voyage_category").on(table.voyageId, table.suiteCategory),
   ],
 )
 

@@ -12,7 +12,8 @@ import { useChartersUiI18nOrDefault } from "../i18n"
 
 export interface VoyageSuiteGridProps extends React.HTMLAttributes<HTMLDivElement> {
   suites: CharterSuiteRecord[]
-  currency: "USD" | "EUR" | "GBP" | "AUD" // i18n-literal-ok type union
+  /** ISO-4217 currency code. Resolved against each suite's `pricesByCurrency` map. */
+  currency: string
   /**
    * Render the price in the requested currency. If the suite hasn't published
    * that currency, the row shows "Price on request".
@@ -35,18 +36,10 @@ const AVAILABILITY_VARIANT: Record<
 }
 
 function priceForCurrency(suite: CharterSuiteRecord, currency: string): string | null {
-  switch (currency) {
-    case "USD":
-      return suite.priceUSD
-    case "EUR":
-      return suite.priceEUR
-    case "GBP":
-      return suite.priceGBP
-    case "AUD":
-      return suite.priceAUD
-    default:
-      return null
-  }
+  // Per-currency suite price lives in a `Record<currency, amount>` map. Adding
+  // a new currency is a content change at the data layer — the UI doesn't
+  // need a code update.
+  return suite.pricesByCurrency?.[currency] ?? null
 }
 
 /**

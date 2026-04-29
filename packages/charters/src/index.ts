@@ -79,8 +79,6 @@ export {
   composePerSuiteQuote,
   composeWholeYachtQuote,
   computeApaAmount,
-  FIRST_CLASS_CURRENCIES,
-  type FirstClassCurrency,
   type PerSuiteQuote,
   pricingService,
   type WholeYachtQuote,

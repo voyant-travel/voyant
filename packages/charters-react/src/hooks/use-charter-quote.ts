@@ -12,11 +12,13 @@ import {
 export interface PerSuiteQuoteRequest {
   /** For local voyages this is a `chst_*` TypeID; for external voyages it's the upstream suite externalId. */
   suiteId: string
-  currency: "USD" | "EUR" | "GBP" | "AUD"
+  /** ISO-4217 currency code. The server resolves it against the suite's `pricesByCurrency` map. */
+  currency: string
 }
 
 export interface WholeYachtQuoteRequest {
-  currency: "USD" | "EUR" | "GBP" | "AUD"
+  /** ISO-4217 currency code. The server resolves it against the voyage's `wholeYachtPricesByCurrency` map. */
+  currency: string
 }
 
 /**

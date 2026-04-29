@@ -21,7 +21,13 @@ export interface CharterProductSummary {
   yachtName?: string | null
   earliestVoyage?: string | null
   latestVoyage?: string | null
-  lowestPriceUSD?: string | null
+  /**
+   * Lowest published per-suite price for the deployment's chosen browse
+   * currency. Stored alongside `lowestPriceCurrency` so the card can
+   * format with the right symbol.
+   */
+  lowestPriceAmount?: string | null
+  lowestPriceCurrency?: string | null
   heroImageUrl?: string | null
   regions?: string[] | null
   themes?: string[] | null
@@ -38,10 +44,23 @@ export interface CharterProductCardProps extends React.ComponentPropsWithoutRef<
   onSelect?: (product: CharterProductRecord | CharterProductSummary) => void
 }
 
-function getLowestPriceUSD(product: CharterProductCardProps["product"]): string | null {
-  if ("lowestPriceUSD" in product && product.lowestPriceUSD !== undefined)
-    return product.lowestPriceUSD ?? null
-  if ("lowestPriceCachedUSD" in product) return product.lowestPriceCachedUSD ?? null
+function getLowestPrice(
+  product: CharterProductCardProps["product"],
+): { amount: string; currency: string } | null {
+  // Summary shape (adapter / public list).
+  if ("lowestPriceAmount" in product && product.lowestPriceAmount) {
+    return {
+      amount: product.lowestPriceAmount,
+      currency: product.lowestPriceCurrency ?? "USD",
+    }
+  }
+  // Full record shape (local).
+  if ("lowestPriceCachedAmount" in product && product.lowestPriceCachedAmount) {
+    return {
+      amount: product.lowestPriceCachedAmount,
+      currency: product.lowestPriceCachedCurrency ?? "USD",
+    }
+  }
   return null
 }
 
@@ -69,7 +88,7 @@ export function CharterProductCard({
   const m = i18n.messages.charterProductCard
   const yachtName = "yachtName" in product ? (product.yachtName ?? null) : null
   const lineName = "lineName" in product ? (product.lineName ?? null) : null
-  const lowest = getLowestPriceUSD(product)
+  const lowest = getLowestPrice(product)
   const earliest = getEarliestVoyage(product)
 
   return (
@@ -140,7 +159,7 @@ export function CharterProductCard({
 }
 
 function formatLowestPrice(
-  amount: string | null | undefined,
+  lowest: { amount: string; currency: string } | null,
   options: {
     pricingOnRequest: string
     fallbackCurrencyAmount: string
@@ -151,14 +170,13 @@ function formatLowestPrice(
     ) => string
   },
 ) {
-  if (!amount) return options.pricingOnRequest
-  const value = Number(amount)
+  if (!lowest) return options.pricingOnRequest
+  const value = Number(lowest.amount)
   if (!Number.isFinite(value)) {
     return formatMessage(options.fallbackCurrencyAmount, {
-      amount,
-      currency: "USD", // i18n-literal-ok domain field is lowestPriceUSD today
+      amount: lowest.amount,
+      currency: lowest.currency,
     })
   }
-
-  return options.formatCurrency(value, "USD", { maximumFractionDigits: 0 })
+  return options.formatCurrency(value, lowest.currency, { maximumFractionDigits: 0 })
 }

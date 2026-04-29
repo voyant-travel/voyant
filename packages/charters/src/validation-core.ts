@@ -3,8 +3,8 @@ import {
   charterStatusSchema,
   externalRefsSchema,
   isoDateSchema,
-  moneyStringSchema,
   percentStringSchema,
+  pricesByCurrencySchema,
   slugSchema,
   voyageSalesStatusSchema,
   z,
@@ -59,10 +59,11 @@ const voyageCoreSchema = z.object({
   bookingModes: z.array(charterBookingModeSchema).min(1).default(["per_suite"]),
   appointmentOnly: z.boolean().default(false),
 
-  wholeYachtPriceUSD: moneyStringSchema.optional().nullable(),
-  wholeYachtPriceEUR: moneyStringSchema.optional().nullable(),
-  wholeYachtPriceGBP: moneyStringSchema.optional().nullable(),
-  wholeYachtPriceAUD: moneyStringSchema.optional().nullable(),
+  /**
+   * Per-currency whole-yacht price map. Adding a new currency is a data
+   * change, not a schema change.
+   */
+  wholeYachtPricesByCurrency: pricesByCurrencySchema.default({}),
 
   apaPercentOverride: percentStringSchema.optional().nullable(),
   mybaTemplateIdOverride: z.string().optional().nullable(),

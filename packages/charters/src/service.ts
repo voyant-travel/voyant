@@ -126,11 +126,19 @@ export const chartersService = {
   async recomputeProductAggregates(
     db: PostgresJsDatabase,
     productId: string,
+    options: { browseCurrency?: string } = {},
   ): Promise<CharterProduct | null> {
-    // Lowest USD suite price across this product's voyages × suites.
+    // Lowest suite price across this product's voyages × suites, in the
+    // deployment's chosen browse currency. Defaults to "USD" so existing
+    // callers and storefronts that haven't picked a browse currency yet
+    // keep their previous behavior; pass `browseCurrency` explicitly to
+    // override (e.g. EUR-first European catalog).
+    const browseCurrency = options.browseCurrency ?? "USD"
     const [priceAgg] = await db
       .select({
-        lowest: sql<string | null>`MIN(${charterSuites.priceUSD}::numeric)::text`,
+        lowest: sql<
+          string | null
+        >`MIN(((${charterSuites.pricesByCurrency} ->> ${browseCurrency})::numeric))::text`,
       })
       .from(charterSuites)
       .innerJoin(charterVoyages, eq(charterSuites.voyageId, charterVoyages.id))
@@ -138,7 +146,7 @@ export const chartersService = {
         and(
           eq(charterVoyages.productId, productId),
           sql`${charterSuites.availability} <> 'sold_out'`,
-          sql`${charterSuites.priceUSD} IS NOT NULL`,
+          sql`(${charterSuites.pricesByCurrency} ? ${browseCurrency})`,
         ),
       )
 
@@ -153,7 +161,8 @@ export const chartersService = {
     const [row] = await db
       .update(charterProducts)
       .set({
-        lowestPriceCachedUSD: priceAgg?.lowest ?? null,
+        lowestPriceCachedAmount: priceAgg?.lowest ?? null,
+        lowestPriceCachedCurrency: priceAgg?.lowest ? browseCurrency : null,
         earliestVoyageCached: dateAgg?.earliest ?? null,
         latestVoyageCached: dateAgg?.latest ?? null,
         ...setUpdated,

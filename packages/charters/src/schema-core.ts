@@ -39,8 +39,18 @@ export const charterProducts = pgTable(
     defaultMybaTemplateId: text("default_myba_template_id"),
     /** Typical APA % for this brand (e.g. 27.50). Per-voyage can override. */
     defaultApaPercent: numeric("default_apa_percent", { precision: 5, scale: 2 }),
-    /** Cached aggregate — recomputed from voyages × suites. */
-    lowestPriceCachedUSD: numeric("lowest_price_cached_usd", { precision: 12, scale: 2 }),
+    /**
+     * Cached aggregate — the lowest published voyage × suite price for this
+     * product, recomputed by `recomputeProductAggregates`. Single-currency
+     * (the deployment's chosen browse currency) so card surfaces have a
+     * sortable price without scanning the jsonb pricing maps;
+     * `lowestPriceCachedCurrency` records which currency the amount is in.
+     */
+    lowestPriceCachedAmount: numeric("lowest_price_cached_amount", {
+      precision: 12,
+      scale: 2,
+    }),
+    lowestPriceCachedCurrency: text("lowest_price_cached_currency"),
     earliestVoyageCached: date("earliest_voyage_cached"),
     latestVoyageCached: date("latest_voyage_cached"),
     externalRefs: jsonb("external_refs").$type<Record<string, string>>().default({}),
@@ -84,11 +94,16 @@ export const charterVoyages = pgTable(
       .default(["per_suite"]),
     appointmentOnly: boolean("appointment_only").notNull().default(false),
 
-    // Whole-yacht pricing — only relevant when 'whole_yacht' in bookingModes
-    wholeYachtPriceUSD: numeric("whole_yacht_price_usd", { precision: 15, scale: 2 }),
-    wholeYachtPriceEUR: numeric("whole_yacht_price_eur", { precision: 15, scale: 2 }),
-    wholeYachtPriceGBP: numeric("whole_yacht_price_gbp", { precision: 15, scale: 2 }),
-    wholeYachtPriceAUD: numeric("whole_yacht_price_aud", { precision: 15, scale: 2 }),
+    /**
+     * Whole-yacht pricing — only relevant when 'whole_yacht' in bookingModes.
+     * `{ "<ISO-4217>": "<numeric-string>" }` map; missing key means the
+     * voyage isn't priced in that currency. Adding a new currency is a
+     * data-only change.
+     */
+    wholeYachtPricesByCurrency: jsonb("whole_yacht_prices_by_currency")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
 
     apaPercentOverride: numeric("apa_percent_override", { precision: 5, scale: 2 }),
     mybaTemplateIdOverride: text("myba_template_id_override"),

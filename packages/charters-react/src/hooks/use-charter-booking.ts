@@ -36,7 +36,8 @@ export interface CharterContactInput {
 export interface CreatePerSuiteBookingInput {
   voyageId: string
   suiteId: string
-  currency: "USD" | "EUR" | "GBP" | "AUD"
+  /** ISO-4217 currency code. The server resolves it against the voyage/suite price map. */
+  currency: string
   personId?: string | null
   organizationId?: string | null
   contact: CharterContactInput
@@ -46,7 +47,8 @@ export interface CreatePerSuiteBookingInput {
 
 export interface CreateWholeYachtBookingInput {
   voyageId: string
-  currency: "USD" | "EUR" | "GBP" | "AUD"
+  /** ISO-4217 currency code. The server resolves it against the voyage/suite price map. */
+  currency: string
   personId?: string | null
   organizationId?: string | null
   contact: CharterContactInput

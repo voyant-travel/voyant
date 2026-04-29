@@ -31,8 +31,7 @@ const voyage: ExternalCharterVoyage = {
   returnDate: "2026-04-19",
   nights: 7,
   bookingModes: ["per_suite", "whole_yacht"],
-  wholeYachtPriceUSD: "5000000.00",
-  wholeYachtPriceEUR: "4500000.00",
+  wholeYachtPricesByCurrency: { USD: "5000000.00", EUR: "4500000.00" },
   apaPercentOverride: "30.00",
   charterAreaOverride: "Western Mediterranean",
 }
@@ -43,8 +42,7 @@ const ownersSuite: ExternalCharterSuite = {
   suiteCode: "OS-1",
   suiteName: "Owners Suite",
   suiteCategory: "owners",
-  priceUSD: "150000.00",
-  priceEUR: "135000.00",
+  pricesByCurrency: { USD: "150000.00", EUR: "135000.00" },
   availability: "available",
   maxGuests: 4,
 }
@@ -55,7 +53,7 @@ const standardSuite: ExternalCharterSuite = {
   suiteCode: "STD-1",
   suiteName: "Standard Stateroom",
   suiteCategory: "standard",
-  priceUSD: "85000.00",
+  pricesByCurrency: { USD: "85000.00" },
   availability: "available",
   maxGuests: 2,
 }
@@ -128,11 +126,12 @@ describe("MockCharterAdapter — fetchers", () => {
     expect(voyages[0]?.voyageCode).toBe("MED-2026-04")
   })
 
-  it("listEntries summarises seeded products with computed lowest USD price", async () => {
+  it("listEntries summarises seeded products with computed lowest browse-currency price", async () => {
     const adapter = seed()
     const result = await adapter.listEntries()
     expect(result.entries).toHaveLength(1)
-    expect(result.entries[0]?.lowestPriceUSD).toBe("85000.00")
+    expect(result.entries[0]?.lowestPriceAmount).toBe("85000.00")
+    expect(result.entries[0]?.lowestPriceCurrency).toBe("USD")
     expect(result.entries[0]?.yachtName).toBe("M/Y Acme One")
   })
 })

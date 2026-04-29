@@ -8,7 +8,7 @@ import { parseUnifiedKey } from "./lib/key.js"
 import { chartersService } from "./service.js"
 import { composePerSuiteQuote, composeWholeYachtQuote, pricingService } from "./service-pricing.js"
 import { productListQuerySchema, voyageListQuerySchema } from "./validation-core.js"
-import { firstClassCurrencySchema } from "./validation-shared.js"
+import { currencyCodeSchema } from "./validation-shared.js"
 
 type Env = {
   Variables: {
@@ -18,10 +18,10 @@ type Env = {
 
 const perSuiteQuotePayload = z.object({
   suiteId: z.string(),
-  currency: firstClassCurrencySchema,
+  currency: currencyCodeSchema,
 })
 const wholeYachtQuotePayload = z.object({
-  currency: firstClassCurrencySchema,
+  currency: currencyCodeSchema,
 })
 
 /**
@@ -170,14 +170,8 @@ export const chartersPublicRoutes = new Hono<Env>()
         suite: {
           id: matching.sourceRef.externalId,
           suiteName: matching.suiteName,
-          priceUSD: matching.priceUSD ?? null,
-          priceEUR: matching.priceEUR ?? null,
-          priceGBP: matching.priceGBP ?? null,
-          priceAUD: matching.priceAUD ?? null,
-          portFeeUSD: matching.portFeeUSD ?? null,
-          portFeeEUR: matching.portFeeEUR ?? null,
-          portFeeGBP: matching.portFeeGBP ?? null,
-          portFeeAUD: matching.portFeeAUD ?? null,
+          pricesByCurrency: matching.pricesByCurrency ?? {},
+          portFeesByCurrency: matching.portFeesByCurrency ?? {},
         },
         currency: payload.currency,
       })
@@ -203,10 +197,7 @@ export const chartersPublicRoutes = new Hono<Env>()
       const quote = composeWholeYachtQuote({
         voyage: {
           id: voyage.sourceRef.externalId,
-          wholeYachtPriceUSD: voyage.wholeYachtPriceUSD ?? null,
-          wholeYachtPriceEUR: voyage.wholeYachtPriceEUR ?? null,
-          wholeYachtPriceGBP: voyage.wholeYachtPriceGBP ?? null,
-          wholeYachtPriceAUD: voyage.wholeYachtPriceAUD ?? null,
+          wholeYachtPricesByCurrency: voyage.wholeYachtPricesByCurrency ?? {},
           apaPercentOverride: voyage.apaPercentOverride ?? null,
         },
         productDefaultApaPercent: product?.defaultApaPercent ?? null,
