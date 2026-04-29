@@ -1,5 +1,12 @@
 # @voyantjs/transactions-react
 
+## 0.17.0
+
+### Patch Changes
+
+- @voyantjs/react@0.17.0
+- @voyantjs/transactions@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes

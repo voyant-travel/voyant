@@ -1,5 +1,24 @@
 # @voyantjs/products
 
+## 0.17.0
+
+### Minor Changes
+
+- 66d722d: `GET /v1/products` now accepts three new optional query params: `productTypeId` (direct equality on `products.product_type_id`), `categoryId` (`EXISTS` subquery against `product_category_products`), and `tag` (Postgres jsonb `@>` containment on `products.tags`).
+
+  `ProductsListFilters` in `@voyantjs/products-react/src/query-keys.ts` mirrors the new fields, and `getProductsQueryOptions` forwards them as URL query params. Consumers organising products by type (admin sidebars per travel-type, storefront category pages) can now filter server-side instead of fetching everything and filtering client-side.
+
+### Patch Changes
+
+- 66d722d: Export `destinations`, `destinationTranslations`, and `productDestinations` from the `@voyantjs/products` barrel. They were defined in `schema-taxonomy.ts` and re-exported from `schema.ts` but missing from the public `index.ts`. Consumers walking the destination tree (CRM analytics, search indexers, country-tag derivation) can now import from the package root instead of using deep paths or raw SQL.
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+  - @voyantjs/core@0.17.0
+  - @voyantjs/db@0.17.0
+  - @voyantjs/hono@0.17.0
+  - @voyantjs/voyant-storage@0.17.0
+  - @voyantjs/utils@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes

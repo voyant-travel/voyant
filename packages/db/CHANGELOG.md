@@ -1,5 +1,18 @@
 # @voyantjs/db
 
+## 0.17.0
+
+### Minor Changes
+
+- 66d722d: `resolveDb` callbacks in `createNotificationsHonoModule` and `createLegalHonoModule` now return `AnyDrizzleDb` (the `PostgresJsDatabase | NeonHttpDatabase` union from `@voyantjs/db`) instead of strictly `PostgresJsDatabase`. Templates wiring `getDbFromHyperdrive` no longer need the `as unknown as PostgresJsDatabase` apology cast.
+
+  New shared type alias `AnyDrizzleDb` exported from `@voyantjs/db`. Also normalized three `bindings: unknown` parameter types to `bindings: Record<string, unknown>` in `packages/legal/src/contracts/routes.ts` (`resolveDocumentGenerator`, `resolveDocumentDownloadUrl`, `resolveEventBus`) — was previously inconsistent with the rest of the workspace.
+
+### Patch Changes
+
+- Updated dependencies [66d722d]
+  - @voyantjs/core@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes
