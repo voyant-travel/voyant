@@ -1,4 +1,5 @@
 import type { Extension, ModuleContainer } from "@voyantjs/core"
+import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "@voyantjs/finance"
 import { defineHonoBundle, type HonoBundle, parseJsonBody } from "@voyantjs/hono"
 import type { HonoExtension } from "@voyantjs/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -167,7 +168,20 @@ export function createNetopiaFinanceRoutes(options: NetopiaRuntimeOptions = {}) 
     .post("/providers/netopia/callback", async (c) => {
       const payload = await parseJsonBody(c, netopiaWebhookPayloadSchema)
       const runtime = resolveRuntime(c)
-      const result = await netopiaService.handleCallback(c.get("db"), payload, runtime)
+      const financeRuntime = (() => {
+        try {
+          return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+        } catch {
+          return undefined
+        }
+      })()
+      const result = await netopiaService.handleCallback(
+        c.get("db"),
+        payload,
+        runtime,
+        c.env,
+        financeRuntime ? { eventBus: financeRuntime.eventBus } : undefined,
+      )
       return c.json({ data: result })
     })
     .get("/providers/netopia/config", async (c) => {

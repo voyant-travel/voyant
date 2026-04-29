@@ -1,8 +1,10 @@
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
+import { createEventBus } from "@voyantjs/core"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
+import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
 import { financeRoutes } from "../../src/routes.js"
 import {
   bookingPaymentSchedules,
@@ -99,6 +101,7 @@ async function cleanupFinanceTestData(
 describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   let app: Hono
   let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
+  const settlementEvents: Array<Record<string, unknown>> = []
 
   beforeAll(async () => {
     process.env.TEST_DATABASE_URL = getIsolatedFinanceTestDbUrl(process.env.TEST_DATABASE_URL)
@@ -217,10 +220,25 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       sql`CREATE UNIQUE INDEX IF NOT EXISTS uidx_payment_sessions_idempotency ON payment_sessions (idempotency_key)`,
     )
 
+    const eventBus = createEventBus()
+    eventBus.subscribe("invoice.settled", (event) => {
+      settlementEvents.push(event as Record<string, unknown>)
+    })
+    const financeRouteRuntime = { eventBus, invoiceSettlementPollers: {} }
+    const containerStub = {
+      resolve: <T>(key: string): T => {
+        if (key === FINANCE_ROUTE_RUNTIME_CONTAINER_KEY) {
+          return financeRouteRuntime as T
+        }
+        throw new Error(`No provider for ${key}`)
+      },
+    }
+
     app = new Hono()
     app.use("*", async (c, next) => {
       c.set("db" as never, db)
       c.set("userId" as never, "test-user-id")
+      c.set("container" as never, containerStub)
       await next()
     })
     app.route("/", financeRoutes)
@@ -228,6 +246,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
   beforeEach(async () => {
     await cleanupFinanceTestData(db)
+    settlementEvents.length = 0
   })
 
   afterAll(async () => {
@@ -553,6 +572,19 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(invoiceBody.data.status).toBe("paid")
       expect(invoiceBody.data.paidCents).toBe(110000)
       expect(invoiceBody.data.balanceDueCents).toBe(0)
+
+      // Settling the session via the complete endpoint must fan out
+      // `invoice.settled` so plugin callbacks (Netopia and friends) don't
+      // need a separate poller — see issue #357.
+      expect(settlementEvents).toHaveLength(1)
+      expect(settlementEvents[0]).toMatchObject({
+        invoiceId: invoice.id,
+        paymentId: data.paymentId,
+        provider: "netopia",
+        newlyAppliedAmountCents: 110000,
+        paidCents: 110000,
+        balanceDueCents: 0,
+      })
     })
 
     it("completes a paid session and marks the linked booking schedule as paid", async () => {
