@@ -52,4 +52,4 @@ import { webhookSubscriptionsTable } from "@voyantjs/db/schema/infra"
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

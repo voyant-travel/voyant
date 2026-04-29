@@ -45,4 +45,4 @@ together for reuse across projects when a broader bundle is helpful.
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

@@ -43,4 +43,4 @@ The S3 provider supports `forcePathStyle` and a custom `endpoint` for S3-compati
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

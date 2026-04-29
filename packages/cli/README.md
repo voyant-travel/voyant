@@ -56,4 +56,4 @@ Requires Node 22.6+ for native TypeScript strip-types.
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

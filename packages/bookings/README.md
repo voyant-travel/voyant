@@ -54,4 +54,4 @@ room/unit selection back onto the booking session totals.
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

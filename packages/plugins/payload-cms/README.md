@@ -52,4 +52,4 @@ fire-and-forget per the EventBus contract.
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0
