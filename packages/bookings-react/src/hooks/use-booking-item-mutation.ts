@@ -1,31 +1,23 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import type {
+  insertBookingItemSchema,
+  updateBookingItemSchema,
+} from "@voyantjs/bookings/validation"
+import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantBookingsContext } from "../provider.js"
 import { bookingsQueryKeys } from "../query-keys.js"
 import { bookingItemsResponse, bookingSingleResponse, successEnvelope } from "../schemas.js"
 
-export interface CreateBookingItemInput {
-  title: string
-  itemType?: string
-  status?: string
-  quantity?: number
-  sellCurrency: string
-  unitSellAmountCents?: number | null
-  totalSellAmountCents?: number | null
-  costCurrency?: string | null
-  unitCostAmountCents?: number | null
-  totalCostAmountCents?: number | null
-  serviceDate?: string | null
-  startsAt?: string | null
-  endsAt?: string | null
-  description?: string | null
-  notes?: string | null
-}
-
-export type UpdateBookingItemInput = Partial<CreateBookingItemInput>
+// Derived from the server schema so this can't drift out of sync. `z.input`
+// (not `z.infer`/`z.output`) gives the pre-parse type, where fields with
+// `.default(...)` are optional — the right shape for a client-side create
+// payload.
+export type CreateBookingItemInput = z.input<typeof insertBookingItemSchema>
+export type UpdateBookingItemInput = z.input<typeof updateBookingItemSchema>
 
 export function useBookingItemMutation(bookingId: string) {
   const { baseUrl, fetcher } = useVoyantBookingsContext()
