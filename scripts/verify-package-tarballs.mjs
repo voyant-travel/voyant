@@ -1,6 +1,10 @@
-import { execFileSync } from "node:child_process"
+import { execFile } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
+import { promisify } from "node:util"
+
+const execFileAsync = promisify(execFile)
+const PACK_CONCURRENCY = Number(process.env.VOYANT_PACK_CONCURRENCY) || 8
 
 const rootDir = process.cwd()
 const packagesRoot = path.join(rootDir, "packages")
@@ -108,44 +112,49 @@ function getPublishedTargets(pkg) {
 }
 
 const packageDirs = findPackageDirs(packagesRoot).sort()
-const failures = []
 
-for (const packageDir of packageDirs) {
+async function verifyPackage(packageDir) {
   const packageJsonPath = path.join(packageDir, "package.json")
   const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
 
-  if (pkg.private) continue
+  if (pkg.private) return null
 
   const expectedTargets = getPublishedTargets(pkg)
-  if (expectedTargets.length === 0) continue
+  if (expectedTargets.length === 0) return null
   const sourceFiles = new Set(listPackageFiles(packageDir))
 
   let stdout
   try {
-    stdout = execFileSync("npm", ["--cache", "/tmp/npm-cache", "pack", "--dry-run", "--json"], {
-      cwd: packageDir,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    })
+    // --ignore-scripts skips prepack (= `pnpm run build` in every package). The
+    // Build packages CI step already populated `dist/` for every workspace
+    // package, so npm pack just needs to enumerate files, not rebuild them.
+    const result = await execFileAsync(
+      "npm",
+      ["--cache", "/tmp/npm-cache", "pack", "--dry-run", "--json", "--ignore-scripts"],
+      {
+        cwd: packageDir,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+      },
+    )
+    stdout = result.stdout
   } catch (error) {
-    failures.push({
+    return {
       name: pkg.name,
       packageDir,
       problems: [`npm pack failed: ${error.stderr?.toString().trim() || error.message}`],
-    })
-    continue
+    }
   }
 
   let packInfo
   try {
     ;[packInfo] = getPackJson(stdout)
   } catch (error) {
-    failures.push({
+    return {
       name: pkg.name,
       packageDir,
       problems: [`could not parse npm pack output: ${error.message}`],
-    })
-    continue
+    }
   }
 
   const tarballFiles = new Set(packInfo.files.map((file) => file.path))
@@ -158,7 +167,7 @@ for (const packageDir of packageDirs) {
     .map((file) => file.path)
     .filter((filePath) => filePath.startsWith("dist/src/") || filePath.startsWith("dist/tests/"))
 
-  if (missingTargets.length === 0 && suspiciousFiles.length === 0) continue
+  if (missingTargets.length === 0 && suspiciousFiles.length === 0) return null
 
   const problems = []
   if (missingTargets.length > 0) {
@@ -168,12 +177,21 @@ for (const packageDir of packageDirs) {
     problems.push(`unexpected packaged build paths: ${suspiciousFiles.join(", ")}`)
   }
 
-  failures.push({
-    name: pkg.name,
-    packageDir,
-    problems,
-  })
+  return { name: pkg.name, packageDir, problems }
 }
+
+const failures = []
+const queue = [...packageDirs]
+const workers = Array.from({ length: Math.min(PACK_CONCURRENCY, queue.length) }, async () => {
+  while (queue.length > 0) {
+    const packageDir = queue.shift()
+    if (!packageDir) break
+    const result = await verifyPackage(packageDir)
+    if (result) failures.push(result)
+  }
+})
+await Promise.all(workers)
+failures.sort((left, right) => left.name.localeCompare(right.name))
 
 if (failures.length > 0) {
   console.error("Publish tarball verification failed:\n")
