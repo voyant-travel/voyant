@@ -1,5 +1,28 @@
 # @voyantjs/notifications
 
+## 0.17.0
+
+### Minor Changes
+
+- 66d722d: Retired `@voyantjs/voyant-cloud`. SDK v0.6.0 ships the env-bindings helpers natively (`getVoyantCloudClient` / `tryGetVoyantCloudClient` / `VoyantCloudConfigError` / `VoyantCloudEnv`) — consumers import directly from `@voyantjs/cloud-sdk`. `@voyantjs/notifications` cloud providers now type-import `VoyantCloudClient` from `@voyantjs/cloud-sdk`.
+- 66d722d: `resolveDb` callbacks in `createNotificationsHonoModule` and `createLegalHonoModule` now return `AnyDrizzleDb` (the `PostgresJsDatabase | NeonHttpDatabase` union from `@voyantjs/db`) instead of strictly `PostgresJsDatabase`. Templates wiring `getDbFromHyperdrive` no longer need the `as unknown as PostgresJsDatabase` apology cast.
+
+  New shared type alias `AnyDrizzleDb` exported from `@voyantjs/db`. Also normalized three `bindings: unknown` parameter types to `bindings: Record<string, unknown>` in `packages/legal/src/contracts/routes.ts` (`resolveDocumentGenerator`, `resolveDocumentDownloadUrl`, `resolveEventBus`) — was previously inconsistent with the rest of the workspace.
+
+### Patch Changes
+
+- 66d722d: Removed the unused `@voyantjs/vault` and `@voyantjs/verify` wrapper packages. They were thin abstractions over `@voyantjs/cloud-sdk` calls (`vault.getSecret`, `verify.start`/`check`) with zero source-code importers anywhere. Templates that need vault or verify primitives now call the SDK directly via `getVoyantCloudClient(env).vault.getSecret(...)` etc.
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+  - @voyantjs/bookings@0.17.0
+  - @voyantjs/core@0.17.0
+  - @voyantjs/db@0.17.0
+  - @voyantjs/finance@0.17.0
+  - @voyantjs/hono@0.17.0
+  - @voyantjs/legal@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes

@@ -1,5 +1,20 @@
 # @voyantjs/storefront
 
+## 0.17.0
+
+### Patch Changes
+
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+  - @voyantjs/availability@0.17.0
+  - @voyantjs/core@0.17.0
+  - @voyantjs/extras@0.17.0
+  - @voyantjs/hono@0.17.0
+  - @voyantjs/pricing@0.17.0
+  - @voyantjs/products@0.17.0
+  - @voyantjs/sellability@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes
