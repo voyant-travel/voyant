@@ -121,28 +121,34 @@ describe("ctx.parallel", () => {
   })
 
   it("defaults concurrency to total items (no artificial serialization)", async () => {
-    const order: number[] = []
+    // Each item sleeps SLEEP_MS. With no concurrency cap they all run together,
+    // so total elapsed should be ~SLEEP_MS, not 5×SLEEP_MS. Asserting on
+    // elapsed time is robust; asserting on completion order is not — CI
+    // runners' setTimeout resolution can collapse small sleep differences
+    // into the same tick.
+    const SLEEP_MS = 50
+    const ITEMS = [0, 1, 2, 3, 4]
 
     const wf = workflow<void, number[]>({
       id: "parallel.unbounded",
       async run(_, ctx) {
-        return ctx.parallel([0, 1, 2, 3, 4], async (n) => {
-          // Return in reverse-completion order: longer items finish first
-          // would imply real concurrency; with concurrency undefined we
-          // let them all run together.
-          await new Promise((r) => setTimeout(r, (5 - n) * 2))
-          order.push(n)
+        return ctx.parallel(ITEMS, async (n) => {
+          await new Promise((r) => setTimeout(r, SLEEP_MS))
           return n
         })
       },
     })
 
+    const start = Date.now()
     const result = await runWorkflowForTest(wf, undefined)
+    const elapsed = Date.now() - start
 
     expect(result.status).toBe("completed")
     // Results are in input order regardless of completion order.
-    expect(result.output).toEqual([0, 1, 2, 3, 4])
-    // Completion order is reverse because later items sleep less.
-    expect(order).toEqual([4, 3, 2, 1, 0])
+    expect(result.output).toEqual(ITEMS)
+    // Real concurrency: total time is closer to one sleep than to N sleeps.
+    // Generous bound to absorb CI scheduler jitter while still failing if
+    // the implementation accidentally serializes (which would be ~250ms+).
+    expect(elapsed).toBeLessThan(SLEEP_MS * ITEMS.length)
   })
 })
