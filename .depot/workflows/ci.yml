@@ -1,0 +1,43 @@
+# Depot CI Migration
+# Source: .github/workflows/ci.yml
+#
+# Changes made:
+# - Changed GitHub runs-on labels to their Depot equivalents
+
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ci:
+    runs-on: depot-ubuntu-latest # was: ubuntu-latest. Mapped standard GitHub runner to Depot equivalent.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build packages
+        run: pnpm turbo build --filter='./packages/**' --continue
+      - name: Build registry artifacts
+        run: pnpm registry:build
+      - name: Verify release train
+        run: pnpm verify:release-train
+      - name: Verify package exports
+        run: pnpm verify:package-exports
+      - name: Verify publish tarballs
+        run: pnpm verify:publish-tarballs
+      - name: Lint
+        run: pnpm turbo lint --filter='./packages/**' --continue
+      - name: Typecheck
+        run: pnpm turbo typecheck --filter='./packages/**' --continue
+      - name: Test
+        run: pnpm turbo test --filter='./packages/**' --continue
