@@ -6,17 +6,23 @@ import {
   useOptionUnitTierMutation,
   useOptionUnitTiers,
 } from "@voyantjs/pricing-react"
+import { usePricingUiI18nOrDefault, usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
 import { OptionUnitTierDialog } from "./option-unit-tier-dialog"
 
 const PAGE_SIZE = 25
 
 export function OptionUnitTiersPage() {
+  const sharedI18n = usePricingUiI18nOrDefault()
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const pageMessages = registryMessages.optionUnitTiersPage
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<OptionUnitTierRecord | undefined>()
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -31,55 +37,61 @@ export function OptionUnitTiersPage() {
     () => [
       {
         accessorKey: "optionUnitPriceRuleId",
-        header: "Unit price rule",
+        header: pageMessages.columns.optionUnitPriceRule,
         cell: ({ row }) => (
           <span className="font-mono text-xs">{row.original.optionUnitPriceRuleId}</span>
         ),
       },
       {
         accessorKey: "quantity",
-        header: "Qty range",
+        header: pageMessages.columns.quantityRange,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
-            {row.original.minQuantity}-{row.original.maxQuantity ?? "∞"}
+            {row.original.minQuantity}-{row.original.maxQuantity ?? pageMessages.labels.infinity}
           </span>
         ),
       },
       {
         accessorKey: "sellAmountCents",
-        header: "Sell",
+        header: pageMessages.columns.sell,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
             {row.original.sellAmountCents != null
-              ? (row.original.sellAmountCents / 100).toFixed(2)
+              ? sharedI18n.formatNumber(row.original.sellAmountCents / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
               : "-"}
           </span>
         ),
       },
       {
         accessorKey: "costAmountCents",
-        header: "Cost",
+        header: pageMessages.columns.cost,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
             {row.original.costAmountCents != null
-              ? (row.original.costAmountCents / 100).toFixed(2)
+              ? sharedI18n.formatNumber(row.original.costAmountCents / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
               : "-"}
           </span>
         ),
       },
       {
         accessorKey: "sortOrder",
-        header: "Order",
+        header: pageMessages.columns.order,
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">{row.original.sortOrder}</span>
         ),
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: pageMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? sharedMessages.common.active : sharedMessages.common.inactive}
           </Badge>
         ),
       },
@@ -101,7 +113,7 @@ export function OptionUnitTiersPage() {
             <button
               type="button"
               onClick={() => {
-                if (confirm("Delete tier?")) {
+                if (confirm(pageMessages.labels.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -113,17 +125,15 @@ export function OptionUnitTiersPage() {
         ),
       },
     ],
-    [refetch, remove],
+    [pageMessages, refetch, remove, sharedI18n, sharedMessages],
   )
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Option Unit Tiers</h2>
-          <p className="text-sm text-muted-foreground">
-            Quantity-based tiered pricing for option unit price rules.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -132,14 +142,14 @@ export function OptionUnitTiersPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          New Tier
+          {pageMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading option unit tiers..." : "No option unit tiers found."}
+        emptyMessage={isPending ? pageMessages.emptyLoading : pageMessages.empty}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

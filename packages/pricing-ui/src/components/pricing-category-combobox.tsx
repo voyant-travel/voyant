@@ -12,6 +12,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
+
 type PricingCategoryComboboxProps = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -24,9 +26,10 @@ const PAGE_SIZE = 25
 export function PricingCategoryCombobox({
   value,
   onChange,
-  placeholder = "Search pricing categories…",
+  placeholder,
   disabled,
 }: PricingCategoryComboboxProps) {
+  const messages = usePricingUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const { data, isPending } = usePricingCategories({
     search: search || undefined,
@@ -78,9 +81,14 @@ export function PricingCategoryCombobox({
         setInputValue(label)
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.pricingCategory.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
-        <ComboboxEmpty>{isPending ? "Loading…" : "No pricing categories found."}</ComboboxEmpty>
+        <ComboboxEmpty>
+          {isPending ? messages.common.loading : messages.comboboxes.pricingCategory.empty}
+        </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
             {(id) => {

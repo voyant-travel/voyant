@@ -11,6 +11,9 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/en": "./src/i18n/en.ts",
+    "./i18n/ro": "./src/i18n/ro.ts",
     "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
@@ -34,12 +37,16 @@
     "react-hook-form": "^7.60.0",
     "zod": "^4.3.6"
   },
+  "dependencies": {
+    "@voyantjs/i18n": "workspace:*"
+  },
   "devDependencies": {
     "@tanstack/react-query": "^5.96.2",
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/distribution-react": "workspace:*",
+    "@voyantjs/i18n": "workspace:*",
     "@voyantjs/markets-react": "workspace:*",
     "@voyantjs/products-react": "workspace:*",
     "@voyantjs/sellability-react": "workspace:*",
@@ -62,6 +69,18 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js"
+      },
+      "./i18n/en": {
+        "types": "./dist/i18n/en.d.ts",
+        "import": "./dist/i18n/en.js"
+      },
+      "./i18n/ro": {
+        "types": "./dist/i18n/ro.d.ts",
+        "import": "./dist/i18n/ro.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",

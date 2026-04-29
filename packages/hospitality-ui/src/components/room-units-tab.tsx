@@ -13,6 +13,8 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { RoomUnitStatus } from "../i18n/messages"
 import { PaginationFooter } from "./pagination-footer"
 import { RoomUnitDialog } from "./room-unit-dialog"
 
@@ -22,6 +24,7 @@ export interface RoomUnitsTabProps {
 const PAGE_SIZE = 25
 
 export function RoomUnitsTab({ propertyId }: RoomUnitsTabProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<RoomUnitRecord | undefined>(undefined)
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -45,7 +48,7 @@ export function RoomUnitsTab({ propertyId }: RoomUnitsTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Physical rooms that belong to a room type.</p>
+        <p className="text-sm text-muted-foreground">{messages.roomUnitsTab.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -54,7 +57,7 @@ export function RoomUnitsTab({ propertyId }: RoomUnitsTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Room Unit
+          {messages.roomUnitsTab.add}
         </Button>
       </div>
 
@@ -64,18 +67,24 @@ export function RoomUnitsTab({ propertyId }: RoomUnitsTabProps) {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No room units yet.</p>
+          <p className="text-sm text-muted-foreground">{messages.roomUnitsTab.empty}</p>
         </div>
       ) : (
         <div className="rounded-md border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">Room #</th>
-                <th className="p-3 text-left font-medium">Room type</th>
-                <th className="p-3 text-left font-medium">Floor</th>
-                <th className="p-3 text-left font-medium">Wing</th>
-                <th className="p-3 text-left font-medium">Status</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomUnitsTab.columns.roomNumber}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomUnitsTab.columns.roomType}
+                </th>
+                <th className="p-3 text-left font-medium">{messages.roomUnitsTab.columns.floor}</th>
+                <th className="p-3 text-left font-medium">{messages.roomUnitsTab.columns.wing}</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomUnitsTab.columns.status}
+                </th>
                 <th className="w-20 p-3" />
               </tr>
             </thead>
@@ -86,14 +95,14 @@ export function RoomUnitsTab({ propertyId }: RoomUnitsTabProps) {
                   <td className="p-3 text-muted-foreground">
                     {roomTypeById.get(row.roomTypeId)?.name ?? row.roomTypeId}
                   </td>
-                  <td className="p-3 text-muted-foreground">{row.floor ?? "—"}</td>
-                  <td className="p-3 text-muted-foreground">{row.wing ?? "—"}</td>
+                  <td className="p-3 text-muted-foreground">{row.floor ?? messages.common.none}</td>
+                  <td className="p-3 text-muted-foreground">{row.wing ?? messages.common.none}</td>
                   <td className="p-3">
                     <Badge
                       variant={row.status === "active" ? "default" : "outline"}
                       className="capitalize"
                     >
-                      {row.status.replace(/_/g, " ")}
+                      {messages.common.roomUnitStatusLabels[row.status as RoomUnitStatus]}
                     </Badge>
                   </td>
                   <td className="p-3">
@@ -111,7 +120,14 @@ export function RoomUnitsTab({ propertyId }: RoomUnitsTabProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          if (confirm(`Delete room unit "${row.roomNumber ?? row.id}"?`)) {
+                          if (
+                            confirm(
+                              messages.roomUnitsTab.deleteConfirm.replace(
+                                "{name}",
+                                row.roomNumber ?? row.id,
+                              ),
+                            )
+                          ) {
                             remove.mutate(row.id)
                           }
                         }}

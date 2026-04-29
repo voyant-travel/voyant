@@ -8,9 +8,11 @@ import {
 } from "@voyantjs/markets-react"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useState } from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useMarketsUiMessagesOrDefault } from "../../../markets-ui/src/index"
+
+import { useRegistryMarketsMessagesOrDefault } from "./i18n"
 import { MarketLocaleDialog } from "./market-locale-dialog"
 
 const PAGE_SIZE = 25
@@ -20,6 +22,8 @@ export interface MarketLocalesTabProps {
 }
 
 export function MarketLocalesTab({ marketId }: MarketLocalesTabProps) {
+  const sharedMessages = useMarketsUiMessagesOrDefault()
+  const tabMessages = useRegistryMarketsMessagesOrDefault().localesTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<MarketLocaleRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -34,12 +38,12 @@ export function MarketLocalesTab({ marketId }: MarketLocalesTabProps) {
   const columns: ColumnDef<MarketLocaleRecord>[] = [
     {
       accessorKey: "languageTag",
-      header: "Language",
+      header: tabMessages.columns.language,
       cell: ({ row }) => <span className="font-mono text-xs">{row.original.languageTag}</span>,
     },
     {
       accessorKey: "isDefault",
-      header: "Default",
+      header: tabMessages.columns.default,
       cell: ({ row }) =>
         row.original.isDefault ? (
           <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
@@ -47,15 +51,15 @@ export function MarketLocalesTab({ marketId }: MarketLocalesTabProps) {
     },
     {
       accessorKey: "sortOrder",
-      header: "Sort",
+      header: tabMessages.columns.sort,
       cell: ({ row }) => row.original.sortOrder,
     },
     {
       accessorKey: "active",
-      header: "Status",
+      header: tabMessages.columns.status,
       cell: ({ row }) => (
         <Badge variant={row.original.active ? "default" : "outline"}>
-          {row.original.active ? "Active" : "Inactive"}
+          {row.original.active ? sharedMessages.common.active : sharedMessages.common.cancel}
         </Badge>
       ),
     },
@@ -77,7 +81,7 @@ export function MarketLocalesTab({ marketId }: MarketLocalesTabProps) {
           <button
             type="button"
             onClick={() => {
-              if (confirm(`Delete locale "${row.original.languageTag}"?`)) {
+              if (confirm(tabMessages.actions.deleteConfirm)) {
                 remove.mutate(row.original.id, { onSuccess: () => void refetch() })
               }
             }}
@@ -93,7 +97,7 @@ export function MarketLocalesTab({ marketId }: MarketLocalesTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Supported languages for this market.</p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -102,14 +106,14 @@ export function MarketLocalesTab({ marketId }: MarketLocalesTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Locale
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading locales..." : "No locales yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.noLocales}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

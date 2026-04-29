@@ -27,6 +27,20 @@ function App() {
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 
+## I18n
+
+Components render English by default. To localize them, wrap your UI in
+`CrmUiMessagesProvider` and import only the locales your app supports.
+
+```tsx
+import { CrmUiMessagesProvider } from "@voyantjs/crm-ui"
+import { crmUiEn } from "@voyantjs/crm-ui/i18n/en"
+import { crmUiRo } from "@voyantjs/crm-ui/i18n/ro"
+```
+
+English-only apps should import only `./i18n/en`. Bilingual apps can import
+`./i18n/en` and `./i18n/ro`.
+
 ## Components
 
 - `PersonCard`, `PersonCardConnected`, `PersonDialog`, `PersonForm`, `PersonList`

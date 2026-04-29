@@ -4,7 +4,6 @@ import {
   buildRRule,
   type Frequency,
   parseRRule,
-  WEEKDAY_LABELS,
   WEEKDAYS,
   type Weekday,
 } from "@voyantjs/availability/rrule"
@@ -28,6 +27,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
+import { formatMessage, useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import {
   getDefaultTimezone,
   getTimezoneOptions,
@@ -56,12 +56,6 @@ interface FormState {
   active: boolean
 }
 
-const FREQUENCY_OPTIONS = [
-  { value: "DAILY", label: "Daily" },
-  { value: "WEEKLY", label: "Weekly" },
-  { value: "MONTHLY", label: "Monthly" },
-] as const
-
 const MONTH_DAYS = Array.from({ length: 31 }, (_, index) => String(index + 1))
 
 function initialState(mode: Mode): FormState {
@@ -88,7 +82,7 @@ function initialState(mode: Mode): FormState {
 
   return {
     timezone: getDefaultTimezone(),
-    frequency: "WEEKLY",
+    frequency: "WEEKLY", // i18n-literal-ok enum default
     interval: "1",
     byWeekdays: ["MO"],
     byMonthDays: [],
@@ -101,26 +95,59 @@ function initialState(mode: Mode): FormState {
   }
 }
 
-function describeSchedule(state: FormState) {
+function describeSchedule(
+  state: FormState,
+  messages: ReturnType<typeof useRegistryProductsMessagesOrDefault>,
+) {
   const interval = Math.max(1, Number.parseInt(state.interval || "1", 10) || 1)
-  const unit = state.frequency === "DAILY" ? "day" : state.frequency === "WEEKLY" ? "week" : "month"
-  const cadence = interval === 1 ? `Every ${unit}` : `Every ${interval} ${unit}s`
+  const singularUnit =
+    state.frequency === "DAILY"
+      ? messages.productScheduleForm.preview.units.day
+      : state.frequency === "WEEKLY"
+        ? messages.productScheduleForm.preview.units.week
+        : messages.productScheduleForm.preview.units.month
+  const pluralUnit =
+    state.frequency === "DAILY"
+      ? messages.productScheduleForm.preview.units.days
+      : state.frequency === "WEEKLY"
+        ? messages.productScheduleForm.preview.units.weeks
+        : messages.productScheduleForm.preview.units.months
+  const cadence =
+    interval === 1
+      ? formatMessage(messages.productScheduleForm.preview.everyUnit, {
+          unit: singularUnit,
+        })
+      : formatMessage(messages.productScheduleForm.preview.everyIntervalUnits, {
+          interval,
+          unitPlural: pluralUnit,
+        })
 
   if (state.frequency === "WEEKLY") {
-    if (state.byWeekdays.length === 0) return `${cadence} (choose weekdays)`
+    if (state.byWeekdays.length === 0) {
+      return `${cadence} ${messages.productScheduleForm.preview.chooseWeekdays}`
+    }
     const labels = WEEKDAYS.filter((weekday) => state.byWeekdays.includes(weekday)).map(
-      (weekday) => WEEKDAY_LABELS[weekday],
+      (weekday) => messages.productScheduleForm.preview.weekdayLabels[weekday],
     )
-    return `${cadence} on ${labels.join(", ")}`
+    return formatMessage(messages.productScheduleForm.preview.onWeekdays, {
+      cadence,
+      labels: labels.join(", "),
+    })
   }
 
   if (state.frequency === "MONTHLY") {
-    if (state.byMonthDays.length === 0) return `${cadence} (choose days)`
+    if (state.byMonthDays.length === 0) {
+      return `${cadence} ${messages.productScheduleForm.preview.chooseDays}`
+    }
     const ordered = [...state.byMonthDays]
       .map((value) => Number.parseInt(value, 10))
       .filter(Number.isFinite)
       .sort((left, right) => left - right)
-    return `${cadence} on day${ordered.length === 1 ? "" : "s"} ${ordered.join(", ")}`
+    return formatMessage(messages.productScheduleForm.preview.onMonthDays, {
+      cadence,
+      daySuffix: ordered.length === 1 ? "" : "s",
+      days: ordered.join(", "),
+    })
   }
 
   return cadence
@@ -130,6 +157,7 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useAvailabilityRuleMutation()
+  const messages = useRegistryProductsMessagesOrDefault()
 
   React.useEffect(() => {
     setState(initialState(mode))
@@ -138,7 +166,16 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
 
   const isSubmitting = create.isPending || update.isPending
   const timezoneOptions = React.useMemo(() => getTimezoneOptions(state.timezone), [state.timezone])
-  const preview = React.useMemo(() => describeSchedule(state), [state])
+  const preview = React.useMemo(() => describeSchedule(state, messages), [messages, state])
+  const frequencyOptions = React.useMemo(
+    () => [
+      // i18n-literal-ok enum values
+      { value: "DAILY", label: messages.productScheduleForm.frequencyLabels.DAILY }, // i18n-literal-ok enum value
+      { value: "WEEKLY", label: messages.productScheduleForm.frequencyLabels.WEEKLY }, // i18n-literal-ok enum value
+      { value: "MONTHLY", label: messages.productScheduleForm.frequencyLabels.MONTHLY }, // i18n-literal-ok enum value
+    ],
+    [messages],
+  )
 
   const field =
     <K extends keyof FormState>(key: K) =>
@@ -151,15 +188,15 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
     setError(null)
 
     if (!state.timezone) {
-      setError("Timezone is required.")
+      setError(messages.productScheduleForm.validation.timezoneRequired)
       return
     }
     if (state.frequency === "WEEKLY" && state.byWeekdays.length === 0) {
-      setError("Select at least one weekday.")
+      setError(messages.productScheduleForm.validation.weekdayRequired)
       return
     }
     if (state.frequency === "MONTHLY" && state.byMonthDays.length === 0) {
-      setError("Select at least one day of the month.")
+      setError(messages.productScheduleForm.validation.monthDayRequired)
       return
     }
 
@@ -172,7 +209,7 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
         state.frequency === "MONTHLY"
           ? state.byMonthDays
               .map((value) => Number.parseInt(value, 10))
-              .filter((value) => Number.isFinite(value) && value >= 1 && value <= 31)
+              .filter((value) => Number.isFinite(value) && value >= 1 && value <= 31) // i18n-literal-ok numeric bounds
           : [],
     })
 
@@ -198,7 +235,9 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
       onSuccess?.(rule)
     } catch (submissionError) {
       setError(
-        submissionError instanceof Error ? submissionError.message : "Failed to save schedule.",
+        submissionError instanceof Error
+          ? submissionError.message
+          : messages.productScheduleForm.validation.saveFailed,
       )
     }
   }
@@ -207,9 +246,9 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
     <form data-slot="product-schedule-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label>Repeats</Label>
+          <Label>{messages.productScheduleForm.fields.repeats}</Label>
           <Select
-            items={FREQUENCY_OPTIONS}
+            items={frequencyOptions}
             value={state.frequency}
             onValueChange={(value) => field("frequency")(value as Frequency)}
           >
@@ -217,7 +256,7 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {FREQUENCY_OPTIONS.map((frequency) => (
+              {frequencyOptions.map((frequency) => (
                 <SelectItem key={frequency.value} value={frequency.value}>
                   {frequency.label}
                 </SelectItem>
@@ -226,7 +265,9 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-schedule-interval">Every</Label>
+          <Label htmlFor="product-schedule-interval">
+            {messages.productScheduleForm.fields.every}
+          </Label>
           <Input
             id="product-schedule-interval"
             type="number"
@@ -239,7 +280,7 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
 
       {state.frequency === "WEEKLY" ? (
         <div className="flex flex-col gap-1.5">
-          <Label>Weekdays</Label>
+          <Label>{messages.productScheduleForm.fields.weekdays}</Label>
           <ToggleGroup
             type="multiple"
             value={state.byWeekdays}
@@ -257,7 +298,7 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
 
       {state.frequency === "MONTHLY" ? (
         <div className="flex flex-col gap-1.5">
-          <Label>Days of the month</Label>
+          <Label>{messages.productScheduleForm.fields.monthDays}</Label>
           <ToggleGroup
             type="multiple"
             value={state.byMonthDays}
@@ -279,7 +320,7 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label>Timezone</Label>
+          <Label>{messages.productScheduleForm.fields.timezone}</Label>
           <Select
             items={timezoneOptions.map((timezone) => ({ label: timezone, value: timezone }))}
             value={state.timezone}
@@ -298,7 +339,9 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-schedule-max-capacity">Max capacity</Label>
+          <Label htmlFor="product-schedule-max-capacity">
+            {messages.productScheduleForm.fields.maxCapacity}
+          </Label>
           <Input
             id="product-schedule-max-capacity"
             type="number"
@@ -311,7 +354,9 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-schedule-max-pickup-capacity">Max pickup capacity</Label>
+          <Label htmlFor="product-schedule-max-pickup-capacity">
+            {messages.productScheduleForm.fields.maxPickupCapacity}
+          </Label>
           <Input
             id="product-schedule-max-pickup-capacity"
             type="number"
@@ -321,7 +366,9 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-schedule-min-total-pax">Minimum total pax</Label>
+          <Label htmlFor="product-schedule-min-total-pax">
+            {messages.productScheduleForm.fields.minTotalPax}
+          </Label>
           <Input
             id="product-schedule-min-total-pax"
             type="number"
@@ -334,7 +381,9 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-schedule-cutoff">Cutoff minutes</Label>
+          <Label htmlFor="product-schedule-cutoff">
+            {messages.productScheduleForm.fields.cutoffMinutes}
+          </Label>
           <Input
             id="product-schedule-cutoff"
             type="number"
@@ -344,7 +393,9 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-schedule-early-booking-limit">Early booking limit minutes</Label>
+          <Label htmlFor="product-schedule-early-booking-limit">
+            {messages.productScheduleForm.fields.earlyBookingLimitMinutes}
+          </Label>
           <Input
             id="product-schedule-early-booking-limit"
             type="number"
@@ -357,7 +408,7 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
 
       <div className="flex items-center gap-2">
         <Switch checked={state.active} onCheckedChange={(checked) => field("active")(checked)} />
-        <Label>Schedule is active</Label>
+        <Label>{messages.productScheduleForm.fields.active}</Label>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -365,14 +416,16 @@ export function ProductScheduleForm({ mode, onSuccess, onCancel }: ProductSchedu
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "create" ? "Create schedule" : "Save schedule"}
+          {mode.kind === "create"
+            ? messages.productScheduleForm.actions.createSchedule
+            : messages.productScheduleForm.actions.saveSchedule}
         </Button>
       </div>
     </form>

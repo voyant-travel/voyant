@@ -8,8 +8,10 @@ import {
   usePricingCategoryDependencyMutation,
   useVoyantPricingContext,
 } from "@voyantjs/pricing-react"
+import { usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
+
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,7 +30,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
 import { PricingCategoryDependencyDialog } from "./pricing-category-dependency-dialog"
+
+const LIMIT_SEPARATOR = " · " // i18n-literal-ok punctuation separator
 
 export interface PricingCategoryDependencyListProps {
   pageSize?: number
@@ -37,10 +42,11 @@ export interface PricingCategoryDependencyListProps {
 export function PricingCategoryDependencyList({
   pageSize = 25,
 }: PricingCategoryDependencyListProps = {}) {
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const listMessages = registryMessages.pricingCategoryDependencyList
   const [dialogOpen, setDialogOpen] = React.useState(false)
-  const [editing, setEditing] = React.useState<PricingCategoryDependencyRecord | undefined>(
-    undefined,
-  )
+  const [editing, setEditing] = React.useState<PricingCategoryDependencyRecord | undefined>()
   const [offset, setOffset] = React.useState(0)
   const { data, isPending, isError } = usePricingCategoryDependencies({
     limit: pageSize,
@@ -71,7 +77,9 @@ export function PricingCategoryDependencyList({
   const categoryById = React.useMemo(() => {
     const map = new Map<string, { name: string }>()
     categoryQueries.forEach((query, index) => {
-      if (query.data) map.set(categoryIds[index], query.data)
+      if (query.data) {
+        map.set(categoryIds[index], query.data)
+      }
     })
     return map
   }, [categoryIds, categoryQueries])
@@ -80,10 +88,8 @@ export function PricingCategoryDependencyList({
     <div data-slot="pricing-category-dependency-list" className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Category Dependencies</h2>
-          <p className="text-sm text-muted-foreground">
-            Rules between pricing categories: requires, limits per master, excludes.
-          </p>
+          <h2 className="text-lg font-semibold">{listMessages.title}</h2>
+          <p className="text-sm text-muted-foreground">{listMessages.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -92,7 +98,7 @@ export function PricingCategoryDependencyList({
           }}
         >
           <Plus className="mr-2 size-4" />
-          New dependency
+          {listMessages.add}
         </Button>
       </div>
 
@@ -100,12 +106,12 @@ export function PricingCategoryDependencyList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Master</TableHead>
-              <TableHead>Dependent</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Limits</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[80px] text-right">Actions</TableHead>
+              <TableHead>{listMessages.columns.master}</TableHead>
+              <TableHead>{listMessages.columns.dependent}</TableHead>
+              <TableHead>{listMessages.columns.type}</TableHead>
+              <TableHead>{listMessages.columns.limits}</TableHead>
+              <TableHead>{listMessages.columns.status}</TableHead>
+              <TableHead className="w-[80px] text-right">{listMessages.columns.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -118,13 +124,13 @@ export function PricingCategoryDependencyList({
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-sm text-destructive">
-                  Failed to load pricing category dependencies.
+                  {listMessages.states.loadFailed}
                 </TableCell>
               </TableRow>
             ) : dependencies.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
-                  No category dependencies found.
+                  {listMessages.states.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -140,24 +146,28 @@ export function PricingCategoryDependencyList({
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
-                      {dependency.dependencyType.replace(/_/g, " ")}
+                      {sharedMessages.common.dependencyTypeLabels[dependency.dependencyType]}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {dependency.maxPerMaster != null
-                      ? `per master: ${dependency.maxPerMaster}`
+                      ? `${listMessages.labels.perMaster}: ${dependency.maxPerMaster}`
                       : ""}
                     {dependency.maxPerMaster != null && dependency.maxDependentSum != null
-                      ? " · "
+                      ? LIMIT_SEPARATOR
                       : ""}
-                    {dependency.maxDependentSum != null ? `sum: ${dependency.maxDependentSum}` : ""}
+                    {dependency.maxDependentSum != null
+                      ? `${listMessages.labels.sum}: ${dependency.maxDependentSum}`
+                      : ""}
                     {dependency.maxPerMaster == null && dependency.maxDependentSum == null
-                      ? "—"
+                      ? listMessages.states.noLimit
                       : ""}
                   </TableCell>
                   <TableCell>
                     <Badge variant={dependency.active ? "default" : "outline"}>
-                      {dependency.active ? "Active" : "Inactive"}
+                      {dependency.active
+                        ? sharedMessages.common.active
+                        : sharedMessages.common.inactive}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -173,19 +183,19 @@ export function PricingCategoryDependencyList({
                           }}
                         >
                           <Pencil className="size-4" />
-                          Edit
+                          {listMessages.labels.edit}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
                           onClick={() => {
-                            if (confirm("Delete dependency?")) {
+                            if (confirm(listMessages.labels.deleteConfirm)) {
                               remove.mutate(dependency.id)
                             }
                           }}
                         >
                           <Trash2 className="size-4" />
-                          Delete
+                          {listMessages.labels.delete}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -199,7 +209,7 @@ export function PricingCategoryDependencyList({
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          Showing {dependencies.length} of {total}
+          {listMessages.labels.showing} {dependencies.length} {listMessages.labels.of} {total}
         </span>
         <div className="flex items-center gap-2">
           <Button
@@ -208,10 +218,10 @@ export function PricingCategoryDependencyList({
             disabled={offset === 0}
             onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
           >
-            Previous
+            {sharedMessages.common.previous}
           </Button>
           <span>
-            Page {page} / {pageCount}
+            {sharedMessages.common.page} {page} / {pageCount}
           </span>
           <Button
             variant="outline"
@@ -219,7 +229,7 @@ export function PricingCategoryDependencyList({
             disabled={offset + pageSize >= total}
             onClick={() => setOffset((prev) => prev + pageSize)}
           >
-            Next
+            {sharedMessages.common.next}
           </Button>
         </div>
       </div>

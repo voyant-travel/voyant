@@ -12,32 +12,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui"
+import {
+  useRegistryNotificationsI18nOrDefault,
+  useRegistryNotificationsMessagesOrDefault,
+} from "./i18n"
 
 export function NotificationReminderRunsPage() {
+  const { formatDateTime } = useRegistryNotificationsI18nOrDefault()
+  const messages = useRegistryNotificationsMessagesOrDefault()
+  const pageMessages = messages.reminderRunsPage
   const [status, setStatus] = useState<string>("all")
   const { data, isPending } = useNotificationReminderRuns({ status, limit: 50, offset: 0 })
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Reminder Runs</h1>
-        <p className="text-sm text-muted-foreground">
-          Inspect queued and processed reminder executions, linked deliveries, and failure reasons.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>
+        <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={pageMessages.filters.status} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="queued">Queued</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="skipped">Skipped</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="all">{pageMessages.filters.statusAll}</SelectItem>
+            <SelectItem value="queued">{messages.common.reminderRunStatusLabels.queued}</SelectItem>
+            <SelectItem value="processing">
+              {messages.common.reminderRunStatusLabels.processing}
+            </SelectItem>
+            <SelectItem value="sent">{messages.common.reminderRunStatusLabels.sent}</SelectItem>
+            <SelectItem value="skipped">
+              {messages.common.reminderRunStatusLabels.skipped}
+            </SelectItem>
+            <SelectItem value="failed">{messages.common.reminderRunStatusLabels.failed}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -50,7 +59,7 @@ export function NotificationReminderRunsPage() {
 
       {!isPending && (!data?.data || data.data.length === 0) ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No reminder runs yet.</p>
+          <p className="text-sm text-muted-foreground">{pageMessages.empty}</p>
         </div>
       ) : null}
 
@@ -59,11 +68,11 @@ export function NotificationReminderRunsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Rule</th>
-                <th className="px-4 py-3">Target</th>
-                <th className="px-4 py-3">Recipient</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Processed</th>
+                <th className="px-4 py-3">{pageMessages.columns.rule}</th>
+                <th className="px-4 py-3">{pageMessages.columns.target}</th>
+                <th className="px-4 py-3">{pageMessages.columns.recipient}</th>
+                <th className="px-4 py-3">{pageMessages.columns.status}</th>
+                <th className="px-4 py-3">{pageMessages.columns.processed}</th>
               </tr>
             </thead>
             <tbody>
@@ -76,10 +85,10 @@ export function NotificationReminderRunsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div>{run.targetType}</div>
+                    <div>{messages.common.targetTypeLabels[run.targetType]}</div>
                     <div className="font-mono text-xs text-muted-foreground">{run.targetId}</div>
                   </td>
-                  <td className="px-4 py-3">{run.recipient ?? "—"}</td>
+                  <td className="px-4 py-3">{run.recipient ?? "-"}</td>
                   <td className="px-4 py-3">
                     <Badge
                       variant={
@@ -90,10 +99,10 @@ export function NotificationReminderRunsPage() {
                             : "secondary"
                       }
                     >
-                      {run.status}
+                      {messages.common.reminderRunStatusLabels[run.status]}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">{new Date(run.processedAt).toLocaleString()}</td>
+                  <td className="px-4 py-3">{formatDateTime(run.processedAt)}</td>
                 </tr>
               ))}
             </tbody>

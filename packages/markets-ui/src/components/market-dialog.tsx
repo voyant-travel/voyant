@@ -30,24 +30,29 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import { useMarketsUiMessagesOrDefault } from "../i18n"
+
 const MARKET_STATUSES = ["active", "inactive", "archived"] as const
 
 type MarketStatus = (typeof MARKET_STATUSES)[number]
 
-const formSchema = z.object({
-  code: z.string().min(1, "Code is required").max(50),
-  name: z.string().min(1, "Name is required").max(255),
-  status: z.enum(MARKET_STATUSES),
-  regionCode: z.string().optional().nullable(),
-  countryCode: z.string().optional().nullable(),
-  defaultLanguageTag: z.string().min(2).max(35),
-  defaultCurrency: z.string().length(3, "Currency must be 3 chars"),
-  timezone: z.string().optional().nullable(),
-  taxContext: z.string().optional().nullable(),
-})
+function createFormSchema(messages: ReturnType<typeof useMarketsUiMessagesOrDefault>) {
+  return z.object({
+    code: z.string().min(1, messages.marketDialog.validation.codeRequired).max(50),
+    name: z.string().min(1, messages.marketDialog.validation.nameRequired).max(255),
+    status: z.enum(MARKET_STATUSES),
+    regionCode: z.string().optional().nullable(),
+    countryCode: z.string().optional().nullable(),
+    defaultLanguageTag: z.string().min(2).max(35),
+    defaultCurrency: z.string().length(3, messages.marketDialog.validation.currencyThreeChars),
+    timezone: z.string().optional().nullable(),
+    taxContext: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface MarketDialogProps {
   open: boolean
@@ -59,6 +64,8 @@ export interface MarketDialogProps {
 export function MarketDialog({ open, onOpenChange, market, onSuccess }: MarketDialogProps) {
   const isEditing = Boolean(market)
   const { create, update } = useMarketMutation()
+  const messages = useMarketsUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -69,7 +76,7 @@ export function MarketDialog({ open, onOpenChange, market, onSuccess }: MarketDi
       regionCode: "",
       countryCode: "",
       defaultLanguageTag: "en",
-      defaultCurrency: "EUR",
+      defaultCurrency: "EUR" /* i18n-literal-ok domain default currency */,
       timezone: "",
       taxContext: "",
     },
@@ -98,7 +105,7 @@ export function MarketDialog({ open, onOpenChange, market, onSuccess }: MarketDi
         regionCode: "",
         countryCode: "",
         defaultLanguageTag: "en",
-        defaultCurrency: "EUR",
+        defaultCurrency: "EUR" /* i18n-literal-ok domain default currency */,
         timezone: "",
         taxContext: "",
       })
@@ -132,26 +139,37 @@ export function MarketDialog({ open, onOpenChange, market, onSuccess }: MarketDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Market" : "Add Market"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? messages.marketDialog.titles.edit : messages.marketDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Code</Label>
-                <Input {...form.register("code")} placeholder="EU-DE" />
+                <Label>{messages.marketDialog.fields.code}</Label>
+                <Input
+                  {...form.register("code")}
+                  placeholder={messages.marketDialog.placeholders.code}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Germany" />
+                <Label>{messages.marketDialog.fields.name}</Label>
+                <Input
+                  {...form.register("name")}
+                  placeholder={messages.marketDialog.placeholders.name}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{messages.marketDialog.fields.status}</Label>
                 <Select
-                  items={MARKET_STATUSES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={MARKET_STATUSES.map((x) => ({
+                    label: messages.common.marketStatusLabels[x],
+                    value: x,
+                  }))}
                   value={form.watch("status")}
                   onValueChange={(value) => form.setValue("status", value as MarketStatus)}
                 >
@@ -160,19 +178,22 @@ export function MarketDialog({ open, onOpenChange, market, onSuccess }: MarketDi
                   </SelectTrigger>
                   <SelectContent>
                     {MARKET_STATUSES.map((status) => (
-                      <SelectItem key={status} value={status} className="capitalize">
-                        {status}
+                      <SelectItem key={status} value={status}>
+                        {messages.common.marketStatusLabels[status]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Region code</Label>
-                <Input {...form.register("regionCode")} placeholder="EU, APAC..." />
+                <Label>{messages.marketDialog.fields.regionCode}</Label>
+                <Input
+                  {...form.register("regionCode")}
+                  placeholder={messages.marketDialog.placeholders.regionCode}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Country</Label>
+                <Label>{messages.marketDialog.fields.country}</Label>
                 <CountryCombobox
                   value={form.watch("countryCode") ?? null}
                   onChange={(code) => form.setValue("countryCode", code)}
@@ -182,39 +203,52 @@ export function MarketDialog({ open, onOpenChange, market, onSuccess }: MarketDi
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Language tag</Label>
-                <Input {...form.register("defaultLanguageTag")} placeholder="en, de-DE..." />
+                <Label>{messages.marketDialog.fields.languageTag}</Label>
+                <Input
+                  {...form.register("defaultLanguageTag")}
+                  placeholder={messages.marketDialog.placeholders.languageTag}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Default currency</Label>
+                <Label>{messages.marketDialog.fields.defaultCurrency}</Label>
                 <CurrencyCombobox
                   value={form.watch("defaultCurrency") || null}
                   onChange={(next) =>
-                    form.setValue("defaultCurrency", next ?? "EUR", {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    })
+                    form.setValue(
+                      "defaultCurrency",
+                      next ?? "EUR" /* i18n-literal-ok domain default currency */,
+                      {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      },
+                    )
                   }
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Timezone</Label>
-                <Input {...form.register("timezone")} placeholder="Europe/Berlin" />
+                <Label>{messages.marketDialog.fields.timezone}</Label>
+                <Input
+                  {...form.register("timezone")}
+                  placeholder={messages.marketDialog.placeholders.timezone}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Tax context</Label>
-              <Input {...form.register("taxContext")} placeholder="EU-VAT, US-Sales-Tax..." />
+              <Label>{messages.marketDialog.fields.taxContext}</Label>
+              <Input
+                {...form.register("taxContext")}
+                placeholder={messages.marketDialog.placeholders.taxContext}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Market"}
+              {isEditing ? messages.common.saveChanges : messages.marketDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

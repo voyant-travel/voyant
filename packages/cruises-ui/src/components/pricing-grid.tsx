@@ -1,6 +1,7 @@
 "use client"
 
 import type { PriceRecord } from "@voyantjs/cruises-react"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import {
   Table,
@@ -12,6 +13,8 @@ import {
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
+
+import { useCruisesUiI18nOrDefault } from "../i18n"
 
 export interface PricingGridProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Flat list of prices for a single sailing (typically from useSailing(...,{include:["pricing"]})). */
@@ -35,20 +38,6 @@ const AVAILABILITY_VARIANT: Record<
   sold_out: "destructive",
 }
 
-const AVAILABILITY_LABEL: Record<PriceRecord["availability"], string> = {
-  available: "Available",
-  limited: "Limited",
-  on_request: "On request",
-  wait_list: "Wait list",
-  sold_out: "Sold out",
-}
-
-function defaultFormatPrice(amount: string, currency: string): string {
-  const n = Number(amount)
-  if (!Number.isFinite(n)) return `${currency} ${amount}`
-  return `${currency} ${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-}
-
 /**
  * The cabin × occupancy pricing matrix that's the heart of any cruise booking
  * flow. Rows = cabin categories; columns = occupancy variants present in the
@@ -59,15 +48,30 @@ function defaultFormatPrice(amount: string, currency: string): string {
 export function PricingGrid({
   prices,
   categoryLabel,
-  formatPrice = defaultFormatPrice,
+  formatPrice,
   onCellSelect,
   className,
   ...props
 }: PricingGridProps) {
+  const i18n = useCruisesUiI18nOrDefault()
+  const m = i18n.messages.pricingGrid
+  const formatResolvedPrice =
+    formatPrice ??
+    ((amount: string, currency: string) =>
+      formatCruiseMoney(
+        amount,
+        currency,
+        {
+          fallbackCurrencyAmount: i18n.messages.common.fallbackCurrencyAmount,
+          formatCurrency: i18n.formatCurrency,
+        },
+        { maximumFractionDigits: 0 },
+      ))
+
   if (prices.length === 0) {
     return (
       <div data-slot="pricing-grid-empty" className={cn("py-8 text-center", className)} {...props}>
-        <p className="text-muted-foreground">No pricing published for this sailing.</p>
+        <p className="text-muted-foreground">{m.empty}</p>
       </div>
     )
   }
@@ -92,18 +96,10 @@ export function PricingGrid({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[220px]">Cabin category</TableHead>
+            <TableHead className="w-[220px]">{m.cabinCategory}</TableHead>
             {occupancies.map((occ) => (
               <TableHead key={occ} className="text-center">
-                {occ === 1
-                  ? "Single"
-                  : occ === 2
-                    ? "Double"
-                    : occ === 3
-                      ? "Triple"
-                      : occ === 4
-                        ? "Quad"
-                        : `${occ}-occupancy`}
+                {occupancyLabel(occ, i18n.messages.common.occupancyTableLabels)}
               </TableHead>
             ))}
           </TableRow>
@@ -140,14 +136,14 @@ export function PricingGrid({
                     data-slot="pricing-grid-cell"
                   >
                     <div className="font-semibold">
-                      {formatPrice(price.pricePerPerson, price.currency)}
+                      {formatResolvedPrice(price.pricePerPerson, price.currency)}
                     </div>
-                    <div className="text-xs text-muted-foreground">per person</div>
+                    <div className="text-xs text-muted-foreground">{m.perPerson}</div>
                     <Badge
                       variant={AVAILABILITY_VARIANT[price.availability]}
                       className="mt-2 font-normal"
                     >
-                      {AVAILABILITY_LABEL[price.availability]}
+                      {m.availabilityLabels[price.availability]}
                     </Badge>
                   </TableCell>
                 )
@@ -158,4 +154,46 @@ export function PricingGrid({
       </Table>
     </div>
   )
+}
+
+function occupancyLabel(
+  occupancy: number,
+  labels: {
+    single: string
+    double: string
+    triple: string
+    quad: string
+    fallback: string
+  },
+) {
+  if (occupancy === 1) return labels.single
+  if (occupancy === 2) return labels.double
+  if (occupancy === 3) return labels.triple
+  if (occupancy === 4) return labels.quad
+  return formatMessage(labels.fallback, { count: occupancy })
+}
+
+function formatCruiseMoney(
+  amount: string,
+  currency: string,
+  i18n: {
+    fallbackCurrencyAmount: string
+    formatCurrency: (
+      value: number | string | bigint,
+      currency: string,
+      options?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+    ) => string
+  },
+  options?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+) {
+  const n = Number(amount)
+  if (!Number.isFinite(n)) {
+    return formatMessage(i18n.fallbackCurrencyAmount, { currency, amount })
+  }
+
+  try {
+    return i18n.formatCurrency(n, currency, options)
+  } catch {
+    return formatMessage(i18n.fallbackCurrencyAmount, { currency, amount })
+  }
 }

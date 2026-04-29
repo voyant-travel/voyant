@@ -14,6 +14,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+
 type Props = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -23,12 +25,8 @@ type Props = {
 
 const PAGE_SIZE = 25
 
-export function CancellationPolicyCombobox({
-  value,
-  onChange,
-  placeholder = "Search cancellation policies…",
-  disabled,
-}: Props) {
+export function CancellationPolicyCombobox({ value, onChange, placeholder, disabled }: Props) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useCancellationPolicies({ search: search || undefined, limit: PAGE_SIZE })
   const selectedQuery = useCancellationPolicy(value, { enabled: !!value })
@@ -72,12 +70,15 @@ export function CancellationPolicyCombobox({
         setInputValue(item ? `${item.name}${item.code ? ` · ${item.code}` : ""}` : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.cancellationPolicy.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
           {listQuery.isPending || selectedQuery.isPending
-            ? "Loading…"
-            : "No cancellation policies found."}
+            ? messages.common.loading
+            : messages.comboboxes.cancellationPolicy.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

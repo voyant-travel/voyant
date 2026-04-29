@@ -1,0 +1,71 @@
+import type { SuppliersUiMessages } from "./messages"
+
+export const suppliersUiRo = {
+  common: {
+    edit: "Editeaza",
+    delete: "Sterge",
+    add: "Adauga",
+    open: "Deschide",
+    inactive: "Inactiv",
+    none: "-",
+    unknown: "?",
+    maxPax: "maxim {count} pax",
+    supplierTypeLabels: {
+      hotel: "Hotel",
+      transfer: "Transfer",
+      guide: "Ghid",
+      experience: "Experienta",
+      airline: "Companie aeriana",
+      restaurant: "Restaurant",
+      other: "Altul",
+    },
+    supplierStatusLabels: {
+      active: "Activ",
+      inactive: "Inactiv",
+      pending: "In asteptare",
+    },
+    serviceTypeLabels: {
+      accommodation: "Cazare",
+      transfer: "Transfer",
+      experience: "Experienta",
+      guide: "Ghid",
+      meal: "Masa",
+      other: "Altul",
+    },
+    rateUnitLabels: {
+      per_person: "Per persoana",
+      per_group: "Per grup",
+      per_night: "Per noapte",
+      per_vehicle: "Per vehicul",
+      flat: "Fix",
+    },
+  },
+  suppliersPage: {
+    title: "Furnizori",
+    description: "Gestioneaza hotelurile, transferurile, ghizii si furnizorii de servicii.",
+    create: "Furnizor Nou",
+    searchPlaceholder: "Cauta furnizori...",
+    summary: "Afisezi {shown} din {total} furnizori",
+    columns: {
+      name: "Nume",
+      type: "Tip",
+      status: "Status",
+      city: "Oras",
+      country: "Tara",
+      currency: "Moneda",
+    },
+  },
+  supplierServiceRow: {
+    rates: "Tarife",
+    addRate: "Adauga Tarif",
+    noRates: "Nu exista inca tarife.",
+    columns: {
+      name: "Nume",
+      amount: "Suma",
+      unit: "Unitate",
+      valid: "Valabil",
+      pax: "Pax",
+    },
+    validFallback: "...",
+  },
+} satisfies SuppliersUiMessages

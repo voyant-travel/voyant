@@ -17,6 +17,8 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
+
 type MediaType = ProductMediaRecord["mediaType"]
 
 type Mode =
@@ -41,10 +43,10 @@ interface FormState {
   isCover: boolean
 }
 
-const MEDIA_TYPES: Array<{ value: MediaType; label: string }> = [
-  { value: "image", label: "Image" },
-  { value: "video", label: "Video" },
-  { value: "document", label: "Document" },
+const MEDIA_TYPES: Array<{ value: MediaType }> = [
+  { value: "image" },
+  { value: "video" },
+  { value: "document" },
 ]
 
 function initialState(mode: Mode): FormState {
@@ -79,6 +81,7 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useProductMediaMutation()
+  const messages = useRegistryProductsMessagesOrDefault()
 
   React.useEffect(() => {
     setState(initialState(mode))
@@ -98,11 +101,11 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
     setError(null)
 
     if (!state.name.trim()) {
-      setError("Media name is required.")
+      setError(messages.productMediaForm.validation.nameRequired)
       return
     }
     if (!state.url.trim()) {
-      setError("Media URL is required.")
+      setError(messages.productMediaForm.validation.urlRequired)
       return
     }
 
@@ -129,7 +132,11 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
           : await update.mutateAsync({ mediaId: mode.media.id, input: payload })
       onSuccess?.(media)
     } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "Failed to save media.")
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : messages.productMediaForm.validation.saveFailed,
+      )
     }
   }
 
@@ -137,9 +144,12 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
     <form data-slot="product-media-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label>Media type</Label>
+          <Label>{messages.productMediaForm.fields.mediaType}</Label>
           <Select
-            items={MEDIA_TYPES}
+            items={MEDIA_TYPES.map((type) => ({
+              label: messages.common.mediaTypeLabels[type.value],
+              value: type.value,
+            }))}
             value={state.mediaType}
             onValueChange={(value) => field("mediaType")(value as MediaType)}
           >
@@ -149,40 +159,42 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
             <SelectContent>
               {MEDIA_TYPES.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
-                  {type.label}
+                  {messages.common.mediaTypeLabels[type.value]}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-media-name">Name</Label>
+          <Label htmlFor="product-media-name">{messages.productMediaForm.fields.name}</Label>
           <Input
             id="product-media-name"
             autoFocus
             required
             value={state.name}
             onChange={(event) => field("name")(event.target.value)}
-            placeholder="Hero image"
+            placeholder={messages.productMediaForm.placeholders.name}
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-media-url">URL</Label>
+        <Label htmlFor="product-media-url">{messages.productMediaForm.fields.url}</Label>
         <Input
           id="product-media-url"
           type="url"
           required
           value={state.url}
           onChange={(event) => field("url")(event.target.value)}
-          placeholder="https://example.com/media/hero.jpg"
+          placeholder={messages.productMediaForm.placeholders.url}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-media-storage-key">Storage key</Label>
+          <Label htmlFor="product-media-storage-key">
+            {messages.productMediaForm.fields.storageKey}
+          </Label>
           <Input
             id="product-media-storage-key"
             value={state.storageKey}
@@ -190,19 +202,23 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-media-mime-type">MIME type</Label>
+          <Label htmlFor="product-media-mime-type">
+            {messages.productMediaForm.fields.mimeType}
+          </Label>
           <Input
             id="product-media-mime-type"
             value={state.mimeType}
             onChange={(event) => field("mimeType")(event.target.value)}
-            placeholder="image/jpeg"
+            placeholder={messages.productMediaForm.placeholders.mimeType}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-media-file-size">File size</Label>
+          <Label htmlFor="product-media-file-size">
+            {messages.productMediaForm.fields.fileSize}
+          </Label>
           <Input
             id="product-media-file-size"
             type="number"
@@ -212,7 +228,9 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-media-sort-order">Sort order</Label>
+          <Label htmlFor="product-media-sort-order">
+            {messages.productMediaForm.fields.sortOrder}
+          </Label>
           <Input
             id="product-media-sort-order"
             type="number"
@@ -225,17 +243,17 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
             checked={state.isCover}
             onCheckedChange={(checked) => field("isCover")(checked)}
           />
-          <Label>Cover media</Label>
+          <Label>{messages.productMediaForm.fields.coverMedia}</Label>
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-media-alt-text">Alt text</Label>
+        <Label htmlFor="product-media-alt-text">{messages.productMediaForm.fields.altText}</Label>
         <Textarea
           id="product-media-alt-text"
           value={state.altText}
           onChange={(event) => field("altText")(event.target.value)}
-          placeholder="Short accessibility description"
+          placeholder={messages.productMediaForm.placeholders.altText}
         />
       </div>
 
@@ -244,14 +262,16 @@ export function ProductMediaForm({ mode, onSuccess, onCancel }: ProductMediaForm
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "create" ? "Add media" : "Save media"}
+          {mode.kind === "create"
+            ? messages.productMediaForm.actions.addMedia
+            : messages.productMediaForm.actions.saveMedia}
         </Button>
       </div>
     </form>

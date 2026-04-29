@@ -10,6 +10,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+
 type Props = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -19,12 +21,8 @@ type Props = {
 
 const PAGE_SIZE = 25
 
-export function PriceCatalogCombobox({
-  value,
-  onChange,
-  placeholder = "Search price catalogs…",
-  disabled,
-}: Props) {
+export function PriceCatalogCombobox({ value, onChange, placeholder, disabled }: Props) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = usePriceCatalogs({ search: search || undefined, limit: PAGE_SIZE })
   const selectedQuery = usePriceCatalog(value, { enabled: !!value })
@@ -66,10 +64,15 @@ export function PriceCatalogCombobox({
         setInputValue(item ? `${item.name} · ${item.code}` : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.priceCatalog.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
-          {listQuery.isPending || selectedQuery.isPending ? "Loading…" : "No price catalogs found."}
+          {listQuery.isPending || selectedQuery.isPending
+            ? messages.common.loading
+            : messages.comboboxes.priceCatalog.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

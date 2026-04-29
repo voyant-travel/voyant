@@ -19,18 +19,28 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-const formSchema = z.object({
-  optionUnitPriceRuleId: z.string().min(1, "Option unit price rule is required"),
-  minQuantity: z.coerce.number().int().min(1, "Min quantity must be at least 1"),
-  maxQuantity: z.coerce.number().int().min(1).optional().or(z.literal("")).nullable(),
-  sellAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
-  costAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
-  active: z.boolean(),
-  sortOrder: z.coerce.number().int(),
-})
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+function createFormSchema(messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
+  return z.object({
+    optionUnitPriceRuleId: z
+      .string()
+      .min(1, messages.optionUnitTierDialog.validation.optionUnitPriceRuleIdRequired),
+    minQuantity: z.coerce
+      .number()
+      .int()
+      .min(1, messages.optionUnitTierDialog.validation.minQuantityMin),
+    maxQuantity: z.coerce.number().int().min(1).optional().or(z.literal("")).nullable(),
+    sellAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
+    costAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
+    active: z.boolean(),
+    sortOrder: z.coerce.number().int(),
+  })
+}
+
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 type Props = {
   open: boolean
@@ -47,6 +57,8 @@ const toInt = (value: number | "" | null | undefined): number | null =>
 export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Props) {
   const isEditing = !!tier
   const { create, update } = useOptionUnitTierMutation()
+  const messages = usePricingUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -110,15 +122,19 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Unit Tier" : "Add Unit Tier"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.optionUnitTierDialog.titles.edit
+              : messages.optionUnitTierDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Option unit price rule ID</Label>
+              <Label>{messages.optionUnitTierDialog.fields.optionUnitPriceRuleId}</Label>
               <Input
                 {...form.register("optionUnitPriceRuleId")}
-                placeholder="oupr_…"
+                placeholder={messages.optionUnitTierDialog.placeholders.optionUnitPriceRuleId}
                 disabled={isEditing}
               />
               {form.formState.errors.optionUnitPriceRuleId ? (
@@ -130,7 +146,7 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Min quantity</Label>
+                <Label>{messages.optionUnitTierDialog.fields.minQuantity}</Label>
                 <Input {...form.register("minQuantity")} type="number" min="1" />
                 {form.formState.errors.minQuantity ? (
                   <p className="text-xs text-destructive">
@@ -139,25 +155,25 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Max quantity</Label>
+                <Label>{messages.optionUnitTierDialog.fields.maxQuantity}</Label>
                 <Input {...form.register("maxQuantity")} type="number" min="1" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Sell amount</Label>
+                <Label>{messages.optionUnitTierDialog.fields.sellAmount}</Label>
                 <Input {...form.register("sellAmount")} type="number" step="0.01" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Cost amount</Label>
+                <Label>{messages.optionUnitTierDialog.fields.costAmount}</Label>
                 <Input {...form.register("costAmount")} type="number" step="0.01" min="0" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Sort order</Label>
+                <Label>{messages.optionUnitTierDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
               </div>
               <div className="flex items-center gap-3 pt-6">
@@ -165,17 +181,19 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
                   checked={form.watch("active")}
                   onCheckedChange={(checked) => form.setValue("active", checked)}
                 />
-                <Label>Active</Label>
+                <Label>{messages.optionUnitTierDialog.fields.active}</Label>
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Tier"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.optionUnitTierDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

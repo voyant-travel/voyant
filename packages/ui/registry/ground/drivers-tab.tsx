@@ -12,10 +12,13 @@ import { useMemo, useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 import { DriverDialog } from "./driver-dialog"
+import { useRegistryGroundMessagesOrDefault } from "./i18n"
 
 const PAGE_SIZE = 25
 
 export function DriversTab() {
+  const messages = useRegistryGroundMessagesOrDefault()
+  const tabMessages = messages.driversTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<GroundDriverRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -29,12 +32,12 @@ export function DriversTab() {
     () => [
       {
         accessorKey: "resourceId",
-        header: "Resource",
+        header: tabMessages.columns.resource,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.resourceId}</span>,
       },
       {
         accessorKey: "operatorId",
-        header: "Operator",
+        header: tabMessages.columns.operator,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.operatorId ?? "-"}
@@ -43,7 +46,7 @@ export function DriversTab() {
       },
       {
         accessorKey: "licenseNumber",
-        header: "License",
+        header: tabMessages.columns.license,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.licenseNumber ?? "-"}
@@ -52,7 +55,7 @@ export function DriversTab() {
       },
       {
         accessorKey: "spokenLanguages",
-        header: "Languages",
+        header: tabMessages.columns.languages,
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
             {row.original.spokenLanguages.length > 0
@@ -63,20 +66,21 @@ export function DriversTab() {
       },
       {
         accessorKey: "isGuide",
-        header: "Guide",
-        cell: ({ row }) => (row.original.isGuide ? "Yes" : "No"),
+        header: tabMessages.columns.guide,
+        cell: ({ row }) => (row.original.isGuide ? messages.common.yes : messages.common.no),
       },
       {
         accessorKey: "isMeetAndGreetCapable",
-        header: "M&G",
-        cell: ({ row }) => (row.original.isMeetAndGreetCapable ? "Yes" : "No"),
+        header: tabMessages.columns.meetAndGreet,
+        cell: ({ row }) =>
+          row.original.isMeetAndGreetCapable ? messages.common.yes : messages.common.no,
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: tabMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? messages.common.active : messages.common.inactive}
           </Badge>
         ),
       },
@@ -98,7 +102,7 @@ export function DriversTab() {
             <button
               type="button"
               onClick={() => {
-                if (confirm("Delete this driver?")) {
+                if (confirm(tabMessages.actions.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -110,15 +114,21 @@ export function DriversTab() {
         ),
       },
     ],
-    [refetch, remove],
+    [
+      messages.common.active,
+      messages.common.inactive,
+      messages.common.no,
+      messages.common.yes,
+      refetch,
+      remove,
+      tabMessages,
+    ],
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Drivers attached to operators. Each driver is backed by a resource.
-        </p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -127,14 +137,14 @@ export function DriversTab() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Driver
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading drivers..." : "No drivers yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.none}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

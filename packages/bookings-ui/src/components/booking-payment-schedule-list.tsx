@@ -9,6 +9,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
 import { BookingPaymentScheduleDialog } from "./booking-payment-schedule-dialog"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -20,10 +21,6 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   expired: "secondary",
 }
 
-function formatAmount(cents: number, currency: string): string {
-  return `${(cents / 100).toFixed(2)} ${currency}`
-}
-
 export interface BookingPaymentScheduleListProps {
   bookingId: string
 }
@@ -33,6 +30,8 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
   const [editing, setEditing] = React.useState<BookingPaymentScheduleRecord | undefined>(undefined)
   const { data } = useBookingPaymentSchedules(bookingId)
   const { remove } = useBookingPaymentScheduleMutation(bookingId)
+  const { formatCurrency } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
 
   const schedules = data?.data ?? []
 
@@ -41,7 +40,7 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <CalendarClock className="h-4 w-4" />
-          Payment Schedule
+          {messages.bookingPaymentScheduleList.title}
         </CardTitle>
         <Button
           size="sm"
@@ -51,45 +50,55 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Schedule
+          {messages.bookingPaymentScheduleList.addSchedule}
         </Button>
       </CardHeader>
       <CardContent>
         {schedules.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            No payment schedules yet.
+            {messages.bookingPaymentScheduleList.empty}
           </p>
         ) : (
           <div className="rounded border bg-background">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="p-2 text-left font-medium">Type</th>
-                  <th className="p-2 text-left font-medium">Status</th>
-                  <th className="p-2 text-left font-medium">Due Date</th>
-                  <th className="p-2 text-right font-medium">Amount</th>
-                  <th className="p-2 text-left font-medium">Notes</th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingPaymentScheduleList.columns.type}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingPaymentScheduleList.columns.status}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingPaymentScheduleList.columns.dueDate}
+                  </th>
+                  <th className="p-2 text-right font-medium">
+                    {messages.bookingPaymentScheduleList.columns.amount}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingPaymentScheduleList.columns.notes}
+                  </th>
                   <th className="w-20 p-2" />
                 </tr>
               </thead>
               <tbody>
                 {schedules.map((schedule) => (
                   <tr key={schedule.id} className="border-b last:border-b-0">
-                    <td className="p-2 capitalize">{schedule.scheduleType.replace("_", " ")}</td>
                     <td className="p-2">
-                      <Badge
-                        variant={statusVariant[schedule.status] ?? "secondary"}
-                        className="capitalize"
-                      >
-                        {schedule.status.replace("_", " ")}
+                      {messages.paymentScheduleDialog.scheduleTypeLabels[schedule.scheduleType]}
+                    </td>
+                    <td className="p-2">
+                      <Badge variant={statusVariant[schedule.status] ?? "secondary"}>
+                        {messages.paymentScheduleDialog.scheduleStatusLabels[schedule.status]}
                       </Badge>
                     </td>
                     <td className="p-2">{schedule.dueDate}</td>
                     <td className="p-2 text-right font-mono">
-                      {formatAmount(schedule.amountCents, schedule.currency)}
+                      {formatCurrency(schedule.amountCents / 100, schedule.currency)}
                     </td>
                     <td className="max-w-[200px] truncate p-2 text-muted-foreground">
-                      {schedule.notes ?? "-"}
+                      {schedule.notes ??
+                        messages.bookingPaymentScheduleList.values.notesUnavailable}
                     </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
@@ -106,7 +115,9 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm("Delete this payment schedule?")) {
+                            if (
+                              confirm(messages.bookingPaymentScheduleList.actions.deleteConfirm)
+                            ) {
                               remove.mutate(schedule.id)
                             }
                           }}

@@ -32,6 +32,7 @@ import { CurrencyCombobox } from "@/components/ui/currency-combobox"
 import { DatePicker } from "@/components/ui/date-picker"
 import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
+import { useRegistryTransactionsMessagesOrDefault } from "./i18n"
 
 type PersonRef = {
   id: string
@@ -58,30 +59,9 @@ const ORDER_STATUSES = [
   "cancelled",
   "expired",
 ] as const
+const DEFAULT_CURRENCY_CODE = "EUR" // i18n-literal-ok ISO default currency
 
 type OrderStatus = (typeof ORDER_STATUSES)[number]
-
-const formSchema = z.object({
-  orderNumber: z.string().min(1, "Order number is required").max(50),
-  offerId: z.string().optional().nullable(),
-  title: z.string().min(1, "Title is required").max(255),
-  status: z.enum(ORDER_STATUSES),
-  currency: z.string().length(3, "Currency must be 3 chars"),
-  personId: z.string().optional().nullable(),
-  organizationId: z.string().optional().nullable(),
-  marketId: z.string().optional().nullable(),
-  subtotalEuros: z.coerce.number().min(0),
-  taxEuros: z.coerce.number().min(0),
-  feeEuros: z.coerce.number().min(0),
-  totalEuros: z.coerce.number().min(0),
-  orderedAt: z.string().optional().nullable(),
-  confirmedAt: z.string().optional().nullable(),
-  expiresAt: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-})
-
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
 
 export interface OrderDialogProps {
   open: boolean
@@ -91,8 +71,30 @@ export interface OrderDialogProps {
 }
 
 export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialogProps) {
+  const messages = useRegistryTransactionsMessagesOrDefault()
+  const dialogMessages = messages.orderDialog
   const isEditing = Boolean(order)
   const { create, update } = useOrderMutation()
+  const formSchema = z.object({
+    orderNumber: z.string().min(1, dialogMessages.errors.orderNumberRequired).max(50),
+    offerId: z.string().optional().nullable(),
+    title: z.string().min(1, dialogMessages.errors.titleRequired).max(255),
+    status: z.enum(ORDER_STATUSES),
+    currency: z.string().length(3, dialogMessages.errors.currencyLength),
+    personId: z.string().optional().nullable(),
+    organizationId: z.string().optional().nullable(),
+    marketId: z.string().optional().nullable(),
+    subtotalEuros: z.coerce.number().min(0),
+    taxEuros: z.coerce.number().min(0),
+    feeEuros: z.coerce.number().min(0),
+    totalEuros: z.coerce.number().min(0),
+    orderedAt: z.string().optional().nullable(),
+    confirmedAt: z.string().optional().nullable(),
+    expiresAt: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+  })
+  type FormValues = z.input<typeof formSchema>
+  type FormOutput = z.output<typeof formSchema>
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -101,7 +103,7 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
       offerId: "",
       title: "",
       status: "draft",
-      currency: "EUR",
+      currency: DEFAULT_CURRENCY_CODE,
       personId: "",
       organizationId: "",
       marketId: "",
@@ -144,7 +146,7 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
         offerId: "",
         title: "",
         status: "draft",
-        currency: "EUR",
+        currency: DEFAULT_CURRENCY_CODE,
         personId: "",
         organizationId: "",
         marketId: "",
@@ -194,26 +196,37 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Order" : "Add Order"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dialogMessages.titleEdit : dialogMessages.titleNew}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Order number</Label>
-                <Input {...form.register("orderNumber")} placeholder="ORD-2026-0001" />
+                <Label>{dialogMessages.fields.orderNumber}</Label>
+                <Input
+                  {...form.register("orderNumber")}
+                  placeholder={dialogMessages.placeholders.orderNumber}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Title</Label>
-                <Input {...form.register("title")} placeholder="Istanbul 5-day tour" />
+                <Label>{dialogMessages.fields.title}</Label>
+                <Input
+                  {...form.register("title")}
+                  placeholder={dialogMessages.placeholders.title}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{dialogMessages.fields.status}</Label>
                 <Select
-                  items={ORDER_STATUSES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={ORDER_STATUSES.map((x) => ({
+                    label: messages.common.orderStatusLabels[x],
+                    value: x,
+                  }))}
                   value={form.watch("status")}
                   onValueChange={(value) => form.setValue("status", value as OrderStatus)}
                 >
@@ -223,26 +236,27 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
                   <SelectContent>
                     {ORDER_STATUSES.map((status) => (
                       <SelectItem key={status} value={status} className="capitalize">
-                        {status}
+                        {messages.common.orderStatusLabels[status]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Currency</Label>
+                <Label>{dialogMessages.fields.currency}</Label>
                 <CurrencyCombobox
                   value={form.watch("currency") || null}
                   onChange={(next) =>
-                    form.setValue("currency", next ?? "EUR", {
+                    form.setValue("currency", next ?? DEFAULT_CURRENCY_CODE, {
                       shouldValidate: true,
                       shouldDirty: true,
                     })
                   }
+                  placeholder={messages.common.selectCurrency}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Market</Label>
+                <Label>{dialogMessages.fields.market}</Label>
                 <EntityCombobox<MarketRef>
                   value={form.watch("marketId") ?? null}
                   onChange={(id) => form.setValue("marketId", id)}
@@ -253,30 +267,30 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
                   getSecondary={(market) =>
                     [market.code, market.defaultCurrency].filter(Boolean).join(" · ") || undefined
                   }
-                  placeholder="Search markets..."
-                  emptyText="No markets found."
+                  placeholder={messages.common.searchMarkets}
+                  emptyText={messages.common.noMarkets}
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Source offer</Label>
+              <Label>{dialogMessages.fields.sourceOffer}</Label>
               <EntityCombobox<OfferRef>
                 value={form.watch("offerId") ?? null}
                 onChange={(id) => form.setValue("offerId", id)}
                 endpoint="/v1/transactions/offers"
                 detailEndpoint="/v1/transactions/offers/:id"
                 queryKey={["transactions", "offers", "picker"]}
-                getLabel={(offer) => `${offer.offerNumber} — ${offer.title}`}
+                getLabel={(offer) => `${offer.offerNumber} - ${offer.title}`}
                 getSecondary={(offer) => offer.status ?? undefined}
-                placeholder="Search offers..."
-                emptyText="No offers found."
+                placeholder={dialogMessages.placeholders.sourceOffer}
+                emptyText={dialogMessages.placeholders.noOffers}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Person</Label>
+                <Label>{dialogMessages.fields.person}</Label>
                 <EntityCombobox<PersonRef>
                   value={form.watch("personId") ?? null}
                   onChange={(id) => form.setValue("personId", id)}
@@ -285,12 +299,12 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
                   queryKey={["crm", "people", "picker"]}
                   getLabel={personLabel}
                   getSecondary={(person) => person.email ?? undefined}
-                  placeholder="Search people..."
-                  emptyText="No people found."
+                  placeholder={messages.common.searchPeople}
+                  emptyText={messages.common.noPeople}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Organization</Label>
+                <Label>{dialogMessages.fields.organization}</Label>
                 <EntityCombobox<OrganizationRef>
                   value={form.watch("organizationId") ?? null}
                   onChange={(id) => form.setValue("organizationId", id)}
@@ -299,34 +313,34 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
                   queryKey={["crm", "organizations", "picker"]}
                   getLabel={(organization) => organization.name}
                   getSecondary={(organization) => organization.domain ?? undefined}
-                  placeholder="Search organizations..."
-                  emptyText="No organizations found."
+                  placeholder={messages.common.searchOrganizations}
+                  emptyText={messages.common.noOrganizations}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-4 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Subtotal</Label>
+                <Label>{dialogMessages.fields.subtotal}</Label>
                 <Input {...form.register("subtotalEuros")} type="number" min="0" step="0.01" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Tax</Label>
+                <Label>{dialogMessages.fields.tax}</Label>
                 <Input {...form.register("taxEuros")} type="number" min="0" step="0.01" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Fee</Label>
+                <Label>{dialogMessages.fields.fee}</Label>
                 <Input {...form.register("feeEuros")} type="number" min="0" step="0.01" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Total</Label>
+                <Label>{dialogMessages.fields.total}</Label>
                 <Input {...form.register("totalEuros")} type="number" min="0" step="0.01" />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Ordered at</Label>
+                <Label>{dialogMessages.fields.orderedAt}</Label>
                 <DatePicker
                   value={form.watch("orderedAt") || null}
                   onChange={(next) =>
@@ -335,12 +349,12 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select order date"
+                  placeholder={dialogMessages.placeholders.orderedAt}
                   className="w-full"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Confirmed at</Label>
+                <Label>{dialogMessages.fields.confirmedAt}</Label>
                 <DatePicker
                   value={form.watch("confirmedAt") || null}
                   onChange={(next) =>
@@ -349,12 +363,12 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select confirm date"
+                  placeholder={dialogMessages.placeholders.confirmedAt}
                   className="w-full"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Expires at</Label>
+                <Label>{dialogMessages.fields.expiresAt}</Label>
                 <DatePicker
                   value={form.watch("expiresAt") || null}
                   onChange={(next) =>
@@ -363,24 +377,24 @@ export function OrderDialog({ open, onOpenChange, order, onSuccess }: OrderDialo
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select expiry"
+                  placeholder={dialogMessages.placeholders.expiresAt}
                   className="w-full"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{dialogMessages.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Order"}
+              {isEditing ? messages.common.saveChanges : dialogMessages.actions.add}
             </Button>
           </DialogFooter>
         </form>

@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import { DollarSign, ExternalLink, Link2, Search, Webhook } from "lucide-react"
+import { useDistributionUiI18nOrDefault } from "../i18n"
 import type {
   ChannelContractRow,
   ChannelProductMappingRow,
@@ -20,7 +21,13 @@ import type {
   ChannelWebhookEventRow,
   SupplierOption,
 } from "./distribution-shared"
-import { formatDateTime, labelById } from "./distribution-shared"
+import {
+  formatDistributionDate,
+  formatDistributionDateTime,
+  getContractStatusLabel,
+  getWebhookStatusLabel,
+  labelById,
+} from "./distribution-shared"
 
 export function DistributionOverview({
   channels,
@@ -62,32 +69,34 @@ export function DistributionOverview({
     (contract) => contract.status === "active",
   ).length
   const activeMappingsCount = filteredMappings.filter((mapping) => mapping.active).length
+  const i18n = useDistributionUiI18nOrDefault()
+  const { messages } = i18n
 
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <OverviewMetric
-          title="Active Channels"
+          title={messages.overview.metrics.activeChannels.title}
           value={activeChannelsCount}
-          description="Live sales and reseller endpoints"
+          description={messages.overview.metrics.activeChannels.description}
           icon={Link2}
         />
         <OverviewMetric
-          title="Active Contracts"
+          title={messages.overview.metrics.activeContracts.title}
           value={activeContractsCount}
-          description="Commercial agreements currently in force"
+          description={messages.overview.metrics.activeContracts.description}
           icon={DollarSign}
         />
         <OverviewMetric
-          title="Active Mappings"
+          title={messages.overview.metrics.activeMappings.title}
           value={activeMappingsCount}
-          description="Products exposed to external channels"
+          description={messages.overview.metrics.activeMappings.description}
           icon={ExternalLink}
         />
         <OverviewMetric
-          title="Sync Queue"
+          title={messages.overview.metrics.syncQueue.title}
           value={syncQueue.length}
-          description="Pending or failed inbound events"
+          description={messages.overview.metrics.syncQueue.description}
           icon={Webhook}
         />
       </div>
@@ -95,11 +104,11 @@ export function DistributionOverview({
       <div className="grid gap-4 xl:grid-cols-2">
         <Card size="sm">
           <CardHeader>
-            <CardTitle>Webhook Queue</CardTitle>
+            <CardTitle>{messages.overview.webhookQueue.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {syncQueue.length === 0 ? (
-              <p className="text-muted-foreground">No pending or failed events in the queue.</p>
+              <p className="text-muted-foreground">{messages.overview.webhookQueue.empty}</p>
             ) : (
               syncQueue.slice(0, 4).map((event) => (
                 <button
@@ -111,8 +120,9 @@ export function DistributionOverview({
                   <div className="font-medium">
                     {labelById(channels, event.channelId)} · {event.eventType}
                   </div>
-                  <div className="text-muted-foreground capitalize">
-                    {event.status} · Received {formatDateTime(event.receivedAt)}
+                  <div className="text-muted-foreground">
+                    {getWebhookStatusLabel(event.status, messages)} · {messages.common.received}{" "}
+                    {formatDistributionDateTime(event.receivedAt, i18n)}
                   </div>
                 </button>
               ))
@@ -122,11 +132,11 @@ export function DistributionOverview({
 
         <Card size="sm">
           <CardHeader>
-            <CardTitle>Contracts To Review</CardTitle>
+            <CardTitle>{messages.overview.contractsToReview.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {contractsNeedingReview.length === 0 ? (
-              <p className="text-muted-foreground">All contracts are currently active.</p>
+              <p className="text-muted-foreground">{messages.overview.contractsToReview.empty}</p>
             ) : (
               contractsNeedingReview.slice(0, 4).map((contract) => (
                 <button
@@ -136,10 +146,12 @@ export function DistributionOverview({
                   onClick={() => onOpenContract(contract.id)}
                 >
                   <div className="font-medium">
-                    {labelById(channels, contract.channelId)} · {contract.startsAt}
+                    {labelById(channels, contract.channelId)} ·{" "}
+                    {formatDistributionDate(contract.startsAt, i18n)}
                   </div>
-                  <div className="text-muted-foreground capitalize">
-                    {contract.status} · Supplier {labelById(suppliers, contract.supplierId)}
+                  <div className="text-muted-foreground">
+                    {getContractStatusLabel(contract.status, messages)} · {messages.common.supplier}{" "}
+                    {labelById(suppliers, contract.supplierId)}
                   </div>
                 </button>
               ))
@@ -153,7 +165,7 @@ export function DistributionOverview({
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search distribution..."
+              placeholder={messages.common.searchPlaceholder}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pl-9"
@@ -161,10 +173,10 @@ export function DistributionOverview({
           </div>
           <Select value={channelFilter} onValueChange={(value) => setChannelFilter(value ?? "all")}>
             <SelectTrigger className="w-full md:w-64">
-              <SelectValue placeholder="All channels" />
+              <SelectValue placeholder={messages.overview.filters.allChannelsPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All channels</SelectItem>
+              <SelectItem value="all">{messages.common.allChannels}</SelectItem>
               {channels.map((channel) => (
                 <SelectItem key={channel.id} value={channel.id}>
                   {channel.name}
@@ -175,7 +187,7 @@ export function DistributionOverview({
         </div>
         {hasFilters ? (
           <Button variant="outline" onClick={onClearFilters}>
-            Clear Filters
+            {messages.common.clearFilters}
           </Button>
         ) : null}
       </div>

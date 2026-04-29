@@ -11,11 +11,14 @@ import { useMemo, useState } from "react"
 
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useRegistryGroundMessagesOrDefault } from "./i18n"
 import { VehicleDialog } from "./vehicle-dialog"
 
 const PAGE_SIZE = 25
 
 export function VehiclesTab() {
+  const messages = useRegistryGroundMessagesOrDefault()
+  const tabMessages = messages.vehiclesTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<GroundVehicleRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -29,12 +32,12 @@ export function VehiclesTab() {
     () => [
       {
         accessorKey: "resourceId",
-        header: "Resource",
+        header: tabMessages.columns.resource,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.resourceId}</span>,
       },
       {
         accessorKey: "operatorId",
-        header: "Operator",
+        header: tabMessages.columns.operator,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.operatorId ?? "-"}
@@ -43,38 +46,38 @@ export function VehiclesTab() {
       },
       {
         accessorKey: "category",
-        header: "Category",
+        header: tabMessages.columns.category,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.category.replace(/_/g, " ")}
+            {messages.common.categoryLabels[row.original.category]}
           </Badge>
         ),
       },
       {
         accessorKey: "vehicleClass",
-        header: "Class",
+        header: tabMessages.columns.class,
         cell: ({ row }) => (
           <Badge variant="secondary" className="capitalize">
-            {row.original.vehicleClass.replace(/_/g, " ")}
+            {messages.common.classLabels[row.original.vehicleClass]}
           </Badge>
         ),
       },
       {
         accessorKey: "passengerCapacity",
-        header: "Pax",
+        header: tabMessages.columns.passengers,
         cell: ({ row }) => row.original.passengerCapacity ?? "-",
       },
       {
         accessorKey: "isAccessible",
-        header: "Accessible",
-        cell: ({ row }) => (row.original.isAccessible ? "Yes" : "No"),
+        header: tabMessages.columns.accessible,
+        cell: ({ row }) => (row.original.isAccessible ? messages.common.yes : messages.common.no),
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: tabMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? messages.common.active : messages.common.inactive}
           </Badge>
         ),
       },
@@ -96,7 +99,7 @@ export function VehiclesTab() {
             <button
               type="button"
               onClick={() => {
-                if (confirm("Delete this vehicle?")) {
+                if (confirm(tabMessages.actions.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -108,15 +111,23 @@ export function VehiclesTab() {
         ),
       },
     ],
-    [refetch, remove],
+    [
+      messages.common.active,
+      messages.common.categoryLabels,
+      messages.common.classLabels,
+      messages.common.inactive,
+      messages.common.no,
+      messages.common.yes,
+      refetch,
+      remove,
+      tabMessages,
+    ],
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Vehicles attached to operators. Each vehicle is backed by a resource.
-        </p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -125,14 +136,14 @@ export function VehiclesTab() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Vehicle
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading vehicles..." : "No vehicles yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.none}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

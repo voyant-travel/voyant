@@ -12,6 +12,8 @@ import { Switch } from "@voyantjs/ui/components/switch"
 import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
+
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
 import { ProductCategoryCombobox } from "./product-category-combobox"
 
 type Mode = { kind: "create" } | { kind: "edit"; category: ProductCategoryRecord }
@@ -69,6 +71,7 @@ export function ProductCategoryForm({ mode, onSuccess, onCancel }: ProductCatego
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useProductCategoryMutation()
+  const messages = useProductsUiMessagesOrDefault()
 
   React.useEffect(() => {
     setState(initialState(mode))
@@ -82,12 +85,12 @@ export function ProductCategoryForm({ mode, onSuccess, onCancel }: ProductCatego
     setError(null)
 
     if (!state.name.trim()) {
-      setError("Category name is required.")
+      setError(messages.productCategoryForm.validation.nameRequired)
       return
     }
 
     if (!state.slug.trim()) {
-      setError("Category slug is required.")
+      setError(messages.productCategoryForm.validation.slugRequired)
       return
     }
 
@@ -98,7 +101,9 @@ export function ProductCategoryForm({ mode, onSuccess, onCancel }: ProductCatego
           : await update.mutateAsync({ id: mode.category.id, input: toPayload(state) })
       onSuccess?.(category)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save product category.")
+      setError(
+        err instanceof Error ? err.message : messages.productCategoryForm.validation.saveFailed,
+      )
     }
   }
 
@@ -106,52 +111,56 @@ export function ProductCategoryForm({ mode, onSuccess, onCancel }: ProductCatego
     <form data-slot="product-category-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-category-name">Name</Label>
+          <Label htmlFor="product-category-name">{messages.productCategoryForm.fields.name}</Label>
           <Input
             id="product-category-name"
             required
             autoFocus
             value={state.name}
             onChange={(event) => setState((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder="Adventure"
+            placeholder={messages.productCategoryForm.placeholders.name}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-category-slug">Slug</Label>
+          <Label htmlFor="product-category-slug">{messages.productCategoryForm.fields.slug}</Label>
           <Input
             id="product-category-slug"
             required
             value={state.slug}
             onChange={(event) => setState((prev) => ({ ...prev, slug: event.target.value }))}
-            placeholder="adventure"
+            placeholder={messages.productCategoryForm.placeholders.slug}
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Parent category</Label>
+        <Label>{messages.productCategoryForm.fields.parentCategory}</Label>
         <ProductCategoryCombobox
           value={state.parentId === "__none__" ? null : state.parentId}
           onChange={(value) => setState((prev) => ({ ...prev, parentId: value ?? "__none__" }))}
           excludeId={mode.kind === "edit" ? mode.category.id : null}
-          placeholder="Search parent category…"
+          placeholder={messages.productCategoryForm.placeholders.parentCategory}
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-category-description">Description</Label>
+        <Label htmlFor="product-category-description">
+          {messages.productCategoryForm.fields.description}
+        </Label>
         <Textarea
           id="product-category-description"
           value={state.description}
           onChange={(event) => setState((prev) => ({ ...prev, description: event.target.value }))}
-          placeholder="Category description..."
+          placeholder={messages.productCategoryForm.placeholders.description}
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-category-sort-order">Sort order</Label>
+          <Label htmlFor="product-category-sort-order">
+            {messages.productCategoryForm.fields.sortOrder}
+          </Label>
           <Input
             id="product-category-sort-order"
             type="number"
@@ -165,7 +174,7 @@ export function ProductCategoryForm({ mode, onSuccess, onCancel }: ProductCatego
             checked={state.active}
             onCheckedChange={(active) => setState((prev) => ({ ...prev, active }))}
           />
-          <Label>Active</Label>
+          <Label>{messages.productCategoryForm.fields.active}</Label>
         </div>
       </div>
 
@@ -174,14 +183,16 @@ export function ProductCategoryForm({ mode, onSuccess, onCancel }: ProductCatego
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "edit" ? "Save changes" : "Create category"}
+          {mode.kind === "edit"
+            ? messages.common.saveChanges
+            : messages.productCategoryForm.actions.createCategory}
         </Button>
       </div>
     </form>

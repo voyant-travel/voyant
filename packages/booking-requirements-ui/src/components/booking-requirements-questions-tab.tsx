@@ -6,6 +6,8 @@ import {
 import { Badge, Button } from "@voyantjs/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 
+import { useBookingRequirementsUiMessagesOrDefault } from "../i18n"
+
 export function BookingRequirementsQuestionsTab({
   rows,
   expandedIds,
@@ -29,26 +31,24 @@ export function BookingRequirementsQuestionsTab({
   onEditOption: (question: BookingQuestion, option: BookingQuestionOption) => void
   onDeleteOption: (option: BookingQuestionOption) => void
 }) {
+  const messages = useBookingRequirementsUiMessagesOrDefault()
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Custom Questions</h2>
-          <p className="text-sm text-muted-foreground">
-            Product-specific questions asked at booking (dietary needs, preferences, etc.).
-          </p>
+          <h2 className="text-lg font-semibold">{messages.questionsTab.title}</h2>
+          <p className="text-sm text-muted-foreground">{messages.questionsTab.description}</p>
         </div>
         <Button size="sm" onClick={onCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Question
+          {messages.questionsTab.addQuestion}
         </Button>
       </div>
 
       {rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No questions yet. Add one to collect custom data at booking.
-          </p>
+          <p className="text-sm text-muted-foreground">{messages.questionsTab.empty}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -67,7 +67,7 @@ export function BookingRequirementsQuestionsTab({
                     onClick={() => onToggle(question.id)}
                     className="text-sm text-muted-foreground hover:text-foreground"
                   >
-                    {expanded ? "Hide" : "Show"}
+                    {expanded ? messages.common.hide : messages.common.show}
                   </button>
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -77,15 +77,17 @@ export function BookingRequirementsQuestionsTab({
                           {question.code}
                         </span>
                       ) : null}
-                      <Badge variant="outline" className="capitalize">
-                        {question.fieldType.replace("_", " ")}
+                      <Badge variant="outline">
+                        {messages.common.questionFieldTypeLabels[question.fieldType]}
                       </Badge>
-                      <Badge variant="secondary" className="capitalize">
-                        {question.target.replace("_", " ")}
+                      <Badge variant="secondary">
+                        {messages.common.questionTargetLabels[question.target]}
                       </Badge>
-                      {question.isRequired ? <Badge variant="default">Required</Badge> : null}
+                      {question.isRequired ? (
+                        <Badge variant="default">{messages.common.required}</Badge>
+                      ) : null}
                       <Badge variant={question.active ? "default" : "outline"}>
-                        {question.active ? "Active" : "Inactive"}
+                        {question.active ? messages.common.active : messages.common.inactive}
                       </Badge>
                     </div>
                     {question.description ? (
@@ -93,10 +95,22 @@ export function BookingRequirementsQuestionsTab({
                     ) : null}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => onEdit(question)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEdit(question)}
+                      aria-label={messages.common.edit}
+                      title={messages.common.edit}
+                    >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => onDelete(question)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(question)}
+                      aria-label={messages.common.delete}
+                      title={messages.common.delete}
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -106,7 +120,7 @@ export function BookingRequirementsQuestionsTab({
                   <div className="border-t bg-muted/30 p-3">
                     {!hasChoices ? (
                       <p className="py-2 text-center text-xs text-muted-foreground">
-                        Choice options only apply to single-select / multi-select field types.
+                        {messages.questionsTab.choiceTypesHint}
                       </p>
                     ) : null}
 
@@ -114,7 +128,7 @@ export function BookingRequirementsQuestionsTab({
                       <>
                         <div className="mb-2 flex items-center justify-between">
                           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Choices
+                            {messages.questionsTab.choices}
                           </p>
                           <Button
                             variant="outline"
@@ -122,24 +136,34 @@ export function BookingRequirementsQuestionsTab({
                             onClick={() => onCreateOption(question, nextSort)}
                           >
                             <Plus className="mr-1 h-3 w-3" />
-                            Add Choice
+                            {messages.questionsTab.addChoice}
                           </Button>
                         </div>
 
                         {options.length === 0 ? (
                           <p className="py-2 text-center text-xs text-muted-foreground">
-                            No choices yet.
+                            {messages.questionsTab.noChoices}
                           </p>
                         ) : (
                           <div className="rounded border bg-background">
                             <table className="w-full text-xs">
                               <thead>
                                 <tr className="border-b text-muted-foreground">
-                                  <th className="p-2 text-left font-medium">Sort</th>
-                                  <th className="p-2 text-left font-medium">Value</th>
-                                  <th className="p-2 text-left font-medium">Label</th>
-                                  <th className="p-2 text-left font-medium">Default</th>
-                                  <th className="p-2 text-left font-medium">Status</th>
+                                  <th className="p-2 text-left font-medium">
+                                    {messages.questionsTab.columns.sort}
+                                  </th>
+                                  <th className="p-2 text-left font-medium">
+                                    {messages.questionsTab.columns.value}
+                                  </th>
+                                  <th className="p-2 text-left font-medium">
+                                    {messages.questionsTab.columns.label}
+                                  </th>
+                                  <th className="p-2 text-left font-medium">
+                                    {messages.questionsTab.columns.default}
+                                  </th>
+                                  <th className="p-2 text-left font-medium">
+                                    {messages.questionsTab.columns.status}
+                                  </th>
                                   <th className="w-16 p-2" />
                                 </tr>
                               </thead>
@@ -153,14 +177,16 @@ export function BookingRequirementsQuestionsTab({
                                     <td className="p-2">{option.label}</td>
                                     <td className="p-2">
                                       {option.isDefault ? (
-                                        <Badge variant="secondary">Default</Badge>
+                                        <Badge variant="secondary">{messages.common.default}</Badge>
                                       ) : (
                                         <span className="text-muted-foreground">-</span>
                                       )}
                                     </td>
                                     <td className="p-2">
                                       <Badge variant={option.active ? "default" : "outline"}>
-                                        {option.active ? "Active" : "Inactive"}
+                                        {option.active
+                                          ? messages.common.active
+                                          : messages.common.inactive}
                                       </Badge>
                                     </td>
                                     <td className="p-2">
@@ -168,6 +194,8 @@ export function BookingRequirementsQuestionsTab({
                                         <button
                                           type="button"
                                           onClick={() => onEditOption(question, option)}
+                                          aria-label={messages.common.edit}
+                                          title={messages.common.edit}
                                           className="text-muted-foreground hover:text-foreground"
                                         >
                                           <Pencil className="h-3 w-3" />
@@ -175,6 +203,8 @@ export function BookingRequirementsQuestionsTab({
                                         <button
                                           type="button"
                                           onClick={() => onDeleteOption(option)}
+                                          aria-label={messages.common.delete}
+                                          title={messages.common.delete}
                                           className="text-muted-foreground hover:text-destructive"
                                         >
                                           <Trash2 className="h-3 w-3" />

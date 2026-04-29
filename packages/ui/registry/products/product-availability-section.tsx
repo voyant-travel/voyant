@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import { formatMessage, useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import {
   formatCapacity,
   formatDuration,
@@ -44,13 +45,14 @@ export interface ProductAvailabilitySectionProps {
 export function ProductAvailabilitySection({
   productId,
   pageSize = 100,
-  title = "Availability",
-  description = "Manage one-off departures and recurring schedules for this product.",
+  title,
+  description,
 }: ProductAvailabilitySectionProps) {
   const [departureDialogOpen, setDepartureDialogOpen] = React.useState(false)
   const [scheduleDialogOpen, setScheduleDialogOpen] = React.useState(false)
   const [editingSlot, setEditingSlot] = React.useState<AvailabilitySlotRecord | undefined>()
   const [editingRule, setEditingRule] = React.useState<AvailabilityRuleRecord | undefined>()
+  const messages = useRegistryProductsMessagesOrDefault()
 
   const {
     data: slotsData,
@@ -82,8 +84,10 @@ export function ProductAvailabilitySection({
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
+            <CardTitle>{title ?? messages.productAvailability.title}</CardTitle>
+            <CardDescription>
+              {description ?? messages.productAvailability.description}
+            </CardDescription>
           </div>
           <Button
             onClick={() => {
@@ -92,7 +96,7 @@ export function ProductAvailabilitySection({
             }}
           >
             <Plus className="mr-2 size-4" aria-hidden="true" />
-            New departure
+            {messages.productAvailability.createDeparture}
           </Button>
         </CardHeader>
         <CardContent>
@@ -101,22 +105,24 @@ export function ProductAvailabilitySection({
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
             </div>
           ) : isSlotsError ? (
-            <p className="text-sm text-destructive">Failed to load departures.</p>
+            <p className="text-sm text-destructive">
+              {messages.productAvailability.loadingDeparturesError}
+            </p>
           ) : slots.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No departures yet. Add a one-off departure or create a recurring schedule below.
+              {messages.productAvailability.emptyDepartures}
             </p>
           ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Start</TableHead>
-                    <TableHead>End</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Capacity</TableHead>
-                    <TableHead>Timezone</TableHead>
+                    <TableHead>{messages.productAvailability.columns.start}</TableHead>
+                    <TableHead>{messages.productAvailability.columns.end}</TableHead>
+                    <TableHead>{messages.productAvailability.columns.duration}</TableHead>
+                    <TableHead>{messages.productAvailability.columns.status}</TableHead>
+                    <TableHead>{messages.productAvailability.columns.capacity}</TableHead>
+                    <TableHead>{messages.productAvailability.columns.timezone}</TableHead>
                     <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
@@ -138,19 +144,20 @@ export function ProductAvailabilitySection({
                             </div>
                           </>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground">{messages.common.none}</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs">{formatDuration(slot)}</TableCell>
+                      <TableCell className="text-xs">
+                        {formatDuration(slot, messages.productAvailability)}
+                      </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={slotStatusVariant[slot.status] ?? "outline"}
-                          className="capitalize"
-                        >
-                          {slot.status.replace("_", " ")}
+                        <Badge variant={slotStatusVariant[slot.status] ?? "outline"}>
+                          {messages.productAvailability.statusLabels[slot.status]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{formatCapacity(slot)}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {formatCapacity(slot, messages.productAvailability)}
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {slot.timezone}
                       </TableCell>
@@ -170,7 +177,7 @@ export function ProductAvailabilitySection({
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => {
-                              if (confirm("Delete this departure?")) {
+                              if (confirm(messages.productAvailability.deleteDepartureConfirm)) {
                                 removeSlot.mutate(slot.id)
                               }
                             }}
@@ -193,11 +200,9 @@ export function ProductAvailabilitySection({
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
               <Repeat className="size-4" aria-hidden="true" />
-              Recurring schedules
+              {messages.productAvailability.titleSchedules}
             </CardTitle>
-            <CardDescription>
-              Define rules that can generate departures automatically.
-            </CardDescription>
+            <CardDescription>{messages.productAvailability.descriptionSchedules}</CardDescription>
           </div>
           <Button
             variant="outline"
@@ -207,7 +212,7 @@ export function ProductAvailabilitySection({
             }}
           >
             <Plus className="mr-2 size-4" aria-hidden="true" />
-            New schedule
+            {messages.productAvailability.createSchedule}
           </Button>
         </CardHeader>
         <CardContent>
@@ -216,10 +221,12 @@ export function ProductAvailabilitySection({
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
             </div>
           ) : isRulesError ? (
-            <p className="text-sm text-destructive">Failed to load schedules.</p>
+            <p className="text-sm text-destructive">
+              {messages.productAvailability.loadingSchedulesError}
+            </p>
           ) : rules.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No recurring schedules. Define a rule to auto-generate departures.
+              {messages.productAvailability.emptySchedules}
             </p>
           ) : (
             <div className="flex flex-col gap-2">
@@ -232,12 +239,29 @@ export function ProductAvailabilitySection({
                     <div className="flex items-center gap-2">
                       <CalendarClock className="size-4 text-muted-foreground" aria-hidden="true" />
                       <span className="font-medium">{describeRRule(rule.recurrenceRule)}</span>
-                      {!rule.active ? <Badge variant="outline">Inactive</Badge> : null}
+                      {!rule.active ? (
+                        <Badge variant="outline">
+                          {messages.productAvailability.inactiveBadge}
+                        </Badge>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Max {rule.maxCapacity} pax · {rule.timezone}
-                      {rule.cutoffMinutes != null ? ` · cutoff ${rule.cutoffMinutes}m` : ""}
-                      {rule.minTotalPax != null ? ` · min ${rule.minTotalPax} pax` : ""}
+                      {formatMessage(messages.productAvailability.scheduleSummary, {
+                        maxCapacity: rule.maxCapacity,
+                        timezone: rule.timezone,
+                        cutoffSuffix:
+                          rule.cutoffMinutes != null
+                            ? formatMessage(messages.productAvailability.cutoffSummary, {
+                                minutes: rule.cutoffMinutes,
+                              })
+                            : "",
+                        minPaxSuffix:
+                          rule.minTotalPax != null
+                            ? formatMessage(messages.productAvailability.minPaxSummary, {
+                                count: rule.minTotalPax,
+                              })
+                            : "",
+                      })}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -255,7 +279,7 @@ export function ProductAvailabilitySection({
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => {
-                        if (confirm("Delete this recurring schedule?")) {
+                        if (confirm(messages.productAvailability.deleteScheduleConfirm)) {
                           removeRule.mutate(rule.id)
                         }
                       }}

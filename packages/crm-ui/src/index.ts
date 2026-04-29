@@ -37,3 +37,17 @@ export {
   PersonList,
   type PersonListProps,
 } from "./components/person-list"
+export {
+  type CrmUiMessageOverrides,
+  type CrmUiMessages,
+  CrmUiMessagesProvider,
+  crmUiEn,
+  crmUiMessageDefinitions,
+  crmUiRo,
+  getCrmUiI18n,
+  resolveCrmUiMessages,
+  useCrmUiI18n,
+  useCrmUiI18nOrDefault,
+  useCrmUiMessages,
+  useCrmUiMessagesOrDefault,
+} from "./i18n"

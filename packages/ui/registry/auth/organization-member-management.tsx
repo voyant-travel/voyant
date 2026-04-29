@@ -33,6 +33,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import { useRegistryAuthI18nOrDefault, useRegistryAuthMessagesOrDefault } from "./i18n"
+
 export interface OrganizationMemberManagementProps {
   organizationId?: string
   availableRoles?: string[]
@@ -47,14 +49,6 @@ function getPrimaryRole(value: OrganizationMember["role"] | OrganizationInvitati
   return Array.isArray(value) ? (value[0] ?? "member") : value
 }
 
-function formatRole(value: OrganizationMember["role"] | OrganizationInvitation["role"]) {
-  return Array.isArray(value) ? value.join(", ") : value
-}
-
-function formatExpiry(value: string) {
-  return new Date(value).toLocaleDateString()
-}
-
 export function OrganizationMemberManagement({
   organizationId,
   availableRoles = ["owner", "admin", "member"],
@@ -64,6 +58,9 @@ export function OrganizationMemberManagement({
   allowRemove = true,
   allowCancelInvitation = true,
 }: OrganizationMemberManagementProps = {}) {
+  const { formatDate } = useRegistryAuthI18nOrDefault()
+  const messages = useRegistryAuthMessagesOrDefault().organizationMemberManagement
+  const roleLabels = useRegistryAuthMessagesOrDefault().common.roleLabels
   const [inviteEmail, setInviteEmail] = React.useState("")
   const [inviteRole, setInviteRole] = React.useState(defaultInviteRole)
   const [inviteError, setInviteError] = React.useState<string | null>(null)
@@ -88,18 +85,32 @@ export function OrganizationMemberManagement({
   const members = membersQuery.data?.members ?? []
   const invitations = invitationsQuery.data ?? []
   const isLoading = workspacePending || (resolvedOrganizationId && membersQuery.isPending)
+  const formatRoleLabel = React.useCallback(
+    (role: string) => {
+      if (role === "owner" || role === "admin" || role === "member") {
+        return roleLabels[role]
+      }
+      return role
+    },
+    [roleLabels],
+  )
+  const formatRoleValue = React.useCallback(
+    (value: OrganizationMember["role"] | OrganizationInvitation["role"]) =>
+      Array.isArray(value) ? value.map(formatRoleLabel).join(", ") : formatRoleLabel(value),
+    [formatRoleLabel],
+  )
 
   const handleInvite = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setInviteError(null)
 
     if (!resolvedOrganizationId) {
-      setInviteError("No active organization selected.")
+      setInviteError(messages.errors.noOrganizationSelected)
       return
     }
 
     if (!inviteEmail.trim()) {
-      setInviteError("Email is required.")
+      setInviteError(messages.errors.emailRequired)
       return
     }
 
@@ -112,7 +123,7 @@ export function OrganizationMemberManagement({
       setInviteEmail("")
       setInviteRole(defaultInviteRole)
     } catch (error) {
-      setInviteError(error instanceof Error ? error.message : "Failed to send invitation.")
+      setInviteError(error instanceof Error ? error.message : messages.errors.inviteFailed)
     }
   }
 
@@ -122,11 +133,9 @@ export function OrganizationMemberManagement({
         <div className="space-y-1">
           <CardTitle className="flex items-center gap-2">
             <Users className="size-4" aria-hidden="true" />
-            Team members
+            {messages.title}
           </CardTitle>
-          <CardDescription>
-            Manage organization members and pending invitations from the shared auth contract.
-          </CardDescription>
+          <CardDescription>{messages.description}</CardDescription>
         </div>
         {workspace?.activeOrganization ? (
           <Badge variant="secondary">{workspace.activeOrganization.name}</Badge>
@@ -136,20 +145,23 @@ export function OrganizationMemberManagement({
         {allowInvite ? (
           <form onSubmit={handleInvite} className="grid gap-3 rounded-md border p-4 sm:grid-cols-4">
             <div className="sm:col-span-2">
-              <Label htmlFor="organization-member-management-email">Invite by email</Label>
+              <Label htmlFor="organization-member-management-email">{messages.inviteByEmail}</Label>
               <Input
                 id="organization-member-management-email"
                 type="email"
-                placeholder="teammate@example.com"
+                placeholder={messages.emailPlaceholder}
                 value={inviteEmail}
                 onChange={(event) => setInviteEmail(event.target.value)}
                 disabled={!resolvedOrganizationId || invite.isPending}
               />
             </div>
             <div>
-              <Label htmlFor="organization-member-management-role">Role</Label>
+              <Label htmlFor="organization-member-management-role">{messages.role}</Label>
               <Select
-                items={availableRoles.map((role) => ({ label: role, value: role }))}
+                items={availableRoles.map((role) => ({
+                  label: formatRoleLabel(role),
+                  value: role,
+                }))}
                 value={inviteRole}
                 onValueChange={setInviteRole}
                 disabled={!resolvedOrganizationId || invite.isPending}
@@ -160,7 +172,7 @@ export function OrganizationMemberManagement({
                 <SelectContent>
                   {availableRoles.map((role) => (
                     <SelectItem key={role} value={role}>
-                      {role}
+                      {formatRoleLabel(role)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -177,7 +189,7 @@ export function OrganizationMemberManagement({
                 ) : (
                   <UserPlus className="mr-2 size-4" aria-hidden="true" />
                 )}
-                Invite
+                {messages.invite}
               </Button>
             </div>
             {inviteError ? (
@@ -188,7 +200,7 @@ export function OrganizationMemberManagement({
 
         {!resolvedOrganizationId ? (
           <p className="rounded-md border px-4 py-6 text-sm text-muted-foreground">
-            Select an organization to manage members.
+            {messages.emptyOrganization}
           </p>
         ) : isLoading ? (
           <div className="flex min-h-24 items-center justify-center rounded-md border">
@@ -200,9 +212,9 @@ export function OrganizationMemberManagement({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead>{messages.members.member}</TableHead>
+                    <TableHead>{messages.members.role}</TableHead>
+                    <TableHead>{messages.members.joined}</TableHead>
                     <TableHead className="w-40" />
                   </TableRow>
                 </TableHeader>
@@ -213,7 +225,7 @@ export function OrganizationMemberManagement({
                         colSpan={4}
                         className="h-20 text-center text-sm text-muted-foreground"
                       >
-                        No members found.
+                        {messages.members.none}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -248,17 +260,17 @@ export function OrganizationMemberManagement({
                               <SelectContent>
                                 {availableRoles.map((role) => (
                                   <SelectItem key={role} value={role}>
-                                    {role}
+                                    {formatRoleLabel(role)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                           ) : (
-                            <Badge variant="outline">{formatRole(member.role)}</Badge>
+                            <Badge variant="outline">{formatRoleValue(member.role)}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {formatExpiry(member.createdAt)}
+                          {formatDate(member.createdAt)}
                         </TableCell>
                         <TableCell>
                           {allowRemove ? (
@@ -268,9 +280,7 @@ export function OrganizationMemberManagement({
                                 size="icon-sm"
                                 disabled={remove.isPending}
                                 onClick={() => {
-                                  if (
-                                    confirm(`Remove ${member.user.email} from this organization?`)
-                                  ) {
+                                  if (confirm(messages.members.removeConfirm)) {
                                     void remove.mutateAsync({
                                       memberIdOrEmail: member.user.email,
                                       organizationId: resolvedOrganizationId,
@@ -294,9 +304,9 @@ export function OrganizationMemberManagement({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Pending invitations</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Expires</TableHead>
+                    <TableHead>{messages.invitations.title}</TableHead>
+                    <TableHead>{messages.invitations.role}</TableHead>
+                    <TableHead>{messages.invitations.expires}</TableHead>
                     <TableHead className="w-40" />
                   </TableRow>
                 </TableHeader>
@@ -307,7 +317,7 @@ export function OrganizationMemberManagement({
                         colSpan={4}
                         className="h-20 text-center text-sm text-muted-foreground"
                       >
-                        No pending invitations.
+                        {messages.invitations.none}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -320,10 +330,10 @@ export function OrganizationMemberManagement({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{formatRole(invitation.role)}</Badge>
+                          <Badge variant="outline">{formatRoleValue(invitation.role)}</Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {formatExpiry(invitation.expiresAt)}
+                          {formatDate(invitation.expiresAt)}
                         </TableCell>
                         <TableCell>
                           {allowCancelInvitation ? (

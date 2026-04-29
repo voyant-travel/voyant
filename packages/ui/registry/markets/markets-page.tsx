@@ -4,9 +4,11 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { type MarketRecord, useMarketMutation, useMarkets } from "@voyantjs/markets-react"
 import { Globe, Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useMarketsUiMessagesOrDefault } from "../../../markets-ui/src/index"
+
+import { useRegistryMarketsMessagesOrDefault } from "./i18n"
 import { MarketCurrenciesTab } from "./market-currencies-tab"
 import { MarketDialog } from "./market-dialog"
 import { MarketLocalesTab } from "./market-locales-tab"
@@ -14,6 +16,8 @@ import { MarketLocalesTab } from "./market-locales-tab"
 const PAGE_SIZE = 25
 
 export function MarketsPage() {
+  const sharedMessages = useMarketsUiMessagesOrDefault()
+  const pageMessages = useRegistryMarketsMessagesOrDefault().page
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<MarketRecord | undefined>()
   const [selectedMarketId, setSelectedMarketId] = useState("")
@@ -31,17 +35,17 @@ export function MarketsPage() {
     () => [
       {
         accessorKey: "code",
-        header: "Code",
+        header: pageMessages.columns.code,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span>,
       },
       {
         accessorKey: "name",
-        header: "Name",
+        header: pageMessages.columns.name,
         cell: ({ row }) => row.original.name,
       },
       {
         accessorKey: "countryCode",
-        header: "Country",
+        header: pageMessages.columns.country,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.countryCode ?? "-"}
@@ -50,7 +54,7 @@ export function MarketsPage() {
       },
       {
         accessorKey: "defaultLanguageTag",
-        header: "Language",
+        header: pageMessages.columns.language,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.defaultLanguageTag}
@@ -59,7 +63,7 @@ export function MarketsPage() {
       },
       {
         accessorKey: "defaultCurrency",
-        header: "Currency",
+        header: pageMessages.columns.currency,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.defaultCurrency}
@@ -68,10 +72,10 @@ export function MarketsPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: pageMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.status === "active" ? "default" : "outline"}>
-            {row.original.status}
+            {sharedMessages.common.marketStatusLabels[row.original.status]}
           </Badge>
         ),
       },
@@ -85,7 +89,7 @@ export function MarketsPage() {
               onClick={() => setSelectedMarketId(row.original.id)}
               className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
             >
-              Configure
+              {pageMessages.columns.configure}
             </button>
             <button
               type="button"
@@ -100,7 +104,7 @@ export function MarketsPage() {
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete market "${row.original.name}"?`)) {
+                if (confirm(pageMessages.actions.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -112,21 +116,19 @@ export function MarketsPage() {
         ),
       },
     ],
-    [refetch, remove],
+    [pageMessages, refetch, remove, sharedMessages.common.marketStatusLabels],
   )
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center gap-3">
         <Globe className="h-5 w-5 text-muted-foreground" />
-        <h1 className="text-2xl font-bold tracking-tight">Markets</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>
       </div>
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Geographic markets with their default currency, language and tax context.
-          </p>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
           <Button
             size="sm"
             onClick={() => {
@@ -135,14 +137,14 @@ export function MarketsPage() {
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Market
+            {pageMessages.addMarket}
           </Button>
         </div>
 
         <DataTable
           columns={columns}
           data={rows}
-          emptyMessage={isPending ? "Loading markets..." : "No markets yet."}
+          emptyMessage={isPending ? pageMessages.empty.loading : pageMessages.empty.noMarkets}
           pagination={{
             pageIndex,
             pageSize: PAGE_SIZE,
@@ -156,13 +158,15 @@ export function MarketsPage() {
         <div className="flex flex-col gap-3 rounded-md border bg-background p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Configuring</p>
+              <p className="text-xs uppercase text-muted-foreground">
+                {pageMessages.selected.title}
+              </p>
               <p className="font-medium">
                 {selectedMarket.name} ({selectedMarket.code})
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setSelectedMarketId("")}>
-              Close
+              {pageMessages.selected.close}
             </Button>
           </div>
           <div className="flex flex-col gap-4">

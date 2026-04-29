@@ -16,6 +16,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
+
 type ItineraryData = {
   id: string
   name: string
@@ -46,6 +48,7 @@ export function ProductItineraryDialog({
   const [name, setName] = React.useState("")
   const [isDefault, setIsDefault] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   const { create, update } = useProductItineraryMutation()
   const pending = create.isPending || update.isPending
@@ -68,7 +71,7 @@ export function ProductItineraryDialog({
 
     const trimmed = name.trim()
     if (!trimmed) {
-      setError("Name is required")
+      setError(messages.productItineraryDialog.validation.nameRequired)
       return
     }
 
@@ -99,7 +102,9 @@ export function ProductItineraryDialog({
       onOpenChange(false)
     } catch (submissionError) {
       setError(
-        submissionError instanceof Error ? submissionError.message : "Failed to save itinerary.",
+        submissionError instanceof Error
+          ? submissionError.message
+          : messages.productItineraryDialog.validation.saveFailed,
       )
     }
   }
@@ -108,22 +113,28 @@ export function ProductItineraryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-itinerary-dialog" className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Rename itinerary" : "New itinerary"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.productItineraryDialog.titles.edit
+              : messages.productItineraryDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Update the itinerary name and default state."
-              : "Add another itinerary variant for this product."}
+              ? messages.productItineraryDialog.descriptions.edit
+              : messages.productItineraryDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-itinerary-name">Name</Label>
+            <Label htmlFor="product-itinerary-name">
+              {messages.productItineraryDialog.fields.name}
+            </Label>
             <Input
               id="product-itinerary-name"
               autoFocus
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="e.g. Main itinerary, Family variant"
+              placeholder={messages.productItineraryDialog.placeholders.name}
             />
           </div>
           <div className="flex items-start gap-2">
@@ -135,15 +146,15 @@ export function ProductItineraryDialog({
             />
             <div className="flex flex-col gap-1">
               <Label htmlFor="product-itinerary-default" className="text-sm font-normal">
-                Set as default itinerary
+                {messages.productItineraryDialog.fields.defaultItinerary}
               </Label>
               {defaultLocked ? (
                 <p className="text-xs text-muted-foreground">
-                  This is the default. Set another itinerary as default to change it.
+                  {messages.productItineraryDialog.fields.notesDefaultLocked}
                 </p>
               ) : isFirstItinerary ? (
                 <p className="text-xs text-muted-foreground">
-                  The first itinerary is automatically the default.
+                  {messages.productItineraryDialog.fields.notesFirstDefault}
                 </p>
               ) : null}
             </div>
@@ -151,11 +162,13 @@ export function ProductItineraryDialog({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <div className="flex items-center justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={pending}>
               {pending ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
-              {isEditing ? "Save changes" : "Create itinerary"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.productItineraryDialog.actions.createItinerary}
             </Button>
           </div>
         </form>

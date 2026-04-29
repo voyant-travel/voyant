@@ -30,6 +30,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import { useIdentityUiMessagesOrDefault } from "../i18n"
+
 const NAMED_CONTACT_ROLES = [
   "general",
   "primary",
@@ -45,18 +47,21 @@ const NAMED_CONTACT_ROLES = [
 
 type NamedContactRole = (typeof NAMED_CONTACT_ROLES)[number]
 
-const formSchema = z.object({
-  role: z.enum(NAMED_CONTACT_ROLES),
-  name: z.string().min(1, "Name is required").max(255),
-  title: z.string().optional().nullable(),
-  email: z.string().optional().nullable(),
-  phone: z.string().optional().nullable(),
-  isPrimary: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
+function createFormSchema(messages: ReturnType<typeof useIdentityUiMessagesOrDefault>) {
+  return z.object({
+    role: z.enum(NAMED_CONTACT_ROLES),
+    name: z.string().min(1, messages.namedContactDialog.validation.nameRequired).max(255),
+    title: z.string().optional().nullable(),
+    email: z.string().optional().nullable(),
+    phone: z.string().optional().nullable(),
+    isPrimary: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface NamedContactDialogProps {
   open: boolean
@@ -77,6 +82,8 @@ export function NamedContactDialog({
 }: NamedContactDialogProps) {
   const isEditing = Boolean(namedContact)
   const { create, update } = useNamedContactMutation()
+  const messages = useIdentityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -143,16 +150,20 @@ export function NamedContactDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Named Contact" : "Add Named Contact"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.namedContactDialog.titles.edit
+              : messages.namedContactDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Role</Label>
+                <Label>{messages.namedContactDialog.fields.role}</Label>
                 <Select
                   items={NAMED_CONTACT_ROLES.map((x) => ({
-                    label: x.replace(/_/g, " "),
+                    label: messages.common.namedContactRoleLabels[x],
                     value: x,
                   }))}
                   value={form.watch("role")}
@@ -163,8 +174,8 @@ export function NamedContactDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {NAMED_CONTACT_ROLES.map((role) => (
-                      <SelectItem key={role} value={role} className="capitalize">
-                        {role.replace(/_/g, " ")}
+                      <SelectItem key={role} value={role}>
+                        {messages.common.namedContactRoleLabels[role]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -175,47 +186,56 @@ export function NamedContactDialog({
                   checked={form.watch("isPrimary")}
                   onCheckedChange={(value) => form.setValue("isPrimary", value)}
                 />
-                <Label>Primary</Label>
+                <Label>{messages.common.primary}</Label>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Jane Doe" />
+                <Label>{messages.namedContactDialog.fields.name}</Label>
+                <Input
+                  {...form.register("name")}
+                  placeholder={messages.namedContactDialog.placeholders.name}
+                />
                 {form.formState.errors.name ? (
                   <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Title</Label>
-                <Input {...form.register("title")} placeholder="Director of Sales" />
+                <Label>{messages.namedContactDialog.fields.title}</Label>
+                <Input
+                  {...form.register("title")}
+                  placeholder={messages.namedContactDialog.placeholders.title}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Email</Label>
-                <Input {...form.register("email")} placeholder="jane@example.com" />
+                <Label>{messages.namedContactDialog.fields.email}</Label>
+                <Input
+                  {...form.register("email")}
+                  placeholder={messages.namedContactDialog.placeholders.email}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Phone</Label>
+                <Label>{messages.namedContactDialog.fields.phone}</Label>
                 <Input {...form.register("phone")} />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.namedContactDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Named Contact"}
+              {isEditing ? messages.common.saveChanges : messages.namedContactDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

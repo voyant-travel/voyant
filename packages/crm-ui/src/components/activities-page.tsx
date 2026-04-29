@@ -15,44 +15,43 @@ import {
 import { Loader2, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { useCrmUiI18nOrDefault } from "../i18n"
+import type { CrmActivityStatus, CrmActivityType } from "../i18n/messages"
 import { CreateActivityDialog } from "./create-activity-dialog"
 
-const ACTIVITY_TYPE_OPTIONS = [
-  { value: "note", label: "Note" },
-  { value: "call", label: "Call" },
-  { value: "email", label: "Email" },
-  { value: "meeting", label: "Meeting" },
-  { value: "task", label: "Task" },
-  { value: "follow_up", label: "Follow-up" },
-] as const
-
-const ACTIVITY_STATUS_OPTIONS = [
-  { value: "planned", label: "Planned" },
-  { value: "done", label: "Done" },
-  { value: "cancelled", label: "Cancelled" },
-] as const
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return "—"
-  return new Date(value).toLocaleDateString(undefined, {
+function formatDate(
+  value: string | null | undefined,
+  i18n: ReturnType<typeof useCrmUiI18nOrDefault>,
+): string {
+  if (!value) return i18n.messages.common.none
+  return i18n.formatDate(value, {
     year: "numeric",
     month: "short",
     day: "numeric",
   })
 }
 
-function formatRelative(value: string): string {
+function formatRelative(
+  value: string,
+  messages: ReturnType<typeof useCrmUiI18nOrDefault>["messages"],
+): string {
   const date = new Date(value)
   const diff = Date.now() - date.getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  if (days < 1) return "today"
-  if (days < 7) return `${days}d ago`
-  if (days < 30) return `${Math.floor(days / 7)}w ago`
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`
-  return `${Math.floor(days / 365)}y ago`
+  if (days < 1) return messages.common.today
+  if (days < 7) return messages.common.relativeTime.daysAgo.replace("{count}", String(days))
+  if (days < 30) {
+    return messages.common.relativeTime.weeksAgo.replace("{count}", String(Math.floor(days / 7)))
+  }
+  if (days < 365) {
+    return messages.common.relativeTime.monthsAgo.replace("{count}", String(Math.floor(days / 30)))
+  }
+  return messages.common.relativeTime.yearsAgo.replace("{count}", String(Math.floor(days / 365)))
 }
 
 export function ActivitiesPage() {
+  const i18n = useCrmUiI18nOrDefault()
+  const { messages } = i18n
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -64,6 +63,18 @@ export function ActivitiesPage() {
   })
 
   const activities = data?.data ?? []
+  const activityTypeOptions = Object.entries(messages.common.activityTypeLabels).map(
+    ([value, label]) => ({
+      value,
+      label,
+    }),
+  )
+  const activityStatusOptions = Object.entries(messages.common.activityStatusLabels).map(
+    ([value, label]) => ({
+      value,
+      label,
+    }),
+  )
 
   const grouped = useMemo(() => {
     const groups = new Map<string, ActivityRecord[]>()
@@ -80,25 +91,23 @@ export function ActivitiesPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Activities</h1>
-          <p className="text-sm text-muted-foreground">
-            Calls, emails, meetings, tasks, and follow-ups across your CRM.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{messages.activitiesPage.title}</h1>
+          <p className="text-sm text-muted-foreground">{messages.activitiesPage.description}</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 size-4" />
-          New activity
+          {messages.activitiesPage.create}
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value ?? "all")}>
           <SelectTrigger className="w-[180px] text-sm">
-            <SelectValue placeholder="Type" />
+            <SelectValue placeholder={messages.activitiesPage.filters.type} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {ACTIVITY_TYPE_OPTIONS.map((option) => (
+            <SelectItem value="all">{messages.activitiesPage.filters.allTypes}</SelectItem>
+            {activityTypeOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -107,11 +116,11 @@ export function ActivitiesPage() {
         </Select>
         <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? "all")}>
           <SelectTrigger className="w-[180px] text-sm">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={messages.activitiesPage.filters.status} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            {ACTIVITY_STATUS_OPTIONS.map((option) => (
+            <SelectItem value="all">{messages.activitiesPage.filters.allStatuses}</SelectItem>
+            {activityStatusOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -126,7 +135,7 @@ export function ActivitiesPage() {
         </div>
       ) : activities.length === 0 ? (
         <Card className="flex items-center justify-center p-8 text-center text-sm text-muted-foreground">
-          No activities match your filters.
+          {messages.activitiesPage.empty}
         </Card>
       ) : (
         <div className="flex flex-col gap-6">
@@ -134,7 +143,7 @@ export function ActivitiesPage() {
             <Card key={day}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">
-                  {formatDate(rows[0]?.createdAt ?? null)} ({rows.length})
+                  {formatDate(rows[0]?.createdAt ?? null, i18n)} ({rows.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -153,14 +162,18 @@ export function ActivitiesPage() {
                         <div className="flex flex-col items-end gap-1">
                           <div className="flex gap-1">
                             <Badge variant="outline" className="capitalize">
-                              {activity.type}
+                              {messages.common.activityTypeLabels[
+                                activity.type as CrmActivityType
+                              ] ?? activity.type}
                             </Badge>
                             <Badge variant="secondary" className="capitalize">
-                              {activity.status}
+                              {messages.common.activityStatusLabels[
+                                activity.status as CrmActivityStatus
+                              ] ?? activity.status}
                             </Badge>
                           </div>
                           <span className="text-xs text-muted-foreground">
-                            {formatRelative(activity.createdAt)}
+                            {formatRelative(activity.createdAt, messages)}
                           </span>
                         </div>
                       </div>

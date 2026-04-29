@@ -53,20 +53,16 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import {
+  formatMessage,
+  useRegistryProductsI18nOrDefault,
+  useRegistryProductsMessagesOrDefault,
+} from "./i18n/provider"
 import { ProductDayDialog } from "./product-day-dialog"
 import { ProductDayServiceDialog } from "./product-day-service-dialog"
 import type { ProductDayServiceSupplierPickerRenderer } from "./product-day-service-form"
 import { ProductItineraryDialog } from "./product-itinerary-dialog"
 import { ProductMediaSection, type ProductMediaUploadHandler } from "./product-media-section"
-
-const serviceTypeLabels: Record<ProductDayServiceRecord["serviceType"], string> = {
-  accommodation: "Accommodation",
-  transfer: "Transfer",
-  experience: "Experience",
-  guide: "Guide",
-  meal: "Meal",
-  other: "Other",
-}
 
 export interface ProductItinerarySectionProps {
   productId: string
@@ -85,10 +81,10 @@ export interface ProductItinerarySectionProps {
 
 export function ProductItinerarySection({
   productId,
-  title = "Itinerary",
-  titleMultiple = "Itineraries",
-  description = "Manage day-by-day structure and attached services for this product.",
-  descriptionMultiple = "Manage the itinerary variants for this product.",
+  title,
+  titleMultiple,
+  description,
+  descriptionMultiple,
   uploadMedia,
   renderSupplierServicePicker,
   renderDayMediaSection,
@@ -106,6 +102,7 @@ export function ProductItinerarySection({
   >()
   const [deleteItineraryTarget, setDeleteItineraryTarget] =
     React.useState<ProductItineraryRecord | null>(null)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   const itineraryQuery = useProductItineraries(productId)
   const itineraryMutation = useProductItineraryMutation()
@@ -187,8 +184,16 @@ export function ProductItinerarySection({
     <Card data-slot="product-itinerary-section">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <CardTitle>{hasMultiple ? titleMultiple : title}</CardTitle>
-          <CardDescription>{hasMultiple ? descriptionMultiple : description}</CardDescription>
+          <CardTitle>
+            {hasMultiple
+              ? (titleMultiple ?? messages.productItinerarySection.titles.multiple)
+              : (title ?? messages.productItinerarySection.titles.default)}
+          </CardTitle>
+          <CardDescription>
+            {hasMultiple
+              ? (descriptionMultiple ?? messages.productItinerarySection.descriptions.multiple)
+              : (description ?? messages.productItinerarySection.descriptions.default)}
+          </CardDescription>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -199,29 +204,33 @@ export function ProductItinerarySection({
             }}
           >
             <Plus className="mr-2 size-4" aria-hidden="true" />
-            Add day
+            {messages.productItinerarySection.actions.addDay}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Itinerary options">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={messages.productItinerarySection.aria.itineraryOptions}
+              >
                 <MoreHorizontal className="size-4" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={openCreateItinerary}>
                 <Plus className="size-4" aria-hidden="true" />
-                New itinerary
+                {messages.productItinerarySection.actions.newItinerary}
               </DropdownMenuItem>
               {selectedItinerary && !hasMultiple ? (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => openRenameItinerary(selectedItinerary)}>
                     <Pencil className="size-4" aria-hidden="true" />
-                    Rename itinerary
+                    {messages.productItinerarySection.actions.renameItinerary}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => void handleDuplicate(selectedItinerary)}>
                     <Copy className="size-4" aria-hidden="true" />
-                    Duplicate itinerary
+                    {messages.productItinerarySection.actions.duplicateItinerary}
                   </DropdownMenuItem>
                 </>
               ) : null}
@@ -235,15 +244,17 @@ export function ProductItinerarySection({
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
           </div>
         ) : itineraryQuery.isError ? (
-          <p className="text-sm text-destructive">Failed to load itineraries.</p>
+          <p className="text-sm text-destructive">
+            {messages.productItinerarySection.loadingError.itineraries}
+          </p>
         ) : itineraries.length === 0 ? (
           <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-6">
             <p className="text-sm text-muted-foreground">
-              No itinerary yet. Create one to start adding days.
+              {messages.productItinerarySection.empty.itineraries}
             </p>
             <Button variant="outline" size="sm" onClick={openCreateItinerary}>
               <Plus className="mr-2 size-4" aria-hidden="true" />
-              New itinerary
+              {messages.productItinerarySection.actions.newItinerary}
             </Button>
           </div>
         ) : (
@@ -252,11 +263,14 @@ export function ProductItinerarySection({
               <div className="flex flex-wrap items-center gap-1 rounded-md border bg-muted/30 p-1">
                 {itineraries.map((itinerary) => {
                   const isSelected = itinerary.id === selectedItineraryId
+                  const itineraryTabClassName = isSelected
+                    ? "bg-background shadow-sm" // i18n-literal-ok utility class branch
+                    : "hover:bg-background/60" // i18n-literal-ok utility class branch
                   return (
                     <div
                       key={itinerary.id}
                       className={`flex items-center gap-1 rounded-sm pl-2 pr-1 transition-colors ${
-                        isSelected ? "bg-background shadow-sm" : "hover:bg-background/60"
+                        itineraryTabClassName
                       }`}
                     >
                       <button
@@ -272,7 +286,7 @@ export function ProductItinerarySection({
                         </span>
                         {itinerary.isDefault ? (
                           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                            Default
+                            {messages.productItinerarySection.badges.default}
                           </Badge>
                         ) : null}
                       </button>
@@ -281,7 +295,10 @@ export function ProductItinerarySection({
                           <Button
                             variant="ghost"
                             size="icon"
-                            aria-label={`${itinerary.name} options`}
+                            aria-label={formatMessage(
+                              messages.productItinerarySection.aria.itineraryItemOptions,
+                              { name: itinerary.name },
+                            )}
                             className="size-6 text-muted-foreground"
                           >
                             <MoreHorizontal className="size-3.5" aria-hidden="true" />
@@ -290,18 +307,18 @@ export function ProductItinerarySection({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => openRenameItinerary(itinerary)}>
                             <Pencil className="size-4" aria-hidden="true" />
-                            Rename
+                            {messages.productItinerarySection.actions.rename}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => void handleDuplicate(itinerary)}>
                             <Copy className="size-4" aria-hidden="true" />
-                            Duplicate
+                            {messages.productItinerarySection.actions.duplicate}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={itinerary.isDefault}
-                            onClick={() => handleSetDefault(itinerary)}
+                            onClick={() => void handleSetDefault(itinerary)}
                           >
                             <Star className="size-4" aria-hidden="true" />
-                            Set as default
+                            {messages.productItinerarySection.actions.setDefault}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -310,7 +327,7 @@ export function ProductItinerarySection({
                             onClick={() => setDeleteItineraryTarget(itinerary)}
                           >
                             <Trash2 className="size-4" aria-hidden="true" />
-                            Delete
+                            {messages.productItinerarySection.actions.delete}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -325,10 +342,12 @@ export function ProductItinerarySection({
                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
               </div>
             ) : daysQuery.isError ? (
-              <p className="text-sm text-destructive">Failed to load itinerary days.</p>
+              <p className="text-sm text-destructive">
+                {messages.productItinerarySection.loadingError.days}
+              </p>
             ) : days.length === 0 ? (
               <p className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-                No days configured yet. Click "Add day" to start.
+                {messages.productItinerarySection.empty.days}
               </p>
             ) : (
               days.map((day) => (
@@ -345,7 +364,7 @@ export function ProductItinerarySection({
                     setDayDialogOpen(true)
                   }}
                   onDelete={() => {
-                    if (confirm("Delete this day and all its services?")) {
+                    if (confirm(messages.productItinerarySection.confirmations.deleteDay)) {
                       removeDay.mutate({
                         productId,
                         itineraryId: selectedItineraryId ?? undefined,
@@ -409,17 +428,22 @@ export function ProductItinerarySection({
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete itinerary?</AlertDialogTitle>
+              <AlertDialogTitle>
+                {messages.productItinerarySection.confirmations.deleteItineraryTitle}
+              </AlertDialogTitle>
               <AlertDialogDescription>
                 {deleteItineraryTarget
-                  ? `"${deleteItineraryTarget.name}" and all its days and services will be permanently removed.`
+                  ? formatMessage(
+                      messages.productItinerarySection.confirmations.deleteItineraryDescription,
+                      { name: deleteItineraryTarget.name },
+                    )
                   : null}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{messages.common.cancel}</AlertDialogCancel>
               <AlertDialogAction onClick={() => void handleConfirmDeleteItinerary()}>
-                Delete
+                {messages.productItinerarySection.actions.delete}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -459,12 +483,13 @@ function DayRow({
   const { data, isPending, isError } = useProductDayServices(productId, day.id, {
     enabled: expanded,
   })
+  const messages = useRegistryProductsMessagesOrDefault()
   const defaultDayMediaSection = (
     <ProductMediaSection
       productId={productId}
       dayId={day.id}
-      title="Media"
-      description="Manage media attached to this itinerary day."
+      title={messages.productItinerarySection.titles.media}
+      description={messages.productItinerarySection.descriptions.media}
       compact
       uploadMedia={uploadMedia}
     />
@@ -482,7 +507,7 @@ function DayRow({
         </button>
         <div className="flex-1">
           <span className="text-sm font-medium">
-            Day {day.dayNumber}
+            {messages.productItinerarySection.labels.day} {day.dayNumber}
             {day.title ? `: ${day.title}` : ""}
           </span>
           {day.location ? (
@@ -504,7 +529,7 @@ function DayRow({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Services
+                {messages.productItinerarySection.headings.services}
               </p>
               {day.description ? (
                 <p className="mt-1 text-sm text-muted-foreground">{day.description}</p>
@@ -512,7 +537,7 @@ function DayRow({
             </div>
             <Button variant="outline" size="sm" onClick={onAddService}>
               <Plus className="mr-2 size-3.5" aria-hidden="true" />
-              Add service
+              {messages.productItinerarySection.actions.addService}
             </Button>
           </div>
 
@@ -521,10 +546,12 @@ function DayRow({
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
             </div>
           ) : isError ? (
-            <p className="text-sm text-destructive">Failed to load day services.</p>
+            <p className="text-sm text-destructive">
+              {messages.productItinerarySection.loadingError.services}
+            </p>
           ) : !data?.data.length ? (
             <p className="rounded-md border bg-background px-3 py-4 text-sm text-muted-foreground">
-              No services configured for this day.
+              {messages.productItinerarySection.empty.services}
             </p>
           ) : (
             <ServicesTable
@@ -560,6 +587,8 @@ function ServicesTable({
   onEditService: (service: ProductDayServiceRecord) => void
 }) {
   const serviceMutation = useProductDayServiceMutation()
+  const { formatNumber } = useRegistryProductsI18nOrDefault()
+  const messages = useRegistryProductsMessagesOrDefault()
   const sorted = React.useMemo(
     () =>
       services
@@ -575,10 +604,10 @@ function ServicesTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Cost</TableHead>
-            <TableHead>Qty</TableHead>
+            <TableHead>{messages.productItinerarySection.columns.name}</TableHead>
+            <TableHead>{messages.productItinerarySection.columns.type}</TableHead>
+            <TableHead>{messages.productItinerarySection.columns.cost}</TableHead>
+            <TableHead>{messages.productItinerarySection.columns.quantity}</TableHead>
             <TableHead className="w-24" />
           </TableRow>
         </TableHeader>
@@ -587,10 +616,16 @@ function ServicesTable({
             <TableRow key={service.id}>
               <TableCell>{service.name}</TableCell>
               <TableCell>
-                <Badge variant="outline">{serviceTypeLabels[service.serviceType]}</Badge>
+                <Badge variant="outline">
+                  {messages.common.serviceTypeLabels[service.serviceType]}
+                </Badge>
               </TableCell>
               <TableCell className="font-mono text-xs">
-                {(service.costAmountCents / 100).toFixed(2)} {service.costCurrency}
+                {formatNumber(service.costAmountCents / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                {service.costCurrency}
               </TableCell>
               <TableCell>{service.quantity}</TableCell>
               <TableCell>
@@ -602,7 +637,7 @@ function ServicesTable({
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => {
-                      if (confirm("Delete this service?")) {
+                      if (confirm(messages.productItinerarySection.confirmations.deleteService)) {
                         serviceMutation.remove.mutate({
                           productId,
                           dayId,

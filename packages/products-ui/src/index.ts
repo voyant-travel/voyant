@@ -48,3 +48,17 @@ export {
   ProductVersionsSection,
   type ProductVersionsSectionProps,
 } from "./components/product-versions-section"
+export type { ProductsUiMessages } from "./i18n"
+export {
+  getProductsUiI18n,
+  type ProductsUiMessageOverrides,
+  ProductsUiMessagesProvider,
+  productsUiEn,
+  productsUiMessageDefinitions,
+  productsUiRo,
+  resolveProductsUiMessages,
+  useProductsUiI18n,
+  useProductsUiI18nOrDefault,
+  useProductsUiMessages,
+  useProductsUiMessagesOrDefault,
+} from "./i18n"

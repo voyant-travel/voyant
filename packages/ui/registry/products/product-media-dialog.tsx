@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductMediaForm } from "./product-media-form"
 
 export interface ProductMediaDialogProps {
@@ -30,16 +31,21 @@ export function ProductMediaDialog({
   onSuccess,
 }: ProductMediaDialogProps) {
   const isEdit = Boolean(media)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-media-dialog" className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit media" : "Add media"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.productMediaDialog.titles.edit
+              : messages.productMediaDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update metadata, sorting, and cover behavior for this media item."
-              : "Register a product or day-level media item by URL."}
+              ? messages.productMediaDialog.descriptions.edit
+              : messages.productMediaDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductMediaForm

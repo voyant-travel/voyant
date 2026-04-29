@@ -21,6 +21,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
+import { useDistributionUiMessagesOrDefault } from "../../../distribution-ui/src/index"
 import type {
   ChannelCommissionRuleRow,
   ChannelContractRow,
@@ -33,19 +34,24 @@ import {
   nullableNumber,
   nullableString,
 } from "./distribution-shared"
+import { useRegistryDistributionMessagesOrDefault } from "./i18n/provider"
 
-const commissionFormSchema = z.object({
-  contractId: z.string().min(1, "Contract is required"),
-  scope: z.enum(["booking", "product", "rate", "category"]),
-  productId: z.string().optional(),
-  externalRateId: z.string().optional(),
-  externalCategoryId: z.string().optional(),
-  commissionType: z.enum(["fixed", "percentage"]),
-  amountCents: z.string().optional(),
-  percentBasisPoints: z.string().optional(),
-  validFrom: z.string().optional(),
-  validTo: z.string().optional(),
-})
+function getCommissionFormSchema(
+  messages: ReturnType<typeof useRegistryDistributionMessagesOrDefault>,
+) {
+  return z.object({
+    contractId: z.string().min(1, messages.dialogs.commissionRule.validation.contractRequired),
+    scope: z.enum(["booking", "product", "rate", "category"]),
+    productId: z.string().optional(),
+    externalRateId: z.string().optional(),
+    externalCategoryId: z.string().optional(),
+    commissionType: z.enum(["fixed", "percentage"]),
+    amountCents: z.string().optional(),
+    percentBasisPoints: z.string().optional(),
+    validFrom: z.string().optional(),
+    validTo: z.string().optional(),
+  })
+}
 
 export function ChannelCommissionRuleDialog({
   open,
@@ -62,8 +68,19 @@ export function ChannelCommissionRuleDialog({
   products: ProductOption[]
   onSuccess: () => void
 }) {
+  const distributionMessages = useDistributionUiMessagesOrDefault()
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const dialog = messages.dialogs.commissionRule
+  const scopeOptions = commissionScopeOptions.map((option) => ({
+    value: option.value,
+    label: distributionMessages.common.commissionScopeLabels[option.value],
+  }))
+  const typeOptions = commissionTypeOptions.map((option) => ({
+    value: option.value,
+    label: distributionMessages.common.commissionTypeLabels[option.value],
+  }))
   const form = useForm({
-    resolver: zodResolver(commissionFormSchema),
+    resolver: zodResolver(getCommissionFormSchema(messages)),
     defaultValues: {
       contractId: "",
       scope: "booking" as const,
@@ -99,7 +116,7 @@ export function ChannelCommissionRuleDialog({
 
   const isEditing = Boolean(commissionRule)
 
-  const onSubmit = async (values: z.output<typeof commissionFormSchema>) => {
+  const onSubmit = async (values: z.output<ReturnType<typeof getCommissionFormSchema>>) => {
     const payload = {
       contractId: values.contractId,
       scope: values.scope,
@@ -125,20 +142,20 @@ export function ChannelCommissionRuleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Commission Rule" : "New Commission Rule"}</DialogTitle>
+          <DialogTitle>{isEditing ? dialog.titleEdit : dialog.titleNew}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Contract</Label>
+                <Label>{dialog.fields.contract}</Label>
                 <Select
                   items={contracts.map((contract) => ({ label: contract.id, value: contract.id }))}
                   value={form.watch("contractId")}
                   onValueChange={(value) => form.setValue("contractId", value ?? "")}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select contract" />
+                    <SelectValue placeholder={dialog.placeholders.selectContract} />
                   </SelectTrigger>
                   <SelectContent>
                     {contracts.map((contract) => (
@@ -150,9 +167,9 @@ export function ChannelCommissionRuleDialog({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Scope</Label>
+                <Label>{dialog.fields.scope}</Label>
                 <Select
-                  items={commissionScopeOptions}
+                  items={scopeOptions}
                   value={form.watch("scope")}
                   onValueChange={(value) =>
                     form.setValue("scope", value as ChannelCommissionRuleRow["scope"])
@@ -162,7 +179,7 @@ export function ChannelCommissionRuleDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {commissionScopeOptions.map((option) => (
+                    {scopeOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -171,10 +188,10 @@ export function ChannelCommissionRuleDialog({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Product</Label>
+                <Label>{dialog.fields.product}</Label>
                 <Select
                   items={[
-                    { label: "No product", value: NONE_VALUE },
+                    { label: dialog.placeholders.noProduct, value: NONE_VALUE },
                     ...products.map((product) => ({ label: product.name, value: product.id })),
                   ]}
                   value={form.watch("productId")}
@@ -184,7 +201,7 @@ export function ChannelCommissionRuleDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE_VALUE}>No product</SelectItem>
+                    <SelectItem value={NONE_VALUE}>{dialog.placeholders.noProduct}</SelectItem>
                     {products.map((product) => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name}
@@ -194,9 +211,9 @@ export function ChannelCommissionRuleDialog({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Commission Type</Label>
+                <Label>{dialog.fields.commissionType}</Label>
                 <Select
-                  items={commissionTypeOptions}
+                  items={typeOptions}
                   value={form.watch("commissionType")}
                   onValueChange={(value) =>
                     form.setValue(
@@ -209,7 +226,7 @@ export function ChannelCommissionRuleDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {commissionTypeOptions.map((option) => (
+                    {typeOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -218,23 +235,29 @@ export function ChannelCommissionRuleDialog({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Amount Cents</Label>
+                <Label>{dialog.fields.amountCents}</Label>
                 <Input {...form.register("amountCents")} type="number" min={0} />
               </div>
               <div className="grid gap-2">
-                <Label>Percent Basis Points</Label>
+                <Label>{dialog.fields.percentBasisPoints}</Label>
                 <Input {...form.register("percentBasisPoints")} type="number" min={0} />
               </div>
               <div className="grid gap-2">
-                <Label>External Rate ID</Label>
-                <Input {...form.register("externalRateId")} placeholder="RACK-STD" />
+                <Label>{dialog.fields.externalRateId}</Label>
+                <Input
+                  {...form.register("externalRateId")}
+                  placeholder={dialog.placeholders.externalRateId}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>External Category ID</Label>
-                <Input {...form.register("externalCategoryId")} placeholder="adult" />
+                <Label>{dialog.fields.externalCategoryId}</Label>
+                <Input
+                  {...form.register("externalCategoryId")}
+                  placeholder={dialog.placeholders.externalCategoryId}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>Valid From</Label>
+                <Label>{dialog.fields.validFrom}</Label>
                 <DatePicker
                   value={form.watch("validFrom") || null}
                   onChange={(next) =>
@@ -243,12 +266,12 @@ export function ChannelCommissionRuleDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select start date"
+                  placeholder={dialog.placeholders.validFrom}
                   className="w-full"
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Valid To</Label>
+                <Label>{dialog.fields.validTo}</Label>
                 <DatePicker
                   value={form.watch("validTo") || null}
                   onChange={(next) =>
@@ -257,7 +280,7 @@ export function ChannelCommissionRuleDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select end date"
+                  placeholder={dialog.placeholders.validTo}
                   className="w-full"
                 />
               </div>
@@ -265,11 +288,11 @@ export function ChannelCommissionRuleDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Rule" : "Create Rule"}
+              {isEditing ? dialog.save : dialog.create}
             </Button>
           </DialogFooter>
         </form>

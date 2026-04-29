@@ -18,37 +18,47 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { Weekday } from "../i18n/messages"
 import { RatePlanCombobox } from "./rate-plan-combobox"
 import { RoomTypeCombobox } from "./room-type-combobox"
 
 export type StayRuleData = StayRuleRecord
 
 const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const
-type Weekday = (typeof WEEKDAYS)[number]
 
-const intOrEmpty = z.coerce.number().int().optional().or(z.literal("")).nullable()
+function createFormSchema(messages: ReturnType<typeof useHospitalityUiMessagesOrDefault>) {
+  const intOrEmpty = z.coerce
+    .number()
+    .int()
+    .min(0, messages.stayRuleDialog.validation.nonNegative)
+    .optional()
+    .or(z.literal(""))
+    .nullable()
 
-const formSchema = z.object({
-  ratePlanId: z.string().optional().nullable(),
-  roomTypeId: z.string().optional().nullable(),
-  validFrom: z.string().optional().nullable(),
-  validTo: z.string().optional().nullable(),
-  minNights: intOrEmpty,
-  maxNights: intOrEmpty,
-  minAdvanceDays: intOrEmpty,
-  maxAdvanceDays: intOrEmpty,
-  releaseDays: intOrEmpty,
-  closedToArrival: z.boolean(),
-  closedToDeparture: z.boolean(),
-  arrivalWeekdays: z.array(z.string()),
-  departureWeekdays: z.array(z.string()),
-  active: z.boolean(),
-  priority: z.coerce.number().int(),
-  notes: z.string().optional().nullable(),
-})
+  return z.object({
+    ratePlanId: z.string().optional().nullable(),
+    roomTypeId: z.string().optional().nullable(),
+    validFrom: z.string().optional().nullable(),
+    validTo: z.string().optional().nullable(),
+    minNights: intOrEmpty,
+    maxNights: intOrEmpty,
+    minAdvanceDays: intOrEmpty,
+    maxAdvanceDays: intOrEmpty,
+    releaseDays: intOrEmpty,
+    closedToArrival: z.boolean(),
+    closedToDeparture: z.boolean(),
+    arrivalWeekdays: z.array(z.string()),
+    departureWeekdays: z.array(z.string()),
+    active: z.boolean(),
+    priority: z.coerce.number().int(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface StayRuleDialogProps {
   open: boolean
@@ -67,6 +77,8 @@ export function StayRuleDialog({
 }: StayRuleDialogProps) {
   const isEditing = Boolean(rule)
   const { create, update } = useStayRuleMutation()
+  const messages = useHospitalityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -182,28 +194,32 @@ export function StayRuleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Stay Rule" : "Add Stay Rule"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.stayRuleDialog.titles.edit
+              : messages.stayRuleDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Rate plan (optional)</Label>
+                <Label>{messages.stayRuleDialog.fields.ratePlan}</Label>
                 <RatePlanCombobox
                   propertyId={propertyId}
                   value={form.watch("ratePlanId")}
                   onChange={(value) => form.setValue("ratePlanId", value ?? "")}
-                  placeholder="All rate plans"
+                  placeholder={messages.stayRuleDialog.placeholders.ratePlan}
                   disabled={!open}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Room type (optional)</Label>
+                <Label>{messages.stayRuleDialog.fields.roomType}</Label>
                 <RoomTypeCombobox
                   propertyId={propertyId}
                   value={form.watch("roomTypeId")}
                   onChange={(value) => form.setValue("roomTypeId", value ?? "")}
-                  placeholder="All room types"
+                  placeholder={messages.stayRuleDialog.placeholders.roomType}
                   disabled={!open}
                 />
               </div>
@@ -211,7 +227,7 @@ export function StayRuleDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Valid from</Label>
+                <Label>{messages.stayRuleDialog.fields.validFrom}</Label>
                 <DatePicker
                   value={form.watch("validFrom") || null}
                   onChange={(next) =>
@@ -220,12 +236,12 @@ export function StayRuleDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select start date"
+                  placeholder={messages.stayRuleDialog.placeholders.validFrom}
                   className="w-full"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Valid to</Label>
+                <Label>{messages.stayRuleDialog.fields.validTo}</Label>
                 <DatePicker
                   value={form.watch("validTo") || null}
                   onChange={(next) =>
@@ -234,7 +250,7 @@ export function StayRuleDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select end date"
+                  placeholder={messages.stayRuleDialog.placeholders.validTo}
                   className="w-full"
                 />
               </div>
@@ -242,39 +258,39 @@ export function StayRuleDialog({
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Min nights</Label>
+                <Label>{messages.stayRuleDialog.fields.minNights}</Label>
                 <Input {...form.register("minNights")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Max nights</Label>
+                <Label>{messages.stayRuleDialog.fields.maxNights}</Label>
                 <Input {...form.register("maxNights")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Release days</Label>
+                <Label>{messages.stayRuleDialog.fields.releaseDays}</Label>
                 <Input {...form.register("releaseDays")} type="number" min="0" />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Min advance days</Label>
+                <Label>{messages.stayRuleDialog.fields.minAdvanceDays}</Label>
                 <Input {...form.register("minAdvanceDays")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Max advance days</Label>
+                <Label>{messages.stayRuleDialog.fields.maxAdvanceDays}</Label>
                 <Input {...form.register("maxAdvanceDays")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Priority</Label>
+                <Label>{messages.stayRuleDialog.fields.priority}</Label>
                 <Input {...form.register("priority")} type="number" />
               </div>
             </div>
 
             <div>
-              <Label>Arrival weekdays</Label>
+              <Label>{messages.stayRuleDialog.fields.arrivalWeekdays}</Label>
               <div className="mt-2 flex flex-wrap gap-3">
                 {WEEKDAYS.map((day) => (
-                  <label key={day} className="flex items-center gap-1.5 text-sm capitalize">
+                  <label key={day} className="flex items-center gap-1.5 text-sm">
                     <input
                       type="checkbox"
                       checked={arrivalWeekdays.includes(day)}
@@ -282,17 +298,17 @@ export function StayRuleDialog({
                         toggleWeekday("arrivalWeekdays", day, event.target.checked)
                       }
                     />
-                    {day}
+                    {messages.common.weekdayLabels[day as Weekday]}
                   </label>
                 ))}
               </div>
             </div>
 
             <div>
-              <Label>Departure weekdays</Label>
+              <Label>{messages.stayRuleDialog.fields.departureWeekdays}</Label>
               <div className="mt-2 flex flex-wrap gap-3">
                 {WEEKDAYS.map((day) => (
-                  <label key={day} className="flex items-center gap-1.5 text-sm capitalize">
+                  <label key={day} className="flex items-center gap-1.5 text-sm">
                     <input
                       type="checkbox"
                       checked={departureWeekdays.includes(day)}
@@ -300,7 +316,7 @@ export function StayRuleDialog({
                         toggleWeekday("departureWeekdays", day, event.target.checked)
                       }
                     />
-                    {day}
+                    {messages.common.weekdayLabels[day as Weekday]}
                   </label>
                 ))}
               </div>
@@ -312,36 +328,36 @@ export function StayRuleDialog({
                   checked={form.watch("closedToArrival")}
                   onCheckedChange={(checked) => form.setValue("closedToArrival", checked)}
                 />
-                <Label>Closed to arrival</Label>
+                <Label>{messages.stayRuleDialog.fields.closedToArrival}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("closedToDeparture")}
                   onCheckedChange={(checked) => form.setValue("closedToDeparture", checked)}
                 />
-                <Label>Closed to departure</Label>
+                <Label>{messages.stayRuleDialog.fields.closedToDeparture}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("active")}
                   onCheckedChange={(checked) => form.setValue("active", checked)}
                 />
-                <Label>Active</Label>
+                <Label>{messages.stayRuleDialog.fields.active}</Label>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.stayRuleDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Stay Rule"}
+              {isEditing ? messages.common.saveChanges : messages.stayRuleDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

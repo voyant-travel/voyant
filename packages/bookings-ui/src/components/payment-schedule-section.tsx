@@ -1,6 +1,7 @@
 "use client"
 
 import { Button, Input, Label } from "@voyantjs/ui/components"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 export type PaymentScheduleMode = "unpaid" | "full" | "advance" | "split"
 
@@ -55,20 +56,6 @@ export interface PaymentScheduleSectionProps {
   }
 }
 
-const DEFAULT_LABELS = {
-  heading: "Payment schedule",
-  modeUnpaid: "Unpaid",
-  modeFull: "Full",
-  modeAdvance: "Advance",
-  modeSplit: "Split",
-  dueDate: "Due date",
-  amount: "Amount",
-  firstInstallment: "First installment",
-  secondInstallment: "Second installment",
-  preset5050: "50 / 50",
-  unpaidHint: "No payment schedule will be created. Operator will invoice manually.",
-} as const
-
 /**
  * Converts an `<input type="number">` string value to minor units (cents).
  * Accepts `""` / `NaN` → `null`. Multiplies by 100 and rounds to avoid
@@ -114,7 +101,8 @@ export function PaymentScheduleSection({
   currency,
   labels,
 }: PaymentScheduleSectionProps) {
-  const merged = { ...DEFAULT_LABELS, ...labels }
+  const messages = useBookingsUiMessagesOrDefault()
+  const merged = { ...messages.paymentScheduleSection.labels, ...labels }
   const set = (patch: Partial<PaymentScheduleValue>) => onChange({ ...value, ...patch })
 
   const currencySuffix = currency ? ` ${currency}` : ""

@@ -1,15 +1,18 @@
 "use client"
 
 import type { CharterSuiteRecord } from "@voyantjs/charters-react"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
+import { useChartersUiI18nOrDefault } from "../i18n"
+
 export interface VoyageSuiteGridProps extends React.HTMLAttributes<HTMLDivElement> {
   suites: CharterSuiteRecord[]
-  currency: "USD" | "EUR" | "GBP" | "AUD"
+  currency: "USD" | "EUR" | "GBP" | "AUD" // i18n-literal-ok type union
   /**
    * Render the price in the requested currency. If the suite hasn't published
    * that currency, the row shows "Price on request".
@@ -18,14 +21,6 @@ export interface VoyageSuiteGridProps extends React.HTMLAttributes<HTMLDivElemen
   /** Fired when an operator clicks "Quote suite" / "Book suite". */
   onSelectSuite?: (suite: CharterSuiteRecord) => void
   selectLabel?: string
-}
-
-const AVAILABILITY_LABEL: Record<CharterSuiteRecord["availability"], string> = {
-  available: "Available",
-  limited: "Limited",
-  on_request: "On request",
-  wait_list: "Wait list",
-  sold_out: "Sold out",
 }
 
 const AVAILABILITY_VARIANT: Record<
@@ -37,24 +32,6 @@ const AVAILABILITY_VARIANT: Record<
   on_request: "outline",
   wait_list: "outline",
   sold_out: "destructive",
-}
-
-const CATEGORY_LABEL: Record<NonNullable<CharterSuiteRecord["suiteCategory"]>, string> = {
-  standard: "Standard",
-  deluxe: "Deluxe",
-  suite: "Suite",
-  penthouse: "Penthouse",
-  owners: "Owners",
-  signature: "Signature",
-}
-
-function defaultFormatPrice(amount: string, currency: string): string {
-  const n = Number(amount)
-  if (!Number.isFinite(n)) return `${currency} ${amount}`
-  return `${currency} ${n.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })}`
 }
 
 function priceForCurrency(suite: CharterSuiteRecord, currency: string): string | null {
@@ -84,12 +61,23 @@ function priceForCurrency(suite: CharterSuiteRecord, currency: string): string |
 export function VoyageSuiteGrid({
   suites,
   currency,
-  formatPrice = defaultFormatPrice,
+  formatPrice,
   onSelectSuite,
-  selectLabel = "Quote suite",
+  selectLabel,
   className,
   ...props
 }: VoyageSuiteGridProps) {
+  const i18n = useChartersUiI18nOrDefault()
+  const m = i18n.messages.voyageSuiteGrid
+  const formatPriceValue =
+    formatPrice ??
+    ((amount: string, currencyCode: string) =>
+      formatSuitePrice(amount, currencyCode, {
+        fallbackCurrencyAmount: i18n.messages.common.fallbackCurrencyAmount,
+        formatCurrency: i18n.formatCurrency,
+      }))
+  const resolvedSelectLabel = selectLabel ?? m.defaultSelectLabel
+
   if (suites.length === 0) {
     return (
       <div
@@ -100,7 +88,7 @@ export function VoyageSuiteGrid({
         )}
         {...props}
       >
-        No suites published for this voyage yet.
+        {m.empty}
       </div>
     )
   }
@@ -132,17 +120,20 @@ export function VoyageSuiteGrid({
             <CardHeader className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 {suite.suiteCategory ? (
-                  <Badge variant="secondary">{CATEGORY_LABEL[suite.suiteCategory]}</Badge>
+                  <Badge variant="secondary">{m.categoryLabels[suite.suiteCategory]}</Badge>
                 ) : null}
                 <Badge variant={AVAILABILITY_VARIANT[suite.availability]}>
-                  {AVAILABILITY_LABEL[suite.availability]}
+                  {m.availabilityLabels[suite.availability]}
                 </Badge>
               </div>
               <h4 className="text-base font-semibold leading-tight">{suite.suiteName}</h4>
               <p className="text-xs text-muted-foreground">
-                {suite.suiteCode}
-                {suite.squareFeet ? ` · ${suite.squareFeet} sq ft` : ""}
-                {suite.maxGuests ? ` · up to ${suite.maxGuests} guests` : ""}
+                {formatSuiteMetadata(suite, {
+                  suiteCode: suite.suiteCode,
+                  squareFeetLabel: m.metadata.squareFeet,
+                  maxGuestsLabel: m.metadata.maxGuests,
+                  formatNumber: i18n.formatNumber,
+                })}
               </p>
             </CardHeader>
             <CardContent className="mt-auto space-y-3 text-sm">
@@ -152,10 +143,10 @@ export function VoyageSuiteGrid({
               <div className="flex items-baseline justify-between border-t pt-2">
                 <div>
                   <div className="text-lg font-semibold">
-                    {price ? formatPrice(price, currency) : "Price on request"}
+                    {price ? formatPriceValue(price, currency) : m.priceOnRequest}
                   </div>
                   {price ? (
-                    <div className="text-xs text-muted-foreground">per suite, all-in</div>
+                    <div className="text-xs text-muted-foreground">{m.perSuiteAllIn}</div>
                   ) : null}
                 </div>
                 {onSelectSuite ? (
@@ -165,7 +156,7 @@ export function VoyageSuiteGrid({
                     disabled={!isBookable}
                     onClick={() => onSelectSuite(suite)}
                   >
-                    {selectLabel}
+                    {resolvedSelectLabel}
                   </Button>
                 ) : null}
               </div>
@@ -175,4 +166,60 @@ export function VoyageSuiteGrid({
       })}
     </div>
   )
+}
+
+function formatSuiteMetadata(
+  suite: Pick<CharterSuiteRecord, "squareFeet" | "maxGuests">,
+  options: {
+    suiteCode: string
+    squareFeetLabel: string
+    maxGuestsLabel: string
+    formatNumber: (
+      value: number | string | bigint,
+      formatOptions?: Intl.NumberFormatOptions,
+    ) => string
+  },
+) {
+  const parts = [options.suiteCode]
+
+  if (suite.squareFeet) {
+    parts.push(
+      formatMessage(options.squareFeetLabel, {
+        value: options.formatNumber(suite.squareFeet, { maximumFractionDigits: 0 }),
+      }),
+    )
+  }
+
+  if (suite.maxGuests) {
+    parts.push(
+      formatMessage(options.maxGuestsLabel, {
+        count: options.formatNumber(suite.maxGuests, { maximumFractionDigits: 0 }),
+      }),
+    )
+  }
+
+  return parts.join(" · ")
+}
+
+function formatSuitePrice(
+  amount: string,
+  currency: string,
+  options: {
+    fallbackCurrencyAmount: string
+    formatCurrency: (
+      value: number | string | bigint,
+      currency: string,
+      formatOptions?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+    ) => string
+  },
+) {
+  const value = Number(amount)
+  if (!Number.isFinite(value)) {
+    return formatMessage(options.fallbackCurrencyAmount, { amount, currency })
+  }
+
+  return options.formatCurrency(value, currency, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
 }

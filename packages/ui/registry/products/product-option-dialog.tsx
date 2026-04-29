@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductOptionForm } from "./product-option-form"
 
 export interface ProductOptionDialogProps {
@@ -30,16 +31,21 @@ export function ProductOptionDialog({
   onSuccess,
 }: ProductOptionDialogProps) {
   const isEdit = Boolean(option)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-option-dialog" className="sm:max-w-[640px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit option" : "New option"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.productOptionDialog.titles.edit
+              : messages.productOptionDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update option availability, ordering, and default behavior."
-              : "Create a reusable option under this product."}
+              ? messages.productOptionDialog.descriptions.edit
+              : messages.productOptionDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductOptionForm

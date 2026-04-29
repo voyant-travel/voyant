@@ -1,3 +1,5 @@
+"use client"
+
 import {
   CONTACT_FIELDS,
   CONTACT_SCOPES,
@@ -27,6 +29,9 @@ import {
 } from "@/components/ui"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
+import { useBookingRequirementsUiMessagesOrDefault } from "../../../../booking-requirements-ui/src/index"
+
+import { useRegistryBookingRequirementsMessagesOrDefault } from "./i18n"
 
 const formSchema = z.object({
   fieldKey: z.enum([
@@ -74,6 +79,9 @@ export function ContactRequirementDialog({
   nextSortOrder,
   onSuccess,
 }: ContactRequirementDialogProps) {
+  const sharedMessages = useBookingRequirementsUiMessagesOrDefault()
+  const messages = useRegistryBookingRequirementsMessagesOrDefault()
+  const dialogMessages = messages.contactRequirementDialog
   const isEditing = !!requirement
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -137,15 +145,20 @@ export function ContactRequirementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Requirement" : "Add Requirement"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dialogMessages.titles.edit : dialogMessages.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Field</Label>
+                <Label>{dialogMessages.fields.field}</Label>
                 <Select
-                  items={CONTACT_FIELDS}
+                  items={CONTACT_FIELDS.map((field) => ({
+                    label: sharedMessages.common.fieldKeyLabels[field.value as FieldKey],
+                    value: field.value,
+                  }))}
                   value={form.watch("fieldKey")}
                   onValueChange={(value) => form.setValue("fieldKey", value as FieldKey)}
                   disabled={isEditing}
@@ -156,16 +169,19 @@ export function ContactRequirementDialog({
                   <SelectContent>
                     {CONTACT_FIELDS.map((field) => (
                       <SelectItem key={field.value} value={field.value}>
-                        {field.label}
+                        {sharedMessages.common.fieldKeyLabels[field.value as FieldKey]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Scope</Label>
+                <Label>{dialogMessages.fields.scope}</Label>
                 <Select
-                  items={CONTACT_SCOPES}
+                  items={CONTACT_SCOPES.map((scope) => ({
+                    label: sharedMessages.common.scopeLabels[scope.value as Scope],
+                    value: scope.value,
+                  }))}
                   value={form.watch("scope")}
                   onValueChange={(value) => form.setValue("scope", value as Scope)}
                 >
@@ -175,7 +191,7 @@ export function ContactRequirementDialog({
                   <SelectContent>
                     {CONTACT_SCOPES.map((scope) => (
                       <SelectItem key={scope.value} value={scope.value}>
-                        {scope.label}
+                        {sharedMessages.common.scopeLabels[scope.value as Scope]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -189,20 +205,20 @@ export function ContactRequirementDialog({
                   checked={form.watch("isRequired")}
                   onCheckedChange={(value) => form.setValue("isRequired", value)}
                 />
-                <Label>Required</Label>
+                <Label>{dialogMessages.fields.required}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("perTraveler")}
                   onCheckedChange={(value) => form.setValue("perTraveler", value)}
                 />
-                <Label>Per traveler</Label>
+                <Label>{dialogMessages.fields.perTraveler}</Label>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Sort order</Label>
+                <Label>{dialogMessages.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
               </div>
               <div className="flex items-center gap-2">
@@ -210,24 +226,24 @@ export function ContactRequirementDialog({
                   checked={form.watch("active")}
                   onCheckedChange={(value) => form.setValue("active", value)}
                 />
-                <Label>Active</Label>
+                <Label>{dialogMessages.fields.active}</Label>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{dialogMessages.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {isEditing ? "Save Changes" : "Add Requirement"}
+              {isEditing ? messages.common.saveChanges : dialogMessages.actions.create}
             </Button>
           </DialogFooter>
         </form>

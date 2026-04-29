@@ -27,45 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui"
 import { zodResolver } from "@/lib/zod-resolver"
-
-const TARGET_TYPE_ITEMS = [
-  { label: "Booking payment schedule", value: "booking_payment_schedule" },
-  { label: "Invoice", value: "invoice" },
-] as const
-
-const STATUS_ITEMS = [
-  { label: "Draft", value: "draft" },
-  { label: "Active", value: "active" },
-  { label: "Archived", value: "archived" },
-] as const
-
-const CHANNEL_ITEMS = [
-  { label: "Email", value: "email" },
-  { label: "SMS", value: "sms" },
-] as const
-
-const PROVIDER_ITEMS = [
-  { label: "Automatic", value: "automatic" },
-  { label: "Resend", value: "resend" },
-  { label: "Twilio", value: "twilio" },
-] as const
-
-const reminderRuleFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z
-    .string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
-  status: z.enum(["draft", "active", "archived"]).default("draft"),
-  targetType: z.enum(["booking_payment_schedule", "invoice"]),
-  channel: z.enum(["email", "sms"]),
-  provider: z.enum(["automatic", "resend", "twilio"]).default("automatic"),
-  templateId: z.string().min(1, "Template is required"),
-  relativeDaysFromDueDate: z.number().int().min(-365).max(365),
-})
-
-type FormValues = z.input<typeof reminderRuleFormSchema>
-type FormOutput = z.output<typeof reminderRuleFormSchema>
+import { useRegistryNotificationsMessagesOrDefault } from "./i18n"
 
 type NotificationReminderRuleDialogProps = {
   open: boolean
@@ -80,8 +42,46 @@ export function NotificationReminderRuleDialog({
   rule,
   onSuccess,
 }: NotificationReminderRuleDialogProps) {
+  const messages = useRegistryNotificationsMessagesOrDefault()
+  const dialogMessages = messages.reminderRuleDialog
   const isEditing = Boolean(rule)
   const { create, update } = useNotificationReminderRuleMutation()
+  const TARGET_TYPE_ITEMS = [
+    {
+      label: messages.common.targetTypeLabels.booking_payment_schedule,
+      value: "booking_payment_schedule",
+    },
+    { label: messages.common.targetTypeLabels.invoice, value: "invoice" },
+  ] as const
+  const STATUS_ITEMS = [
+    { label: messages.common.templateStatusLabels.draft, value: "draft" },
+    { label: messages.common.templateStatusLabels.active, value: "active" },
+    { label: messages.common.templateStatusLabels.archived, value: "archived" },
+  ] as const
+  const CHANNEL_ITEMS = [
+    { label: messages.common.channelLabels.email, value: "email" },
+    { label: messages.common.channelLabels.sms, value: "sms" },
+  ] as const
+  const PROVIDER_ITEMS = [
+    { label: messages.common.providerLabels.automatic, value: "automatic" },
+    { label: messages.common.providerLabels.resend, value: "resend" },
+    { label: messages.common.providerLabels.twilio, value: "twilio" },
+  ] as const
+  const reminderRuleFormSchema = z.object({
+    name: z.string().min(1, dialogMessages.errors.nameRequired),
+    slug: z
+      .string()
+      .min(1, dialogMessages.errors.slugRequired)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, dialogMessages.errors.kebabCase),
+    status: z.enum(["draft", "active", "archived"]).default("draft"),
+    targetType: z.enum(["booking_payment_schedule", "invoice"]),
+    channel: z.enum(["email", "sms"]),
+    provider: z.enum(["automatic", "resend", "twilio"]).default("automatic"),
+    templateId: z.string().min(1, dialogMessages.errors.templateRequired),
+    relativeDaysFromDueDate: z.number().int().min(-365).max(365),
+  })
+  type FormValues = z.input<typeof reminderRuleFormSchema>
+  type FormOutput = z.output<typeof reminderRuleFormSchema>
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(reminderRuleFormSchema),
     defaultValues: {
@@ -154,24 +154,26 @@ export function NotificationReminderRuleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Reminder Rule" : "New Reminder Rule"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dialogMessages.titleEdit : dialogMessages.titleNew}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Invoice due in 3 days" />
+                <Label>{dialogMessages.fields.name}</Label>
+                <Input {...form.register("name")} placeholder={dialogMessages.placeholders.name} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Slug</Label>
-                <Input {...form.register("slug")} placeholder="invoice-due-minus-3" />
+                <Label>{dialogMessages.fields.slug}</Label>
+                <Input {...form.register("slug")} placeholder={dialogMessages.placeholders.slug} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Target</Label>
+                <Label>{dialogMessages.fields.target}</Label>
                 <Select
                   items={TARGET_TYPE_ITEMS}
                   value={form.watch("targetType")}
@@ -192,7 +194,7 @@ export function NotificationReminderRuleDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{dialogMessages.fields.status}</Label>
                 <Select
                   items={STATUS_ITEMS}
                   value={form.watch("status")}
@@ -214,7 +216,7 @@ export function NotificationReminderRuleDialog({
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Channel</Label>
+                <Label>{dialogMessages.fields.channel}</Label>
                 <Select
                   items={CHANNEL_ITEMS}
                   value={form.watch("channel")}
@@ -235,7 +237,7 @@ export function NotificationReminderRuleDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Provider</Label>
+                <Label>{dialogMessages.fields.provider}</Label>
                 <Select
                   items={PROVIDER_ITEMS}
                   value={form.watch("provider")}
@@ -256,7 +258,7 @@ export function NotificationReminderRuleDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Offset days</Label>
+                <Label>{dialogMessages.fields.offsetDays}</Label>
                 <Input
                   type="number"
                   value={form.watch("relativeDaysFromDueDate")}
@@ -271,7 +273,7 @@ export function NotificationReminderRuleDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Template</Label>
+              <Label>{dialogMessages.fields.template}</Label>
               <Select
                 items={(templates?.data ?? []).map((template) => ({
                   label: `${template.name} (${template.slug})`,
@@ -281,7 +283,7 @@ export function NotificationReminderRuleDialog({
                 onValueChange={(value) => form.setValue("templateId", value)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select template" />
+                  <SelectValue placeholder={dialogMessages.placeholders.template} />
                 </SelectTrigger>
                 <SelectContent>
                   {(templates?.data ?? []).map((template) => (
@@ -295,11 +297,11 @@ export function NotificationReminderRuleDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Create Rule"}
+              {isEditing ? messages.common.saveChanges : dialogMessages.actions.create}
             </Button>
           </DialogFooter>
         </form>

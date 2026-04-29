@@ -28,6 +28,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import type { UnitPricingMode } from "../i18n/messages"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 import { OptionPriceRuleCombobox } from "./option-price-rule-combobox"
 import { PricingCategoryCombobox } from "./pricing-category-combobox"
 
@@ -41,23 +43,28 @@ const PRICING_MODES = [
 ] as const
 type PricingMode = (typeof PRICING_MODES)[number]
 
-const formSchema = z.object({
-  optionPriceRuleId: z.string().min(1, "Option price rule is required"),
-  optionId: z.string().min(1, "Option ID is required"),
-  unitId: z.string().min(1, "Unit ID is required"),
-  pricingCategoryId: z.string().optional().nullable(),
-  pricingMode: z.enum(PRICING_MODES),
-  sellAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
-  costAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
-  minQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  maxQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  sortOrder: z.coerce.number().int(),
-  active: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
+function createFormSchema(messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
+  return z.object({
+    optionPriceRuleId: z
+      .string()
+      .min(1, messages.optionUnitPriceRuleDialog.validation.optionPriceRuleRequired),
+    optionId: z.string().min(1, messages.optionUnitPriceRuleDialog.validation.optionIdRequired),
+    unitId: z.string().min(1, messages.optionUnitPriceRuleDialog.validation.unitIdRequired),
+    pricingCategoryId: z.string().optional().nullable(),
+    pricingMode: z.enum(PRICING_MODES),
+    sellAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
+    costAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
+    minQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    maxQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    sortOrder: z.coerce.number().int(),
+    active: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 type Props = {
   open: boolean
@@ -74,6 +81,8 @@ const toCents = (value: number | "" | null | undefined): number | null =>
 export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: Props) {
   const isEditing = !!rule
   const { create, update } = useOptionUnitPriceRuleMutation()
+  const messages = usePricingUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -145,13 +154,15 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
       <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit Option Unit Price Rule" : "Add Option Unit Price Rule"}
+            {isEditing
+              ? messages.optionUnitPriceRuleDialog.titles.edit
+              : messages.optionUnitPriceRuleDialog.titles.create}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Option price rule</Label>
+              <Label>{messages.optionUnitPriceRuleDialog.fields.optionPriceRule}</Label>
               <OptionPriceRuleCombobox
                 value={form.watch("optionPriceRuleId")}
                 onChange={(value) =>
@@ -171,29 +182,39 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Option ID</Label>
-                <Input {...form.register("optionId")} placeholder="popt_…" />
+                <Label>{messages.optionUnitPriceRuleDialog.fields.optionId}</Label>
+                <Input
+                  {...form.register("optionId")}
+                  placeholder={messages.optionUnitPriceRuleDialog.placeholders.optionId}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Unit ID</Label>
-                <Input {...form.register("unitId")} placeholder="punit_…" />
+                <Label>{messages.optionUnitPriceRuleDialog.fields.unitId}</Label>
+                <Input
+                  {...form.register("unitId")}
+                  placeholder={messages.optionUnitPriceRuleDialog.placeholders.unitId}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Pricing category (optional)</Label>
+                <Label>{messages.optionUnitPriceRuleDialog.fields.pricingCategory}</Label>
                 <PricingCategoryCombobox
                   value={form.watch("pricingCategoryId")}
                   onChange={(value) =>
                     form.setValue("pricingCategoryId", value ?? "", { shouldDirty: true })
                   }
+                  placeholder={messages.optionUnitPriceRuleDialog.placeholders.pricingCategory}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Pricing mode</Label>
+                <Label>{messages.optionUnitPriceRuleDialog.fields.pricingMode}</Label>
                 <Select
-                  items={PRICING_MODES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={PRICING_MODES.map((mode) => ({
+                    label: messages.common.unitPricingModeLabels[mode as UnitPricingMode],
+                    value: mode,
+                  }))}
                   value={form.watch("pricingMode")}
                   onValueChange={(value) => form.setValue("pricingMode", value as PricingMode)}
                 >
@@ -202,8 +223,8 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
                   </SelectTrigger>
                   <SelectContent>
                     {PRICING_MODES.map((mode) => (
-                      <SelectItem key={mode} value={mode} className="capitalize">
-                        {mode.replace(/_/g, " ")}
+                      <SelectItem key={mode} value={mode}>
+                        {messages.common.unitPricingModeLabels[mode as UnitPricingMode]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -213,26 +234,26 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Sell amount</Label>
+                <Label>{messages.optionUnitPriceRuleDialog.fields.sellAmount}</Label>
                 <Input {...form.register("sellAmount")} type="number" step="0.01" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Cost amount</Label>
+                <Label>{messages.optionUnitPriceRuleDialog.fields.costAmount}</Label>
                 <Input {...form.register("costAmount")} type="number" step="0.01" min="0" />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Min quantity</Label>
+                <Label>{messages.optionUnitPriceRuleDialog.fields.minQuantity}</Label>
                 <Input {...form.register("minQuantity")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Max quantity</Label>
+                <Label>{messages.optionUnitPriceRuleDialog.fields.maxQuantity}</Label>
                 <Input {...form.register("maxQuantity")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Sort order</Label>
+                <Label>{messages.optionUnitPriceRuleDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
               </div>
             </div>
@@ -242,21 +263,23 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{messages.optionUnitPriceRuleDialog.fields.active}</Label>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.optionUnitPriceRuleDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Rule"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.optionUnitPriceRuleDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

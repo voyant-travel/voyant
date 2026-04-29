@@ -6,17 +6,23 @@ import {
   usePriceCatalogMutation,
   usePriceCatalogs,
 } from "@voyantjs/pricing-react"
+import { usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { Badge, Button, Input } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
 import { PriceCatalogDialog } from "./price-catalog-dialog"
 
 const PAGE_SIZE = 25
 
 export function PriceCatalogsPage() {
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const pageMessages = registryMessages.priceCatalogsPage
+  const catalogLabels = registryMessages.priceCatalogDialog.catalogTypeLabels
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<PriceCatalogRecord | undefined>()
   const [search, setSearch] = React.useState("")
@@ -33,39 +39,43 @@ export function PriceCatalogsPage() {
     () => [
       {
         accessorKey: "code",
-        header: "Code",
+        header: pageMessages.columns.code,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span>,
       },
       {
         accessorKey: "name",
-        header: "Name",
+        header: pageMessages.columns.name,
       },
       {
         accessorKey: "catalogType",
-        header: "Type",
+        header: pageMessages.columns.type,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.catalogType}
+            {catalogLabels[row.original.catalogType]}
           </Badge>
         ),
       },
       {
         accessorKey: "currencyCode",
-        header: "Currency",
+        header: pageMessages.columns.currency,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.currencyCode}</span>,
       },
       {
         accessorKey: "isDefault",
-        header: "Default",
+        header: pageMessages.columns.default,
         cell: ({ row }) =>
-          row.original.isDefault ? <Badge variant="secondary">Default</Badge> : <span>—</span>,
+          row.original.isDefault ? (
+            <Badge variant="secondary">{pageMessages.labels.default}</Badge>
+          ) : (
+            <span>—</span>
+          ),
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: pageMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? sharedMessages.common.active : sharedMessages.common.inactive}
           </Badge>
         ),
       },
@@ -87,7 +97,7 @@ export function PriceCatalogsPage() {
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete catalog "${row.original.name}"?`)) {
+                if (confirm(pageMessages.labels.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -99,23 +109,28 @@ export function PriceCatalogsPage() {
         ),
       },
     ],
-    [refetch, remove],
+    [
+      catalogLabels,
+      pageMessages,
+      refetch,
+      remove,
+      sharedMessages.common.active,
+      sharedMessages.common.inactive,
+    ],
   )
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">Price Catalogs</h2>
-        <p className="text-sm text-muted-foreground">
-          Define named price books with a currency and pricing posture.
-        </p>
+        <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>
+        <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search price catalogs…"
+            placeholder={pageMessages.searchPlaceholder}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -131,14 +146,14 @@ export function PriceCatalogsPage() {
           }}
         >
           <Plus className="mr-2 size-4" />
-          New catalog
+          {pageMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading price catalogs..." : "No price catalogs found."}
+        emptyMessage={isPending ? pageMessages.emptyLoading : pageMessages.empty}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

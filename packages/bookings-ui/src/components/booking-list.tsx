@@ -3,7 +3,6 @@
 import {
   type BookingRecord,
   bookingStatusBadgeVariant,
-  formatBookingStatus,
   useBookings,
 } from "@voyantjs/bookings-react"
 import { Badge } from "@voyantjs/ui/components/badge"
@@ -20,6 +19,11 @@ import {
 import { Loader2, Plus, Search } from "lucide-react"
 import * as React from "react"
 
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../i18n/provider"
 import { BookingDialog } from "./booking-dialog"
 
 export interface BookingListProps {
@@ -27,16 +31,13 @@ export interface BookingListProps {
   onSelectBooking?: (booking: BookingRecord) => void
 }
 
-function formatAmount(cents: number | null, currency: string): string {
-  if (cents == null) return "—"
-  return `${(cents / 100).toFixed(2)} ${currency}`
-}
-
 export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps = {}) {
   const [search, setSearch] = React.useState("")
   const [offset, setOffset] = React.useState(0)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<BookingRecord | undefined>(undefined)
+  const { formatNumber } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
 
   const { data, isPending, isError } = useBookings({
     search: search || undefined,
@@ -64,7 +65,7 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search bookings…"
+            placeholder={messages.bookingList.searchPlaceholder}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -81,7 +82,7 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
             }}
           >
             <Plus className="mr-2 size-4" />
-            New booking
+            {messages.bookingList.newBooking}
           </Button>
         </div>
       </div>
@@ -90,11 +91,11 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Booking #</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Sell Amount</TableHead>
-              <TableHead>Pax</TableHead>
-              <TableHead>Start Date</TableHead>
+              <TableHead>{messages.bookingList.columns.bookingNumber}</TableHead>
+              <TableHead>{messages.bookingList.columns.status}</TableHead>
+              <TableHead>{messages.bookingList.columns.sellAmount}</TableHead>
+              <TableHead>{messages.bookingList.columns.pax}</TableHead>
+              <TableHead>{messages.bookingList.columns.startDate}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -107,13 +108,13 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-destructive">
-                  Failed to load bookings.
+                  {messages.bookingList.loadingError}
                 </TableCell>
               </TableRow>
             ) : bookings.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
-                  No bookings found.
+                  {messages.bookingList.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -126,11 +127,16 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
                   <TableCell className="font-medium">{booking.bookingNumber}</TableCell>
                   <TableCell>
                     <Badge variant={bookingStatusBadgeVariant[booking.status]}>
-                      {formatBookingStatus(booking.status)}
+                      {messages.common.bookingStatusLabels[booking.status]}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {formatAmount(booking.sellAmountCents, booking.sellCurrency)}
+                    {booking.sellAmountCents == null
+                      ? "—"
+                      : `${formatNumber(booking.sellAmountCents / 100, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })} ${booking.sellCurrency}`}
                   </TableCell>
                   <TableCell>{booking.pax ?? "—"}</TableCell>
                   <TableCell>{booking.startDate ?? "—"}</TableCell>
@@ -143,7 +149,10 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          Showing {bookings.length} of {total}
+          {formatMessage(messages.bookingList.showingSummary, {
+            count: bookings.length,
+            total,
+          })}
         </span>
         <div className="flex items-center gap-2">
           <Button
@@ -155,7 +164,10 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
             Previous
           </Button>
           <span>
-            Page {page} / {pageCount}
+            {formatMessage(messages.bookingList.pageSummary, {
+              page,
+              pageCount,
+            })}
           </span>
           <Button
             variant="outline"

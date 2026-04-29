@@ -1,9 +1,12 @@
 "use client"
 
 import type { Quote } from "@voyantjs/cruises-react"
+import { formatMessage } from "@voyantjs/i18n"
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
+
+import { useCruisesUiI18nOrDefault } from "../i18n"
 
 type QuoteComponent = Quote["components"][number]
 
@@ -12,49 +15,42 @@ export interface QuoteDisplayProps extends React.ComponentPropsWithoutRef<typeof
   formatPrice?: (amount: string, currency: string) => string
 }
 
-function defaultFormatPrice(amount: string, currency: string): string {
-  const negative = amount.startsWith("-")
-  const abs = negative ? amount.slice(1) : amount
-  const n = Number(abs)
-  if (!Number.isFinite(n)) return `${currency} ${amount}`
-  return `${negative ? "-" : ""}${currency} ${n.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
-}
-
-const COMPONENT_KIND_LABEL: Record<QuoteComponent["kind"], string> = {
-  gratuity: "Gratuity",
-  onboard_credit: "Onboard credit",
-  port_charge: "Port charges",
-  tax: "Tax",
-  ncf: "Non-comm fees",
-  airfare: "Airfare",
-  transfer: "Transfer",
-  insurance: "Insurance",
-}
-
 /**
  * Renders an itemised cruise quote: base per person, components grouped by
  * direction (additions / inclusions / credits), and totals. Mirrors what the
  * server's composeQuote returns; pure presentational.
  */
-export function QuoteDisplay({
-  quote,
-  formatPrice = defaultFormatPrice,
-  className,
-  ...props
-}: QuoteDisplayProps) {
+export function QuoteDisplay({ quote, formatPrice, className, ...props }: QuoteDisplayProps) {
+  const i18n = useCruisesUiI18nOrDefault()
+  const m = i18n.messages.quoteDisplay
+  const formatResolvedPrice =
+    formatPrice ??
+    ((amount: string, currency: string) =>
+      formatCruiseMoney(
+        amount,
+        currency,
+        {
+          fallbackCurrencyAmount: i18n.messages.common.fallbackCurrencyAmount,
+          formatCurrency: i18n.formatCurrency,
+        },
+        {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        },
+      ))
+
   const additions = quote.components.filter((c) => c.direction === "addition")
   const inclusions = quote.components.filter((c) => c.direction === "inclusion")
   const credits = quote.components.filter((c) => c.direction === "credit")
+  const guestLabel = quote.guestCount === 1 ? m.guestLabelSingular : m.guestLabelPlural
+  const occupancyLabel = formatMessage(m.occupancyCabin, { count: quote.occupancy })
 
   return (
     <Card data-slot="quote-display" className={cn(className)} {...props}>
       <CardHeader>
         <div className="flex items-baseline justify-between">
           <div>
-            <h3 className="text-base font-semibold">Your quote</h3>
+            <h3 className="text-base font-semibold">{m.heading}</h3>
             {quote.fareCodeName ? (
               <p className="text-sm text-muted-foreground">
                 {quote.fareCodeName}
@@ -64,68 +60,91 @@ export function QuoteDisplay({
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold">
-              {formatPrice(quote.totalForCabin, quote.currency)}
+              {formatResolvedPrice(quote.totalForCabin, quote.currency)}
             </div>
             <div className="text-xs text-muted-foreground">
-              for {quote.guestCount} guest{quote.guestCount === 1 ? "" : "s"} ({quote.occupancy}
-              -occupancy cabin)
+              {formatMessage(m.guestSummary, {
+                guestCount: quote.guestCount,
+                guestLabel,
+                occupancyLabel,
+              })}
             </div>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <Row
-          label={`Base · ${formatPrice(quote.basePerPerson, quote.currency)} pp × ${quote.guestCount}`}
+          label={formatMessage(m.baseLine, {
+            price: formatResolvedPrice(quote.basePerPerson, quote.currency),
+            guestCount: quote.guestCount,
+          })}
         />
         {additions.length > 0 ? (
-          <Section title="Additions">
+          <Section title={m.sections.additions}>
             {additions.map((c) => (
               <Row
                 key={`add-${c.kind}-${c.label ?? ""}-${c.amount}`}
-                label={`${c.label ?? COMPONENT_KIND_LABEL[c.kind]}${c.perPerson ? " (per person)" : " (per cabin)"}`}
-                amount={`+ ${formatPrice(c.amount, c.currency)}`}
+                label={componentLabel(c, m)}
+                amount={`+ ${formatResolvedPrice(c.amount, c.currency)}`}
               />
             ))}
           </Section>
         ) : null}
         {credits.length > 0 ? (
-          <Section title="Credits">
+          <Section title={m.sections.credits}>
             {credits.map((c) => (
               <Row
                 key={`cred-${c.kind}-${c.label ?? ""}-${c.amount}`}
-                label={`${c.label ?? COMPONENT_KIND_LABEL[c.kind]}${c.perPerson ? " (per person)" : " (per cabin)"}`}
-                amount={`− ${formatPrice(c.amount, c.currency)}`}
+                label={componentLabel(c, m)}
+                amount={`− ${formatResolvedPrice(c.amount, c.currency)}`}
                 amountClassName="text-emerald-600"
               />
             ))}
           </Section>
         ) : null}
         {inclusions.length > 0 ? (
-          <Section title="Included">
+          <Section title={m.sections.included}>
             {inclusions.map((c) => (
               <Row
                 key={`inc-${c.kind}-${c.label ?? ""}`}
-                label={c.label ?? COMPONENT_KIND_LABEL[c.kind]}
-                amount="Included"
+                label={c.label ?? m.componentKindLabels[c.kind]}
+                amount={m.includedAmount}
               />
             ))}
           </Section>
         ) : null}
         <div className="border-t pt-3">
           <Row
-            label="Per person"
-            amount={formatPrice(quote.totalPerPerson, quote.currency)}
+            label={m.totals.perPerson}
+            amount={formatResolvedPrice(quote.totalPerPerson, quote.currency)}
             amountClassName="font-semibold"
           />
           <Row
-            label="Total for cabin"
-            amount={formatPrice(quote.totalForCabin, quote.currency)}
+            label={m.totals.totalForCabin}
+            amount={formatResolvedPrice(quote.totalForCabin, quote.currency)}
             amountClassName="font-bold text-base"
           />
         </div>
       </CardContent>
     </Card>
   )
+}
+
+function componentLabel(
+  component: QuoteComponent,
+  messages: {
+    componentKindLabels: Record<QuoteComponent["kind"], string>
+    componentScope: {
+      perPerson: string
+      perCabin: string
+    }
+  },
+) {
+  const baseLabel = component.label ?? messages.componentKindLabels[component.kind]
+  const scope = component.perPerson
+    ? messages.componentScope.perPerson
+    : messages.componentScope.perCabin
+  return `${baseLabel} (${scope})`
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -154,4 +173,29 @@ function Row({
       {amount ? <span className={cn("tabular-nums", amountClassName)}>{amount}</span> : null}
     </div>
   )
+}
+
+function formatCruiseMoney(
+  amount: string,
+  currency: string,
+  i18n: {
+    fallbackCurrencyAmount: string
+    formatCurrency: (
+      value: number | string | bigint,
+      currency: string,
+      options?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+    ) => string
+  },
+  options?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+) {
+  const n = Number(amount)
+  if (!Number.isFinite(n)) {
+    return formatMessage(i18n.fallbackCurrencyAmount, { currency, amount })
+  }
+
+  try {
+    return i18n.formatCurrency(n, currency, options)
+  } catch {
+    return formatMessage(i18n.fallbackCurrencyAmount, { currency, amount })
+  }
 }

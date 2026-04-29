@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import {
   ProductDayServiceForm,
   type ProductDayServiceSupplierPickerRenderer,
@@ -35,16 +36,21 @@ export function ProductDayServiceDialog({
   renderSupplierServicePicker,
 }: ProductDayServiceDialogProps) {
   const isEdit = Boolean(service)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-day-service-dialog" className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit day service" : "Add day service"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.productDayServiceDialog.titles.edit
+              : messages.productDayServiceDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update supplier linkage, pricing, quantity, and notes for this itinerary service."
-              : "Add a service item under the selected itinerary day."}
+              ? messages.productDayServiceDialog.descriptions.edit
+              : messages.productDayServiceDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductDayServiceForm

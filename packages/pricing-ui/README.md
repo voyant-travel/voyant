@@ -11,3 +11,14 @@ pnpm add @voyantjs/pricing-ui @voyantjs/pricing-react @voyantjs/ui @tanstack/rea
 `@voyantjs/ui` provides the design-system primitives. `@voyantjs/pricing-react` provides the data-layer hooks. Both are required peers.
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
+
+## I18n
+
+Components render English by default. To localize them, wrap your UI in
+`PricingUiMessagesProvider` and import only the locales your app supports.
+
+```tsx
+import { PricingUiMessagesProvider } from "@voyantjs/pricing-ui"
+import { pricingUiEn } from "@voyantjs/pricing-ui/i18n/en"
+import { pricingUiRo } from "@voyantjs/pricing-ui/i18n/ro"
+```

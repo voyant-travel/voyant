@@ -9,6 +9,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { ChevronDown, ChevronRight, Package, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
 import { BookingItemDialog } from "./booking-item-dialog"
 import { BookingItemTravelers } from "./booking-item-travelers"
 
@@ -21,11 +22,6 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   fulfilled: "default",
 }
 
-function formatAmount(cents: number | null, currency: string): string {
-  if (cents == null) return "-"
-  return `${(cents / 100).toFixed(2)} ${currency}`
-}
-
 export interface BookingItemListProps {
   bookingId: string
 }
@@ -36,6 +32,8 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
   const [expandedItemId, setExpandedItemId] = React.useState<string | null>(null)
   const { data } = useBookingItems(bookingId)
   const { remove } = useBookingItemMutation(bookingId)
+  const { formatCurrency } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
 
   const items = data?.data ?? []
 
@@ -44,7 +42,7 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Package className="h-4 w-4" />
-          Items
+          {messages.bookingItemList.title}
         </CardTitle>
         <Button
           size="sm"
@@ -54,24 +52,38 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Item
+          {messages.bookingItemList.addItem}
         </Button>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">No items yet.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {messages.bookingItemList.empty}
+          </p>
         ) : (
           <div className="rounded border bg-background">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
                   <th className="w-8 p-2" />
-                  <th className="p-2 text-left font-medium">Title</th>
-                  <th className="p-2 text-left font-medium">Type</th>
-                  <th className="p-2 text-left font-medium">Status</th>
-                  <th className="p-2 text-right font-medium">Qty</th>
-                  <th className="p-2 text-right font-medium">Total</th>
-                  <th className="p-2 text-left font-medium">Service Date</th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingItemList.columns.title}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingItemList.columns.type}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingItemList.columns.status}
+                  </th>
+                  <th className="p-2 text-right font-medium">
+                    {messages.bookingItemList.columns.quantity}
+                  </th>
+                  <th className="p-2 text-right font-medium">
+                    {messages.bookingItemList.columns.total}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingItemList.columns.serviceDate}
+                  </th>
                   <th className="w-20 p-2" />
                 </tr>
               </thead>
@@ -95,20 +107,24 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                           </button>
                         </td>
                         <td className="p-2 font-medium">{item.title}</td>
-                        <td className="p-2 capitalize">{item.itemType.replace("_", " ")}</td>
                         <td className="p-2">
-                          <Badge
-                            variant={statusVariant[item.status] ?? "secondary"}
-                            className="capitalize"
-                          >
-                            {item.status.replace("_", " ")}
+                          {messages.bookingItemDialog.itemTypeLabels[item.itemType]}
+                        </td>
+                        <td className="p-2">
+                          <Badge variant={statusVariant[item.status] ?? "secondary"}>
+                            {messages.bookingItemDialog.itemStatusLabels[item.status]}
                           </Badge>
                         </td>
                         <td className="p-2 text-right font-mono">{item.quantity}</td>
                         <td className="p-2 text-right font-mono">
-                          {formatAmount(item.totalSellAmountCents, item.sellCurrency)}
+                          {item.totalSellAmountCents == null
+                            ? messages.bookingItemList.values.totalUnavailable
+                            : formatCurrency(item.totalSellAmountCents / 100, item.sellCurrency)}
                         </td>
-                        <td className="p-2">{item.serviceDate ?? "-"}</td>
+                        <td className="p-2">
+                          {item.serviceDate ??
+                            messages.bookingItemList.values.serviceDateUnavailable}
+                        </td>
                         <td className="p-2">
                           <div className="flex items-center gap-1">
                             <button
@@ -124,7 +140,7 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                             <button
                               type="button"
                               onClick={() => {
-                                if (confirm("Delete this item?")) {
+                                if (confirm(messages.bookingItemList.actions.deleteConfirm)) {
                                   remove.mutate(item.id)
                                 }
                               }}

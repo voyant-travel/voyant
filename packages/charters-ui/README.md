@@ -2,6 +2,20 @@
 
 Importable React UI components for Voyant charters. Bundler-consumed (Vite, Next.js, webpack, etc.).
 
+## I18n
+
+Components render English by default. To localize them, wrap your UI in
+`ChartersUiMessagesProvider` and import only the locales your app supports.
+
+```tsx
+import { ChartersUiMessagesProvider } from "@voyantjs/charters-ui"
+import { chartersUiEn } from "@voyantjs/charters-ui/i18n/en"
+import { chartersUiRo } from "@voyantjs/charters-ui/i18n/ro"
+```
+
+English-only apps should import only `./i18n/en`. Bilingual apps can import
+`./i18n/en` and `./i18n/ro`.
+
 ## Install
 
 ```bash

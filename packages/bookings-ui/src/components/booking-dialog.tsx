@@ -25,23 +25,26 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 import { BookingCreateDialog } from "./booking-create-dialog"
 
-const bookingFormSchema = z.object({
-  bookingNumber: z.string().min(1, "Booking number is required"),
-  status: z.enum(["draft", "confirmed", "in_progress", "completed", "cancelled"]),
-  sellCurrency: z.string().min(3).max(3, "Use 3-letter ISO code"),
-  sellAmountCents: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  costAmountCents: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  startDate: z.string().optional().nullable(),
-  endDate: z.string().optional().nullable(),
-  pax: z.coerce.number().int().positive().optional().or(z.literal("")).nullable(),
-  internalNotes: z.string().optional().nullable(),
-})
+function createBookingFormSchema(messages: ReturnType<typeof useBookingsUiMessagesOrDefault>) {
+  return z.object({
+    bookingNumber: z.string().min(1, messages.bookingDialog.validation.bookingNumberRequired),
+    status: z.enum(["draft", "confirmed", "in_progress", "completed", "cancelled"]),
+    sellCurrency: z.string().min(3).max(3, messages.bookingDialog.validation.sellCurrencyInvalid),
+    sellAmountCents: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    costAmountCents: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    startDate: z.string().optional().nullable(),
+    endDate: z.string().optional().nullable(),
+    pax: z.coerce.number().int().positive().optional().or(z.literal("")).nullable(),
+    internalNotes: z.string().optional().nullable(),
+  })
+}
 
-type BookingFormValues = z.input<typeof bookingFormSchema>
-type BookingFormOutput = z.output<typeof bookingFormSchema>
+type BookingFormValues = z.input<ReturnType<typeof createBookingFormSchema>>
+type BookingFormOutput = z.output<ReturnType<typeof createBookingFormSchema>>
 
 export interface BookingDialogProps {
   open: boolean
@@ -55,13 +58,14 @@ export interface BookingDialogProps {
   defaultProductId?: string
 }
 
-const BOOKING_STATUSES = [
-  { value: "draft", label: "Draft" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
+const BOOKING_STATUS_VALUES = [
+  "draft",
+  "confirmed",
+  "in_progress",
+  "completed",
+  "cancelled",
 ] as const
+const DEFAULT_CURRENCY = "EUR" // i18n-literal-ok ISO default currency
 
 /**
  * Single booking dialog that handles both create and edit:
@@ -109,13 +113,15 @@ interface BookingEditDialogProps {
 
 function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEditDialogProps) {
   const { update } = useBookingMutation()
+  const messages = useBookingsUiMessagesOrDefault()
+  const bookingFormSchema = createBookingFormSchema(messages)
 
   const form = useForm<BookingFormValues, unknown, BookingFormOutput>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
       bookingNumber: "",
       status: "draft",
-      sellCurrency: "EUR",
+      sellCurrency: DEFAULT_CURRENCY,
       sellAmountCents: "",
       costAmountCents: "",
       startDate: "",
@@ -172,7 +178,7 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Edit Booking</DialogTitle>
+          <DialogTitle>{messages.bookingDialog.editTitle}</DialogTitle>
         </DialogHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -181,8 +187,11 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Booking Number</Label>
-                <Input {...form.register("bookingNumber")} placeholder="BK-2501-1234" />
+                <Label>{messages.bookingDialog.fields.bookingNumber}</Label>
+                <Input
+                  {...form.register("bookingNumber")}
+                  placeholder={messages.bookingDialog.placeholders.bookingNumber}
+                />
                 {form.formState.errors.bookingNumber && (
                   <p className="text-xs text-destructive">
                     {form.formState.errors.bookingNumber.message}
@@ -191,7 +200,7 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{messages.bookingDialog.fields.status}</Label>
                 <Select
                   value={form.watch("status")}
                   onValueChange={(value) =>
@@ -202,9 +211,9 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {BOOKING_STATUSES.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
+                    {BOOKING_STATUS_VALUES.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {messages.common.bookingStatusLabels[status]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -214,11 +223,11 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Sell Currency</Label>
+                <Label>{messages.bookingDialog.fields.sellCurrency}</Label>
                 <CurrencyCombobox
                   value={form.watch("sellCurrency") || null}
                   onChange={(next) =>
-                    form.setValue("sellCurrency", next ?? "EUR", {
+                    form.setValue("sellCurrency", next ?? DEFAULT_CURRENCY, {
                       shouldValidate: true,
                       shouldDirty: true,
                     })
@@ -226,7 +235,7 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Travel Dates</Label>
+                <Label>{messages.bookingDialog.fields.travelDates}</Label>
                 <DateRangePicker
                   value={{
                     from: form.watch("startDate") || null,
@@ -236,7 +245,7 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
                     form.setValue("startDate", nextValue?.from ?? "", { shouldDirty: true })
                     form.setValue("endDate", nextValue?.to ?? "", { shouldDirty: true })
                   }}
-                  placeholder="Pick travel dates"
+                  placeholder={messages.bookingDialog.placeholders.travelDates}
                   className="w-full"
                 />
               </div>
@@ -244,34 +253,39 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Sell Amount (cents)</Label>
+                <Label>{messages.bookingDialog.fields.sellAmountCents}</Label>
                 <Input {...form.register("sellAmountCents")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Cost Amount (cents)</Label>
+                <Label>{messages.bookingDialog.fields.costAmountCents}</Label>
                 <Input {...form.register("costAmountCents")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Travelers (Pax)</Label>
-                <Input {...form.register("pax")} type="number" min="1" placeholder="2" />
+                <Label>{messages.bookingDialog.fields.pax}</Label>
+                <Input
+                  {...form.register("pax")}
+                  type="number"
+                  min="1"
+                  placeholder={messages.bookingDialog.placeholders.pax}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Internal Notes</Label>
+              <Label>{messages.bookingDialog.fields.internalNotes}</Label>
               <Textarea
                 {...form.register("internalNotes")}
-                placeholder="Private operations notes..."
+                placeholder={messages.bookingDialog.placeholders.internalNotes}
               />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" size="sm" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              {messages.common.saveChanges}
             </Button>
           </DialogFooter>
         </form>

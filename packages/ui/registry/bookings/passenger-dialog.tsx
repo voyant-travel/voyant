@@ -1,6 +1,7 @@
 "use client"
 
 import { type BookingPassengerRecord, usePassengerMutation } from "@voyantjs/bookings-react"
+import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-ui"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
@@ -19,17 +20,22 @@ import {
   Textarea,
 } from "@/components/ui"
 import { zodResolver } from "@/lib/zod-resolver"
+import { useRegistryBookingsMessagesOrDefault } from "./i18n"
 
-const passengerFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email().optional().or(z.literal("")).nullable(),
-  phone: z.string().optional().nullable(),
-  specialRequests: z.string().optional().nullable(),
-})
+function createPassengerFormSchema(
+  messages: ReturnType<typeof useRegistryBookingsMessagesOrDefault>,
+) {
+  return z.object({
+    firstName: z.string().min(1, messages.passengerDialog.validation.firstNameRequired),
+    lastName: z.string().min(1, messages.passengerDialog.validation.lastNameRequired),
+    email: z.string().email().optional().or(z.literal("")).nullable(),
+    phone: z.string().optional().nullable(),
+    specialRequests: z.string().optional().nullable(),
+  })
+}
 
-type PassengerFormValues = z.input<typeof passengerFormSchema>
-type PassengerFormOutput = z.output<typeof passengerFormSchema>
+type PassengerFormValues = z.input<ReturnType<typeof createPassengerFormSchema>>
+type PassengerFormOutput = z.output<ReturnType<typeof createPassengerFormSchema>>
 
 export interface PassengerDialogProps {
   open: boolean
@@ -48,6 +54,9 @@ export function PassengerDialog({
 }: PassengerDialogProps) {
   const isEditing = Boolean(passenger)
   const { create, update } = usePassengerMutation(bookingId)
+  const bookingMessages = useBookingsUiMessagesOrDefault()
+  const messages = useRegistryBookingsMessagesOrDefault()
+  const passengerFormSchema = createPassengerFormSchema(messages)
 
   const form = useForm<PassengerFormValues, unknown, PassengerFormOutput>({
     resolver: zodResolver(passengerFormSchema),
@@ -99,7 +108,11 @@ export function PassengerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Passenger" : "Add Passenger"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.passengerDialog.titles.edit
+              : messages.passengerDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -108,8 +121,11 @@ export function PassengerDialog({
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>First Name</Label>
-                <Input {...form.register("firstName")} placeholder="John" />
+                <Label>{messages.passengerDialog.fields.firstName}</Label>
+                <Input
+                  {...form.register("firstName")}
+                  placeholder={messages.passengerDialog.placeholders.firstName}
+                />
                 {form.formState.errors.firstName && (
                   <p className="text-xs text-destructive">
                     {form.formState.errors.firstName.message}
@@ -117,8 +133,11 @@ export function PassengerDialog({
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Last Name</Label>
-                <Input {...form.register("lastName")} placeholder="Smith" />
+                <Label>{messages.passengerDialog.fields.lastName}</Label>
+                <Input
+                  {...form.register("lastName")}
+                  placeholder={messages.passengerDialog.placeholders.lastName}
+                />
                 {form.formState.errors.lastName && (
                   <p className="text-xs text-destructive">
                     {form.formState.errors.lastName.message}
@@ -129,30 +148,39 @@ export function PassengerDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Email</Label>
-                <Input {...form.register("email")} type="email" placeholder="john@example.com" />
+                <Label>{messages.passengerDialog.fields.email}</Label>
+                <Input
+                  {...form.register("email")}
+                  type="email"
+                  placeholder={messages.passengerDialog.placeholders.email}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Phone</Label>
-                <Input {...form.register("phone")} placeholder="+44 7911 123456" />
+                <Label>{messages.passengerDialog.fields.phone}</Label>
+                <Input
+                  {...form.register("phone")}
+                  placeholder={messages.passengerDialog.placeholders.phone}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Special Requests</Label>
+              <Label>{messages.passengerDialog.fields.specialRequests}</Label>
               <Textarea
                 {...form.register("specialRequests")}
-                placeholder="Any special requests..."
+                placeholder={messages.passengerDialog.placeholders.specialRequests}
               />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
+              {bookingMessages.common.cancel}
             </Button>
             <Button type="submit" size="sm" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Passenger"}
+              {isEditing
+                ? bookingMessages.common.saveChanges
+                : messages.passengerDialog.actions.addPassenger}
             </Button>
           </DialogFooter>
         </form>

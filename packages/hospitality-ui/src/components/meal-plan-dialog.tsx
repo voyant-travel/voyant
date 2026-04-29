@@ -18,20 +18,25 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-const formSchema = z.object({
-  code: z.string().min(1, "Code is required").max(50),
-  name: z.string().min(1, "Name is required").max(255),
-  description: z.string().optional().nullable(),
-  includesBreakfast: z.boolean(),
-  includesLunch: z.boolean(),
-  includesDinner: z.boolean(),
-  includesDrinks: z.boolean(),
-  active: z.boolean(),
-  sortOrder: z.coerce.number().int(),
-})
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+function createFormSchema(messages: ReturnType<typeof useHospitalityUiMessagesOrDefault>) {
+  return z.object({
+    code: z.string().min(1, messages.mealPlanDialog.validation.codeRequired).max(50),
+    name: z.string().min(1, messages.mealPlanDialog.validation.nameRequired).max(255),
+    description: z.string().optional().nullable(),
+    includesBreakfast: z.boolean(),
+    includesLunch: z.boolean(),
+    includesDinner: z.boolean(),
+    includesDrinks: z.boolean(),
+    active: z.boolean(),
+    sortOrder: z.coerce.number().int(),
+  })
+}
+
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface MealPlanDialogProps {
   open: boolean
@@ -50,6 +55,8 @@ export function MealPlanDialog({
 }: MealPlanDialogProps) {
   const isEditing = Boolean(mealPlan)
   const { create, update } = useMealPlanMutation()
+  const messages = useHospitalityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -122,26 +129,36 @@ export function MealPlanDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Meal Plan" : "Add Meal Plan"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.mealPlanDialog.titles.edit
+              : messages.mealPlanDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Code</Label>
-                <Input {...form.register("code")} placeholder="BB" />
+                <Label>{messages.mealPlanDialog.fields.code}</Label>
+                <Input
+                  {...form.register("code")}
+                  placeholder={messages.mealPlanDialog.placeholders.code}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Bed & Breakfast" />
+                <Label>{messages.mealPlanDialog.fields.name}</Label>
+                <Input
+                  {...form.register("name")}
+                  placeholder={messages.mealPlanDialog.placeholders.name}
+                />
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Description</Label>
+              <Label>{messages.mealPlanDialog.fields.description}</Label>
               <Textarea {...form.register("description")} />
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Sort order</Label>
+              <Label>{messages.mealPlanDialog.fields.sortOrder}</Label>
               <Input {...form.register("sortOrder")} type="number" className="w-32" />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -150,28 +167,28 @@ export function MealPlanDialog({
                   checked={form.watch("includesBreakfast")}
                   onCheckedChange={(checked) => form.setValue("includesBreakfast", checked)}
                 />
-                <Label>Breakfast</Label>
+                <Label>{messages.mealPlanDialog.fields.breakfast}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("includesLunch")}
                   onCheckedChange={(checked) => form.setValue("includesLunch", checked)}
                 />
-                <Label>Lunch</Label>
+                <Label>{messages.mealPlanDialog.fields.lunch}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("includesDinner")}
                   onCheckedChange={(checked) => form.setValue("includesDinner", checked)}
                 />
-                <Label>Dinner</Label>
+                <Label>{messages.mealPlanDialog.fields.dinner}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("includesDrinks")}
                   onCheckedChange={(checked) => form.setValue("includesDrinks", checked)}
                 />
-                <Label>Drinks</Label>
+                <Label>{messages.mealPlanDialog.fields.drinks}</Label>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -179,16 +196,16 @@ export function MealPlanDialog({
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{messages.mealPlanDialog.fields.active}</Label>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Meal Plan"}
+              {isEditing ? messages.common.saveChanges : messages.mealPlanDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

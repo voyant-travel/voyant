@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+
 import {
   Button,
   Dialog,
@@ -23,23 +24,22 @@ import {
 import { DateTimePicker } from "@/components/ui/date-time-picker"
 import { zodResolver } from "@/lib/zod-resolver"
 
-const contractFormSchema = z.object({
-  scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
-  title: z.string().min(1, "Title is required"),
-  language: z.string().min(2).max(10).optional(),
-  templateVersionId: z.string().optional(),
-  seriesId: z.string().optional(),
-  personId: z.string().optional(),
-  organizationId: z.string().optional(),
-  supplierId: z.string().optional(),
-  channelId: z.string().optional(),
-  expiresAt: z.string().optional(),
-  variables: z.string().optional(),
-  metadata: z.string().optional(),
-})
+import { useRegistryLegalMessagesOrDefault } from "./i18n/provider"
 
-type FormValues = z.input<typeof contractFormSchema>
-type FormOutput = z.output<typeof contractFormSchema>
+type FormValues = {
+  scope: "customer" | "supplier" | "partner" | "channel" | "other"
+  title: string
+  language?: string
+  templateVersionId?: string
+  seriesId?: string
+  personId?: string
+  organizationId?: string
+  supplierId?: string
+  channelId?: string
+  expiresAt?: string
+  variables?: string
+  metadata?: string
+}
 
 type ContractDialogProps = {
   open: boolean
@@ -48,19 +48,32 @@ type ContractDialogProps = {
   onSuccess: () => void
 }
 
-const SCOPES = [
-  { value: "customer", label: "Customer" },
-  { value: "supplier", label: "Supplier" },
-  { value: "partner", label: "Partner" },
-  { value: "channel", label: "Channel" },
-  { value: "other", label: "Other" },
-] as const
+function createContractFormSchema(messages: ReturnType<typeof useRegistryLegalMessagesOrDefault>) {
+  return z.object({
+    scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
+    title: z.string().min(1, messages.contractDialog.validation.titleRequired),
+    language: z.string().min(2).max(10).optional(),
+    templateVersionId: z.string().optional(),
+    seriesId: z.string().optional(),
+    personId: z.string().optional(),
+    organizationId: z.string().optional(),
+    supplierId: z.string().optional(),
+    channelId: z.string().optional(),
+    expiresAt: z.string().optional(),
+    variables: z.string().optional(),
+    metadata: z.string().optional(),
+  })
+}
+
+const SCOPES = ["customer", "supplier", "partner", "channel", "other"] as const
 
 export function ContractDialog({ open, onOpenChange, contract, onSuccess }: ContractDialogProps) {
+  const messages = useRegistryLegalMessagesOrDefault()
+  const contractFormSchema = createContractFormSchema(messages)
   const isEditing = !!contract
   const { create, update } = useLegalContractMutation()
 
-  const form = useForm<FormValues, unknown, FormOutput>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(contractFormSchema),
     defaultValues: {
       scope: "customer",
@@ -99,7 +112,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
     }
   }, [open, contract, form])
 
-  const onSubmit = async (values: FormOutput) => {
+  const onSubmit = async (values: FormValues) => {
     const payload = {
       scope: values.scope,
       title: values.title,
@@ -127,15 +140,22 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Contract" : "New Contract"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.contractDialog.titles.edit
+              : messages.contractDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Scope</Label>
+                <Label>{messages.contractDialog.fields.scope}</Label>
                 <Select
-                  items={SCOPES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={SCOPES.map((scope) => ({
+                    label: messages.common.contractScopeLabels[scope],
+                    value: scope,
+                  }))}
                   value={form.watch("scope")}
                   onValueChange={(v) => form.setValue("scope", v as FormValues["scope"])}
                 >
@@ -143,63 +163,88 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SCOPES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
+                    {SCOPES.map((scope) => (
+                      <SelectItem key={scope} value={scope}>
+                        {messages.common.contractScopeLabels[scope]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Language</Label>
-                <Input {...form.register("language")} placeholder="en" maxLength={10} />
+                <Label>{messages.contractDialog.fields.language}</Label>
+                <Input
+                  {...form.register("language")}
+                  placeholder={messages.contractDialog.placeholders.language}
+                  maxLength={10}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Title</Label>
-              <Input {...form.register("title")} placeholder="Contract title" />
-              {form.formState.errors.title && (
+              <Label>{messages.contractDialog.fields.title}</Label>
+              <Input
+                {...form.register("title")}
+                placeholder={messages.contractDialog.placeholders.title}
+              />
+              {form.formState.errors.title ? (
                 <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
-              )}
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Template Version ID</Label>
-                <Input {...form.register("templateVersionId")} placeholder="Optional" />
+                <Label>{messages.contractDialog.fields.templateVersionId}</Label>
+                <Input
+                  {...form.register("templateVersionId")}
+                  placeholder={messages.contractDialog.placeholders.optional}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Series ID</Label>
-                <Input {...form.register("seriesId")} placeholder="Optional" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label>Person ID</Label>
-                <Input {...form.register("personId")} placeholder="Optional" />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>Organization ID</Label>
-                <Input {...form.register("organizationId")} placeholder="Optional" />
+                <Label>{messages.contractDialog.fields.seriesId}</Label>
+                <Input
+                  {...form.register("seriesId")}
+                  placeholder={messages.contractDialog.placeholders.optional}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Supplier ID</Label>
-                <Input {...form.register("supplierId")} placeholder="Optional" />
+                <Label>{messages.contractDialog.fields.personId}</Label>
+                <Input
+                  {...form.register("personId")}
+                  placeholder={messages.contractDialog.placeholders.optional}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Channel ID</Label>
-                <Input {...form.register("channelId")} placeholder="Optional" />
+                <Label>{messages.contractDialog.fields.organizationId}</Label>
+                <Input
+                  {...form.register("organizationId")}
+                  placeholder={messages.contractDialog.placeholders.optional}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label>{messages.contractDialog.fields.supplierId}</Label>
+                <Input
+                  {...form.register("supplierId")}
+                  placeholder={messages.contractDialog.placeholders.optional}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>{messages.contractDialog.fields.channelId}</Label>
+                <Input
+                  {...form.register("channelId")}
+                  placeholder={messages.contractDialog.placeholders.optional}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Expires At</Label>
+              <Label>{messages.contractDialog.fields.expiresAt}</Label>
               <DateTimePicker
                 value={form.watch("expiresAt") || null}
                 onChange={(next) =>
@@ -208,28 +253,38 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                     shouldDirty: true,
                   })
                 }
-                placeholder="Select expiry date & time"
+                placeholder={messages.contractDialog.placeholders.expiresAt}
                 className="w-full"
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Variables (JSON)</Label>
-              <Textarea {...form.register("variables")} placeholder='{"key": "value"}' rows={3} />
+              <Label>{messages.contractDialog.fields.variables}</Label>
+              <Textarea
+                {...form.register("variables")}
+                placeholder={messages.contractDialog.placeholders.variables}
+                rows={3}
+              />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Metadata (JSON)</Label>
-              <Textarea {...form.register("metadata")} placeholder='{"key": "value"}' rows={3} />
+              <Label>{messages.contractDialog.fields.metadata}</Label>
+              <Textarea
+                {...form.register("metadata")}
+                placeholder={messages.contractDialog.placeholders.metadata}
+                rows={3}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Create Contract"}
+              {form.formState.isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {isEditing ? messages.common.saveChanges : messages.contractDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

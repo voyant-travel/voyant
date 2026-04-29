@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 const GROUP_NONE = "__none__"
 
@@ -48,15 +49,6 @@ export interface SharedRoomSectionProps {
   }
 }
 
-const DEFAULT_LABELS = {
-  toggle: "Link to a shared-room group",
-  createMode: "Create new group",
-  joinMode: "Join existing",
-  selectPlaceholder: "Select a group...",
-  noGroups: "No existing groups for this product",
-  createHint: "A new group will be created with this booking as the primary member.",
-} as const
-
 /**
  * Shared-room (partaj) attachment section. Operators use it to either create a
  * new `booking_groups` row at booking-create time or join an existing group
@@ -73,7 +65,8 @@ export function SharedRoomSection({
   enabled = true,
   labels,
 }: SharedRoomSectionProps) {
-  const merged = { ...DEFAULT_LABELS, ...labels }
+  const messages = useBookingsUiMessagesOrDefault()
+  const merged = { ...messages.sharedRoomSection.labels, ...labels }
 
   const { data: groupsData } = useBookingGroups({
     productId: productId || undefined,

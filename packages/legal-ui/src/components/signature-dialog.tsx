@@ -21,17 +21,27 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-const signatureFormSchema = z.object({
-  signerName: z.string().min(1, "Signer name is required"),
-  signerEmail: z.string().email().optional().or(z.literal("")),
-  signerRole: z.string().optional(),
-  method: z.enum(["manual", "electronic", "docusign", "other"]),
-  provider: z.string().optional(),
-  externalReference: z.string().optional(),
-})
+import { useLegalUiMessagesOrDefault } from "../i18n"
+import { type LegalSignatureMethod, legalSignatureMethods } from "../i18n/messages"
 
-type FormValues = z.input<typeof signatureFormSchema>
-type FormOutput = z.output<typeof signatureFormSchema>
+function createSignatureFormSchema(messages: ReturnType<typeof useLegalUiMessagesOrDefault>) {
+  return z.object({
+    signerName: z.string().min(1, messages.signatureDialog.validation.signerNameRequired),
+    signerEmail: z
+      .string()
+      .email(messages.signatureDialog.validation.signerEmailInvalid)
+      .optional()
+      .or(z.literal("")),
+    signerRole: z.string().optional(),
+    method: z.enum(legalSignatureMethods),
+    provider: z.string().optional(),
+    externalReference: z.string().optional(),
+  })
+}
+
+type SignatureFormSchema = ReturnType<typeof createSignatureFormSchema>
+type FormValues = z.input<SignatureFormSchema>
+type FormOutput = z.output<SignatureFormSchema>
 
 type SignatureDialogProps = {
   open: boolean
@@ -40,13 +50,6 @@ type SignatureDialogProps = {
   onSuccess: () => void
 }
 
-const METHODS = [
-  { value: "manual", label: "Manual" },
-  { value: "electronic", label: "Electronic" },
-  { value: "docusign", label: "DocuSign" },
-  { value: "other", label: "Other" },
-] as const
-
 export function SignatureDialog({
   open,
   onOpenChange,
@@ -54,6 +57,12 @@ export function SignatureDialog({
   onSuccess,
 }: SignatureDialogProps) {
   const { create } = useLegalContractSignatureMutation()
+  const messages = useLegalUiMessagesOrDefault()
+  const signatureFormSchema = createSignatureFormSchema(messages)
+  const methodItems = legalSignatureMethods.map((value) => ({
+    value,
+    label: messages.signatureDialog.methodLabels[value],
+  }))
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(signatureFormSchema),
     defaultValues: {
@@ -91,13 +100,16 @@ export function SignatureDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Record Signature</DialogTitle>
+          <DialogTitle>{messages.signatureDialog.title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Signer Name</Label>
-              <Input {...form.register("signerName")} placeholder="Full name" />
+              <Label>{messages.signatureDialog.fields.signerName}</Label>
+              <Input
+                {...form.register("signerName")}
+                placeholder={messages.signatureDialog.placeholders.signerName}
+              />
               {form.formState.errors.signerName && (
                 <p className="text-xs text-destructive">
                   {form.formState.errors.signerName.message}
@@ -107,31 +119,36 @@ export function SignatureDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Signer Email</Label>
+                <Label>{messages.signatureDialog.fields.signerEmail}</Label>
                 <Input
                   {...form.register("signerEmail")}
                   type="email"
-                  placeholder="email@example.com"
+                  placeholder={messages.signatureDialog.placeholders.signerEmail}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Signer Role</Label>
-                <Input {...form.register("signerRole")} placeholder="e.g. CEO, Legal Rep" />
+                <Label>{messages.signatureDialog.fields.signerRole}</Label>
+                <Input
+                  {...form.register("signerRole")}
+                  placeholder={messages.signatureDialog.placeholders.signerRole}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Method</Label>
+              <Label>{messages.signatureDialog.fields.method}</Label>
               <Select
-                items={METHODS}
+                items={methodItems}
                 value={form.watch("method")}
-                onValueChange={(v) => form.setValue("method", v as FormValues["method"])}
+                onValueChange={(v) =>
+                  form.setValue("method", v as LegalSignatureMethod, { shouldValidate: true })
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {METHODS.map((m) => (
+                  {methodItems.map((m) => (
                     <SelectItem key={m.value} value={m.value}>
                       {m.label}
                     </SelectItem>
@@ -142,22 +159,28 @@ export function SignatureDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Provider</Label>
-                <Input {...form.register("provider")} placeholder="Optional" />
+                <Label>{messages.signatureDialog.fields.provider}</Label>
+                <Input
+                  {...form.register("provider")}
+                  placeholder={messages.signatureDialog.placeholders.provider}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>External Reference</Label>
-                <Input {...form.register("externalReference")} placeholder="Optional" />
+                <Label>{messages.signatureDialog.fields.externalReference}</Label>
+                <Input
+                  {...form.register("externalReference")}
+                  placeholder={messages.signatureDialog.placeholders.externalReference}
+                />
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Record Signature
+              {messages.signatureDialog.actions.submit}
             </Button>
           </DialogFooter>
         </form>

@@ -31,6 +31,7 @@ import {
 } from "@/components/ui"
 import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
+import { useRegistryGroundMessagesOrDefault } from "./i18n"
 
 type ResourceRef = { id: string; name: string; kind?: string | null }
 type OperatorRef = { id: string; name: string; code?: string | null }
@@ -59,24 +60,6 @@ const GROUND_VEHICLE_CLASSES = [
 type VehicleCategory = (typeof GROUND_VEHICLE_CATEGORIES)[number]
 type VehicleClass = (typeof GROUND_VEHICLE_CLASSES)[number]
 
-const formSchema = z.object({
-  resourceId: z.string().min(1, "Resource ID is required"),
-  operatorId: z.string().optional().nullable(),
-  category: z.enum(GROUND_VEHICLE_CATEGORIES),
-  vehicleClass: z.enum(GROUND_VEHICLE_CLASSES),
-  passengerCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  checkedBagCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  carryOnCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  wheelchairCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  childSeatCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  isAccessible: z.boolean(),
-  active: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
-
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
-
 export interface VehicleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -89,9 +72,27 @@ function numberOrNull(value: number | "" | null | undefined) {
 }
 
 export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: VehicleDialogProps) {
+  const messages = useRegistryGroundMessagesOrDefault()
+  const dialogMessages = messages.vehicleDialog
   const isEditing = Boolean(vehicle)
   const { create, update } = useGroundVehicleMutation()
+  const formSchema = z.object({
+    resourceId: z.string().min(1, dialogMessages.errors.resourceRequired),
+    operatorId: z.string().optional().nullable(),
+    category: z.enum(GROUND_VEHICLE_CATEGORIES),
+    vehicleClass: z.enum(GROUND_VEHICLE_CLASSES),
+    passengerCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    checkedBagCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    carryOnCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    wheelchairCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    childSeatCapacity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    isAccessible: z.boolean(),
+    active: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
 
+  type FormValues = z.input<typeof formSchema>
+  type FormOutput = z.output<typeof formSchema>
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -176,13 +177,15 @@ export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: Vehicl
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Vehicle" : "Add Vehicle"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dialogMessages.editTitle : dialogMessages.addTitle}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Resource</Label>
+                <Label>{dialogMessages.fields.resource}</Label>
                 <EntityCombobox<ResourceRef>
                   value={form.watch("resourceId") || null}
                   onChange={(id) => form.setValue("resourceId", id ?? "")}
@@ -191,8 +194,8 @@ export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: Vehicl
                   queryKey={["resources", "picker"]}
                   getLabel={(resource) => resource.name}
                   getSecondary={(resource) => resource.kind ?? undefined}
-                  placeholder="Search resources…"
-                  emptyText="No resources found."
+                  placeholder={dialogMessages.placeholders.resource}
+                  emptyText={dialogMessages.placeholders.resourceEmpty}
                 />
                 {form.formState.errors.resourceId ? (
                   <p className="text-xs text-destructive">
@@ -201,7 +204,7 @@ export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: Vehicl
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Operator (optional)</Label>
+                <Label>{dialogMessages.fields.operator}</Label>
                 <EntityCombobox<OperatorRef>
                   value={form.watch("operatorId") ?? null}
                   onChange={(id) => form.setValue("operatorId", id)}
@@ -210,18 +213,18 @@ export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: Vehicl
                   queryKey={["ground", "operators", "picker"]}
                   getLabel={(groundOperator) => groundOperator.name}
                   getSecondary={(groundOperator) => groundOperator.code ?? undefined}
-                  placeholder="Search operators…"
-                  emptyText="No operators found."
+                  placeholder={dialogMessages.placeholders.operator}
+                  emptyText={dialogMessages.placeholders.operatorEmpty}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Category</Label>
+                <Label>{dialogMessages.fields.category}</Label>
                 <Select
                   items={GROUND_VEHICLE_CATEGORIES.map((x) => ({
-                    label: x.replace(/_/g, " "),
+                    label: messages.common.categoryLabels[x],
                     value: x,
                   }))}
                   value={form.watch("category")}
@@ -233,17 +236,17 @@ export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: Vehicl
                   <SelectContent>
                     {GROUND_VEHICLE_CATEGORIES.map((category) => (
                       <SelectItem key={category} value={category} className="capitalize">
-                        {category}
+                        {messages.common.categoryLabels[category]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Class</Label>
+                <Label>{dialogMessages.fields.class}</Label>
                 <Select
                   items={GROUND_VEHICLE_CLASSES.map((x) => ({
-                    label: x.replace(/_/g, " "),
+                    label: messages.common.classLabels[x],
                     value: x,
                   }))}
                   value={form.watch("vehicleClass")}
@@ -255,7 +258,7 @@ export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: Vehicl
                   <SelectContent>
                     {GROUND_VEHICLE_CLASSES.map((vehicleClass) => (
                       <SelectItem key={vehicleClass} value={vehicleClass} className="capitalize">
-                        {vehicleClass}
+                        {messages.common.classLabels[vehicleClass]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -265,29 +268,29 @@ export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: Vehicl
 
             <div className="grid grid-cols-5 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Passengers</Label>
+                <Label>{dialogMessages.fields.passengers}</Label>
                 <Input {...form.register("passengerCapacity")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Checked bags</Label>
+                <Label>{dialogMessages.fields.checkedBags}</Label>
                 <Input {...form.register("checkedBagCapacity")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Carry-on</Label>
+                <Label>{dialogMessages.fields.carryOn}</Label>
                 <Input {...form.register("carryOnCapacity")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Wheelchairs</Label>
+                <Label>{dialogMessages.fields.wheelchairs}</Label>
                 <Input {...form.register("wheelchairCapacity")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Child seats</Label>
+                <Label>{dialogMessages.fields.childSeats}</Label>
                 <Input {...form.register("childSeatCapacity")} type="number" min="0" />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{dialogMessages.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
 
@@ -297,24 +300,24 @@ export function VehicleDialog({ open, onOpenChange, vehicle, onSuccess }: Vehicl
                   checked={form.watch("isAccessible")}
                   onCheckedChange={(value) => form.setValue("isAccessible", value)}
                 />
-                <Label>Accessible</Label>
+                <Label>{dialogMessages.fields.accessible}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("active")}
                   onCheckedChange={(value) => form.setValue("active", value)}
                 />
-                <Label>Active</Label>
+                <Label>{dialogMessages.fields.active}</Label>
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Vehicle"}
+              {isEditing ? messages.common.saveChanges : dialogMessages.actions.add}
             </Button>
           </DialogFooter>
         </form>

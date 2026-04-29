@@ -13,6 +13,8 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { MaintenanceBlockStatus } from "../i18n/messages"
 import { MaintenanceBlockDialog } from "./maintenance-block-dialog"
 import { PaginationFooter } from "./pagination-footer"
 
@@ -22,6 +24,7 @@ export interface MaintenanceBlocksTabProps {
 const PAGE_SIZE = 25
 
 export function MaintenanceBlocksTab({ propertyId }: MaintenanceBlocksTabProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<MaintenanceBlockRecord | undefined>(undefined)
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -52,9 +55,7 @@ export function MaintenanceBlocksTab({ propertyId }: MaintenanceBlocksTabProps) 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Take rooms out of service for repairs or upkeep.
-        </p>
+        <p className="text-sm text-muted-foreground">{messages.maintenanceBlocksTab.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -63,7 +64,7 @@ export function MaintenanceBlocksTab({ propertyId }: MaintenanceBlocksTabProps) 
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Block
+          {messages.maintenanceBlocksTab.add}
         </Button>
       </div>
 
@@ -73,17 +74,25 @@ export function MaintenanceBlocksTab({ propertyId }: MaintenanceBlocksTabProps) 
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No maintenance blocks yet.</p>
+          <p className="text-sm text-muted-foreground">{messages.maintenanceBlocksTab.empty}</p>
         </div>
       ) : (
         <div className="rounded-md border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">Dates</th>
-                <th className="p-3 text-left font-medium">Room type / unit</th>
-                <th className="p-3 text-left font-medium">Reason</th>
-                <th className="p-3 text-left font-medium">Status</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.maintenanceBlocksTab.columns.dates}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.maintenanceBlocksTab.columns.roomTypeUnit}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.maintenanceBlocksTab.columns.reason}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.maintenanceBlocksTab.columns.status}
+                </th>
                 <th className="w-20 p-3" />
               </tr>
             </thead>
@@ -100,12 +109,22 @@ export function MaintenanceBlocksTab({ propertyId }: MaintenanceBlocksTabProps) 
                       {row.startsOn} → {row.endsOn}
                     </td>
                     <td className="p-3 text-muted-foreground">
-                      {roomType ?? roomUnit ?? row.roomTypeId ?? row.roomUnitId ?? "—"}
+                      {roomType ??
+                        roomUnit ??
+                        row.roomTypeId ??
+                        row.roomUnitId ??
+                        messages.common.none}
                     </td>
-                    <td className="p-3 text-muted-foreground">{row.reason ?? "—"}</td>
+                    <td className="p-3 text-muted-foreground">
+                      {row.reason ?? messages.common.none}
+                    </td>
                     <td className="p-3">
-                      <Badge variant="outline" className="capitalize">
-                        {row.status.replace(/_/g, " ")}
+                      <Badge variant="outline">
+                        {
+                          messages.common.maintenanceBlockStatusLabels[
+                            row.status as MaintenanceBlockStatus
+                          ]
+                        }
                       </Badge>
                     </td>
                     <td className="p-3">
@@ -123,7 +142,7 @@ export function MaintenanceBlocksTab({ propertyId }: MaintenanceBlocksTabProps) 
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm("Delete block?")) {
+                            if (confirm(messages.maintenanceBlocksTab.deleteConfirm)) {
                               remove.mutate(row.id)
                             }
                           }}

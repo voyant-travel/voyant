@@ -10,6 +10,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useSellabilityUiMessagesOrDefault } from "../i18n"
+
 type Props = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -19,12 +21,8 @@ type Props = {
 
 const PAGE_SIZE = 100
 
-export function ChannelCombobox({
-  value,
-  onChange,
-  placeholder = "Select channel…",
-  disabled,
-}: Props) {
+export function ChannelCombobox({ value, onChange, placeholder, disabled }: Props) {
+  const messages = useSellabilityUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useChannels({ limit: PAGE_SIZE })
   const selectedQuery = useChannel(value ?? undefined, { enabled: !!value })
@@ -70,10 +68,15 @@ export function ChannelCombobox({
         setInputValue(id ? (itemMap.get(id)?.name ?? "") : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.channelCombobox.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
-          {listQuery.isPending || selectedQuery.isPending ? "Loading…" : "No channels found."}
+          {listQuery.isPending || selectedQuery.isPending
+            ? messages.common.loading
+            : messages.channelCombobox.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
@@ -85,7 +88,10 @@ export function ChannelCombobox({
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate font-medium">{item.name}</span>
                     <span className="truncate text-xs text-muted-foreground">
-                      {[item.kind, item.status].filter(Boolean).join(" · ")}
+                      {[
+                        messages.common.channelKindLabels[item.kind],
+                        messages.common.channelStatusLabels[item.status],
+                      ].join(" · ")}
                     </span>
                   </div>
                 </ComboboxItem>

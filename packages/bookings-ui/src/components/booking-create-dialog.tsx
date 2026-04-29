@@ -32,6 +32,12 @@ import { Loader2 } from "lucide-react"
 import * as React from "react"
 
 import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../i18n/provider"
+
+import {
   emptyPassengerListValue,
   type PassengerListValue,
   PassengersSection,
@@ -205,6 +211,8 @@ export function BookingCreateDialog({
    */
   const [confirmAfterCreate, setConfirmAfterCreate] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const { formatDate } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
 
   React.useEffect(() => {
     if (!open) {
@@ -251,16 +259,21 @@ export function BookingCreateDialog({
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
   }, [slotsData, product.optionId])
 
-  const formatSlotLabel = React.useCallback((slot: (typeof slots)[number]) => {
-    const date = new Date(slot.startsAt).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-    const remaining =
-      !slot.unlimited && typeof slot.remainingPax === "number" ? ` · ${slot.remainingPax} left` : ""
-    return `${date}${remaining}`
-  }, [])
+  const formatSlotLabel = React.useCallback(
+    (slot: (typeof slots)[number]) => {
+      const date = formatDate(slot.startsAt, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+      const remaining =
+        !slot.unlimited && typeof slot.remainingPax === "number"
+          ? ` · ${slot.remainingPax} ${messages.bookingCreateDialog.labels.remainingCapacity}`
+          : ""
+      return `${date}${remaining}`
+    },
+    [formatDate, messages],
+  )
 
   const slotUnitAvailability = useSlotUnitAvailability({
     slotId: slotId ?? undefined,
@@ -289,7 +302,7 @@ export function BookingCreateDialog({
   // Currency placeholder — used for voucher + payment schedule display.
   // Consumers hooking in real product data should override this by wrapping
   // the component or swapping in their own currency-aware hook.
-  const currency = "EUR"
+  const currency = messages.bookingCreateDialog.labels.currency
 
   const { create: createPerson } = usePersonMutation()
   const quickCreateMutation = useBookingQuickCreateMutation()
@@ -299,7 +312,7 @@ export function BookingCreateDialog({
     setError(null)
 
     if (!product.productId) {
-      setError("Select a product")
+      setError(messages.bookingCreateDialog.validation.selectProduct)
       return
     }
 
@@ -307,13 +320,13 @@ export function BookingCreateDialog({
     try {
       if (person.mode === "existing") {
         if (!person.personId) {
-          setError("Select a person or switch to create mode")
+          setError(messages.bookingCreateDialog.validation.selectPerson)
           return
         }
         resolvedPersonId = person.personId
       } else {
         if (!person.newPerson.firstName.trim() || !person.newPerson.lastName.trim()) {
-          setError("First and last name are required")
+          setError(messages.bookingCreateDialog.validation.firstAndLastNameRequired)
           return
         }
         const created = await createPerson.mutateAsync({
@@ -326,7 +339,7 @@ export function BookingCreateDialog({
       }
 
       if (sharedRoom.enabled && sharedRoom.mode === "join" && !sharedRoom.groupId) {
-        setError("Select a shared-room group to join")
+        setError(messages.bookingCreateDialog.validation.selectSharedRoomGroup)
         return
       }
 
@@ -349,7 +362,7 @@ export function BookingCreateDialog({
           ? {
               action: "create",
               kind: "shared_room",
-              label: `Shared room — ${bookingNumber}`,
+              label: `${messages.bookingCreateDialog.labels.sharedRoomGeneratedLabelPrefix} - ${bookingNumber}`,
               optionUnitId: product.optionId,
               makeBookingPrimary: true,
             }
@@ -388,8 +401,10 @@ export function BookingCreateDialog({
         } catch (statusErr) {
           setError(
             statusErr instanceof Error
-              ? `Booking created but confirm failed: ${statusErr.message}`
-              : "Booking created but confirm failed",
+              ? formatMessage(messages.bookingCreateDialog.validation.confirmFailedPrefix, {
+                  message: statusErr.message,
+                })
+              : messages.bookingCreateDialog.validation.confirmFailed,
           )
           onCreated?.(booking)
           return
@@ -399,7 +414,9 @@ export function BookingCreateDialog({
       onOpenChange(false)
       onCreated?.(finalBooking)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create booking")
+      setError(
+        err instanceof Error ? err.message : messages.bookingCreateDialog.validation.createFailed,
+      )
     }
   }
 
@@ -410,7 +427,7 @@ export function BookingCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Quick Book</DialogTitle>
+          <DialogTitle>{messages.bookingCreateDialog.title}</DialogTitle>
         </DialogHeader>
         <DialogBody className="grid gap-4">
           <ProductPickerSection
@@ -418,23 +435,28 @@ export function BookingCreateDialog({
             onChange={setProduct}
             enabled={open}
             lockProduct={Boolean(defaultProductId)}
+            labels={{
+              optionNone: messages.bookingCreateDialog.labels.noSpecificOption,
+            }}
           />
 
           {product.productId ? (
             <div className="flex flex-col gap-1">
-              <Label>Departure</Label>
+              <Label>{messages.bookingCreateDialog.fields.departure}</Label>
               <Select
                 value={slotId ?? "__none__"}
                 onValueChange={(v) => setSlotId(v === "__none__" ? null : (v ?? null))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a departure..." />
+                  <SelectValue placeholder={messages.bookingCreateDialog.placeholders.departure} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">No specific departure</SelectItem>
+                  <SelectItem value="__none__">
+                    {messages.bookingCreateDialog.placeholders.departureNone}
+                  </SelectItem>
                   {slots.length === 0 ? (
                     <SelectItem value="__empty__" disabled>
-                      No open departures for this product
+                      {messages.bookingCreateDialog.placeholders.departureEmpty}
                     </SelectItem>
                   ) : (
                     slots.map((slot) => (
@@ -449,16 +471,45 @@ export function BookingCreateDialog({
           ) : null}
 
           {slotId ? (
-            <RoomsStepperSection value={rooms} onChange={setRooms} slotId={slotId} enabled={open} />
+            <RoomsStepperSection
+              value={rooms}
+              onChange={setRooms}
+              slotId={slotId}
+              enabled={open}
+              labels={{
+                heading: messages.bookingCreateDialog.labels.roomsHeading,
+                noSlot: messages.bookingCreateDialog.labels.roomsNoSlot,
+                noUnits: messages.bookingCreateDialog.labels.roomsNoUnits,
+                remaining: messages.bookingCreateDialog.labels.roomsRemaining,
+                unlimited: messages.bookingCreateDialog.labels.roomsUnlimited,
+              }}
+            />
           ) : null}
 
-          <PersonPickerSection value={person} onChange={setPerson} enabled={open} />
+          <PersonPickerSection
+            value={person}
+            onChange={setPerson}
+            enabled={open}
+            labels={{
+              createNewPerson: messages.bookingCreateDialog.labels.createNewPerson,
+              selectExistingPerson: messages.bookingCreateDialog.labels.selectExistingPerson,
+              organizationNone: messages.bookingCreateDialog.labels.organizationNone,
+            }}
+          />
 
           <SharedRoomSection
             value={sharedRoom}
             onChange={setSharedRoom}
             productId={product.productId || undefined}
             enabled={open}
+            labels={{
+              toggle: messages.bookingCreateDialog.labels.sharedRoomToggle,
+              createMode: messages.bookingCreateDialog.labels.sharedRoomCreateMode,
+              joinMode: messages.bookingCreateDialog.labels.sharedRoomJoinMode,
+              selectPlaceholder: messages.bookingCreateDialog.labels.sharedRoomSelectPlaceholder,
+              noGroups: messages.bookingCreateDialog.labels.sharedRoomNoGroups,
+              createHint: messages.bookingCreateDialog.labels.sharedRoomCreateHint,
+            }}
           />
 
           {product.productId ? (
@@ -466,6 +517,19 @@ export function BookingCreateDialog({
               value={passengers}
               onChange={setPassengers}
               roomUnits={roomUnitOptions.length > 0 ? roomUnitOptions : undefined}
+              labels={{
+                heading: messages.bookingCreateDialog.labels.passengerHeading,
+                addPassenger: messages.bookingCreateDialog.labels.addPassenger,
+                role: messages.bookingCreateDialog.labels.passengerRole,
+                roleLead: messages.bookingCreateDialog.labels.passengerLead,
+                roleAdult: messages.bookingCreateDialog.labels.passengerAdult,
+                roleChild: messages.bookingCreateDialog.labels.passengerChild,
+                roleInfant: messages.bookingCreateDialog.labels.passengerInfant,
+                room: messages.bookingCreateDialog.labels.passengerRoom,
+                noRoom: messages.bookingCreateDialog.labels.passengerNoRoom,
+                remove: messages.bookingCreateDialog.labels.passengerRemove,
+                empty: messages.bookingCreateDialog.labels.passengerEmpty,
+              }}
             />
           ) : null}
 
@@ -474,23 +538,56 @@ export function BookingCreateDialog({
               productId={product.productId}
               optionId={product.optionId}
               unitQuantities={rooms.quantities}
+              labels={{
+                heading: messages.bookingCreateDialog.labels.breakdownHeading,
+                total: messages.bookingCreateDialog.labels.breakdownTotal,
+                onRequest: messages.bookingCreateDialog.labels.breakdownOnRequest,
+                groupRate: messages.bookingCreateDialog.labels.breakdownGroupRate,
+                empty: messages.bookingCreateDialog.labels.breakdownEmpty,
+                noPricing: messages.bookingCreateDialog.labels.breakdownNoPricing,
+              }}
             />
           ) : null}
 
-          <VoucherPickerSection value={voucher} onChange={setVoucher} currency={currency} />
+          <VoucherPickerSection
+            value={voucher}
+            onChange={setVoucher}
+            currency={currency}
+            labels={{
+              heading: messages.bookingCreateDialog.labels.voucherHeading,
+              codePlaceholder: messages.bookingCreateDialog.labels.voucherCodePlaceholder,
+              apply: messages.bookingCreateDialog.labels.voucherApply,
+              clear: messages.bookingCreateDialog.labels.voucherClear,
+              remainingLabel: messages.bookingCreateDialog.labels.voucherRemainingLabel,
+              invalidLabel: messages.bookingCreateDialog.labels.voucherInvalidLabel,
+            }}
+          />
 
           <PaymentScheduleSection
             value={paymentSchedule}
             onChange={setPaymentSchedule}
             currency={currency}
+            labels={{
+              heading: messages.bookingCreateDialog.labels.paymentHeading,
+              modeUnpaid: messages.bookingCreateDialog.labels.paymentModeUnpaid,
+              modeFull: messages.bookingCreateDialog.labels.paymentModeFull,
+              modeAdvance: messages.bookingCreateDialog.labels.paymentModeAdvance,
+              modeSplit: messages.bookingCreateDialog.labels.paymentModeSplit,
+              dueDate: messages.bookingCreateDialog.labels.paymentDueDate,
+              amount: messages.bookingCreateDialog.labels.paymentAmount,
+              firstInstallment: messages.bookingCreateDialog.labels.paymentFirstInstallment,
+              secondInstallment: messages.bookingCreateDialog.labels.paymentSecondInstallment,
+              preset5050: messages.bookingCreateDialog.labels.paymentPreset5050,
+              unpaidHint: messages.bookingCreateDialog.labels.paymentUnpaidHint,
+            }}
           />
 
           <div className="flex flex-col gap-2">
-            <Label>Internal Notes</Label>
+            <Label>{messages.bookingCreateDialog.fields.internalNotes}</Label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Quick context for this booking..."
+              placeholder={messages.bookingCreateDialog.placeholders.internalNotes}
             />
           </div>
 
@@ -503,12 +600,10 @@ export function BookingCreateDialog({
             />
             <div className="flex flex-col gap-1">
               <Label htmlFor="quickbook-confirm-after-create" className="cursor-pointer text-sm">
-                Confirm & notify traveler after creating
+                {messages.bookingCreateDialog.fields.confirmAfterCreate}
               </Label>
               <p className="text-xs text-muted-foreground">
-                Transitions to confirmed after create. When the notifications module's auto-dispatch
-                is on, this fires the doc bundle + traveler email via the booking.confirmed
-                subscriber.
+                {messages.bookingCreateDialog.fields.confirmAfterCreateHint}
               </p>
             </div>
           </div>
@@ -523,7 +618,7 @@ export function BookingCreateDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            {messages.common.cancel}
           </Button>
           <Button
             type="button"
@@ -532,7 +627,7 @@ export function BookingCreateDialog({
             disabled={isSubmitting || !product.productId}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Draft Booking
+            {messages.bookingCreateDialog.actions.createDraftBooking}
           </Button>
         </DialogFooter>
       </DialogContent>

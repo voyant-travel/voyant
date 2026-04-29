@@ -7,6 +7,8 @@ import { Label } from "@voyantjs/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
+import { useCrmUiMessagesOrDefault } from "../i18n"
+
 type Mode = { kind: "create" } | { kind: "edit"; person: PersonRecord }
 
 export interface PersonFormProps {
@@ -62,6 +64,7 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = usePersonMutation()
+  const messages = useCrmUiMessagesOrDefault()
 
   const isSubmitting = create.isPending || update.isPending
 
@@ -76,7 +79,7 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
     setError(null)
 
     if (!state.firstName.trim() || !state.lastName.trim()) {
-      setError("First and last name are required.")
+      setError(messages.personForm.validation.nameRequired)
       return
     }
 
@@ -89,7 +92,7 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
           : await update.mutateAsync({ id: mode.person.id, input: payload })
       onSuccess?.(person)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save person.")
+      setError(err instanceof Error ? err.message : messages.personForm.validation.saveFailed)
     }
   }
 
@@ -97,7 +100,7 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
     <form data-slot="person-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="person-first-name">First name</Label>
+          <Label htmlFor="person-first-name">{messages.personForm.fields.firstName}</Label>
           <Input
             id="person-first-name"
             required
@@ -106,7 +109,7 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="person-last-name">Last name</Label>
+          <Label htmlFor="person-last-name">{messages.personForm.fields.lastName}</Label>
           <Input
             id="person-last-name"
             required
@@ -115,15 +118,15 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
           />
         </div>
         <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <Label htmlFor="person-job-title">Job title</Label>
+          <Label htmlFor="person-job-title">{messages.personForm.fields.jobTitle}</Label>
           <Input id="person-job-title" value={state.jobTitle} onChange={field("jobTitle")} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="person-email">Email</Label>
+          <Label htmlFor="person-email">{messages.personForm.fields.email}</Label>
           <Input id="person-email" type="email" value={state.email} onChange={field("email")} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="person-phone">Phone</Label>
+          <Label htmlFor="person-phone">{messages.personForm.fields.phone}</Label>
           <Input id="person-phone" value={state.phone} onChange={field("phone")} />
         </div>
       </div>
@@ -137,19 +140,19 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              Saving…
+              {messages.common.saving}
             </>
           ) : mode.kind === "create" ? (
-            "Create person"
+            messages.personForm.actions.create
           ) : (
-            "Save changes"
+            messages.common.saveChanges
           )}
         </Button>
       </div>

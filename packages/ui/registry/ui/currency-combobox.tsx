@@ -13,6 +13,8 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 
+import { useRegistryUiMessagesOrDefault } from "./i18n"
+
 type CurrencyRecord = (typeof currencies)[keyof typeof currencies]
 type CurrencyCode = keyof typeof currencies
 
@@ -48,10 +50,11 @@ export interface CurrencyComboboxProps {
 export function CurrencyCombobox({
   value,
   onChange,
-  placeholder = "Select currency…",
+  placeholder,
   disabled,
   className,
 }: CurrencyComboboxProps) {
+  const messages = useRegistryUiMessagesOrDefault().currencyCombobox
   const [search, setSearch] = React.useState("")
 
   const filtered = React.useMemo(() => {
@@ -90,11 +93,11 @@ export function CurrencyCombobox({
     >
       <ComboboxInput
         className={className ?? "w-full"}
-        placeholder={placeholder}
+        placeholder={placeholder ?? messages.placeholder}
         showClear={Boolean(value)}
       />
       <ComboboxContent>
-        <ComboboxEmpty>No currencies found.</ComboboxEmpty>
+        <ComboboxEmpty>{messages.empty}</ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
             {(code) => {

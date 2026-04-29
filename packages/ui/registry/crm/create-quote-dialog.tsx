@@ -3,6 +3,7 @@ import { type OpportunityRecord, useOpportunities, useQuoteMutation } from "@voy
 import { currencies } from "@voyantjs/utils/currencies"
 import { Loader2 } from "lucide-react"
 import { useMemo, useState } from "react"
+
 import {
   Button,
   Dialog,
@@ -22,7 +23,9 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { DatePicker } from "@/components/ui/date-picker"
-import { formatMoney } from "@/components/voyant/crm/crm-constants"
+
+import { useRegistryCrmI18nOrDefault, useRegistryCrmMessagesOrDefault } from "./i18n"
+import { formatRegistryCrmMoney } from "./i18n/utils"
 
 const CURRENCY_CODES = Object.keys(currencies).sort()
 
@@ -34,6 +37,8 @@ export function CreateQuoteDialog({
   onOpenChange: (next: boolean) => void
 }) {
   const navigate = useNavigate()
+  const i18n = useRegistryCrmI18nOrDefault()
+  const m = useRegistryCrmMessagesOrDefault()
   const { create } = useQuoteMutation()
 
   const [opportunityId, setOpportunityId] = useState<string | null>(null)
@@ -68,11 +73,11 @@ export function CreateQuoteDialog({
 
   async function handleCreate() {
     if (!opportunityId) {
-      setError("Please select an opportunity")
+      setError(m.createQuoteDialog.validation.selectOpportunity)
       return
     }
     if (!currency) {
-      setError("Please select a currency")
+      setError(m.createQuoteDialog.validation.selectCurrency)
       return
     }
     setError(null)
@@ -86,30 +91,36 @@ export function CreateQuoteDialog({
       onOpenChange(false)
       void navigate({ to: "/quotes/$id", params: { id: quote.id } })
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create quote")
+      setError(err instanceof Error ? err.message : m.createQuoteDialog.validation.createFailed)
     }
   }
 
   function describeOpportunity(opportunity: OpportunityRecord): string {
-    const money = formatMoney(opportunity.valueAmountCents, opportunity.valueCurrency)
-    return `${opportunity.title} · ${money}`
+    const money = formatRegistryCrmMoney(
+      i18n,
+      opportunity.valueAmountCents,
+      opportunity.valueCurrency,
+    )
+    return `${opportunity.title} - ${money}`
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) reset()
+        if (!next) {
+          reset()
+        }
         onOpenChange(next)
       }}
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New quote</DialogTitle>
+          <DialogTitle>{m.createQuoteDialog.title}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label>Opportunity</Label>
+            <Label>{m.createQuoteDialog.fields.opportunity}</Label>
             <Combobox
               items={opportunityIds}
               value={opportunityId}
@@ -128,7 +139,9 @@ export function CreateQuoteDialog({
                 }
                 setOpportunityLabel(next)
                 setOpportunitySearch(next)
-                if (!next) setOpportunityId(null)
+                if (!next) {
+                  setOpportunityId(null)
+                }
               }}
               onValueChange={(next) => {
                 const id = (next as string | null) ?? null
@@ -136,17 +149,21 @@ export function CreateQuoteDialog({
                 const opportunity = id ? opportunityResults.find((item) => item.id === id) : null
                 if (opportunity) {
                   setOpportunityLabel(describeOpportunity(opportunity))
-                  if (opportunity.valueCurrency) setCurrency(opportunity.valueCurrency)
+                  if (opportunity.valueCurrency) {
+                    setCurrency(opportunity.valueCurrency)
+                  }
                 } else {
                   setOpportunityLabel("")
                 }
                 setOpportunitySearch("")
               }}
             >
-              <ComboboxInput placeholder="Search opportunities…" />
+              <ComboboxInput placeholder={m.createQuoteDialog.placeholders.searchOpportunities} />
               <ComboboxContent>
                 <ComboboxEmpty>
-                  {opportunitiesQuery.isPending ? "Loading…" : "No opportunities found."}
+                  {opportunitiesQuery.isPending
+                    ? m.createQuoteDialog.empty.loading
+                    : m.createQuoteDialog.empty.noOpportunities}
                 </ComboboxEmpty>
                 <ComboboxList>
                   <ComboboxCollection>
@@ -154,14 +171,24 @@ export function CreateQuoteDialog({
                       const opportunity = opportunityResults.find(
                         (item) => item.id === (id as string),
                       )
-                      if (!opportunity) return null
+                      if (!opportunity) {
+                        return null
+                      }
+                      const statusLabel =
+                        m.common.opportunityStatusLabels[
+                          opportunity.status as keyof typeof m.common.opportunityStatusLabels
+                        ] ?? opportunity.status
                       return (
                         <ComboboxItem key={opportunity.id} value={opportunity.id}>
                           <div className="flex min-w-0 flex-col">
                             <span className="truncate font-medium">{opportunity.title}</span>
                             <span className="truncate text-xs text-muted-foreground">
-                              {formatMoney(opportunity.valueAmountCents, opportunity.valueCurrency)}{" "}
-                              · {opportunity.status}
+                              {formatRegistryCrmMoney(
+                                i18n,
+                                opportunity.valueAmountCents,
+                                opportunity.valueCurrency,
+                              )}{" "}
+                              - {statusLabel}
                             </span>
                           </div>
                         </ComboboxItem>
@@ -175,22 +202,24 @@ export function CreateQuoteDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label>Currency</Label>
+              <Label>{m.createQuoteDialog.fields.currency}</Label>
               <Combobox
                 items={CURRENCY_CODES}
                 value={currency}
                 autoHighlight
                 itemToStringValue={(code) => {
                   const info = currencies[code as keyof typeof currencies]
-                  return info ? `${code} — ${info.name}` : (code as string)
+                  return info ? `${code} - ${info.name}` : (code as string)
                 }}
                 onValueChange={(next) => {
-                  if (typeof next === "string") setCurrency(next)
+                  if (typeof next === "string") {
+                    setCurrency(next)
+                  }
                 }}
               >
                 <ComboboxInput />
                 <ComboboxContent>
-                  <ComboboxEmpty>No currency found.</ComboboxEmpty>
+                  <ComboboxEmpty>{m.createQuoteDialog.empty.noCurrencies}</ComboboxEmpty>
                   <ComboboxList>
                     <ComboboxCollection>
                       {(code) => {
@@ -212,11 +241,11 @@ export function CreateQuoteDialog({
               </Combobox>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Valid until</Label>
+              <Label>{m.createQuoteDialog.fields.validUntil}</Label>
               <DatePicker
                 value={validUntil}
                 onChange={setValidUntil}
-                placeholder="Pick a date"
+                placeholder={m.createQuoteDialog.placeholders.pickDate}
                 clearable
               />
             </div>
@@ -226,11 +255,11 @@ export function CreateQuoteDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {m.common.cancel}
           </Button>
           <Button onClick={() => void handleCreate()} disabled={create.isPending}>
             {create.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-            Create
+            {m.createQuoteDialog.actions.create}
           </Button>
         </DialogFooter>
       </DialogContent>

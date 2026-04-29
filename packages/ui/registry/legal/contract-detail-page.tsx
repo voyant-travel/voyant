@@ -16,8 +16,11 @@ import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
+
 import { AttachmentDialog } from "./attachment-dialog"
 import { ContractDialog } from "./contract-dialog"
+import { useRegistryLegalI18nOrDefault, useRegistryLegalMessagesOrDefault } from "./i18n/provider"
+import { formatRegistryLegalDate, formatRegistryLegalDateTime } from "./i18n/utils"
 import { SignatureDialog } from "./signature-dialog"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -53,6 +56,8 @@ export function loadContractDetailPage(id: string, ensureQueryData: EnsureQueryD
 export function ContractDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const i18n = useRegistryLegalI18nOrDefault()
+  const m = useRegistryLegalMessagesOrDefault()
   const { remove, issue, send, execute, voidContract } = useLegalContractMutation()
   const { remove: removeAttachment } = useLegalContractAttachmentMutation()
 
@@ -82,15 +87,17 @@ export function ContractDetailPage({ id }: { id: string }) {
   if (!contract) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
-        <p className="text-muted-foreground">Contract not found</p>
+        <p className="text-muted-foreground">{m.contractDetailPage.notFound}</p>
         <Button variant="outline" onClick={() => void navigate({ to: "/legal/contracts" })}>
-          Back to Contracts
+          {m.contractDetailPage.backToContracts}
         </Button>
       </div>
     )
   }
 
   const status = contract.status
+  const scopeLabel = m.common.contractScopeLabels[contract.scope] ?? contract.scope
+  const statusLabel = m.common.contractStatusLabels[status] ?? status
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -105,12 +112,8 @@ export function ContractDetailPage({ id }: { id: string }) {
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">{contract.title}</h1>
           <div className="mt-1 flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">
-              {contract.scope}
-            </Badge>
-            <Badge variant={statusVariant[status] ?? "secondary"} className="capitalize">
-              {status}
-            </Badge>
+            <Badge variant="outline">{scopeLabel}</Badge>
+            <Badge variant={statusVariant[status] ?? "secondary"}>{statusLabel}</Badge>
             {contract.contractNumber ? (
               <span className="font-mono text-xs text-muted-foreground">
                 {contract.contractNumber}
@@ -121,22 +124,22 @@ export function ContractDetailPage({ id }: { id: string }) {
         <div className="flex flex-wrap items-center gap-2">
           {status === "draft" ? (
             <Button size="sm" onClick={() => issue.mutate(id)} disabled={issue.isPending}>
-              Issue
+              {m.common.issue}
             </Button>
           ) : null}
           {status === "issued" ? (
             <Button size="sm" onClick={() => send.mutate(id)} disabled={send.isPending}>
-              Send
+              {m.common.send}
             </Button>
           ) : null}
           {status === "issued" || status === "sent" ? (
             <Button size="sm" onClick={() => setSignOpen(true)}>
-              Sign
+              {m.common.sign}
             </Button>
           ) : null}
           {status === "signed" ? (
             <Button size="sm" onClick={() => execute.mutate(id)} disabled={execute.isPending}>
-              Execute
+              {m.common.execute}
             </Button>
           ) : null}
           {status !== "void" ? (
@@ -144,32 +147,32 @@ export function ContractDetailPage({ id }: { id: string }) {
               size="sm"
               variant="destructive"
               onClick={() => {
-                if (confirm("Void this contract?")) {
+                if (confirm(m.contractDetailPage.confirms.voidContract)) {
                   voidContract.mutate(id)
                 }
               }}
               disabled={voidContract.isPending}
             >
-              Void
+              {m.common.delete}
             </Button>
           ) : null}
           <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" />
-            Edit
+            {m.common.edit}
           </Button>
           {status === "draft" ? (
             <Button
               variant="destructive"
               size="sm"
               onClick={() => {
-                if (confirm("Delete this contract?")) {
+                if (confirm(m.contractDetailPage.confirms.deleteContract)) {
                   remove.mutate(id, { onSuccess: () => void navigate({ to: "/legal/contracts" }) })
                 }
               }}
               disabled={remove.isPending}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+              {m.common.delete}
             </Button>
           ) : null}
         </div>
@@ -178,39 +181,47 @@ export function ContractDetailPage({ id }: { id: string }) {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Contract Details</CardTitle>
+            <CardTitle>{m.contractDetailPage.sections.details}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm">
             <div>
-              <span className="text-muted-foreground">Language:</span>{" "}
+              <span className="text-muted-foreground">{m.contractDetailPage.fields.language}:</span>{" "}
               <span>{contract.language}</span>
             </div>
             {contract.templateVersionId ? (
               <div>
-                <span className="text-muted-foreground">Template Version:</span>{" "}
+                <span className="text-muted-foreground">
+                  {m.contractDetailPage.fields.templateVersion}:
+                </span>{" "}
                 <span className="font-mono text-xs">{contract.templateVersionId}</span>
               </div>
             ) : null}
             {contract.seriesId ? (
               <div>
-                <span className="text-muted-foreground">Series:</span>{" "}
+                <span className="text-muted-foreground">{m.contractDetailPage.fields.series}:</span>{" "}
                 <span className="font-mono text-xs">{contract.seriesId}</span>
               </div>
             ) : null}
             {contract.expiresAt ? (
               <div>
-                <span className="text-muted-foreground">Expires:</span>{" "}
-                <span>{new Date(contract.expiresAt).toLocaleDateString()}</span>
+                <span className="text-muted-foreground">
+                  {m.contractDetailPage.fields.expires}:
+                </span>{" "}
+                <span>{formatRegistryLegalDate(i18n, contract.expiresAt)}</span>
               </div>
             ) : null}
             <div className="mt-2 border-t pt-3">
               <div>
-                <span className="text-muted-foreground">Created:</span>{" "}
-                <span>{new Date(contract.createdAt).toLocaleDateString()}</span>
+                <span className="text-muted-foreground">
+                  {m.contractDetailPage.fields.created}:
+                </span>{" "}
+                <span>{formatRegistryLegalDate(i18n, contract.createdAt)}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Updated:</span>{" "}
-                <span>{new Date(contract.updatedAt).toLocaleDateString()}</span>
+                <span className="text-muted-foreground">
+                  {m.contractDetailPage.fields.updated}:
+                </span>{" "}
+                <span>{formatRegistryLegalDate(i18n, contract.updatedAt)}</span>
               </div>
             </div>
           </CardContent>
@@ -218,30 +229,36 @@ export function ContractDetailPage({ id }: { id: string }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Parties</CardTitle>
+            <CardTitle>{m.contractDetailPage.sections.parties}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm">
             {contract.personId ? (
               <div>
-                <span className="text-muted-foreground">Person:</span>{" "}
+                <span className="text-muted-foreground">{m.contractDetailPage.fields.person}:</span>{" "}
                 <span className="font-mono text-xs">{contract.personId}</span>
               </div>
             ) : null}
             {contract.organizationId ? (
               <div>
-                <span className="text-muted-foreground">Organization:</span>{" "}
+                <span className="text-muted-foreground">
+                  {m.contractDetailPage.fields.organization}:
+                </span>{" "}
                 <span className="font-mono text-xs">{contract.organizationId}</span>
               </div>
             ) : null}
             {contract.supplierId ? (
               <div>
-                <span className="text-muted-foreground">Supplier:</span>{" "}
+                <span className="text-muted-foreground">
+                  {m.contractDetailPage.fields.supplier}:
+                </span>{" "}
                 <span className="font-mono text-xs">{contract.supplierId}</span>
               </div>
             ) : null}
             {contract.channelId ? (
               <div>
-                <span className="text-muted-foreground">Channel:</span>{" "}
+                <span className="text-muted-foreground">
+                  {m.contractDetailPage.fields.channel}:
+                </span>{" "}
                 <span className="font-mono text-xs">{contract.channelId}</span>
               </div>
             ) : null}
@@ -249,7 +266,7 @@ export function ContractDetailPage({ id }: { id: string }) {
             !contract.organizationId &&
             !contract.supplierId &&
             !contract.channelId ? (
-              <p className="text-muted-foreground">No parties assigned.</p>
+              <p className="text-muted-foreground">{m.contractDetailPage.empty.noParties}</p>
             ) : null}
           </CardContent>
         </Card>
@@ -258,7 +275,7 @@ export function ContractDetailPage({ id }: { id: string }) {
       {contract.renderedBody ? (
         <Card>
           <CardHeader>
-            <CardTitle>Rendered Body</CardTitle>
+            <CardTitle>{m.common.renderedBody}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="prose prose-sm max-w-none rounded-md border bg-muted/30 p-4">
@@ -270,37 +287,51 @@ export function ContractDetailPage({ id }: { id: string }) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Signatures</CardTitle>
+          <CardTitle>{m.contractDetailPage.sections.signatures}</CardTitle>
           {status === "issued" || status === "sent" || status === "signed" ? (
             <Button size="sm" onClick={() => setSignOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Signature
+              {m.common.addSignature}
             </Button>
           ) : null}
         </CardHeader>
         <CardContent>
           {!signatures || signatures.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">No signatures yet.</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {m.contractDetailPage.empty.noSignatures}
+            </p>
           ) : (
             <div className="rounded border bg-background">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="p-2 text-left font-medium">Name</th>
-                    <th className="p-2 text-left font-medium">Email</th>
-                    <th className="p-2 text-left font-medium">Role</th>
-                    <th className="p-2 text-left font-medium">Method</th>
-                    <th className="p-2 text-left font-medium">Signed At</th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.name}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.email}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.role}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.method}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.signedAt}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {signatures.map((signature) => (
                     <tr key={signature.id} className="border-b last:border-b-0">
                       <td className="p-2">{signature.signerName}</td>
-                      <td className="p-2">{signature.signerEmail ?? "-"}</td>
-                      <td className="p-2">{signature.signerRole ?? "-"}</td>
-                      <td className="p-2 capitalize">{signature.method}</td>
-                      <td className="p-2">{new Date(signature.signedAt).toLocaleString()}</td>
+                      <td className="p-2">{signature.signerEmail ?? m.common.noResultsDash}</td>
+                      <td className="p-2">{signature.signerRole ?? m.common.noResultsDash}</td>
+                      <td className="p-2">{signature.method}</td>
+                      <td className="p-2">
+                        {formatRegistryLegalDateTime(i18n, signature.signedAt)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -312,7 +343,7 @@ export function ContractDetailPage({ id }: { id: string }) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Attachments</CardTitle>
+          <CardTitle>{m.contractDetailPage.sections.attachments}</CardTitle>
           <Button
             size="sm"
             onClick={() => {
@@ -321,21 +352,31 @@ export function ContractDetailPage({ id }: { id: string }) {
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Attachment
+            {m.common.addAttachment}
           </Button>
         </CardHeader>
         <CardContent>
           {!attachments || attachments.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">No attachments yet.</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {m.contractDetailPage.empty.noAttachments}
+            </p>
           ) : (
             <div className="rounded border bg-background">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="p-2 text-left font-medium">Name</th>
-                    <th className="p-2 text-left font-medium">Kind</th>
-                    <th className="p-2 text-left font-medium">MIME Type</th>
-                    <th className="p-2 text-left font-medium">Size</th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.name}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.kind}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.mimeType}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.contractDetailPage.fields.size}
+                    </th>
                     <th className="w-16 p-2" />
                   </tr>
                 </thead>
@@ -344,9 +385,11 @@ export function ContractDetailPage({ id }: { id: string }) {
                     <tr key={attachment.id} className="border-b last:border-b-0">
                       <td className="p-2">{attachment.name}</td>
                       <td className="p-2">{attachment.kind}</td>
-                      <td className="p-2">{attachment.mimeType ?? "-"}</td>
+                      <td className="p-2">{attachment.mimeType ?? m.common.noResultsDash}</td>
                       <td className="p-2">
-                        {attachment.fileSize ? `${attachment.fileSize} B` : "-"}
+                        {attachment.fileSize
+                          ? `${attachment.fileSize} ${m.common.kilobytes}`
+                          : m.common.noResultsDash}
                       </td>
                       <td className="p-2">
                         <div className="flex items-center gap-1">
@@ -363,7 +406,7 @@ export function ContractDetailPage({ id }: { id: string }) {
                           <button
                             type="button"
                             onClick={() => {
-                              if (confirm("Delete this attachment?")) {
+                              if (confirm(m.contractDetailPage.confirms.deleteAttachment)) {
                                 removeAttachment.mutate({ contractId: id, id: attachment.id })
                               }
                             }}

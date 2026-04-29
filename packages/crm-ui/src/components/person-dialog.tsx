@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
+import { useCrmUiMessagesOrDefault } from "../i18n"
 import { PersonForm } from "./person-form"
 
 export interface PersonDialogProps {
@@ -25,16 +26,19 @@ export interface PersonDialogProps {
  */
 export function PersonDialog({ open, onOpenChange, person, onSuccess }: PersonDialogProps) {
   const isEdit = Boolean(person)
+  const messages = useCrmUiMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="person-dialog" className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit person" : "New person"}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? messages.personDialog.titles.edit : messages.personDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update contact details and reference information."
-              : "Add a new person to your CRM."}
+              ? messages.personDialog.descriptions.edit
+              : messages.personDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <PersonForm

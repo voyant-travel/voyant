@@ -25,6 +25,7 @@ import {
 import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2, Upload } from "lucide-react"
 import * as React from "react"
 
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
 import { ProductMediaDialog } from "./product-media-dialog"
 
 export interface ProductMediaUploadResult {
@@ -42,7 +43,7 @@ export interface ProductMediaUploadResult {
 export type ProductMediaUploadHandler = (
   file: File,
   context: { productId: string; dayId?: string },
-) => Promise<ProductMediaUploadResult>
+) => Promise<ProductMediaUploadResult> // i18n-literal-ok type signature
 
 export interface ProductMediaSectionProps {
   productId: string
@@ -57,14 +58,13 @@ export interface ProductMediaSectionProps {
 export function ProductMediaSection({
   productId,
   dayId,
-  title = dayId ? "Day media" : "Media",
-  description = dayId
-    ? "Manage media attached to this itinerary day."
-    : "Manage product-level media assets and cover selection.",
+  title,
+  description,
   compact = false,
   uploadMedia,
   uploadAccept = "image/*,video/*,application/pdf",
 }: ProductMediaSectionProps) {
+  const messages = useProductsUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingMedia, setEditingMedia] = React.useState<ProductMediaRecord | undefined>()
   const [isUploading, setIsUploading] = React.useState(false)
@@ -84,10 +84,21 @@ export function ProductMediaSection({
     [data?.data],
   )
 
+  const resolvedTitle =
+    title ??
+    (dayId
+      ? messages.productMediaSection.titles.dayMedia
+      : messages.productMediaSection.titles.media)
+  const resolvedDescription =
+    description ??
+    (dayId
+      ? messages.productMediaSection.descriptions.dayMedia
+      : messages.productMediaSection.descriptions.media)
+
   const header = (
     <div className="space-y-1">
-      <CardTitle className={compact ? "text-base" : undefined}>{title}</CardTitle>
-      <CardDescription>{description}</CardDescription>
+      <CardTitle className={compact ? "text-base" : undefined}>{resolvedTitle}</CardTitle>
+      <CardDescription>{resolvedDescription}</CardDescription>
     </div>
   )
 
@@ -122,7 +133,9 @@ export function ProductMediaSection({
         isCover: uploaded.isCover ?? media.length === 0,
       })
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "Failed to upload media.")
+      setUploadError(
+        error instanceof Error ? error.message : messages.productMediaSection.uploadFailed,
+      )
     } finally {
       setIsUploading(false)
     }
@@ -142,7 +155,7 @@ export function ProductMediaSection({
             ) : (
               <Upload className="mr-2 size-4" aria-hidden="true" />
             )}
-            Upload
+            {messages.productMediaSection.actions.upload}
           </Button>
           <input
             ref={fileInputRef}
@@ -166,7 +179,7 @@ export function ProductMediaSection({
         }}
       >
         <Plus className="mr-2 size-4" aria-hidden="true" />
-        Add media
+        {messages.productMediaSection.actions.addMedia}
       </Button>
     </div>
   )
@@ -179,18 +192,18 @@ export function ProductMediaSection({
           <Loader2 className="size-4 animate-spin text-muted-foreground" />
         </div>
       ) : isError ? (
-        <p className="text-sm text-destructive">Failed to load media.</p>
+        <p className="text-sm text-destructive">{messages.productMediaSection.loadingError}</p>
       ) : media.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No media items configured yet.</p>
+        <p className="text-sm text-muted-foreground">{messages.productMediaSection.empty}</p>
       ) : (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Sort</TableHead>
+                <TableHead>{messages.productMediaSection.columns.name}</TableHead>
+                <TableHead>{messages.productMediaSection.columns.type}</TableHead>
+                <TableHead>{messages.productMediaSection.columns.url}</TableHead>
+                <TableHead>{messages.productMediaSection.columns.sort}</TableHead>
                 <TableHead className="w-32" />
               </TableRow>
             </TableHeader>
@@ -206,12 +219,14 @@ export function ProductMediaSection({
                           <div className="text-xs text-muted-foreground">{item.altText}</div>
                         ) : null}
                       </div>
-                      {item.isCover ? <Badge>Cover</Badge> : null}
+                      {item.isCover ? (
+                        <Badge>{messages.productMediaSection.coverBadge}</Badge>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {item.mediaType}
+                    <Badge variant="outline">
+                      {messages.common.mediaTypeLabels[item.mediaType]}
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-[320px]">
@@ -232,6 +247,7 @@ export function ProductMediaSection({
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => setCover.mutate(item.id)}
+                          aria-label={messages.productMediaSection.actions.markCover}
                         >
                           <Star className="size-4" aria-hidden="true" />
                         </Button>
@@ -243,6 +259,7 @@ export function ProductMediaSection({
                           setEditingMedia(item)
                           setDialogOpen(true)
                         }}
+                        aria-label={messages.productMediaSection.actions.edit}
                       >
                         <Pencil className="size-4" aria-hidden="true" />
                       </Button>
@@ -250,10 +267,11 @@ export function ProductMediaSection({
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => {
-                          if (confirm("Delete this media item?")) {
+                          if (confirm(messages.productMediaSection.deleteConfirm)) {
                             remove.mutate(item.id)
                           }
                         }}
+                        aria-label={messages.productMediaSection.actions.delete}
                       >
                         <Trash2 className="size-4" aria-hidden="true" />
                       </Button>

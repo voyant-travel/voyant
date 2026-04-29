@@ -10,6 +10,7 @@ import * as React from "react"
 
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 
+import { useRegistryBookingsMessagesOrDefault } from "./i18n"
 import { PassengerDialog } from "./passenger-dialog"
 
 export interface PassengerListProps {
@@ -21,6 +22,7 @@ export function PassengerList({ bookingId }: PassengerListProps) {
   const [editing, setEditing] = React.useState<BookingPassengerRecord | undefined>(undefined)
   const { data } = usePassengers(bookingId)
   const { remove } = usePassengerMutation(bookingId)
+  const messages = useRegistryBookingsMessagesOrDefault()
 
   const passengers = data?.data ?? []
 
@@ -29,7 +31,7 @@ export function PassengerList({ bookingId }: PassengerListProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Users className="h-4 w-4" />
-          Passengers
+          {messages.passengerList.title}
         </CardTitle>
         <Button
           size="sm"
@@ -39,20 +41,28 @@ export function PassengerList({ bookingId }: PassengerListProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Passenger
+          {messages.passengerList.addPassenger}
         </Button>
       </CardHeader>
       <CardContent>
         {passengers.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">No passengers yet.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {messages.passengerList.empty}
+          </p>
         ) : (
           <div className="rounded border bg-background">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="p-2 text-left font-medium">Name</th>
-                  <th className="p-2 text-left font-medium">Email</th>
-                  <th className="p-2 text-left font-medium">Phone</th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.passengerList.columns.name}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.passengerList.columns.email}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.passengerList.columns.phone}
+                  </th>
                   <th className="w-20 p-2" />
                 </tr>
               </thead>
@@ -62,8 +72,12 @@ export function PassengerList({ bookingId }: PassengerListProps) {
                     <td className="p-2">
                       {passenger.firstName} {passenger.lastName}
                     </td>
-                    <td className="p-2">{passenger.email ?? "-"}</td>
-                    <td className="p-2">{passenger.phone ?? "-"}</td>
+                    <td className="p-2">
+                      {passenger.email ?? messages.passengerList.values.emailUnavailable}
+                    </td>
+                    <td className="p-2">
+                      {passenger.phone ?? messages.passengerList.values.phoneUnavailable}
+                    </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
                         <button
@@ -79,7 +93,7 @@ export function PassengerList({ bookingId }: PassengerListProps) {
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm("Delete this passenger?")) {
+                            if (confirm(messages.passengerList.actions.deleteConfirm)) {
                               remove.mutate(passenger.id)
                             }
                           }}

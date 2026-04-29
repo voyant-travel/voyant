@@ -8,18 +8,21 @@ import {
   useCancellationPolicyRuleMutation,
   useCancellationPolicyRules,
 } from "@voyantjs/pricing-react"
+import { usePricingUiI18nOrDefault, usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { ChevronDown, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { Badge, Button, Input } from "@/components/ui"
-
 import { CancellationPolicyDialog } from "./cancellation-policy-dialog"
 import { CancellationPolicyRuleDialog } from "./cancellation-policy-rule-dialog"
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
 
 const POLICY_PAGE_SIZE = 25
 const RULE_PAGE_SIZE = 10
 
 export function CancellationPoliciesPage() {
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const pageMessages = registryMessages.cancellationPoliciesPage
   const [policyDialogOpen, setPolicyDialogOpen] = React.useState(false)
   const [editingPolicy, setEditingPolicy] = React.useState<CancellationPolicyRecord | undefined>()
   const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
@@ -53,10 +56,8 @@ export function CancellationPoliciesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Cancellation Fee Policies</h2>
-          <p className="text-sm text-muted-foreground">
-            Pricing-side cancellation fee policies with cutoff-based fee rules and ordered steps.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -65,14 +66,14 @@ export function CancellationPoliciesPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          New Policy
+          {pageMessages.addPolicy}
         </Button>
       </div>
 
       <div className="relative w-full max-w-sm">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search cancellation fee policies…"
+          placeholder={pageMessages.searchPlaceholder}
           value={search}
           onChange={(event) => {
             setSearch(event.target.value)
@@ -84,13 +85,11 @@ export function CancellationPoliciesPage() {
 
       {isPending ? (
         <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-          Loading cancellation fee policies...
+          {pageMessages.emptyLoading}
         </div>
       ) : (data?.data ?? []).length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No cancellation fee policies yet. Create one to start defining cancellation rules.
-          </p>
+          <p className="text-sm text-muted-foreground">{pageMessages.empty}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -105,7 +104,7 @@ export function CancellationPoliciesPage() {
                 setPolicyDialogOpen(true)
               }}
               onDelete={() => {
-                if (confirm(`Delete policy "${policy.name}"?`)) {
+                if (confirm(pageMessages.labels.deletePolicyConfirm)) {
                   remove.mutate(policy.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -177,6 +176,11 @@ function PolicyRow({
   onAddRule: (nextSortOrder: number) => void
   onEditRule: (rule: CancellationPolicyRuleRecord) => void
 }) {
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const sharedI18n = usePricingUiI18nOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const pageMessages = registryMessages.cancellationPoliciesPage
+  const policyTypeLabels = registryMessages.cancellationPolicyDialog.policyTypeLabels
   const [rulePageIndex, setRulePageIndex] = React.useState(0)
   const rulesQuery = useCancellationPolicyRules({
     cancellationPolicyId: policy.id,
@@ -209,16 +213,18 @@ function PolicyRow({
               <span className="font-mono text-xs text-muted-foreground">{policy.code}</span>
             ) : null}
             <Badge variant="outline" className="capitalize">
-              {policy.policyType.replace("_", " ")}
+              {policyTypeLabels[policy.policyType]}
             </Badge>
-            {policy.isDefault ? <Badge variant="secondary">Default</Badge> : null}
+            {policy.isDefault ? (
+              <Badge variant="secondary">{pageMessages.labels.default}</Badge>
+            ) : null}
             <Badge variant={policy.active ? "default" : "outline"}>
-              {policy.active ? "Active" : "Inactive"}
+              {policy.active ? sharedMessages.common.active : sharedMessages.common.inactive}
             </Badge>
           </div>
           {policy.policyType === "simple" && policy.simpleCutoffHours != null ? (
             <p className="mt-1 text-xs text-muted-foreground">
-              Simple cutoff: {policy.simpleCutoffHours}h
+              {pageMessages.simpleCutoff}: {policy.simpleCutoffHours}h
             </p>
           ) : null}
         </div>
@@ -236,28 +242,32 @@ function PolicyRow({
         <div className="border-t bg-muted/30 p-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Rules
+              {pageMessages.rulesTitle}
             </p>
             <Button variant="outline" size="sm" onClick={() => onAddRule(nextSort)}>
               <Plus className="mr-1 h-3 w-3" />
-              Add Rule
+              {pageMessages.addRule}
             </Button>
           </div>
 
           {rulesQuery.isPending ? (
-            <p className="py-2 text-center text-xs text-muted-foreground">Loading rules...</p>
+            <p className="py-2 text-center text-xs text-muted-foreground">
+              {pageMessages.rulesLoading}
+            </p>
           ) : rules.length === 0 ? (
-            <p className="py-2 text-center text-xs text-muted-foreground">No rules yet.</p>
+            <p className="py-2 text-center text-xs text-muted-foreground">
+              {pageMessages.rulesEmpty}
+            </p>
           ) : (
             <div className="rounded border bg-background">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="p-2 text-left font-medium">Sort</th>
-                    <th className="p-2 text-left font-medium">Cutoff</th>
-                    <th className="p-2 text-left font-medium">Charge</th>
-                    <th className="p-2 text-left font-medium">Status</th>
-                    <th className="p-2 text-left font-medium">Notes</th>
+                    <th className="p-2 text-left font-medium">{pageMessages.columns.sort}</th>
+                    <th className="p-2 text-left font-medium">{pageMessages.columns.cutoff}</th>
+                    <th className="p-2 text-left font-medium">{pageMessages.columns.charge}</th>
+                    <th className="p-2 text-left font-medium">{pageMessages.columns.status}</th>
+                    <th className="p-2 text-left font-medium">{pageMessages.columns.notes}</th>
                     <th className="w-16 p-2" />
                   </tr>
                 </thead>
@@ -268,11 +278,15 @@ function PolicyRow({
                     .map((rule) => (
                       <tr key={rule.id} className="border-b last:border-b-0">
                         <td className="p-2 font-mono">{rule.sortOrder}</td>
-                        <td className="p-2">{formatCutoff(rule.cutoffMinutesBefore)}</td>
-                        <td className="p-2">{formatCharge(rule)}</td>
+                        <td className="p-2">
+                          {formatCutoff(pageMessages, rule.cutoffMinutesBefore)}
+                        </td>
+                        <td className="p-2">{formatCharge(pageMessages, sharedI18n, rule)}</td>
                         <td className="p-2">
                           <Badge variant={rule.active ? "default" : "outline"}>
-                            {rule.active ? "Active" : "Inactive"}
+                            {rule.active
+                              ? sharedMessages.common.active
+                              : sharedMessages.common.inactive}
                           </Badge>
                         </td>
                         <td className="p-2 text-muted-foreground">{rule.notes ?? "-"}</td>
@@ -288,7 +302,7 @@ function PolicyRow({
                             <button
                               type="button"
                               onClick={() => {
-                                if (confirm("Delete this rule?")) {
+                                if (confirm(pageMessages.labels.deleteRuleConfirm)) {
                                   remove.mutate(rule.id, {
                                     onSuccess: () => void rulesQuery.refetch(),
                                   })
@@ -335,6 +349,7 @@ function PaginationBar({
   onPageIndexChange: (pageIndex: number) => void
   compact?: boolean
 }) {
+  const sharedMessages = usePricingUiMessagesOrDefault()
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
   const canPrevious = pageIndex > 0
   const canNext = pageIndex + 1 < pageCount
@@ -342,7 +357,7 @@ function PaginationBar({
   return (
     <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
       <span>
-        Page {total === 0 ? 0 : pageIndex + 1} / {pageCount}
+        {sharedMessages.common.page} {total === 0 ? 0 : pageIndex + 1} / {pageCount}
       </span>
       <div className="flex items-center gap-2">
         <Button
@@ -351,7 +366,7 @@ function PaginationBar({
           disabled={!canPrevious}
           onClick={() => onPageIndexChange(pageIndex - 1)}
         >
-          Previous
+          {sharedMessages.common.previous}
         </Button>
         <Button
           variant="outline"
@@ -359,26 +374,41 @@ function PaginationBar({
           disabled={!canNext}
           onClick={() => onPageIndexChange(pageIndex + 1)}
         >
-          Next
+          {sharedMessages.common.next}
         </Button>
       </div>
     </div>
   )
 }
 
-function formatCutoff(minutes: number | null): string {
-  if (minutes == null || minutes === 0) return "At start"
-  if (minutes % 1440 === 0) return `${minutes / 1440}d before`
-  if (minutes % 60 === 0) return `${minutes / 60}h before`
-  return `${minutes}m before`
+function formatCutoff(
+  messages: ReturnType<typeof useRegistryPricingMessagesOrDefault>["cancellationPoliciesPage"],
+  minutes: number | null,
+): string {
+  if (minutes == null || minutes === 0) return messages.labels.atStart
+  if (minutes % 1440 === 0) return `${minutes / 1440}${messages.labels.beforeDays}`
+  if (minutes % 60 === 0) return `${minutes / 60}${messages.labels.beforeHours}`
+  return `${minutes}${messages.labels.beforeMinutes}`
 }
 
-function formatCharge(rule: CancellationPolicyRuleRecord): string {
-  if (rule.chargeType === "none") return "None"
+function formatCharge(
+  messages: ReturnType<typeof useRegistryPricingMessagesOrDefault>["cancellationPoliciesPage"],
+  i18n: ReturnType<typeof usePricingUiI18nOrDefault>,
+  rule: CancellationPolicyRuleRecord,
+): string {
+  if (rule.chargeType === "none") return messages.labels.none
   if (rule.chargeType === "amount") {
-    return rule.chargeAmountCents != null ? (rule.chargeAmountCents / 100).toFixed(2) : "-"
+    return rule.chargeAmountCents != null
+      ? i18n.formatNumber(rule.chargeAmountCents / 100, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : "-"
   }
   return rule.chargePercentBasisPoints != null
-    ? `${(rule.chargePercentBasisPoints / 100).toFixed(2)}%`
+    ? `${i18n.formatNumber(rule.chargePercentBasisPoints / 100, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}%`
     : "-"
 }

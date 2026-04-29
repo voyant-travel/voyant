@@ -5,6 +5,8 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
+
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
 import { MealPlanDialog } from "./meal-plan-dialog"
 import { PaginationFooter } from "./pagination-footer"
 
@@ -14,6 +16,7 @@ export interface MealPlansTabProps {
 const PAGE_SIZE = 25
 
 export function MealPlansTab({ propertyId }: MealPlansTabProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<MealPlanRecord | undefined>(undefined)
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -30,9 +33,7 @@ export function MealPlansTab({ propertyId }: MealPlansTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Meal inclusions like BB, HB, FB, all-inclusive, and room-only.
-        </p>
+        <p className="text-sm text-muted-foreground">{messages.mealPlansTab.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -41,7 +42,7 @@ export function MealPlansTab({ propertyId }: MealPlansTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Meal Plan
+          {messages.mealPlansTab.add}
         </Button>
       </div>
 
@@ -51,27 +52,31 @@ export function MealPlansTab({ propertyId }: MealPlansTabProps) {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No meal plans yet.</p>
+          <p className="text-sm text-muted-foreground">{messages.mealPlansTab.empty}</p>
         </div>
       ) : (
         <div className="rounded-md border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">Code</th>
-                <th className="p-3 text-left font-medium">Name</th>
-                <th className="p-3 text-left font-medium">Includes</th>
-                <th className="p-3 text-left font-medium">Status</th>
+                <th className="p-3 text-left font-medium">{messages.mealPlansTab.columns.code}</th>
+                <th className="p-3 text-left font-medium">{messages.mealPlansTab.columns.name}</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.mealPlansTab.columns.includes}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.mealPlansTab.columns.status}
+                </th>
                 <th className="w-20 p-3" />
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => {
                 const includes: string[] = []
-                if (row.includesBreakfast) includes.push("Breakfast")
-                if (row.includesLunch) includes.push("Lunch")
-                if (row.includesDinner) includes.push("Dinner")
-                if (row.includesDrinks) includes.push("Drinks")
+                if (row.includesBreakfast) includes.push(messages.common.mealInclusions.breakfast)
+                if (row.includesLunch) includes.push(messages.common.mealInclusions.lunch)
+                if (row.includesDinner) includes.push(messages.common.mealInclusions.dinner)
+                if (row.includesDrinks) includes.push(messages.common.mealInclusions.drinks)
 
                 return (
                   <tr key={row.id} className="border-b last:border-b-0">
@@ -80,7 +85,9 @@ export function MealPlansTab({ propertyId }: MealPlansTabProps) {
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {includes.length === 0 ? (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">
+                            {messages.common.none}
+                          </span>
                         ) : (
                           includes.map((label) => (
                             <Badge key={label} variant="secondary">
@@ -92,7 +99,7 @@ export function MealPlansTab({ propertyId }: MealPlansTabProps) {
                     </td>
                     <td className="p-3">
                       <Badge variant={row.active ? "default" : "outline"}>
-                        {row.active ? "Active" : "Inactive"}
+                        {row.active ? messages.common.active : messages.common.inactive}
                       </Badge>
                     </td>
                     <td className="p-3">
@@ -110,7 +117,11 @@ export function MealPlansTab({ propertyId }: MealPlansTabProps) {
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm(`Delete meal plan "${row.name}"?`)) {
+                            if (
+                              confirm(
+                                messages.mealPlansTab.deleteConfirm.replace("{name}", row.name),
+                              )
+                            ) {
                               remove.mutate(row.id)
                             }
                           }}

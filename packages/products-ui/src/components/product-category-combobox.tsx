@@ -14,6 +14,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
+
 type Props = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -27,10 +29,11 @@ const PAGE_SIZE = 25
 export function ProductCategoryCombobox({
   value,
   onChange,
-  placeholder = "Search parent category…",
+  placeholder,
   disabled,
   excludeId,
 }: Props) {
+  const messages = useProductsUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useProductCategories({ search: search || undefined, limit: PAGE_SIZE })
   const selectedQuery = useProductCategory(value, { enabled: !!value })
@@ -74,12 +77,15 @@ export function ProductCategoryCombobox({
         setInputValue(id ? (itemMap.get(id)?.name ?? "") : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.productCategory.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
           {listQuery.isPending || selectedQuery.isPending
-            ? "Loading…"
-            : "No product categories found."}
+            ? messages.common.loading
+            : messages.comboboxes.productCategory.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

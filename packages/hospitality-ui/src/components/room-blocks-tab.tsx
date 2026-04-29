@@ -14,6 +14,8 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { RoomBlockStatus } from "../i18n/messages"
 import { PaginationFooter } from "./pagination-footer"
 import { RoomBlockDialog } from "./room-block-dialog"
 
@@ -23,6 +25,7 @@ export interface RoomBlocksTabProps {
 const PAGE_SIZE = 25
 
 export function RoomBlocksTab({ propertyId }: RoomBlocksTabProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<RoomBlockRecord | undefined>(undefined)
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -53,9 +56,7 @@ export function RoomBlocksTab({ propertyId }: RoomBlocksTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Hold rooms for group bookings, allotments, or other commitments.
-        </p>
+        <p className="text-sm text-muted-foreground">{messages.roomBlocksTab.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -64,7 +65,7 @@ export function RoomBlocksTab({ propertyId }: RoomBlocksTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Block
+          {messages.roomBlocksTab.add}
         </Button>
       </div>
 
@@ -74,18 +75,28 @@ export function RoomBlocksTab({ propertyId }: RoomBlocksTabProps) {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No room blocks yet.</p>
+          <p className="text-sm text-muted-foreground">{messages.roomBlocksTab.empty}</p>
         </div>
       ) : (
         <div className="rounded-md border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">Dates</th>
-                <th className="p-3 text-left font-medium">Room type / unit</th>
-                <th className="p-3 text-left font-medium">Qty</th>
-                <th className="p-3 text-left font-medium">Reason</th>
-                <th className="p-3 text-left font-medium">Status</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomBlocksTab.columns.dates}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomBlocksTab.columns.roomTypeUnit}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomBlocksTab.columns.quantity}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomBlocksTab.columns.reason}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomBlocksTab.columns.status}
+                </th>
                 <th className="w-20 p-3" />
               </tr>
             </thead>
@@ -102,13 +113,19 @@ export function RoomBlocksTab({ propertyId }: RoomBlocksTabProps) {
                       {row.startsOn} → {row.endsOn}
                     </td>
                     <td className="p-3 text-muted-foreground">
-                      {roomType ?? roomUnit ?? row.roomTypeId ?? row.roomUnitId ?? "—"}
+                      {roomType ??
+                        roomUnit ??
+                        row.roomTypeId ??
+                        row.roomUnitId ??
+                        messages.common.none}
                     </td>
                     <td className="p-3 font-mono">{row.quantity}</td>
-                    <td className="p-3 text-muted-foreground">{row.blockReason ?? "—"}</td>
+                    <td className="p-3 text-muted-foreground">
+                      {row.blockReason ?? messages.common.none}
+                    </td>
                     <td className="p-3">
-                      <Badge variant="outline" className="capitalize">
-                        {row.status}
+                      <Badge variant="outline">
+                        {messages.common.roomBlockStatusLabels[row.status as RoomBlockStatus]}
                       </Badge>
                     </td>
                     <td className="p-3">
@@ -126,7 +143,7 @@ export function RoomBlocksTab({ propertyId }: RoomBlocksTabProps) {
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm("Delete block?")) {
+                            if (confirm(messages.roomBlocksTab.deleteConfirm)) {
                               remove.mutate(row.id)
                             }
                           }}

@@ -1,3 +1,5 @@
+"use client"
+
 import type { ColumnDef } from "@tanstack/react-table"
 import {
   type SellabilityPolicyRecord,
@@ -6,7 +8,6 @@ import {
 } from "@voyantjs/sellability-react"
 import { Loader2, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import {
   Badge,
   Button,
@@ -17,45 +18,23 @@ import {
   SelectValue,
 } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useSellabilityUiMessagesOrDefault } from "../../../sellability-ui/src/index"
 
+import { useRegistrySellabilityMessagesOrDefault } from "./i18n"
 import { PolicyDialog } from "./policy-dialog"
 
 const PAGE_SIZE = 25
 
-const POLICY_SCOPE_OPTIONS = [
-  { value: "all", label: "All scopes" },
-  { value: "global", label: "Global" },
-  { value: "product", label: "Product" },
-  { value: "option", label: "Option" },
-  { value: "market", label: "Market" },
-  { value: "channel", label: "Channel" },
-] as const
-
-const POLICY_TYPE_OPTIONS = [
-  { value: "all", label: "All types" },
-  { value: "capability", label: "Capability" },
-  { value: "occupancy", label: "Occupancy" },
-  { value: "pickup", label: "Pickup" },
-  { value: "question", label: "Question" },
-  { value: "allotment", label: "Allotment" },
-  { value: "availability_window", label: "Availability window" },
-  { value: "currency", label: "Currency" },
-  { value: "custom", label: "Custom" },
-] as const
-
-const ACTIVE_OPTIONS = [
-  { value: "all", label: "All statuses" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-] as const
-
 export function SellabilityPage() {
+  const sharedMessages = useSellabilityUiMessagesOrDefault()
+  const pageMessages = useRegistrySellabilityMessagesOrDefault().page
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<SellabilityPolicyRecord | undefined>()
-  const [scope, setScope] = React.useState<(typeof POLICY_SCOPE_OPTIONS)[number]["value"]>("all")
-  const [policyType, setPolicyType] =
-    React.useState<(typeof POLICY_TYPE_OPTIONS)[number]["value"]>("all")
-  const [active, setActive] = React.useState<(typeof ACTIVE_OPTIONS)[number]["value"]>("all")
+  const [scope, setScope] = React.useState<"all" | SellabilityPolicyRecord["scope"]>("all")
+  const [policyType, setPolicyType] = React.useState<"all" | SellabilityPolicyRecord["policyType"]>(
+    "all",
+  )
+  const [active, setActive] = React.useState<"all" | "active" | "inactive">("all")
   const [pageIndex, setPageIndex] = React.useState(0)
 
   const { data, isPending, refetch } = useSellabilityPolicies({
@@ -80,40 +59,40 @@ export function SellabilityPage() {
     () => [
       {
         accessorKey: "name",
-        header: "Name",
+        header: pageMessages.columns.name,
         cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
       },
       {
         accessorKey: "scope",
-        header: "Scope",
+        header: pageMessages.columns.scope,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.scope}
+            {sharedMessages.common.policyScopeLabels[row.original.scope]}
           </Badge>
         ),
       },
       {
         accessorKey: "policyType",
-        header: "Type",
+        header: pageMessages.columns.type,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.policyType.replace(/_/g, " ")}
+            {sharedMessages.common.policyTypeLabels[row.original.policyType]}
           </Badge>
         ),
       },
       {
         accessorKey: "priority",
-        header: "Priority",
+        header: pageMessages.columns.priority,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">{row.original.priority}</span>
         ),
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: pageMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? pageMessages.filters.active : pageMessages.filters.inactive}
           </Badge>
         ),
       },
@@ -135,7 +114,7 @@ export function SellabilityPage() {
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete policy "${row.original.name}"?`)) {
+                if (confirm(pageMessages.actions.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -147,8 +126,40 @@ export function SellabilityPage() {
         ),
       },
     ],
-    [refetch, remove],
+    [
+      pageMessages,
+      refetch,
+      remove,
+      sharedMessages.common.policyScopeLabels,
+      sharedMessages.common.policyTypeLabels,
+    ],
   )
+
+  const scopeOptions: Array<{ value: "all" | SellabilityPolicyRecord["scope"]; label: string }> = [
+    { value: "all", label: pageMessages.filters.scopeAll },
+    { value: "global", label: sharedMessages.common.policyScopeLabels.global },
+    { value: "product", label: sharedMessages.common.policyScopeLabels.product },
+    { value: "option", label: sharedMessages.common.policyScopeLabels.option },
+    { value: "market", label: sharedMessages.common.policyScopeLabels.market },
+    { value: "channel", label: sharedMessages.common.policyScopeLabels.channel },
+  ]
+
+  const typeOptions: Array<{
+    value: "all" | SellabilityPolicyRecord["policyType"]
+    label: string
+  }> = [
+    { value: "all", label: pageMessages.filters.typeAll },
+    ...Object.entries(sharedMessages.common.policyTypeLabels).map(([value, label]) => ({
+      value: value as SellabilityPolicyRecord["policyType"],
+      label,
+    })),
+  ]
+
+  const statusOptions = [
+    { value: "all", label: pageMessages.filters.statusAll },
+    { value: "active", label: pageMessages.filters.active },
+    { value: "inactive", label: pageMessages.filters.inactive },
+  ] as const
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -156,11 +167,8 @@ export function SellabilityPage() {
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-5 w-5 text-muted-foreground" />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Sellability</h1>
-            <p className="max-w-3xl text-sm text-muted-foreground">
-              Declarative policies that decide when offers can be sold across global, product,
-              option, market, and channel scopes.
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>
+            <p className="max-w-3xl text-sm text-muted-foreground">{pageMessages.description}</p>
           </div>
         </div>
         <Button
@@ -170,17 +178,17 @@ export function SellabilityPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Policy
+          {pageMessages.addPolicy}
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <Select value={scope} onValueChange={(value) => setScope(value as typeof scope)}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Scope" />
+            <SelectValue placeholder={pageMessages.filters.scopePlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            {POLICY_SCOPE_OPTIONS.map((option) => (
+            {scopeOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -193,10 +201,10 @@ export function SellabilityPage() {
           onValueChange={(value) => setPolicyType(value as typeof policyType)}
         >
           <SelectTrigger className="w-[220px]">
-            <SelectValue placeholder="Type" />
+            <SelectValue placeholder={pageMessages.filters.typePlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            {POLICY_TYPE_OPTIONS.map((option) => (
+            {typeOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -206,10 +214,10 @@ export function SellabilityPage() {
 
         <Select value={active} onValueChange={(value) => setActive(value as typeof active)}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={pageMessages.filters.statusPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            {ACTIVE_OPTIONS.map((option) => (
+            {statusOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -226,7 +234,7 @@ export function SellabilityPage() {
         <DataTable
           columns={columns}
           data={rows}
-          emptyMessage="No policies found."
+          emptyMessage={pageMessages.empty.noPolicies}
           pagination={{
             pageIndex,
             pageSize: PAGE_SIZE,

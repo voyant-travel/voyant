@@ -1,0 +1,262 @@
+import type { ResourcesUiMessages } from "./messages"
+
+export const resourcesUiRo: ResourcesUiMessages = {
+  common: {
+    open: "Deschide",
+    view: "Vizualizare",
+    cancel: "Anuleaza",
+    clearSelection: "Goleste selectia",
+    clearFilters: "Sterge filtrele",
+    selectionSummary: "{count} selectate",
+    selectionLabel: "{count} {noun}",
+    slotLabel: "{date} · {time}",
+    dateTimeFallback: "-",
+    resourceKindLabels: {
+      guide: "Ghid",
+      vehicle: "Vehicul",
+      room: "Camera",
+      boat: "Barca",
+      equipment: "Echipament",
+      other: "Altul",
+    },
+    allocationModeLabels: {
+      shared: "Partajat",
+      exclusive: "Exclusiv",
+    },
+    assignmentStatusLabels: {
+      reserved: "Rezervat",
+      assigned: "Alocat",
+      released: "Eliberat",
+      cancelled: "Anulat",
+      completed: "Finalizat",
+    },
+    active: "Activ",
+    inactive: "Inactiv",
+    allKinds: "Toate tipurile",
+    selectionNouns: {
+      resource: { singular: "resursa", plural: "resurse" },
+      pool: { singular: "pool", plural: "pool-uri" },
+      allocation: { singular: "alocare", plural: "alocari" },
+      assignment: { singular: "asignare", plural: "asignari" },
+      closeout: { singular: "blocare", plural: "blocari" },
+    },
+  },
+  overview: {
+    metrics: {
+      activeResources: {
+        title: "Resurse Active",
+        description: "Active alocabile gata de utilizare",
+      },
+      activePools: {
+        title: "Pool-uri Active",
+        description: "Pool-uri cu capacitate partajata active",
+      },
+      liveAssignments: {
+        title: "Asignari Active",
+        description: "Acoperire rezervata sau alocata pentru sloturi",
+      },
+      closeouts: {
+        title: "Blocari",
+        description: "Blocari active pentru mentenanta sau conflicte",
+      },
+    },
+    assignmentGaps: {
+      title: "Lipsuri de Asignare",
+      empty: "Fiecare rezervare activa are o resursa numita.",
+      statusBooking: "Status: {status} · Rezervare: {booking}",
+    },
+    ownershipGaps: {
+      title: "Lipsuri de Proprietate",
+      empty: "Fiecare resursa este legata de un furnizor.",
+      detail: "{kind} · Capacitate {capacity} · Fara furnizor alocat",
+    },
+    filters: {
+      searchPlaceholder: "Cauta resurse...",
+      allKindsPlaceholder: "Toate tipurile",
+    },
+    labels: {
+      status: "Status",
+      booking: "Rezervare",
+      capacity: "Capacitate",
+      noSupplierAssigned: "Fara furnizor alocat",
+    },
+  },
+  tabsPrimary: {
+    columns: {
+      resources: {
+        name: "Resursa",
+        kind: "Tip",
+        supplier: "Furnizor",
+        capacity: "Capacitate",
+        status: "Status",
+        view: "Vizualizare",
+      },
+      pools: {
+        name: "Pool",
+        kind: "Tip",
+        product: "Produs",
+        sharedCapacity: "Capacitate Partajata",
+        view: "Vizualizare",
+      },
+      allocations: {
+        pool: "Pool",
+        product: "Produs",
+        mode: "Mod",
+        quantityRequired: "Cantitate Necesara",
+        priority: "Prioritate",
+        view: "Vizualizare",
+      },
+    },
+    sections: {
+      resources: {
+        title: "Resurse",
+        description: "Ghizi, vehicule, camere si alte active alocabile.",
+        actionLabel: "Resursa Noua",
+        emptyMessage: "Nicio resursa nu corespunde filtrelor curente.",
+        actions: {
+          activate: {
+            buttonLabel: "Activeaza",
+            confirmLabel: "Activeaza Resursele",
+            title: "Activezi {selection}?",
+            description:
+              "Aceasta face resursele selectate disponibile din nou pentru asignare si planificare.",
+            successVerb: "Activate",
+          },
+          deactivate: {
+            buttonLabel: "Dezactiveaza",
+            confirmLabel: "Dezactiveaza Resursele",
+            title: "Dezactivezi {selection}?",
+            description:
+              "Aceasta pastreaza resursele selectate, dar le scoate din utilizarea operationala activa.",
+            successVerb: "Dezactivate",
+          },
+          delete: {
+            buttonLabel: "Sterge Selectate",
+            confirmLabel: "Sterge Resursele",
+            title: "Stergi {selection}?",
+            description:
+              "Aceasta elimina permanent resursele selectate. Foloseste Dezactiveaza daca vrei doar sa le scoti din rotatie.",
+            successVerb: "Sterse",
+          },
+        },
+      },
+      pools: {
+        title: "Pool-uri",
+        description: "Grupuri cu capacitate partajata dupa produs sau nevoie operationala.",
+        actionLabel: "Pool Nou",
+        emptyMessage: "Niciun pool nu corespunde filtrelor curente.",
+        actions: {
+          activate: {
+            buttonLabel: "Activeaza",
+            confirmLabel: "Activeaza Pool-urile",
+            title: "Activezi {selection}?",
+            description:
+              "Aceasta reactiveaza pool-urile selectate pentru planificare activa a capacitatii.",
+            successVerb: "Activate",
+          },
+          deactivate: {
+            buttonLabel: "Dezactiveaza",
+            confirmLabel: "Dezactiveaza Pool-urile",
+            title: "Dezactivezi {selection}?",
+            description:
+              "Aceasta pastreaza pool-urile selectate pentru referinta, dar le scoate din planificarea activa.",
+            successVerb: "Dezactivate",
+          },
+          delete: {
+            buttonLabel: "Sterge Selectate",
+            confirmLabel: "Sterge Pool-urile",
+            title: "Stergi {selection}?",
+            description:
+              "Aceasta elimina permanent pool-urile selectate si orice grupare la nivel de pool pe care o ofera.",
+            successVerb: "Sterse",
+          },
+        },
+      },
+      allocations: {
+        title: "Alocari",
+        description: "Ataseaza pool-uri la produse, reguli si ore de start.",
+        actionLabel: "Alocare Noua",
+        emptyMessage: "Nicio alocare nu corespunde filtrelor curente.",
+        actions: {
+          delete: {
+            buttonLabel: "Sterge Selectate",
+            confirmLabel: "Sterge Alocarile",
+            title: "Stergi {selection}?",
+            description:
+              "Aceasta elimina permanent regulile de alocare selectate din planificarea resurselor.",
+            successVerb: "Sterse",
+          },
+        },
+      },
+    },
+  },
+  tabsSecondary: {
+    columns: {
+      assignments: {
+        slot: "Slot",
+        resource: "Resursa",
+        booking: "Rezervare",
+        status: "Status",
+        released: "Eliberat",
+        view: "Vizualizare",
+      },
+      closeouts: {
+        resource: "Resursa",
+        date: "Data",
+        starts: "Incepe",
+        ends: "Se Termina",
+        reason: "Motiv",
+      },
+    },
+    sections: {
+      assignments: {
+        title: "Asignari de Slot",
+        description: "Rezerva sau aloca resurse specifice pentru sloturi si rezervari active.",
+        actionLabel: "Asignare Noua",
+        emptyMessage: "Nicio asignare nu corespunde filtrelor curente.",
+        actions: {
+          assign: {
+            buttonLabel: "Asigneaza",
+            confirmLabel: "Marcheaza ca Alocata",
+            title: "Marchezi {selection} ca alocate?",
+            description:
+              "Aceasta marcheaza rezervarile selectate ca alocate activ, fara a sterge nicio legatura.",
+            successVerb: "Actualizate",
+          },
+          release: {
+            buttonLabel: "Elibereaza",
+            confirmLabel: "Elibereaza Asignarile",
+            title: "Eliberezi {selection}?",
+            description:
+              "Aceasta marcheaza rezervarile selectate ca eliberate, pastrand istoricul asignarii.",
+            successVerb: "Eliberate",
+          },
+          delete: {
+            buttonLabel: "Sterge Selectate",
+            confirmLabel: "Sterge Asignarile",
+            title: "Stergi {selection}?",
+            description:
+              "Aceasta elimina permanent asignarile de slot selectate. Foloseste Elibereaza daca trebuie doar sa eliberezi resursa.",
+            successVerb: "Sterse",
+          },
+        },
+      },
+      closeouts: {
+        title: "Blocari de Resurse",
+        description: "Blocheaza active pentru mentenanta, charter sau conflicte operationale.",
+        actionLabel: "Blocare Noua",
+        emptyMessage: "Nicio blocare nu corespunde filtrelor curente.",
+        actions: {
+          delete: {
+            buttonLabel: "Sterge Selectate",
+            confirmLabel: "Sterge Blocarile",
+            title: "Stergi {selection}?",
+            description:
+              "Aceasta elimina permanent blocarile selectate si poate readuce resursele in uz operational.",
+            successVerb: "Sterse",
+          },
+        },
+      },
+    },
+  },
+}

@@ -6,18 +6,24 @@ import {
   usePickupPriceRuleMutation,
   usePickupPriceRules,
 } from "@voyantjs/pricing-react"
+import { usePricingUiI18nOrDefault, usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
 import { PickupPriceRuleDialog } from "./pickup-price-rule-dialog"
 import { OptionPriceRuleLabel } from "./pricing-shared-labels"
 
 const PAGE_SIZE = 25
 
 export function PickupPriceRulesPage() {
+  const sharedI18n = usePricingUiI18nOrDefault()
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const pageMessages = registryMessages.pickupPriceRulesPage
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<PickupPriceRuleRecord | undefined>()
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -32,51 +38,57 @@ export function PickupPriceRulesPage() {
     () => [
       {
         accessorKey: "optionPriceRuleId",
-        header: "Option price rule",
+        header: pageMessages.columns.optionPriceRule,
         cell: ({ row }) => <OptionPriceRuleLabel id={row.original.optionPriceRuleId} />,
       },
       {
         accessorKey: "pickupPointId",
-        header: "Pickup point",
+        header: pageMessages.columns.pickupPoint,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.pickupPointId}</span>,
       },
       {
         accessorKey: "pricingMode",
-        header: "Mode",
+        header: pageMessages.columns.mode,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.pricingMode.replace(/_/g, " ")}
+            {sharedMessages.common.addonPricingModeLabels[row.original.pricingMode]}
           </Badge>
         ),
       },
       {
         accessorKey: "sellAmountCents",
-        header: "Sell",
+        header: pageMessages.columns.sell,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
             {row.original.sellAmountCents != null
-              ? (row.original.sellAmountCents / 100).toFixed(2)
+              ? sharedI18n.formatNumber(row.original.sellAmountCents / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
               : "-"}
           </span>
         ),
       },
       {
         accessorKey: "costAmountCents",
-        header: "Cost",
+        header: pageMessages.columns.cost,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
             {row.original.costAmountCents != null
-              ? (row.original.costAmountCents / 100).toFixed(2)
+              ? sharedI18n.formatNumber(row.original.costAmountCents / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
               : "-"}
           </span>
         ),
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: pageMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? sharedMessages.common.active : sharedMessages.common.inactive}
           </Badge>
         ),
       },
@@ -98,7 +110,7 @@ export function PickupPriceRulesPage() {
             <button
               type="button"
               onClick={() => {
-                if (confirm("Delete rule?")) {
+                if (confirm(pageMessages.labels.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -110,17 +122,15 @@ export function PickupPriceRulesPage() {
         ),
       },
     ],
-    [refetch, remove],
+    [pageMessages, refetch, remove, sharedI18n, sharedMessages],
   )
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Pickup Price Rules</h2>
-          <p className="text-sm text-muted-foreground">
-            Per-pickup-point pricing for option price rules.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -129,14 +139,14 @@ export function PickupPriceRulesPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          New Rule
+          {pageMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading pickup price rules..." : "No pickup price rules found."}
+        emptyMessage={isPending ? pageMessages.emptyLoading : pageMessages.empty}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

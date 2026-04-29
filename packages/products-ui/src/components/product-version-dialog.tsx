@@ -14,6 +14,8 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
+
 export interface ProductVersionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -30,6 +32,7 @@ export function ProductVersionDialog({
   const [notes, setNotes] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
   const { create } = useProductVersionMutation()
+  const messages = useProductsUiMessagesOrDefault()
 
   React.useEffect(() => {
     if (open) {
@@ -42,11 +45,8 @@ export function ProductVersionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-version-dialog" className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>Create version snapshot</DialogTitle>
-          <DialogDescription>
-            Save the current product state, including itinerary and option structure, as a new
-            version.
-          </DialogDescription>
+          <DialogTitle>{messages.productVersionDialog.title}</DialogTitle>
+          <DialogDescription>{messages.productVersionDialog.description}</DialogDescription>
         </DialogHeader>
         <form
           className="flex flex-col gap-4"
@@ -65,30 +65,32 @@ export function ProductVersionDialog({
               setError(
                 submissionError instanceof Error
                   ? submissionError.message
-                  : "Failed to create version snapshot.",
+                  : messages.productVersionDialog.validation.saveFailed,
               )
             }
           }}
         >
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-version-notes">Notes</Label>
+            <Label htmlFor="product-version-notes">
+              {messages.productVersionDialog.fields.notes}
+            </Label>
             <Textarea
               id="product-version-notes"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="What changed in this version?"
+              placeholder={messages.productVersionDialog.placeholders.notes}
             />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <div className="flex items-center justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={create.isPending}>
               {create.isPending ? (
                 <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
               ) : null}
-              Create version
+              {messages.productVersionDialog.actions.createVersion}
             </Button>
           </div>
         </form>

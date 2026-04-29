@@ -3,7 +3,6 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
       "env": [
@@ -39,16 +38,11 @@
       ]
     },
     "test": {
-      "dependsOn": ["^build"],
       "outputs": [],
       "env": ["TEST_DATABASE_URL"]
     },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
-    "typecheck": {
-      "dependsOn": ["^build"]
-    },
+    "lint": {},
+    "typecheck": {},
     "dev": {
       "cache": false,
       "persistent": true

@@ -3,6 +3,7 @@
 import { useSlotUnitAvailability } from "@voyantjs/availability-react"
 import { Button, Label } from "@voyantjs/ui/components"
 import { Minus, Plus } from "lucide-react"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 /** Quantity per option_unit id; omitted ids are treated as 0. */
 export interface RoomsStepperValue {
@@ -29,14 +30,6 @@ export interface RoomsStepperSectionProps {
     unlimited?: string
   }
 }
-
-const DEFAULT_LABELS = {
-  heading: "Rooms",
-  noSlot: "Pick a departure first to see available rooms.",
-  noUnits: "This departure has no per-unit availability configured.",
-  remaining: "left",
-  unlimited: "unlimited",
-} as const
 
 /**
  * Rooms / per-unit stepper for booking-create flows. Drives
@@ -65,7 +58,8 @@ export function RoomsStepperSection({
   enabled = true,
   labels,
 }: RoomsStepperSectionProps) {
-  const merged = { ...DEFAULT_LABELS, ...labels }
+  const messages = useBookingsUiMessagesOrDefault()
+  const merged = { ...messages.roomsStepperSection.labels, ...labels }
   const availability = useSlotUnitAvailability({ slotId, enabled: enabled && Boolean(slotId) })
   const units = availability.data?.data ?? []
 
@@ -124,7 +118,7 @@ export function RoomsStepperSection({
                   className="h-7 w-7 p-0"
                   onClick={() => setQuantity(unit.optionUnitId, Math.max(0, qty - 1))}
                   disabled={qty <= 0}
-                  aria-label={`Decrease ${unit.unitName}`}
+                  aria-label={`${merged.decreaseUnitPrefix} ${unit.unitName}`}
                 >
                   <Minus className="h-3.5 w-3.5" />
                 </Button>
@@ -136,7 +130,7 @@ export function RoomsStepperSection({
                   className="h-7 w-7 p-0"
                   onClick={() => setQuantity(unit.optionUnitId, qty + 1)}
                   disabled={atMax}
-                  aria-label={`Increase ${unit.unitName}`}
+                  aria-label={`${merged.increaseUnitPrefix} ${unit.unitName}`}
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </Button>

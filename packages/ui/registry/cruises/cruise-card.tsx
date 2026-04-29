@@ -1,32 +1,19 @@
 "use client"
 
 import type { SearchIndexEntry } from "@voyantjs/cruises-react"
+import { formatMessage } from "@voyantjs/i18n"
 import { Anchor, Calendar, Ship } from "lucide-react"
 import type * as React from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-
 import { ExternalCruiseBadge } from "./external-badge"
+import { useRegistryCruisesI18nOrDefault } from "./i18n"
 
 export interface CruiseCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
   cruise: SearchIndexEntry
   onSelect?: (cruise: SearchIndexEntry) => void
-}
-
-const CRUISE_TYPE_LABEL: Record<SearchIndexEntry["cruiseType"], string> = {
-  ocean: "Ocean",
-  river: "River",
-  expedition: "Expedition",
-  coastal: "Coastal",
-}
-
-function formatPrice(amount: string | null, currency: string | null): string {
-  if (!amount || !currency) return "Pricing on request"
-  const n = Number(amount)
-  if (!Number.isFinite(n)) return `${currency} ${amount}`
-  return `${currency} ${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
 }
 
 /**
@@ -36,6 +23,8 @@ function formatPrice(amount: string | null, currency: string | null): string {
  * can tell at a glance.
  */
 export function CruiseCard({ cruise, onSelect, className, ...props }: CruiseCardProps) {
+  const i18n = useRegistryCruisesI18nOrDefault()
+  const m = i18n.messages.cruiseCard
   const isExternal = cruise.source === "external"
   return (
     <Card
@@ -56,7 +45,7 @@ export function CruiseCard({ cruise, onSelect, className, ...props }: CruiseCard
       <CardHeader className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge data-slot="cruise-card-type" variant="secondary">
-            {CRUISE_TYPE_LABEL[cruise.cruiseType]}
+            {m.cruiseTypeLabels[cruise.cruiseType]}
           </Badge>
           {isExternal && cruise.sourceProvider ? (
             <ExternalCruiseBadge sourceProvider={cruise.sourceProvider} />
@@ -70,7 +59,7 @@ export function CruiseCard({ cruise, onSelect, className, ...props }: CruiseCard
       <CardContent className="space-y-2 text-sm">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Ship aria-hidden="true" className="size-4 shrink-0" />
-          <span>{cruise.nights} nights</span>
+          <span>{formatMessage(m.nights, { count: cruise.nights })}</span>
         </div>
         {cruise.embarkPortName ? (
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -79,23 +68,44 @@ export function CruiseCard({ cruise, onSelect, className, ...props }: CruiseCard
               {cruise.embarkPortName}
               {cruise.disembarkPortName && cruise.disembarkPortName !== cruise.embarkPortName
                 ? ` → ${cruise.disembarkPortName}`
-                : " (round trip)"}
+                : ` (${m.roundTrip})`}
             </span>
           </div>
         ) : null}
         {cruise.earliestDeparture ? (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar aria-hidden="true" className="size-4 shrink-0" />
-            <span>From {cruise.earliestDeparture}</span>
+            <span>{formatMessage(m.departurePrefix, { date: cruise.earliestDeparture })}</span>
           </div>
         ) : null}
         <div className="pt-2 text-base font-semibold">
-          {formatPrice(cruise.lowestPrice, cruise.lowestPriceCurrency)}
+          {formatCruisePrice(cruise.lowestPrice, cruise.lowestPriceCurrency, {
+            pricingOnRequest: m.pricingOnRequest,
+            formatCurrency: i18n.formatCurrency,
+          })}
           {cruise.lowestPrice ? (
-            <span className="text-xs font-normal text-muted-foreground"> from / pp</span>
+            <span className="text-xs font-normal text-muted-foreground"> {m.priceFromSuffix}</span>
           ) : null}
         </div>
       </CardContent>
     </Card>
   )
+}
+
+function formatCruisePrice(
+  amount: string | null,
+  currency: string | null,
+  options: {
+    pricingOnRequest: string
+    formatCurrency: (
+      value: number | string | bigint,
+      currency: string,
+      options?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+    ) => string
+  },
+) {
+  if (!amount || !currency) return options.pricingOnRequest
+  const n = Number(amount)
+  if (!Number.isFinite(n)) return `${currency} ${amount}`
+  return options.formatCurrency(n, currency, { maximumFractionDigits: 0 })
 }

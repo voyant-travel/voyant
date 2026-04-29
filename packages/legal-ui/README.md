@@ -12,6 +12,20 @@ pnpm add @voyantjs/legal-ui @voyantjs/legal-react @voyantjs/ui @tanstack/react-q
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 
+## I18n
+
+Components render English by default. To localize them, wrap your UI in
+`LegalUiMessagesProvider` and import only the locales your app supports.
+
+```tsx
+import { LegalUiMessagesProvider } from "@voyantjs/legal-ui"
+import { legalUiEn } from "@voyantjs/legal-ui/i18n/en"
+import { legalUiRo } from "@voyantjs/legal-ui/i18n/ro"
+```
+
+English-only apps should import only `./i18n/en`. Bilingual apps can import
+`./i18n/en` and `./i18n/ro`.
+
 ## Not included (registry-only)
 
 Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `contract-detail-page`, `contracts-page`, `policies-page`, `policy-detail-page`, `template-detail-page`, `templates-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.

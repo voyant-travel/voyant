@@ -30,15 +30,22 @@ import type {
   ProductOption,
 } from "./distribution-shared"
 import { nullableString, toIsoDateTime, toLocalDateTimeInput } from "./distribution-shared"
+import { useRegistryDistributionMessagesOrDefault } from "./i18n/provider"
 
-const mappingFormSchema = z.object({
-  channelId: z.string().min(1, "Channel is required"),
-  productId: z.string().min(1, "Product is required"),
-  externalProductId: z.string().min(1, "External product ID is required"),
-  externalRateId: z.string().optional(),
-  externalCategoryId: z.string().optional(),
-  active: z.boolean(),
-})
+function getMappingFormSchema(
+  messages: ReturnType<typeof useRegistryDistributionMessagesOrDefault>,
+) {
+  return z.object({
+    channelId: z.string().min(1, messages.dialogs.mapping.validation.channelRequired),
+    productId: z.string().min(1, messages.dialogs.mapping.validation.productRequired),
+    externalProductId: z
+      .string()
+      .min(1, messages.dialogs.mapping.validation.externalProductRequired),
+    externalRateId: z.string().optional(),
+    externalCategoryId: z.string().optional(),
+    active: z.boolean(),
+  })
+}
 
 export function ChannelProductMappingDialog({
   open,
@@ -55,8 +62,10 @@ export function ChannelProductMappingDialog({
   products: ProductOption[]
   onSuccess: () => void
 }) {
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const dialog = messages.dialogs.mapping
   const form = useForm({
-    resolver: zodResolver(mappingFormSchema),
+    resolver: zodResolver(getMappingFormSchema(messages)),
     defaultValues: {
       channelId: "",
       productId: "",
@@ -84,7 +93,7 @@ export function ChannelProductMappingDialog({
 
   const isEditing = Boolean(mapping)
 
-  const onSubmit = async (values: z.output<typeof mappingFormSchema>) => {
+  const onSubmit = async (values: z.output<ReturnType<typeof getMappingFormSchema>>) => {
     const payload = {
       channelId: values.channelId,
       productId: values.productId,
@@ -106,19 +115,19 @@ export function ChannelProductMappingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Product Mapping" : "New Product Mapping"}</DialogTitle>
+          <DialogTitle>{isEditing ? dialog.titleEdit : dialog.titleNew}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid gap-2">
-              <Label>Channel</Label>
+              <Label>{dialog.fields.channel}</Label>
               <Select
                 items={channels.map((channel) => ({ label: channel.name, value: channel.id }))}
                 value={form.watch("channelId")}
                 onValueChange={(value) => form.setValue("channelId", value ?? "")}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select channel" />
+                  <SelectValue placeholder={dialog.placeholders.selectChannel} />
                 </SelectTrigger>
                 <SelectContent>
                   {channels.map((channel) => (
@@ -130,14 +139,14 @@ export function ChannelProductMappingDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Product</Label>
+              <Label>{dialog.fields.product}</Label>
               <Select
                 items={products.map((product) => ({ label: product.name, value: product.id }))}
                 value={form.watch("productId")}
                 onValueChange={(value) => form.setValue("productId", value ?? "")}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select product" />
+                  <SelectValue placeholder={dialog.placeholders.selectProduct} />
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((product) => (
@@ -150,24 +159,31 @@ export function ChannelProductMappingDialog({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>External Product ID</Label>
-                <Input {...form.register("externalProductId")} placeholder="fh_12345" />
+                <Label>{dialog.fields.externalProductId}</Label>
+                <Input
+                  {...form.register("externalProductId")}
+                  placeholder={dialog.placeholders.externalProductId}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>External Rate ID</Label>
-                <Input {...form.register("externalRateId")} placeholder="adult" />
+                <Label>{dialog.fields.externalRateId}</Label>
+                <Input
+                  {...form.register("externalRateId")}
+                  placeholder={dialog.placeholders.externalRateId}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>External Category ID</Label>
-                <Input {...form.register("externalCategoryId")} placeholder="high-season" />
+                <Label>{dialog.fields.externalCategoryId}</Label>
+                <Input
+                  {...form.register("externalCategoryId")}
+                  placeholder={dialog.placeholders.externalCategoryId}
+                />
               </div>
             </div>
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <div>
-                <p className="text-sm font-medium">Active</p>
-                <p className="text-xs text-muted-foreground">
-                  Include this mapping in outbound sync and reconciliation.
-                </p>
+                <p className="text-sm font-medium">{dialog.fields.activeTitle}</p>
+                <p className="text-xs text-muted-foreground">{dialog.fields.activeDescription}</p>
               </div>
               <Switch
                 checked={form.watch("active")}
@@ -177,11 +193,11 @@ export function ChannelProductMappingDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Mapping" : "Create Mapping"}
+              {isEditing ? dialog.save : dialog.create}
             </Button>
           </DialogFooter>
         </form>
@@ -190,15 +206,19 @@ export function ChannelProductMappingDialog({
   )
 }
 
-const bookingLinkFormSchema = z.object({
-  channelId: z.string().min(1, "Channel is required"),
-  bookingId: z.string().min(1, "Booking is required"),
-  externalBookingId: z.string().optional(),
-  externalReference: z.string().optional(),
-  externalStatus: z.string().optional(),
-  bookedAtExternal: z.string().optional(),
-  lastSyncedAt: z.string().optional(),
-})
+function getBookingLinkFormSchema(
+  messages: ReturnType<typeof useRegistryDistributionMessagesOrDefault>,
+) {
+  return z.object({
+    channelId: z.string().min(1, messages.dialogs.bookingLink.validation.channelRequired),
+    bookingId: z.string().min(1, messages.dialogs.bookingLink.validation.bookingRequired),
+    externalBookingId: z.string().optional(),
+    externalReference: z.string().optional(),
+    externalStatus: z.string().optional(),
+    bookedAtExternal: z.string().optional(),
+    lastSyncedAt: z.string().optional(),
+  })
+}
 
 export function ChannelBookingLinkDialog({
   open,
@@ -215,8 +235,10 @@ export function ChannelBookingLinkDialog({
   bookings: BookingOption[]
   onSuccess: () => void
 }) {
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const dialog = messages.dialogs.bookingLink
   const form = useForm({
-    resolver: zodResolver(bookingLinkFormSchema),
+    resolver: zodResolver(getBookingLinkFormSchema(messages)),
     defaultValues: {
       channelId: "",
       bookingId: "",
@@ -246,7 +268,7 @@ export function ChannelBookingLinkDialog({
 
   const isEditing = Boolean(bookingLink)
 
-  const onSubmit = async (values: z.output<typeof bookingLinkFormSchema>) => {
+  const onSubmit = async (values: z.output<ReturnType<typeof getBookingLinkFormSchema>>) => {
     const payload = {
       channelId: values.channelId,
       bookingId: values.bookingId,
@@ -269,19 +291,19 @@ export function ChannelBookingLinkDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Booking Link" : "New Booking Link"}</DialogTitle>
+          <DialogTitle>{isEditing ? dialog.titleEdit : dialog.titleNew}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid gap-2">
-              <Label>Channel</Label>
+              <Label>{dialog.fields.channel}</Label>
               <Select
                 items={channels.map((channel) => ({ label: channel.name, value: channel.id }))}
                 value={form.watch("channelId")}
                 onValueChange={(value) => form.setValue("channelId", value ?? "")}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select channel" />
+                  <SelectValue placeholder={dialog.placeholders.selectChannel} />
                 </SelectTrigger>
                 <SelectContent>
                   {channels.map((channel) => (
@@ -293,7 +315,7 @@ export function ChannelBookingLinkDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Booking</Label>
+              <Label>{dialog.fields.booking}</Label>
               <Select
                 items={bookings.map((booking) => ({
                   label: booking.bookingNumber,
@@ -303,7 +325,7 @@ export function ChannelBookingLinkDialog({
                 onValueChange={(value) => form.setValue("bookingId", value ?? "")}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select booking" />
+                  <SelectValue placeholder={dialog.placeholders.selectBooking} />
                 </SelectTrigger>
                 <SelectContent>
                   {bookings.map((booking) => (
@@ -316,19 +338,28 @@ export function ChannelBookingLinkDialog({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>External Booking ID</Label>
-                <Input {...form.register("externalBookingId")} placeholder="123456" />
+                <Label>{dialog.fields.externalBookingId}</Label>
+                <Input
+                  {...form.register("externalBookingId")}
+                  placeholder={dialog.placeholders.externalBookingId}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>External Reference</Label>
-                <Input {...form.register("externalReference")} placeholder="OTA-REF-002" />
+                <Label>{dialog.fields.externalReference}</Label>
+                <Input
+                  {...form.register("externalReference")}
+                  placeholder={dialog.placeholders.externalReference}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>External Status</Label>
-                <Input {...form.register("externalStatus")} placeholder="confirmed" />
+                <Label>{dialog.fields.externalStatus}</Label>
+                <Input
+                  {...form.register("externalStatus")}
+                  placeholder={dialog.placeholders.externalStatus}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>Booked At External</Label>
+                <Label>{dialog.fields.bookedAtExternal}</Label>
                 <DateTimePicker
                   value={form.watch("bookedAtExternal") || null}
                   onChange={(next) =>
@@ -337,12 +368,12 @@ export function ChannelBookingLinkDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select booking date & time"
+                  placeholder={dialog.placeholders.bookedAtExternal}
                   className="w-full"
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Last Synced At</Label>
+                <Label>{dialog.fields.lastSyncedAt}</Label>
                 <DateTimePicker
                   value={form.watch("lastSyncedAt") || null}
                   onChange={(next) =>
@@ -351,7 +382,7 @@ export function ChannelBookingLinkDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select last sync date & time"
+                  placeholder={dialog.placeholders.lastSyncedAt}
                   className="w-full"
                 />
               </div>
@@ -359,11 +390,11 @@ export function ChannelBookingLinkDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Booking Link" : "Create Booking Link"}
+              {isEditing ? dialog.save : dialog.create}
             </Button>
           </DialogFooter>
         </form>

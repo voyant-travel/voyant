@@ -35,42 +35,7 @@ import {
   Textarea,
 } from "@/components/ui"
 import { zodResolver } from "@/lib/zod-resolver"
-
-const CHANNEL_ITEMS = [
-  { label: "Email", value: "email" },
-  { label: "SMS", value: "sms" },
-] as const
-
-const PROVIDER_ITEMS = [
-  { label: "Automatic", value: "automatic" },
-  { label: "Resend", value: "resend" },
-  { label: "Twilio", value: "twilio" },
-] as const
-
-const STATUS_ITEMS = [
-  { label: "Draft", value: "draft" },
-  { label: "Active", value: "active" },
-  { label: "Archived", value: "archived" },
-] as const
-
-const templateFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z
-    .string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
-  channel: z.enum(["email", "sms"]),
-  provider: z.enum(["automatic", "resend", "twilio"]).default("automatic"),
-  status: z.enum(["draft", "active", "archived"]).default("draft"),
-  subjectTemplate: z.string().optional(),
-  htmlTemplate: z.string().optional(),
-  textTemplate: z.string().optional(),
-  fromAddress: z.string().optional(),
-  active: z.boolean(),
-})
-
-type FormValues = z.input<typeof templateFormSchema>
-type FormOutput = z.output<typeof templateFormSchema>
+import { useRegistryNotificationsMessagesOrDefault } from "./i18n"
 
 type NotificationTemplateDialogProps = {
   open: boolean
@@ -85,8 +50,42 @@ export function NotificationTemplateDialog({
   template,
   onSuccess,
 }: NotificationTemplateDialogProps) {
+  const messages = useRegistryNotificationsMessagesOrDefault()
+  const dialogMessages = messages.templateDialog
+  const authoringHelpMessages = messages.authoringHelp
   const isEditing = Boolean(template)
   const { create, update } = useNotificationTemplateMutation()
+  const CHANNEL_ITEMS = [
+    { label: messages.common.channelLabels.email, value: "email" },
+    { label: messages.common.channelLabels.sms, value: "sms" },
+  ] as const
+  const PROVIDER_ITEMS = [
+    { label: messages.common.providerLabels.automatic, value: "automatic" },
+    { label: messages.common.providerLabels.resend, value: "resend" },
+    { label: messages.common.providerLabels.twilio, value: "twilio" },
+  ] as const
+  const STATUS_ITEMS = [
+    { label: messages.common.templateStatusLabels.draft, value: "draft" },
+    { label: messages.common.templateStatusLabels.active, value: "active" },
+    { label: messages.common.templateStatusLabels.archived, value: "archived" },
+  ] as const
+  const templateFormSchema = z.object({
+    name: z.string().min(1, dialogMessages.errors.nameRequired),
+    slug: z
+      .string()
+      .min(1, dialogMessages.errors.slugRequired)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, dialogMessages.errors.kebabCase),
+    channel: z.enum(["email", "sms"]),
+    provider: z.enum(["automatic", "resend", "twilio"]).default("automatic"),
+    status: z.enum(["draft", "active", "archived"]).default("draft"),
+    subjectTemplate: z.string().optional(),
+    htmlTemplate: z.string().optional(),
+    textTemplate: z.string().optional(),
+    fromAddress: z.string().optional(),
+    active: z.boolean(),
+  })
+  type FormValues = z.input<typeof templateFormSchema>
+  type FormOutput = z.output<typeof templateFormSchema>
   const { variableCatalog, liquidSnippets } = useNotificationTemplateAuthoring()
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
   const variableGroups = useMemo(
@@ -175,22 +174,22 @@ export function NotificationTemplateDialog({
       <DialogContent size="xl">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit Notification Template" : "New Notification Template"}
+            {isEditing ? dialogMessages.titleEdit : dialogMessages.titleNew}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Booking confirmation" />
+                <Label>{dialogMessages.fields.name}</Label>
+                <Input {...form.register("name")} placeholder={dialogMessages.placeholders.name} />
                 {form.formState.errors.name ? (
                   <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Slug</Label>
-                <Input {...form.register("slug")} placeholder="booking-confirmation" />
+                <Label>{dialogMessages.fields.slug}</Label>
+                <Input {...form.register("slug")} placeholder={dialogMessages.placeholders.slug} />
                 {form.formState.errors.slug ? (
                   <p className="text-xs text-destructive">{form.formState.errors.slug.message}</p>
                 ) : null}
@@ -199,7 +198,7 @@ export function NotificationTemplateDialog({
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Channel</Label>
+                <Label>{dialogMessages.fields.channel}</Label>
                 <Select
                   items={CHANNEL_ITEMS}
                   value={form.watch("channel")}
@@ -220,7 +219,7 @@ export function NotificationTemplateDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Provider</Label>
+                <Label>{dialogMessages.fields.provider}</Label>
                 <Select
                   items={PROVIDER_ITEMS}
                   value={form.watch("provider")}
@@ -241,7 +240,7 @@ export function NotificationTemplateDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{dialogMessages.fields.status}</Label>
                 <Select
                   items={STATUS_ITEMS}
                   value={form.watch("status")}
@@ -265,23 +264,23 @@ export function NotificationTemplateDialog({
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
-                    <Label>From address</Label>
+                    <Label>{dialogMessages.fields.fromAddress}</Label>
                     <Input
                       {...form.register("fromAddress")}
-                      placeholder="reservations@example.com"
+                      placeholder={dialogMessages.placeholders.fromAddress}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label>Subject</Label>
+                    <Label>{dialogMessages.fields.subject}</Label>
                     <Input
                       {...form.register("subjectTemplate")}
-                      placeholder="Your booking {{ booking.reference }}"
+                      placeholder={dialogMessages.placeholders.subject}
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label>HTML body</Label>
+                  <Label>{dialogMessages.fields.htmlBody}</Label>
                   <RichTextEditor
                     value={form.watch("htmlTemplate") ?? ""}
                     onChange={(value) =>
@@ -291,7 +290,7 @@ export function NotificationTemplateDialog({
                         shouldValidate: true,
                       })
                     }
-                    placeholder="Compose the email body using Liquid variables..."
+                    placeholder={dialogMessages.placeholders.htmlBody}
                     enableVariables
                     onEditorReady={setEditorInstance}
                   />
@@ -300,13 +299,17 @@ export function NotificationTemplateDialog({
             ) : null}
 
             <div className="flex flex-col gap-2">
-              <Label>{channel === "sms" ? "SMS body" : "Plain-text fallback"}</Label>
+              <Label>
+                {channel === "sms"
+                  ? dialogMessages.fields.textBodySms
+                  : dialogMessages.fields.textFallback}
+              </Label>
               <Textarea
                 {...form.register("textTemplate")}
                 placeholder={
                   channel === "sms"
-                    ? 'Hi {{ traveler.firstName | default: "traveler" }}, your booking is confirmed.'
-                    : "Optional plain-text version for email clients."
+                    ? dialogMessages.placeholders.textBodySms
+                    : dialogMessages.placeholders.textFallback
                 }
                 rows={6}
               />
@@ -335,6 +338,7 @@ export function NotificationTemplateDialog({
                   },
                 )
               }}
+              messages={authoringHelpMessages}
             />
 
             <div className="flex items-center gap-3">
@@ -342,17 +346,17 @@ export function NotificationTemplateDialog({
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label className="cursor-pointer">Mark template active after saving</Label>
+              <Label className="cursor-pointer">{dialogMessages.fields.activateAfterSaving}</Label>
             </div>
           </DialogBody>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Create Template"}
+              {isEditing ? messages.common.saveChanges : dialogMessages.actions.create}
             </Button>
           </DialogFooter>
         </form>

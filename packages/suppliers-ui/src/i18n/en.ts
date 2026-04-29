@@ -1,0 +1,71 @@
+import type { SuppliersUiMessages } from "./messages"
+
+export const suppliersUiEn = {
+  common: {
+    edit: "Edit",
+    delete: "Delete",
+    add: "Add",
+    open: "Open",
+    inactive: "Inactive",
+    none: "-",
+    unknown: "?",
+    maxPax: "max {count} pax",
+    supplierTypeLabels: {
+      hotel: "Hotel",
+      transfer: "Transfer",
+      guide: "Guide",
+      experience: "Experience",
+      airline: "Airline",
+      restaurant: "Restaurant",
+      other: "Other",
+    },
+    supplierStatusLabels: {
+      active: "Active",
+      inactive: "Inactive",
+      pending: "Pending",
+    },
+    serviceTypeLabels: {
+      accommodation: "Accommodation",
+      transfer: "Transfer",
+      experience: "Experience",
+      guide: "Guide",
+      meal: "Meal",
+      other: "Other",
+    },
+    rateUnitLabels: {
+      per_person: "Per person",
+      per_group: "Per group",
+      per_night: "Per night",
+      per_vehicle: "Per vehicle",
+      flat: "Flat",
+    },
+  },
+  suppliersPage: {
+    title: "Suppliers",
+    description: "Manage your hotels, transfers, guides, and service providers.",
+    create: "New Supplier",
+    searchPlaceholder: "Search suppliers...",
+    summary: "Showing {shown} of {total} suppliers",
+    columns: {
+      name: "Name",
+      type: "Type",
+      status: "Status",
+      city: "City",
+      country: "Country",
+      currency: "Currency",
+    },
+  },
+  supplierServiceRow: {
+    rates: "Rates",
+    addRate: "Add Rate",
+    noRates: "No rates yet.",
+    columns: {
+      name: "Name",
+      amount: "Amount",
+      unit: "Unit",
+      valid: "Valid",
+      pax: "Pax",
+    },
+    validFallback: "...",
+  },
+} satisfies SuppliersUiMessages

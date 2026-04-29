@@ -9,6 +9,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
 import { BookingGuaranteeDialog } from "./booking-guarantee-dialog"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -20,11 +21,6 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   expired: "secondary",
 }
 
-function formatAmount(cents: number | null, currency: string | null): string {
-  if (cents == null || !currency) return "-"
-  return `${(cents / 100).toFixed(2)} ${currency}`
-}
-
 export interface BookingGuaranteeListProps {
   bookingId: string
 }
@@ -34,6 +30,8 @@ export function BookingGuaranteeList({ bookingId }: BookingGuaranteeListProps) {
   const [editing, setEditing] = React.useState<BookingGuaranteeRecord | undefined>(undefined)
   const { data } = useBookingGuarantees(bookingId)
   const { remove } = useBookingGuaranteeMutation(bookingId)
+  const { formatCurrency, formatDate } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
 
   const guarantees = data?.data ?? []
 
@@ -42,7 +40,7 @@ export function BookingGuaranteeList({ bookingId }: BookingGuaranteeListProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4" />
-          Guarantees
+          {messages.bookingGuaranteeList.title}
         </CardTitle>
         <Button
           size="sm"
@@ -52,47 +50,67 @@ export function BookingGuaranteeList({ bookingId }: BookingGuaranteeListProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Guarantee
+          {messages.bookingGuaranteeList.addGuarantee}
         </Button>
       </CardHeader>
       <CardContent>
         {guarantees.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">No guarantees yet.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {messages.bookingGuaranteeList.empty}
+          </p>
         ) : (
           <div className="rounded border bg-background">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="p-2 text-left font-medium">Type</th>
-                  <th className="p-2 text-left font-medium">Status</th>
-                  <th className="p-2 text-right font-medium">Amount</th>
-                  <th className="p-2 text-left font-medium">Provider</th>
-                  <th className="p-2 text-left font-medium">Reference</th>
-                  <th className="p-2 text-left font-medium">Expires</th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingGuaranteeList.columns.type}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingGuaranteeList.columns.status}
+                  </th>
+                  <th className="p-2 text-right font-medium">
+                    {messages.bookingGuaranteeList.columns.amount}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingGuaranteeList.columns.provider}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingGuaranteeList.columns.reference}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.bookingGuaranteeList.columns.expires}
+                  </th>
                   <th className="w-20 p-2" />
                 </tr>
               </thead>
               <tbody>
                 {guarantees.map((g) => (
                   <tr key={g.id} className="border-b last:border-b-0">
-                    <td className="p-2 capitalize">{g.guaranteeType.replace(/_/g, " ")}</td>
                     <td className="p-2">
-                      <Badge
-                        variant={statusVariant[g.status] ?? "secondary"}
-                        className="capitalize"
-                      >
-                        {g.status.replace(/_/g, " ")}
+                      {messages.bookingGuaranteeDialog.guaranteeTypeLabels[g.guaranteeType]}
+                    </td>
+                    <td className="p-2">
+                      <Badge variant={statusVariant[g.status] ?? "secondary"}>
+                        {messages.bookingGuaranteeDialog.guaranteeStatusLabels[g.status]}
                       </Badge>
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatAmount(g.amountCents, g.currency)}
-                    </td>
-                    <td className="p-2">{g.provider ?? "-"}</td>
-                    <td className="max-w-[150px] truncate p-2 font-mono text-xs">
-                      {g.referenceNumber ?? "-"}
+                      {g.amountCents == null || !g.currency
+                        ? messages.bookingGuaranteeList.values.amountUnavailable
+                        : formatCurrency(g.amountCents / 100, g.currency)}
                     </td>
                     <td className="p-2">
-                      {g.expiresAt ? new Date(g.expiresAt).toLocaleDateString() : "-"}
+                      {g.provider ?? messages.bookingGuaranteeList.values.providerUnavailable}
+                    </td>
+                    <td className="max-w-[150px] truncate p-2 font-mono text-xs">
+                      {g.referenceNumber ??
+                        messages.bookingGuaranteeList.values.referenceUnavailable}
+                    </td>
+                    <td className="p-2">
+                      {g.expiresAt
+                        ? formatDate(g.expiresAt)
+                        : messages.bookingGuaranteeList.values.expiresUnavailable}
                     </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
@@ -109,7 +127,7 @@ export function BookingGuaranteeList({ bookingId }: BookingGuaranteeListProps) {
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm("Delete this guarantee?")) {
+                            if (confirm(messages.bookingGuaranteeList.actions.deleteConfirm)) {
                               remove.mutate(g.id)
                             }
                           }}

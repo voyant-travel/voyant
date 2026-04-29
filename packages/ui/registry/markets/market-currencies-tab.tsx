@@ -8,9 +8,11 @@ import {
 } from "@voyantjs/markets-react"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useMarketsUiMessagesOrDefault } from "../../../markets-ui/src/index"
+
+import { useRegistryMarketsMessagesOrDefault } from "./i18n"
 import { MarketCurrencyDialog } from "./market-currency-dialog"
 
 const PAGE_SIZE = 25
@@ -20,6 +22,8 @@ export interface MarketCurrenciesTabProps {
 }
 
 export function MarketCurrenciesTab({ marketId }: MarketCurrenciesTabProps) {
+  const sharedMessages = useMarketsUiMessagesOrDefault()
+  const tabMessages = useRegistryMarketsMessagesOrDefault().currenciesTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<MarketCurrencyRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -34,37 +38,37 @@ export function MarketCurrenciesTab({ marketId }: MarketCurrenciesTabProps) {
   const columns: ColumnDef<MarketCurrencyRecord>[] = [
     {
       accessorKey: "currencyCode",
-      header: "Currency",
+      header: tabMessages.columns.currency,
       cell: ({ row }) => (
         <span className="font-mono text-xs font-medium">{row.original.currencyCode}</span>
       ),
     },
     {
       accessorKey: "isDefault",
-      header: "Default",
-      cell: ({ row }) => (row.original.isDefault ? "Yes" : "-"),
+      header: tabMessages.columns.default,
+      cell: ({ row }) => (row.original.isDefault ? tabMessages.values.yes : "-"),
     },
     {
       accessorKey: "isSettlement",
-      header: "Settlement",
-      cell: ({ row }) => (row.original.isSettlement ? "Yes" : "-"),
+      header: tabMessages.columns.settlement,
+      cell: ({ row }) => (row.original.isSettlement ? tabMessages.values.yes : "-"),
     },
     {
       accessorKey: "isReporting",
-      header: "Reporting",
-      cell: ({ row }) => (row.original.isReporting ? "Yes" : "-"),
+      header: tabMessages.columns.reporting,
+      cell: ({ row }) => (row.original.isReporting ? tabMessages.values.yes : "-"),
     },
     {
       accessorKey: "sortOrder",
-      header: "Sort",
+      header: tabMessages.columns.sort,
       cell: ({ row }) => row.original.sortOrder,
     },
     {
       accessorKey: "active",
-      header: "Status",
+      header: tabMessages.columns.status,
       cell: ({ row }) => (
         <Badge variant={row.original.active ? "default" : "outline"}>
-          {row.original.active ? "Active" : "Inactive"}
+          {row.original.active ? sharedMessages.common.active : sharedMessages.common.cancel}
         </Badge>
       ),
     },
@@ -86,7 +90,7 @@ export function MarketCurrenciesTab({ marketId }: MarketCurrenciesTabProps) {
           <button
             type="button"
             onClick={() => {
-              if (confirm(`Delete currency "${row.original.currencyCode}"?`)) {
+              if (confirm(tabMessages.actions.deleteConfirm)) {
                 remove.mutate(row.original.id, { onSuccess: () => void refetch() })
               }
             }}
@@ -102,9 +106,7 @@ export function MarketCurrenciesTab({ marketId }: MarketCurrenciesTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Currencies accepted for display, settlement and reporting in this market.
-        </p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -113,14 +115,14 @@ export function MarketCurrenciesTab({ marketId }: MarketCurrenciesTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Currency
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading currencies..." : "No currencies yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.noCurrencies}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

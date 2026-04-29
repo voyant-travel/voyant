@@ -15,6 +15,7 @@ import { Label } from "@voyantjs/ui/components/label"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
 import { PaginationFooter } from "./pagination-footer"
 import { RoomInventoryDialog } from "./room-inventory-dialog"
 import { RoomTypeCombobox } from "./room-type-combobox"
@@ -25,6 +26,7 @@ export interface RoomInventoryTabProps {
 const PAGE_SIZE = 25
 
 export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<RoomInventoryRecord | undefined>(undefined)
   const [dateFrom, setDateFrom] = React.useState("")
@@ -57,7 +59,7 @@ export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Daily unit availability per room type.</p>
+        <p className="text-sm text-muted-foreground">{messages.roomInventoryTab.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -66,13 +68,13 @@ export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Inventory
+          {messages.roomInventoryTab.add}
         </Button>
       </div>
 
       <div className="grid max-w-3xl grid-cols-3 gap-3">
         <div className="flex flex-col gap-2">
-          <Label>Room type</Label>
+          <Label>{messages.roomInventoryTab.filters.roomType}</Label>
           <RoomTypeCombobox
             propertyId={propertyId}
             value={roomTypeId}
@@ -80,11 +82,11 @@ export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
               setRoomTypeId(value ?? "")
               setPageIndex(0)
             }}
-            placeholder="All"
+            placeholder={messages.roomInventoryTab.filters.allRoomTypes}
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label>From</Label>
+          <Label>{messages.roomInventoryTab.filters.from}</Label>
           <Input
             value={dateFrom}
             onChange={(event) => {
@@ -95,7 +97,7 @@ export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label>To</Label>
+          <Label>{messages.roomInventoryTab.filters.to}</Label>
           <Input
             value={dateTo}
             onChange={(event) => {
@@ -113,21 +115,37 @@ export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No inventory rows yet.</p>
+          <p className="text-sm text-muted-foreground">{messages.roomInventoryTab.empty}</p>
         </div>
       ) : (
         <div className="rounded-md border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">Date</th>
-                <th className="p-3 text-left font-medium">Room type</th>
-                <th className="p-3 text-right font-medium">Total</th>
-                <th className="p-3 text-right font-medium">Avail</th>
-                <th className="p-3 text-right font-medium">Held</th>
-                <th className="p-3 text-right font-medium">Sold</th>
-                <th className="p-3 text-right font-medium">OOO</th>
-                <th className="p-3 text-left font-medium">Stop</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomInventoryTab.columns.date}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomInventoryTab.columns.roomType}
+                </th>
+                <th className="p-3 text-right font-medium">
+                  {messages.roomInventoryTab.columns.total}
+                </th>
+                <th className="p-3 text-right font-medium">
+                  {messages.roomInventoryTab.columns.available}
+                </th>
+                <th className="p-3 text-right font-medium">
+                  {messages.roomInventoryTab.columns.held}
+                </th>
+                <th className="p-3 text-right font-medium">
+                  {messages.roomInventoryTab.columns.sold}
+                </th>
+                <th className="p-3 text-right font-medium">
+                  {messages.roomInventoryTab.columns.outOfOrder}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomInventoryTab.columns.stop}
+                </th>
                 <th className="w-20 p-3" />
               </tr>
             </thead>
@@ -144,7 +162,9 @@ export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
                   <td className="p-3 text-right font-mono">{row.soldUnits}</td>
                   <td className="p-3 text-right font-mono">{row.outOfOrderUnits}</td>
                   <td className="p-3">
-                    {row.stopSell ? <Badge variant="destructive">Stop</Badge> : null}
+                    {row.stopSell ? (
+                      <Badge variant="destructive">{messages.common.stop}</Badge>
+                    ) : null}
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-1">
@@ -161,7 +181,7 @@ export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          if (confirm("Delete inventory row?")) {
+                          if (confirm(messages.roomInventoryTab.deleteConfirm)) {
                             remove.mutate(row.id)
                           }
                         }}

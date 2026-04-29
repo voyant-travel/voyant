@@ -21,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductTypeCombobox } from "./product-type-combobox"
 
 type Mode = { kind: "create" } | { kind: "edit"; product: ProductRecord }
@@ -43,20 +45,16 @@ interface FormState {
   tags: string[]
 }
 
-const PRODUCT_STATUSES = [
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "archived", label: "Archived" },
-] as const
+const PRODUCT_STATUSES = [{ value: "draft" }, { value: "active" }, { value: "archived" }] as const
 
 const BOOKING_MODES = [
-  { value: "date", label: "Date" },
-  { value: "date_time", label: "Date & Time" },
-  { value: "open", label: "Open" },
-  { value: "stay", label: "Stay" },
-  { value: "transfer", label: "Transfer" },
-  { value: "itinerary", label: "Itinerary" },
-  { value: "other", label: "Other" },
+  { value: "date" },
+  { value: "date_time" },
+  { value: "open" },
+  { value: "stay" },
+  { value: "transfer" },
+  { value: "itinerary" },
+  { value: "other" },
 ] as const
 
 const CURRENCY_OPTIONS = Object.values(currencies).map((currency) => ({
@@ -86,7 +84,7 @@ function initialState(mode: Mode): FormState {
     status: "draft",
     bookingMode: "itinerary",
     productTypeId: "__none__",
-    sellCurrency: "EUR",
+    sellCurrency: "EUR", // i18n-literal-ok ISO default currency
     sellAmount: "",
     costAmount: "",
     tags: [],
@@ -120,6 +118,7 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
   const [tagInput, setTagInput] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useProductMutation()
+  const messages = useRegistryProductsMessagesOrDefault()
 
   const isSubmitting = create.isPending || update.isPending
 
@@ -134,12 +133,12 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
     setError(null)
 
     if (!state.name.trim()) {
-      setError("Product name is required.")
+      setError(messages.productForm.validation.nameRequired)
       return
     }
 
     if (state.sellCurrency.trim().length !== 3) {
-      setError("Sell currency must be a 3-letter ISO code.")
+      setError(messages.productForm.validation.sellCurrencyInvalid)
       return
     }
 
@@ -152,7 +151,7 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
           : await update.mutateAsync({ id: mode.product.id, input: payload })
       onSuccess?.(product)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save product.")
+      setError(err instanceof Error ? err.message : messages.productForm.validation.saveFailed)
     }
   }
 
@@ -160,35 +159,36 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
     <form data-slot="product-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-name">Name</Label>
+          <Label htmlFor="product-name">{messages.productForm.fields.name}</Label>
           <Input
             id="product-name"
             required
             autoFocus
             value={state.name}
             onChange={(event) => field("name")(event.target.value)}
-            placeholder="Croatia Explorer 2026"
+            placeholder={messages.productForm.placeholders.name}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-description">Description</Label>
+          <Label htmlFor="product-description">{messages.productForm.fields.description}</Label>
           <Textarea
             id="product-description"
             value={state.description}
             onChange={(event) => field("description")(event.target.value)}
-            placeholder="Brief overview of the product..."
+            placeholder={messages.productForm.placeholders.description}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label>Tags</Label>
+          <Label>{messages.productForm.fields.tags}</Label>
           <div className="flex flex-wrap gap-1.5">
             {state.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="gap-1 text-xs">
                 {tag}
                 <button
                   type="button"
+                  aria-label={messages.productForm.actions.removeTag}
                   className="ml-0.5 rounded-full hover:text-destructive"
                   onClick={() => field("tags")(state.tags.filter((value) => value !== tag))}
                 >
@@ -210,17 +210,20 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
                 setTagInput("")
               }
             }}
-            placeholder="Type a tag and press Enter"
+            placeholder={messages.productForm.placeholders.tags}
           />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label>Status</Label>
+            <Label>{messages.productForm.fields.status}</Label>
             <Select
               value={state.status}
               onValueChange={(value) => value && field("status")(value)}
-              items={PRODUCT_STATUSES}
+              items={PRODUCT_STATUSES.map((status) => ({
+                label: messages.common.productStatusLabels[status.value],
+                value: status.value,
+              }))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -228,7 +231,7 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               <SelectContent>
                 {PRODUCT_STATUSES.map((status) => (
                   <SelectItem key={status.value} value={status.value}>
-                    {status.label}
+                    {messages.common.productStatusLabels[status.value]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -236,9 +239,12 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Booking Mode</Label>
+            <Label>{messages.productForm.fields.bookingMode}</Label>
             <Select
-              items={BOOKING_MODES}
+              items={BOOKING_MODES.map((modeOption) => ({
+                label: messages.productForm.bookingModeLabels[modeOption.value],
+                value: modeOption.value,
+              }))}
               value={state.bookingMode}
               onValueChange={(value) => value && field("bookingMode")(value)}
             >
@@ -248,7 +254,7 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               <SelectContent>
                 {BOOKING_MODES.map((modeOption) => (
                   <SelectItem key={modeOption.value} value={modeOption.value}>
-                    {modeOption.label}
+                    {messages.productForm.bookingModeLabels[modeOption.value]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -256,16 +262,16 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Product Type</Label>
+            <Label>{messages.productForm.fields.productType}</Label>
             <ProductTypeCombobox
               value={state.productTypeId === "__none__" ? null : state.productTypeId}
               onChange={(value) => field("productTypeId")(value ?? "__none__")}
-              placeholder="Search product types…"
+              placeholder={messages.productForm.placeholders.productType}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Sell Currency</Label>
+            <Label>{messages.productForm.fields.sellCurrency}</Label>
             <Select
               items={CURRENCY_OPTIONS}
               value={state.sellCurrency}
@@ -285,7 +291,7 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-sell-amount">Sell Amount</Label>
+            <Label htmlFor="product-sell-amount">{messages.productForm.fields.sellAmount}</Label>
             <Input
               id="product-sell-amount"
               type="number"
@@ -293,12 +299,12 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               step="0.01"
               value={state.sellAmount}
               onChange={(event) => field("sellAmount")(event.target.value)}
-              placeholder="0.00"
+              placeholder={messages.productForm.placeholders.sellAmount}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="product-cost-amount">Cost Amount</Label>
+            <Label htmlFor="product-cost-amount">{messages.productForm.fields.costAmount}</Label>
             <Input
               id="product-cost-amount"
               type="number"
@@ -306,7 +312,7 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               step="0.01"
               value={state.costAmount}
               onChange={(event) => field("costAmount")(event.target.value)}
-              placeholder="0.00"
+              placeholder={messages.productForm.placeholders.costAmount}
             />
           </div>
         </div>
@@ -321,19 +327,19 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              Saving…
+              {messages.productForm.actions.saving}
             </>
           ) : mode.kind === "create" ? (
-            "Create product"
+            messages.productForm.actions.createProduct
           ) : (
-            "Save changes"
+            messages.common.saveChanges
           )}
         </Button>
       </div>

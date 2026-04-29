@@ -67,7 +67,7 @@ export function DistributionDialogs({
   contracts: ChannelContractRow[]
   products: ProductOption[]
   bookings: BookingOption[]
-  refreshAll: () => Promise<void>
+  refreshAll: () => Promise<void> // i18n-literal-ok type annotation
 }) {
   return (
     <>

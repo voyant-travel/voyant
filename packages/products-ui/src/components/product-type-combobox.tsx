@@ -10,6 +10,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
+
 type Props = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -19,12 +21,8 @@ type Props = {
 
 const PAGE_SIZE = 25
 
-export function ProductTypeCombobox({
-  value,
-  onChange,
-  placeholder = "Search product types…",
-  disabled,
-}: Props) {
+export function ProductTypeCombobox({ value, onChange, placeholder, disabled }: Props) {
+  const messages = useProductsUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useProductTypes({ active: true, search: search || undefined, limit: PAGE_SIZE })
   const selectedQuery = useProductType(value, { enabled: !!value })
@@ -68,10 +66,15 @@ export function ProductTypeCombobox({
         setInputValue(item ? `${item.name} · ${item.code}` : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.productType.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
-          {listQuery.isPending || selectedQuery.isPending ? "Loading…" : "No product types found."}
+          {listQuery.isPending || selectedQuery.isPending
+            ? messages.common.loading
+            : messages.comboboxes.productType.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

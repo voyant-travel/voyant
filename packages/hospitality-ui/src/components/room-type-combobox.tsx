@@ -10,6 +10,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+
 type Props = {
   propertyId: string
   value: string | null | undefined
@@ -20,13 +22,8 @@ type Props = {
 
 const PAGE_SIZE = 25
 
-export function RoomTypeCombobox({
-  propertyId,
-  value,
-  onChange,
-  placeholder = "Search room types…",
-  disabled,
-}: Props) {
+export function RoomTypeCombobox({ propertyId, value, onChange, placeholder, disabled }: Props) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useRoomTypes({
     propertyId,
@@ -69,10 +66,15 @@ export function RoomTypeCombobox({
         setInputValue(id ? (itemMap.get(id)?.name ?? "") : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.roomType.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
-          {listQuery.isPending || selectedQuery.isPending ? "Loading…" : "No room types found."}
+          {listQuery.isPending || selectedQuery.isPending
+            ? messages.common.loading
+            : messages.comboboxes.roomType.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

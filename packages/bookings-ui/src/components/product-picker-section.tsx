@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import * as React from "react"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 const OPTION_NONE = "__none__"
 
@@ -36,14 +37,6 @@ export interface ProductPickerSectionProps {
   }
 }
 
-const DEFAULT_LABELS = {
-  product: "Product",
-  productSearchPlaceholder: "Search products...",
-  productSelectPlaceholder: "Select a product...",
-  option: "Option",
-  optionNone: "No specific option",
-} as const
-
 /**
  * Controlled product + option picker. Splits `value` + `onChange` so apps can
  * replace the whole section (e.g., with a typeahead against a custom catalog)
@@ -57,7 +50,8 @@ export function ProductPickerSection({
   labels,
 }: ProductPickerSectionProps) {
   const [productSearch, setProductSearch] = React.useState("")
-  const merged = { ...DEFAULT_LABELS, ...labels }
+  const messages = useBookingsUiMessagesOrDefault()
+  const merged = { ...messages.productPickerSection.labels, ...labels }
 
   const { data: productsData } = useProducts({
     search: productSearch || undefined,

@@ -1,6 +1,7 @@
 "use client"
 
 import { type PriceCatalogRecord, usePriceCatalogMutation } from "@voyantjs/pricing-react"
+import { usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { currencies } from "@voyantjs/utils/currencies"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
@@ -36,23 +37,27 @@ import {
 } from "@/components/ui/combobox"
 import { zodResolver } from "@/lib/zod-resolver"
 
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
+
 const CURRENCY_CODES = Object.keys(currencies).sort()
+const DEFAULT_CURRENCY_CODE = "EUR" // i18n-literal-ok ISO default currency
 
-const catalogFormSchema = z.object({
-  code: z.string().min(1, "Code is required").max(100),
-  name: z.string().min(1, "Name is required").max(255),
-  currencyCode: z
-    .string()
-    .length(3, "Use 3-letter ISO code")
-    .regex(/^[A-Z]{3}$/, "Must be uppercase"),
-  catalogType: z.enum(["public", "contract", "net", "gross", "promo", "internal", "other"]),
-  isDefault: z.boolean(),
-  active: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
-
-type CatalogFormValues = z.input<typeof catalogFormSchema>
-type CatalogFormOutput = z.output<typeof catalogFormSchema>
+function createCatalogFormSchema(
+  messages: ReturnType<typeof useRegistryPricingMessagesOrDefault>["priceCatalogDialog"],
+) {
+  return z.object({
+    code: z.string().min(1, messages.validation.codeRequired).max(100),
+    name: z.string().min(1, messages.validation.nameRequired).max(255),
+    currencyCode: z
+      .string()
+      .length(3, messages.validation.currencyLength)
+      .regex(/^[A-Z]{3}$/, messages.validation.currencyUppercase),
+    catalogType: z.enum(["public", "contract", "net", "gross", "promo", "internal", "other"]),
+    isDefault: z.boolean(),
+    active: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
 export interface PriceCatalogDialogProps {
   open: boolean
@@ -61,31 +66,30 @@ export interface PriceCatalogDialogProps {
   onSuccess?: (catalog: PriceCatalogRecord) => void
 }
 
-const CATALOG_TYPES = [
-  { value: "public", label: "Public" },
-  { value: "contract", label: "Contract" },
-  { value: "net", label: "Net" },
-  { value: "gross", label: "Gross" },
-  { value: "promo", label: "Promo" },
-  { value: "internal", label: "Internal" },
-  { value: "other", label: "Other" },
-] as const
-
 export function PriceCatalogDialog({
   open,
   onOpenChange,
   catalog,
   onSuccess,
 }: PriceCatalogDialogProps) {
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const dialogMessages = registryMessages.priceCatalogDialog
+  const formSchema = createCatalogFormSchema(dialogMessages)
   const isEditing = !!catalog
   const { create, update } = usePriceCatalogMutation()
 
+  type CatalogFormValues = z.input<typeof formSchema>
+  type CatalogFormOutput = z.output<typeof formSchema>
+
+  const catalogTypes = ["public", "contract", "net", "gross", "promo", "internal", "other"] as const
+
   const form = useForm<CatalogFormValues, unknown, CatalogFormOutput>({
-    resolver: zodResolver(catalogFormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       code: "",
       name: "",
-      currencyCode: "EUR",
+      currencyCode: DEFAULT_CURRENCY_CODE,
       catalogType: "public",
       isDefault: false,
       active: true,
@@ -107,7 +111,7 @@ export function PriceCatalogDialog({
     } else if (open) {
       form.reset()
     }
-  }, [open, catalog, form])
+  }, [catalog, form, open])
 
   const onSubmit = async (values: CatalogFormOutput) => {
     const payload = {
@@ -134,21 +138,23 @@ export function PriceCatalogDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Price Catalog" : "New Price Catalog"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dialogMessages.titles.edit : dialogMessages.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Code</Label>
-                <Input {...form.register("code")} placeholder="public-eur" />
+                <Label>{dialogMessages.fields.code}</Label>
+                <Input {...form.register("code")} placeholder={dialogMessages.placeholders.code} />
                 {form.formState.errors.code ? (
                   <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Public EUR Pricing" />
+                <Label>{dialogMessages.fields.name}</Label>
+                <Input {...form.register("name")} placeholder={dialogMessages.placeholders.name} />
                 {form.formState.errors.name ? (
                   <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
                 ) : null}
@@ -157,9 +163,12 @@ export function PriceCatalogDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Type</Label>
+                <Label>{dialogMessages.fields.type}</Label>
                 <Select
-                  items={CATALOG_TYPES}
+                  items={catalogTypes.map((value) => ({
+                    label: dialogMessages.catalogTypeLabels[value],
+                    value,
+                  }))}
                   value={form.watch("catalogType")}
                   onValueChange={(value) =>
                     form.setValue("catalogType", value as CatalogFormValues["catalogType"])
@@ -169,16 +178,16 @@ export function PriceCatalogDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATALOG_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                    {catalogTypes.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {dialogMessages.catalogTypeLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Currency</Label>
+                <Label>{dialogMessages.fields.currency}</Label>
                 <Combobox
                   items={CURRENCY_CODES}
                   value={form.watch("currencyCode") || null}
@@ -196,15 +205,15 @@ export function PriceCatalogDialog({
                   onValueChange={(next) => {
                     if (typeof next === "string") {
                       form.setValue("currencyCode", next, {
-                        shouldValidate: true,
                         shouldDirty: true,
+                        shouldValidate: true,
                       })
                     }
                   }}
                 >
-                  <ComboboxInput placeholder="Search currency…" />
+                  <ComboboxInput placeholder={dialogMessages.placeholders.currencySearch} />
                   <ComboboxContent>
-                    <ComboboxEmpty>No currencies found</ComboboxEmpty>
+                    <ComboboxEmpty>{dialogMessages.placeholders.currencyEmpty}</ComboboxEmpty>
                     <ComboboxList>
                       <ComboboxCollection>
                         {(code: string) => {
@@ -236,29 +245,32 @@ export function PriceCatalogDialog({
                   checked={form.watch("isDefault")}
                   onCheckedChange={(checked) => form.setValue("isDefault", checked)}
                 />
-                <Label>Default catalog</Label>
+                <Label>{dialogMessages.fields.defaultCatalog}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("active")}
                   onCheckedChange={(checked) => form.setValue("active", checked)}
                 />
-                <Label>Active</Label>
+                <Label>{dialogMessages.fields.active}</Label>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
-              <Textarea {...form.register("notes")} placeholder="Internal description…" />
+              <Label>{dialogMessages.fields.notes}</Label>
+              <Textarea
+                {...form.register("notes")}
+                placeholder={dialogMessages.placeholders.notes}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {sharedMessages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Create Catalog"}
+              {isEditing ? sharedMessages.common.saveChanges : dialogMessages.actions.create}
             </Button>
           </DialogFooter>
         </form>

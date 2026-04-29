@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage } from "@voyantjs/i18n"
 import { type ProductRecord, useProducts } from "@voyantjs/products-react"
 import { Loader2, Plus, Search } from "lucide-react"
 import * as React from "react"
@@ -16,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import { useRegistryProductsI18nOrDefault } from "./i18n/provider"
 import { ProductDialog } from "./product-dialog"
 
 export interface ProductListProps {
@@ -29,12 +31,9 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   archived: "secondary",
 }
 
-function formatAmount(cents: number | null, currency: string): string {
-  if (cents == null) return "—"
-  return `${(cents / 100).toFixed(2)} ${currency}`
-}
-
 export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps = {}) {
+  const i18n = useRegistryProductsI18nOrDefault()
+  const messages = i18n.messages
   const [search, setSearch] = React.useState("")
   const [offset, setOffset] = React.useState(0)
   const [dialogOpen, setDialogOpen] = React.useState(false)
@@ -65,6 +64,17 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
     setDialogOpen(true)
   }
 
+  const formatSellAmount = (cents: number | null, currency: string) => {
+    if (cents == null) return messages.common.none
+    return i18n.formatCurrency(cents / 100, currency)
+  }
+
+  const formatStartDate = (value: string | null) => {
+    if (!value) return messages.common.none
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.valueOf()) ? value : i18n.formatDate(parsed)
+  }
+
   return (
     <div data-slot="product-list" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -74,7 +84,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
             aria-hidden="true"
           />
           <Input
-            placeholder="Search products…"
+            placeholder={messages.productList.searchPlaceholder}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -85,7 +95,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
         </div>
         <Button onClick={handleCreate} data-slot="product-list-create">
           <Plus className="mr-2 size-4" aria-hidden="true" />
-          New product
+          {messages.productList.createProduct}
         </Button>
       </div>
 
@@ -93,11 +103,11 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Sell Amount</TableHead>
-              <TableHead>Pax</TableHead>
-              <TableHead>Start Date</TableHead>
+              <TableHead>{messages.productList.columns.name}</TableHead>
+              <TableHead>{messages.productList.columns.status}</TableHead>
+              <TableHead>{messages.productList.columns.sellAmount}</TableHead>
+              <TableHead>{messages.productList.columns.pax}</TableHead>
+              <TableHead>{messages.productList.columns.startDate}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -113,13 +123,13 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-destructive">
-                  Failed to load products.
+                  {messages.productList.loadingError}
                 </TableCell>
               </TableRow>
             ) : products.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
-                  No products found.
+                  {messages.productList.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -131,18 +141,19 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                 >
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={statusVariant[product.status] ?? "secondary"}
-                      className="capitalize"
-                    >
-                      {product.status}
+                    <Badge variant={statusVariant[product.status] ?? "secondary"}>
+                      {
+                        messages.common.productStatusLabels[
+                          product.status as keyof typeof messages.common.productStatusLabels
+                        ]
+                      }
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {formatAmount(product.sellAmountCents, product.sellCurrency)}
+                    {formatSellAmount(product.sellAmountCents, product.sellCurrency)}
                   </TableCell>
-                  <TableCell>{product.pax ?? "—"}</TableCell>
-                  <TableCell>{product.startDate ?? "—"}</TableCell>
+                  <TableCell>{product.pax ?? messages.common.none}</TableCell>
+                  <TableCell>{formatStartDate(product.startDate)}</TableCell>
                 </TableRow>
               ))
             )}
@@ -152,7 +163,10 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          Showing {products.length} of {total}
+          {formatMessage(messages.productList.showingSummary, {
+            count: products.length,
+            total,
+          })}
         </span>
         <div className="flex items-center gap-2">
           <Button
@@ -161,10 +175,10 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
             disabled={offset === 0}
             onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
           >
-            Previous
+            {messages.common.previous}
           </Button>
           <span>
-            Page {page} / {pageCount}
+            {messages.common.page} {page} / {pageCount}
           </span>
           <Button
             variant="outline"
@@ -172,7 +186,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
             disabled={offset + pageSize >= total}
             onClick={() => setOffset((prev) => prev + pageSize)}
           >
-            Next
+            {messages.common.next}
           </Button>
         </div>
       </div>

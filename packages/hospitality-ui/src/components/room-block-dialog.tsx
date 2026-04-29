@@ -22,6 +22,8 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { RoomBlockStatus } from "../i18n/messages"
 import { RoomTypeCombobox } from "./room-type-combobox"
 import { RoomUnitCombobox } from "./room-unit-combobox"
 
@@ -30,19 +32,22 @@ export type RoomBlockData = RoomBlockRecord
 const STATUSES = ["draft", "held", "confirmed", "released", "cancelled"] as const
 type Status = RoomBlockRecord["status"]
 
-const formSchema = z.object({
-  roomTypeId: z.string().optional().nullable(),
-  roomUnitId: z.string().optional().nullable(),
-  startsOn: z.string().min(1, "Start date is required"),
-  endsOn: z.string().min(1, "End date is required"),
-  status: z.enum(STATUSES),
-  blockReason: z.string().optional().nullable(),
-  quantity: z.coerce.number().int().min(1),
-  notes: z.string().optional().nullable(),
-})
+function createFormSchema(messages: ReturnType<typeof useHospitalityUiMessagesOrDefault>) {
+  return z.object({
+    roomTypeId: z.string().optional().nullable(),
+    roomUnitId: z.string().optional().nullable(),
+    startsOn: z.string().min(1, messages.roomBlockDialog.validation.startsOnRequired),
+    endsOn: z.string().min(1, messages.roomBlockDialog.validation.endsOnRequired),
+    status: z.enum(STATUSES),
+    blockReason: z.string().optional().nullable(),
+    quantity: z.coerce.number().int().min(1, messages.roomBlockDialog.validation.quantityMin),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface RoomBlockDialogProps {
   open: boolean
@@ -61,6 +66,8 @@ export function RoomBlockDialog({
 }: RoomBlockDialogProps) {
   const isEditing = Boolean(block)
   const { create, update } = useRoomBlockMutation()
+  const messages = useHospitalityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -129,28 +136,32 @@ export function RoomBlockDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Room Block" : "Add Room Block"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.roomBlockDialog.titles.edit
+              : messages.roomBlockDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Room type (optional)</Label>
+                <Label>{messages.roomBlockDialog.fields.roomType}</Label>
                 <RoomTypeCombobox
                   propertyId={propertyId}
                   value={form.watch("roomTypeId")}
                   onChange={(value) => form.setValue("roomTypeId", value ?? "")}
-                  placeholder="None"
+                  placeholder={messages.roomBlockDialog.placeholders.roomType}
                   disabled={!open}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Room unit (optional)</Label>
+                <Label>{messages.roomBlockDialog.fields.roomUnit}</Label>
                 <RoomUnitCombobox
                   propertyId={propertyId}
                   value={form.watch("roomUnitId")}
                   onChange={(value) => form.setValue("roomUnitId", value ?? "")}
-                  placeholder="None"
+                  placeholder={messages.roomBlockDialog.placeholders.roomUnit}
                   disabled={!open}
                 />
               </div>
@@ -158,7 +169,7 @@ export function RoomBlockDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Starts on</Label>
+                <Label>{messages.roomBlockDialog.fields.startsOn}</Label>
                 <DatePicker
                   value={form.watch("startsOn") || null}
                   onChange={(next) =>
@@ -167,12 +178,12 @@ export function RoomBlockDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select start date"
+                  placeholder={messages.roomBlockDialog.placeholders.startsOn}
                   className="w-full"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Ends on</Label>
+                <Label>{messages.roomBlockDialog.fields.endsOn}</Label>
                 <DatePicker
                   value={form.watch("endsOn") || null}
                   onChange={(next) =>
@@ -181,7 +192,7 @@ export function RoomBlockDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select end date"
+                  placeholder={messages.roomBlockDialog.placeholders.endsOn}
                   className="w-full"
                 />
               </div>
@@ -189,9 +200,12 @@ export function RoomBlockDialog({
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{messages.roomBlockDialog.fields.status}</Label>
                 <Select
-                  items={STATUSES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={STATUSES.map((status) => ({
+                    label: messages.common.roomBlockStatusLabels[status],
+                    value: status,
+                  }))}
                   value={form.watch("status")}
                   onValueChange={(value) => form.setValue("status", value as Status)}
                 >
@@ -200,35 +214,38 @@ export function RoomBlockDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {STATUSES.map((status) => (
-                      <SelectItem key={status} value={status} className="capitalize">
-                        {status}
+                      <SelectItem key={status} value={status}>
+                        {messages.common.roomBlockStatusLabels[status as RoomBlockStatus]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Quantity</Label>
+                <Label>{messages.roomBlockDialog.fields.quantity}</Label>
                 <Input {...form.register("quantity")} type="number" min="1" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Reason</Label>
-                <Input {...form.register("blockReason")} placeholder="Group block" />
+                <Label>{messages.roomBlockDialog.fields.reason}</Label>
+                <Input
+                  {...form.register("blockReason")}
+                  placeholder={messages.roomBlockDialog.placeholders.reason}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.roomBlockDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Block"}
+              {isEditing ? messages.common.saveChanges : messages.roomBlockDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

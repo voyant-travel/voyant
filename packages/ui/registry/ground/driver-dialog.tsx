@@ -26,23 +26,10 @@ import {
 } from "@/components/ui"
 import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
+import { useRegistryGroundMessagesOrDefault } from "./i18n"
 
 type ResourceRef = { id: string; name: string; kind?: string | null }
 type OperatorRef = { id: string; name: string; code?: string | null }
-
-const formSchema = z.object({
-  resourceId: z.string().min(1, "Resource ID is required"),
-  operatorId: z.string().optional().nullable(),
-  licenseNumber: z.string().max(100).optional().nullable(),
-  spokenLanguages: z.string(),
-  isGuide: z.boolean(),
-  isMeetAndGreetCapable: z.boolean(),
-  active: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
-
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
 
 export interface DriverDialogProps {
   open: boolean
@@ -52,9 +39,23 @@ export interface DriverDialogProps {
 }
 
 export function DriverDialog({ open, onOpenChange, driver, onSuccess }: DriverDialogProps) {
+  const messages = useRegistryGroundMessagesOrDefault()
+  const dialogMessages = messages.driverDialog
   const isEditing = Boolean(driver)
   const { create, update } = useGroundDriverMutation()
+  const formSchema = z.object({
+    resourceId: z.string().min(1, dialogMessages.errors.resourceRequired),
+    operatorId: z.string().optional().nullable(),
+    licenseNumber: z.string().max(100).optional().nullable(),
+    spokenLanguages: z.string(),
+    isGuide: z.boolean(),
+    isMeetAndGreetCapable: z.boolean(),
+    active: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
 
+  type FormValues = z.input<typeof formSchema>
+  type FormOutput = z.output<typeof formSchema>
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -126,13 +127,15 @@ export function DriverDialog({ open, onOpenChange, driver, onSuccess }: DriverDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Driver" : "Add Driver"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dialogMessages.editTitle : dialogMessages.addTitle}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Resource</Label>
+                <Label>{dialogMessages.fields.resource}</Label>
                 <EntityCombobox<ResourceRef>
                   value={form.watch("resourceId") || null}
                   onChange={(id) => form.setValue("resourceId", id ?? "")}
@@ -141,8 +144,8 @@ export function DriverDialog({ open, onOpenChange, driver, onSuccess }: DriverDi
                   queryKey={["resources", "picker"]}
                   getLabel={(resource) => resource.name}
                   getSecondary={(resource) => resource.kind ?? undefined}
-                  placeholder="Search resources…"
-                  emptyText="No resources found."
+                  placeholder={dialogMessages.placeholders.resource}
+                  emptyText={dialogMessages.placeholders.resourceEmpty}
                 />
                 {form.formState.errors.resourceId ? (
                   <p className="text-xs text-destructive">
@@ -151,7 +154,7 @@ export function DriverDialog({ open, onOpenChange, driver, onSuccess }: DriverDi
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Operator (optional)</Label>
+                <Label>{dialogMessages.fields.operator}</Label>
                 <EntityCombobox<OperatorRef>
                   value={form.watch("operatorId") ?? null}
                   onChange={(id) => form.setValue("operatorId", id)}
@@ -160,21 +163,24 @@ export function DriverDialog({ open, onOpenChange, driver, onSuccess }: DriverDi
                   queryKey={["ground", "operators", "picker"]}
                   getLabel={(groundOperator) => groundOperator.name}
                   getSecondary={(groundOperator) => groundOperator.code ?? undefined}
-                  placeholder="Search operators…"
-                  emptyText="No operators found."
+                  placeholder={dialogMessages.placeholders.operator}
+                  emptyText={dialogMessages.placeholders.operatorEmpty}
                 />
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Label>License number</Label>
+              <Label>{dialogMessages.fields.licenseNumber}</Label>
               <Input {...form.register("licenseNumber")} />
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Spoken languages (comma-separated)</Label>
-              <Input {...form.register("spokenLanguages")} placeholder="en, tr, ar" />
+              <Label>{dialogMessages.fields.spokenLanguages}</Label>
+              <Input
+                {...form.register("spokenLanguages")}
+                placeholder={dialogMessages.placeholders.spokenLanguages}
+              />
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{dialogMessages.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
             <div className="flex flex-wrap gap-6">
@@ -183,31 +189,31 @@ export function DriverDialog({ open, onOpenChange, driver, onSuccess }: DriverDi
                   checked={form.watch("isGuide")}
                   onCheckedChange={(value) => form.setValue("isGuide", value)}
                 />
-                <Label>Guide</Label>
+                <Label>{dialogMessages.fields.guide}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("isMeetAndGreetCapable")}
                   onCheckedChange={(value) => form.setValue("isMeetAndGreetCapable", value)}
                 />
-                <Label>Meet &amp; greet</Label>
+                <Label>{dialogMessages.fields.meetAndGreet}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("active")}
                   onCheckedChange={(value) => form.setValue("active", value)}
                 />
-                <Label>Active</Label>
+                <Label>{dialogMessages.fields.active}</Label>
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Driver"}
+              {isEditing ? messages.common.saveChanges : dialogMessages.actions.add}
             </Button>
           </DialogFooter>
         </form>

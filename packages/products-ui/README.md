@@ -11,3 +11,14 @@ pnpm add @voyantjs/products-ui @voyantjs/products-react @voyantjs/ui @tanstack/r
 `@voyantjs/ui` provides the design-system primitives. `@voyantjs/products-react` provides the data-layer hooks. Both are required peers.
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
+
+## I18n
+
+Components render English by default. To localize them, wrap your UI in
+`ProductsUiMessagesProvider` and import only the locales your app supports.
+
+```tsx
+import { ProductsUiMessagesProvider } from "@voyantjs/products-ui"
+import { productsUiEn } from "@voyantjs/products-ui/i18n/en"
+import { productsUiRo } from "@voyantjs/products-ui/i18n/ro"
+```

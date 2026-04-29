@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
+import { useCrmUiMessagesOrDefault } from "../i18n"
 import { OrganizationForm } from "./organization-form"
 
 export interface OrganizationDialogProps {
@@ -26,16 +27,21 @@ export function OrganizationDialog({
   onSuccess,
 }: OrganizationDialogProps) {
   const isEdit = Boolean(organization)
+  const messages = useCrmUiMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="organization-dialog" className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit organization" : "New organization"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.organizationDialog.titles.edit
+              : messages.organizationDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update company details and account metadata."
-              : "Add a new company to your CRM."}
+              ? messages.organizationDialog.descriptions.edit
+              : messages.organizationDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <OrganizationForm

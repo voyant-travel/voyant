@@ -11,11 +11,14 @@ import { useMemo, useState } from "react"
 
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useRegistryGroundMessagesOrDefault } from "./i18n"
 import { OperatorDialog } from "./operator-dialog"
 
 const PAGE_SIZE = 25
 
 export function OperatorsTab() {
+  const messages = useRegistryGroundMessagesOrDefault()
+  const tabMessages = messages.operatorsTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<GroundOperatorRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -29,12 +32,12 @@ export function OperatorsTab() {
     () => [
       {
         accessorKey: "name",
-        header: "Name",
+        header: tabMessages.columns.name,
         cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
       },
       {
         accessorKey: "code",
-        header: "Code",
+        header: tabMessages.columns.code,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.code ?? "-"}
@@ -43,7 +46,7 @@ export function OperatorsTab() {
       },
       {
         accessorKey: "supplierId",
-        header: "Supplier",
+        header: tabMessages.columns.supplier,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.supplierId ?? "-"}
@@ -52,7 +55,7 @@ export function OperatorsTab() {
       },
       {
         accessorKey: "facilityId",
-        header: "Facility",
+        header: tabMessages.columns.facility,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.facilityId ?? "-"}
@@ -61,10 +64,10 @@ export function OperatorsTab() {
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: tabMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? messages.common.active : messages.common.inactive}
           </Badge>
         ),
       },
@@ -86,7 +89,7 @@ export function OperatorsTab() {
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete operator "${row.original.name}"?`)) {
+                if (confirm(tabMessages.actions.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -98,15 +101,13 @@ export function OperatorsTab() {
         ),
       },
     ],
-    [refetch, remove],
+    [messages.common.active, messages.common.inactive, refetch, remove, tabMessages],
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Transport operators such as DMC fleets, transfer partners and rental companies.
-        </p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -115,14 +116,14 @@ export function OperatorsTab() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Operator
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading operators..." : "No operators yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.none}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

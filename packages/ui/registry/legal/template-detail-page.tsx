@@ -1,5 +1,6 @@
 import { type QueryClient, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   defaultFetcher,
   getLegalContractTemplateQueryOptions,
@@ -13,6 +14,7 @@ import {
 } from "@voyantjs/legal-react"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
+
 import {
   Badge,
   Button,
@@ -22,6 +24,9 @@ import {
   CardTitle,
   ContractTemplateAuthoringHelp,
 } from "@/components/ui"
+
+import { useRegistryLegalI18nOrDefault, useRegistryLegalMessagesOrDefault } from "./i18n/provider"
+import { formatRegistryLegalDate, formatRegistryLegalDateTime } from "./i18n/utils"
 import { TemplateDialog } from "./template-dialog"
 import { TemplateVersionDialog } from "./template-version-dialog"
 
@@ -44,6 +49,8 @@ export function loadTemplateDetailPage(id: string, ensureQueryData: EnsureQueryD
 export function TemplateDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const i18n = useRegistryLegalI18nOrDefault()
+  const m = useRegistryLegalMessagesOrDefault()
   const { remove } = useLegalContractTemplateMutation()
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
   const [editOpen, setEditOpen] = useState(false)
@@ -74,9 +81,9 @@ export function TemplateDetailPage({ id }: { id: string }) {
   if (!template) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
-        <p className="text-muted-foreground">Template not found</p>
+        <p className="text-muted-foreground">{m.templateDetailPage.notFound}</p>
         <Button variant="outline" onClick={() => void navigate({ to: "/legal/templates" })}>
-          Back to Templates
+          {m.templateDetailPage.backToTemplates}
         </Button>
       </div>
     )
@@ -99,28 +106,32 @@ export function TemplateDetailPage({ id }: { id: string }) {
           <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
           <div className="mt-1 flex items-center gap-2">
             <span className="font-mono text-xs text-muted-foreground">{template.slug}</span>
-            <Badge variant="outline" className="capitalize">
-              {template.scope}
-            </Badge>
+            <Badge variant="outline">{m.common.contractScopeLabels[template.scope]}</Badge>
             <Badge variant={template.active ? "default" : "secondary"}>
-              {template.active ? "Active" : "Inactive"}
+              {template.active ? m.common.active : m.common.inactive}
             </Badge>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" />
-            Edit
+            {m.common.edit}
           </Button>
           <Button size="sm" onClick={() => setVersionDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Version
+            {m.templateDetailPage.actions.addVersion}
           </Button>
           <Button
             variant="destructive"
             size="sm"
             onClick={() => {
-              if (confirm(`Delete template "${template.name}"?`)) {
+              if (
+                confirm(
+                  formatMessage(m.templateDetailPage.confirms.deleteTemplate, {
+                    name: template.name,
+                  }),
+                )
+              ) {
                 remove.mutate(template.id, {
                   onSuccess: () => {
                     void navigate({ to: "/legal/templates" })
@@ -131,7 +142,7 @@ export function TemplateDetailPage({ id }: { id: string }) {
             disabled={remove.isPending}
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            {m.common.delete}
           </Button>
         </div>
       </div>
@@ -139,43 +150,47 @@ export function TemplateDetailPage({ id }: { id: string }) {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Template Details</CardTitle>
+            <CardTitle>{m.templateDetailPage.sections.details}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm">
             <div>
-              <span className="text-muted-foreground">Language:</span>{" "}
+              <span className="text-muted-foreground">{m.templateDetailPage.fields.language}:</span>{" "}
               <span>{template.language}</span>
             </div>
             {template.currentVersionId ? (
               <div>
-                <span className="text-muted-foreground">Current Version ID:</span>{" "}
+                <span className="text-muted-foreground">
+                  {m.templateDetailPage.fields.currentVersionId}:
+                </span>{" "}
                 <span className="font-mono text-xs">{template.currentVersionId}</span>
               </div>
             ) : null}
             <div>
-              <span className="text-muted-foreground">Created:</span>{" "}
-              <span>{new Date(template.createdAt).toLocaleDateString()}</span>
+              <span className="text-muted-foreground">{m.templateDetailPage.fields.created}:</span>{" "}
+              <span>{formatRegistryLegalDate(i18n, template.createdAt)}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Updated:</span>{" "}
-              <span>{new Date(template.updatedAt).toLocaleDateString()}</span>
+              <span className="text-muted-foreground">{m.templateDetailPage.fields.updated}:</span>{" "}
+              <span>{formatRegistryLegalDate(i18n, template.updatedAt)}</span>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Description</CardTitle>
+            <CardTitle>{m.templateDetailPage.sections.description}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            {template.description?.trim() ? template.description : "No description provided."}
+            {template.description?.trim()
+              ? template.description
+              : m.templateDetailPage.empty.noDescription}
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Current Body</CardTitle>
+          <CardTitle>{m.templateDetailPage.sections.currentBody}</CardTitle>
         </CardHeader>
         <CardContent>
           <TemplateBodyPreview body={template.body} />
@@ -184,33 +199,45 @@ export function TemplateDetailPage({ id }: { id: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Template Variables &amp; Liquid</CardTitle>
+          <CardTitle>{m.templateDetailPage.sections.variables}</CardTitle>
         </CardHeader>
         <CardContent>
           <ContractTemplateAuthoringHelp
+            title={m.authoringHelp.title}
+            description={m.templateDetailPage.variablesDescription}
+            messages={m.authoringHelp}
             variableGroups={variableGroups}
             snippets={liquidSnippets}
-            description="Templates render with Liquid. Use the reference below to see available variables, filters, loops, and conditionals."
           />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Versions</CardTitle>
+          <CardTitle>{m.templateDetailPage.sections.versions}</CardTitle>
         </CardHeader>
         <CardContent>
           {!versions || versions.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">No versions yet.</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {m.templateDetailPage.empty.noVersions}
+            </p>
           ) : (
             <div className="overflow-hidden rounded border bg-background">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="p-2 text-left font-medium">Version</th>
-                    <th className="p-2 text-left font-medium">Changelog</th>
-                    <th className="p-2 text-left font-medium">Created By</th>
-                    <th className="p-2 text-left font-medium">Created At</th>
+                    <th className="p-2 text-left font-medium">
+                      {m.templateDetailPage.fields.version}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.templateDetailPage.fields.changelog}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.templateDetailPage.fields.createdBy}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.templateDetailPage.fields.createdAt}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -281,17 +308,22 @@ function TemplateVersionRow({
   version: LegalContractTemplateVersionRecord
   isCurrent: boolean
 }) {
+  const i18n = useRegistryLegalI18nOrDefault()
+  const m = useRegistryLegalMessagesOrDefault()
+
   return (
     <tr className="border-b last:border-b-0">
       <td className="p-2">
         <div className="flex items-center gap-2">
           <span className="font-mono">v{version.version}</span>
-          {isCurrent ? <Badge variant="secondary">Current</Badge> : null}
+          {isCurrent ? (
+            <Badge variant="secondary">{m.templateDetailPage.currentBadge}</Badge>
+          ) : null}
         </div>
       </td>
-      <td className="p-2">{version.changelog ?? "-"}</td>
-      <td className="p-2">{version.createdBy ?? "-"}</td>
-      <td className="p-2">{new Date(version.createdAt).toLocaleString()}</td>
+      <td className="p-2">{version.changelog ?? m.common.noResultsDash}</td>
+      <td className="p-2">{version.createdBy ?? m.common.noResultsDash}</td>
+      <td className="p-2">{formatRegistryLegalDateTime(i18n, version.createdAt)}</td>
     </tr>
   )
 }

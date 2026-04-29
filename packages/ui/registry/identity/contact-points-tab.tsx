@@ -8,10 +8,12 @@ import {
 } from "@voyantjs/identity-react"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useIdentityUiMessagesOrDefault } from "../../../identity-ui/src/index"
+
 import { ContactPointDialog } from "./contact-point-dialog"
+import { useRegistryIdentityMessagesOrDefault } from "./i18n"
 
 export interface ContactPointsTabProps {
   entityType: string
@@ -21,6 +23,8 @@ export interface ContactPointsTabProps {
 const PAGE_SIZE = 25
 
 export function ContactPointsTab({ entityType, entityId }: ContactPointsTabProps) {
+  const sharedMessages = useIdentityUiMessagesOrDefault()
+  const tabMessages = useRegistryIdentityMessagesOrDefault().contactPointsTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<ContactPointRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -37,28 +41,28 @@ export function ContactPointsTab({ entityType, entityId }: ContactPointsTabProps
     () => [
       {
         accessorKey: "kind",
-        header: "Kind",
+        header: tabMessages.columns.kind,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.kind}
+            {sharedMessages.common.contactPointKindLabels[row.original.kind]}
           </Badge>
         ),
       },
       {
         accessorKey: "value",
-        header: "Value",
+        header: tabMessages.columns.value,
         cell: ({ row }) => <span className="font-medium">{row.original.value}</span>,
       },
       {
         accessorKey: "label",
-        header: "Label",
+        header: tabMessages.columns.label,
         cell: ({ row }) => (
           <span className="text-muted-foreground">{row.original.label ?? "-"}</span>
         ),
       },
       {
         accessorKey: "isPrimary",
-        header: "Primary",
+        header: tabMessages.columns.primary,
         cell: ({ row }) =>
           row.original.isPrimary ? (
             <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
@@ -82,7 +86,7 @@ export function ContactPointsTab({ entityType, entityId }: ContactPointsTabProps
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete contact point "${row.original.value}"?`)) {
+                if (confirm(tabMessages.actions.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -94,15 +98,13 @@ export function ContactPointsTab({ entityType, entityId }: ContactPointsTabProps
         ),
       },
     ],
-    [refetch, remove],
+    [refetch, remove, sharedMessages.common.contactPointKindLabels, tabMessages],
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Phone numbers, emails and other communication channels for this entity.
-        </p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -111,14 +113,14 @@ export function ContactPointsTab({ entityType, entityId }: ContactPointsTabProps
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Contact Point
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading contact points..." : "No contact points yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.none}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

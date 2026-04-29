@@ -31,6 +31,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import { useIdentityUiMessagesOrDefault } from "../i18n"
+
 const ADDRESS_LABELS = [
   "primary",
   "billing",
@@ -45,24 +47,27 @@ const ADDRESS_LABELS = [
 type AddressLabel = (typeof ADDRESS_LABELS)[number]
 const numOrEmpty = z.coerce.number().optional().or(z.literal("")).nullable()
 
-const formSchema = z.object({
-  label: z.enum(ADDRESS_LABELS),
-  fullText: z.string().optional().nullable(),
-  line1: z.string().optional().nullable(),
-  line2: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  region: z.string().optional().nullable(),
-  postalCode: z.string().optional().nullable(),
-  country: z.string().optional().nullable(),
-  latitude: numOrEmpty,
-  longitude: numOrEmpty,
-  timezone: z.string().optional().nullable(),
-  isPrimary: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
+function createFormSchema() {
+  return z.object({
+    label: z.enum(ADDRESS_LABELS),
+    fullText: z.string().optional().nullable(),
+    line1: z.string().optional().nullable(),
+    line2: z.string().optional().nullable(),
+    city: z.string().optional().nullable(),
+    region: z.string().optional().nullable(),
+    postalCode: z.string().optional().nullable(),
+    country: z.string().optional().nullable(),
+    latitude: numOrEmpty,
+    longitude: numOrEmpty,
+    timezone: z.string().optional().nullable(),
+    isPrimary: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface AddressDialogProps {
   open: boolean
@@ -83,6 +88,8 @@ export function AddressDialog({
 }: AddressDialogProps) {
   const isEditing = Boolean(address)
   const { create, update } = useAddressMutation()
+  const messages = useIdentityUiMessagesOrDefault()
+  const formSchema = createFormSchema()
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -176,15 +183,20 @@ export function AddressDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Address" : "Add Address"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? messages.addressDialog.titles.edit : messages.addressDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Label</Label>
+                <Label>{messages.addressDialog.fields.label}</Label>
                 <Select
-                  items={ADDRESS_LABELS.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={ADDRESS_LABELS.map((x) => ({
+                    label: messages.common.addressLabelLabels[x],
+                    value: x,
+                  }))}
                   value={form.watch("label")}
                   onValueChange={(value) => form.setValue("label", value as AddressLabel)}
                 >
@@ -193,8 +205,8 @@ export function AddressDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {ADDRESS_LABELS.map((label) => (
-                      <SelectItem key={label} value={label} className="capitalize">
-                        {label}
+                      <SelectItem key={label} value={label}>
+                        {messages.common.addressLabelLabels[label]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -205,74 +217,77 @@ export function AddressDialog({
                   checked={form.watch("isPrimary")}
                   onCheckedChange={(value) => form.setValue("isPrimary", value)}
                 />
-                <Label>Primary</Label>
+                <Label>{messages.common.primary}</Label>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Line 1</Label>
+                <Label>{messages.addressDialog.fields.line1}</Label>
                 <Input {...form.register("line1")} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Line 2</Label>
+                <Label>{messages.addressDialog.fields.line2}</Label>
                 <Input {...form.register("line2")} />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>City</Label>
+                <Label>{messages.addressDialog.fields.city}</Label>
                 <Input {...form.register("city")} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Region</Label>
+                <Label>{messages.addressDialog.fields.region}</Label>
                 <Input {...form.register("region")} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Postal code</Label>
+                <Label>{messages.addressDialog.fields.postalCode}</Label>
                 <Input {...form.register("postalCode")} />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Country</Label>
+                <Label>{messages.addressDialog.fields.country}</Label>
                 <CountryCombobox
                   value={form.watch("country") ?? null}
                   onChange={(code) => form.setValue("country", code)}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Timezone</Label>
-                <Input {...form.register("timezone")} placeholder="Europe/Istanbul" />
+                <Label>{messages.addressDialog.fields.timezone}</Label>
+                <Input
+                  {...form.register("timezone")}
+                  placeholder={messages.addressDialog.placeholders.timezone}
+                />
               </div>
               <div />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Latitude</Label>
+                <Label>{messages.addressDialog.fields.latitude}</Label>
                 <Input {...form.register("latitude")} type="number" step="any" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Longitude</Label>
+                <Label>{messages.addressDialog.fields.longitude}</Label>
                 <Input {...form.register("longitude")} type="number" step="any" />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.addressDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Address"}
+              {isEditing ? messages.common.saveChanges : messages.addressDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

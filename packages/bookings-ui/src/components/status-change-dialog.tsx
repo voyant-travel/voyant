@@ -27,6 +27,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 const statusChangeFormSchema = z.object({
   status: bookingStatusSchema,
@@ -52,6 +53,7 @@ export function StatusChangeDialog({
   onSuccess,
 }: StatusChangeDialogProps) {
   const mutation = useBookingStatusMutation(bookingId)
+  const messages = useBookingsUiMessagesOrDefault()
 
   const form = useForm<StatusChangeFormValues, unknown, StatusChangeFormOutput>({
     resolver: zodResolver(statusChangeFormSchema),
@@ -84,7 +86,7 @@ export function StatusChangeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Change Booking Status</DialogTitle>
+          <DialogTitle>{messages.statusChangeDialog.title}</DialogTitle>
         </DialogHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -92,13 +94,19 @@ export function StatusChangeDialog({
         >
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>New Status</Label>
+              <Label>{messages.statusChangeDialog.fields.status}</Label>
               <Select
                 value={form.watch("status")}
                 onValueChange={(value) =>
                   form.setValue("status", value as StatusChangeFormValues["status"])
                 }
-                items={bookingStatusOptions}
+                items={bookingStatusOptions.map((status) => ({
+                  ...status,
+                  label:
+                    messages.common.bookingStatusLabels[
+                      status.value as keyof typeof messages.common.bookingStatusLabels
+                    ],
+                }))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -106,7 +114,11 @@ export function StatusChangeDialog({
                 <SelectContent>
                   {bookingStatusOptions.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
-                      {status.label}
+                      {
+                        messages.common.bookingStatusLabels[
+                          status.value as keyof typeof messages.common.bookingStatusLabels
+                        ]
+                      }
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -114,17 +126,20 @@ export function StatusChangeDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Note (optional)</Label>
-              <Textarea {...form.register("note")} placeholder="Reason for status change..." />
+              <Label>{messages.statusChangeDialog.fields.note}</Label>
+              <Textarea
+                {...form.register("note")}
+                placeholder={messages.statusChangeDialog.placeholders.note}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" size="sm" disabled={mutation.isPending}>
               {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Update Status
+              {messages.statusChangeDialog.actions.updateStatus}
             </Button>
           </DialogFooter>
         </form>

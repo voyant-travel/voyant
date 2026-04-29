@@ -1,26 +1,18 @@
 "use client"
 
 import type { BookingCharterDetailRecord } from "@voyantjs/charters-react"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { CheckCircle2 } from "lucide-react"
 import type * as React from "react"
 
+import { useChartersUiI18nOrDefault } from "../i18n"
+
 export interface ApaTrackerProps extends React.ComponentPropsWithoutRef<typeof Card> {
   detail: BookingCharterDetailRecord
   formatPrice?: (amount: string, currency: string) => string
-}
-
-function defaultFormatPrice(amount: string, currency: string): string {
-  const negative = amount.startsWith("-")
-  const abs = negative ? amount.slice(1) : amount
-  const n = Number(abs)
-  if (!Number.isFinite(n)) return `${currency} ${amount}`
-  return `${negative ? "-" : ""}${currency} ${n.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
 }
 
 function parseAmount(value: string | null): number {
@@ -38,12 +30,17 @@ function parseAmount(value: string | null): number {
  * Pure presentational — wire actions (record payment, reconcile) at the
  * caller via `useRecordApaPayment` / `useReconcileApa`.
  */
-export function ApaTracker({
-  detail,
-  formatPrice = defaultFormatPrice,
-  className,
-  ...props
-}: ApaTrackerProps) {
+export function ApaTracker({ detail, formatPrice, className, ...props }: ApaTrackerProps) {
+  const i18n = useChartersUiI18nOrDefault()
+  const m = i18n.messages.apaTracker
+  const formatPriceValue =
+    formatPrice ??
+    ((amount: string, currency: string) =>
+      formatCharterPrice(amount, currency, {
+        fallbackCurrencyAmount: i18n.messages.common.fallbackCurrencyAmount,
+        formatCurrency: i18n.formatCurrency,
+      }))
+
   if (detail.bookingMode !== "whole_yacht") return null
 
   const currency = detail.quotedCurrency
@@ -54,10 +51,10 @@ export function ApaTracker({
   const balance = apaPaid - apaSpent - apaRefund
   const balanceLabel =
     balance > 0
-      ? "remaining to refund/spend"
+      ? m.tiles.remainingToRefundOrSpend
       : balance < 0
-        ? "overspent (top-up required)"
-        : "fully reconciled"
+        ? m.tiles.overspentTopUpRequired
+        : m.tiles.fullyReconciled
   const isSettled = !!detail.apaSettledAt
 
   const collectionPct = apaQuoted > 0 ? Math.min(100, (apaPaid / apaQuoted) * 100) : 0
@@ -68,55 +65,59 @@ export function ApaTracker({
       <CardHeader className="space-y-2">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-semibold">APA reconciliation</h3>
+            <h3 className="text-base font-semibold">{m.heading}</h3>
             <p className="text-sm text-muted-foreground">
-              Advance Provisioning Allowance · {detail.apaPercent ?? "—"}% of charter fee
+              {formatMessage(m.subtitle, { percent: detail.apaPercent ?? "—" })}
             </p>
           </div>
           {isSettled ? (
             <Badge variant="default" data-slot="apa-tracker-settled">
               <CheckCircle2 aria-hidden="true" className="mr-1 size-3" />
-              Settled
+              {m.status.settled}
             </Badge>
           ) : (
-            <Badge variant="outline">In progress</Badge>
+            <Badge variant="outline">{m.status.inProgress}</Badge>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div className="space-y-3">
           <Bar
-            label="Collected from charterer"
+            label={m.bars.collectedFromCharterer}
             current={apaPaid}
             target={apaQuoted}
             currency={currency}
             pct={collectionPct}
-            formatPrice={formatPrice}
+            formatPrice={formatPriceValue}
+            ofAmountLabel={m.bars.ofAmount}
           />
           <Bar
-            label="Spent on board"
+            label={m.bars.spentOnBoard}
             current={apaSpent}
             target={apaPaid || apaQuoted}
             currency={currency}
             pct={spendPct}
-            formatPrice={formatPrice}
+            formatPrice={formatPriceValue}
+            ofAmountLabel={m.bars.ofAmount}
             tone="muted"
           />
         </div>
         <div className="grid grid-cols-2 gap-3 border-t pt-3">
           <Tile
-            label="Refund issued"
-            amount={formatPrice(detail.apaRefundAmount ?? "0.00", currency)}
+            label={m.tiles.refundIssued}
+            amount={formatPriceValue(detail.apaRefundAmount ?? "0.00", currency)}
           />
           <Tile
             label={balanceLabel}
-            amount={formatPrice(Math.abs(balance).toFixed(2), currency)}
+            amount={formatPriceValue(Math.abs(balance).toFixed(2), currency)}
             highlight={balance !== 0}
           />
         </div>
         {detail.apaSettledAt ? (
           <p className="text-xs text-muted-foreground">
-            Settled at {new Date(detail.apaSettledAt).toLocaleString()}
+            {formatMessage(m.settledAt, {
+              date: i18n.formatDateTime(detail.apaSettledAt),
+            })}
           </p>
         ) : null}
       </CardContent>
@@ -131,6 +132,7 @@ function Bar({
   currency,
   pct,
   formatPrice,
+  ofAmountLabel,
   tone = "default",
 }: {
   label: string
@@ -139,6 +141,7 @@ function Bar({
   currency: string
   pct: number
   formatPrice: (amount: string, currency: string) => string
+  ofAmountLabel: string
   tone?: "default" | "muted"
 }) {
   return (
@@ -148,7 +151,9 @@ function Bar({
         <span className="tabular-nums font-medium">
           {formatPrice(current.toFixed(2), currency)}{" "}
           <span className="text-xs font-normal text-muted-foreground">
-            of {formatPrice(target.toFixed(2), currency)}
+            {formatMessage(ofAmountLabel, {
+              amount: formatPrice(target.toFixed(2), currency),
+            })}
           </span>
         </span>
       </div>
@@ -167,6 +172,29 @@ function Bar({
       </div>
     </div>
   )
+}
+
+function formatCharterPrice(
+  amount: string,
+  currency: string,
+  options: {
+    fallbackCurrencyAmount: string
+    formatCurrency: (
+      value: number | string | bigint,
+      currency: string,
+      formatOptions?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+    ) => string
+  },
+) {
+  const value = Number(amount)
+  if (!Number.isFinite(value)) {
+    return formatMessage(options.fallbackCurrencyAmount, { amount, currency })
+  }
+
+  return options.formatCurrency(value, currency, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 
 function Tile({

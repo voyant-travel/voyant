@@ -22,6 +22,8 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
+
 type Mode =
   | { kind: "create"; productId: string; sortOrder?: number }
   | { kind: "edit"; option: ProductOptionRecord }
@@ -43,11 +45,7 @@ interface FormState {
   availableTo: string
 }
 
-const OPTION_STATUSES = [
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "archived", label: "Archived" },
-] as const
+const OPTION_STATUSES = [{ value: "draft" }, { value: "active" }, { value: "archived" }] as const
 
 function initialState(mode: Mode): FormState {
   if (mode.kind === "edit") {
@@ -97,6 +95,7 @@ export function ProductOptionForm({ mode, onSuccess, onCancel }: ProductOptionFo
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useProductOptionMutation()
+  const messages = useRegistryProductsMessagesOrDefault()
 
   React.useEffect(() => {
     setState(initialState(mode))
@@ -116,7 +115,7 @@ export function ProductOptionForm({ mode, onSuccess, onCancel }: ProductOptionFo
     setError(null)
 
     if (!state.name.trim()) {
-      setError("Option name is required.")
+      setError(messages.productOptionForm.validation.nameRequired)
       return
     }
 
@@ -127,7 +126,9 @@ export function ProductOptionForm({ mode, onSuccess, onCancel }: ProductOptionFo
           : await update.mutateAsync({ id: mode.option.id, input: toPayload(state) })
       onSuccess?.(option)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save product option.")
+      setError(
+        err instanceof Error ? err.message : messages.productOptionForm.validation.saveFailed,
+      )
     }
   }
 
@@ -135,44 +136,49 @@ export function ProductOptionForm({ mode, onSuccess, onCancel }: ProductOptionFo
     <form data-slot="product-option-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-option-name">Name</Label>
+          <Label htmlFor="product-option-name">{messages.productOptionForm.fields.name}</Label>
           <Input
             id="product-option-name"
             required
             autoFocus
             value={state.name}
             onChange={(event) => field("name")(event.target.value)}
-            placeholder="Single room"
+            placeholder={messages.productOptionForm.placeholders.name}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-option-code">Code</Label>
+          <Label htmlFor="product-option-code">{messages.productOptionForm.fields.code}</Label>
           <Input
             id="product-option-code"
             value={state.code}
             onChange={(event) => field("code")(event.target.value)}
-            placeholder="single-room"
+            placeholder={messages.productOptionForm.placeholders.code}
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-option-description">Description</Label>
+        <Label htmlFor="product-option-description">
+          {messages.productOptionForm.fields.description}
+        </Label>
         <Textarea
           id="product-option-description"
           value={state.description}
           onChange={(event) => field("description")(event.target.value)}
-          placeholder="Optional option description"
+          placeholder={messages.productOptionForm.placeholders.description}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label>Status</Label>
+          <Label>{messages.productOptionForm.fields.status}</Label>
           <Select
             value={state.status}
             onValueChange={(value) => value && field("status")(value)}
-            items={OPTION_STATUSES}
+            items={OPTION_STATUSES.map((status) => ({
+              label: messages.common.optionStatusLabels[status.value],
+              value: status.value,
+            }))}
           >
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -180,14 +186,16 @@ export function ProductOptionForm({ mode, onSuccess, onCancel }: ProductOptionFo
             <SelectContent>
               {OPTION_STATUSES.map((status) => (
                 <SelectItem key={status.value} value={status.value}>
-                  {status.label}
+                  {messages.common.optionStatusLabels[status.value]}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-option-sort-order">Sort order</Label>
+          <Label htmlFor="product-option-sort-order">
+            {messages.productOptionForm.fields.sortOrder}
+          </Label>
           <Input
             id="product-option-sort-order"
             type="number"
@@ -199,20 +207,24 @@ export function ProductOptionForm({ mode, onSuccess, onCancel }: ProductOptionFo
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-option-available-from">Available from</Label>
+          <Label htmlFor="product-option-available-from">
+            {messages.productOptionForm.fields.availableFrom}
+          </Label>
           <DatePicker
             value={state.availableFrom || null}
             onChange={(next) => field("availableFrom")(next ?? "")}
-            placeholder="Select start date"
+            placeholder={messages.productOptionForm.placeholders.availableFrom}
             className="w-full"
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-option-available-to">Available to</Label>
+          <Label htmlFor="product-option-available-to">
+            {messages.productOptionForm.fields.availableTo}
+          </Label>
           <DatePicker
             value={state.availableTo || null}
             onChange={(next) => field("availableTo")(next ?? "")}
-            placeholder="Select end date"
+            placeholder={messages.productOptionForm.placeholders.availableTo}
             className="w-full"
           />
         </div>
@@ -223,7 +235,9 @@ export function ProductOptionForm({ mode, onSuccess, onCancel }: ProductOptionFo
           checked={state.isDefault}
           onCheckedChange={(checked) => field("isDefault")(checked)}
         />
-        <Label htmlFor="product-option-default">Default option</Label>
+        <Label htmlFor="product-option-default">
+          {messages.productOptionForm.fields.defaultOption}
+        </Label>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -231,14 +245,16 @@ export function ProductOptionForm({ mode, onSuccess, onCancel }: ProductOptionFo
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "create" ? "Create option" : "Save changes"}
+          {mode.kind === "create"
+            ? messages.productOptionForm.actions.createOption
+            : messages.common.saveChanges}
         </Button>
       </div>
     </form>

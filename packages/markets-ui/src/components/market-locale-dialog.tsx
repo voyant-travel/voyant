@@ -24,15 +24,23 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-const formSchema = z.object({
-  languageTag: z.string().min(2, "Language tag is required").max(35),
-  isDefault: z.boolean(),
-  sortOrder: z.coerce.number().int().min(0),
-  active: z.boolean(),
-})
+import { useMarketsUiMessagesOrDefault } from "../i18n"
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+function createFormSchema(messages: ReturnType<typeof useMarketsUiMessagesOrDefault>) {
+  return z.object({
+    languageTag: z
+      .string()
+      .min(2, messages.marketLocaleDialog.validation.languageTagRequired)
+      .max(35),
+    isDefault: z.boolean(),
+    sortOrder: z.coerce.number().int().min(0),
+    active: z.boolean(),
+  })
+}
+
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface MarketLocaleDialogProps {
   open: boolean
@@ -51,6 +59,8 @@ export function MarketLocaleDialog({
 }: MarketLocaleDialogProps) {
   const isEditing = Boolean(locale)
   const { create, update } = useMarketLocaleMutation()
+  const messages = useMarketsUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -104,17 +114,24 @@ export function MarketLocaleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Locale" : "Add Locale"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.marketLocaleDialog.titles.edit
+              : messages.marketLocaleDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Language tag</Label>
-                <Input {...form.register("languageTag")} placeholder="en-GB, de-DE..." />
+                <Label>{messages.marketLocaleDialog.fields.languageTag}</Label>
+                <Input
+                  {...form.register("languageTag")}
+                  placeholder={messages.marketLocaleDialog.placeholders.languageTag}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Sort order</Label>
+                <Label>{messages.marketLocaleDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" min="0" />
               </div>
             </div>
@@ -125,24 +142,24 @@ export function MarketLocaleDialog({
                   checked={form.watch("isDefault")}
                   onCheckedChange={(value) => form.setValue("isDefault", value)}
                 />
-                <Label>Default</Label>
+                <Label>{messages.marketLocaleDialog.fields.isDefault}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("active")}
                   onCheckedChange={(value) => form.setValue("active", value)}
                 />
-                <Label>Active</Label>
+                <Label>{messages.marketLocaleDialog.fields.active}</Label>
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Locale"}
+              {isEditing ? messages.common.saveChanges : messages.marketLocaleDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

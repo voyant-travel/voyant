@@ -6,18 +6,24 @@ import {
   useOptionStartTimeRuleMutation,
   useOptionStartTimeRules,
 } from "@voyantjs/pricing-react"
+import { usePricingUiI18nOrDefault, usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
 import { OptionStartTimeRuleDialog } from "./option-start-time-rule-dialog"
 import { OptionPriceRuleLabel } from "./pricing-shared-labels"
 
 const PAGE_SIZE = 25
 
 export function OptionStartTimeRulesPage() {
+  const sharedI18n = usePricingUiI18nOrDefault()
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const pageMessages = registryMessages.optionStartTimeRulesPage
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<OptionStartTimeRuleRecord | undefined>()
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -32,71 +38,82 @@ export function OptionStartTimeRulesPage() {
     () => [
       {
         accessorKey: "optionPriceRuleId",
-        header: "Option price rule",
+        header: pageMessages.columns.optionPriceRule,
         cell: ({ row }) => <OptionPriceRuleLabel id={row.original.optionPriceRuleId} />,
       },
       {
         accessorKey: "startTimeId",
-        header: "Start time",
+        header: pageMessages.columns.startTime,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.startTimeId}</span>,
       },
       {
         accessorKey: "ruleMode",
-        header: "Mode",
+        header: pageMessages.columns.mode,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.ruleMode.replace(/_/g, " ")}
+            {sharedMessages.common.startTimeRuleModeLabels[row.original.ruleMode]}
           </Badge>
         ),
       },
       {
         accessorKey: "adjustmentType",
-        header: "Adj. type",
+        header: pageMessages.columns.adjustmentType,
         cell: ({ row }) => (
           <span className="text-xs capitalize text-muted-foreground">
-            {row.original.adjustmentType ?? "-"}
+            {row.original.adjustmentType
+              ? sharedMessages.common.adjustmentTypeLabels[row.original.adjustmentType]
+              : "-"}
           </span>
         ),
       },
       {
         accessorKey: "sellAdjustmentCents",
-        header: "Sell adj.",
+        header: pageMessages.columns.sellAdjustment,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
             {row.original.sellAdjustmentCents != null
-              ? (row.original.sellAdjustmentCents / 100).toFixed(2)
+              ? sharedI18n.formatNumber(row.original.sellAdjustmentCents / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
               : "-"}
           </span>
         ),
       },
       {
         accessorKey: "costAdjustmentCents",
-        header: "Cost adj.",
+        header: pageMessages.columns.costAdjustment,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
             {row.original.costAdjustmentCents != null
-              ? (row.original.costAdjustmentCents / 100).toFixed(2)
+              ? sharedI18n.formatNumber(row.original.costAdjustmentCents / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
               : "-"}
           </span>
         ),
       },
       {
         accessorKey: "adjustmentBasisPoints",
-        header: "%",
+        header: pageMessages.columns.percent,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
             {row.original.adjustmentBasisPoints != null
-              ? `${(row.original.adjustmentBasisPoints / 100).toFixed(2)}%`
+              ? `${sharedI18n.formatNumber(row.original.adjustmentBasisPoints / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}%`
               : "-"}
           </span>
         ),
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: pageMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? sharedMessages.common.active : sharedMessages.common.inactive}
           </Badge>
         ),
       },
@@ -118,7 +135,7 @@ export function OptionStartTimeRulesPage() {
             <button
               type="button"
               onClick={() => {
-                if (confirm("Delete rule?")) {
+                if (confirm(pageMessages.labels.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -130,17 +147,15 @@ export function OptionStartTimeRulesPage() {
         ),
       },
     ],
-    [refetch, remove],
+    [pageMessages, refetch, remove, sharedI18n, sharedMessages],
   )
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Option Start Time Rules</h2>
-          <p className="text-sm text-muted-foreground">
-            Price adjustments or overrides based on start time for an option price rule.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -149,16 +164,14 @@ export function OptionStartTimeRulesPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          New Rule
+          {pageMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={
-          isPending ? "Loading option start time rules..." : "No option start time rules found."
-        }
+        emptyMessage={isPending ? pageMessages.emptyLoading : pageMessages.empty}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

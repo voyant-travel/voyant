@@ -17,6 +17,8 @@ import {
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
+import { useCrmUiMessagesOrDefault } from "../i18n"
+
 export function CreateOpportunityDialog({
   open,
   onOpenChange,
@@ -31,6 +33,7 @@ export function CreateOpportunityDialog({
   onCreated: (id: string) => void
 }) {
   const { create } = useOpportunityMutation()
+  const messages = useCrmUiMessagesOrDefault()
   const [title, setTitle] = useState("")
   const [stageId, setStageId] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -46,11 +49,11 @@ export function CreateOpportunityDialog({
   async function handleSubmit() {
     const trimmed = title.trim()
     if (!trimmed) {
-      setError("Title is required")
+      setError(messages.createOpportunityDialog.validation.titleRequired)
       return
     }
     if (!stageId) {
-      setError("Stage is required")
+      setError(messages.createOpportunityDialog.validation.stageRequired)
       return
     }
     setError(null)
@@ -62,7 +65,11 @@ export function CreateOpportunityDialog({
       })
       onCreated(created.id)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create opportunity")
+      setError(
+        err instanceof Error
+          ? err.message
+          : messages.createOpportunityDialog.validation.createFailed,
+      )
     }
   }
 
@@ -70,21 +77,25 @@ export function CreateOpportunityDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New opportunity</DialogTitle>
+          <DialogTitle>{messages.createOpportunityDialog.title}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="registry-opp-title">Title</Label>
+            <Label htmlFor="registry-opp-title">
+              {messages.createOpportunityDialog.fields.title}
+            </Label>
             <Input
               id="registry-opp-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="New opportunity"
+              placeholder={messages.createOpportunityDialog.placeholders.title}
               autoFocus
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="registry-opp-stage">Stage</Label>
+            <Label htmlFor="registry-opp-stage">
+              {messages.createOpportunityDialog.fields.stage}
+            </Label>
             <Select
               items={stages.map((stage) => ({ label: stage.name, value: stage.id }))}
               value={stageId}
@@ -92,7 +103,10 @@ export function CreateOpportunityDialog({
             >
               <SelectTrigger id="registry-opp-stage" className="w-full">
                 <SelectValue>
-                  {(value) => stages.find((stage) => stage.id === value)?.name ?? "Select stage…"}
+                  {(value) =>
+                    stages.find((stage) => stage.id === value)?.name ??
+                    messages.createOpportunityDialog.placeholders.stage
+                  }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -108,11 +122,11 @@ export function CreateOpportunityDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {messages.common.cancel}
           </Button>
           <Button onClick={() => void handleSubmit()} disabled={create.isPending}>
             {create.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-            Create
+            {messages.common.create}
           </Button>
         </DialogFooter>
       </DialogContent>
