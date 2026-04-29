@@ -3,7 +3,7 @@ import {
   getVoyantCloudClient,
   type VideoUploadTicket,
   type VoyantCloudEnv,
-} from "@voyantjs/voyant-cloud"
+} from "@voyantjs/cloud-sdk"
 
 /**
  * Default video upload handler for this template.

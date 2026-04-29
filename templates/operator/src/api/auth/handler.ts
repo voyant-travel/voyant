@@ -8,9 +8,9 @@
  */
 
 import { createBetterAuth } from "@voyantjs/auth/server"
+import { getVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import type { VoyantRequestAuthContext } from "@voyantjs/hono"
-import { getVoyantCloudClient } from "@voyantjs/voyant-cloud"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 

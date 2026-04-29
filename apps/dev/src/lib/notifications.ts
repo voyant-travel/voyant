@@ -1,3 +1,4 @@
+import { getVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { createInMemoryExecutionLockManager } from "@voyantjs/core"
 import {
   buildNotificationTaskRuntime,
@@ -6,7 +7,6 @@ import {
   type NotificationProvider,
   type NotificationTaskRuntimeOptions,
 } from "@voyantjs/notifications"
-import { getVoyantCloudClient } from "@voyantjs/voyant-cloud"
 
 export const resolveNotificationProviders = (
   env: Record<string, unknown>,
