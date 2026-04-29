@@ -101,7 +101,7 @@ export function CharterProductCard({
       {product.heroImageUrl ? (
         <div
           data-slot="charter-product-card-hero"
-          className="aspect-[16/9] w-full bg-muted bg-cover bg-center"
+          className="aspect-video w-full bg-muted bg-cover bg-center"
           style={{ backgroundImage: `url(${product.heroImageUrl})` }}
           role="img"
           aria-label={product.name}
