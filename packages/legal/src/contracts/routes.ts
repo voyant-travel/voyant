@@ -43,13 +43,15 @@ export type ContractDocumentGenerator = Parameters<
 
 export interface ContractsRouteOptions {
   documentGenerator?: ContractDocumentGenerator
-  resolveDocumentGenerator?: (bindings: unknown) => ContractDocumentGenerator | undefined
+  resolveDocumentGenerator?: (
+    bindings: Record<string, unknown>,
+  ) => ContractDocumentGenerator | undefined
   resolveDocumentDownloadUrl?: (
-    bindings: unknown,
+    bindings: Record<string, unknown>,
     storageKey: string,
   ) => Promise<string | null> | string | null
   eventBus?: EventBus
-  resolveEventBus?: (bindings: unknown) => EventBus | undefined
+  resolveEventBus?: (bindings: Record<string, unknown>) => EventBus | undefined
 }
 
 function getRuntime(

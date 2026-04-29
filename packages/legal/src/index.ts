@@ -1,4 +1,5 @@
 import type { Module } from "@voyantjs/core"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { HonoModule } from "@voyantjs/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -33,9 +34,12 @@ export interface CreateLegalHonoModuleOptions extends ContractsRouteOptions {
   /**
    * Required when `autoGenerateContractOnConfirmed.enabled` is true. The
    * `booking.confirmed` subscriber fires outside request scope, so it
-   * needs its own db handle from runtime bindings.
+   * needs its own db handle from runtime bindings. Returns `AnyDrizzleDb`
+   * (the `PostgresJsDatabase | NeonHttpDatabase` union from
+   * `@voyantjs/db`) so consumers don't need to cast through `unknown` when
+   * wiring a Hyperdrive/Neon client.
    */
-  resolveDb?: (bindings: Record<string, unknown>) => PostgresJsDatabase
+  resolveDb?: (bindings: Record<string, unknown>) => AnyDrizzleDb
   /**
    * Opt-in auto-generate on `booking.confirmed`. When enabled + a
    * `templateSlug` is supplied + a `documentGenerator` is resolvable, every
@@ -89,7 +93,10 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
             data: { bookingId: string; bookingNumber: string; actorId: string | null }
           }) => {
             try {
-              const db = resolveDb(bindings as Record<string, unknown>)
+              // The resolver may return either drizzle flavor; the queries
+              // autoGenerateContractForBooking runs are compatible with both
+              // at runtime, so we narrow at this internal boundary.
+              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
               const result = await autoGenerateContractForBooking(db, event.data, auto, {
                 generator,
                 eventBus,

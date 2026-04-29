@@ -60,14 +60,10 @@ const notificationsHonoModule = createNotificationsHonoModule({
   // the in-process event bus; errors are logged, not rethrown, so a flaky
   // mailer can't block the confirm request.
   //
-  // `getDbFromHyperdrive` returns a union of PostgresJsDatabase and
-  // NeonHttpDatabase depending on env (hyperdrive vs plain DATABASE_URL).
-  // The notifications service only calls drizzle operations that both
-  // flavors support, so we narrow through `unknown`.
-  resolveDb: (bindings) =>
-    getDbFromHyperdrive(
-      bindings as unknown as CloudflareBindings,
-    ) as unknown as import("drizzle-orm/postgres-js").PostgresJsDatabase,
+  // `getDbFromHyperdrive` returns either drizzle flavor (postgres-js or
+  // neon-http) depending on env. `resolveDb` accepts the union via
+  // `AnyDrizzleDb`, so no double-cast is needed here.
+  resolveDb: (bindings) => getDbFromHyperdrive(bindings as unknown as CloudflareBindings),
   autoConfirmAndDispatch: {
     enabled: true,
     templateSlug: "booking-confirmation",
@@ -93,21 +89,17 @@ const financeModule = createFinanceHonoModule({
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
 })
 const legalModule = createLegalHonoModule({
-  // Same union-narrowing trick notifications uses — see the comment on
-  // notificationsHonoModule's resolveDb. Contract operations are all
-  // compatible across the hyperdrive/neon-http drizzle flavors.
-  resolveDb: (bindings) =>
-    getDbFromHyperdrive(
-      bindings as unknown as CloudflareBindings,
-    ) as unknown as import("drizzle-orm/postgres-js").PostgresJsDatabase,
-  resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
+  // `getDbFromHyperdrive` returns either drizzle flavor; `resolveDb` accepts
+  // the union via `AnyDrizzleDb`, so no double-cast is needed here.
+  resolveDb: (bindings) => getDbFromHyperdrive(bindings as unknown as CloudflareBindings),
+  resolveDocumentDownloadUrl: (bindings, storageKey) =>
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
   // Wire a PDF document generator against the private DOCUMENTS_BUCKET so
   // auto-generated contracts + manual regeneration land in R2. Returning
   // `undefined` when no bucket is configured keeps the module wired but
   // inert — the generate-document endpoint falls back to a 501.
   resolveDocumentGenerator: (bindings) => {
-    const storage = createDocumentStorage(bindings as CloudflareBindings)
+    const storage = createDocumentStorage(bindings as unknown as CloudflareBindings)
     if (!storage) return undefined
     return createPdfContractDocumentGenerator({ storage })
   },

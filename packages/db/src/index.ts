@@ -1,10 +1,23 @@
 import { neon } from "@neondatabase/serverless"
+import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-http"
 import { withReplicas } from "drizzle-orm/pg-core"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 
 export type DbAdapter = "edge" | "node"
+
+/**
+ * Union of the two drizzle driver flavors `createDbClient` can return —
+ * `PostgresJsDatabase` (node adapter) and `NeonHttpDatabase` (edge adapter).
+ * Use this as the parameter type for `resolveDb`-style callbacks in module
+ * factories so consumers don't need `as unknown as PostgresJsDatabase` casts
+ * when wiring a Cloudflare Worker / Hyperdrive client into a module.
+ */
+export type AnyDrizzleDb<TSchema extends Record<string, unknown> = Record<string, never>> =
+  | PostgresJsDatabase<TSchema>
+  | NeonHttpDatabase<TSchema>
 
 export function createDbClient<TSchema extends Record<string, unknown> = Record<string, never>>(
   connectionString: string,
