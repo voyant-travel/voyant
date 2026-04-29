@@ -41,6 +41,7 @@
       "@voyantjs/extras-ui",
       "@voyantjs/facilities",
       "@voyantjs/facilities-react",
+      "@voyantjs/facilities-ui",
       "@voyantjs/finance",
       "@voyantjs/finance-react",
       "@voyantjs/finance-ui",
