@@ -1,5 +1,6 @@
 "use client"
 
+import { useLocale } from "@voyantjs/admin"
 import {
   useBookingGroupMemberMutation,
   useBookingGroupMutation,
@@ -21,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
-import { useLocale } from "@voyantjs/voyant-admin"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

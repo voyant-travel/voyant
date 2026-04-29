@@ -1,3 +1,4 @@
+import { DEFAULT_ADMIN_LOCALE, useLocale } from "@voyantjs/admin"
 import {
   type DmcAdminMessages,
   dmcAdminMessageDefinitions,
@@ -7,7 +8,6 @@ import {
   useMessages,
   useResolvedLocaleMessages,
 } from "@voyantjs/i18n"
-import { DEFAULT_ADMIN_LOCALE, useLocale } from "@voyantjs/voyant-admin"
 import type { ReactNode } from "react"
 
 export type AdminMessages = DmcAdminMessages

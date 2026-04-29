@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { useLocale, useTheme } from "@voyantjs/admin"
 import {
   Avatar,
   AvatarFallback,
@@ -14,7 +15,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@voyantjs/ui/components"
-import { useLocale, useTheme } from "@voyantjs/voyant-admin"
 import { BadgeCheck, Check, ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { useSignOut } from "@/lib/auth"

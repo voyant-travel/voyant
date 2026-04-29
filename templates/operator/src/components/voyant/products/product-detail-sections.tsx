@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { formatMessage } from "@voyantjs/admin"
 import { describeRRule } from "@voyantjs/availability/rrule"
 import {
   Badge,
@@ -10,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
 import { Separator } from "@voyantjs/ui/components/separator"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

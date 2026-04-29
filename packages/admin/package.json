@@ -1,7 +1,6 @@
 {
-  "name": "@voyantjs/voyant-admin",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@voyantjs/admin",
+  "version": "0.16.0",
   "license": "FSL-1.1-Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -17,6 +16,9 @@
     "./types": "./src/types.ts"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
     "test": "vitest run --passWithNoTests"
@@ -40,6 +42,52 @@
     "react-dom": "^19.2.4",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./extensions": {
+        "types": "./dist/extensions.d.ts",
+        "import": "./dist/extensions.js"
+      },
+      "./providers/theme": {
+        "types": "./dist/providers/theme.d.ts",
+        "import": "./dist/providers/theme.js"
+      },
+      "./providers/locale": {
+        "types": "./dist/providers/locale.d.ts",
+        "import": "./dist/providers/locale.js"
+      },
+      "./providers/query-client": {
+        "types": "./dist/providers/query-client.d.ts",
+        "import": "./dist/providers/query-client.js"
+      },
+      "./providers/admin-provider": {
+        "types": "./dist/providers/admin-provider.d.ts",
+        "import": "./dist/providers/admin-provider.js"
+      },
+      "./lib/i18n": {
+        "types": "./dist/lib/i18n.d.ts",
+        "import": "./dist/lib/i18n.js"
+      },
+      "./lib/initials": {
+        "types": "./dist/lib/initials.d.ts",
+        "import": "./dist/lib/initials.js"
+      },
+      "./types": {
+        "types": "./dist/types.d.ts",
+        "import": "./dist/types.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
   },
   "repository": {
     "type": "git",

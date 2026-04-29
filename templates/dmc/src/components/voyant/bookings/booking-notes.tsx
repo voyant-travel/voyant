@@ -1,8 +1,8 @@
 "use client"
 
+import { useLocale } from "@voyantjs/admin"
 import { useBookingNoteMutation, useBookingNotes } from "@voyantjs/bookings-react"
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { useLocale } from "@voyantjs/voyant-admin"
 import { Loader2, Plus, StickyNote, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

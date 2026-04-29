@@ -4,6 +4,7 @@
   "commit": false,
   "fixed": [
     [
+      "@voyantjs/admin",
       "@voyantjs/auth",
       "@voyantjs/auth-react",
       "@voyantjs/availability",
@@ -102,11 +103,7 @@
     ]
   ],
   "linked": [],
-  "ignore": [
-    "@voyantjs/voyant-admin",
-    "@voyantjs/voyant-test-utils",
-    "@voyantjs/voyant-typescript-config"
-  ],
+  "ignore": ["@voyantjs/voyant-test-utils", "@voyantjs/voyant-typescript-config"],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch"

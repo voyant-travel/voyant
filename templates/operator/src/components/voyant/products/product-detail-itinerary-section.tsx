@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/admin"
 import {
   type ProductDayRecord,
   type ProductDayServiceRecord,
@@ -27,7 +28,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@voyantjs/ui/components/alert-dialog"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { Copy, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

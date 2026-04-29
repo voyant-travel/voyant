@@ -1,3 +1,4 @@
+import { formatMessage, useLocale } from "@voyantjs/admin"
 import {
   Button,
   Card,
@@ -8,7 +9,6 @@ import {
   Input,
   Label,
 } from "@voyantjs/ui/components"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import { Loader2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"

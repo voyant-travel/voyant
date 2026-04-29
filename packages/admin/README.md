@@ -1,25 +1,25 @@
-# @voyantjs/voyant-admin
+# @voyantjs/admin
 
 Reusable admin dashboard primitives for Voyant templates. Pure, transport-agnostic React providers and helpers — no UI components tied to a specific shadcn copy.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/voyant-admin
+pnpm add @voyantjs/admin
 ```
 
 ## Usage
 
 ```typescript
-import { AdminProvider } from "@voyantjs/voyant-admin/providers/admin-provider"
-import { ThemeProvider, useTheme } from "@voyantjs/voyant-admin/providers/theme"
-import { makeQueryClient } from "@voyantjs/voyant-admin/providers/query-client"
-import { getInitials, getDisplayName } from "@voyantjs/voyant-admin/lib/initials"
+import { AdminProvider } from "@voyantjs/admin/providers/admin-provider"
+import { ThemeProvider, useTheme } from "@voyantjs/admin/providers/theme"
+import { makeQueryClient } from "@voyantjs/admin/providers/query-client"
+import { getInitials, getDisplayName } from "@voyantjs/admin/lib/initials"
 import {
   createAdminExtensionRegistry,
   defineAdminExtension,
   resolveAdminNavigation,
-} from "@voyantjs/voyant-admin"
+} from "@voyantjs/admin"
 
 function App() {
   return (
@@ -48,7 +48,7 @@ Use `defineAdminExtension(...)` to declare shared admin contributions and keep
 the extension surface explicit:
 
 ```ts
-import { defineAdminExtension } from "@voyantjs/voyant-admin"
+import { defineAdminExtension } from "@voyantjs/admin"
 
 export const financeExtension = defineAdminExtension({
   id: "finance-tools",

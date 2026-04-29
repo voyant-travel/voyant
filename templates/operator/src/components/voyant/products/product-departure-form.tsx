@@ -1,5 +1,5 @@
+import { formatMessage } from "@voyantjs/admin"
 import { useProductItineraries } from "@voyantjs/products-react"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { useLocale } from "@voyantjs/admin"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { useLocale } from "@voyantjs/voyant-admin"
 import { ArrowLeft, Link2, Loader2, Package, Trash2, Webhook } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"

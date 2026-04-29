@@ -1,6 +1,6 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
+import { formatMessage } from "@voyantjs/admin"
 import { TabsContent } from "@voyantjs/ui/components/tabs"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 import { SectionHeader } from "@/components/voyant/resources/resources-section-header"

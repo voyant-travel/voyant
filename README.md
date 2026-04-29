@@ -83,7 +83,7 @@ Voyant currently ships two first-party starters:
 
 ### UI and integrations
 
-- [`@voyantjs/voyant-admin`](./packages/admin/README.md), [`@voyantjs/crm-react`](./packages/crm-react/README.md), and [`@voyantjs/products-react`](./packages/products-react/README.md)
+- [`@voyantjs/admin`](./packages/admin/README.md), [`@voyantjs/crm-react`](./packages/crm-react/README.md), and [`@voyantjs/products-react`](./packages/products-react/README.md)
 - [`packages/ui`](./packages/ui/README.md) holds the private shadcn registry source for installable UI blocks
 - [`@voyantjs/plugin-netopia`](./packages/plugins/netopia/README.md), [`@voyantjs/plugin-smartbill`](./packages/plugins/smartbill/README.md), [`@voyantjs/plugin-payload-cms`](./packages/plugins/payload-cms/README.md), [`@voyantjs/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md)
 

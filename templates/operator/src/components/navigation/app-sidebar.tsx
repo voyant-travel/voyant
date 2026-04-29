@@ -1,3 +1,4 @@
+import { type NavItem, resolveAdminNavigation } from "@voyantjs/admin"
 import {
   Sidebar,
   SidebarContent,
@@ -5,7 +6,6 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@voyantjs/ui/components"
-import { type NavItem, resolveAdminNavigation } from "@voyantjs/voyant-admin"
 import {
   Building,
   Building2,

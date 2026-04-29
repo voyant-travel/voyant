@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/admin"
 import { useDuplicateOptionPricingMutation } from "@voyantjs/pricing-react"
 import {
   useDuplicateProductOptionMutation,
@@ -15,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
 import { Separator } from "@voyantjs/ui/components/separator"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { ChevronDown, ChevronRight, Copy, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

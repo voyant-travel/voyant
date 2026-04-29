@@ -1,8 +1,8 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
+import { formatMessage } from "@voyantjs/admin"
 import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { TabsContent } from "@voyantjs/ui/components/tabs"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import type {
   AvailabilityCloseoutRow,
   AvailabilityPickupPointRow,

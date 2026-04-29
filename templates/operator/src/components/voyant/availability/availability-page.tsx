@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { RowSelectionState } from "@tanstack/react-table"
+import { formatMessage } from "@voyantjs/admin"
 import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { useState } from "react"
 import { toast } from "sonner"
 import type {

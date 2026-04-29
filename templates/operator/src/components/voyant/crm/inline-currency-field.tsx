@@ -1,3 +1,4 @@
+import { formatMessage } from "@voyantjs/admin"
 import {
   Combobox,
   ComboboxCollection,
@@ -9,7 +10,6 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { currencies } from "@voyantjs/utils/currencies"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"

@@ -1,9 +1,9 @@
 "use client"
 
+import { formatMessage, useLocale } from "@voyantjs/admin"
 import { useBookingActivity, useBookingTravelerDocuments } from "@voyantjs/bookings-react"
 import { usePublicBookingPayments } from "@voyantjs/finance-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { formatMessage, useLocale } from "@voyantjs/voyant-admin"
 import {
   Activity,
   Clock,

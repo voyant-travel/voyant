@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage } from "@voyantjs/admin"
 import {
   type ProductCategoryRecord,
   useProductCategories,
@@ -23,7 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { formatMessage } from "@voyantjs/voyant-admin"
 import { CheckCircle2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 import { SkeletonTableRows } from "@/components/ui/skeletons"
