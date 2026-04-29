@@ -280,12 +280,6 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/vault':
-        specifier: workspace:*
-        version: link:../../packages/vault
-      '@voyantjs/verify':
-        specifier: workspace:*
-        version: link:../../packages/verify
       '@voyantjs/voyant-cloud':
         specifier: workspace:*
         version: link:../../packages/voyant-cloud
@@ -4152,38 +4146,6 @@ importers:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/vault:
-    dependencies:
-      '@voyantjs/voyant-cloud':
-        specifier: workspace:*
-        version: link:../voyant-cloud
-    devDependencies:
-      '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-
-  packages/verify:
-    dependencies:
-      '@voyantjs/voyant-cloud':
-        specifier: workspace:*
-        version: link:../voyant-cloud
-    devDependencies:
-      '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-
   packages/voyant-cloud:
     dependencies:
       '@voyantjs/cloud-sdk':
@@ -4528,12 +4490,6 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/vault':
-        specifier: workspace:*
-        version: link:../../packages/vault
-      '@voyantjs/verify':
-        specifier: workspace:*
-        version: link:../../packages/verify
       '@voyantjs/voyant-admin':
         specifier: workspace:*
         version: link:../../packages/admin
@@ -4859,12 +4815,6 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/vault':
-        specifier: workspace:*
-        version: link:../../packages/vault
-      '@voyantjs/verify':
-        specifier: workspace:*
-        version: link:../../packages/verify
       '@voyantjs/voyant-admin':
         specifier: workspace:*
         version: link:../../packages/admin
