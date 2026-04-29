@@ -94,6 +94,8 @@ export type {
   ProductVisibilitySetting,
 } from "./schema.js"
 export {
+  destinations,
+  destinationTranslations,
   optionUnits,
   optionUnitTranslations,
   productActivationSettings,
@@ -103,6 +105,7 @@ export {
   productDayServices,
   productDays,
   productDeliveryFormats,
+  productDestinations,
   productFaqs,
   productFeatures,
   productItineraries,
