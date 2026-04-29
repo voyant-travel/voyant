@@ -53,4 +53,4 @@ By default it wires up 3 subscribers
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

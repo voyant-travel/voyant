@@ -48,4 +48,4 @@ pnpm -F operator deploy
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

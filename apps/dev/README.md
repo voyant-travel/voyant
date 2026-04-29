@@ -18,4 +18,4 @@ This app is **not** a deployable template. It exists so you can iterate on `pack
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

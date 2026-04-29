@@ -25,4 +25,4 @@ import { apiErrorSchema } from "@voyantjs/types/schemas/api-error"
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0

@@ -24,4 +24,4 @@ npx shadcn@latest add https://registry.voyantjs.com/r/crm/person-list.json
 
 ## License
 
-FSL-1.1-Apache-2.0
+Apache-2.0
