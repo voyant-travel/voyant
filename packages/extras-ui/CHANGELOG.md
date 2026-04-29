@@ -1,5 +1,17 @@
 # @voyantjs/extras-ui
 
+## 0.17.0
+
+### Patch Changes
+
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+  - @voyantjs/extras-react@0.17.0
+  - @voyantjs/i18n@0.17.0
+  - @voyantjs/products-react@0.17.0
+  - @voyantjs/ui@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes

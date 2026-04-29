@@ -1,5 +1,20 @@
 # @voyantjs/products-react
 
+## 0.17.0
+
+### Minor Changes
+
+- 66d722d: `GET /v1/products` now accepts three new optional query params: `productTypeId` (direct equality on `products.product_type_id`), `categoryId` (`EXISTS` subquery against `product_category_products`), and `tag` (Postgres jsonb `@>` containment on `products.tags`).
+
+  `ProductsListFilters` in `@voyantjs/products-react/src/query-keys.ts` mirrors the new fields, and `getProductsQueryOptions` forwards them as URL query params. Consumers organising products by type (admin sidebars per travel-type, storefront category pages) can now filter server-side instead of fetching everything and filtering client-side.
+
+### Patch Changes
+
+- Updated dependencies [66d722d]
+- Updated dependencies [66d722d]
+  - @voyantjs/products@0.17.0
+  - @voyantjs/react@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes

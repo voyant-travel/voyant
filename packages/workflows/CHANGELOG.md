@@ -1,5 +1,12 @@
 # @voyantjs/workflows
 
+## 0.17.0
+
+### Patch Changes
+
+- 66d722d: De-flake the `ctx.parallel > defaults concurrency to total items` test by asserting on elapsed time (`elapsed < SLEEP_MS * ITEMS.length`) instead of completion order. Sleep-based ordering tests are fragile under CI runner scheduler resolution; the elapsed-time invariant verifies the actual contract (real concurrency, not serialized) without relying on `setTimeout` precision.
+  - @voyantjs/workflows-errors@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes
