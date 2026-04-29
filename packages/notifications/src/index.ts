@@ -1,4 +1,5 @@
 import type { Module } from "@voyantjs/core"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { HonoModule } from "@voyantjs/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -151,9 +152,12 @@ export interface CreateNotificationsHonoModuleOptions extends NotificationsRoute
   /**
    * Resolves a database from runtime bindings. Required for
    * `autoConfirmAndDispatch` — the `booking.confirmed` subscriber fires
-   * outside a request scope and needs its own db handle.
+   * outside a request scope and needs its own db handle. Returns
+   * `AnyDrizzleDb` (the union of `PostgresJsDatabase | NeonHttpDatabase`)
+   * so consumers don't have to cast through `unknown` when wiring a
+   * Hyperdrive/Neon client.
    */
-  resolveDb?: (bindings: Record<string, unknown>) => PostgresJsDatabase
+  resolveDb?: (bindings: Record<string, unknown>) => AnyDrizzleDb
   autoConfirmAndDispatch?: NotificationsAutoConfirmAndDispatchOptions
 }
 
@@ -187,7 +191,10 @@ export function createNotificationsHonoModule(
             data: { bookingId: string; bookingNumber: string; actorId: string | null }
           }) => {
             try {
-              const db = resolveDb(bindings as Record<string, unknown>)
+              // The resolver may return either drizzle flavor; the queries
+              // bookingDocumentNotificationsService runs are compatible with
+              // both at runtime, so we narrow at this internal boundary.
+              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
               await bookingDocumentNotificationsService.confirmAndDispatchBooking(
                 db,
                 dispatcher,
