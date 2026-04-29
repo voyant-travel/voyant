@@ -338,6 +338,24 @@ export const productsService = {
       conditions.push(eq(products.facilityId, query.facilityId))
     }
 
+    if (query.productTypeId) {
+      conditions.push(eq(products.productTypeId, query.productTypeId))
+    }
+
+    if (query.categoryId) {
+      conditions.push(
+        sql`exists (select 1 from ${productCategoryProducts}
+          where ${productCategoryProducts.productId} = ${products.id}
+          and ${productCategoryProducts.categoryId} = ${query.categoryId})`,
+      )
+    }
+
+    if (query.tag) {
+      // Postgres jsonb `@>` containment: does the array include this string?
+      // Mirrors the pattern used in @voyantjs/charters and @voyantjs/cruises.
+      conditions.push(sql`${products.tags} @> ${JSON.stringify([query.tag])}::jsonb`)
+    }
+
     if (query.search) {
       const term = `%${query.search}%`
       conditions.push(or(ilike(products.name, term), ilike(products.description, term)))
