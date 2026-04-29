@@ -1,9 +1,9 @@
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
+import type { EventBus } from "@voyantjs/core"
 import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
 import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-
 import {
   bookingGuarantees,
   bookingItemCommissions,
@@ -27,6 +27,7 @@ import {
   taxRegimes,
 } from "./schema.js"
 import { getFinanceAggregates } from "./service-aggregates.js"
+import type { InvoiceSettledEvent } from "./service-settlement.js"
 import { vouchersService } from "./service-vouchers.js"
 import type {
   agingReportQuerySchema,
@@ -276,6 +277,16 @@ async function paginate<T extends object>(
 ) {
   const [data, countResult] = await Promise.all([rowsQuery, countQuery])
   return { data, total: countResult[0]?.total ?? 0, limit, offset }
+}
+
+/**
+ * Runtime context for finance service methods that need to emit lifecycle
+ * events (e.g. `invoice.settled`). Optional — methods fall back to a no-op
+ * when no eventBus is provided, so direct callers (tests, scripts) don't
+ * have to wire one up.
+ */
+export interface FinanceServiceRuntime {
+  eventBus?: EventBus
 }
 
 export const financeService = {
@@ -551,6 +562,7 @@ export const financeService = {
     db: PostgresJsDatabase,
     id: string,
     data: CompletePaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
     const [session] = await db
       .select()
@@ -562,10 +574,14 @@ export const financeService = {
       return null
     }
 
-    return db.transaction(async (tx) => {
+    const txResult = await db.transaction(async (tx) => {
       let authorizationId = session.paymentAuthorizationId
       let captureId = session.paymentCaptureId
       let paymentId = session.paymentId
+      // Settlement payload to emit after the tx commits, so subscribers see
+      // a consistent post-update view. Stays null when this call doesn't
+      // result in a new payment being applied to an invoice.
+      let settlementForEmit: InvoiceSettledEvent | null = null
 
       if (!authorizationId) {
         const [authorization] = await tx
@@ -687,6 +703,17 @@ export const financeService = {
               updatedAt: new Date(),
             })
             .where(eq(invoices.id, session.invoiceId))
+
+          if (paymentId) {
+            settlementForEmit = {
+              invoiceId: session.invoiceId,
+              paymentId,
+              provider: session.provider ?? "internal",
+              newlyAppliedAmountCents: session.amountCents,
+              paidCents,
+              balanceDueCents,
+            }
+          }
         }
       }
 
@@ -736,8 +763,17 @@ export const financeService = {
         .where(eq(paymentSessions.id, id))
         .returning()
 
-      return updated ?? null
+      return { updated: updated ?? null, settlement: settlementForEmit }
     })
+
+    if (txResult.settlement) {
+      await runtime.eventBus?.emit("invoice.settled", txResult.settlement, {
+        category: "domain",
+        source: "service",
+      })
+    }
+
+    return txResult.updated
   },
 
   async listPaymentAuthorizations(db: PostgresJsDatabase, query: PaymentAuthorizationListQuery) {

@@ -1,3 +1,4 @@
+import type { EventBus } from "@voyantjs/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { resolveNetopiaRuntimeOptions } from "./client.js"
@@ -16,6 +17,7 @@ export async function handleCallback(
   payload: NetopiaWebhookPayload,
   runtimeOptions: NetopiaRuntimeOptions = {},
   bindings?: Record<string, unknown>,
+  financeRuntime: { eventBus?: EventBus } = {},
 ): Promise<NetopiaCallbackResult> {
   const runtime = resolveNetopiaRuntimeOptions(bindings, runtimeOptions)
   const orderId = payload.order.orderID
@@ -104,32 +106,37 @@ export async function handleCallback(
       }
     }
 
-    const completed = await financeService.completePaymentSession(db, session.id, {
-      status: "paid",
-      captureMode: "manual",
-      paymentMethod: "credit_card",
-      providerSessionId: payload.payment.ntpID,
-      providerPaymentId: payload.payment.ntpID,
-      externalReference: orderId,
-      externalAuthorizationId:
-        typeof payload.payment.data?.AuthCode === "string"
-          ? payload.payment.data.AuthCode
-          : payload.payment.ntpID,
-      externalCaptureId:
-        typeof payload.payment.data?.RRN === "string"
-          ? payload.payment.data.RRN
-          : payload.payment.ntpID,
-      approvalCode:
-        typeof payload.payment.data?.AuthCode === "string"
-          ? payload.payment.data.AuthCode
-          : undefined,
-      referenceNumber:
-        typeof payload.payment.data?.RRN === "string" ? payload.payment.data.RRN : undefined,
-      authorizedAt: new Date().toISOString(),
-      capturedAt: new Date().toISOString(),
-      paymentDate: new Date().toISOString(),
-      providerPayload,
-    })
+    const completed = await financeService.completePaymentSession(
+      db,
+      session.id,
+      {
+        status: "paid",
+        captureMode: "manual",
+        paymentMethod: "credit_card",
+        providerSessionId: payload.payment.ntpID,
+        providerPaymentId: payload.payment.ntpID,
+        externalReference: orderId,
+        externalAuthorizationId:
+          typeof payload.payment.data?.AuthCode === "string"
+            ? payload.payment.data.AuthCode
+            : payload.payment.ntpID,
+        externalCaptureId:
+          typeof payload.payment.data?.RRN === "string"
+            ? payload.payment.data.RRN
+            : payload.payment.ntpID,
+        approvalCode:
+          typeof payload.payment.data?.AuthCode === "string"
+            ? payload.payment.data.AuthCode
+            : undefined,
+        referenceNumber:
+          typeof payload.payment.data?.RRN === "string" ? payload.payment.data.RRN : undefined,
+        authorizedAt: new Date().toISOString(),
+        capturedAt: new Date().toISOString(),
+        paymentDate: new Date().toISOString(),
+        providerPayload,
+      },
+      { eventBus: financeRuntime.eventBus },
+    )
 
     return {
       action: "completed",

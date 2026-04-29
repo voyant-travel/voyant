@@ -1,6 +1,7 @@
 import { parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
 import { Hono } from "hono"
 
+import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
 import type { publicFinanceRoutes } from "./routes-public.js"
 import type { Env } from "./routes-shared.js"
 import { financeService } from "./service.js"
@@ -133,10 +134,18 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/payment-sessions/:id/complete", async (c) => {
+    const runtime = (() => {
+      try {
+        return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+      } catch {
+        return undefined
+      }
+    })()
     const row = await financeService.completePaymentSession(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, completePaymentSessionSchema),
+      { eventBus: runtime?.eventBus },
     )
     if (!row) return c.json({ error: "Payment session not found" }, 404)
     return c.json({ data: row })
