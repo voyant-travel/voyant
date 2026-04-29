@@ -9,9 +9,9 @@
 
 import { createBetterAuth } from "@voyantjs/auth/server"
 import { ensureCurrentUserProfile, getCurrentUser } from "@voyantjs/auth/workspace"
+import { getVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { authUser } from "@voyantjs/db/schema/iam"
 import type { VoyantRequestAuthContext } from "@voyantjs/hono"
-import { getVoyantCloudClient } from "@voyantjs/voyant-cloud"
 import { sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 

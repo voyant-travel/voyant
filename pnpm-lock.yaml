@@ -133,6 +133,9 @@ importers:
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
+      '@voyantjs/cloud-sdk':
+        specifier: ^0.6.0
+        version: 0.6.0
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -280,9 +283,6 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/voyant-cloud':
-        specifier: workspace:*
-        version: link:../../packages/voyant-cloud
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -2843,6 +2843,9 @@ importers:
       '@voyantjs/bookings':
         specifier: workspace:*
         version: link:../bookings
+      '@voyantjs/cloud-sdk':
+        specifier: ^0.6.0
+        version: 0.6.0
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -2858,9 +2861,6 @@ importers:
       '@voyantjs/legal':
         specifier: workspace:*
         version: link:../legal
-      '@voyantjs/voyant-cloud':
-        specifier: workspace:*
-        version: link:../voyant-cloud
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -4098,22 +4098,6 @@ importers:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/voyant-cloud:
-    dependencies:
-      '@voyantjs/cloud-sdk':
-        specifier: ^0.4.0
-        version: 0.4.0
-    devDependencies:
-      '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-
   packages/workflows:
     dependencies:
       '@voyantjs/workflows-errors':
@@ -4322,6 +4306,9 @@ importers:
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
+      '@voyantjs/cloud-sdk':
+        specifier: ^0.6.0
+        version: 0.6.0
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -4445,9 +4432,6 @@ importers:
       '@voyantjs/voyant-admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@voyantjs/voyant-cloud':
-        specifier: workspace:*
-        version: link:../../packages/voyant-cloud
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -4647,6 +4631,9 @@ importers:
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
+      '@voyantjs/cloud-sdk':
+        specifier: ^0.6.0
+        version: 0.6.0
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -4770,9 +4757,6 @@ importers:
       '@voyantjs/voyant-admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@voyantjs/voyant-cloud':
-        specifier: workspace:*
-        version: link:../../packages/voyant-cloud
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -8009,8 +7993,13 @@ packages:
   '@vitest/utils@4.1.2':
     resolution: {integrity: sha512-xw2/TiX82lQHA06cgbqRKFb5lCAy3axQ4H4SoUFhUsg+wztiet+co86IAMDtF6Vm1hc7J6j09oh/rgDn+JdKIQ==}
 
-  '@voyantjs/cloud-sdk@0.4.0':
-    resolution: {integrity: sha512-nyeUsoiGDa3V37SrJmH56NoDRiLPQd6sBLi4ltRjwQpd5VJTreOK03l3pBgXPW/LoCeo/O8HDDrh4fAYea0RTw==}
+  '@voyantjs/cloud-sdk@0.6.0':
+    resolution: {integrity: sha512-kwTGyCIOJ/qPBG/ieccOawPC6/ySCti0F1oFz7i/hbw8yt4omPNjyqI8zJ1uwv7jeHOXSjnGj0RYYzkLRqX94g==}
+    peerDependencies:
+      typesense: ^2.0.0
+    peerDependenciesMeta:
+      typesense:
+        optional: true
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
@@ -14455,7 +14444,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@voyantjs/cloud-sdk@0.4.0': {}
+  '@voyantjs/cloud-sdk@0.6.0': {}
 
   '@vue/compiler-core@3.5.32':
     dependencies:

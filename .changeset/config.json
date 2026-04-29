@@ -90,7 +90,6 @@
       "@voyantjs/types",
       "@voyantjs/ui",
       "@voyantjs/utils",
-      "@voyantjs/voyant-cloud",
       "@voyantjs/voyant-storage",
       "@voyantjs/workflows",
       "@voyantjs/workflows-bindings",

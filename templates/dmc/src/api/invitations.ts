@@ -13,6 +13,7 @@
  *     Better Auth session via signInEmail and forward the cookie.
  */
 
+import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { newId } from "@voyantjs/db/lib/typeid"
 import {
   authAccount,
@@ -20,7 +21,6 @@ import {
   userInvitationsTable,
   userProfilesTable,
 } from "@voyantjs/db/schema/iam"
-import { tryGetVoyantCloudClient } from "@voyantjs/voyant-cloud"
 import { hashPassword } from "better-auth/crypto"
 import { and, desc, eq, gt, isNull } from "drizzle-orm"
 import { Hono } from "hono"
