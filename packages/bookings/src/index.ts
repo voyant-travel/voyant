@@ -1,7 +1,11 @@
 import type { LinkableDefinition, Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 
-import { BOOKING_ROUTE_RUNTIME_CONTAINER_KEY, buildBookingRouteRuntime } from "./route-runtime.js"
+import {
+  BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
+  type BookingRouteRuntimeOptions,
+  buildBookingRouteRuntime,
+} from "./route-runtime.js"
 import { bookingRoutes } from "./routes.js"
 import { publicBookingRoutes } from "./routes-public.js"
 
@@ -64,13 +68,15 @@ export const bookingsModule: Module = {
   linkable: bookingsLinkable,
 }
 
-export function createBookingsHonoModule(): HonoModule {
+export interface BookingsHonoModuleOptions extends BookingRouteRuntimeOptions {}
+
+export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}): HonoModule {
   const module: Module = {
     ...bookingsModule,
     bootstrap: ({ bindings, container }) => {
       container.register(
         BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
-        buildBookingRouteRuntime(bindings as Record<string, unknown>),
+        buildBookingRouteRuntime(bindings as Record<string, unknown>, options),
       )
     },
   }
@@ -85,7 +91,11 @@ export function createBookingsHonoModule(): HonoModule {
 
 export const bookingsHonoModule: HonoModule = createBookingsHonoModule()
 
-export type { BookingRouteRuntime } from "./route-runtime.js"
+export type {
+  BookingRouteRuntime,
+  BookingRouteRuntimeOptions,
+  ResolveBookingKmsProvider,
+} from "./route-runtime.js"
 export {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
   buildBookingRouteRuntime,

@@ -197,11 +197,12 @@ function getRouteRuntime(c: Context<Env>): BookingRouteRuntime {
   }
 }
 
-function createAuditedBookingPiiService(c: Context<Env>, bookingId: string) {
+async function createAuditedBookingPiiService(c: Context<Env>, bookingId: string) {
   const runtime = getRouteRuntime(c)
+  const kms = await runtime.getKmsProvider()
 
   return createBookingPiiService({
-    kms: runtime.getKmsProvider(),
+    kms,
     onAudit: async (event) => {
       await logBookingPiiAccess(c, {
         bookingId,
@@ -749,7 +750,7 @@ export const bookingRoutes = new Hono<Env>()
     }
 
     try {
-      const pii = createAuditedBookingPiiService(c, traveler.bookingId)
+      const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
       const details = await pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
 
       if (!details) {
@@ -812,7 +813,7 @@ export const bookingRoutes = new Hono<Env>()
     }
 
     try {
-      const pii = createAuditedBookingPiiService(c, traveler.bookingId)
+      const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
       const row = await pii.upsertTravelerTravelDetails(
         c.get("db"),
         traveler.id,
@@ -872,7 +873,7 @@ export const bookingRoutes = new Hono<Env>()
     }
 
     try {
-      const pii = createAuditedBookingPiiService(c, traveler.bookingId)
+      const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
       const row = await pii.deleteTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
 
       if (!row) {
