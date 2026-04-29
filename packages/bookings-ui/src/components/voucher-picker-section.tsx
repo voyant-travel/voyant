@@ -3,6 +3,7 @@
 import { usePublicVoucherValidationMutation } from "@voyantjs/finance-react"
 import { Button, Input, Label } from "@voyantjs/ui/components"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 /** Details of a successfully-validated voucher. */
 export interface PickedVoucher {
@@ -49,30 +50,6 @@ export interface VoucherPickerSectionProps {
   }
 }
 
-const DEFAULT_LABELS = {
-  heading: "Voucher (optional)",
-  codePlaceholder: "Enter voucher code...",
-  apply: "Apply",
-  clear: "Clear",
-  remainingLabel: "Remaining balance:",
-  invalidLabel: "This voucher can't be applied:",
-} as const
-
-const REASON_MESSAGES: Record<string, string> = {
-  not_found: "Voucher code not found.",
-  inactive: "Voucher is not active.",
-  not_started: "Voucher is not yet valid.",
-  expired: "Voucher has expired.",
-  booking_mismatch: "Voucher is assigned to a different booking.",
-  currency_mismatch: "Voucher currency does not match the booking.",
-  insufficient_balance: "Voucher balance is too low for the selected amount.",
-}
-
-function formatAmount(cents: number | null | undefined, currency: string | null | undefined) {
-  if (cents == null) return "—"
-  return `${(cents / 100).toFixed(2)}${currency ? ` ${currency}` : ""}`
-}
-
 /**
  * Voucher picker for booking-create flows. Operator enters a code, clicks
  * Apply, and the server-side `/v1/public/vouchers/validate` runs all the
@@ -92,7 +69,9 @@ export function VoucherPickerSection({
   amountCents,
   labels,
 }: VoucherPickerSectionProps) {
-  const merged = { ...DEFAULT_LABELS, ...labels }
+  const { formatCurrency } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
+  const merged = { ...messages.voucherPickerSection.labels, ...labels }
   const validate = usePublicVoucherValidationMutation()
 
   const handleApply = async () => {
@@ -126,13 +105,19 @@ export function VoucherPickerSection({
       onChange({
         code,
         picked: null,
-        error: REASON_MESSAGES[data.reason ?? ""] ?? "Voucher is not valid.",
+        error:
+          messages.voucherPickerSection.reasonMessages[
+            data.reason as keyof typeof messages.voucherPickerSection.reasonMessages
+          ] ?? messages.voucherPickerSection.validation.invalid,
       })
     } catch (err) {
       onChange({
         code,
         picked: null,
-        error: err instanceof Error ? err.message : "Voucher lookup failed.",
+        error:
+          err instanceof Error
+            ? err.message
+            : messages.voucherPickerSection.validation.lookupFailed,
       })
     }
   }
@@ -178,7 +163,9 @@ export function VoucherPickerSection({
           <span>
             {merged.remainingLabel}{" "}
             <strong>
-              {formatAmount(value.picked.remainingAmountCents, value.picked.currency)}
+              {value.picked.remainingAmountCents == null || !value.picked.currency
+                ? messages.voucherPickerSection.validation.amountUnavailable
+                : formatCurrency(value.picked.remainingAmountCents / 100, value.picked.currency)}
             </strong>
           </span>
         </div>

@@ -11,6 +11,8 @@ import { Label } from "@voyantjs/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
+import { useCrmUiMessagesOrDefault } from "../i18n"
+
 type Mode = { kind: "create" } | { kind: "edit"; organization: OrganizationRecord }
 
 export interface OrganizationFormProps {
@@ -58,6 +60,7 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useOrganizationMutation()
+  const messages = useCrmUiMessagesOrDefault()
 
   const isSubmitting = create.isPending || update.isPending
 
@@ -72,7 +75,7 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
     setError(null)
 
     if (!state.name.trim()) {
-      setError("Organization name is required.")
+      setError(messages.organizationForm.validation.nameRequired)
       return
     }
 
@@ -85,7 +88,7 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
           : await update.mutateAsync({ id: mode.organization.id, input: payload })
       onSuccess?.(organization)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save organization.")
+      setError(err instanceof Error ? err.message : messages.organizationForm.validation.saveFailed)
     }
   }
 
@@ -93,11 +96,13 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
     <form data-slot="organization-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <Label htmlFor="organization-name">Name</Label>
+          <Label htmlFor="organization-name">{messages.organizationForm.fields.name}</Label>
           <Input id="organization-name" required value={state.name} onChange={field("name")} />
         </div>
         <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <Label htmlFor="organization-legal-name">Legal name</Label>
+          <Label htmlFor="organization-legal-name">
+            {messages.organizationForm.fields.legalName}
+          </Label>
           <Input
             id="organization-legal-name"
             value={state.legalName}
@@ -105,7 +110,7 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="organization-website">Website</Label>
+          <Label htmlFor="organization-website">{messages.organizationForm.fields.website}</Label>
           <Input
             id="organization-website"
             type="url"
@@ -114,7 +119,7 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="organization-industry">Industry</Label>
+          <Label htmlFor="organization-industry">{messages.organizationForm.fields.industry}</Label>
           <Input id="organization-industry" value={state.industry} onChange={field("industry")} />
         </div>
       </div>
@@ -128,19 +133,19 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              Saving…
+              {messages.common.saving}
             </>
           ) : mode.kind === "create" ? (
-            "Create organization"
+            messages.organizationForm.actions.create
           ) : (
-            "Save changes"
+            messages.common.saveChanges
           )}
         </Button>
       </div>

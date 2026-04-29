@@ -1,7 +1,9 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
+import { formatMessage } from "@voyantjs/i18n"
 import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 import { TabsContent } from "@/components/ui/tabs"
+import { useDistributionUiI18nOrDefault } from "../../../distribution-ui/src/index"
 import { SectionHeader } from "./distribution-dialog-barrel"
 import type {
   ChannelCommissionRuleRow,
@@ -10,12 +12,9 @@ import type {
   ProductOption,
   SupplierOption,
 } from "./distribution-shared"
-import {
-  channelColumns,
-  commissionColumns,
-  contractColumns,
-  formatSelectionLabel,
-} from "./distribution-shared"
+import { channelColumns, commissionColumns, contractColumns } from "./distribution-shared"
+import { useRegistryDistributionMessagesOrDefault } from "./i18n/provider"
+import { formatRegistryDistributionCount, formatRegistryDistributionSummary } from "./i18n/utils"
 
 type BulkFn = (args: {
   ids: string[]
@@ -25,7 +24,7 @@ type BulkFn = (args: {
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok type annotation
 
 type DeleteFn = (args: {
   ids: string[]
@@ -33,7 +32,11 @@ type DeleteFn = (args: {
   target: string
   noun: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok type annotation
+
+function getSelectionSummary(count: number, template: string) {
+  return formatRegistryDistributionSummary(template, { count })
+}
 
 export function DistributionChannelsTab(props: {
   filteredChannels: ChannelRow[]
@@ -46,80 +49,103 @@ export function DistributionChannelsTab(props: {
   onOpenRoute: (channelId: string) => void
   onEdit: (row: ChannelRow) => void
 }) {
+  const i18n = useDistributionUiI18nOrDefault()
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const tab = messages.tabs.channels
+
   return (
     <TabsContent value="channels" className="space-y-4">
       <SectionHeader
-        title="Channels"
-        description="Sales partners, affiliates, OTAs, marketplaces, and direct channels."
-        actionLabel="New Channel"
+        title={tab.title}
+        description={tab.description}
+        actionLabel={tab.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={channelColumns(props.onOpenRoute)}
+        columns={channelColumns(props.onOpenRoute, i18n)}
         data={props.filteredChannels}
-        emptyMessage="No channels match the current filters."
+        emptyMessage={tab.empty}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.channelSelection}
         onRowSelectionChange={props.setChannelSelection}
-        renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
-            <ConfirmActionButton
-              buttonLabel="Activate"
-              confirmLabel="Activate Channels"
-              title={`Activate ${formatSelectionLabel(selectedRows.length, "channel")}?`}
-              description="This enables the selected channels for live distribution again."
-              disabled={props.bulkActionTarget === "channels-activate"}
-              onConfirm={() =>
-                props.handleBulkUpdate({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/channels",
-                  target: "channels-activate",
-                  noun: "channel",
-                  payload: { status: "active" },
-                  successVerb: "Activated",
-                  clearSelection,
-                })
-              }
-            />
-            <ConfirmActionButton
-              buttonLabel="Archive"
-              confirmLabel="Archive Channels"
-              title={`Archive ${formatSelectionLabel(selectedRows.length, "channel")}?`}
-              description="This keeps the selected channels for history but removes them from active commercial use."
-              disabled={props.bulkActionTarget === "channels-archive"}
-              onConfirm={() =>
-                props.handleBulkUpdate({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/channels",
-                  target: "channels-archive",
-                  noun: "channel",
-                  payload: { status: "archived" },
-                  successVerb: "Archived",
-                  clearSelection,
-                })
-              }
-            />
-            <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Channels"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "channel")}?`}
-              description="This permanently removes the selected channels. Use Archive if you only need to retire them from active use."
-              disabled={props.bulkActionTarget === "channels-delete"}
-              variant="destructive"
-              confirmVariant="destructive"
-              onConfirm={() =>
-                props.handleBulkDelete({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/channels",
-                  target: "channels-delete",
-                  noun: "channel",
-                  clearSelection,
-                })
-              }
-            />
-          </SelectionActionBar>
-        )}
+        renderSelectionActions={({ selectedRows, clearSelection }) => {
+          const countLabel = formatRegistryDistributionCount(
+            messages,
+            "channel",
+            selectedRows.length,
+          )
+
+          return (
+            <SelectionActionBar
+              selectedCount={selectedRows.length}
+              onClear={clearSelection}
+              selectionSummary={getSelectionSummary(
+                selectedRows.length,
+                messages.common.selectionSummary,
+              )}
+              clearLabel={messages.common.clearSelection}
+            >
+              <ConfirmActionButton
+                buttonLabel={tab.actions.activate.button}
+                confirmLabel={tab.actions.activate.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.activate.title, { countLabel })}
+                description={tab.actions.activate.description}
+                disabled={props.bulkActionTarget === "channels-activate"}
+                onConfirm={() =>
+                  props.handleBulkUpdate({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/channels",
+                    target: "channels-activate",
+                    noun: messages.common.entities.channel.one,
+                    payload: { status: "active" },
+                    successVerb: messages.page.bulkVerbs.activated,
+                    clearSelection,
+                  })
+                }
+              />
+              <ConfirmActionButton
+                buttonLabel={tab.actions.archive.button}
+                confirmLabel={tab.actions.archive.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.archive.title, { countLabel })}
+                description={tab.actions.archive.description}
+                disabled={props.bulkActionTarget === "channels-archive"}
+                onConfirm={() =>
+                  props.handleBulkUpdate({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/channels",
+                    target: "channels-archive",
+                    noun: messages.common.entities.channel.one,
+                    payload: { status: "archived" },
+                    successVerb: messages.page.bulkVerbs.archived,
+                    clearSelection,
+                  })
+                }
+              />
+              <ConfirmActionButton
+                buttonLabel={tab.actions.delete.button}
+                confirmLabel={tab.actions.delete.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.delete.title, { countLabel })}
+                description={tab.actions.delete.description}
+                disabled={props.bulkActionTarget === "channels-delete"}
+                variant="destructive"
+                confirmVariant="destructive"
+                onConfirm={() =>
+                  props.handleBulkDelete({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/channels",
+                    target: "channels-delete",
+                    noun: messages.common.entities.channel.one,
+                    clearSelection,
+                  })
+                }
+              />
+            </SelectionActionBar>
+          )
+        }}
         onRowClick={(row) => props.onEdit(row.original)}
       />
     </TabsContent>
@@ -139,80 +165,103 @@ export function DistributionContractsTab(props: {
   onOpenRoute: (contractId: string) => void
   onEdit: (row: ChannelContractRow) => void
 }) {
+  const i18n = useDistributionUiI18nOrDefault()
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const tab = messages.tabs.contracts
+
   return (
     <TabsContent value="contracts" className="space-y-4">
       <SectionHeader
-        title="Contracts"
-        description="Commercial terms per channel and supplier relationship."
-        actionLabel="New Contract"
+        title={tab.title}
+        description={tab.description}
+        actionLabel={tab.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={contractColumns(props.channels, props.suppliers, props.onOpenRoute)}
+        columns={contractColumns(props.channels, props.suppliers, props.onOpenRoute, i18n)}
         data={props.filteredContracts}
-        emptyMessage="No contracts match the current filters."
+        emptyMessage={tab.empty}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.contractSelection}
         onRowSelectionChange={props.setContractSelection}
-        renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
-            <ConfirmActionButton
-              buttonLabel="Activate"
-              confirmLabel="Activate Contracts"
-              title={`Activate ${formatSelectionLabel(selectedRows.length, "contract")}?`}
-              description="This marks the selected contracts as commercially active."
-              disabled={props.bulkActionTarget === "contracts-activate"}
-              onConfirm={() =>
-                props.handleBulkUpdate({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/contracts",
-                  target: "contracts-activate",
-                  noun: "contract",
-                  payload: { status: "active" },
-                  successVerb: "Activated",
-                  clearSelection,
-                })
-              }
-            />
-            <ConfirmActionButton
-              buttonLabel="Expire"
-              confirmLabel="Expire Contracts"
-              title={`Expire ${formatSelectionLabel(selectedRows.length, "contract")}?`}
-              description="This preserves the selected contracts but marks them as no longer in force."
-              disabled={props.bulkActionTarget === "contracts-expire"}
-              onConfirm={() =>
-                props.handleBulkUpdate({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/contracts",
-                  target: "contracts-expire",
-                  noun: "contract",
-                  payload: { status: "expired" },
-                  successVerb: "Expired",
-                  clearSelection,
-                })
-              }
-            />
-            <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Contracts"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "contract")}?`}
-              description="This permanently removes the selected contracts and their commercial setup."
-              disabled={props.bulkActionTarget === "contracts-delete"}
-              variant="destructive"
-              confirmVariant="destructive"
-              onConfirm={() =>
-                props.handleBulkDelete({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/contracts",
-                  target: "contracts-delete",
-                  noun: "contract",
-                  clearSelection,
-                })
-              }
-            />
-          </SelectionActionBar>
-        )}
+        renderSelectionActions={({ selectedRows, clearSelection }) => {
+          const countLabel = formatRegistryDistributionCount(
+            messages,
+            "contract",
+            selectedRows.length,
+          )
+
+          return (
+            <SelectionActionBar
+              selectedCount={selectedRows.length}
+              onClear={clearSelection}
+              selectionSummary={getSelectionSummary(
+                selectedRows.length,
+                messages.common.selectionSummary,
+              )}
+              clearLabel={messages.common.clearSelection}
+            >
+              <ConfirmActionButton
+                buttonLabel={tab.actions.activate.button}
+                confirmLabel={tab.actions.activate.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.activate.title, { countLabel })}
+                description={tab.actions.activate.description}
+                disabled={props.bulkActionTarget === "contracts-activate"}
+                onConfirm={() =>
+                  props.handleBulkUpdate({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/contracts",
+                    target: "contracts-activate",
+                    noun: messages.common.entities.contract.one,
+                    payload: { status: "active" },
+                    successVerb: messages.page.bulkVerbs.activated,
+                    clearSelection,
+                  })
+                }
+              />
+              <ConfirmActionButton
+                buttonLabel={tab.actions.expire.button}
+                confirmLabel={tab.actions.expire.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.expire.title, { countLabel })}
+                description={tab.actions.expire.description}
+                disabled={props.bulkActionTarget === "contracts-expire"}
+                onConfirm={() =>
+                  props.handleBulkUpdate({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/contracts",
+                    target: "contracts-expire",
+                    noun: messages.common.entities.contract.one,
+                    payload: { status: "expired" },
+                    successVerb: messages.page.bulkVerbs.expired,
+                    clearSelection,
+                  })
+                }
+              />
+              <ConfirmActionButton
+                buttonLabel={tab.actions.delete.button}
+                confirmLabel={tab.actions.delete.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.delete.title, { countLabel })}
+                description={tab.actions.delete.description}
+                disabled={props.bulkActionTarget === "contracts-delete"}
+                variant="destructive"
+                confirmVariant="destructive"
+                onConfirm={() =>
+                  props.handleBulkDelete({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/contracts",
+                    target: "contracts-delete",
+                    noun: messages.common.entities.contract.one,
+                    clearSelection,
+                  })
+                }
+              />
+            </SelectionActionBar>
+          )
+        }}
         onRowClick={(row) => props.onEdit(row.original)}
       />
     </TabsContent>
@@ -231,44 +280,65 @@ export function DistributionCommissionsTab(props: {
   onOpenRoute: (commissionRuleId: string) => void
   onEdit: (row: ChannelCommissionRuleRow) => void
 }) {
+  const i18n = useDistributionUiI18nOrDefault()
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const tab = messages.tabs.commissions
+
   return (
     <TabsContent value="commissions" className="space-y-4">
       <SectionHeader
-        title="Commission Rules"
-        description="Define booking, product, rate, and category-based commission logic."
-        actionLabel="New Commission Rule"
+        title={tab.title}
+        description={tab.description}
+        actionLabel={tab.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={commissionColumns(props.contracts, props.products, props.onOpenRoute)}
+        columns={commissionColumns(props.contracts, props.products, props.onOpenRoute, i18n)}
         data={props.filteredCommissionRules}
-        emptyMessage="No commission rules match the current filters."
+        emptyMessage={tab.empty}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.commissionSelection}
         onRowSelectionChange={props.setCommissionSelection}
-        renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
-            <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Commission Rules"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "commission rule")}?`}
-              description="This permanently removes the selected commission rules from channel pricing."
-              disabled={props.bulkActionTarget === "commission-rules-delete"}
-              variant="destructive"
-              confirmVariant="destructive"
-              onConfirm={() =>
-                props.handleBulkDelete({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/commission-rules",
-                  target: "commission-rules-delete",
-                  noun: "commission rule",
-                  clearSelection,
-                })
-              }
-            />
-          </SelectionActionBar>
-        )}
+        renderSelectionActions={({ selectedRows, clearSelection }) => {
+          const countLabel = formatRegistryDistributionCount(
+            messages,
+            "commissionRule",
+            selectedRows.length,
+          )
+
+          return (
+            <SelectionActionBar
+              selectedCount={selectedRows.length}
+              onClear={clearSelection}
+              selectionSummary={getSelectionSummary(
+                selectedRows.length,
+                messages.common.selectionSummary,
+              )}
+              clearLabel={messages.common.clearSelection}
+            >
+              <ConfirmActionButton
+                buttonLabel={tab.actions.delete.button}
+                confirmLabel={tab.actions.delete.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.delete.title, { countLabel })}
+                description={tab.actions.delete.description}
+                disabled={props.bulkActionTarget === "commission-rules-delete"}
+                variant="destructive"
+                confirmVariant="destructive"
+                onConfirm={() =>
+                  props.handleBulkDelete({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/commission-rules",
+                    target: "commission-rules-delete",
+                    noun: messages.common.entities.commissionRule.one,
+                    clearSelection,
+                  })
+                }
+              />
+            </SelectionActionBar>
+          )
+        }}
         onRowClick={(row) => props.onEdit(row.original)}
       />
     </TabsContent>

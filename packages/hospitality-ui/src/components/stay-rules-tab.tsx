@@ -14,6 +14,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
 import { PaginationFooter } from "./pagination-footer"
 import { StayRuleDialog } from "./stay-rule-dialog"
 
@@ -23,6 +24,7 @@ export interface StayRulesTabProps {
 const PAGE_SIZE = 25
 
 export function StayRulesTab({ propertyId }: StayRulesTabProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<StayRuleRecord | undefined>(undefined)
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -53,9 +55,7 @@ export function StayRulesTab({ propertyId }: StayRulesTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Min/max nights, advance booking, and weekday restrictions.
-        </p>
+        <p className="text-sm text-muted-foreground">{messages.stayRulesTab.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -64,7 +64,7 @@ export function StayRulesTab({ propertyId }: StayRulesTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Stay Rule
+          {messages.stayRulesTab.add}
         </Button>
       </div>
 
@@ -74,19 +74,27 @@ export function StayRulesTab({ propertyId }: StayRulesTabProps) {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No stay rules yet.</p>
+          <p className="text-sm text-muted-foreground">{messages.stayRulesTab.empty}</p>
         </div>
       ) : (
         <div className="rounded-md border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">Rate plan</th>
-                <th className="p-3 text-left font-medium">Room type</th>
-                <th className="p-3 text-left font-medium">Valid</th>
-                <th className="p-3 text-left font-medium">Nights</th>
-                <th className="p-3 text-left font-medium">Flags</th>
-                <th className="p-3 text-left font-medium">Status</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.stayRulesTab.columns.ratePlan}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.stayRulesTab.columns.roomType}
+                </th>
+                <th className="p-3 text-left font-medium">{messages.stayRulesTab.columns.valid}</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.stayRulesTab.columns.nights}
+                </th>
+                <th className="p-3 text-left font-medium">{messages.stayRulesTab.columns.flags}</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.stayRulesTab.columns.status}
+                </th>
                 <th className="w-20 p-3" />
               </tr>
             </thead>
@@ -96,28 +104,37 @@ export function StayRulesTab({ propertyId }: StayRulesTabProps) {
                   <td className="p-3 text-muted-foreground">
                     {row.ratePlanId
                       ? (ratePlanById.get(row.ratePlanId)?.name ?? row.ratePlanId)
-                      : "All"}
+                      : messages.common.all}
                   </td>
                   <td className="p-3 text-muted-foreground">
                     {row.roomTypeId
                       ? (roomTypeById.get(row.roomTypeId)?.name ?? row.roomTypeId)
-                      : "All"}
+                      : messages.common.all}
                   </td>
                   <td className="p-3 font-mono text-xs text-muted-foreground">
-                    {row.validFrom ?? "—"} → {row.validTo ?? "—"}
+                    {row.validFrom ?? messages.common.none} → {row.validTo ?? messages.common.none}
                   </td>
                   <td className="p-3 font-mono text-xs text-muted-foreground">
-                    {row.minNights ?? "—"} / {row.maxNights ?? "—"}
+                    {row.minNights ?? messages.common.none} /{" "}
+                    {row.maxNights ?? messages.common.none}
                   </td>
                   <td className="p-3">
                     <div className="flex gap-1">
-                      {row.closedToArrival ? <Badge variant="outline">CTA</Badge> : null}
-                      {row.closedToDeparture ? <Badge variant="outline">CTD</Badge> : null}
+                      {row.closedToArrival ? (
+                        <Badge variant="outline">
+                          {messages.stayRulesTab.flags.closedToArrival}
+                        </Badge>
+                      ) : null}
+                      {row.closedToDeparture ? (
+                        <Badge variant="outline">
+                          {messages.stayRulesTab.flags.closedToDeparture}
+                        </Badge>
+                      ) : null}
                     </div>
                   </td>
                   <td className="p-3">
                     <Badge variant={row.active ? "default" : "outline"}>
-                      {row.active ? "Active" : "Inactive"}
+                      {row.active ? messages.common.active : messages.common.inactive}
                     </Badge>
                   </td>
                   <td className="p-3">
@@ -135,7 +152,7 @@ export function StayRulesTab({ propertyId }: StayRulesTabProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          if (confirm("Delete stay rule?")) {
+                          if (confirm(messages.stayRulesTab.deleteConfirm)) {
                             remove.mutate(row.id)
                           }
                         }}

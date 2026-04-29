@@ -6,6 +6,8 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { InventoryMode } from "../i18n/messages"
 import { PaginationFooter } from "./pagination-footer"
 import { RoomTypeDialog } from "./room-type-dialog"
 
@@ -15,6 +17,7 @@ export interface RoomTypesTabProps {
 const PAGE_SIZE = 25
 
 export function RoomTypesTab({ propertyId }: RoomTypesTabProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<RoomTypeRecord | undefined>(undefined)
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -31,7 +34,7 @@ export function RoomTypesTab({ propertyId }: RoomTypesTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Room categories sold as inventory.</p>
+        <p className="text-sm text-muted-foreground">{messages.roomTypesTab.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -40,7 +43,7 @@ export function RoomTypesTab({ propertyId }: RoomTypesTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Room Type
+          {messages.roomTypesTab.add}
         </Button>
       </div>
 
@@ -50,18 +53,22 @@ export function RoomTypesTab({ propertyId }: RoomTypesTabProps) {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No room types yet.</p>
+          <p className="text-sm text-muted-foreground">{messages.roomTypesTab.empty}</p>
         </div>
       ) : (
         <div className="rounded-md border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">Name</th>
-                <th className="p-3 text-left font-medium">Code</th>
-                <th className="p-3 text-left font-medium">Mode</th>
-                <th className="p-3 text-left font-medium">Occupancy</th>
-                <th className="p-3 text-left font-medium">Status</th>
+                <th className="p-3 text-left font-medium">{messages.roomTypesTab.columns.name}</th>
+                <th className="p-3 text-left font-medium">{messages.roomTypesTab.columns.code}</th>
+                <th className="p-3 text-left font-medium">{messages.roomTypesTab.columns.mode}</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomTypesTab.columns.occupancy}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.roomTypesTab.columns.status}
+                </th>
                 <th className="w-20 p-3" />
               </tr>
             </thead>
@@ -69,18 +76,21 @@ export function RoomTypesTab({ propertyId }: RoomTypesTabProps) {
               {rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-b-0">
                   <td className="p-3 font-medium">{row.name}</td>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">{row.code ?? "—"}</td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">
+                    {row.code ?? messages.common.none}
+                  </td>
                   <td className="p-3">
                     <Badge variant="outline" className="capitalize">
-                      {row.inventoryMode}
+                      {messages.common.inventoryModeLabels[row.inventoryMode as InventoryMode]}
                     </Badge>
                   </td>
                   <td className="p-3 font-mono text-xs text-muted-foreground">
-                    {row.standardOccupancy ?? "—"} / {row.maxOccupancy ?? "—"}
+                    {row.standardOccupancy ?? messages.common.none} /{" "}
+                    {row.maxOccupancy ?? messages.common.none}
                   </td>
                   <td className="p-3">
                     <Badge variant={row.active ? "default" : "outline"}>
-                      {row.active ? "Active" : "Inactive"}
+                      {row.active ? messages.common.active : messages.common.inactive}
                     </Badge>
                   </td>
                   <td className="p-3">
@@ -98,7 +108,9 @@ export function RoomTypesTab({ propertyId }: RoomTypesTabProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          if (confirm(`Delete room type "${row.name}"?`)) {
+                          if (
+                            confirm(messages.roomTypesTab.deleteConfirm.replace("{name}", row.name))
+                          ) {
                             remove.mutate(row.id)
                           }
                         }}

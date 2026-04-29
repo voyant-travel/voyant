@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { OptionUnitForm } from "./option-unit-form"
 
 export interface OptionUnitDialogProps {
@@ -30,16 +31,21 @@ export function OptionUnitDialog({
   onSuccess,
 }: OptionUnitDialogProps) {
   const isEdit = Boolean(unit)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="option-unit-dialog" className="sm:max-w-[680px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit option unit" : "New option unit"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.optionUnitDialog.titles.edit
+              : messages.optionUnitDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update unit constraints, quantity limits, and occupancy rules."
-              : "Create a selectable unit under this option."}
+              ? messages.optionUnitDialog.descriptions.edit
+              : messages.optionUnitDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <OptionUnitForm

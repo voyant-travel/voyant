@@ -25,7 +25,8 @@ import {
 } from "@voyantjs/ui/components/table"
 import { Loader2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
-
+import type { PricingCategoryType } from "../i18n/messages"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 import { PricingCategoryDialog } from "./pricing-category-dialog"
 
 export interface PricingCategoryListProps {
@@ -33,6 +34,7 @@ export interface PricingCategoryListProps {
 }
 
 export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps = {}) {
+  const messages = usePricingUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<PricingCategoryRecord | undefined>(undefined)
   const [search, setSearch] = React.useState("")
@@ -57,7 +59,7 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search pricing categories…"
+            placeholder={messages.pricingCategoryList.searchPlaceholder}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -73,7 +75,7 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
           }}
         >
           <Plus className="mr-2 size-4" />
-          New category
+          {messages.pricingCategoryList.add}
         </Button>
       </div>
 
@@ -81,14 +83,16 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Age</TableHead>
-              <TableHead>Seat</TableHead>
-              <TableHead>Sort</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[80px] text-right">Actions</TableHead>
+              <TableHead>{messages.pricingCategoryList.columns.name}</TableHead>
+              <TableHead>{messages.pricingCategoryList.columns.code}</TableHead>
+              <TableHead>{messages.pricingCategoryList.columns.type}</TableHead>
+              <TableHead>{messages.pricingCategoryList.columns.age}</TableHead>
+              <TableHead>{messages.pricingCategoryList.columns.seat}</TableHead>
+              <TableHead>{messages.pricingCategoryList.columns.sort}</TableHead>
+              <TableHead>{messages.pricingCategoryList.columns.status}</TableHead>
+              <TableHead className="w-[80px] text-right">
+                {messages.pricingCategoryList.columns.actions}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -101,13 +105,13 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center text-sm text-destructive">
-                  Failed to load pricing categories.
+                  {messages.pricingCategoryList.loadingError}
                 </TableCell>
               </TableRow>
             ) : categories.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center text-sm text-muted-foreground">
-                  No pricing categories found.
+                  {messages.pricingCategoryList.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -115,23 +119,27 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {category.code ?? "—"}
+                    {category.code ?? messages.common.none}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {category.categoryType}
+                    <Badge variant="outline">
+                      {
+                        messages.common.categoryTypeLabels[
+                          category.categoryType as PricingCategoryType
+                        ]
+                      }
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {category.isAgeQualified
                       ? `${category.minAge ?? 0}–${category.maxAge ?? "∞"}`
-                      : "—"}
+                      : messages.common.none}
                   </TableCell>
                   <TableCell className="font-mono">{category.seatOccupancy}</TableCell>
                   <TableCell className="font-mono">{category.sortOrder}</TableCell>
                   <TableCell>
                     <Badge variant={category.active ? "default" : "outline"}>
-                      {category.active ? "Active" : "Inactive"}
+                      {category.active ? messages.common.active : messages.common.inactive}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -147,19 +155,26 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
                           }}
                         >
                           <Pencil className="size-4" />
-                          Edit
+                          {messages.pricingCategoryList.edit}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
                           onClick={() => {
-                            if (confirm(`Delete category "${category.name}"?`)) {
+                            if (
+                              confirm(
+                                messages.pricingCategoryList.deleteConfirm.replace(
+                                  "{name}",
+                                  category.name,
+                                ),
+                              )
+                            ) {
                               remove.mutate(category.id)
                             }
                           }}
                         >
                           <Trash2 className="size-4" />
-                          Delete
+                          {messages.pricingCategoryList.delete}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -173,7 +188,9 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          Showing {categories.length} of {total}
+          {messages.pricingCategoryList.showingSummary
+            .replace("{count}", String(categories.length))
+            .replace("{total}", String(total))}
         </span>
         <div className="flex items-center gap-2">
           <Button
@@ -182,10 +199,10 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
             disabled={offset === 0}
             onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
           >
-            Previous
+            {messages.common.previous}
           </Button>
           <span>
-            Page {page} / {pageCount}
+            {messages.common.page} {page} / {pageCount}
           </span>
           <Button
             variant="outline"
@@ -193,7 +210,7 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
             disabled={offset + pageSize >= total}
             onClick={() => setOffset((prev) => prev + pageSize)}
           >
-            Next
+            {messages.common.next}
           </Button>
         </div>
       </div>

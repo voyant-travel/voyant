@@ -44,3 +44,26 @@ export {
   type StayRuleDialogProps,
 } from "./components/stay-rule-dialog"
 export { StayRulesTab, type StayRulesTabProps } from "./components/stay-rules-tab"
+export type {
+  ChargeFrequency,
+  GuaranteeMode,
+  HospitalityUiMessages,
+  InventoryMode,
+  MaintenanceBlockStatus,
+  RoomBlockStatus,
+  RoomUnitStatus,
+  Weekday,
+} from "./i18n"
+export {
+  getHospitalityUiI18n,
+  type HospitalityUiMessageOverrides,
+  HospitalityUiMessagesProvider,
+  hospitalityUiEn,
+  hospitalityUiMessageDefinitions,
+  hospitalityUiRo,
+  resolveHospitalityUiMessages,
+  useHospitalityUiI18n,
+  useHospitalityUiI18nOrDefault,
+  useHospitalityUiMessages,
+  useHospitalityUiMessagesOrDefault,
+} from "./i18n"

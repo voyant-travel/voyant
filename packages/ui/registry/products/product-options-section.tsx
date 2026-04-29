@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { OptionUnitDialog } from "./option-unit-dialog"
 import { ProductOptionDialog } from "./product-option-dialog"
 
@@ -53,10 +54,11 @@ export interface ProductOptionsSectionProps {
 export function ProductOptionsSection({
   productId,
   pageSize = 100,
-  title = "Options and units",
-  description = "Manage option variants and the units available under each option.",
+  title,
+  description,
   renderOptionDetails,
 }: ProductOptionsSectionProps) {
+  const messages = useRegistryProductsMessagesOrDefault()
   const [expandedOptionId, setExpandedOptionId] = React.useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingOption, setEditingOption] = React.useState<ProductOptionRecord | undefined>(
@@ -77,13 +79,15 @@ export function ProductOptionsSection({
   )
   const nextSortOrder =
     options.length > 0 ? Math.max(...options.map((option) => option.sortOrder)) + 1 : 0
+  const resolvedTitle = title ?? messages.productOptionsSection.titles.default
+  const resolvedDescription = description ?? messages.productOptionsSection.descriptions.default
 
   return (
     <Card data-slot="product-options-section">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle>{resolvedTitle}</CardTitle>
+          <CardDescription>{resolvedDescription}</CardDescription>
         </div>
         <Button
           onClick={() => {
@@ -92,7 +96,7 @@ export function ProductOptionsSection({
           }}
         >
           <Plus className="mr-2 size-4" aria-hidden="true" />
-          Add option
+          {messages.productOptionsSection.actions.addOption}
         </Button>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -101,9 +105,13 @@ export function ProductOptionsSection({
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
           </div>
         ) : isError ? (
-          <p className="text-sm text-destructive">Failed to load product options.</p>
+          <p className="text-sm text-destructive">
+            {messages.productOptionsSection.loadingError.options}
+          </p>
         ) : options.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No options configured for this product.</p>
+          <p className="text-sm text-muted-foreground">
+            {messages.productOptionsSection.empty.options}
+          </p>
         ) : (
           options.map((option) => (
             <OptionRow
@@ -133,10 +141,18 @@ export function ProductOptionsSection({
                 )
               }}
               onDelete={() => {
-                if (confirm(`Delete option "${option.name}" and all its units?`)) {
+                if (
+                  confirm(
+                    messages.productOptionsSection.deleteConfirm.option.replace(
+                      "{name}",
+                      option.name,
+                    ),
+                  )
+                ) {
                   remove.mutate(option.id)
                 }
               }}
+              messages={messages}
             >
               {renderOptionDetails?.(option)}
             </OptionRow>
@@ -166,6 +182,7 @@ function OptionRow({
   onEdit,
   onDuplicate,
   onDelete,
+  messages,
   children,
 }: React.PropsWithChildren<{
   option: ProductOptionRecord
@@ -174,6 +191,7 @@ function OptionRow({
   onEdit: () => void
   onDuplicate: () => void
   onDelete: () => void
+  messages: ReturnType<typeof useRegistryProductsMessagesOrDefault>
 }>) {
   return (
     <div className="rounded-md border">
@@ -190,19 +208,40 @@ function OptionRow({
           {option.code ? (
             <span className="font-mono text-xs text-muted-foreground">{option.code}</span>
           ) : null}
-          <Badge variant={optionStatusVariant[option.status] ?? "outline"} className="capitalize">
-            {option.status}
+          <Badge variant={optionStatusVariant[option.status] ?? "outline"}>
+            {
+              messages.common.optionStatusLabels[
+                option.status as keyof typeof messages.common.optionStatusLabels
+              ]
+            }
           </Badge>
-          {option.isDefault ? <Badge variant="secondary">Default</Badge> : null}
+          {option.isDefault ? (
+            <Badge variant="secondary">{messages.productOptionsSection.badges.defaultOption}</Badge>
+          ) : null}
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={onDuplicate}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onDuplicate}
+            aria-label={messages.productOptionsSection.actions.duplicate}
+          >
             <Copy className="size-4" aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={onEdit}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onEdit}
+            aria-label={messages.productOptionsSection.actions.edit}
+          >
             <Pencil className="size-4" aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={onDelete}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onDelete}
+            aria-label={messages.productOptionsSection.actions.delete}
+          >
             <Trash2 className="size-4" aria-hidden="true" />
           </Button>
         </div>
@@ -210,7 +249,7 @@ function OptionRow({
 
       {expanded ? (
         <div className="flex flex-col gap-4 border-t bg-muted/30 p-3">
-          <UnitsPanel optionId={option.id} />
+          <UnitsPanel optionId={option.id} messages={messages} />
           {children}
         </div>
       ) : null}
@@ -218,7 +257,13 @@ function OptionRow({
   )
 }
 
-function UnitsPanel({ optionId }: { optionId: string }) {
+function UnitsPanel({
+  optionId,
+  messages,
+}: {
+  optionId: string
+  messages: ReturnType<typeof useRegistryProductsMessagesOrDefault>
+}) {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingUnit, setEditingUnit] = React.useState<OptionUnitRecord | undefined>(undefined)
   const { data, isPending, isError } = useOptionUnits({ optionId, limit: 100 })
@@ -234,9 +279,11 @@ function UnitsPanel({ optionId }: { optionId: string }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Units</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {messages.productOptionsSection.titles.units}
+          </p>
           <p className="text-xs text-muted-foreground">
-            Configure the selectable units that belong to this option.
+            {messages.productOptionsSection.descriptions.units}
           </p>
         </div>
         <Button
@@ -248,7 +295,7 @@ function UnitsPanel({ optionId }: { optionId: string }) {
           }}
         >
           <Plus className="mr-2 size-3.5" aria-hidden="true" />
-          Add unit
+          {messages.productOptionsSection.actions.addUnit}
         </Button>
       </div>
 
@@ -257,30 +304,34 @@ function UnitsPanel({ optionId }: { optionId: string }) {
           <Loader2 className="size-4 animate-spin text-muted-foreground" />
         </div>
       ) : isError ? (
-        <p className="text-sm text-destructive">Failed to load option units.</p>
+        <p className="text-sm text-destructive">
+          {messages.productOptionsSection.loadingError.units}
+        </p>
       ) : units.length === 0 ? (
         <p className="rounded-md border bg-background px-3 py-4 text-sm text-muted-foreground">
-          No units configured for this option.
+          {messages.productOptionsSection.empty.units}
         </p>
       ) : (
         <div className="rounded-md border bg-background">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Occupancy</TableHead>
-                <TableHead className="w-[88px] text-right">Actions</TableHead>
+                <TableHead>{messages.productOptionsSection.columns.unitType}</TableHead>
+                <TableHead>{messages.productOptionsSection.columns.unitName}</TableHead>
+                <TableHead>{messages.productOptionsSection.columns.quantity}</TableHead>
+                <TableHead>{messages.productOptionsSection.columns.age}</TableHead>
+                <TableHead>{messages.productOptionsSection.columns.occupancy}</TableHead>
+                <TableHead className="w-[88px] text-right">
+                  {messages.productOptionsSection.columns.actions}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {units.map((unit) => (
                 <TableRow key={unit.id}>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {unit.unitType}
+                    <Badge variant="outline">
+                      {messages.common.optionUnitTypeLabels[unit.unitType]}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -314,7 +365,14 @@ function UnitsPanel({ optionId }: { optionId: string }) {
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => {
-                          if (confirm(`Delete unit "${unit.name}"?`)) {
+                          if (
+                            confirm(
+                              messages.productOptionsSection.deleteConfirm.unit.replace(
+                                "{name}",
+                                unit.name,
+                              ),
+                            )
+                          ) {
                             remove.mutate(unit.id)
                           }
                         }}

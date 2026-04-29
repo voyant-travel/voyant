@@ -3,9 +3,12 @@ import type {
   StageRecord as StageData,
 } from "@voyantjs/crm-react"
 import { TrendingUp } from "lucide-react"
+
 import { Card } from "@/components/ui"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { formatDate, formatMoney } from "@/components/voyant/crm/crm-constants"
+
+import { useRegistryCrmI18nOrDefault, useRegistryCrmMessagesOrDefault } from "./i18n"
+import { formatRegistryCrmDate, formatRegistryCrmMoney } from "./i18n/utils"
 
 export function OpportunitiesBoard({
   stages,
@@ -14,6 +17,9 @@ export function OpportunitiesBoard({
   stages: StageData[]
   opportunitiesByStage: Map<string, OpportunityData[]>
 }) {
+  const i18n = useRegistryCrmI18nOrDefault()
+  const m = useRegistryCrmMessagesOrDefault()
+
   return (
     <ScrollArea className="flex-1">
       <div className="flex gap-3 pb-2">
@@ -32,14 +38,17 @@ export function OpportunitiesBoard({
             >
               <div className="flex items-center justify-between gap-2 px-2 py-1">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{stage.name}</p>
+                  <p className="truncate text-sm font-medium">
+                    {stage.name || m.opportunitiesBoard.fallbackName}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {opportunities.length} · {formatMoney(total, primaryCurrency)}
+                    {i18n.formatNumber(opportunities.length)} -{" "}
+                    {formatRegistryCrmMoney(i18n, total, primaryCurrency)}
                   </p>
                 </div>
                 {stage.probability != null ? (
                   <span className="rounded border px-1.5 py-0.5 text-[10px]">
-                    {stage.probability}%
+                    {i18n.formatNumber(stage.probability)}%
                   </span>
                 ) : null}
               </div>
@@ -50,11 +59,15 @@ export function OpportunitiesBoard({
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <TrendingUp className="h-3 w-3" />
-                        {formatMoney(opportunity.valueAmountCents, opportunity.valueCurrency)}
+                        {formatRegistryCrmMoney(
+                          i18n,
+                          opportunity.valueAmountCents,
+                          opportunity.valueCurrency,
+                        )}
                       </span>
                       {opportunity.expectedCloseDate ? (
                         <span className="text-xs text-muted-foreground">
-                          {formatDate(opportunity.expectedCloseDate)}
+                          {formatRegistryCrmDate(i18n, opportunity.expectedCloseDate)}
                         </span>
                       ) : null}
                     </div>

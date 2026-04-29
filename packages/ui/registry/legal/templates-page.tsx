@@ -1,5 +1,6 @@
 import { type QueryClient, useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   defaultFetcher,
   getLegalContractTemplatesQueryOptions,
@@ -21,6 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui"
+
+import { useRegistryLegalI18nOrDefault, useRegistryLegalMessagesOrDefault } from "./i18n/provider"
+import { formatRegistryLegalDate } from "./i18n/utils"
 import { TemplateDialog } from "./template-dialog"
 import { TemplateVersionDialog } from "./template-version-dialog"
 
@@ -38,6 +42,7 @@ export function loadTemplatesPage(ensureQueryData: EnsureQueryData) {
 
 export function TemplatesPage() {
   const navigate = useNavigate()
+  const m = useRegistryLegalMessagesOrDefault()
   const [search, setSearch] = useState("")
   const [scope, setScope] = useState<string>("all")
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -52,8 +57,11 @@ export function TemplatesPage() {
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
       return next
     })
   }
@@ -62,10 +70,8 @@ export function TemplatesPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Contract Templates</h1>
-          <p className="text-sm text-muted-foreground">
-            Reusable contract templates with Liquid variables and version history.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{m.templatesPage.title}</h1>
+          <p className="text-sm text-muted-foreground">{m.templatesPage.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -74,7 +80,7 @@ export function TemplatesPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          New Template
+          {m.templatesPage.create}
         </Button>
       </div>
 
@@ -82,7 +88,7 @@ export function TemplatesPage() {
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search templates..."
+            placeholder={m.templatesPage.searchPlaceholder}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="pl-9"
@@ -90,13 +96,13 @@ export function TemplatesPage() {
         </div>
         <Select value={scope} onValueChange={(value) => setScope(value ?? "all")}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Scope" />
+            <SelectValue placeholder={m.contractsPage.filters.scope} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All scopes</SelectItem>
+            <SelectItem value="all">{m.templatesPage.allScopes}</SelectItem>
             {SCOPES.map((item) => (
-              <SelectItem key={item} value={item} className="capitalize">
-                {item}
+              <SelectItem key={item} value={item}>
+                {m.common.contractScopeLabels[item]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -111,9 +117,7 @@ export function TemplatesPage() {
 
       {!isPending && (!data?.data || data.data.length === 0) ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No templates yet. Create one to start building contract templates.
-          </p>
+          <p className="text-sm text-muted-foreground">{m.templatesPage.empty}</p>
         </div>
       ) : null}
 
@@ -133,7 +137,13 @@ export function TemplatesPage() {
                 setDialogOpen(true)
               }}
               onDelete={() => {
-                if (confirm(`Delete template "${template.name}"?`)) {
+                if (
+                  confirm(
+                    formatMessage(m.templatesPage.confirms.deleteTemplate, {
+                      name: template.name,
+                    }),
+                  )
+                ) {
                   remove.mutate(template.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -189,6 +199,8 @@ function TemplateRow({
   onDelete: () => void
   onAddVersion: () => void
 }) {
+  const i18n = useRegistryLegalI18nOrDefault()
+  const m = useRegistryLegalMessagesOrDefault()
   const { data: versions } = useQuery({
     ...getLegalContractTemplateVersionsQueryOptions(
       { baseUrl: "", fetcher: defaultFetcher },
@@ -217,11 +229,9 @@ function TemplateRow({
               {template.name}
             </button>
             <span className="font-mono text-xs text-muted-foreground">{template.slug}</span>
-            <Badge variant="outline" className="capitalize">
-              {template.scope}
-            </Badge>
+            <Badge variant="outline">{m.common.contractScopeLabels[template.scope]}</Badge>
             <Badge variant={template.active ? "default" : "secondary"}>
-              {template.active ? "Active" : "Inactive"}
+              {template.active ? m.common.active : m.common.inactive}
             </Badge>
           </div>
           {template.description ? (
@@ -230,7 +240,7 @@ function TemplateRow({
         </div>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={onOpen}>
-            Open
+            {m.common.open}
           </Button>
           <Button variant="ghost" size="sm" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" />
@@ -245,34 +255,42 @@ function TemplateRow({
         <div className="border-t bg-muted/30 p-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Versions
+              {m.templatesPage.versions}
             </p>
             <Button variant="outline" size="sm" onClick={onAddVersion}>
               <Plus className="mr-1 h-3 w-3" />
-              Add Version
+              {m.common.addVersion}
             </Button>
           </div>
 
           {!versions || versions.length === 0 ? (
-            <p className="py-2 text-center text-xs text-muted-foreground">No versions yet.</p>
+            <p className="py-2 text-center text-xs text-muted-foreground">
+              {m.templatesPage.noVersions}
+            </p>
           ) : (
             <div className="rounded border bg-background">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="p-2 text-left font-medium">Version</th>
-                    <th className="p-2 text-left font-medium">Changelog</th>
-                    <th className="p-2 text-left font-medium">Created By</th>
-                    <th className="p-2 text-left font-medium">Created At</th>
+                    <th className="p-2 text-left font-medium">{m.templatesPage.columns.version}</th>
+                    <th className="p-2 text-left font-medium">
+                      {m.templatesPage.columns.changelog}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.templatesPage.columns.createdBy}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.templatesPage.columns.createdAt}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {versions.map((version) => (
                     <tr key={version.id} className="border-b last:border-b-0">
                       <td className="p-2 font-mono">v{version.version}</td>
-                      <td className="p-2">{version.changelog ?? "-"}</td>
-                      <td className="p-2">{version.createdBy ?? "-"}</td>
-                      <td className="p-2">{new Date(version.createdAt).toLocaleDateString()}</td>
+                      <td className="p-2">{version.changelog ?? m.common.noResultsDash}</td>
+                      <td className="p-2">{version.createdBy ?? m.common.noResultsDash}</td>
+                      <td className="p-2">{formatRegistryLegalDate(i18n, version.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>

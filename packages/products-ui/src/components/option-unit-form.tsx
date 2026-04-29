@@ -20,6 +20,8 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
+
 type Mode =
   | { kind: "create"; optionId: string; sortOrder?: number }
   | { kind: "edit"; unit: OptionUnitRecord }
@@ -47,12 +49,12 @@ interface FormState {
 }
 
 const UNIT_TYPES = [
-  { value: "person", label: "Person" },
-  { value: "group", label: "Group" },
-  { value: "room", label: "Room" },
-  { value: "vehicle", label: "Vehicle" },
-  { value: "service", label: "Service" },
-  { value: "other", label: "Other" },
+  { value: "person" },
+  { value: "group" },
+  { value: "room" },
+  { value: "vehicle" },
+  { value: "service" },
+  { value: "other" },
 ] as const
 
 function initialState(mode: Mode): FormState {
@@ -125,6 +127,7 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useOptionUnitMutation()
+  const messages = useProductsUiMessagesOrDefault()
 
   React.useEffect(() => {
     setState(initialState(mode))
@@ -144,7 +147,7 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
     setError(null)
 
     if (!state.name.trim()) {
-      setError("Unit name is required.")
+      setError(messages.optionUnitForm.validation.nameRequired)
       return
     }
 
@@ -155,7 +158,7 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
           : await update.mutateAsync({ id: mode.unit.id, input: toPayload(state) })
       onSuccess?.(unit)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save option unit.")
+      setError(err instanceof Error ? err.message : messages.optionUnitForm.validation.saveFailed)
     }
   }
 
@@ -167,32 +170,35 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
     <form data-slot="option-unit-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="option-unit-name">Name</Label>
+          <Label htmlFor="option-unit-name">{messages.optionUnitForm.fields.name}</Label>
           <Input
             id="option-unit-name"
             required
             autoFocus
             value={state.name}
             onChange={(event) => field("name")(event.target.value)}
-            placeholder="Adult"
+            placeholder={messages.optionUnitForm.placeholders.name}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="option-unit-code">Code</Label>
+          <Label htmlFor="option-unit-code">{messages.optionUnitForm.fields.code}</Label>
           <Input
             id="option-unit-code"
             value={state.code}
             onChange={(event) => field("code")(event.target.value)}
-            placeholder="adult"
+            placeholder={messages.optionUnitForm.placeholders.code}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label>Unit type</Label>
+          <Label>{messages.optionUnitForm.fields.unitType}</Label>
           <Select
-            items={UNIT_TYPES}
+            items={UNIT_TYPES.map((type) => ({
+              label: messages.common.optionUnitTypeLabels[type.value],
+              value: type.value,
+            }))}
             value={state.unitType}
             onValueChange={(value) => value && field("unitType")(value)}
           >
@@ -202,14 +208,14 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
             <SelectContent>
               {UNIT_TYPES.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
-                  {type.label}
+                  {messages.common.optionUnitTypeLabels[type.value]}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="option-unit-sort-order">Sort order</Label>
+          <Label htmlFor="option-unit-sort-order">{messages.optionUnitForm.fields.sortOrder}</Label>
           <Input
             id="option-unit-sort-order"
             type="number"
@@ -221,7 +227,9 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="option-unit-min-quantity">Min quantity</Label>
+          <Label htmlFor="option-unit-min-quantity">
+            {messages.optionUnitForm.fields.minQuantity}
+          </Label>
           <Input
             id="option-unit-min-quantity"
             type="number"
@@ -231,7 +239,9 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="option-unit-max-quantity">Max quantity</Label>
+          <Label htmlFor="option-unit-max-quantity">
+            {messages.optionUnitForm.fields.maxQuantity}
+          </Label>
           <Input
             id="option-unit-max-quantity"
             type="number"
@@ -245,7 +255,7 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
       {showAgeRange ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="option-unit-min-age">Min age</Label>
+            <Label htmlFor="option-unit-min-age">{messages.optionUnitForm.fields.minAge}</Label>
             <Input
               id="option-unit-min-age"
               type="number"
@@ -255,7 +265,7 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="option-unit-max-age">Max age</Label>
+            <Label htmlFor="option-unit-max-age">{messages.optionUnitForm.fields.maxAge}</Label>
             <Input
               id="option-unit-max-age"
               type="number"
@@ -270,7 +280,9 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
       {showOccupancy ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="option-unit-occupancy-min">Occupancy min</Label>
+            <Label htmlFor="option-unit-occupancy-min">
+              {messages.optionUnitForm.fields.occupancyMin}
+            </Label>
             <Input
               id="option-unit-occupancy-min"
               type="number"
@@ -280,7 +292,9 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="option-unit-occupancy-max">Occupancy max</Label>
+            <Label htmlFor="option-unit-occupancy-max">
+              {messages.optionUnitForm.fields.occupancyMax}
+            </Label>
             <Input
               id="option-unit-occupancy-max"
               type="number"
@@ -293,12 +307,14 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
       ) : null}
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="option-unit-description">Description</Label>
+        <Label htmlFor="option-unit-description">
+          {messages.optionUnitForm.fields.description}
+        </Label>
         <Textarea
           id="option-unit-description"
           value={state.description}
           onChange={(event) => field("description")(event.target.value)}
-          placeholder="Optional unit description"
+          placeholder={messages.optionUnitForm.placeholders.description}
         />
       </div>
 
@@ -308,14 +324,14 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
             checked={state.isRequired}
             onCheckedChange={(checked) => field("isRequired")(checked)}
           />
-          <Label>Required</Label>
+          <Label>{messages.optionUnitForm.fields.required}</Label>
         </div>
         <div className="flex items-center gap-2">
           <Switch
             checked={state.isHidden}
             onCheckedChange={(checked) => field("isHidden")(checked)}
           />
-          <Label>Hidden</Label>
+          <Label>{messages.optionUnitForm.fields.hidden}</Label>
         </div>
       </div>
 
@@ -324,14 +340,16 @@ export function OptionUnitForm({ mode, onSuccess, onCancel }: OptionUnitFormProp
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "create" ? "Create unit" : "Save changes"}
+          {mode.kind === "create"
+            ? messages.optionUnitForm.actions.createUnit
+            : messages.common.saveChanges}
         </Button>
       </div>
     </form>

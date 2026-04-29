@@ -30,6 +30,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import { useIdentityUiMessagesOrDefault } from "../i18n"
+
 const CONTACT_POINT_KINDS = [
   "email",
   "phone",
@@ -44,16 +46,19 @@ const CONTACT_POINT_KINDS = [
 
 type ContactPointKind = (typeof CONTACT_POINT_KINDS)[number]
 
-const formSchema = z.object({
-  kind: z.enum(CONTACT_POINT_KINDS),
-  label: z.string().optional().nullable(),
-  value: z.string().min(1, "Value is required").max(500),
-  isPrimary: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
+function createFormSchema(messages: ReturnType<typeof useIdentityUiMessagesOrDefault>) {
+  return z.object({
+    kind: z.enum(CONTACT_POINT_KINDS),
+    label: z.string().optional().nullable(),
+    value: z.string().min(1, messages.contactPointDialog.validation.valueRequired).max(500),
+    isPrimary: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface ContactPointDialogProps {
   open: boolean
@@ -74,6 +79,8 @@ export function ContactPointDialog({
 }: ContactPointDialogProps) {
   const isEditing = Boolean(contactPoint)
   const { create, update } = useContactPointMutation()
+  const messages = useIdentityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues: { kind: "email", label: "", value: "", isPrimary: false, notes: "" },
@@ -120,16 +127,20 @@ export function ContactPointDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Contact Point" : "Add Contact Point"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.contactPointDialog.titles.edit
+              : messages.contactPointDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Kind</Label>
+                <Label>{messages.contactPointDialog.fields.kind}</Label>
                 <Select
                   items={CONTACT_POINT_KINDS.map((x) => ({
-                    label: x.replace(/_/g, " "),
+                    label: messages.common.contactPointKindLabels[x],
                     value: x,
                   }))}
                   value={form.watch("kind")}
@@ -140,22 +151,28 @@ export function ContactPointDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {CONTACT_POINT_KINDS.map((kind) => (
-                      <SelectItem key={kind} value={kind} className="capitalize">
-                        {kind}
+                      <SelectItem key={kind} value={kind}>
+                        {messages.common.contactPointKindLabels[kind]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Label</Label>
-                <Input {...form.register("label")} placeholder="work, personal..." />
+                <Label>{messages.contactPointDialog.fields.label}</Label>
+                <Input
+                  {...form.register("label")}
+                  placeholder={messages.contactPointDialog.placeholders.label}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Value</Label>
-              <Input {...form.register("value")} placeholder="name@example.com" />
+              <Label>{messages.contactPointDialog.fields.value}</Label>
+              <Input
+                {...form.register("value")}
+                placeholder={messages.contactPointDialog.placeholders.value}
+              />
               {form.formState.errors.value ? (
                 <p className="text-xs text-destructive">{form.formState.errors.value.message}</p>
               ) : null}
@@ -166,21 +183,21 @@ export function ContactPointDialog({
                 checked={form.watch("isPrimary")}
                 onCheckedChange={(value) => form.setValue("isPrimary", value)}
               />
-              <Label>Primary</Label>
+              <Label>{messages.common.primary}</Label>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.contactPointDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Contact Point"}
+              {isEditing ? messages.common.saveChanges : messages.contactPointDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

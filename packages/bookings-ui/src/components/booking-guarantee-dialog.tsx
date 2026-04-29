@@ -25,6 +25,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 const guaranteeTypes = [
   "deposit",
@@ -45,20 +46,23 @@ const guaranteeStatuses = [
   "cancelled",
   "expired",
 ] as const
+const DEFAULT_CURRENCY = "EUR" // i18n-literal-ok ISO default currency
 
-const guaranteeFormSchema = z.object({
-  guaranteeType: z.enum(guaranteeTypes),
-  status: z.enum(guaranteeStatuses).default("pending"),
-  currency: z.string().min(3).max(3).optional().nullable(),
-  amountCents: z.coerce.number().int().min(0).optional().nullable(),
-  provider: z.string().optional().nullable(),
-  referenceNumber: z.string().optional().nullable(),
-  expiresAt: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-})
+function createGuaranteeFormSchema() {
+  return z.object({
+    guaranteeType: z.enum(guaranteeTypes),
+    status: z.enum(guaranteeStatuses).default("pending"),
+    currency: z.string().min(3).max(3).optional().nullable(),
+    amountCents: z.coerce.number().int().min(0).optional().nullable(),
+    provider: z.string().optional().nullable(),
+    referenceNumber: z.string().optional().nullable(),
+    expiresAt: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type GuaranteeFormValues = z.input<typeof guaranteeFormSchema>
-type GuaranteeFormOutput = z.output<typeof guaranteeFormSchema>
+type GuaranteeFormValues = z.input<ReturnType<typeof createGuaranteeFormSchema>>
+type GuaranteeFormOutput = z.output<ReturnType<typeof createGuaranteeFormSchema>>
 
 export interface BookingGuaranteeDialogProps {
   open: boolean
@@ -77,13 +81,15 @@ export function BookingGuaranteeDialog({
 }: BookingGuaranteeDialogProps) {
   const isEditing = Boolean(guarantee)
   const { create, update } = useBookingGuaranteeMutation(bookingId)
+  const messages = useBookingsUiMessagesOrDefault()
+  const guaranteeFormSchema = createGuaranteeFormSchema()
 
   const form = useForm<GuaranteeFormValues, unknown, GuaranteeFormOutput>({
     resolver: zodResolver(guaranteeFormSchema),
     defaultValues: {
       guaranteeType: "deposit",
       status: "pending",
-      currency: "EUR",
+      currency: DEFAULT_CURRENCY,
       amountCents: null,
       provider: "",
       referenceNumber: "",
@@ -137,7 +143,11 @@ export function BookingGuaranteeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Guarantee" : "Add Guarantee"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.bookingGuaranteeDialog.titles.edit
+              : messages.bookingGuaranteeDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -146,9 +156,12 @@ export function BookingGuaranteeDialog({
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Type</Label>
+                <Label>{messages.bookingGuaranteeDialog.fields.type}</Label>
                 <Select
-                  items={guaranteeTypes.map((t) => ({ label: t.replace(/_/g, " "), value: t }))}
+                  items={guaranteeTypes.map((t) => ({
+                    label: messages.bookingGuaranteeDialog.guaranteeTypeLabels[t],
+                    value: t,
+                  }))}
                   value={form.watch("guaranteeType")}
                   onValueChange={(v) =>
                     form.setValue(
@@ -163,16 +176,19 @@ export function BookingGuaranteeDialog({
                   <SelectContent>
                     {guaranteeTypes.map((t) => (
                       <SelectItem key={t} value={t}>
-                        {t.replace(/_/g, " ")}
+                        {messages.bookingGuaranteeDialog.guaranteeTypeLabels[t]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{messages.bookingGuaranteeDialog.fields.status}</Label>
                 <Select
-                  items={guaranteeStatuses.map((s) => ({ label: s.replace(/_/g, " "), value: s }))}
+                  items={guaranteeStatuses.map((s) => ({
+                    label: messages.bookingGuaranteeDialog.guaranteeStatusLabels[s],
+                    value: s,
+                  }))}
                   value={form.watch("status")}
                   onValueChange={(v) =>
                     form.setValue("status", (v ?? "pending") as (typeof guaranteeStatuses)[number])
@@ -184,7 +200,7 @@ export function BookingGuaranteeDialog({
                   <SelectContent>
                     {guaranteeStatuses.map((s) => (
                       <SelectItem key={s} value={s}>
-                        {s.replace(/_/g, " ")}
+                        {messages.bookingGuaranteeDialog.guaranteeStatusLabels[s]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -194,11 +210,11 @@ export function BookingGuaranteeDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Currency</Label>
+                <Label>{messages.bookingGuaranteeDialog.fields.currency}</Label>
                 <CurrencyCombobox
                   value={form.watch("currency") || null}
                   onChange={(next) =>
-                    form.setValue("currency", next ?? "EUR", {
+                    form.setValue("currency", next ?? DEFAULT_CURRENCY, {
                       shouldValidate: true,
                       shouldDirty: true,
                     })
@@ -206,24 +222,30 @@ export function BookingGuaranteeDialog({
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Amount (cents)</Label>
+                <Label>{messages.bookingGuaranteeDialog.fields.amountCents}</Label>
                 <Input {...form.register("amountCents")} type="number" min={0} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Provider</Label>
-                <Input {...form.register("provider")} placeholder="Stripe, bank name..." />
+                <Label>{messages.bookingGuaranteeDialog.fields.provider}</Label>
+                <Input
+                  {...form.register("provider")}
+                  placeholder={messages.bookingGuaranteeDialog.placeholders.provider}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Reference Number</Label>
-                <Input {...form.register("referenceNumber")} placeholder="External reference..." />
+                <Label>{messages.bookingGuaranteeDialog.fields.referenceNumber}</Label>
+                <Input
+                  {...form.register("referenceNumber")}
+                  placeholder={messages.bookingGuaranteeDialog.placeholders.referenceNumber}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Expires At</Label>
+              <Label>{messages.bookingGuaranteeDialog.fields.expiresAt}</Label>
               <DateTimePicker
                 value={form.watch("expiresAt") || null}
                 onChange={(next) =>
@@ -232,23 +254,28 @@ export function BookingGuaranteeDialog({
                     shouldDirty: true,
                   })
                 }
-                placeholder="Select expiry date & time"
+                placeholder={messages.bookingGuaranteeDialog.placeholders.expiresAt}
                 className="w-full"
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
-              <Textarea {...form.register("notes")} placeholder="Guarantee notes..." />
+              <Label>{messages.bookingGuaranteeDialog.fields.notes}</Label>
+              <Textarea
+                {...form.register("notes")}
+                placeholder={messages.bookingGuaranteeDialog.placeholders.notes}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" size="sm" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Guarantee"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.bookingGuaranteeDialog.actions.addGuarantee}
             </Button>
           </DialogFooter>
         </form>

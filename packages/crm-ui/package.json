@@ -11,6 +11,9 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/en": "./src/i18n/en.ts",
+    "./i18n/ro": "./src/i18n/ro.ts",
     "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
@@ -30,6 +33,7 @@
   },
   "devDependencies": {
     "@voyantjs/crm-react": "workspace:*",
+    "@voyantjs/i18n": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "@tanstack/react-query": "^5.96.2",
@@ -42,6 +46,7 @@
     "vitest": "^4.1.2"
   },
   "dependencies": {
+    "@voyantjs/i18n": "workspace:*",
     "@voyantjs/utils": "workspace:*"
   },
   "files": [
@@ -53,6 +58,18 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js"
+      },
+      "./i18n/en": {
+        "types": "./dist/i18n/en.d.ts",
+        "import": "./dist/i18n/en.js"
+      },
+      "./i18n/ro": {
+        "types": "./dist/i18n/ro.d.ts",
+        "import": "./dist/i18n/ro.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",

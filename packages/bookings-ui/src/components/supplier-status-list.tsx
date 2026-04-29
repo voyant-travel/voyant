@@ -5,6 +5,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { Pencil, Plus } from "lucide-react"
 import * as React from "react"
 
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
 import { SupplierStatusDialog } from "./supplier-status-dialog"
 
 export interface SupplierStatusListProps {
@@ -22,13 +23,15 @@ export function SupplierStatusList({ bookingId }: SupplierStatusListProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<BookingSupplierStatusRecord | undefined>(undefined)
   const { data } = useSupplierStatuses(bookingId)
+  const { formatCurrency, formatDate } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
 
   const statuses = data?.data ?? []
 
   return (
     <Card data-slot="supplier-status-list">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Supplier Confirmations</CardTitle>
+        <CardTitle>{messages.supplierStatusList.title}</CardTitle>
         <Button
           size="sm"
           onClick={() => {
@@ -37,24 +40,34 @@ export function SupplierStatusList({ bookingId }: SupplierStatusListProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Supplier
+          {messages.supplierStatusList.addSupplier}
         </Button>
       </CardHeader>
       <CardContent>
         {statuses.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            No supplier statuses yet.
+            {messages.supplierStatusList.empty}
           </p>
         ) : (
           <div className="rounded border bg-background">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="p-2 text-left font-medium">Service</th>
-                  <th className="p-2 text-left font-medium">Status</th>
-                  <th className="p-2 text-left font-medium">Cost</th>
-                  <th className="p-2 text-left font-medium">Reference</th>
-                  <th className="p-2 text-left font-medium">Confirmed</th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.supplierStatusList.columns.service}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.supplierStatusList.columns.status}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.supplierStatusList.columns.cost}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.supplierStatusList.columns.reference}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.supplierStatusList.columns.confirmed}
+                  </th>
                   <th className="w-12 p-2" />
                 </tr>
               </thead>
@@ -63,19 +76,23 @@ export function SupplierStatusList({ bookingId }: SupplierStatusListProps) {
                   <tr key={status.id} className="border-b last:border-b-0">
                     <td className="p-2">{status.serviceName}</td>
                     <td className="p-2">
-                      <Badge
-                        variant={supplierStatusVariant[status.status] ?? "secondary"}
-                        className="capitalize text-xs"
-                      >
-                        {status.status}
+                      <Badge variant={supplierStatusVariant[status.status] ?? "secondary"}>
+                        {messages.common.supplierStatusLabels[status.status]}
                       </Badge>
                     </td>
                     <td className="p-2 font-mono">
-                      {(status.costAmountCents / 100).toFixed(2)} {status.costCurrency}
+                      {status.costAmountCents == null || !status.costCurrency
+                        ? messages.supplierStatusList.values.costUnavailable
+                        : formatCurrency(status.costAmountCents / 100, status.costCurrency)}
                     </td>
-                    <td className="p-2">{status.supplierReference ?? "-"}</td>
                     <td className="p-2">
-                      {status.confirmedAt ? new Date(status.confirmedAt).toLocaleDateString() : "-"}
+                      {status.supplierReference ??
+                        messages.supplierStatusList.values.referenceUnavailable}
+                    </td>
+                    <td className="p-2">
+                      {status.confirmedAt
+                        ? formatDate(status.confirmedAt)
+                        : messages.supplierStatusList.values.confirmedUnavailable}
                     </td>
                     <td className="p-2">
                       <button

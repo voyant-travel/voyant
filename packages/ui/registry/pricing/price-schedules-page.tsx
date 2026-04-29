@@ -6,18 +6,23 @@ import {
   usePriceScheduleMutation,
   usePriceSchedules,
 } from "@voyantjs/pricing-react"
+import { usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { Badge, Button, Input } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
 import { PriceScheduleDialog } from "./price-schedule-dialog"
 import { PriceCatalogLabel } from "./pricing-shared-labels"
 
 const PAGE_SIZE = 25
 
 export function PriceSchedulesPage() {
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const pageMessages = registryMessages.priceSchedulesPage
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<PriceScheduleRecord | undefined>()
   const [search, setSearch] = React.useState("")
@@ -34,16 +39,16 @@ export function PriceSchedulesPage() {
     () => [
       {
         accessorKey: "name",
-        header: "Name",
+        header: pageMessages.columns.name,
       },
       {
         accessorKey: "priceCatalogId",
-        header: "Catalog",
+        header: pageMessages.columns.catalog,
         cell: ({ row }) => <PriceCatalogLabel id={row.original.priceCatalogId} />,
       },
       {
         accessorKey: "code",
-        header: "Code",
+        header: pageMessages.columns.code,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.code ?? "-"}
@@ -52,24 +57,25 @@ export function PriceSchedulesPage() {
       },
       {
         accessorKey: "validity",
-        header: "Valid",
+        header: pageMessages.columns.valid,
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
-            {row.original.validFrom ?? "—"} → {row.original.validTo ?? "∞"}
+            {row.original.validFrom ?? "—"} {pageMessages.labels.validitySeparator}{" "}
+            {row.original.validTo ?? pageMessages.labels.infinity}
           </span>
         ),
       },
       {
         accessorKey: "priority",
-        header: "Priority",
+        header: pageMessages.columns.priority,
         cell: ({ row }) => <span className="font-mono">{row.original.priority}</span>,
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: pageMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? sharedMessages.common.active : sharedMessages.common.inactive}
           </Badge>
         ),
       },
@@ -91,7 +97,7 @@ export function PriceSchedulesPage() {
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete schedule "${row.original.name}"?`)) {
+                if (confirm(pageMessages.labels.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -103,23 +109,21 @@ export function PriceSchedulesPage() {
         ),
       },
     ],
-    [refetch, remove],
+    [pageMessages, refetch, remove, sharedMessages.common.active, sharedMessages.common.inactive],
   )
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">Price Schedules</h2>
-        <p className="text-sm text-muted-foreground">
-          RRULE-based seasonal windows that modulate a price catalog.
-        </p>
+        <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>
+        <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search price schedules…"
+            placeholder={pageMessages.searchPlaceholder}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -135,14 +139,14 @@ export function PriceSchedulesPage() {
           }}
         >
           <Plus className="mr-2 size-4" />
-          New schedule
+          {pageMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading price schedules..." : "No price schedules found."}
+        emptyMessage={isPending ? pageMessages.emptyLoading : pageMessages.empty}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

@@ -17,6 +17,12 @@ import {
 } from "lucide-react"
 import * as React from "react"
 
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../i18n/provider"
+
 export interface BookingActivityTimelineProps {
   bookingId: string
 }
@@ -52,12 +58,6 @@ const activityIcons: Record<string, LucideIcon> = {
   note_added: Pencil,
 }
 
-const sourceLabel: Record<TimelineSource, string> = {
-  activity: "Activity",
-  document: "Document",
-  payment: "Payment",
-}
-
 const sourceVariant: Record<TimelineSource, "default" | "secondary" | "outline"> = {
   activity: "outline",
   document: "secondary",
@@ -71,6 +71,14 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
   const { data: activityData } = useBookingActivity(bookingId)
   const { data: documentsData } = useBookingTravelerDocuments(bookingId)
   const { data: paymentsData } = usePublicBookingPayments(bookingId)
+  const { formatNumber } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
+
+  const sourceLabel: Record<TimelineSource, string> = {
+    activity: messages.bookingActivityTimeline.sourceLabels.activity,
+    document: messages.bookingActivityTimeline.sourceLabels.document,
+    payment: messages.bookingActivityTimeline.sourceLabels.payment,
+  }
 
   const events = React.useMemo<TimelineEvent[]>(() => {
     const merged: TimelineEvent[] = []
@@ -79,7 +87,9 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
       merged.push({
         id: `activity:${entry.id}`,
         source: "activity",
-        title: entry.description,
+        title:
+          messages.bookingActivityTimeline.activityTitles[entry.activityType] ?? entry.description,
+        description: entry.description,
         actorId: entry.actorId,
         timestamp: entry.createdAt,
         icon: activityIcons[entry.activityType] ?? Activity,
@@ -90,20 +100,35 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
       merged.push({
         id: `document:${doc.id}`,
         source: "document",
-        title: `${doc.type.replace(/_/g, " ")} uploaded`,
+        title: `${doc.type.replace(/_/g, " ")} ${messages.bookingActivityTimeline.documentUploadedSuffix}`,
         description: doc.fileName,
         timestamp: doc.createdAt,
         icon: FileText,
-        link: { href: doc.fileUrl, label: "View file" },
+        link: { href: doc.fileUrl, label: messages.bookingActivityTimeline.viewFile },
       })
     }
 
     for (const payment of paymentsData?.data?.payments ?? []) {
+      const status =
+        messages.bookingPaymentsSummary.paymentStatusLabels[
+          payment.status as keyof typeof messages.bookingPaymentsSummary.paymentStatusLabels
+        ] ?? payment.status
+      const amount = `${formatNumber(payment.amountCents / 100, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} ${payment.currency}`
+      const method =
+        messages.bookingPaymentsSummary.paymentMethodLabels[
+          payment.paymentMethod as keyof typeof messages.bookingPaymentsSummary.paymentMethodLabels
+        ] ?? payment.paymentMethod
       merged.push({
         id: `payment:${payment.id}`,
         source: "payment",
-        title: `Payment ${payment.status} — ${(payment.amountCents / 100).toFixed(2)} ${payment.currency}`,
-        description: `Invoice ${payment.invoiceNumber} · ${payment.paymentMethod.replace(/_/g, " ")}`,
+        title: formatMessage(messages.bookingActivityTimeline.paymentTitle, { status, amount }),
+        description: formatMessage(messages.bookingActivityTimeline.paymentDescription, {
+          invoice: payment.invoiceNumber,
+          method,
+        }),
         timestamp: payment.paymentDate,
         icon: CreditCard,
       })
@@ -111,7 +136,7 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
 
     merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     return merged
-  }, [activityData, documentsData, paymentsData])
+  }, [activityData, documentsData, formatNumber, messages, paymentsData])
 
   const visible = filter === "all" ? events : events.filter((e) => e.source === filter)
 
@@ -122,7 +147,7 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-4 w-4" />
-          Activity Timeline
+          {messages.bookingActivityTimeline.title}
         </CardTitle>
         <div className="flex items-center gap-1">
           {filterChips.map((chip) => (
@@ -133,18 +158,20 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
               className="h-7 capitalize"
               onClick={() => setFilter(chip)}
             >
-              {chip === "all" ? "All" : sourceLabel[chip]}
+              {chip === "all" ? messages.bookingActivityTimeline.filters.all : sourceLabel[chip]}
             </Button>
           ))}
         </div>
       </CardHeader>
       <CardContent>
         {visible.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">No events yet.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {messages.bookingActivityTimeline.empty}
+          </p>
         ) : (
           <div className="flex flex-col gap-3">
             {visible.map((event) => (
-              <TimelineEventItem key={event.id} event={event} />
+              <TimelineEventItem key={event.id} event={event} sourceLabel={sourceLabel} />
             ))}
           </div>
         )}
@@ -153,8 +180,16 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
   )
 }
 
-function TimelineEventItem({ event }: { event: TimelineEvent }) {
+function TimelineEventItem({
+  event,
+  sourceLabel,
+}: {
+  event: TimelineEvent
+  sourceLabel: Record<TimelineSource, string>
+}) {
   const Icon = event.icon
+  const { formatDateTime } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <div className="flex items-start gap-3 rounded-md border p-3">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -169,8 +204,12 @@ function TimelineEventItem({ event }: { event: TimelineEvent }) {
           <p className="mt-0.5 text-xs text-muted-foreground">{event.description}</p>
         )}
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {event.actorId && event.actorId !== "system" ? `By ${event.actorId} · ` : ""}
-          {new Date(event.timestamp).toLocaleString()}
+          {event.actorId && event.actorId !== "system"
+            ? formatMessage(messages.bookingActivityTimeline.byActor, {
+                actor: event.actorId,
+                timestamp: formatDateTime(event.timestamp),
+              })
+            : formatDateTime(event.timestamp)}
         </p>
         {event.link && (
           <a

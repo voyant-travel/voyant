@@ -13,6 +13,7 @@ import {
 } from "@voyantjs/ui/components"
 import { UserPlus } from "lucide-react"
 import * as React from "react"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 const ORG_NONE = "__none__"
 
@@ -74,25 +75,6 @@ export interface PersonPickerSectionProps {
   }
 }
 
-const DEFAULT_LABELS = {
-  person: "Person",
-  createNewPerson: "Create new",
-  selectExistingPerson: "Select existing",
-  personSearchPlaceholder: "Search people by name or email...",
-  personSelectPlaceholder: "Select a person...",
-  firstName: "First Name",
-  firstNamePlaceholder: "John",
-  lastName: "Last Name",
-  lastNamePlaceholder: "Smith",
-  email: "Email",
-  emailPlaceholder: "john@example.com",
-  phone: "Phone",
-  phonePlaceholder: "+44 7911 123456",
-  organization: "Organization (optional)",
-  organizationSearchPlaceholder: "Search organizations...",
-  organizationNone: "No organization",
-} as const
-
 /**
  * Person picker with inline-create + optional organization attachment.
  *
@@ -111,7 +93,8 @@ export function PersonPickerSection({
 }: PersonPickerSectionProps) {
   const [personSearch, setPersonSearch] = React.useState("")
   const [orgSearch, setOrgSearch] = React.useState("")
-  const merged = { ...DEFAULT_LABELS, ...labels }
+  const messages = useBookingsUiMessagesOrDefault()
+  const merged = { ...messages.personPickerSection.labels, ...labels }
 
   const { data: peopleData } = usePeople({
     search: personSearch || undefined,

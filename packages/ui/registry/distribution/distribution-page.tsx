@@ -28,7 +28,7 @@ import type {
   ChannelRow,
   ChannelWebhookEventRow,
 } from "./distribution-shared"
-import { formatSelectionLabel, labelById } from "./distribution-shared"
+import { labelById } from "./distribution-shared"
 import {
   DistributionChannelsTab,
   DistributionCommissionsTab,
@@ -39,9 +39,12 @@ import {
   DistributionMappingsTab,
   DistributionWebhooksTab,
 } from "./distribution-tabs-secondary"
+import { useRegistryDistributionMessagesOrDefault } from "./i18n/provider"
+import { formatRegistryDistributionCount, formatRegistryDistributionSummary } from "./i18n/utils"
 
 export function DistributionPage() {
   const navigate = useNavigate()
+  const messages = useRegistryDistributionMessagesOrDefault()
   const [search, setSearch] = useState("")
   const [channelFilter, setChannelFilter] = useState("all")
   const [bulkActionTarget, setBulkActionTarget] = useState<string | null>(null)
@@ -230,13 +233,24 @@ export function DistributionPage() {
     clearSelection()
     setBulkActionTarget(null)
 
+    const countLabel = formatRegistryDistributionCount(messages, noun as never, result.succeeded)
+    const totalLabel = formatRegistryDistributionCount(messages, noun as never, result.total)
+
     if (result.failed.length === 0) {
-      toast.success(`${successVerb} ${formatSelectionLabel(result.succeeded, noun)}.`)
+      toast.success(
+        formatRegistryDistributionSummary(messages.common.resultSummary, {
+          verb: successVerb,
+          countLabel,
+        }),
+      )
       return
     }
 
     toast.error(
-      `${successVerb} ${result.succeeded} of ${formatSelectionLabel(result.total, noun)}.`,
+      formatRegistryDistributionSummary(messages.common.resultSummary, {
+        verb: successVerb,
+        countLabel: `${result.succeeded} of ${totalLabel}`,
+      }),
     )
   }
 
@@ -263,21 +277,30 @@ export function DistributionPage() {
     clearSelection()
     setBulkActionTarget(null)
 
+    const countLabel = formatRegistryDistributionCount(messages, noun as never, result.succeeded)
+    const totalLabel = formatRegistryDistributionCount(messages, noun as never, result.total)
+
     if (result.failed.length === 0) {
-      toast.success(`Deleted ${formatSelectionLabel(result.succeeded, noun)}.`)
+      toast.success(
+        formatRegistryDistributionSummary(messages.common.deleteSummary, {
+          countLabel,
+        }),
+      )
       return
     }
 
-    toast.error(`Deleted ${result.succeeded} of ${formatSelectionLabel(result.total, noun)}.`)
+    toast.error(
+      formatRegistryDistributionSummary(messages.common.deleteSummary, {
+        countLabel: `${result.succeeded} of ${totalLabel}`,
+      }),
+    )
   }
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Distribution</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage sales channels, commercial contracts, external mappings, and sync events.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{messages.page.title}</h1>
+        <p className="text-sm text-muted-foreground">{messages.page.description}</p>
       </div>
 
       {isLoading ? (
@@ -319,12 +342,12 @@ export function DistributionPage() {
 
           <Tabs defaultValue="channels">
             <TabsList variant="line">
-              <TabsTrigger value="channels">Channels</TabsTrigger>
-              <TabsTrigger value="contracts">Contracts</TabsTrigger>
-              <TabsTrigger value="commissions">Commission Rules</TabsTrigger>
-              <TabsTrigger value="mappings">Product Mappings</TabsTrigger>
-              <TabsTrigger value="booking-links">Booking Links</TabsTrigger>
-              <TabsTrigger value="webhooks">Webhook Events</TabsTrigger>
+              <TabsTrigger value="channels">{messages.page.tabs.channels}</TabsTrigger>
+              <TabsTrigger value="contracts">{messages.page.tabs.contracts}</TabsTrigger>
+              <TabsTrigger value="commissions">{messages.page.tabs.commissions}</TabsTrigger>
+              <TabsTrigger value="mappings">{messages.page.tabs.mappings}</TabsTrigger>
+              <TabsTrigger value="booking-links">{messages.page.tabs.bookingLinks}</TabsTrigger>
+              <TabsTrigger value="webhooks">{messages.page.tabs.webhooks}</TabsTrigger>
             </TabsList>
             <DistributionChannelsTab
               filteredChannels={filteredChannels}

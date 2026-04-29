@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductDepartureForm } from "./product-departure-form"
 
 export interface ProductDepartureDialogProps {
@@ -28,16 +29,21 @@ export function ProductDepartureDialog({
   onSuccess,
 }: ProductDepartureDialogProps) {
   const isEdit = Boolean(slot)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-departure-dialog" className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit departure" : "New departure"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.productDepartureDialog.titles.edit
+              : messages.productDepartureDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update the dates, capacity, and status for this departure."
-              : "Create a one-off departure for this product."}
+              ? messages.productDepartureDialog.descriptions.edit
+              : messages.productDepartureDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductDepartureForm

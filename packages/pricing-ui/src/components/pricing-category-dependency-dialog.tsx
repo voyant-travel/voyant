@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 import { PricingCategoryDependencyForm } from "./pricing-category-dependency-form"
 
 export interface PricingCategoryDependencyDialogProps {
@@ -26,16 +27,19 @@ export function PricingCategoryDependencyDialog({
   onSuccess,
 }: PricingCategoryDependencyDialogProps) {
   const isEdit = Boolean(dependency)
+  const messages = usePricingUiMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="pricing-category-dependency-dialog" className="sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Edit category dependency" : "Add category dependency"}
+            {isEdit
+              ? messages.pricingCategoryDependencyDialog.titles.edit
+              : messages.pricingCategoryDependencyDialog.titles.create}
           </DialogTitle>
           <DialogDescription>
-            Rules between pricing categories such as requires, excludes, and quantity limits.
+            {messages.pricingCategoryDependencyDialog.description}
           </DialogDescription>
         </DialogHeader>
         <PricingCategoryDependencyForm

@@ -8,6 +8,8 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
+
 type Mode =
   | { kind: "create"; productId: string; nextDayNumber?: number }
   | { kind: "edit"; productId: string; day: ProductDayRecord }
@@ -47,6 +49,7 @@ export function ProductDayForm({ mode, onSuccess, onCancel }: ProductDayFormProp
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useProductDayMutation()
+  const messages = useProductsUiMessagesOrDefault()
 
   React.useEffect(() => {
     setState(initialState(mode))
@@ -67,7 +70,7 @@ export function ProductDayForm({ mode, onSuccess, onCancel }: ProductDayFormProp
 
     const dayNumber = Number.parseInt(state.dayNumber || "0", 10)
     if (!Number.isFinite(dayNumber) || dayNumber < 1) {
-      setError("Day number must be at least 1.")
+      setError(messages.productDayForm.validation.dayNumberMin)
       return
     }
 
@@ -89,7 +92,11 @@ export function ProductDayForm({ mode, onSuccess, onCancel }: ProductDayFormProp
             })
       onSuccess?.(day)
     } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "Failed to save day.")
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : messages.productDayForm.validation.saveFailed,
+      )
     }
   }
 
@@ -97,7 +104,7 @@ export function ProductDayForm({ mode, onSuccess, onCancel }: ProductDayFormProp
     <form data-slot="product-day-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-number">Day number</Label>
+          <Label htmlFor="product-day-number">{messages.productDayForm.fields.dayNumber}</Label>
           <Input
             id="product-day-number"
             type="number"
@@ -109,33 +116,35 @@ export function ProductDayForm({ mode, onSuccess, onCancel }: ProductDayFormProp
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-location">Location</Label>
+          <Label htmlFor="product-day-location">{messages.productDayForm.fields.location}</Label>
           <Input
             id="product-day-location"
             value={state.location}
             onChange={(event) => field("location")(event.target.value)}
-            placeholder="Dubrovnik"
+            placeholder={messages.productDayForm.placeholders.location}
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-day-title">Title</Label>
+        <Label htmlFor="product-day-title">{messages.productDayForm.fields.title}</Label>
         <Input
           id="product-day-title"
           value={state.title}
           onChange={(event) => field("title")(event.target.value)}
-          placeholder="Arrival in Dubrovnik"
+          placeholder={messages.productDayForm.placeholders.title}
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-day-description">Description</Label>
+        <Label htmlFor="product-day-description">
+          {messages.productDayForm.fields.description}
+        </Label>
         <Textarea
           id="product-day-description"
           value={state.description}
           onChange={(event) => field("description")(event.target.value)}
-          placeholder="Overview and activities for this day"
+          placeholder={messages.productDayForm.placeholders.description}
         />
       </div>
 
@@ -144,14 +153,16 @@ export function ProductDayForm({ mode, onSuccess, onCancel }: ProductDayFormProp
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "create" ? "Add day" : "Save day"}
+          {mode.kind === "create"
+            ? messages.productDayForm.actions.addDay
+            : messages.productDayForm.actions.saveDay}
         </Button>
       </div>
     </form>

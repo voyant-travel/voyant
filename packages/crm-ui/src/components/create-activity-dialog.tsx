@@ -20,20 +20,8 @@ import {
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 
-const ACTIVITY_TYPE_OPTIONS = [
-  { value: "note", label: "Note" },
-  { value: "call", label: "Call" },
-  { value: "email", label: "Email" },
-  { value: "meeting", label: "Meeting" },
-  { value: "task", label: "Task" },
-  { value: "follow_up", label: "Follow-up" },
-] as const
-
-const ACTIVITY_STATUS_OPTIONS = [
-  { value: "planned", label: "Planned" },
-  { value: "done", label: "Done" },
-  { value: "cancelled", label: "Cancelled" },
-] as const
+import { useCrmUiMessagesOrDefault } from "../i18n"
+import { crmActivityStatuses, crmActivityTypes, crmEntityTypes } from "../i18n/messages"
 
 type Props = {
   open: boolean
@@ -42,6 +30,7 @@ type Props = {
 
 export function CreateActivityDialog({ open, onOpenChange }: Props) {
   const { create, addLink } = useActivityMutation()
+  const messages = useCrmUiMessagesOrDefault()
   const [subject, setSubject] = useState("")
   const [type, setType] = useState<string>("note")
   const [status, setStatus] = useState<string>("planned")
@@ -52,7 +41,7 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
 
   async function handleCreate() {
     if (!subject.trim()) {
-      setError("Subject is required")
+      setError(messages.createActivityDialog.validation.subjectRequired)
       return
     }
 
@@ -86,44 +75,60 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
       setStatus("planned")
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create activity")
+      setError(
+        err instanceof Error ? err.message : messages.createActivityDialog.validation.createFailed,
+      )
     }
   }
 
   const isSubmitting = create.isPending || addLink.isPending
+  const activityTypeOptions = crmActivityTypes.map((value) => ({
+    value,
+    label: messages.common.activityTypeLabels[value],
+  }))
+  const activityStatusOptions = crmActivityStatuses.map((value) => ({
+    value,
+    label: messages.common.activityStatusLabels[value],
+  }))
+  const entityTypeOptions = crmEntityTypes.map((value) => ({
+    value,
+    label: messages.common.entityTypeLabels[value],
+  }))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New activity</DialogTitle>
-          <DialogDescription>Log a call, email, meeting, or task.</DialogDescription>
+          <DialogTitle>{messages.createActivityDialog.title}</DialogTitle>
+          <DialogDescription>{messages.createActivityDialog.description}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground" htmlFor="act-subject">
-              Subject
+              {messages.createActivityDialog.fields.subject}
             </label>
             <Input
               id="act-subject"
               value={subject}
               onChange={(event) => setSubject(event.target.value)}
-              placeholder="Discovery call with Acme"
+              placeholder={messages.createActivityDialog.placeholders.subject}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="text-xs font-medium text-muted-foreground">Type</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {messages.createActivityDialog.fields.type}
+              </span>
               <Select
                 value={type}
                 onValueChange={(value) => setType(value ?? "note")}
-                items={ACTIVITY_TYPE_OPTIONS}
+                items={activityTypeOptions}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ACTIVITY_TYPE_OPTIONS.map((option) => (
+                  {activityTypeOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -132,17 +137,19 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
               </Select>
             </div>
             <div>
-              <span className="text-xs font-medium text-muted-foreground">Status</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {messages.createActivityDialog.fields.status}
+              </span>
               <Select
                 value={status}
                 onValueChange={(value) => setStatus(value ?? "planned")}
-                items={ACTIVITY_STATUS_OPTIONS}
+                items={activityStatusOptions}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ACTIVITY_STATUS_OPTIONS.map((option) => (
+                  {activityStatusOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -153,7 +160,7 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground" htmlFor="act-desc">
-              Description
+              {messages.createActivityDialog.fields.description}
             </label>
             <Textarea
               id="act-desc"
@@ -164,40 +171,36 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="text-xs font-medium text-muted-foreground">Link to</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {messages.createActivityDialog.fields.linkTo}
+              </span>
               <Select
                 value={entityType}
                 onValueChange={(value) => setEntityType(value ?? "none")}
-                items={[
-                  { label: "None", value: "none" },
-                  { label: "Person", value: "person" },
-                  { label: "Organization", value: "organization" },
-                  { label: "Opportunity", value: "opportunity" },
-                  { label: "Quote", value: "quote" },
-                ]}
+                items={entityTypeOptions}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="person">Person</SelectItem>
-                  <SelectItem value="organization">Organization</SelectItem>
-                  <SelectItem value="opportunity">Opportunity</SelectItem>
-                  <SelectItem value="quote">Quote</SelectItem>
+                  {entityTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground" htmlFor="act-entity">
-                Entity ID
+                {messages.createActivityDialog.fields.entityId}
               </label>
               <Input
                 id="act-entity"
                 value={entityId}
                 onChange={(event) => setEntityId(event.target.value)}
                 disabled={entityType === "none"}
-                placeholder="pers_…"
+                placeholder={messages.createActivityDialog.placeholders.entityId}
               />
             </div>
           </div>
@@ -205,11 +208,11 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {messages.common.cancel}
           </Button>
           <Button onClick={handleCreate} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-            Create
+            {messages.common.create}
           </Button>
         </DialogFooter>
       </DialogContent>

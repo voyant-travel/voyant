@@ -1,6 +1,9 @@
 import { TrendingUp } from "lucide-react"
+
 import { Badge, Card, CardContent } from "@/components/ui"
-import { formatDate, formatMoney } from "@/components/voyant/crm/crm-constants"
+
+import { useRegistryCrmI18nOrDefault, useRegistryCrmMessagesOrDefault } from "./i18n"
+import { formatRegistryCrmDate, formatRegistryCrmMoney } from "./i18n/utils"
 
 export function OpportunitySummaryCard({
   title,
@@ -19,6 +22,12 @@ export function OpportunitySummaryCard({
   valueCurrency: string | null
   expectedCloseDate: string | null | undefined
 }) {
+  const i18n = useRegistryCrmI18nOrDefault()
+  const m = useRegistryCrmMessagesOrDefault()
+  const statusLabel =
+    m.common.opportunityStatusLabels[status as keyof typeof m.common.opportunityStatusLabels] ??
+    status
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -26,22 +35,22 @@ export function OpportunitySummaryCard({
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold leading-tight">{title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {pipelineName ?? "…"} · {stageName ?? "…"}
+              {pipelineName ?? m.opportunitySummaryCard.unknown} -{" "}
+              {stageName ?? m.opportunitySummaryCard.unknown}
             </p>
           </div>
-          <Badge variant="outline" className="capitalize">
-            {status}
-          </Badge>
+          <Badge variant="outline">{statusLabel}</Badge>
         </div>
         <div className="mt-3 flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
           <span className="text-lg font-semibold">
-            {formatMoney(valueAmountCents, valueCurrency)}
+            {formatRegistryCrmMoney(i18n, valueAmountCents, valueCurrency)}
           </span>
         </div>
         {expectedCloseDate ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            Expected close: {formatDate(expectedCloseDate)}
+            {m.opportunitySummaryCard.expectedClose}:{" "}
+            {formatRegistryCrmDate(i18n, expectedCloseDate)}
           </p>
         ) : null}
       </CardContent>

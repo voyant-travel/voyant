@@ -23,6 +23,7 @@ import {
 } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 export interface BookingGroupLinkDialogProps {
   open: boolean
@@ -49,6 +50,8 @@ export function BookingGroupLinkDialog({
   const [selectedGroupId, setSelectedGroupId] = React.useState("")
   const [newGroupLabel, setNewGroupLabel] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
+  const { formatDate } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
 
   React.useEffect(() => {
     if (!open) {
@@ -78,7 +81,9 @@ export function BookingGroupLinkDialog({
       let role: "primary" | "shared" = "shared"
 
       if (mode === "create") {
-        const label = newGroupLabel.trim() || `Shared room — ${new Date().toLocaleDateString()}`
+        const label =
+          newGroupLabel.trim() ||
+          `${messages.bookingGroupLinkDialog.labels.generatedLabelPrefix} - ${formatDate(new Date())}`
         const group = await createGroup.mutateAsync({
           kind: "shared_room",
           label,
@@ -91,7 +96,7 @@ export function BookingGroupLinkDialog({
       }
 
       if (!targetGroupId || targetGroupId === JOIN_PLACEHOLDER) {
-        setError("Select a group to join")
+        setError(messages.bookingGroupLinkDialog.validation.selectGroup)
         return
       }
 
@@ -104,7 +109,8 @@ export function BookingGroupLinkDialog({
       onOpenChange(false)
       onLinked?.(targetGroupId)
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to link booking"
+      const message =
+        err instanceof Error ? err.message : messages.bookingGroupLinkDialog.validation.linkFailed
       setError(message)
     }
   }
@@ -115,7 +121,7 @@ export function BookingGroupLinkDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Link Booking to Shared Room</DialogTitle>
+          <DialogTitle>{messages.bookingGroupLinkDialog.title}</DialogTitle>
         </DialogHeader>
         <DialogBody className="grid gap-4">
           <div className="flex items-center gap-2">
@@ -125,7 +131,7 @@ export function BookingGroupLinkDialog({
               variant={mode === "join" ? "default" : "ghost"}
               onClick={() => setMode("join")}
             >
-              Join existing
+              {messages.bookingGroupLinkDialog.modes.join}
             </Button>
             <Button
               type="button"
@@ -133,29 +139,36 @@ export function BookingGroupLinkDialog({
               variant={mode === "create" ? "default" : "ghost"}
               onClick={() => setMode("create")}
             >
-              Create new
+              {messages.bookingGroupLinkDialog.modes.create}
             </Button>
           </div>
 
           {mode === "join" ? (
             <div className="flex flex-col gap-2">
-              <Label>Existing groups</Label>
+              <Label>{messages.bookingGroupLinkDialog.fields.existingGroups}</Label>
               <Select
                 items={
                   groups.length === 0
-                    ? [{ label: "No existing groups", value: JOIN_PLACEHOLDER }]
+                    ? [
+                        {
+                          label: messages.bookingGroupLinkDialog.placeholders.noExistingGroups,
+                          value: JOIN_PLACEHOLDER,
+                        },
+                      ]
                     : groups.map((g) => ({ label: g.label, value: g.id }))
                 }
                 value={selectedGroupId || JOIN_PLACEHOLDER}
                 onValueChange={(v) => setSelectedGroupId(v === JOIN_PLACEHOLDER ? "" : (v ?? ""))}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a group..." />
+                  <SelectValue
+                    placeholder={messages.bookingGroupLinkDialog.placeholders.selectGroup}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {groups.length === 0 ? (
                     <SelectItem value={JOIN_PLACEHOLDER} disabled>
-                      No existing groups
+                      {messages.bookingGroupLinkDialog.placeholders.noExistingGroups}
                     </SelectItem>
                   ) : (
                     groups.map((g) => (
@@ -168,20 +181,20 @@ export function BookingGroupLinkDialog({
               </Select>
               {productId && (
                 <p className="text-xs text-muted-foreground">
-                  Filtered to groups for the booking's product.
+                  {messages.bookingGroupLinkDialog.hints.productFiltered}
                 </p>
               )}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              <Label>Group label</Label>
+              <Label>{messages.bookingGroupLinkDialog.fields.groupLabel}</Label>
               <Input
                 value={newGroupLabel}
                 onChange={(e) => setNewGroupLabel(e.target.value)}
-                placeholder="e.g. Smith + Jones, Room 204"
+                placeholder={messages.bookingGroupLinkDialog.placeholders.groupLabel}
               />
               <p className="text-xs text-muted-foreground">
-                This booking will be marked as the primary member.
+                {messages.bookingGroupLinkDialog.hints.primaryMember}
               </p>
             </div>
           )}
@@ -196,7 +209,7 @@ export function BookingGroupLinkDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            {messages.common.cancel}
           </Button>
           <Button
             type="button"
@@ -205,7 +218,9 @@ export function BookingGroupLinkDialog({
             disabled={isSubmitting || (mode === "join" && !selectedGroupId)}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {mode === "create" ? "Create & Link" : "Link to Group"}
+            {mode === "create"
+              ? messages.bookingGroupLinkDialog.actions.createAndLink
+              : messages.bookingGroupLinkDialog.actions.linkToGroup}
           </Button>
         </DialogFooter>
       </DialogContent>

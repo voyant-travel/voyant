@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductCategoryDialog } from "./product-category-dialog"
 
 export interface ProductCategoryListProps {
@@ -44,6 +45,7 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
     offset,
   })
   const { remove } = useProductCategoryMutation()
+  const messages = useRegistryProductsMessagesOrDefault()
 
   const categories = data?.data ?? []
   const total = data?.total ?? 0
@@ -57,7 +59,7 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search product categories…"
+            placeholder={messages.productCategoryList.searchPlaceholder}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -73,7 +75,7 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
           }}
         >
           <Plus className="mr-2 size-4" aria-hidden="true" />
-          Add category
+          {messages.productCategoryList.addCategory}
         </Button>
       </div>
 
@@ -81,11 +83,13 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Parent</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[80px] text-right">Actions</TableHead>
+              <TableHead>{messages.productCategoryList.columns.name}</TableHead>
+              <TableHead>{messages.productCategoryList.columns.slug}</TableHead>
+              <TableHead>{messages.productCategoryList.columns.parent}</TableHead>
+              <TableHead>{messages.productCategoryList.columns.status}</TableHead>
+              <TableHead className="w-[80px] text-right">
+                {messages.productCategoryList.columns.actions}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -98,13 +102,13 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-destructive">
-                  Failed to load product categories.
+                  {messages.productCategoryList.loadingError}
                 </TableCell>
               </TableRow>
             ) : categories.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
-                  No product categories found.
+                  {messages.productCategoryList.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -113,16 +117,18 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell>{category.slug}</TableCell>
                   <TableCell>
-                    {category.parentId ? (categoryById.get(category.parentId)?.name ?? "—") : "—"}
+                    {category.parentId
+                      ? (categoryById.get(category.parentId)?.name ?? messages.common.none)
+                      : messages.common.none}
                   </TableCell>
                   <TableCell>
                     {category.active ? (
                       <Badge variant="default" className="gap-1">
                         <CheckCircle2 className="size-3.5" />
-                        Active
+                        {messages.common.active}
                       </Badge>
                     ) : (
-                      <Badge variant="secondary">Inactive</Badge>
+                      <Badge variant="secondary">{messages.common.inactive}</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -138,19 +144,19 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
                           }}
                         >
                           <Pencil className="size-4" />
-                          Edit
+                          {messages.productCategoryList.edit}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
                           onClick={() => {
-                            if (confirm("Delete this product category?")) {
+                            if (confirm(messages.productCategoryList.deleteConfirm)) {
                               remove.mutate(category.id)
                             }
                           }}
                         >
                           <Trash2 className="size-4" />
-                          Delete
+                          {messages.productCategoryList.delete}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -164,7 +170,9 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          Showing {categories.length} of {total}
+          {messages.productCategoryList.showingSummary
+            .replace("{count}", String(categories.length))
+            .replace("{total}", String(total))}
         </span>
         <div className="flex items-center gap-2">
           <Button
@@ -173,10 +181,10 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
             disabled={offset === 0}
             onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
           >
-            Previous
+            {messages.common.previous}
           </Button>
           <span>
-            Page {page} / {pageCount}
+            {messages.common.page} {page} / {pageCount}
           </span>
           <Button
             variant="outline"
@@ -184,7 +192,7 @@ export function ProductCategoryList({ pageSize = 200 }: ProductCategoryListProps
             disabled={offset + pageSize >= total}
             onClick={() => setOffset((prev) => prev + pageSize)}
           >
-            Next
+            {messages.common.next}
           </Button>
         </div>
       </div>

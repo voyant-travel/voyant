@@ -949,6 +949,10 @@ importers:
         version: 4.3.6
 
   packages/booking-requirements-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -1059,6 +1063,10 @@ importers:
         version: 4.3.6
 
   packages/bookings-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -1190,6 +1198,10 @@ importers:
         version: 4.3.6
 
   packages/charters-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -1375,6 +1387,9 @@ importers:
 
   packages/crm-ui:
     dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../utils
@@ -1488,6 +1503,10 @@ importers:
         version: 4.3.6
 
   packages/cruises-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -1718,6 +1737,10 @@ importers:
         version: 4.3.6
 
   packages/distribution-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -1822,6 +1845,10 @@ importers:
         version: 4.3.6
 
   packages/external-refs-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -1938,6 +1965,10 @@ importers:
         version: 4.3.6
 
   packages/extras-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -2128,6 +2159,10 @@ importers:
         version: 4.3.6
 
   packages/finance-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -2358,6 +2393,10 @@ importers:
         version: 4.3.6
 
   packages/hospitality-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -2489,6 +2528,10 @@ importers:
         version: 4.3.6
 
   packages/identity-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -2620,6 +2663,10 @@ importers:
         version: 4.3.6
 
   packages/legal-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -2733,6 +2780,10 @@ importers:
         version: 4.3.6
 
   packages/markets-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -3088,6 +3139,10 @@ importers:
         version: 4.3.6
 
   packages/pricing-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -3210,6 +3265,10 @@ importers:
         version: 4.3.6
 
   packages/products-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -3350,6 +3409,10 @@ importers:
         version: 4.3.6
 
   packages/resources-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -3472,6 +3535,10 @@ importers:
         version: 4.3.6
 
   packages/sellability-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -3726,6 +3793,10 @@ importers:
         version: 4.3.6
 
   packages/suppliers-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -3901,12 +3972,51 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.7.2
         version: 3.22.4
+      '@voyantjs/booking-requirements-ui':
+        specifier: workspace:*
+        version: link:../booking-requirements-ui
+      '@voyantjs/bookings-ui':
+        specifier: workspace:*
+        version: link:../bookings-ui
+      '@voyantjs/charters-ui':
+        specifier: workspace:*
+        version: link:../charters-ui
+      '@voyantjs/cruises-ui':
+        specifier: workspace:*
+        version: link:../cruises-ui
+      '@voyantjs/finance-ui':
+        specifier: workspace:*
+        version: link:../finance-ui
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@voyantjs/identity-ui':
+        specifier: workspace:*
+        version: link:../identity-ui
+      '@voyantjs/markets-ui':
+        specifier: workspace:*
+        version: link:../markets-ui
       '@voyantjs/notifications':
         specifier: workspace:*
         version: link:../notifications
       '@voyantjs/notifications-react':
         specifier: workspace:*
         version: link:../notifications-react
+      '@voyantjs/pricing-ui':
+        specifier: workspace:*
+        version: link:../pricing-ui
+      '@voyantjs/products-ui':
+        specifier: workspace:*
+        version: link:../products-ui
+      '@voyantjs/resources-ui':
+        specifier: workspace:*
+        version: link:../resources-ui
+      '@voyantjs/sellability-ui':
+        specifier: workspace:*
+        version: link:../sellability-ui
+      '@voyantjs/suppliers-ui':
+        specifier: workspace:*
+        version: link:../suppliers-ui
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../utils

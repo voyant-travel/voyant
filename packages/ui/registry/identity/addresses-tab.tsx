@@ -4,10 +4,12 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { type AddressRecord, useAddresses, useAddressMutation } from "@voyantjs/identity-react"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useIdentityUiMessagesOrDefault } from "../../../identity-ui/src/index"
+
 import { AddressDialog } from "./address-dialog"
+import { useRegistryIdentityMessagesOrDefault } from "./i18n"
 
 export interface AddressesTabProps {
   entityType: string
@@ -17,6 +19,8 @@ export interface AddressesTabProps {
 const PAGE_SIZE = 25
 
 export function AddressesTab({ entityType, entityId }: AddressesTabProps) {
+  const sharedMessages = useIdentityUiMessagesOrDefault()
+  const tabMessages = useRegistryIdentityMessagesOrDefault().addressesTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<AddressRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -33,30 +37,30 @@ export function AddressesTab({ entityType, entityId }: AddressesTabProps) {
     () => [
       {
         accessorKey: "label",
-        header: "Label",
+        header: tabMessages.columns.label,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.label}
+            {sharedMessages.common.addressLabelLabels[row.original.label]}
           </Badge>
         ),
       },
       {
         accessorKey: "line1",
-        header: "Street",
+        header: tabMessages.columns.street,
         cell: ({ row }) => (
           <span className="text-muted-foreground">{row.original.line1 ?? "-"}</span>
         ),
       },
       {
         accessorKey: "city",
-        header: "City",
+        header: tabMessages.columns.city,
         cell: ({ row }) => (
           <span className="text-muted-foreground">{row.original.city ?? "-"}</span>
         ),
       },
       {
         accessorKey: "country",
-        header: "Country",
+        header: tabMessages.columns.country,
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.original.country ?? "-"}
@@ -65,7 +69,7 @@ export function AddressesTab({ entityType, entityId }: AddressesTabProps) {
       },
       {
         accessorKey: "isPrimary",
-        header: "Primary",
+        header: tabMessages.columns.primary,
         cell: ({ row }) =>
           row.original.isPrimary ? (
             <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
@@ -89,7 +93,7 @@ export function AddressesTab({ entityType, entityId }: AddressesTabProps) {
             <button
               type="button"
               onClick={() => {
-                if (confirm("Delete address?")) {
+                if (confirm(tabMessages.actions.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -101,15 +105,13 @@ export function AddressesTab({ entityType, entityId }: AddressesTabProps) {
         ),
       },
     ],
-    [refetch, remove],
+    [refetch, remove, sharedMessages.common.addressLabelLabels, tabMessages],
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Physical and postal addresses associated with this entity.
-        </p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -118,14 +120,14 @@ export function AddressesTab({ entityType, entityId }: AddressesTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Address
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading addresses..." : "No addresses yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.none}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

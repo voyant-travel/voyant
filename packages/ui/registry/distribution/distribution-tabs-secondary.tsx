@@ -1,7 +1,9 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
+import { formatMessage } from "@voyantjs/i18n"
 import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 import { TabsContent } from "@/components/ui/tabs"
+import { useDistributionUiI18nOrDefault } from "../../../distribution-ui/src/index"
 import { SectionHeader } from "./distribution-dialog-barrel"
 import type {
   BookingOption,
@@ -11,12 +13,9 @@ import type {
   ChannelWebhookEventRow,
   ProductOption,
 } from "./distribution-shared"
-import {
-  bookingLinkColumns,
-  formatSelectionLabel,
-  mappingColumns,
-  webhookColumns,
-} from "./distribution-shared"
+import { bookingLinkColumns, mappingColumns, webhookColumns } from "./distribution-shared"
+import { useRegistryDistributionMessagesOrDefault } from "./i18n/provider"
+import { formatRegistryDistributionCount, formatRegistryDistributionSummary } from "./i18n/utils"
 
 type BulkFn = (args: {
   ids: string[]
@@ -26,7 +25,7 @@ type BulkFn = (args: {
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok type annotation
 
 type DeleteFn = (args: {
   ids: string[]
@@ -34,7 +33,11 @@ type DeleteFn = (args: {
   target: string
   noun: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok type annotation
+
+function getSelectionSummary(count: number, template: string) {
+  return formatRegistryDistributionSummary(template, { count })
+}
 
 export function DistributionMappingsTab(props: {
   channels: ChannelRow[]
@@ -49,80 +52,103 @@ export function DistributionMappingsTab(props: {
   onOpenRoute: (mappingId: string) => void
   onEdit: (row: ChannelProductMappingRow) => void
 }) {
+  const i18n = useDistributionUiI18nOrDefault()
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const tab = messages.tabs.mappings
+
   return (
     <TabsContent value="mappings" className="space-y-4">
       <SectionHeader
-        title="Product Mappings"
-        description="Map Voyant products to external channel catalog identifiers."
-        actionLabel="New Mapping"
+        title={tab.title}
+        description={tab.description}
+        actionLabel={tab.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={mappingColumns(props.channels, props.products, props.onOpenRoute)}
+        columns={mappingColumns(props.channels, props.products, props.onOpenRoute, i18n)}
         data={props.filteredMappings}
-        emptyMessage="No product mappings match the current filters."
+        emptyMessage={tab.empty}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.mappingSelection}
         onRowSelectionChange={props.setMappingSelection}
-        renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
-            <ConfirmActionButton
-              buttonLabel="Activate"
-              confirmLabel="Activate Mappings"
-              title={`Activate ${formatSelectionLabel(selectedRows.length, "mapping")}?`}
-              description="This re-enables the selected external product mappings for live channel use."
-              disabled={props.bulkActionTarget === "mappings-activate"}
-              onConfirm={() =>
-                props.handleBulkUpdate({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/product-mappings",
-                  target: "mappings-activate",
-                  noun: "mapping",
-                  payload: { active: true },
-                  successVerb: "Activated",
-                  clearSelection,
-                })
-              }
-            />
-            <ConfirmActionButton
-              buttonLabel="Deactivate"
-              confirmLabel="Deactivate Mappings"
-              title={`Deactivate ${formatSelectionLabel(selectedRows.length, "mapping")}?`}
-              description="This keeps the selected mappings for reference but removes them from active sync/distribution."
-              disabled={props.bulkActionTarget === "mappings-deactivate"}
-              onConfirm={() =>
-                props.handleBulkUpdate({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/product-mappings",
-                  target: "mappings-deactivate",
-                  noun: "mapping",
-                  payload: { active: false },
-                  successVerb: "Deactivated",
-                  clearSelection,
-                })
-              }
-            />
-            <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Mappings"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "mapping")}?`}
-              description="This permanently removes the selected external product mappings."
-              disabled={props.bulkActionTarget === "mappings-delete"}
-              variant="destructive"
-              confirmVariant="destructive"
-              onConfirm={() =>
-                props.handleBulkDelete({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/product-mappings",
-                  target: "mappings-delete",
-                  noun: "mapping",
-                  clearSelection,
-                })
-              }
-            />
-          </SelectionActionBar>
-        )}
+        renderSelectionActions={({ selectedRows, clearSelection }) => {
+          const countLabel = formatRegistryDistributionCount(
+            messages,
+            "mapping",
+            selectedRows.length,
+          )
+
+          return (
+            <SelectionActionBar
+              selectedCount={selectedRows.length}
+              onClear={clearSelection}
+              selectionSummary={getSelectionSummary(
+                selectedRows.length,
+                messages.common.selectionSummary,
+              )}
+              clearLabel={messages.common.clearSelection}
+            >
+              <ConfirmActionButton
+                buttonLabel={tab.actions.activate.button}
+                confirmLabel={tab.actions.activate.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.activate.title, { countLabel })}
+                description={tab.actions.activate.description}
+                disabled={props.bulkActionTarget === "mappings-activate"}
+                onConfirm={() =>
+                  props.handleBulkUpdate({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/product-mappings",
+                    target: "mappings-activate",
+                    noun: messages.common.entities.mapping.one,
+                    payload: { active: true },
+                    successVerb: messages.page.bulkVerbs.activated,
+                    clearSelection,
+                  })
+                }
+              />
+              <ConfirmActionButton
+                buttonLabel={tab.actions.deactivate.button}
+                confirmLabel={tab.actions.deactivate.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.deactivate.title, { countLabel })}
+                description={tab.actions.deactivate.description}
+                disabled={props.bulkActionTarget === "mappings-deactivate"}
+                onConfirm={() =>
+                  props.handleBulkUpdate({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/product-mappings",
+                    target: "mappings-deactivate",
+                    noun: messages.common.entities.mapping.one,
+                    payload: { active: false },
+                    successVerb: messages.page.bulkVerbs.deactivated,
+                    clearSelection,
+                  })
+                }
+              />
+              <ConfirmActionButton
+                buttonLabel={tab.actions.delete.button}
+                confirmLabel={tab.actions.delete.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.delete.title, { countLabel })}
+                description={tab.actions.delete.description}
+                disabled={props.bulkActionTarget === "mappings-delete"}
+                variant="destructive"
+                confirmVariant="destructive"
+                onConfirm={() =>
+                  props.handleBulkDelete({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/product-mappings",
+                    target: "mappings-delete",
+                    noun: messages.common.entities.mapping.one,
+                    clearSelection,
+                  })
+                }
+              />
+            </SelectionActionBar>
+          )
+        }}
         onRowClick={(row) => props.onEdit(row.original)}
       />
     </TabsContent>
@@ -141,44 +167,65 @@ export function DistributionBookingLinksTab(props: {
   onOpenRoute: (bookingLinkId: string) => void
   onEdit: (row: ChannelBookingLinkRow) => void
 }) {
+  const i18n = useDistributionUiI18nOrDefault()
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const tab = messages.tabs.bookingLinks
+
   return (
     <TabsContent value="booking-links" className="space-y-4">
       <SectionHeader
-        title="Booking Links"
-        description="Track external booking IDs and sync state for channel-originated bookings."
-        actionLabel="New Booking Link"
+        title={tab.title}
+        description={tab.description}
+        actionLabel={tab.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={bookingLinkColumns(props.channels, props.bookings, props.onOpenRoute)}
+        columns={bookingLinkColumns(props.channels, props.bookings, props.onOpenRoute, i18n)}
         data={props.filteredBookingLinks}
-        emptyMessage="No booking links match the current filters."
+        emptyMessage={tab.empty}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.bookingLinkSelection}
         onRowSelectionChange={props.setBookingLinkSelection}
-        renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
-            <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Booking Links"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "booking link")}?`}
-              description="This permanently removes the selected external booking references and sync links."
-              disabled={props.bulkActionTarget === "booking-links-delete"}
-              variant="destructive"
-              confirmVariant="destructive"
-              onConfirm={() =>
-                props.handleBulkDelete({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/booking-links",
-                  target: "booking-links-delete",
-                  noun: "booking link",
-                  clearSelection,
-                })
-              }
-            />
-          </SelectionActionBar>
-        )}
+        renderSelectionActions={({ selectedRows, clearSelection }) => {
+          const countLabel = formatRegistryDistributionCount(
+            messages,
+            "bookingLink",
+            selectedRows.length,
+          )
+
+          return (
+            <SelectionActionBar
+              selectedCount={selectedRows.length}
+              onClear={clearSelection}
+              selectionSummary={getSelectionSummary(
+                selectedRows.length,
+                messages.common.selectionSummary,
+              )}
+              clearLabel={messages.common.clearSelection}
+            >
+              <ConfirmActionButton
+                buttonLabel={tab.actions.delete.button}
+                confirmLabel={tab.actions.delete.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.delete.title, { countLabel })}
+                description={tab.actions.delete.description}
+                disabled={props.bulkActionTarget === "booking-links-delete"}
+                variant="destructive"
+                confirmVariant="destructive"
+                onConfirm={() =>
+                  props.handleBulkDelete({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/booking-links",
+                    target: "booking-links-delete",
+                    noun: messages.common.entities.bookingLink.one,
+                    clearSelection,
+                  })
+                }
+              />
+            </SelectionActionBar>
+          )
+        }}
         onRowClick={(row) => props.onEdit(row.original)}
       />
     </TabsContent>
@@ -197,80 +244,103 @@ export function DistributionWebhooksTab(props: {
   onOpenRoute: (webhookEventId: string) => void
   onEdit: (row: ChannelWebhookEventRow) => void
 }) {
+  const i18n = useDistributionUiI18nOrDefault()
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const tab = messages.tabs.webhooks
+
   return (
     <TabsContent value="webhooks" className="space-y-4">
       <SectionHeader
-        title="Webhook Events"
-        description="Inspect ingested partner events and replay/problem cases."
-        actionLabel="New Webhook Event"
+        title={tab.title}
+        description={tab.description}
+        actionLabel={tab.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={webhookColumns(props.channels, props.onOpenRoute)}
+        columns={webhookColumns(props.channels, props.onOpenRoute, i18n)}
         data={props.filteredWebhookEvents}
-        emptyMessage="No webhook events match the current filters."
+        emptyMessage={tab.empty}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.webhookSelection}
         onRowSelectionChange={props.setWebhookSelection}
-        renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
-            <ConfirmActionButton
-              buttonLabel="Mark Processed"
-              confirmLabel="Mark Processed"
-              title={`Mark ${formatSelectionLabel(selectedRows.length, "webhook event")} as processed?`}
-              description="This marks the selected events as processed and removes them from the active sync queue."
-              disabled={props.bulkActionTarget === "webhook-events-processed"}
-              onConfirm={() =>
-                props.handleBulkUpdate({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/webhook-events",
-                  target: "webhook-events-processed",
-                  noun: "webhook event",
-                  payload: { status: "processed" },
-                  successVerb: "Processed",
-                  clearSelection,
-                })
-              }
-            />
-            <ConfirmActionButton
-              buttonLabel="Ignore"
-              confirmLabel="Ignore Events"
-              title={`Ignore ${formatSelectionLabel(selectedRows.length, "webhook event")}?`}
-              description="This keeps the selected events in history but marks them as intentionally ignored."
-              disabled={props.bulkActionTarget === "webhook-events-ignored"}
-              onConfirm={() =>
-                props.handleBulkUpdate({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/webhook-events",
-                  target: "webhook-events-ignored",
-                  noun: "webhook event",
-                  payload: { status: "ignored" },
-                  successVerb: "Ignored",
-                  clearSelection,
-                })
-              }
-            />
-            <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Events"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "webhook event")}?`}
-              description="This permanently removes the selected webhook events from the event log."
-              disabled={props.bulkActionTarget === "webhook-events-delete"}
-              variant="destructive"
-              confirmVariant="destructive"
-              onConfirm={() =>
-                props.handleBulkDelete({
-                  ids: selectedRows.map((row) => row.original.id),
-                  endpoint: "/v1/distribution/webhook-events",
-                  target: "webhook-events-delete",
-                  noun: "webhook event",
-                  clearSelection,
-                })
-              }
-            />
-          </SelectionActionBar>
-        )}
+        renderSelectionActions={({ selectedRows, clearSelection }) => {
+          const countLabel = formatRegistryDistributionCount(
+            messages,
+            "webhookEvent",
+            selectedRows.length,
+          )
+
+          return (
+            <SelectionActionBar
+              selectedCount={selectedRows.length}
+              onClear={clearSelection}
+              selectionSummary={getSelectionSummary(
+                selectedRows.length,
+                messages.common.selectionSummary,
+              )}
+              clearLabel={messages.common.clearSelection}
+            >
+              <ConfirmActionButton
+                buttonLabel={tab.actions.markProcessed.button}
+                confirmLabel={tab.actions.markProcessed.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.markProcessed.title, { countLabel })}
+                description={tab.actions.markProcessed.description}
+                disabled={props.bulkActionTarget === "webhook-events-processed"}
+                onConfirm={() =>
+                  props.handleBulkUpdate({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/webhook-events",
+                    target: "webhook-events-processed",
+                    noun: messages.common.entities.webhookEvent.one,
+                    payload: { status: "processed" },
+                    successVerb: messages.page.bulkVerbs.processed,
+                    clearSelection,
+                  })
+                }
+              />
+              <ConfirmActionButton
+                buttonLabel={tab.actions.ignore.button}
+                confirmLabel={tab.actions.ignore.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.ignore.title, { countLabel })}
+                description={tab.actions.ignore.description}
+                disabled={props.bulkActionTarget === "webhook-events-ignored"}
+                onConfirm={() =>
+                  props.handleBulkUpdate({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/webhook-events",
+                    target: "webhook-events-ignored",
+                    noun: messages.common.entities.webhookEvent.one,
+                    payload: { status: "ignored" },
+                    successVerb: messages.page.bulkVerbs.ignored,
+                    clearSelection,
+                  })
+                }
+              />
+              <ConfirmActionButton
+                buttonLabel={tab.actions.delete.button}
+                confirmLabel={tab.actions.delete.confirm}
+                cancelLabel={messages.common.cancel}
+                title={formatMessage(tab.actions.delete.title, { countLabel })}
+                description={tab.actions.delete.description}
+                disabled={props.bulkActionTarget === "webhook-events-delete"}
+                variant="destructive"
+                confirmVariant="destructive"
+                onConfirm={() =>
+                  props.handleBulkDelete({
+                    ids: selectedRows.map((row) => row.original.id),
+                    endpoint: "/v1/distribution/webhook-events",
+                    target: "webhook-events-delete",
+                    noun: messages.common.entities.webhookEvent.one,
+                    clearSelection,
+                  })
+                }
+              />
+            </SelectionActionBar>
+          )
+        }}
         onRowClick={(row) => props.onEdit(row.original)}
       />
     </TabsContent>

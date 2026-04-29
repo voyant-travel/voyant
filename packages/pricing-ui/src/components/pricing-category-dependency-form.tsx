@@ -19,6 +19,8 @@ import { Switch } from "@voyantjs/ui/components/switch"
 import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
+import type { PricingDependencyType } from "../i18n/messages"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 import { PricingCategoryCombobox } from "./pricing-category-combobox"
 
 type Mode = { kind: "create" } | { kind: "edit"; dependency: PricingCategoryDependencyRecord }
@@ -40,10 +42,10 @@ interface FormState {
 }
 
 const DEPENDENCY_TYPES = [
-  { value: "requires", label: "Requires" },
-  { value: "limits_per_master", label: "Limits per master" },
-  { value: "limits_sum", label: "Limits sum" },
-  { value: "excludes", label: "Excludes" },
+  { value: "requires" },
+  { value: "limits_per_master" },
+  { value: "limits_sum" },
+  { value: "excludes" },
 ] as const
 
 function initialState(mode: Mode): FormState {
@@ -98,6 +100,7 @@ export function PricingCategoryDependencyForm({
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = usePricingCategoryDependencyMutation()
+  const messages = usePricingUiMessagesOrDefault()
 
   React.useEffect(() => {
     setState(initialState(mode))
@@ -111,7 +114,7 @@ export function PricingCategoryDependencyForm({
     setError(null)
 
     if (!state.masterPricingCategoryId || !state.pricingCategoryId) {
-      setError("Both master and dependent categories are required.")
+      setError(messages.pricingCategoryDependencyForm.validation.categoriesRequired)
       return
     }
 
@@ -122,7 +125,11 @@ export function PricingCategoryDependencyForm({
           : await update.mutateAsync({ id: mode.dependency.id, input: toPayload(state) })
       onSuccess?.(dependency)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save category dependency.")
+      setError(
+        err instanceof Error
+          ? err.message
+          : messages.pricingCategoryDependencyForm.validation.saveFailed,
+      )
     }
   }
 
@@ -134,30 +141,33 @@ export function PricingCategoryDependencyForm({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label>Master category</Label>
+          <Label>{messages.pricingCategoryDependencyForm.fields.masterCategory}</Label>
           <PricingCategoryCombobox
             value={state.masterPricingCategoryId}
             onChange={(value) =>
               setState((prev) => ({ ...prev, masterPricingCategoryId: value ?? "" }))
             }
-            placeholder="Search category"
+            placeholder={messages.pricingCategoryDependencyForm.placeholders.categorySearch}
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label>Dependent category</Label>
+          <Label>{messages.pricingCategoryDependencyForm.fields.dependentCategory}</Label>
           <PricingCategoryCombobox
             value={state.pricingCategoryId}
             onChange={(value) => setState((prev) => ({ ...prev, pricingCategoryId: value ?? "" }))}
-            placeholder="Search category"
+            placeholder={messages.pricingCategoryDependencyForm.placeholders.categorySearch}
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Dependency type</Label>
+        <Label>{messages.pricingCategoryDependencyForm.fields.dependencyType}</Label>
         <Select
-          items={DEPENDENCY_TYPES}
+          items={DEPENDENCY_TYPES.map((type) => ({
+            label: messages.common.dependencyTypeLabels[type.value as PricingDependencyType],
+            value: type.value,
+          }))}
           value={state.dependencyType}
           onValueChange={(value) =>
             setState((prev) => ({
@@ -172,7 +182,7 @@ export function PricingCategoryDependencyForm({
           <SelectContent>
             {DEPENDENCY_TYPES.map((type) => (
               <SelectItem key={type.value} value={type.value}>
-                {type.label}
+                {messages.common.dependencyTypeLabels[type.value as PricingDependencyType]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -181,7 +191,9 @@ export function PricingCategoryDependencyForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pricing-category-dependency-max-per-master">Max per master</Label>
+          <Label htmlFor="pricing-category-dependency-max-per-master">
+            {messages.pricingCategoryDependencyForm.fields.maxPerMaster}
+          </Label>
           <Input
             id="pricing-category-dependency-max-per-master"
             type="number"
@@ -194,7 +206,9 @@ export function PricingCategoryDependencyForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="pricing-category-dependency-max-dependent-sum">Max dependent sum</Label>
+          <Label htmlFor="pricing-category-dependency-max-dependent-sum">
+            {messages.pricingCategoryDependencyForm.fields.maxDependentSum}
+          </Label>
           <Input
             id="pricing-category-dependency-max-dependent-sum"
             type="number"
@@ -212,11 +226,13 @@ export function PricingCategoryDependencyForm({
           checked={state.active}
           onCheckedChange={(active) => setState((prev) => ({ ...prev, active }))}
         />
-        <Label>Active</Label>
+        <Label>{messages.pricingCategoryDependencyForm.fields.active}</Label>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="pricing-category-dependency-notes">Notes</Label>
+        <Label htmlFor="pricing-category-dependency-notes">
+          {messages.pricingCategoryDependencyForm.fields.notes}
+        </Label>
         <Textarea
           id="pricing-category-dependency-notes"
           value={state.notes}
@@ -229,14 +245,16 @@ export function PricingCategoryDependencyForm({
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "edit" ? "Save changes" : "Add dependency"}
+          {mode.kind === "edit"
+            ? messages.common.saveChanges
+            : messages.pricingCategoryDependencyForm.actions.create}
         </Button>
       </div>
     </form>

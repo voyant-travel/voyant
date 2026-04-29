@@ -8,14 +8,7 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Camera, Compass, GraduationCap, Mic, ScrollText, Sparkles } from "lucide-react"
 import type * as React from "react"
 
-const KIND_LABEL: Record<EnrichmentProgramRecord["kind"], string> = {
-  naturalist: "Naturalist",
-  historian: "Historian",
-  photographer: "Photographer",
-  lecturer: "Lecturer",
-  expert: "Expert",
-  other: "Specialist",
-}
+import { useCruisesUiI18nOrDefault } from "../i18n"
 
 const KIND_ICON: Record<
   EnrichmentProgramRecord["kind"],
@@ -46,20 +39,21 @@ export function EnrichmentProgramList({
   className,
   ...props
 }: EnrichmentProgramListProps) {
+  const { messages } = useCruisesUiI18nOrDefault()
+  const m = messages.enrichmentProgramList
   const { data, isLoading } = useEnrichmentPrograms(cruiseKey)
+
   if (isLoading) {
     return (
       <div data-slot="enrichment-loading" className={cn("py-8 text-center", className)} {...props}>
-        <p className="text-muted-foreground">Loading enrichment programs…</p>
+        <p className="text-muted-foreground">{m.loading}</p>
       </div>
     )
   }
   if (!data || data.length === 0) {
     return (
       <div data-slot="enrichment-empty" className={cn("py-8 text-center", className)} {...props}>
-        {emptyState ?? (
-          <p className="text-muted-foreground">No enrichment programs published for this cruise.</p>
-        )}
+        {emptyState ?? <p className="text-muted-foreground">{m.empty}</p>}
       </div>
     )
   }
@@ -85,13 +79,13 @@ export function EnrichmentProgramList({
                 {program.bioImageUrl ? (
                   <AvatarImage src={program.bioImageUrl} alt={program.name} />
                 ) : null}
-                <AvatarFallback>{initials || "?"}</AvatarFallback>
+                <AvatarFallback>{initials || m.avatarFallback}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="font-normal">
                     <Icon aria-hidden className="mr-1 size-3" />
-                    {KIND_LABEL[program.kind]}
+                    {m.kindLabels[program.kind]}
                   </Badge>
                 </div>
                 <div className="font-semibold truncate">{program.name}</div>

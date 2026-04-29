@@ -7,11 +7,15 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Building2, Globe } from "lucide-react"
 import type * as React from "react"
 
+import { useCrmUiMessagesOrDefault } from "../i18n"
+import type { CrmRelationType } from "../i18n/messages"
+
 export interface OrganizationCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
   organization: OrganizationRecord
 }
 
 export function OrganizationCard({ organization, className, ...props }: OrganizationCardProps) {
+  const messages = useCrmUiMessagesOrDefault()
   return (
     <Card data-slot="organization-card" className={cn("overflow-hidden", className)} {...props}>
       <CardHeader className="flex flex-row items-center gap-3">
@@ -29,7 +33,8 @@ export function OrganizationCard({ organization, className, ...props }: Organiza
         </div>
         {organization.relation ? (
           <Badge variant="secondary" className="capitalize">
-            {organization.relation}
+            {messages.common.relationTypeLabels[organization.relation as CrmRelationType] ??
+              organization.relation}
           </Badge>
         ) : null}
       </CardHeader>

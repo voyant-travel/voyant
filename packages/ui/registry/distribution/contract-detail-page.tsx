@@ -4,12 +4,20 @@ import { ArrowLeft, DollarSign, Loader2, Trash2 } from "lucide-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { api } from "@/lib/api-client"
 import {
+  formatDistributionDateTime,
+  getContractStatusLabel,
+  getPaymentOwnerLabel,
+} from "../../../distribution-ui/src/components/distribution-shared"
+import { useDistributionUiI18nOrDefault } from "../../../distribution-ui/src/index"
+import {
   getDistributionContractChannelQueryOptions,
   getDistributionContractCommissionRulesQueryOptions,
   getDistributionContractProductsQueryOptions,
   getDistributionContractQueryOptions,
   getDistributionContractSupplierQueryOptions,
 } from "./distribution-detail-query-options"
+import { useRegistryDistributionMessagesOrDefault } from "./i18n/provider"
+import { formatRegistryDistributionDate } from "./i18n/utils"
 
 type DistributionContractDetailPageProps = {
   id: string
@@ -18,6 +26,9 @@ type DistributionContractDetailPageProps = {
 export function DistributionContractDetailPage({ id }: DistributionContractDetailPageProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const i18n = useDistributionUiI18nOrDefault()
+  const messages = useRegistryDistributionMessagesOrDefault()
+  const detail = messages.details.contract
 
   const { data: contractData, isPending } = useQuery(getDistributionContractQueryOptions(id))
   const contract = contractData?.data
@@ -52,9 +63,9 @@ export function DistributionContractDetailPage({ id }: DistributionContractDetai
   if (!contract) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
-        <p className="text-muted-foreground">Contract not found</p>
+        <p className="text-muted-foreground">{detail.notFound}</p>
         <Button variant="outline" onClick={() => void navigate({ to: "/distribution" })}>
-          Back to Distribution
+          {messages.common.backToDistribution}
         </Button>
       </div>
     )
@@ -71,12 +82,14 @@ export function DistributionContractDetailPage({ id }: DistributionContractDetai
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">Channel Contract</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{detail.title}</h1>
           <div className="mt-1 flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">
-              {contract.status}
+            <Badge variant="outline">
+              {getContractStatusLabel(contract.status, i18n.messages)}
             </Badge>
-            <Badge variant="secondary">{contract.startsAt}</Badge>
+            <Badge variant="secondary">
+              {formatRegistryDistributionDate(i18n, contract.startsAt)}
+            </Badge>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -86,19 +99,19 @@ export function DistributionContractDetailPage({ id }: DistributionContractDetai
               void navigate({ to: "/distribution/$id", params: { id: contract.channelId } })
             }
           >
-            Open Channel
+            {detail.openChannel}
           </Button>
           <Button
             variant="destructive"
             onClick={() => {
-              if (confirm("Delete this contract?")) {
+              if (confirm(detail.deleteConfirm)) {
                 deleteMutation.mutate()
               }
             }}
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            {detail.deleteButton}
           </Button>
         </div>
       </div>
@@ -106,52 +119,60 @@ export function DistributionContractDetailPage({ id }: DistributionContractDetai
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Contract Details</CardTitle>
+            <CardTitle>{detail.sections.details}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm">
             <div>
-              <span className="text-muted-foreground">Channel:</span>{" "}
+              <span className="text-muted-foreground">{messages.common.channelLabel}:</span>{" "}
               <span>{channelQuery.data?.data.name ?? contract.channelId}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Supplier:</span>{" "}
-              <span>{supplierQuery.data?.data.name ?? contract.supplierId ?? "-"}</span>
+              <span className="text-muted-foreground">{detail.labels.supplier}:</span>{" "}
+              <span>
+                {supplierQuery.data?.data.name ?? contract.supplierId ?? messages.common.none}
+              </span>
             </div>
             <div>
-              <span className="text-muted-foreground">Ends At:</span>{" "}
-              <span>{contract.endsAt ?? "Open-ended"}</span>
+              <span className="text-muted-foreground">{detail.labels.endsAt}:</span>{" "}
+              <span>
+                {contract.endsAt
+                  ? formatRegistryDistributionDate(i18n, contract.endsAt)
+                  : messages.common.openEnded}
+              </span>
             </div>
             <div>
-              <span className="text-muted-foreground">Payment Owner:</span>{" "}
-              <span>{contract.paymentOwner}</span>
+              <span className="text-muted-foreground">{detail.labels.paymentOwner}:</span>{" "}
+              <span>{getPaymentOwnerLabel(contract.paymentOwner, i18n.messages)}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Cancellation Owner:</span>{" "}
-              <span>{contract.cancellationOwner}</span>
+              <span className="text-muted-foreground">{detail.labels.cancellationOwner}:</span>{" "}
+              <span>{messages.common.cancellationOwnerLabels[contract.cancellationOwner]}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Created:</span>{" "}
-              <span>{new Date(contract.createdAt).toLocaleString()}</span>
+              <span className="text-muted-foreground">{messages.common.createdLabel}:</span>{" "}
+              <span>{formatDistributionDateTime(contract.createdAt, i18n)}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Updated:</span>{" "}
-              <span>{new Date(contract.updatedAt).toLocaleString()}</span>
+              <span className="text-muted-foreground">{messages.common.updatedLabel}:</span>{" "}
+              <span>{formatDistributionDateTime(contract.updatedAt, i18n)}</span>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Commercial Notes</CardTitle>
+            <CardTitle>{detail.sections.notes}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 text-sm">
             <div>
-              <div className="mb-1 text-muted-foreground">Settlement Terms</div>
-              <div className="whitespace-pre-wrap">{contract.settlementTerms ?? "-"}</div>
+              <div className="mb-1 text-muted-foreground">{detail.labels.settlementTerms}</div>
+              <div className="whitespace-pre-wrap">
+                {contract.settlementTerms ?? messages.common.none}
+              </div>
             </div>
             <div>
-              <div className="mb-1 text-muted-foreground">Notes</div>
-              <div className="whitespace-pre-wrap">{contract.notes ?? "-"}</div>
+              <div className="mb-1 text-muted-foreground">{detail.labels.notes}</div>
+              <div className="whitespace-pre-wrap">{contract.notes ?? messages.common.none}</div>
             </div>
           </CardContent>
         </Card>
@@ -160,11 +181,11 @@ export function DistributionContractDetailPage({ id }: DistributionContractDetai
       <Card>
         <CardHeader className="flex flex-row items-center gap-2">
           <DollarSign className="h-4 w-4" />
-          <CardTitle>Commission Rules</CardTitle>
+          <CardTitle>{detail.sections.commissionRules}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {(commissionRulesQuery.data?.data.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground">No commission rules on this contract.</p>
+            <p className="text-muted-foreground">{detail.empty.commissionRules}</p>
           ) : (
             commissionRulesQuery.data?.data.map((rule) => (
               <button
@@ -179,24 +200,38 @@ export function DistributionContractDetailPage({ id }: DistributionContractDetai
                 }
               >
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="capitalize">
-                    {rule.scope}
+                  <Badge variant="outline">
+                    {i18n.messages.common.commissionScopeLabels[rule.scope]}
                   </Badge>
-                  <Badge variant="secondary" className="capitalize">
-                    {rule.commissionType}
+                  <Badge variant="secondary">
+                    {i18n.messages.common.commissionTypeLabels[rule.commissionType]}
                   </Badge>
                 </div>
                 <div className="mt-2 text-muted-foreground">
-                  Product: {productsById.get(rule.productId ?? "")?.name ?? rule.productId ?? "-"}
+                  {messages.common.productLabel}:{" "}
+                  {productsById.get(rule.productId ?? "")?.name ??
+                    rule.productId ??
+                    messages.common.none}
                 </div>
                 <div className="text-muted-foreground">
-                  Amount: {rule.amountCents ?? "-"} · Basis Points: {rule.percentBasisPoints ?? "-"}
+                  {detail.labels.amount}: {rule.amountCents ?? messages.common.none}
+                  {" · "}
+                  {detail.labels.basisPoints}: {rule.percentBasisPoints ?? messages.common.none}
                 </div>
                 <div className="text-muted-foreground">
-                  Rate: {rule.externalRateId ?? "-"} · Category: {rule.externalCategoryId ?? "-"}
+                  {detail.labels.rate}: {rule.externalRateId ?? messages.common.none}
+                  {" · "}
+                  {detail.labels.category}: {rule.externalCategoryId ?? messages.common.none}
                 </div>
                 <div className="text-muted-foreground">
-                  Valid: {rule.validFrom ?? "-"} to {rule.validTo ?? "-"}
+                  {detail.labels.valid}:{" "}
+                  {rule.validFrom
+                    ? formatRegistryDistributionDate(i18n, rule.validFrom)
+                    : messages.common.none}
+                  {" to "}
+                  {rule.validTo
+                    ? formatRegistryDistributionDate(i18n, rule.validTo)
+                    : messages.common.none}
                 </div>
               </button>
             ))

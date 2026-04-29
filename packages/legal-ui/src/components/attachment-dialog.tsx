@@ -19,17 +19,21 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-const attachmentFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  kind: z.string().min(1).optional(),
-  mimeType: z.string().optional(),
-  fileSize: z.coerce.number().int().optional(),
-  storageKey: z.string().optional(),
-  checksum: z.string().optional(),
-})
+import { useLegalUiMessagesOrDefault } from "../i18n"
 
-type FormValues = z.input<typeof attachmentFormSchema>
-type FormOutput = z.output<typeof attachmentFormSchema>
+function createAttachmentFormSchema(messages: ReturnType<typeof useLegalUiMessagesOrDefault>) {
+  return z.object({
+    name: z.string().min(1, messages.attachmentDialog.validation.nameRequired),
+    kind: z.string().min(1).optional(),
+    mimeType: z.string().optional(),
+    fileSize: z.coerce.number().int().optional(),
+    storageKey: z.string().optional(),
+    checksum: z.string().optional(),
+  })
+}
+type AttachmentFormSchema = ReturnType<typeof createAttachmentFormSchema>
+type FormValues = z.input<AttachmentFormSchema>
+type FormOutput = z.output<AttachmentFormSchema>
 
 type AttachmentDialogProps = {
   open: boolean
@@ -48,12 +52,14 @@ export function AttachmentDialog({
 }: AttachmentDialogProps) {
   const isEditing = !!attachment
   const { create, update } = useLegalContractAttachmentMutation()
+  const messages = useLegalUiMessagesOrDefault()
+  const attachmentFormSchema = createAttachmentFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(attachmentFormSchema),
     defaultValues: {
       name: "",
-      kind: "appendix",
+      kind: "appendix", // i18n-literal-ok domain default attachment kind
       mimeType: "",
       fileSize: undefined,
       storageKey: "",
@@ -79,7 +85,7 @@ export function AttachmentDialog({
   const onSubmit = async (values: FormOutput) => {
     const payload = {
       name: values.name,
-      kind: values.kind || "appendix",
+      kind: values.kind || "appendix", // i18n-literal-ok domain default attachment kind
       mimeType: values.mimeType || undefined,
       fileSize: values.fileSize || undefined,
       storageKey: values.storageKey || undefined,
@@ -98,13 +104,20 @@ export function AttachmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Attachment" : "Add Attachment"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.attachmentDialog.titles.edit
+              : messages.attachmentDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Name</Label>
-              <Input {...form.register("name")} placeholder="Attachment name" />
+              <Label>{messages.attachmentDialog.fields.name}</Label>
+              <Input
+                {...form.register("name")}
+                placeholder={messages.attachmentDialog.placeholders.name}
+              />
               {form.formState.errors.name && (
                 <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
               )}
@@ -112,38 +125,54 @@ export function AttachmentDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Kind</Label>
-                <Input {...form.register("kind")} placeholder="appendix" />
+                <Label>{messages.attachmentDialog.fields.kind}</Label>
+                <Input
+                  {...form.register("kind")}
+                  placeholder={messages.attachmentDialog.placeholders.kind}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>MIME Type</Label>
-                <Input {...form.register("mimeType")} placeholder="application/pdf" />
+                <Label>{messages.attachmentDialog.fields.mimeType}</Label>
+                <Input
+                  {...form.register("mimeType")}
+                  placeholder={messages.attachmentDialog.placeholders.mimeType}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>File Size</Label>
-                <Input {...form.register("fileSize")} type="number" placeholder="Bytes" />
+                <Label>{messages.attachmentDialog.fields.fileSize}</Label>
+                <Input
+                  {...form.register("fileSize")}
+                  type="number"
+                  placeholder={messages.attachmentDialog.placeholders.fileSize}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Checksum</Label>
-                <Input {...form.register("checksum")} placeholder="Optional" />
+                <Label>{messages.attachmentDialog.fields.checksum}</Label>
+                <Input
+                  {...form.register("checksum")}
+                  placeholder={messages.attachmentDialog.placeholders.checksum}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Storage Key</Label>
-              <Input {...form.register("storageKey")} placeholder="Optional storage reference" />
+              <Label>{messages.attachmentDialog.fields.storageKey}</Label>
+              <Input
+                {...form.register("storageKey")}
+                placeholder={messages.attachmentDialog.placeholders.storageKey}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Attachment"}
+              {isEditing ? messages.common.saveChanges : messages.attachmentDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

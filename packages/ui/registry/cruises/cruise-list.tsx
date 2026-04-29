@@ -1,11 +1,12 @@
 "use client"
 
 import { type StorefrontListFilters, useStorefrontCruises } from "@voyantjs/cruises-react"
+import { formatMessage } from "@voyantjs/i18n"
 import type * as React from "react"
 
 import { cn } from "@/lib/utils"
-
 import { CruiseCard } from "./cruise-card"
+import { useRegistryCruisesI18nOrDefault } from "./i18n"
 
 export interface CruiseListProps extends React.HTMLAttributes<HTMLDivElement> {
   filters?: StorefrontListFilters
@@ -27,6 +28,8 @@ export function CruiseList({
   className,
   ...props
 }: CruiseListProps) {
+  const { messages } = useRegistryCruisesI18nOrDefault()
+  const m = messages.cruiseList
   const { data, isLoading, isError, error } = useStorefrontCruises(filters)
 
   if (isLoading) {
@@ -36,23 +39,23 @@ export function CruiseList({
         className={cn("py-12 text-center", className)}
         {...props}
       >
-        {loadingState ?? <p className="text-muted-foreground">Loading cruises…</p>}
+        {loadingState ?? <p className="text-muted-foreground">{m.loading}</p>}
       </div>
     )
   }
   if (isError) {
     return (
       <div data-slot="cruise-list-error" className={cn("py-12 text-center", className)} {...props}>
-        <p className="text-destructive">Failed to load cruises: {(error as Error).message}</p>
+        <p className="text-destructive">
+          {formatMessage(m.error, { message: (error as Error).message })}
+        </p>
       </div>
     )
   }
   if (!data || data.data.length === 0) {
     return (
       <div data-slot="cruise-list-empty" className={cn("py-12 text-center", className)} {...props}>
-        {emptyState ?? (
-          <p className="text-muted-foreground">No cruises match the selected filters.</p>
-        )}
+        {emptyState ?? <p className="text-muted-foreground">{m.empty}</p>}
       </div>
     )
   }

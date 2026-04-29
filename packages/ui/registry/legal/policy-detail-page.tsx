@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   type LegalPolicyVersionRecord,
   useLegalPolicy,
@@ -12,7 +13,11 @@ import {
 } from "@voyantjs/legal-react"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
+
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
+
+import { useRegistryLegalI18nOrDefault, useRegistryLegalMessagesOrDefault } from "./i18n/provider"
+import { formatRegistryLegalDateTime } from "./i18n/utils"
 import { type AssignmentData, PolicyAssignmentDialog } from "./policy-assignment-dialog"
 import {
   type Acceptance,
@@ -39,6 +44,8 @@ export function loadPolicyDetailPage(id: string, ensureQueryData: EnsureQueryDat
 export function PolicyDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const i18n = useRegistryLegalI18nOrDefault()
+  const m = useRegistryLegalMessagesOrDefault()
   const { remove } = useLegalPolicyMutation()
   const { publish, retire } = useLegalPolicyVersionMutation()
   const { remove: removeAssignment } = useLegalPolicyAssignmentMutation()
@@ -72,9 +79,9 @@ export function PolicyDetailPage({ id }: { id: string }) {
   if (!policy) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
-        <p className="text-muted-foreground">Policy not found</p>
+        <p className="text-muted-foreground">{m.policyDetailPage.notFound}</p>
         <Button variant="outline" onClick={() => void navigate({ to: "/legal/policies" })}>
-          Back to Policies
+          {m.policyDetailPage.backToPolicies}
         </Button>
       </div>
     )
@@ -93,8 +100,9 @@ export function PolicyDetailPage({ id }: { id: string }) {
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">{policy.name}</h1>
           <div className="mt-1 flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">
-              {policy.kind.replace(/_/g, " ")}
+            <Badge variant="outline">
+              {m.common.policyKindLabels[policy.kind as keyof typeof m.common.policyKindLabels] ??
+                policy.kind.replace(/_/g, " ")}
             </Badge>
             <span className="font-mono text-xs text-muted-foreground">{policy.slug}</span>
           </div>
@@ -102,19 +110,19 @@ export function PolicyDetailPage({ id }: { id: string }) {
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setEditOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" />
-            Edit
+            {m.common.edit}
           </Button>
           <Button
             variant="destructive"
             onClick={() => {
-              if (confirm("Delete this policy?")) {
+              if (confirm(m.policyDetailPage.confirms.deletePolicy)) {
                 remove.mutate(id, { onSuccess: () => void navigate({ to: "/legal/policies" }) })
               }
             }}
             disabled={remove.isPending}
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            {m.common.delete}
           </Button>
         </div>
       </div>
@@ -129,7 +137,7 @@ export function PolicyDetailPage({ id }: { id: string }) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Versions</CardTitle>
+          <CardTitle>{m.policyDetailPage.sections.versions}</CardTitle>
           <Button
             size="sm"
             onClick={() => {
@@ -138,12 +146,14 @@ export function PolicyDetailPage({ id }: { id: string }) {
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            New Version
+            {m.policyDetailPage.actions.createVersion}
           </Button>
         </CardHeader>
         <CardContent>
           {!versionsData || versionsData.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">No versions yet.</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {m.policyDetailPage.empty.noVersions}
+            </p>
           ) : null}
           <div className="flex flex-col gap-2">
             {versionsData?.map((version) => (
@@ -178,7 +188,7 @@ export function PolicyDetailPage({ id }: { id: string }) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Assignments</CardTitle>
+          <CardTitle>{m.policyDetailPage.sections.assignments}</CardTitle>
           <Button
             size="sm"
             onClick={() => {
@@ -187,42 +197,55 @@ export function PolicyDetailPage({ id }: { id: string }) {
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Assignment
+            {m.policyDetailPage.actions.addAssignment}
           </Button>
         </CardHeader>
         <CardContent>
           {assignments.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">No assignments yet.</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {m.policyDetailPage.empty.noAssignments}
+            </p>
           ) : null}
           {assignments.length > 0 ? (
             <div className="rounded border bg-background">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="p-2 text-left font-medium">Scope</th>
-                    <th className="p-2 text-left font-medium">Target ID</th>
-                    <th className="p-2 text-left font-medium">Priority</th>
-                    <th className="p-2 text-left font-medium">Valid</th>
+                    <th className="p-2 text-left font-medium">{m.policyDetailPage.fields.scope}</th>
+                    <th className="p-2 text-left font-medium">
+                      {m.policyDetailPage.fields.targetId}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.policyDetailPage.fields.priority}
+                    </th>
+                    <th className="p-2 text-left font-medium">{m.policyDetailPage.fields.valid}</th>
                     <th className="w-16 p-2" />
                   </tr>
                 </thead>
                 <tbody>
                   {assignments.map((assignment) => (
                     <tr key={assignment.id} className="border-b last:border-b-0">
-                      <td className="p-2 capitalize">{assignment.scope}</td>
+                      <td className="p-2">
+                        {m.policyAssignmentDialog.scopeLabels[
+                          assignment.scope as keyof typeof m.policyAssignmentDialog.scopeLabels
+                        ] ?? assignment.scope}
+                      </td>
                       <td className="p-2 font-mono text-xs">
                         {assignment.productId ||
                           assignment.channelId ||
                           assignment.supplierId ||
                           assignment.marketId ||
                           assignment.organizationId ||
-                          "-"}
+                          m.common.noResultsDash}
                       </td>
                       <td className="p-2">{assignment.priority}</td>
                       <td className="p-2 text-xs">
                         {assignment.validFrom || assignment.validTo
-                          ? `${assignment.validFrom ?? "..."} — ${assignment.validTo ?? "..."}`
-                          : "Always"}
+                          ? formatMessage(m.policyDetailPage.validRange, {
+                              from: assignment.validFrom ?? "...",
+                              to: assignment.validTo ?? "...",
+                            })
+                          : m.policyDetailPage.always}
                       </td>
                       <td className="p-2">
                         <div className="flex items-center gap-1">
@@ -239,7 +262,7 @@ export function PolicyDetailPage({ id }: { id: string }) {
                           <button
                             type="button"
                             onClick={() => {
-                              if (confirm("Delete this assignment?")) {
+                              if (confirm(m.policyDetailPage.confirms.deleteAssignment)) {
                                 removeAssignment.mutate({ policyId: id, id: assignment.id })
                               }
                             }}
@@ -260,32 +283,50 @@ export function PolicyDetailPage({ id }: { id: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Acceptances</CardTitle>
+          <CardTitle>{m.policyDetailPage.sections.recentAcceptances}</CardTitle>
         </CardHeader>
         <CardContent>
           {acceptances.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">No acceptances yet.</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {m.policyDetailPage.empty.noAcceptances}
+            </p>
           ) : null}
           {acceptances.length > 0 ? (
             <div className="rounded border bg-background">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="p-2 text-left font-medium">Version ID</th>
-                    <th className="p-2 text-left font-medium">Person ID</th>
-                    <th className="p-2 text-left font-medium">Booking ID</th>
-                    <th className="p-2 text-left font-medium">Method</th>
-                    <th className="p-2 text-left font-medium">Accepted At</th>
+                    <th className="p-2 text-left font-medium">
+                      {m.policyDetailPage.fields.versionId}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.policyDetailPage.fields.personId}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.policyDetailPage.fields.bookingId}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.policyDetailPage.fields.method}
+                    </th>
+                    <th className="p-2 text-left font-medium">
+                      {m.policyDetailPage.fields.acceptedAt}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {acceptances.map((acceptance: Acceptance) => (
                     <tr key={acceptance.id} className="border-b last:border-b-0">
                       <td className="p-2 font-mono text-xs">{acceptance.policyVersionId}</td>
-                      <td className="p-2 font-mono text-xs">{acceptance.personId ?? "-"}</td>
-                      <td className="p-2 font-mono text-xs">{acceptance.bookingId ?? "-"}</td>
-                      <td className="p-2 capitalize">{acceptance.method.replace(/_/g, " ")}</td>
-                      <td className="p-2">{new Date(acceptance.acceptedAt).toLocaleString()}</td>
+                      <td className="p-2 font-mono text-xs">
+                        {acceptance.personId ?? m.common.noResultsDash}
+                      </td>
+                      <td className="p-2 font-mono text-xs">
+                        {acceptance.bookingId ?? m.common.noResultsDash}
+                      </td>
+                      <td className="p-2">{acceptance.method.replace(/_/g, " ")}</td>
+                      <td className="p-2">
+                        {formatRegistryLegalDateTime(i18n, acceptance.acceptedAt)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

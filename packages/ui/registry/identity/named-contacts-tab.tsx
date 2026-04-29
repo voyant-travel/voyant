@@ -8,9 +8,11 @@ import {
 } from "@voyantjs/identity-react"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import { useIdentityUiMessagesOrDefault } from "../../../identity-ui/src/index"
+
+import { useRegistryIdentityMessagesOrDefault } from "./i18n"
 import { NamedContactDialog } from "./named-contact-dialog"
 
 export interface NamedContactsTabProps {
@@ -21,6 +23,8 @@ export interface NamedContactsTabProps {
 const PAGE_SIZE = 25
 
 export function NamedContactsTab({ entityType, entityId }: NamedContactsTabProps) {
+  const sharedMessages = useIdentityUiMessagesOrDefault()
+  const tabMessages = useRegistryIdentityMessagesOrDefault().namedContactsTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<NamedContactRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -37,42 +41,42 @@ export function NamedContactsTab({ entityType, entityId }: NamedContactsTabProps
     () => [
       {
         accessorKey: "role",
-        header: "Role",
+        header: tabMessages.columns.role,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.role.replace(/_/g, " ")}
+            {sharedMessages.common.namedContactRoleLabels[row.original.role]}
           </Badge>
         ),
       },
       {
         accessorKey: "name",
-        header: "Name",
+        header: tabMessages.columns.name,
         cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
       },
       {
         accessorKey: "title",
-        header: "Title",
+        header: tabMessages.columns.title,
         cell: ({ row }) => (
           <span className="text-muted-foreground">{row.original.title ?? "-"}</span>
         ),
       },
       {
         accessorKey: "email",
-        header: "Email",
+        header: tabMessages.columns.email,
         cell: ({ row }) => (
           <span className="text-muted-foreground">{row.original.email ?? "-"}</span>
         ),
       },
       {
         accessorKey: "phone",
-        header: "Phone",
+        header: tabMessages.columns.phone,
         cell: ({ row }) => (
           <span className="text-muted-foreground">{row.original.phone ?? "-"}</span>
         ),
       },
       {
         accessorKey: "isPrimary",
-        header: "Primary",
+        header: tabMessages.columns.primary,
         cell: ({ row }) =>
           row.original.isPrimary ? (
             <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
@@ -96,7 +100,7 @@ export function NamedContactsTab({ entityType, entityId }: NamedContactsTabProps
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete named contact "${row.original.name}"?`)) {
+                if (confirm(tabMessages.actions.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -108,13 +112,13 @@ export function NamedContactsTab({ entityType, entityId }: NamedContactsTabProps
         ),
       },
     ],
-    [refetch, remove],
+    [refetch, remove, sharedMessages.common.namedContactRoleLabels, tabMessages],
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Named people associated with this entity.</p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -123,14 +127,14 @@ export function NamedContactsTab({ entityType, entityId }: NamedContactsTabProps
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Named Contact
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading named contacts..." : "No named contacts yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.none}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

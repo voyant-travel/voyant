@@ -1,20 +1,26 @@
 import type { ColumnDef, OnChangeFn, RowSelectionState } from "@tanstack/react-table"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   type BookingOption,
-  formatDateTime,
-  formatSelectionLabel,
   labelById,
   type ResourceCloseoutRow,
   type ResourceRow,
   type ResourceSlotAssignmentRow,
   type SlotOption,
-  slotLabel,
 } from "@voyantjs/resources-react"
 import { Badge, Button, ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { TabsContent } from "@voyantjs/ui/components/tabs"
 import { ExternalLink } from "lucide-react"
+
+import { useResourcesUiI18nOrDefault } from "../i18n"
+import {
+  formatDateTimeOrFallback,
+  formatResourceSlotLabel,
+  formatSelectionLabel,
+  formatSelectionSummary,
+} from "../i18n/utils"
 import { ResourcesSectionHeader } from "./resources-section-header"
 
 type BulkFn = (args: {
@@ -25,7 +31,7 @@ type BulkFn = (args: {
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok local callback type alias
 
 type DeleteFn = (args: {
   ids: string[]
@@ -33,9 +39,10 @@ type DeleteFn = (args: {
   target: string
   noun: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok local callback type alias
 
 const assignmentColumns = (
+  i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
   slots: SlotOption[],
   resources: ResourceRow[],
   bookings: BookingOption[],
@@ -43,44 +50,77 @@ const assignmentColumns = (
 ): ColumnDef<ResourceSlotAssignmentRow>[] => [
   {
     accessorKey: "slotId",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Slot" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.assignments.slot}
+      />
+    ),
     cell: ({ row }) =>
-      slotLabel(
+      formatResourceSlotLabel(
         slots.find((slot) => slot.id === row.original.slotId) ?? {
           id: row.original.slotId,
           productId: "",
           dateLocal: row.original.slotId,
           startsAt: row.original.slotId,
         },
+        {
+          template: i18n.messages.common.slotLabel,
+          formatDate: i18n.formatDate,
+        },
       ),
   },
   {
     accessorKey: "resourceId",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Resource" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.assignments.resource}
+      />
+    ),
     cell: ({ row }) => labelById(resources, row.original.resourceId),
   },
   {
     accessorKey: "bookingId",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Booking" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.assignments.booking}
+      />
+    ),
     cell: ({ row }) => labelById(bookings, row.original.bookingId),
   },
   {
     accessorKey: "status",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.assignments.status}
+      />
+    ),
     cell: ({ row }) => (
-      <Badge variant="outline" className="capitalize">
-        {row.original.status}
+      <Badge variant="outline">
+        {i18n.messages.common.assignmentStatusLabels[row.original.status]}
       </Badge>
     ),
   },
   {
     accessorKey: "releasedAt",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Released" />,
-    cell: ({ row }) => formatDateTime(row.original.releasedAt),
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.assignments.released}
+      />
+    ),
+    cell: ({ row }) =>
+      formatDateTimeOrFallback(row.original.releasedAt, {
+        fallback: i18n.messages.common.dateTimeFallback,
+        formatDateTime: i18n.formatDateTime,
+      }),
   },
   {
     id: "view",
-    header: "View",
+    header: i18n.messages.tabsSecondary.columns.assignments.view,
     cell: ({ row }) => (
       <Button
         variant="ghost"
@@ -91,35 +131,71 @@ const assignmentColumns = (
         }}
       >
         <ExternalLink className="mr-2 h-4 w-4" />
-        Open
+        {i18n.messages.common.open}
       </Button>
     ),
   },
 ]
 
-const closeoutColumns = (resources: ResourceRow[]): ColumnDef<ResourceCloseoutRow>[] => [
+const closeoutColumns = (
+  i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
+  resources: ResourceRow[],
+): ColumnDef<ResourceCloseoutRow>[] => [
   {
     accessorKey: "resourceId",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Resource" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.closeouts.resource}
+      />
+    ),
     cell: ({ row }) => labelById(resources, row.original.resourceId),
   },
   {
     accessorKey: "dateLocal",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.closeouts.date}
+      />
+    ),
   },
   {
     accessorKey: "startsAt",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Starts" />,
-    cell: ({ row }) => formatDateTime(row.original.startsAt),
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.closeouts.starts}
+      />
+    ),
+    cell: ({ row }) =>
+      formatDateTimeOrFallback(row.original.startsAt, {
+        fallback: i18n.messages.common.dateTimeFallback,
+        formatDateTime: i18n.formatDateTime,
+      }),
   },
   {
     accessorKey: "endsAt",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Ends" />,
-    cell: ({ row }) => formatDateTime(row.original.endsAt),
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.closeouts.ends}
+      />
+    ),
+    cell: ({ row }) =>
+      formatDateTimeOrFallback(row.original.endsAt, {
+        fallback: i18n.messages.common.dateTimeFallback,
+        formatDateTime: i18n.formatDateTime,
+      }),
   },
   {
     accessorKey: "reason",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Reason" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsSecondary.columns.closeouts.reason}
+      />
+    ),
     cell: ({ row }) => row.original.reason ?? "-",
   },
 ]
@@ -138,29 +214,55 @@ export function AssignmentsTab(props: {
   onOpenRoute: (assignmentId: string) => void
   onEdit: (row: ResourceSlotAssignmentRow) => void
 }) {
+  const i18n = useResourcesUiI18nOrDefault()
+  const m = i18n.messages
+  const section = m.tabsSecondary.sections.assignments
+  const selection = m.common.selectionNouns.assignment
+
   return (
     <TabsContent value="assignments" className="space-y-4">
       <ResourcesSectionHeader
-        title="Slot Assignments"
-        description="Reserve or assign specific resources against live slots and bookings."
-        actionLabel="New Assignment"
+        title={section.title}
+        description={section.description}
+        actionLabel={section.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={assignmentColumns(props.slots, props.resources, props.bookings, props.onOpenRoute)}
+        columns={assignmentColumns(
+          i18n,
+          props.slots,
+          props.resources,
+          props.bookings,
+          props.onOpenRoute,
+        )}
         data={props.filteredAssignments}
-        emptyMessage="No assignments match the current filters."
+        emptyMessage={section.emptyMessage}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.assignmentSelection}
         onRowSelectionChange={props.setAssignmentSelection}
         renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
+          <SelectionActionBar
+            selectedCount={selectedRows.length}
+            onClear={clearSelection}
+            clearLabel={m.common.clearSelection}
+            selectionSummary={formatSelectionSummary(
+              selectedRows.length,
+              m.common.selectionSummary,
+            )}
+          >
             <ConfirmActionButton
-              buttonLabel="Assign"
-              confirmLabel="Mark Assigned"
-              title={`Mark ${formatSelectionLabel(selectedRows.length, "assignment")} as assigned?`}
-              description="This marks the selected reservations as actively assigned without deleting any linkage."
+              buttonLabel={section.actions.assign.buttonLabel}
+              confirmLabel={section.actions.assign.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.assign.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.assign.description}
               disabled={props.bulkActionTarget === "assignments-assigned"}
               onConfirm={() =>
                 props.handleBulkUpdate({
@@ -169,16 +271,23 @@ export function AssignmentsTab(props: {
                   target: "assignments-assigned",
                   noun: "assignment",
                   payload: { status: "assigned" },
-                  successVerb: "Updated",
+                  successVerb: section.actions.assign.successVerb,
                   clearSelection,
                 })
               }
             />
             <ConfirmActionButton
-              buttonLabel="Release"
-              confirmLabel="Release Assignments"
-              title={`Release ${formatSelectionLabel(selectedRows.length, "assignment")}?`}
-              description="This marks the selected reservations as released while keeping the assignment history intact."
+              buttonLabel={section.actions.release.buttonLabel}
+              confirmLabel={section.actions.release.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.release.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.release.description}
               disabled={props.bulkActionTarget === "assignments-released"}
               onConfirm={() =>
                 props.handleBulkUpdate({
@@ -187,16 +296,23 @@ export function AssignmentsTab(props: {
                   target: "assignments-released",
                   noun: "assignment",
                   payload: { status: "released" },
-                  successVerb: "Released",
+                  successVerb: section.actions.release.successVerb,
                   clearSelection,
                 })
               }
             />
             <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Assignments"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "assignment")}?`}
-              description="This permanently removes the selected slot assignments. Use Release if you only need to free the resource."
+              buttonLabel={section.actions.delete.buttonLabel}
+              confirmLabel={section.actions.delete.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.delete.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.delete.description}
               disabled={props.bulkActionTarget === "assignments-delete"}
               variant="destructive"
               confirmVariant="destructive"
@@ -228,29 +344,49 @@ export function CloseoutsTab(props: {
   onCreate: () => void
   onEdit: (row: ResourceCloseoutRow) => void
 }) {
+  const i18n = useResourcesUiI18nOrDefault()
+  const m = i18n.messages
+  const section = m.tabsSecondary.sections.closeouts
+  const selection = m.common.selectionNouns.closeout
+
   return (
     <TabsContent value="closeouts" className="space-y-4">
       <ResourcesSectionHeader
-        title="Resource Closeouts"
-        description="Block assets for maintenance, charter use, or operational conflicts."
-        actionLabel="New Closeout"
+        title={section.title}
+        description={section.description}
+        actionLabel={section.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={closeoutColumns(props.resources)}
+        columns={closeoutColumns(i18n, props.resources)}
         data={props.filteredCloseouts}
-        emptyMessage="No closeouts match the current filters."
+        emptyMessage={section.emptyMessage}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.closeoutSelection}
         onRowSelectionChange={props.setCloseoutSelection}
         renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
+          <SelectionActionBar
+            selectedCount={selectedRows.length}
+            onClear={clearSelection}
+            clearLabel={m.common.clearSelection}
+            selectionSummary={formatSelectionSummary(
+              selectedRows.length,
+              m.common.selectionSummary,
+            )}
+          >
             <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Closeouts"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "closeout")}?`}
-              description="This permanently removes the selected closeouts and may return the resources to operational use."
+              buttonLabel={section.actions.delete.buttonLabel}
+              confirmLabel={section.actions.delete.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.delete.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.delete.description}
               disabled={props.bulkActionTarget === "closeouts-delete"}
               variant="destructive"
               confirmVariant="destructive"

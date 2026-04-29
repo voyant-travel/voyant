@@ -14,6 +14,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
+
 type Props = {
   priceCatalogId?: string | null
   value: string | null | undefined
@@ -28,9 +30,10 @@ export function PriceScheduleCombobox({
   priceCatalogId,
   value,
   onChange,
-  placeholder = "Search price schedules…",
+  placeholder,
   disabled,
 }: Props) {
+  const messages = usePricingUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = usePriceSchedules({
     priceCatalogId: priceCatalogId || undefined,
@@ -75,12 +78,15 @@ export function PriceScheduleCombobox({
         setInputValue(id ? (itemMap.get(id)?.name ?? "") : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.priceSchedule.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
           {listQuery.isPending || selectedQuery.isPending
-            ? "Loading…"
-            : "No price schedules found."}
+            ? messages.common.loading
+            : messages.comboboxes.priceSchedule.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

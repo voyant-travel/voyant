@@ -12,6 +12,20 @@ pnpm add @voyantjs/distribution-ui @voyantjs/distribution-react @voyantjs/ui @ta
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 
+## I18n
+
+Components render English by default. To localize them, wrap your UI in
+`DistributionUiMessagesProvider` and import only the locales your app supports.
+
+```tsx
+import { DistributionUiMessagesProvider } from "@voyantjs/distribution-ui"
+import { distributionUiEn } from "@voyantjs/distribution-ui/i18n/en"
+import { distributionUiRo } from "@voyantjs/distribution-ui/i18n/ro"
+```
+
+English-only apps should import only `./i18n/en`. Bilingual apps can import
+`./i18n/en` and `./i18n/ro`.
+
 ## Not included (registry-only)
 
 Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `booking-link-detail-page`, `channel-detail-page`, `commission-rule-detail-page`, `contract-detail-page`, `distribution-dialogs-commercial`, `distribution-dialogs-commission`, `distribution-dialogs-sync`, `distribution-dialogs-webhook`, `distribution-page`, `mapping-detail-page`, `webhook-event-detail-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.

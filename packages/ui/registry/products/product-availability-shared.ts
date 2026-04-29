@@ -2,12 +2,9 @@
 
 import type { AvailabilitySlotRecord } from "@voyantjs/availability-react"
 
-export const SLOT_STATUSES = [
-  { value: "open", label: "Open" },
-  { value: "closed", label: "Closed" },
-  { value: "sold_out", label: "Sold out" },
-  { value: "cancelled", label: "Cancelled" },
-] as const
+import type { RegistryProductsMessages } from "./i18n/messages"
+
+export const SLOT_STATUS_VALUES = ["open", "closed", "sold_out", "cancelled"] as const
 
 export const slotStatusVariant: Record<
   AvailabilitySlotRecord["status"],
@@ -46,11 +43,24 @@ export function formatSlotTime(iso: string): string {
   return isoToLocalTime(iso)
 }
 
-export function formatDuration(slot: AvailabilitySlotRecord): string {
+export function formatDuration(
+  slot: AvailabilitySlotRecord,
+  messages: RegistryProductsMessages["productAvailability"],
+): string {
   if (slot.nights != null || slot.days != null) {
     const parts: string[] = []
-    if (slot.days != null) parts.push(`${slot.days} day${slot.days === 1 ? "" : "s"}`)
-    if (slot.nights != null) parts.push(`${slot.nights} night${slot.nights === 1 ? "" : "s"}`)
+    if (slot.days != null) {
+      parts.push(
+        `${slot.days} ${slot.days === 1 ? messages.durationUnits.day : messages.durationUnits.days}`,
+      )
+    }
+    if (slot.nights != null) {
+      parts.push(
+        `${slot.nights} ${
+          slot.nights === 1 ? messages.durationUnits.night : messages.durationUnits.nights
+        }`,
+      )
+    }
     return parts.join(" / ")
   }
 
@@ -62,18 +72,23 @@ export function formatDuration(slot: AvailabilitySlotRecord): string {
   if (diffMs <= 0) return "—"
 
   const hours = diffMs / 3_600_000
-  if (hours < 24) return `${hours.toFixed(hours % 1 === 0 ? 0 : 1)}h`
+  if (hours < 24) {
+    return `${hours.toFixed(hours % 1 === 0 ? 0 : 1)}${messages.durationUnits.hourSuffix}`
+  }
 
   const nights = Math.round(
     (new Date(`${formatSlotDate(slot.endsAt)}T00:00:00Z`).getTime() -
       new Date(`${formatSlotDate(slot.startsAt)}T00:00:00Z`).getTime()) /
       86_400_000,
   )
-  return `${nights} night${nights === 1 ? "" : "s"}`
+  return `${nights} ${nights === 1 ? messages.durationUnits.night : messages.durationUnits.nights}`
 }
 
-export function formatCapacity(slot: AvailabilitySlotRecord): string {
-  if (slot.unlimited) return "Unlimited"
+export function formatCapacity(
+  slot: AvailabilitySlotRecord,
+  messages: RegistryProductsMessages["productAvailability"],
+): string {
+  if (slot.unlimited) return messages.unlimitedCapacity
   if (slot.initialPax == null) return "—"
   const remaining = slot.remainingPax ?? slot.initialPax
   return `${remaining} / ${slot.initialPax}`
@@ -81,8 +96,8 @@ export function formatCapacity(slot: AvailabilitySlotRecord): string {
 
 export function getDefaultTimezone() {
   return typeof Intl !== "undefined"
-    ? (Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC")
-    : "UTC"
+    ? (Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC") // i18n-literal-ok timezone fallback
+    : "UTC" // i18n-literal-ok timezone fallback
 }
 
 export function getTimezoneOptions(current?: string) {

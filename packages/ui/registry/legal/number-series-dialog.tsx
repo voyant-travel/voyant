@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+
 import {
   Button,
   Dialog,
@@ -25,19 +26,18 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { zodResolver } from "@/lib/zod-resolver"
 
-const seriesFormSchema = z.object({
-  code: z.string().min(1, "Code is required").max(50),
-  name: z.string().min(1, "Name is required").max(255),
-  prefix: z.string().max(20).optional(),
-  separator: z.string().max(5).optional(),
-  padLength: z.coerce.number().int().min(0).max(12).optional(),
-  resetStrategy: z.enum(["never", "annual", "monthly"]),
-  scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
-  active: z.boolean(),
-})
+import { useRegistryLegalMessagesOrDefault } from "./i18n/provider"
 
-type FormValues = z.input<typeof seriesFormSchema>
-type FormOutput = z.output<typeof seriesFormSchema>
+type FormValues = {
+  code: string
+  name: string
+  prefix?: string
+  separator?: string
+  padLength?: number
+  resetStrategy: "never" | "annual" | "monthly"
+  scope: "customer" | "supplier" | "partner" | "channel" | "other"
+  active: boolean
+}
 
 export type NumberSeriesData = LegalContractNumberSeriesRecord
 
@@ -48,19 +48,21 @@ type NumberSeriesDialogProps = {
   onSuccess: () => void
 }
 
-const RESET_STRATEGIES = [
-  { value: "never", label: "Never" },
-  { value: "annual", label: "Annual" },
-  { value: "monthly", label: "Monthly" },
-] as const
+function createSeriesFormSchema(messages: ReturnType<typeof useRegistryLegalMessagesOrDefault>) {
+  return z.object({
+    code: z.string().min(1, messages.numberSeriesDialog.validation.codeRequired).max(50),
+    name: z.string().min(1, messages.numberSeriesDialog.validation.nameRequired).max(255),
+    prefix: z.string().max(20).optional(),
+    separator: z.string().max(5).optional(),
+    padLength: z.coerce.number().int().min(0).max(12).optional(),
+    resetStrategy: z.enum(["never", "annual", "monthly"]),
+    scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
+    active: z.boolean(),
+  })
+}
 
-const SCOPES = [
-  { value: "customer", label: "Customer" },
-  { value: "supplier", label: "Supplier" },
-  { value: "partner", label: "Partner" },
-  { value: "channel", label: "Channel" },
-  { value: "other", label: "Other" },
-] as const
+const RESET_STRATEGIES = ["never", "annual", "monthly"] as const
+const SCOPES = ["customer", "supplier", "partner", "channel", "other"] as const
 
 export function NumberSeriesDialog({
   open,
@@ -68,10 +70,12 @@ export function NumberSeriesDialog({
   series,
   onSuccess,
 }: NumberSeriesDialogProps) {
+  const messages = useRegistryLegalMessagesOrDefault()
+  const seriesFormSchema = createSeriesFormSchema(messages)
   const isEditing = !!series
   const { create, update } = useLegalContractNumberSeriesMutation()
 
-  const form = useForm<FormValues, unknown, FormOutput>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(seriesFormSchema),
     defaultValues: {
       code: "",
@@ -102,7 +106,7 @@ export function NumberSeriesDialog({
     }
   }, [open, series, form])
 
-  const onSubmit = async (values: FormOutput) => {
+  const onSubmit = async (values: FormValues) => {
     const payload = {
       code: values.code,
       name: values.name,
@@ -126,47 +130,69 @@ export function NumberSeriesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Number Series" : "New Number Series"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.numberSeriesDialog.titles.edit
+              : messages.numberSeriesDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Code</Label>
-                <Input {...form.register("code")} placeholder="INV" maxLength={50} />
-                {form.formState.errors.code && (
+                <Label>{messages.numberSeriesDialog.fields.code}</Label>
+                <Input
+                  {...form.register("code")}
+                  placeholder={messages.numberSeriesDialog.placeholders.code}
+                  maxLength={50}
+                />
+                {form.formState.errors.code ? (
                   <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
-                )}
+                ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Invoice Series" />
-                {form.formState.errors.name && (
+                <Label>{messages.numberSeriesDialog.fields.name}</Label>
+                <Input
+                  {...form.register("name")}
+                  placeholder={messages.numberSeriesDialog.placeholders.name}
+                />
+                {form.formState.errors.name ? (
                   <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
-                )}
+                ) : null}
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Prefix</Label>
-                <Input {...form.register("prefix")} placeholder="CTR" maxLength={20} />
+                <Label>{messages.numberSeriesDialog.fields.prefix}</Label>
+                <Input
+                  {...form.register("prefix")}
+                  placeholder={messages.numberSeriesDialog.placeholders.prefix}
+                  maxLength={20}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Separator</Label>
-                <Input {...form.register("separator")} placeholder="-" maxLength={5} />
+                <Label>{messages.numberSeriesDialog.fields.separator}</Label>
+                <Input
+                  {...form.register("separator")}
+                  placeholder={messages.numberSeriesDialog.placeholders.separator}
+                  maxLength={5}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Pad Length</Label>
+                <Label>{messages.numberSeriesDialog.fields.padLength}</Label>
                 <Input {...form.register("padLength")} type="number" min={0} max={12} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Reset Strategy</Label>
+                <Label>{messages.numberSeriesDialog.fields.resetStrategy}</Label>
                 <Select
-                  items={RESET_STRATEGIES}
+                  items={RESET_STRATEGIES.map((item) => ({
+                    label: messages.common.resetStrategyLabels[item],
+                    value: item,
+                  }))}
                   value={form.watch("resetStrategy")}
                   onValueChange={(v) =>
                     form.setValue("resetStrategy", v as FormValues["resetStrategy"])
@@ -176,18 +202,21 @@ export function NumberSeriesDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {RESET_STRATEGIES.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>
-                        {r.label}
+                    {RESET_STRATEGIES.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {messages.common.resetStrategyLabels[item]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Scope</Label>
+                <Label>{messages.numberSeriesDialog.fields.scope}</Label>
                 <Select
-                  items={SCOPES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={SCOPES.map((item) => ({
+                    label: messages.common.contractScopeLabels[item],
+                    value: item,
+                  }))}
                   value={form.watch("scope")}
                   onValueChange={(v) => form.setValue("scope", v as FormValues["scope"])}
                 >
@@ -195,9 +224,9 @@ export function NumberSeriesDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SCOPES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
+                    {SCOPES.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {messages.common.contractScopeLabels[item]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -210,16 +239,18 @@ export function NumberSeriesDialog({
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{messages.numberSeriesDialog.fields.active}</Label>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Create Series"}
+              {form.formState.isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {isEditing ? messages.common.saveChanges : messages.numberSeriesDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

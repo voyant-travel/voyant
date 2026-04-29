@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+
 import {
   Button,
   ContractTemplateAuthoringHelp,
@@ -26,14 +27,13 @@ import {
 } from "@/components/ui"
 import { zodResolver } from "@/lib/zod-resolver"
 
-const versionFormSchema = z.object({
-  body: z.string().min(1, "Body is required"),
-  changelog: z.string().optional(),
-  createdBy: z.string().optional(),
-})
+import { useRegistryLegalMessagesOrDefault } from "./i18n/provider"
 
-type FormValues = z.input<typeof versionFormSchema>
-type FormOutput = z.output<typeof versionFormSchema>
+type FormValues = {
+  body: string
+  changelog?: string
+  createdBy?: string
+}
 
 type TemplateVersionDialogProps = {
   open: boolean
@@ -42,12 +42,22 @@ type TemplateVersionDialogProps = {
   onSuccess: () => void
 }
 
+function createVersionFormSchema(messages: ReturnType<typeof useRegistryLegalMessagesOrDefault>) {
+  return z.object({
+    body: z.string().min(1, messages.templateVersionDialog.validation.bodyRequired),
+    changelog: z.string().optional(),
+    createdBy: z.string().optional(),
+  })
+}
+
 export function TemplateVersionDialog({
   open,
   onOpenChange,
   templateId,
   onSuccess,
 }: TemplateVersionDialogProps) {
+  const messages = useRegistryLegalMessagesOrDefault()
+  const versionFormSchema = createVersionFormSchema(messages)
   const { create } = useLegalContractTemplateVersionMutation()
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
@@ -63,7 +73,7 @@ export function TemplateVersionDialog({
     [variableCatalog],
   )
 
-  const form = useForm<FormValues, unknown, FormOutput>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(versionFormSchema),
     defaultValues: {
       body: "",
@@ -78,7 +88,7 @@ export function TemplateVersionDialog({
     }
   }, [open, form])
 
-  const onSubmit = async (values: FormOutput) => {
+  const onSubmit = async (values: FormValues) => {
     await create.mutateAsync({
       templateId,
       input: {
@@ -94,12 +104,12 @@ export function TemplateVersionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>New Template Version</DialogTitle>
+          <DialogTitle>{messages.templateVersionDialog.title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Body</Label>
+              <Label>{messages.templateVersionDialog.fields.body}</Label>
               <RichTextEditor
                 value={form.watch("body")}
                 onChange={(value) =>
@@ -109,7 +119,7 @@ export function TemplateVersionDialog({
                     shouldValidate: true,
                   })
                 }
-                placeholder="Template body with Liquid variables and conditionals..."
+                placeholder={messages.templateVersionDialog.placeholders.body}
                 enableVariables
                 onEditorReady={setEditorInstance}
               />
@@ -119,6 +129,9 @@ export function TemplateVersionDialog({
             </div>
 
             <ContractTemplateAuthoringHelp
+              title={messages.authoringHelp.title}
+              description={messages.authoringHelp.description}
+              messages={messages.authoringHelp}
               variableGroups={variableGroups}
               snippets={liquidSnippets}
               onInsertVariable={(variable) => {
@@ -133,24 +146,30 @@ export function TemplateVersionDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Changelog</Label>
-                <Input {...form.register("changelog")} placeholder="What changed..." />
+                <Label>{messages.templateVersionDialog.fields.changelog}</Label>
+                <Input
+                  {...form.register("changelog")}
+                  placeholder={messages.templateVersionDialog.placeholders.changelog}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Created By</Label>
-                <Input {...form.register("createdBy")} placeholder="Author name" />
+                <Label>{messages.templateVersionDialog.fields.createdBy}</Label>
+                <Input
+                  {...form.register("createdBy")}
+                  placeholder={messages.templateVersionDialog.placeholders.createdBy}
+                />
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Create Version
+              {messages.common.createVersion}
             </Button>
           </DialogFooter>
         </form>

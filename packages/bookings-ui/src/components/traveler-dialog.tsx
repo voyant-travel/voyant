@@ -19,16 +19,20 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-const travelerFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email().optional().or(z.literal("")).nullable(),
-  phone: z.string().optional().nullable(),
-  specialRequests: z.string().optional().nullable(),
-})
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
-type TravelerFormValues = z.input<typeof travelerFormSchema>
-type TravelerFormOutput = z.output<typeof travelerFormSchema>
+function createTravelerFormSchema(messages: ReturnType<typeof useBookingsUiMessagesOrDefault>) {
+  return z.object({
+    firstName: z.string().min(1, messages.travelerDialog.validation.firstNameRequired),
+    lastName: z.string().min(1, messages.travelerDialog.validation.lastNameRequired),
+    email: z.string().email().optional().or(z.literal("")).nullable(),
+    phone: z.string().optional().nullable(),
+    specialRequests: z.string().optional().nullable(),
+  })
+}
+
+type TravelerFormValues = z.input<ReturnType<typeof createTravelerFormSchema>>
+type TravelerFormOutput = z.output<ReturnType<typeof createTravelerFormSchema>>
 
 export interface TravelerDialogProps {
   open: boolean
@@ -47,6 +51,8 @@ export function TravelerDialog({
 }: TravelerDialogProps) {
   const isEditing = Boolean(traveler)
   const { create, update } = useTravelerMutation(bookingId)
+  const messages = useBookingsUiMessagesOrDefault()
+  const travelerFormSchema = createTravelerFormSchema(messages)
 
   const form = useForm<TravelerFormValues, unknown, TravelerFormOutput>({
     resolver: zodResolver(travelerFormSchema),
@@ -99,7 +105,11 @@ export function TravelerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Traveler" : "Add Traveler"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.travelerDialog.titles.edit
+              : messages.travelerDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -108,8 +118,11 @@ export function TravelerDialog({
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>First Name</Label>
-                <Input {...form.register("firstName")} placeholder="John" />
+                <Label>{messages.travelerDialog.fields.firstName}</Label>
+                <Input
+                  {...form.register("firstName")}
+                  placeholder={messages.travelerDialog.placeholders.firstName}
+                />
                 {form.formState.errors.firstName && (
                   <p className="text-xs text-destructive">
                     {form.formState.errors.firstName.message}
@@ -117,8 +130,11 @@ export function TravelerDialog({
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Last Name</Label>
-                <Input {...form.register("lastName")} placeholder="Smith" />
+                <Label>{messages.travelerDialog.fields.lastName}</Label>
+                <Input
+                  {...form.register("lastName")}
+                  placeholder={messages.travelerDialog.placeholders.lastName}
+                />
                 {form.formState.errors.lastName && (
                   <p className="text-xs text-destructive">
                     {form.formState.errors.lastName.message}
@@ -129,30 +145,39 @@ export function TravelerDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Email</Label>
-                <Input {...form.register("email")} type="email" placeholder="john@example.com" />
+                <Label>{messages.travelerDialog.fields.email}</Label>
+                <Input
+                  {...form.register("email")}
+                  type="email"
+                  placeholder={messages.travelerDialog.placeholders.email}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Phone</Label>
-                <Input {...form.register("phone")} placeholder="+44 7911 123456" />
+                <Label>{messages.travelerDialog.fields.phone}</Label>
+                <Input
+                  {...form.register("phone")}
+                  placeholder={messages.travelerDialog.placeholders.phone}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Special Requests</Label>
+              <Label>{messages.travelerDialog.fields.specialRequests}</Label>
               <Textarea
                 {...form.register("specialRequests")}
-                placeholder="Any special requests..."
+                placeholder={messages.travelerDialog.placeholders.specialRequests}
               />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" size="sm" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Traveler"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.travelerDialog.actions.addTraveler}
             </Button>
           </DialogFooter>
         </form>

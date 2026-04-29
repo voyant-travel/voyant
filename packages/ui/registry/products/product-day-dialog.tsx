@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductDayForm } from "./product-day-form"
 
 export interface ProductDayDialogProps {
@@ -30,16 +31,21 @@ export function ProductDayDialog({
   onSuccess,
 }: ProductDayDialogProps) {
   const isEdit = Boolean(day)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-day-dialog" className="sm:max-w-[640px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit itinerary day" : "Add itinerary day"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.productDayDialog.titles.edit
+              : messages.productDayDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update the title, location, and overview for this day."
-              : "Create a structured day in the product itinerary."}
+              ? messages.productDayDialog.descriptions.edit
+              : messages.productDayDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductDayForm

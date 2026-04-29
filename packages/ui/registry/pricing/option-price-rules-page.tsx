@@ -6,12 +6,14 @@ import {
   useOptionPriceRuleMutation,
   useOptionPriceRules,
 } from "@voyantjs/pricing-react"
+import { usePricingUiI18nOrDefault, usePricingUiMessagesOrDefault } from "@voyantjs/pricing-ui"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 
+import { useRegistryPricingMessagesOrDefault } from "./i18n"
 import { OptionPriceRuleDialog } from "./option-price-rule-dialog"
 import {
   CancellationPolicyLabel,
@@ -24,6 +26,10 @@ import {
 const PAGE_SIZE = 25
 
 export function OptionPriceRulesPage() {
+  const sharedI18n = usePricingUiI18nOrDefault()
+  const sharedMessages = usePricingUiMessagesOrDefault()
+  const registryMessages = useRegistryPricingMessagesOrDefault()
+  const pageMessages = registryMessages.optionPriceRulesPage
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<OptionPriceRuleRecord | undefined>()
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -38,26 +44,26 @@ export function OptionPriceRulesPage() {
     () => [
       {
         accessorKey: "name",
-        header: "Name",
+        header: pageMessages.columns.name,
       },
       {
         accessorKey: "productId",
-        header: "Product",
+        header: pageMessages.columns.product,
         cell: ({ row }) => <ProductLabel id={row.original.productId} />,
       },
       {
         accessorKey: "optionId",
-        header: "Option",
+        header: pageMessages.columns.option,
         cell: ({ row }) => <ProductOptionLabel id={row.original.optionId} />,
       },
       {
         accessorKey: "priceCatalogId",
-        header: "Catalog",
+        header: pageMessages.columns.catalog,
         cell: ({ row }) => <PriceCatalogLabel id={row.original.priceCatalogId} />,
       },
       {
         accessorKey: "priceScheduleId",
-        header: "Schedule",
+        header: pageMessages.columns.schedule,
         cell: ({ row }) =>
           row.original.priceScheduleId ? (
             <PriceScheduleLabel id={row.original.priceScheduleId} />
@@ -67,7 +73,7 @@ export function OptionPriceRulesPage() {
       },
       {
         accessorKey: "cancellationPolicyId",
-        header: "Policy",
+        header: pageMessages.columns.policy,
         cell: ({ row }) =>
           row.original.cancellationPolicyId ? (
             <CancellationPolicyLabel id={row.original.cancellationPolicyId} />
@@ -77,30 +83,33 @@ export function OptionPriceRulesPage() {
       },
       {
         accessorKey: "pricingMode",
-        header: "Mode",
+        header: pageMessages.columns.mode,
         cell: ({ row }) => (
           <Badge variant="outline" className="capitalize">
-            {row.original.pricingMode.replace(/_/g, " ")}
+            {sharedMessages.common.optionPriceRulePricingModeLabels[row.original.pricingMode]}
           </Badge>
         ),
       },
       {
         accessorKey: "baseSellAmountCents",
-        header: "Base sell",
+        header: pageMessages.columns.baseSell,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
             {row.original.baseSellAmountCents != null
-              ? (row.original.baseSellAmountCents / 100).toFixed(2)
+              ? sharedI18n.formatNumber(row.original.baseSellAmountCents / 100, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
               : "-"}
           </span>
         ),
       },
       {
         accessorKey: "active",
-        header: "Status",
+        header: pageMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.active ? "default" : "outline"}>
-            {row.original.active ? "Active" : "Inactive"}
+            {row.original.active ? sharedMessages.common.active : sharedMessages.common.inactive}
           </Badge>
         ),
       },
@@ -122,7 +131,7 @@ export function OptionPriceRulesPage() {
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete rule "${row.original.name}"?`)) {
+                if (confirm(pageMessages.labels.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -134,17 +143,15 @@ export function OptionPriceRulesPage() {
         ),
       },
     ],
-    [refetch, remove],
+    [pageMessages, refetch, remove, sharedI18n, sharedMessages],
   )
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Option Price Rules</h2>
-          <p className="text-sm text-muted-foreground">
-            Base price rules per product option and catalog. Downstream rules attach to these.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -153,14 +160,14 @@ export function OptionPriceRulesPage() {
           }}
         >
           <Plus className="mr-2 size-4" />
-          New rule
+          {pageMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading option price rules..." : "No option price rules found."}
+        emptyMessage={isPending ? pageMessages.emptyLoading : pageMessages.empty}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import { Trash2 } from "lucide-react"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 export type PassengerRole = "lead" | "adult" | "child" | "infant"
 
@@ -73,23 +74,6 @@ export interface PassengersSectionProps {
   }
 }
 
-const DEFAULT_LABELS = {
-  heading: "Passengers",
-  addPassenger: "Add passenger",
-  firstName: "First name",
-  lastName: "Last name",
-  email: "Email",
-  role: "Role",
-  roleLead: "Lead",
-  roleAdult: "Adult",
-  roleChild: "Child",
-  roleInfant: "Infant",
-  room: "Room",
-  noRoom: "Unassigned",
-  remove: "Remove passenger",
-  empty: "No passengers yet. Add at least one.",
-} as const
-
 const NO_ROOM = "__unassigned__"
 
 /**
@@ -113,7 +97,8 @@ const NO_ROOM = "__unassigned__"
  *    the submit handler errors if the invariant isn't met.
  */
 export function PassengersSection({ value, onChange, roomUnits, labels }: PassengersSectionProps) {
-  const merged = { ...DEFAULT_LABELS, ...labels }
+  const messages = useBookingsUiMessagesOrDefault()
+  const merged = { ...messages.passengersSection.labels, ...labels }
   const roleLabels: Record<PassengerRole, string> = {
     lead: merged.roleLead,
     adult: merged.roleAdult,

@@ -8,12 +8,16 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Mail, Phone } from "lucide-react"
 import type * as React from "react"
 
+import { useCrmUiMessagesOrDefault } from "../i18n"
+import type { CrmRelationType } from "../i18n/messages"
+
 export interface PersonCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
   person: PersonRecord
   onEdit?: (person: PersonRecord) => void
 }
 
 export function PersonCard({ person, onEdit, className, ...props }: PersonCardProps) {
+  const messages = useCrmUiMessagesOrDefault()
   const fullName = [person.firstName, person.lastName].filter(Boolean).join(" ")
   const initials = [person.firstName?.[0], person.lastName?.[0]]
     .filter(Boolean)
@@ -31,14 +35,15 @@ export function PersonCard({ person, onEdit, className, ...props }: PersonCardPr
           <AvatarFallback>{initials || "?"}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold truncate">{fullName || "Unnamed"}</div>
+          <div className="font-semibold truncate">{fullName || messages.personCard.unnamed}</div>
           {person.jobTitle ? (
             <div className="text-sm text-muted-foreground truncate">{person.jobTitle}</div>
           ) : null}
         </div>
         {person.relation ? (
           <Badge data-slot="person-card-relation" variant="secondary" className="capitalize">
-            {person.relation}
+            {messages.common.relationTypeLabels[person.relation as CrmRelationType] ??
+              person.relation}
           </Badge>
         ) : null}
       </CardHeader>

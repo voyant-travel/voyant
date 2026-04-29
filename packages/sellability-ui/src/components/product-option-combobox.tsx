@@ -14,6 +14,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useSellabilityUiMessagesOrDefault } from "../i18n"
+
 type Props = {
   productId?: string | null
   value: string | null | undefined
@@ -28,9 +30,10 @@ export function ProductOptionCombobox({
   productId,
   value,
   onChange,
-  placeholder = "Select product option…",
+  placeholder,
   disabled,
 }: Props) {
+  const messages = useSellabilityUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useProductOptions({
     productId: productId || undefined,
@@ -76,14 +79,17 @@ export function ProductOptionCombobox({
         setInputValue(id ? (itemMap.get(id)?.name ?? "") : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.productOptionCombobox.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
           {listQuery.isPending || selectedQuery.isPending
-            ? "Loading…"
+            ? messages.common.loading
             : productId
-              ? "No product options found."
-              : "Select a product first."}
+              ? messages.productOptionCombobox.empty
+              : messages.productOptionCombobox.selectProductFirst}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

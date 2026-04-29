@@ -25,6 +25,7 @@ import {
 import { Loader2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
 import { ProductTagDialog } from "./product-tag-dialog"
 
 export interface ProductTagListProps {
@@ -42,6 +43,7 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
     offset,
   })
   const { remove } = useProductTagMutation()
+  const messages = useProductsUiMessagesOrDefault()
 
   const tags = data?.data ?? []
   const total = data?.total ?? 0
@@ -54,7 +56,7 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search product tags…"
+            placeholder={messages.productTagList.searchPlaceholder}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -70,7 +72,7 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
           }}
         >
           <Plus className="mr-2 size-4" aria-hidden="true" />
-          Add tag
+          {messages.productTagList.addTag}
         </Button>
       </div>
 
@@ -78,8 +80,10 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead className="w-[80px] text-right">Actions</TableHead>
+              <TableHead>{messages.productTagList.columns.name}</TableHead>
+              <TableHead className="w-[80px] text-right">
+                {messages.productTagList.columns.actions}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -92,13 +96,13 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={2} className="h-24 text-center text-sm text-destructive">
-                  Failed to load product tags.
+                  {messages.productTagList.loadingError}
                 </TableCell>
               </TableRow>
             ) : tags.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={2} className="h-24 text-center text-sm text-muted-foreground">
-                  No product tags found.
+                  {messages.productTagList.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -118,19 +122,19 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
                           }}
                         >
                           <Pencil className="size-4" />
-                          Edit
+                          {messages.productTagList.edit}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
                           onClick={() => {
-                            if (confirm("Delete this product tag?")) {
+                            if (confirm(messages.productTagList.deleteConfirm)) {
                               remove.mutate(tag.id)
                             }
                           }}
                         >
                           <Trash2 className="size-4" />
-                          Delete
+                          {messages.productTagList.delete}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -144,7 +148,9 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          Showing {tags.length} of {total}
+          {messages.productTagList.showingSummary
+            .replace("{count}", String(tags.length))
+            .replace("{total}", String(total))}
         </span>
         <div className="flex items-center gap-2">
           <Button
@@ -153,10 +159,10 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
             disabled={offset === 0}
             onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
           >
-            Previous
+            {messages.common.previous}
           </Button>
           <span>
-            Page {page} / {pageCount}
+            {messages.common.page} {page} / {pageCount}
           </span>
           <Button
             variant="outline"
@@ -164,7 +170,7 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
             disabled={offset + pageSize >= total}
             onClick={() => setOffset((prev) => prev + pageSize)}
           >
-            Next
+            {messages.common.next}
           </Button>
         </div>
       </div>

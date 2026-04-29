@@ -1,14 +1,16 @@
 {
   "name": "@voyantjs/i18n",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.16.0",
   "license": "FSL-1.1-Apache-2.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check:parity": "tsx ../../scripts/check-i18n-parity.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "check:parity": "node --import tsx ../../scripts/check-i18n-parity.ts",
+    "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/"
   },
@@ -28,5 +30,19 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/i18n"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
   }
 }

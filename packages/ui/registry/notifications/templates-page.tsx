@@ -17,9 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui"
+import {
+  useRegistryNotificationsI18nOrDefault,
+  useRegistryNotificationsMessagesOrDefault,
+} from "./i18n"
 import { NotificationTemplateDialog } from "./template-dialog"
 
 export function NotificationTemplatesPage() {
+  const { formatDateTime } = useRegistryNotificationsI18nOrDefault()
+  const messages = useRegistryNotificationsMessagesOrDefault()
+  const pageMessages = messages.templatesPage
   const [search, setSearch] = useState("")
   const [channel, setChannel] = useState<string>("all")
   const [status, setStatus] = useState<string>("all")
@@ -31,11 +38,8 @@ export function NotificationTemplatesPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Notification Templates</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage email and SMS templates rendered with Liquid and delivered through swappable
-            providers.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -44,7 +48,7 @@ export function NotificationTemplatesPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          New Template
+          {pageMessages.add}
         </Button>
       </div>
 
@@ -52,7 +56,7 @@ export function NotificationTemplatesPage() {
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search templates..."
+            placeholder={pageMessages.searchPlaceholder}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="pl-9"
@@ -60,23 +64,25 @@ export function NotificationTemplatesPage() {
         </div>
         <Select value={channel} onValueChange={setChannel}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Channel" />
+            <SelectValue placeholder={pageMessages.filters.channel} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All channels</SelectItem>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="sms">SMS</SelectItem>
+            <SelectItem value="all">{pageMessages.filters.channelAll}</SelectItem>
+            <SelectItem value="email">{messages.common.channelLabels.email}</SelectItem>
+            <SelectItem value="sms">{messages.common.channelLabels.sms}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={pageMessages.filters.status} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
+            <SelectItem value="all">{pageMessages.filters.statusAll}</SelectItem>
+            <SelectItem value="draft">{messages.common.templateStatusLabels.draft}</SelectItem>
+            <SelectItem value="active">{messages.common.templateStatusLabels.active}</SelectItem>
+            <SelectItem value="archived">
+              {messages.common.templateStatusLabels.archived}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -89,10 +95,7 @@ export function NotificationTemplatesPage() {
 
       {!isPending && (!data?.data || data.data.length === 0) ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No notification templates yet. Create one to start sending branded emails and SMS
-            messages.
-          </p>
+          <p className="text-sm text-muted-foreground">{pageMessages.empty}</p>
         </div>
       ) : null}
 
@@ -101,12 +104,12 @@ export function NotificationTemplatesPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Template</th>
-                <th className="px-4 py-3">Channel</th>
-                <th className="px-4 py-3">Provider</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Updated</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{pageMessages.columns.template}</th>
+                <th className="px-4 py-3">{pageMessages.columns.channel}</th>
+                <th className="px-4 py-3">{pageMessages.columns.provider}</th>
+                <th className="px-4 py-3">{pageMessages.columns.status}</th>
+                <th className="px-4 py-3">{pageMessages.columns.updated}</th>
+                <th className="px-4 py-3 text-right">{pageMessages.columns.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -117,15 +120,19 @@ export function NotificationTemplatesPage() {
                     <div className="font-mono text-xs text-muted-foreground">{template.slug}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline">{template.channel}</Badge>
-                  </td>
-                  <td className="px-4 py-3">{template.provider ?? "Automatic"}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant={template.status === "active" ? "default" : "secondary"}>
-                      {template.status}
+                    <Badge variant="outline">
+                      {messages.common.channelLabels[template.channel]}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">{new Date(template.updatedAt).toLocaleString()}</td>
+                  <td className="px-4 py-3">
+                    {messages.common.providerLabels[template.provider ?? "automatic"]}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant={template.status === "active" ? "default" : "secondary"}>
+                      {messages.common.templateStatusLabels[template.status]}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">{formatDateTime(template.updatedAt)}</td>
                   <td className="px-4 py-3 text-right">
                     <Button
                       variant="ghost"

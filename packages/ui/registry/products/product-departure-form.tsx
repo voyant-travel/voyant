@@ -21,6 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 
+import { formatMessage, useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import {
   combineLocalToIso,
   computeNights,
@@ -28,7 +29,7 @@ import {
   getTimezoneOptions,
   isoToLocalDate,
   isoToLocalTime,
-  SLOT_STATUSES,
+  SLOT_STATUS_VALUES,
   toNullableNumber,
 } from "./product-availability-shared"
 
@@ -90,6 +91,7 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useAvailabilitySlotMutation()
+  const messages = useRegistryProductsMessagesOrDefault()
 
   React.useEffect(() => {
     setState(initialState(mode))
@@ -114,25 +116,25 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
     setError(null)
 
     if (!state.startDate) {
-      setError("Start date is required.")
+      setError(messages.productDepartureForm.validation.startDateRequired)
       return
     }
     if (!state.startTime) {
-      setError("Start time is required.")
+      setError(messages.productDepartureForm.validation.startTimeRequired)
       return
     }
     if (!state.timezone) {
-      setError("Timezone is required.")
+      setError(messages.productDepartureForm.validation.timezoneRequired)
       return
     }
 
     const effectiveEndDate = state.endDate || state.startDate
     if (state.endDate && state.endDate < state.startDate) {
-      setError("End date must be on or after the start date.")
+      setError(messages.productDepartureForm.validation.endDateInvalid)
       return
     }
     if (state.endTime && effectiveEndDate === state.startDate && state.endTime < state.startTime) {
-      setError("End time must be after the start time on the same day.")
+      setError(messages.productDepartureForm.validation.endTimeInvalid)
       return
     }
 
@@ -168,7 +170,9 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
       onSuccess?.(slot)
     } catch (submissionError) {
       setError(
-        submissionError instanceof Error ? submissionError.message : "Failed to save departure.",
+        submissionError instanceof Error
+          ? submissionError.message
+          : messages.productDepartureForm.validation.saveFailed,
       )
     }
   }
@@ -181,16 +185,20 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-departure-start-date">Start date</Label>
+          <Label htmlFor="product-departure-start-date">
+            {messages.productDepartureForm.fields.startDate}
+          </Label>
           <DatePicker
             value={state.startDate || null}
             onChange={(next) => field("startDate")(next ?? "")}
-            placeholder="Select start date"
+            placeholder={messages.productDepartureForm.placeholders.startDate}
             className="w-full"
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-departure-start-time">Start time</Label>
+          <Label htmlFor="product-departure-start-time">
+            {messages.productDepartureForm.fields.startTime}
+          </Label>
           <Input
             id="product-departure-start-time"
             type="time"
@@ -203,16 +211,20 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-departure-end-date">End date</Label>
+          <Label htmlFor="product-departure-end-date">
+            {messages.productDepartureForm.fields.endDate}
+          </Label>
           <DatePicker
             value={state.endDate || null}
             onChange={(next) => field("endDate")(next ?? "")}
-            placeholder="Select end date"
+            placeholder={messages.productDepartureForm.placeholders.endDate}
             className="w-full"
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-departure-end-time">End time</Label>
+          <Label htmlFor="product-departure-end-time">
+            {messages.productDepartureForm.fields.endTime}
+          </Label>
           <Input
             id="product-departure-end-time"
             type="time"
@@ -224,14 +236,17 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
 
       {derivedNights > 0 ? (
         <p className="text-sm text-muted-foreground">
-          Multi-day departure: {derivedNights} night{derivedNights === 1 ? "" : "s"} (
-          {derivedNights + 1} days)
+          {formatMessage(messages.productDepartureForm.derived.multiDayDeparture, {
+            nights: derivedNights,
+            nightSuffix: derivedNights === 1 ? "" : "s",
+            days: derivedNights + 1,
+          })}
         </p>
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label>Timezone</Label>
+          <Label>{messages.productDepartureForm.fields.timezone}</Label>
           <Select
             items={timezoneOptions.map((timezone) => ({ label: timezone, value: timezone }))}
             value={state.timezone}
@@ -250,9 +265,12 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label>Status</Label>
+          <Label>{messages.productDepartureForm.fields.status}</Label>
           <Select
-            items={SLOT_STATUSES}
+            items={SLOT_STATUS_VALUES.map((value) => ({
+              value,
+              label: messages.productAvailability.statusLabels[value],
+            }))}
             value={state.status}
             onValueChange={(value) => field("status")(value as AvailabilitySlotRecord["status"])}
           >
@@ -260,9 +278,9 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SLOT_STATUSES.map((status) => (
-                <SelectItem key={status.value} value={status.value}>
-                  {status.label}
+              {SLOT_STATUS_VALUES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {messages.productAvailability.statusLabels[status]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -275,12 +293,14 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
           checked={state.unlimited}
           onCheckedChange={(checked) => field("unlimited")(checked)}
         />
-        <Label>Unlimited capacity</Label>
+        <Label>{messages.productDepartureForm.fields.unlimitedCapacity}</Label>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-departure-initial-pax">Initial capacity</Label>
+          <Label htmlFor="product-departure-initial-pax">
+            {messages.productDepartureForm.fields.initialCapacity}
+          </Label>
           <Input
             id="product-departure-initial-pax"
             type="number"
@@ -291,7 +311,9 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-departure-days">Days</Label>
+          <Label htmlFor="product-departure-days">
+            {messages.productDepartureForm.fields.days}
+          </Label>
           <Input
             id="product-departure-days"
             type="number"
@@ -301,7 +323,9 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-departure-nights">Nights</Label>
+          <Label htmlFor="product-departure-nights">
+            {messages.productDepartureForm.fields.nights}
+          </Label>
           <Input
             id="product-departure-nights"
             type="number"
@@ -313,12 +337,14 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-departure-notes">Notes</Label>
+        <Label htmlFor="product-departure-notes">
+          {messages.productDepartureForm.fields.notes}
+        </Label>
         <Textarea
           id="product-departure-notes"
           value={state.notes}
           onChange={(event) => field("notes")(event.target.value)}
-          placeholder="Optional internal notes for this departure"
+          placeholder={messages.productDepartureForm.placeholders.notes}
         />
       </div>
 
@@ -327,14 +353,16 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "create" ? "Create departure" : "Save departure"}
+          {mode.kind === "create"
+            ? messages.productDepartureForm.actions.createDeparture
+            : messages.productDepartureForm.actions.saveDeparture}
         </Button>
       </div>
     </form>

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductScheduleForm } from "./product-schedule-form"
 
 export interface ProductScheduleDialogProps {
@@ -28,16 +29,21 @@ export function ProductScheduleDialog({
   onSuccess,
 }: ProductScheduleDialogProps) {
   const isEdit = Boolean(rule)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-schedule-dialog" className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit schedule" : "New schedule"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.productScheduleDialog.titles.edit
+              : messages.productScheduleDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update the recurrence rule, capacity, and booking limits for this schedule."
-              : "Create a recurring rule that generates departures for this product."}
+              ? messages.productScheduleDialog.descriptions.edit
+              : messages.productScheduleDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductScheduleForm

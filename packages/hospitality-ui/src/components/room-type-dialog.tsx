@@ -23,32 +23,36 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-const INVENTORY_MODES = ["virtual", "pooled", "serialized"] as const
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { InventoryMode } from "../i18n/messages"
 
-type InventoryMode = RoomTypeRecord["inventoryMode"]
+const INVENTORY_MODES = ["virtual", "pooled", "serialized"] as const
 
 const intOrEmpty = z.coerce.number().int().optional().or(z.literal("")).nullable()
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
-  code: z.string().optional().nullable(),
-  description: z.string().optional().nullable(),
-  inventoryMode: z.enum(INVENTORY_MODES),
-  maxAdults: intOrEmpty,
-  maxChildren: intOrEmpty,
-  maxInfants: intOrEmpty,
-  standardOccupancy: intOrEmpty,
-  maxOccupancy: intOrEmpty,
-  minOccupancy: intOrEmpty,
-  bedroomCount: intOrEmpty,
-  bathroomCount: intOrEmpty,
-  smokingAllowed: z.boolean(),
-  active: z.boolean(),
-  sortOrder: z.coerce.number().int(),
-})
+function createFormSchema(messages: ReturnType<typeof useHospitalityUiMessagesOrDefault>) {
+  return z.object({
+    name: z.string().min(1, messages.roomTypeDialog.validation.nameRequired).max(255),
+    code: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    inventoryMode: z.enum(INVENTORY_MODES),
+    maxAdults: intOrEmpty,
+    maxChildren: intOrEmpty,
+    maxInfants: intOrEmpty,
+    standardOccupancy: intOrEmpty,
+    maxOccupancy: intOrEmpty,
+    minOccupancy: intOrEmpty,
+    bedroomCount: intOrEmpty,
+    bathroomCount: intOrEmpty,
+    smokingAllowed: z.boolean(),
+    active: z.boolean(),
+    sortOrder: z.coerce.number().int(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface RoomTypeDialogProps {
   open: boolean
@@ -67,6 +71,8 @@ export function RoomTypeDialog({
 }: RoomTypeDialogProps) {
   const isEditing = Boolean(roomType)
   const { create, update } = useRoomTypeMutation()
+  const messages = useHospitalityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -166,33 +172,48 @@ export function RoomTypeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Room Type" : "Add Room Type"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.roomTypeDialog.titles.edit
+              : messages.roomTypeDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Deluxe Double" />
+                <Label>{messages.roomTypeDialog.fields.name}</Label>
+                <Input
+                  {...form.register("name")}
+                  placeholder={messages.roomTypeDialog.placeholders.name}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Code</Label>
-                <Input {...form.register("code")} placeholder="DLX-DBL" />
+                <Label>{messages.roomTypeDialog.fields.code}</Label>
+                <Input
+                  {...form.register("code")}
+                  placeholder={messages.roomTypeDialog.placeholders.code}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Description</Label>
+              <Label>{messages.roomTypeDialog.fields.description}</Label>
               <Textarea {...form.register("description")} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Inventory mode</Label>
+                <Label>{messages.roomTypeDialog.fields.inventoryMode}</Label>
                 <Select
-                  items={INVENTORY_MODES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={INVENTORY_MODES.map((value) => ({
+                    label: messages.common.inventoryModeLabels[value as InventoryMode],
+                    value,
+                  }))}
                   value={form.watch("inventoryMode")}
-                  onValueChange={(value) => form.setValue("inventoryMode", value as InventoryMode)}
+                  onValueChange={(value) =>
+                    form.setValue("inventoryMode", value as RoomTypeRecord["inventoryMode"])
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -200,55 +221,55 @@ export function RoomTypeDialog({
                   <SelectContent>
                     {INVENTORY_MODES.map((mode) => (
                       <SelectItem key={mode} value={mode} className="capitalize">
-                        {mode}
+                        {messages.common.inventoryModeLabels[mode as InventoryMode]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Sort order</Label>
+                <Label>{messages.roomTypeDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Std. occupancy</Label>
+                <Label>{messages.roomTypeDialog.fields.standardOccupancy}</Label>
                 <Input {...form.register("standardOccupancy")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Min occupancy</Label>
+                <Label>{messages.roomTypeDialog.fields.minOccupancy}</Label>
                 <Input {...form.register("minOccupancy")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Max occupancy</Label>
+                <Label>{messages.roomTypeDialog.fields.maxOccupancy}</Label>
                 <Input {...form.register("maxOccupancy")} type="number" min="0" />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Max adults</Label>
+                <Label>{messages.roomTypeDialog.fields.maxAdults}</Label>
                 <Input {...form.register("maxAdults")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Max children</Label>
+                <Label>{messages.roomTypeDialog.fields.maxChildren}</Label>
                 <Input {...form.register("maxChildren")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Max infants</Label>
+                <Label>{messages.roomTypeDialog.fields.maxInfants}</Label>
                 <Input {...form.register("maxInfants")} type="number" min="0" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Bedrooms</Label>
+                <Label>{messages.roomTypeDialog.fields.bedrooms}</Label>
                 <Input {...form.register("bedroomCount")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Bathrooms</Label>
+                <Label>{messages.roomTypeDialog.fields.bathrooms}</Label>
                 <Input {...form.register("bathroomCount")} type="number" min="0" />
               </div>
             </div>
@@ -259,24 +280,24 @@ export function RoomTypeDialog({
                   checked={form.watch("smokingAllowed")}
                   onCheckedChange={(checked) => form.setValue("smokingAllowed", checked)}
                 />
-                <Label>Smoking allowed</Label>
+                <Label>{messages.roomTypeDialog.fields.smokingAllowed}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("active")}
                   onCheckedChange={(checked) => form.setValue("active", checked)}
                 />
-                <Label>Active</Label>
+                <Label>{messages.roomTypeDialog.fields.active}</Label>
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Room Type"}
+              {isEditing ? messages.common.saveChanges : messages.roomTypeDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

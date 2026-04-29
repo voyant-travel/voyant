@@ -1,6 +1,6 @@
 import type { ColumnDef, OnChangeFn, RowSelectionState } from "@tanstack/react-table"
+import { formatMessage } from "@voyantjs/i18n"
 import {
-  formatSelectionLabel,
   labelById,
   type ProductOption,
   type ResourceAllocationRow,
@@ -13,6 +13,9 @@ import { DataTable } from "@voyantjs/ui/components/data-table"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { TabsContent } from "@voyantjs/ui/components/tabs"
 import { ExternalLink } from "lucide-react"
+
+import { useResourcesUiI18nOrDefault } from "../i18n"
+import { formatSelectionLabel, formatSelectionSummary } from "../i18n/utils"
 import { ResourcesSectionHeader } from "./resources-section-header"
 
 type BulkFn = (args: {
@@ -23,7 +26,7 @@ type BulkFn = (args: {
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok local callback type alias
 
 type DeleteFn = (args: {
   ids: string[]
@@ -31,47 +34,72 @@ type DeleteFn = (args: {
   target: string
   noun: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok local callback type alias
 
 const resourceColumns = (
+  i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
   suppliers: SupplierOption[],
   onView: (resourceId: string) => void,
 ): ColumnDef<ResourceRow>[] => [
   {
     accessorKey: "name",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Resource" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.resources.name}
+      />
+    ),
   },
   {
     accessorKey: "kind",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Kind" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.resources.kind}
+      />
+    ),
     cell: ({ row }) => (
-      <Badge variant="outline" className="capitalize">
-        {row.original.kind}
-      </Badge>
+      <Badge variant="outline">{i18n.messages.common.resourceKindLabels[row.original.kind]}</Badge>
     ),
   },
   {
     accessorKey: "supplierId",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Supplier" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.resources.supplier}
+      />
+    ),
     cell: ({ row }) => labelById(suppliers, row.original.supplierId),
   },
   {
     accessorKey: "capacity",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Capacity" />,
-    cell: ({ row }) => row.original.capacity ?? "-",
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.resources.capacity}
+      />
+    ),
+    cell: ({ row }) =>
+      row.original.capacity === null ? "-" : i18n.formatNumber(row.original.capacity),
   },
   {
     accessorKey: "active",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.resources.status}
+      />
+    ),
     cell: ({ row }) => (
       <Badge variant={row.original.active ? "default" : "secondary"}>
-        {row.original.active ? "Active" : "Inactive"}
+        {row.original.active ? i18n.messages.common.active : i18n.messages.common.inactive}
       </Badge>
     ),
   },
   {
     id: "view",
-    header: "View",
+    header: i18n.messages.tabsPrimary.columns.resources.view,
     cell: ({ row }) => (
       <Button
         variant="ghost"
@@ -82,42 +110,56 @@ const resourceColumns = (
         }}
       >
         <ExternalLink className="mr-2 h-4 w-4" />
-        Open
+        {i18n.messages.common.open}
       </Button>
     ),
   },
 ]
 
 const poolColumns = (
+  i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
   products: ProductOption[],
   onView: (poolId: string) => void,
 ): ColumnDef<ResourcePoolRow>[] => [
   {
     accessorKey: "name",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Pool" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={i18n.messages.tabsPrimary.columns.pools.name} />
+    ),
   },
   {
     accessorKey: "kind",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Kind" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={i18n.messages.tabsPrimary.columns.pools.kind} />
+    ),
     cell: ({ row }) => (
-      <Badge variant="outline" className="capitalize">
-        {row.original.kind}
-      </Badge>
+      <Badge variant="outline">{i18n.messages.common.resourceKindLabels[row.original.kind]}</Badge>
     ),
   },
   {
     accessorKey: "productId",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Product" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.pools.product}
+      />
+    ),
     cell: ({ row }) => labelById(products, row.original.productId),
   },
   {
     accessorKey: "sharedCapacity",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Shared Capacity" />,
-    cell: ({ row }) => row.original.sharedCapacity ?? "-",
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.pools.sharedCapacity}
+      />
+    ),
+    cell: ({ row }) =>
+      row.original.sharedCapacity === null ? "-" : i18n.formatNumber(row.original.sharedCapacity),
   },
   {
     id: "view",
-    header: "View",
+    header: i18n.messages.tabsPrimary.columns.pools.view,
     cell: ({ row }) => (
       <Button
         variant="ghost"
@@ -128,47 +170,75 @@ const poolColumns = (
         }}
       >
         <ExternalLink className="mr-2 h-4 w-4" />
-        Open
+        {i18n.messages.common.open}
       </Button>
     ),
   },
 ]
 
 const allocationColumns = (
+  i18n: ReturnType<typeof useResourcesUiI18nOrDefault>,
   pools: ResourcePoolRow[],
   products: ProductOption[],
   onView: (allocationId: string) => void,
 ): ColumnDef<ResourceAllocationRow>[] => [
   {
     accessorKey: "poolId",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Pool" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.allocations.pool}
+      />
+    ),
     cell: ({ row }) => labelById(pools, row.original.poolId),
   },
   {
     accessorKey: "productId",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Product" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.allocations.product}
+      />
+    ),
     cell: ({ row }) => labelById(products, row.original.productId),
   },
   {
     accessorKey: "allocationMode",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Mode" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.allocations.mode}
+      />
+    ),
     cell: ({ row }) => (
-      <Badge variant="outline" className="capitalize">
-        {row.original.allocationMode}
+      <Badge variant="outline">
+        {i18n.messages.common.allocationModeLabels[row.original.allocationMode]}
       </Badge>
     ),
   },
   {
     accessorKey: "quantityRequired",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Qty Required" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.allocations.quantityRequired}
+      />
+    ),
+    cell: ({ row }) => i18n.formatNumber(row.original.quantityRequired),
   },
   {
     accessorKey: "priority",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Priority" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={i18n.messages.tabsPrimary.columns.allocations.priority}
+      />
+    ),
+    cell: ({ row }) => i18n.formatNumber(row.original.priority),
   },
   {
     id: "view",
-    header: "View",
+    header: i18n.messages.tabsPrimary.columns.allocations.view,
     cell: ({ row }) => (
       <Button
         variant="ghost"
@@ -179,7 +249,7 @@ const allocationColumns = (
         }}
       >
         <ExternalLink className="mr-2 h-4 w-4" />
-        Open
+        {i18n.messages.common.open}
       </Button>
     ),
   },
@@ -197,29 +267,49 @@ export function ResourcesTab(props: {
   onOpenRoute: (resourceId: string) => void
   onEdit: (row: ResourceRow) => void
 }) {
+  const i18n = useResourcesUiI18nOrDefault()
+  const m = i18n.messages
+  const section = m.tabsPrimary.sections.resources
+  const selection = m.common.selectionNouns.resource
+
   return (
     <TabsContent value="resources" className="space-y-4">
       <ResourcesSectionHeader
-        title="Resources"
-        description="Guides, vehicles, rooms, and other assignable assets."
-        actionLabel="New Resource"
+        title={section.title}
+        description={section.description}
+        actionLabel={section.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={resourceColumns(props.suppliers, props.onOpenRoute)}
+        columns={resourceColumns(i18n, props.suppliers, props.onOpenRoute)}
         data={props.filteredResources}
-        emptyMessage="No resources match the current filters."
+        emptyMessage={section.emptyMessage}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.resourceSelection}
         onRowSelectionChange={props.setResourceSelection}
         renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
+          <SelectionActionBar
+            selectedCount={selectedRows.length}
+            onClear={clearSelection}
+            clearLabel={m.common.clearSelection}
+            selectionSummary={formatSelectionSummary(
+              selectedRows.length,
+              m.common.selectionSummary,
+            )}
+          >
             <ConfirmActionButton
-              buttonLabel="Activate"
-              confirmLabel="Activate Resources"
-              title={`Activate ${formatSelectionLabel(selectedRows.length, "resource")}?`}
-              description="This makes the selected resources available again for assignment and planning."
+              buttonLabel={section.actions.activate.buttonLabel}
+              confirmLabel={section.actions.activate.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.activate.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.activate.description}
               disabled={props.bulkActionTarget === "resources-activate"}
               onConfirm={() =>
                 props.handleBulkUpdate({
@@ -228,16 +318,23 @@ export function ResourcesTab(props: {
                   target: "resources-activate",
                   noun: "resource",
                   payload: { active: true },
-                  successVerb: "Activated",
+                  successVerb: section.actions.activate.successVerb,
                   clearSelection,
                 })
               }
             />
             <ConfirmActionButton
-              buttonLabel="Deactivate"
-              confirmLabel="Deactivate Resources"
-              title={`Deactivate ${formatSelectionLabel(selectedRows.length, "resource")}?`}
-              description="This preserves the selected resources but removes them from active operational use."
+              buttonLabel={section.actions.deactivate.buttonLabel}
+              confirmLabel={section.actions.deactivate.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.deactivate.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.deactivate.description}
               disabled={props.bulkActionTarget === "resources-deactivate"}
               onConfirm={() =>
                 props.handleBulkUpdate({
@@ -246,16 +343,23 @@ export function ResourcesTab(props: {
                   target: "resources-deactivate",
                   noun: "resource",
                   payload: { active: false },
-                  successVerb: "Deactivated",
+                  successVerb: section.actions.deactivate.successVerb,
                   clearSelection,
                 })
               }
             />
             <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Resources"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "resource")}?`}
-              description="This permanently removes the selected resources. Use Deactivate if you only need to take them out of rotation."
+              buttonLabel={section.actions.delete.buttonLabel}
+              confirmLabel={section.actions.delete.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.delete.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.delete.description}
               disabled={props.bulkActionTarget === "resources-delete"}
               variant="destructive"
               confirmVariant="destructive"
@@ -289,29 +393,49 @@ export function PoolsTab(props: {
   onOpenRoute: (poolId: string) => void
   onEdit: (row: ResourcePoolRow) => void
 }) {
+  const i18n = useResourcesUiI18nOrDefault()
+  const m = i18n.messages
+  const section = m.tabsPrimary.sections.pools
+  const selection = m.common.selectionNouns.pool
+
   return (
     <TabsContent value="pools" className="space-y-4">
       <ResourcesSectionHeader
-        title="Pools"
-        description="Shared capacity groups by product or operational need."
-        actionLabel="New Pool"
+        title={section.title}
+        description={section.description}
+        actionLabel={section.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={poolColumns(props.products, props.onOpenRoute)}
+        columns={poolColumns(i18n, props.products, props.onOpenRoute)}
         data={props.filteredPools}
-        emptyMessage="No pools match the current filters."
+        emptyMessage={section.emptyMessage}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.poolSelection}
         onRowSelectionChange={props.setPoolSelection}
         renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
+          <SelectionActionBar
+            selectedCount={selectedRows.length}
+            onClear={clearSelection}
+            clearLabel={m.common.clearSelection}
+            selectionSummary={formatSelectionSummary(
+              selectedRows.length,
+              m.common.selectionSummary,
+            )}
+          >
             <ConfirmActionButton
-              buttonLabel="Activate"
-              confirmLabel="Activate Pools"
-              title={`Activate ${formatSelectionLabel(selectedRows.length, "pool")}?`}
-              description="This re-enables the selected resource pools for live capacity planning."
+              buttonLabel={section.actions.activate.buttonLabel}
+              confirmLabel={section.actions.activate.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.activate.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.activate.description}
               disabled={props.bulkActionTarget === "pools-activate"}
               onConfirm={() =>
                 props.handleBulkUpdate({
@@ -320,16 +444,23 @@ export function PoolsTab(props: {
                   target: "pools-activate",
                   noun: "pool",
                   payload: { active: true },
-                  successVerb: "Activated",
+                  successVerb: section.actions.activate.successVerb,
                   clearSelection,
                 })
               }
             />
             <ConfirmActionButton
-              buttonLabel="Deactivate"
-              confirmLabel="Deactivate Pools"
-              title={`Deactivate ${formatSelectionLabel(selectedRows.length, "pool")}?`}
-              description="This keeps the selected pools for reference but removes them from active planning."
+              buttonLabel={section.actions.deactivate.buttonLabel}
+              confirmLabel={section.actions.deactivate.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.deactivate.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.deactivate.description}
               disabled={props.bulkActionTarget === "pools-deactivate"}
               onConfirm={() =>
                 props.handleBulkUpdate({
@@ -338,16 +469,23 @@ export function PoolsTab(props: {
                   target: "pools-deactivate",
                   noun: "pool",
                   payload: { active: false },
-                  successVerb: "Deactivated",
+                  successVerb: section.actions.deactivate.successVerb,
                   clearSelection,
                 })
               }
             />
             <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Pools"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "pool")}?`}
-              description="This permanently removes the selected pools and any pool-level grouping they provide."
+              buttonLabel={section.actions.delete.buttonLabel}
+              confirmLabel={section.actions.delete.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.delete.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.delete.description}
               disabled={props.bulkActionTarget === "pools-delete"}
               variant="destructive"
               confirmVariant="destructive"
@@ -381,29 +519,49 @@ export function AllocationsTab(props: {
   onOpenRoute: (allocationId: string) => void
   onEdit: (row: ResourceAllocationRow) => void
 }) {
+  const i18n = useResourcesUiI18nOrDefault()
+  const m = i18n.messages
+  const section = m.tabsPrimary.sections.allocations
+  const selection = m.common.selectionNouns.allocation
+
   return (
     <TabsContent value="allocations" className="space-y-4">
       <ResourcesSectionHeader
-        title="Allocations"
-        description="Attach pools to products, rules, and start times."
-        actionLabel="New Allocation"
+        title={section.title}
+        description={section.description}
+        actionLabel={section.actionLabel}
         onAction={props.onCreate}
       />
       <DataTable
-        columns={allocationColumns(props.pools, props.products, props.onOpenRoute)}
+        columns={allocationColumns(i18n, props.pools, props.products, props.onOpenRoute)}
         data={props.filteredAllocations}
-        emptyMessage="No allocations match the current filters."
+        emptyMessage={section.emptyMessage}
         enableRowSelection
         getRowId={(row) => row.id}
         rowSelection={props.allocationSelection}
         onRowSelectionChange={props.setAllocationSelection}
         renderSelectionActions={({ selectedRows, clearSelection }) => (
-          <SelectionActionBar selectedCount={selectedRows.length} onClear={clearSelection}>
+          <SelectionActionBar
+            selectedCount={selectedRows.length}
+            onClear={clearSelection}
+            clearLabel={m.common.clearSelection}
+            selectionSummary={formatSelectionSummary(
+              selectedRows.length,
+              m.common.selectionSummary,
+            )}
+          >
             <ConfirmActionButton
-              buttonLabel="Delete Selected"
-              confirmLabel="Delete Allocations"
-              title={`Delete ${formatSelectionLabel(selectedRows.length, "allocation")}?`}
-              description="This permanently removes the selected allocation rules from resource planning."
+              buttonLabel={section.actions.delete.buttonLabel}
+              confirmLabel={section.actions.delete.confirmLabel}
+              cancelLabel={m.common.cancel}
+              title={formatMessage(section.actions.delete.title, {
+                selection: formatSelectionLabel(
+                  selectedRows.length,
+                  selection,
+                  m.common.selectionLabel,
+                ),
+              })}
+              description={section.actions.delete.description}
               disabled={props.bulkActionTarget === "allocations-delete"}
               variant="destructive"
               confirmVariant="destructive"

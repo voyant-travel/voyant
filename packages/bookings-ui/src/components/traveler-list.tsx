@@ -9,6 +9,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/c
 import { Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
 
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 import { TravelerDialog } from "./traveler-dialog"
 
 export interface TravelerListProps {
@@ -20,6 +21,7 @@ export function TravelerList({ bookingId }: TravelerListProps) {
   const [editing, setEditing] = React.useState<BookingTravelerRecord | undefined>(undefined)
   const { data } = useTravelers(bookingId)
   const { remove } = useTravelerMutation(bookingId)
+  const messages = useBookingsUiMessagesOrDefault()
 
   const travelers = data?.data ?? []
 
@@ -28,7 +30,7 @@ export function TravelerList({ bookingId }: TravelerListProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Users className="h-4 w-4" />
-          Travelers
+          {messages.travelerList.title}
         </CardTitle>
         <Button
           size="sm"
@@ -38,20 +40,28 @@ export function TravelerList({ bookingId }: TravelerListProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Traveler
+          {messages.travelerList.addTraveler}
         </Button>
       </CardHeader>
       <CardContent>
         {travelers.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">No travelers yet.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {messages.travelerList.empty}
+          </p>
         ) : (
           <div className="rounded border bg-background">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="p-2 text-left font-medium">Name</th>
-                  <th className="p-2 text-left font-medium">Email</th>
-                  <th className="p-2 text-left font-medium">Phone</th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.travelerList.columns.name}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.travelerList.columns.email}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.travelerList.columns.phone}
+                  </th>
                   <th className="w-20 p-2" />
                 </tr>
               </thead>
@@ -61,8 +71,12 @@ export function TravelerList({ bookingId }: TravelerListProps) {
                     <td className="p-2">
                       {traveler.firstName} {traveler.lastName}
                     </td>
-                    <td className="p-2">{traveler.email ?? "-"}</td>
-                    <td className="p-2">{traveler.phone ?? "-"}</td>
+                    <td className="p-2">
+                      {traveler.email ?? messages.travelerList.values.emailUnavailable}
+                    </td>
+                    <td className="p-2">
+                      {traveler.phone ?? messages.travelerList.values.phoneUnavailable}
+                    </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
                         <button
@@ -78,7 +92,7 @@ export function TravelerList({ bookingId }: TravelerListProps) {
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm("Delete this traveler?")) {
+                            if (confirm(messages.travelerList.actions.deleteConfirm)) {
                               remove.mutate(traveler.id)
                             }
                           }}

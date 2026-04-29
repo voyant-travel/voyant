@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 
 import { Button } from "./button"
 import { Calendar } from "./calendar"
+import { useRegistryUiMessagesOrDefault } from "./i18n"
 import { Input } from "./input"
 import { Label } from "./label"
 import { Popover, PopoverContent, PopoverTrigger } from "./popover"
@@ -92,7 +93,7 @@ export function DateTimePicker({
   value,
   defaultValue,
   onChange,
-  placeholder = "Pick date & time",
+  placeholder,
   displayFormat = "PPp",
   className,
   contentClassName,
@@ -100,6 +101,7 @@ export function DateTimePicker({
   dateDisabled,
   clearable = true,
 }: DateTimePickerProps) {
+  const messages = useRegistryUiMessagesOrDefault().dateTimePicker
   const [open, setOpen] = React.useState(false)
   const [internalValue, setInternalValue] = React.useState<string | null>(defaultValue ?? null)
 
@@ -136,7 +138,9 @@ export function DateTimePicker({
     handleChange(formatDateTimeValue(combined))
   }
 
-  const label = selectedDate ? format(selectedDate, displayFormat) : placeholder
+  const label = selectedDate
+    ? format(selectedDate, displayFormat)
+    : (placeholder ?? messages.placeholder)
 
   return (
     <Popover open={disabled ? false : open} onOpenChange={disabled ? undefined : setOpen}>
@@ -158,7 +162,7 @@ export function DateTimePicker({
         <Separator />
         <div className="flex items-center gap-2 p-3">
           <Label htmlFor="datetime-picker-time" className="text-xs text-muted-foreground">
-            Time
+            {messages.time}
           </Label>
           <Input
             id="datetime-picker-time"
@@ -183,7 +187,7 @@ export function DateTimePicker({
                 }}
               >
                 <XIcon className="h-4 w-4" />
-                Clear
+                {messages.clear}
               </Button>
             </div>
           </>

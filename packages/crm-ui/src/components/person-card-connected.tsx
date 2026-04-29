@@ -4,6 +4,7 @@ import { usePerson } from "@voyantjs/crm-react"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { Loader2 } from "lucide-react"
 
+import { useCrmUiMessagesOrDefault } from "../i18n"
 import { PersonCard, type PersonCardProps } from "./person-card"
 
 export interface PersonCardConnectedProps extends Omit<PersonCardProps, "person"> {
@@ -16,6 +17,7 @@ export interface PersonCardConnectedProps extends Omit<PersonCardProps, "person"
  */
 export function PersonCardConnected({ personId, ...props }: PersonCardConnectedProps) {
   const { data, isPending, isError, error } = usePerson(personId)
+  const messages = useCrmUiMessagesOrDefault()
 
   if (isPending) {
     return (
@@ -31,7 +33,8 @@ export function PersonCardConnected({ personId, ...props }: PersonCardConnectedP
     return (
       <Card data-slot="person-card-connected-error">
         <CardContent className="p-6 text-sm text-destructive">
-          Failed to load person: {error instanceof Error ? error.message : "Unknown error"}
+          {messages.personCardConnected.loadFailed}{" "}
+          {error instanceof Error ? error.message : messages.common.unknownError}
         </CardContent>
       </Card>
     )

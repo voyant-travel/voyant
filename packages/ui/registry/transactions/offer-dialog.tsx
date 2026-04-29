@@ -33,6 +33,7 @@ import { CurrencyCombobox } from "@/components/ui/currency-combobox"
 import { DatePicker } from "@/components/ui/date-picker"
 import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
+import { useRegistryTransactionsMessagesOrDefault } from "./i18n"
 
 type PersonRef = {
   id: string
@@ -64,6 +65,7 @@ type OfferStatus = (typeof OFFER_STATUSES)[number]
 
 const moneyEuros = z.coerce.number().min(0)
 const storefrontDiscountTypes = ["percentage", "fixed_amount"] as const
+const DEFAULT_CURRENCY_CODE = "EUR" // i18n-literal-ok ISO default currency
 
 function parseIdList(value: string | null | undefined) {
   return Array.from(
@@ -80,41 +82,6 @@ function formatIdList(values: string[] | null | undefined) {
   return (values ?? []).join("\n")
 }
 
-const formSchema = z.object({
-  offerNumber: z.string().min(1, "Offer number is required").max(50),
-  title: z.string().min(1, "Title is required").max(255),
-  status: z.enum(OFFER_STATUSES),
-  currency: z.string().length(3, "Currency must be 3 chars"),
-  personId: z.string().optional().nullable(),
-  organizationId: z.string().optional().nullable(),
-  marketId: z.string().optional().nullable(),
-  subtotalEuros: moneyEuros,
-  taxEuros: moneyEuros,
-  feeEuros: moneyEuros,
-  totalEuros: moneyEuros,
-  validFrom: z.string().optional().nullable(),
-  validUntil: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  storefrontPromotionalOfferEnabled: z.boolean().default(false),
-  storefrontPromotionalOfferLocale: z.string().optional().nullable(),
-  storefrontPromotionalOfferSlug: z.string().optional().nullable(),
-  storefrontPromotionalOfferDescription: z.string().optional().nullable(),
-  storefrontPromotionalOfferDiscountType: z.enum(storefrontDiscountTypes).default("percentage"),
-  storefrontPromotionalOfferDiscountValue: z.string().optional().nullable(),
-  storefrontPromotionalOfferCurrency: z.string().optional().nullable(),
-  storefrontPromotionalOfferValidFrom: z.string().optional().nullable(),
-  storefrontPromotionalOfferValidTo: z.string().optional().nullable(),
-  storefrontPromotionalOfferMinTravelers: z.coerce.number().int().min(1).optional().nullable(),
-  storefrontPromotionalOfferImageMobileUrl: z.string().optional().nullable(),
-  storefrontPromotionalOfferImageDesktopUrl: z.string().optional().nullable(),
-  storefrontPromotionalOfferStackable: z.boolean().default(false),
-  storefrontPromotionalOfferApplicableProductIds: z.string().optional().nullable(),
-  storefrontPromotionalOfferApplicableDepartureIds: z.string().optional().nullable(),
-})
-
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
-
 export interface OfferDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -123,8 +90,43 @@ export interface OfferDialogProps {
 }
 
 export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialogProps) {
+  const messages = useRegistryTransactionsMessagesOrDefault()
+  const dialogMessages = messages.offerDialog
   const isEditing = Boolean(offer)
   const { create, update } = useOfferMutation()
+  const formSchema = z.object({
+    offerNumber: z.string().min(1, dialogMessages.errors.offerNumberRequired).max(50),
+    title: z.string().min(1, dialogMessages.errors.titleRequired).max(255),
+    status: z.enum(OFFER_STATUSES),
+    currency: z.string().length(3, dialogMessages.errors.currencyLength),
+    personId: z.string().optional().nullable(),
+    organizationId: z.string().optional().nullable(),
+    marketId: z.string().optional().nullable(),
+    subtotalEuros: moneyEuros,
+    taxEuros: moneyEuros,
+    feeEuros: moneyEuros,
+    totalEuros: moneyEuros,
+    validFrom: z.string().optional().nullable(),
+    validUntil: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    storefrontPromotionalOfferEnabled: z.boolean().default(false),
+    storefrontPromotionalOfferLocale: z.string().optional().nullable(),
+    storefrontPromotionalOfferSlug: z.string().optional().nullable(),
+    storefrontPromotionalOfferDescription: z.string().optional().nullable(),
+    storefrontPromotionalOfferDiscountType: z.enum(storefrontDiscountTypes).default("percentage"),
+    storefrontPromotionalOfferDiscountValue: z.string().optional().nullable(),
+    storefrontPromotionalOfferCurrency: z.string().optional().nullable(),
+    storefrontPromotionalOfferValidFrom: z.string().optional().nullable(),
+    storefrontPromotionalOfferValidTo: z.string().optional().nullable(),
+    storefrontPromotionalOfferMinTravelers: z.coerce.number().int().min(1).optional().nullable(),
+    storefrontPromotionalOfferImageMobileUrl: z.string().optional().nullable(),
+    storefrontPromotionalOfferImageDesktopUrl: z.string().optional().nullable(),
+    storefrontPromotionalOfferStackable: z.boolean().default(false),
+    storefrontPromotionalOfferApplicableProductIds: z.string().optional().nullable(),
+    storefrontPromotionalOfferApplicableDepartureIds: z.string().optional().nullable(),
+  })
+  type FormValues = z.input<typeof formSchema>
+  type FormOutput = z.output<typeof formSchema>
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -132,7 +134,7 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
       offerNumber: "",
       title: "",
       status: "draft",
-      currency: "EUR",
+      currency: DEFAULT_CURRENCY_CODE,
       personId: "",
       organizationId: "",
       marketId: "",
@@ -208,7 +210,7 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
         offerNumber: "",
         title: "",
         status: "draft",
-        currency: "EUR",
+        currency: DEFAULT_CURRENCY_CODE,
         personId: "",
         organizationId: "",
         marketId: "",
@@ -306,26 +308,37 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Offer" : "Add Offer"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dialogMessages.titleEdit : dialogMessages.titleNew}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Offer number</Label>
-                <Input {...form.register("offerNumber")} placeholder="OFF-2026-0001" />
+                <Label>{dialogMessages.fields.offerNumber}</Label>
+                <Input
+                  {...form.register("offerNumber")}
+                  placeholder={dialogMessages.placeholders.offerNumber}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Title</Label>
-                <Input {...form.register("title")} placeholder="Istanbul 5-day tour" />
+                <Label>{dialogMessages.fields.title}</Label>
+                <Input
+                  {...form.register("title")}
+                  placeholder={dialogMessages.placeholders.title}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{dialogMessages.fields.status}</Label>
                 <Select
-                  items={OFFER_STATUSES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={OFFER_STATUSES.map((x) => ({
+                    label: messages.common.offerStatusLabels[x],
+                    value: x,
+                  }))}
                   value={form.watch("status")}
                   onValueChange={(value) => form.setValue("status", value as OfferStatus)}
                 >
@@ -335,26 +348,27 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                   <SelectContent>
                     {OFFER_STATUSES.map((status) => (
                       <SelectItem key={status} value={status} className="capitalize">
-                        {status}
+                        {messages.common.offerStatusLabels[status]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Currency</Label>
+                <Label>{dialogMessages.fields.currency}</Label>
                 <CurrencyCombobox
                   value={form.watch("currency") || null}
                   onChange={(next) =>
-                    form.setValue("currency", next ?? "EUR", {
+                    form.setValue("currency", next ?? DEFAULT_CURRENCY_CODE, {
                       shouldValidate: true,
                       shouldDirty: true,
                     })
                   }
+                  placeholder={messages.common.selectCurrency}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Market</Label>
+                <Label>{dialogMessages.fields.market}</Label>
                 <EntityCombobox<MarketRef>
                   value={form.watch("marketId") ?? null}
                   onChange={(id) => form.setValue("marketId", id)}
@@ -365,15 +379,15 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                   getSecondary={(market) =>
                     [market.code, market.defaultCurrency].filter(Boolean).join(" · ") || undefined
                   }
-                  placeholder="Search markets..."
-                  emptyText="No markets found."
+                  placeholder={messages.common.searchMarkets}
+                  emptyText={messages.common.noMarkets}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Person</Label>
+                <Label>{dialogMessages.fields.person}</Label>
                 <EntityCombobox<PersonRef>
                   value={form.watch("personId") ?? null}
                   onChange={(id) => form.setValue("personId", id)}
@@ -382,12 +396,12 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                   queryKey={["crm", "people", "picker"]}
                   getLabel={personLabel}
                   getSecondary={(person) => person.email ?? undefined}
-                  placeholder="Search people..."
-                  emptyText="No people found."
+                  placeholder={messages.common.searchPeople}
+                  emptyText={messages.common.noPeople}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Organization</Label>
+                <Label>{dialogMessages.fields.organization}</Label>
                 <EntityCombobox<OrganizationRef>
                   value={form.watch("organizationId") ?? null}
                   onChange={(id) => form.setValue("organizationId", id)}
@@ -396,34 +410,34 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                   queryKey={["crm", "organizations", "picker"]}
                   getLabel={(organization) => organization.name}
                   getSecondary={(organization) => organization.domain ?? undefined}
-                  placeholder="Search organizations..."
-                  emptyText="No organizations found."
+                  placeholder={messages.common.searchOrganizations}
+                  emptyText={messages.common.noOrganizations}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-4 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Subtotal</Label>
+                <Label>{dialogMessages.fields.subtotal}</Label>
                 <Input {...form.register("subtotalEuros")} type="number" min="0" step="0.01" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Tax</Label>
+                <Label>{dialogMessages.fields.tax}</Label>
                 <Input {...form.register("taxEuros")} type="number" min="0" step="0.01" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Fee</Label>
+                <Label>{dialogMessages.fields.fee}</Label>
                 <Input {...form.register("feeEuros")} type="number" min="0" step="0.01" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Total</Label>
+                <Label>{dialogMessages.fields.total}</Label>
                 <Input {...form.register("totalEuros")} type="number" min="0" step="0.01" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Valid from</Label>
+                <Label>{dialogMessages.fields.validFrom}</Label>
                 <DatePicker
                   value={form.watch("validFrom") || null}
                   onChange={(next) =>
@@ -432,12 +446,12 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select start date"
+                  placeholder={dialogMessages.placeholders.validFrom}
                   className="w-full"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Valid until</Label>
+                <Label>{dialogMessages.fields.validUntil}</Label>
                 <DatePicker
                   value={form.watch("validUntil") || null}
                   onChange={(next) =>
@@ -446,23 +460,23 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select end date"
+                  placeholder={dialogMessages.placeholders.validUntil}
                   className="w-full"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{dialogMessages.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
 
             <div className="rounded-lg border p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <Label>Storefront promotional offer</Label>
+                  <Label>{dialogMessages.fields.promoTitle}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Publish editorial promo fields on this offer for storefront pages.
+                    {dialogMessages.fields.promoDescription}
                   </p>
                 </div>
                 <Switch
@@ -477,21 +491,21 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                 <div className="mt-4 grid gap-4">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="flex flex-col gap-2">
-                      <Label>Locale</Label>
+                      <Label>{dialogMessages.fields.promoLocale}</Label>
                       <Input
                         {...form.register("storefrontPromotionalOfferLocale")}
-                        placeholder="ro"
+                        placeholder={dialogMessages.placeholders.promoLocale}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label>Slug</Label>
+                      <Label>{dialogMessages.fields.promoSlug}</Label>
                       <Input
                         {...form.register("storefrontPromotionalOfferSlug")}
-                        placeholder="early-booking-budapest"
+                        placeholder={dialogMessages.placeholders.promoSlug}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label>Minimum travelers</Label>
+                      <Label>{dialogMessages.fields.promoMinTravelers}</Label>
                       <Input
                         {...form.register("storefrontPromotionalOfferMinTravelers")}
                         type="number"
@@ -502,11 +516,17 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
 
                   <div className="grid grid-cols-3 gap-4">
                     <div className="flex flex-col gap-2">
-                      <Label>Discount type</Label>
+                      <Label>{dialogMessages.fields.promoDiscountType}</Label>
                       <Select
                         items={[
-                          { label: "Percentage", value: "percentage" },
-                          { label: "Fixed amount", value: "fixed_amount" },
+                          {
+                            label: messages.common.discountTypeLabels.percentage,
+                            value: "percentage",
+                          },
+                          {
+                            label: messages.common.discountTypeLabels.fixed_amount,
+                            value: "fixed_amount",
+                          },
                         ]}
                         value={form.watch("storefrontPromotionalOfferDiscountType")}
                         onValueChange={(value) =>
@@ -520,35 +540,44 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="percentage">Percentage</SelectItem>
-                          <SelectItem value="fixed_amount">Fixed amount</SelectItem>
+                          <SelectItem value="percentage">
+                            {messages.common.discountTypeLabels.percentage}
+                          </SelectItem>
+                          <SelectItem value="fixed_amount">
+                            {messages.common.discountTypeLabels.fixed_amount}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label>Discount value</Label>
+                      <Label>{dialogMessages.fields.promoDiscountValue}</Label>
                       <Input
                         {...form.register("storefrontPromotionalOfferDiscountValue")}
                         placeholder="15"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label>Promo currency</Label>
+                      <Label>{dialogMessages.fields.promoCurrency}</Label>
                       <CurrencyCombobox
                         value={form.watch("storefrontPromotionalOfferCurrency") || null}
                         onChange={(next) =>
-                          form.setValue("storefrontPromotionalOfferCurrency", next ?? "EUR", {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                          })
+                          form.setValue(
+                            "storefrontPromotionalOfferCurrency",
+                            next ?? DEFAULT_CURRENCY_CODE,
+                            {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            },
+                          )
                         }
+                        placeholder={messages.common.selectCurrency}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
-                      <Label>Promo valid from</Label>
+                      <Label>{dialogMessages.fields.promoValidFrom}</Label>
                       <DatePicker
                         value={form.watch("storefrontPromotionalOfferValidFrom") || null}
                         onChange={(next) =>
@@ -557,12 +586,12 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                             shouldDirty: true,
                           })
                         }
-                        placeholder="Select promo start"
+                        placeholder={dialogMessages.placeholders.promoValidFrom}
                         className="w-full"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label>Promo valid to</Label>
+                      <Label>{dialogMessages.fields.promoValidTo}</Label>
                       <DatePicker
                         value={form.watch("storefrontPromotionalOfferValidTo") || null}
                         onChange={(next) =>
@@ -571,7 +600,7 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                             shouldDirty: true,
                           })
                         }
-                        placeholder="Select promo end"
+                        placeholder={dialogMessages.placeholders.promoValidTo}
                         className="w-full"
                       />
                     </div>
@@ -584,44 +613,44 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
                         form.setValue("storefrontPromotionalOfferStackable", value)
                       }
                     />
-                    <Label>Stackable with other storefront promos</Label>
+                    <Label>{dialogMessages.fields.promoStackable}</Label>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Label>Description</Label>
+                    <Label>{dialogMessages.fields.promoDescriptionField}</Label>
                     <Textarea {...form.register("storefrontPromotionalOfferDescription")} />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
-                      <Label>Mobile image URL</Label>
+                      <Label>{dialogMessages.fields.promoImageMobile}</Label>
                       <Input
                         {...form.register("storefrontPromotionalOfferImageMobileUrl")}
-                        placeholder="https://cdn.example.com/offers/mobile.jpg"
+                        placeholder={dialogMessages.placeholders.promoImageMobile}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label>Desktop image URL</Label>
+                      <Label>{dialogMessages.fields.promoImageDesktop}</Label>
                       <Input
                         {...form.register("storefrontPromotionalOfferImageDesktopUrl")}
-                        placeholder="https://cdn.example.com/offers/desktop.jpg"
+                        placeholder={dialogMessages.placeholders.promoImageDesktop}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
-                      <Label>Applicable product IDs</Label>
+                      <Label>{dialogMessages.fields.promoProductIds}</Label>
                       <Textarea
                         {...form.register("storefrontPromotionalOfferApplicableProductIds")}
-                        placeholder={"prod_123\nprod_456"}
+                        placeholder={dialogMessages.placeholders.promoProductIds}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label>Applicable departure IDs</Label>
+                      <Label>{dialogMessages.fields.promoDepartureIds}</Label>
                       <Textarea
                         {...form.register("storefrontPromotionalOfferApplicableDepartureIds")}
-                        placeholder={"dep_123\ndep_456"}
+                        placeholder={dialogMessages.placeholders.promoDepartureIds}
                       />
                     </div>
                   </div>
@@ -631,11 +660,11 @@ export function OfferDialog({ open, onOpenChange, offer, onSuccess }: OfferDialo
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add Offer"}
+              {isEditing ? messages.common.saveChanges : dialogMessages.actions.add}
             </Button>
           </DialogFooter>
         </form>

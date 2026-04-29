@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
+
 type ServiceType = ProductDayServiceRecord["serviceType"]
 
 type Mode =
@@ -72,15 +74,6 @@ interface FormState {
   notes: string
 }
 
-const SERVICE_TYPES: Array<{ value: ServiceType; label: string }> = [
-  { value: "accommodation", label: "Accommodation" },
-  { value: "transfer", label: "Transfer" },
-  { value: "experience", label: "Experience" },
-  { value: "guide", label: "Guide" },
-  { value: "meal", label: "Meal" },
-  { value: "other", label: "Other" },
-]
-
 function initialState(mode: Mode): FormState {
   if (mode.kind === "edit") {
     return {
@@ -101,7 +94,7 @@ function initialState(mode: Mode): FormState {
     name: "",
     description: "",
     supplierServiceId: "",
-    costCurrency: "EUR",
+    costCurrency: "EUR", // i18n-literal-ok ISO default currency
     costAmount: "0.00",
     quantity: "1",
     sortOrder: "",
@@ -120,6 +113,8 @@ export function ProductDayServiceForm({
   const { create, update } = useProductDayServiceMutation()
   const suppliersClient = useVoyantSuppliersContext()
   const suppliersQuery = useSuppliers({ enabled: true, limit: 100 })
+  const messages = useRegistryProductsMessagesOrDefault()
+
   const supplierServiceQueries = useQueries({
     queries: (suppliersQuery.data?.data ?? []).map((supplier) => ({
       ...getSupplierServicesQueryOptions(suppliersClient, supplier.id),
@@ -131,6 +126,21 @@ export function ProductDayServiceForm({
     setState(initialState(mode))
     setError(null)
   }, [mode])
+
+  const serviceTypes = React.useMemo(
+    () => [
+      {
+        value: "accommodation" as const,
+        label: messages.common.serviceTypeLabels.accommodation,
+      },
+      { value: "transfer" as const, label: messages.common.serviceTypeLabels.transfer },
+      { value: "experience" as const, label: messages.common.serviceTypeLabels.experience },
+      { value: "guide" as const, label: messages.common.serviceTypeLabels.guide },
+      { value: "meal" as const, label: messages.common.serviceTypeLabels.meal },
+      { value: "other" as const, label: messages.common.serviceTypeLabels.other },
+    ],
+    [messages],
+  )
 
   const isSubmitting = create.isPending || update.isPending
   const isLoadingSupplierServices =
@@ -144,15 +154,20 @@ export function ProductDayServiceForm({
       const services = query.data?.data ?? []
       return services.map((service) => {
         const supplier = suppliersById.get(service.supplierId)
+        const supplierName =
+          supplier?.name ?? messages.productDayServiceForm.placeholders.supplierFallback
+        const typeLabel =
+          serviceTypes.find((type) => type.value === service.serviceType)?.label ??
+          service.serviceType
         return {
           id: service.id,
-          supplierName: supplier?.name ?? "Supplier",
+          supplierName,
           service,
-          label: `${supplier?.name ?? "Supplier"} — ${service.name} (${SERVICE_TYPES.find((type) => type.value === service.serviceType)?.label ?? service.serviceType})`,
+          label: `${supplierName} - ${service.name} (${typeLabel})`,
         }
       })
     })
-  }, [supplierServiceQueries, suppliersQuery.data?.data])
+  }, [messages, serviceTypes, supplierServiceQueries, suppliersQuery.data?.data])
 
   const field =
     <K extends keyof FormState>(key: K) =>
@@ -173,22 +188,22 @@ export function ProductDayServiceForm({
 
   const defaultSupplierServicePicker = isLoadingSupplierServices ? (
     <div className="flex flex-col gap-1.5 sm:col-span-2">
-      <Label>Supplier service</Label>
+      <Label>{messages.productDayServiceForm.fields.supplierService}</Label>
       <div className="flex h-10 items-center rounded-md border px-3 text-sm text-muted-foreground">
         <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-        Loading supplier services...
+        {messages.productDayServiceForm.placeholders.loadingSupplierServices}
       </div>
     </div>
   ) : supplierServiceOptions.length > 0 ? (
     <div className="flex flex-col gap-1.5 sm:col-span-2">
-      <Label>Supplier service</Label>
+      <Label>{messages.productDayServiceForm.fields.supplierService}</Label>
       <Select
         items={supplierServiceOptions.map((option) => ({ label: option.label, value: option.id }))}
         value={state.supplierServiceId}
         onValueChange={handleSupplierServiceSelect}
       >
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select a supplier service" />
+          <SelectValue placeholder={messages.productDayServiceForm.placeholders.supplierService} />
         </SelectTrigger>
         <SelectContent>
           {supplierServiceOptions.map((option) => (
@@ -206,18 +221,18 @@ export function ProductDayServiceForm({
     setError(null)
 
     if (!state.name.trim()) {
-      setError("Service name is required.")
+      setError(messages.productDayServiceForm.validation.nameRequired)
       return
     }
 
     const costAmount = Number.parseFloat(state.costAmount || "0")
     const quantity = Number.parseInt(state.quantity || "0", 10)
     if (!Number.isFinite(costAmount) || costAmount < 0) {
-      setError("Cost must be zero or greater.")
+      setError(messages.productDayServiceForm.validation.costInvalid)
       return
     }
     if (!Number.isFinite(quantity) || quantity < 1) {
-      setError("Quantity must be at least 1.")
+      setError(messages.productDayServiceForm.validation.quantityInvalid)
       return
     }
 
@@ -254,7 +269,9 @@ export function ProductDayServiceForm({
       onSuccess?.(service)
     } catch (submissionError) {
       setError(
-        submissionError instanceof Error ? submissionError.message : "Failed to save service.",
+        submissionError instanceof Error
+          ? submissionError.message
+          : messages.productDayServiceForm.validation.saveFailed,
       )
     }
   }
@@ -277,9 +294,9 @@ export function ProductDayServiceForm({
             })
           : defaultSupplierServicePicker}
         <div className="flex flex-col gap-1.5">
-          <Label>Service type</Label>
+          <Label>{messages.productDayServiceForm.fields.serviceType}</Label>
           <Select
-            items={SERVICE_TYPES}
+            items={serviceTypes}
             value={state.serviceType}
             onValueChange={(value) => field("serviceType")(value as ServiceType)}
           >
@@ -287,7 +304,7 @@ export function ProductDayServiceForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SERVICE_TYPES.map((type) => (
+              {serviceTypes.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
                 </SelectItem>
@@ -296,40 +313,48 @@ export function ProductDayServiceForm({
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-name">Name</Label>
+          <Label htmlFor="product-day-service-name">
+            {messages.productDayServiceForm.fields.name}
+          </Label>
           <Input
             id="product-day-service-name"
             autoFocus
             required
             value={state.name}
             onChange={(event) => field("name")(event.target.value)}
-            placeholder="Deluxe sea view room"
+            placeholder={messages.productDayServiceForm.placeholders.name}
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-day-service-description">Description</Label>
+        <Label htmlFor="product-day-service-description">
+          {messages.productDayServiceForm.fields.description}
+        </Label>
         <Textarea
           id="product-day-service-description"
           value={state.description}
           onChange={(event) => field("description")(event.target.value)}
-          placeholder="Optional service details"
+          placeholder={messages.productDayServiceForm.placeholders.description}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-supplier-service">Supplier service ID</Label>
+          <Label htmlFor="product-day-service-supplier-service">
+            {messages.productDayServiceForm.fields.supplierServiceId}
+          </Label>
           <Input
             id="product-day-service-supplier-service"
             value={state.supplierServiceId}
             onChange={(event) => field("supplierServiceId")(event.target.value)}
-            placeholder="Optional supplier service reference"
+            placeholder={messages.productDayServiceForm.placeholders.supplierServiceId}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-sort-order">Sort order</Label>
+          <Label htmlFor="product-day-service-sort-order">
+            {messages.productDayServiceForm.fields.sortOrder}
+          </Label>
           <Input
             id="product-day-service-sort-order"
             type="number"
@@ -341,14 +366,18 @@ export function ProductDayServiceForm({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-cost-currency">Currency</Label>
+          <Label htmlFor="product-day-service-cost-currency">
+            {messages.productDayServiceForm.fields.currency}
+          </Label>
           <CurrencyCombobox
             value={state.costCurrency || null}
-            onChange={(next) => field("costCurrency")(next ?? "EUR")}
+            onChange={(next) => field("costCurrency")(next ?? "EUR")} // i18n-literal-ok ISO default currency
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-cost-amount">Cost</Label>
+          <Label htmlFor="product-day-service-cost-amount">
+            {messages.productDayServiceForm.fields.cost}
+          </Label>
           <Input
             id="product-day-service-cost-amount"
             type="number"
@@ -359,7 +388,9 @@ export function ProductDayServiceForm({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-quantity">Quantity</Label>
+          <Label htmlFor="product-day-service-quantity">
+            {messages.productDayServiceForm.fields.quantity}
+          </Label>
           <Input
             id="product-day-service-quantity"
             type="number"
@@ -371,12 +402,14 @@ export function ProductDayServiceForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="product-day-service-notes">Notes</Label>
+        <Label htmlFor="product-day-service-notes">
+          {messages.productDayServiceForm.fields.notes}
+        </Label>
         <Textarea
           id="product-day-service-notes"
           value={state.notes}
           onChange={(event) => field("notes")(event.target.value)}
-          placeholder="Internal notes"
+          placeholder={messages.productDayServiceForm.placeholders.notes}
         />
       </div>
 
@@ -385,14 +418,16 @@ export function ProductDayServiceForm({
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            {messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {mode.kind === "create" ? "Add service" : "Save service"}
+          {mode.kind === "create"
+            ? messages.productDayServiceForm.actions.addService
+            : messages.productDayServiceForm.actions.saveService}
         </Button>
       </div>
     </form>

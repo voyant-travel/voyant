@@ -17,6 +17,7 @@ import { Button } from "./button"
 function ConfirmActionButton({
   buttonLabel,
   confirmLabel,
+  cancelLabel = "Cancel",
   title,
   description,
   onConfirm,
@@ -26,6 +27,7 @@ function ConfirmActionButton({
 }: {
   buttonLabel: string
   confirmLabel: string
+  cancelLabel?: string
   title: string
   description: React.ReactNode
   onConfirm: () => Promise<void> | void
@@ -61,7 +63,7 @@ function ConfirmActionButton({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
             variant={confirmVariant}
             disabled={pending}

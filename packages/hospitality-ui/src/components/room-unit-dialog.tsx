@@ -21,26 +21,31 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { RoomUnitStatus } from "../i18n/messages"
 import { RoomTypeCombobox } from "./room-type-combobox"
 
 const STATUSES = ["active", "inactive", "out_of_order", "archived"] as const
-type Status = RoomUnitRecord["status"]
 
-const formSchema = z.object({
-  roomTypeId: z.string().min(1, "Room type is required"),
-  code: z.string().optional().nullable(),
-  roomNumber: z.string().optional().nullable(),
-  floor: z.string().optional().nullable(),
-  wing: z.string().optional().nullable(),
-  status: z.enum(STATUSES),
-  viewCode: z.string().optional().nullable(),
-  accessibilityCode: z.string().optional().nullable(),
-  genderRestriction: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-})
+function createFormSchema(messages: ReturnType<typeof useHospitalityUiMessagesOrDefault>) {
+  return z.object({
+    roomTypeId: z.string().min(1, messages.roomUnitDialog.validation.roomTypeRequired),
+    code: z.string().optional().nullable(),
+    roomNumber: z.string().optional().nullable(),
+    floor: z.string().optional().nullable(),
+    wing: z.string().optional().nullable(),
+    status: z.enum(STATUSES),
+    viewCode: z.string().optional().nullable(),
+    accessibilityCode: z.string().optional().nullable(),
+    genderRestriction: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface RoomUnitDialogProps {
   open: boolean
@@ -59,6 +64,8 @@ export function RoomUnitDialog({
 }: RoomUnitDialogProps) {
   const isEditing = Boolean(unit)
   const { create, update } = useRoomUnitMutation()
+  const messages = useHospitalityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -135,50 +142,71 @@ export function RoomUnitDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Room Unit" : "Add Room Unit"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.roomUnitDialog.titles.edit
+              : messages.roomUnitDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Room type</Label>
+              <Label>{messages.roomUnitDialog.fields.roomType}</Label>
               <RoomTypeCombobox
                 propertyId={propertyId}
                 value={form.watch("roomTypeId")}
                 onChange={(value) => form.setValue("roomTypeId", value ?? "")}
-                placeholder="Select a room type…"
+                placeholder={messages.roomUnitDialog.placeholders.roomType}
                 disabled={!open}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Room number</Label>
-                <Input {...form.register("roomNumber")} placeholder="412" />
+                <Label>{messages.roomUnitDialog.fields.roomNumber}</Label>
+                <Input
+                  {...form.register("roomNumber")}
+                  placeholder={messages.roomUnitDialog.placeholders.roomNumber}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Code</Label>
-                <Input {...form.register("code")} placeholder="DLX-412" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label>Floor</Label>
-                <Input {...form.register("floor")} placeholder="4" />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>Wing</Label>
-                <Input {...form.register("wing")} placeholder="North" />
+                <Label>{messages.roomUnitDialog.fields.code}</Label>
+                <Input
+                  {...form.register("code")}
+                  placeholder={messages.roomUnitDialog.placeholders.code}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{messages.roomUnitDialog.fields.floor}</Label>
+                <Input
+                  {...form.register("floor")}
+                  placeholder={messages.roomUnitDialog.placeholders.floor}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>{messages.roomUnitDialog.fields.wing}</Label>
+                <Input
+                  {...form.register("wing")}
+                  placeholder={messages.roomUnitDialog.placeholders.wing}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label>{messages.roomUnitDialog.fields.status}</Label>
                 <Select
-                  items={STATUSES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={STATUSES.map((value) => ({
+                    label: messages.common.roomUnitStatusLabels[value as RoomUnitStatus],
+                    value,
+                  }))}
                   value={form.watch("status")}
-                  onValueChange={(value) => form.setValue("status", value as Status)}
+                  onValueChange={(value) =>
+                    form.setValue("status", value as RoomUnitRecord["status"])
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -186,41 +214,50 @@ export function RoomUnitDialog({
                   <SelectContent>
                     {STATUSES.map((status) => (
                       <SelectItem key={status} value={status} className="capitalize">
-                        {status.replace(/_/g, " ")}
+                        {messages.common.roomUnitStatusLabels[status as RoomUnitStatus]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>View code</Label>
-                <Input {...form.register("viewCode")} placeholder="sea" />
+                <Label>{messages.roomUnitDialog.fields.viewCode}</Label>
+                <Input
+                  {...form.register("viewCode")}
+                  placeholder={messages.roomUnitDialog.placeholders.viewCode}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Accessibility</Label>
-                <Input {...form.register("accessibilityCode")} placeholder="wheelchair" />
+                <Label>{messages.roomUnitDialog.fields.accessibility}</Label>
+                <Input
+                  {...form.register("accessibilityCode")}
+                  placeholder={messages.roomUnitDialog.placeholders.accessibility}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Gender restriction</Label>
-                <Input {...form.register("genderRestriction")} placeholder="female_only" />
+                <Label>{messages.roomUnitDialog.fields.genderRestriction}</Label>
+                <Input
+                  {...form.register("genderRestriction")}
+                  placeholder={messages.roomUnitDialog.placeholders.genderRestriction}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.roomUnitDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Room Unit"}
+              {isEditing ? messages.common.saveChanges : messages.roomUnitDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

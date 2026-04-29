@@ -10,6 +10,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useSellabilityUiMessagesOrDefault } from "../i18n"
+
 type Props = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -19,12 +21,8 @@ type Props = {
 
 const PAGE_SIZE = 25
 
-export function MarketCombobox({
-  value,
-  onChange,
-  placeholder = "Search markets…",
-  disabled,
-}: Props) {
+export function MarketCombobox({ value, onChange, placeholder, disabled }: Props) {
+  const messages = useSellabilityUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useMarkets({ search: search || undefined, limit: PAGE_SIZE })
   const selectedQuery = useMarket(value ?? undefined, { enabled: !!value })
@@ -64,10 +62,15 @@ export function MarketCombobox({
         setInputValue(id ? (itemMap.get(id)?.name ?? "") : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.marketCombobox.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
-          {listQuery.isPending || selectedQuery.isPending ? "Loading…" : "No markets found."}
+          {listQuery.isPending || selectedQuery.isPending
+            ? messages.common.loading
+            : messages.marketCombobox.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

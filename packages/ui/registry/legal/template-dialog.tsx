@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+
 import {
   Button,
   ContractTemplateAuthoringHelp,
@@ -34,21 +35,17 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { zodResolver } from "@/lib/zod-resolver"
 
-const templateFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z
-    .string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
-  scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
-  language: z.string().min(2).max(10).optional(),
-  description: z.string().optional(),
-  body: z.string().min(1, "Body is required"),
-  active: z.boolean(),
-})
+import { useRegistryLegalMessagesOrDefault } from "./i18n/provider"
 
-type FormValues = z.input<typeof templateFormSchema>
-type FormOutput = z.output<typeof templateFormSchema>
+type FormValues = {
+  name: string
+  slug: string
+  scope: "customer" | "supplier" | "partner" | "channel" | "other"
+  language?: string
+  description?: string
+  body: string
+  active: boolean
+}
 
 type TemplateDialogProps = {
   open: boolean
@@ -57,15 +54,26 @@ type TemplateDialogProps = {
   onSuccess: () => void
 }
 
-const SCOPES = [
-  { value: "customer", label: "Customer" },
-  { value: "supplier", label: "Supplier" },
-  { value: "partner", label: "Partner" },
-  { value: "channel", label: "Channel" },
-  { value: "other", label: "Other" },
-] as const
+function createTemplateFormSchema(messages: ReturnType<typeof useRegistryLegalMessagesOrDefault>) {
+  return z.object({
+    name: z.string().min(1, messages.templateDialog.validation.nameRequired),
+    slug: z
+      .string()
+      .min(1, messages.templateDialog.validation.slugRequired)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, messages.templateDialog.validation.slugKebabCase),
+    scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
+    language: z.string().min(2).max(10).optional(),
+    description: z.string().optional(),
+    body: z.string().min(1, messages.templateDialog.validation.bodyRequired),
+    active: z.boolean(),
+  })
+}
+
+const SCOPES = ["customer", "supplier", "partner", "channel", "other"] as const
 
 export function TemplateDialog({ open, onOpenChange, template, onSuccess }: TemplateDialogProps) {
+  const messages = useRegistryLegalMessagesOrDefault()
+  const templateFormSchema = createTemplateFormSchema(messages)
   const isEditing = !!template
   const { create, update } = useLegalContractTemplateMutation()
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
@@ -82,7 +90,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
     [variableCatalog],
   )
 
-  const form = useForm<FormValues, unknown, FormOutput>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(templateFormSchema),
     defaultValues: {
       name: "",
@@ -111,7 +119,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
     }
   }, [open, template, form])
 
-  const onSubmit = async (values: FormOutput) => {
+  const onSubmit = async (values: FormValues) => {
     const payload = {
       name: values.name,
       slug: values.slug,
@@ -135,21 +143,31 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Template" : "New Template"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.templateDialog.titles.edit
+              : messages.templateDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Template name" />
+                <Label>{messages.templateDialog.fields.name}</Label>
+                <Input
+                  {...form.register("name")}
+                  placeholder={messages.templateDialog.placeholders.name}
+                />
                 {form.formState.errors.name ? (
                   <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Slug</Label>
-                <Input {...form.register("slug")} placeholder="template-slug" />
+                <Label>{messages.templateDialog.fields.slug}</Label>
+                <Input
+                  {...form.register("slug")}
+                  placeholder={messages.templateDialog.placeholders.slug}
+                />
                 {form.formState.errors.slug ? (
                   <p className="text-xs text-destructive">{form.formState.errors.slug.message}</p>
                 ) : null}
@@ -158,9 +176,12 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Scope</Label>
+                <Label>{messages.templateDialog.fields.scope}</Label>
                 <Select
-                  items={SCOPES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={SCOPES.map((scope) => ({
+                    label: messages.common.contractScopeLabels[scope],
+                    value: scope,
+                  }))}
                   value={form.watch("scope")}
                   onValueChange={(value) => form.setValue("scope", value as FormValues["scope"])}
                 >
@@ -169,26 +190,33 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
                   </SelectTrigger>
                   <SelectContent>
                     {SCOPES.map((scope) => (
-                      <SelectItem key={scope.value} value={scope.value}>
-                        {scope.label}
+                      <SelectItem key={scope} value={scope}>
+                        {messages.common.contractScopeLabels[scope]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Language</Label>
-                <Input {...form.register("language")} placeholder="en" maxLength={10} />
+                <Label>{messages.templateDialog.fields.language}</Label>
+                <Input
+                  {...form.register("language")}
+                  placeholder={messages.templateDialog.placeholders.language}
+                  maxLength={10}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Description</Label>
-              <Textarea {...form.register("description")} placeholder="Optional description..." />
+              <Label>{messages.templateDialog.fields.description}</Label>
+              <Textarea
+                {...form.register("description")}
+                placeholder={messages.templateDialog.placeholders.description}
+              />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Body</Label>
+              <Label>{messages.templateDialog.fields.body}</Label>
               <RichTextEditor
                 value={form.watch("body")}
                 onChange={(value) =>
@@ -198,7 +226,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
                     shouldValidate: true,
                   })
                 }
-                placeholder="Template body with Liquid variables and conditionals..."
+                placeholder={messages.templateDialog.placeholders.body}
                 enableVariables
                 onEditorReady={setEditorInstance}
               />
@@ -208,6 +236,9 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
             </div>
 
             <ContractTemplateAuthoringHelp
+              title={messages.authoringHelp.title}
+              description={messages.authoringHelp.description}
+              messages={messages.authoringHelp}
               variableGroups={variableGroups}
               snippets={liquidSnippets}
               onInsertVariable={(variable) => {
@@ -225,18 +256,18 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{messages.templateDialog.fields.active}</Label>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {isEditing ? "Save Changes" : "Create Template"}
+              {isEditing ? messages.common.saveChanges : messages.templateDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

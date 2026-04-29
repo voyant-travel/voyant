@@ -7,15 +7,18 @@ import { useMemo, useState } from "react"
 
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import {
+  useRegistryTransactionsI18nOrDefault,
+  useRegistryTransactionsMessagesOrDefault,
+} from "./i18n"
 import { OfferDialog } from "./offer-dialog"
 
 const PAGE_SIZE = 25
 
-function formatMoney(cents: number, currency: string) {
-  return `${(cents / 100).toFixed(2)} ${currency}`
-}
-
 export function OffersTab() {
+  const { formatCurrency, formatDate } = useRegistryTransactionsI18nOrDefault()
+  const messages = useRegistryTransactionsMessagesOrDefault()
+  const tabMessages = messages.offersTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<OfferRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -29,36 +32,35 @@ export function OffersTab() {
     () => [
       {
         accessorKey: "offerNumber",
-        header: "Number",
+        header: tabMessages.columns.number,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.offerNumber}</span>,
       },
       {
         accessorKey: "title",
-        header: "Title",
+        header: tabMessages.columns.title,
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: tabMessages.columns.status,
         cell: ({ row }) => (
           <Badge variant={row.original.status === "accepted" ? "default" : "outline"}>
-            {row.original.status}
+            {messages.common.offerStatusLabels[row.original.status]}
           </Badge>
         ),
       },
       {
         accessorKey: "totalAmountCents",
-        header: "Total",
+        header: tabMessages.columns.total,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
-            {formatMoney(row.original.totalAmountCents, row.original.currency)}
+            {formatCurrency(row.original.totalAmountCents / 100, row.original.currency)}
           </span>
         ),
       },
       {
         accessorKey: "validUntil",
-        header: "Valid Until",
-        cell: ({ row }) =>
-          row.original.validUntil ? new Date(row.original.validUntil).toLocaleDateString() : "-",
+        header: tabMessages.columns.validUntil,
+        cell: ({ row }) => (row.original.validUntil ? formatDate(row.original.validUntil) : "-"),
       },
       {
         id: "actions",
@@ -78,7 +80,7 @@ export function OffersTab() {
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete offer "${row.original.offerNumber}"?`)) {
+                if (confirm(tabMessages.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -90,15 +92,13 @@ export function OffersTab() {
         ),
       },
     ],
-    [refetch, remove],
+    [formatCurrency, formatDate, messages.common.offerStatusLabels, refetch, remove, tabMessages],
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Priced proposals sent to customers. Each offer can be converted into an order.
-        </p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -107,14 +107,14 @@ export function OffersTab() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Offer
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading offers..." : "No offers yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.none}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

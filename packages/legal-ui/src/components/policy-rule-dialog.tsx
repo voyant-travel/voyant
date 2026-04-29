@@ -21,20 +21,35 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useLegalUiMessagesOrDefault } from "../i18n"
+import {
+  type LegalRefundType,
+  type LegalRuleType,
+  legalRefundTypes,
+  legalRuleTypes,
+} from "../i18n/messages"
 
-const ruleFormSchema = z.object({
-  ruleType: z.enum(["window", "percentage", "flat_amount", "date_range", "custom"]),
-  label: z.string().optional(),
-  daysBeforeDeparture: z.coerce.number().int().optional(),
-  refundPercent: z.coerce.number().int().min(0).max(10000).optional(),
-  refundType: z.enum(["cash", "credit", "cash_or_credit", "none"]).optional(),
-  flatAmountCents: z.coerce.number().int().optional(),
-  currency: z.string().optional(),
-  sortOrder: z.coerce.number().int().optional(),
-})
+function createRuleFormSchema(messages: ReturnType<typeof useLegalUiMessagesOrDefault>) {
+  return z.object({
+    ruleType: z.enum(legalRuleTypes),
+    label: z.string().optional(),
+    daysBeforeDeparture: z.coerce.number().int().optional(),
+    refundPercent: z.coerce
+      .number()
+      .int()
+      .min(0, messages.policyRuleDialog.validation.refundPercentMin)
+      .max(10000, messages.policyRuleDialog.validation.refundPercentMax)
+      .optional(),
+    refundType: z.enum(legalRefundTypes).optional(),
+    flatAmountCents: z.coerce.number().int().optional(),
+    currency: z.string().optional(),
+    sortOrder: z.coerce.number().int().optional(),
+  })
+}
 
-type FormValues = z.input<typeof ruleFormSchema>
-type FormOutput = z.output<typeof ruleFormSchema>
+type RuleFormSchema = ReturnType<typeof createRuleFormSchema>
+type FormValues = z.input<RuleFormSchema>
+type FormOutput = z.output<RuleFormSchema>
 
 export type RuleData = LegalPolicyRuleRecord
 
@@ -46,21 +61,6 @@ type PolicyRuleDialogProps = {
   onSuccess: () => void
 }
 
-const RULE_TYPES = [
-  { value: "window", label: "Window" },
-  { value: "percentage", label: "Percentage" },
-  { value: "flat_amount", label: "Flat Amount" },
-  { value: "date_range", label: "Date Range" },
-  { value: "custom", label: "Custom" },
-] as const
-
-const REFUND_TYPES = [
-  { value: "cash", label: "Cash" },
-  { value: "credit", label: "Credit" },
-  { value: "cash_or_credit", label: "Cash or Credit" },
-  { value: "none", label: "None" },
-] as const
-
 export function PolicyRuleDialog({
   open,
   onOpenChange,
@@ -70,6 +70,16 @@ export function PolicyRuleDialog({
 }: PolicyRuleDialogProps) {
   const isEditing = !!rule
   const { create, update } = useLegalPolicyRuleMutation()
+  const messages = useLegalUiMessagesOrDefault()
+  const ruleFormSchema = createRuleFormSchema(messages)
+  const ruleTypeItems = legalRuleTypes.map((value) => ({
+    value,
+    label: messages.policyRuleDialog.ruleTypeLabels[value],
+  }))
+  const refundTypeItems = legalRefundTypes.map((value) => ({
+    value,
+    label: messages.policyRuleDialog.refundTypeLabels[value],
+  }))
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(ruleFormSchema),
@@ -126,23 +136,29 @@ export function PolicyRuleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Rule" : "New Rule"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.policyRuleDialog.titles.edit
+              : messages.policyRuleDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Rule Type</Label>
+                <Label>{messages.policyRuleDialog.fields.ruleType}</Label>
                 <Select
-                  items={RULE_TYPES}
+                  items={ruleTypeItems}
                   value={form.watch("ruleType")}
-                  onValueChange={(v) => form.setValue("ruleType", v as FormValues["ruleType"])}
+                  onValueChange={(v) =>
+                    form.setValue("ruleType", v as LegalRuleType, { shouldValidate: true })
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {RULE_TYPES.map((t) => (
+                    {ruleTypeItems.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
                         {t.label}
                       </SelectItem>
@@ -151,50 +167,53 @@ export function PolicyRuleDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Sort Order</Label>
+                <Label>{messages.policyRuleDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Label</Label>
-              <Input {...form.register("label")} placeholder="e.g. 30+ days before departure" />
+              <Label>{messages.policyRuleDialog.fields.label}</Label>
+              <Input
+                {...form.register("label")}
+                placeholder={messages.policyRuleDialog.placeholders.label}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Days Before Departure</Label>
+                <Label>{messages.policyRuleDialog.fields.daysBeforeDeparture}</Label>
                 <Input
                   {...form.register("daysBeforeDeparture")}
                   type="number"
-                  placeholder="e.g. 30"
+                  placeholder={messages.policyRuleDialog.placeholders.daysBeforeDeparture}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Refund Percent (basis points)</Label>
+                <Label>{messages.policyRuleDialog.fields.refundPercent}</Label>
                 <Input
                   {...form.register("refundPercent")}
                   type="number"
-                  placeholder="e.g. 10000 = 100%"
+                  placeholder={messages.policyRuleDialog.placeholders.refundPercent}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Refund Type</Label>
+                <Label>{messages.policyRuleDialog.fields.refundType}</Label>
                 <Select
-                  items={REFUND_TYPES}
+                  items={refundTypeItems}
                   value={form.watch("refundType") ?? ""}
                   onValueChange={(v) =>
-                    form.setValue("refundType", (v || undefined) as FormValues["refundType"])
+                    form.setValue("refundType", (v || undefined) as LegalRefundType | undefined)
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select..." />
+                    <SelectValue placeholder={messages.common.selectPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
-                    {REFUND_TYPES.map((t) => (
+                    {refundTypeItems.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
                         {t.label}
                       </SelectItem>
@@ -203,31 +222,39 @@ export function PolicyRuleDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Currency</Label>
+                <Label>{messages.policyRuleDialog.fields.currency}</Label>
                 <CurrencyCombobox
                   value={form.watch("currency") || null}
                   onChange={(next) =>
-                    form.setValue("currency", next ?? "EUR", {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    })
+                    form.setValue(
+                      "currency",
+                      next ?? "EUR" /* i18n-literal-ok domain default currency */,
+                      {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      },
+                    )
                   }
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Flat Amount (cents)</Label>
-              <Input {...form.register("flatAmountCents")} type="number" placeholder="e.g. 5000" />
+              <Label>{messages.policyRuleDialog.fields.flatAmountCents}</Label>
+              <Input
+                {...form.register("flatAmountCents")}
+                type="number"
+                placeholder={messages.policyRuleDialog.placeholders.flatAmountCents}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Create Rule"}
+              {isEditing ? messages.common.saveChanges : messages.policyRuleDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

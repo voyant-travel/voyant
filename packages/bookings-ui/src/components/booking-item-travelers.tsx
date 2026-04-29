@@ -18,6 +18,7 @@ import {
 } from "@voyantjs/ui/components"
 import { Plus, Trash2, UserCheck } from "lucide-react"
 import * as React from "react"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 const roles = [
   "traveler",
@@ -37,6 +38,7 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
   const { data: travelerLinksData } = useBookingItemTravelers(bookingId, itemId)
   const { data: travelersData } = useTravelers(bookingId)
   const { add, remove } = useBookingItemTravelerMutation(bookingId, itemId)
+  const messages = useBookingsUiMessagesOrDefault()
 
   const [selectedTravelerId, setSelectedTravelerId] = React.useState("")
   const [selectedRole, setSelectedRole] = React.useState<string>("traveler")
@@ -69,11 +71,11 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
     <div className="space-y-3 rounded-md border bg-muted/30 p-3">
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
         <UserCheck className="h-3.5 w-3.5" />
-        Assigned Travelers
+        {messages.bookingItemTravelers.title}
       </div>
 
       {assignedTravelers.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No travelers assigned to this item.</p>
+        <p className="text-xs text-muted-foreground">{messages.bookingItemTravelers.empty}</p>
       ) : (
         <div className="space-y-1">
           {assignedTravelers.map((link: BookingItemTravelerRecord) => {
@@ -87,19 +89,19 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
                   <span>
                     {traveler ? `${traveler.firstName} ${traveler.lastName}` : link.travelerId}
                   </span>
-                  <Badge variant="outline" className="text-xs capitalize">
-                    {link.role.replace("_", " ")}
+                  <Badge variant="outline" className="text-xs">
+                    {messages.bookingItemTravelers.roleLabels[link.role]}
                   </Badge>
                   {link.isPrimary && (
                     <Badge variant="default" className="text-xs">
-                      Primary
+                      {messages.bookingItemTravelers.primaryBadge}
                     </Badge>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm("Remove this traveler from the item?")) {
+                    if (confirm(messages.bookingItemTravelers.actions.removeConfirm)) {
                       remove.mutate(link.id)
                     }
                   }}
@@ -125,7 +127,9 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
               onValueChange={(v) => setSelectedTravelerId(v ?? "")}
             >
               <SelectTrigger className="w-full h-8 text-xs">
-                <SelectValue placeholder="Select traveler..." />
+                <SelectValue
+                  placeholder={messages.bookingItemTravelers.selectTravelerPlaceholder}
+                />
               </SelectTrigger>
               <SelectContent>
                 {availableTravelers.map((traveler) => (
@@ -138,7 +142,10 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
           </div>
           <div className="w-36">
             <Select
-              items={roles.map((r) => ({ label: r.replace("_", " "), value: r }))}
+              items={roles.map((r) => ({
+                label: messages.bookingItemTravelers.roleLabels[r],
+                value: r,
+              }))}
               value={selectedRole}
               onValueChange={(v) => setSelectedRole(v ?? "traveler")}
             >
@@ -148,7 +155,7 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
               <SelectContent>
                 {roles.map((r) => (
                   <SelectItem key={r} value={r}>
-                    {r.replace("_", " ")}
+                    {messages.bookingItemTravelers.roleLabels[r]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -162,7 +169,7 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
             disabled={!selectedTravelerId || add.isPending}
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
-            Assign
+            {messages.bookingItemTravelers.actions.assign}
           </Button>
         </div>
       )}

@@ -1,8 +1,11 @@
 "use client"
 
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
+
+import { useCruisesUiI18nOrDefault } from "../i18n"
 
 export interface ExternalCruiseBadgeProps extends React.ComponentPropsWithoutRef<typeof Badge> {
   /** The adapter that sourced the cruise (e.g. "voyant-connect", "custom"). */
@@ -20,18 +23,21 @@ export function ExternalCruiseBadge({
   className,
   ...props
 }: ExternalCruiseBadgeProps) {
+  const { messages } = useCruisesUiI18nOrDefault()
+  const m = messages.externalCruiseBadge
+
   return (
     <Badge
       data-slot="external-cruise-badge"
       variant="outline"
       className={cn("font-normal", className)}
-      title={`Sourced via ${sourceProvider}`}
+      title={formatMessage(m.title, { sourceProvider })}
       {...props}
     >
       <span aria-hidden="true" className="mr-1">
         ↗
       </span>
-      External · {sourceProvider}
+      {formatMessage(m.label, { sourceProvider })}
     </Badge>
   )
 }

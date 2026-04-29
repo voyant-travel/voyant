@@ -27,18 +27,26 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
-const supplierStatusFormSchema = z.object({
-  serviceName: z.string().min(1, "Service name is required"),
-  status: z.enum(["pending", "confirmed", "rejected", "cancelled"]),
-  supplierReference: z.string().optional().nullable(),
-  costCurrency: z.string().min(3).max(3, "Use 3-letter ISO code"),
-  costAmountCents: z.coerce.number().int().min(0),
-  notes: z.string().optional().nullable(),
-})
+function createSupplierStatusFormSchema(
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+) {
+  return z.object({
+    serviceName: z.string().min(1, messages.supplierStatusDialog.validation.serviceNameRequired),
+    status: z.enum(["pending", "confirmed", "rejected", "cancelled"]),
+    supplierReference: z.string().optional().nullable(),
+    costCurrency: z
+      .string()
+      .min(3)
+      .max(3, messages.supplierStatusDialog.validation.costCurrencyInvalid),
+    costAmountCents: z.coerce.number().int().min(0),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type SupplierStatusFormValues = z.input<typeof supplierStatusFormSchema>
-type SupplierStatusFormOutput = z.output<typeof supplierStatusFormSchema>
+type SupplierStatusFormValues = z.input<ReturnType<typeof createSupplierStatusFormSchema>>
+type SupplierStatusFormOutput = z.output<ReturnType<typeof createSupplierStatusFormSchema>>
 
 export interface SupplierStatusDialogProps {
   open: boolean
@@ -49,11 +57,12 @@ export interface SupplierStatusDialogProps {
 }
 
 const CONFIRMATION_STATUSES = [
-  { value: "pending", label: "Pending" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "rejected", label: "Rejected" },
-  { value: "cancelled", label: "Cancelled" },
+  { value: "pending" },
+  { value: "confirmed" },
+  { value: "rejected" },
+  { value: "cancelled" },
 ] as const
+const DEFAULT_CURRENCY = "EUR" // i18n-literal-ok ISO default currency
 
 export function SupplierStatusDialog({
   open,
@@ -64,6 +73,8 @@ export function SupplierStatusDialog({
 }: SupplierStatusDialogProps) {
   const isEditing = Boolean(supplierStatus)
   const { create, update } = useSupplierStatusMutation(bookingId)
+  const messages = useBookingsUiMessagesOrDefault()
+  const supplierStatusFormSchema = createSupplierStatusFormSchema(messages)
 
   const form = useForm<SupplierStatusFormValues, unknown, SupplierStatusFormOutput>({
     resolver: zodResolver(supplierStatusFormSchema),
@@ -71,7 +82,7 @@ export function SupplierStatusDialog({
       serviceName: "",
       status: "pending",
       supplierReference: "",
-      costCurrency: "EUR",
+      costCurrency: DEFAULT_CURRENCY,
       costAmountCents: 0,
       notes: "",
     },
@@ -118,7 +129,11 @@ export function SupplierStatusDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Update Supplier Status" : "Add Supplier Status"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.supplierStatusDialog.titles.edit
+              : messages.supplierStatusDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -127,10 +142,10 @@ export function SupplierStatusDialog({
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Service Name</Label>
+                <Label>{messages.supplierStatusDialog.fields.serviceName}</Label>
                 <Input
                   {...form.register("serviceName")}
-                  placeholder="Hotel Dubrovnik Palace"
+                  placeholder={messages.supplierStatusDialog.placeholders.serviceName}
                   disabled={isEditing}
                 />
                 {form.formState.errors.serviceName && (
@@ -141,13 +156,16 @@ export function SupplierStatusDialog({
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{messages.supplierStatusDialog.fields.status}</Label>
                 <Select
                   value={form.watch("status")}
                   onValueChange={(value) =>
                     form.setValue("status", value as SupplierStatusFormValues["status"])
                   }
-                  items={CONFIRMATION_STATUSES}
+                  items={CONFIRMATION_STATUSES.map((status) => ({
+                    ...status,
+                    label: messages.common.supplierStatusLabels[status.value],
+                  }))}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -155,7 +173,7 @@ export function SupplierStatusDialog({
                   <SelectContent>
                     {CONFIRMATION_STATUSES.map((status) => (
                       <SelectItem key={status.value} value={status.value}>
-                        {status.label}
+                        {messages.common.supplierStatusLabels[status.value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -165,11 +183,11 @@ export function SupplierStatusDialog({
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Cost Currency</Label>
+                <Label>{messages.supplierStatusDialog.fields.costCurrency}</Label>
                 <CurrencyCombobox
                   value={form.watch("costCurrency") || null}
                   onChange={(next) =>
-                    form.setValue("costCurrency", next ?? "EUR", {
+                    form.setValue("costCurrency", next ?? DEFAULT_CURRENCY, {
                       shouldValidate: true,
                       shouldDirty: true,
                     })
@@ -177,7 +195,7 @@ export function SupplierStatusDialog({
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Cost Amount (cents)</Label>
+                <Label>{messages.supplierStatusDialog.fields.costAmountCents}</Label>
                 <Input
                   {...form.register("costAmountCents", { valueAsNumber: true })}
                   type="number"
@@ -185,23 +203,31 @@ export function SupplierStatusDialog({
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Supplier Reference</Label>
-                <Input {...form.register("supplierReference")} placeholder="CONF-12345" />
+                <Label>{messages.supplierStatusDialog.fields.supplierReference}</Label>
+                <Input
+                  {...form.register("supplierReference")}
+                  placeholder={messages.supplierStatusDialog.placeholders.supplierReference}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
-              <Textarea {...form.register("notes")} placeholder="Additional notes..." />
+              <Label>{messages.supplierStatusDialog.fields.notes}</Label>
+              <Textarea
+                {...form.register("notes")}
+                placeholder={messages.supplierStatusDialog.placeholders.notes}
+              />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" size="sm" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Add"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.supplierStatusDialog.actions.addSupplierStatus}
             </Button>
           </DialogFooter>
         </form>

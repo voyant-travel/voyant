@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductForm } from "./product-form"
 
 export interface ProductDialogProps {
@@ -21,16 +22,19 @@ export interface ProductDialogProps {
 
 export function ProductDialog({ open, onOpenChange, product, onSuccess }: ProductDialogProps) {
   const isEdit = Boolean(product)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-dialog" className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit product" : "New product"}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? messages.productDialog.titles.edit : messages.productDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update product details, pricing, and classification."
-              : "Create a new product in your catalog."}
+              ? messages.productDialog.descriptions.edit
+              : messages.productDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductForm

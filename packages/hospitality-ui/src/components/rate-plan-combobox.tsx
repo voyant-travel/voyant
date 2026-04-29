@@ -10,6 +10,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+
 type Props = {
   propertyId: string
   value: string | null | undefined
@@ -20,13 +22,8 @@ type Props = {
 
 const PAGE_SIZE = 25
 
-export function RatePlanCombobox({
-  propertyId,
-  value,
-  onChange,
-  placeholder = "Search rate plans…",
-  disabled,
-}: Props) {
+export function RatePlanCombobox({ propertyId, value, onChange, placeholder, disabled }: Props) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useRatePlans({
     propertyId,
@@ -73,10 +70,15 @@ export function RatePlanCombobox({
         setInputValue(item ? `${item.name} · ${item.code}` : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.ratePlan.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
-          {listQuery.isPending || selectedQuery.isPending ? "Loading…" : "No rate plans found."}
+          {listQuery.isPending || selectedQuery.isPending
+            ? messages.common.loading
+            : messages.comboboxes.ratePlan.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

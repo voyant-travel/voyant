@@ -2,6 +2,11 @@
 
 import { File as FileIcon, Loader2, Upload, X } from "lucide-react"
 import * as React from "react"
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../i18n/provider"
 
 export interface UploadedFile {
   key: string
@@ -28,19 +33,13 @@ export interface FileDropzoneProps {
   disabled?: boolean
 }
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
 export function FileDropzone({
   uploadUrl = "/api/v1/uploads",
   accept,
   maxSize,
   onUploaded,
   onError,
-  helperText = "Drag and drop a file here, or click to select",
+  helperText,
   disabled,
 }: FileDropzoneProps) {
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -48,6 +47,21 @@ export function FileDropzone({
   const [isUploading, setIsUploading] = React.useState(false)
   const [uploaded, setUploaded] = React.useState<UploadedFile | null>(null)
   const [error, setError] = React.useState<string | null>(null)
+  const { formatNumber } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
+  const resolvedHelperText = helperText ?? messages.fileDropzone.helperText
+
+  const formatSize = React.useCallback(
+    (bytes: number): string => {
+      if (bytes < 1024) return `${formatNumber(bytes)} B`
+      if (bytes < 1024 * 1024) {
+        return `${formatNumber(bytes / 1024, { maximumFractionDigits: 1 })} KB`
+      }
+
+      return `${formatNumber(bytes / (1024 * 1024), { maximumFractionDigits: 1 })} MB`
+    },
+    [formatNumber],
+  )
 
   const reportError = (message: string) => {
     setError(message)
@@ -58,7 +72,11 @@ export function FileDropzone({
     setError(null)
 
     if (maxSize && file.size > maxSize) {
-      reportError(`File too large (max ${formatSize(maxSize)})`)
+      reportError(
+        formatMessage(messages.fileDropzone.validation.fileTooLarge, {
+          maxSize: formatSize(maxSize),
+        }),
+      )
       return
     }
 
@@ -67,13 +85,18 @@ export function FileDropzone({
       const formData = new FormData()
       formData.append("file", file)
       const res = await fetch(uploadUrl, {
-        method: "POST",
+        method: "POST", // i18n-literal-ok HTTP method
         body: formData,
-        credentials: "include",
+        credentials: "include", // i18n-literal-ok fetch credentials mode
       })
       if (!res.ok) {
         const body = await res.text()
-        reportError(body || `Upload failed (${res.status})`)
+        reportError(
+          body ||
+            formatMessage(messages.fileDropzone.validation.uploadFailedWithStatus, {
+              status: res.status,
+            }),
+        )
         return
       }
       const data = (await res.json()) as Omit<UploadedFile, "name">
@@ -81,7 +104,9 @@ export function FileDropzone({
       setUploaded(result)
       onUploaded(result)
     } catch (err) {
-      reportError(err instanceof Error ? err.message : "Upload failed")
+      reportError(
+        err instanceof Error ? err.message : messages.fileDropzone.validation.uploadFailed,
+      )
     } finally {
       setIsUploading(false)
     }
@@ -142,7 +167,7 @@ export function FileDropzone({
           type="button"
           onClick={reset}
           className="text-muted-foreground hover:text-destructive"
-          aria-label="Remove file"
+          aria-label={messages.fileDropzone.removeFileAriaLabel}
         >
           <X className="h-4 w-4" />
         </button>
@@ -165,13 +190,17 @@ export function FileDropzone({
         {isUploading ? (
           <>
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Uploading...</p>
+            <p className="text-sm text-muted-foreground">{messages.fileDropzone.uploading}</p>
           </>
         ) : (
           <>
             <Upload className="h-6 w-6 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{helperText}</p>
-            {accept && <p className="text-xs text-muted-foreground">Accepted: {accept}</p>}
+            <p className="text-sm text-muted-foreground">{resolvedHelperText}</p>
+            {accept && (
+              <p className="text-xs text-muted-foreground">
+                {messages.fileDropzone.acceptedPrefix} {accept}
+              </p>
+            )}
           </>
         )}
       </button>

@@ -2,6 +2,8 @@
 
 import { Button } from "@voyantjs/ui/components/button"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+
 type PaginationFooterProps = {
   pageIndex: number
   pageSize: number
@@ -15,6 +17,7 @@ export function PaginationFooter({
   total,
   onPageIndexChange,
 }: PaginationFooterProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
   const canPreviousPage = pageIndex > 0
   const canNextPage = pageIndex + 1 < pageCount
@@ -24,7 +27,10 @@ export function PaginationFooter({
   return (
     <div className="flex items-center justify-between text-sm text-muted-foreground">
       <span>
-        Showing {pageIndex * pageSize + 1}-{Math.min((pageIndex + 1) * pageSize, total)} of {total}
+        {messages.common.showingRange
+          .replace("{start}", String(pageIndex * pageSize + 1))
+          .replace("{end}", String(Math.min((pageIndex + 1) * pageSize, total)))
+          .replace("{total}", String(total))}
       </span>
       <div className="flex items-center gap-2">
         <Button
@@ -33,10 +39,10 @@ export function PaginationFooter({
           disabled={!canPreviousPage}
           onClick={() => onPageIndexChange(pageIndex - 1)}
         >
-          Previous
+          {messages.common.previous}
         </Button>
         <span>
-          Page {pageIndex + 1} / {pageCount}
+          {messages.common.page} {pageIndex + 1} / {pageCount}
         </span>
         <Button
           variant="outline"
@@ -44,7 +50,7 @@ export function PaginationFooter({
           disabled={!canNextPage}
           onClick={() => onPageIndexChange(pageIndex + 1)}
         >
-          Next
+          {messages.common.next}
         </Button>
       </div>
     </div>

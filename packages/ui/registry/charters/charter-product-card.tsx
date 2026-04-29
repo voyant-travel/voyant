@@ -1,6 +1,7 @@
 "use client"
 
 import type { CharterProductRecord } from "@voyantjs/charters-react"
+import { formatMessage } from "@voyantjs/i18n"
 import { Anchor, Calendar, Sailboat } from "lucide-react"
 import type * as React from "react"
 
@@ -9,6 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 import { ExternalCharterBadge } from "./external-badge"
+import { useRegistryChartersI18nOrDefault } from "./i18n"
 
 /** Lighter shape for the public-list / external-summary case. */
 export interface CharterProductSummary {
@@ -34,13 +36,6 @@ export interface CharterProductCardProps extends React.ComponentPropsWithoutRef<
   /** Set when rendering an adapter-sourced product so the badge appears. */
   sourceProvider?: string | null
   onSelect?: (product: CharterProductRecord | CharterProductSummary) => void
-}
-
-function formatPrice(amount: string | null | undefined): string {
-  if (!amount) return "Pricing on request"
-  const n = Number(amount)
-  if (!Number.isFinite(n)) return `USD ${amount}`
-  return `USD ${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
 }
 
 function getLowestPriceUSD(product: CharterProductCardProps["product"]): string | null {
@@ -70,6 +65,8 @@ export function CharterProductCard({
   className,
   ...props
 }: CharterProductCardProps) {
+  const i18n = useRegistryChartersI18nOrDefault()
+  const m = i18n.messages.charterProductCard
   const yachtName = "yachtName" in product ? (product.yachtName ?? null) : null
   const lineName = "lineName" in product ? (product.lineName ?? null) : null
   const lowest = getLowestPriceUSD(product)
@@ -121,16 +118,47 @@ export function CharterProductCard({
         {earliest ? (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar aria-hidden="true" className="size-4 shrink-0" />
-            <span>From {earliest}</span>
+            <span>{formatMessage(m.departurePrefix, { date: earliest })}</span>
           </div>
         ) : null}
         <div className="pt-2 text-base font-semibold">
-          {formatPrice(lowest)}
+          {formatLowestPrice(lowest, {
+            pricingOnRequest: m.pricingOnRequest,
+            fallbackCurrencyAmount: m.fallbackCurrencyAmount,
+            formatCurrency: i18n.formatCurrency,
+          })}
           {lowest ? (
-            <span className="text-xs font-normal text-muted-foreground"> from / suite</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {" "}
+              {m.priceFromSuiteSuffix}
+            </span>
           ) : null}
         </div>
       </CardContent>
     </Card>
   )
+}
+
+function formatLowestPrice(
+  amount: string | null | undefined,
+  options: {
+    pricingOnRequest: string
+    fallbackCurrencyAmount: string
+    formatCurrency: (
+      value: number | string | bigint,
+      currency: string,
+      formatOptions?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+    ) => string
+  },
+) {
+  if (!amount) return options.pricingOnRequest
+  const value = Number(amount)
+  if (!Number.isFinite(value)) {
+    return formatMessage(options.fallbackCurrencyAmount, {
+      amount,
+      currency: "USD", // i18n-literal-ok domain field is lowestPriceUSD today
+    })
+  }
+
+  return options.formatCurrency(value, "USD", { maximumFractionDigits: 0 })
 }

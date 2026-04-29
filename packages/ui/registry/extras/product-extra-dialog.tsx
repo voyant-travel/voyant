@@ -26,48 +26,34 @@ import {
 } from "@/components/ui"
 import { zodResolver } from "@/lib/zod-resolver"
 
-const SELECTION_TYPES = [
-  { value: "optional", label: "Optional" },
-  { value: "required", label: "Required" },
-  { value: "default_selected", label: "Default selected" },
-  { value: "unavailable", label: "Unavailable" },
+import { useRegistryExtrasMessagesOrDefault } from "./i18n"
+
+const selectionTypes = ["optional", "required", "default_selected", "unavailable"] as const
+
+const pricingModes = [
+  "included",
+  "per_person",
+  "per_booking",
+  "quantity_based",
+  "on_request",
+  "free",
 ] as const
 
-const PRICING_MODES = [
-  { value: "included", label: "Included" },
-  { value: "per_person", label: "Per person" },
-  { value: "per_booking", label: "Per booking" },
-  { value: "quantity_based", label: "Quantity based" },
-  { value: "on_request", label: "On request" },
-  { value: "free", label: "Free" },
-] as const
-
-type SelectionType = (typeof SELECTION_TYPES)[number]["value"]
-type PricingMode = (typeof PRICING_MODES)[number]["value"]
-
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
-  code: z.string().max(100).optional().nullable(),
-  description: z.string().optional().nullable(),
-  selectionType: z.enum(["optional", "required", "default_selected", "unavailable"]),
-  pricingMode: z.enum([
-    "included",
-    "per_person",
-    "per_booking",
-    "quantity_based",
-    "on_request",
-    "free",
-  ]),
-  pricedPerPerson: z.boolean(),
-  minQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  maxQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  defaultQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  active: z.boolean(),
-  sortOrder: z.coerce.number().int(),
-})
-
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+function createFormSchema(messages: ReturnType<typeof useRegistryExtrasMessagesOrDefault>) {
+  return z.object({
+    name: z.string().min(1, messages.productExtraDialog.validation.nameRequired).max(255),
+    code: z.string().max(100).optional().nullable(),
+    description: z.string().optional().nullable(),
+    selectionType: z.enum(selectionTypes),
+    pricingMode: z.enum(pricingModes),
+    pricedPerPerson: z.boolean(),
+    minQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    maxQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    defaultQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    active: z.boolean(),
+    sortOrder: z.coerce.number().int(),
+  })
+}
 
 type Props = {
   open: boolean
@@ -86,8 +72,15 @@ export function ProductExtraDialog({
   nextSortOrder,
   onSuccess,
 }: Props) {
+  const messages = useRegistryExtrasMessagesOrDefault()
+  const dialogMessages = messages.productExtraDialog
+  const commonMessages = messages.common
+  const formSchema = createFormSchema(messages)
   const isEditing = !!extra
   const { create, update } = useProductExtraMutation()
+
+  type FormValues = z.input<typeof formSchema>
+  type FormOutput = z.output<typeof formSchema>
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -168,66 +161,78 @@ export function ProductExtraDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Extra" : "Add Extra"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? dialogMessages.titles.edit : dialogMessages.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Airport transfer" />
+                <Label>{dialogMessages.fields.name}</Label>
+                <Input {...form.register("name")} placeholder={dialogMessages.placeholders.name} />
                 {form.formState.errors.name ? (
                   <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Code</Label>
-                <Input {...form.register("code")} placeholder="airport-transfer" />
+                <Label>{dialogMessages.fields.code}</Label>
+                <Input {...form.register("code")} placeholder={dialogMessages.placeholders.code} />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Description</Label>
+              <Label>{dialogMessages.fields.description}</Label>
               <Textarea
                 {...form.register("description")}
-                placeholder="Shown to travelers when choosing extras…"
+                placeholder={dialogMessages.placeholders.description}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Selection type</Label>
+                <Label>{dialogMessages.fields.selectionType}</Label>
                 <Select
-                  items={SELECTION_TYPES}
+                  items={selectionTypes.map((value) => ({
+                    label: commonMessages.selectionTypeLabels[value],
+                    value,
+                  }))}
                   value={form.watch("selectionType")}
-                  onValueChange={(value) => form.setValue("selectionType", value as SelectionType)}
+                  onValueChange={(value) =>
+                    form.setValue("selectionType", value as FormValues["selectionType"])
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SELECTION_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                    {selectionTypes.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {commonMessages.selectionTypeLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Pricing mode</Label>
+                <Label>{dialogMessages.fields.pricingMode}</Label>
                 <Select
-                  items={PRICING_MODES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={pricingModes.map((value) => ({
+                    label: commonMessages.pricingModeLabels[value],
+                    value,
+                  }))}
                   value={form.watch("pricingMode")}
-                  onValueChange={(value) => form.setValue("pricingMode", value as PricingMode)}
+                  onValueChange={(value) =>
+                    form.setValue("pricingMode", value as FormValues["pricingMode"])
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {PRICING_MODES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                    {pricingModes.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {commonMessages.pricingModeLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -237,22 +242,22 @@ export function ProductExtraDialog({
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Min quantity</Label>
+                <Label>{dialogMessages.fields.minQuantity}</Label>
                 <Input {...form.register("minQuantity")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Max quantity</Label>
+                <Label>{dialogMessages.fields.maxQuantity}</Label>
                 <Input {...form.register("maxQuantity")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Default quantity</Label>
+                <Label>{dialogMessages.fields.defaultQuantity}</Label>
                 <Input {...form.register("defaultQuantity")} type="number" min="0" />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Sort order</Label>
+                <Label>{dialogMessages.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
               </div>
               <div className="flex items-center gap-2">
@@ -260,24 +265,24 @@ export function ProductExtraDialog({
                   checked={form.watch("pricedPerPerson")}
                   onCheckedChange={(value) => form.setValue("pricedPerPerson", value)}
                 />
-                <Label>Per person</Label>
+                <Label>{dialogMessages.fields.pricedPerPerson}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("active")}
                   onCheckedChange={(value) => form.setValue("active", value)}
                 />
-                <Label>Active</Label>
+                <Label>{dialogMessages.fields.active}</Label>
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {commonMessages.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Extra"}
+              {isEditing ? commonMessages.saveChanges : dialogMessages.actions.create}
             </Button>
           </DialogFooter>
         </form>

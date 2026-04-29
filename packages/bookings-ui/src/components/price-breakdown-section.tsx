@@ -3,6 +3,7 @@
 import { usePricingPreview } from "@voyantjs/bookings-react"
 import { Label } from "@voyantjs/ui/components"
 import * as React from "react"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
 
 export interface PriceBreakdownLine {
   unitId: string
@@ -40,21 +41,6 @@ export interface PriceBreakdownSectionProps {
   }
 }
 
-const DEFAULT_LABELS = {
-  heading: "Price breakdown",
-  total: "Total",
-  onRequest: "On request",
-  groupRate: "group rate",
-  empty: "Pick units above to see the breakdown.",
-  noPricing: "No pricing catalog available for this product.",
-} as const
-
-function formatCents(cents: number | null, currency: string | null | undefined): string {
-  if (cents === null) return ""
-  const major = (cents / 100).toFixed(2)
-  return currency ? `${major} ${currency}` : major
-}
-
 interface TierRow {
   minQuantity: number
   maxQuantity: number | null
@@ -69,7 +55,10 @@ interface TierRow {
  */
 function matchTier(tiers: ReadonlyArray<TierRow>, qty: number): TierRow | null {
   for (const tier of tiers) {
-    if (qty >= tier.minQuantity && (tier.maxQuantity === null || qty <= tier.maxQuantity)) {
+    if (
+      qty >= tier.minQuantity &&
+      (tier.maxQuantity === null || qty <= tier.maxQuantity) // i18n-literal-ok numeric bounds
+    ) {
       return tier
     }
   }
@@ -95,7 +84,9 @@ export function PriceBreakdownSection({
   catalogId,
   labels,
 }: PriceBreakdownSectionProps) {
-  const merged = { ...DEFAULT_LABELS, ...labels }
+  const { formatCurrency, formatNumber } = useBookingsUiI18nOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
+  const merged = { ...messages.priceBreakdownSection.labels, ...labels }
   const preview = usePricingPreview({
     productId: productId ?? "",
     optionId: optionId ?? null,
@@ -105,6 +96,16 @@ export function PriceBreakdownSection({
 
   const snapshot = preview.data?.data
   const currency = snapshot?.catalog.currencyCode ?? null
+  const formatAmount = React.useCallback(
+    (cents: number) =>
+      currency
+        ? formatCurrency(cents / 100, currency)
+        : formatNumber(cents / 100, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+    [currency, formatCurrency, formatNumber],
+  )
 
   const { lines, total } = React.useMemo(() => {
     const out: PriceBreakdownLine[] = []
@@ -238,7 +239,7 @@ export function PriceBreakdownSection({
         {lines.map((line) => (
           <div key={line.unitId} className="flex items-baseline justify-between text-sm">
             <div className="flex items-baseline gap-2">
-              <span className="tabular-nums">{line.quantity}×</span>
+              <span className="tabular-nums">{formatNumber(line.quantity)}x</span>
               <span>{line.label}</span>
               {line.tierLabel ? (
                 <span className="text-xs text-muted-foreground">· {line.tierLabel}</span>
@@ -247,7 +248,7 @@ export function PriceBreakdownSection({
             <div className="tabular-nums">
               {line.totalAmountCents === null
                 ? merged.onRequest
-                : formatCents(line.totalAmountCents, currency)}
+                : formatAmount(line.totalAmountCents)}
             </div>
           </div>
         ))}
@@ -255,7 +256,7 @@ export function PriceBreakdownSection({
       <div className="mt-1 flex items-baseline justify-between border-t pt-2 text-sm font-medium">
         <span>{merged.total}</span>
         <span className="tabular-nums">
-          {total === null ? merged.onRequest : formatCents(total, currency)}
+          {total === null ? merged.onRequest : formatAmount(total)}
         </span>
       </div>
     </div>

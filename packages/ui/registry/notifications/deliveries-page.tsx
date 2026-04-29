@@ -12,8 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui"
+import {
+  useRegistryNotificationsI18nOrDefault,
+  useRegistryNotificationsMessagesOrDefault,
+} from "./i18n"
 
 export function NotificationDeliveriesPage() {
+  const { formatDateTime } = useRegistryNotificationsI18nOrDefault()
+  const messages = useRegistryNotificationsMessagesOrDefault()
+  const pageMessages = messages.deliveriesPage
   const [channel, setChannel] = useState<string>("all")
   const [status, setStatus] = useState<string>("all")
   const { data, isPending } = useNotificationDeliveries({ channel, status, limit: 50, offset: 0 })
@@ -21,33 +28,33 @@ export function NotificationDeliveriesPage() {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Deliveries</h1>
-        <p className="text-sm text-muted-foreground">
-          Review notification delivery attempts, rendered payloads, and provider-level outcomes.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>
+        <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <Select value={channel} onValueChange={setChannel}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Channel" />
+            <SelectValue placeholder={pageMessages.filters.channel} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All channels</SelectItem>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="sms">SMS</SelectItem>
+            <SelectItem value="all">{pageMessages.filters.channelAll}</SelectItem>
+            <SelectItem value="email">{messages.common.channelLabels.email}</SelectItem>
+            <SelectItem value="sms">{messages.common.channelLabels.sms}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={pageMessages.filters.status} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="all">{pageMessages.filters.statusAll}</SelectItem>
+            <SelectItem value="pending">{messages.common.deliveryStatusLabels.pending}</SelectItem>
+            <SelectItem value="sent">{messages.common.deliveryStatusLabels.sent}</SelectItem>
+            <SelectItem value="failed">{messages.common.deliveryStatusLabels.failed}</SelectItem>
+            <SelectItem value="cancelled">
+              {messages.common.deliveryStatusLabels.cancelled}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -60,7 +67,7 @@ export function NotificationDeliveriesPage() {
 
       {!isPending && (!data?.data || data.data.length === 0) ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No deliveries yet.</p>
+          <p className="text-sm text-muted-foreground">{pageMessages.empty}</p>
         </div>
       ) : null}
 
@@ -69,12 +76,12 @@ export function NotificationDeliveriesPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">To</th>
-                <th className="px-4 py-3">Template</th>
-                <th className="px-4 py-3">Channel</th>
-                <th className="px-4 py-3">Provider</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Created</th>
+                <th className="px-4 py-3">{pageMessages.columns.to}</th>
+                <th className="px-4 py-3">{pageMessages.columns.template}</th>
+                <th className="px-4 py-3">{pageMessages.columns.channel}</th>
+                <th className="px-4 py-3">{pageMessages.columns.provider}</th>
+                <th className="px-4 py-3">{pageMessages.columns.status}</th>
+                <th className="px-4 py-3">{pageMessages.columns.created}</th>
               </tr>
             </thead>
             <tbody>
@@ -87,10 +94,12 @@ export function NotificationDeliveriesPage() {
                     ) : null}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">
-                    {delivery.templateSlug ?? "direct"}
+                    {delivery.templateSlug ?? pageMessages.direct}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline">{delivery.channel}</Badge>
+                    <Badge variant="outline">
+                      {messages.common.channelLabels[delivery.channel]}
+                    </Badge>
                   </td>
                   <td className="px-4 py-3">{delivery.provider}</td>
                   <td className="px-4 py-3">
@@ -103,10 +112,10 @@ export function NotificationDeliveriesPage() {
                             : "secondary"
                       }
                     >
-                      {delivery.status}
+                      {messages.common.deliveryStatusLabels[delivery.status]}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">{new Date(delivery.createdAt).toLocaleString()}</td>
+                  <td className="px-4 py-3">{formatDateTime(delivery.createdAt)}</td>
                 </tr>
               ))}
             </tbody>

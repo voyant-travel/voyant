@@ -14,6 +14,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
+
 type Props = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -23,12 +25,8 @@ type Props = {
 
 const PAGE_SIZE = 25
 
-export function OptionPriceRuleCombobox({
-  value,
-  onChange,
-  placeholder = "Search option price rules…",
-  disabled,
-}: Props) {
+export function OptionPriceRuleCombobox({ value, onChange, placeholder, disabled }: Props) {
+  const messages = usePricingUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useOptionPriceRules({ limit: PAGE_SIZE })
   const selectedQuery = useOptionPriceRule(value, { enabled: !!value })
@@ -70,12 +68,15 @@ export function OptionPriceRuleCombobox({
         setInputValue(id ? (itemMap.get(id)?.name ?? "") : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.comboboxes.optionPriceRule.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
           {listQuery.isPending || selectedQuery.isPending
-            ? "Loading…"
-            : "No option price rules found."}
+            ? messages.common.loading
+            : messages.comboboxes.optionPriceRule.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>

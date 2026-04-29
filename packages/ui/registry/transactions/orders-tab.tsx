@@ -7,13 +7,13 @@ import { useMemo, useState } from "react"
 
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
+import {
+  useRegistryTransactionsI18nOrDefault,
+  useRegistryTransactionsMessagesOrDefault,
+} from "./i18n"
 import { OrderDialog } from "./order-dialog"
 
 const PAGE_SIZE = 25
-
-function formatMoney(cents: number, currency: string) {
-  return `${(cents / 100).toFixed(2)} ${currency}`
-}
 
 function statusVariant(status: string) {
   if (status === "confirmed" || status === "fulfilled") return "default" as const
@@ -22,6 +22,9 @@ function statusVariant(status: string) {
 }
 
 export function OrdersTab() {
+  const { formatCurrency, formatDate } = useRegistryTransactionsI18nOrDefault()
+  const messages = useRegistryTransactionsMessagesOrDefault()
+  const tabMessages = messages.ordersTab
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<OrderRecord | undefined>()
   const [pageIndex, setPageIndex] = useState(0)
@@ -35,34 +38,35 @@ export function OrdersTab() {
     () => [
       {
         accessorKey: "orderNumber",
-        header: "Number",
+        header: tabMessages.columns.number,
         cell: ({ row }) => <span className="font-mono text-xs">{row.original.orderNumber}</span>,
       },
       {
         accessorKey: "title",
-        header: "Title",
+        header: tabMessages.columns.title,
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: tabMessages.columns.status,
         cell: ({ row }) => (
-          <Badge variant={statusVariant(row.original.status)}>{row.original.status}</Badge>
+          <Badge variant={statusVariant(row.original.status)}>
+            {messages.common.orderStatusLabels[row.original.status]}
+          </Badge>
         ),
       },
       {
         accessorKey: "totalAmountCents",
-        header: "Total",
+        header: tabMessages.columns.total,
         cell: ({ row }) => (
           <span className="font-mono text-xs">
-            {formatMoney(row.original.totalAmountCents, row.original.currency)}
+            {formatCurrency(row.original.totalAmountCents / 100, row.original.currency)}
           </span>
         ),
       },
       {
         accessorKey: "orderedAt",
-        header: "Ordered",
-        cell: ({ row }) =>
-          row.original.orderedAt ? new Date(row.original.orderedAt).toLocaleDateString() : "-",
+        header: tabMessages.columns.ordered,
+        cell: ({ row }) => (row.original.orderedAt ? formatDate(row.original.orderedAt) : "-"),
       },
       {
         id: "actions",
@@ -82,7 +86,7 @@ export function OrdersTab() {
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Delete order "${row.original.orderNumber}"?`)) {
+                if (confirm(tabMessages.deleteConfirm)) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -94,15 +98,13 @@ export function OrdersTab() {
         ),
       },
     ],
-    [refetch, remove],
+    [formatCurrency, formatDate, messages.common.orderStatusLabels, refetch, remove, tabMessages],
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Committed purchases. Orders may originate from an accepted offer or be created directly.
-        </p>
+        <p className="text-sm text-muted-foreground">{tabMessages.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -111,14 +113,14 @@ export function OrdersTab() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Order
+          {tabMessages.add}
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data?.data ?? []}
-        emptyMessage={isPending ? "Loading orders..." : "No orders yet."}
+        emptyMessage={isPending ? tabMessages.empty.loading : tabMessages.empty.none}
         pagination={{
           pageIndex,
           pageSize: PAGE_SIZE,

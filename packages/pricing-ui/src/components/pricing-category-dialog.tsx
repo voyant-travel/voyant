@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 import { PricingCategoryForm } from "./pricing-category-form"
 
 export interface PricingCategoryDialogProps {
@@ -26,16 +27,21 @@ export function PricingCategoryDialog({
   onSuccess,
 }: PricingCategoryDialogProps) {
   const isEdit = Boolean(category)
+  const messages = usePricingUiMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="pricing-category-dialog" className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit pricing category" : "New pricing category"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.pricingCategoryDialog.titles.edit
+              : messages.pricingCategoryDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update reusable pricing category rules and eligibility."
-              : "Create a reusable pricing category for products and options."}
+              ? messages.pricingCategoryDialog.descriptions.edit
+              : messages.pricingCategoryDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <PricingCategoryForm

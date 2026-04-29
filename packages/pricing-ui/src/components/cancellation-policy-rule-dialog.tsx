@@ -28,18 +28,24 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-const ruleFormSchema = z.object({
-  sortOrder: z.coerce.number().int(),
-  cutoffMinutesBefore: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
-  chargeType: z.enum(["none", "amount", "percentage"]),
-  chargeAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
-  chargePercent: z.coerce.number().min(0).max(100).optional().or(z.literal("")).nullable(),
-  active: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
+import type { ChargeType } from "../i18n/messages"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 
-type RuleFormValues = z.input<typeof ruleFormSchema>
-type RuleFormOutput = z.output<typeof ruleFormSchema>
+function createRuleFormSchema(_messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
+  return z.object({
+    sortOrder: z.coerce.number().int(),
+    cutoffMinutesBefore: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
+    chargeType: z.enum(["none", "amount", "percentage"]),
+    chargeAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
+    chargePercent: z.coerce.number().min(0).max(100).optional().or(z.literal("")).nullable(),
+    active: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
+
+type RuleFormSchema = ReturnType<typeof createRuleFormSchema>
+type RuleFormValues = z.input<RuleFormSchema>
+type RuleFormOutput = z.output<RuleFormSchema>
 
 export interface CancellationPolicyRuleDialogProps {
   open: boolean
@@ -50,11 +56,7 @@ export interface CancellationPolicyRuleDialogProps {
   onSuccess?: (rule: CancellationPolicyRuleRecord) => void
 }
 
-const CHARGE_TYPES = [
-  { value: "none", label: "None" },
-  { value: "amount", label: "Amount" },
-  { value: "percentage", label: "Percentage" },
-] as const
+const CHARGE_TYPES = [{ value: "none" }, { value: "amount" }, { value: "percentage" }] as const
 
 export function CancellationPolicyRuleDialog({
   open,
@@ -66,6 +68,8 @@ export function CancellationPolicyRuleDialog({
 }: CancellationPolicyRuleDialogProps) {
   const isEditing = !!rule
   const { create, update } = useCancellationPolicyRuleMutation()
+  const messages = usePricingUiMessagesOrDefault()
+  const ruleFormSchema = createRuleFormSchema(messages)
 
   const form = useForm<RuleFormValues, unknown, RuleFormOutput>({
     resolver: zodResolver(ruleFormSchema),
@@ -140,31 +144,42 @@ export function CancellationPolicyRuleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Rule" : "Add Rule"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.cancellationPolicyRuleDialog.titles.edit
+              : messages.cancellationPolicyRuleDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Cutoff (minutes before)</Label>
+                <Label>{messages.cancellationPolicyRuleDialog.fields.cutoffMinutesBefore}</Label>
                 <Input
                   {...form.register("cutoffMinutesBefore")}
                   type="number"
                   min="0"
-                  placeholder="2880"
+                  placeholder={
+                    messages.cancellationPolicyRuleDialog.placeholders.cutoffMinutesBefore
+                  }
                 />
-                <p className="text-xs text-muted-foreground">48h = 2880m · 24h = 1440m</p>
+                <p className="text-xs text-muted-foreground">
+                  {messages.cancellationPolicyRuleDialog.helpText.cutoffMinutesBefore}
+                </p>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Sort order</Label>
+                <Label>{messages.cancellationPolicyRuleDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Charge type</Label>
+              <Label>{messages.cancellationPolicyRuleDialog.fields.chargeType}</Label>
               <Select
-                items={CHARGE_TYPES}
+                items={CHARGE_TYPES.map((type) => ({
+                  label: messages.common.chargeTypeLabels[type.value as ChargeType],
+                  value: type.value,
+                }))}
                 value={form.watch("chargeType")}
                 onValueChange={(value) =>
                   form.setValue("chargeType", value as RuleFormValues["chargeType"])
@@ -176,7 +191,7 @@ export function CancellationPolicyRuleDialog({
                 <SelectContent>
                   {CHARGE_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                      {messages.common.chargeTypeLabels[type.value as ChargeType]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -185,21 +200,21 @@ export function CancellationPolicyRuleDialog({
 
             {chargeType === "amount" ? (
               <div className="flex flex-col gap-2">
-                <Label>Charge amount</Label>
+                <Label>{messages.cancellationPolicyRuleDialog.fields.chargeAmount}</Label>
                 <Input {...form.register("chargeAmount")} type="number" step="0.01" min="0" />
               </div>
             ) : null}
 
             {chargeType === "percentage" ? (
               <div className="flex flex-col gap-2">
-                <Label>Charge percent (0-100)</Label>
+                <Label>{messages.cancellationPolicyRuleDialog.fields.chargePercent}</Label>
                 <Input
                   {...form.register("chargePercent")}
                   type="number"
                   step="0.01"
                   min="0"
                   max="100"
-                  placeholder="50"
+                  placeholder={messages.cancellationPolicyRuleDialog.placeholders.chargePercent}
                 />
               </div>
             ) : null}
@@ -209,21 +224,23 @@ export function CancellationPolicyRuleDialog({
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{messages.cancellationPolicyRuleDialog.fields.active}</Label>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.cancellationPolicyRuleDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Rule"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.cancellationPolicyRuleDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

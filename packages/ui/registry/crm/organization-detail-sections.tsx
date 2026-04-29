@@ -26,21 +26,20 @@ import {
 } from "@/components/ui"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  formatDate,
-  formatMoney,
-  formatRelative,
-  initialsFrom,
-  OPPORTUNITY_STATUS_OPTIONS,
-  RELATION_OPTIONS,
-  STATUS_OPTIONS,
-} from "@/components/voyant/crm/crm-constants"
+import { initialsFrom } from "@/components/voyant/crm/crm-constants"
 import { InlineCurrencyField } from "@/components/voyant/crm/inline-currency-field"
 import { InlineField } from "@/components/voyant/crm/inline-field"
 import { InlineLanguageField } from "@/components/voyant/crm/inline-language-field"
 import { InlineNumberField } from "@/components/voyant/crm/inline-number-field"
 import { InlineSelectField } from "@/components/voyant/crm/inline-select-field"
 import { TagsEditor } from "@/components/voyant/crm/tags-editor"
+
+import { useRegistryCrmI18nOrDefault, useRegistryCrmMessagesOrDefault } from "./i18n"
+import {
+  formatRegistryCrmDate,
+  formatRegistryCrmMoney,
+  formatRegistryCrmRelative,
+} from "./i18n/utils"
 
 type OrganizationData = {
   name: string
@@ -97,9 +96,11 @@ export function OrganizationTopBar({
 }: {
   orgName: string
   onBack: () => void
-  onDelete: () => Promise<void>
+  onDelete: () => Promise<void> // i18n-literal-ok local callback type alias
   deletePending: boolean
 }) {
+  const m = useRegistryCrmMessagesOrDefault()
+
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background px-6 py-3">
       <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
@@ -107,17 +108,17 @@ export function OrganizationTopBar({
       </Button>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <button type="button" onClick={onBack} className="hover:text-foreground">
-          Organizations
+          {m.organizationDetail.topBar.organizations}
         </button>
         <span>/</span>
         <span className="text-foreground">{orgName}</span>
       </div>
       <div className="ml-auto flex items-center gap-2">
         <ConfirmActionButton
-          buttonLabel="Delete"
-          confirmLabel="Delete"
-          title="Delete this organization?"
-          description="This will permanently remove the organization. People linked to it will remain."
+          buttonLabel={m.organizationDetail.topBar.delete}
+          confirmLabel={m.organizationDetail.topBar.delete}
+          title={m.organizationDetail.topBar.deleteTitle}
+          description={m.organizationDetail.topBar.deleteDescription}
           variant="destructive"
           confirmVariant="destructive"
           disabled={deletePending}
@@ -135,8 +136,21 @@ export function OrganizationSidebar({
 }: {
   org: OrganizationData
   websiteHref?: string
-  onUpdateField: (patch: UpdateOrganizationInput) => Promise<void>
+  onUpdateField: (patch: UpdateOrganizationInput) => Promise<void> // i18n-literal-ok local callback type alias
 }) {
+  const m = useRegistryCrmMessagesOrDefault()
+  const relationOptions = [
+    { value: "client", label: m.common.relationTypeLabels.client },
+    { value: "partner", label: m.common.relationTypeLabels.partner },
+    { value: "supplier", label: m.common.relationTypeLabels.supplier },
+    { value: "other", label: m.common.relationTypeLabels.other },
+  ]
+  const statusOptions = [
+    { value: "active", label: m.common.recordStatusLabels.active },
+    { value: "inactive", label: m.common.recordStatusLabels.inactive },
+    { value: "archived", label: m.common.recordStatusLabels.archived },
+  ]
+
   return (
     <aside className="col-span-12 flex flex-col gap-4 lg:col-span-3">
       <Card>
@@ -160,12 +174,16 @@ export function OrganizationSidebar({
           </div>
           <div className="flex flex-wrap justify-center gap-1">
             {org.relation && (
-              <Badge variant="secondary" className="capitalize">
-                {org.relation}
+              <Badge variant="secondary">
+                {m.common.relationTypeLabels[
+                  org.relation as keyof typeof m.common.relationTypeLabels
+                ] ?? org.relation}
               </Badge>
             )}
-            <Badge variant="outline" className="capitalize">
-              {org.status}
+            <Badge variant="outline">
+              {m.common.recordStatusLabels[
+                org.status as keyof typeof m.common.recordStatusLabels
+              ] ?? org.status}
             </Badge>
           </div>
         </CardContent>
@@ -173,63 +191,65 @@ export function OrganizationSidebar({
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">About</CardTitle>
+          <CardTitle className="text-sm font-semibold">
+            {m.organizationDetail.sidebar.about}
+          </CardTitle>
         </CardHeader>
         <CardContent className="divide-y text-sm">
           <InlineField
             icon={Building}
-            label="Name"
+            label={m.organizationDetail.sidebar.fields.name}
             value={org.name}
             onSave={(next) => onUpdateField({ name: next ?? org.name })}
           />
           <InlineField
             icon={Building}
-            label="Legal name"
+            label={m.organizationDetail.sidebar.fields.legalName}
             value={org.legalName}
             onSave={(next) => onUpdateField({ legalName: next })}
           />
           <InlineField
             icon={Globe}
-            label="Website"
+            label={m.organizationDetail.sidebar.fields.website}
             kind="url"
             value={org.website}
             onSave={(next) => onUpdateField({ website: next })}
           />
           <InlineField
             icon={Hash}
-            label="Industry"
+            label={m.organizationDetail.sidebar.fields.industry}
             value={org.industry}
             onSave={(next) => onUpdateField({ industry: next })}
           />
           <InlineSelectField
             icon={Users}
-            label="Relation"
+            label={m.organizationDetail.sidebar.fields.relation}
             value={org.relation}
-            options={RELATION_OPTIONS}
+            options={relationOptions}
             onSave={(next) => onUpdateField({ relation: next })}
           />
           <InlineSelectField
             icon={CircleDot}
-            label="Status"
+            label={m.organizationDetail.sidebar.fields.status}
             value={org.status}
-            options={STATUS_OPTIONS}
+            options={statusOptions}
             allowClear={false}
             onSave={(next) => onUpdateField({ status: next ?? "active" })}
           />
           <InlineCurrencyField
-            label="Default currency"
+            label={m.organizationDetail.sidebar.fields.defaultCurrency}
             value={org.defaultCurrency}
             onSave={(next) => onUpdateField({ defaultCurrency: next })}
           />
           <InlineLanguageField
             icon={Languages}
-            label="Preferred language"
+            label={m.organizationDetail.sidebar.fields.preferredLanguage}
             value={org.preferredLanguage}
             onSave={(next) => onUpdateField({ preferredLanguage: next })}
           />
           <InlineNumberField
             icon={Calendar}
-            label="Payment terms (days)"
+            label={m.organizationDetail.sidebar.fields.paymentTerms}
             value={org.paymentTerms}
             min={0}
             max={365}
@@ -237,7 +257,7 @@ export function OrganizationSidebar({
           />
           <InlineField
             icon={Tag}
-            label="Source"
+            label={m.organizationDetail.sidebar.fields.source}
             value={org.source}
             onSave={(next) => onUpdateField({ source: next })}
           />
@@ -246,7 +266,9 @@ export function OrganizationSidebar({
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">Tags</CardTitle>
+          <CardTitle className="text-sm font-semibold">
+            {m.organizationDetail.sidebar.tags}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <TagsEditor tags={org.tags} onChange={(tags) => onUpdateField({ tags })} />
@@ -283,8 +305,10 @@ export function OrganizationMain({
   totalOpenValue: number
   primaryCurrency: string | null
   onOpenPerson: (id: string) => void
-  onUpdateField: (patch: UpdateOrganizationInput) => Promise<void>
+  onUpdateField: (patch: UpdateOrganizationInput) => Promise<void> // i18n-literal-ok local callback type alias
 }) {
+  const i18n = useRegistryCrmI18nOrDefault()
+  const m = useRegistryCrmMessagesOrDefault()
   const openOpportunities = opportunities.filter((opportunity) => opportunity.status === "open")
   const wonOpportunities = opportunities.filter((opportunity) => opportunity.status === "won")
 
@@ -294,7 +318,7 @@ export function OrganizationMain({
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              People
+              {m.organizationDetail.metrics.people}
             </p>
             <p className="mt-1 text-2xl font-semibold">{people.length}</p>
           </CardContent>
@@ -302,7 +326,7 @@ export function OrganizationMain({
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Open opportunities
+              {m.organizationDetail.metrics.openOpportunities}
             </p>
             <p className="mt-1 text-2xl font-semibold">{openOpportunities.length}</p>
           </CardContent>
@@ -310,16 +334,18 @@ export function OrganizationMain({
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Pipeline value
+              {m.organizationDetail.metrics.pipelineValue}
             </p>
             <p className="mt-1 text-2xl font-semibold">
-              {formatMoney(totalOpenValue, primaryCurrency)}
+              {formatRegistryCrmMoney(i18n, totalOpenValue, primaryCurrency)}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Won</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {m.organizationDetail.metrics.won}
+            </p>
             <p className="mt-1 text-2xl font-semibold">{wonOpportunities.length}</p>
           </CardContent>
         </Card>
@@ -334,35 +360,45 @@ export function OrganizationMain({
         >
           <CardHeader className="pb-0">
             <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="people">People ({people.length})</TabsTrigger>
-              <TabsTrigger value="opportunities">
-                Opportunities ({opportunities.length})
+              <TabsTrigger value="overview">{m.organizationDetail.tabs.overview}</TabsTrigger>
+              <TabsTrigger value="people">
+                {m.organizationDetail.tabs.people} ({people.length})
               </TabsTrigger>
-              <TabsTrigger value="activities">Activities ({activities.length})</TabsTrigger>
+              <TabsTrigger value="opportunities">
+                {m.organizationDetail.tabs.opportunities} ({opportunities.length})
+              </TabsTrigger>
+              <TabsTrigger value="activities">
+                {m.organizationDetail.tabs.activities} ({activities.length})
+              </TabsTrigger>
             </TabsList>
           </CardHeader>
           <CardContent className="pt-4">
             <TabsContent value="overview" className="m-0">
               <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs font-medium uppercase text-muted-foreground">Created</dt>
-                  <dd className="mt-0.5">{formatDate(org.createdAt)}</dd>
+                  <dt className="text-xs font-medium uppercase text-muted-foreground">
+                    {m.organizationDetail.sections.created}
+                  </dt>
+                  <dd className="mt-0.5">{formatRegistryCrmDate(i18n, org.createdAt)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase text-muted-foreground">Updated</dt>
-                  <dd className="mt-0.5">{formatRelative(org.updatedAt)}</dd>
+                  <dt className="text-xs font-medium uppercase text-muted-foreground">
+                    {m.organizationDetail.sections.updated}
+                  </dt>
+                  <dd className="mt-0.5">{formatRegistryCrmRelative(i18n, org.updatedAt)}</dd>
                 </div>
                 {org.notes && (
                   <div className="sm:col-span-2">
-                    <dt className="text-xs font-medium uppercase text-muted-foreground">Notes</dt>
+                    <dt className="text-xs font-medium uppercase text-muted-foreground">
+                      {m.organizationDetail.sections.notes}
+                    </dt>
                     <dd className="mt-0.5 whitespace-pre-wrap">{org.notes}</dd>
                   </div>
                 )}
               </dl>
               <Separator className="my-4" />
               <InlineField
-                label="Notes"
+                label={m.organizationDetail.sections.notes}
                 kind="textarea"
                 value={org.notes}
                 onSave={(next) => onUpdateField({ notes: next })}
@@ -376,13 +412,14 @@ export function OrganizationMain({
                 </div>
               ) : people.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  No people linked to this organization.
+                  {m.organizationDetail.empty.noPeople}
                 </p>
               ) : (
                 <ul className="divide-y">
                   {people.map((person) => {
                     const name =
-                      [person.firstName, person.lastName].filter(Boolean).join(" ") || "Unnamed"
+                      [person.firstName, person.lastName].filter(Boolean).join(" ") ||
+                      m.organizationDetail.empty.unnamed
                     return (
                       <li key={person.id}>
                         <button
@@ -422,13 +459,16 @@ export function OrganizationMain({
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : opportunities.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">No opportunities.</p>
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  {m.organizationDetail.empty.noOpportunities}
+                </p>
               ) : (
                 <ul className="divide-y">
                   {opportunities.map((opportunity) => {
-                    const statusLabel = OPPORTUNITY_STATUS_OPTIONS.find(
-                      (status) => status.value === opportunity.status,
-                    )?.label
+                    const statusLabel =
+                      m.common.opportunityStatusLabels[
+                        opportunity.status as keyof typeof m.common.opportunityStatusLabels
+                      ] ?? opportunity.status
                     return (
                       <li
                         key={opportunity.id}
@@ -437,18 +477,20 @@ export function OrganizationMain({
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">{opportunity.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {statusLabel ?? opportunity.status} ·{" "}
-                            {formatDate(opportunity.expectedCloseDate)}
+                            {statusLabel} -{" "}
+                            {formatRegistryCrmDate(i18n, opportunity.expectedCloseDate)}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1 text-sm font-medium">
                             <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-                            {formatMoney(opportunity.valueAmountCents, opportunity.valueCurrency)}
+                            {formatRegistryCrmMoney(
+                              i18n,
+                              opportunity.valueAmountCents,
+                              opportunity.valueCurrency,
+                            )}
                           </span>
-                          <Badge variant="outline" className="capitalize">
-                            {opportunity.status}
-                          </Badge>
+                          <Badge variant="outline">{statusLabel}</Badge>
                         </div>
                       </li>
                     )
@@ -463,7 +505,9 @@ export function OrganizationMain({
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : activities.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">No activities yet.</p>
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  {m.organizationDetail.empty.noActivities}
+                </p>
               ) : (
                 <ul className="divide-y">
                   {activities.map((activity) => (
@@ -478,11 +522,13 @@ export function OrganizationMain({
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                          <Badge variant="outline" className="capitalize">
-                            {activity.type}
+                          <Badge variant="outline">
+                            {m.common.activityTypeLabels[
+                              (activity.type ?? "note") as keyof typeof m.common.activityTypeLabels
+                            ] ?? activity.type}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            {formatRelative(activity.createdAt)}
+                            {formatRegistryCrmRelative(i18n, activity.createdAt)}
                           </span>
                         </div>
                       </div>
@@ -497,9 +543,7 @@ export function OrganizationMain({
 
       <div className="flex items-center gap-2">
         <Pencil className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-        <span className="text-xs text-muted-foreground">
-          Fields update on the left panel. Hover to reveal the edit icon.
-        </span>
+        <span className="text-xs text-muted-foreground">{m.organizationDetail.hint}</span>
       </div>
     </main>
   )

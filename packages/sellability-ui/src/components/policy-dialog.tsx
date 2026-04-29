@@ -26,6 +26,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import { useSellabilityUiMessagesOrDefault } from "../i18n"
 import { ChannelCombobox } from "./channel-combobox"
 import { MarketCombobox } from "./market-combobox"
 import { ProductCombobox } from "./product-combobox"
@@ -46,36 +47,39 @@ const POLICY_TYPES = [
 type PolicyScope = (typeof POLICY_SCOPES)[number]
 type PolicyType = (typeof POLICY_TYPES)[number]
 
-const jsonStringSchema = z.string().refine(
-  (value) => {
-    if (!value || value.trim() === "") return true
-    try {
-      const parsed = JSON.parse(value)
-      return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
-    } catch {
-      return false
-    }
-  },
-  { message: "Must be a JSON object" },
-)
+function createFormSchema(messages: ReturnType<typeof useSellabilityUiMessagesOrDefault>) {
+  const jsonStringSchema = z.string().refine(
+    (value) => {
+      if (!value || value.trim() === "") return true
+      try {
+        const parsed = JSON.parse(value)
+        return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      } catch {
+        return false
+      }
+    },
+    { message: messages.policyDialog.validation.jsonObject },
+  )
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
-  scope: z.enum(POLICY_SCOPES),
-  policyType: z.enum(POLICY_TYPES),
-  productId: z.string().optional().nullable(),
-  optionId: z.string().optional().nullable(),
-  marketId: z.string().optional().nullable(),
-  channelId: z.string().optional().nullable(),
-  priority: z.coerce.number().int(),
-  active: z.boolean(),
-  conditionsJson: jsonStringSchema,
-  effectsJson: jsonStringSchema,
-  notes: z.string().optional().nullable(),
-})
+  return z.object({
+    name: z.string().min(1, messages.policyDialog.validation.nameRequired).max(255),
+    scope: z.enum(POLICY_SCOPES),
+    policyType: z.enum(POLICY_TYPES),
+    productId: z.string().optional().nullable(),
+    optionId: z.string().optional().nullable(),
+    marketId: z.string().optional().nullable(),
+    channelId: z.string().optional().nullable(),
+    priority: z.coerce.number().int(),
+    active: z.boolean(),
+    conditionsJson: jsonStringSchema,
+    effectsJson: jsonStringSchema,
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 type Props = {
   open: boolean
@@ -87,6 +91,8 @@ type Props = {
 export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
   const isEditing = !!policy
   const { create, update } = useSellabilityPolicyMutation()
+  const messages = useSellabilityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -176,13 +182,18 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Policy" : "Add Policy"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? messages.policyDialog.titles.edit : messages.policyDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Name</Label>
-              <Input {...form.register("name")} placeholder="Block bookings without capability" />
+              <Label>{messages.policyDialog.fields.name}</Label>
+              <Input
+                {...form.register("name")}
+                placeholder={messages.policyDialog.placeholders.name}
+              />
               {form.formState.errors.name ? (
                 <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
               ) : null}
@@ -190,9 +201,12 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Scope</Label>
+                <Label>{messages.policyDialog.fields.scope}</Label>
                 <Select
-                  items={POLICY_SCOPES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={POLICY_SCOPES.map((value) => ({
+                    label: messages.common.policyScopeLabels[value],
+                    value,
+                  }))}
                   value={form.watch("scope")}
                   onValueChange={(value) => form.setValue("scope", value as PolicyScope)}
                 >
@@ -201,17 +215,20 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     {POLICY_SCOPES.map((value) => (
-                      <SelectItem key={value} value={value} className="capitalize">
-                        {value}
+                      <SelectItem key={value} value={value}>
+                        {messages.common.policyScopeLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Type</Label>
+                <Label>{messages.policyDialog.fields.type}</Label>
                 <Select
-                  items={POLICY_TYPES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={POLICY_TYPES.map((value) => ({
+                    label: messages.common.policyTypeLabels[value],
+                    value,
+                  }))}
                   value={form.watch("policyType")}
                   onValueChange={(value) => form.setValue("policyType", value as PolicyType)}
                 >
@@ -220,22 +237,22 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     {POLICY_TYPES.map((value) => (
-                      <SelectItem key={value} value={value} className="capitalize">
-                        {value.replace(/_/g, " ")}
+                      <SelectItem key={value} value={value}>
+                        {messages.common.policyTypeLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Priority</Label>
+                <Label>{messages.policyDialog.fields.priority}</Label>
                 <Input {...form.register("priority")} type="number" />
               </div>
             </div>
 
             {scope === "product" ? (
               <div className="flex flex-col gap-2">
-                <Label>Product</Label>
+                <Label>{messages.policyDialog.fields.product}</Label>
                 <ProductCombobox
                   value={form.watch("productId") ?? null}
                   onChange={(value) => form.setValue("productId", value)}
@@ -246,7 +263,7 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
             {scope === "option" ? (
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Product</Label>
+                  <Label>{messages.policyDialog.fields.product}</Label>
                   <ProductCombobox
                     value={form.watch("productId") ?? null}
                     onChange={(value) => {
@@ -256,7 +273,7 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Option</Label>
+                  <Label>{messages.policyDialog.fields.option}</Label>
                   <ProductOptionCombobox
                     productId={form.watch("productId")}
                     value={form.watch("optionId") ?? null}
@@ -268,7 +285,7 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
 
             {scope === "market" ? (
               <div className="flex flex-col gap-2">
-                <Label>Market</Label>
+                <Label>{messages.policyDialog.fields.market}</Label>
                 <MarketCombobox
                   value={form.watch("marketId") ?? null}
                   onChange={(value) => form.setValue("marketId", value)}
@@ -278,7 +295,7 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
 
             {scope === "channel" ? (
               <div className="flex flex-col gap-2">
-                <Label>Channel</Label>
+                <Label>{messages.policyDialog.fields.channel}</Label>
                 <ChannelCombobox
                   value={form.watch("channelId") ?? null}
                   onChange={(value) => form.setValue("channelId", value)}
@@ -288,7 +305,7 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Conditions (JSON)</Label>
+                <Label>{messages.policyDialog.fields.conditionsJson}</Label>
                 <Textarea
                   {...form.register("conditionsJson")}
                   rows={6}
@@ -301,7 +318,7 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Effects (JSON)</Label>
+                <Label>{messages.policyDialog.fields.effectsJson}</Label>
                 <Textarea
                   {...form.register("effectsJson")}
                   rows={6}
@@ -320,21 +337,23 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: Props) {
                 checked={form.watch("active")}
                 onCheckedChange={(value) => form.setValue("active", value)}
               />
-              <Label>Active</Label>
+              <Label>{messages.policyDialog.fields.active}</Label>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.policyDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Policy"}
+              {isEditing
+                ? messages.policyDialog.actions.save
+                : messages.policyDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

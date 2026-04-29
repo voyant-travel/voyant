@@ -1,8 +1,11 @@
 "use client"
 
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
+
+import { useChartersUiI18nOrDefault } from "../i18n"
 
 export interface ExternalCharterBadgeProps extends React.ComponentPropsWithoutRef<typeof Badge> {
   /** The adapter that sourced the charter (e.g. "voyant-connect", "custom"). */
@@ -19,18 +22,20 @@ export function ExternalCharterBadge({
   className,
   ...props
 }: ExternalCharterBadgeProps) {
+  const { messages } = useChartersUiI18nOrDefault()
+  const m = messages.externalCharterBadge
   return (
     <Badge
       data-slot="external-charter-badge"
       variant="outline"
       className={cn("font-normal", className)}
-      title={`Sourced via ${sourceProvider}`}
+      title={formatMessage(m.title, { sourceProvider })}
       {...props}
     >
       <span aria-hidden="true" className="mr-1">
         ↗
       </span>
-      External · {sourceProvider}
+      {formatMessage(m.label, { sourceProvider })}
     </Badge>
   )
 }

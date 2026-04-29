@@ -9,7 +9,10 @@ import {
 } from "@voyantjs/crm-react"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
+
 import { Button } from "@/components/ui"
+
+import { useRegistryCrmMessagesOrDefault } from "./i18n"
 import {
   OrganizationMain,
   OrganizationSidebar,
@@ -18,6 +21,7 @@ import {
 
 export function OrganizationDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
+  const m = useRegistryCrmMessagesOrDefault()
   const [activeTab, setActiveTab] = useState<
     "overview" | "people" | "opportunities" | "activities"
   >("overview")
@@ -53,9 +57,9 @@ export function OrganizationDetailPage({ id }: { id: string }) {
   if (!org) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
-        <p className="text-muted-foreground">Organization not found</p>
+        <p className="text-muted-foreground">{m.organizationDetailPage.notFound}</p>
         <Button variant="outline" onClick={() => void navigate({ to: "/organizations" })}>
-          Back to Organizations
+          {m.organizationDetailPage.backToOrganizations}
         </Button>
       </div>
     )

@@ -18,6 +18,8 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import type { ChargeFrequency } from "../i18n/messages"
 import { PaginationFooter } from "./pagination-footer"
 import { RatePlanDialog } from "./rate-plan-dialog"
 
@@ -27,6 +29,7 @@ export interface RatePlansTabProps {
 const PAGE_SIZE = 25
 
 export function RatePlansTab({ propertyId }: RatePlansTabProps) {
+  const messages = useHospitalityUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<RatePlanRecord | undefined>(undefined)
   const [pageIndex, setPageIndex] = React.useState(0)
@@ -71,9 +74,7 @@ export function RatePlansTab({ propertyId }: RatePlansTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Commercial rate plans with pricing, guarantee, and cancellation defaults.
-        </p>
+        <p className="text-sm text-muted-foreground">{messages.ratePlansTab.description}</p>
         <Button
           size="sm"
           onClick={() => {
@@ -82,7 +83,7 @@ export function RatePlansTab({ propertyId }: RatePlansTabProps) {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Rate Plan
+          {messages.ratePlansTab.add}
         </Button>
       </div>
 
@@ -92,21 +93,33 @@ export function RatePlansTab({ propertyId }: RatePlansTabProps) {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No rate plans yet.</p>
+          <p className="text-sm text-muted-foreground">{messages.ratePlansTab.empty}</p>
         </div>
       ) : (
         <div className="rounded-md border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">Code</th>
-                <th className="p-3 text-left font-medium">Name</th>
-                <th className="p-3 text-left font-medium">Catalog</th>
-                <th className="p-3 text-left font-medium">Cancellation</th>
-                <th className="p-3 text-left font-medium">Meal Plan</th>
-                <th className="p-3 text-left font-medium">Currency</th>
-                <th className="p-3 text-left font-medium">Charge</th>
-                <th className="p-3 text-left font-medium">Status</th>
+                <th className="p-3 text-left font-medium">{messages.ratePlansTab.columns.code}</th>
+                <th className="p-3 text-left font-medium">{messages.ratePlansTab.columns.name}</th>
+                <th className="p-3 text-left font-medium">
+                  {messages.ratePlansTab.columns.catalog}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.ratePlansTab.columns.cancellation}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.ratePlansTab.columns.mealPlan}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.ratePlansTab.columns.currency}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.ratePlansTab.columns.charge}
+                </th>
+                <th className="p-3 text-left font-medium">
+                  {messages.ratePlansTab.columns.status}
+                </th>
                 <th className="w-20 p-3" />
               </tr>
             </thead>
@@ -116,25 +129,33 @@ export function RatePlansTab({ propertyId }: RatePlansTabProps) {
                   <td className="p-3 font-mono text-xs">{row.code}</td>
                   <td className="p-3 font-medium">{row.name}</td>
                   <td className="p-3 text-muted-foreground">
-                    {row.priceCatalogId ? (catalogMap.get(row.priceCatalogId) ?? "—") : "—"}
+                    {row.priceCatalogId
+                      ? (catalogMap.get(row.priceCatalogId) ?? messages.common.none)
+                      : messages.common.none}
                   </td>
                   <td className="p-3 text-muted-foreground">
                     {row.cancellationPolicyId
-                      ? (cancelMap.get(row.cancellationPolicyId) ?? "—")
-                      : "—"}
+                      ? (cancelMap.get(row.cancellationPolicyId) ?? messages.common.none)
+                      : messages.common.none}
                   </td>
                   <td className="p-3 text-muted-foreground">
-                    {row.mealPlanId ? (mealMap.get(row.mealPlanId) ?? "—") : "—"}
+                    {row.mealPlanId
+                      ? (mealMap.get(row.mealPlanId) ?? messages.common.none)
+                      : messages.common.none}
                   </td>
                   <td className="p-3 font-mono text-xs">{row.currencyCode}</td>
                   <td className="p-3">
-                    <Badge variant="outline" className="capitalize">
-                      {row.chargeFrequency.replace(/_/g, " ")}
+                    <Badge variant="outline">
+                      {
+                        messages.common.chargeFrequencyLabels[
+                          row.chargeFrequency as ChargeFrequency
+                        ]
+                      }
                     </Badge>
                   </td>
                   <td className="p-3">
                     <Badge variant={row.active ? "default" : "outline"}>
-                      {row.active ? "Active" : "Inactive"}
+                      {row.active ? messages.common.active : messages.common.inactive}
                     </Badge>
                   </td>
                   <td className="p-3">
@@ -152,7 +173,9 @@ export function RatePlansTab({ propertyId }: RatePlansTabProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          if (confirm(`Delete rate plan "${row.name}"?`)) {
+                          if (
+                            confirm(messages.ratePlansTab.deleteConfirm.replace("{name}", row.name))
+                          ) {
                             remove.mutate(row.id)
                           }
                         }}

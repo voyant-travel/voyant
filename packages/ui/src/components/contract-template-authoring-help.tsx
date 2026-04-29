@@ -41,6 +41,18 @@ type ContractTemplateAuthoringHelpProps = {
   className?: string
   title?: string
   description?: string
+  messages?: {
+    tabs?: {
+      variables?: string
+      liquid?: string
+    }
+    searchPlaceholder?: string
+    noVariables?: string
+    example?: string
+    insert?: string
+    liquidUsage?: string
+    noLiquidSnippets?: string
+  }
 }
 
 function matchesSearch(haystack: string, query: string) {
@@ -55,6 +67,7 @@ export function ContractTemplateAuthoringHelp({
   className,
   title = "Template variables",
   description = "Templates render with Liquid. Use output tags for variables and control tags for loops and conditionals.",
+  messages,
 }: ContractTemplateAuthoringHelpProps) {
   const [search, setSearch] = React.useState("")
   const normalizedQuery = search.trim().toLowerCase()
@@ -104,8 +117,8 @@ export function ContractTemplateAuthoringHelp({
 
       <Tabs defaultValue="variables" className="gap-3 p-4">
         <TabsList className="w-full">
-          <TabsTrigger value="variables">Variables</TabsTrigger>
-          <TabsTrigger value="liquid">Liquid</TabsTrigger>
+          <TabsTrigger value="variables">{messages?.tabs?.variables ?? "Variables"}</TabsTrigger>
+          <TabsTrigger value="liquid">{messages?.tabs?.liquid ?? "Liquid"}</TabsTrigger>
         </TabsList>
 
         <div className="relative">
@@ -113,7 +126,7 @@ export function ContractTemplateAuthoringHelp({
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search variables or snippets..."
+            placeholder={messages?.searchPlaceholder ?? "Search variables or snippets..."}
             className="pl-9"
           />
         </div>
@@ -122,7 +135,9 @@ export function ContractTemplateAuthoringHelp({
           <ScrollArea className="h-80">
             <div className="space-y-4 pr-3">
               {filteredGroups.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No variables match this search.</p>
+                <p className="text-sm text-muted-foreground">
+                  {messages?.noVariables ?? "No variables match this search."}
+                </p>
               ) : (
                 filteredGroups.map((group) => (
                   <section key={group.id} className="space-y-2">
@@ -159,7 +174,7 @@ export function ContractTemplateAuthoringHelp({
                                 </p>
                               ) : null}
                               <p className="text-xs text-muted-foreground">
-                                Example:{" "}
+                                {messages?.example ?? "Example"}:{" "}
                                 <span className="font-mono text-foreground">
                                   {variable.example}
                                 </span>
@@ -173,7 +188,7 @@ export function ContractTemplateAuthoringHelp({
                                 variant="outline"
                                 onClick={() => onInsertVariable(variable)}
                               >
-                                Insert
+                                {messages?.insert ?? "Insert"}
                               </Button>
                             ) : null}
                           </div>
@@ -191,13 +206,13 @@ export function ContractTemplateAuthoringHelp({
           <ScrollArea className="h-80">
             <div className="space-y-3 pr-3">
               <div className="rounded-md border bg-background p-3 text-xs text-muted-foreground">
-                Use <code className="font-mono text-foreground">{`{{ ... }}`}</code> for output and{" "}
-                <code className="font-mono text-foreground">{`{% ... %}`}</code> for control flow.
+                {messages?.liquidUsage ??
+                  "Use {{ ... }} for output and {% ... %} for control flow."}
               </div>
 
               {filteredSnippets.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No Liquid snippets match this search.
+                  {messages?.noLiquidSnippets ?? "No Liquid snippets match this search."}
                 </p>
               ) : (
                 filteredSnippets.map((snippet) => (
@@ -214,7 +229,7 @@ export function ContractTemplateAuthoringHelp({
                           variant="outline"
                           onClick={() => onInsertSnippet(snippet)}
                         >
-                          Insert
+                          {messages?.insert ?? "Insert"}
                         </Button>
                       ) : null}
                     </div>

@@ -17,9 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui"
+import { useRegistryNotificationsMessagesOrDefault } from "./i18n"
 import { NotificationReminderRuleDialog } from "./reminder-rule-dialog"
 
 export function NotificationReminderRulesPage() {
+  const messages = useRegistryNotificationsMessagesOrDefault()
+  const pageMessages = messages.reminderRulesPage
   const [search, setSearch] = useState("")
   const [channel, setChannel] = useState<string>("all")
   const [status, setStatus] = useState<string>("all")
@@ -37,10 +40,8 @@ export function NotificationReminderRulesPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Reminder Rules</h1>
-          <p className="text-sm text-muted-foreground">
-            Schedule invoice and payment reminders against templates and channel-specific providers.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -49,7 +50,7 @@ export function NotificationReminderRulesPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          New Rule
+          {pageMessages.add}
         </Button>
       </div>
 
@@ -57,7 +58,7 @@ export function NotificationReminderRulesPage() {
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search rules..."
+            placeholder={pageMessages.searchPlaceholder}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="pl-9"
@@ -65,33 +66,37 @@ export function NotificationReminderRulesPage() {
         </div>
         <Select value={targetType} onValueChange={setTargetType}>
           <SelectTrigger className="w-[190px]">
-            <SelectValue placeholder="Target" />
+            <SelectValue placeholder={pageMessages.filters.target} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All targets</SelectItem>
-            <SelectItem value="booking_payment_schedule">Booking payment schedule</SelectItem>
-            <SelectItem value="invoice">Invoice</SelectItem>
+            <SelectItem value="all">{pageMessages.filters.targetAll}</SelectItem>
+            <SelectItem value="booking_payment_schedule">
+              {messages.common.targetTypeLabels.booking_payment_schedule}
+            </SelectItem>
+            <SelectItem value="invoice">{messages.common.targetTypeLabels.invoice}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={channel} onValueChange={setChannel}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Channel" />
+            <SelectValue placeholder={pageMessages.filters.channel} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All channels</SelectItem>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="sms">SMS</SelectItem>
+            <SelectItem value="all">{pageMessages.filters.channelAll}</SelectItem>
+            <SelectItem value="email">{messages.common.channelLabels.email}</SelectItem>
+            <SelectItem value="sms">{messages.common.channelLabels.sms}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={pageMessages.filters.status} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
+            <SelectItem value="all">{pageMessages.filters.statusAll}</SelectItem>
+            <SelectItem value="draft">{messages.common.templateStatusLabels.draft}</SelectItem>
+            <SelectItem value="active">{messages.common.templateStatusLabels.active}</SelectItem>
+            <SelectItem value="archived">
+              {messages.common.templateStatusLabels.archived}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -104,7 +109,7 @@ export function NotificationReminderRulesPage() {
 
       {!isPending && (!data?.data || data.data.length === 0) ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No reminder rules yet.</p>
+          <p className="text-sm text-muted-foreground">{pageMessages.empty}</p>
         </div>
       ) : null}
 
@@ -113,13 +118,13 @@ export function NotificationReminderRulesPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Rule</th>
-                <th className="px-4 py-3">Target</th>
-                <th className="px-4 py-3">Channel</th>
-                <th className="px-4 py-3">Provider</th>
-                <th className="px-4 py-3">Offset</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{pageMessages.columns.rule}</th>
+                <th className="px-4 py-3">{pageMessages.columns.target}</th>
+                <th className="px-4 py-3">{pageMessages.columns.channel}</th>
+                <th className="px-4 py-3">{pageMessages.columns.provider}</th>
+                <th className="px-4 py-3">{pageMessages.columns.offset}</th>
+                <th className="px-4 py-3">{pageMessages.columns.status}</th>
+                <th className="px-4 py-3 text-right">{pageMessages.columns.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -129,15 +134,19 @@ export function NotificationReminderRulesPage() {
                     <div className="font-medium">{rule.name}</div>
                     <div className="font-mono text-xs text-muted-foreground">{rule.slug}</div>
                   </td>
-                  <td className="px-4 py-3">{rule.targetType}</td>
+                  <td className="px-4 py-3">{messages.common.targetTypeLabels[rule.targetType]}</td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline">{rule.channel}</Badge>
+                    <Badge variant="outline">{messages.common.channelLabels[rule.channel]}</Badge>
                   </td>
-                  <td className="px-4 py-3">{rule.provider ?? "Automatic"}</td>
-                  <td className="px-4 py-3">{rule.relativeDaysFromDueDate} days</td>
+                  <td className="px-4 py-3">
+                    {messages.common.providerLabels[rule.provider ?? "automatic"]}
+                  </td>
+                  <td className="px-4 py-3">
+                    {rule.relativeDaysFromDueDate} {pageMessages.daysSuffix}
+                  </td>
                   <td className="px-4 py-3">
                     <Badge variant={rule.status === "active" ? "default" : "secondary"}>
-                      {rule.status}
+                      {messages.common.templateStatusLabels[rule.status]}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { useRegistryProductsMessagesOrDefault } from "./i18n/provider"
 import { ProductTagForm } from "./product-tag-form"
 
 export interface ProductTagDialogProps {
@@ -21,16 +22,21 @@ export interface ProductTagDialogProps {
 
 export function ProductTagDialog({ open, onOpenChange, tag, onSuccess }: ProductTagDialogProps) {
   const isEdit = Boolean(tag)
+  const messages = useRegistryProductsMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-tag-dialog" className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit product tag" : "New product tag"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.productTagDialog.titles.edit
+              : messages.productTagDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update the tag used to label and filter products."
-              : "Create a reusable tag for filtering and classification."}
+              ? messages.productTagDialog.descriptions.edit
+              : messages.productTagDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductTagForm

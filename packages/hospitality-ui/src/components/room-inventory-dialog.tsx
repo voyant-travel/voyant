@@ -18,27 +18,43 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useHospitalityUiMessagesOrDefault } from "../i18n"
 import { RoomTypeCombobox } from "./room-type-combobox"
 
 export type RoomInventoryData = RoomInventoryRecord
 
-const intOrEmpty = z.coerce.number().int().optional().or(z.literal("")).nullable()
+function createFormSchema(messages: ReturnType<typeof useHospitalityUiMessagesOrDefault>) {
+  const intOrEmpty = z.coerce
+    .number()
+    .int()
+    .min(0, messages.roomInventoryDialog.validation.nonNegative)
+    .optional()
+    .or(z.literal(""))
+    .nullable()
 
-const formSchema = z.object({
-  roomTypeId: z.string().min(1, "Room type is required"),
-  date: z.string().min(1, "Date is required"),
-  totalUnits: z.coerce.number().int().min(0),
-  availableUnits: z.coerce.number().int().min(0),
-  heldUnits: z.coerce.number().int().min(0),
-  soldUnits: z.coerce.number().int().min(0),
-  outOfOrderUnits: z.coerce.number().int().min(0),
-  overbookLimit: intOrEmpty,
-  stopSell: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
+  return z.object({
+    roomTypeId: z.string().min(1, messages.roomInventoryDialog.validation.roomTypeRequired),
+    date: z.string().min(1, messages.roomInventoryDialog.validation.dateRequired),
+    totalUnits: z.coerce.number().int().min(0, messages.roomInventoryDialog.validation.nonNegative),
+    availableUnits: z.coerce
+      .number()
+      .int()
+      .min(0, messages.roomInventoryDialog.validation.nonNegative),
+    heldUnits: z.coerce.number().int().min(0, messages.roomInventoryDialog.validation.nonNegative),
+    soldUnits: z.coerce.number().int().min(0, messages.roomInventoryDialog.validation.nonNegative),
+    outOfOrderUnits: z.coerce
+      .number()
+      .int()
+      .min(0, messages.roomInventoryDialog.validation.nonNegative),
+    overbookLimit: intOrEmpty,
+    stopSell: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 export interface RoomInventoryDialogProps {
   open: boolean
@@ -57,6 +73,8 @@ export function RoomInventoryDialog({
 }: RoomInventoryDialogProps) {
   const isEditing = Boolean(inventory)
   const { create, update } = useRoomInventoryMutation()
+  const messages = useHospitalityUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -136,23 +154,27 @@ export function RoomInventoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Room Inventory" : "Add Room Inventory"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.roomInventoryDialog.titles.edit
+              : messages.roomInventoryDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Room type</Label>
+                <Label>{messages.roomInventoryDialog.fields.roomType}</Label>
                 <RoomTypeCombobox
                   propertyId={propertyId}
                   value={form.watch("roomTypeId")}
                   onChange={(value) => form.setValue("roomTypeId", value ?? "")}
-                  placeholder="Select a room type…"
+                  placeholder={messages.roomInventoryDialog.placeholders.roomType}
                   disabled={isEditing}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Date</Label>
+                <Label>{messages.roomInventoryDialog.fields.date}</Label>
                 <DatePicker
                   value={form.watch("date") || null}
                   onChange={(next) =>
@@ -161,7 +183,7 @@ export function RoomInventoryDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select date"
+                  placeholder={messages.roomInventoryDialog.placeholders.date}
                   className="w-full"
                   disabled={isEditing}
                 />
@@ -170,27 +192,27 @@ export function RoomInventoryDialog({
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Total</Label>
+                <Label>{messages.roomInventoryDialog.fields.total}</Label>
                 <Input {...form.register("totalUnits")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Available</Label>
+                <Label>{messages.roomInventoryDialog.fields.available}</Label>
                 <Input {...form.register("availableUnits")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Held</Label>
+                <Label>{messages.roomInventoryDialog.fields.held}</Label>
                 <Input {...form.register("heldUnits")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Sold</Label>
+                <Label>{messages.roomInventoryDialog.fields.sold}</Label>
                 <Input {...form.register("soldUnits")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Out of order</Label>
+                <Label>{messages.roomInventoryDialog.fields.outOfOrder}</Label>
                 <Input {...form.register("outOfOrderUnits")} type="number" min="0" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Overbook limit</Label>
+                <Label>{messages.roomInventoryDialog.fields.overbookLimit}</Label>
                 <Input {...form.register("overbookLimit")} type="number" min="0" />
               </div>
             </div>
@@ -200,21 +222,23 @@ export function RoomInventoryDialog({
                 checked={form.watch("stopSell")}
                 onCheckedChange={(checked) => form.setValue("stopSell", checked)}
               />
-              <Label>Stop sell</Label>
+              <Label>{messages.roomInventoryDialog.fields.stopSell}</Label>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.roomInventoryDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Inventory"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.roomInventoryDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

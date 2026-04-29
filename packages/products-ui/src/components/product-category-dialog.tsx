@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
+import { useProductsUiMessagesOrDefault } from "../i18n/provider"
 import { ProductCategoryForm } from "./product-category-form"
 
 export interface ProductCategoryDialogProps {
@@ -26,16 +27,21 @@ export function ProductCategoryDialog({
   onSuccess,
 }: ProductCategoryDialogProps) {
   const isEdit = Boolean(category)
+  const messages = useProductsUiMessagesOrDefault()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-slot="product-category-dialog" className="sm:max-w-[640px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit product category" : "New product category"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? messages.productCategoryDialog.titles.edit
+              : messages.productCategoryDialog.titles.create}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update category hierarchy, slug, and active state."
-              : "Create a category for organizing your product catalog."}
+              ? messages.productCategoryDialog.descriptions.edit
+              : messages.productCategoryDialog.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductCategoryForm

@@ -21,23 +21,29 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 import { PriceCatalogCombobox } from "./price-catalog-combobox"
 
-const scheduleFormSchema = z.object({
-  priceCatalogId: z.string().min(1, "Catalog is required"),
-  name: z.string().min(1, "Name is required").max(255),
-  code: z.string().max(100).optional().nullable(),
-  recurrenceRule: z.string().min(1, "RRULE is required"),
-  timezone: z.string().max(100).optional().nullable(),
-  validFrom: z.string().optional().nullable(),
-  validTo: z.string().optional().nullable(),
-  priority: z.coerce.number().int(),
-  active: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
+function createScheduleFormSchema(messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
+  return z.object({
+    priceCatalogId: z.string().min(1, messages.priceScheduleDialog.validation.catalogRequired),
+    name: z.string().min(1, messages.priceScheduleDialog.validation.nameRequired).max(255),
+    code: z.string().max(100).optional().nullable(),
+    recurrenceRule: z
+      .string()
+      .min(1, messages.priceScheduleDialog.validation.recurrenceRuleRequired),
+    timezone: z.string().max(100).optional().nullable(),
+    validFrom: z.string().optional().nullable(),
+    validTo: z.string().optional().nullable(),
+    priority: z.coerce.number().int(),
+    active: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type ScheduleFormValues = z.input<typeof scheduleFormSchema>
-type ScheduleFormOutput = z.output<typeof scheduleFormSchema>
+type ScheduleFormSchema = ReturnType<typeof createScheduleFormSchema>
+type ScheduleFormValues = z.input<ScheduleFormSchema>
+type ScheduleFormOutput = z.output<ScheduleFormSchema>
 
 export interface PriceScheduleDialogProps {
   open: boolean
@@ -54,6 +60,8 @@ export function PriceScheduleDialog({
 }: PriceScheduleDialogProps) {
   const isEditing = !!schedule
   const { create, update } = usePriceScheduleMutation()
+  const messages = usePricingUiMessagesOrDefault()
+  const scheduleFormSchema = createScheduleFormSchema(messages)
 
   const form = useForm<ScheduleFormValues, unknown, ScheduleFormOutput>({
     resolver: zodResolver(scheduleFormSchema),
@@ -61,7 +69,7 @@ export function PriceScheduleDialog({
       priceCatalogId: "",
       name: "",
       code: "",
-      recurrenceRule: "FREQ=YEARLY;BYMONTH=6,7,8",
+      recurrenceRule: messages.priceScheduleDialog.placeholders.recurrenceRule,
       timezone: "",
       validFrom: "",
       validTo: "",
@@ -120,12 +128,16 @@ export function PriceScheduleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Price Schedule" : "New Price Schedule"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.priceScheduleDialog.titles.edit
+              : messages.priceScheduleDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Catalog</Label>
+              <Label>{messages.priceScheduleDialog.fields.catalog}</Label>
               <PriceCatalogCombobox
                 value={form.watch("priceCatalogId")}
                 onChange={(value) =>
@@ -134,6 +146,7 @@ export function PriceScheduleDialog({
                     shouldValidate: true,
                   })
                 }
+                placeholder={messages.priceScheduleDialog.placeholders.catalog}
               />
               {form.formState.errors.priceCatalogId ? (
                 <p className="text-xs text-destructive">
@@ -144,28 +157,34 @@ export function PriceScheduleDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="High Season" />
+                <Label>{messages.priceScheduleDialog.fields.name}</Label>
+                <Input
+                  {...form.register("name")}
+                  placeholder={messages.priceScheduleDialog.placeholders.name}
+                />
                 {form.formState.errors.name ? (
                   <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Code</Label>
-                <Input {...form.register("code")} placeholder="high-season" />
+                <Label>{messages.priceScheduleDialog.fields.code}</Label>
+                <Input
+                  {...form.register("code")}
+                  placeholder={messages.priceScheduleDialog.placeholders.code}
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Recurrence rule (RRULE)</Label>
+              <Label>{messages.priceScheduleDialog.fields.recurrenceRule}</Label>
               <Textarea
                 {...form.register("recurrenceRule")}
-                placeholder="FREQ=YEARLY;BYMONTH=6,7,8"
+                placeholder={messages.priceScheduleDialog.placeholders.recurrenceRule}
                 rows={2}
                 className="font-mono text-xs"
               />
               <p className="text-xs text-muted-foreground">
-                e.g. <code>FREQ=YEARLY;BYMONTH=6,7,8</code> for June-August.
+                {messages.priceScheduleDialog.helpText.recurrenceRuleExample}
               </p>
               {form.formState.errors.recurrenceRule ? (
                 <p className="text-xs text-destructive">
@@ -176,32 +195,35 @@ export function PriceScheduleDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Valid from</Label>
+                <Label>{messages.priceScheduleDialog.fields.validFrom}</Label>
                 <DatePicker
                   value={typeof validFrom === "string" && validFrom.length > 0 ? validFrom : null}
                   onChange={(value) =>
                     form.setValue("validFrom", value ?? "", { shouldDirty: true })
                   }
-                  placeholder="Optional"
+                  placeholder={messages.priceScheduleDialog.placeholders.validFrom}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Valid to</Label>
+                <Label>{messages.priceScheduleDialog.fields.validTo}</Label>
                 <DatePicker
                   value={typeof validTo === "string" && validTo.length > 0 ? validTo : null}
                   onChange={(value) => form.setValue("validTo", value ?? "", { shouldDirty: true })}
-                  placeholder="Optional"
+                  placeholder={messages.priceScheduleDialog.placeholders.validTo}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Timezone</Label>
-                <Input {...form.register("timezone")} placeholder="Europe/Istanbul" />
+                <Label>{messages.priceScheduleDialog.fields.timezone}</Label>
+                <Input
+                  {...form.register("timezone")}
+                  placeholder={messages.priceScheduleDialog.placeholders.timezone}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Priority</Label>
+                <Label>{messages.priceScheduleDialog.fields.priority}</Label>
                 <Input {...form.register("priority")} type="number" />
               </div>
             </div>
@@ -211,21 +233,23 @@ export function PriceScheduleDialog({
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{messages.priceScheduleDialog.fields.active}</Label>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.priceScheduleDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Create Schedule"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.priceScheduleDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

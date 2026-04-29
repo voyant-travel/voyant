@@ -19,6 +19,20 @@ type NotificationTemplateAuthoringHelpProps = {
   onInsertVariable?: (variable: NotificationTemplateVariableDefinition) => void
   onInsertSnippet?: (snippet: NotificationLiquidSnippet) => void
   className?: string
+  messages?: {
+    title?: string
+    description?: string
+    tabs?: {
+      variables?: string
+      liquid?: string
+    }
+    searchPlaceholder?: string
+    noVariables?: string
+    example?: string
+    insert?: string
+    liquidUsage?: string
+    noLiquidSnippets?: string
+  }
 }
 
 export function NotificationTemplateAuthoringHelp({
@@ -27,12 +41,17 @@ export function NotificationTemplateAuthoringHelp({
   onInsertVariable,
   onInsertSnippet,
   className,
+  messages,
 }: NotificationTemplateAuthoringHelpProps) {
   return (
     <ContractTemplateAuthoringHelp
       className={className}
-      title="Notification variables"
-      description="Notifications render with Liquid. Use variables for subject/body content and control tags for conditionals or loops."
+      title={messages?.title ?? "Notification variables"}
+      description={
+        messages?.description ??
+        "Notifications render with Liquid. Use variables for subject/body content and control tags for conditionals or loops."
+      }
+      messages={messages}
       variableGroups={variableGroups as TemplateAuthoringVariableGroup[]}
       snippets={snippets as TemplateAuthoringSnippet[]}
       onInsertVariable={

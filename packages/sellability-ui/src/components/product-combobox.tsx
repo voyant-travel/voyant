@@ -10,6 +10,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useSellabilityUiMessagesOrDefault } from "../i18n"
+
 type Props = {
   value: string | null | undefined
   onChange: (value: string | null) => void
@@ -19,12 +21,8 @@ type Props = {
 
 const PAGE_SIZE = 25
 
-export function ProductCombobox({
-  value,
-  onChange,
-  placeholder = "Search products…",
-  disabled,
-}: Props) {
+export function ProductCombobox({ value, onChange, placeholder, disabled }: Props) {
+  const messages = useSellabilityUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
   const listQuery = useProducts({ search: search || undefined, limit: PAGE_SIZE })
   const selectedQuery = useProduct(value ?? undefined, { enabled: !!value })
@@ -64,10 +62,15 @@ export function ProductCombobox({
         setInputValue(id ? (itemMap.get(id)?.name ?? "") : "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={!!value} />
+      <ComboboxInput
+        placeholder={placeholder ?? messages.productCombobox.placeholder}
+        showClear={!!value}
+      />
       <ComboboxContent>
         <ComboboxEmpty>
-          {listQuery.isPending || selectedQuery.isPending ? "Loading…" : "No products found."}
+          {listQuery.isPending || selectedQuery.isPending
+            ? messages.common.loading
+            : messages.productCombobox.empty}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
@@ -79,7 +82,8 @@ export function ProductCombobox({
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate font-medium">{item.name}</span>
                     <span className="truncate text-xs text-muted-foreground">
-                      {item.status} · {item.bookingMode}
+                      {messages.common.productStatusLabels[item.status]} ·{" "}
+                      {messages.common.productBookingModeLabels[item.bookingMode]}
                     </span>
                   </div>
                 </ComboboxItem>

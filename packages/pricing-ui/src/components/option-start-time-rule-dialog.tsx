@@ -28,29 +28,37 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import type { StartTimeRuleMode } from "../i18n/messages"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider"
 import { OptionPriceRuleCombobox } from "./option-price-rule-combobox"
 
 const RULE_MODES = ["included", "excluded", "override", "adjustment"] as const
 type RuleMode = (typeof RULE_MODES)[number]
 
 const ADJUSTMENT_TYPES = ["fixed", "percentage"] as const
-type AdjustmentType = (typeof ADJUSTMENT_TYPES)[number]
 
-const formSchema = z.object({
-  optionPriceRuleId: z.string().min(1, "Option price rule is required"),
-  optionId: z.string().min(1, "Option ID is required"),
-  startTimeId: z.string().min(1, "Start time ID is required"),
-  ruleMode: z.enum(RULE_MODES),
-  adjustmentType: z.enum(ADJUSTMENT_TYPES).optional().nullable(),
-  sellAdjustment: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
-  costAdjustment: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
-  adjustmentPercent: z.coerce.number().min(0).max(100).optional().or(z.literal("")).nullable(),
-  active: z.boolean(),
-  notes: z.string().optional().nullable(),
-})
+function createFormSchema(messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
+  return z.object({
+    optionPriceRuleId: z
+      .string()
+      .min(1, messages.optionStartTimeRuleDialog.validation.optionPriceRuleRequired),
+    optionId: z.string().min(1, messages.optionStartTimeRuleDialog.validation.optionIdRequired),
+    startTimeId: z
+      .string()
+      .min(1, messages.optionStartTimeRuleDialog.validation.startTimeIdRequired),
+    ruleMode: z.enum(RULE_MODES),
+    adjustmentType: z.enum(ADJUSTMENT_TYPES).optional().nullable(),
+    sellAdjustment: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
+    costAdjustment: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
+    adjustmentPercent: z.coerce.number().min(0).max(100).optional().or(z.literal("")).nullable(),
+    active: z.boolean(),
+    notes: z.string().optional().nullable(),
+  })
+}
 
-type FormValues = z.input<typeof formSchema>
-type FormOutput = z.output<typeof formSchema>
+type FormSchema = ReturnType<typeof createFormSchema>
+type FormValues = z.input<FormSchema>
+type FormOutput = z.output<FormSchema>
 
 type Props = {
   open: boolean
@@ -67,6 +75,8 @@ const toBasisPoints = (value: number | "" | null | undefined): number | null =>
 export function OptionStartTimeRuleDialog({ open, onOpenChange, rule, onSuccess }: Props) {
   const isEditing = !!rule
   const { create, update } = useOptionStartTimeRuleMutation()
+  const messages = usePricingUiMessagesOrDefault()
+  const formSchema = createFormSchema(messages)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -135,12 +145,16 @@ export function OptionStartTimeRuleDialog({ open, onOpenChange, rule, onSuccess 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Start Time Rule" : "Add Start Time Rule"}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? messages.optionStartTimeRuleDialog.titles.edit
+              : messages.optionStartTimeRuleDialog.titles.create}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Option price rule</Label>
+              <Label>{messages.optionStartTimeRuleDialog.fields.optionPriceRule}</Label>
               <OptionPriceRuleCombobox
                 value={form.watch("optionPriceRuleId")}
                 onChange={(value) =>
@@ -160,20 +174,29 @@ export function OptionStartTimeRuleDialog({ open, onOpenChange, rule, onSuccess 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Option ID</Label>
-                <Input {...form.register("optionId")} placeholder="popt_…" />
+                <Label>{messages.optionStartTimeRuleDialog.fields.optionId}</Label>
+                <Input
+                  {...form.register("optionId")}
+                  placeholder={messages.optionStartTimeRuleDialog.placeholders.optionId}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Start time ID</Label>
-                <Input {...form.register("startTimeId")} placeholder="pst_…" />
+                <Label>{messages.optionStartTimeRuleDialog.fields.startTimeId}</Label>
+                <Input
+                  {...form.register("startTimeId")}
+                  placeholder={messages.optionStartTimeRuleDialog.placeholders.startTimeId}
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Rule mode</Label>
+                <Label>{messages.optionStartTimeRuleDialog.fields.ruleMode}</Label>
                 <Select
-                  items={RULE_MODES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                  items={RULE_MODES.map((mode) => ({
+                    label: messages.common.startTimeRuleModeLabels[mode as StartTimeRuleMode],
+                    value: mode,
+                  }))}
                   value={form.watch("ruleMode")}
                   onValueChange={(value) => form.setValue("ruleMode", value as RuleMode)}
                 >
@@ -182,8 +205,8 @@ export function OptionStartTimeRuleDialog({ open, onOpenChange, rule, onSuccess 
                   </SelectTrigger>
                   <SelectContent>
                     {RULE_MODES.map((mode) => (
-                      <SelectItem key={mode} value={mode} className="capitalize">
-                        {mode.replace(/_/g, " ")}
+                      <SelectItem key={mode} value={mode}>
+                        {messages.common.startTimeRuleModeLabels[mode as StartTimeRuleMode]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -191,21 +214,29 @@ export function OptionStartTimeRuleDialog({ open, onOpenChange, rule, onSuccess 
               </div>
               {showAdjustment ? (
                 <div className="flex flex-col gap-2">
-                  <Label>Adjustment type</Label>
+                  <Label>{messages.optionStartTimeRuleDialog.fields.adjustmentType}</Label>
                   <Select
-                    items={ADJUSTMENT_TYPES.map((x) => ({ label: x.replace(/_/g, " "), value: x }))}
+                    items={ADJUSTMENT_TYPES.map((type) => ({
+                      label: messages.common.adjustmentTypeLabels[type],
+                      value: type,
+                    }))}
                     value={form.watch("adjustmentType") ?? ""}
                     onValueChange={(value) =>
-                      form.setValue("adjustmentType", (value || null) as AdjustmentType | null)
+                      form.setValue(
+                        "adjustmentType",
+                        (value || null) as FormValues["adjustmentType"],
+                      )
                     }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select…" />
+                      <SelectValue
+                        placeholder={messages.optionStartTimeRuleDialog.placeholders.select}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {ADJUSTMENT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type} className="capitalize">
-                          {type}
+                        <SelectItem key={type} value={type}>
+                          {messages.common.adjustmentTypeLabels[type]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -217,15 +248,15 @@ export function OptionStartTimeRuleDialog({ open, onOpenChange, rule, onSuccess 
             {showAdjustment ? (
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-2">
-                  <Label>Sell adjustment</Label>
+                  <Label>{messages.optionStartTimeRuleDialog.fields.sellAdjustment}</Label>
                   <Input {...form.register("sellAdjustment")} type="number" step="0.01" min="0" />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Cost adjustment</Label>
+                  <Label>{messages.optionStartTimeRuleDialog.fields.costAdjustment}</Label>
                   <Input {...form.register("costAdjustment")} type="number" step="0.01" min="0" />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Adjustment (%)</Label>
+                  <Label>{messages.optionStartTimeRuleDialog.fields.adjustmentPercent}</Label>
                   <Input
                     {...form.register("adjustmentPercent")}
                     type="number"
@@ -242,21 +273,23 @@ export function OptionStartTimeRuleDialog({ open, onOpenChange, rule, onSuccess 
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{messages.optionStartTimeRuleDialog.fields.active}</Label>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Notes</Label>
+              <Label>{messages.optionStartTimeRuleDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Add Rule"}
+              {isEditing
+                ? messages.common.saveChanges
+                : messages.optionStartTimeRuleDialog.actions.create}
             </Button>
           </DialogFooter>
         </form>

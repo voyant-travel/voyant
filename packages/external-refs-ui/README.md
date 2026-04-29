@@ -1,5 +1,16 @@
 # @voyantjs/external-refs-ui
 
+## I18n
+
+Components render English by default. To localize them, wrap your UI in
+`ExternalRefsUiMessagesProvider` and import only the locales your app supports.
+
+```tsx
+import { ExternalRefsUiMessagesProvider } from "@voyantjs/external-refs-ui"
+import { externalRefsUiEn } from "@voyantjs/external-refs-ui/i18n/en"
+import { externalRefsUiRo } from "@voyantjs/external-refs-ui/i18n/ro"
+```
+
 Importable React UI components for Voyant external-refs. Bundler-consumed (Vite, Next.js, webpack, etc.).
 
 ## Install
