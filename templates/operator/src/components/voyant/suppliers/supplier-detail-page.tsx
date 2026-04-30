@@ -7,6 +7,7 @@ import {
   useSupplierRateMutation,
   useSupplierServiceMutation,
 } from "@voyantjs/suppliers-react"
+import { SupplierServiceRow } from "@voyantjs/suppliers-ui/components/supplier-service-row"
 import {
   Badge,
   Button,
@@ -33,7 +34,6 @@ import {
 } from "./shared"
 import { SupplierDetailSkeleton } from "./supplier-detail-skeleton"
 import { SupplierDialog } from "./supplier-dialog"
-import { ServiceRow } from "./supplier-service-row"
 
 export function SupplierDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
@@ -238,7 +238,7 @@ export function SupplierDetailPage({ id }: { id: string }) {
 
           <div className="flex flex-col gap-2">
             {servicesData?.data.map((service) => (
-              <ServiceRow
+              <SupplierServiceRow
                 key={service.id}
                 service={service}
                 supplierId={id}

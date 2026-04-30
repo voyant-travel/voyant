@@ -5,25 +5,7 @@ export const adminContactsMessages = {
     contacts: {
       pageTitle: "Contacts",
       pageDescription: "Manage your clients, partners, and suppliers.",
-      list: {
-        searchPlaceholder: "Search people…",
-        newAction: "New contact",
-        columnName: "Name",
-        columnEmail: "Email",
-        columnPhone: "Phone",
-        columnRelation: "Relation",
-        loadFailed: "Failed to load people.",
-        empty: "No people found.",
-        noValue: "—",
-        paginationShowing: "Showing {count} of {total}",
-        paginationPage: "Page {page} / {pageCount}",
-        paginationPrevious: "Previous",
-        paginationNext: "Next",
-        relationClient: "Client",
-        relationPartner: "Partner",
-        relationSupplier: "Supplier",
-        relationOther: "Other",
-      },
+      // list: removed — contacts list page no longer reads these keys.
       dialog: {
         editTitle: "Edit contact",
         newTitle: "New contact",
@@ -138,25 +120,7 @@ export const adminContactsMessages = {
     contacts: {
       pageTitle: "Contacts",
       pageDescription: "Manage your clients, partners, and suppliers.",
-      list: {
-        searchPlaceholder: "Search people…",
-        newAction: "New contact",
-        columnName: "Name",
-        columnEmail: "Email",
-        columnPhone: "Phone",
-        columnRelation: "Relation",
-        loadFailed: "Failed to load people.",
-        empty: "No people found.",
-        noValue: "—",
-        paginationShowing: "Showing {count} of {total}",
-        paginationPage: "Page {page} / {pageCount}",
-        paginationPrevious: "Previous",
-        paginationNext: "Next",
-        relationClient: "Client",
-        relationPartner: "Partner",
-        relationSupplier: "Supplier",
-        relationOther: "Other",
-      },
+      // list: removed — contacts list page no longer reads these keys.
       dialog: {
         editTitle: "Edit contact",
         newTitle: "New contact",

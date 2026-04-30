@@ -3,14 +3,8 @@
   "name": "voyant-bookings-shared-room-section",
   "title": "Booking Shared-Room Section",
   "description": "Partaj (shared-room) section for booking create: toggle + create/join mode + group selector. Parent owns the booking_groups mutations (they fire after booking insert).",
-  "dependencies": [
-    "@voyantjs/bookings-react"
-  ],
-  "registryDependencies": [
-    "button",
-    "label",
-    "select"
-  ],
+  "dependencies": ["@voyantjs/bookings-react"],
+  "registryDependencies": ["button", "label", "select"],
   "files": [
     {
       "path": "registry/bookings/shared-room-section.tsx",

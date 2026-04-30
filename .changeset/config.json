@@ -92,7 +92,7 @@
       "@voyantjs/types",
       "@voyantjs/ui",
       "@voyantjs/utils",
-      "@voyantjs/voyant-storage",
+      "@voyantjs/storage",
       "@voyantjs/workflows",
       "@voyantjs/workflows-bindings",
       "@voyantjs/workflows-config",

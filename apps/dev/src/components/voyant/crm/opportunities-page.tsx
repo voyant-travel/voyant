@@ -6,6 +6,7 @@ import {
   usePipelines,
   useStages,
 } from "@voyantjs/crm-react"
+import { CreateOpportunityDialog } from "@voyantjs/crm-ui/components/create-opportunity-dialog"
 import {
   Button,
   Card,
@@ -17,7 +18,6 @@ import {
 } from "@voyantjs/ui/components"
 import { Loader2, Plus, Settings2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { CreateOpportunityDialog } from "./create-opportunity-dialog"
 import { OpportunitiesBoard } from "./opportunities-board"
 import { CreatePipelineDialog, ManageStagesDialog } from "./pipeline-dialogs"
 

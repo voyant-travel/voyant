@@ -8,7 +8,7 @@
  */
 
 import { createBetterAuth } from "@voyantjs/auth/server"
-import { getVoyantCloudClient } from "@voyantjs/cloud-sdk"
+import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import type { VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
@@ -71,7 +71,7 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
  */
 function getBetterAuth(env: CloudflareBindings) {
   const db = getDbFromHyperdrive(env)
-  const cloud = getVoyantCloudClient(env as unknown as Record<string, unknown>)
+  const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
 
   return createBetterAuth({
@@ -81,6 +81,10 @@ function getBetterAuth(env: CloudflareBindings) {
     basePath: "/auth",
     trustedOrigins: getTrustedOrigins(env),
     sendResetPassword: async ({ user, url }) => {
+      if (!cloud) {
+        console.info(`[auth] reset-password (no VOYANT_CLOUD_API_KEY) → ${user.email}: ${url}`)
+        return
+      }
       await cloud.email.sendMessage({
         from: emailFrom,
         to: [user.email],
@@ -89,6 +93,12 @@ function getBetterAuth(env: CloudflareBindings) {
       })
     },
     sendVerificationOTP: async ({ email, otp, type }) => {
+      if (!cloud) {
+        console.info(
+          `[auth] verification-otp (no VOYANT_CLOUD_API_KEY) [${type}] → ${email}: ${otp}`,
+        )
+        return
+      }
       await cloud.email.sendMessage({
         from: emailFrom,
         to: [email],

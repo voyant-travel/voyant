@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { useLocale } from "@voyantjs/admin"
+import { formatDistributionDateTime } from "@voyantjs/distribution-ui/components/distribution-shared"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Link2, Loader2, Trash2, Webhook } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
@@ -9,7 +9,6 @@ import {
   getDistributionWebhookEventChannelQueryOptions,
   getDistributionWebhookEventQueryOptions,
 } from "./distribution-detail-query-options"
-import { formatDistributionDateTime } from "./distribution-shared"
 
 type DistributionWebhookEventDetailPageProps = {
   id: string
@@ -21,7 +20,6 @@ export function DistributionWebhookEventDetailPage({
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const messages = useAdminMessages()
-  const { resolvedLocale } = useLocale()
   const commonMessages = messages.distribution.details.common
   const detailMessages = messages.distribution.details.webhook
   const valueMessages = messages.distribution.values
@@ -119,19 +117,19 @@ export function DistributionWebhookEventDetailPage({
             </div>
             <div>
               <span className="text-muted-foreground">{detailMessages.fields.received}:</span>{" "}
-              <span>{formatDistributionDateTime(event.receivedAt, resolvedLocale, noValue)}</span>
+              <span>{formatDistributionDateTime(event.receivedAt)}</span>
             </div>
             <div>
               <span className="text-muted-foreground">{detailMessages.fields.processed}:</span>{" "}
-              <span>{formatDistributionDateTime(event.processedAt, resolvedLocale, noValue)}</span>
+              <span>{formatDistributionDateTime(event.processedAt)}</span>
             </div>
             <div>
               <span className="text-muted-foreground">{detailMessages.fields.created}:</span>{" "}
-              <span>{formatDistributionDateTime(event.createdAt, resolvedLocale, noValue)}</span>
+              <span>{formatDistributionDateTime(event.createdAt)}</span>
             </div>
             <div>
               <span className="text-muted-foreground">{detailMessages.fields.updated}:</span>{" "}
-              <span>{formatDistributionDateTime(event.updatedAt, resolvedLocale, noValue)}</span>
+              <span>{formatDistributionDateTime(event.updatedAt)}</span>
             </div>
             {event.errorMessage ? (
               <div>

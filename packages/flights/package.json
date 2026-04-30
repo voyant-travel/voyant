@@ -1,0 +1,95 @@
+{
+  "name": "@voyantjs/voyant-flights",
+  "version": "0.19.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contract/types": "./src/contract/types.ts",
+    "./contract/adapter": "./src/contract/adapter.ts",
+    "./orchestration/fingerprint": "./src/orchestration/fingerprint.ts",
+    "./orchestration/fan-out": "./src/orchestration/fan-out.ts",
+    "./snapshot": "./src/snapshot.ts",
+    "./reference/contract": "./src/reference/contract.ts",
+    "./reference/local-postgres": "./src/reference/local-postgres.ts",
+    "./reference/static-bundle": "./src/reference/static-bundle.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./contract/types": {
+        "types": "./dist/contract/types.d.ts",
+        "import": "./dist/contract/types.js",
+        "default": "./dist/contract/types.js"
+      },
+      "./contract/adapter": {
+        "types": "./dist/contract/adapter.d.ts",
+        "import": "./dist/contract/adapter.js",
+        "default": "./dist/contract/adapter.js"
+      },
+      "./orchestration/fingerprint": {
+        "types": "./dist/orchestration/fingerprint.d.ts",
+        "import": "./dist/orchestration/fingerprint.js",
+        "default": "./dist/orchestration/fingerprint.js"
+      },
+      "./orchestration/fan-out": {
+        "types": "./dist/orchestration/fan-out.d.ts",
+        "import": "./dist/orchestration/fan-out.js",
+        "default": "./dist/orchestration/fan-out.js"
+      },
+      "./snapshot": {
+        "types": "./dist/snapshot.d.ts",
+        "import": "./dist/snapshot.js",
+        "default": "./dist/snapshot.js"
+      },
+      "./reference/contract": {
+        "types": "./dist/reference/contract.d.ts",
+        "import": "./dist/reference/contract.js",
+        "default": "./dist/reference/contract.js"
+      },
+      "./reference/local-postgres": {
+        "types": "./dist/reference/local-postgres.d.ts",
+        "import": "./dist/reference/local-postgres.js",
+        "default": "./dist/reference/local-postgres.js"
+      },
+      "./reference/static-bundle": {
+        "types": "./dist/reference/static-bundle.d.ts",
+        "import": "./dist/reference/static-bundle.js",
+        "default": "./dist/reference/static-bundle.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "dependencies": {
+    "@voyantjs/db": "workspace:*",
+    "@voyantjs/catalog": "workspace:*",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/flights"
+  }
+}

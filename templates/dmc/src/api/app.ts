@@ -30,9 +30,11 @@ import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/
 import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
+import { catalogBridgeBundle } from "./catalog-bridge"
 import { createInvitationsRoutes } from "./invitations"
 import { getDbFromHyperdrive } from "./lib/db"
 import { createMediaStorage, guessMimeType, resolveDocumentDownloadUrl } from "./lib/storage"
+import { mountCatalogMcpRoutes } from "./mcp"
 
 const notificationsHonoModule = createNotificationsHonoModule({
   resolveProviders: resolveNotificationProviders,
@@ -121,6 +123,7 @@ export const app = createApp<CloudflareBindings>({
     transactionsBookingExtension,
     distributionBookingExtension,
   ],
+  plugins: [catalogBridgeBundle],
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>
@@ -205,5 +208,7 @@ export const app = createApp<CloudflareBindings>({
 
       return new Response(buffer, { headers })
     })
+
+    mountCatalogMcpRoutes(hono)
   },
 })

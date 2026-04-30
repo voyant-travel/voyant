@@ -17,6 +17,8 @@ export interface ProductDayDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   productId: string
+  /** Optional. When set, new days are created against this itinerary. */
+  itineraryId?: string
   day?: ProductDayRecord
   nextDayNumber?: number
   onSuccess?: (day: ProductDayRecord) => void
@@ -26,6 +28,7 @@ export function ProductDayDialog({
   open,
   onOpenChange,
   productId,
+  itineraryId,
   day,
   nextDayNumber,
   onSuccess,
@@ -50,7 +53,9 @@ export function ProductDayDialog({
         </DialogHeader>
         <ProductDayForm
           mode={
-            day ? { kind: "edit", productId, day } : { kind: "create", productId, nextDayNumber }
+            day
+              ? { kind: "edit", productId, day }
+              : { kind: "create", productId, itineraryId, nextDayNumber }
           }
           onSuccess={(savedDay) => {
             onSuccess?.(savedDay)

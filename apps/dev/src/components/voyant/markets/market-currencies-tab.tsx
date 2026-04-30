@@ -4,11 +4,11 @@ import {
   useMarketCurrencies,
   useMarketCurrencyMutation,
 } from "@voyantjs/markets-react"
+import { MarketCurrencyDialog } from "@voyantjs/markets-ui/components/market-currency-dialog"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { MarketCurrencyDialog } from "./market-currency-dialog"
 
 const PAGE_SIZE = 25
 

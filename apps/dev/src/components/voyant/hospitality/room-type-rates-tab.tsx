@@ -7,13 +7,13 @@ import {
   useRoomTypeRates,
   useVoyantHospitalityContext,
 } from "@voyantjs/hospitality-react"
+import { PaginationFooter } from "@voyantjs/hospitality-ui/components/pagination-footer"
+import { RatePlanCombobox } from "@voyantjs/hospitality-ui/components/rate-plan-combobox"
+import { RoomTypeCombobox } from "@voyantjs/hospitality-ui/components/room-type-combobox"
 import { getPriceScheduleQueryOptions, useVoyantPricingContext } from "@voyantjs/pricing-react"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { PaginationFooter } from "./pagination-footer"
-import { RatePlanCombobox } from "./rate-plan-combobox"
-import { RoomTypeCombobox } from "./room-type-combobox"
 import { type RoomTypeRateData, RoomTypeRateDialog } from "./room-type-rate-dialog"
 
 type Props = { propertyId: string }

@@ -8,7 +8,7 @@
   - @voyantjs/core@0.19.0
   - @voyantjs/db@0.19.0
   - @voyantjs/hono@0.19.0
-  - @voyantjs/voyant-storage@0.19.0
+  - @voyantjs/storage@0.19.0
   - @voyantjs/utils@0.19.0
 
 ## 0.18.0
@@ -69,7 +69,7 @@
   - @voyantjs/core@0.18.0
   - @voyantjs/db@0.18.0
   - @voyantjs/hono@0.18.0
-  - @voyantjs/voyant-storage@0.18.0
+  - @voyantjs/storage@0.18.0
   - @voyantjs/utils@0.18.0
 
 ## 0.17.0
@@ -88,7 +88,7 @@
   - @voyantjs/core@0.17.0
   - @voyantjs/db@0.17.0
   - @voyantjs/hono@0.17.0
-  - @voyantjs/voyant-storage@0.17.0
+  - @voyantjs/storage@0.17.0
   - @voyantjs/utils@0.17.0
 
 ## 0.16.0
@@ -111,7 +111,7 @@
   - @voyantjs/core@0.16.0
   - @voyantjs/db@0.16.0
   - @voyantjs/hono@0.16.0
-  - @voyantjs/voyant-storage@0.16.0
+  - @voyantjs/storage@0.16.0
   - @voyantjs/utils@0.16.0
 
 ## 0.15.0
@@ -121,7 +121,7 @@
 - @voyantjs/core@0.15.0
 - @voyantjs/db@0.15.0
 - @voyantjs/hono@0.15.0
-- @voyantjs/voyant-storage@0.15.0
+- @voyantjs/storage@0.15.0
 - @voyantjs/utils@0.15.0
 
 ## 0.14.0
@@ -131,7 +131,7 @@
 - @voyantjs/core@0.14.0
 - @voyantjs/db@0.14.0
 - @voyantjs/hono@0.14.0
-- @voyantjs/voyant-storage@0.14.0
+- @voyantjs/storage@0.14.0
 - @voyantjs/utils@0.14.0
 
 ## 0.13.0
@@ -141,7 +141,7 @@
 - @voyantjs/core@0.13.0
 - @voyantjs/db@0.13.0
 - @voyantjs/hono@0.13.0
-- @voyantjs/voyant-storage@0.13.0
+- @voyantjs/storage@0.13.0
 - @voyantjs/utils@0.13.0
 
 ## 0.12.0
@@ -153,7 +153,7 @@
   - @voyantjs/core@0.12.0
   - @voyantjs/db@0.12.0
   - @voyantjs/hono@0.12.0
-  - @voyantjs/voyant-storage@0.12.0
+  - @voyantjs/storage@0.12.0
   - @voyantjs/utils@0.12.0
 
 ## 0.11.0
@@ -163,7 +163,7 @@
 - @voyantjs/core@0.11.0
 - @voyantjs/db@0.11.0
 - @voyantjs/hono@0.11.0
-- @voyantjs/voyant-storage@0.11.0
+- @voyantjs/storage@0.11.0
 - @voyantjs/utils@0.11.0
 
 ## 0.10.0
@@ -175,7 +175,7 @@
   - @voyantjs/core@0.10.0
   - @voyantjs/db@0.10.0
   - @voyantjs/hono@0.10.0
-  - @voyantjs/voyant-storage@0.10.0
+  - @voyantjs/storage@0.10.0
   - @voyantjs/utils@0.10.0
 
 ## 0.9.0
@@ -185,7 +185,7 @@
 - @voyantjs/core@0.9.0
 - @voyantjs/db@0.9.0
 - @voyantjs/hono@0.9.0
-- @voyantjs/voyant-storage@0.9.0
+- @voyantjs/storage@0.9.0
 - @voyantjs/utils@0.9.0
 
 ## 0.8.0
@@ -196,7 +196,7 @@
   - @voyantjs/core@0.8.0
   - @voyantjs/db@0.8.0
   - @voyantjs/hono@0.8.0
-  - @voyantjs/voyant-storage@0.8.0
+  - @voyantjs/storage@0.8.0
   - @voyantjs/utils@0.8.0
 
 ## 0.7.0
@@ -206,7 +206,7 @@
 - @voyantjs/core@0.7.0
 - @voyantjs/db@0.7.0
 - @voyantjs/hono@0.7.0
-- @voyantjs/voyant-storage@0.7.0
+- @voyantjs/storage@0.7.0
 - @voyantjs/utils@0.7.0
 
 ## 0.6.9
@@ -216,7 +216,7 @@
 - @voyantjs/core@0.6.9
 - @voyantjs/db@0.6.9
 - @voyantjs/hono@0.6.9
-- @voyantjs/voyant-storage@0.6.9
+- @voyantjs/storage@0.6.9
 - @voyantjs/utils@0.6.9
 
 ## 0.6.8
@@ -243,7 +243,7 @@
   - @voyantjs/core@0.6.8
   - @voyantjs/db@0.6.8
   - @voyantjs/hono@0.6.8
-  - @voyantjs/voyant-storage@0.6.8
+  - @voyantjs/storage@0.6.8
   - @voyantjs/utils@0.6.8
 
 ## 0.6.7
@@ -253,7 +253,7 @@
 - @voyantjs/core@0.6.7
 - @voyantjs/db@0.6.7
 - @voyantjs/hono@0.6.7
-- @voyantjs/voyant-storage@0.6.7
+- @voyantjs/storage@0.6.7
 - @voyantjs/utils@0.6.7
 
 ## 0.6.6
@@ -263,7 +263,7 @@
 - @voyantjs/core@0.6.6
 - @voyantjs/db@0.6.6
 - @voyantjs/hono@0.6.6
-- @voyantjs/voyant-storage@0.6.6
+- @voyantjs/storage@0.6.6
 - @voyantjs/utils@0.6.6
 
 ## 0.6.5
@@ -273,7 +273,7 @@
 - @voyantjs/core@0.6.5
 - @voyantjs/db@0.6.5
 - @voyantjs/hono@0.6.5
-- @voyantjs/voyant-storage@0.6.5
+- @voyantjs/storage@0.6.5
 - @voyantjs/utils@0.6.5
 
 ## 0.6.4
@@ -283,7 +283,7 @@
 - @voyantjs/core@0.6.4
 - @voyantjs/db@0.6.4
 - @voyantjs/hono@0.6.4
-- @voyantjs/voyant-storage@0.6.4
+- @voyantjs/storage@0.6.4
 - @voyantjs/utils@0.6.4
 
 ## 0.6.3
@@ -294,7 +294,7 @@
   - @voyantjs/core@0.6.3
   - @voyantjs/db@0.6.3
   - @voyantjs/hono@0.6.3
-  - @voyantjs/voyant-storage@0.6.3
+  - @voyantjs/storage@0.6.3
   - @voyantjs/utils@0.6.3
 
 ## 0.6.2
@@ -304,7 +304,7 @@
 - @voyantjs/core@0.6.2
 - @voyantjs/db@0.6.2
 - @voyantjs/hono@0.6.2
-- @voyantjs/voyant-storage@0.6.2
+- @voyantjs/storage@0.6.2
 - @voyantjs/utils@0.6.2
 
 ## 0.6.1
@@ -314,7 +314,7 @@
 - @voyantjs/core@0.6.1
 - @voyantjs/db@0.6.1
 - @voyantjs/hono@0.6.1
-- @voyantjs/voyant-storage@0.6.1
+- @voyantjs/storage@0.6.1
 - @voyantjs/utils@0.6.1
 
 ## 0.6.0
@@ -324,7 +324,7 @@
 - @voyantjs/core@0.6.0
 - @voyantjs/db@0.6.0
 - @voyantjs/hono@0.6.0
-- @voyantjs/voyant-storage@0.6.0
+- @voyantjs/storage@0.6.0
 - @voyantjs/utils@0.6.0
 
 ## 0.5.0
@@ -335,7 +335,7 @@
   - @voyantjs/core@0.5.0
   - @voyantjs/db@0.5.0
   - @voyantjs/hono@0.5.0
-  - @voyantjs/voyant-storage@0.5.0
+  - @voyantjs/storage@0.5.0
   - @voyantjs/utils@0.5.0
 
 ## 0.4.5
@@ -346,7 +346,7 @@
   - @voyantjs/core@0.4.5
   - @voyantjs/db@0.4.5
   - @voyantjs/hono@0.4.5
-  - @voyantjs/voyant-storage@0.4.5
+  - @voyantjs/storage@0.4.5
   - @voyantjs/utils@0.4.5
 
 ## 0.4.4
@@ -356,7 +356,7 @@
 - @voyantjs/core@0.4.4
 - @voyantjs/db@0.4.4
 - @voyantjs/hono@0.4.4
-- @voyantjs/voyant-storage@0.4.4
+- @voyantjs/storage@0.4.4
 - @voyantjs/utils@0.4.4
 
 ## 0.4.3
@@ -366,7 +366,7 @@
 - @voyantjs/core@0.4.3
 - @voyantjs/db@0.4.3
 - @voyantjs/hono@0.4.3
-- @voyantjs/voyant-storage@0.4.3
+- @voyantjs/storage@0.4.3
 - @voyantjs/utils@0.4.3
 
 ## 0.4.2
@@ -376,7 +376,7 @@
 - @voyantjs/core@0.4.2
 - @voyantjs/db@0.4.2
 - @voyantjs/hono@0.4.2
-- @voyantjs/voyant-storage@0.4.2
+- @voyantjs/storage@0.4.2
 - @voyantjs/utils@0.4.2
 
 ## 0.4.1
@@ -386,7 +386,7 @@
 - @voyantjs/core@0.4.1
 - @voyantjs/db@0.4.1
 - @voyantjs/hono@0.4.1
-- @voyantjs/voyant-storage@0.4.1
+- @voyantjs/storage@0.4.1
 - @voyantjs/utils@0.4.1
 
 ## 0.4.0
@@ -442,7 +442,7 @@
   - @voyantjs/core@0.4.0
   - @voyantjs/db@0.4.0
   - @voyantjs/hono@0.4.0
-  - @voyantjs/voyant-storage@0.4.0
+  - @voyantjs/storage@0.4.0
   - @voyantjs/utils@0.4.0
 
 ## 0.3.1

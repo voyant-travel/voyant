@@ -7,10 +7,10 @@ import {
   useRatePlanRoomTypes,
   useVoyantHospitalityContext,
 } from "@voyantjs/hospitality-react"
+import { PaginationFooter } from "@voyantjs/hospitality-ui/components/pagination-footer"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { PaginationFooter } from "./pagination-footer"
 import { type RatePlanRoomTypeData, RatePlanRoomTypeDialog } from "./rate-plan-room-type-dialog"
 
 type Props = { propertyId: string }

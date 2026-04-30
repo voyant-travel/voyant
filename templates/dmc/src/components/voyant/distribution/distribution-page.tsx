@@ -2,6 +2,20 @@ import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { RowSelectionState } from "@tanstack/react-table"
 import { formatMessage, useLocale } from "@voyantjs/admin"
+import { DistributionOverview } from "@voyantjs/distribution-ui/components/distribution-overview"
+import type {
+  BatchMutationResponse,
+  ChannelBookingLinkRow,
+  ChannelCommissionRuleRow,
+  ChannelContractRow,
+  ChannelProductMappingRow,
+  ChannelRow,
+  ChannelWebhookEventRow,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import {
+  formatSelectionLabel,
+  labelById,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
@@ -17,23 +31,9 @@ import {
   getDistributionSuppliersQueryOptions,
   getDistributionWebhookEventsQueryOptions,
 } from "@/components/voyant/distribution/distribution-query-options"
-import type {
-  BatchMutationResponse,
-  ChannelBookingLinkRow,
-  ChannelCommissionRuleRow,
-  ChannelContractRow,
-  ChannelProductMappingRow,
-  ChannelRow,
-  ChannelWebhookEventRow,
-} from "@/components/voyant/distribution/distribution-shared"
-import {
-  formatLocalizedSelectionLabel,
-  labelById,
-} from "@/components/voyant/distribution/distribution-shared"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { DistributionDialogs } from "./distribution-dialogs"
-import { DistributionOverview } from "./distribution-overview"
 import {
   DistributionChannelsTab,
   DistributionCommissionsTab,
@@ -241,7 +241,7 @@ export function DistributionPage() {
       toast.success(
         formatMessage(messages.distribution.toasts.success, {
           verb: successVerb,
-          selection: formatLocalizedSelectionLabel(result.succeeded, nouns),
+          selection: formatSelectionLabel(result.succeeded, nouns.singular, nouns.plural),
         }),
       )
       return
@@ -251,7 +251,7 @@ export function DistributionPage() {
       formatMessage(messages.distribution.toasts.partial, {
         verb: successVerb,
         succeeded: result.succeeded,
-        selection: formatLocalizedSelectionLabel(result.total, nouns),
+        selection: formatSelectionLabel(result.total, nouns.singular, nouns.plural),
       }),
     )
   }
@@ -283,7 +283,7 @@ export function DistributionPage() {
       toast.success(
         formatMessage(messages.distribution.toasts.success, {
           verb: messages.distribution.toasts.deleted,
-          selection: formatLocalizedSelectionLabel(result.succeeded, nouns),
+          selection: formatSelectionLabel(result.succeeded, nouns.singular, nouns.plural),
         }),
       )
       return
@@ -293,7 +293,7 @@ export function DistributionPage() {
       formatMessage(messages.distribution.toasts.partial, {
         verb: messages.distribution.toasts.deleted,
         succeeded: result.succeeded,
-        selection: formatLocalizedSelectionLabel(result.total, nouns),
+        selection: formatSelectionLabel(result.total, nouns.singular, nouns.plural),
       }),
     )
   }

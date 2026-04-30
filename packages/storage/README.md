@@ -1,18 +1,18 @@
-# @voyantjs/voyant-storage
+# @voyantjs/storage
 
 Storage provider abstraction for Voyant. `StorageProvider` interface plus providers for local (in-memory), Cloudflare R2, and S3-compatible (AWS SigV4 via Web Crypto — works in Cloudflare Workers).
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/voyant-storage
+pnpm add @voyantjs/storage
 ```
 
 ## Usage
 
 ```typescript
-import { createStorageService } from "@voyantjs/voyant-storage"
-import { s3Provider } from "@voyantjs/voyant-storage/providers/s3"
+import { createStorageService } from "@voyantjs/storage"
+import { s3Provider } from "@voyantjs/storage/providers/s3"
 
 const storage = createStorageService(
   s3Provider({

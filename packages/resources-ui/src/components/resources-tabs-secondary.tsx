@@ -27,7 +27,8 @@ type BulkFn = (args: {
   ids: string[]
   endpoint: string
   target: string
-  noun: string
+  nounSingular: string
+  nounPlural: string
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
@@ -37,7 +38,8 @@ type DeleteFn = (args: {
   ids: string[]
   endpoint: string
   target: string
-  noun: string
+  nounSingular: string
+  nounPlural: string
   clearSelection: () => void
 }) => Promise<void> // i18n-literal-ok local callback type alias
 
@@ -269,7 +271,8 @@ export function AssignmentsTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/slot-assignments",
                   target: "assignments-assigned",
-                  noun: "assignment",
+                  nounSingular: "assignment",
+                  nounPlural: "assignments",
                   payload: { status: "assigned" },
                   successVerb: section.actions.assign.successVerb,
                   clearSelection,
@@ -294,7 +297,8 @@ export function AssignmentsTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/slot-assignments",
                   target: "assignments-released",
-                  noun: "assignment",
+                  nounSingular: "assignment",
+                  nounPlural: "assignments",
                   payload: { status: "released" },
                   successVerb: section.actions.release.successVerb,
                   clearSelection,
@@ -321,7 +325,8 @@ export function AssignmentsTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/slot-assignments",
                   target: "assignments-delete",
-                  noun: "assignment",
+                  nounSingular: "assignment",
+                  nounPlural: "assignments",
                   clearSelection,
                 })
               }
@@ -395,7 +400,8 @@ export function CloseoutsTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/closeouts",
                   target: "closeouts-delete",
-                  noun: "closeout",
+                  nounSingular: "closeout",
+                  nounPlural: "closeouts",
                   clearSelection,
                 })
               }

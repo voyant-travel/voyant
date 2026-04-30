@@ -1,5 +1,5 @@
+import { ProductCategoryList } from "@voyantjs/products-ui/components/product-category-list"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { ProductCategoryList } from "./product-category-list"
 
 export function ProductCategoriesPage() {
   const messages = useAdminMessages()

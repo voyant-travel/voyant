@@ -4,11 +4,11 @@ import {
   useNamedContactMutation,
   useNamedContacts,
 } from "@voyantjs/identity-react"
+import { NamedContactDialog } from "@voyantjs/identity-ui/components/named-contact-dialog"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { NamedContactDialog } from "./named-contact-dialog"
 
 type Props = { entityType: string; entityId: string }
 const PAGE_SIZE = 25

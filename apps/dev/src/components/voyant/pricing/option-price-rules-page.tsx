@@ -6,19 +6,18 @@ import {
   useOptionPriceRuleMutation,
   useOptionPriceRules,
 } from "@voyantjs/pricing-react"
-import { Pencil, Plus, Trash2 } from "lucide-react"
-import * as React from "react"
-
-import { Badge, Button } from "@/components/ui"
-import { DataTable } from "@/components/ui/data-table"
-import { OptionPriceRuleDialog } from "./option-price-rule-dialog"
+import { OptionPriceRuleDialog } from "@voyantjs/pricing-ui/components/option-price-rule-dialog"
 import {
   CancellationPolicyLabel,
   PriceCatalogLabel,
   PriceScheduleLabel,
   ProductLabel,
   ProductOptionLabel,
-} from "./pricing-shared-labels"
+} from "@voyantjs/pricing-ui/components/pricing-shared-labels"
+import { Pencil, Plus, Trash2 } from "lucide-react"
+import * as React from "react"
+import { Badge, Button } from "@/components/ui"
+import { DataTable } from "@/components/ui/data-table"
 
 const PAGE_SIZE = 25
 

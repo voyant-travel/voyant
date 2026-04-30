@@ -1,11 +1,3 @@
-import {
-  ChannelBookingLinkDialog,
-  ChannelCommissionRuleDialog,
-  ChannelContractDialog,
-  ChannelDialog,
-  ChannelProductMappingDialog,
-  ChannelWebhookEventDialog,
-} from "./distribution-dialog-barrel"
 import type {
   BookingOption,
   ChannelBookingLinkRow,
@@ -16,7 +8,15 @@ import type {
   ChannelWebhookEventRow,
   ProductOption,
   SupplierOption,
-} from "./distribution-shared"
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import {
+  ChannelBookingLinkDialog,
+  ChannelCommissionRuleDialog,
+  ChannelContractDialog,
+  ChannelDialog,
+  ChannelProductMappingDialog,
+  ChannelWebhookEventDialog,
+} from "./distribution-dialog-barrel"
 
 export function DistributionDialogs({
   channelDialogOpen,

@@ -1,13 +1,22 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { RowSelectionState } from "@tanstack/react-table"
+import { ResourcesOverview } from "@voyantjs/resources-ui/components/resources-overview"
+import {
+  AllocationsTab,
+  PoolsTab,
+  ResourcesTab,
+} from "@voyantjs/resources-ui/components/resources-tabs-primary"
+import {
+  AssignmentsTab,
+  CloseoutsTab,
+} from "@voyantjs/resources-ui/components/resources-tabs-secondary"
 import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { api } from "@/lib/api-client"
 import { ResourcesDialogs } from "./resources-dialogs"
-import { ResourcesOverview } from "./resources-overview"
 import type {
   BatchMutationResponse,
   ResourceAllocationRow,
@@ -32,8 +41,6 @@ import {
   labelById,
   slotLabel,
 } from "./resources-shared"
-import { AllocationsTab, PoolsTab, ResourcesTab } from "./resources-tabs-primary"
-import { AssignmentsTab, CloseoutsTab } from "./resources-tabs-secondary"
 
 export function ResourcesPage() {
   const navigate = useNavigate()
@@ -189,7 +196,8 @@ export function ResourcesPage() {
     ids,
     endpoint,
     target,
-    noun,
+    nounSingular,
+    nounPlural,
     payload,
     successVerb,
     clearSelection,
@@ -197,7 +205,8 @@ export function ResourcesPage() {
     ids: string[]
     endpoint: string
     target: string
-    noun: string
+    nounSingular: string
+    nounPlural: string
     payload: Record<string, unknown>
     successVerb: string
     clearSelection: () => void
@@ -216,12 +225,14 @@ export function ResourcesPage() {
     setBulkActionTarget(null)
 
     if (result.failed.length === 0) {
-      toast.success(`${successVerb} ${formatSelectionLabel(result.succeeded, noun)}.`)
+      toast.success(
+        `${successVerb} ${formatSelectionLabel(result.succeeded, nounSingular, nounPlural)}.`,
+      )
       return
     }
 
     toast.error(
-      `${successVerb} ${result.succeeded} of ${formatSelectionLabel(result.total, noun)}.`,
+      `${successVerb} ${result.succeeded} of ${formatSelectionLabel(result.total, nounSingular, nounPlural)}.`,
     )
   }
 
@@ -229,13 +240,15 @@ export function ResourcesPage() {
     ids,
     endpoint,
     target,
-    noun,
+    nounSingular,
+    nounPlural,
     clearSelection,
   }: {
     ids: string[]
     endpoint: string
     target: string
-    noun: string
+    nounSingular: string
+    nounPlural: string
     clearSelection: () => void
   }) => {
     if (ids.length === 0) return
@@ -249,11 +262,13 @@ export function ResourcesPage() {
     setBulkActionTarget(null)
 
     if (result.failed.length === 0) {
-      toast.success(`Deleted ${formatSelectionLabel(result.succeeded, noun)}.`)
+      toast.success(`Deleted ${formatSelectionLabel(result.succeeded, nounSingular, nounPlural)}.`)
       return
     }
 
-    toast.error(`Deleted ${result.succeeded} of ${formatSelectionLabel(result.total, noun)}.`)
+    toast.error(
+      `Deleted ${result.succeeded} of ${formatSelectionLabel(result.total, nounSingular, nounPlural)}.`,
+    )
   }
 
   return (

@@ -3,14 +3,8 @@
   "name": "voyant-bookings-product-picker-section",
   "title": "Booking Product Picker Section",
   "description": "Controlled product + option picker for booking-create flows. Cascades option list from the selected product; accepts a pre-locked productId for product-page entry points.",
-  "dependencies": [
-    "@voyantjs/products-react"
-  ],
-  "registryDependencies": [
-    "input",
-    "label",
-    "select"
-  ],
+  "dependencies": ["@voyantjs/products-react"],
+  "registryDependencies": ["input", "label", "select"],
   "files": [
     {
       "path": "registry/bookings/product-picker-section.tsx",

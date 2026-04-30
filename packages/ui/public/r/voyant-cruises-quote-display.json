@@ -3,12 +3,8 @@
   "name": "voyant-cruises-quote-display",
   "title": "Cruise Quote Display",
   "description": "Itemised cruise quote — base + additions/credits/inclusions + per-person/per-cabin totals.",
-  "dependencies": [
-    "@voyantjs/cruises-react"
-  ],
-  "registryDependencies": [
-    "card"
-  ],
+  "dependencies": ["@voyantjs/cruises-react"],
+  "registryDependencies": ["card"],
   "files": [
     {
       "path": "registry/cruises/quote-display.tsx",

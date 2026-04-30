@@ -4,11 +4,11 @@ import {
   useExternalRefMutation,
   useExternalRefs,
 } from "@voyantjs/external-refs-react"
+import { ExternalRefDialog } from "@voyantjs/external-refs-ui/components/external-ref-dialog"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { ExternalRefDialog } from "./external-ref-dialog"
 
 type Props = { entityType: string; entityId: string }
 const PAGE_SIZE = 25

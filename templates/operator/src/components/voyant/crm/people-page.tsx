@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
-
+import { PersonList } from "@voyantjs/crm-ui/components/person-list"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { PersonList } from "./person-list"
 
 export function PeoplePage() {
   const navigate = useNavigate()

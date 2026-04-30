@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { useLocale } from "@voyantjs/admin"
+import { formatDistributionDateTime } from "@voyantjs/distribution-ui/components/distribution-shared"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Link2, Loader2, Package, Trash2 } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
@@ -10,7 +10,6 @@ import {
   getDistributionMappingProductQueryOptions,
   getDistributionMappingQueryOptions,
 } from "./distribution-detail-query-options"
-import { formatDistributionDateTime } from "./distribution-shared"
 
 type DistributionMappingDetailPageProps = {
   id: string
@@ -20,7 +19,6 @@ export function DistributionMappingDetailPage({ id }: DistributionMappingDetailP
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const messages = useAdminMessages()
-  const { resolvedLocale } = useLocale()
   const commonMessages = messages.distribution.details.common
   const detailMessages = messages.distribution.details.mapping
   const valueMessages = messages.distribution.values
@@ -143,11 +141,11 @@ export function DistributionMappingDetailPage({ id }: DistributionMappingDetailP
           </div>
           <div>
             <span className="text-muted-foreground">{detailMessages.fields.created}:</span>{" "}
-            <span>{formatDistributionDateTime(mapping.createdAt, resolvedLocale, noValue)}</span>
+            <span>{formatDistributionDateTime(mapping.createdAt)}</span>
           </div>
           <div>
             <span className="text-muted-foreground">{detailMessages.fields.updated}:</span>{" "}
-            <span>{formatDistributionDateTime(mapping.updatedAt, resolvedLocale, noValue)}</span>
+            <span>{formatDistributionDateTime(mapping.updatedAt)}</span>
           </div>
         </CardContent>
       </Card>

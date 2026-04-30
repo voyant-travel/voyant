@@ -1,4 +1,4 @@
-# @voyantjs/voyant-storage
+# @voyantjs/storage
 
 ## 0.19.0
 
@@ -62,4 +62,4 @@
 
 ### Patch Changes
 
-- 2d5f323: Promote `@voyantjs/voyant-storage` into the public release train so storage-backed legal, finance, and product document workflows can publish cleanly.
+- 2d5f323: Promote `@voyantjs/storage` into the public release train so storage-backed legal, finance, and product document workflows can publish cleanly.

@@ -1,0 +1,416 @@
+/**
+ * Catalog plane field policy for `packages/products`.
+ *
+ * Declares every product field's governance under the
+ * `@voyantjs/catalog` 12-attribute contract. Phase B shake-out
+ * adoption — see `docs/architecture/catalog-architecture.md` §9.1.
+ *
+ * Scope of this file:
+ *   - The root `products` table (from `schema-core.ts`).
+ *   - Provenance + identity fields the catalog plane needs to track.
+ *
+ * Out of scope (deferred to follow-up adoption passes):
+ *   - `productOptions`, `optionUnits`, `productDays`, `productNotes`,
+ *     `productVersions` — promoted child entities (per composition rule §6.2);
+ *     each gets its own micro-registry when wired in.
+ *   - The split of `tags` into `marketing_tags` + `facet_tags` per the
+ *     human-readable / machine-evaluable rule (§7.1). Today's schema has a
+ *     single `tags` column; declared here as merchandisable with a TODO.
+ */
+
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
+
+/**
+ * Field-policy declarations for `products`. Pass through `defineFieldPolicy`
+ * to apply inheritance and produce the runtime registry.
+ */
+const PRODUCT_FIELD_POLICY: FieldPolicyInput[] = [
+  // ── Source pointer / provenance ─────────────────────────────────────────
+  // These are not columns on the `products` table; they live on the parallel
+  // catalog Provenance row. Declared here so the indexer / overlay resolver
+  // know how to treat them.
+  {
+    path: "source.kind",
+    class: "managed",
+    merge: "source-only",
+    drift: "critical",
+    reindex: "entry",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "source.ref",
+    class: "managed",
+    merge: "source-only",
+    drift: "critical",
+    reindex: "none",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "seller.operator_id",
+    class: "managed",
+    merge: "source-only",
+    drift: "critical",
+    reindex: "none",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "static",
+  },
+
+  // ── Identity / lifecycle ────────────────────────────────────────────────
+  {
+    path: "id",
+    class: "managed",
+    merge: "source-only",
+    drift: "critical",
+    reindex: "none",
+    snapshot: "on-book",
+    query: "first-class-table",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "static",
+  },
+  {
+    path: "createdAt",
+    class: "managed",
+    merge: "source-only",
+    drift: "none",
+    reindex: "none",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "static",
+  },
+  {
+    path: "updatedAt",
+    class: "managed",
+    merge: "source-only",
+    drift: "none",
+    reindex: "none",
+    snapshot: "never",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+
+  // ── Merchandisable / marketing ──────────────────────────────────────────
+  // Note: `name` maps to "title" in catalog vocabulary. The existing schema
+  // column stays `name` for backwards compatibility; the field-policy path
+  // uses the schema column name so the indexer can map it directly.
+  {
+    path: "name",
+    class: "merchandisable",
+    merge: "replace",
+    drift: "medium",
+    reindex: "entry-locale",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: true,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "marketing",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "description",
+    class: "merchandisable",
+    merge: "replace",
+    drift: "low",
+    reindex: "entry-locale",
+    snapshot: "on-book",
+    query: "blob-only",
+    localized: true,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "marketing",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  // TODO(catalog): split into marketing_tags + facet_tags per architecture
+  // §7.1 (human-readable + machine-evaluable rule). Today's schema has one
+  // `tags` column; declared here as merchandisable + additive-set so
+  // marketing can extend the source set without trampling it. Until the
+  // split lands, search-facet leakage is possible (marketing edits affect
+  // search facets); flag for follow-up.
+  {
+    path: "tags[]",
+    class: "merchandisable",
+    merge: "additive-set",
+    drift: "low",
+    reindex: "entry",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "marketing",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+
+  // ── Structural / facet-affecting ───────────────────────────────────────
+  {
+    path: "status",
+    class: "structural",
+    merge: "source-only",
+    drift: "high",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "bookingMode",
+    class: "structural",
+    merge: "source-only",
+    drift: "high",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "capacityMode",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "entry",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    // The `visibility` *column* on the products table — distinct from the
+    // catalog plane's audience-visibility axis.
+    path: "visibility",
+    class: "structural",
+    merge: "source-only",
+    drift: "high",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "activated",
+    class: "structural",
+    merge: "source-only",
+    drift: "high",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "productTypeId",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "facilityId",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "entry",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "pax",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "entry",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "startDate",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "endDate",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "timezone",
+    class: "managed",
+    merge: "source-only",
+    drift: "low",
+    reindex: "none",
+    snapshot: "on-book",
+    query: "blob-only",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "reservationTimeoutMinutes",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "none",
+    snapshot: "never",
+    query: "blob-only",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+
+  // ── Pricing (configured defaults — not the live quote) ──────────────────
+  // These are the operator's configured prices on the product. The live
+  // quote engine resolves volatile-live `quote_price` separately at quote
+  // time and is captured at booking commit (snapshot mode handled by the
+  // pricing module's own field policy when it adopts).
+  {
+    path: "sellAmountCents",
+    class: "structural",
+    merge: "source-only",
+    drift: "high",
+    reindex: "entry",
+    snapshot: "on-quote-and-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "sellCurrency",
+    class: "managed",
+    merge: "source-only",
+    drift: "high",
+    reindex: "entry",
+    snapshot: "on-quote-and-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+
+  // ── Internal / staff-only ──────────────────────────────────────────────
+  {
+    path: "costAmountCents",
+    class: "managed",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "none",
+    snapshot: "never",
+    query: "blob-only",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "marginPercent",
+    class: "managed",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "none",
+    snapshot: "never",
+    query: "blob-only",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+]
+
+/**
+ * Resolved field-policy registry for products. Verticals adopt the catalog
+ * plane by exporting this; templates wire it into the indexer, overlay
+ * resolver, and snapshot capture pipeline.
+ */
+export const productCatalogPolicy = defineFieldPolicy(PRODUCT_FIELD_POLICY)
+
+export { PRODUCT_FIELD_POLICY }

@@ -10,7 +10,7 @@
   - @voyantjs/crm@0.19.0
   - @voyantjs/db@0.19.0
   - @voyantjs/hono@0.19.0
-  - @voyantjs/voyant-storage@0.19.0
+  - @voyantjs/storage@0.19.0
   - @voyantjs/suppliers@0.19.0
   - @voyantjs/utils@0.19.0
 
@@ -74,7 +74,7 @@
   - @voyantjs/crm@0.18.0
   - @voyantjs/db@0.18.0
   - @voyantjs/hono@0.18.0
-  - @voyantjs/voyant-storage@0.18.0
+  - @voyantjs/storage@0.18.0
   - @voyantjs/suppliers@0.18.0
   - @voyantjs/utils@0.18.0
 
@@ -96,7 +96,7 @@
   - @voyantjs/crm@0.17.0
   - @voyantjs/db@0.17.0
   - @voyantjs/hono@0.17.0
-  - @voyantjs/voyant-storage@0.17.0
+  - @voyantjs/storage@0.17.0
   - @voyantjs/suppliers@0.17.0
   - @voyantjs/utils@0.17.0
 
@@ -109,7 +109,7 @@
 - @voyantjs/crm@0.16.0
 - @voyantjs/db@0.16.0
 - @voyantjs/hono@0.16.0
-- @voyantjs/voyant-storage@0.16.0
+- @voyantjs/storage@0.16.0
 - @voyantjs/suppliers@0.16.0
 - @voyantjs/utils@0.16.0
 
@@ -122,7 +122,7 @@
 - @voyantjs/crm@0.15.0
 - @voyantjs/db@0.15.0
 - @voyantjs/hono@0.15.0
-- @voyantjs/voyant-storage@0.15.0
+- @voyantjs/storage@0.15.0
 - @voyantjs/suppliers@0.15.0
 - @voyantjs/utils@0.15.0
 
@@ -135,7 +135,7 @@
 - @voyantjs/crm@0.14.0
 - @voyantjs/db@0.14.0
 - @voyantjs/hono@0.14.0
-- @voyantjs/voyant-storage@0.14.0
+- @voyantjs/storage@0.14.0
 - @voyantjs/suppliers@0.14.0
 - @voyantjs/utils@0.14.0
 
@@ -150,7 +150,7 @@
   - @voyantjs/crm@0.13.0
   - @voyantjs/db@0.13.0
   - @voyantjs/hono@0.13.0
-  - @voyantjs/voyant-storage@0.13.0
+  - @voyantjs/storage@0.13.0
   - @voyantjs/suppliers@0.13.0
   - @voyantjs/utils@0.13.0
 
@@ -165,7 +165,7 @@
   - @voyantjs/crm@0.12.0
   - @voyantjs/db@0.12.0
   - @voyantjs/hono@0.12.0
-  - @voyantjs/voyant-storage@0.12.0
+  - @voyantjs/storage@0.12.0
   - @voyantjs/suppliers@0.12.0
   - @voyantjs/utils@0.12.0
 
@@ -179,7 +179,7 @@
   - @voyantjs/crm@0.11.0
   - @voyantjs/db@0.11.0
   - @voyantjs/hono@0.11.0
-  - @voyantjs/voyant-storage@0.11.0
+  - @voyantjs/storage@0.11.0
   - @voyantjs/suppliers@0.11.0
   - @voyantjs/utils@0.11.0
 
@@ -213,7 +213,7 @@
   - @voyantjs/crm@0.10.0
   - @voyantjs/db@0.10.0
   - @voyantjs/hono@0.10.0
-  - @voyantjs/voyant-storage@0.10.0
+  - @voyantjs/storage@0.10.0
   - @voyantjs/suppliers@0.10.0
   - @voyantjs/utils@0.10.0
 
@@ -226,7 +226,7 @@
 - @voyantjs/crm@0.9.0
 - @voyantjs/db@0.9.0
 - @voyantjs/hono@0.9.0
-- @voyantjs/voyant-storage@0.9.0
+- @voyantjs/storage@0.9.0
 - @voyantjs/suppliers@0.9.0
 - @voyantjs/utils@0.9.0
 
@@ -252,7 +252,7 @@
   - @voyantjs/crm@0.8.0
   - @voyantjs/db@0.8.0
   - @voyantjs/hono@0.8.0
-  - @voyantjs/voyant-storage@0.8.0
+  - @voyantjs/storage@0.8.0
   - @voyantjs/suppliers@0.8.0
   - @voyantjs/utils@0.8.0
 
@@ -264,7 +264,7 @@
 - @voyantjs/crm@0.7.0
 - @voyantjs/db@0.7.0
 - @voyantjs/hono@0.7.0
-- @voyantjs/voyant-storage@0.7.0
+- @voyantjs/storage@0.7.0
 - @voyantjs/suppliers@0.7.0
 - @voyantjs/utils@0.7.0
 
@@ -276,7 +276,7 @@
 - @voyantjs/crm@0.6.9
 - @voyantjs/db@0.6.9
 - @voyantjs/hono@0.6.9
-- @voyantjs/voyant-storage@0.6.9
+- @voyantjs/storage@0.6.9
 - @voyantjs/suppliers@0.6.9
 - @voyantjs/utils@0.6.9
 
@@ -298,7 +298,7 @@
   - @voyantjs/crm@0.6.8
   - @voyantjs/db@0.6.8
   - @voyantjs/hono@0.6.8
-  - @voyantjs/voyant-storage@0.6.8
+  - @voyantjs/storage@0.6.8
   - @voyantjs/suppliers@0.6.8
   - @voyantjs/utils@0.6.8
 
@@ -310,7 +310,7 @@
 - @voyantjs/crm@0.6.7
 - @voyantjs/db@0.6.7
 - @voyantjs/hono@0.6.7
-- @voyantjs/voyant-storage@0.6.7
+- @voyantjs/storage@0.6.7
 - @voyantjs/suppliers@0.6.7
 - @voyantjs/utils@0.6.7
 
@@ -322,7 +322,7 @@
 - @voyantjs/crm@0.6.6
 - @voyantjs/db@0.6.6
 - @voyantjs/hono@0.6.6
-- @voyantjs/voyant-storage@0.6.6
+- @voyantjs/storage@0.6.6
 - @voyantjs/suppliers@0.6.6
 - @voyantjs/utils@0.6.6
 
@@ -334,7 +334,7 @@
 - @voyantjs/crm@0.6.5
 - @voyantjs/db@0.6.5
 - @voyantjs/hono@0.6.5
-- @voyantjs/voyant-storage@0.6.5
+- @voyantjs/storage@0.6.5
 - @voyantjs/suppliers@0.6.5
 - @voyantjs/utils@0.6.5
 
@@ -347,7 +347,7 @@
   - @voyantjs/crm@0.6.4
   - @voyantjs/db@0.6.4
   - @voyantjs/hono@0.6.4
-  - @voyantjs/voyant-storage@0.6.4
+  - @voyantjs/storage@0.6.4
   - @voyantjs/suppliers@0.6.4
   - @voyantjs/utils@0.6.4
 
@@ -360,7 +360,7 @@
   - @voyantjs/crm@0.6.3
   - @voyantjs/db@0.6.3
   - @voyantjs/hono@0.6.3
-  - @voyantjs/voyant-storage@0.6.3
+  - @voyantjs/storage@0.6.3
   - @voyantjs/suppliers@0.6.3
   - @voyantjs/utils@0.6.3
 
@@ -372,7 +372,7 @@
 - @voyantjs/crm@0.6.2
 - @voyantjs/db@0.6.2
 - @voyantjs/hono@0.6.2
-- @voyantjs/voyant-storage@0.6.2
+- @voyantjs/storage@0.6.2
 - @voyantjs/suppliers@0.6.2
 - @voyantjs/utils@0.6.2
 
@@ -384,7 +384,7 @@
 - @voyantjs/crm@0.6.1
 - @voyantjs/db@0.6.1
 - @voyantjs/hono@0.6.1
-- @voyantjs/voyant-storage@0.6.1
+- @voyantjs/storage@0.6.1
 - @voyantjs/suppliers@0.6.1
 - @voyantjs/utils@0.6.1
 
@@ -396,7 +396,7 @@
 - @voyantjs/crm@0.6.0
 - @voyantjs/db@0.6.0
 - @voyantjs/hono@0.6.0
-- @voyantjs/voyant-storage@0.6.0
+- @voyantjs/storage@0.6.0
 - @voyantjs/suppliers@0.6.0
 - @voyantjs/utils@0.6.0
 
@@ -409,7 +409,7 @@
   - @voyantjs/crm@0.5.0
   - @voyantjs/db@0.5.0
   - @voyantjs/hono@0.5.0
-  - @voyantjs/voyant-storage@0.5.0
+  - @voyantjs/storage@0.5.0
   - @voyantjs/suppliers@0.5.0
   - @voyantjs/utils@0.5.0
 
@@ -428,7 +428,7 @@
   - @voyantjs/crm@0.4.5
   - @voyantjs/db@0.4.5
   - @voyantjs/hono@0.4.5
-  - @voyantjs/voyant-storage@0.4.5
+  - @voyantjs/storage@0.4.5
   - @voyantjs/suppliers@0.4.5
   - @voyantjs/utils@0.4.5
 
@@ -440,7 +440,7 @@
 - @voyantjs/crm@0.4.4
 - @voyantjs/db@0.4.4
 - @voyantjs/hono@0.4.4
-- @voyantjs/voyant-storage@0.4.4
+- @voyantjs/storage@0.4.4
 - @voyantjs/suppliers@0.4.4
 - @voyantjs/utils@0.4.4
 
@@ -452,7 +452,7 @@
 - @voyantjs/crm@0.4.3
 - @voyantjs/db@0.4.3
 - @voyantjs/hono@0.4.3
-- @voyantjs/voyant-storage@0.4.3
+- @voyantjs/storage@0.4.3
 - @voyantjs/suppliers@0.4.3
 - @voyantjs/utils@0.4.3
 
@@ -477,7 +477,7 @@
   - @voyantjs/crm@0.4.2
   - @voyantjs/db@0.4.2
   - @voyantjs/hono@0.4.2
-  - @voyantjs/voyant-storage@0.4.2
+  - @voyantjs/storage@0.4.2
   - @voyantjs/suppliers@0.4.2
   - @voyantjs/utils@0.4.2
 
@@ -489,7 +489,7 @@
 - @voyantjs/crm@0.4.1
 - @voyantjs/db@0.4.1
 - @voyantjs/hono@0.4.1
-- @voyantjs/voyant-storage@0.4.1
+- @voyantjs/storage@0.4.1
 - @voyantjs/suppliers@0.4.1
 - @voyantjs/utils@0.4.1
 
@@ -547,7 +547,7 @@
   - @voyantjs/crm@0.4.0
   - @voyantjs/db@0.4.0
   - @voyantjs/hono@0.4.0
-  - @voyantjs/voyant-storage@0.4.0
+  - @voyantjs/storage@0.4.0
   - @voyantjs/suppliers@0.4.0
   - @voyantjs/utils@0.4.0
 

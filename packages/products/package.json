@@ -11,7 +11,9 @@
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
     "./tasks": "./src/tasks/index.ts",
-    "./booking-extension": "./src/booking-extension.ts"
+    "./booking-extension": "./src/booking-extension.ts",
+    "./catalog-policy": "./src/catalog-policy.ts",
+    "./service-catalog-plane": "./src/service-catalog-plane.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -26,7 +28,8 @@
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",
     "@voyantjs/utils": "workspace:*",
-    "@voyantjs/voyant-storage": "workspace:*",
+    "@voyantjs/catalog": "workspace:*",
+    "@voyantjs/storage": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "pdf-lib": "^1.17.1",

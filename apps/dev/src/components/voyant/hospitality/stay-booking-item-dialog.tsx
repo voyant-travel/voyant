@@ -1,4 +1,8 @@
 import { type StayBookingItemRecord, useStayBookingItemMutation } from "@voyantjs/hospitality-react"
+import { MealPlanCombobox } from "@voyantjs/hospitality-ui/components/meal-plan-combobox"
+import { RatePlanCombobox } from "@voyantjs/hospitality-ui/components/rate-plan-combobox"
+import { RoomTypeCombobox } from "@voyantjs/hospitality-ui/components/room-type-combobox"
+import { RoomUnitCombobox } from "@voyantjs/hospitality-ui/components/room-unit-combobox"
 import {
   Button,
   Dialog,
@@ -21,10 +25,6 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
-import { MealPlanCombobox } from "./meal-plan-combobox"
-import { RatePlanCombobox } from "./rate-plan-combobox"
-import { RoomTypeCombobox } from "./room-type-combobox"
-import { RoomUnitCombobox } from "./room-unit-combobox"
 
 const STATUSES = ["reserved", "checked_in", "checked_out", "cancelled", "no_show"] as const
 type Status = (typeof STATUSES)[number]

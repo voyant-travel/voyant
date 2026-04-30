@@ -12,7 +12,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 
 const checks: ExportCheck[] = [
   {
-    packageName: "@voyantjs/voyant-storage",
+    packageName: "@voyantjs/storage",
     entry: "packages/storage/dist/index.js",
     requiredExports: [
       "createStorageService",

@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
-
+import { OrganizationList } from "@voyantjs/crm-ui/components/organization-list"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { OrganizationList } from "./organization-list"
 
 export function OrganizationsPage() {
   const navigate = useNavigate()

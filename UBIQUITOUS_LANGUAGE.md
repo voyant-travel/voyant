@@ -13,9 +13,23 @@ The canonical domain vocabulary for Voyant — a tour-operator / DMC platform. T
 | **Traveler**      | A person who actually travels on a booking; carries category (adult/child/infant/senior) and PII.     | *guest, pax, passenger*         |
 | **Participant**   | A role-bearer on an opportunity, offer, order, or booking item (traveler, booker, decision-maker, finance). | *contact-on-deal*          |
 | **User**          | An authentication identity in the system; orthogonal to Person — staff and customers can both be Users. | *login, account*              |
-| **Supplier**      | An external provider of services (hotel, transfer company, guide, restaurant, airline, experience operator). | *vendor, provider*         |
+| **Supplier**      | An operational vendor we contract directly for delivery of owned or assembled products.                | *vendor, provider, source*      |
 | **Channel**       | A distribution counterparty selling our inventory (direct, OTA, affiliate, reseller, marketplace, API partner). | *partner, distributor*    |
 | **Actor type**    | The authorization role of the caller: `staff`, `customer`, `partner`, or `supplier`.                  | *role, audience*                |
+
+## Commercial network & sourcing
+
+| Term                 | Definition                                                                                         | Aliases to avoid                    |
+| -------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| **Operator**         | The organization accountable for commercial control and, when applicable, operational fulfillment. | *agency, tenant, seller*            |
+| **Reseller**         | A commercial role where an Operator sells inventory another Operator or Supplier fulfills.         | *channel (when used as a role)*     |
+| **Operating party**  | The party that actually runs and fulfills the travel service day to day.                           | *supplier (when the party is an operator)* |
+| **Inventory Source** | A technical upstream source of inventory data or booking capability (Connect, GDS, direct API, CSV import). | *supplier, provider, feed*   |
+| **Operator Link**    | A capability-bearing relationship between an Operator and a counterparty for catalog, availability, booking, or sync. | *connection, partnership* |
+| **Catalog Item**     | A normalized sellable discovery record used by admin search, storefront, or CMS sync regardless of provenance. | *product, listing*          |
+| **Operated Inventory** | Inventory the Operator owns or manages operationally in local module-owned records.              | *local product*                      |
+| **Sourced Inventory** | Inventory the Operator sells but does not operate, reached through an Inventory Source.           | *external product, imported product* |
+| **Catalog Projection** | A derived read model that interleaves Operated Inventory and Sourced Inventory for search and sync. | *master catalog, product table*  |
 
 ## Sales pipeline (pre-commitment)
 
@@ -180,6 +194,9 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 - A **Channel** sells via an **Allotment** (its reserved inventory) and earns via **Commission Rules**; **Settlement** runs reconcile its activity.
 - A **Policy** is assigned by scope (Product, Channel, Market, Booking); a **Policy Acceptance** binds a specific Policy Version to a Person or Booking.
 - **Cost** ≠ **Rate** ≠ **Price**: Cost is what we pay, Rate is the Supplier's per-unit tariff input, Price is what the customer sees.
+- A **Product** is canonical module-owned truth; a **Catalog Item** is a derived sellable read model that may resolve to a Product or to Sourced Inventory.
+- An **Operator Link** grants one or more capabilities (catalog, availability, booking, sync) between counterparties; an **Inventory Source** is one technical adapter behind that link.
+- An Operator can be both an **Operating party** for some inventory and a **Reseller** for other inventory at the same time.
 
 ## Example dialogue
 
@@ -197,9 +214,13 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 
 > **Finance:** "Don't forget the **Payment Schedule**. Deposit at booking, balance 30 days out. The deposit is also our **Guarantee**. Each line goes through a **Payment Session** when collected."
 
-> **Sales agent:** "Got it. And if Expedia sends us this same booking instead of direct?"
+> **Sales agent:** "What about the Viking sailings we're selling but not actually operating? They don't feel like our own **Products**."
 
-> **Operations manager:** "Then it comes in via that **Channel** under their **Allotment**, the **Commission Rule** computes their cut, and it shows up in next month's **Settlement** run for **Reconciliation**."
+> **Operations manager:** "Right — those are **Sourced Inventory**. Viking is the **Operating party**, we are the **Reseller**, and the feed comes through an **Inventory Source** behind an **Operator Link**."
+
+> **Sales agent:** "So what shows up in search and in the storefront?"
+
+> **Operations manager:** "A **Catalog Item**. For our own tours the Catalog Item resolves to a local **Product**. For Viking it resolves to sourced inventory. Same discovery surface, different source of truth."
 
 ## Flagged ambiguities
 
@@ -214,6 +235,9 @@ These terms are used loosely in conversation. Pick the canonical form below; tre
 - **Hold vs. Allocation vs. Reservation** — **Hold** is the temporal status of a Booking before confirmation (`hold_expires_at`). **Allocation** is the inventory-line entity (`held` → `confirmed` → `fulfilled`). Avoid "Reservation".
 - **Supplier vs. Partner vs. Provider** — **Supplier** is the entity that sells us services. **Partner** is a relationship type on Organizations. **Provider** is for tech integrations (notification provider, storage provider) — do not call a hotel a "provider".
 - **Channel vs. Distribution vs. Partner** — **Channel** is the entity (the OTA, the affiliate, the marketplace). **Distribution** is the subdomain. Don't say "Partner" when you mean Channel.
+- **Supplier vs. Operator vs. Inventory Source** — **Supplier** is an operational vendor in local managed operations. **Operator** is the principal commercial/operational party in the network. **Inventory Source** is the technical integration path. TUI or Viking may be the upstream Operating party while Connect or a GDS is only the Inventory Source.
+- **Product vs. Catalog Item** — **Product** is canonical local truth with admin ownership and operational modeling. **Catalog Item** is the normalized discovery projection that can represent either a local Product or Sourced Inventory. Do not import external inventory into Product just to make it searchable.
+- **Reseller vs. Channel** — **Reseller** is a role an Operator can play relative to inventory. **Channel** is a distribution entity that sells our inventory. They overlap in commerce but are not the same record.
 - **Contact** — too overloaded to use raw. Pick: **Person** (CRM record), **Contact Point** (email/phone/website on identity), **Named Contact** (titled role at an Organization), or **Participant** (role on a deal/order/booking).
 - **Traveler vs. Participant vs. Guest** — **Traveler** is the person actually traveling (booking_travelers, with category and PII). **Participant** is the broader role-bearer on a transaction (booker, decision-maker, finance, traveler). Avoid "Guest" except inside hospitality where it specifically means a Traveler occupying a room.
 - **Capacity** is always a number, never a status. Slots have a capacity *and* a status — don't conflate them.

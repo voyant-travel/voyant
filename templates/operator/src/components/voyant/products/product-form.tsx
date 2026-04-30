@@ -5,6 +5,7 @@ import {
   type ProductRecord,
   useProductMutation,
 } from "@voyantjs/products-react"
+import { ProductTypeCombobox } from "@voyantjs/products-ui/components/product-type-combobox"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
@@ -21,7 +22,6 @@ import { currencies } from "@voyantjs/utils/currencies"
 import { Loader2, X } from "lucide-react"
 import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { ProductTypeCombobox } from "./product-type-combobox"
 
 type Mode = { kind: "create" } | { kind: "edit"; product: ProductRecord }
 

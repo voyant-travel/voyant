@@ -1,3 +1,15 @@
+import type {
+  ChannelCommissionRuleRow,
+  ChannelContractRow,
+  ProductOption,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import {
+  commissionScopeOptions,
+  commissionTypeOptions,
+  NONE_VALUE,
+  nullableNumber,
+  nullableString,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import {
   Button,
   Dialog,
@@ -21,18 +33,6 @@ import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
-import type {
-  ChannelCommissionRuleRow,
-  ChannelContractRow,
-  ProductOption,
-} from "./distribution-shared"
-import {
-  commissionScopeOptions,
-  commissionTypeOptions,
-  NONE_VALUE,
-  nullableNumber,
-  nullableString,
-} from "./distribution-shared"
 
 const commissionFormSchema = z.object({
   contractId: z.string().min(1, "Contract is required"),

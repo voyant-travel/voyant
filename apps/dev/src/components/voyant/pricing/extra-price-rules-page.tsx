@@ -6,14 +6,12 @@ import {
   useExtraPriceRuleMutation,
   useExtraPriceRules,
 } from "@voyantjs/pricing-react"
+import { ExtraPriceRuleDialog } from "@voyantjs/pricing-ui/components/extra-price-rule-dialog"
+import { OptionPriceRuleLabel } from "@voyantjs/pricing-ui/components/pricing-shared-labels"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-
-import { ExtraPriceRuleDialog } from "./extra-price-rule-dialog"
-import { OptionPriceRuleLabel } from "./pricing-shared-labels"
 
 const PAGE_SIZE = 25
 

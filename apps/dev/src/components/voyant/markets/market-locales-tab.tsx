@@ -4,11 +4,11 @@ import {
   useMarketLocaleMutation,
   useMarketLocales,
 } from "@voyantjs/markets-react"
+import { MarketLocaleDialog } from "@voyantjs/markets-ui/components/market-locale-dialog"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { MarketLocaleDialog } from "./market-locale-dialog"
 
 const PAGE_SIZE = 25
 

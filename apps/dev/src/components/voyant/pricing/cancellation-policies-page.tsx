@@ -8,12 +8,11 @@ import {
   useCancellationPolicyRuleMutation,
   useCancellationPolicyRules,
 } from "@voyantjs/pricing-react"
+import { CancellationPolicyRuleDialog } from "@voyantjs/pricing-ui/components/cancellation-policy-rule-dialog"
 import { Badge, Button, Input } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import { CancellationPolicyDialog } from "./cancellation-policy-dialog"
-import { CancellationPolicyRuleDialog } from "./cancellation-policy-rule-dialog"
 
 const POLICY_PAGE_SIZE = 25
 const RULE_PAGE_SIZE = 10

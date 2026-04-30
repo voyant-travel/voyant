@@ -66,7 +66,7 @@ Voyant ships two first-party starters:
 
 - [`@voyantjs/core`](./packages/core/README.md), [`@voyantjs/db`](./packages/db/README.md), [`@voyantjs/hono`](./packages/hono/README.md), [`@voyantjs/next`](./packages/next/README.md), [`@voyantjs/react`](./packages/react)
 - [`@voyantjs/auth`](./packages/auth/README.md), [`@voyantjs/auth-react`](./packages/auth-react/README.md), [`@voyantjs/types`](./packages/types/README.md), [`@voyantjs/utils`](./packages/utils/README.md), [`@voyantjs/voyant-test-utils`](./packages/test-utils/README.md)
-- [`@voyantjs/cli`](./packages/cli/README.md), [`@voyantjs/voyant-storage`](./packages/storage/README.md), [`@voyantjs/i18n`](./packages/i18n)
+- [`@voyantjs/cli`](./packages/cli/README.md), [`@voyantjs/storage`](./packages/storage/README.md), [`@voyantjs/i18n`](./packages/i18n)
 
 ### Travel domain modules
 

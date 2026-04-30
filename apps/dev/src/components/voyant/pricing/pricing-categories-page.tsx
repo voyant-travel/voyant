@@ -1,4 +1,4 @@
-import { PricingCategoryList } from "./pricing-category-list"
+import { PricingCategoryList } from "@voyantjs/pricing-ui/components/pricing-category-list"
 
 export function PricingCategoriesPage() {
   return (

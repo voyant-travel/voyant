@@ -3,15 +3,8 @@
   "name": "voyant-legal-booking-contract-card",
   "title": "Booking Contract Card",
   "description": "Operator booking-detail card that lists the contracts linked to a booking, shows each contract's status + number, lets the operator download the generated PDF (opens in a new tab), and offers a Regenerate action that forces a fresh render via POST /contracts/:id/regenerate-document.",
-  "dependencies": [
-    "lucide-react",
-    "@voyantjs/legal-react"
-  ],
-  "registryDependencies": [
-    "badge",
-    "button",
-    "card"
-  ],
+  "dependencies": ["lucide-react", "@voyantjs/legal-react"],
+  "registryDependencies": ["badge", "button", "card"],
   "files": [
     {
       "path": "registry/legal/booking-contract-card.tsx",

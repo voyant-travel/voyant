@@ -6,13 +6,11 @@ import {
   useOptionUnitTierMutation,
   useOptionUnitTiers,
 } from "@voyantjs/pricing-react"
+import { OptionUnitTierDialog } from "@voyantjs/pricing-ui/components/option-unit-tier-dialog"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-
-import { OptionUnitTierDialog } from "./option-unit-tier-dialog"
 
 const PAGE_SIZE = 25
 

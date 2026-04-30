@@ -25,11 +25,11 @@
   },
   "dependencies": {
     "@voyantjs/bookings": "workspace:*",
+    "@voyantjs/cloud-sdk": "^0.6.2",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/finance": "workspace:*",
     "@voyantjs/hono": "workspace:*",
-    "@voyantjs/cloud-sdk": "^0.6.0",
     "@voyantjs/legal": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",

@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { productsQueryKeys, useProduct } from "@voyantjs/products-react"
+import { ProductMediaSection } from "@voyantjs/products-ui/components/product-media-section"
+import { ProductOptionsSection as OptionsSection } from "@voyantjs/products-ui/components/product-options-section"
+import { ProductVersionsSection } from "@voyantjs/products-ui/components/product-versions-section"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -15,9 +18,6 @@ import {
   statusVariant,
 } from "./product-detail-shared"
 import { ProductItinerarySection } from "./product-itinerary-section"
-import { ProductMediaSection } from "./product-media-section"
-import { OptionsSection } from "./product-options-section"
-import { ProductVersionsSection } from "./product-versions-section"
 
 export function ProductDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()

@@ -95,6 +95,7 @@ import {
   optionUnits,
   productDayServices,
   productDays,
+  productItineraries,
   productMedia,
   productOptions,
   products,
@@ -249,6 +250,7 @@ async function reset() {
     "product_day_services",
     "product_media",
     "product_days",
+    "product_itineraries",
     "product_versions",
     "option_units",
     "product_options",
@@ -1442,7 +1444,8 @@ async function seedProductImages() {
     const dayRows = await db
       .select({ id: productDays.id, dayNumber: productDays.dayNumber })
       .from(productDays)
-      .where(eq(productDays.productId, p.id))
+      .innerJoin(productItineraries, eq(productDays.itineraryId, productItineraries.id))
+      .where(eq(productItineraries.productId, p.id))
       .orderBy(asc(productDays.dayNumber))
 
     for (const day of dayRows) {
@@ -1502,10 +1505,19 @@ async function seedProducts() {
       notes: "v1 — initial seed",
     })
 
+    const itineraryId = newId("product_itineraries")
+    await db.insert(productItineraries).values({
+      id: itineraryId,
+      productId: p.id,
+      name: "Default itinerary",
+      isDefault: true,
+      sortOrder: 0,
+    })
+
     for (let d = 1; d <= p.days; d++) {
       await db.insert(productDays).values({
         id: newId("product_days"),
-        productId: p.id,
+        itineraryId,
         dayNumber: d,
         title: `Day ${d}`,
         description: `Day ${d} itinerary highlights.`,
@@ -1630,7 +1642,8 @@ async function seedItineraryServicesAndPricing() {
     const dayRows = await db
       .select({ id: productDays.id, dayNumber: productDays.dayNumber })
       .from(productDays)
-      .where(eq(productDays.productId, p.id))
+      .innerJoin(productItineraries, eq(productDays.itineraryId, productItineraries.id))
+      .where(eq(productItineraries.productId, p.id))
       .orderBy(asc(productDays.dayNumber))
 
     for (const day of dayRows) {

@@ -1,3 +1,4 @@
+export { SectionHeader } from "@voyantjs/distribution-ui/components/distribution-section-header"
 export {
   ChannelContractDialog,
   ChannelDialog,
@@ -8,4 +9,3 @@ export {
   ChannelProductMappingDialog,
 } from "./distribution-dialogs-sync"
 export { ChannelWebhookEventDialog } from "./distribution-dialogs-webhook"
-export { SectionHeader } from "./distribution-section-header"

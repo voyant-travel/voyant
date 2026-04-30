@@ -1,21 +1,21 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
-import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
-import { DataTable } from "@voyantjs/ui/components/data-table"
-import { TabsContent } from "@voyantjs/ui/components/tabs"
-import { SectionHeader } from "./distribution-dialog-barrel"
 import type {
   ChannelCommissionRuleRow,
   ChannelContractRow,
   ChannelRow,
   ProductOption,
   SupplierOption,
-} from "./distribution-shared"
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import {
   channelColumns,
   commissionColumns,
   contractColumns,
   formatSelectionLabel,
-} from "./distribution-shared"
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
+import { DataTable } from "@voyantjs/ui/components/data-table"
+import { TabsContent } from "@voyantjs/ui/components/tabs"
+import { SectionHeader } from "./distribution-dialog-barrel"
 
 type BulkFn = (args: {
   ids: string[]

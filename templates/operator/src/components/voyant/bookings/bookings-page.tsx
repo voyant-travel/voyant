@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
-
+import { BookingList } from "@voyantjs/bookings-ui/components/booking-list"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { BookingList } from "./booking-list"
 
 export function BookingsPage() {
   const bookingMessages = useAdminMessages().bookings.list

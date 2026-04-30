@@ -1,11 +1,11 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { type MarketRecord, useMarketMutation, useMarkets } from "@voyantjs/markets-react"
+import { MarketDialog } from "@voyantjs/markets-ui/components/market-dialog"
 import { Globe, Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 import { MarketCurrenciesTab } from "./market-currencies-tab"
-import { MarketDialog } from "./market-dialog"
 import { MarketLocalesTab } from "./market-locales-tab"
 
 const PAGE_SIZE = 25

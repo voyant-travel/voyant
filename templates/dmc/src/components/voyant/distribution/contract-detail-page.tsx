@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { useLocale } from "@voyantjs/admin"
+import { formatDistributionDateTime } from "@voyantjs/distribution-ui/components/distribution-shared"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, DollarSign, Loader2, Trash2 } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
@@ -12,7 +12,6 @@ import {
   getDistributionContractQueryOptions,
   getDistributionContractSupplierQueryOptions,
 } from "./distribution-detail-query-options"
-import { formatDistributionDateTime } from "./distribution-shared"
 
 type DistributionContractDetailPageProps = {
   id: string
@@ -22,7 +21,6 @@ export function DistributionContractDetailPage({ id }: DistributionContractDetai
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const messages = useAdminMessages()
-  const { resolvedLocale } = useLocale()
   const commonMessages = messages.distribution.details.common
   const detailMessages = messages.distribution.details.contract
   const valueMessages = messages.distribution.values
@@ -147,11 +145,11 @@ export function DistributionContractDetailPage({ id }: DistributionContractDetai
             </div>
             <div>
               <span className="text-muted-foreground">{detailMessages.fields.created}:</span>{" "}
-              <span>{formatDistributionDateTime(contract.createdAt, resolvedLocale, noValue)}</span>
+              <span>{formatDistributionDateTime(contract.createdAt)}</span>
             </div>
             <div>
               <span className="text-muted-foreground">{detailMessages.fields.updated}:</span>{" "}
-              <span>{formatDistributionDateTime(contract.updatedAt, resolvedLocale, noValue)}</span>
+              <span>{formatDistributionDateTime(contract.updatedAt)}</span>
             </div>
           </CardContent>
         </Card>
