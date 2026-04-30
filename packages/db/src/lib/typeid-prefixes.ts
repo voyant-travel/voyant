@@ -306,6 +306,11 @@ export const PREFIXES = {
   charter_yachts: "chry",
   charter_suites: "chst",
   charter_schedule_days: "chrd",
+
+  // --- CATALOG (cross-vertical infrastructure) ---
+  catalog_overlay: "ovly",
+  booking_catalog_snapshot: "bcsn",
+  catalog_drift_event: "cdrf",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

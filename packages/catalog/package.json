@@ -1,0 +1,140 @@
+{
+  "name": "@voyantjs/voyant-catalog",
+  "version": "0.19.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./contract": "./src/contract.ts",
+    "./provenance": "./src/provenance.ts",
+    "./overlay/schema": "./src/overlay/schema.ts",
+    "./overlay/resolver": "./src/overlay/resolver.ts",
+    "./snapshot/schema": "./src/snapshot/schema.ts",
+    "./indexer/contract": "./src/indexer/contract.ts",
+    "./indexer/typesense": "./src/indexer/typesense.ts",
+    "./search/rerank": "./src/search/rerank.ts",
+    "./drift/events": "./src/drift/events.ts",
+    "./events/taxonomy": "./src/events/taxonomy.ts",
+    "./adapter/contract": "./src/adapter/contract.ts",
+    "./services/overlay": "./src/services/overlay-service.ts",
+    "./services/snapshot": "./src/services/snapshot-service.ts",
+    "./services/indexer": "./src/services/indexer-service.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build",
+    "db:generate": "drizzle-kit generate"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./contract": {
+        "types": "./dist/contract.d.ts",
+        "import": "./dist/contract.js",
+        "default": "./dist/contract.js"
+      },
+      "./provenance": {
+        "types": "./dist/provenance.d.ts",
+        "import": "./dist/provenance.js",
+        "default": "./dist/provenance.js"
+      },
+      "./overlay/schema": {
+        "types": "./dist/overlay/schema.d.ts",
+        "import": "./dist/overlay/schema.js",
+        "default": "./dist/overlay/schema.js"
+      },
+      "./overlay/resolver": {
+        "types": "./dist/overlay/resolver.d.ts",
+        "import": "./dist/overlay/resolver.js",
+        "default": "./dist/overlay/resolver.js"
+      },
+      "./snapshot/schema": {
+        "types": "./dist/snapshot/schema.d.ts",
+        "import": "./dist/snapshot/schema.js",
+        "default": "./dist/snapshot/schema.js"
+      },
+      "./indexer/contract": {
+        "types": "./dist/indexer/contract.d.ts",
+        "import": "./dist/indexer/contract.js",
+        "default": "./dist/indexer/contract.js"
+      },
+      "./indexer/typesense": {
+        "types": "./dist/indexer/typesense.d.ts",
+        "import": "./dist/indexer/typesense.js",
+        "default": "./dist/indexer/typesense.js"
+      },
+      "./search/rerank": {
+        "types": "./dist/search/rerank.d.ts",
+        "import": "./dist/search/rerank.js",
+        "default": "./dist/search/rerank.js"
+      },
+      "./drift/events": {
+        "types": "./dist/drift/events.d.ts",
+        "import": "./dist/drift/events.js",
+        "default": "./dist/drift/events.js"
+      },
+      "./events/taxonomy": {
+        "types": "./dist/events/taxonomy.d.ts",
+        "import": "./dist/events/taxonomy.js",
+        "default": "./dist/events/taxonomy.js"
+      },
+      "./adapter/contract": {
+        "types": "./dist/adapter/contract.d.ts",
+        "import": "./dist/adapter/contract.js",
+        "default": "./dist/adapter/contract.js"
+      },
+      "./services/overlay": {
+        "types": "./dist/services/overlay-service.d.ts",
+        "import": "./dist/services/overlay-service.js",
+        "default": "./dist/services/overlay-service.js"
+      },
+      "./services/snapshot": {
+        "types": "./dist/services/snapshot-service.d.ts",
+        "import": "./dist/services/snapshot-service.js",
+        "default": "./dist/services/snapshot-service.js"
+      },
+      "./services/indexer": {
+        "types": "./dist/services/indexer-service.d.ts",
+        "import": "./dist/services/indexer-service.js",
+        "default": "./dist/services/indexer-service.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "dependencies": {
+    "@voyantjs/core": "workspace:*",
+    "@voyantjs/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "zod": "^4.1.4"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/catalog"
+  }
+}
