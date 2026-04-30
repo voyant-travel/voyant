@@ -58,10 +58,8 @@ function seedTemplate(root: string) {
     "../../packages/db/src/schema/index.ts",
     "../../packages/crm/src/schema.ts",
     "../../packages/bookings/src/schema.ts",
-    "../../packages/bookings/src/schema/travel-details.ts",
-    "../../packages/products/src/booking-extension.ts",
-    "../../packages/legal/src/contracts/schema.ts",
-    "../../packages/legal/src/policies/schema.ts",
+    "../../packages/products/src/schema.ts",
+    "../../packages/legal/src/schema.ts",
   ],
 }
 `,
@@ -221,8 +219,8 @@ describe("newCommand", () => {
     const schema = readFileSync(join(tmp, "my-app", "src", "db", "voyant-schema.ts"), "utf8")
     expect(drizzle).toContain('schema: "./src/db/voyant-schema.ts"')
     expect(schema).toContain('export * from "@voyantjs/db/schema"')
-    expect(schema).toContain('export * from "@voyantjs/bookings/schema/travel-details"')
-    expect(schema).toContain('export * from "@voyantjs/legal/contracts/schema"')
+    expect(schema).toContain('export * from "@voyantjs/bookings/schema"')
+    expect(schema).toContain('export * from "@voyantjs/legal/schema"')
   })
 
   it("downloads a built-in starter from a versioned release tarball", async () => {

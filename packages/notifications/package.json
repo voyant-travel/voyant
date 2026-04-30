@@ -49,43 +49,53 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
-        "import": "./dist/schema.js"
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
       },
       "./types": {
         "types": "./dist/types.d.ts",
-        "import": "./dist/types.js"
+        "import": "./dist/types.js",
+        "default": "./dist/types.js"
       },
       "./validation": {
         "types": "./dist/validation.d.ts",
-        "import": "./dist/validation.js"
+        "import": "./dist/validation.js",
+        "default": "./dist/validation.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",
-        "import": "./dist/routes.js"
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
       },
       "./service": {
         "types": "./dist/service.d.ts",
-        "import": "./dist/service.js"
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
       },
       "./tasks": {
         "types": "./dist/tasks/index.d.ts",
-        "import": "./dist/tasks/index.js"
+        "import": "./dist/tasks/index.js",
+        "default": "./dist/tasks/index.js"
       },
       "./providers/local": {
         "types": "./dist/providers/local.d.ts",
-        "import": "./dist/providers/local.js"
+        "import": "./dist/providers/local.js",
+        "default": "./dist/providers/local.js"
       },
       "./providers/voyant-cloud-email": {
         "types": "./dist/providers/voyant-cloud-email.d.ts",
-        "import": "./dist/providers/voyant-cloud-email.js"
+        "import": "./dist/providers/voyant-cloud-email.js",
+        "default": "./dist/providers/voyant-cloud-email.js"
       },
       "./providers/voyant-cloud-sms": {
         "types": "./dist/providers/voyant-cloud-sms.d.ts",
-        "import": "./dist/providers/voyant-cloud-sms.js"
+        "import": "./dist/providers/voyant-cloud-sms.js",
+        "default": "./dist/providers/voyant-cloud-sms.js"
       }
     },
     "main": "./dist/index.js",
@@ -95,5 +105,11 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/notifications"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
   }
 }

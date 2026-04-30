@@ -41,23 +41,28 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
-        "import": "./dist/schema.js"
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
       },
       "./validation": {
         "types": "./dist/validation.d.ts",
-        "import": "./dist/validation.js"
+        "import": "./dist/validation.js",
+        "default": "./dist/validation.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",
-        "import": "./dist/routes.js"
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
       },
       "./public-routes": {
         "types": "./dist/routes-public.d.ts",
-        "import": "./dist/routes-public.js"
+        "import": "./dist/routes-public.js",
+        "default": "./dist/routes-public.js"
       }
     },
     "main": "./dist/index.js",
@@ -67,5 +72,11 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/booking-requirements"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
   }
 }

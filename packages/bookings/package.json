@@ -12,7 +12,6 @@
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
-    "./schema/travel-details": "./src/schema/travel-details.ts",
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
     "./status-dispatch": "./src/status-dispatch.ts"
   },
@@ -47,47 +46,53 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./pii": {
         "types": "./dist/pii.d.ts",
-        "import": "./dist/pii.js"
+        "import": "./dist/pii.js",
+        "default": "./dist/pii.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
-        "import": "./dist/schema.js"
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
       },
       "./tasks": {
         "types": "./dist/tasks/index.d.ts",
-        "import": "./dist/tasks/index.js"
+        "import": "./dist/tasks/index.js",
+        "default": "./dist/tasks/index.js"
       },
       "./validation": {
         "types": "./dist/validation.d.ts",
-        "import": "./dist/validation.js"
+        "import": "./dist/validation.js",
+        "default": "./dist/validation.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",
-        "import": "./dist/routes.js"
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
       },
       "./public-routes": {
         "types": "./dist/routes-public.d.ts",
-        "import": "./dist/routes-public.js"
+        "import": "./dist/routes-public.js",
+        "default": "./dist/routes-public.js"
       },
       "./public-validation": {
         "types": "./dist/validation-public.d.ts",
-        "import": "./dist/validation-public.js"
-      },
-      "./schema/travel-details": {
-        "types": "./dist/schema/travel-details.d.ts",
-        "import": "./dist/schema/travel-details.js"
+        "import": "./dist/validation-public.js",
+        "default": "./dist/validation-public.js"
       },
       "./extensions/suppliers": {
         "types": "./dist/extensions/suppliers.d.ts",
-        "import": "./dist/extensions/suppliers.js"
+        "import": "./dist/extensions/suppliers.js",
+        "default": "./dist/extensions/suppliers.js"
       },
       "./status-dispatch": {
         "types": "./dist/status-dispatch.d.ts",
-        "import": "./dist/status-dispatch.js"
+        "import": "./dist/status-dispatch.js",
+        "default": "./dist/status-dispatch.js"
       }
     },
     "main": "./dist/index.js",
@@ -97,5 +102,11 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/bookings"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
   }
 }

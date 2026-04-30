@@ -80,13 +80,11 @@ import {
   contracts,
   contractTemplates,
   contractTemplateVersions,
-} from "@voyantjs/legal/contracts/schema"
-import {
   policies,
   policyAcceptances,
   policyRules,
   policyVersions,
-} from "@voyantjs/legal/policies/schema"
+} from "@voyantjs/legal/schema"
 import { marketCurrencies, marketLocales, markets } from "@voyantjs/markets/schema"
 import { optionPriceRules, optionUnitPriceRules, priceCatalogs } from "@voyantjs/pricing/schema"
 import {

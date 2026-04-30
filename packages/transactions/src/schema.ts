@@ -1,3 +1,4 @@
+export { bookingTransactionDetails } from "./booking-extension"
 export * from "./schema-audit"
 export * from "./schema-contacts"
 export * from "./schema-offers"

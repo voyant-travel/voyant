@@ -1,3 +1,4 @@
+export * from "./schema/travel-details"
 export * from "./schema-core"
 export * from "./schema-groups"
 export * from "./schema-items"

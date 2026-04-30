@@ -43,19 +43,23 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./public-routes": {
         "types": "./dist/routes-public.d.ts",
-        "import": "./dist/routes-public.js"
+        "import": "./dist/routes-public.js",
+        "default": "./dist/routes-public.js"
       },
       "./service": {
         "types": "./dist/service.d.ts",
-        "import": "./dist/service.js"
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
       },
       "./validation": {
         "types": "./dist/validation.d.ts",
-        "import": "./dist/validation.js"
+        "import": "./dist/validation.js",
+        "default": "./dist/validation.js"
       }
     },
     "main": "./dist/index.js",

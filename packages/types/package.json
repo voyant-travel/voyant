@@ -21,15 +21,18 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./api-keys": {
         "types": "./dist/api-keys.d.ts",
-        "import": "./dist/api-keys.js"
+        "import": "./dist/api-keys.js",
+        "default": "./dist/api-keys.js"
       },
       "./schemas/*": {
         "types": "./dist/schemas/*.d.ts",
-        "import": "./dist/schemas/*.js"
+        "import": "./dist/schemas/*.js",
+        "default": "./dist/schemas/*.js"
       }
     }
   },

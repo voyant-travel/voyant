@@ -1,3 +1,4 @@
+export { bookingCrmDetails } from "./booking-extension"
 export * from "./schema-accounts"
 export * from "./schema-activities"
 export * from "./schema-relations"

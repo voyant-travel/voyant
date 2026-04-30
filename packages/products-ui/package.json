@@ -62,23 +62,28 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./i18n": {
         "types": "./dist/i18n/index.d.ts",
-        "import": "./dist/i18n/index.js"
+        "import": "./dist/i18n/index.js",
+        "default": "./dist/i18n/index.js"
       },
       "./i18n/en": {
         "types": "./dist/i18n/en.d.ts",
-        "import": "./dist/i18n/en.js"
+        "import": "./dist/i18n/en.js",
+        "default": "./dist/i18n/en.js"
       },
       "./i18n/ro": {
         "types": "./dist/i18n/ro.d.ts",
-        "import": "./dist/i18n/ro.js"
+        "import": "./dist/i18n/ro.js",
+        "default": "./dist/i18n/ro.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",
-        "import": "./dist/components/*.js"
+        "import": "./dist/components/*.js",
+        "default": "./dist/components/*.js"
       }
     },
     "main": "./dist/index.js",

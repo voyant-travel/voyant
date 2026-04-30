@@ -53,71 +53,88 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./app": {
         "types": "./dist/app.d.ts",
-        "import": "./dist/app.js"
+        "import": "./dist/app.js",
+        "default": "./dist/app.js"
       },
       "./module": {
         "types": "./dist/module.d.ts",
-        "import": "./dist/module.js"
+        "import": "./dist/module.js",
+        "default": "./dist/module.js"
       },
       "./plugin": {
         "types": "./dist/plugin.d.ts",
-        "import": "./dist/plugin.js"
+        "import": "./dist/plugin.js",
+        "default": "./dist/plugin.js"
       },
       "./types": {
         "types": "./dist/types.d.ts",
-        "import": "./dist/types.js"
+        "import": "./dist/types.js",
+        "default": "./dist/types.js"
       },
       "./middleware": {
         "types": "./dist/middleware/index.d.ts",
-        "import": "./dist/middleware/index.js"
+        "import": "./dist/middleware/index.js",
+        "default": "./dist/middleware/index.js"
       },
       "./middleware/auth": {
         "types": "./dist/middleware/auth.d.ts",
-        "import": "./dist/middleware/auth.js"
+        "import": "./dist/middleware/auth.js",
+        "default": "./dist/middleware/auth.js"
       },
       "./middleware/cors": {
         "types": "./dist/middleware/cors.d.ts",
-        "import": "./dist/middleware/cors.js"
+        "import": "./dist/middleware/cors.js",
+        "default": "./dist/middleware/cors.js"
       },
       "./middleware/error-boundary": {
         "types": "./dist/middleware/error-boundary.d.ts",
-        "import": "./dist/middleware/error-boundary.js"
+        "import": "./dist/middleware/error-boundary.js",
+        "default": "./dist/middleware/error-boundary.js"
       },
       "./middleware/db": {
         "types": "./dist/middleware/db.d.ts",
-        "import": "./dist/middleware/db.js"
+        "import": "./dist/middleware/db.js",
+        "default": "./dist/middleware/db.js"
       },
       "./middleware/rate-limit": {
         "types": "./dist/middleware/rate-limit.d.ts",
-        "import": "./dist/middleware/rate-limit.js"
+        "import": "./dist/middleware/rate-limit.js",
+        "default": "./dist/middleware/rate-limit.js"
       },
       "./middleware/require-actor": {
         "types": "./dist/middleware/require-actor.d.ts",
-        "import": "./dist/middleware/require-actor.js"
+        "import": "./dist/middleware/require-actor.js",
+        "default": "./dist/middleware/require-actor.js"
       },
       "./middleware/require-permission": {
         "types": "./dist/middleware/require-permission.d.ts",
-        "import": "./dist/middleware/require-permission.js"
+        "import": "./dist/middleware/require-permission.js",
+        "default": "./dist/middleware/require-permission.js"
       },
       "./middleware/logger": {
         "types": "./dist/middleware/logger.d.ts",
-        "import": "./dist/middleware/logger.js"
+        "import": "./dist/middleware/logger.js",
+        "default": "./dist/middleware/logger.js"
       },
       "./auth": {
         "types": "./dist/auth/index.d.ts",
-        "import": "./dist/auth/index.js"
+        "import": "./dist/auth/index.js",
+        "default": "./dist/auth/index.js"
       },
       "./auth/session-jwt": {
         "types": "./dist/auth/session-jwt.d.ts",
-        "import": "./dist/auth/session-jwt.js"
+        "import": "./dist/auth/session-jwt.js",
+        "default": "./dist/auth/session-jwt.js"
       },
       "./auth/crypto": {
         "types": "./dist/auth/crypto.d.ts",
-        "import": "./dist/auth/crypto.js"
+        "import": "./dist/auth/crypto.js",
+        "default": "./dist/auth/crypto.js"
       }
     },
     "main": "./dist/index.js",

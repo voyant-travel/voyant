@@ -18,7 +18,7 @@ import {
 import { invoiceRenditions, invoices, payments } from "@voyantjs/finance/schema"
 import { identityContactPoints } from "@voyantjs/identity/schema"
 import { identityService } from "@voyantjs/identity/service"
-import { contractAttachments, contracts } from "@voyantjs/legal/contracts/schema"
+import { contractAttachments, contracts } from "@voyantjs/legal/schema"
 import {
   decryptOptionalJsonEnvelope,
   encryptOptionalJsonEnvelope,

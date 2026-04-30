@@ -5,13 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
     "./contracts": "./src/contracts/index.ts",
-    "./contracts/schema": "./src/contracts/schema.ts",
     "./contracts/validation": "./src/contracts/validation.ts",
     "./contracts/routes": "./src/contracts/routes.ts",
     "./contracts/service": "./src/contracts/service.ts",
     "./policies": "./src/policies/index.ts",
-    "./policies/schema": "./src/policies/schema.ts",
     "./policies/validation": "./src/policies/validation.ts",
     "./policies/routes": "./src/policies/routes.ts",
     "./policies/service": "./src/policies/service.ts"
@@ -51,47 +50,53 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
       },
       "./contracts": {
         "types": "./dist/contracts/index.d.ts",
-        "import": "./dist/contracts/index.js"
-      },
-      "./contracts/schema": {
-        "types": "./dist/contracts/schema.d.ts",
-        "import": "./dist/contracts/schema.js"
+        "import": "./dist/contracts/index.js",
+        "default": "./dist/contracts/index.js"
       },
       "./contracts/validation": {
         "types": "./dist/contracts/validation.d.ts",
-        "import": "./dist/contracts/validation.js"
+        "import": "./dist/contracts/validation.js",
+        "default": "./dist/contracts/validation.js"
       },
       "./contracts/routes": {
         "types": "./dist/contracts/routes.d.ts",
-        "import": "./dist/contracts/routes.js"
+        "import": "./dist/contracts/routes.js",
+        "default": "./dist/contracts/routes.js"
       },
       "./contracts/service": {
         "types": "./dist/contracts/service.d.ts",
-        "import": "./dist/contracts/service.js"
+        "import": "./dist/contracts/service.js",
+        "default": "./dist/contracts/service.js"
       },
       "./policies": {
         "types": "./dist/policies/index.d.ts",
-        "import": "./dist/policies/index.js"
-      },
-      "./policies/schema": {
-        "types": "./dist/policies/schema.d.ts",
-        "import": "./dist/policies/schema.js"
+        "import": "./dist/policies/index.js",
+        "default": "./dist/policies/index.js"
       },
       "./policies/validation": {
         "types": "./dist/policies/validation.d.ts",
-        "import": "./dist/policies/validation.js"
+        "import": "./dist/policies/validation.js",
+        "default": "./dist/policies/validation.js"
       },
       "./policies/routes": {
         "types": "./dist/policies/routes.d.ts",
-        "import": "./dist/policies/routes.js"
+        "import": "./dist/policies/routes.js",
+        "default": "./dist/policies/routes.js"
       },
       "./policies/service": {
         "types": "./dist/policies/service.d.ts",
-        "import": "./dist/policies/service.js"
+        "import": "./dist/policies/service.js",
+        "default": "./dist/policies/service.js"
       }
     },
     "main": "./dist/index.js",
@@ -101,5 +106,11 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/legal"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
   }
 }

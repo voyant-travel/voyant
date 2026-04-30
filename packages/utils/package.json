@@ -33,63 +33,78 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./countries": {
         "types": "./dist/countries.d.ts",
-        "import": "./dist/countries.js"
+        "import": "./dist/countries.js",
+        "default": "./dist/countries.js"
       },
       "./currencies": {
         "types": "./dist/currencies.d.ts",
-        "import": "./dist/currencies.js"
+        "import": "./dist/currencies.js",
+        "default": "./dist/currencies.js"
       },
       "./languages": {
         "types": "./dist/languages.d.ts",
-        "import": "./dist/languages.js"
+        "import": "./dist/languages.js",
+        "default": "./dist/languages.js"
       },
       "./timezones": {
         "types": "./dist/timezones.d.ts",
-        "import": "./dist/timezones.js"
+        "import": "./dist/timezones.js",
+        "default": "./dist/timezones.js"
       },
       "./localized-countries-regions": {
         "types": "./dist/localized-countries-regions.d.ts",
-        "import": "./dist/localized-countries-regions.js"
+        "import": "./dist/localized-countries-regions.js",
+        "default": "./dist/localized-countries-regions.js"
       },
       "./localized-regions": {
         "types": "./dist/localized-regions.d.ts",
-        "import": "./dist/localized-regions.js"
+        "import": "./dist/localized-regions.js",
+        "default": "./dist/localized-regions.js"
       },
       "./geographic-regions": {
         "types": "./dist/geographic-regions.d.ts",
-        "import": "./dist/geographic-regions.js"
+        "import": "./dist/geographic-regions.js",
+        "default": "./dist/geographic-regions.js"
       },
       "./rate-limits": {
         "types": "./dist/rate-limits.d.ts",
-        "import": "./dist/rate-limits.js"
+        "import": "./dist/rate-limits.js",
+        "default": "./dist/rate-limits.js"
       },
       "./kv": {
         "types": "./dist/kv.d.ts",
-        "import": "./dist/kv.js"
+        "import": "./dist/kv.js",
+        "default": "./dist/kv.js"
       },
       "./kms": {
         "types": "./dist/kms.d.ts",
-        "import": "./dist/kms.js"
+        "import": "./dist/kms.js",
+        "default": "./dist/kms.js"
       },
       "./session-claims": {
         "types": "./dist/session-claims.d.ts",
-        "import": "./dist/session-claims.js"
+        "import": "./dist/session-claims.js",
+        "default": "./dist/session-claims.js"
       },
       "./cache": {
         "types": "./dist/cache.d.ts",
-        "import": "./dist/cache.js"
+        "import": "./dist/cache.js",
+        "default": "./dist/cache.js"
       },
       "./template-renderer": {
         "types": "./dist/template-renderer.d.ts",
-        "import": "./dist/template-renderer.js"
+        "import": "./dist/template-renderer.js",
+        "default": "./dist/template-renderer.js"
       },
       "./pdf-renderer": {
         "types": "./dist/pdf-renderer.d.ts",
-        "import": "./dist/pdf-renderer.js"
+        "import": "./dist/pdf-renderer.js",
+        "default": "./dist/pdf-renderer.js"
       }
     }
   },

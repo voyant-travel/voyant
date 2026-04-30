@@ -320,16 +320,8 @@ function toPublishedSchemaImport(pkgDir: string, srcPath: string): string | null
     return "@voyantjs/db/schema"
   }
 
-  if (pkgDir === "legal") {
-    if (srcPath === "contracts/schema.ts") return "@voyantjs/legal/contracts/schema"
-    if (srcPath === "policies/schema.ts") return "@voyantjs/legal/policies/schema"
-    return null
-  }
-
   const packageName = `@voyantjs/${pkgDir}`
   if (srcPath === "schema.ts") return `${packageName}/schema`
-  if (srcPath === "booking-extension.ts") return `${packageName}/booking-extension`
-  if (srcPath === "schema/travel-details.ts") return `${packageName}/schema/travel-details`
   return null
 }
 

@@ -1,3 +1,4 @@
+export { bookingDistributionDetails, bookingPaymentOwnerEnum } from "./booking-extension"
 export * from "./schema-automation"
 export * from "./schema-core"
 export * from "./schema-finance"

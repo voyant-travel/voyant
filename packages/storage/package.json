@@ -28,31 +28,38 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./types": {
         "types": "./dist/types.d.ts",
-        "import": "./dist/types.js"
+        "import": "./dist/types.js",
+        "default": "./dist/types.js"
       },
       "./service": {
         "types": "./dist/service.d.ts",
-        "import": "./dist/service.js"
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
       },
       "./providers/local": {
         "types": "./dist/providers/local.d.ts",
-        "import": "./dist/providers/local.js"
+        "import": "./dist/providers/local.js",
+        "default": "./dist/providers/local.js"
       },
       "./providers/r2": {
         "types": "./dist/providers/r2.d.ts",
-        "import": "./dist/providers/r2.js"
+        "import": "./dist/providers/r2.js",
+        "default": "./dist/providers/r2.js"
       },
       "./providers/s3": {
         "types": "./dist/providers/s3.d.ts",
-        "import": "./dist/providers/s3.js"
+        "import": "./dist/providers/s3.js",
+        "default": "./dist/providers/s3.js"
       },
       "./lib/sigv4": {
         "types": "./dist/lib/sigv4.d.ts",
-        "import": "./dist/lib/sigv4.js"
+        "import": "./dist/lib/sigv4.js",
+        "default": "./dist/lib/sigv4.js"
       }
     },
     "main": "./dist/index.js",
