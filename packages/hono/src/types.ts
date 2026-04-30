@@ -1,4 +1,5 @@
 import type {
+  Actor,
   VoyantVariables as CoreVoyantVariables,
   EventBus,
   LinkService,
@@ -52,8 +53,15 @@ export type DbFactory<TBindings extends VoyantBindings = VoyantBindings> = (
   env: TBindings,
 ) => VoyantDb
 
-export type VoyantRequestAuthContext = VoyantAuthContext & {
+/**
+ * The shape returned by a custom `auth.resolve` integration. Both `userId`
+ * and `actor` are required: `requireActor` is fail-closed, so a resolver
+ * that omits `actor` would 401 every protected request. Make the omission a
+ * compile-time error instead of a runtime mystery.
+ */
+export type VoyantRequestAuthContext = Omit<VoyantAuthContext, "actor"> & {
   userId: string
+  actor: Actor
 }
 
 export interface LogEntry {
@@ -88,6 +96,15 @@ export interface VoyantAuthIntegration<TBindings extends VoyantBindings = Voyant
       ctx?: VoyantExecutionContext,
     ) => Response | Promise<Response>
   }
+  /**
+   * Resolve the request to an auth context, or return `null` for anonymous.
+   *
+   * The returned object MUST include `actor` — `requireActor` is fail-closed,
+   * so omitting it 401s every protected route. For single-tenant admin apps
+   * where every authenticated session is staff, return `actor: "staff"`.
+   * Customer/partner/supplier sessions should return the corresponding actor
+   * so `/v1/public/*` route guards work.
+   */
   resolve?: (
     args: VoyantAuthResolveArgs<TBindings>,
   ) => Promise<VoyantRequestAuthContext | null> | VoyantRequestAuthContext | null

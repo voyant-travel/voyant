@@ -55,6 +55,21 @@ describe("requireActor", () => {
     expect(body.error).toMatch(/Unauthorized/)
   })
 
+  it("401 message points custom-resolver consumers at the missing `actor` field", async () => {
+    // Lock in the actionable wording — the previous "actor not resolved" error
+    // surfaced as a session bug; the message must call out `auth.resolve` and
+    // the `actor` field so the migration path is obvious. See issue #381.
+    const app = makeApp(() => {})
+    app.use("*", requireActor("staff"))
+    app.get("/", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/")
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toContain("auth.resolve")
+    expect(body.error).toContain("actor")
+    expect(body.error).toContain("staff")
+  })
+
   it("returns 401 when no actor is set on a public-only surface", async () => {
     const app = makeApp(() => {
       // do not set actor

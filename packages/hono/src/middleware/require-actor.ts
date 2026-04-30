@@ -44,7 +44,15 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
 
     const actor = c.get("actor") as Actor | undefined
     if (!actor) {
-      return c.json({ error: "Unauthorized: actor not resolved" }, 401)
+      return c.json(
+        {
+          error:
+            "Unauthorized: actor not resolved. The auth pipeline did not assign an `actor` to this request. " +
+            "If you set `auth.resolve` on `createApp({...})`, the returned object must include `actor` " +
+            '(usually `"staff"` for admin sessions). Public routes should be listed in `publicPaths`.',
+        },
+        401,
+      )
     }
     if (!allowSet.has(actor)) {
       return c.json({ error: "Forbidden: actor not permitted on this surface" }, 403)
