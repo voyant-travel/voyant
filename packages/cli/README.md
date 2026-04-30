@@ -1,58 +1,29 @@
-# @voyantjs/cli
+# @voyantjs/cli — moved
 
-The `voyant` CLI. Scaffolding, code generation, config loading, database commands, and a TypeScript script runner with native strip-types.
+> **The `@voyantjs/cli` package now ships from a separate repo:**
+> [github.com/voyantjs/cli](https://github.com/voyantjs/cli)
+>
+> Install via `npm install -g @voyantjs/cli`. Versions `0.19.0` and later are
+> published from there.
 
-## Install
+## Why this folder still exists
 
-```bash
-pnpm add -D @voyantjs/cli
+This in-monorepo copy stays as a `private: true` workspace package so that
+internal consumers — `templates/dmc`'s `drizzle.config.ts`, the `voyant`
+binary used during framework development, etc. — can keep importing
+`@voyantjs/cli` and `@voyantjs/cli/drizzle` via `workspace:*`. It is no
+longer published to npm.
+
+## Working on the CLI
+
+If you want to add or change a CLI command, do it in the new repo:
+
+```sh
+git clone https://github.com/voyantjs/cli
+cd cli
+pnpm install
+pnpm test
 ```
-
-Or as a global install:
-
-```bash
-npm install -g @voyantjs/cli
-```
-
-Built-in starters can be referenced by name:
-
-```bash
-voyant new my-app --template dmc
-voyant new my-app --template operator
-```
-
-Built-in starters are downloaded from the matching GitHub Release for the installed CLI version.
-
-You can also point at a custom local template directory:
-
-```bash
-voyant new my-app --template ./templates/custom
-```
-
-## Commands
-
-| Command | Description |
-| --- | --- |
-| `voyant new <name> [--template <name\|path>] [--force]` | Clone a built-in or custom template into a new directory |
-| `voyant generate module <name> [--dir <path>]` | Scaffold a new module package (schema, validation, service, routes) |
-| `voyant generate link <a.entity> <b.entity>` | Print a `defineLink` snippet |
-| `voyant config <show\|validate\|path> [--path <file>]` | Load + inspect `voyant.config.ts` |
-| `voyant db <generate\|migrate\|studio\|push\|check>` | Drizzle-kit subcommands for the DMC template |
-| `voyant db sync-links [--links <path>] [--out <file>]` | Emit DDL for link pivot tables |
-| `voyant exec <script.ts> [args...]` | Run a TS script with native strip-types + extensionless imports |
-| `voyant --help` | Print usage |
-
-Requires Node 22.6+ for native TypeScript strip-types.
-
-## Exports
-
-| Entry | Description |
-| --- | --- |
-| `.` | CLI `main(argv, ctx)` entry point |
-| `./commands/*` | Individual command handlers |
-| `./lib/strings` | `toKebabCase`, `toCamelCase`, `toPascalCase` |
-| `./lib/args` | Hand-rolled arg parser |
-| `./lib/config-loader` | `voyant.config.*` loader |
 
 ## License
 
