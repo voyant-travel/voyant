@@ -111,6 +111,7 @@ export async function resolveAuthRequest(
     sessionId: session.session.id,
     organizationId: null,
     callerType: "session",
+    actor: "staff",
     email: session.user.email ?? null,
   }
 }

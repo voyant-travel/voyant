@@ -48,6 +48,7 @@ describe("requirePermission", () => {
     app.use("*", requestId)
     app.use("*", async (c, next) => {
       c.set("userId", "user_123")
+      c.set("actor", "staff")
       await next()
     })
     app.use(
@@ -72,6 +73,40 @@ describe("requirePermission", () => {
       code: "forbidden",
     })
     expect(hasPermission).toHaveBeenCalledTimes(1)
+  })
+
+  it("returns 401 when userId is set but actor is not (upstream wiring bug)", async () => {
+    // `requirePermission` runs after `requireActor`. If actor is missing here,
+    // it means the auth pipeline silently let an unresolved request through —
+    // throw rather than fabricate a default that would mask the bug. See #381.
+    vi.spyOn(console, "error").mockImplementation(() => {})
+
+    const hasPermission = vi.fn().mockResolvedValue(true)
+
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", requestId)
+    app.use("*", async (c, next) => {
+      c.set("userId", "user_123")
+      // intentionally no `actor`
+      await next()
+    })
+    app.use(
+      "*",
+      requirePermission(() => ({}) as never, "crm", "write", {
+        auth: { hasPermission },
+      }),
+    )
+    app.get("/secure", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure"),
+      {},
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
+    expect(hasPermission).not.toHaveBeenCalled()
   })
 })
 

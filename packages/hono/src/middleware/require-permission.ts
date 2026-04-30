@@ -1,9 +1,9 @@
-import type { VoyantPermission } from "@voyantjs/core"
+import type { Actor, VoyantPermission } from "@voyantjs/core"
 import type { MiddlewareHandler } from "hono"
 
 import { requireUserId } from "../auth/require-user.js"
 import type { DbFactory, VoyantAuthIntegration, VoyantBindings, VoyantVariables } from "../types.js"
-import { ForbiddenApiError } from "../validation.js"
+import { ForbiddenApiError, UnauthorizedApiError } from "../validation.js"
 
 function hasScope(scopes: string[] | null | undefined, permission: VoyantPermission): boolean {
   if (!scopes || scopes.length === 0) return false
@@ -41,6 +41,13 @@ export function requirePermission<TBindings extends VoyantBindings>(
     }
 
     const userId = requireUserId(c)
+    const actor = c.get("actor") as Actor | undefined
+    if (!actor) {
+      // Should be unreachable in well-wired apps: `requireActor` runs before
+      // `requirePermission`. Throw rather than fabricate a default so callers
+      // see the upstream wiring bug instead of a silent privilege grant.
+      throw new UnauthorizedApiError()
+    }
 
     if (!opts?.auth?.hasPermission) {
       return c.json({ error: "No auth permission checker configured" }, 500)
@@ -53,6 +60,7 @@ export function requirePermission<TBindings extends VoyantBindings>(
       ctx: c.executionCtx,
       auth: {
         userId,
+        actor,
         sessionId: c.get("sessionId"),
         organizationId: c.get("organizationId"),
         callerType: c.get("callerType"),
