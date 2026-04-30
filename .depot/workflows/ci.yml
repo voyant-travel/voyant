@@ -17,6 +17,12 @@ jobs:
     runs-on: depot-ubuntu-latest # was: ubuntu-latest. Mapped standard GitHub runner to Depot equivalent.
     permissions:
       contents: read
+    # Turbo remote cache via Vercel. Without these, every run rebuilds all
+    # ~80 packages from scratch (`0 cached, 98 total`) and tsc fan-out OOMs
+    # the runner. With them, unchanged packages restore from cache in seconds.
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -25,8 +31,12 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
+      # can't OOM the runner (kernel SIGKILLs whichever tsc is heaviest at the
+      # peak — exit 137). Cache hits remain instant; only genuine rebuilds pay
+      # the serialization cost.
       - name: Build packages
-        run: pnpm turbo build --filter='./packages/**' --continue
+        run: pnpm turbo build --filter='./packages/**' --continue --concurrency=4
       - name: Build registry artifacts
         run: pnpm registry:build
       - name: Verify release train
@@ -36,8 +46,8 @@ jobs:
       - name: Verify publish tarballs
         run: pnpm verify:publish-tarballs
       - name: Lint
-        run: pnpm turbo lint --filter='./packages/**' --continue
+        run: pnpm turbo lint --filter='./packages/**' --continue --concurrency=4
       - name: Typecheck
-        run: pnpm turbo typecheck --filter='./packages/**' --continue
+        run: pnpm turbo typecheck --filter='./packages/**' --continue --concurrency=4
       - name: Test
-        run: pnpm turbo test --filter='./packages/**' --continue
+        run: pnpm turbo test --filter='./packages/**' --continue --concurrency=4
