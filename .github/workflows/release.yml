@@ -25,6 +25,10 @@ jobs:
       id-token: write
     env:
       HUSKY: 0
+      # Turbo remote cache. Configure in GitHub Settings → Secrets and variables
+      # → Actions; without them turbo silently falls back to no remote cache.
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,8 +44,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
+      # can't OOM the runner (kernel SIGKILLs the heaviest tsc — exit 137).
       - name: Build packages
-        run: pnpm turbo build --filter='./packages/**' --continue
+        run: pnpm turbo build --filter='./packages/**' --continue --concurrency=4
 
       - name: Build registry artifacts
         run: pnpm registry:build
@@ -82,6 +88,10 @@ jobs:
       id-token: write
     env:
       HUSKY: 0
+      # Turbo remote cache. Configure in GitHub Settings → Secrets and variables
+      # → Actions; without them turbo silently falls back to no remote cache.
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,8 +107,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
+      # can't OOM the runner (kernel SIGKILLs the heaviest tsc — exit 137).
       - name: Build packages
-        run: pnpm turbo build --filter='./packages/**' --continue
+        run: pnpm turbo build --filter='./packages/**' --continue --concurrency=4
 
       - name: Build registry artifacts
         run: pnpm registry:build
