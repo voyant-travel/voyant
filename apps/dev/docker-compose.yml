@@ -16,5 +16,23 @@ services:
       timeout: 5s
       retries: 10
 
+  typesense:
+    image: typesense/typesense:28.0
+    container_name: voyant-dev-typesense
+    ports:
+      - "8108:8108"
+    environment:
+      TYPESENSE_API_KEY: voyant_dev_typesense_key
+      TYPESENSE_DATA_DIR: /data
+      TYPESENSE_ENABLE_CORS: "true"
+    volumes:
+      - voyant_dev_typesense_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8108/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   voyant_dev_data:
+  voyant_dev_typesense_data:
