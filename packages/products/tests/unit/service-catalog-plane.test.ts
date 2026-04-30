@@ -38,7 +38,7 @@ describe("productRowToProjection", () => {
     expect(projection.get("status")).toBe("active")
     expect(projection.get("sellCurrency")).toBe("EUR")
     expect(projection.get("sellAmountCents")).toBe(250000)
-    expect(projection.get("tags")).toEqual(["wellness", "yoga"])
+    expect(projection.get("tags[]")).toEqual(["wellness", "yoga"])
     expect(projection.get("productTypeId")).toBe("ptyp_wellness")
   })
 

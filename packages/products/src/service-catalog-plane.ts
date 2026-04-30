@@ -82,7 +82,7 @@ export function productRowToProjection(
     // Merchandisable
     ["name", row.name],
     ["description", row.description],
-    ["tags", row.tags],
+    ["tags[]", row.tags],
 
     // Structural
     ["status", row.status],

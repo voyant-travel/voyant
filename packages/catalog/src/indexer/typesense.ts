@@ -326,9 +326,9 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
 }
 
 function flattenDocument(document: IndexerDocument): Record<string, unknown> {
-  const flat: Record<string, unknown> = {
-    id: document.id,
-    ...document.fields,
+  const flat: Record<string, unknown> = { id: document.id }
+  for (const [path, value] of Object.entries(document.fields)) {
+    flat[path] = coerceForTypesense(value)
   }
   if (document.embeddings) {
     for (const [name, vector] of Object.entries(document.embeddings)) {
@@ -339,6 +339,29 @@ function flattenDocument(document: IndexerDocument): Record<string, unknown> {
     flat.embedding_model_id = document.embedding_model_id
   }
   return flat
+}
+
+/**
+ * Coerce a field value to match the typesense schema. `typesenseFieldFromPolicy`
+ * declares every non-vector field as `string` or `string[]`, so any non-string
+ * primitive must be stringified at import time. `null`/`undefined` drop out
+ * (typesense optional fields tolerate absence). Arrays recurse element-wise.
+ */
+function coerceForTypesense(value: unknown): unknown {
+  if (value == null) return undefined
+  if (typeof value === "string") return value
+  if (Array.isArray(value)) {
+    const coerced = value.map((v) => coerceForTypesense(v)).filter((v) => v !== undefined)
+    return coerced
+  }
+  if (typeof value === "object") {
+    // Nested objects round-trip via JSON. Typesense's nested-fields support
+    // accepts these only when the schema declares them as `object`/`object[]`,
+    // which the policy registry does not currently emit. Stringify so the
+    // payload at least lands; downstream consumers can JSON.parse.
+    return JSON.stringify(value)
+  }
+  return String(value)
 }
 
 function mapTypesenseResponse(response: TypesenseSearchResponse): SearchResults {

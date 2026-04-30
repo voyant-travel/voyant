@@ -155,7 +155,7 @@ const PRODUCT_FIELD_POLICY: FieldPolicyInput[] = [
   // split lands, search-facet leakage is possible (marketing edits affect
   // search facets); flag for follow-up.
   {
-    path: "tags",
+    path: "tags[]",
     class: "merchandisable",
     merge: "additive-set",
     drift: "low",
