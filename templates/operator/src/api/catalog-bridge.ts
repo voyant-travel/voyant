@@ -17,9 +17,11 @@ import type { HonoBundle } from "@voyantjs/hono/plugin"
 import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
 import { createIndexerService } from "@voyantjs/voyant-catalog"
 import {
+  buildEmbeddingProvider,
   buildTypesenseIndexer,
   DEFAULT_SLICES,
   getFieldPolicyRegistries,
+  withEmbedding,
 } from "./lib/catalog-runtime"
 import { getDbFromHyperdrive } from "./lib/db"
 
@@ -35,41 +37,45 @@ export const catalogBridgeBundle: HonoBundle = {
       TYPESENSE_HOST?: string
       TYPESENSE_ADMIN_API_KEY?: string
       TYPESENSE_API_KEY?: string
+      VOYANT_CLOUD_API_KEY?: string
     }
     const sellerOperatorId = env.TENANT_ID ?? "default"
 
-    function buildService() {
-      const indexer = buildTypesenseIndexer(env)
+    function buildContext() {
+      const embeddings = buildEmbeddingProvider(env)
+      const indexer = buildTypesenseIndexer(env, embeddings)
       if (!indexer) return null
       const slices = [...DEFAULT_SLICES]
-      return createIndexerService({
+      const service = createIndexerService({
         adapter: indexer,
         slices,
         registries: getFieldPolicyRegistries(),
       })
+      const db = getDbFromHyperdrive(env)
+      const builder = withEmbedding(
+        createProductDocumentBuilder(db, { sellerOperatorId }),
+        embeddings,
+      )
+      return { service, builder }
     }
 
     eventBus.subscribe<ProductEventPayload>("product.created", async ({ data }) => {
-      const service = buildService()
-      if (!service) return
-      const db = getDbFromHyperdrive(env)
-      const builder = createProductDocumentBuilder(db, { sellerOperatorId })
-      await service.ensureCollections()
-      await service.reindexEntity("products", data.id, builder)
+      const ctx = buildContext()
+      if (!ctx) return
+      await ctx.service.ensureCollections()
+      await ctx.service.reindexEntity("products", data.id, ctx.builder)
     })
 
     eventBus.subscribe<ProductEventPayload>("product.updated", async ({ data }) => {
-      const service = buildService()
-      if (!service) return
-      const db = getDbFromHyperdrive(env)
-      const builder = createProductDocumentBuilder(db, { sellerOperatorId })
-      await service.reindexEntity("products", data.id, builder)
+      const ctx = buildContext()
+      if (!ctx) return
+      await ctx.service.reindexEntity("products", data.id, ctx.builder)
     })
 
     eventBus.subscribe<ProductEventPayload>("product.deleted", async ({ data }) => {
-      const service = buildService()
-      if (!service) return
-      await service.deleteEntity("products", data.id)
+      const ctx = buildContext()
+      if (!ctx) return
+      await ctx.service.deleteEntity("products", data.id)
     })
   },
 }

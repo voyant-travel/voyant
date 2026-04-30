@@ -10,10 +10,9 @@ import {
   searchCatalogTool,
   suggestAlternativesTool,
 } from "@voyantjs/voyant-catalog-mcp"
-import { createOpenAIEmbeddingProvider } from "@voyantjs/voyant-catalog-rag"
 import type { Context, Hono } from "hono"
 
-import { buildTypesenseIndexer } from "./lib/catalog-runtime"
+import { buildEmbeddingProvider, buildTypesenseIndexer } from "./lib/catalog-runtime"
 
 function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
   registry.register(searchCatalogTool)
@@ -25,7 +24,7 @@ function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): v
 
 function buildToolContext(c: Context): McpToolContext {
   const env = c.env as CloudflareBindings & {
-    OPENAI_API_KEY?: string
+    VOYANT_CLOUD_API_KEY?: string
     TENANT_ID?: string
     TYPESENSE_HOST?: string
     TYPESENSE_ADMIN_API_KEY?: string
@@ -38,11 +37,8 @@ function buildToolContext(c: Context): McpToolContext {
   const tenantId = env.TENANT_ID ?? "default"
   const sellerOperatorId = tenantId
 
-  const embeddings = env.OPENAI_API_KEY
-    ? createOpenAIEmbeddingProvider({ apiKey: env.OPENAI_API_KEY })
-    : undefined
-
-  const indexer = buildTypesenseIndexer(env)
+  const embeddings = buildEmbeddingProvider(env)
+  const indexer = buildTypesenseIndexer(env, embeddings)
 
   return {
     actor,

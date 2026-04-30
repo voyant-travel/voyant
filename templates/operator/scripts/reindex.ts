@@ -10,6 +10,16 @@
  *   DATABASE_URL              — Postgres connection string
  *   TYPESENSE_HOST            — e.g. http://localhost:8108
  *   TYPESENSE_ADMIN_API_KEY   — admin key
+ *
+ * Env optional:
+ *   VOYANT_CLOUD_API_KEY      — when set, every emitted document gets a
+ *                               `text_embedding` vector via the Voyant
+ *                               Cloud Gemini gateway. Without it, the
+ *                               index works for keyword search only. Swap
+ *                               to direct Google or OpenAI by editing the
+ *                               `embeddings` factory below.
+ *   VOYANT_CLOUD_API_URL      — defaults to `https://api.voyantjs.com`.
+ *                               Override for staging gateways.
  */
 
 import { createDbClient } from "@voyantjs/db"
@@ -20,10 +30,13 @@ import {
   createFieldPolicyRegistry,
   createIndexerService,
   createTypesenseIndexer,
+  type DocumentBuilder,
   type FieldPolicyRegistry,
+  type IndexerDocument,
   type IndexerSlice,
   type TypesenseClient,
 } from "@voyantjs/voyant-catalog"
+import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/voyant-catalog-rag"
 import { config } from "dotenv"
 import { Client as TypesenseSdkClient } from "typesense"
 
@@ -35,6 +48,11 @@ config({ path: ".dev.vars", override: true })
 const databaseUrl = process.env.DATABASE_URL
 const typesenseHost = process.env.TYPESENSE_HOST
 const typesenseKey = process.env.TYPESENSE_ADMIN_API_KEY ?? process.env.TYPESENSE_API_KEY
+const cloudApiKey = process.env.VOYANT_CLOUD_API_KEY
+const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(
+  /\/$/,
+  "",
+)
 
 if (!databaseUrl) throw new Error("DATABASE_URL is not set")
 if (!typesenseHost) throw new Error("TYPESENSE_HOST is not set")
@@ -53,6 +71,22 @@ const requestedVertical = process.argv[2]
 
 const db = createDbClient(databaseUrl, { adapter: "node" })
 
+const embeddings: EmbeddingProvider | undefined = cloudApiKey
+  ? createGeminiEmbeddingProvider({
+      apiKey: cloudApiKey,
+      auth: "bearer",
+      baseUrl: `${cloudApiUrl}/ai/v1/gemini`,
+    })
+  : undefined
+
+if (embeddings) {
+  console.info(
+    `[reindex] embeddings enabled via Voyant Cloud — model=${embeddings.capabilities.modelId} dims=${embeddings.capabilities.dimensions}`,
+  )
+} else {
+  console.info("[reindex] embeddings disabled (VOYANT_CLOUD_API_KEY not set) — keyword-only index")
+}
+
 const parsed = new URL(typesenseHost)
 const port = parsed.port ? Number(parsed.port) : parsed.protocol === "https:" ? 443 : 80
 const protocol = parsed.protocol.replace(":", "") as "http" | "https"
@@ -61,7 +95,10 @@ const tsClient = new TypesenseSdkClient({
   apiKey: typesenseKey,
   connectionTimeoutSeconds: 10,
 })
-const indexer = createTypesenseIndexer({ client: tsClient as unknown as TypesenseClient })
+const indexer = createTypesenseIndexer({
+  client: tsClient as unknown as TypesenseClient,
+  vectorDimensions: embeddings?.capabilities.dimensions,
+})
 
 const registries = new Map<string, FieldPolicyRegistry>([
   ["products", createFieldPolicyRegistry(productCatalogPolicy)],
@@ -84,7 +121,29 @@ if (!requestedVertical || requestedVertical === "products") {
   const rows = await db.select().from(products)
   console.info(`[reindex] products: ${rows.length} rows`)
 
-  const builder = createProductDocumentBuilder(db, { sellerOperatorId })
+  const baseBuilder = createProductDocumentBuilder(db, { sellerOperatorId })
+  const builder: DocumentBuilder = embeddings
+    ? async (entityId, slice): Promise<IndexerDocument | null> => {
+        const doc = await baseBuilder(entityId, slice)
+        if (!doc) return null
+        const text = composeMerchandisableText(doc)
+        if (!text) return doc
+        try {
+          const [vector] = await embeddings.embed([text])
+          if (!vector) return doc
+          return {
+            ...doc,
+            embeddings: { ...(doc.embeddings ?? {}), text_embedding: vector },
+            embedding_model_id: embeddings.capabilities.modelId,
+          }
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err)
+          console.warn(`[reindex] embedding failed for ${slice.vertical}/${entityId}: ${message}`)
+          return doc
+        }
+      }
+    : baseBuilder
+
   let done = 0
   for (const row of rows) {
     await service.reindexEntity("products", row.id, builder)
@@ -97,3 +156,18 @@ if (!requestedVertical || requestedVertical === "products") {
 
 console.info("[reindex] complete")
 process.exit(0)
+
+function composeMerchandisableText(doc: IndexerDocument): string {
+  const parts: string[] = []
+  const name = doc.fields.name
+  if (typeof name === "string" && name.length > 0) parts.push(name)
+  const description = doc.fields.description
+  if (typeof description === "string" && description.length > 0) parts.push(description)
+  const tags = doc.fields.tags
+  if (Array.isArray(tags)) {
+    for (const tag of tags) {
+      if (typeof tag === "string" && tag.length > 0) parts.push(tag)
+    }
+  }
+  return parts.join(" ")
+}

@@ -8,6 +8,14 @@ export {
   type EmbeddingProviderCapabilities,
   EmbeddingProviderError,
 } from "./embeddings/contract.js"
+// Gemini provider (Google AI Studio).
+export {
+  createGeminiEmbeddingProvider,
+  GEMINI_MODELS,
+  type GeminiEmbeddingModel,
+  type GeminiEmbeddingProviderOptions,
+  type GeminiTaskType,
+} from "./embeddings/gemini.js"
 // Model registry helpers — validation + migration planning.
 export {
   type EmbeddingMigrationPlan,
@@ -16,7 +24,7 @@ export {
   stampEmbeddingModelId,
   validateEmbeddingCompatibility,
 } from "./embeddings/model-registry.js"
-// Default OpenAI provider.
+// OpenAI provider.
 export {
   createOpenAIEmbeddingProvider,
   embedBatched,
