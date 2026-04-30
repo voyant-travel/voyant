@@ -14,6 +14,14 @@ concurrency:
   cancel-in-progress: true
 jobs:
   ci:
+    # Skip the post-merge CI run on changesets release commits — they only bump
+    # versions + CHANGELOGs (no source change worth re-validating), and the
+    # release workflow on the same push already runs verify:release-train +
+    # verify:package-exports before publishing. Without this gate, every
+    # release fires CI and Release in parallel and rebuilds everything twice.
+    if: >-
+      github.event_name == 'pull_request' ||
+      !startsWith(github.event.head_commit.message, 'chore: release packages')
     runs-on: depot-ubuntu-latest # was: ubuntu-latest. Mapped standard GitHub runner to Depot equivalent.
     permissions:
       contents: read
