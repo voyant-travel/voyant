@@ -1,0 +1,75 @@
+{
+  "name": "@voyantjs/voyant-catalog-rag",
+  "version": "0.19.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./embeddings/contract": "./src/embeddings/contract.ts",
+    "./embeddings/openai": "./src/embeddings/openai.ts",
+    "./embeddings/model-registry": "./src/embeddings/model-registry.ts",
+    "./search/semantic": "./src/search/semantic.ts",
+    "./search/federate": "./src/search/federate.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./embeddings/contract": {
+        "types": "./dist/embeddings/contract.d.ts",
+        "import": "./dist/embeddings/contract.js",
+        "default": "./dist/embeddings/contract.js"
+      },
+      "./embeddings/openai": {
+        "types": "./dist/embeddings/openai.d.ts",
+        "import": "./dist/embeddings/openai.js",
+        "default": "./dist/embeddings/openai.js"
+      },
+      "./embeddings/model-registry": {
+        "types": "./dist/embeddings/model-registry.d.ts",
+        "import": "./dist/embeddings/model-registry.js",
+        "default": "./dist/embeddings/model-registry.js"
+      },
+      "./search/semantic": {
+        "types": "./dist/search/semantic.d.ts",
+        "import": "./dist/search/semantic.js",
+        "default": "./dist/search/semantic.js"
+      },
+      "./search/federate": {
+        "types": "./dist/search/federate.d.ts",
+        "import": "./dist/search/federate.js",
+        "default": "./dist/search/federate.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "dependencies": {
+    "@voyantjs/voyant-catalog": "workspace:*"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/catalog-rag"
+  }
+}
