@@ -1,0 +1,103 @@
+import { createFieldPolicyRegistry } from "@voyantjs/voyant-catalog/contract"
+import { resolveOverlay } from "@voyantjs/voyant-catalog/overlay/resolver"
+import { describe, expect, it } from "vitest"
+
+import { cruiseCatalogPolicy } from "../../src/catalog-policy.js"
+import { cruiseProvenance, cruiseRowToProjection } from "../../src/service-catalog-plane.js"
+
+const sampleRow = {
+  id: "crse_abc",
+  slug: "rhine-discovery-15d",
+  name: "15-Day Rhine Discovery",
+  cruiseType: "river" as const,
+  lineSupplierId: "supp_viking",
+  defaultShipId: "ship_eir",
+  nights: 14,
+  embarkPortFacilityId: "fac_ams",
+  disembarkPortFacilityId: "fac_bsl",
+  description: "Source description",
+  shortDescription: "Short blurb",
+  highlights: ["Cologne Cathedral", "Black Forest"],
+  inclusionsHtml: "<p>All meals</p>",
+  exclusionsHtml: "<p>Excursions extra</p>",
+  regions: ["Western Europe"],
+  themes: ["culture", "history"],
+  heroImageUrl: "https://example.com/hero.jpg",
+  mapImageUrl: "https://example.com/map.jpg",
+  status: "draft" as const,
+  lowestPriceCached: "3499.00",
+  lowestPriceCurrencyCached: "EUR",
+  earliestDepartureCached: "2026-04-01",
+  latestDepartureCached: "2026-10-31",
+  externalRefs: { vikingId: "WAVE2026-RHN-15D" },
+  createdAt: new Date("2026-01-01"),
+  updatedAt: new Date("2026-04-01"),
+  // biome-ignore lint/suspicious/noExplicitAny: test fixture
+} as any
+
+describe("cruiseRowToProjection", () => {
+  it("maps every column to its catalog-policy path", () => {
+    const projection = cruiseRowToProjection(sampleRow, { sellerOperatorId: "op_xyz" })
+    expect(projection.get("name")).toBe("15-Day Rhine Discovery")
+    expect(projection.get("nights")).toBe(14)
+    expect(projection.get("cruiseType")).toBe("river")
+    expect(projection.get("lineSupplierId")).toBe("supp_viking")
+    expect(projection.get("highlights")).toEqual(["Cologne Cathedral", "Black Forest"])
+  })
+
+  it("synthesizes owned provenance by default", () => {
+    const projection = cruiseRowToProjection(sampleRow, { sellerOperatorId: "op_xyz" })
+    expect(projection.get("source.kind")).toBe("owned")
+    expect(projection.get("seller.operator_id")).toBe("op_xyz")
+  })
+
+  it("accepts sourced provenance for Voyant Connect peers", () => {
+    const projection = cruiseRowToProjection(sampleRow, {
+      sellerOperatorId: "op_xyz",
+      sourceKind: "voyant-connect",
+      sourceRef: "viking_rhn_15d",
+    })
+    expect(projection.get("source.kind")).toBe("voyant-connect")
+    expect(projection.get("source.ref")).toBe("viking_rhn_15d")
+  })
+})
+
+describe("cruiseProvenance", () => {
+  it("returns owned static-freshness for owned cruises", () => {
+    const p = cruiseProvenance(sampleRow, { sellerOperatorId: "op_xyz" })
+    expect(p.source_kind).toBe("owned")
+    expect(p.source_freshness).toBe("static")
+  })
+
+  it("returns sync-freshness for sourced cruises", () => {
+    const p = cruiseProvenance(sampleRow, {
+      sellerOperatorId: "op_xyz",
+      sourceKind: "voyant-connect",
+      sourceRef: "x",
+    })
+    expect(p.source_kind).toBe("voyant-connect")
+    expect(p.source_freshness).toBe("sync")
+  })
+})
+
+describe("end-to-end: projection + resolver", () => {
+  it("applies marketing overlay on cruise name for customer audience", () => {
+    const projection = cruiseRowToProjection(sampleRow, { sellerOperatorId: "op_xyz" })
+    const registry = createFieldPolicyRegistry(cruiseCatalogPolicy)
+    const view = resolveOverlay(
+      registry,
+      projection,
+      [
+        {
+          field_path: "name",
+          locale: "en-GB",
+          audience: "customer",
+          market: "default",
+          value: "✨ Magical Rhine Voyage",
+        },
+      ],
+      { locale: "en-GB", audience: "customer", market: "default", actor: "customer" },
+    )
+    expect(view.values.get("name")).toBe("✨ Magical Rhine Voyage")
+  })
+})

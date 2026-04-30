@@ -1,0 +1,296 @@
+/**
+ * Catalog-plane integration for the products service.
+ *
+ * Adds catalog-aware service methods alongside the existing `productsService`
+ * surface in `service.ts`. Routes opt in: the original `getProductById` /
+ * `listProducts` continue to return raw DB rows; the methods here return
+ * resolved CatalogEntry views with overlays + visibility filtering applied.
+ *
+ * Existing service code is untouched. Migration is per-route, gradual.
+ *
+ * Naming note: this file is `service-catalog-plane.ts` (not `service-catalog.ts`)
+ * because the existing `service-catalog.ts` handles the products module's own
+ * catalog management (categories, tags, types). The "catalog plane" is the
+ * cross-vertical projection / overlay / snapshot infrastructure from
+ * `@voyantjs/voyant-catalog`.
+ *
+ * See `docs/architecture/catalog-architecture.md` §9.1 for the integration
+ * pattern this file establishes (replicated for cruises, hospitality, etc.
+ * in their own service-catalog-plane.ts files).
+ */
+
+import type { AnyDrizzleDb } from "@voyantjs/db"
+import {
+  buildIndexerDocument,
+  buildSnapshotInputFromView,
+  type CaptureSnapshotInput,
+  createFieldPolicyRegistry,
+  type DocumentBuilder,
+  type DocumentEmitter,
+  type FieldPolicyRegistry,
+  type IndexerDocument,
+  type IndexerSlice,
+  type PricingBasis,
+  type Provenance,
+  type ResolvedView,
+  type ResolverScope,
+  resolveEntityView,
+  type Visibility,
+} from "@voyantjs/voyant-catalog"
+import { eq } from "drizzle-orm"
+
+import { productCatalogPolicy } from "./catalog-policy.js"
+import { products } from "./schema-core.js"
+
+/**
+ * Lazy-initialized registry. Built once per process; the field-policy file
+ * is static so this is safe to memoize.
+ */
+let _registry: FieldPolicyRegistry | undefined
+function getProductsRegistry(): FieldPolicyRegistry {
+  if (!_registry) {
+    _registry = createFieldPolicyRegistry(productCatalogPolicy)
+  }
+  return _registry
+}
+
+/**
+ * Maps a product row to a field-keyed projection consumable by the catalog
+ * resolver. Field paths match the policy registry declarations in
+ * `catalog-policy.ts`.
+ *
+ * Provenance fields (`source.kind`, `source.ref`, `seller.operator_id`) are
+ * synthesized: today's products module models operator-owned inventory
+ * exclusively, so `source.kind = "owned"` and `source.ref = undefined`.
+ * When sourced products land (e.g. via Voyant Connect), this helper picks
+ * up the provenance from a parallel provenance row instead.
+ */
+export function productRowToProjection(
+  row: typeof products.$inferSelect,
+  context: { sellerOperatorId: string },
+): ReadonlyMap<string, unknown> {
+  const projection = new Map<string, unknown>([
+    // Provenance — synthesized for owned products.
+    ["source.kind", "owned"],
+    ["seller.operator_id", context.sellerOperatorId],
+
+    // Identity
+    ["id", row.id],
+    ["createdAt", row.createdAt],
+    ["updatedAt", row.updatedAt],
+
+    // Merchandisable
+    ["name", row.name],
+    ["description", row.description],
+    ["tags", row.tags],
+
+    // Structural
+    ["status", row.status],
+    ["bookingMode", row.bookingMode],
+    ["capacityMode", row.capacityMode],
+    ["visibility", row.visibility],
+    ["activated", row.activated],
+    ["productTypeId", row.productTypeId],
+    ["facilityId", row.facilityId],
+    ["pax", row.pax],
+    ["startDate", row.startDate],
+    ["endDate", row.endDate],
+    ["timezone", row.timezone],
+    ["reservationTimeoutMinutes", row.reservationTimeoutMinutes],
+
+    // Pricing (configured defaults — quote-time prices come from pricing module)
+    ["sellAmountCents", row.sellAmountCents],
+    ["sellCurrency", row.sellCurrency],
+
+    // Internal / staff-only
+    ["costAmountCents", row.costAmountCents],
+    ["marginPercent", row.marginPercent],
+  ])
+  return projection
+}
+
+/**
+ * Returns the Provenance tuple for a product row. Owned products synthesize
+ * a `source.kind: "owned"` provenance with `static` freshness; sourced
+ * products (Voyant Connect / GDS / direct API) carry their actual source
+ * connection identity. Phase 1 ships only the owned form.
+ */
+export function productProvenance(
+  _row: typeof products.$inferSelect,
+  _context: { sellerOperatorId: string },
+): Provenance {
+  return {
+    source_kind: "owned",
+    source_freshness: "static",
+  }
+}
+
+/** Service-context the catalog-aware methods need. Templates wire this in. */
+export interface ProductCatalogContext {
+  /** The deployment's operator/tenant identifier — synthesized into provenance. */
+  sellerOperatorId: string
+  /** Variant scope for the request. */
+  scope: ResolverScope
+}
+
+/**
+ * Catalog-aware product fetch. Returns the resolved view (source projection
+ * + active overlays + visibility filtering) instead of the raw DB row.
+ *
+ * The original `productsService.getProductById` continues to return raw
+ * rows — routes that haven't migrated to the catalog plane keep working.
+ *
+ * Returns `null` if no product with `id` exists.
+ */
+export async function getResolvedProductById(
+  db: AnyDrizzleDb,
+  id: string,
+  context: ProductCatalogContext,
+): Promise<ResolvedView | null> {
+  const rows = await db.select().from(products).where(eq(products.id, id)).limit(1)
+  const row = rows[0]
+  if (!row) return null
+
+  const projection = productRowToProjection(row, {
+    sellerOperatorId: context.sellerOperatorId,
+  })
+  return resolveEntityView(db, getProductsRegistry(), "products", id, projection, context.scope)
+}
+
+/**
+ * Catalog-aware product list. Returns resolved views per row.
+ *
+ * Caller fetches the rows (typically via the existing `productsService.listProducts`
+ * with whatever filtering / pagination / sort the route applies) and passes
+ * them in. This keeps query construction in the existing service layer and
+ * adds the catalog overlay step on top.
+ *
+ * For Phase B v1, this is a naive per-row resolver that issues one overlay
+ * fetch per product. Real list paths (storefront browse, admin search)
+ * should go through the search index instead — `IndexerService.search` is
+ * already wired for that purpose. Use this method for small admin-facing
+ * lists or detail-page composition where the index isn't on the read path.
+ *
+ * Production-grade batched overlay fetch is a TODO; the catalog plane
+ * supports it conceptually but `fetchOverlaysForEntity` is currently
+ * one-entity-at-a-time. A future `fetchOverlaysForEntities(db, [(module, id), ...])`
+ * lands with the indexer hot-path optimization.
+ */
+export async function listResolvedProducts(
+  db: AnyDrizzleDb,
+  rows: ReadonlyArray<typeof products.$inferSelect>,
+  context: ProductCatalogContext,
+): Promise<ResolvedView[]> {
+  const registry = getProductsRegistry()
+  const views: ResolvedView[] = []
+  for (const row of rows) {
+    const projection = productRowToProjection(row, {
+      sellerOperatorId: context.sellerOperatorId,
+    })
+    const view = await resolveEntityView(
+      db,
+      registry,
+      "products",
+      row.id,
+      projection,
+      context.scope,
+    )
+    views.push(view)
+  }
+  return views
+}
+
+/**
+ * Build a `CaptureSnapshotInput` for a product to feed into the catalog
+ * plane's `captureSnapshot` / `captureSnapshotGraph` helpers at booking
+ * commit time. Fetches the product, resolves its view (overlays applied,
+ * visibility filter for the supplied scope), and returns the snapshot
+ * input shape.
+ *
+ * Returns `null` if the product doesn't exist.
+ *
+ * Composition: a single-product booking calls this once and passes the
+ * result to `captureSnapshot`. A composite booking (e.g. a tour-package
+ * booking with referenced hospitality + excursions) calls this and the
+ * other verticals' equivalents, collects the inputs, and passes them all
+ * to `captureSnapshotGraph` in one transaction.
+ */
+export async function buildProductSnapshotInput(
+  db: AnyDrizzleDb,
+  productId: string,
+  context: ProductCatalogContext & { pricingBasis?: PricingBasis },
+): Promise<Omit<CaptureSnapshotInput, "bookingId"> | null> {
+  const view = await getResolvedProductById(db, productId, context)
+  if (!view) return null
+  return buildSnapshotInputFromView(view, {
+    entityModule: "products",
+    entityId: productId,
+    sourceKind: "owned",
+    pricingBasis: context.pricingBasis,
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Indexer document emission
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Construct a sync `DocumentEmitter` for products. The emitter takes a
+ * pre-fetched product row + a slice and returns the indexer document
+ * (filtered by visibility, with blob-only fields skipped).
+ *
+ * Bulk-reindex pipelines that already have rows in hand call this directly.
+ * Live reindex paths use `createProductDocumentBuilder` below, which fetches
+ * the row before emitting.
+ */
+export function createProductDocumentEmitter(context: {
+  sellerOperatorId: string
+}): DocumentEmitter<typeof products.$inferSelect> {
+  const registry = getProductsRegistry()
+  return {
+    vertical: "products",
+    emit(source, slice) {
+      const projection = productRowToProjection(source, {
+        sellerOperatorId: context.sellerOperatorId,
+      })
+      return buildIndexerDocument(registry, projection, slice, source.id)
+    },
+  }
+}
+
+/**
+ * Async `DocumentBuilder` for products — fetches the row by id, then emits.
+ * Plug this into `IndexerService.reindexEntity` for live reindex events.
+ *
+ * Returns `null` if the product no longer exists (e.g. it was deleted
+ * between the reindex enqueue and the worker picking it up). Callers can
+ * treat `null` as a delete signal.
+ */
+export function createProductDocumentBuilder(
+  db: AnyDrizzleDb,
+  context: { sellerOperatorId: string },
+): DocumentBuilder {
+  const emitter = createProductDocumentEmitter(context)
+  return async (entityId: string, slice: IndexerSlice): Promise<IndexerDocument | null> => {
+    const rows = await db.select().from(products).where(eq(products.id, entityId)).limit(1)
+    const row = rows[0]
+    if (!row) return null
+    return emitter.emit(row, slice)
+  }
+}
+
+/**
+ * Re-exports for routes that only import from this file.
+ */
+export type {
+  CaptureSnapshotInput,
+  DocumentBuilder,
+  DocumentEmitter,
+  IndexerDocument,
+  IndexerSlice,
+  PricingBasis,
+  Provenance,
+  ResolvedView,
+  ResolverScope,
+  Visibility,
+}
