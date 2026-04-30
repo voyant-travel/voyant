@@ -3,15 +3,8 @@
   "name": "voyant-bookings-passengers-section",
   "title": "Booking Passengers Section",
   "description": "Multi-row passenger list for booking-create: name + email + role (lead / adult / child / infant) + optional room assignment, with add/remove. Parent creates CRM people + booking_travelers rows at submit time.",
-  "dependencies": [
-    "lucide-react"
-  ],
-  "registryDependencies": [
-    "button",
-    "input",
-    "label",
-    "select"
-  ],
+  "dependencies": ["lucide-react"],
+  "registryDependencies": ["button", "input", "label", "select"],
   "files": [
     {
       "path": "registry/bookings/passengers-section.tsx",

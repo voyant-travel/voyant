@@ -3,15 +3,8 @@
   "name": "voyant-bookings-voucher-picker-section",
   "title": "Booking Voucher Picker Section",
   "description": "Operator voucher picker: enter a code, validate against POST /v1/public/vouchers/validate (status / expiry / currency / booking-assignment / balance guards apply). Returns the picked voucher on success; parent redeems at submit time when the final amount is known.",
-  "dependencies": [
-    "@voyantjs/finance-react",
-    "lucide-react"
-  ],
-  "registryDependencies": [
-    "button",
-    "input",
-    "label"
-  ],
+  "dependencies": ["@voyantjs/finance-react", "lucide-react"],
+  "registryDependencies": ["button", "input", "label"],
   "files": [
     {
       "path": "registry/bookings/voucher-picker-section.tsx",

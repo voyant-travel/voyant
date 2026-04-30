@@ -1,3 +1,14 @@
+import type {
+  ChannelRow,
+  ChannelWebhookEventRow,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import {
+  nullableString,
+  parseJsonRecord,
+  toIsoDateTime,
+  toLocalDateTimeInput,
+  webhookStatusOptions,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import {
   Button,
   Dialog,
@@ -22,14 +33,6 @@ import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
-import type { ChannelRow, ChannelWebhookEventRow } from "./distribution-shared"
-import {
-  nullableString,
-  parseJsonRecord,
-  toIsoDateTime,
-  toLocalDateTimeInput,
-  webhookStatusOptions,
-} from "./distribution-shared"
 
 const webhookFormSchema = z.object({
   channelId: z.string().min(1, "Channel is required"),

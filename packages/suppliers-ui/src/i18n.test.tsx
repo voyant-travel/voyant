@@ -1,6 +1,17 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type { Supplier, SupplierRate, SupplierService } from "@voyantjs/suppliers-react"
+import { VoyantSuppliersProvider } from "@voyantjs/suppliers-react"
+import type { ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
+
+function withProviders(children: ReactNode) {
+  return (
+    <VoyantSuppliersProvider baseUrl="/api">
+      <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+    </VoyantSuppliersProvider>
+  )
+}
 
 import { SupplierServiceRow } from "./components/supplier-service-row"
 import { SuppliersPage } from "./components/suppliers-page"
@@ -93,40 +104,7 @@ describe("suppliers-ui i18n", () => {
 
   it("renders English copy without a provider", () => {
     const html = renderToStaticMarkup(
-      <div>
-        <SuppliersPage
-          search=""
-          onSearchChange={() => {}}
-          onCreate={() => {}}
-          onRowClick={() => {}}
-          rows={suppliers}
-          total={1}
-        />
-        <SupplierServiceRow
-          service={service}
-          rates={rates}
-          expanded
-          onToggle={() => {}}
-          onEdit={() => {}}
-          onDelete={() => {}}
-          onAddRate={() => {}}
-          onEditRate={() => {}}
-          onDeleteRate={() => {}}
-        />
-        <SuppliersMessageProbe />
-      </div>,
-    )
-
-    expect(html).toContain("Suppliers")
-    expect(html).toContain("New Supplier")
-    expect(html).toContain("Rates")
-    expect(html).toContain("Guide")
-    expect(html).toContain("Per person")
-  })
-
-  it("renders Romanian copy with the package provider", () => {
-    const html = renderToStaticMarkup(
-      <SuppliersUiMessagesProvider locale="ro-RO">
+      withProviders(
         <div>
           <SuppliersPage
             search=""
@@ -148,8 +126,45 @@ describe("suppliers-ui i18n", () => {
             onDeleteRate={() => {}}
           />
           <SuppliersMessageProbe />
-        </div>
-      </SuppliersUiMessagesProvider>,
+        </div>,
+      ),
+    )
+
+    expect(html).toContain("Suppliers")
+    expect(html).toContain("New Supplier")
+    expect(html).toContain("Rates")
+    expect(html).toContain("Guide")
+    expect(html).toContain("Per person")
+  })
+
+  it("renders Romanian copy with the package provider", () => {
+    const html = renderToStaticMarkup(
+      withProviders(
+        <SuppliersUiMessagesProvider locale="ro-RO">
+          <div>
+            <SuppliersPage
+              search=""
+              onSearchChange={() => {}}
+              onCreate={() => {}}
+              onRowClick={() => {}}
+              rows={suppliers}
+              total={1}
+            />
+            <SupplierServiceRow
+              service={service}
+              rates={rates}
+              expanded
+              onToggle={() => {}}
+              onEdit={() => {}}
+              onDelete={() => {}}
+              onAddRate={() => {}}
+              onEditRate={() => {}}
+              onDeleteRate={() => {}}
+            />
+            <SuppliersMessageProbe />
+          </div>
+        </SuppliersUiMessagesProvider>,
+      ),
     )
 
     expect(html).toContain("Furnizori")

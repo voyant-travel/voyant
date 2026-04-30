@@ -1,10 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { type AddressRecord, useAddresses, useAddressMutation } from "@voyantjs/identity-react"
+import { AddressDialog } from "@voyantjs/identity-ui/components/address-dialog"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { AddressDialog } from "./address-dialog"
 
 type Props = { entityType: string; entityId: string }
 const PAGE_SIZE = 25

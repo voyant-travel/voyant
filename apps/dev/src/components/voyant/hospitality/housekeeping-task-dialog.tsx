@@ -2,6 +2,7 @@ import {
   type HousekeepingTaskRecord,
   useHousekeepingTaskMutation,
 } from "@voyantjs/hospitality-react"
+import { RoomUnitCombobox } from "@voyantjs/hospitality-ui/components/room-unit-combobox"
 import {
   Button,
   Dialog,
@@ -24,7 +25,6 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
-import { RoomUnitCombobox } from "./room-unit-combobox"
 
 const STATUSES = ["open", "in_progress", "completed", "cancelled"] as const
 type Status = (typeof STATUSES)[number]

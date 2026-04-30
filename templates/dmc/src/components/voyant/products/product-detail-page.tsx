@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { formatMessage, useLocale } from "@voyantjs/admin"
+import { ProductDayDialog as DayDialog } from "@voyantjs/products-ui/components/product-day-dialog"
+import { ProductVersionDialog as VersionDialog } from "@voyantjs/products-ui/components/product-version-dialog"
 import {
   Badge,
   Button,
@@ -23,7 +25,6 @@ import {
 import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
-import { DayDialog } from "./product-day-dialog"
 import { DayRow } from "./product-detail-day-row"
 import {
   type DayService,
@@ -38,7 +39,6 @@ import {
 } from "./product-detail-shared"
 import { ProductDialog } from "./product-dialog"
 import { ServiceDialog } from "./product-service-dialog"
-import { VersionDialog } from "./product-version-dialog"
 
 export function ProductDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()

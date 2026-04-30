@@ -6,13 +6,15 @@ import {
   useOptionUnitPriceRuleMutation,
   useOptionUnitPriceRules,
 } from "@voyantjs/pricing-react"
+import { OptionUnitPriceRuleDialog } from "@voyantjs/pricing-ui/components/option-unit-price-rule-dialog"
+import {
+  OptionPriceRuleLabel,
+  PricingCategoryLabel,
+} from "@voyantjs/pricing-ui/components/pricing-shared-labels"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { OptionUnitPriceRuleDialog } from "./option-unit-price-rule-dialog"
-import { OptionPriceRuleLabel, PricingCategoryLabel } from "./pricing-shared-labels"
 
 const PAGE_SIZE = 25
 

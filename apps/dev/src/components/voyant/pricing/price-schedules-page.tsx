@@ -6,13 +6,12 @@ import {
   usePriceScheduleMutation,
   usePriceSchedules,
 } from "@voyantjs/pricing-react"
+import { PriceScheduleDialog } from "@voyantjs/pricing-ui/components/price-schedule-dialog"
+import { PriceCatalogLabel } from "@voyantjs/pricing-ui/components/pricing-shared-labels"
 import { Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import { Badge, Button, Input } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { PriceScheduleDialog } from "./price-schedule-dialog"
-import { PriceCatalogLabel } from "./pricing-shared-labels"
 
 const PAGE_SIZE = 25
 

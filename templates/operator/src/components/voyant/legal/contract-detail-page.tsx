@@ -11,13 +11,13 @@ import {
   useLegalContractMutation,
   useLegalContractSignatures,
 } from "@voyantjs/legal-react"
+import { AttachmentDialog } from "@voyantjs/legal-ui/components/attachment-dialog"
+import { SignatureDialog } from "@voyantjs/legal-ui/components/signature-dialog"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { AttachmentDialog } from "./attachment-dialog"
 import { ContractDialog } from "./contract-dialog"
 import { legalQueryClient } from "./legal-query-client"
-import { SignatureDialog } from "./signature-dialog"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "outline",

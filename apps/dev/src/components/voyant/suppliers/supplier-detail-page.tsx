@@ -6,6 +6,7 @@ import {
   useSupplierRateMutation,
   useSupplierServiceMutation,
 } from "@voyantjs/suppliers-react"
+import { SupplierServiceRow as ServiceRow } from "@voyantjs/suppliers-ui/components/supplier-service-row"
 import {
   Badge,
   Button,
@@ -28,7 +29,6 @@ import {
   statusVariant,
 } from "./shared"
 import { SupplierDialog } from "./supplier-dialog"
-import { ServiceRow } from "./supplier-service-row"
 
 export function SupplierDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()

@@ -1,4 +1,8 @@
-import type { SupplierRate, SupplierService } from "@voyantjs/suppliers-react"
+import {
+  type SupplierRate,
+  type SupplierService,
+  useSupplierServiceRates,
+} from "@voyantjs/suppliers-react"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 
@@ -6,6 +10,7 @@ import { useSuppliersUiI18nOrDefault } from "../i18n"
 
 export function SupplierServiceRow({
   service,
+  supplierId,
   rates,
   expanded,
   onToggle,
@@ -16,7 +21,16 @@ export function SupplierServiceRow({
   onDeleteRate,
 }: {
   service: SupplierService
-  rates: SupplierRate[]
+  /**
+   * Optional. When set (and `rates` is not), the row fetches rates lazily on
+   * expand via `useSupplierServiceRates`.
+   */
+  supplierId?: string
+  /**
+   * Optional. When provided, the caller owns rate fetching. When omitted and
+   * `supplierId` is set, rates are fetched internally on expand.
+   */
+  rates?: SupplierRate[]
   expanded: boolean
   onToggle: () => void
   onEdit: () => void
@@ -27,6 +41,10 @@ export function SupplierServiceRow({
 }) {
   const i18n = useSuppliersUiI18nOrDefault()
   const { messages } = i18n
+  const { data: fetchedRates } = useSupplierServiceRates(supplierId ?? "", service.id, {
+    enabled: expanded && !rates && !!supplierId,
+  })
+  const resolvedRates = rates ?? fetchedRates?.data ?? []
 
   return (
     <div className="rounded-md border">
@@ -93,7 +111,7 @@ export function SupplierServiceRow({
             </Button>
           </div>
 
-          {rates.length === 0 ? (
+          {resolvedRates.length === 0 ? (
             <p className="py-2 text-center text-xs text-muted-foreground">
               {messages.supplierServiceRow.noRates}
             </p>
@@ -121,7 +139,7 @@ export function SupplierServiceRow({
                   </tr>
                 </thead>
                 <tbody>
-                  {rates.map((rate) => (
+                  {resolvedRates.map((rate) => (
                     <tr key={rate.id} className="border-b last:border-b-0">
                       <td className="p-2">{rate.name}</td>
                       <td className="p-2 font-mono">

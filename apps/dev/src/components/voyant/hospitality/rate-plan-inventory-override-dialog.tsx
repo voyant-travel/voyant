@@ -2,6 +2,8 @@ import {
   type RatePlanInventoryOverrideRecord,
   useRatePlanInventoryOverrideMutation,
 } from "@voyantjs/hospitality-react"
+import { RatePlanCombobox } from "@voyantjs/hospitality-ui/components/rate-plan-combobox"
+import { RoomTypeCombobox } from "@voyantjs/hospitality-ui/components/room-type-combobox"
 import {
   Button,
   Dialog,
@@ -20,8 +22,6 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
-import { RatePlanCombobox } from "./rate-plan-combobox"
-import { RoomTypeCombobox } from "./room-type-combobox"
 
 const intOrEmpty = z.coerce.number().int().optional().or(z.literal("")).nullable()
 

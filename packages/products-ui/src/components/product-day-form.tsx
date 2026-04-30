@@ -11,7 +11,7 @@ import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider"
 
 type Mode =
-  | { kind: "create"; productId: string; nextDayNumber?: number }
+  | { kind: "create"; productId: string; itineraryId?: string; nextDayNumber?: number }
   | { kind: "edit"; productId: string; day: ProductDayRecord }
 
 export interface ProductDayFormProps {
@@ -84,7 +84,11 @@ export function ProductDayForm({ mode, onSuccess, onCancel }: ProductDayFormProp
     try {
       const day =
         mode.kind === "create"
-          ? await create.mutateAsync({ productId: mode.productId, ...payload })
+          ? await create.mutateAsync({
+              productId: mode.productId,
+              itineraryId: mode.itineraryId,
+              ...payload,
+            })
           : await update.mutateAsync({
               productId: mode.productId,
               dayId: mode.day.id,

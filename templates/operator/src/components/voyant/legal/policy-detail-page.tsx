@@ -10,6 +10,8 @@ import {
   useLegalPolicyVersionMutation,
   useLegalPolicyVersions,
 } from "@voyantjs/legal-react"
+import { PolicyRuleDialog, type RuleData } from "@voyantjs/legal-ui/components/policy-rule-dialog"
+import { PolicyVersionDialog } from "@voyantjs/legal-ui/components/policy-version-dialog"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -23,8 +25,6 @@ import {
   getLegalPolicyVersionsQueryOptions,
 } from "./policy-detail-shared"
 import { PolicyDialog } from "./policy-dialog"
-import { PolicyRuleDialog, type RuleData } from "./policy-rule-dialog"
-import { PolicyVersionDialog } from "./policy-version-dialog"
 import { PolicyVersionRow } from "./policy-version-row"
 
 export function loadPolicyDetailPage(id: string, ensureQueryData: EnsureQueryData) {

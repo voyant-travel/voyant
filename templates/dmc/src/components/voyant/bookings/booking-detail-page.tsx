@@ -3,6 +3,19 @@
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useLocale } from "@voyantjs/admin"
 import { bookingStatusBadgeVariant, useBooking, useBookingMutation } from "@voyantjs/bookings-react"
+import { BookingActivityTimeline } from "@voyantjs/bookings-ui/components/booking-activity-timeline"
+import { BookingCancellationDialog } from "@voyantjs/bookings-ui/components/booking-cancellation-dialog"
+import { BookingDialog } from "@voyantjs/bookings-ui/components/booking-dialog"
+import { BookingDocumentList } from "@voyantjs/bookings-ui/components/booking-document-list"
+import { BookingGroupSection } from "@voyantjs/bookings-ui/components/booking-group-section"
+import { BookingGuaranteeList } from "@voyantjs/bookings-ui/components/booking-guarantee-list"
+import { BookingItemList } from "@voyantjs/bookings-ui/components/booking-item-list"
+import { BookingNotes } from "@voyantjs/bookings-ui/components/booking-notes"
+import { BookingPaymentScheduleList } from "@voyantjs/bookings-ui/components/booking-payment-schedule-list"
+import { BookingPaymentsSummary } from "@voyantjs/bookings-ui/components/booking-payments-summary"
+import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-change-dialog"
+import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
+import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
 import { Badge, Button, Card, CardContent } from "@voyantjs/ui/components"
 import {
   DropdownMenu,
@@ -25,21 +38,7 @@ import {
 import type { ReactNode } from "react"
 import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
-
-import { BookingActivityTimeline } from "./booking-activity-timeline"
-import { BookingCancellationDialog } from "./booking-cancellation-dialog"
 import { BookingDetailSkeleton } from "./booking-detail-skeleton"
-import { BookingDialog } from "./booking-dialog"
-import { BookingDocumentList } from "./booking-document-list"
-import { BookingGroupSection } from "./booking-group-section"
-import { BookingGuaranteeList } from "./booking-guarantee-list"
-import { BookingItemList } from "./booking-item-list"
-import { BookingNotes } from "./booking-notes"
-import { BookingPaymentScheduleList } from "./booking-payment-schedule-list"
-import { BookingPaymentsSummary } from "./booking-payments-summary"
-import { StatusChangeDialog } from "./status-change-dialog"
-import { SupplierStatusList } from "./supplier-status-list"
-import { TravelerList } from "./traveler-list"
 
 function formatAmount(
   cents: number | null,

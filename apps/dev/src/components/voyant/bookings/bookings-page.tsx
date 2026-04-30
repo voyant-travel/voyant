@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 
-import { BookingList } from "./booking-list"
+import { BookingList } from "@voyantjs/bookings-ui/components/booking-list"
 
 export function BookingsPage() {
   const navigate = useNavigate()

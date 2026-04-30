@@ -8,7 +8,6 @@ import {
   booleanOptions,
   defaultFetcher,
   formatDateTime,
-  formatSelectionLabel,
   getCloseoutsQueryOptions as getCloseoutsQueryOptionsBase,
   getPickupPointsQueryOptions as getPickupPointsQueryOptionsBase,
   getProductsQueryOptions as getProductsQueryOptionsBase,
@@ -50,7 +49,6 @@ export type {
 export {
   booleanOptions,
   formatDateTime,
-  formatSelectionLabel,
   NONE_VALUE,
   nullableNumber,
   nullableString,

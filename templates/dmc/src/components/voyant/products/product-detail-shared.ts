@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
+import type { ProductDayRecord as ProductDay } from "@voyantjs/products-react"
 import { api } from "@/lib/api-client"
 
 export type Product = {
@@ -20,16 +21,7 @@ export type Product = {
   updatedAt: string
 }
 
-export type ProductDay = {
-  id: string
-  productId: string
-  dayNumber: number
-  title: string | null
-  description: string | null
-  location: string | null
-  createdAt: string
-  updatedAt: string
-}
+export type { ProductDayRecord as ProductDay } from "@voyantjs/products-react"
 
 export type DayService = {
   id: string

@@ -1,13 +1,26 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { RowSelectionState } from "@tanstack/react-table"
+import { DistributionOverview } from "@voyantjs/distribution-ui/components/distribution-overview"
+import type {
+  BatchMutationResponse,
+  ChannelBookingLinkRow,
+  ChannelCommissionRuleRow,
+  ChannelContractRow,
+  ChannelProductMappingRow,
+  ChannelRow,
+  ChannelWebhookEventRow,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import {
+  formatSelectionLabel,
+  labelById,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { api } from "@/lib/api-client"
 import { DistributionDialogs } from "./distribution-dialogs"
-import { DistributionOverview } from "./distribution-overview"
 import {
   getDistributionBookingLinksQueryOptions,
   getDistributionBookingsQueryOptions,
@@ -19,16 +32,6 @@ import {
   getDistributionSuppliersQueryOptions,
   getDistributionWebhookEventsQueryOptions,
 } from "./distribution-query-options"
-import type {
-  BatchMutationResponse,
-  ChannelBookingLinkRow,
-  ChannelCommissionRuleRow,
-  ChannelContractRow,
-  ChannelProductMappingRow,
-  ChannelRow,
-  ChannelWebhookEventRow,
-} from "./distribution-shared"
-import { formatSelectionLabel, labelById } from "./distribution-shared"
 import {
   DistributionChannelsTab,
   DistributionCommissionsTab,

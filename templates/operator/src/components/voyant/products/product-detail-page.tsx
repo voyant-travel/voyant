@@ -1,9 +1,8 @@
 import { useNavigate } from "@tanstack/react-router"
-
+import { BookingDialog } from "@voyantjs/bookings-ui/components/booking-dialog"
+import { ProductOptionsSection } from "@voyantjs/products-ui/components/product-options-section"
 import { Button } from "@voyantjs/ui/components"
 import { useAdminMessages } from "@/lib/admin-i18n"
-
-import { BookingDialog } from "../bookings/booking-dialog"
 import { DepartureDialog } from "./product-departure-dialog"
 import { ProductDialog } from "./product-detail-dialog"
 import { ProductDetailHeader } from "./product-detail-header"
@@ -17,7 +16,6 @@ import {
   ProductSchedulesSection,
 } from "./product-detail-sections"
 import { ProductDetailSkeleton } from "./product-detail-skeleton"
-import { OptionsSection } from "./product-options-section"
 import { ScheduleDialog } from "./product-schedule-dialog"
 import { useProductDetailData } from "./use-product-detail-data"
 import { useProductDetailDialogs } from "./use-product-detail-dialogs"
@@ -108,7 +106,7 @@ export function ProductDetailPage({ id }: { id: string }) {
 
           <ProductDetailItinerarySection productId={id} />
 
-          <OptionsSection productId={id} />
+          <ProductOptionsSection productId={id} />
         </div>
 
         {/* ── Right column (sidebar) ── */}

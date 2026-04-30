@@ -4,9 +4,9 @@ import {
   useSellabilityPolicies,
   useSellabilityPolicyMutation,
 } from "@voyantjs/sellability-react"
+import { PolicyDialog } from "@voyantjs/sellability-ui/components/policy-dialog"
 import { Loader2, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import {
   Badge,
   Button,
@@ -17,8 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-
-import { PolicyDialog } from "./policy-dialog"
 
 const PAGE_SIZE = 25
 

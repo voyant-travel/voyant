@@ -1,6 +1,13 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { useLocale } from "@voyantjs/admin"
+import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
+import { CrmUiMessagesProvider } from "@voyantjs/crm-ui/i18n"
+import { FinanceUiMessagesProvider } from "@voyantjs/finance-ui/i18n"
+import { LegalUiMessagesProvider } from "@voyantjs/legal-ui/i18n"
+import { ProductsUiMessagesProvider } from "@voyantjs/products-ui/i18n"
 import { VoyantReactProvider } from "@voyantjs/react"
+import { ResourcesUiMessagesProvider } from "@voyantjs/resources-ui/i18n"
+import { SuppliersUiMessagesProvider } from "@voyantjs/suppliers-ui/i18n"
 import { SidebarProvider } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
@@ -57,7 +64,7 @@ function WorkspaceLayout() {
 
 function WorkspaceContent() {
   const { user, isLoading } = useUser()
-  const { setLocale, setTimeZone } = useLocale()
+  const { resolvedLocale, setLocale, setTimeZone } = useLocale()
   const messages = useAdminMessages()
 
   useEffect(() => {
@@ -91,7 +98,21 @@ function WorkspaceContent() {
 
   return (
     <AdminI18nProvider overrides={getAdminMessageOverridesFromUiPrefs(user.uiPrefs)}>
-      <WorkspaceInner user={user} />
+      <BookingsUiMessagesProvider locale={resolvedLocale}>
+        <ProductsUiMessagesProvider locale={resolvedLocale}>
+          <LegalUiMessagesProvider locale={resolvedLocale}>
+            <CrmUiMessagesProvider locale={resolvedLocale}>
+              <ResourcesUiMessagesProvider locale={resolvedLocale}>
+                <FinanceUiMessagesProvider locale={resolvedLocale}>
+                  <SuppliersUiMessagesProvider locale={resolvedLocale}>
+                    <WorkspaceInner user={user} />
+                  </SuppliersUiMessagesProvider>
+                </FinanceUiMessagesProvider>
+              </ResourcesUiMessagesProvider>
+            </CrmUiMessagesProvider>
+          </LegalUiMessagesProvider>
+        </ProductsUiMessagesProvider>
+      </BookingsUiMessagesProvider>
     </AdminI18nProvider>
   )
 }

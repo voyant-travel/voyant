@@ -1,8 +1,5 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
 import { formatMessage } from "@voyantjs/admin"
-import { TabsContent } from "@voyantjs/ui/components/tabs"
-import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
-import { DataTable } from "@/components/ui/data-table"
 import type {
   BookingOption,
   ChannelBookingLinkRow,
@@ -10,13 +7,16 @@ import type {
   ChannelRow,
   ChannelWebhookEventRow,
   ProductOption,
-} from "@/components/voyant/distribution/distribution-shared"
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import {
   bookingLinkColumns,
-  formatLocalizedSelectionLabel,
+  formatSelectionLabel,
   mappingColumns,
   webhookColumns,
-} from "@/components/voyant/distribution/distribution-shared"
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import { TabsContent } from "@voyantjs/ui/components/tabs"
+import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
+import { DataTable } from "@/components/ui/data-table"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { SectionHeader } from "./distribution-dialog-barrel"
 
@@ -53,7 +53,8 @@ export function DistributionMappingsTab(props: {
 }) {
   const messages = useAdminMessages()
   const nouns = messages.distribution.entities.mapping
-  const selectionLabel = (count: number) => formatLocalizedSelectionLabel(count, nouns)
+  const selectionLabel = (count: number) =>
+    formatSelectionLabel(count, nouns.singular, nouns.plural)
 
   return (
     <TabsContent value="mappings" className="space-y-4">
@@ -64,12 +65,7 @@ export function DistributionMappingsTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={mappingColumns(
-          messages.distribution,
-          props.channels,
-          props.products,
-          props.onOpenRoute,
-        )}
+        columns={mappingColumns(props.channels, props.products, props.onOpenRoute)}
         data={props.filteredMappings}
         emptyMessage={messages.distribution.mappings.empty}
         enableRowSelection
@@ -161,7 +157,8 @@ export function DistributionBookingLinksTab(props: {
 }) {
   const messages = useAdminMessages()
   const nouns = messages.distribution.entities.bookingLink
-  const selectionLabel = (count: number) => formatLocalizedSelectionLabel(count, nouns)
+  const selectionLabel = (count: number) =>
+    formatSelectionLabel(count, nouns.singular, nouns.plural)
 
   return (
     <TabsContent value="booking-links" className="space-y-4">
@@ -172,13 +169,7 @@ export function DistributionBookingLinksTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={bookingLinkColumns(
-          messages.distribution,
-          props.locale,
-          props.channels,
-          props.bookings,
-          props.onOpenRoute,
-        )}
+        columns={bookingLinkColumns(props.channels, props.bookings, props.onOpenRoute)}
         data={props.filteredBookingLinks}
         emptyMessage={messages.distribution.bookingLinks.empty}
         enableRowSelection
@@ -230,7 +221,8 @@ export function DistributionWebhooksTab(props: {
 }) {
   const messages = useAdminMessages()
   const nouns = messages.distribution.entities.webhookEvent
-  const selectionLabel = (count: number) => formatLocalizedSelectionLabel(count, nouns)
+  const selectionLabel = (count: number) =>
+    formatSelectionLabel(count, nouns.singular, nouns.plural)
 
   return (
     <TabsContent value="webhooks" className="space-y-4">
@@ -241,12 +233,7 @@ export function DistributionWebhooksTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={webhookColumns(
-          messages.distribution,
-          props.locale,
-          props.channels,
-          props.onOpenRoute,
-        )}
+        columns={webhookColumns(props.channels, props.onOpenRoute)}
         data={props.filteredWebhookEvents}
         emptyMessage={messages.distribution.webhooks.empty}
         enableRowSelection

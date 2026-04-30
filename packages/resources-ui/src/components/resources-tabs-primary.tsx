@@ -22,7 +22,8 @@ type BulkFn = (args: {
   ids: string[]
   endpoint: string
   target: string
-  noun: string
+  nounSingular: string
+  nounPlural: string
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
@@ -32,7 +33,8 @@ type DeleteFn = (args: {
   ids: string[]
   endpoint: string
   target: string
-  noun: string
+  nounSingular: string
+  nounPlural: string
   clearSelection: () => void
 }) => Promise<void> // i18n-literal-ok local callback type alias
 
@@ -316,7 +318,8 @@ export function ResourcesTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/resources",
                   target: "resources-activate",
-                  noun: "resource",
+                  nounSingular: "resource",
+                  nounPlural: "resources",
                   payload: { active: true },
                   successVerb: section.actions.activate.successVerb,
                   clearSelection,
@@ -341,7 +344,8 @@ export function ResourcesTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/resources",
                   target: "resources-deactivate",
-                  noun: "resource",
+                  nounSingular: "resource",
+                  nounPlural: "resources",
                   payload: { active: false },
                   successVerb: section.actions.deactivate.successVerb,
                   clearSelection,
@@ -368,7 +372,8 @@ export function ResourcesTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/resources",
                   target: "resources-delete",
-                  noun: "resource",
+                  nounSingular: "resource",
+                  nounPlural: "resources",
                   clearSelection,
                 })
               }
@@ -442,7 +447,8 @@ export function PoolsTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/pools",
                   target: "pools-activate",
-                  noun: "pool",
+                  nounSingular: "pool",
+                  nounPlural: "pools",
                   payload: { active: true },
                   successVerb: section.actions.activate.successVerb,
                   clearSelection,
@@ -467,7 +473,8 @@ export function PoolsTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/pools",
                   target: "pools-deactivate",
-                  noun: "pool",
+                  nounSingular: "pool",
+                  nounPlural: "pools",
                   payload: { active: false },
                   successVerb: section.actions.deactivate.successVerb,
                   clearSelection,
@@ -494,7 +501,8 @@ export function PoolsTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/pools",
                   target: "pools-delete",
-                  noun: "pool",
+                  nounSingular: "pool",
+                  nounPlural: "pools",
                   clearSelection,
                 })
               }
@@ -570,7 +578,8 @@ export function AllocationsTab(props: {
                   ids: selectedRows.map((row) => row.original.id),
                   endpoint: "/v1/resources/allocations",
                   target: "allocations-delete",
-                  noun: "allocation",
+                  nounSingular: "allocation",
+                  nounPlural: "allocations",
                   clearSelection,
                 })
               }

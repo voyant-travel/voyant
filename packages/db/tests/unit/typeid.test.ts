@@ -26,11 +26,14 @@ describe("PREFIXES", () => {
   })
 
   it("has no duplicate prefix values", () => {
-    const grouped = Object.entries(PREFIXES).reduce<Record<string, string[]>>((acc, [key, value]) => {
-      acc[value] ??= []
-      acc[value].push(key)
-      return acc
-    }, {})
+    const grouped = Object.entries(PREFIXES).reduce<Record<string, string[]>>(
+      (acc, [key, value]) => {
+        acc[value] ??= []
+        acc[value].push(key)
+        return acc
+      },
+      {},
+    )
 
     const duplicates = Object.entries(grouped)
       .filter(([, keys]) => keys.length > 1)

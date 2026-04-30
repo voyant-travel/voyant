@@ -8,6 +8,7 @@ import {
   usePricingCategoryDependencyMutation,
   useVoyantPricingContext,
 } from "@voyantjs/pricing-react"
+import { PricingCategoryDependencyDialog } from "@voyantjs/pricing-ui/components/pricing-category-dependency-dialog"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import {
@@ -27,8 +28,6 @@ import {
 } from "@voyantjs/ui/components/table"
 import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-
-import { PricingCategoryDependencyDialog } from "./pricing-category-dependency-dialog"
 
 export interface PricingCategoryDependencyListProps {
   pageSize?: number

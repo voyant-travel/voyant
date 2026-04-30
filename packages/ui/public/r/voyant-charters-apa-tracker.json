@@ -3,14 +3,8 @@
   "name": "voyant-charters-apa-tracker",
   "title": "APA Tracker",
   "description": "Pre-/post-charter APA reconciliation panel — quoted, paid, spent, refund balance, settled status. Pure presentational; wire actions via useRecordApaPayment / useReconcileApa.",
-  "dependencies": [
-    "lucide-react",
-    "@voyantjs/charters-react"
-  ],
-  "registryDependencies": [
-    "badge",
-    "card"
-  ],
+  "dependencies": ["lucide-react", "@voyantjs/charters-react"],
+  "registryDependencies": ["badge", "card"],
   "files": [
     {
       "path": "registry/charters/apa-tracker.tsx",

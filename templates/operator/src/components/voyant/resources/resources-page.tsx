@@ -2,12 +2,21 @@ import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { RowSelectionState } from "@tanstack/react-table"
 import { formatMessage } from "@voyantjs/admin"
+import { ResourcesOverview } from "@voyantjs/resources-ui/components/resources-overview"
+import {
+  AllocationsTab,
+  PoolsTab,
+  ResourcesTab,
+} from "@voyantjs/resources-ui/components/resources-tabs-primary"
+import {
+  AssignmentsTab,
+  CloseoutsTab,
+} from "@voyantjs/resources-ui/components/resources-tabs-secondary"
 import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { useState } from "react"
 import { toast } from "sonner"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
-import { ResourcesOverview } from "./resources-overview"
 import { ResourcesDialogs } from "./resources-page-dialogs"
 import { ResourcesBodySkeleton } from "./resources-page-skeleton"
 import type {
@@ -34,8 +43,6 @@ import {
   labelById,
   slotLabel,
 } from "./resources-shared"
-import { AllocationsTab, PoolsTab, ResourcesTab } from "./resources-tabs-primary"
-import { AssignmentsTab, CloseoutsTab } from "./resources-tabs-secondary"
 
 export function ResourcesPage() {
   const navigate = useNavigate()

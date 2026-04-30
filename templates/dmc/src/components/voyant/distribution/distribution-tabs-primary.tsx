@@ -1,21 +1,21 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
 import { formatMessage } from "@voyantjs/admin"
-import { TabsContent } from "@voyantjs/ui/components/tabs"
-import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
-import { DataTable } from "@/components/ui/data-table"
 import type {
   ChannelCommissionRuleRow,
   ChannelContractRow,
   ChannelRow,
   ProductOption,
   SupplierOption,
-} from "@/components/voyant/distribution/distribution-shared"
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import {
   channelColumns,
   commissionColumns,
   contractColumns,
-  formatLocalizedSelectionLabel,
-} from "@/components/voyant/distribution/distribution-shared"
+  formatSelectionLabel,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import { TabsContent } from "@voyantjs/ui/components/tabs"
+import { ConfirmActionButton, SelectionActionBar } from "@/components/ui"
+import { DataTable } from "@/components/ui/data-table"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { SectionHeader } from "./distribution-dialog-barrel"
 
@@ -50,7 +50,8 @@ export function DistributionChannelsTab(props: {
 }) {
   const messages = useAdminMessages()
   const nouns = messages.distribution.entities.channel
-  const selectionLabel = (count: number) => formatLocalizedSelectionLabel(count, nouns)
+  const selectionLabel = (count: number) =>
+    formatSelectionLabel(count, nouns.singular, nouns.plural)
 
   return (
     <TabsContent value="channels" className="space-y-4">
@@ -61,7 +62,7 @@ export function DistributionChannelsTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={channelColumns(messages.distribution, props.onOpenRoute)}
+        columns={channelColumns(props.onOpenRoute)}
         data={props.filteredChannels}
         emptyMessage={messages.distribution.channels.empty}
         enableRowSelection
@@ -154,7 +155,8 @@ export function DistributionContractsTab(props: {
 }) {
   const messages = useAdminMessages()
   const nouns = messages.distribution.entities.contract
-  const selectionLabel = (count: number) => formatLocalizedSelectionLabel(count, nouns)
+  const selectionLabel = (count: number) =>
+    formatSelectionLabel(count, nouns.singular, nouns.plural)
 
   return (
     <TabsContent value="contracts" className="space-y-4">
@@ -165,13 +167,7 @@ export function DistributionContractsTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={contractColumns(
-          messages.distribution,
-          props.locale,
-          props.channels,
-          props.suppliers,
-          props.onOpenRoute,
-        )}
+        columns={contractColumns(props.channels, props.suppliers, props.onOpenRoute)}
         data={props.filteredContracts}
         emptyMessage={messages.distribution.contracts.empty}
         enableRowSelection
@@ -262,7 +258,8 @@ export function DistributionCommissionsTab(props: {
 }) {
   const messages = useAdminMessages()
   const nouns = messages.distribution.entities.commissionRule
-  const selectionLabel = (count: number) => formatLocalizedSelectionLabel(count, nouns)
+  const selectionLabel = (count: number) =>
+    formatSelectionLabel(count, nouns.singular, nouns.plural)
 
   return (
     <TabsContent value="commissions" className="space-y-4">
@@ -273,12 +270,7 @@ export function DistributionCommissionsTab(props: {
         onAction={props.onCreate}
       />
       <DataTable
-        columns={commissionColumns(
-          messages.distribution,
-          props.contracts,
-          props.products,
-          props.onOpenRoute,
-        )}
+        columns={commissionColumns(props.contracts, props.products, props.onOpenRoute)}
         data={props.filteredCommissionRules}
         emptyMessage={messages.distribution.commissions.empty}
         enableRowSelection

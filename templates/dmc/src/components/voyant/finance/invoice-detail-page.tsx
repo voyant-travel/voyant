@@ -9,11 +9,11 @@ import {
   useInvoiceNotes,
   useInvoicePayments,
 } from "@voyantjs/finance-react"
+import { InvoiceDialog } from "@voyantjs/finance-ui/components/invoice-dialog"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
-
 import { CreditNoteDialog } from "./credit-note-dialog"
 import {
   InvoiceCreditNotesCard,
@@ -23,7 +23,6 @@ import {
   InvoicePaymentsCard,
 } from "./invoice-detail-sections"
 import { type LineItem, statusVariant } from "./invoice-detail-shared"
-import { InvoiceDialog } from "./invoice-dialog"
 import { LineItemDialog } from "./line-item-dialog"
 import { PaymentDialog } from "./payment-dialog"
 

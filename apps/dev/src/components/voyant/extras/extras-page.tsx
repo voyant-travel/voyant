@@ -6,12 +6,11 @@ import {
   useProductExtraMutation,
   useProductExtras,
 } from "@voyantjs/extras-react"
+import { ProductCombobox } from "@voyantjs/extras-ui/components/product-combobox"
 import { Pencil, Plus, Search, Sparkles, Trash2 } from "lucide-react"
 import * as React from "react"
 import { Badge, Button, Input, Label } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-
-import { ProductCombobox } from "./product-combobox"
 import { ProductExtraDialog } from "./product-extra-dialog"
 
 const PAGE_SIZE = 25

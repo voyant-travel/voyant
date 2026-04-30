@@ -4,11 +4,11 @@ import {
   useContactPointMutation,
   useContactPoints,
 } from "@voyantjs/identity-react"
+import { ContactPointDialog } from "@voyantjs/identity-ui/components/contact-point-dialog"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-import { ContactPointDialog } from "./contact-point-dialog"
 
 type Props = { entityType: string; entityId: string }
 const PAGE_SIZE = 25

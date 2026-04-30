@@ -3,12 +3,8 @@
   "name": "voyant-bookings-price-breakdown-section",
   "title": "Booking Price Breakdown Section",
   "description": "Read-only live price breakdown for booking-create flows. Reads the catalog-resolved pricing snapshot via usePricingPreview and computes per-unit tiered lines + total against the operator's current unit quantities — same math the storefront runs.",
-  "dependencies": [
-    "@voyantjs/bookings-react"
-  ],
-  "registryDependencies": [
-    "label"
-  ],
+  "dependencies": ["@voyantjs/bookings-react"],
+  "registryDependencies": ["label"],
   "files": [
     {
       "path": "registry/bookings/price-breakdown-section.tsx",

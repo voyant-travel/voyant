@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 
-import { PersonList } from "./person-list"
+import { PersonList } from "@voyantjs/crm-ui/components/person-list"
 
 export function PeoplePage() {
   const navigate = useNavigate()

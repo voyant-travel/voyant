@@ -1,13 +1,14 @@
 import { useNavigate } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import { useInvoices, useSupplierPayments } from "@voyantjs/finance-react"
+import { InvoiceDialog } from "@voyantjs/finance-ui/components/invoice-dialog"
+import { SupplierPaymentDialog } from "@voyantjs/finance-ui/components/supplier-payment-dialog"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { Loader2, Plus, Search } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge, Button, Input } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
-
 import {
   formatAmount,
   type InvoiceRow,
@@ -15,8 +16,6 @@ import {
   paymentStatusVariant,
   type SupplierPaymentRow,
 } from "./finance-shared"
-import { InvoiceDialog } from "./invoice-dialog"
-import { SupplierPaymentDialog } from "./supplier-payment-dialog"
 
 function getInvoiceStatusLabel(messages: AdminMessages, status: string): string {
   switch (status) {

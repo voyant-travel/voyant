@@ -9,6 +9,8 @@ import {
   useProductItineraryDays,
   useProductItineraryMutation,
 } from "@voyantjs/products-react"
+import { ProductDayDialog } from "@voyantjs/products-ui/components/product-day-dialog"
+import { ProductItineraryDialog } from "@voyantjs/products-ui/components/product-itinerary-dialog"
 import {
   Badge,
   Button,
@@ -32,11 +34,8 @@ import { Copy, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
-
-import { DayDialog } from "./product-day-dialog"
 import { ProductDetailDayRow } from "./product-detail-day-row"
 import { ActionMenu, EmptyState, Section } from "./product-detail-sections"
-import { ProductItineraryDialog } from "./product-itinerary-dialog"
 import { ServiceDialog } from "./product-service-dialog"
 
 export function ProductDetailItinerarySection({ productId }: { productId: string }) {
@@ -101,33 +100,6 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
   const openRenameItinerary = (itinerary: ProductItineraryRecord) => {
     setEditingItinerary(itinerary)
     setItineraryDialogOpen(true)
-  }
-
-  const handleItinerarySubmit = async (values: { name: string; isDefault: boolean }) => {
-    if (editingItinerary) {
-      const patch: { name?: string; isDefault?: boolean } = {}
-      if (values.name !== editingItinerary.name) patch.name = values.name
-      if (values.isDefault && !editingItinerary.isDefault) patch.isDefault = true
-      if (Object.keys(patch).length > 0) {
-        await itineraryMutation.update.mutateAsync({
-          productId,
-          itineraryId: editingItinerary.id,
-          input: patch,
-        })
-      }
-    } else {
-      const created = await itineraryMutation.create.mutateAsync({
-        productId,
-        input: {
-          name: values.name,
-          sortOrder: itineraries.length,
-          isDefault: itineraries.length === 0 ? true : values.isDefault,
-        },
-      })
-      setSelectedItineraryId(created.id)
-    }
-    setItineraryDialogOpen(false)
-    setEditingItinerary(undefined)
   }
 
   const handleSetDefault = async (itinerary: ProductItineraryRecord) => {
@@ -349,7 +321,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
         )}
       </Section>
 
-      <DayDialog
+      <ProductDayDialog
         open={dayDialogOpen}
         onOpenChange={setDayDialogOpen}
         productId={productId}
@@ -388,9 +360,12 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
           setItineraryDialogOpen(open)
           if (!open) setEditingItinerary(undefined)
         }}
+        productId={productId}
         itinerary={editingItinerary}
-        isFirstItinerary={!editingItinerary && itineraries.length === 0}
-        onSubmit={handleItinerarySubmit}
+        itineraryCount={itineraries.length}
+        onSuccess={(itineraryId) => {
+          if (!editingItinerary) setSelectedItineraryId(itineraryId)
+        }}
       />
 
       <AlertDialog

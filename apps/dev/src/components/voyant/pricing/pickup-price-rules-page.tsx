@@ -6,14 +6,12 @@ import {
   usePickupPriceRuleMutation,
   usePickupPriceRules,
 } from "@voyantjs/pricing-react"
+import { PickupPriceRuleDialog } from "@voyantjs/pricing-ui/components/pickup-price-rule-dialog"
+import { OptionPriceRuleLabel } from "@voyantjs/pricing-ui/components/pricing-shared-labels"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import { Badge, Button } from "@/components/ui"
 import { DataTable } from "@/components/ui/data-table"
-
-import { PickupPriceRuleDialog } from "./pickup-price-rule-dialog"
-import { OptionPriceRuleLabel } from "./pricing-shared-labels"
 
 const PAGE_SIZE = 25
 

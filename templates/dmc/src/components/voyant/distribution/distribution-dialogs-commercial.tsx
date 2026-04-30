@@ -1,3 +1,18 @@
+import type {
+  ChannelContractRow,
+  ChannelRow,
+  SupplierOption,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import {
+  cancellationOwnerOptions,
+  channelKindOptions,
+  channelStatusOptions,
+  contractStatusOptions,
+  NONE_VALUE,
+  nullableString,
+  parseJsonRecord,
+  paymentOwnerOptions,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import {
   Button,
   Dialog,
@@ -23,17 +38,6 @@ import { z } from "zod/v4"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
-import type { ChannelContractRow, ChannelRow, SupplierOption } from "./distribution-shared"
-import {
-  cancellationOwnerOptions,
-  channelKindOptions,
-  channelStatusOptions,
-  contractStatusOptions,
-  NONE_VALUE,
-  nullableString,
-  parseJsonRecord,
-  paymentOwnerOptions,
-} from "./distribution-shared"
 
 function createChannelFormSchema(nameRequired: string) {
   return z.object({

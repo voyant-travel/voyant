@@ -1,3 +1,15 @@
+import type {
+  BookingOption,
+  ChannelBookingLinkRow,
+  ChannelProductMappingRow,
+  ChannelRow,
+  ProductOption,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
+import {
+  nullableString,
+  toIsoDateTime,
+  toLocalDateTimeInput,
+} from "@voyantjs/distribution-ui/components/distribution-shared"
 import {
   Button,
   Dialog,
@@ -22,14 +34,6 @@ import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
-import type {
-  BookingOption,
-  ChannelBookingLinkRow,
-  ChannelProductMappingRow,
-  ChannelRow,
-  ProductOption,
-} from "./distribution-shared"
-import { nullableString, toIsoDateTime, toLocalDateTimeInput } from "./distribution-shared"
 
 const mappingFormSchema = z.object({
   channelId: z.string().min(1, "Channel is required"),

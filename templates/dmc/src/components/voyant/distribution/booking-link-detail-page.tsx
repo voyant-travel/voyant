@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { useLocale } from "@voyantjs/admin"
+import { formatDistributionDateTime } from "@voyantjs/distribution-ui/components/distribution-shared"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Link2, Loader2, ReceiptText, Trash2 } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
@@ -10,7 +10,6 @@ import {
   getDistributionBookingLinkChannelQueryOptions,
   getDistributionBookingLinkQueryOptions,
 } from "./distribution-detail-query-options"
-import { formatDistributionDateTime } from "./distribution-shared"
 
 type DistributionBookingLinkDetailPageProps = {
   id: string
@@ -20,7 +19,6 @@ export function DistributionBookingLinkDetailPage({ id }: DistributionBookingLin
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const messages = useAdminMessages()
-  const { resolvedLocale } = useLocale()
   const commonMessages = messages.distribution.details.common
   const detailMessages = messages.distribution.details.bookingLink
   const noValue = messages.distribution.table.noValue
@@ -134,21 +132,19 @@ export function DistributionBookingLinkDetailPage({ id }: DistributionBookingLin
           </div>
           <div>
             <span className="text-muted-foreground">{detailMessages.fields.bookedAtExternal}:</span>{" "}
-            <span>
-              {formatDistributionDateTime(link.bookedAtExternal, resolvedLocale, noValue)}
-            </span>
+            <span>{formatDistributionDateTime(link.bookedAtExternal)}</span>
           </div>
           <div>
             <span className="text-muted-foreground">{detailMessages.fields.lastSynced}:</span>{" "}
-            <span>{formatDistributionDateTime(link.lastSyncedAt, resolvedLocale, noValue)}</span>
+            <span>{formatDistributionDateTime(link.lastSyncedAt)}</span>
           </div>
           <div>
             <span className="text-muted-foreground">{detailMessages.fields.created}:</span>{" "}
-            <span>{formatDistributionDateTime(link.createdAt, resolvedLocale, noValue)}</span>
+            <span>{formatDistributionDateTime(link.createdAt)}</span>
           </div>
           <div>
             <span className="text-muted-foreground">{detailMessages.fields.updated}:</span>{" "}
-            <span>{formatDistributionDateTime(link.updatedAt, resolvedLocale, noValue)}</span>
+            <span>{formatDistributionDateTime(link.updatedAt)}</span>
           </div>
         </CardContent>
       </Card>

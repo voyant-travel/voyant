@@ -9,6 +9,7 @@ import {
   useProductItineraries,
   useProductItineraryDays,
 } from "@voyantjs/products-react"
+import { ProductDayDialog as DayDialog } from "@voyantjs/products-ui/components/product-day-dialog"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
   Table,
@@ -20,7 +21,6 @@ import {
 } from "@voyantjs/ui/components/table"
 import { ChevronDown, ChevronRight, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-import { DayDialog } from "./product-day-dialog"
 import { ServiceDialog } from "./product-service-dialog"
 
 const serviceTypeLabels = {

@@ -3,16 +3,8 @@
   "name": "voyant-bookings-person-picker-section",
   "title": "Booking Person Picker Section",
   "description": "Controlled person picker with inline-create and optional organization attachment. Parent owns the create-person mutation so the dialog can defer it to submit time.",
-  "dependencies": [
-    "@voyantjs/crm-react",
-    "lucide-react"
-  ],
-  "registryDependencies": [
-    "button",
-    "input",
-    "label",
-    "select"
-  ],
+  "dependencies": ["@voyantjs/crm-react", "lucide-react"],
+  "registryDependencies": ["button", "input", "label", "select"],
   "files": [
     {
       "path": "registry/bookings/person-picker-section.tsx",
