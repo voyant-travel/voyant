@@ -13,13 +13,8 @@
  * See `docs/architecture/catalog-rag-architecture.md` §3 + §12.
  */
 
-import type {
-  IndexerAdapter,
-  IndexerSlice,
-  ResolverScope,
-  Visibility,
-} from "@voyantjs/voyant-catalog"
-import type { EmbeddingProvider } from "@voyantjs/voyant-catalog-rag"
+import type { IndexerAdapter, IndexerSlice, ResolverScope, Visibility } from "@voyantjs/catalog"
+import type { EmbeddingProvider } from "@voyantjs/catalog-rag"
 import type { z } from "zod"
 
 /**

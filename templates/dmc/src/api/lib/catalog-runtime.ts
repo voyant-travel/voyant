@@ -6,7 +6,6 @@
  * background catalog-bridge subscribers stay aligned.
  */
 
-import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import {
   createFieldPolicyRegistry,
   createTypesenseIndexer,
@@ -16,8 +15,9 @@ import {
   type IndexerDocument,
   type IndexerSlice,
   type TypesenseClient,
-} from "@voyantjs/voyant-catalog"
-import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/voyant-catalog-rag"
+} from "@voyantjs/catalog"
+import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
+import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { Client as TypesenseSdkClient } from "typesense"
 
 /**
@@ -60,7 +60,7 @@ export type CatalogRuntimeEnv = {
  *  - OpenAI: import `createOpenAIEmbeddingProvider` and read
  *    `OPENAI_API_KEY` instead.
  *  - Custom provider: return anything matching `EmbeddingProvider`
- *    from `@voyantjs/voyant-catalog-rag`.
+ *    from `@voyantjs/catalog-rag`.
  *
  * Switching providers (or models) is a deliberate `bulkReindex` operation —
  * the catalog plane scopes vector queries to documents matching the active

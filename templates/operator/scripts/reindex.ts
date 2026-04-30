@@ -22,10 +22,6 @@
  *                               Override for staging gateways.
  */
 
-import { createDbClient } from "@voyantjs/db"
-import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
-import { products } from "@voyantjs/products/schema"
-import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
 import {
   createFieldPolicyRegistry,
   createIndexerService,
@@ -35,8 +31,12 @@ import {
   type IndexerDocument,
   type IndexerSlice,
   type TypesenseClient,
-} from "@voyantjs/voyant-catalog"
-import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/voyant-catalog-rag"
+} from "@voyantjs/catalog"
+import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
+import { createDbClient } from "@voyantjs/db"
+import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
+import { products } from "@voyantjs/products/schema"
+import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
 import { config } from "dotenv"
 import { Client as TypesenseSdkClient } from "typesense"
 

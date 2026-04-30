@@ -1,13 +1,13 @@
-# @voyantjs/voyant-catalog-rag
+# @voyantjs/catalog-rag
 
-Phase 2 of the catalog plane. Adds vector embeddings, AI-agent access patterns, and the MCP server scaffolding on top of the Phase 1 foundation in `@voyantjs/voyant-catalog`.
+Phase 2 of the catalog plane. Adds vector embeddings, AI-agent access patterns, and the MCP server scaffolding on top of the Phase 1 foundation in `@voyantjs/catalog`.
 
 See [`docs/architecture/catalog-rag-architecture.md`](../../docs/architecture/catalog-rag-architecture.md) for the full design.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/voyant-catalog-rag
+pnpm add @voyantjs/catalog-rag
 ```
 
 ## What's in the box
@@ -31,7 +31,7 @@ Phase 2 is **additive** on Phase 1. It does not modify the field-policy contract
 ## Usage
 
 ```typescript
-import { createOpenAIEmbeddingProvider } from "@voyantjs/voyant-catalog-rag/embeddings/openai"
+import { createOpenAIEmbeddingProvider } from "@voyantjs/catalog-rag/embeddings/openai"
 
 const embeddings = createOpenAIEmbeddingProvider({
   apiKey: env.OPENAI_API_KEY,

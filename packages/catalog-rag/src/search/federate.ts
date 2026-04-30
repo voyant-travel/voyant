@@ -31,7 +31,7 @@ import type {
   SearchRequest,
   SearchResults,
   Visibility,
-} from "@voyantjs/voyant-catalog"
+} from "@voyantjs/catalog"
 
 export interface FederatedSearchOptions {
   adapter: IndexerAdapter

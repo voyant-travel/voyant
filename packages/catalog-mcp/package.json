@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/voyant-catalog-mcp",
+  "name": "@voyantjs/catalog-mcp",
   "version": "0.19.0",
   "license": "Apache-2.0",
   "type": "module",
@@ -72,8 +72,8 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/voyant-catalog": "workspace:*",
-    "@voyantjs/voyant-catalog-rag": "workspace:*",
+    "@voyantjs/catalog": "workspace:*",
+    "@voyantjs/catalog-rag": "workspace:*",
     "zod": "^4.1.4"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 {
-  "name": "@voyantjs/voyant-catalog-rag",
+  "name": "@voyantjs/catalog-rag",
   "version": "0.19.0",
   "license": "Apache-2.0",
   "type": "module",
@@ -60,7 +60,7 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/voyant-catalog": "workspace:*"
+    "@voyantjs/catalog": "workspace:*"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",

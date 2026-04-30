@@ -16,7 +16,7 @@
  * See `docs/architecture/catalog-rag-architecture.md` §8.
  */
 
-import type { IndexerCapabilities } from "@voyantjs/voyant-catalog"
+import type { IndexerCapabilities } from "@voyantjs/catalog"
 
 import type { EmbeddingProviderCapabilities } from "./contract.js"
 

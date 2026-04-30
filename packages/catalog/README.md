@@ -1,15 +1,15 @@
-# @voyantjs/voyant-catalog
+# @voyantjs/catalog
 
 Catalog plane foundation for Voyant. The shared cross-cutting infrastructure that vertical modules — `products`, `cruises`, `hospitality`, `charters`, `extras` — adopt to participate in a normalized discovery / overlay / snapshot / search surface.
 
-This is **Phase 1** of the catalog plane. Phase 2 (semantic search, embeddings, AI agent access via MCP) ships in `@voyantjs/voyant-catalog-rag`. Phase 3 (the flights vertical, the swappable `ReferenceDataProvider`) ships in `@voyantjs/voyant-flights`.
+This is **Phase 1** of the catalog plane. Phase 2 (semantic search, embeddings, AI agent access via MCP) ships in `@voyantjs/catalog-rag`. Phase 3 (the flights vertical, the swappable `ReferenceDataProvider`) ships in `@voyantjs/voyant-flights`.
 
 See [`docs/architecture/catalog-architecture.md`](../../docs/architecture/catalog-architecture.md) for the full design.
 
 ## Install
 
 ```bash
-pnpm add @voyantjs/voyant-catalog
+pnpm add @voyantjs/catalog
 ```
 
 ## What's in the box
@@ -40,7 +40,7 @@ The catalog plane is a **contract**, not a polymorphic root. Vertical modules ke
 The catalog plane is consumed by vertical modules; templates wire it together.
 
 ```typescript
-import { defineFieldPolicy } from "@voyantjs/voyant-catalog/contract"
+import { defineFieldPolicy } from "@voyantjs/catalog/contract"
 
 export const productCatalogPolicy = defineFieldPolicy([
   {

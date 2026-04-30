@@ -1,4 +1,4 @@
-# @voyantjs/voyant-catalog-mcp
+# @voyantjs/catalog-mcp
 
 Phase 2.x — MCP (Model Context Protocol) server scaffolding for the catalog
 plane. Wraps the catalog plane's APIs as agent-callable tools so AI assistants
@@ -21,7 +21,7 @@ server is a thin transport.
 ## Install
 
 ```bash
-pnpm add @voyantjs/voyant-catalog-mcp
+pnpm add @voyantjs/catalog-mcp
 ```
 
 ## What's in the box
@@ -56,9 +56,9 @@ pnpm add @voyantjs/voyant-catalog-mcp
 Templates wire the registry into their MCP SDK transport of choice:
 
 ```typescript
-import { createMcpToolRegistry } from "@voyantjs/voyant-catalog-mcp/registry"
-import { searchCatalogTool } from "@voyantjs/voyant-catalog-mcp/tools/search-catalog"
-import { getEntityTool } from "@voyantjs/voyant-catalog-mcp/tools/get-entity"
+import { createMcpToolRegistry } from "@voyantjs/catalog-mcp/registry"
+import { searchCatalogTool } from "@voyantjs/catalog-mcp/tools/search-catalog"
+import { getEntityTool } from "@voyantjs/catalog-mcp/tools/get-entity"
 // ... and so on
 
 const registry = createMcpToolRegistry({

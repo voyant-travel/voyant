@@ -7,7 +7,7 @@
  * this rather than crafting its own search query.
  */
 
-import { executeSemanticSearch } from "@voyantjs/voyant-catalog-rag"
+import { executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { z } from "zod"
 
 import type { McpToolDefinition, McpToolResult } from "../contract.js"

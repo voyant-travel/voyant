@@ -16,7 +16,7 @@
  * pricing basis).
  */
 
-import type { CaptureSnapshotInput, PricingBasis } from "@voyantjs/voyant-catalog"
+import type { CaptureSnapshotInput, PricingBasis } from "@voyantjs/catalog"
 
 import type { FlightOffer, FlightOrder } from "./contract/types.js"
 

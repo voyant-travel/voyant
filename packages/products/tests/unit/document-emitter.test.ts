@@ -1,4 +1,4 @@
-import type { IndexerSlice } from "@voyantjs/voyant-catalog"
+import type { IndexerSlice } from "@voyantjs/catalog"
 import { describe, expect, it } from "vitest"
 
 import { createProductDocumentEmitter } from "../../src/service-catalog-plane.js"

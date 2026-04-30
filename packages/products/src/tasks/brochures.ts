@@ -1,4 +1,4 @@
-import type { StorageProvider } from "@voyantjs/voyant-storage"
+import type { StorageProvider } from "@voyantjs/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { productsService } from "../service.js"

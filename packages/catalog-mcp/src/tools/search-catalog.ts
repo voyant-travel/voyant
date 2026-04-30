@@ -1,12 +1,12 @@
 /**
  * `search_catalog` tool — keyword / hybrid / semantic search across a
- * vertical. Wraps `executeSemanticSearch` from `@voyantjs/voyant-catalog-rag`.
+ * vertical. Wraps `executeSemanticSearch` from `@voyantjs/catalog-rag`.
  *
  * Visibility filtering and audience-pool enforcement happen at the
  * underlying API layer; the tool just wires args through.
  */
 
-import { executeSemanticSearch } from "@voyantjs/voyant-catalog-rag"
+import { executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { z } from "zod"
 
 import type { McpToolDefinition, McpToolResult } from "../contract.js"

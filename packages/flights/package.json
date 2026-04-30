@@ -79,7 +79,7 @@
   },
   "dependencies": {
     "@voyantjs/db": "workspace:*",
-    "@voyantjs/voyant-catalog": "workspace:*",
+    "@voyantjs/catalog": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

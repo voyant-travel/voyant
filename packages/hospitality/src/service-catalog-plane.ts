@@ -10,7 +10,6 @@
  * See `docs/architecture/catalog-architecture.md` §9.1.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
 import {
   buildIndexerDocument,
   buildSnapshotInputFromView,
@@ -26,7 +25,8 @@ import {
   type ResolvedView,
   type ResolverScope,
   resolveEntityView,
-} from "@voyantjs/voyant-catalog"
+} from "@voyantjs/catalog"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { eq } from "drizzle-orm"
 
 import { hospitalityCatalogPolicy } from "./catalog-policy.js"

@@ -4,7 +4,7 @@ import type {
   IndexerSlice,
   SearchHit,
   SearchResults,
-} from "@voyantjs/voyant-catalog"
+} from "@voyantjs/catalog"
 import { describe, expect, it } from "vitest"
 
 import { federateAudienceSearch, mergeAndDedupe } from "./federate.js"

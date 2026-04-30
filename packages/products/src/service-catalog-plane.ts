@@ -12,14 +12,13 @@
  * because the existing `service-catalog.ts` handles the products module's own
  * catalog management (categories, tags, types). The "catalog plane" is the
  * cross-vertical projection / overlay / snapshot infrastructure from
- * `@voyantjs/voyant-catalog`.
+ * `@voyantjs/catalog`.
  *
  * See `docs/architecture/catalog-architecture.md` §9.1 for the integration
  * pattern this file establishes (replicated for cruises, hospitality, etc.
  * in their own service-catalog-plane.ts files).
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
 import {
   buildIndexerDocument,
   buildSnapshotInputFromView,
@@ -36,7 +35,8 @@ import {
   type ResolverScope,
   resolveEntityView,
   type Visibility,
-} from "@voyantjs/voyant-catalog"
+} from "@voyantjs/catalog"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { eq } from "drizzle-orm"
 
 import { productCatalogPolicy } from "./catalog-policy.js"

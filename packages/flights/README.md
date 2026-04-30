@@ -40,7 +40,7 @@ pnpm add @voyantjs/voyant-flights
 ## Phase relationship
 
 Phase 3 is independent of Phase 2 (RAG). Either can ship first; both build on
-Phase 1 (`@voyantjs/voyant-catalog`).
+Phase 1 (`@voyantjs/catalog`).
 
 Flights opt **in** to:
 - Booking snapshot graph (the most important participation)

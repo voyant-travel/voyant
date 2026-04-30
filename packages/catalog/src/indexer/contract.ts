@@ -91,6 +91,19 @@ export interface SearchRequest {
    * / supplier agents are pinned to their own audience by API authorization.
    */
   search_audiences?: Visibility[]
+  /**
+   * Hybrid-mode rank-fusion weight. `0..1` — `0` is keyword-only, `1` is
+   * semantic-only. Engine default mid-point varies (Typesense weights
+   * keyword `0.7` / semantic `0.3`). Only meaningful when `mode` is
+   * `hybrid` or when both signals participate.
+   */
+  alpha?: number
+  /**
+   * Drop hits whose vector distance exceeds this threshold (cosine
+   * distance, range `0..2`). Useful in semantic mode to cut weak-similarity
+   * tail results. Ignored in keyword-only mode.
+   */
+  distance_threshold?: number
 }
 
 export interface SearchHit {

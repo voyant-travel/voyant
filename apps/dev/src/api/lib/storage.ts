@@ -1,5 +1,5 @@
-import type { StorageProvider } from "@voyantjs/voyant-storage"
-import { createR2Provider } from "@voyantjs/voyant-storage/providers/r2"
+import type { StorageProvider } from "@voyantjs/storage"
+import { createR2Provider } from "@voyantjs/storage/providers/r2"
 
 const MIME_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",
@@ -54,7 +54,7 @@ const DEFAULT_DOCUMENT_URL_EXPIRES_IN = 60 * 5
  *
  *   - **R2 via S3 API** (if you need cross-cloud parity or signed URLs):
  *     ```ts
- *     import { createS3Provider } from "@voyantjs/voyant-storage/providers/s3"
+ *     import { createS3Provider } from "@voyantjs/storage/providers/s3"
  *     return createS3Provider({
  *       accessKeyId: env.R2_ACCESS_KEY_ID!,
  *       secretAccessKey: env.R2_SECRET_ACCESS_KEY!,
@@ -78,7 +78,7 @@ const DEFAULT_DOCUMENT_URL_EXPIRES_IN = 60 * 5
  *
  *   - **Local in-memory** (dev/tests only):
  *     ```ts
- *     import { createLocalStorageProvider } from "@voyantjs/voyant-storage/providers/local"
+ *     import { createLocalStorageProvider } from "@voyantjs/storage/providers/local"
  *     return createLocalStorageProvider({ baseUrl: `${appUrl}/api/v1/media/` })
  *     ```
  *

@@ -72,6 +72,8 @@ export interface TypesenseSearchQuery {
   page?: number
   vector_query?: string
   prefix?: boolean
+  exclude_fields?: string
+  drop_tokens_threshold?: number
 }
 
 export interface TypesenseSearchHit {
@@ -197,10 +199,16 @@ export function buildSearchQuery(
     .map((p) => (p.path.endsWith("[]") ? p.path.slice(0, -2) : p.path))
     .join(",")
 
+  const perPage = request.pagination?.limit ?? 20
+
   const query: TypesenseSearchQuery = {
     q: request.query.length > 0 ? request.query : "*",
     query_by: queryFields || "title",
-    per_page: request.pagination?.limit ?? 20,
+    per_page: perPage,
+    // Strip the vector field from response payloads — at e.g. 3072-dim that's
+    // ~12 KB per hit of float-array noise the caller never reads. The catalog
+    // plane re-resolves entities via `resolveEntity` for full views.
+    exclude_fields: "text_embedding,embedding_model_id",
   }
 
   if (request.filters && request.filters.length > 0) {
@@ -215,7 +223,24 @@ export function buildSearchQuery(
   // provided. The actual embedding generation for the query string lives in
   // the search/semantic helper (Phase 2); this adapter just relays it.
   if ((request.mode === "hybrid" || request.mode === "semantic") && request.query_embedding) {
-    query.vector_query = `text_embedding:([${request.query_embedding.join(",")}], k:${query.per_page ?? 20})`
+    // Ground the ANN search against a candidate pool larger than `per_page`
+    // so caller-side pagination has actual results to walk through. Typesense
+    // resolves `max(k, per_page)` per the docs, so we lift the floor.
+    const k = Math.max(perPage * 10, 100)
+    const vectorOpts: string[] = [`k:${k}`]
+    if (request.alpha != null) vectorOpts.push(`alpha:${request.alpha}`)
+    if (request.distance_threshold != null) {
+      vectorOpts.push(`distance_threshold:${request.distance_threshold}`)
+    }
+    query.vector_query = `text_embedding:([${request.query_embedding.join(",")}], ${vectorOpts.join(", ")})`
+  }
+
+  // For multi-token hybrid queries, the docs warn that the default
+  // `drop_tokens_threshold` (10) leads to redundant internal keyword
+  // re-runs. We disable token drop entirely — catalog queries tend to be
+  // short and we'd rather return zero hits than spend CPU on permutations.
+  if (request.mode === "hybrid" && request.query.length > 0) {
+    query.drop_tokens_threshold = 0
   }
 
   return query

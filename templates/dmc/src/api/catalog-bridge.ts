@@ -16,16 +16,16 @@
  */
 
 import { bookingItems } from "@voyantjs/bookings/schema"
+import {
+  type CaptureSnapshotInput,
+  captureSnapshotGraph,
+  createIndexerService,
+} from "@voyantjs/catalog"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
 import {
   buildProductSnapshotInput,
   createProductDocumentBuilder,
 } from "@voyantjs/products/service-catalog-plane"
-import {
-  type CaptureSnapshotInput,
-  captureSnapshotGraph,
-  createIndexerService,
-} from "@voyantjs/voyant-catalog"
 import { and, eq, isNotNull } from "drizzle-orm"
 
 import {

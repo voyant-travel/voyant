@@ -1,4 +1,4 @@
-import type { IndexerCapabilities } from "@voyantjs/voyant-catalog"
+import type { IndexerCapabilities } from "@voyantjs/catalog"
 import { describe, expect, it } from "vitest"
 
 import type { EmbeddingProviderCapabilities } from "./contract.js"

@@ -2,7 +2,7 @@
  * Catalog plane field policy for `packages/cruises`.
  *
  * Declares every cruise field's governance under the
- * `@voyantjs/voyant-catalog` 12-attribute contract. See
+ * `@voyantjs/catalog` 12-attribute contract. See
  * `docs/architecture/catalog-architecture.md` and the cruise vertical's
  * design doc `docs/architecture/cruises-module.md`.
  *
@@ -22,7 +22,7 @@
  *   - Pricing grid, fare codes — pricing module's responsibility.
  */
 
-import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/voyant-catalog/contract"
+import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
 
 const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Source pointer / provenance ─────────────────────────────────────────

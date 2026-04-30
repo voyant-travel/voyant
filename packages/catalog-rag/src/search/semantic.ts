@@ -14,12 +14,7 @@
  * See `docs/architecture/catalog-rag-architecture.md` §3 + §6.
  */
 
-import type {
-  IndexerAdapter,
-  IndexerSlice,
-  SearchRequest,
-  SearchResults,
-} from "@voyantjs/voyant-catalog"
+import type { IndexerAdapter, IndexerSlice, SearchRequest, SearchResults } from "@voyantjs/catalog"
 
 import type { EmbeddingProvider } from "../embeddings/contract.js"
 

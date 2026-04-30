@@ -3,8 +3,8 @@ import type {
   IndexerCapabilities,
   SearchHit,
   SearchResults,
-} from "@voyantjs/voyant-catalog"
-import type { EmbeddingProvider } from "@voyantjs/voyant-catalog-rag"
+} from "@voyantjs/catalog"
+import type { EmbeddingProvider } from "@voyantjs/catalog-rag"
 import { describe, expect, it, vi } from "vitest"
 
 import type {

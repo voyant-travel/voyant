@@ -3,7 +3,7 @@ import type {
   IndexerCapabilities,
   IndexerSlice,
   SearchRequest,
-} from "@voyantjs/voyant-catalog"
+} from "@voyantjs/catalog"
 import { describe, expect, it, vi } from "vitest"
 
 import type { EmbeddingProvider } from "../embeddings/contract.js"

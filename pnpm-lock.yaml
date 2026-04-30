@@ -124,12 +124,18 @@ importers:
       '@voyantjs/booking-requirements-react':
         specifier: workspace:*
         version: link:../../packages/booking-requirements-react
+      '@voyantjs/booking-requirements-ui':
+        specifier: workspace:*
+        version: link:../../packages/booking-requirements-ui
       '@voyantjs/bookings':
         specifier: workspace:*
         version: link:../../packages/bookings
       '@voyantjs/bookings-react':
         specifier: workspace:*
         version: link:../../packages/bookings-react
+      '@voyantjs/bookings-ui':
+        specifier: workspace:*
+        version: link:../../packages/bookings-ui
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -160,18 +166,27 @@ importers:
       '@voyantjs/distribution-react':
         specifier: workspace:*
         version: link:../../packages/distribution-react
+      '@voyantjs/distribution-ui':
+        specifier: workspace:*
+        version: link:../../packages/distribution-ui
       '@voyantjs/external-refs':
         specifier: workspace:*
         version: link:../../packages/external-refs
       '@voyantjs/external-refs-react':
         specifier: workspace:*
         version: link:../../packages/external-refs-react
+      '@voyantjs/external-refs-ui':
+        specifier: workspace:*
+        version: link:../../packages/external-refs-ui
       '@voyantjs/extras':
         specifier: workspace:*
         version: link:../../packages/extras
       '@voyantjs/extras-react':
         specifier: workspace:*
         version: link:../../packages/extras-react
+      '@voyantjs/extras-ui':
+        specifier: workspace:*
+        version: link:../../packages/extras-ui
       '@voyantjs/facilities':
         specifier: workspace:*
         version: link:../../packages/facilities
@@ -184,6 +199,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../../packages/finance-react
+      '@voyantjs/finance-ui':
+        specifier: workspace:*
+        version: link:../../packages/finance-ui
       '@voyantjs/ground':
         specifier: workspace:*
         version: link:../../packages/ground
@@ -208,15 +226,24 @@ importers:
       '@voyantjs/identity-react':
         specifier: workspace:*
         version: link:../../packages/identity-react
+      '@voyantjs/identity-ui':
+        specifier: workspace:*
+        version: link:../../packages/identity-ui
       '@voyantjs/legal-react':
         specifier: workspace:*
         version: link:../../packages/legal-react
+      '@voyantjs/legal-ui':
+        specifier: workspace:*
+        version: link:../../packages/legal-ui
       '@voyantjs/markets':
         specifier: workspace:*
         version: link:../../packages/markets
       '@voyantjs/markets-react':
         specifier: workspace:*
         version: link:../../packages/markets-react
+      '@voyantjs/markets-ui':
+        specifier: workspace:*
+        version: link:../../packages/markets-ui
       '@voyantjs/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
@@ -238,6 +265,9 @@ importers:
       '@voyantjs/products-react':
         specifier: workspace:*
         version: link:../../packages/products-react
+      '@voyantjs/products-ui':
+        specifier: workspace:*
+        version: link:../../packages/products-ui
       '@voyantjs/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -256,6 +286,12 @@ importers:
       '@voyantjs/sellability-react':
         specifier: workspace:*
         version: link:../../packages/sellability-react
+      '@voyantjs/sellability-ui':
+        specifier: workspace:*
+        version: link:../../packages/sellability-ui
+      '@voyantjs/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@voyantjs/storefront':
         specifier: workspace:*
         version: link:../../packages/storefront
@@ -283,9 +319,6 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/voyant-storage':
-        specifier: workspace:*
-        version: link:../../packages/storage
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../../packages/workflows
@@ -1147,10 +1180,10 @@ importers:
 
   packages/catalog-mcp:
     dependencies:
-      '@voyantjs/voyant-catalog':
+      '@voyantjs/catalog':
         specifier: workspace:*
         version: link:../catalog
-      '@voyantjs/voyant-catalog-rag':
+      '@voyantjs/catalog-rag':
         specifier: workspace:*
         version: link:../catalog-rag
       zod:
@@ -1169,7 +1202,7 @@ importers:
 
   packages/catalog-rag:
     dependencies:
-      '@voyantjs/voyant-catalog':
+      '@voyantjs/catalog':
         specifier: workspace:*
         version: link:../catalog
     devDependencies:
@@ -1188,6 +1221,9 @@ importers:
       '@voyantjs/bookings':
         specifier: workspace:*
         version: link:../bookings
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -1197,9 +1233,6 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
-      '@voyantjs/voyant-catalog':
-        specifier: workspace:*
-        version: link:../catalog
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -1462,6 +1495,9 @@ importers:
       '@voyantjs/bookings':
         specifier: workspace:*
         version: link:../bookings
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -1471,9 +1507,6 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
-      '@voyantjs/voyant-catalog':
-        specifier: workspace:*
-        version: link:../catalog
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -1927,6 +1960,9 @@ importers:
 
   packages/extras:
     dependencies:
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -1936,9 +1972,6 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
-      '@voyantjs/voyant-catalog':
-        specifier: workspace:*
-        version: link:../catalog
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -2170,12 +2203,12 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
+      '@voyantjs/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../utils
-      '@voyantjs/voyant-storage':
-        specifier: workspace:*
-        version: link:../storage
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -2278,12 +2311,12 @@ importers:
 
   packages/flights:
     dependencies:
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@voyantjs/db':
         specifier: workspace:*
         version: link:../db
-      '@voyantjs/voyant-catalog':
-        specifier: workspace:*
-        version: link:../catalog
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -2417,6 +2450,9 @@ importers:
       '@voyantjs/bookings':
         specifier: workspace:*
         version: link:../bookings
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -2429,9 +2465,6 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
-      '@voyantjs/voyant-catalog':
-        specifier: workspace:*
-        version: link:../catalog
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -2690,15 +2723,15 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
+      '@voyantjs/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@voyantjs/suppliers':
         specifier: workspace:*
         version: link:../suppliers
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../utils
-      '@voyantjs/voyant-storage':
-        specifier: workspace:*
-        version: link:../storage
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -3289,6 +3322,9 @@ importers:
 
   packages/products:
     dependencies:
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -3298,15 +3334,12 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
+      '@voyantjs/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../utils
-      '@voyantjs/voyant-catalog':
-        specifier: workspace:*
-        version: link:../catalog
-      '@voyantjs/voyant-storage':
-        specifier: workspace:*
-        version: link:../storage
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
@@ -4412,6 +4445,18 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:*
         version: link:../../packages/bookings-react
+      '@voyantjs/bookings-ui':
+        specifier: workspace:*
+        version: link:../../packages/bookings-ui
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../../packages/catalog
+      '@voyantjs/catalog-mcp':
+        specifier: workspace:*
+        version: link:../../packages/catalog-mcp
+      '@voyantjs/catalog-rag':
+        specifier: workspace:*
+        version: link:../../packages/catalog-rag
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -4460,6 +4505,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../../packages/finance-react
+      '@voyantjs/finance-ui':
+        specifier: workspace:*
+        version: link:../../packages/finance-ui
       '@voyantjs/ground':
         specifier: workspace:*
         version: link:../../packages/ground
@@ -4496,6 +4544,9 @@ importers:
       '@voyantjs/products-react':
         specifier: workspace:*
         version: link:../../packages/products-react
+      '@voyantjs/products-ui':
+        specifier: workspace:*
+        version: link:../../packages/products-ui
       '@voyantjs/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -4511,6 +4562,9 @@ importers:
       '@voyantjs/sellability':
         specifier: workspace:*
         version: link:../../packages/sellability
+      '@voyantjs/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@voyantjs/storefront':
         specifier: workspace:*
         version: link:../../packages/storefront
@@ -4538,18 +4592,6 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/voyant-catalog':
-        specifier: workspace:*
-        version: link:../../packages/catalog
-      '@voyantjs/voyant-catalog-mcp':
-        specifier: workspace:*
-        version: link:../../packages/catalog-mcp
-      '@voyantjs/voyant-catalog-rag':
-        specifier: workspace:*
-        version: link:../../packages/catalog-rag
-      '@voyantjs/voyant-storage':
-        specifier: workspace:*
-        version: link:../../packages/storage
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../../packages/workflows
@@ -4749,6 +4791,18 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:*
         version: link:../../packages/bookings-react
+      '@voyantjs/bookings-ui':
+        specifier: workspace:*
+        version: link:../../packages/bookings-ui
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../../packages/catalog
+      '@voyantjs/catalog-mcp':
+        specifier: workspace:*
+        version: link:../../packages/catalog-mcp
+      '@voyantjs/catalog-rag':
+        specifier: workspace:*
+        version: link:../../packages/catalog-rag
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -4794,6 +4848,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../../packages/finance-react
+      '@voyantjs/finance-ui':
+        specifier: workspace:*
+        version: link:../../packages/finance-ui
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../../packages/hono
@@ -4809,6 +4866,9 @@ importers:
       '@voyantjs/legal-react':
         specifier: workspace:*
         version: link:../../packages/legal-react
+      '@voyantjs/legal-ui':
+        specifier: workspace:*
+        version: link:../../packages/legal-ui
       '@voyantjs/markets':
         specifier: workspace:*
         version: link:../../packages/markets
@@ -4848,6 +4908,9 @@ importers:
       '@voyantjs/sellability':
         specifier: workspace:*
         version: link:../../packages/sellability
+      '@voyantjs/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@voyantjs/storefront':
         specifier: workspace:*
         version: link:../../packages/storefront
@@ -4875,18 +4938,6 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@voyantjs/voyant-catalog':
-        specifier: workspace:*
-        version: link:../../packages/catalog
-      '@voyantjs/voyant-catalog-mcp':
-        specifier: workspace:*
-        version: link:../../packages/catalog-mcp
-      '@voyantjs/voyant-catalog-rag':
-        specifier: workspace:*
-        version: link:../../packages/catalog-rag
-      '@voyantjs/voyant-storage':
-        specifier: workspace:*
-        version: link:../../packages/storage
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../../packages/workflows
@@ -11252,6 +11303,7 @@ packages:
 
   uuid@10.0.0:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   validate-npm-package-license@3.0.4:

@@ -1,4 +1,4 @@
-import { createFieldPolicyRegistry } from "@voyantjs/voyant-catalog/contract"
+import { createFieldPolicyRegistry } from "@voyantjs/catalog/contract"
 import { describe, expect, it } from "vitest"
 
 import { cruiseCatalogPolicy } from "../../src/catalog-policy.js"

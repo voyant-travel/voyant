@@ -9,7 +9,6 @@
  * `docs/architecture/charters-module.md`.
  */
 
-import type { AnyDrizzleDb } from "@voyantjs/db"
 import {
   buildIndexerDocument,
   buildSnapshotInputFromView,
@@ -25,7 +24,8 @@ import {
   type ResolvedView,
   type ResolverScope,
   resolveEntityView,
-} from "@voyantjs/voyant-catalog"
+} from "@voyantjs/catalog"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { eq } from "drizzle-orm"
 
 import { charterCatalogPolicy } from "./catalog-policy.js"

@@ -1,6 +1,3 @@
-import { getResolvedExtraById } from "@voyantjs/extras/service-catalog-plane"
-import { getResolvedRoomTypeById } from "@voyantjs/hospitality/service-catalog-plane"
-import { getResolvedProductById } from "@voyantjs/products/service-catalog-plane"
 import {
   checkAvailabilityTool,
   createMcpToolRegistry,
@@ -10,7 +7,10 @@ import {
   type McpToolContext,
   searchCatalogTool,
   suggestAlternativesTool,
-} from "@voyantjs/voyant-catalog-mcp"
+} from "@voyantjs/catalog-mcp"
+import { getResolvedExtraById } from "@voyantjs/extras/service-catalog-plane"
+import { getResolvedRoomTypeById } from "@voyantjs/hospitality/service-catalog-plane"
+import { getResolvedProductById } from "@voyantjs/products/service-catalog-plane"
 import type { Context, Hono } from "hono"
 
 import { buildEmbeddingProvider, buildTypesenseIndexer } from "./lib/catalog-runtime"
