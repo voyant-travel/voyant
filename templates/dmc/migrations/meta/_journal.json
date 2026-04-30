@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1775597204759,
-      "tag": "0000_wild_randall_flagg",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776118378699,
-      "tag": "0001_add_marketing_consent_source",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776189000001,
-      "tag": "0002_add_product_media_brochure_flag",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1776191000001,
-      "tag": "0003_add_product_brochure_versions",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1776193000001,
-      "tag": "0004_add_destinations",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1776264000001,
-      "tag": "0005_add_payment_sessions",
+      "when": 1777566645137,
+      "tag": "0000_tired_firestar",
       "breakpoints": true
     }
   ]
