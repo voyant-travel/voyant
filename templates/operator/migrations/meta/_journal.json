@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776851224227,
-      "tag": "0000_striped_jubilee",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776852257472,
-      "tag": "0001_conscious_whistler",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776853819109,
-      "tag": "0002_legal_sheva_callister",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1776868800002,
-      "tag": "0003_add_product_itineraries",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1777485383453,
-      "tag": "0004_steady_molten_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1777493473068,
-      "tag": "0005_condemned_nomad",
+      "when": 1777567042125,
+      "tag": "0000_absurd_victor_mancha",
       "breakpoints": true
     }
   ]

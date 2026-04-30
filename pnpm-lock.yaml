@@ -4372,7 +4372,7 @@ importers:
         version: 1.5.6(528a90069b32ded3cd69e6bc8dd18c96)
       '@cloudflare/vite-plugin':
         specifier: ^1.31.0
-        version: 1.31.0(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260426.1)(wrangler@4.80.0(@cloudflare/workers-types@4.20260426.1))
+        version: 1.31.0(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260401.1)(wrangler@4.80.0(@cloudflare/workers-types@4.20260426.1))
       '@fontsource-variable/inter':
         specifier: ^5.2.8
         version: 5.2.8
@@ -4691,7 +4691,7 @@ importers:
         version: 1.5.6(528a90069b32ded3cd69e6bc8dd18c96)
       '@cloudflare/vite-plugin':
         specifier: ^1.31.0
-        version: 1.31.0(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260401.1)(wrangler@4.80.0(@cloudflare/workers-types@4.20260426.1))
+        version: 1.31.0(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260426.1)(wrangler@4.80.0(@cloudflare/workers-types@4.20260426.1))
       '@fontsource-variable/inter':
         specifier: ^5.2.8
         version: 5.2.8
@@ -4872,6 +4872,15 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@voyantjs/voyant-catalog':
+        specifier: workspace:*
+        version: link:../../packages/catalog
+      '@voyantjs/voyant-catalog-mcp':
+        specifier: workspace:*
+        version: link:../../packages/catalog-mcp
+      '@voyantjs/voyant-catalog-rag':
+        specifier: workspace:*
+        version: link:../../packages/catalog-rag
       '@voyantjs/voyant-storage':
         specifier: workspace:*
         version: link:../../packages/storage

@@ -37,6 +37,7 @@ export default defineConfig({
     "../../packages/finance/src/schema.ts",
     "../../packages/legal/src/schema.ts",
     "../../packages/cruises/src/schema.ts",
+    "../../packages/catalog/src/schema.ts",
   ],
   out: "./migrations",
   dialect: "postgresql",
