@@ -2,11 +2,6 @@ import { getResolvedExtraById } from "@voyantjs/extras/service-catalog-plane"
 import { getResolvedRoomTypeById } from "@voyantjs/hospitality/service-catalog-plane"
 import { getResolvedProductById } from "@voyantjs/products/service-catalog-plane"
 import {
-  createTypesenseIndexer,
-  type IndexerAdapter,
-  type TypesenseClient,
-} from "@voyantjs/voyant-catalog"
-import {
   checkAvailabilityTool,
   createMcpToolRegistry,
   getEntityTool,
@@ -18,7 +13,8 @@ import {
 } from "@voyantjs/voyant-catalog-mcp"
 import { createOpenAIEmbeddingProvider } from "@voyantjs/voyant-catalog-rag"
 import type { Context, Hono } from "hono"
-import { Client as TypesenseSdkClient } from "typesense"
+
+import { buildTypesenseIndexer } from "./lib/catalog-runtime"
 
 function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
   registry.register(searchCatalogTool)
@@ -26,34 +22,6 @@ function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): v
   registry.register(suggestAlternativesTool)
   registry.register(checkAvailabilityTool)
   registry.register(getQuoteTool)
-}
-
-function buildTypesenseIndexer(env: {
-  TYPESENSE_HOST?: string
-  TYPESENSE_ADMIN_API_KEY?: string
-  TYPESENSE_API_KEY?: string
-}): IndexerAdapter | undefined {
-  const host = env.TYPESENSE_HOST
-  const apiKey = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
-  if (!host || !apiKey) return undefined
-
-  let parsed: URL
-  try {
-    parsed = new URL(host)
-  } catch {
-    return undefined
-  }
-
-  const port = parsed.port ? Number(parsed.port) : parsed.protocol === "https:" ? 443 : 80
-  const protocol = parsed.protocol.replace(":", "") as "http" | "https"
-
-  const client = new TypesenseSdkClient({
-    nodes: [{ host: parsed.hostname, port, protocol }],
-    apiKey,
-    connectionTimeoutSeconds: 10,
-  })
-
-  return createTypesenseIndexer({ client: client as unknown as TypesenseClient })
 }
 
 function buildToolContext(c: Context): McpToolContext {

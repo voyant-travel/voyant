@@ -85,6 +85,7 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    eventBus?: import("@voyantjs/core").EventBus
   }
 }
 
@@ -108,15 +109,12 @@ export const productRoutes = new Hono<Env>()
 
   // POST / — Create product
   .post("/", async (c) => {
-    return c.json(
-      {
-        data: await productsService.createProduct(
-          c.get("db"),
-          await parseJsonBody(c, insertProductSchema),
-        ),
-      },
-      201,
+    const row = await productsService.createProduct(
+      c.get("db"),
+      await parseJsonBody(c, insertProductSchema),
     )
+    await c.get("eventBus")?.emit("product.created", { id: row.id })
+    return c.json({ data: row }, 201)
   })
 
   // ==========================================================================
@@ -1252,6 +1250,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await c.get("eventBus")?.emit("product.updated", { id: row.id })
     return c.json({ data: row })
   })
 
@@ -1263,6 +1262,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await c.get("eventBus")?.emit("product.deleted", { id: row.id })
     return c.json({ success: true }, 200)
   })
 
