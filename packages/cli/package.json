@@ -8,17 +8,20 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./drizzle": "./src/drizzle.ts",
     "./commands/generate-module": "./src/commands/generate-module.ts",
     "./commands/generate-link": "./src/commands/generate-link.ts",
     "./commands/config": "./src/commands/config.ts",
     "./commands/db-sync-links": "./src/commands/db-sync-links.ts",
+    "./commands/db-schemas": "./src/commands/db-schemas.ts",
     "./commands/exec": "./src/commands/exec.ts",
     "./commands/new": "./src/commands/new.ts",
     "./commands/dev": "./src/commands/dev.ts",
     "./commands/workflows": "./src/commands/workflows-command.ts",
     "./lib/strings": "./src/lib/strings.ts",
     "./lib/args": "./src/lib/args.ts",
-    "./lib/config-loader": "./src/lib/config-loader.ts"
+    "./lib/config-loader": "./src/lib/config-loader.ts",
+    "./lib/resolve-schemas": "./src/lib/resolve-schemas.ts"
   },
   "files": [
     "bin",
@@ -51,51 +54,78 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./drizzle": {
+        "types": "./dist/drizzle.d.ts",
+        "import": "./dist/drizzle.js",
+        "default": "./dist/drizzle.js"
       },
       "./commands/generate-module": {
         "types": "./dist/commands/generate-module.d.ts",
-        "import": "./dist/commands/generate-module.js"
+        "import": "./dist/commands/generate-module.js",
+        "default": "./dist/commands/generate-module.js"
       },
       "./commands/generate-link": {
         "types": "./dist/commands/generate-link.d.ts",
-        "import": "./dist/commands/generate-link.js"
+        "import": "./dist/commands/generate-link.js",
+        "default": "./dist/commands/generate-link.js"
       },
       "./commands/config": {
         "types": "./dist/commands/config.d.ts",
-        "import": "./dist/commands/config.js"
+        "import": "./dist/commands/config.js",
+        "default": "./dist/commands/config.js"
       },
       "./commands/db-sync-links": {
         "types": "./dist/commands/db-sync-links.d.ts",
-        "import": "./dist/commands/db-sync-links.js"
+        "import": "./dist/commands/db-sync-links.js",
+        "default": "./dist/commands/db-sync-links.js"
+      },
+      "./commands/db-schemas": {
+        "types": "./dist/commands/db-schemas.d.ts",
+        "import": "./dist/commands/db-schemas.js",
+        "default": "./dist/commands/db-schemas.js"
       },
       "./commands/exec": {
         "types": "./dist/commands/exec.d.ts",
-        "import": "./dist/commands/exec.js"
+        "import": "./dist/commands/exec.js",
+        "default": "./dist/commands/exec.js"
       },
       "./commands/new": {
         "types": "./dist/commands/new.d.ts",
-        "import": "./dist/commands/new.js"
+        "import": "./dist/commands/new.js",
+        "default": "./dist/commands/new.js"
       },
       "./commands/dev": {
         "types": "./dist/commands/dev.d.ts",
-        "import": "./dist/commands/dev.js"
+        "import": "./dist/commands/dev.js",
+        "default": "./dist/commands/dev.js"
       },
       "./commands/workflows": {
         "types": "./dist/commands/workflows-command.d.ts",
-        "import": "./dist/commands/workflows-command.js"
+        "import": "./dist/commands/workflows-command.js",
+        "default": "./dist/commands/workflows-command.js"
       },
       "./lib/strings": {
         "types": "./dist/lib/strings.d.ts",
-        "import": "./dist/lib/strings.js"
+        "import": "./dist/lib/strings.js",
+        "default": "./dist/lib/strings.js"
       },
       "./lib/args": {
         "types": "./dist/lib/args.d.ts",
-        "import": "./dist/lib/args.js"
+        "import": "./dist/lib/args.js",
+        "default": "./dist/lib/args.js"
       },
       "./lib/config-loader": {
         "types": "./dist/lib/config-loader.d.ts",
-        "import": "./dist/lib/config-loader.js"
+        "import": "./dist/lib/config-loader.js",
+        "default": "./dist/lib/config-loader.js"
+      },
+      "./lib/resolve-schemas": {
+        "types": "./dist/lib/resolve-schemas.d.ts",
+        "import": "./dist/lib/resolve-schemas.js",
+        "default": "./dist/lib/resolve-schemas.js"
       }
     },
     "main": "./dist/index.js",

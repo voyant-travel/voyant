@@ -4,6 +4,7 @@ import { join } from "node:path"
 
 import { parseArgs } from "../lib/args.js"
 import type { CommandContext, CommandResult } from "../types.js"
+import { dbSchemasCommand } from "./db-schemas.js"
 import { dbSyncLinksCommand } from "./db-sync-links.js"
 
 /**
@@ -25,7 +26,9 @@ export async function dbCommand(ctx: CommandContext): Promise<CommandResult> {
   const { positionals, flags } = parseArgs(ctx.argv)
   const [sub, ...rest] = positionals
   if (!sub) {
-    ctx.stderr("Usage: voyant db <generate|migrate|studio|push|check|sync-links> [...args]\n")
+    ctx.stderr(
+      "Usage: voyant db <generate|migrate|studio|push|check|sync-links|schemas> [...args]\n",
+    )
     return 1
   }
 
@@ -34,6 +37,11 @@ export async function dbCommand(ctx: CommandContext): Promise<CommandResult> {
     const idx = ctx.argv.indexOf(sub)
     const subArgs = idx >= 0 ? ctx.argv.slice(idx + 1) : []
     return dbSyncLinksCommand({ ...ctx, argv: subArgs })
+  }
+  if (sub === "schemas") {
+    const idx = ctx.argv.indexOf(sub)
+    const subArgs = idx >= 0 ? ctx.argv.slice(idx + 1) : []
+    return dbSchemasCommand({ ...ctx, argv: subArgs })
   }
 
   const known = new Set(["generate", "migrate", "studio", "push", "check"])

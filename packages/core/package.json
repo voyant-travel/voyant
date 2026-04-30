@@ -40,59 +40,73 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./env": {
         "types": "./dist/env.d.ts",
-        "import": "./dist/env.js"
+        "import": "./dist/env.js",
+        "default": "./dist/env.js"
       },
       "./module": {
         "types": "./dist/module.d.ts",
-        "import": "./dist/module.js"
+        "import": "./dist/module.js",
+        "default": "./dist/module.js"
       },
       "./hooks": {
         "types": "./dist/hooks.d.ts",
-        "import": "./dist/hooks.js"
+        "import": "./dist/hooks.js",
+        "default": "./dist/hooks.js"
       },
       "./locking": {
         "types": "./dist/locking.d.ts",
-        "import": "./dist/locking.js"
+        "import": "./dist/locking.js",
+        "default": "./dist/locking.js"
       },
       "./registry": {
         "types": "./dist/registry.d.ts",
-        "import": "./dist/registry.js"
+        "import": "./dist/registry.js",
+        "default": "./dist/registry.js"
       },
       "./container": {
         "types": "./dist/container.d.ts",
-        "import": "./dist/container.js"
+        "import": "./dist/container.js",
+        "default": "./dist/container.js"
       },
       "./events": {
         "types": "./dist/events.d.ts",
-        "import": "./dist/events.js"
+        "import": "./dist/events.js",
+        "default": "./dist/events.js"
       },
       "./orchestration": {
         "types": "./dist/orchestration.d.ts",
-        "import": "./dist/orchestration.js"
+        "import": "./dist/orchestration.js",
+        "default": "./dist/orchestration.js"
       },
       "./links": {
         "types": "./dist/links.d.ts",
-        "import": "./dist/links.js"
+        "import": "./dist/links.js",
+        "default": "./dist/links.js"
       },
       "./query": {
         "types": "./dist/query.d.ts",
-        "import": "./dist/query.js"
+        "import": "./dist/query.js",
+        "default": "./dist/query.js"
       },
       "./workflows": {
         "types": "./dist/workflows.d.ts",
-        "import": "./dist/workflows.js"
+        "import": "./dist/workflows.js",
+        "default": "./dist/workflows.js"
       },
       "./plugin": {
         "types": "./dist/plugin.d.ts",
-        "import": "./dist/plugin.js"
+        "import": "./dist/plugin.js",
+        "default": "./dist/plugin.js"
       },
       "./config": {
         "types": "./dist/config.d.ts",
-        "import": "./dist/config.js"
+        "import": "./dist/config.js",
+        "default": "./dist/config.js"
       }
     },
     "main": "./dist/index.js",

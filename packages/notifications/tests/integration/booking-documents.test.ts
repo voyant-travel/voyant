@@ -1,7 +1,7 @@
 import { bookings, bookingTravelers } from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"
 import { invoiceRenditions, invoices } from "@voyantjs/finance/schema"
-import { contractAttachments, contracts } from "@voyantjs/legal/contracts/schema"
+import { contractAttachments, contracts } from "@voyantjs/legal/schema"
 import { eq } from "drizzle-orm"
 import { beforeEach, describe, expect, it } from "vitest"
 import { notificationDeliveries } from "../../src/schema.js"

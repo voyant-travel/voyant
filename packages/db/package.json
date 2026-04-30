@@ -41,111 +41,138 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./operators": {
         "types": "./dist/operators.d.ts",
-        "import": "./dist/operators.js"
+        "import": "./dist/operators.js",
+        "default": "./dist/operators.js"
       },
       "./lib": {
         "types": "./dist/lib/index.d.ts",
-        "import": "./dist/lib/index.js"
+        "import": "./dist/lib/index.js",
+        "default": "./dist/lib/index.js"
       },
       "./lib/typeid": {
         "types": "./dist/lib/typeid.d.ts",
-        "import": "./dist/lib/typeid.js"
+        "import": "./dist/lib/typeid.js",
+        "default": "./dist/lib/typeid.js"
       },
       "./lib/typeid-column": {
         "types": "./dist/lib/typeid-column.d.ts",
-        "import": "./dist/lib/typeid-column.js"
+        "import": "./dist/lib/typeid-column.js",
+        "default": "./dist/lib/typeid-column.js"
       },
       "./columns": {
         "types": "./dist/columns/index.d.ts",
-        "import": "./dist/columns/index.js"
+        "import": "./dist/columns/index.js",
+        "default": "./dist/columns/index.js"
       },
       "./primitives": {
         "types": "./dist/primitives/index.d.ts",
-        "import": "./dist/primitives/index.js"
+        "import": "./dist/primitives/index.js",
+        "default": "./dist/primitives/index.js"
       },
       "./primitives/*": {
         "types": "./dist/primitives/*.d.ts",
-        "import": "./dist/primitives/*.js"
+        "import": "./dist/primitives/*.js",
+        "default": "./dist/primitives/*.js"
       },
       "./utils": {
         "types": "./dist/utils.d.ts",
-        "import": "./dist/utils.js"
+        "import": "./dist/utils.js",
+        "default": "./dist/utils.js"
       },
       "./helpers": {
         "types": "./dist/helpers.d.ts",
-        "import": "./dist/helpers.js"
+        "import": "./dist/helpers.js",
+        "default": "./dist/helpers.js"
       },
       "./types": {
         "types": "./dist/types.d.ts",
-        "import": "./dist/types.js"
+        "import": "./dist/types.js",
+        "default": "./dist/types.js"
       },
       "./crud": {
         "types": "./dist/crud.d.ts",
-        "import": "./dist/crud.js"
+        "import": "./dist/crud.js",
+        "default": "./dist/crud.js"
       },
       "./lifecycle": {
         "types": "./dist/lifecycle.d.ts",
-        "import": "./dist/lifecycle.js"
+        "import": "./dist/lifecycle.js",
+        "default": "./dist/lifecycle.js"
       },
       "./links": {
         "types": "./dist/links.d.ts",
-        "import": "./dist/links.js"
+        "import": "./dist/links.js",
+        "default": "./dist/links.js"
       },
       "./queries": {
         "types": "./dist/queries/index.d.ts",
-        "import": "./dist/queries/index.js"
+        "import": "./dist/queries/index.js",
+        "default": "./dist/queries/index.js"
       },
       "./runtime": {
         "types": "./dist/runtime/index.d.ts",
-        "import": "./dist/runtime/index.js"
+        "import": "./dist/runtime/index.js",
+        "default": "./dist/runtime/index.js"
       },
       "./schema": {
         "types": "./dist/schema/index.d.ts",
-        "import": "./dist/schema/index.js"
+        "import": "./dist/schema/index.js",
+        "default": "./dist/schema/index.js"
       },
       "./schema/iam": {
         "types": "./dist/schema/iam/index.d.ts",
-        "import": "./dist/schema/iam/index.js"
+        "import": "./dist/schema/iam/index.js",
+        "default": "./dist/schema/iam/index.js"
       },
       "./schema/iam/*": {
         "types": "./dist/schema/iam/*.d.ts",
-        "import": "./dist/schema/iam/*.js"
+        "import": "./dist/schema/iam/*.js",
+        "default": "./dist/schema/iam/*.js"
       },
       "./schema/infra": {
         "types": "./dist/schema/infra/index.d.ts",
-        "import": "./dist/schema/infra/index.js"
+        "import": "./dist/schema/infra/index.js",
+        "default": "./dist/schema/infra/index.js"
       },
       "./schema/infra/*": {
         "types": "./dist/schema/infra/*.d.ts",
-        "import": "./dist/schema/infra/*.js"
+        "import": "./dist/schema/infra/*.js",
+        "default": "./dist/schema/infra/*.js"
       },
       "./schema/voyant/*": {
         "types": "./dist/schema/voyant/*.d.ts",
-        "import": "./dist/schema/voyant/*.js"
+        "import": "./dist/schema/voyant/*.js",
+        "default": "./dist/schema/voyant/*.js"
       },
       "./schema/*": {
         "types": "./dist/schema/*.d.ts",
-        "import": "./dist/schema/*.js"
+        "import": "./dist/schema/*.js",
+        "default": "./dist/schema/*.js"
       },
       "./schema/*/*": {
         "types": "./dist/schema/*/*.d.ts",
-        "import": "./dist/schema/*/*.js"
+        "import": "./dist/schema/*/*.js",
+        "default": "./dist/schema/*/*.js"
       },
       "./schema/*/*/*": {
         "types": "./dist/schema/*/*/*.d.ts",
-        "import": "./dist/schema/*/*/*.js"
+        "import": "./dist/schema/*/*/*.js",
+        "default": "./dist/schema/*/*/*.js"
       },
       "./schema/*/*/*/*": {
         "types": "./dist/schema/*/*/*/*.d.ts",
-        "import": "./dist/schema/*/*/*/*.js"
+        "import": "./dist/schema/*/*/*/*.js",
+        "default": "./dist/schema/*/*/*/*.js"
       },
       "./test-utils": {
         "types": "./dist/test-utils.d.ts",
-        "import": "./dist/test-utils.js"
+        "import": "./dist/test-utils.js",
+        "default": "./dist/test-utils.js"
       }
     },
     "main": "./dist/index.js",
@@ -174,5 +201,9 @@
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": []
   }
 }

@@ -1,3 +1,8 @@
+export {
+  bookingCruiseDetails,
+  bookingGroupCruiseDetails,
+  cruiseBookingModeEnum,
+} from "./booking-extension.js"
 export * from "./schema-cabins.js"
 export * from "./schema-content.js"
 export * from "./schema-core.js"

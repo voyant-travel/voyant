@@ -85,19 +85,23 @@
       "./postcss.config": "./postcss.config.mjs",
       "./lib/*": {
         "types": "./dist/lib/*.d.ts",
-        "import": "./dist/lib/*.js"
+        "import": "./dist/lib/*.js",
+        "default": "./dist/lib/*.js"
       },
       "./components": {
         "types": "./dist/components/index.d.ts",
-        "import": "./dist/components/index.js"
+        "import": "./dist/components/index.js",
+        "default": "./dist/components/index.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",
-        "import": "./dist/components/*.js"
+        "import": "./dist/components/*.js",
+        "default": "./dist/components/*.js"
       },
       "./hooks/*": {
         "types": "./dist/hooks/*.d.ts",
-        "import": "./dist/hooks/*.js"
+        "import": "./dist/hooks/*.js",
+        "default": "./dist/hooks/*.js"
       }
     }
   },

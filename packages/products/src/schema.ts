@@ -1,3 +1,4 @@
+export { bookingItemProductDetails, bookingProductDetails } from "./booking-extension"
 export * from "./schema-core"
 export * from "./schema-itinerary"
 export * from "./schema-relations"

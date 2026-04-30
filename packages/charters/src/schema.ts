@@ -1,3 +1,4 @@
+export { bookingCharterDetails } from "./booking-extension.js"
 export * from "./schema-core.js"
 export * from "./schema-itinerary.js"
 export * from "./schema-pricing.js"
