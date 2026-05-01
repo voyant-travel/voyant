@@ -1,4 +1,4 @@
-# @voyantjs/voyant-flights
+# @voyantjs/flights
 
 Phase 3 of the catalog plane. The flights vertical — a partial-adoption module
 for live-API flight search and booking.
@@ -9,7 +9,7 @@ for the full design.
 ## Install
 
 ```bash
-pnpm add @voyantjs/voyant-flights
+pnpm add @voyantjs/flights
 ```
 
 ## What's in the box
@@ -60,7 +60,7 @@ Flights opt **out** of:
 ### Multi-connection search
 
 ```typescript
-import { fanOutFlightSearch } from "@voyantjs/voyant-flights/orchestration/fan-out"
+import { fanOutFlightSearch } from "@voyantjs/flights/orchestration/fan-out"
 
 const result = await fanOutFlightSearch({
   adapters: [hiskyAdapter, amadeusAdapter, charterConsolidatorAdapter],
@@ -86,7 +86,7 @@ const result = await fanOutFlightSearch({
 import {
   createLocalPostgresReferenceProvider,
   createReferenceDataTables,
-} from "@voyantjs/voyant-flights/reference/local-postgres"
+} from "@voyantjs/flights/reference/local-postgres"
 
 // Schema lives in the operator's own DB. No external service required.
 const reference = createLocalPostgresReferenceProvider({ db })
