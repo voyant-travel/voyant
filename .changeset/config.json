@@ -21,6 +21,8 @@
       "@voyantjs/catalog",
       "@voyantjs/catalog-mcp",
       "@voyantjs/catalog-rag",
+      "@voyantjs/catalog-react",
+      "@voyantjs/catalog-ui",
       "@voyantjs/checkout",
       "@voyantjs/core",
       "@voyantjs/crm",
