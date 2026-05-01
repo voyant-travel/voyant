@@ -13,6 +13,7 @@ import {
   CalendarDays,
   DollarSign,
   LayoutDashboard,
+  Library,
   Mail,
   Package,
   Scale,
@@ -62,6 +63,12 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       title: messages.nav.dashboard,
       url: "/",
       icon: LayoutDashboard,
+    },
+    {
+      id: "catalog",
+      title: messages.nav.catalog,
+      url: "/catalog",
+      icon: Library,
     },
     {
       id: "products",
