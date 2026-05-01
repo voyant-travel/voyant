@@ -1,4 +1,5 @@
 export {
+  type CatalogFilterField,
   CatalogSearchPage,
   type CatalogSearchPageProps,
   type CatalogSearchTab,

@@ -14,14 +14,20 @@ const searchHitSchema = z.object({
   highlights: z.record(z.string(), z.unknown()).optional(),
 })
 
+const facetBucketSchema = z.object({
+  value: z.union([z.string(), z.number()]),
+  count: z.number(),
+})
+
 export const catalogSearchResponseSchema = z.object({
   vertical: z.string(),
   mode: z.enum(["keyword", "hybrid", "semantic"]),
   total: z.number(),
   hits: z.array(searchHitSchema),
-  facets: z.record(z.string(), z.array(z.unknown())).optional(),
+  facets: z.record(z.string(), z.array(facetBucketSchema)).optional(),
 })
 
 export type CatalogSearchResponse = z.infer<typeof catalogSearchResponseSchema>
 export type CatalogSearchHit = z.infer<typeof searchHitSchema>
 export type CatalogSearchDocument = z.infer<typeof indexerDocumentSchema>
+export type CatalogFacetBucket = z.infer<typeof facetBucketSchema>

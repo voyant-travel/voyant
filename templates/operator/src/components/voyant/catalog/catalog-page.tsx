@@ -19,12 +19,21 @@ export function CatalogPage() {
           onClick={() => navigate({ to: "/products/$id", params: { id: hit.id } })}
         />
       ),
+      filterFields: [
+        { field: "status", label: "Status" },
+        { field: "bookingMode", label: "Booking mode" },
+        { field: "productTypeId", label: "Type" },
+      ],
     },
     {
       id: "extras",
       label: "Extras",
       vertical: "extras",
       renderCard: (hit) => <ExtraCatalogCard hit={hit} />,
+      filterFields: [
+        { field: "status", label: "Status" },
+        { field: "category", label: "Category" },
+      ],
     },
   ]
 

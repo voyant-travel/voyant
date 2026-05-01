@@ -23,6 +23,7 @@ export {
   type VoyantCatalogProviderProps,
 } from "./provider.js"
 export {
+  type CatalogFacetBucket,
   type CatalogSearchDocument,
   type CatalogSearchHit,
   type CatalogSearchResponse,
