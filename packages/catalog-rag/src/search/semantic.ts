@@ -21,8 +21,13 @@ import type { EmbeddingProvider } from "../embeddings/contract.js"
 export interface SemanticSearchOptions {
   /** Adapter to query. */
   adapter: IndexerAdapter
-  /** Embedding provider — used to vectorize the query string when needed. */
-  embeddings: EmbeddingProvider
+  /**
+   * Embedding provider — used to vectorize the query string when the mode
+   * needs vectors. Optional: callers running pure-keyword searches can omit
+   * this. `executeSemanticSearch` throws a clear error if mode is
+   * `semantic` / `hybrid` and no provider is configured.
+   */
+  embeddings?: EmbeddingProvider
   /** The variant slice (vertical, locale, audience, market) to search. */
   slice: IndexerSlice
   /** The search request. `mode` controls keyword/hybrid/semantic blending. */
@@ -72,6 +77,12 @@ export async function executeSemanticSearch(
   // Use caller-supplied embedding if provided; otherwise generate one.
   let queryEmbedding = request.query_embedding
   if (!queryEmbedding && request.query.length > 0) {
+    if (!embeddings) {
+      throw new Error(
+        `Search mode "${request.mode}" requires an EmbeddingProvider to vectorize the query. ` +
+          `Configure one (e.g. createGeminiEmbeddingProvider) or supply request.query_embedding directly.`,
+      )
+    }
     const [vector] = await embeddings.embed([request.query])
     if (!vector) {
       throw new Error("EmbeddingProvider returned no vector for the query string")

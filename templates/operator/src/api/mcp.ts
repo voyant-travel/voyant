@@ -1,3 +1,4 @@
+import type { SearchFilter, SearchMode, SearchRequest } from "@voyantjs/catalog"
 import {
   checkAvailabilityTool,
   createMcpToolRegistry,
@@ -8,6 +9,7 @@ import {
   searchCatalogTool,
   suggestAlternativesTool,
 } from "@voyantjs/catalog-mcp"
+import { executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { getResolvedExtraById } from "@voyantjs/extras/service-catalog-plane"
 import { getResolvedProductById } from "@voyantjs/products/service-catalog-plane"
 import type { Context, Hono } from "hono"
@@ -86,4 +88,97 @@ export function mountCatalogMcpRoutes(hono: Hono): void {
 
   hono.post("/v1/admin/mcp/tools/:tool", handle)
   hono.post("/v1/public/mcp/tools/:tool", handle)
+}
+
+interface CatalogSearchBody {
+  vertical?: string
+  query?: string
+  mode?: SearchMode
+  filters?: SearchFilter[]
+  facets?: Array<{ field: string }>
+  pagination?: { limit?: number; cursor?: string }
+  alpha?: number
+  distance_threshold?: number
+  query_embedding?: number[]
+  /** Optional explicit market override; defaults to defaultScope.market. */
+  market?: string
+  /** Optional explicit locale override; defaults to defaultScope.locale. */
+  locale?: string
+}
+
+/**
+ * Plain-JSON catalog search route — what admin UIs call directly.
+ * Same `IndexerService` plumbing as the MCP `search_catalog` tool, but
+ * the response shape is `{ vertical, mode, total, hits, facets }` instead
+ * of the MCP `{ isError, content, structuredContent }` envelope.
+ *
+ * Authorization: actor pinned by createApp's auth middleware. Audience
+ * comes from actor (staff → staff slice; customer → customer slice).
+ * Cross-audience federation isn't surfaced here — admins doing federated
+ * search go through the MCP route.
+ */
+export function mountCatalogSearchRoutes(hono: Hono): void {
+  async function handle(c: Context) {
+    let body: CatalogSearchBody
+    try {
+      body = await c.req.json<CatalogSearchBody>()
+    } catch {
+      body = {}
+    }
+
+    if (!body.vertical) return c.json({ error: "vertical is required" }, 400)
+
+    const ctx = buildToolContext(c)
+    const indexer = ctx.catalog.indexer
+    if (!indexer) {
+      return c.json({ error: "Search indexer is not configured (missing TYPESENSE_HOST)" }, 503)
+    }
+
+    const mode = body.mode ?? "keyword"
+    if ((mode === "semantic" || mode === "hybrid") && !ctx.catalog.embeddings) {
+      return c.json(
+        { error: "Embeddings provider is not configured for semantic / hybrid mode" },
+        503,
+      )
+    }
+
+    const slice = {
+      vertical: body.vertical,
+      locale: body.locale ?? ctx.defaultScope.locale,
+      audience: ctx.defaultScope.audience,
+      market: body.market ?? ctx.defaultScope.market,
+    }
+
+    const request: SearchRequest = {
+      query: body.query ?? "",
+      mode,
+      filters: body.filters,
+      facets: body.facets,
+      pagination: body.pagination,
+      alpha: body.alpha,
+      distance_threshold: body.distance_threshold,
+      query_embedding: body.query_embedding,
+    }
+
+    try {
+      const results = await executeSemanticSearch({
+        adapter: indexer,
+        embeddings: ctx.catalog.embeddings,
+        slice,
+        request,
+      })
+      return c.json({
+        vertical: body.vertical,
+        mode,
+        total: results.total,
+        hits: results.hits,
+        facets: results.facets ?? {},
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      return c.json({ error: message }, 500)
+    }
+  }
+
+  hono.post("/v1/admin/catalog/search", handle)
 }

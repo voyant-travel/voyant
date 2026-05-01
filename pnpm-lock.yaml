@@ -1216,6 +1216,79 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/catalog-react:
+    dependencies:
+      '@voyantjs/react':
+        specifier: workspace:*
+        version: link:../react
+    devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.96.2
+        version: 5.96.2(react@19.2.4)
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../catalog
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+
+  packages/catalog-ui:
+    devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.96.2
+        version: 5.96.2(react@19.2.4)
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/catalog-react':
+        specifier: workspace:*
+        version: link:../catalog-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      lucide-react:
+        specifier: ^1.7.0
+        version: 1.7.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/charters:
     dependencies:
       '@voyantjs/bookings':
@@ -1308,6 +1381,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/catalog-react':
+        specifier: workspace:*
+        version: link:../catalog-react
       '@voyantjs/charters-react':
         specifier: workspace:*
         version: link:../charters-react
@@ -1582,6 +1658,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/catalog-react':
+        specifier: workspace:*
+        version: link:../catalog-react
       '@voyantjs/cruises-react':
         specifier: workspace:*
         version: link:../cruises-react
@@ -2050,6 +2129,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/catalog-react':
+        specifier: workspace:*
+        version: link:../catalog-react
       '@voyantjs/extras-react':
         specifier: workspace:*
         version: link:../extras-react
@@ -2537,6 +2619,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/catalog-react':
+        specifier: workspace:*
+        version: link:../catalog-react
       '@voyantjs/hospitality-react':
         specifier: workspace:*
         version: link:../hospitality-react
@@ -3415,6 +3500,9 @@ importers:
       '@voyantjs/availability-react':
         specifier: workspace:*
         version: link:../availability-react
+      '@voyantjs/catalog-react':
+        specifier: workspace:*
+        version: link:../catalog-react
       '@voyantjs/pricing-react':
         specifier: workspace:*
         version: link:../pricing-react
@@ -4803,6 +4891,12 @@ importers:
       '@voyantjs/catalog-rag':
         specifier: workspace:*
         version: link:../../packages/catalog-rag
+      '@voyantjs/catalog-react':
+        specifier: workspace:*
+        version: link:../../packages/catalog-react
+      '@voyantjs/catalog-ui':
+        specifier: workspace:*
+        version: link:../../packages/catalog-ui
       '@voyantjs/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
@@ -4839,6 +4933,9 @@ importers:
       '@voyantjs/extras':
         specifier: workspace:*
         version: link:../../packages/extras
+      '@voyantjs/extras-ui':
+        specifier: workspace:*
+        version: link:../../packages/extras-ui
       '@voyantjs/facilities':
         specifier: workspace:*
         version: link:../../packages/facilities

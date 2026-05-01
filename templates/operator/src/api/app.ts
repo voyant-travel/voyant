@@ -36,7 +36,7 @@ import {
   guessMimeType,
   resolveDocumentDownloadUrl,
 } from "./lib/storage"
-import { mountCatalogMcpRoutes } from "./mcp"
+import { mountCatalogMcpRoutes, mountCatalogSearchRoutes } from "./mcp"
 
 const notificationsHonoModule = createNotificationsHonoModule({
   resolveProviders: resolveNotificationProviders,
@@ -249,5 +249,6 @@ export const app = createApp<CloudflareBindings>({
     })
 
     mountCatalogMcpRoutes(hono)
+    mountCatalogSearchRoutes(hono)
   },
 })

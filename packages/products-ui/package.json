@@ -27,6 +27,7 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@voyantjs/availability-react": "workspace:*",
+    "@voyantjs/catalog-react": "workspace:*",
     "@voyantjs/pricing-react": "workspace:*",
     "@voyantjs/products-react": "workspace:*",
     "@voyantjs/suppliers-react": "workspace:*",
@@ -42,6 +43,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/availability-react": "workspace:*",
+    "@voyantjs/catalog-react": "workspace:*",
     "@voyantjs/i18n": "workspace:*",
     "@voyantjs/pricing-react": "workspace:*",
     "@voyantjs/products-react": "workspace:*",

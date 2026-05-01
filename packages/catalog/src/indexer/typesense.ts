@@ -200,11 +200,16 @@ export function buildSearchQuery(
     .join(",")
 
   const perPage = request.pagination?.limit ?? 20
+  // Cursor doubles as the 1-indexed page number for Typesense's `page`
+  // parameter. Callers wanting a different cursor strategy (e.g. opaque
+  // cursor for streaming results) write a different adapter.
+  const page = parsePageCursor(request.pagination?.cursor) ?? 1
 
   const query: TypesenseSearchQuery = {
     q: request.query.length > 0 ? request.query : "*",
     query_by: queryFields || "title",
     per_page: perPage,
+    page,
     // Strip the vector field from response payloads — at e.g. 3072-dim that's
     // ~12 KB per hit of float-array noise the caller never reads. The catalog
     // plane re-resolves entities via `resolveEntity` for full views.
@@ -244,6 +249,12 @@ export function buildSearchQuery(
   }
 
   return query
+}
+
+function parsePageCursor(cursor: string | undefined): number | undefined {
+  if (!cursor) return undefined
+  const n = Number(cursor)
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : undefined
 }
 
 function serializeFilters(filters: SearchFilter[]): string {
