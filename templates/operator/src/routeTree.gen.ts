@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
+import { Route as WorkspaceCatalogRouteImport } from './routes/_workspace/catalog'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
 import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
@@ -77,6 +78,11 @@ const authRouteRoute = authRouteRouteImport.update({
 const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const WorkspaceCatalogRoute = WorkspaceCatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
@@ -385,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof authSignUpRoute
   '/verify-email': typeof authVerifyEmailRoute
   '/account': typeof WorkspaceAccountRoute
+  '/catalog': typeof WorkspaceCatalogRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
@@ -439,6 +446,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof authSignUpRoute
   '/verify-email': typeof authVerifyEmailRoute
   '/account': typeof WorkspaceAccountRoute
+  '/catalog': typeof WorkspaceCatalogRoute
   '/': typeof WorkspaceIndexRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
@@ -498,6 +506,7 @@ export interface FileRoutesById {
   '/(auth)/sign-up': typeof authSignUpRoute
   '/(auth)/verify-email': typeof authVerifyEmailRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
+  '/_workspace/catalog': typeof WorkspaceCatalogRoute
   '/_workspace/': typeof WorkspaceIndexRoute
   '/_workspace/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/_workspace/bookings/$id': typeof WorkspaceBookingsIdRoute
@@ -557,6 +566,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify-email'
     | '/account'
+    | '/catalog'
     | '/availability/$id'
     | '/bookings/$id'
     | '/notifications/deliveries'
@@ -611,6 +621,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify-email'
     | '/account'
+    | '/catalog'
     | '/'
     | '/availability/$id'
     | '/bookings/$id'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-up'
     | '/(auth)/verify-email'
     | '/_workspace/account'
+    | '/_workspace/catalog'
     | '/_workspace/'
     | '/_workspace/availability/$id'
     | '/_workspace/bookings/$id'
@@ -741,6 +753,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof WorkspaceIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/catalog': {
+      id: '/_workspace/catalog'
+      path: '/catalog'
+      fullPath: '/catalog'
+      preLoaderRoute: typeof WorkspaceCatalogRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/account': {
@@ -1173,6 +1192,7 @@ const WorkspaceSettingsRouteRouteWithChildren =
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
+  WorkspaceCatalogRoute: typeof WorkspaceCatalogRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   WorkspaceAvailabilityIdRoute: typeof WorkspaceAvailabilityIdRoute
   WorkspaceBookingsIdRoute: typeof WorkspaceBookingsIdRoute
@@ -1215,6 +1235,7 @@ interface WorkspaceRouteRouteChildren {
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceAccountRoute: WorkspaceAccountRoute,
+  WorkspaceCatalogRoute: WorkspaceCatalogRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
   WorkspaceAvailabilityIdRoute: WorkspaceAvailabilityIdRoute,
   WorkspaceBookingsIdRoute: WorkspaceBookingsIdRoute,
