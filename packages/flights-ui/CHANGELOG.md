@@ -1,0 +1,46 @@
+# @voyantjs/flights-ui
+
+## 0.20.0
+
+### Minor Changes
+
+- cc3eddd: **Checkout layering: rename `payments-ui` → `checkout-ui`, add `checkout-react`, and centralise the universal payment UX on top of the existing checkout/finance stack.**
+
+  The "payments" domain previously had a single `@voyantjs/payments-ui` component package with no matching backend or hooks layer, while orchestration already lived in `@voyantjs/checkout` and state in `@voyantjs/finance`. The naming was confusing (no `payments` package to match `payments-ui`) and verticals had to hand-roll fetch calls for the admin "Collect payment" and customer landing flows. This release rationalises the stack:
+
+  - **Renamed** `@voyantjs/payments-ui` → `@voyantjs/checkout-ui`. Same components (`<PaymentStep>`, `<PaymentLinkLandingPage>`) plus a new `<CollectPaymentDialog>`. Old name is gone — update imports.
+  - **New** `@voyantjs/checkout-react` package: `useInitiateCheckoutCollection`, `usePreviewCheckoutCollection`, `useCheckoutPaymentLinkConfig`, and a higher-level `useCollectPayment(bookingId)` that maps a `PaymentChoice` to the right `initiateCheckoutCollection` request body. Re-exports the public-side `usePublicPaymentSession` / `usePublicBookingPaymentOptions` from `finance-react` so consumers don't need a second import. Owns the canonical `PaymentChoice`, `PaymentStepCapabilities`, `SavedPaymentAccount` types (re-exported by `checkout-ui` for backward-compatible single-import).
+  - **`createCheckoutAdminRoutes(options)`** now mounts `collection-plan`, `initiate-collection`, and `collections/bootstrap` alongside the existing `reminder-runs` route, so admin (`actor=staff`) callers don't need a hand-rolled proxy. The public surface is unchanged.
+  - **`<PaymentStep>`** simplified: dropped `send_link` and `bank_transfer` from `PaymentChoice` and the corresponding capability flags. The customer's card-vs-bank-transfer decision happens on the public `/pay/:sessionId` landing page, not on the admin picker. Admin choices are now `saved_method | new_card | extra | hold`. `hold` is the universal "create a payment session and share the link" path; vertical extras (e.g. flights' "Issue on agency credit") render unchanged.
+  - **`useCollectPayment`** accepts `payerLanguage`, `returnUrl`, `cancelUrl`, `notes` per call so the processor's hosted page renders in the customer's locale and lands them back on the right confirmation route. The Netopia plugin honors all four via `startProvider.payload`.
+  - **`<PaymentLinkLandingPage>`** gains an `onRetry` slot. Failed/expired sessions get a `Try again` button that calls the parent's retry handler (the operator template wires it to `POST /v1/public/payment-link/:sessionId/retry`, which mints a fresh session for the same target). Also surfaces `session.notes` as a subtitle so the customer sees what they're paying for.
+  - **`PublicPaymentSession`** schema (`@voyantjs/finance/public-validation`) gains a `notes: string | null` field. The public projection passes through whatever was stored on the session at creation.
+  - **Netopia callback (`@voyantjs/plugin-netopia`)** drops the strict amount/currency-equality check. Netopia auto-converts non-RON orders to RON for processing, so an EUR session legitimately receives a RON-denominated callback — the previous check rejected every cross-currency payment as `amount_or_currency_mismatch`. Status is the trustworthy field (matches `protravel-v3`'s production handler).
+  - **`NETOPIA_MODE=sandbox|live`** replaces hard-coded `NETOPIA_URL`. Defaults to sandbox. `NETOPIA_API_BASES` exports the resolved hosts; `NETOPIA_URL` is now an optional override for staging proxies.
+  - **`<FlightPaymentStep>`** updated for the simpler `PaymentChoice` shape. Drops the obsolete `onRequestPaymentLink` callback (Hold IS that flow now). The flight booking shell's `paymentCapabilities` only needs `chargeSavedCard` / `newCard` now.
+
+  Migration: imports of `@voyantjs/payments-ui` → `@voyantjs/checkout-ui`. If you used `paymentCapabilities.sendLink` or `bankTransfer`, drop those — they're no longer in the type. If you wired `onRequestPaymentLink`, point that callback's behavior into the `hold` choice instead.
+
+- cc3eddd: **Demo flight adapter is now a standalone HTTP service with its own DB; flight orders get a list page, payment status badges, and search/filter/sort.**
+
+  The previous demo adapter lived inside the operator template, used an in-memory `Map` for "persistence" (orders vanished on every restart), and bled fake tables into the template's primary Postgres. None of that scales to "show me my bookings". This release extracts the demo into a proper standalone provider so the operator template no longer pretends a demo is real.
+
+  - **New** `@voyantjs/plugin-flights-demo` is now a thin HTTP-client `FlightConnectorAdapter` (~150 lines, zero state). `createDemoFlightAdapter({ baseUrl })` returns the adapter; every method `fetch()`s the standalone service. Real GDS connectors (Sabre, Amadeus, Duffel) plug in the same way — replace the import, no template churn.
+  - **New runnable** `apps/flights-demo-api` (Node + Hono + drizzle + postgres) — own database, own migrations, own `docker-compose.yml`. Mirrors the `FlightConnectorAdapter` 1:1 over REST: `POST /search`, `POST /price`, `POST /book`, `GET /orders`, `GET /orders/:id`, `POST /orders/:id/cancel`, `POST /ancillaries`, `POST /seatmap`, `GET /health`. Fails fast at startup if its Postgres is unreachable. Set `FLIGHTS_DEMO_DATABASE_URL` (preferred over the shared `DATABASE_URL` so the demo can never silently inherit the operator's DB).
+  - **Booking** is no longer "idempotent" via deterministic order id — `synthesizeOrder` now seeds with the offer hash + `Date.now()` + a random nonce so every `bookFlight` call mints a unique PNR, matching real GDS behaviour. Same offer + same passengers → distinct order rows.
+  - **Contract: `FlightConnectorAdapter.listOrders?(ctx, query)`** is a new optional method (`flight/list-orders` capability), with `FlightOrdersListQuery` and `FlightOrdersListResponse` types. Adapters that own a persistent store (the demo, real travel-tech connectors with agency-side APIs) implement it; pass-through GDS connectors simply omit it. `FlightAdapterContext.deps` is a new optional escape hatch for adapter-specific runtime handles (DB, FX clients, etc.) — real connectors ignore it.
+  - **`useFlightOrders(filters?)`** hook in `@voyantjs/flights-react` with `cursor` / `limit` / `search` / `status` / `paymentStatus` filters, plus the `FlightOrdersListResponseDto` schema and the new `FlightOrderPaymentStatus` enum.
+  - **Operator template** gets `/flights/orders` route, sidebar "Orders" sub-item under Flights (en + ro i18n), payment status badge on the booking confirmation page, and the orders list now includes Booking + Payment status columns, search debounced 250ms, two filter dropdowns (booking status + payment status — operator-side filter against the bulk-fetched session map, no N+1), and toggle-direction sort headers on Order/Total.
+  - **Webhook + redirect plumbing**: the operator template adds the Netopia callback path (`/v1/finance/providers/netopia/callback`) to `publicPaths`, sets `vite.config.ts` `server.allowedHosts: true` (Cloudflare-tunnel friendly for dev webhook delivery), and ships a `/pay` resolver route + `POST /v1/public/payment-link/resolve?ref=` + `POST /v1/public/payment-link/:sessionId/retry` + `POST /v1/public/payment-link/:sessionId/start-card` so any orderID/clientReference echoed back by Netopia resolves to the canonical session id, lazy-starts the card path on demand, and supports retrying after a failed payment by minting a fresh session.
+
+  Migration: if you were importing `createDemoFlightAdapter` from the old (template-internal) location, switch to `@voyantjs/plugin-flights-demo` and pass `{ baseUrl: env.FLIGHTS_DEMO_API_URL }`. Stand up the new service via `pnpm --filter flights-demo-api db:migrate && pnpm --filter flights-demo-api dev` (defaults to `:3320`). Drop the `demo_flight_orders` table from your operator DB — migration `0006_common_vance_astro` handles this idempotently for templates following the operator one.
+
+### Patch Changes
+
+- Updated dependencies [cc3eddd]
+- Updated dependencies [cc3eddd]
+  - @voyantjs/checkout-ui@0.20.0
+  - @voyantjs/finance@0.20.0
+  - @voyantjs/flights@0.20.0
+  - @voyantjs/flights-react@0.20.0
+  - @voyantjs/ui@0.20.0
