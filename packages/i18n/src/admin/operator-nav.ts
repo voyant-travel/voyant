@@ -2,6 +2,9 @@ import type { LocaleMessageDefinitions } from "../runtime.js"
 
 export type OperatorAdminNavMessages = {
   dashboard: string
+  catalog: string
+  flights: string
+  flightOrders: string
   products: string
   categories: string
   bookings: string
@@ -28,6 +31,9 @@ export const operatorAdminNavMessages = {
   en: {
     nav: {
       dashboard: "Dashboard",
+      catalog: "Catalog",
+      flights: "Flights",
+      flightOrders: "Orders",
       products: "Products",
       categories: "Categories",
       bookings: "Bookings",
@@ -53,6 +59,9 @@ export const operatorAdminNavMessages = {
   ro: {
     nav: {
       dashboard: "Panou",
+      catalog: "Catalog",
+      flights: "Zboruri",
+      flightOrders: "Comenzi",
       products: "Produse",
       categories: "Categorii",
       bookings: "Rezervari",

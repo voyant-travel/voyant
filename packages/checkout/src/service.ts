@@ -79,7 +79,12 @@ export interface CheckoutBankTransferDetails {
   beneficiary: string
   iban: string
   bankName?: string | null
-  currency?: string | null
+  /**
+   * Deploy-wide instructions appended to every bank-transfer block (e.g.
+   * "Please reference your invoice number in the wire memo"). Per-call
+   * notes from `initiateCheckoutCollection({ notes })` take precedence —
+   * use this slot for boilerplate, not booking-specific content.
+   */
   notes?: string | null
 }
 
@@ -302,6 +307,7 @@ function toInvoiceDueDateTime(value: string | null | undefined) {
 function buildBankTransferInstructions(
   invoice: typeof invoices.$inferSelect,
   details: CheckoutBankTransferDetails | null | undefined,
+  callNotes?: string | null,
 ): CheckoutBankTransferInstructionsRecord | null {
   if (!details) {
     return null
@@ -313,12 +319,17 @@ function buildBankTransferInstructions(
     invoiceNumber: invoice.invoiceNumber,
     documentType: invoice.invoiceType === "proforma" ? "proforma" : "invoice",
     amountCents: invoice.balanceDueCents,
-    currency: details.currency ?? invoice.currency,
+    // Currency always tracks the invoice — the deploy-wide bank-transfer
+    // block can't predict what the customer is buying. EUR booking +
+    // RON-default env would have shown the wrong currency to the customer.
+    currency: invoice.currency,
     dueDate: toInvoiceDueDateTime(invoice.dueDate),
     beneficiary: details.beneficiary,
     iban: details.iban,
     bankName: details.bankName ?? null,
-    notes: details.notes ?? null,
+    // Per-call notes win over deploy-wide boilerplate — the caller knows
+    // booking context (invoice number, due date, etc.) the env can't.
+    notes: callNotes ?? details.notes ?? null,
   }
 }
 
@@ -609,6 +620,7 @@ export async function initiateCheckoutCollection(
     bankTransferInstructions = buildBankTransferInstructions(
       invoice,
       runtime.bankTransferDetails ?? null,
+      input.notes ?? null,
     )
 
     if (dispatcher && input.invoiceNotification) {

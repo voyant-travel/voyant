@@ -147,7 +147,17 @@ export interface NetopiaStartPaymentInput {
   notes?: string | null
 }
 
+export type NetopiaMode = "sandbox" | "live"
+
 export interface NetopiaRuntimeOptions {
+  /**
+   * Selects the Netopia environment. Resolves to a known base URL via
+   * `NETOPIA_API_BASES`. Pass `apiUrl` to override (e.g. for tests or a
+   * private staging proxy). Defaults to `"sandbox"` when neither `mode`
+   * nor `apiUrl` is set, so a misconfigured production deploy fails into
+   * the safer mode rather than charging real cards.
+   */
+  mode?: NetopiaMode
   apiUrl?: string
   apiKey?: string
   posSignature?: string

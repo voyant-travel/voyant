@@ -70,7 +70,9 @@ export function personBaseFields(data: CreatePersonInput | UpdatePersonInput) {
   return {
     organizationId: data.organizationId,
     firstName: data.firstName,
+    middleName: data.middleName,
     lastName: data.lastName,
+    gender: data.gender,
     jobTitle: data.jobTitle,
     relation: data.relation,
     preferredLanguage: data.preferredLanguage,

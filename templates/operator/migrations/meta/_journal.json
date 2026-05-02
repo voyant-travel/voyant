@@ -8,6 +8,48 @@
       "when": 1777567042125,
       "tag": "0000_absurd_victor_mancha",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777718807570,
+      "tag": "0001_keen_tag",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777800000000,
+      "tag": "0002_add_org_vat",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777810000000,
+      "tag": "0003_person_payment_methods",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777820000000,
+      "tag": "0004_flight_order_payment_session_target",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777736993980,
+      "tag": "0005_classy_crystal",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777830000000,
+      "tag": "0006_common_vance_astro",
+      "breakpoints": true
     }
   ]
 }

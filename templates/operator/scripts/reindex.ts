@@ -15,11 +15,8 @@
  *   VOYANT_CLOUD_API_KEY      — when set, every emitted document gets a
  *                               `text_embedding` vector via the Voyant
  *                               Cloud Gemini gateway. Without it, the
- *                               index works for keyword search only. Swap
- *                               to direct Google or OpenAI by editing the
- *                               `embeddings` factory below.
+ *                               index works for keyword search only.
  *   VOYANT_CLOUD_API_URL      — defaults to `https://api.voyantjs.com`.
- *                               Override for staging gateways.
  */
 
 import {
@@ -33,11 +30,24 @@ import {
   type TypesenseClient,
 } from "@voyantjs/catalog"
 import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
+import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
+import { charterProducts } from "@voyantjs/charters/schema"
+import { createCharterDocumentBuilder } from "@voyantjs/charters/service-catalog-plane"
+import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
+import { cruises } from "@voyantjs/cruises/schema"
+import { createCruiseDocumentBuilder } from "@voyantjs/cruises/service-catalog-plane"
 import { createDbClient } from "@voyantjs/db"
+import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
+import { productExtras } from "@voyantjs/extras/schema"
+import { createExtraDocumentBuilder } from "@voyantjs/extras/service-catalog-plane"
+import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
+import { roomTypes } from "@voyantjs/hospitality/schema"
+import { createRoomTypeDocumentBuilder } from "@voyantjs/hospitality/service-catalog-plane"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { products } from "@voyantjs/products/schema"
 import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
 import { config } from "dotenv"
+import type { PgTable } from "drizzle-orm/pg-core"
 import { Client as TypesenseSdkClient } from "typesense"
 
 config({ path: ".env" })
@@ -61,11 +71,13 @@ if (!typesenseKey) throw new Error("TYPESENSE_ADMIN_API_KEY is not set")
 const sellerOperatorId = process.env.TENANT_ID ?? "default"
 
 // Default slice set — staff (admin) + customer (storefront) on en-GB / default
-// market. Add more locales / audiences here as the deployment needs them.
-const SLICES: IndexerSlice[] = [
-  { vertical: "products", locale: "en-GB", audience: "staff", market: "default" },
-  { vertical: "products", locale: "en-GB", audience: "customer", market: "default" },
-]
+// market for every adopted vertical. Mirrors `DEFAULT_SLICES` in the live
+// catalog-runtime so the reindex CLI and the request-time route never drift.
+const VERTICALS = ["products", "extras", "cruises", "charters", "hospitality"] as const
+const SLICES: IndexerSlice[] = VERTICALS.flatMap((vertical) => [
+  { vertical, locale: "en-GB", audience: "staff", market: "default" },
+  { vertical, locale: "en-GB", audience: "customer", market: "default" },
+])
 
 const requestedVertical = process.argv[2]
 
@@ -102,6 +114,10 @@ const indexer = createTypesenseIndexer({
 
 const registries = new Map<string, FieldPolicyRegistry>([
   ["products", createFieldPolicyRegistry(productCatalogPolicy)],
+  ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
+  ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
+  ["charters", createFieldPolicyRegistry(charterCatalogPolicy)],
+  ["hospitality", createFieldPolicyRegistry(hospitalityCatalogPolicy)],
 ])
 
 const activeSlices = SLICES.filter(
@@ -117,14 +133,51 @@ const service = createIndexerService({
 console.info(`[reindex] ensuring collections for ${activeSlices.length} slice(s)`)
 await service.ensureCollections()
 
-if (!requestedVertical || requestedVertical === "products") {
-  const rows = await db.select().from(products)
-  console.info(`[reindex] products: ${rows.length} rows`)
+interface VerticalConfig {
+  vertical: (typeof VERTICALS)[number]
+  // Drizzle table — typed loosely so each vertical's slightly different row
+  // shape compiles against the same `select all rows + read .id` flow.
+  table: PgTable & { id: { name: string } }
+  builder: DocumentBuilder
+}
 
-  const baseBuilder = createProductDocumentBuilder(db, { sellerOperatorId })
+const VERTICAL_CONFIGS: VerticalConfig[] = [
+  {
+    vertical: "products",
+    table: products as unknown as VerticalConfig["table"],
+    builder: createProductDocumentBuilder(db, { sellerOperatorId }),
+  },
+  {
+    vertical: "extras",
+    table: productExtras as unknown as VerticalConfig["table"],
+    builder: createExtraDocumentBuilder(db, { sellerOperatorId }),
+  },
+  {
+    vertical: "cruises",
+    table: cruises as unknown as VerticalConfig["table"],
+    builder: createCruiseDocumentBuilder(db, { sellerOperatorId }),
+  },
+  {
+    vertical: "charters",
+    table: charterProducts as unknown as VerticalConfig["table"],
+    builder: createCharterDocumentBuilder(db, { sellerOperatorId }),
+  },
+  {
+    vertical: "hospitality",
+    table: roomTypes as unknown as VerticalConfig["table"],
+    builder: createRoomTypeDocumentBuilder(db, { sellerOperatorId }),
+  },
+]
+
+for (const cfg of VERTICAL_CONFIGS) {
+  if (requestedVertical && requestedVertical !== cfg.vertical) continue
+
+  const rows = (await db.select().from(cfg.table)) as Array<{ id: string }>
+  console.info(`[reindex] ${cfg.vertical}: ${rows.length} rows`)
+
   const builder: DocumentBuilder = embeddings
     ? async (entityId, slice): Promise<IndexerDocument | null> => {
-        const doc = await baseBuilder(entityId, slice)
+        const doc = await cfg.builder(entityId, slice)
         if (!doc) return null
         const text = composeMerchandisableText(doc)
         if (!text) return doc
@@ -142,16 +195,16 @@ if (!requestedVertical || requestedVertical === "products") {
           return doc
         }
       }
-    : baseBuilder
+    : cfg.builder
 
   let done = 0
   for (const row of rows) {
-    await service.reindexEntity("products", row.id, builder)
+    await service.reindexEntity(cfg.vertical, row.id, builder)
     done++
-    if (done % 25 === 0) console.info(`[reindex] products: ${done}/${rows.length}`)
+    if (done % 25 === 0) console.info(`[reindex] ${cfg.vertical}: ${done}/${rows.length}`)
   }
-  const productSliceCount = activeSlices.filter((s) => s.vertical === "products").length
-  console.info(`[reindex] products: done (${done} entities × ${productSliceCount} slices)`)
+  const sliceCount = activeSlices.filter((s) => s.vertical === cfg.vertical).length
+  console.info(`[reindex] ${cfg.vertical}: done (${done} entities × ${sliceCount} slices)`)
 }
 
 console.info("[reindex] complete")

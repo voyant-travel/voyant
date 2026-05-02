@@ -3,12 +3,10 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { resolveNetopiaRuntimeOptions } from "./client.js"
 import {
-  amountToCents,
   financeService,
   mapNetopiaPaymentStatus,
   mergeRecord,
   type NetopiaCallbackResult,
-  normalizeCurrency,
 } from "./service-shared.js"
 import type { NetopiaRuntimeOptions, NetopiaWebhookPayload } from "./types.js"
 
@@ -46,30 +44,16 @@ export async function handleCallback(
   const providerPayload = mergeRecord(session.providerPayload, {
     netopiaCallback: payload,
   })
-  const normalizedCurrency = normalizeCurrency(payload.payment.currency)
-  const amountCents = amountToCents(payload.payment.amount)
 
-  if (
-    callbackState === "completed" &&
-    (normalizedCurrency !== normalizeCurrency(session.currency) ||
-      amountCents !== session.amountCents)
-  ) {
-    const failed = await financeService.failPaymentSession(db, session.id, {
-      providerSessionId: payload.payment.ntpID,
-      providerPaymentId: payload.payment.ntpID,
-      externalReference: orderId,
-      failureCode: "amount_or_currency_mismatch",
-      failureMessage: `Expected ${session.amountCents} ${normalizeCurrency(session.currency)}, received ${amountCents} ${normalizedCurrency}`,
-      providerPayload,
-    })
-
-    return {
-      action: "failed",
-      reason: "amount_or_currency_mismatch",
-      session: failed,
-      orderId,
-    }
-  }
+  // Note: we intentionally don't validate `payment.amount` / `payment.currency`
+  // against the session. Netopia auto-converts non-RON orders into RON for
+  // processing (so an EUR session always callbacks with `currency: "RON"` and
+  // a converted amount). Any strict equality check here would reject every
+  // legitimate cross-currency payment. The trustworthy field is
+  // `payment.status` — the orderID is the unguessable secret that ties the
+  // callback to the session, and Netopia is the only party that knows it.
+  // For tamper detection beyond that, wrap this handler at the route layer
+  // and verify the processed amount via your own FX source.
 
   if (callbackState === "processing") {
     const updated = await financeService.updatePaymentSession(db, session.id, {

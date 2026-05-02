@@ -1,0 +1,12 @@
+{
+  "extends": "@voyantjs/voyant-typescript-config/base.json",
+  "compilerOptions": {
+    "composite": false,
+    "outDir": "dist",
+    "rootDir": ".",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  },
+  "include": ["src/**/*", "scripts/**/*", "drizzle.config.ts"]
+}

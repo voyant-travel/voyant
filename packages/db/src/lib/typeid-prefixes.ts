@@ -98,6 +98,7 @@ export const PREFIXES = {
   activity_participants: "actp",
   custom_field_definitions: "cfdf",
   custom_field_values: "cfvl",
+  person_payment_methods: "pmth",
   invoices: "inv",
   payment_instruments: "pmin",
   vouchers: "vch",

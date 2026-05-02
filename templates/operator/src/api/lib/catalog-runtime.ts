@@ -15,10 +15,16 @@ import {
   type IndexerDocument,
   type IndexerSlice,
   type TypesenseClient,
+  type TypesenseCollectionSchema,
+  type TypesenseSearchQuery,
+  type TypesenseSearchResponse,
 } from "@voyantjs/catalog"
 import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
+import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
+import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
+import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
+import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
-import { Client as TypesenseSdkClient } from "typesense"
 
 /**
  * The slice set the operator template indexes by default — staff (admin
@@ -29,6 +35,14 @@ import { Client as TypesenseSdkClient } from "typesense"
 export const DEFAULT_SLICES: ReadonlyArray<IndexerSlice> = [
   { vertical: "products", locale: "en-GB", audience: "staff", market: "default" },
   { vertical: "products", locale: "en-GB", audience: "customer", market: "default" },
+  { vertical: "extras", locale: "en-GB", audience: "staff", market: "default" },
+  { vertical: "extras", locale: "en-GB", audience: "customer", market: "default" },
+  { vertical: "cruises", locale: "en-GB", audience: "staff", market: "default" },
+  { vertical: "cruises", locale: "en-GB", audience: "customer", market: "default" },
+  { vertical: "charters", locale: "en-GB", audience: "staff", market: "default" },
+  { vertical: "charters", locale: "en-GB", audience: "customer", market: "default" },
+  { vertical: "hospitality", locale: "en-GB", audience: "staff", market: "default" },
+  { vertical: "hospitality", locale: "en-GB", audience: "customer", market: "default" },
 ]
 
 /**
@@ -90,26 +104,119 @@ export function buildTypesenseIndexer(
   const apiKey = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
   if (!host || !apiKey) return undefined
 
-  let parsed: URL
   try {
-    parsed = new URL(host)
+    new URL(host)
   } catch {
     return undefined
   }
 
-  const port = parsed.port ? Number(parsed.port) : parsed.protocol === "https:" ? 443 : 80
-  const protocol = parsed.protocol.replace(":", "") as "http" | "https"
-
-  const client = new TypesenseSdkClient({
-    nodes: [{ host: parsed.hostname, port, protocol }],
-    apiKey,
-    connectionTimeoutSeconds: 10,
-  })
+  const client = createTypesenseFetchClient(host, apiKey)
 
   return createTypesenseIndexer({
-    client: client as unknown as TypesenseClient,
+    client,
     vectorDimensions: embeddings?.capabilities.dimensions,
   })
+}
+
+/**
+ * Minimal fetch-based Typesense client. Used in place of the official
+ * `typesense` SDK because that SDK pulls in `axios` + `node:https`, which
+ * crashes the worker mid-request inside Cloudflare workerd (Miniflare),
+ * surfacing as a generic `fetch failed` at the dispatch level.
+ *
+ * Implements only the subset the catalog `IndexerAdapter` exercises —
+ * see `TypesenseClient` interface in `@voyantjs/catalog`. Errors throw
+ * with the response status + body so failures bubble up cleanly.
+ */
+function createTypesenseFetchClient(host: string, apiKey: string): TypesenseClient {
+  const baseUrl = host.replace(/\/$/, "")
+  const baseHeaders = { "X-TYPESENSE-API-KEY": apiKey }
+
+  async function request(path: string, init: RequestInit = {}): Promise<Response> {
+    const headers = new Headers(init.headers)
+    headers.set("X-TYPESENSE-API-KEY", apiKey)
+    if (init.body && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json")
+    }
+    const res = await fetch(`${baseUrl}${path}`, { ...init, headers })
+    if (!res.ok) {
+      const text = await res.text().catch(() => "")
+      throw new Error(`Typesense ${init.method ?? "GET"} ${path} ${res.status}: ${text}`)
+    }
+    return res
+  }
+
+  function buildSearchUrl(name: string, query: TypesenseSearchQuery): string {
+    const params = new URLSearchParams()
+    for (const [k, v] of Object.entries(query)) {
+      if (v == null) continue
+      params.set(k, String(v))
+    }
+    return `/collections/${encodeURIComponent(name)}/documents/search?${params.toString()}`
+  }
+
+  return {
+    collections(name?: string) {
+      return {
+        async create(schema: TypesenseCollectionSchema): Promise<void> {
+          await request("/collections", { method: "POST", body: JSON.stringify(schema) })
+        },
+        async update(schema: Partial<TypesenseCollectionSchema>): Promise<void> {
+          if (!name) throw new Error("update requires a collection name")
+          await request(`/collections/${encodeURIComponent(name)}`, {
+            method: "PATCH",
+            body: JSON.stringify(schema),
+          })
+        },
+        async delete(): Promise<void> {
+          if (!name) throw new Error("delete requires a collection name")
+          await request(`/collections/${encodeURIComponent(name)}`, { method: "DELETE" })
+        },
+        async retrieve(): Promise<TypesenseCollectionSchema> {
+          if (!name) throw new Error("retrieve requires a collection name")
+          const res = await request(`/collections/${encodeURIComponent(name)}`, { method: "GET" })
+          return (await res.json()) as TypesenseCollectionSchema
+        },
+        documents() {
+          if (!name) throw new Error("documents() requires a collection name")
+          return {
+            async import(
+              documents: unknown[],
+              options?: { action?: "upsert" | "create" },
+            ): Promise<unknown> {
+              const action = options?.action ?? "create"
+              const ndjson = documents.map((d) => JSON.stringify(d)).join("\n")
+              const res = await fetch(
+                `${baseUrl}/collections/${encodeURIComponent(name)}/documents/import?action=${action}`,
+                {
+                  method: "POST",
+                  headers: { ...baseHeaders, "Content-Type": "text/plain" },
+                  body: ndjson,
+                },
+              )
+              if (!res.ok) {
+                const text = await res.text().catch(() => "")
+                throw new Error(`Typesense import ${name} ${res.status}: ${text}`)
+              }
+              return res.text()
+            },
+            async delete(query: { filter_by: string }): Promise<unknown> {
+              const params = new URLSearchParams({ filter_by: query.filter_by })
+              const res = await request(
+                `/collections/${encodeURIComponent(name)}/documents?${params.toString()}`,
+                { method: "DELETE" },
+              )
+              return res.json()
+            },
+            async search(query: TypesenseSearchQuery): Promise<TypesenseSearchResponse> {
+              const res = await request(buildSearchUrl(name, query), { method: "GET" })
+              return (await res.json()) as TypesenseSearchResponse
+            },
+          }
+        },
+      }
+    },
+  }
 }
 
 /**
@@ -121,6 +228,10 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
   if (!_registries) {
     _registries = new Map<string, FieldPolicyRegistry>([
       ["products", createFieldPolicyRegistry(productCatalogPolicy)],
+      ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
+      ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
+      ["charters", createFieldPolicyRegistry(charterCatalogPolicy)],
+      ["hospitality", createFieldPolicyRegistry(hospitalityCatalogPolicy)],
     ])
   }
   return _registries

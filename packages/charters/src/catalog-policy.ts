@@ -254,7 +254,7 @@ const CHARTER_FIELD_POLICY: FieldPolicyInput[] = [
   {
     // Same TODO as products / cruises — split into marketing_regions +
     // facet_regions per architecture §7.1.
-    path: "regions",
+    path: "regions[]",
     class: "structural",
     merge: "additive-set",
     drift: "medium",
@@ -268,7 +268,7 @@ const CHARTER_FIELD_POLICY: FieldPolicyInput[] = [
     sourceFreshness: "sync",
   },
   {
-    path: "themes",
+    path: "themes[]",
     class: "structural",
     merge: "additive-set",
     drift: "medium",
@@ -282,7 +282,7 @@ const CHARTER_FIELD_POLICY: FieldPolicyInput[] = [
     sourceFreshness: "sync",
   },
   {
-    path: "defaultBookingModes",
+    path: "defaultBookingModes[]",
     class: "structural",
     merge: "source-only",
     drift: "high",

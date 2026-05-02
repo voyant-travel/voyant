@@ -14,16 +14,27 @@
  */
 
 import type {
+  AncillaryRequest,
+  AncillaryResponse,
   FlightBookRequest,
   FlightCapability,
   FlightOffer,
   FlightOrder,
+  FlightOrderStatus,
+  FlightSearchPaginationMeta,
   FlightSearchRequest,
+  SeatMapRequest,
+  SeatMapResponse,
 } from "./types.js"
 
 /**
  * Context passed to every adapter call. Identifies the connection and
  * carries credentials, optional point-of-sale, tracing identifiers.
+ *
+ * `deps` is an escape hatch for adapter-specific runtime dependencies that
+ * shouldn't bleed into the contract — e.g. a Postgres handle for a demo
+ * adapter that self-persists, or a feature-flag client. Real connectors
+ * (Sabre, Amadeus, Duffel) ignore it.
  */
 export interface FlightAdapterContext {
   connectionId: string
@@ -31,10 +42,17 @@ export interface FlightAdapterContext {
   /** Operator's IATA office id / pseudo-city / point-of-sale, when applicable. */
   pointOfSale?: string
   correlationId?: string
+  deps?: Record<string, unknown>
 }
 
 export interface FlightSearchResponse {
   offers: FlightOffer[]
+  /**
+   * Pagination metadata, present when the adapter honors
+   * `request.pagination`. Omitted by adapters that always return the
+   * full result set in one call.
+   */
+  pagination?: FlightSearchPaginationMeta
   /** Provider-specific data, opaque to the consumer. */
   providerData?: Record<string, unknown>
 }
@@ -67,6 +85,25 @@ export interface FlightCancelResponse {
 }
 
 export type FlightCancelReason = "customer_request" | "schedule_change" | "operational" | "fraud"
+
+export interface FlightOrdersListQuery {
+  /** Pagination cursor — opaque, returned by the previous response. */
+  cursor?: string
+  limit?: number
+  /** Restrict to orders in any of these statuses. */
+  status?: FlightOrderStatus[]
+  /** Free-text match against PNR, passenger name, or contact email. */
+  search?: string
+}
+
+export interface FlightOrdersListResponse {
+  orders: FlightOrder[]
+  pagination: {
+    total: number
+    hasMore: boolean
+    cursor?: string
+  }
+}
 
 /**
  * Capability declaration returned by the adapter at registration time.
@@ -131,8 +168,36 @@ export interface FlightConnectorAdapter {
   // others can either omit them entirely or throw the standard
   // `CAPABILITY_NOT_SUPPORTED` error.
 
+  /**
+   * `flight/list-orders` — return a paginated list of orders the adapter
+   * has visibility on. Real GDS connectors typically only support listing
+   * by PNR/locator (not the full agency book of business), but persistent
+   * adapters and self-hosted demos can list everything they've stored.
+   */
+  listOrders?(
+    ctx: FlightAdapterContext,
+    query: FlightOrdersListQuery,
+  ): Promise<FlightOrdersListResponse>
+
   /** `flight/holds` — promote a held order to ticketed. */
   ticketOrder?(ctx: FlightAdapterContext, orderId: string): Promise<FlightGetOrderResponse>
+
+  /**
+   * `flight/ancillaries` — list bag / assistance / extra options for an offer.
+   * Catalog is per-offer because availability depends on the booked itinerary;
+   * for round-trip flows where each leg is its own offer, callers fetch one
+   * catalog per leg and merge the picks at book time via
+   * `FlightBookRequest.ancillaries`.
+   */
+  getAncillaries?(ctx: FlightAdapterContext, request: AncillaryRequest): Promise<AncillaryResponse>
+
+  /**
+   * `flight/seatmap` — fetch the seat map for one segment of an offer.
+   * Maps are per-segment because layouts differ by aircraft and cabin
+   * (a multi-stop itinerary may use different equipment per leg). Picks
+   * are submitted at book time via `FlightBookRequest.ancillaries.seats`.
+   */
+  getSeatMap?(ctx: FlightAdapterContext, request: SeatMapRequest): Promise<SeatMapResponse>
 }
 
 /**

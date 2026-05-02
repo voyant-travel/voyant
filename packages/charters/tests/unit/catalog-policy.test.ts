@@ -37,14 +37,14 @@ describe("charterCatalogPolicy", () => {
 
   it("makes default booking modes facet-affecting (per-suite vs whole-yacht filter)", () => {
     const registry = createFieldPolicyRegistry(charterCatalogPolicy)
-    const modes = registry.byPath.get("defaultBookingModes")
+    const modes = registry.byPath.get("defaultBookingModes[]")
     expect(modes?.reindex).toBe("facet-affecting")
     expect(modes?.class).toBe("structural")
   })
 
   it("requires confirm friction on ops-overridable structural fields", () => {
     const registry = createFieldPolicyRegistry(charterCatalogPolicy)
-    expect(registry.byPath.get("regions")?.overrideFriction).toBe("confirm")
-    expect(registry.byPath.get("themes")?.overrideFriction).toBe("confirm")
+    expect(registry.byPath.get("regions[]")?.overrideFriction).toBe("confirm")
+    expect(registry.byPath.get("themes[]")?.overrideFriction).toBe("confirm")
   })
 })

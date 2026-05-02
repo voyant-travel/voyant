@@ -1,35 +1,60 @@
 "use client"
 
-import {
-  type CatalogFacetBucket,
-  type CatalogSearchHit,
-  type CatalogSearchMode,
-  useCatalogSearch,
-} from "@voyantjs/catalog-react"
-import { Badge } from "@voyantjs/ui/components/badge"
+import type { ColumnDef } from "@tanstack/react-table"
+import { type CatalogSearchHit, useCatalogSearch } from "@voyantjs/catalog-react"
 import { Button } from "@voyantjs/ui/components/button"
+import { DataTable } from "@voyantjs/ui/components/data-table"
 import { Input } from "@voyantjs/ui/components/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-group"
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
 import { type ReactNode, useEffect, useMemo, useState } from "react"
 
+import { type CatalogDetailAction, CatalogDetailSheet } from "./catalog-detail-sheet"
+import { CatalogFacetedFilter } from "./catalog-faceted-filter"
+import { CatalogRangeFilter, type CatalogRangeFilterValue } from "./catalog-range-filter"
+
 /**
- * Declares a facetable field on a tab. The page renders one chip group
- * per declaration; chip values come from the live facet response so the
- * UI never lies about what's present in the data.
+ * Declares a filter on a tab. Two kinds:
+ *   - `facet`  (default) — multi-select against live facet buckets. Hidden
+ *                          when the search response yields no buckets and
+ *                          nothing is currently selected.
+ *   - `range`  — numeric min/max range. Always visible (no facet response
+ *                  needed). Use `format: "currency"` for money fields
+ *                  stored as integer cents (e.g. `sellAmountCents`).
  */
-export interface CatalogFilterField {
+export type CatalogFilterField = CatalogFacetFilterField | CatalogRangeFilterField
+
+export interface CatalogFacetFilterField {
+  kind?: "facet"
   /** Field name on the indexer document (e.g. "status", "bookingMode"). */
   field: string
   /** Human-readable group label (already localized). */
   label: string
+  /**
+   * Optional value formatter. Use it when the underlying field is an ID and
+   * you want the dropdown to show the human-readable label instead — e.g.
+   * resolving `lineSupplierId` against a `Map<id, name>`. Returns the raw
+   * value as a string by default.
+   */
+  formatValue?: (value: string | number) => string
+}
+
+export interface CatalogRangeFilterField {
+  kind: "range"
+  field: string
+  label: string
+  step?: number
+  minPlaceholder?: string
+  maxPlaceholder?: string
+  /** When the field stores cents, set `"currency"` + `currency`. */
+  format?: "number" | "currency"
+  currency?: string
 }
 
 /**
  * One tab in the catalog search page. Each tab maps to a single vertical
- * (`products`, `cruises`, `hospitality`, etc.) and supplies its own card
- * renderer so per-vertical UI packages own their own visual language.
+ * (`products`, `cruises`, `hospitality`, etc.) and supplies its own column
+ * definitions so per-vertical UI packages own their own visual language.
  */
 export interface CatalogSearchTab {
   /** Stable id used as the TabsTrigger value + queryKey segment. */
@@ -38,8 +63,12 @@ export interface CatalogSearchTab {
   label: string
   /** The catalog vertical to query — mapped to the slice's `vertical`. */
   vertical: string
-  /** Per-tab result-card renderer — each `-ui` package exports one. */
-  renderCard: (hit: CatalogSearchHit) => ReactNode
+  /**
+   * Per-tab column definitions for the results data table. Each column
+   * receives the full `CatalogSearchHit` and projects whatever fields the
+   * vertical's indexer document carries.
+   */
+  columns: ColumnDef<CatalogSearchHit, unknown>[]
   /**
    * Optional facet declarations. When set, the page requests these as
    * `facets` in the search request and renders a chip group per field
@@ -52,23 +81,30 @@ export interface CatalogSearchTab {
    * the current query. Defaults to a simple "no results" message.
    */
   emptyState?: ReactNode
+  /**
+   * Indexer field that carries the entity's primary image URL. Defaults
+   * to `thumbnailUrl`. Cruises / charters use `heroImageUrl`.
+   */
+  imageField?: string
+  /**
+   * Optional per-field formatters used by the detail sheet to render
+   * human-readable values (e.g. resolve `lineSupplierId` → supplier name).
+   * The same `formatValue` you pass on a `CatalogFacetFilterField` should
+   * usually appear here too.
+   */
+  detailFormatters?: Record<string, (value: unknown) => ReactNode>
+  /**
+   * Optional footer actions shown at the bottom of the detail sheet
+   * (e.g. "Open in editor" → router push). Use them when you want a row
+   * click to do more than just "view details."
+   */
+  detailActions?: CatalogDetailAction[]
 }
 
 export interface CatalogSearchPageProps {
   tabs: CatalogSearchTab[]
   /** Default tab id; falls back to the first tab. */
   defaultTab?: string
-  /**
-   * Initial search mode. Default `keyword`. Page-level state — switching
-   * the mode toggles for every tab.
-   */
-  defaultMode?: CatalogSearchMode
-  /**
-   * Available modes shown in the toggle. Default `["keyword", "hybrid",
-   * "semantic"]`. Pass `["keyword"]` to hide the toggle entirely
-   * (e.g. when the deployment doesn't have an embeddings provider).
-   */
-  availableModes?: CatalogSearchMode[]
   /** Items per page, mapped to `pagination.limit`. Default `20`. */
   pageSize?: number
   /**
@@ -81,33 +117,73 @@ export interface CatalogSearchPageProps {
   searchPlaceholder?: string
   /** Debounce on keystrokes, milliseconds. Default 200. */
   queryDebounceMs?: number
+  /**
+   * Controlled active-tab id. When provided, callers must also pass
+   * `onActiveTabChange` and the tab state is owned by the parent (e.g. a
+   * router-driven URL state). Omit for uncontrolled internal state.
+   */
+  activeTab?: string
+  onActiveTabChange?: (tabId: string) => void
+  /** Controlled query string (already debounced if you want to skip the debounce here). */
+  query?: string
+  onQueryChange?: (q: string) => void
+  /** Controlled current page (1-indexed) for the active tab. */
+  page?: number
+  onPageChange?: (page: number) => void
 }
 
 /**
  * Generic tabbed search shell. Owns the search input, mode toggle,
  * tab state, and per-tab data fetching (search + facets + pagination).
- * Per-vertical visuals come from the tab's `renderCard` callback so
- * this shell stays vertical-agnostic.
+ * Per-vertical visuals come from the tab's column definitions so this
+ * shell stays vertical-agnostic.
  */
 export function CatalogSearchPage({
   tabs,
   defaultTab,
-  defaultMode = "keyword",
-  availableModes = ["keyword", "hybrid", "semantic"],
   pageSize = 20,
   title,
   searchPlaceholder = "Search the catalog…",
   queryDebounceMs = 200,
+  activeTab: activeTabProp,
+  onActiveTabChange,
+  query: queryProp,
+  onQueryChange,
+  page: pageProp,
+  onPageChange,
 }: CatalogSearchPageProps) {
-  const [activeTab, setActiveTab] = useState<string>(defaultTab ?? tabs[0]?.id ?? "")
-  const [rawQuery, setRawQuery] = useState("")
-  const [debouncedQuery, setDebouncedQuery] = useState("")
-  const [mode, setMode] = useState<CatalogSearchMode>(defaultMode)
+  const [internalActiveTab, setInternalActiveTab] = useState<string>(
+    defaultTab ?? tabs[0]?.id ?? "",
+  )
+  const activeTab = activeTabProp ?? internalActiveTab
+  const setActiveTab = (next: string) => {
+    if (onActiveTabChange) onActiveTabChange(next)
+    if (activeTabProp == null) setInternalActiveTab(next)
+  }
+
+  // The query input lives locally (typing buffer); the debounced value is
+  // either pushed to the controlled `onQueryChange` callback OR kept as
+  // internal state. Controlled `queryProp` wins on the way down (e.g. URL
+  // back button overrides the typed value).
+  const [internalRawQuery, setInternalRawQuery] = useState(queryProp ?? "")
+  const [debouncedInternal, setDebouncedInternal] = useState(queryProp ?? "")
+  const rawQuery = queryProp != null ? queryProp : internalRawQuery
+  const debouncedQuery = queryProp != null ? queryProp : debouncedInternal
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(rawQuery), queryDebounceMs)
+    if (queryProp != null) {
+      // Keep the typing buffer in sync when the URL changes externally.
+      setInternalRawQuery(queryProp)
+    }
+  }, [queryProp])
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (onQueryChange) onQueryChange(internalRawQuery)
+      else setDebouncedInternal(internalRawQuery)
+    }, queryDebounceMs)
     return () => clearTimeout(t)
-  }, [rawQuery, queryDebounceMs])
+  }, [internalRawQuery, queryDebounceMs, onQueryChange])
 
   if (tabs.length === 0) {
     return (
@@ -120,33 +196,15 @@ export function CatalogSearchPage({
   return (
     <div className="flex flex-col gap-4">
       {title}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            value={rawQuery}
-            onChange={(e) => setRawQuery(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="pl-9"
-          />
-        </div>
-        {availableModes.length > 1 && (
-          <ToggleGroup
-            value={[mode]}
-            onValueChange={(values: string[]) => {
-              const next = values[0]
-              if (next) setMode(next as CatalogSearchMode)
-            }}
-            className="shrink-0"
-          >
-            {availableModes.map((m) => (
-              <ToggleGroupItem key={m} value={m} className="capitalize">
-                {m}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        )}
+      <div className="relative">
+        <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          value={rawQuery}
+          onChange={(e) => setInternalRawQuery(e.target.value)}
+          placeholder={searchPlaceholder}
+          className="pl-9"
+        />
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -158,7 +216,13 @@ export function CatalogSearchPage({
         </TabsList>
         {tabs.map((tab) => (
           <TabsContent key={tab.id} value={tab.id} className="mt-4">
-            <CatalogTabPanel tab={tab} query={debouncedQuery} mode={mode} pageSize={pageSize} />
+            <CatalogTabPanel
+              tab={tab}
+              query={debouncedQuery}
+              pageSize={pageSize}
+              page={tab.id === activeTab ? pageProp : undefined}
+              onPageChange={tab.id === activeTab ? onPageChange : undefined}
+            />
           </TabsContent>
         ))}
       </Tabs>
@@ -169,77 +233,152 @@ export function CatalogSearchPage({
 interface CatalogTabPanelProps {
   tab: CatalogSearchTab
   query: string
-  mode: CatalogSearchMode
   pageSize: number
+  /** Controlled page (1-indexed). Falls back to internal state when omitted. */
+  page?: number
+  onPageChange?: (page: number) => void
 }
 
 /**
- * Filter selections for one tab, keyed by field. Multi-select — values
- * accumulate. Selecting a value adds it; selecting an already-selected
- * value removes it.
+ * Filter selections for one tab.
+ *  - `facets`: field → list of selected values (multi-select).
+ *  - `ranges`: field → { gte?, lte? }.
  */
-type FilterSelections = Record<string, Array<string | number>>
+interface FilterSelections {
+  facets: Record<string, Array<string | number>>
+  ranges: Record<string, CatalogRangeFilterValue>
+}
 
-function CatalogTabPanel({ tab, query, mode, pageSize }: CatalogTabPanelProps) {
-  const [selections, setSelections] = useState<FilterSelections>({})
-  const [page, setPage] = useState(1)
+const EMPTY_SELECTIONS: FilterSelections = { facets: {}, ranges: {} }
 
-  // Reset page when query / mode / filters change. Keeps "Next" honest.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: tab.id / query / mode / selections all reset page intentionally
+function CatalogTabPanel({
+  tab,
+  query,
+  pageSize,
+  page: pageProp,
+  onPageChange,
+}: CatalogTabPanelProps) {
+  const [selections, setSelections] = useState<FilterSelections>(EMPTY_SELECTIONS)
+  const [internalPage, setInternalPage] = useState(1)
+  const page = pageProp ?? internalPage
+  const setPage = (next: number) => {
+    if (onPageChange) onPageChange(next)
+    if (pageProp == null) setInternalPage(next)
+  }
+  const [openHit, setOpenHit] = useState<CatalogSearchHit | null>(null)
+
+  // Reset page when query / filters change. Keeps "Next" honest.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tab.id / query / selections all reset page intentionally
   useEffect(() => {
     setPage(1)
-  }, [tab.id, query, mode, selections])
+  }, [tab.id, query, selections])
 
   const filters = useMemo(() => buildFilters(selections), [selections])
   const facetRequests = useMemo(
-    () => tab.filterFields?.map((f) => ({ field: f.field })),
+    () =>
+      (tab.filterFields ?? [])
+        .filter((f): f is CatalogFacetFilterField => (f.kind ?? "facet") === "facet")
+        .map((f) => ({ field: f.field })),
     [tab.filterFields],
   )
 
+  // The deployment picks the actual mode at the route — `hybrid` here means
+  // "use the best mode this deployment supports." Operators with embeddings
+  // configured get vector + keyword fusion; those without silently get pure
+  // keyword. The end user shouldn't have to think about it.
   const { data, isLoading, error } = useCatalogSearch({
     vertical: tab.vertical,
     query,
-    mode,
+    mode: "hybrid",
     filters,
     facets: facetRequests,
     pagination: { limit: pageSize, cursor: page > 1 ? String(page) : undefined },
   })
 
-  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / pageSize))
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const facetGroups = data?.facets ?? {}
+  const hits = data?.hits ?? []
 
   if (error) {
     const message = error instanceof Error ? error.message : String(error)
-    const isModeError = /503|embedd|vector field/i.test(message)
     return (
       <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-        {isModeError
-          ? `${mode} search isn't available in this deployment. Switch to keyword mode or configure an embeddings provider.`
-          : message}
+        {message}
       </div>
     )
   }
 
+  const hasFacetSelections = Object.values(selections.facets).some((v) => v.length > 0)
+  const hasRangeSelections = Object.values(selections.ranges).some(
+    (v) => v.gte != null || v.lte != null,
+  )
+  const hasSelections = hasFacetSelections || hasRangeSelections
+
+  const visibleFilterFields = (tab.filterFields ?? []).filter((f) => {
+    if ((f.kind ?? "facet") === "range") return true
+    return (facetGroups[f.field]?.length ?? 0) > 0 || (selections.facets[f.field]?.length ?? 0) > 0
+  })
+
   return (
     <div className="flex flex-col gap-3">
-      {tab.filterFields && tab.filterFields.length > 0 && (
-        <CatalogFilterChips
-          fields={tab.filterFields}
-          facetGroups={facetGroups}
-          selections={selections}
-          onToggle={(field, value) => setSelections((prev) => toggleSelection(prev, field, value))}
-          onClear={() => setSelections({})}
-        />
+      {visibleFilterFields.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {visibleFilterFields.map((f) => {
+            if ((f.kind ?? "facet") === "range") {
+              const range = f as CatalogRangeFilterField
+              return (
+                <CatalogRangeFilter
+                  key={range.field}
+                  field={range.field}
+                  label={range.label}
+                  value={selections.ranges[range.field]}
+                  onChange={(next) => setSelections((prev) => setRange(prev, range.field, next))}
+                  step={range.step}
+                  minPlaceholder={range.minPlaceholder}
+                  maxPlaceholder={range.maxPlaceholder}
+                  format={range.format}
+                  currency={range.currency}
+                />
+              )
+            }
+            const facet = f as CatalogFacetFilterField
+            return (
+              <CatalogFacetedFilter
+                key={facet.field}
+                field={facet.field}
+                label={facet.label}
+                buckets={facetGroups[facet.field] ?? []}
+                selected={selections.facets[facet.field] ?? []}
+                formatValue={facet.formatValue}
+                onToggle={(value) => setSelections((prev) => toggleFacet(prev, facet.field, value))}
+                onClear={() => setSelections((prev) => clearFacet(prev, facet.field))}
+              />
+            )
+          })}
+          {hasSelections && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelections(EMPTY_SELECTIONS)}
+              className="h-8 px-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="mr-1 h-3.5 w-3.5" />
+              Clear all
+            </Button>
+          )}
+        </div>
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+        <div className="rounded-md border">
+          <div className="h-12 animate-pulse border-b bg-muted/40" />
+          {Array.from({ length: 5 }).map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
-            <div key={i} className="h-32 animate-pulse rounded-md border bg-muted/40" />
+            <div key={i} className="h-12 animate-pulse border-b bg-muted/20 last:border-b-0" />
           ))}
         </div>
-      ) : (data?.hits.length ?? 0) === 0 ? (
+      ) : hits.length === 0 ? (
         (tab.emptyState ?? (
           <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
             No results for {query ? `"${query}"` : "your filters"} in {tab.label.toLowerCase()}.
@@ -248,103 +387,62 @@ function CatalogTabPanel({ tab, query, mode, pageSize }: CatalogTabPanelProps) {
       ) : (
         <>
           <div className="text-muted-foreground text-sm">
-            {data?.total ?? 0} result{data?.total === 1 ? "" : "s"}
+            {total} result{total === 1 ? "" : "s"}
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data?.hits.map((hit) => (
-              <div key={hit.id}>{tab.renderCard(hit)}</div>
-            ))}
-          </div>
+          <DataTable
+            columns={tab.columns}
+            data={hits}
+            getRowId={(row) => row.id}
+            onRowClick={(row) => setOpenHit(row.original)}
+            showPagination={false}
+            pageSize={pageSize}
+          />
           {totalPages > 1 && (
-            <div className="mt-2 flex items-center justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-              >
-                <ChevronLeft className="mr-1 h-4 w-4" /> Previous
-              </Button>
+            <div className="mt-1 flex items-center justify-between gap-2">
               <span className="text-muted-foreground text-sm">
-                Page {page} of {totalPages}
+                Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-              >
-                Next <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+                </Button>
+                <span className="text-muted-foreground text-sm">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Next <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </>
       )}
-    </div>
-  )
-}
-
-interface CatalogFilterChipsProps {
-  fields: CatalogFilterField[]
-  facetGroups: Record<string, CatalogFacetBucket[]>
-  selections: FilterSelections
-  onToggle: (field: string, value: string | number) => void
-  onClear: () => void
-}
-
-function CatalogFilterChips({
-  fields,
-  facetGroups,
-  selections,
-  onToggle,
-  onClear,
-}: CatalogFilterChipsProps) {
-  const hasSelections = Object.values(selections).some((v) => v.length > 0)
-
-  return (
-    <div className="flex flex-col gap-2">
-      {fields.map((f) => {
-        const buckets = facetGroups[f.field] ?? []
-        if (buckets.length === 0) return null
-        const selected = new Set(selections[f.field] ?? [])
-        return (
-          <div key={f.field} className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-muted-foreground text-xs">{f.label}:</span>
-            {buckets.map((b) => {
-              const isOn = selected.has(b.value)
-              return (
-                <button
-                  key={String(b.value)}
-                  type="button"
-                  onClick={() => onToggle(f.field, b.value)}
-                  className="cursor-pointer"
-                >
-                  <Badge variant={isOn ? "default" : "outline"} className="text-[10px]">
-                    {String(b.value)} ({b.count})
-                  </Badge>
-                </button>
-              )
-            })}
-          </div>
-        )
-      })}
-      {hasSelections && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClear}
-          className="self-start text-muted-foreground"
-        >
-          <X className="mr-1 h-3 w-3" /> Clear filters
-        </Button>
-      )}
+      <CatalogDetailSheet
+        hit={openHit}
+        onOpenChange={(open) => {
+          if (!open) setOpenHit(null)
+        }}
+        formatters={tab.detailFormatters}
+        actions={tab.detailActions}
+        imageField={tab.imageField ?? "thumbnailUrl"}
+      />
     </div>
   )
 }
 
 function buildFilters(selections: FilterSelections) {
   const filters = []
-  for (const [field, values] of Object.entries(selections)) {
+  for (const [field, values] of Object.entries(selections.facets)) {
     if (values.length === 0) continue
     if (values.length === 1) {
       filters.push({ kind: "eq", field, value: values[0] as string | number | boolean })
@@ -352,15 +450,44 @@ function buildFilters(selections: FilterSelections) {
       filters.push({ kind: "in", field, values })
     }
   }
+  for (const [field, range] of Object.entries(selections.ranges)) {
+    if (range.gte == null && range.lte == null) continue
+    filters.push({
+      kind: "range",
+      field,
+      ...(range.gte != null ? { gte: range.gte } : {}),
+      ...(range.lte != null ? { lte: range.lte } : {}),
+    })
+  }
   return filters.length > 0 ? filters : undefined
 }
 
-function toggleSelection(
+function toggleFacet(
   prev: FilterSelections,
   field: string,
   value: string | number,
 ): FilterSelections {
-  const current = prev[field] ?? []
+  const current = prev.facets[field] ?? []
   const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value]
-  return { ...prev, [field]: next }
+  return { ...prev, facets: { ...prev.facets, [field]: next } }
+}
+
+function clearFacet(prev: FilterSelections, field: string): FilterSelections {
+  const facets = { ...prev.facets }
+  delete facets[field]
+  return { ...prev, facets }
+}
+
+function setRange(
+  prev: FilterSelections,
+  field: string,
+  next: CatalogRangeFilterValue | undefined,
+): FilterSelections {
+  const ranges = { ...prev.ranges }
+  if (!next || (next.gte == null && next.lte == null)) {
+    delete ranges[field]
+  } else {
+    ranges[field] = next
+  }
+  return { ...prev, ranges }
 }

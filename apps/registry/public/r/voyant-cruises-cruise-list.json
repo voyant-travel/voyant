@@ -3,12 +3,8 @@
   "name": "voyant-cruises-cruise-list",
   "title": "Cruise List",
   "description": "Connected storefront list — paginated, filterable browse against cruise_search_index.",
-  "dependencies": [
-    "@voyantjs/cruises-react"
-  ],
-  "registryDependencies": [
-    "voyant-cruises-cruise-card"
-  ],
+  "dependencies": ["@voyantjs/cruises-react"],
+  "registryDependencies": ["voyant-cruises-cruise-card"],
   "files": [
     {
       "path": "registry/cruises/cruise-list.tsx",

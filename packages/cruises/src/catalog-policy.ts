@@ -363,7 +363,7 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
   // facets work, but that means marketing edits to it would drift faceting.
   // Operationally this is mostly source-controlled today; flag for split.
   {
-    path: "regions",
+    path: "regions[]",
     class: "structural",
     merge: "additive-set",
     drift: "medium",
@@ -379,7 +379,7 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
   {
     // Same TODO as `regions` — split into marketing_themes + facet_themes
     // when the rule lands.
-    path: "themes",
+    path: "themes[]",
     class: "structural",
     merge: "additive-set",
     drift: "medium",

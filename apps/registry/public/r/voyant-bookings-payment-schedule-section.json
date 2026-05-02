@@ -4,11 +4,7 @@
   "title": "Booking Payment Schedule Section",
   "description": "Operator payment schedule picker: unpaid / full / advance / split (two installments with a 50-50 preset). Produces a controlled PaymentScheduleValue; parent creates booking_payment_schedules rows at submit time.",
   "dependencies": [],
-  "registryDependencies": [
-    "button",
-    "input",
-    "label"
-  ],
+  "registryDependencies": ["button", "input", "label"],
   "files": [
     {
       "path": "registry/bookings/payment-schedule-section.tsx",

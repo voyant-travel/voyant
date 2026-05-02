@@ -1,13 +1,22 @@
 import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
 import { bookingsHonoModule, bookingsSupplierExtension } from "@voyantjs/bookings"
-import { createCheckoutHonoModule } from "@voyantjs/checkout"
+import {
+  type CheckoutBankTransferDetails,
+  type CheckoutPaymentStarter,
+  createCheckoutHonoModule,
+} from "@voyantjs/checkout"
 import { crmBookingExtension, crmHonoModule } from "@voyantjs/crm"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
 import { extrasHonoModule } from "@voyantjs/extras"
-import { bookingsQuickCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
+import {
+  bookingsQuickCreateExtension,
+  createFinanceHonoModule,
+  financeService,
+} from "@voyantjs/finance"
+import { paymentSessions } from "@voyantjs/finance/schema"
 import { createApp } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
 import { createLegalHonoModule, createPdfContractDocumentGenerator } from "@voyantjs/legal"
@@ -16,6 +25,13 @@ import {
   createDefaultBookingDocumentAttachment,
   createNotificationsHonoModule,
 } from "@voyantjs/notifications"
+import {
+  createNetopiaCheckoutStarter,
+  NETOPIA_RUNTIME_CONTAINER_KEY,
+  netopiaHonoBundle,
+  netopiaService,
+  type ResolvedNetopiaRuntimeOptions,
+} from "@voyantjs/plugin-netopia"
 import { pricingHonoModule } from "@voyantjs/pricing"
 import { productsBookingExtension, productsHonoModule } from "@voyantjs/products"
 import { resourcesHonoModule } from "@voyantjs/resources"
@@ -24,10 +40,13 @@ import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
+import { eq, or } from "drizzle-orm"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
 import { catalogBridgeBundle } from "./catalog-bridge"
+import { mountCatalogSearchRoutes } from "./catalog-search"
+import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
 import { getDbFromHyperdrive } from "./lib/db"
 import {
@@ -36,7 +55,7 @@ import {
   guessMimeType,
   resolveDocumentDownloadUrl,
 } from "./lib/storage"
-import { mountCatalogMcpRoutes, mountCatalogSearchRoutes } from "./mcp"
+import { mountCatalogMcpRoutes } from "./mcp"
 
 const notificationsHonoModule = createNotificationsHonoModule({
   resolveProviders: resolveNotificationProviders,
@@ -78,8 +97,36 @@ const storefrontVerificationHonoModule = createStorefrontVerificationHonoModule(
   },
 })
 const storefrontHonoModule = createStorefrontHonoModule()
+
+// Netopia is the only configured `pay-by-link` provider in this template.
+// Container bootstrap (via `netopiaHonoBundle`) caches the resolved runtime
+// options, so the starter only needs the `payload` from the request — env
+// resolution happens lazily inside the starter's `startProvider`.
+const netopiaCheckoutStarter = createNetopiaCheckoutStarter()
+
+function resolveBankTransferDetails(
+  bindings: Record<string, unknown>,
+): CheckoutBankTransferDetails | null {
+  const env = bindings as unknown as CloudflareBindings
+  if (!env.BANK_TRANSFER_BENEFICIARY || !env.BANK_TRANSFER_IBAN) return null
+  return {
+    provider: "bank-transfer",
+    beneficiary: env.BANK_TRANSFER_BENEFICIARY,
+    iban: env.BANK_TRANSFER_IBAN,
+    bankName: env.BANK_TRANSFER_BANK_NAME ?? null,
+    // Currency comes from the invoice (per-booking); env value would be
+    // wrong for any deal not in the deploy's home currency. Notes here are
+    // just deploy-wide boilerplate — per-call collection notes override.
+    notes: env.BANK_TRANSFER_NOTES ?? null,
+  }
+}
+
 const checkoutHonoModule = createCheckoutHonoModule({
   resolveProviders: resolveNotificationProviders,
+  resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
+    netopia: netopiaCheckoutStarter,
+  }),
+  resolveBankTransferDetails,
 })
 const customerPortalHonoModule = createCustomerPortalHonoModule({
   resolveDocumentDownloadUrl: (bindings, storageKey) =>
@@ -129,6 +176,18 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/checkout",
     // Invitation redemption is reachable without a session.
     "/v1/public/invitations",
+    // Payment-link landing page reads the session via TypeID (unguessable)
+    // and the bank-transfer block from a config endpoint. Both must be
+    // reachable without auth — the customer arrives from an emailed link.
+    "/v1/public/finance/payment-sessions",
+    "/v1/public/payment-link-config",
+    "/v1/public/payment-link",
+    // Netopia webhook receiver. Netopia's servers POST here without a
+    // session cookie or bearer; the plugin handler matches the inbound
+    // payload to a payment session by orderID and validates the
+    // processor's response shape. This is the URL set in
+    // `NETOPIA_NOTIFY_URL`.
+    "/v1/finance/providers/netopia/callback",
   ],
   modules: [
     crmHonoModule,
@@ -162,7 +221,7 @@ export const app = createApp<CloudflareBindings>({
     transactionsBookingExtension,
     distributionBookingExtension,
   ],
-  plugins: [catalogBridgeBundle],
+  plugins: [catalogBridgeBundle, netopiaHonoBundle()],
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>
@@ -248,7 +307,154 @@ export const app = createApp<CloudflareBindings>({
       return new Response(buffer, { headers })
     })
 
+    // GET /v1/public/payment-link-config — config block consumed by the
+    // public `/pay/:sessionId` landing page. Returns the bank-transfer
+    // instructions when configured, plus the brand context so the page
+    // can render a header. Intentionally minimal — no PII, no secrets.
+    hono.get("/v1/public/payment-link-config", async (c) => {
+      const bankTransfer = resolveBankTransferDetails(c.env as Record<string, unknown>)
+      return c.json({
+        data: {
+          bankTransfer,
+        },
+      })
+    })
+
+    // POST /v1/public/payment-link/:sessionId/retry — create a fresh
+    // payment_session targeting the same booking/invoice/etc. as the
+    // original, so customers can retry after a failed/expired/cancelled
+    // payment without being permanently locked into the dead session.
+    // The original stays in the DB for audit. Already-paid sessions
+    // return themselves (no-op) so retry is safe to call from the UI
+    // without checking status first.
+    hono.post("/v1/public/payment-link/:sessionId/retry", async (c) => {
+      const sessionId = c.req.param("sessionId")
+      const db = getDbFromHyperdrive(c.env)
+      const [original] = await db
+        .select()
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, sessionId))
+        .limit(1)
+      if (!original) return c.json({ error: "Session not found" }, 404)
+      if (original.status === "paid" || original.status === "authorized") {
+        return c.json({ data: { sessionId: original.id, alreadyPaid: true } })
+      }
+      const dbCast = db as unknown as Parameters<typeof financeService.createPaymentSession>[0]
+      // Don't copy `clientReference` / `externalReference` to the retry —
+      // Netopia derives its `orderID` from those fields, and reusing them
+      // makes Netopia reject the new start as "Order already processed".
+      // Letting them default to null means Netopia gets the new session.id
+      // (unique by construction). Linkage back to the flight order is
+      // preserved via `targetType` + `targetId`, and the resolver
+      // endpoint searches all three keys so existing redirects still work.
+      const fresh = await financeService.createPaymentSession(dbCast, {
+        targetType: original.targetType,
+        targetId: original.targetId ?? undefined,
+        bookingId: original.bookingId ?? undefined,
+        invoiceId: original.invoiceId ?? undefined,
+        bookingPaymentScheduleId: original.bookingPaymentScheduleId ?? undefined,
+        bookingGuaranteeId: original.bookingGuaranteeId ?? undefined,
+        currency: original.currency,
+        amountCents: original.amountCents,
+        status: "pending",
+        provider: original.provider ?? undefined,
+        paymentMethod: original.paymentMethod ?? undefined,
+        payerEmail: original.payerEmail ?? undefined,
+        payerName: original.payerName ?? undefined,
+        notes: original.notes ?? undefined,
+      })
+      return c.json({ data: { sessionId: fresh.id } })
+    })
+
+    // GET /v1/public/payment-link/resolve?ref=X — translate a customer-
+    // facing reference (the orderID a processor echoes back, a booking
+    // number, etc.) to the canonical session id. Tries id, clientReference,
+    // and externalReference in that order. Used by the `/pay` resolver
+    // route so processor redirects work regardless of which key was used.
+    hono.get("/v1/public/payment-link/resolve", async (c) => {
+      const ref = c.req.query("ref")
+      if (!ref) return c.json({ error: "ref query param is required" }, 400)
+      const db = getDbFromHyperdrive(c.env)
+      const [session] = await db
+        .select({ id: paymentSessions.id })
+        .from(paymentSessions)
+        .where(
+          or(
+            eq(paymentSessions.id, ref),
+            eq(paymentSessions.clientReference, ref),
+            eq(paymentSessions.externalReference, ref),
+          ),
+        )
+        .limit(1)
+      if (!session) return c.json({ error: "Payment session not found" }, 404)
+      return c.json({ data: { sessionId: session.id } })
+    })
+
+    // POST /v1/public/payment-link/:sessionId/start-card — customer-facing
+    // lazy-start for the configured card processor. Idempotent: if the
+    // session already has a `redirectUrl`, returns it; otherwise calls
+    // netopia.startPaymentSession with synthesized placeholder billing
+    // (Netopia's hosted form collects the real billing from the customer)
+    // and returns the new redirect URL.
+    hono.post("/v1/public/payment-link/:sessionId/start-card", async (c) => {
+      const sessionId = c.req.param("sessionId")
+      const db = getDbFromHyperdrive(c.env)
+      // `netopia.startPaymentSession` is typed against postgres-js; cast at
+      // the call site since the union with neon-http is structurally
+      // compatible for the queries Netopia issues.
+      const dbCast = db as unknown as Parameters<typeof netopiaService.startPaymentSession>[0]
+      const [session] = await db
+        .select()
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, sessionId))
+        .limit(1)
+      if (!session) return c.json({ error: "Session not found" }, 404)
+      if (session.redirectUrl) {
+        return c.json({ data: { redirectUrl: session.redirectUrl } })
+      }
+      const runtime = c.var.container?.resolve(NETOPIA_RUNTIME_CONTAINER_KEY) as
+        | ResolvedNetopiaRuntimeOptions
+        | undefined
+      if (!runtime) {
+        return c.json({ error: "Card processor not configured" }, 503)
+      }
+      const [first, ...rest] = (session.payerName ?? "").trim().split(/\s+/)
+      const last = rest.length > 0 ? rest.join(" ") : "Customer"
+      try {
+        const started = await netopiaService.startPaymentSession(
+          dbCast,
+          sessionId,
+          {
+            billing: {
+              email: session.payerEmail ?? "tbd@example.com",
+              phone: "0000000000",
+              firstName: first || "Customer",
+              lastName: last,
+              city: "TBD",
+              country: 642,
+              state: "TBD",
+              postalCode: "00000",
+              details: "Pending — customer to confirm at payment.",
+            },
+            description: session.notes ?? `Payment ${sessionId}`,
+          },
+          runtime,
+          undefined,
+        )
+        return c.json({
+          data: {
+            redirectUrl:
+              started.session.redirectUrl ?? started.providerResponse.payment?.paymentURL ?? null,
+          },
+        })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to start card payment"
+        return c.json({ error: message }, 502)
+      }
+    })
+
     mountCatalogMcpRoutes(hono)
     mountCatalogSearchRoutes(hono)
+    mountFlightRoutes(hono)
   },
 })

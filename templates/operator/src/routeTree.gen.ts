@@ -9,9 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PayRouteImport } from './routes/pay'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
+import { Route as PaySessionIdRouteImport } from './routes/pay_.$sessionId'
+import { Route as WorkspaceFlightsRouteImport } from './routes/_workspace/flights'
 import { Route as WorkspaceCatalogRouteImport } from './routes/_workspace/catalog'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
@@ -56,6 +59,7 @@ import { Route as WorkspaceLegalTemplatesIndexRouteImport } from './routes/_work
 import { Route as WorkspaceLegalPoliciesIndexRouteImport } from './routes/_workspace/legal/policies/index'
 import { Route as WorkspaceLegalNumberSeriesIndexRouteImport } from './routes/_workspace/legal/number-series/index'
 import { Route as WorkspaceLegalContractsIndexRouteImport } from './routes/_workspace/legal/contracts/index'
+import { Route as WorkspaceFlightsOrdersIndexRouteImport } from './routes/_workspace/flights_.orders.index'
 import { Route as WorkspaceResourcesPoolsIdRouteImport } from './routes/_workspace/resources/pools/$id'
 import { Route as WorkspaceResourcesAssignmentsIdRouteImport } from './routes/_workspace/resources/assignments/$id'
 import { Route as WorkspaceResourcesAllocationsIdRouteImport } from './routes/_workspace/resources/allocations/$id'
@@ -63,10 +67,17 @@ import { Route as WorkspaceNotificationsTemplatesIdRouteImport } from './routes/
 import { Route as WorkspaceLegalTemplatesIdRouteImport } from './routes/_workspace/legal/templates/$id'
 import { Route as WorkspaceLegalPoliciesIdRouteImport } from './routes/_workspace/legal/policies/$id'
 import { Route as WorkspaceLegalContractsIdRouteImport } from './routes/_workspace/legal/contracts/$id'
+import { Route as WorkspaceFlightsOrdersOrderIdRouteImport } from './routes/_workspace/flights_.orders.$orderId'
+import { Route as WorkspaceFlightsBookOfferIdRouteImport } from './routes/_workspace/flights_.book.$offerId'
 import { Route as WorkspaceFinanceInvoicesIdRouteImport } from './routes/_workspace/finance/invoices/$id'
 import { Route as WorkspaceAvailabilityStartTimesIdRouteImport } from './routes/_workspace/availability/start-times/$id'
 import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_workspace/availability/rules/$id'
 
+const PayRoute = PayRouteImport.update({
+  id: '/pay',
+  path: '/pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkspaceRouteRoute = WorkspaceRouteRouteImport.update({
   id: '/_workspace',
   getParentRoute: () => rootRouteImport,
@@ -78,6 +89,16 @@ const authRouteRoute = authRouteRouteImport.update({
 const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const PaySessionIdRoute = PaySessionIdRouteImport.update({
+  id: '/pay_/$sessionId',
+  path: '/pay/$sessionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceFlightsRoute = WorkspaceFlightsRouteImport.update({
+  id: '/flights',
+  path: '/flights',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceCatalogRoute = WorkspaceCatalogRouteImport.update({
@@ -318,6 +339,12 @@ const WorkspaceLegalContractsIndexRoute =
     path: '/legal/contracts/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceFlightsOrdersIndexRoute =
+  WorkspaceFlightsOrdersIndexRouteImport.update({
+    id: '/flights_/orders/',
+    path: '/flights/orders/',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceResourcesPoolsIdRoute =
   WorkspaceResourcesPoolsIdRouteImport.update({
     id: '/resources/pools/$id',
@@ -360,6 +387,18 @@ const WorkspaceLegalContractsIdRoute =
     path: '/legal/contracts/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceFlightsOrdersOrderIdRoute =
+  WorkspaceFlightsOrdersOrderIdRouteImport.update({
+    id: '/flights_/orders/$orderId',
+    path: '/flights/orders/$orderId',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
+const WorkspaceFlightsBookOfferIdRoute =
+  WorkspaceFlightsBookOfferIdRouteImport.update({
+    id: '/flights_/book/$offerId',
+    path: '/flights/book/$offerId',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceFinanceInvoicesIdRoute =
   WorkspaceFinanceInvoicesIdRouteImport.update({
     id: '/finance/invoices/$id',
@@ -381,6 +420,7 @@ const WorkspaceAvailabilityRulesIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
+  '/pay': typeof PayRoute
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/accept-invitation': typeof authAcceptInvitationRoute
   '/accept-invite': typeof authAcceptInviteRoute
@@ -392,6 +432,8 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof authVerifyEmailRoute
   '/account': typeof WorkspaceAccountRoute
   '/catalog': typeof WorkspaceCatalogRoute
+  '/flights': typeof WorkspaceFlightsRoute
+  '/pay/$sessionId': typeof PaySessionIdRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
@@ -423,6 +465,8 @@ export interface FileRoutesByFullPath {
   '/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
   '/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
+  '/flights/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
+  '/flights/orders/$orderId': typeof WorkspaceFlightsOrdersOrderIdRoute
   '/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
@@ -430,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/flights/orders/': typeof WorkspaceFlightsOrdersIndexRoute
   '/legal/contracts/': typeof WorkspaceLegalContractsIndexRoute
   '/legal/number-series/': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
@@ -437,6 +482,7 @@ export interface FileRoutesByFullPath {
   '/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
 }
 export interface FileRoutesByTo {
+  '/pay': typeof PayRoute
   '/accept-invitation': typeof authAcceptInvitationRoute
   '/accept-invite': typeof authAcceptInviteRoute
   '/forgot-password': typeof authForgotPasswordRoute
@@ -447,6 +493,8 @@ export interface FileRoutesByTo {
   '/verify-email': typeof authVerifyEmailRoute
   '/account': typeof WorkspaceAccountRoute
   '/catalog': typeof WorkspaceCatalogRoute
+  '/flights': typeof WorkspaceFlightsRoute
+  '/pay/$sessionId': typeof PaySessionIdRoute
   '/': typeof WorkspaceIndexRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
@@ -479,6 +527,8 @@ export interface FileRoutesByTo {
   '/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
   '/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
+  '/flights/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
+  '/flights/orders/$orderId': typeof WorkspaceFlightsOrdersOrderIdRoute
   '/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
@@ -486,6 +536,7 @@ export interface FileRoutesByTo {
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/flights/orders': typeof WorkspaceFlightsOrdersIndexRoute
   '/legal/contracts': typeof WorkspaceLegalContractsIndexRoute
   '/legal/number-series': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/legal/policies': typeof WorkspaceLegalPoliciesIndexRoute
@@ -496,6 +547,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(auth)': typeof authRouteRouteWithChildren
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
+  '/pay': typeof PayRoute
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/(auth)/accept-invitation': typeof authAcceptInvitationRoute
   '/(auth)/accept-invite': typeof authAcceptInviteRoute
@@ -507,6 +559,8 @@ export interface FileRoutesById {
   '/(auth)/verify-email': typeof authVerifyEmailRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
   '/_workspace/catalog': typeof WorkspaceCatalogRoute
+  '/_workspace/flights': typeof WorkspaceFlightsRoute
+  '/pay_/$sessionId': typeof PaySessionIdRoute
   '/_workspace/': typeof WorkspaceIndexRoute
   '/_workspace/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/_workspace/bookings/$id': typeof WorkspaceBookingsIdRoute
@@ -539,6 +593,8 @@ export interface FileRoutesById {
   '/_workspace/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/_workspace/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
   '/_workspace/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
+  '/_workspace/flights_/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
+  '/_workspace/flights_/orders/$orderId': typeof WorkspaceFlightsOrdersOrderIdRoute
   '/_workspace/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/_workspace/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/_workspace/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
@@ -546,6 +602,7 @@ export interface FileRoutesById {
   '/_workspace/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/_workspace/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/_workspace/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/_workspace/flights_/orders/': typeof WorkspaceFlightsOrdersIndexRoute
   '/_workspace/legal/contracts/': typeof WorkspaceLegalContractsIndexRoute
   '/_workspace/legal/number-series/': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/_workspace/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
@@ -556,6 +613,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/pay'
     | '/settings'
     | '/accept-invitation'
     | '/accept-invite'
@@ -567,6 +625,8 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/account'
     | '/catalog'
+    | '/flights'
+    | '/pay/$sessionId'
     | '/availability/$id'
     | '/bookings/$id'
     | '/notifications/deliveries'
@@ -598,6 +658,8 @@ export interface FileRouteTypes {
     | '/availability/rules/$id'
     | '/availability/start-times/$id'
     | '/finance/invoices/$id'
+    | '/flights/book/$offerId'
+    | '/flights/orders/$orderId'
     | '/legal/contracts/$id'
     | '/legal/policies/$id'
     | '/legal/templates/$id'
@@ -605,6 +667,7 @@ export interface FileRouteTypes {
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
     | '/resources/pools/$id'
+    | '/flights/orders/'
     | '/legal/contracts/'
     | '/legal/number-series/'
     | '/legal/policies/'
@@ -612,6 +675,7 @@ export interface FileRouteTypes {
     | '/notifications/templates/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/pay'
     | '/accept-invitation'
     | '/accept-invite'
     | '/forgot-password'
@@ -622,6 +686,8 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/account'
     | '/catalog'
+    | '/flights'
+    | '/pay/$sessionId'
     | '/'
     | '/availability/$id'
     | '/bookings/$id'
@@ -654,6 +720,8 @@ export interface FileRouteTypes {
     | '/availability/rules/$id'
     | '/availability/start-times/$id'
     | '/finance/invoices/$id'
+    | '/flights/book/$offerId'
+    | '/flights/orders/$orderId'
     | '/legal/contracts/$id'
     | '/legal/policies/$id'
     | '/legal/templates/$id'
@@ -661,6 +729,7 @@ export interface FileRouteTypes {
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
     | '/resources/pools/$id'
+    | '/flights/orders'
     | '/legal/contracts'
     | '/legal/number-series'
     | '/legal/policies'
@@ -670,6 +739,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/(auth)'
     | '/_workspace'
+    | '/pay'
     | '/_workspace/settings'
     | '/(auth)/accept-invitation'
     | '/(auth)/accept-invite'
@@ -681,6 +751,8 @@ export interface FileRouteTypes {
     | '/(auth)/verify-email'
     | '/_workspace/account'
     | '/_workspace/catalog'
+    | '/_workspace/flights'
+    | '/pay_/$sessionId'
     | '/_workspace/'
     | '/_workspace/availability/$id'
     | '/_workspace/bookings/$id'
@@ -713,6 +785,8 @@ export interface FileRouteTypes {
     | '/_workspace/availability/rules/$id'
     | '/_workspace/availability/start-times/$id'
     | '/_workspace/finance/invoices/$id'
+    | '/_workspace/flights_/book/$offerId'
+    | '/_workspace/flights_/orders/$orderId'
     | '/_workspace/legal/contracts/$id'
     | '/_workspace/legal/policies/$id'
     | '/_workspace/legal/templates/$id'
@@ -720,6 +794,7 @@ export interface FileRouteTypes {
     | '/_workspace/resources/allocations/$id'
     | '/_workspace/resources/assignments/$id'
     | '/_workspace/resources/pools/$id'
+    | '/_workspace/flights_/orders/'
     | '/_workspace/legal/contracts/'
     | '/_workspace/legal/number-series/'
     | '/_workspace/legal/policies/'
@@ -730,10 +805,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   authRouteRoute: typeof authRouteRouteWithChildren
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
+  PayRoute: typeof PayRoute
+  PaySessionIdRoute: typeof PaySessionIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/pay': {
+      id: '/pay'
+      path: '/pay'
+      fullPath: '/pay'
+      preLoaderRoute: typeof PayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_workspace': {
       id: '/_workspace'
       path: ''
@@ -753,6 +837,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof WorkspaceIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/pay_/$sessionId': {
+      id: '/pay_/$sessionId'
+      path: '/pay/$sessionId'
+      fullPath: '/pay/$sessionId'
+      preLoaderRoute: typeof PaySessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_workspace/flights': {
+      id: '/_workspace/flights'
+      path: '/flights'
+      fullPath: '/flights'
+      preLoaderRoute: typeof WorkspaceFlightsRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/catalog': {
@@ -1063,6 +1161,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceLegalContractsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/flights_/orders/': {
+      id: '/_workspace/flights_/orders/'
+      path: '/flights/orders'
+      fullPath: '/flights/orders/'
+      preLoaderRoute: typeof WorkspaceFlightsOrdersIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/resources/pools/$id': {
       id: '/_workspace/resources/pools/$id'
       path: '/resources/pools/$id'
@@ -1110,6 +1215,20 @@ declare module '@tanstack/react-router' {
       path: '/legal/contracts/$id'
       fullPath: '/legal/contracts/$id'
       preLoaderRoute: typeof WorkspaceLegalContractsIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/flights_/orders/$orderId': {
+      id: '/_workspace/flights_/orders/$orderId'
+      path: '/flights/orders/$orderId'
+      fullPath: '/flights/orders/$orderId'
+      preLoaderRoute: typeof WorkspaceFlightsOrdersOrderIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/flights_/book/$offerId': {
+      id: '/_workspace/flights_/book/$offerId'
+      path: '/flights/book/$offerId'
+      fullPath: '/flights/book/$offerId'
+      preLoaderRoute: typeof WorkspaceFlightsBookOfferIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/finance/invoices/$id': {
@@ -1193,6 +1312,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
   WorkspaceCatalogRoute: typeof WorkspaceCatalogRoute
+  WorkspaceFlightsRoute: typeof WorkspaceFlightsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   WorkspaceAvailabilityIdRoute: typeof WorkspaceAvailabilityIdRoute
   WorkspaceBookingsIdRoute: typeof WorkspaceBookingsIdRoute
@@ -1218,6 +1338,8 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceAvailabilityRulesIdRoute: typeof WorkspaceAvailabilityRulesIdRoute
   WorkspaceAvailabilityStartTimesIdRoute: typeof WorkspaceAvailabilityStartTimesIdRoute
   WorkspaceFinanceInvoicesIdRoute: typeof WorkspaceFinanceInvoicesIdRoute
+  WorkspaceFlightsBookOfferIdRoute: typeof WorkspaceFlightsBookOfferIdRoute
+  WorkspaceFlightsOrdersOrderIdRoute: typeof WorkspaceFlightsOrdersOrderIdRoute
   WorkspaceLegalContractsIdRoute: typeof WorkspaceLegalContractsIdRoute
   WorkspaceLegalPoliciesIdRoute: typeof WorkspaceLegalPoliciesIdRoute
   WorkspaceLegalTemplatesIdRoute: typeof WorkspaceLegalTemplatesIdRoute
@@ -1225,6 +1347,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceResourcesAllocationsIdRoute: typeof WorkspaceResourcesAllocationsIdRoute
   WorkspaceResourcesAssignmentsIdRoute: typeof WorkspaceResourcesAssignmentsIdRoute
   WorkspaceResourcesPoolsIdRoute: typeof WorkspaceResourcesPoolsIdRoute
+  WorkspaceFlightsOrdersIndexRoute: typeof WorkspaceFlightsOrdersIndexRoute
   WorkspaceLegalContractsIndexRoute: typeof WorkspaceLegalContractsIndexRoute
   WorkspaceLegalNumberSeriesIndexRoute: typeof WorkspaceLegalNumberSeriesIndexRoute
   WorkspaceLegalPoliciesIndexRoute: typeof WorkspaceLegalPoliciesIndexRoute
@@ -1236,6 +1359,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceAccountRoute: WorkspaceAccountRoute,
   WorkspaceCatalogRoute: WorkspaceCatalogRoute,
+  WorkspaceFlightsRoute: WorkspaceFlightsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
   WorkspaceAvailabilityIdRoute: WorkspaceAvailabilityIdRoute,
   WorkspaceBookingsIdRoute: WorkspaceBookingsIdRoute,
@@ -1264,6 +1388,8 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceAvailabilityStartTimesIdRoute:
     WorkspaceAvailabilityStartTimesIdRoute,
   WorkspaceFinanceInvoicesIdRoute: WorkspaceFinanceInvoicesIdRoute,
+  WorkspaceFlightsBookOfferIdRoute: WorkspaceFlightsBookOfferIdRoute,
+  WorkspaceFlightsOrdersOrderIdRoute: WorkspaceFlightsOrdersOrderIdRoute,
   WorkspaceLegalContractsIdRoute: WorkspaceLegalContractsIdRoute,
   WorkspaceLegalPoliciesIdRoute: WorkspaceLegalPoliciesIdRoute,
   WorkspaceLegalTemplatesIdRoute: WorkspaceLegalTemplatesIdRoute,
@@ -1272,6 +1398,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceResourcesAllocationsIdRoute: WorkspaceResourcesAllocationsIdRoute,
   WorkspaceResourcesAssignmentsIdRoute: WorkspaceResourcesAssignmentsIdRoute,
   WorkspaceResourcesPoolsIdRoute: WorkspaceResourcesPoolsIdRoute,
+  WorkspaceFlightsOrdersIndexRoute: WorkspaceFlightsOrdersIndexRoute,
   WorkspaceLegalContractsIndexRoute: WorkspaceLegalContractsIndexRoute,
   WorkspaceLegalNumberSeriesIndexRoute: WorkspaceLegalNumberSeriesIndexRoute,
   WorkspaceLegalPoliciesIndexRoute: WorkspaceLegalPoliciesIndexRoute,
@@ -1287,6 +1414,8 @@ const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   authRouteRoute: authRouteRouteWithChildren,
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
+  PayRoute: PayRoute,
+  PaySessionIdRoute: PaySessionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

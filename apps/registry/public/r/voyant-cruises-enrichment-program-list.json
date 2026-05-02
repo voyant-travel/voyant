@@ -3,15 +3,8 @@
   "name": "voyant-cruises-enrichment-program-list",
   "title": "Enrichment Program List",
   "description": "Connected list of expedition staff (naturalist / historian / photographer / lecturer / expert).",
-  "dependencies": [
-    "lucide-react",
-    "@voyantjs/cruises-react"
-  ],
-  "registryDependencies": [
-    "avatar",
-    "badge",
-    "card"
-  ],
+  "dependencies": ["lucide-react", "@voyantjs/cruises-react"],
+  "registryDependencies": ["avatar", "badge", "card"],
   "files": [
     {
       "path": "registry/cruises/enrichment-program-list.tsx",

@@ -39,7 +39,36 @@ describe("resolveNetopiaRuntimeOptions", () => {
   })
 
   it("throws when required config is missing", () => {
-    expect(() => resolveNetopiaRuntimeOptions({})).toThrow(/NETOPIA_URL/)
+    // apiUrl is no longer required — `mode` defaults to `sandbox` and resolves
+    // to a known base. The first credential check now fires on `NETOPIA_API_KEY`.
+    expect(() => resolveNetopiaRuntimeOptions({})).toThrow(/NETOPIA_API_KEY/)
+  })
+
+  it("rejects an invalid NETOPIA_MODE", () => {
+    expect(() => resolveNetopiaRuntimeOptions({ NETOPIA_MODE: "test" })).toThrow(/NETOPIA_MODE/)
+  })
+
+  it("resolves the live base URL when NETOPIA_MODE=live", () => {
+    const options = resolveNetopiaRuntimeOptions({
+      NETOPIA_MODE: "live",
+      NETOPIA_API_KEY: "api-key",
+      NETOPIA_POS_SIGNATURE: "pos-signature",
+      NETOPIA_NOTIFY_URL: "https://api.example.com/netopia/callback",
+      NETOPIA_REDIRECT_URL: "https://app.example.com/checkout/return",
+    })
+    expect(options.apiUrl).toBe("https://secure.mobilpay.ro/pay")
+  })
+
+  it("NETOPIA_URL overrides the mode-resolved base", () => {
+    const options = resolveNetopiaRuntimeOptions({
+      NETOPIA_MODE: "live",
+      NETOPIA_URL: "https://staging-proxy.internal/pay",
+      NETOPIA_API_KEY: "api-key",
+      NETOPIA_POS_SIGNATURE: "pos-signature",
+      NETOPIA_NOTIFY_URL: "https://api.example.com/netopia/callback",
+      NETOPIA_REDIRECT_URL: "https://app.example.com/checkout/return",
+    })
+    expect(options.apiUrl).toBe("https://staging-proxy.internal/pay")
   })
 
   it("throws when configured runtime values are invalid", () => {

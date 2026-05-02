@@ -3,12 +3,8 @@
   "name": "voyant-charters-whole-yacht-quote-card",
   "title": "Whole-Yacht Quote Card",
   "description": "Itemised whole-yacht quote — charter fee + APA + total, with explanatory copy. Ships with a per-suite sibling component.",
-  "dependencies": [
-    "@voyantjs/charters-react"
-  ],
-  "registryDependencies": [
-    "card"
-  ],
+  "dependencies": ["@voyantjs/charters-react"],
+  "registryDependencies": ["card"],
   "files": [
     {
       "path": "registry/charters/whole-yacht-quote-card.tsx",

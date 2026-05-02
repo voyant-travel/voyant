@@ -73,9 +73,9 @@ export function charterProductRowToProjection(
     ["status", row.status],
     ["lineSupplierId", row.lineSupplierId],
     ["defaultYachtId", row.defaultYachtId],
-    ["regions", row.regions],
-    ["themes", row.themes],
-    ["defaultBookingModes", row.defaultBookingModes],
+    ["regions[]", row.regions],
+    ["themes[]", row.themes],
+    ["defaultBookingModes[]", row.defaultBookingModes],
 
     // Charter-specific managed fields (legal-sensitive — captured in snapshot)
     ["defaultMybaTemplateId", row.defaultMybaTemplateId],

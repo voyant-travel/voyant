@@ -36,6 +36,7 @@ export const paymentSessionTargetTypeSchema = z.enum([
   "invoice",
   "booking_payment_schedule",
   "booking_guarantee",
+  "flight_order",
   "other",
 ])
 export const paymentInstrumentTypeSchema = z.enum([

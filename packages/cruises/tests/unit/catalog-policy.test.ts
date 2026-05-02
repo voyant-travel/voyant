@@ -45,7 +45,7 @@ describe("cruiseCatalogPolicy", () => {
 
   it("requires confirmation when ops edits regions/themes (override friction)", () => {
     const registry = createFieldPolicyRegistry(cruiseCatalogPolicy)
-    expect(registry.byPath.get("regions")?.overrideFriction).toBe("confirm")
-    expect(registry.byPath.get("themes")?.overrideFriction).toBe("confirm")
+    expect(registry.byPath.get("regions[]")?.overrideFriction).toBe("confirm")
+    expect(registry.byPath.get("themes[]")?.overrideFriction).toBe("confirm")
   })
 })

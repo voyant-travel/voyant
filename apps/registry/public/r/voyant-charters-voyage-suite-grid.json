@@ -3,14 +3,8 @@
   "name": "voyant-charters-voyage-suite-grid",
   "title": "Voyage Suite Grid",
   "description": "Per-suite pricing grid for a charter voyage — suite cards with category, availability, multi-currency price, and a quote/book CTA.",
-  "dependencies": [
-    "@voyantjs/charters-react"
-  ],
-  "registryDependencies": [
-    "badge",
-    "button",
-    "card"
-  ],
+  "dependencies": ["@voyantjs/charters-react"],
+  "registryDependencies": ["badge", "button", "card"],
   "files": [
     {
       "path": "registry/charters/voyage-suite-grid.tsx",

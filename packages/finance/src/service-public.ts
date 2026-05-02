@@ -111,6 +111,7 @@ function toPublicPaymentSession(
     completedAt: normalizeDateTime(session.completedAt),
     failureCode: session.failureCode ?? null,
     failureMessage: session.failureMessage ?? null,
+    notes: session.notes ?? null,
   }
 }
 

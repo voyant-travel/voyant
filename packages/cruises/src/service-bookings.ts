@@ -77,7 +77,7 @@ function priceCentsFromString(s: string): number {
   const parts = abs.split(".")
   const whole = parts[0] ?? "0"
   const frac = parts[1] ?? ""
-  const fracPadded = (frac + "00").slice(0, 2)
+  const fracPadded = `${frac}00`.slice(0, 2)
   const cents = Number(whole) * 100 + Number(fracPadded)
   return negative ? -cents : cents
 }

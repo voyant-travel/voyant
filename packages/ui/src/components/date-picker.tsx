@@ -91,15 +91,18 @@ function formatRangeLabel(
   return placeholder
 }
 
-type TriggerProps = {
-  className?: string
+type TriggerProps = React.ComponentProps<typeof Button> & {
   empty: boolean
-  children?: React.ReactNode
 }
 
-function DatePickerTrigger({ className, empty, children }: TriggerProps) {
+function DatePickerTrigger({ className, empty, children, ...props }: TriggerProps) {
+  // Spread `...props` so base-ui's `<PopoverTrigger render={<DatePickerTrigger />}>`
+  // can forward its merged onClick / aria-expanded / ref onto the actual Button —
+  // without this, the popover never opens because the click handler stops at this
+  // wrapper.
   return (
     <Button
+      {...props}
       variant="outline"
       data-empty={empty}
       className={cn(

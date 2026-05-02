@@ -38,7 +38,7 @@ describe("charterProductRowToProjection", () => {
   it("maps every column to its catalog-policy path", () => {
     const projection = charterProductRowToProjection(sampleRow, { sellerOperatorId: "op_xyz" })
     expect(projection.get("name")).toBe("Aman Experience Week")
-    expect(projection.get("defaultBookingModes")).toEqual(["whole_yacht", "per_suite"])
+    expect(projection.get("defaultBookingModes[]")).toEqual(["whole_yacht", "per_suite"])
     expect(projection.get("defaultApaPercent")).toBe("27.50")
     expect(projection.get("defaultMybaTemplateId")).toBe("ctpl_myba_2026")
   })

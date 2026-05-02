@@ -50,4 +50,55 @@ interface CloudflareBindings {
   API_BASE_URL: string
   CORS_ALLOWLIST: string
   DASH_BASE_URL: string
+
+  // Netopia (pay-by-link card processor). `NETOPIA_MODE` selects sandbox
+  // vs live (defaults to sandbox); `NETOPIA_URL` is an optional override
+  // for staging proxies / test mocks. `NETOPIA_NOTIFY_URL` must be
+  // publicly reachable so the processor can deliver callbacks.
+  NETOPIA_MODE?: "sandbox" | "live"
+  NETOPIA_URL?: string
+  NETOPIA_API_KEY?: string
+  NETOPIA_POS_SIGNATURE?: string
+  /**
+   * Server-to-server webhook receiver. Genuinely deploy-wide — Netopia
+   * POSTs payment results here, so it must be a single publicly reachable
+   * HTTPS endpoint. Should resolve to
+   * `${API_BASE_URL}/v1/admin/finance/providers/netopia/callback`.
+   */
+  NETOPIA_NOTIFY_URL?: string
+  /**
+   * Default browser redirect after the customer completes (or cancels)
+   * payment on Netopia's hosted page. Per-session overrides are passed via
+   * `useCollectPayment({ returnUrl, cancelUrl })`; storefront flows
+   * typically override per call, while operator-initiated send-link flows
+   * leave the default pointing at the public `/pay/:sessionId` landing.
+   */
+  NETOPIA_REDIRECT_URL?: string
+  /**
+   * Deploy-wide fallback for the Netopia hosted-page language. The actual
+   * language for each session is set per-call via `startProvider.payload.
+   * language` (see `useCollectPayment`'s `payerLanguage` option), so this
+   * env var only matters when the caller doesn't supply one.
+   */
+  NETOPIA_LANGUAGE?: string
+
+  /**
+   * Base URL of the standalone `flights-demo-api` service (e.g.
+   * `http://localhost:3320`). Required when using
+   * `@voyantjs/plugin-flights-demo` — the plugin is a thin HTTP client and
+   * the service owns its own database. Swap to a real GDS connector by
+   * replacing the adapter in `src/api/flights.ts`.
+   */
+  FLIGHTS_DEMO_API_URL?: string
+
+  // Manual bank-transfer block rendered on the public payment landing page.
+  // Leave BENEFICIARY + IBAN empty to hide the bank-transfer tab. Currency
+  // is intentionally omitted — it always tracks the booking's invoice
+  // currency (set on the invoice at collection time). NOTES is deploy-wide
+  // boilerplate; per-call notes from `initiateCheckoutCollection({ notes })`
+  // override it.
+  BANK_TRANSFER_BENEFICIARY?: string
+  BANK_TRANSFER_IBAN?: string
+  BANK_TRANSFER_BANK_NAME?: string
+  BANK_TRANSFER_NOTES?: string
 }

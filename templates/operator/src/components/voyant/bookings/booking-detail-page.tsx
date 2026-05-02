@@ -16,6 +16,7 @@ import { BookingPaymentsSummary } from "@voyantjs/bookings-ui/components/booking
 import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-change-dialog"
 import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
 import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
+import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
 import { BookingContractCard } from "@voyantjs/legal-ui/components/booking-contract-card"
 import { Badge, Button, Card, CardContent } from "@voyantjs/ui/components"
 import {
@@ -99,6 +100,7 @@ export function BookingDetailPage({ id }: { id: string }) {
   const [editOpen, setEditOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [collectPaymentOpen, setCollectPaymentOpen] = useState(false)
   const { data: bookingData, isPending } = useBooking(id)
   const { remove } = useBookingMutation()
 
@@ -269,6 +271,9 @@ export function BookingDetailPage({ id }: { id: string }) {
         </TabsContent>
 
         <TabsContent value="finance" className="mt-4 flex flex-col gap-6">
+          <div className="flex items-center justify-end">
+            <Button onClick={() => setCollectPaymentOpen(true)}>Collect payment</Button>
+          </div>
           <BookingPaymentsSummary bookingId={id} />
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />
@@ -302,6 +307,15 @@ export function BookingDetailPage({ id }: { id: string }) {
         open={cancelDialogOpen}
         onOpenChange={setCancelDialogOpen}
         booking={booking}
+      />
+
+      <CollectPaymentDialog
+        open={collectPaymentOpen}
+        onOpenChange={setCollectPaymentOpen}
+        bookingId={id}
+        defaultCurrency={booking.sellCurrency}
+        defaultAmountCents={booking.sellAmountCents ?? null}
+        defaultPayerLanguage={resolvedLocale}
       />
     </div>
   )

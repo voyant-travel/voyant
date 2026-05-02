@@ -3,6 +3,24 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 
+@import "@voyantjs/ui/globals.css";
+@import "@voyantjs/booking-requirements-ui/styles.css";
+@import "@voyantjs/bookings-ui/styles.css";
+@import "@voyantjs/crm-ui/styles.css";
+@import "@voyantjs/distribution-ui/styles.css";
+@import "@voyantjs/external-refs-ui/styles.css";
+@import "@voyantjs/extras-ui/styles.css";
+@import "@voyantjs/finance-ui/styles.css";
+@import "@voyantjs/hospitality-ui/styles.css";
+@import "@voyantjs/identity-ui/styles.css";
+@import "@voyantjs/legal-ui/styles.css";
+@import "@voyantjs/markets-ui/styles.css";
+@import "@voyantjs/pricing-ui/styles.css";
+@import "@voyantjs/products-ui/styles.css";
+@import "@voyantjs/resources-ui/styles.css";
+@import "@voyantjs/sellability-ui/styles.css";
+@import "@voyantjs/suppliers-ui/styles.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
