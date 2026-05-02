@@ -135,6 +135,13 @@ export const publicPaymentSessionSchema = z.object({
   completedAt: z.string().nullable(),
   failureCode: z.string().nullable(),
   failureMessage: z.string().nullable(),
+  /**
+   * Operator-supplied human-readable context (e.g. "London → New York,
+   * Sat 16 May · Diego Müller"). Surfaced on the public landing page so
+   * the customer can see what they're paying for. Server-controlled — only
+   * populated when the session is created with `notes`.
+   */
+  notes: z.string().nullable(),
 })
 
 export const publicFinanceBookingDocumentSchema = z.object({

@@ -1,12 +1,29 @@
 import { ZodError } from "zod"
 import type {
   NetopiaFetch,
+  NetopiaMode,
   NetopiaRuntimeOptions,
   NetopiaStartPaymentRequest,
   NetopiaStartPaymentResponse,
   ResolvedNetopiaRuntimeOptions,
 } from "./types.js"
 import { resolvedNetopiaRuntimeOptionsSchema } from "./validation.js"
+
+/**
+ * Known Netopia API base URLs. The client appends `/payment/card/start`
+ * (and any future paths) to whichever value is selected via `mode`. To
+ * point at a staging proxy or test mock — or if your tenant is provisioned
+ * on a non-default host — set `NETOPIA_URL` (or pass `apiUrl`) to override.
+ *
+ * The two hosts use *different* path conventions:
+ *   - live host has a `/pay` prefix on every endpoint
+ *   - sandbox host serves endpoints from the root
+ * Sourced from the protravel-v3 reference implementation.
+ */
+export const NETOPIA_API_BASES: Record<NetopiaMode, string> = {
+  live: "https://secure.mobilpay.ro/pay",
+  sandbox: "https://secure.sandbox.netopia-payments.com",
+}
 
 export interface NetopiaClientApi {
   startCardPayment(request: NetopiaStartPaymentRequest): Promise<NetopiaStartPaymentResponse>
@@ -22,13 +39,14 @@ export function resolveNetopiaRuntimeOptions(
   options: NetopiaRuntimeOptions = {},
 ): ResolvedNetopiaRuntimeOptions {
   const env = bindings ?? {}
-  const apiUrl = options.apiUrl ?? coerceString(env.NETOPIA_URL)
+  const apiUrlOverride = options.apiUrl ?? coerceString(env.NETOPIA_URL)
+  const mode = resolveMode(options.mode ?? coerceString(env.NETOPIA_MODE))
+  const apiUrl = apiUrlOverride ?? NETOPIA_API_BASES[mode]
   const apiKey = options.apiKey ?? coerceString(env.NETOPIA_API_KEY)
   const posSignature = options.posSignature ?? coerceString(env.NETOPIA_POS_SIGNATURE)
   const notifyUrl = options.notifyUrl ?? coerceString(env.NETOPIA_NOTIFY_URL)
   const redirectUrl = options.redirectUrl ?? coerceString(env.NETOPIA_REDIRECT_URL)
 
-  if (!apiUrl) throw new Error("Missing Netopia config: NETOPIA_URL")
   if (!apiKey) throw new Error("Missing Netopia config: NETOPIA_API_KEY")
   if (!posSignature) throw new Error("Missing Netopia config: NETOPIA_POS_SIGNATURE")
   if (!notifyUrl) throw new Error("Missing Netopia config: NETOPIA_NOTIFY_URL")
@@ -63,6 +81,16 @@ export function resolveNetopiaRuntimeOptions(
 
 function coerceString(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined
+}
+
+function resolveMode(raw: string | undefined): NetopiaMode {
+  if (raw === "live" || raw === "sandbox") return raw
+  if (raw !== undefined) {
+    throw new Error(`Invalid NETOPIA_MODE: ${raw} (expected "sandbox" or "live")`)
+  }
+  // Default to sandbox so a half-configured production deploy fails into
+  // the safer environment instead of charging real cards.
+  return "sandbox"
 }
 
 export function createNetopiaClient(options: NetopiaClientOptions): NetopiaClientApi {
@@ -104,12 +132,31 @@ export function createNetopiaClient(options: NetopiaClientOptions): NetopiaClien
     async startCardPayment(requestBody: NetopiaStartPaymentRequest) {
       const res = await request("POST", "/payment/card/start", requestBody)
       const json = (res.json ?? {}) as NetopiaStartPaymentResponse
+      // Netopia quirk (per protravel-v3 reference): error code 101 means
+      // "redirect customer to payment page" — it's success-with-redirect,
+      // not a failure. The API sometimes omits `paymentURL` in this case;
+      // upstream callers fall back to other fields on the session.
+      if (json.error && String(json.error.code) === "101") {
+        return json
+      }
       if (!res.ok || json.error) {
+        const detail =
+          json.error?.message ??
+          (res.status === 404
+            ? `Endpoint not found at ${apiUrl}/payment/card/start. Verify NETOPIA_MODE/NETOPIA_URL.`
+            : stripHtml(res.text).slice(0, 200))
         throw new Error(
-          `Netopia start payment failed (${json.error?.code ?? res.status}): ${json.error?.message ?? res.text}`,
+          `Netopia start payment failed (${json.error?.code ?? res.status}): ${detail}`,
         )
       }
       return json
     },
   }
+}
+
+function stripHtml(text: string): string {
+  return text
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
 }

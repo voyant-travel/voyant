@@ -43,6 +43,7 @@ import {
   organizations,
   people,
   personNotes,
+  personPaymentMethods,
   pipelines,
   quoteLines,
   quotes,
@@ -113,6 +114,14 @@ import { hashPassword } from "better-auth/crypto"
 import { asc, eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
+
+import {
+  seedCharters,
+  seedCruises,
+  seedExtras,
+  seedHospitalityRooms,
+} from "./seed-catalog-verticals"
+import { seedAircraft, seedAirlines, seedAirports } from "./seed-flights-reference"
 
 // ---------- Env & args ----------
 
@@ -963,6 +972,30 @@ async function seedCrm() {
     personId: people_ids[0]!,
     name: "Accounts Payable",
   })
+
+  // Saved payment methods on file for the first 8 people. Mix of brands +
+  // bank transfer; one is marked default per person. Tokens are placeholders —
+  // a production setup would carry processor-issued opaque ids.
+  const PM_BRANDS = ["visa", "mastercard", "amex", "revolut", "bank_transfer"] as const
+  for (let i = 0; i < 8; i++) {
+    const personId = people_ids[i]!
+    const count = (i % 3) + 1 // 1..3 methods per person
+    for (let j = 0; j < count; j++) {
+      const brand = PM_BRANDS[(i + j) % PM_BRANDS.length]!
+      const isCard = brand !== "bank_transfer"
+      await db.insert(personPaymentMethods).values({
+        id: newId("person_payment_methods"),
+        personId,
+        brand,
+        last4: isCard ? String(1000 + ((i * 13 + j * 7) % 9000)).padStart(4, "0") : null,
+        holderName: `${pick(FIRST_NAMES, i)} ${pick(LAST_NAMES, i * 7)}`,
+        expMonth: isCard ? ((i + j) % 12) + 1 : null,
+        expYear: isCard ? 2027 + ((i + j) % 4) : null,
+        processorToken: `tok_seed_${personId}_${j}`,
+        isDefault: j === 0,
+      })
+    }
+  }
 
   // Pipeline + stages
   const pipelineId = newId("pipelines")
@@ -2332,6 +2365,34 @@ async function seedBookingsAndFinance() {
   }
 }
 
+// ---------- Catalog verticals (extras / cruises / charters / hospitality) ----------
+
+async function seedCatalogVerticals() {
+  console.log("→ seeding catalog verticals (extras, cruises, charters, hospitality)…")
+  const ctx = {
+    sellerOperatorId: process.env.TENANT_ID ?? "default",
+    supplierIds: SUPPLIERS.map((s) => s.id),
+    facilityIds: Object.values(FACILITIES),
+  }
+  const extrasIds = await seedExtras(db, ctx)
+  const cruiseIds = await seedCruises(db, ctx)
+  const charterIds = await seedCharters(db, ctx)
+  const roomIds = await seedHospitalityRooms(db, ctx)
+  console.log(
+    `  · extras: ${extrasIds.length}, cruises: ${cruiseIds.length}, charters: ${charterIds.length}, rooms: ${roomIds.length}`,
+  )
+}
+
+async function seedFlightsReference() {
+  console.log("→ seeding flights reference data (airlines + airports + aircraft)…")
+  const airlineCount = await seedAirlines(db)
+  const airportCount = await seedAirports(db)
+  const aircraftCount = await seedAircraft(db)
+  console.log(
+    `  · airlines: ${airlineCount}, airports: ${airportCount}, aircraft: ${aircraftCount}`,
+  )
+}
+
 // ---------- Run ----------
 
 async function main() {
@@ -2350,6 +2411,8 @@ async function main() {
     await seedAvailability()
     await seedLegal()
     await seedBookingsAndFinance()
+    await seedCatalogVerticals()
+    await seedFlightsReference()
 
     console.timeEnd("seed")
     console.log("\n✓ Seed complete. Sign in with:")

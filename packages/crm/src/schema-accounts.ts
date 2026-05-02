@@ -1,5 +1,6 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import {
+  boolean,
   date,
   index,
   integer,
@@ -24,6 +25,8 @@ export const organizations = pgTable(
     name: text("name").notNull(),
     legalName: text("legal_name"),
     website: text("website"),
+    /** Tax / VAT identification number — used for billing + e-invoicing. */
+    vatNumber: text("vat_number"),
     industry: text("industry"),
     relation: relationTypeEnum("relation"),
     ownerId: text("owner_id"),
@@ -57,7 +60,10 @@ export const people = pgTable(
       onDelete: "set null",
     }),
     firstName: text("first_name").notNull(),
+    middleName: text("middle_name"),
     lastName: text("last_name").notNull(),
+    /** ISO-style "M" / "F" / "X" — used by airline + travel-doc workflows. */
+    gender: text("gender"),
     jobTitle: text("job_title"),
     relation: relationTypeEnum("relation"),
     preferredLanguage: text("preferred_language"),
@@ -118,6 +124,42 @@ export const personNotes = pgTable(
 
 export type PersonNote = typeof personNotes.$inferSelect
 export type NewPersonNote = typeof personNotes.$inferInsert
+
+/**
+ * Saved payment methods on file for a person. Stores processor-issued
+ * tokens (never raw card numbers) so the booking flow can charge the
+ * customer without re-entering card details. Cards have last4 + expiry +
+ * brand; bank-transfer "methods" carry a brand of "bank_transfer" with
+ * last4 / expiry omitted.
+ */
+export const personPaymentMethods = pgTable(
+  "person_payment_methods",
+  {
+    id: typeId("person_payment_methods"),
+    personId: typeIdRef("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    /** "visa" | "mastercard" | "amex" | "revolut" | "bank_transfer" — kept as text to stay open. */
+    brand: text("brand").notNull(),
+    /** Last four digits — null for non-card methods. */
+    last4: text("last4"),
+    holderName: text("holder_name"),
+    /** 1-12; null for non-card methods. */
+    expMonth: integer("exp_month"),
+    expYear: integer("exp_year"),
+    /** Opaque processor token — used to charge the customer. */
+    processorToken: text("processor_token").notNull(),
+    isDefault: boolean("is_default").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_person_payment_methods_person").on(table.personId),
+    index("idx_person_payment_methods_person_default").on(table.personId, table.isDefault),
+  ],
+)
+
+export type PersonPaymentMethod = typeof personPaymentMethods.$inferSelect
+export type NewPersonPaymentMethod = typeof personPaymentMethods.$inferInsert
 
 export const organizationNotes = pgTable(
   "organization_notes",

@@ -16,6 +16,7 @@ import {
   Library,
   Mail,
   Package,
+  Plane,
   Scale,
   Settings,
   Users,
@@ -69,6 +70,13 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       title: messages.nav.catalog,
       url: "/catalog",
       icon: Library,
+    },
+    {
+      id: "flights",
+      title: messages.nav.flights,
+      url: "/flights",
+      icon: Plane,
+      items: [{ id: "flight-orders", title: messages.nav.flightOrders, url: "/flights/orders" }],
     },
     {
       id: "products",

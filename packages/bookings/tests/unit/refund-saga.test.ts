@@ -44,8 +44,7 @@ function fakeDb(seedBooking: FakeBooking) {
         // We disambiguate which "table" by the sql tag's _ field — but
         // since the test fakes all flow through the booking-shape branch,
         // we simply check whether the selection projects bookings columns.
-        const isBookings =
-          !table || (table as { _?: { name?: string } })._?.name === undefined ? true : false
+        const isBookings = !!(!table || (table as { _?: { name?: string } })._?.name === undefined)
         const builder = {
           where(_cond: unknown) {
             const result: Array<unknown> = isBookings ? [state.booking] : state.allocations

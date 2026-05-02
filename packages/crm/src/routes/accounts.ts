@@ -15,6 +15,7 @@ import {
   insertOrganizationNoteSchema,
   insertOrganizationSchema,
   insertPersonNoteSchema,
+  insertPersonPaymentMethodSchema,
   insertPersonSchema,
   insertSegmentSchema,
   organizationListQuerySchema,
@@ -22,6 +23,7 @@ import {
   updateOrganizationNoteSchema,
   updateOrganizationSchema,
   updatePersonNoteSchema,
+  updatePersonPaymentMethodSchema,
   updatePersonSchema,
 } from "../validation.js"
 
@@ -235,6 +237,35 @@ export const accountRoutes = new Hono<Env>()
   .delete("/person-notes/:id", async (c) => {
     const row = await crmService.deletePersonNote(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Note not found" }, 404)
+    return c.json({ success: true })
+  })
+  // Payment methods on file for a person.
+  .get("/people/:id/payment-methods", async (c) => {
+    return c.json({
+      data: await crmService.listPersonPaymentMethods(c.get("db"), c.req.param("id")),
+    })
+  })
+  .post("/people/:id/payment-methods", async (c) => {
+    const row = await crmService.createPersonPaymentMethod(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, insertPersonPaymentMethodSchema),
+    )
+    if (!row) return c.json({ error: "Person not found" }, 404)
+    return c.json({ data: row }, 201)
+  })
+  .patch("/person-payment-methods/:id", async (c) => {
+    const row = await crmService.updatePersonPaymentMethod(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updatePersonPaymentMethodSchema),
+    )
+    if (!row) return c.json({ error: "Payment method not found" }, 404)
+    return c.json({ data: row })
+  })
+  .delete("/person-payment-methods/:id", async (c) => {
+    const row = await crmService.deletePersonPaymentMethod(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Payment method not found" }, 404)
     return c.json({ success: true })
   })
   .get("/people/:id/communications", async (c) => {

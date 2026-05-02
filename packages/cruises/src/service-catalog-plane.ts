@@ -79,8 +79,8 @@ export function cruiseRowToProjection(
     ["nights", row.nights],
     ["embarkPortFacilityId", row.embarkPortFacilityId],
     ["disembarkPortFacilityId", row.disembarkPortFacilityId],
-    ["regions", row.regions],
-    ["themes", row.themes],
+    ["regions[]", row.regions],
+    ["themes[]", row.themes],
 
     // Volatile-indexed (browse-time approximations)
     ["lowestPriceCached", row.lowestPriceCached],

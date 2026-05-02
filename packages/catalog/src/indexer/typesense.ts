@@ -34,6 +34,7 @@ export interface TypesenseClient {
     create(schema: TypesenseCollectionSchema): Promise<void>
     update(schema: Partial<TypesenseCollectionSchema>): Promise<void>
     delete(): Promise<void>
+    retrieve(): Promise<TypesenseCollectionSchema>
     documents(): {
       import(documents: unknown[], options?: { action?: "upsert" | "create" }): Promise<unknown>
       delete(query: { filter_by: string }): Promise<unknown>
@@ -257,6 +258,63 @@ function parsePageCursor(cursor: string | undefined): number | undefined {
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : undefined
 }
 
+/**
+ * Recognizes errors that originate from Typesense returning 404 when the
+ * collection doesn't exist. The fetch-based template client throws Errors
+ * whose message includes the status code; the official `typesense` SDK
+ * throws an `ObjectNotFound` with `httpStatus === 404`. Match either.
+ */
+function isCollectionNotFoundError(err: unknown): boolean {
+  if (!err) return false
+  const status =
+    typeof err === "object" && err !== null && "httpStatus" in err
+      ? (err as { httpStatus?: unknown }).httpStatus
+      : undefined
+  if (status === 404) return true
+  const message = err instanceof Error ? err.message : String(err)
+  return / 404\b/.test(message) && /Not Found/i.test(message)
+}
+
+/**
+ * Fallback used when `search()` is called before `ensureCollection()` has
+ * cached a registry for this vertical. Fetches the live schema from
+ * Typesense and synthesizes a minimal `FieldPolicyRegistry` whose policies
+ * cover every string / string[] field as `merchandisable + indexed-column`.
+ * That gives `buildSearchQuery` a non-empty `query_by` so the search
+ * doesn't 404 on `query_by: "title"`.
+ */
+async function inferRegistryFromCollection(
+  client: TypesenseClient,
+  collectionName: string,
+): Promise<FieldPolicyRegistry> {
+  const schema = await client.collections(collectionName).retrieve()
+  const policies: FieldPolicy[] = []
+  for (const field of schema.fields) {
+    if (field.type !== "string" && field.type !== "string[]") continue
+    if (field.name === "id" || field.name === "text_embedding") continue
+    policies.push({
+      path: field.type === "string[]" ? `${field.name}[]` : field.name,
+      class: "merchandisable",
+      merge: "replace",
+      drift: "low",
+      reindex: "entry",
+      snapshot: "never",
+      query: "indexed-column",
+      localized: false,
+      visibility: ["staff", "customer", "partner", "supplier"],
+      editRole: "marketing",
+      overrideFriction: "none",
+      sourceFreshness: "sync",
+    })
+  }
+  const byPath = new Map(policies.map((p) => [p.path, p]))
+  return {
+    policies,
+    byPath,
+    resolve: (path: string) => byPath.get(path),
+  }
+}
+
 function serializeFilters(filters: SearchFilter[]): string {
   return filters.map(serializeFilter).filter(Boolean).join(" && ")
 }
@@ -289,10 +347,17 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     supportsHybridSearch: vectorDimensions != null,
   }
 
+  // Cache the registry per vertical at `ensureCollection` time so `search`
+  // can build a correct `query_by` against actual schema fields. Without
+  // this, search falls back to `query_by: "title"` and Typesense returns
+  // 404 because the products schema has no `title` field.
+  const registryByVertical = new Map<string, FieldPolicyRegistry>()
+
   return {
     capabilities,
 
     async ensureCollection(slice, registry) {
+      registryByVertical.set(slice.vertical, registry)
       const schema = buildCollectionSchema(slice, registry, {
         vectorDimensions,
         collectionPrefix,
@@ -326,19 +391,36 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
 
     async search(slice, request) {
       const name = collectionName(slice, collectionPrefix)
-      const dummyRegistry: FieldPolicyRegistry = {
-        policies: [],
-        byPath: new Map(),
-        resolve: () => undefined,
+      // Use the registry cached at ensureCollection() time so query_by
+      // points at fields that actually exist in the schema. If a caller
+      // searches before ensureCollection has run for this vertical, fall
+      // back to fetching the live schema and inferring string-typed
+      // fields — slower but at least produces a valid query.
+      let registry: FieldPolicyRegistry | undefined = registryByVertical.get(slice.vertical)
+      if (!registry) {
+        try {
+          registry = await inferRegistryFromCollection(client, name)
+        } catch (err) {
+          // Collection doesn't exist (vertical not indexed yet) — return
+          // empty results instead of propagating a 404. Surfacing search
+          // errors for unindexed verticals is hostile UX; downstream UI
+          // already renders "no results" cleanly.
+          if (isCollectionNotFoundError(err)) {
+            return { hits: [], total: 0, facets: {} }
+          }
+          throw err
+        }
       }
-      // The query needs the registry to know which fields to search;
-      // production callers pass the registry through a closure (see the
-      // search/semantic helper). For low-level direct callers, this falls
-      // back to the request's `query_by` if Typesense can infer it. Here we
-      // assume callers wrap this through the higher-level search helper.
-      const query = buildSearchQuery(request, dummyRegistry)
-      const response = await client.collections(name).documents().search(query)
-      return mapTypesenseResponse(response)
+      const query = buildSearchQuery(request, registry)
+      try {
+        const response = await client.collections(name).documents().search(query)
+        return mapTypesenseResponse(response)
+      } catch (err) {
+        if (isCollectionNotFoundError(err)) {
+          return { hits: [], total: 0, facets: {} }
+        }
+        throw err
+      }
     },
 
     async bulkReindex(slice, stream, _options) {
@@ -403,7 +485,10 @@ function coerceForTypesense(value: unknown): unknown {
 function mapTypesenseResponse(response: TypesenseSearchResponse): SearchResults {
   const hits = response.hits.map((hit) => ({
     id: String(hit.document.id ?? ""),
-    score: hit.text_match,
+    // Wildcard queries (`q=*`) and pure-vector searches don't compute a
+    // `text_match` score — fall back to 0 so downstream consumers always
+    // see a number.
+    score: hit.text_match ?? 0,
     document: {
       id: String(hit.document.id ?? ""),
       fields: hit.document,

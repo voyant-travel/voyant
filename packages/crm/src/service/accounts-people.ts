@@ -8,8 +8,13 @@ import {
   organizations,
   people,
   personNotes,
+  personPaymentMethods,
   segments,
 } from "../schema.js"
+import type {
+  InsertPersonPaymentMethodInput,
+  UpdatePersonPaymentMethodInput,
+} from "../validation.js"
 import {
   type CommunicationListQuery,
   type CreateAddressInput,
@@ -247,6 +252,76 @@ export const peopleAccountsService = {
 
   async deletePersonNote(db: PostgresJsDatabase, id: string) {
     const [row] = await db.delete(personNotes).where(eq(personNotes.id, id)).returning()
+    return row ?? null
+  },
+
+  // ── Payment methods ────────────────────────────────────────────────────
+
+  listPersonPaymentMethods(db: PostgresJsDatabase, personId: string) {
+    return db
+      .select()
+      .from(personPaymentMethods)
+      .where(eq(personPaymentMethods.personId, personId))
+      .orderBy(desc(personPaymentMethods.isDefault), desc(personPaymentMethods.createdAt))
+  },
+
+  async createPersonPaymentMethod(
+    db: PostgresJsDatabase,
+    personId: string,
+    data: InsertPersonPaymentMethodInput,
+  ) {
+    const [existing] = await db
+      .select({ id: people.id })
+      .from(people)
+      .where(eq(people.id, personId))
+      .limit(1)
+    if (!existing) return null
+
+    if (data.isDefault) {
+      // Only one default per person — clear the others first.
+      await db
+        .update(personPaymentMethods)
+        .set({ isDefault: false })
+        .where(eq(personPaymentMethods.personId, personId))
+    }
+    const [row] = await db
+      .insert(personPaymentMethods)
+      .values({ personId, ...data })
+      .returning()
+    return row ?? null
+  },
+
+  async updatePersonPaymentMethod(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdatePersonPaymentMethodInput,
+  ) {
+    if (data.isDefault) {
+      const [target] = await db
+        .select({ personId: personPaymentMethods.personId })
+        .from(personPaymentMethods)
+        .where(eq(personPaymentMethods.id, id))
+        .limit(1)
+      if (target) {
+        await db
+          .update(personPaymentMethods)
+          .set({ isDefault: false })
+          .where(eq(personPaymentMethods.personId, target.personId))
+      }
+    }
+    const [row] = await db
+      .update(personPaymentMethods)
+      .set(data)
+      .where(eq(personPaymentMethods.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deletePersonPaymentMethod(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(personPaymentMethods)
+      .where(eq(personPaymentMethods.id, id))
+      .returning()
     return row ?? null
   },
 

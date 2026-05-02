@@ -1,0 +1,322 @@
+"use client"
+
+import type { FlightOffer, Money, PassengerCounts } from "@voyantjs/flights/contract/types"
+import { Button } from "@voyantjs/ui/components/button"
+import { cn } from "@voyantjs/ui/lib/utils"
+import { Check, Pencil, Plane, Users } from "lucide-react"
+
+import { AirlineLogo } from "./airline-logo"
+
+/**
+ * Per-leg selection passed through the booking journey. Two single-itinerary
+ * offers when round-trip; one when one-way. The shell synthesizes a combined
+ * offer from these at submit time.
+ */
+export interface FlightItinerarySelection {
+  outbound: FlightOffer
+  return?: FlightOffer
+}
+
+/**
+ * Optional ancillary line items rendered nested under the relevant leg.
+ * Phases 2/3 wire bag/seat picks here; for Phase 1 it's just a placeholder
+ * shape so the ledger doesn't need to change later.
+ */
+export interface LedgerLineItem {
+  label: string
+  amount?: Money
+  /** Free-text right-side value (e.g. "Included") when no money applies. */
+  meta?: string
+}
+
+export interface FlightBookingLedgerProps {
+  selection: FlightItinerarySelection
+  passengers: PassengerCounts
+  carrierName?: (iataCode: string) => string | undefined
+  airportName?: (iataCode: string) => string | undefined
+  /** Per-leg ancillary line items (bags / seats / extras). */
+  outboundExtras?: LedgerLineItem[]
+  returnExtras?: LedgerLineItem[]
+  /** Sticky CTA at the bottom — typically "Continue" or "Confirm". */
+  cta?: { label: string; onClick: () => void; disabled?: boolean; loading?: boolean }
+  /** Per-leg edit handlers — open the search results back up. */
+  onEditOutbound?: () => void
+  onEditReturn?: () => void
+  /** Step status hints — checks shown next to each section name. */
+  completedSections?: ReadonlySet<LedgerSection>
+  className?: string
+}
+
+export type LedgerSection =
+  | "flights"
+  | "passengers"
+  | "bags"
+  | "seats"
+  | "services"
+  | "documents"
+  | "billing"
+  | "payment"
+
+/**
+ * Sticky right-rail price ledger. Mirrors the running total + per-leg
+ * breakdown that real airline checkouts use (Wizz/Ryanair/Lufthansa). One
+ * source of truth for the total — the shell passes ancillary picks down via
+ * `outboundExtras`/`returnExtras`, so the ledger doesn't need to know how
+ * they were collected.
+ */
+export function FlightBookingLedger({
+  selection,
+  passengers,
+  carrierName,
+  airportName,
+  outboundExtras,
+  returnExtras,
+  cta,
+  onEditOutbound,
+  onEditReturn,
+  completedSections,
+  className,
+}: FlightBookingLedgerProps) {
+  const total = computeTotal(selection, outboundExtras, returnExtras)
+  const paxTotal = (passengers.adults ?? 0) + (passengers.children ?? 0) + (passengers.infants ?? 0)
+
+  return (
+    <aside
+      className={cn(
+        "flex w-full max-w-sm flex-col gap-4 rounded-xl border bg-card p-4 shadow-sm",
+        className,
+      )}
+    >
+      <LegBlock
+        label={selection.return ? "Outbound" : "Flight"}
+        offer={selection.outbound}
+        carrierName={carrierName}
+        airportName={airportName}
+        extras={outboundExtras}
+        onEdit={onEditOutbound}
+        complete={completedSections?.has("flights")}
+      />
+      {selection.return && (
+        <LegBlock
+          label="Return"
+          offer={selection.return}
+          carrierName={carrierName}
+          airportName={airportName}
+          extras={returnExtras}
+          onEdit={onEditReturn}
+          complete={completedSections?.has("flights")}
+        />
+      )}
+
+      <SectionRow
+        icon={<Users className="h-3.5 w-3.5" />}
+        label="Passengers"
+        right={`${paxTotal} pax`}
+        complete={completedSections?.has("passengers")}
+      />
+
+      <PlaceholderSections completed={completedSections} />
+
+      <div className="mt-2 flex items-center justify-between border-t pt-3">
+        <span className="font-medium text-sm">Total</span>
+        <span className="font-semibold text-lg tabular-nums">
+          {formatMoney(total.amount, total.currency)}
+        </span>
+      </div>
+
+      {cta && (
+        <Button className="w-full" onClick={cta.onClick} disabled={cta.disabled || cta.loading}>
+          {cta.loading ? "Working…" : cta.label}
+        </Button>
+      )}
+    </aside>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+function LegBlock({
+  label,
+  offer,
+  carrierName,
+  airportName,
+  extras,
+  onEdit,
+  complete,
+}: {
+  label: string
+  offer: FlightOffer
+  carrierName?: (iataCode: string) => string | undefined
+  airportName?: (iataCode: string) => string | undefined
+  extras?: LedgerLineItem[]
+  onEdit?: () => void
+  complete?: boolean
+}) {
+  const itin = offer.itineraries[0]
+  if (!itin) return null
+  const segs = itin.segments
+  const first = segs[0]
+  const last = segs[segs.length - 1]
+  if (!first || !last) return null
+  const carriers = Array.from(new Set(segs.map((s) => s.carrierCode)))
+  const stops = segs.length - 1
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          {complete ? (
+            <Check className="h-3.5 w-3.5 text-emerald-600" />
+          ) : (
+            <Plane className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+          <span className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground">
+            {label}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-sm tabular-nums">
+            {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency)}
+          </span>
+          {onEdit && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-1.5 text-muted-foreground"
+              onClick={onEdit}
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center -space-x-1">
+          {carriers.map((code) => (
+            <AirlineLogo key={code} iataCode={code} name={carrierName?.(code)} size={18} />
+          ))}
+        </div>
+        <div className="flex min-w-0 flex-col leading-tight">
+          <span className="truncate font-medium text-sm">
+            {airportName?.(first.departure.iataCode) ?? first.departure.iataCode} →{" "}
+            {airportName?.(last.arrival.iataCode) ?? last.arrival.iataCode}
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            {formatDate(first.departure.at)} · {formatTime(first.departure.at)} –{" "}
+            {formatTime(last.arrival.at)} ·{" "}
+            {stops === 0 ? "Nonstop" : `${stops} stop${stops > 1 ? "s" : ""}`}
+          </span>
+        </div>
+      </div>
+
+      {extras && extras.length > 0 && (
+        <ul className="flex flex-col gap-1 border-t pt-2">
+          {extras.map((x, i) => (
+            <li
+              // biome-ignore lint/suspicious/noArrayIndexKey: positional list
+              key={i}
+              className="flex items-center justify-between text-muted-foreground text-xs"
+            >
+              <span>{x.label}</span>
+              <span className="tabular-nums">
+                {x.amount ? formatMoney(x.amount.amount, x.amount.currency) : (x.meta ?? "")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function SectionRow({
+  icon,
+  label,
+  right,
+  complete,
+}: {
+  icon: React.ReactNode
+  label: string
+  right?: string
+  complete?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between border-t pt-3">
+      <span className="flex items-center gap-1.5 font-medium text-[11px] uppercase tracking-wider text-muted-foreground">
+        {complete ? (
+          <Check className="h-3.5 w-3.5 text-emerald-600" />
+        ) : (
+          <span className="text-muted-foreground">{icon}</span>
+        )}
+        {label}
+      </span>
+      {right && <span className="text-muted-foreground text-xs">{right}</span>}
+    </div>
+  )
+}
+
+function PlaceholderSections({ completed }: { completed?: ReadonlySet<LedgerSection> }) {
+  // Phase 1 only renders Passengers above; later phases will replace this with
+  // bags/seats/services/documents/billing rows. The shape stays consistent so
+  // the ledger doesn't need to change later.
+  if (!completed) return null
+  const items: { id: LedgerSection; label: string }[] = []
+  if (completed.has("billing")) items.push({ id: "billing", label: "Billing" })
+  if (completed.has("payment")) items.push({ id: "payment", label: "Payment" })
+  if (items.length === 0) return null
+  return (
+    <>
+      {items.map((it) => (
+        <SectionRow key={it.id} icon={<span />} label={it.label} complete={completed.has(it.id)} />
+      ))}
+    </>
+  )
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function computeTotal(
+  selection: FlightItinerarySelection,
+  outboundExtras?: LedgerLineItem[],
+  returnExtras?: LedgerLineItem[],
+): Money {
+  const currency = selection.outbound.totalPrice.currency
+  let amount = num(selection.outbound.totalPrice.amount)
+  if (selection.return) amount += num(selection.return.totalPrice.amount)
+  for (const x of outboundExtras ?? []) amount += num(x.amount?.amount)
+  for (const x of returnExtras ?? []) amount += num(x.amount?.amount)
+  return { amount: amount.toFixed(2), currency }
+}
+
+function num(v: string | undefined): number {
+  if (!v) return 0
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function formatMoney(amount: string, currency: string): string {
+  const n = Number(amount)
+  if (!Number.isFinite(n)) return `${amount} ${currency}`
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(n)
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(d)
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(d)
+}

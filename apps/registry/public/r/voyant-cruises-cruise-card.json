@@ -3,15 +3,8 @@
   "name": "voyant-cruises-cruise-card",
   "title": "Cruise Card",
   "description": "Display card for a cruise summary — line, ship, ports, lowest price, with provenance badge for external entries.",
-  "dependencies": [
-    "lucide-react",
-    "@voyantjs/cruises-react"
-  ],
-  "registryDependencies": [
-    "badge",
-    "card",
-    "voyant-cruises-external-badge"
-  ],
+  "dependencies": ["lucide-react", "@voyantjs/cruises-react"],
+  "registryDependencies": ["badge", "card", "voyant-cruises-external-badge"],
   "files": [
     {
       "path": "registry/cruises/cruise-card.tsx",

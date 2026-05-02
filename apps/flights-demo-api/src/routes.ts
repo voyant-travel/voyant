@@ -1,0 +1,165 @@
+/**
+ * REST surface for the demo flight service. Mirrors the methods on
+ * `FlightConnectorAdapter` so the plugin client (`@voyantjs/plugin-flights-demo`)
+ * is a thin fetch wrapper. Each endpoint maps 1:1 to an adapter call.
+ *
+ *   POST   /search                       searchFlights
+ *   POST   /price                        priceOffer
+ *   POST   /book                         bookFlight
+ *   GET    /orders                       listOrders
+ *   GET    /orders/:orderId              getOrder
+ *   POST   /orders/:orderId/cancel       cancelOrder
+ *   POST   /ancillaries                  getAncillaries
+ *   POST   /seatmap                      getSeatMap
+ */
+
+import type {
+  AncillaryRequest,
+  FlightBookRequest,
+  FlightOrder,
+  FlightOrderStatus,
+  FlightSearchRequest,
+  SeatMapRequest,
+} from "@voyantjs/flights/contract/types"
+import { Hono } from "hono"
+
+import type { DemoFlightsDb } from "./db.js"
+import * as store from "./store.js"
+import {
+  applySearchFilters,
+  findSegmentInOffer,
+  parsePageCursor,
+  synthesizeAncillaryCatalog,
+  synthesizeOffers,
+  synthesizeOrder,
+  synthesizeSeatMap,
+} from "./synthesis.js"
+
+interface PriceRequest {
+  offerId: string
+  offer?: import("@voyantjs/flights/contract/types").FlightOffer
+}
+
+const DEFAULT_PAGE_SIZE = 20
+
+export function createRoutes(db: DemoFlightsDb): Hono {
+  const app = new Hono()
+
+  app.get("/health", (c) => c.json({ ok: true, service: "flights-demo-api" }))
+
+  // ── Search ────────────────────────────────────────────────────────────
+  app.post("/search", async (c) => {
+    const body = await c.req.json<FlightSearchRequest>()
+    const pool = synthesizeOffers(body)
+    const filtered = applySearchFilters(pool, body)
+    const limit = body.pagination?.limit ?? DEFAULT_PAGE_SIZE
+    const page = parsePageCursor(body.pagination?.cursor)
+    const start = (page - 1) * limit
+    const slice = filtered.slice(start, start + limit)
+    const hasMore = start + limit < filtered.length
+    return c.json({
+      offers: slice,
+      pagination: {
+        total: filtered.length,
+        hasMore,
+        ...(hasMore ? { cursor: String(page + 1) } : {}),
+      },
+    })
+  })
+
+  // ── Price ─────────────────────────────────────────────────────────────
+  app.post("/price", async (c) => {
+    const body = await c.req.json<PriceRequest>()
+    if (!body.offer) {
+      return c.json({ error: "offer payload is required for /price" }, 400)
+    }
+    return c.json({ offer: body.offer, valid: true })
+  })
+
+  // ── Book ──────────────────────────────────────────────────────────────
+  app.post("/book", async (c) => {
+    const body = await c.req.json<FlightBookRequest>()
+    if (!body.offer) {
+      return c.json({ error: "offer payload is required for /book" }, 400)
+    }
+    const order = synthesizeOrder(body)
+    await store.insertOrder(db, order, body)
+    return c.json({ order })
+  })
+
+  // ── List orders ───────────────────────────────────────────────────────
+  app.get("/orders", async (c) => {
+    const url = new URL(c.req.url)
+    const limitParam = url.searchParams.get("limit")
+    const cursor = url.searchParams.get("cursor") ?? undefined
+    const search = url.searchParams.get("q") ?? url.searchParams.get("search") ?? undefined
+    const statusParam = url.searchParams.getAll("status")
+    const status = statusParam.length > 0 ? (statusParam as FlightOrderStatus[]) : undefined
+    const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined
+    const result = await store.listOrders(db, {
+      ...(limit !== undefined ? { limit } : {}),
+      ...(cursor !== undefined ? { cursor } : {}),
+      ...(search !== undefined ? { search } : {}),
+      ...(status !== undefined ? { status } : {}),
+    })
+    return c.json({
+      orders: result.orders,
+      pagination: {
+        total: result.total,
+        hasMore: result.hasMore,
+        ...(result.nextCursor ? { cursor: result.nextCursor } : {}),
+      },
+    })
+  })
+
+  // ── Get order ─────────────────────────────────────────────────────────
+  app.get("/orders/:orderId", async (c) => {
+    const order = await store.getOrder(db, c.req.param("orderId"))
+    if (!order) return c.json({ error: "Order not found" }, 404)
+    return c.json({ order })
+  })
+
+  // ── Cancel order ──────────────────────────────────────────────────────
+  app.post("/orders/:orderId/cancel", async (c) => {
+    const orderId = c.req.param("orderId")
+    const existing = await store.getOrder(db, orderId)
+    if (!existing) return c.json({ error: "Order not found" }, 404)
+    const cancelled: FlightOrder = {
+      ...existing,
+      status: "cancelled" satisfies FlightOrderStatus,
+      updatedAt: new Date().toISOString(),
+    }
+    await store.updateOrder(db, orderId, cancelled)
+    return c.json({ order: cancelled, refundedAmount: existing.totalPrice })
+  })
+
+  // ── Ancillaries ───────────────────────────────────────────────────────
+  app.post("/ancillaries", async (c) => {
+    const body = await c.req.json<AncillaryRequest>()
+    if (!body.offer) {
+      return c.json({ error: "offer payload is required for /ancillaries" }, 400)
+    }
+    return c.json({
+      catalog: synthesizeAncillaryCatalog(body.offer),
+      validUntil: new Date(Date.now() + 30 * 60_000).toISOString(),
+    })
+  })
+
+  // ── Seat map ──────────────────────────────────────────────────────────
+  app.post("/seatmap", async (c) => {
+    const body = await c.req.json<SeatMapRequest>()
+    if (!body.offer) {
+      return c.json({ error: "offer payload is required for /seatmap" }, 400)
+    }
+    const segment = findSegmentInOffer(body.offer, body.segmentId)
+    if (!segment) {
+      return c.json({ error: `Segment ${body.segmentId} not found on offer ${body.offerId}` }, 404)
+    }
+    return c.json({
+      seatMap: synthesizeSeatMap(segment),
+      validUntil: new Date(Date.now() + 30 * 60_000).toISOString(),
+    })
+  })
+
+  return app
+}

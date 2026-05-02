@@ -53,3 +53,47 @@ KMS_ENV_KEY="<generate with: openssl rand -base64 32>"
 # KMS_PROVIDER=gcp only: GCP service-account private key as PEM,
 # newlines escaped as \n. Not needed when KMS_PROVIDER=local.
 GCP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Netopia (pay-by-link card processor). `NETOPIA_MODE` picks the API base
+# (`sandbox` → https://sandbox.netopia-payments.com/pay, `live` →
+# https://secure.mobilpay.ro/pay). Defaults to `sandbox` so a half-
+# configured prod deploy fails into the safer environment instead of
+# charging real cards. `NETOPIA_URL` overrides the resolved base — only
+# set it for staging proxies or test mocks.
+#
+# Sandbox + live both require API key + POS signature issued by Netopia.
+# `NETOPIA_NOTIFY_URL` must be a publicly reachable HTTPS endpoint that
+# proxies to `${API_BASE_URL}/v1/admin/finance/providers/netopia/callback`.
+NETOPIA_MODE="sandbox"
+# NETOPIA_URL=""
+NETOPIA_API_KEY=""
+NETOPIA_POS_SIGNATURE=""
+# Webhook receiver — genuinely deploy-wide. Netopia POSTs payment results
+# here, so it must be a single publicly reachable HTTPS endpoint resolving
+# to ${API_BASE_URL}/v1/admin/finance/providers/netopia/callback.
+NETOPIA_NOTIFY_URL=""
+# Default post-payment browser landing. Operator-initiated send-link flows
+# usually point this at our public ${APP_URL}/pay landing; storefronts
+# override per session via useCollectPayment({ returnUrl, cancelUrl }).
+NETOPIA_REDIRECT_URL=""
+# Per-session language is supplied by the operator UI at collection time
+# (CollectPaymentDialog.defaultPayerLanguage). NETOPIA_LANGUAGE is only the
+# deploy-wide fallback for callers that don't pass one.
+# NETOPIA_LANGUAGE="en"
+
+# Standalone flights demo service (apps/flights-demo-api). Run it with
+# `pnpm --filter flights-demo-api dev` (defaults to :3320). Owns its own
+# Postgres — orders persist there, not in this template's DB. Swap to a
+# real GDS connector by replacing the adapter in src/api/flights.ts.
+FLIGHTS_DEMO_API_URL="http://localhost:3320"
+
+# Manual bank-transfer block rendered on the public payment landing page.
+# Both BENEFICIARY and IBAN must be set, otherwise the tab is hidden.
+# Currency is NOT configurable here — it always tracks the booking's
+# invoice currency. NOTES is deploy-wide boilerplate (e.g. "Please
+# include your invoice number in the wire reference"); per-call notes
+# from useCollectPayment({ notes }) override it.
+BANK_TRANSFER_BENEFICIARY=""
+BANK_TRANSFER_IBAN=""
+BANK_TRANSFER_BANK_NAME=""
+BANK_TRANSFER_NOTES=""

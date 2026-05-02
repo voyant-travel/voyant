@@ -3,15 +3,8 @@
   "name": "voyant-charters-product-card",
   "title": "Charter Product Card",
   "description": "Display card for a charter brand/product summary — line, yacht, regions, lowest price, with provenance badge for external entries.",
-  "dependencies": [
-    "lucide-react",
-    "@voyantjs/charters-react"
-  ],
-  "registryDependencies": [
-    "badge",
-    "card",
-    "voyant-charters-external-badge"
-  ],
+  "dependencies": ["lucide-react", "@voyantjs/charters-react"],
+  "registryDependencies": ["badge", "card", "voyant-charters-external-badge"],
   "files": [
     {
       "path": "registry/charters/charter-product-card.tsx",

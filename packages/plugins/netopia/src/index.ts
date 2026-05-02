@@ -1,6 +1,7 @@
 export { createNetopiaCheckoutStarter } from "./checkout.js"
 export {
   createNetopiaClient,
+  NETOPIA_API_BASES,
   type NetopiaClientApi,
   type NetopiaClientOptions,
   resolveNetopiaRuntimeOptions,
@@ -16,6 +17,7 @@ export {
   createNetopiaFinanceRoutes,
   NETOPIA_RUNTIME_CONTAINER_KEY,
   netopiaFinanceExtension,
+  netopiaHonoBundle,
   netopiaHonoPlugin as createNetopiaAdapterBundle,
   netopiaHonoPlugin,
 } from "./plugin.js"
@@ -32,6 +34,7 @@ export type {
   NetopiaBrowserData,
   NetopiaFetch,
   NetopiaInstallments,
+  NetopiaMode,
   NetopiaPaymentInstrument,
   NetopiaPaymentOptions,
   NetopiaProductLine,

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: flights-demo-pg
+    environment:
+      POSTGRES_PASSWORD: demo
+      POSTGRES_USER: postgres
+      POSTGRES_DB: flights_demo
+    ports:
+      - "5435:5432"
+    volumes:
+      - flights_demo_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flights_demo"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+volumes:
+  flights_demo_pg_data:

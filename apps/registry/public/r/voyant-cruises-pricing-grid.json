@@ -3,13 +3,8 @@
   "name": "voyant-cruises-pricing-grid",
   "title": "Cruise Pricing Grid",
   "description": "Cabin × occupancy pricing matrix for a sailing — the load-bearing component of any cruise booking flow.",
-  "dependencies": [
-    "@voyantjs/cruises-react"
-  ],
-  "registryDependencies": [
-    "badge",
-    "table"
-  ],
+  "dependencies": ["@voyantjs/cruises-react"],
+  "registryDependencies": ["badge", "table"],
   "files": [
     {
       "path": "registry/cruises/pricing-grid.tsx",

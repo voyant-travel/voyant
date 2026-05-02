@@ -1,0 +1,217 @@
+"use client"
+
+import type { FlightOffer, Itinerary } from "@voyantjs/flights/contract/types"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { cn } from "@voyantjs/ui/lib/utils"
+import { Plane } from "lucide-react"
+
+import { AirlineLogo } from "./airline-logo"
+
+export interface FlightOfferRowProps {
+  offer: FlightOffer
+  /** Click handler — typically opens the detail sheet. */
+  onClick?: (offer: FlightOffer) => void
+  /** "Select" CTA — when set, renders a primary button alongside the price. */
+  onSelect?: (offer: FlightOffer) => void
+  /** Customize the select CTA label. Defaults to "Select". */
+  selectLabel?: string
+  /** Optional carrier name resolver — used for the logo `alt` text. */
+  carrierName?: (iataCode: string) => string | undefined
+  /** Highlight ring (e.g. when this offer is currently picked). */
+  selected?: boolean
+  className?: string
+}
+
+/**
+ * One row in the search-results list. Lays out each itinerary on its own
+ * line: carriers · departure time · journey · arrival time · stops ·
+ * duration. Total price sits on the right with an optional "Select" CTA.
+ *
+ * For per-leg searches, each offer carries one itinerary; for combined
+ * round-trip searches it carries two. The renderer handles both shapes.
+ */
+export function FlightOfferRow({
+  offer,
+  onClick,
+  onSelect,
+  selectLabel = "Select",
+  carrierName,
+  selected,
+  className,
+}: FlightOfferRowProps) {
+  const interactive = !!onClick
+  const Container: "button" | "div" = interactive ? "button" : "div"
+  return (
+    <Container
+      type={interactive ? "button" : undefined}
+      onClick={onClick ? () => onClick(offer) : undefined}
+      className={cn(
+        "flex w-full items-stretch gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors",
+        interactive && "hover:border-primary/40 hover:bg-accent/30",
+        selected && "border-primary ring-1 ring-primary/40",
+        className,
+      )}
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        {offer.itineraries.map((itin, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return)
+          <ItineraryRow key={i} itinerary={itin} carrierName={carrierName} />
+        ))}
+      </div>
+      <div className="flex shrink-0 flex-col items-end justify-center gap-2 border-l pl-4">
+        <div className="font-semibold text-2xl tabular-nums">
+          {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency)}
+        </div>
+        <PriceFootnote offer={offer} />
+        {onSelect && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onSelect(offer)
+            }}
+            className="mt-1 inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 font-medium text-primary-foreground text-xs hover:bg-primary/90"
+          >
+            {selectLabel}
+          </button>
+        )}
+      </div>
+    </Container>
+  )
+}
+
+function PriceFootnote({ offer }: { offer: FlightOffer }) {
+  const totalPax = offer.fareBreakdowns.reduce((n, b) => n + b.passengerCount, 0)
+  const adult = offer.fareBreakdowns.find((b) => b.passengerType === "adult")
+  if (totalPax <= 1) {
+    return <div className="text-muted-foreground text-xs">total</div>
+  }
+  return (
+    <div className="flex flex-col items-end gap-0.5 text-muted-foreground text-xs">
+      <span>total · {totalPax} pax</span>
+      {adult && (
+        <span>
+          {formatMoney(adult.total.amount, adult.total.currency)}
+          <span className="ml-0.5 text-muted-foreground/70">/adult</span>
+        </span>
+      )}
+    </div>
+  )
+}
+
+function ItineraryRow({
+  itinerary,
+  carrierName,
+}: {
+  itinerary: Itinerary
+  carrierName?: (iataCode: string) => string | undefined
+}) {
+  const segs = itinerary.segments
+  const first = segs[0]
+  const last = segs[segs.length - 1]
+  if (!first || !last) return null
+
+  const carriers = Array.from(new Set(segs.map((s) => s.carrierCode)))
+  const stops = segs.length - 1
+  const hasCodeshare = segs.some(
+    (s) => s.operatingCarrierCode != null && s.operatingCarrierCode !== s.carrierCode,
+  )
+  const hasInterline = carriers.length > 1
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center -space-x-1.5">
+        {carriers.map((code) => (
+          <AirlineLogo key={code} iataCode={code} name={carrierName?.(code)} size={28} />
+        ))}
+      </div>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <Endpoint at={first.departure.at} iata={first.departure.iataCode} />
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <div className="text-[11px] text-muted-foreground">
+            {formatDuration(itinerary.duration)}
+          </div>
+          <div className="flex w-full items-center gap-1.5">
+            <div className="h-px flex-1 bg-border" />
+            <Plane className="h-3 w-3 text-muted-foreground" />
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+            {stops === 0 ? (
+              <span className="font-medium text-emerald-600">Nonstop</span>
+            ) : (
+              <span>
+                {stops} stop{stops > 1 ? "s" : ""} via{" "}
+                {segs
+                  .slice(0, -1)
+                  .map((s) => s.arrival.iataCode)
+                  .join(", ")}
+              </span>
+            )}
+            {hasInterline && (
+              <Badge variant="secondary" className="px-1.5 py-0 text-[9px]">
+                Interline
+              </Badge>
+            )}
+            {hasCodeshare && (
+              <Badge variant="secondary" className="px-1.5 py-0 text-[9px]">
+                Codeshare
+              </Badge>
+            )}
+          </div>
+        </div>
+        <Endpoint at={last.arrival.at} iata={last.arrival.iataCode} align="end" />
+      </div>
+      <Badge variant="outline" className="shrink-0 capitalize">
+        {first.cabin.replace("_", " ")}
+      </Badge>
+    </div>
+  )
+}
+
+function Endpoint({
+  at,
+  iata,
+  align = "start",
+}: {
+  at: string
+  iata: string
+  align?: "start" | "end"
+}) {
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 flex-col leading-tight",
+        align === "end" ? "items-end" : "items-start",
+      )}
+    >
+      <span className="font-semibold text-base tabular-nums">{formatTime(at)}</span>
+      <span className="font-mono text-muted-foreground text-xs">{iata}</span>
+    </div>
+  )
+}
+
+function formatMoney(amount: string, currency: string): string {
+  const n = Number(amount)
+  if (!Number.isFinite(n)) return `${amount} ${currency}`
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(n)
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(d)
+}
+
+function formatDuration(iso: string | undefined): string {
+  if (!iso) return ""
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?$/.exec(iso)
+  if (!m) return iso
+  const h = m[1] ? `${m[1]}h` : ""
+  const min = m[2] ? `${m[2]}m` : ""
+  return [h, min].filter(Boolean).join(" ") || iso
+}

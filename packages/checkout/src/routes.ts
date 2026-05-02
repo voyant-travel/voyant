@@ -54,7 +54,7 @@ export type CheckoutRouteRuntime = {
 
 export const CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY = "providers.checkout.runtime"
 
-export function createCheckoutRoutes(options: CheckoutRoutesOptions = {}) {
+function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: CheckoutRoutesOptions) {
   function getRuntime(
     bindings: Record<string, unknown>,
     resolveFromContainer?: (key: string) => CheckoutRouteRuntime | undefined,
@@ -65,7 +65,7 @@ export function createCheckoutRoutes(options: CheckoutRoutesOptions = {}) {
     )
   }
 
-  return new Hono<Env>()
+  return app
     .post("/bookings/:bookingId/collection-plan", async (c) => {
       try {
         const plan = await previewCheckoutCollection(
@@ -141,12 +141,17 @@ export function createCheckoutRoutes(options: CheckoutRoutesOptions = {}) {
     })
 }
 
-export function createCheckoutAdminRoutes() {
-  return new Hono<Env>().get("/bookings/:bookingId/reminder-runs", async (c) => {
+export function createCheckoutRoutes(options: CheckoutRoutesOptions = {}) {
+  return attachCollectionRoutes(new Hono<Env>(), options)
+}
+
+export function createCheckoutAdminRoutes(options: CheckoutRoutesOptions = {}) {
+  const app = new Hono<Env>().get("/bookings/:bookingId/reminder-runs", async (c) => {
     const query = parseQuery(c, checkoutReminderRunListQuerySchema)
 
     return c.json(await listBookingReminderRuns(c.get("db"), c.req.param("bookingId"), query))
   })
+  return attachCollectionRoutes(app, options)
 }
 
 export const checkoutModule: Module = {
@@ -167,7 +172,7 @@ export function createCheckoutHonoModule(options: CheckoutRoutesOptions = {}): H
   return {
     module,
     publicRoutes: createCheckoutRoutes(options),
-    adminRoutes: createCheckoutAdminRoutes(),
+    adminRoutes: createCheckoutAdminRoutes(options),
   }
 }
 

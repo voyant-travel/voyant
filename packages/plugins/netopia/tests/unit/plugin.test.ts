@@ -127,7 +127,7 @@ describe("netopiaHonoPlugin.bootstrap", () => {
       eventBus: createEventBus(),
     })
 
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/NETOPIA_URL/))
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/NETOPIA_API_KEY/))
     expect(() => container.resolve(NETOPIA_RUNTIME_CONTAINER_KEY)).toThrow()
   })
 
@@ -154,7 +154,7 @@ describe("netopiaHonoPlugin.bootstrap", () => {
     const res = await app.request("/providers/netopia/config", { method: "GET" })
     expect(res.status).toBe(500)
     const body = (await res.json()) as { error: string }
-    expect(body.error).toMatch(/NETOPIA_URL/)
+    expect(body.error).toMatch(/NETOPIA_API_KEY/)
   })
 })
 
@@ -463,17 +463,29 @@ describe("netopiaService.handleCallback", () => {
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 
-  it("fails when callback amount does not match the stored session", async () => {
+  it("completes the session even when the callback currency differs from the order", async () => {
+    // Netopia auto-converts non-RON orders into RON for processing — an
+    // EUR session legitimately receives a RON-denominated callback. The
+    // handler trusts the status (orderID is the unguessable bearer), not
+    // the converted amount/currency. See `service-callback.ts` comment.
     vi.spyOn(financeService, "listPaymentSessions").mockResolvedValue({
-      data: [{ ...baseSession, provider: "netopia", externalReference: "client_ref_123" }],
+      data: [
+        {
+          ...baseSession,
+          currency: "EUR",
+          provider: "netopia",
+          externalReference: "client_ref_123",
+        },
+      ],
       total: 1,
       limit: 1,
       offset: 0,
     })
-    const failSpy = vi.spyOn(financeService, "failPaymentSession").mockResolvedValue({
+    const completeSpy = vi.spyOn(financeService, "completePaymentSession").mockResolvedValue({
       ...baseSession,
+      currency: "EUR",
       provider: "netopia",
-      status: "failed",
+      status: "paid",
       externalReference: "client_ref_123",
     })
 
@@ -491,14 +503,8 @@ describe("netopiaService.handleCallback", () => {
       runtimeOptions,
     )
 
-    expect(result.action).toBe("failed")
-    expect(failSpy).toHaveBeenCalledWith(
-      {} as never,
-      baseSession.id,
-      expect.objectContaining({
-        failureCode: "amount_or_currency_mismatch",
-      }),
-    )
+    expect(result.action).toBe("completed")
+    expect(completeSpy).toHaveBeenCalledTimes(1)
   })
 
   it("treats duplicate success callbacks as idempotent", async () => {

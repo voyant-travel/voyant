@@ -7,6 +7,13 @@ import viteReact from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
 const config = defineConfig({
+  // Allow Cloudflare-tunnel / ngrok hostnames to reach the dev server.
+  // Vite's default rejects any Host header that isn't localhost, which
+  // breaks Netopia (and other) webhooks delivered through a public tunnel.
+  // `true` allows everything — fine for dev, never for production.
+  server: {
+    allowedHosts: true,
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
