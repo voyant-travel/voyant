@@ -186,3 +186,14 @@ export const bookingExtrasRelations = relations(bookingExtras, ({ one }) => ({
     references: [optionExtraConfigs.id],
   }),
 }))
+
+// ─── Sourced-content cache ──────────────────────────────────────────
+// Re-exported here so templates pick it up via the package's `./schema`
+// entry without needing a separate config entry.
+export {
+  EXTRAS_CONTENT_MARKET_ANY,
+  type ExtrasSourcedContentFetchStatus,
+  extrasSourcedContentTable,
+  type InsertExtrasSourcedContent,
+  type SelectExtrasSourcedContent,
+} from "./schema-sourced-content.js"

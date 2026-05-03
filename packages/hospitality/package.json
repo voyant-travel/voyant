@@ -9,7 +9,10 @@
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
-    "./service-catalog-plane": "./src/service-catalog-plane.ts"
+    "./service-catalog-plane": "./src/service-catalog-plane.ts",
+    "./content-shape": "./src/content-shape.ts",
+    "./service-content": "./src/service-content.ts",
+    "./service-content-synthesizer": "./src/service-content-synthesizer.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
