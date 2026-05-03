@@ -49,6 +49,7 @@ import { Route as WorkspaceProductsCategoriesRouteImport } from './routes/_works
 import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/products/$id'
 import { Route as WorkspacePeopleIdRouteImport } from './routes/_workspace/people/$id'
 import { Route as WorkspaceOrganizationsIdRouteImport } from './routes/_workspace/organizations/$id'
+import { Route as WorkspaceOrdersCatalogRouteImport } from './routes/_workspace/orders.catalog'
 import { Route as WorkspaceNotificationsReminderRunsRouteImport } from './routes/_workspace/notifications/reminder-runs'
 import { Route as WorkspaceNotificationsReminderRulesRouteImport } from './routes/_workspace/notifications/reminder-rules'
 import { Route as WorkspaceNotificationsDeliveriesRouteImport } from './routes/_workspace/notifications/deliveries'
@@ -72,6 +73,7 @@ import { Route as WorkspaceFlightsBookOfferIdRouteImport } from './routes/_works
 import { Route as WorkspaceFinanceInvoicesIdRouteImport } from './routes/_workspace/finance/invoices/$id'
 import { Route as WorkspaceAvailabilityStartTimesIdRouteImport } from './routes/_workspace/availability/start-times/$id'
 import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_workspace/availability/rules/$id'
+import { Route as WorkspaceCatalogBookEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.book.$entityModule.$entityId'
 
 const PayRoute = PayRouteImport.update({
   id: '/pay',
@@ -281,6 +283,11 @@ const WorkspaceOrganizationsIdRoute =
     path: '/organizations/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceOrdersCatalogRoute = WorkspaceOrdersCatalogRouteImport.update({
+  id: '/orders/catalog',
+  path: '/orders/catalog',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
 const WorkspaceNotificationsReminderRunsRoute =
   WorkspaceNotificationsReminderRunsRouteImport.update({
     id: '/notifications/reminder-runs',
@@ -417,6 +424,12 @@ const WorkspaceAvailabilityRulesIdRoute =
     path: '/availability/rules/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceCatalogBookEntityModuleEntityIdRoute =
+  WorkspaceCatalogBookEntityModuleEntityIdRouteImport.update({
+    id: '/catalog_/book/$entityModule/$entityId',
+    path: '/catalog/book/$entityModule/$entityId',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
@@ -439,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
@@ -480,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
   '/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
 }
 export interface FileRoutesByTo {
   '/pay': typeof PayRoute
@@ -501,6 +516,7 @@ export interface FileRoutesByTo {
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
@@ -542,6 +558,7 @@ export interface FileRoutesByTo {
   '/legal/policies': typeof WorkspaceLegalPoliciesIndexRoute
   '/legal/templates': typeof WorkspaceLegalTemplatesIndexRoute
   '/notifications/templates': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -567,6 +584,7 @@ export interface FileRoutesById {
   '/_workspace/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/_workspace/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/_workspace/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/_workspace/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/_workspace/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/_workspace/people/$id': typeof WorkspacePeopleIdRoute
   '/_workspace/products/$id': typeof WorkspaceProductsIdRoute
@@ -608,6 +626,7 @@ export interface FileRoutesById {
   '/_workspace/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
   '/_workspace/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/_workspace/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/_workspace/catalog_/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -632,6 +651,7 @@ export interface FileRouteTypes {
     | '/notifications/deliveries'
     | '/notifications/reminder-rules'
     | '/notifications/reminder-runs'
+    | '/orders/catalog'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
@@ -673,6 +693,7 @@ export interface FileRouteTypes {
     | '/legal/policies/'
     | '/legal/templates/'
     | '/notifications/templates/'
+    | '/catalog/book/$entityModule/$entityId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/pay'
@@ -694,6 +715,7 @@ export interface FileRouteTypes {
     | '/notifications/deliveries'
     | '/notifications/reminder-rules'
     | '/notifications/reminder-runs'
+    | '/orders/catalog'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
@@ -735,6 +757,7 @@ export interface FileRouteTypes {
     | '/legal/policies'
     | '/legal/templates'
     | '/notifications/templates'
+    | '/catalog/book/$entityModule/$entityId'
   id:
     | '__root__'
     | '/(auth)'
@@ -759,6 +782,7 @@ export interface FileRouteTypes {
     | '/_workspace/notifications/deliveries'
     | '/_workspace/notifications/reminder-rules'
     | '/_workspace/notifications/reminder-runs'
+    | '/_workspace/orders/catalog'
     | '/_workspace/organizations/$id'
     | '/_workspace/people/$id'
     | '/_workspace/products/$id'
@@ -800,6 +824,7 @@ export interface FileRouteTypes {
     | '/_workspace/legal/policies/'
     | '/_workspace/legal/templates/'
     | '/_workspace/notifications/templates/'
+    | '/_workspace/catalog_/book/$entityModule/$entityId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1091,6 +1116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceOrganizationsIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/orders/catalog': {
+      id: '/_workspace/orders/catalog'
+      path: '/orders/catalog'
+      fullPath: '/orders/catalog'
+      preLoaderRoute: typeof WorkspaceOrdersCatalogRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/notifications/reminder-runs': {
       id: '/_workspace/notifications/reminder-runs'
       path: '/notifications/reminder-runs'
@@ -1252,6 +1284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAvailabilityRulesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/catalog_/book/$entityModule/$entityId': {
+      id: '/_workspace/catalog_/book/$entityModule/$entityId'
+      path: '/catalog/book/$entityModule/$entityId'
+      fullPath: '/catalog/book/$entityModule/$entityId'
+      preLoaderRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
   }
 }
 
@@ -1319,6 +1358,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceNotificationsDeliveriesRoute: typeof WorkspaceNotificationsDeliveriesRoute
   WorkspaceNotificationsReminderRulesRoute: typeof WorkspaceNotificationsReminderRulesRoute
   WorkspaceNotificationsReminderRunsRoute: typeof WorkspaceNotificationsReminderRunsRoute
+  WorkspaceOrdersCatalogRoute: typeof WorkspaceOrdersCatalogRoute
   WorkspaceOrganizationsIdRoute: typeof WorkspaceOrganizationsIdRoute
   WorkspacePeopleIdRoute: typeof WorkspacePeopleIdRoute
   WorkspaceProductsIdRoute: typeof WorkspaceProductsIdRoute
@@ -1353,6 +1393,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceLegalPoliciesIndexRoute: typeof WorkspaceLegalPoliciesIndexRoute
   WorkspaceLegalTemplatesIndexRoute: typeof WorkspaceLegalTemplatesIndexRoute
   WorkspaceNotificationsTemplatesIndexRoute: typeof WorkspaceNotificationsTemplatesIndexRoute
+  WorkspaceCatalogBookEntityModuleEntityIdRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
@@ -1368,6 +1409,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
     WorkspaceNotificationsReminderRulesRoute,
   WorkspaceNotificationsReminderRunsRoute:
     WorkspaceNotificationsReminderRunsRoute,
+  WorkspaceOrdersCatalogRoute: WorkspaceOrdersCatalogRoute,
   WorkspaceOrganizationsIdRoute: WorkspaceOrganizationsIdRoute,
   WorkspacePeopleIdRoute: WorkspacePeopleIdRoute,
   WorkspaceProductsIdRoute: WorkspaceProductsIdRoute,
@@ -1405,6 +1447,8 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceLegalTemplatesIndexRoute: WorkspaceLegalTemplatesIndexRoute,
   WorkspaceNotificationsTemplatesIndexRoute:
     WorkspaceNotificationsTemplatesIndexRoute,
+  WorkspaceCatalogBookEntityModuleEntityIdRoute:
+    WorkspaceCatalogBookEntityModuleEntityIdRoute,
 }
 
 const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(

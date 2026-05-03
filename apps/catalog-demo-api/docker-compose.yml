@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: catalog-demo-pg
+    environment:
+      POSTGRES_PASSWORD: demo
+      POSTGRES_USER: postgres
+      POSTGRES_DB: catalog_demo
+    ports:
+      - "5437:5432"
+    volumes:
+      - catalog_demo_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d catalog_demo"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+volumes:
+  catalog_demo_pg_data:

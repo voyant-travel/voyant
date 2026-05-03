@@ -1,0 +1,97 @@
+/**
+ * Stable error codes returned from the booking engine.
+ *
+ * Mirrors the catalog plane's `CAPABILITY_NOT_SUPPORTED` convention:
+ * codes are stable strings, callers branch on them, and each carries a
+ * dedicated `Error` subclass for stack-trace clarity.
+ */
+
+/** No SourceAdapter was registered for the row's `source.kind`. */
+export const NO_ADAPTER_REGISTERED = "NO_ADAPTER_REGISTERED" as const
+
+/** The supplied `quoteId` is unknown or already consumed. */
+export const QUOTE_NOT_FOUND = "QUOTE_NOT_FOUND" as const
+
+/** The quote's `expires_at` has passed; caller must re-quote. */
+export const QUOTE_EXPIRED = "QUOTE_EXPIRED" as const
+
+/** The quote's entity_module/entity_id doesn't match the book request. */
+export const QUOTE_MISMATCH = "QUOTE_MISMATCH" as const
+
+/** The adapter returned `failed` for the requested entity. */
+export const RESERVE_FAILED = "RESERVE_FAILED" as const
+
+/** No snapshot row exists for the given (booking_id, entity_*). */
+export const ORDER_NOT_FOUND = "ORDER_NOT_FOUND" as const
+
+/** The order has already been cancelled. */
+export const ORDER_ALREADY_CANCELLED = "ORDER_ALREADY_CANCELLED" as const
+
+export type BookingEngineErrorCode =
+  | typeof NO_ADAPTER_REGISTERED
+  | typeof QUOTE_NOT_FOUND
+  | typeof QUOTE_EXPIRED
+  | typeof QUOTE_MISMATCH
+  | typeof RESERVE_FAILED
+  | typeof ORDER_NOT_FOUND
+  | typeof ORDER_ALREADY_CANCELLED
+
+export class BookingEngineError extends Error {
+  constructor(
+    public readonly code: BookingEngineErrorCode,
+    message: string,
+    public readonly context?: Record<string, unknown>,
+  ) {
+    super(message)
+    this.name = "BookingEngineError"
+  }
+}
+
+export class NoAdapterRegisteredError extends BookingEngineError {
+  constructor(sourceKind: string) {
+    super(NO_ADAPTER_REGISTERED, `no SourceAdapter registered for source.kind = "${sourceKind}"`, {
+      sourceKind,
+    })
+    this.name = "NoAdapterRegisteredError"
+  }
+}
+
+export class QuoteExpiredError extends BookingEngineError {
+  constructor(quoteId: string, expiredAt: Date) {
+    super(QUOTE_EXPIRED, `quote ${quoteId} expired at ${expiredAt.toISOString()}`, {
+      quoteId,
+      expiredAt: expiredAt.toISOString(),
+    })
+    this.name = "QuoteExpiredError"
+  }
+}
+
+export class QuoteMismatchError extends BookingEngineError {
+  constructor(
+    quoteId: string,
+    expected: { entityModule: string; entityId: string },
+    actual: { entityModule: string; entityId: string },
+  ) {
+    super(
+      QUOTE_MISMATCH,
+      `quote ${quoteId} is for ${expected.entityModule}:${expected.entityId} but book request is for ${actual.entityModule}:${actual.entityId}`,
+      { quoteId, expected, actual },
+    )
+    this.name = "QuoteMismatchError"
+  }
+}
+
+export class ReserveFailedError extends BookingEngineError {
+  constructor(
+    public readonly upstreamPayload: unknown,
+    public readonly sourceKind: string,
+    public readonly entityId: string,
+  ) {
+    super(RESERVE_FAILED, `adapter "${sourceKind}" returned failed status for ${entityId}`, {
+      sourceKind,
+      entityId,
+      upstreamPayload,
+    })
+    this.name = "ReserveFailedError"
+  }
+}

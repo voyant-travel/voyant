@@ -44,6 +44,7 @@ import { eq, or } from "drizzle-orm"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
+import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { mountCatalogSearchRoutes } from "./catalog-search"
 import { mountFlightRoutes } from "./flights"
@@ -455,6 +456,7 @@ export const app = createApp<CloudflareBindings>({
 
     mountCatalogMcpRoutes(hono)
     mountCatalogSearchRoutes(hono)
+    mountCatalogBookingRoutes(hono)
     mountFlightRoutes(hono)
   },
 })

@@ -312,6 +312,9 @@ export const PREFIXES = {
   catalog_overlay: "ovly",
   booking_catalog_snapshot: "bcsn",
   catalog_drift_event: "cdrf",
+  catalog_quotes: "cquo",
+  catalog_demo_inventory: "cdmi",
+  catalog_demo_orders: "cdmo",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

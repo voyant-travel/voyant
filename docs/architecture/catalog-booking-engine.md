@@ -1,0 +1,229 @@
+# Catalog Booking Engine
+
+Status: draft / proposal — sits on top of the Phase 1 foundation
+Audience: anyone designing or implementing the cross-vertical booking lifecycle for the catalog plane.
+
+This document describes the **booking engine** that runs on top of the Phase 1 catalog foundation defined in [`catalog-architecture.md`](./catalog-architecture.md). The booking engine is the "live" layer that turns a row in the indexer (or in an adapter's upstream system) into a confirmed reservation with a frozen snapshot, mirroring the pattern already established for the flights vertical in [`catalog-flights-architecture.md`](./catalog-flights-architecture.md).
+
+The booking engine is **vertical-agnostic**. The same `quoteEntity` / `bookEntity` / `cancelEntity` lifecycle works for products, extras, cruises, charters, and hospitality, dispatching to the right adapter based on the catalog row's provenance. Owned inventory (`source.kind: "owned"`) flows through each module's own service layer; sourced inventory (`source.kind: "voyant-connect"`, `"direct:*"`, `"bedbank:*"`, `"gds:*"`, `"demo"`) flows through a registered `SourceAdapter` instance.
+
+## 1. Phase relationship
+
+**Prerequisites** (must be live before this layer lands):
+
+- Phase 1 catalog foundation: `SourceAdapter` contract (§5.6), provenance shape (§5.1), snapshot graph (§5.3), webhooks (§5.8).
+- The five existing verticals have adopted Phase 1's contract (`products`, `cruises`, `hospitality`, `charters`, `extras`).
+- The `supplierId` and `source.kind` indexed fields ship on each vertical so the indexer hits already carry enough to dispatch a quote/book.
+
+**This layer does NOT change:**
+
+- The `SourceAdapter` interface itself — `connect`, `discover`, `liveResolve`, `reserve`, `cancel`, `disconnect` are already declared in `packages/catalog/src/adapter/contract.ts`. No new methods.
+- The flights booking engine (`packages/flights`) — that pattern is preserved verbatim. The cross-vertical booking engine here is a sibling, not a replacement. Flights' `searchFlights` / `bookFlight` shape stays specialized because flights' search request shape (slices, passengers, cabin) doesn't generalize cleanly across the rest of the catalog.
+
+**What this layer adds:**
+
+- `packages/catalog/src/booking-engine/` — the orchestration: `SourceAdapterRegistry`, `quoteEntity`, `bookEntity`, `cancelEntity`, `getOrder`, `listOrders`. Vertical-agnostic.
+- `packages/catalog-demo-adapter` — a reference `SourceAdapter` implementation that serves as the integration test fixture and the operator's demo source. Backs its inventory and its orders in its own Postgres tables.
+- HTTP routes mounted by templates that opt in: `POST /v1/admin/catalog/quote`, `POST /v1/admin/catalog/book`, `POST /v1/admin/catalog/orders/:id/cancel`, `GET /v1/admin/catalog/orders`, `GET /v1/admin/catalog/orders/:id`.
+
+## 2. Why a layer on top of `SourceAdapter`
+
+The Phase 1 foundation already declares the seam: any external feed becomes a `SourceAdapter` instance, the catalog plane projects its inventory into the indexer, and `reserve` / `cancel` calls flow back to the upstream source. What's missing is the **application-level lifecycle** that makes that seam clickable from the operator UI:
+
+- **Owned-vs-sourced dispatch.** Today every catalog row carries `source.kind`, but no service code path branches on it. The booking engine is the first cross-cutting consumer of that field.
+- **Quote step.** `liveResolve` returns volatile-live values; the engine wraps it as a "is this row still bookable, and at what price?" call with a TTL that the UI can rely on.
+- **Snapshot capture at book.** The catalog plane has `captureSnapshot` / `captureSnapshotGraph`, but no production caller for sourced inventory yet — flights snapshot their own way through `packages/flights/src/snapshot.ts`. The booking engine wires the generic snapshot pipeline so every sourced book lands a snapshot row deterministically.
+- **First-class orders surface.** Today, owned bookings live in `packages/bookings`; sourced flight bookings live in `packages/flights`'s `FlightOrder` model; sourced everything-else has nowhere to live. The booking engine reuses `packages/bookings` as the shared parent (so an itinerary can mix owned and sourced rows) and stamps the source pointer on each line item.
+
+The engine is intentionally a thin coordinator. It contains no transport logic, no inventory specifics, and no per-vertical assumptions — those live in the adapter and the vertical's service-catalog-plane.
+
+## 3. The lifecycle
+
+### 3.1. `quoteEntity`
+
+```ts
+quoteEntity(ctx, { entityModule, entityId, parameters }) → {
+  quoteId,
+  quotedAt,
+  expiresAt,
+  pricing: PricingBasis,
+  available: boolean,
+  invalidReason?: string,
+  upstreamPayload?: unknown,
+}
+```
+
+Owned rows: pull the resolved view via the vertical's `getResolvedXxxById` and compute `pricing` from configured defaults (`sellAmountCents` + `sellCurrency`). Always available unless the row is archived/inactive.
+
+Sourced rows: dispatch by `source.kind` to the registered adapter and call `liveResolve({ ids: [entityId], scope, parameters })`. The adapter's response populates `pricing` and `available`. Stash the upstream payload so the subsequent `bookEntity` call can re-use it without a round trip if the adapter accepts a quote token.
+
+Quotes are short-lived (default TTL: 10 minutes) and persisted in `catalog_quotes` so the booking engine can validate the same quote at book time and reject expired quotes.
+
+### 3.2. `bookEntity`
+
+```ts
+bookEntity(ctx, {
+  bookingId,             // existing or newly-created bookings row
+  entityModule,
+  entityId,
+  quoteId?,              // when present, must be unexpired and match the entity
+  party,                 // customer / passenger identity
+  paymentIntent,         // hold | card | ticket_on_credit (mirrors flights)
+}) → {
+  orderRef,              // adapter's upstream id for sourced; bookingId for owned
+  status: "held" | "confirmed" | "ticketed" | "failed",
+  snapshotId,            // booking_catalog_snapshot row written
+  pricing: PricingBasis, // final pricing at commit
+}
+```
+
+Owned rows: re-validate the quote (or fetch fresh pricing), call into the vertical's existing booking-creation path (`packages/bookings` services), and capture the snapshot via `captureSnapshot`. `orderRef` equals `bookingId`; status is `confirmed`.
+
+Sourced rows: validate the quote, call `adapter.reserve({ entity_module, entity_id, parameters, party, payment_intent })`, capture `captureSnapshot` with `frozenPayload = { resolvedView, upstreamPayload, pricing }` and `sourceRef = result.upstream_ref`. `orderRef` equals the adapter's upstream ref; status mirrors `result.status`.
+
+Both branches end with the same `booking_catalog_snapshot` row format, the same webhook (`catalog.booking.committed`), and the same audit shape. The caller doesn't have to know which branch ran.
+
+### 3.3. `cancelEntity`
+
+```ts
+cancelEntity(ctx, { bookingId, entityModule, entityId, reason? }) → {
+  status: "cancelled" | "refused" | "failed",
+  refundAmount?: number,
+  refundCurrency?: string,
+}
+```
+
+Looks up the snapshot row, dispatches by `source_kind`. Owned: marks the booking entry cancelled in `packages/bookings`. Sourced: calls `adapter.cancel({ upstream_ref, reason })`. Either way, the snapshot stays — it's the audit record — and a `catalog.booking.cancelled` webhook fires.
+
+### 3.4. `getOrder` / `listOrders`
+
+Reads the `booking_catalog_snapshot` rows joined to `bookings` and the per-vertical line items. The engine doesn't introduce a new "orders" table — `bookings` is already that table. The engine just exposes the cross-vertical view.
+
+## 4. The `SourceAdapterRegistry`
+
+A process-local registry keyed by `source.kind` (and optionally `source_provider`). Templates register the adapters they want at startup:
+
+```ts
+const registry = createSourceAdapterRegistry()
+registry.register(demoAdapter())                    // source.kind: "demo"
+registry.register(voyantConnectAdapter({ ... }))    // source.kind: "voyant-connect"
+registry.register(hotelbedsAdapter({ ... }))        // source.kind: "bedbank:hotelbeds"
+```
+
+The booking engine's `quoteEntity` / `bookEntity` / `cancelEntity` look up `registry.resolveFor(sourceKind)` and call into the adapter. If no adapter is registered for the row's source kind, the call fails with `NO_ADAPTER_REGISTERED` (a stable error code analogous to `CAPABILITY_NOT_SUPPORTED`).
+
+The registry is intentionally not a dependency-injection container — it's a `Map<string, SourceAdapter>` with a fluent API. Adapters that need credentials, HTTP clients, or DB handles get them through their constructor; the registry just stores the wired instances.
+
+## 5. The demo: separate app + thin plugin
+
+The demo follows the same posture as the flights vertical (`apps/flights-demo-api` + `@voyantjs/plugin-flights-demo`): a standalone HTTP service simulates the upstream, and a thin client plugin implements the `SourceAdapter` interface against it. This is load-bearing — operator templates ship **zero demo state**. No demo tables in the operator's DB, no demo seed in the operator's seed script. Swapping `demo` for a real upstream (TUI direct, Hotelbeds, a Voyant Connect peer) is purely an env-var change.
+
+### 5.1. `apps/catalog-demo-api` — standalone upstream simulator
+
+Hono Node service with its own Postgres. Owns:
+
+- Two tables: `catalog_demo_inventory` (rows the upstream "publishes") and `catalog_demo_orders` (reservations the upstream tracks).
+- REST endpoints mirroring `SourceAdapter` 1:1 — `POST /discover`, `POST /live-resolve`, `POST /reserve`, `POST /cancel`, plus admin surfaces (`GET /inventory`, `POST /inventory/seed`, `GET /orders/:id`, `GET /health`).
+- Auto-seed on first boot when `AUTO_SEED=true` so the booking lifecycle is clickable immediately.
+- Bundled `docker-compose.yml` for a self-contained Postgres on host port `5437`. Database is fully isolated from the operator's `DATABASE_URL`.
+
+The service is launched separately (`pnpm -F catalog-demo-api dev`) and listens on `:3330` by default. A real upstream (TUI's API, Voyant Connect's edge) plays the same role — it just happens to live in a different repo and run on different infrastructure. The contract is the same.
+
+### 5.2. `@voyantjs/plugin-catalog-demo` — thin HTTP client
+
+Pure `SourceAdapter` implementation, zero state. `createDemoCatalogAdapter({ baseUrl })` returns an adapter whose lifecycle methods all round-trip to `apps/catalog-demo-api`:
+
+- `connect` / `getState` ping `/health`.
+- `discover` POSTs to `/discover` with the cursor + verticals filter.
+- `liveResolve` POSTs to `/live-resolve`.
+- `reserve` POSTs to `/reserve`.
+- `cancel` POSTs to `/cancel`.
+
+The plugin contains no business logic. Replacing it with `@voyantjs/plugin-voyant-connect` or `@voyantjs/plugin-hotelbeds` is the typical upgrade path — same shape, different upstream.
+
+### 5.3. Why this split matters
+
+Three reasons the demo is structured this way rather than embedded in the operator template:
+
+1. **Adapter authors get a target.** Building a real adapter against an in-process demo with shared DB tables is misleading — the actual upstream is over a network and owns its own state. The demo-api models the real shape so the gap between demo and prod is just URLs and credentials.
+2. **Templates stay clean.** Adding a vertical's demo to the operator template means schemas, migrations, seed code, and dependencies leak into every operator deployment that doesn't actually want the demo. With the app-and-plugin split, the demo simply isn't deployed unless the operator wants it.
+3. **The contract gets exercised over the wire.** A demo that bypasses HTTP can satisfy the type signature without satisfying the actual operational shape (timeouts, partial responses, JSON parsing). The standalone service forces every contract change to hold up over real HTTP.
+
+The demo doubles as the integration test fixture: booking-engine integration tests boot the demo-api against a test Postgres, register the plugin pointing at it, and exercise the full lifecycle without mocking.
+
+## 6. Owned-vs-sourced: why this isn't a special case
+
+A reasonable instinct is to treat owned inventory as the primary code path and sourced inventory as the "external" branch. The booking engine deliberately doesn't:
+
+- Owned inventory is just a row whose `source.kind = "owned"` and whose `liveResolve` / `reserve` / `cancel` are implemented by an internal "owned adapter" (or directly by the engine bypassing the adapter call). The lifecycle is identical from the caller's perspective.
+- Today's "owned" path runs through `packages/bookings` plus the vertical's own service layer. Tomorrow's "owned" path may add a Voyant-Connect-published copy of the same inventory at another operator. The booking engine should not have to grow a new code path when that happens; it just sees a different `source.kind`.
+- The snapshot row, the webhook payload, and the audit shape are identical for owned vs. sourced. The only difference is which arm of the dispatch ran — and that's traceable through `source.kind` on the snapshot.
+
+This mirrors flights, where there is no "owned flight" code path — every flight goes through an adapter. The cross-vertical booking engine takes the same shape, except the dispatch can fall through to an internal "owned" arm when no external adapter is involved.
+
+## 7. Package layout
+
+```
+packages/catalog/src/booking-engine/
+  registry.ts                    SourceAdapterRegistry
+  quote.ts                       quoteEntity (owned/sourced dispatch)
+  book.ts                        bookEntity (owned/sourced dispatch + snapshot capture)
+  cancel.ts                      cancelEntity (owned/sourced dispatch)
+  orders.ts                      getOrder / listOrders (read-side)
+  schema.ts                      catalog_quotes table
+  errors.ts                      NO_ADAPTER_REGISTERED, QUOTE_EXPIRED, etc.
+  index.ts                       exports
+
+packages/plugins/catalog-demo/   thin HTTP client plugin
+  src/adapter.ts                 createDemoCatalogAdapter({ baseUrl }) → SourceAdapter
+  src/index.ts                   barrel
+  README.md
+
+apps/catalog-demo-api/           standalone upstream simulator
+  src/schema.ts                  catalog_demo_inventory + catalog_demo_orders
+  src/store.ts                   DB ops
+  src/seed.ts                    default 3-row inventory + seedInventory()
+  src/routes.ts                  REST mirroring SourceAdapter
+  src/app.ts                     Hono app
+  src/index.ts                   bootstrap (auto-seed + HTTP server)
+  scripts/migrate.ts             apply drizzle migrations
+  drizzle.config.ts              points at its own DB
+  docker-compose.yml             self-contained Postgres on :5437
+  .env.example
+  README.md
+```
+
+Templates that want the booking engine register `@voyantjs/catalog/booking-engine` routes and conditionally register adapters based on env. The operator template registers `@voyantjs/plugin-catalog-demo` if `CATALOG_DEMO_API_URL` is set, otherwise the booking engine reports `NO_ADAPTER_REGISTERED` for any `demo` row — the operator's primary DB stays clean either way.
+
+## 8. Open questions
+
+1. **Owned-arm packaging.** Should the engine expose a built-in "owned adapter" for each vertical, or should it dispatch directly to the vertical's service layer when `source.kind === "owned"`? Lean toward direct dispatch for now (avoids a layer of indirection); revisit if templates start needing to swap out the owned path.
+2. **Quote persistence vs. signed tokens.** Persisting quotes in `catalog_quotes` is simple but adds a write per quote; signed JWT-style quote tokens skip the write but complicate cross-pod expiration. Lean toward persisted quotes for MVP — write volume is low (one per book attempt, not one per page view) and the audit trail is useful.
+3. **Multi-line bookings.** A package booking with a flight + hotel + extras hits multiple verticals (some sourced, some owned). The engine's `bookEntity` is single-entity; the multi-line orchestrator (analogous to flights' multi-passenger order) is deferred until the tracer is end-to-end on a single line.
+4. **Idempotency keys.** `bookEntity` should accept an idempotency key so a retry doesn't double-book. Standard pattern; not in the MVP cut but flagged as the next ergonomic addition.
+
+## 9. Tracer rollout
+
+The first real implementation is scoped to:
+
+- **Products vertical only.** Cruises / charters / hospitality / extras are the next steps once the tracer ships.
+- **Demo adapter only.** Voyant Connect, GDS, bedbank adapters come from external implementers later.
+- **Single-line bookings.** Composite packages are deferred.
+- **`paymentIntent: { type: "hold" }` only.** Card / ticket-on-credit come once a payment provider is wired (separate concern, see [`payments-architecture.md`](./payments-architecture.md)).
+
+Once that tracer is clickable end-to-end (an operator can open the Catalog page, find a `source = Demo` product, click "Quote", click "Book", see the order in the bookings list, click "Cancel"), the same code path is duplicated for the other verticals and the same orchestration is reused for non-demo adapters.
+
+## 10. Glossary
+
+- **Booking engine** — the cross-vertical lifecycle layer (`quoteEntity`, `bookEntity`, `cancelEntity`) that sits on top of the `SourceAdapter` contract.
+- **Owned inventory** — a catalog row with `source.kind: "owned"`. Lives in the operator's own DB; the engine dispatches the lifecycle to the vertical's local service layer.
+- **Sourced inventory** — a catalog row with any non-`owned` `source.kind`. The engine dispatches the lifecycle to the registered `SourceAdapter` for that kind.
+- **Demo adapter** — `@voyantjs/catalog-demo-adapter`, the reference `SourceAdapter` implementation. Backs its data in its own Postgres tables. Operator template registers it for the demo flow.
+- **`SourceAdapterRegistry`** — process-local map keyed by `source.kind` that the engine consults to find the right adapter for a given row.
+- **`NO_ADAPTER_REGISTERED`** — stable error code returned when the engine encounters a `source.kind` with no registered adapter. Analogous to `CAPABILITY_NOT_SUPPORTED`.
+
+## 11. Related documents
+
+- [`catalog-architecture.md`](./catalog-architecture.md) — the Phase 1 foundation. The engine depends on its `SourceAdapter` contract, snapshot graph, provenance shape, and webhook taxonomy.
+- [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) — the flight-vertical-specific booking engine. The cross-vertical engine in this document is its sibling, not its replacement.
+- [`payments-architecture.md`](./payments-architecture.md) — payment flow. The booking engine's `paymentIntent` parameter is the seam.

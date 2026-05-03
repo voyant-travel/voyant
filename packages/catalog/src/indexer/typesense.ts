@@ -362,14 +362,58 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
         vectorDimensions,
         collectionPrefix,
       })
-      try {
-        await client.collections().create(schema)
-      } catch {
-        // Collection already exists — try update. (Real Typesense errors on
-        // already-exists; falling through to update is the simplest pattern.
-        // Production deployments may want stricter handling.)
-        await client.collections(schema.name).update({ fields: schema.fields })
+      // Typesense maintains `id` implicitly as the document primary key;
+      // it must not appear in the schema fields list (the server rejects
+      // alters to it with `Field "id" cannot be altered.`). Strip it
+      // unconditionally — if a vertical's field policy declares `id`,
+      // it's covered by the implicit doc id at index time.
+      const fieldsForServer = schema.fields.filter((f) => f.name !== "id")
+      const schemaForCreate: TypesenseCollectionSchema = {
+        ...schema,
+        fields: fieldsForServer,
       }
+
+      try {
+        await client.collections().create(schemaForCreate)
+        return
+      } catch {
+        // Collection already exists — fall through to the update path.
+      }
+
+      // Typesense's `update` only accepts new fields, drops, and
+      // drop+add as the way to "alter" an existing field. Diff existing
+      // vs desired and emit:
+      //   - additions for fields that don't exist yet
+      //   - drop+add pairs for fields whose facet/type drifted (so a
+      //     policy change like reindex:"entry" → "facet-affecting" gets
+      //     picked up without operators having to nuke the collection)
+      let existing: TypesenseCollectionSchema | undefined
+      try {
+        existing = await client.collections(schema.name).retrieve()
+      } catch {
+        // If retrieve also fails, surface the original create error path
+        // by re-trying create — the second create will throw the real cause.
+        await client.collections().create(schemaForCreate)
+        return
+      }
+      const existingByName = new Map(existing.fields.map((f) => [f.name, f]))
+      const updates: Array<TypesenseFieldSchema & { drop?: boolean }> = []
+      for (const desired of fieldsForServer) {
+        const current = existingByName.get(desired.name)
+        if (!current) {
+          updates.push(desired)
+          continue
+        }
+        if (
+          current.type !== desired.type ||
+          (current.facet ?? false) !== (desired.facet ?? false)
+        ) {
+          updates.push({ name: desired.name, type: desired.type, drop: true })
+          updates.push(desired)
+        }
+      }
+      if (updates.length === 0) return
+      await client.collections(schema.name).update({ fields: updates as TypesenseFieldSchema[] })
     },
 
     async upsert(slice, documents) {

@@ -18,6 +18,7 @@
     "db:studio": "drizzle-kit studio",
     "reindex": "tsx scripts/reindex.ts",
     "seed": "tsx scripts/seed.ts",
+    "sync:sources": "tsx scripts/sync-sources.ts",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "lint": "biome check src/"
   },
@@ -74,6 +75,7 @@
     "@voyantjs/flights-react": "workspace:*",
     "@voyantjs/flights-ui": "workspace:*",
     "@voyantjs/hono": "workspace:*",
+    "@voyantjs/plugin-catalog-demo": "workspace:*",
     "@voyantjs/plugin-flights-demo": "workspace:*",
     "@voyantjs/plugin-netopia": "workspace:*",
     "@voyantjs/hospitality": "workspace:*",

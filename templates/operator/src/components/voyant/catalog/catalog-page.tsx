@@ -12,6 +12,7 @@ import { useSuppliers } from "@voyantjs/suppliers-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { useMemo } from "react"
+import { toast } from "sonner"
 
 import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
 
@@ -19,7 +20,11 @@ export function CatalogPage() {
   const navigate = useNavigate()
   const search = Route.useSearch()
   const routeNavigate = Route.useNavigate()
-  const suppliersQuery = useSuppliers({ limit: 200 })
+  // `supplierListQuerySchema` caps `limit` at 100. For deployments with
+  // more suppliers than that, the Supplier facet would need a paginated
+  // lookup endpoint rather than an in-memory map — flag for follow-up
+  // when a real operator hits the cap.
+  const suppliersQuery = useSuppliers({ limit: 100 })
   const supplierMap = useMemo(() => {
     const m = new Map<string, string>()
     for (const s of suppliersQuery.data?.data ?? []) m.set(s.id, s.name)
@@ -47,6 +52,10 @@ export function CatalogPage() {
         "source.kind": sourceKindFormatter,
       },
       detailActions: [
+        {
+          label: "Book this",
+          onClick: (hit) => goToBookingPage(hit, "products", navigate),
+        },
         {
           label: "Open editor",
           onClick: (hit) => navigate({ to: "/products/$id", params: { id: hit.id } }),
@@ -614,4 +623,44 @@ function formatPrice(
     currency,
     maximumFractionDigits: 0,
   }).format(cents / 100)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Booking-engine action: navigate to the multi-step booking page.
+//
+// The catalog detail sheet's actions API doesn't support per-hit
+// disabling, so this is the runtime check: rows without a `source.kind`
+// or with `source.kind = "owned"` toast a friendly explainer instead of
+// dispatching. Sourced rows navigate to the catalog booking journey
+// (`/catalog_/book/$entityModule/$entityId`) which runs quote → book
+// against the operator's catalog booking-engine routes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type AppNavigate = ReturnType<typeof useNavigate>
+
+function goToBookingPage(hit: CatalogSearchHit, entityModule: string, navigate: AppNavigate): void {
+  const sourceKind = stringField(hit, "source.kind", null)
+  if (!sourceKind || sourceKind === "owned") {
+    toast.info("Booking via the catalog engine is only wired for sourced inventory today.", {
+      description:
+        sourceKind === "owned"
+          ? "Owned products go through the existing product workflow — try a Demo source row."
+          : "This row has no source.kind; book through the per-vertical workflow instead.",
+    })
+    return
+  }
+
+  const sourceRef = stringField(hit, "source.ref", null) ?? undefined
+  const name = stringField(hit, "name", null) ?? undefined
+  const supplierId = stringField(hit, "supplierId", null) ?? undefined
+  navigate({
+    to: "/catalog/book/$entityModule/$entityId",
+    params: { entityModule, entityId: hit.id },
+    search: {
+      sourceKind,
+      ...(sourceRef ? { sourceRef } : {}),
+      ...(name ? { name } : {}),
+      ...(supplierId ? { supplierId } : {}),
+    },
+  })
 }

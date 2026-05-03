@@ -33,7 +33,7 @@ const EXTRAS_FIELD_POLICY: FieldPolicyInput[] = [
     class: "managed",
     merge: "source-only",
     drift: "critical",
-    reindex: "none",
+    reindex: "facet-affecting",
     snapshot: "on-book",
     query: "indexed-column",
     localized: false,

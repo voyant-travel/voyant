@@ -19,7 +19,9 @@
     "./adapter/contract": "./src/adapter/contract.ts",
     "./services/overlay": "./src/services/overlay-service.ts",
     "./services/snapshot": "./src/services/snapshot-service.ts",
-    "./services/indexer": "./src/services/indexer-service.ts"
+    "./services/indexer": "./src/services/indexer-service.ts",
+    "./booking-engine": "./src/booking-engine/index.ts",
+    "./booking-engine/schema": "./src/booking-engine/schema.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -115,6 +117,16 @@
         "types": "./dist/services/indexer-service.d.ts",
         "import": "./dist/services/indexer-service.js",
         "default": "./dist/services/indexer-service.js"
+      },
+      "./booking-engine": {
+        "types": "./dist/booking-engine/index.d.ts",
+        "import": "./dist/booking-engine/index.js",
+        "default": "./dist/booking-engine/index.js"
+      },
+      "./booking-engine/schema": {
+        "types": "./dist/booking-engine/schema.d.ts",
+        "import": "./dist/booking-engine/schema.js",
+        "default": "./dist/booking-engine/schema.js"
       }
     },
     "main": "./dist/index.js",
