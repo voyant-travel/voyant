@@ -26,9 +26,10 @@
  * See `docs/architecture/storefront-checkout-flow.md` Phases 3–5.
  */
 
-import { bookingsService } from "@voyantjs/bookings"
+import { bookingsService, canTransitionBooking, transitionBooking } from "@voyantjs/bookings"
 import { bookings } from "@voyantjs/bookings/schema"
 import { runCheckoutFinalize } from "@voyantjs/catalog/booking-engine"
+import type { EventBus } from "@voyantjs/core"
 import {
   type CreateInvoiceFromBookingInput,
   financeService,
@@ -81,6 +82,24 @@ interface PaymentCompletedPayload {
   provider?: string | null
 }
 
+interface ContractDocumentGeneratedPayload {
+  contractId: string
+  contractStatus: string
+  attachmentId: string
+  attachmentKind: string
+  attachmentName: string
+}
+
+const ACCEPTANCE_MARKER_PREFIX = "__contract_acceptance__:"
+
+interface StoredAcceptance {
+  templateId: string
+  templateSlug: string
+  acceptedAt: string
+  acceptedMarketing: boolean
+  renderedHtmlLength: number
+}
+
 export function mountCatalogCheckoutRoutes(hono: Hono): void {
   hono.post("/v1/public/catalog/checkout/start", handleCheckoutStart)
 }
@@ -130,18 +149,134 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
     case "bank_transfer":
       return handleBankTransferIntent(c, db, booking, body)
     case "inquiry":
-      return c.json({
-        kind: "inquiry_received" as const,
-        bookingId: booking.id,
-        inquiryId: `inq-${booking.id}`,
-        note: "Phase 6 will write a real CRM opportunity and emit inquiry.created.",
-      })
+      return handleInquiryIntent(c, db, booking, body)
     case "hold":
       return c.json({
         kind: "hold_placed" as const,
         bookingId: booking.id,
       })
   }
+}
+
+/**
+ * Inquiry intent — write a CRM opportunity for the operator to follow
+ * up on, then cancel the booking so inventory isn't blocked.
+ *
+ * The pipeline + stage used can be pinned via env vars
+ * (`INQUIRY_PIPELINE_ID` / `INQUIRY_STAGE_ID`); otherwise we pick the
+ * first sales pipeline + its first stage. Without any configured
+ * pipeline the endpoint falls back to a stub response so the journey
+ * keeps working through demos.
+ */
+async function handleInquiryIntent(
+  c: Context,
+  db: PostgresJsDatabase,
+  booking: typeof bookings.$inferSelect,
+  _body: z.infer<typeof checkoutStartSchema>,
+): Promise<Response> {
+  const env = c.env as Record<string, string | undefined>
+  const eventBus = c.var.eventBus
+
+  let pipelineId = env.INQUIRY_PIPELINE_ID ?? null
+  let stageId = env.INQUIRY_STAGE_ID ?? null
+
+  if (!pipelineId || !stageId) {
+    const { crmService } = await import("@voyantjs/crm")
+    const pipelines = await crmService
+      .listPipelines(db, { entityType: "person", limit: 1, offset: 0 })
+      .catch(() => null)
+    const firstPipeline = pipelines?.data?.[0] ?? null
+    if (firstPipeline) {
+      pipelineId = pipelineId ?? firstPipeline.id
+      const stages = await crmService
+        .listStages(db, { pipelineId: firstPipeline.id, limit: 1, offset: 0 })
+        .catch(() => null)
+      stageId = stageId ?? stages?.data?.[0]?.id ?? null
+    }
+  }
+
+  if (!pipelineId || !stageId) {
+    // No CRM pipeline configured. Still cancel the booking so the
+    // hold doesn't linger, and return a stub inquiry reference.
+    await releaseInquiryBooking(db, booking, eventBus)
+    return c.json({
+      kind: "inquiry_received" as const,
+      bookingId: booking.id,
+      inquiryId: `inq-${booking.id}`,
+      note: "No CRM pipeline configured — set INQUIRY_PIPELINE_ID + INQUIRY_STAGE_ID to record a real opportunity.",
+    })
+  }
+
+  const { crmService } = await import("@voyantjs/crm")
+  const opportunity = await crmService.createOpportunity(db, {
+    title: `Inquiry — booking ${booking.bookingNumber}`,
+    pipelineId,
+    stageId,
+    personId: booking.personId,
+    organizationId: booking.organizationId,
+    status: "open",
+    valueAmountCents: booking.sellAmountCents ?? null,
+    valueCurrency: booking.sellCurrency ?? null,
+    source: "storefront-inquiry",
+    sourceRef: booking.id,
+  } as never)
+
+  await releaseInquiryBooking(db, booking, eventBus)
+
+  await eventBus?.emit("inquiry.created", {
+    opportunityId: opportunity?.id ?? null,
+    bookingId: booking.id,
+    bookingNumber: booking.bookingNumber,
+    pipelineId,
+    stageId,
+  })
+
+  return c.json({
+    kind: "inquiry_received" as const,
+    bookingId: booking.id,
+    inquiryId: opportunity?.id ?? `inq-${booking.id}`,
+  })
+}
+
+async function releaseInquiryBooking(
+  db: PostgresJsDatabase,
+  booking: typeof bookings.$inferSelect,
+  eventBus: EventBus | undefined,
+): Promise<void> {
+  // Inquiry mode: don't keep capacity locked. Cancel the booking so
+  // the hold drops; the row stays for the audit trail.
+  if (!canTransitionBooking(booking.status, "cancelled")) return
+  try {
+    await bookingsService.cancelBooking(
+      db,
+      booking.id,
+      { reason: "Released — converted to inquiry" } as never,
+      undefined,
+      { eventBus },
+    )
+  } catch (err) {
+    console.warn("[catalog-checkout] could not release booking on inquiry path", err)
+  }
+}
+
+/**
+ * Move the booking from `on_hold` (or `draft`) into `awaiting_payment`
+ * so ops can see in the bookings list which rows are pending money
+ * vs. just brokered. The state machine accepts the transition;
+ * already-`awaiting_payment` / already-`confirmed` rows are
+ * silently no-op'd so re-entries (e.g. user reloads the dialog
+ * twice) stay idempotent.
+ */
+async function markAwaitingPayment(
+  db: PostgresJsDatabase,
+  booking: typeof bookings.$inferSelect,
+): Promise<void> {
+  if (!canTransitionBooking(booking.status, "awaiting_payment")) return
+  const patch = transitionBooking(booking.status, "awaiting_payment")
+  await db
+    .update(bookings)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(bookings.id, booking.id))
 }
 
 async function handleCardIntent(
@@ -166,6 +301,8 @@ async function handleCardIntent(
   // received manually. Useful for demos without sandbox creds.
   const amountCents = booking.sellAmountCents ?? 0
   const currency = booking.sellCurrency ?? "EUR"
+
+  await markAwaitingPayment(db, booking)
 
   const session = await financeService.createPaymentSession(db, {
     bookingId: booking.id,
@@ -235,6 +372,8 @@ async function handleBankTransferIntent(
   booking: typeof bookings.$inferSelect,
   _body: z.infer<typeof checkoutStartSchema>,
 ): Promise<Response> {
+  await markAwaitingPayment(db, booking)
+
   // Issue a proforma synchronously so the customer leaves with a
   // document reference. SmartBill (subscribing to
   // invoice.proforma.issued) will sync to its proforma endpoint.
@@ -326,16 +465,103 @@ async function handleBankTransferIntent(
 }
 
 /**
+ * Pull the storefront's acceptance marker out of `bookings.internalNotes`
+ * and turn it into a real `contract_signatures` row once the contract
+ * has been auto-generated. The marker is the JSON-stringified payload
+ * the checkout-start endpoint stashed at acceptance time; we keep it
+ * keyed by prefix so unrelated notes survive untouched.
+ */
+function readStoredAcceptance(internalNotes: string | null): StoredAcceptance | null {
+  if (!internalNotes) return null
+  for (const line of internalNotes.split("\n")) {
+    if (!line.startsWith(ACCEPTANCE_MARKER_PREFIX)) continue
+    try {
+      return JSON.parse(line.slice(ACCEPTANCE_MARKER_PREFIX.length)) as StoredAcceptance
+    } catch {
+      // Bad marker — fall through and try the next line.
+    }
+  }
+  return null
+}
+
+async function persistAcceptanceSignature(
+  db: PostgresJsDatabase,
+  contractId: string,
+): Promise<void> {
+  const { contractsService } = await import("@voyantjs/legal/contracts")
+  const { contracts: contractsTable } = await import("@voyantjs/legal/contracts")
+  const [contract] = await db
+    .select()
+    .from(contractsTable)
+    .where(eq(contractsTable.id, contractId))
+    .limit(1)
+  if (!contract?.bookingId) return
+
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, contract.bookingId))
+    .limit(1)
+  if (!booking) return
+
+  const acceptance = readStoredAcceptance(booking.internalNotes)
+  if (!acceptance) return
+
+  // Already signed for this contract? `signContract` requires status
+  // ∈ {issued, sent}; idempotency comes from listSignatures.
+  const existing = await contractsService.listSignatures(db, contractId)
+  if (existing.length > 0) return
+
+  const signerName =
+    [booking.bookingNumber, "lead booker"].filter(Boolean).join(" — ") || "Storefront customer"
+
+  const result = await contractsService.signContract(db, contractId, {
+    signerName,
+    method: "electronic" as const,
+    metadata: {
+      source: "storefront-checkout",
+      templateId: acceptance.templateId,
+      templateSlug: acceptance.templateSlug,
+      acceptedAt: acceptance.acceptedAt,
+      acceptedMarketing: acceptance.acceptedMarketing,
+      renderedHtmlLength: acceptance.renderedHtmlLength,
+    },
+  } as never)
+
+  if (result.status !== "signed") {
+    console.warn(
+      `[catalog-checkout] could not record acceptance signature for ${contractId}: ${result.status}`,
+    )
+  }
+}
+
+/**
  * Bundle that subscribes to `payment.completed` and runs the
  * checkout-finalize workflow. The workflow transitions the booking
  * to `confirmed` (which emits `booking.confirmed` for legal /
  * notifications subscribers) and issues the final invoice — using
  * the proforma linkage when bank-transfer is the path.
+ *
+ * Also subscribes to `contract.document.generated` so once the
+ * legal package's auto-generate-contract subscriber materialises a
+ * contract, we promote the storefront's acceptance marker into a
+ * real `contract_signatures` row.
  */
 export const catalogCheckoutBundle: HonoBundle = {
   name: "catalog-checkout",
   bootstrap: ({ bindings, eventBus }) => {
     const env = bindings as CloudflareBindings
+    eventBus.subscribe<ContractDocumentGeneratedPayload>(
+      "contract.document.generated",
+      async ({ data }) => {
+        const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+        try {
+          await persistAcceptanceSignature(db, data.contractId)
+        } catch (err) {
+          console.error("[catalog-checkout] persistAcceptanceSignature failed", err)
+        }
+      },
+    )
     eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
       if (!data.bookingId) return
       const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase

@@ -42,6 +42,7 @@ import { useState } from "react"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { BookingDetailSkeleton } from "./booking-detail-skeleton"
+import { BookingPendingPaymentSessions } from "./booking-pending-payment-sessions"
 
 function formatAmount(
   cents: number | null,
@@ -274,6 +275,7 @@ export function BookingDetailPage({ id }: { id: string }) {
           <div className="flex items-center justify-end">
             <Button onClick={() => setCollectPaymentOpen(true)}>Collect payment</Button>
           </div>
+          <BookingPendingPaymentSessions bookingId={id} />
           <BookingPaymentsSummary bookingId={id} />
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />

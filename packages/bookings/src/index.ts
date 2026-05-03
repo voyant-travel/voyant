@@ -41,7 +41,14 @@ export {
   listGroupBookingTravelers,
   type UpdateBookingGroupInput,
 } from "./service-groups.js"
-export type { BookingStatus } from "./state-machine.js"
+export {
+  BOOKING_TRANSITIONS,
+  type BookingStatus,
+  type BookingStatusPatch,
+  BookingTransitionError,
+  canTransitionBooking,
+  transitionBooking,
+} from "./state-machine.js"
 export {
   type BookingStatusDispatchTarget,
   dispatchBookingStatusChange,

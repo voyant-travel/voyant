@@ -1,0 +1,158 @@
+"use client"
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Button } from "@voyantjs/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
+import { Loader2, Wallet } from "lucide-react"
+
+import { api } from "@/lib/api-client"
+
+interface PendingPaymentSession {
+  id: string
+  status: string
+  amountCents: number
+  currency: string
+  provider: string | null
+  notes: string | null
+  payerName: string | null
+  payerEmail: string | null
+  createdAt: string
+  invoiceId: string | null
+}
+
+interface ListResponse {
+  data: PendingPaymentSession[]
+  total: number
+}
+
+/**
+ * Operator-side panel that lists payment_sessions still in `pending`
+ * for a given booking and offers a one-click "Mark received" action.
+ *
+ * Calling /v1/admin/finance/payment-sessions/:id/complete with
+ * `status: "paid"` writes a payment authorization + capture row
+ * and emits `payment.completed`, which fires the storefront's
+ * checkout-finalize workflow (final invoice, contract auto-gen).
+ *
+ * Bank-transfer is the canonical use case — the storefront creates
+ * a pending session at checkout-start time so this UI has something
+ * to act on.
+ */
+export interface BookingPendingPaymentSessionsProps {
+  bookingId: string
+}
+
+export function BookingPendingPaymentSessions({
+  bookingId,
+}: BookingPendingPaymentSessionsProps): React.ReactElement | null {
+  const queryClient = useQueryClient()
+  const queryKey = ["booking-pending-payment-sessions", bookingId]
+  const { data, isLoading } = useQuery({
+    queryKey,
+    queryFn: () =>
+      api.get<ListResponse>(
+        `/v1/admin/finance/payment-sessions?bookingId=${encodeURIComponent(
+          bookingId,
+        )}&status=pending&limit=10`,
+      ),
+  })
+
+  const markReceived = useMutation({
+    mutationFn: async (sessionId: string) => {
+      await api.post(
+        `/v1/admin/finance/payment-sessions/${encodeURIComponent(sessionId)}/complete`,
+        {
+          status: "paid",
+          captureMode: "manual",
+          paymentMethod: "bank_transfer",
+          paymentDate: new Date().toISOString(),
+          authorizedAt: new Date().toISOString(),
+          capturedAt: new Date().toISOString(),
+        },
+      )
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey })
+      // The completion fires payment.completed, which kicks off the
+      // checkout-finalize workflow → booking.confirmed → contract +
+      // invoice auto-gen. Refresh the surrounding booking data so
+      // the operator sees the new status without a hard reload.
+      void queryClient.invalidateQueries({ queryKey: ["public-booking-detail", bookingId] })
+      void queryClient.invalidateQueries({ queryKey: ["public-booking-payments", bookingId] })
+    },
+  })
+
+  const sessions = data?.data ?? []
+  if (!isLoading && sessions.length === 0) return null
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Wallet className="h-4 w-4" />
+          Pending payments
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Loading payment sessions…
+          </div>
+        ) : null}
+        {sessions.map((session) => (
+          <div
+            key={session.id}
+            className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="space-y-0.5">
+              <div className="font-medium">
+                {formatMoney(session.amountCents, session.currency)}
+                {session.provider ? (
+                  <span className="ml-2 text-muted-foreground text-xs uppercase">
+                    {session.provider}
+                  </span>
+                ) : null}
+              </div>
+              {session.notes ? (
+                <div className="text-muted-foreground text-xs">{session.notes}</div>
+              ) : null}
+              <div className="text-muted-foreground text-xs">
+                Created {new Date(session.createdAt).toLocaleString()}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => markReceived.mutate(session.id)}
+              disabled={markReceived.isPending}
+            >
+              {markReceived.isPending && markReceived.variables === session.id ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Marking…
+                </>
+              ) : (
+                "Mark payment received"
+              )}
+            </Button>
+          </div>
+        ))}
+        {markReceived.error ? (
+          <p className="text-destructive text-xs">
+            {markReceived.error instanceof Error
+              ? markReceived.error.message
+              : "Could not mark payment received."}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
+}
+
+function formatMoney(cents: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
+  } catch {
+    return `${(cents / 100).toFixed(2)} ${currency}`
+  }
+}

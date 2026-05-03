@@ -334,7 +334,7 @@ relevant phase.
 | 3 checkout-start endpoint + finalize workflow | ✅ done | e5d06d9c8, 6be800a4f |
 | 4 Netopia card path | ✅ done | a556f0fac |
 | 5 Bank-transfer path | ✅ done | a556f0fac |
-| 6 Inquiry path + observability | 🟡 partial — inquiry is a stub; observability deferred |
+| 6 Inquiry path + observability | 🟢 mostly done — observability dashboard deferred |
 
 What works end-to-end after Phase 5:
 
@@ -373,31 +373,40 @@ Mark-payment-received (admin):
   "bank_transfer", ... }`. That fires `payment.completed` and the
   checkout-finalize workflow runs the same way the card path does.
 
-What's still pending (Phase 6 follow-up):
+Followups landed alongside Phase 6:
 
-1. **Real CRM opportunity for inquiry** — the inquiry intent
-   currently returns a stubbed `inq-{bookingId}` and skips the
-   workflow. Wiring it to `crm.opportunities` requires deployment
-   config for the inquiry pipeline + stage; until that's in place,
-   the inquiry path is functionally a "thanks for your interest"
-   page.
-2. **Operator-side "Mark payment received" UI** — the endpoint
-   exists; the booking-detail page in the operator dashboard needs
-   a button that calls it. Pending the dashboard UI sprint.
-3. **Observability dashboard** — there is no `workflow_runs` table
+1. **Real CRM opportunity for inquiry** ✅ — inquiry intent now
+   creates a `crm.opportunities` row using
+   `INQUIRY_PIPELINE_ID`/`INQUIRY_STAGE_ID` env vars (or the first
+   sales pipeline + stage when those aren't set), then cancels the
+   booking so capacity isn't blocked. Emits `inquiry.created` for
+   downstream subscribers. Falls back to the stub response only when
+   no pipeline at all is configured in the deployment.
+2. **Operator-side "Mark payment received" UI** ✅ — the booking
+   detail's finance tab now renders a `BookingPendingPaymentSessions`
+   card listing pending sessions for the booking with a one-click
+   "Mark payment received" button that POSTs to
+   `/v1/admin/finance/payment-sessions/:id/complete` and invalidates
+   the surrounding booking + payments queries.
+3. **Contract acceptance signature persistence** ✅ — the
+   catalog-checkout bundle subscribes to `contract.document.generated`
+   (fired after the legal package's auto-generate-contract creates
+   the contract row); on each fire it reads the storefront's
+   acceptance marker out of `bookings.internalNotes` and writes a
+   real `contract_signatures` row via `contractsService.signContract`
+   (`method: 'electronic'`). Idempotent — already-signed contracts
+   are skipped.
+4. **Booking status flip to `awaiting_payment`** ✅ — both card and
+   bank-transfer paths transition the booking from `on_hold` →
+   `awaiting_payment` at checkout-start so ops sees the right state
+   while waiting on the webhook / manual mark-received.
+
+Still pending (deferred):
+
+1. **Observability dashboard** — there is no `workflow_runs` table
    yet, so the workflow execution is fire-and-forget. The plan
    originally called for a "Checkout pipeline" view; that depends
    on a new schema and is deferred.
-4. **Contract acceptance signature persistence** — the storefront
-   captures acceptance into `bookings.internalNotes` for now. Once
-   a contract row is auto-generated on `booking.confirmed`, a
-   subscriber should turn that note into a real
-   `contract_signatures` row. Trivially done in a follow-up.
-5. **Booking status flip to `awaiting_payment`** — bookings
-   currently sit in `on_hold` between checkout-start and webhook
-   completion. The `awaiting_payment` status is in the schema but
-   the checkout-start handler doesn't transition into it. Cosmetic
-   for ops; the workflow accepts both states.
 
 ## PR sequencing
 
