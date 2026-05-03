@@ -8,6 +8,13 @@
       "when": 1777782568957,
       "tag": "0000_large_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777813761394,
+      "tag": "0001_bouncy_zaran",
+      "breakpoints": true
     }
   ]
 }

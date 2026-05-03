@@ -45,18 +45,37 @@ import {
 
 // ---------- Hono env ----------
 
+import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
+
 type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    /**
+     * Catalog source-adapter registry. Required for the `/:key`
+     * external branch — the route dispatches through `getCruiseContent`
+     * which routes refresh / fresh-fetch through the registry's
+     * shimmed cruise adapter (`cruiseAdapterToSourceAdapter`).
+     *
+     * Templates inject this via Hono middleware:
+     *
+     *   app.use("*", (c, next) => {
+     *     c.set("sourceAdapterRegistry", getRegistryFromEnv(c.env))
+     *     return next()
+     *   })
+     */
+    sourceAdapterRegistry?: SourceAdapterRegistry
   }
 }
 
 // ---------- unified key parsing ----------
 
+import type { Context } from "hono"
+
 import type { CruiseAdapter, SourceRef } from "./adapters/index.js"
 import { listCruiseAdapters, resolveCruiseAdapter } from "./adapters/registry.js"
 import { type ParsedKey, parseUnifiedKey } from "./lib/key.js"
+import { type CruiseContentScope, getCruiseContent } from "./service-content.js"
 import { detachExternalCruise } from "./service-detach.js"
 
 const adapterNotRegistered = (provider: string) => ({
@@ -85,6 +104,75 @@ function resolveExternal(parsed: Extract<ParsedKey, { kind: "external" }>): {
 
 function makeExternalKey(adapter: CruiseAdapter, ref: SourceRef): string {
   return `${adapter.name}:${ref.externalId}`
+}
+
+const registryNotConfigured = () => ({
+  error: "registry_not_configured",
+  detail:
+    "Cruise external detail/refresh dispatches through the catalog SourceAdapterRegistry. Inject one via Hono middleware: `c.set('sourceAdapterRegistry', registry)`. See cruiseAdapterToSourceAdapter() in @voyantjs/cruises/adapters.",
+})
+
+/**
+ * Translate a parsed external key into the catalog-side `entity_id`.
+ * Mirrors `cruiseAdapterToSourceAdapter`'s default `buildEntityId` —
+ * `crus_<slug-of-ref>`. Templates that override the shim's
+ * `buildEntityId` should also patch this helper (TODO: factory).
+ */
+function entityIdFromExternal(parsed: Extract<ParsedKey, { kind: "external" }>): string {
+  const slug =
+    String(parsed.ref)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 26) || "unknown"
+  return `crus_${slug}`
+}
+
+/**
+ * Read locale / market / currency / accept_mt scope from the request
+ * for content-aware dispatch. Locale priority: explicit query > Accept-
+ * Language header > en-GB fallback.
+ */
+function readContentScope(c: Context): CruiseContentScope {
+  const localeParams = c.req.queries("locale") ?? c.req.queries("locales") ?? []
+  const headerLocale = c.req.header("accept-language")
+  const acceptLanguageList = headerLocale ? parseAcceptLanguageHeader(headerLocale) : []
+  const preferredLocales =
+    localeParams.length > 0
+      ? localeParams
+      : acceptLanguageList.length > 0
+        ? acceptLanguageList
+        : ["en-GB"]
+  const acceptMt = c.req.query("accept_mt")
+  return {
+    preferredLocales,
+    market: c.req.query("market") ?? undefined,
+    currency: c.req.query("currency") ?? undefined,
+    acceptMachineTranslated: acceptMt != null ? acceptMt !== "false" && acceptMt !== "0" : true,
+  }
+}
+
+function parseAcceptLanguageHeader(header: string): string[] {
+  const parts = header.split(",")
+  const ranked: Array<{ tag: string; q: number; idx: number }> = []
+  for (let i = 0; i < parts.length; i += 1) {
+    const part = parts[i]!.trim()
+    if (!part) continue
+    const [tagRaw, ...params] = part.split(";")
+    const tag = tagRaw!.trim()
+    if (!tag || tag === "*") continue
+    let q = 1
+    for (const p of params) {
+      const [k, v] = p.split("=").map((s) => s.trim())
+      if (k === "q" && v) {
+        const parsed = Number.parseFloat(v)
+        if (Number.isFinite(parsed)) q = parsed
+      }
+    }
+    ranked.push({ tag, q, idx: i })
+  }
+  ranked.sort((a, b) => b.q - a.q || a.idx - b.idx)
+  return ranked.map((r) => r.tag)
 }
 
 // ---------- payload schemas for create-booking endpoints ----------
@@ -262,20 +350,45 @@ export const cruiseAdminRoutes = new Hono<Env>()
     return c.json({ data: row }, 201)
   })
   // --- per-cruise (parses unified key, dispatches local or external) ---
+  // External branch dispatches through the catalog content service
+  // (cache-first, SWR refresh, synthesizer fallback) — flipped from
+  // ad-hoc adapter.fetchCruise() per the catalog-sourced-content
+  // migration. Returns the rich CruiseContent shape; templates that
+  // need backwards-compatible ExternalCruise can post-process the
+  // response.
   .get("/:key", async (c) => {
     const parsed = parseUnifiedKey(c.req.param("key"))
     if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
     if (parsed.kind === "external") {
-      const ext = resolveExternal(parsed)
-      if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
-      const cruise = await ext.adapter.fetchCruise(ext.sourceRef)
-      if (!cruise) return c.json({ error: "not_found" }, 404)
+      const registry = c.get("sourceAdapterRegistry")
+      if (!registry) return c.json(registryNotConfigured(), 503)
+
+      const entityId = entityIdFromExternal(parsed)
+      const result = await getCruiseContent(c.get("db"), entityId, readContentScope(c), {
+        registry,
+      })
+      if (!result) {
+        return c.json(
+          {
+            error: "not_found",
+            detail: `No sourced-entry row for cruise ${parsed.provider}:${parsed.ref} (entity ${entityId}). Run discovery first or check that an adapter is registered for "${parsed.provider}".`,
+          },
+          404,
+        )
+      }
       return c.json({
         data: {
           source: "external",
-          sourceProvider: ext.adapter.name,
-          sourceRef: cruise.sourceRef,
-          cruise,
+          sourceProvider: parsed.provider,
+          sourceRef: parsed.ref,
+          entityId,
+          content: result.content,
+          servedLocale: result.resolution.served_locale,
+          matchKind: result.resolution.match_kind,
+          contentSource: result.source,
+          servedStale: result.served_stale,
+          synthesized: result.synthesized,
+          machineTranslated: result.machine_translated,
         },
       })
     }
@@ -383,20 +496,50 @@ export const cruiseAdminRoutes = new Hono<Env>()
     })
     return c.json({ data: days })
   })
-  // --- external-only operations (now real, phase 3) ---
+  // --- external-only operations ---
+  // Refresh dispatches through the catalog content service. The
+  // invalidator marks the cache row stale; the subsequent
+  // getCruiseContent call sees the staleness and triggers a SWR
+  // refresh. Templates that need synchronous "force fresh from
+  // upstream" semantics should call adapter.getContent() directly
+  // — this route's contract is "best effort refresh, eventually
+  // consistent."
   .post("/:key/refresh", async (c) => {
     const parsed = parseUnifiedKey(c.req.param("key"))
     if (parsed.kind !== "external") return c.json({ error: "local_cruise_no_refresh" }, 400)
-    const ext = resolveExternal(parsed)
-    if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
-    const cruise = await ext.adapter.fetchCruise(ext.sourceRef)
-    if (!cruise) return c.json({ error: "not_found" }, 404)
+    const registry = c.get("sourceAdapterRegistry")
+    if (!registry) return c.json(registryNotConfigured(), 503)
+
+    const entityId = entityIdFromExternal(parsed)
+    const { invalidateCruiseContentOnDrift } = await import("./service-content.js")
+    await invalidateCruiseContentOnDrift(c.get("db"), {
+      id: `cnde_refresh_${Date.now()}`,
+      entity_module: "cruises",
+      entity_id: entityId,
+      kind: "content_invalidated",
+      detected_at: new Date(),
+    })
+    const result = await getCruiseContent(c.get("db"), entityId, readContentScope(c), {
+      registry,
+    })
+    if (!result) {
+      return c.json(
+        {
+          error: "not_found",
+          detail: `No sourced-entry row for cruise ${parsed.provider}:${parsed.ref} (entity ${entityId}).`,
+        },
+        404,
+      )
+    }
     return c.json({
       data: {
         source: "external",
-        sourceProvider: ext.adapter.name,
-        sourceRef: cruise.sourceRef,
-        cruise,
+        sourceProvider: parsed.provider,
+        sourceRef: parsed.ref,
+        entityId,
+        content: result.content,
+        contentSource: result.source,
+        servedStale: result.served_stale,
         refreshedAt: new Date().toISOString(),
       },
     })

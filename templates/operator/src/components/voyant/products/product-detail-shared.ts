@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import type { ProductRecord } from "@voyantjs/products-react"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
-import { api } from "@/lib/api-client"
+import { ApiError, api } from "@/lib/api-client"
 import type { DepartureSlot } from "./product-departure-dialog"
 import type { AvailabilityRule } from "./product-schedule-dialog"
 
@@ -253,4 +253,80 @@ export function formatCapacityLabel(slot: DepartureSlot, messages: AdminMessages
   if (slot.initialPax == null) return messages.products.core.noValue
   const remaining = slot.remainingPax ?? slot.initialPax
   return `${remaining} / ${slot.initialPax}`
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sourced content (catalog-sourced-content §3.3) — owned products return
+// 404 from /v1/admin/products/:id/content; the query options helper
+// catches that and returns null so the UI can render conditionally
+// without a TanStack Query error state.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ProductSourcedContentResponse {
+  data: {
+    content: {
+      product: {
+        id: string
+        name: string
+        description?: string | null
+        highlights?: string[]
+        hero_image_url?: string | null
+        duration_days?: number | null
+        sell_currency?: string | null
+        supplier?: string | null
+        country?: string | null
+      }
+      options: Array<{ id: string; name: string; description?: string | null }>
+      days: Array<{
+        day_number: number
+        title?: string | null
+        description?: string | null
+        location?: string | null
+      }>
+      media: Array<{ url: string; type: string; caption?: string | null }>
+      policies: Array<{ kind: string; body: string }>
+      departures?: Array<{
+        id: string
+        starts_at: string
+        ends_at?: string | null
+        status?: string | null
+        capacity?: number | null
+        remaining?: number | null
+        lowest_price_cents?: number | null
+        currency?: string | null
+        note?: string | null
+      }>
+    }
+    served_locale: string
+    match_kind: "exact" | "language_match" | "fallback_chain" | "any"
+    source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
+    served_stale: boolean
+    synthesized: boolean
+    machine_translated: boolean
+  }
+}
+
+export function getProductSourcedContentQueryOptions(productId: string) {
+  return queryOptions({
+    queryKey: ["products", productId, "sourced-content"] as const,
+    queryFn: async (): Promise<ProductSourcedContentResponse | null> => {
+      try {
+        return await api.get<ProductSourcedContentResponse>(
+          `/v1/admin/products/${productId}/content`,
+        )
+      } catch (err) {
+        // 404 → owned product (no sourced-entry row). Return null so
+        // the UI can branch cleanly. 503 → registry not configured —
+        // also null. Other errors propagate so the user sees them.
+        if (err instanceof ApiError && (err.status === 404 || err.status === 503)) {
+          return null
+        }
+        throw err
+      }
+    },
+    // Sourced content is loosely cached at the wizard level — the
+    // backend's SWR machinery handles freshness. 60s stale time keeps
+    // the badge stable across tab switches.
+    staleTime: 60_000,
+  })
 }

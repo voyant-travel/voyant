@@ -9,7 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/component
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
 import { type ReactNode, useEffect, useMemo, useState } from "react"
 
-import { type CatalogDetailAction, CatalogDetailSheet } from "./catalog-detail-sheet"
+import {
+  type CatalogDetailAction,
+  type CatalogDetailEnrichment,
+  CatalogDetailSheet,
+} from "./catalog-detail-sheet"
 import { CatalogFacetedFilter } from "./catalog-faceted-filter"
 import { CatalogRangeFilter, type CatalogRangeFilterValue } from "./catalog-range-filter"
 
@@ -99,6 +103,29 @@ export interface CatalogSearchTab {
    * click to do more than just "view details."
    */
   detailActions?: CatalogDetailAction[]
+  /**
+   * Optional enrichment loader. Called when the detail sheet opens for
+   * a hit. Returns the rich content shape (description, itinerary,
+   * media, options, policies, supplier) so the sheet can render full
+   * detail without expanding the search-time projection — keeps the
+   * search index lean and lets every entity carry rich content via
+   * the catalog content service.
+   *
+   * Templates wire this per-vertical to call `/v1/admin/<vertical>/:id/content`
+   * (which `getProductContent` / `getCruiseContent` / etc back).
+   * Returns null when the entity has no content (rare — surfaces as a
+   * subtle "no extra detail" hint in the sheet).
+   */
+  onLoadDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  /**
+   * Called when the operator clicks a per-departure Book button on a
+   * catalog row. Templates typically navigate to the catalog booking
+   * journey with the departure id pinned.
+   */
+  onBookDeparture?: (
+    hit: CatalogSearchHit,
+    departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
+  ) => void
 }
 
 export interface CatalogSearchPageProps {
@@ -435,6 +462,8 @@ function CatalogTabPanel({
         formatters={tab.detailFormatters}
         actions={tab.detailActions}
         imageField={tab.imageField ?? "thumbnailUrl"}
+        onLoadDetail={tab.onLoadDetail}
+        onBookDeparture={tab.onBookDeparture}
       />
     </div>
   )

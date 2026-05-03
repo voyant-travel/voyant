@@ -46,6 +46,7 @@ import { createVideoUploadTicket } from "../lib/video-uploads"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
 import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
+import { mountCatalogContentRoutes } from "./catalog-content"
 import { mountCatalogSearchRoutes } from "./catalog-search"
 import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
@@ -457,6 +458,7 @@ export const app = createApp<CloudflareBindings>({
     mountCatalogMcpRoutes(hono)
     mountCatalogSearchRoutes(hono)
     mountCatalogBookingRoutes(hono)
+    mountCatalogContentRoutes(hono)
     mountFlightRoutes(hono)
   },
 })

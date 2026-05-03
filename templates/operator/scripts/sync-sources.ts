@@ -45,6 +45,8 @@ import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { config } from "dotenv"
+import { drizzle } from "drizzle-orm/postgres-js"
+import postgres from "postgres"
 import { Client as TypesenseSdkClient } from "typesense"
 
 config({ path: ".env" })
@@ -60,9 +62,18 @@ const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.c
   "",
 )
 const catalogDemoUrl = process.env.CATALOG_DEMO_API_URL
+const databaseUrl = process.env.DATABASE_URL
 
 if (!typesenseHost) throw new Error("TYPESENSE_HOST is not set")
 if (!typesenseKey) throw new Error("TYPESENSE_ADMIN_API_KEY is not set")
+if (!databaseUrl) throw new Error("DATABASE_URL is not set")
+
+// Drizzle client. The sync upserts a row into `catalog_sourced_entries`
+// for every projection alongside the indexer write so the catalog
+// detail sheet's content endpoint (and the snapshot capture path) can
+// resolve the entity by its catalog-side id (sourced-content §2.5.2).
+const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} })
+const db = drizzle(sql)
 
 // ── Registry: register every adapter the deployment supports ─────────────
 const registry = createSourceAdapterRegistry()
@@ -166,6 +177,7 @@ const summary: SyncSourcesSummary = await syncSources({
   registry,
   indexerService,
   fieldPolicyRegistries,
+  db,
   ...(wrapBuilder ? { wrapBuilder } : {}),
   onProgress(event) {
     console.info(
@@ -178,10 +190,11 @@ console.info("[sync-sources] complete")
 for (const adapter of summary.adapters) {
   const verticals = adapter.verticalsTouched.join(",") || "(none)"
   console.info(
-    `[sync-sources]   · ${adapter.adapter}: ${adapter.projectionsSynced} projection(s) across [${verticals}], skipped ${adapter.skippedNoRegistry}`,
+    `[sync-sources]   · ${adapter.adapter}: ${adapter.projectionsSynced} projection(s) across [${verticals}], skipped ${adapter.skippedNoRegistry}, sourced-entries upserted ${adapter.sourcedEntriesUpserted}`,
   )
 }
 console.info(`[sync-sources] total projections synced: ${summary.totalProjections}`)
+await sql.end()
 process.exit(0)
 
 function composeMerchandisableText(doc: IndexerDocument): string {

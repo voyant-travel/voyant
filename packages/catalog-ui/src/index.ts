@@ -1,5 +1,6 @@
 export {
   type CatalogDetailAction,
+  type CatalogDetailEnrichment,
   CatalogDetailSheet,
   type CatalogDetailSheetProps,
 } from "./components/catalog-detail-sheet.js"

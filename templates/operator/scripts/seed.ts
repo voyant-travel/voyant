@@ -1326,6 +1326,10 @@ type ProductRow = {
   supplierIdx?: number
   status: "draft" | "active" | "inactive" | "archived"
   visibility: "private" | "public"
+  /** Marketing description — surfaces in the catalog detail sheet body. */
+  description?: string
+  /** Faceted tags — surfaces in the catalog "Tags & themes" section. */
+  tags?: string[]
 }
 const PRODUCTS: ProductRow[] = [
   {
@@ -1339,6 +1343,9 @@ const PRODUCTS: ProductRow[] = [
     supplierIdx: 0,
     status: "active",
     visibility: "public",
+    description:
+      "Three days hitting London's headline beats — Westminster, Tower Bridge, Borough Market — with a riverside boutique hotel, central transfers, and a private guide who picks the queue-skip windows.",
+    tags: ["london", "city-break", "guided", "boutique"],
   },
   {
     id: newId("products"),
@@ -1351,6 +1358,9 @@ const PRODUCTS: ProductRow[] = [
     supplierIdx: 1,
     status: "active",
     visibility: "public",
+    description:
+      "Two evenings in Paris built around a sunset cruise on the Seine, a Montmartre dinner reservation, and a private morning at the Musée d'Orsay before the crowds.",
+    tags: ["paris", "romantic", "cruise", "evening"],
   },
   {
     id: newId("products"),
@@ -1362,6 +1372,9 @@ const PRODUCTS: ProductRow[] = [
     supplierIdx: 2,
     status: "active",
     visibility: "public",
+    description:
+      "Half-day walking tour through Montmartre's painters' streets with a local art-history guide. Stops at Sacré-Cœur, Place du Tertre, and a tucked-away wine cellar for a tasting break.",
+    tags: ["paris", "walking", "guided", "half-day", "art"],
   },
   {
     id: newId("products"),
@@ -1374,6 +1387,9 @@ const PRODUCTS: ProductRow[] = [
     supplierIdx: 3,
     status: "active",
     visibility: "public",
+    description:
+      "Private sedan transfer between Heathrow Terminal 5 and central London. Meet-and-greet inside arrivals, complimentary wait time, fixed all-in price.",
+    tags: ["transfer", "london", "airport", "private"],
   },
   {
     id: newId("products"),
@@ -1386,6 +1402,9 @@ const PRODUCTS: ProductRow[] = [
     supplierIdx: 4,
     status: "active",
     visibility: "public",
+    description:
+      "Skip-the-line summit access at the Eiffel Tower with a private host. Champagne option at the second floor brasserie; flexible 90-minute window.",
+    tags: ["paris", "landmark", "private", "skip-the-line", "evening"],
   },
   {
     id: newId("products"),
@@ -1397,6 +1416,9 @@ const PRODUCTS: ProductRow[] = [
     supplierIdx: 5,
     status: "draft",
     visibility: "private",
+    description:
+      "Five-night two-city honeymoon — three nights riverside in London, two nights Montmartre in Paris, Eurostar in between, daily concierge, sunset Seine cruise on night four.",
+    tags: ["honeymoon", "luxury", "multi-city", "london", "paris"],
   },
 ]
 

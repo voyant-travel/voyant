@@ -81,6 +81,7 @@ export interface CreateOrderInput {
   inventoryId: string
   party: Record<string, unknown> | null
   paymentIntent: Record<string, unknown> | null
+  parameters: Record<string, unknown> | null
 }
 
 export async function createOrder(
@@ -100,6 +101,7 @@ export async function createOrder(
       currency: input.currency,
       party: input.party,
       paymentIntent: input.paymentIntent,
+      parameters: input.parameters,
     })
     .returning()) as CatalogDemoOrderRow[]
   if (!inserted[0]) {

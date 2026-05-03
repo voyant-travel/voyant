@@ -298,3 +298,12 @@ export interface CruiseAdapter {
 }
 
 export type AdapterCallContext = { adapterName: string; method: string }
+
+// ---------- catalog SourceAdapter shim ----------
+
+export {
+  type CruiseSourceAdapterShim,
+  type CruiseSourceAdapterShimOptions,
+  cruiseAdapterToSourceAdapter,
+  cruiseItineraryStopFrom,
+} from "./source-adapter-shim.js"

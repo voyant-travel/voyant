@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
+    "./schema-sourced-entries": "./src/schema-sourced-entries.ts",
     "./contract": "./src/contract.ts",
     "./provenance": "./src/provenance.ts",
     "./overlay/schema": "./src/overlay/schema.ts",
@@ -20,8 +21,11 @@
     "./services/overlay": "./src/services/overlay-service.ts",
     "./services/snapshot": "./src/services/snapshot-service.ts",
     "./services/indexer": "./src/services/indexer-service.ts",
+    "./services/sourced-entry": "./src/services/sourced-entry-service.ts",
+    "./services/content": "./src/services/content-service.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
-    "./booking-engine/schema": "./src/booking-engine/schema.ts"
+    "./booking-engine/schema": "./src/booking-engine/schema.ts",
+    "./booking-engine/draft-shape": "./src/booking-engine/draft-shape.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -47,6 +51,11 @@
         "types": "./dist/schema.d.ts",
         "import": "./dist/schema.js",
         "default": "./dist/schema.js"
+      },
+      "./schema-sourced-entries": {
+        "types": "./dist/schema-sourced-entries.d.ts",
+        "import": "./dist/schema-sourced-entries.js",
+        "default": "./dist/schema-sourced-entries.js"
       },
       "./contract": {
         "types": "./dist/contract.d.ts",
@@ -117,6 +126,16 @@
         "types": "./dist/services/indexer-service.d.ts",
         "import": "./dist/services/indexer-service.js",
         "default": "./dist/services/indexer-service.js"
+      },
+      "./services/sourced-entry": {
+        "types": "./dist/services/sourced-entry-service.d.ts",
+        "import": "./dist/services/sourced-entry-service.js",
+        "default": "./dist/services/sourced-entry-service.js"
+      },
+      "./services/content": {
+        "types": "./dist/services/content-service.d.ts",
+        "import": "./dist/services/content-service.js",
+        "default": "./dist/services/content-service.js"
       },
       "./booking-engine": {
         "types": "./dist/booking-engine/index.d.ts",

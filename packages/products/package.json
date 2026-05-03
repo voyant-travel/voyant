@@ -13,7 +13,12 @@
     "./tasks": "./src/tasks/index.ts",
     "./booking-extension": "./src/booking-extension.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
-    "./service-catalog-plane": "./src/service-catalog-plane.ts"
+    "./service-catalog-plane": "./src/service-catalog-plane.ts",
+    "./content-shape": "./src/content-shape.ts",
+    "./service-content": "./src/service-content.ts",
+    "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
+    "./routes-content": "./src/routes-content.ts",
+    "./draft-shape": "./src/draft-shape.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

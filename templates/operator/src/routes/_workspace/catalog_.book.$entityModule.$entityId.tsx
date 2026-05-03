@@ -24,6 +24,14 @@ const catalogBookSearchSchema = z.object({
   supplierId: z.string().optional(),
   /** Locale override; defaults to en-GB to match DEFAULT_SLICES. */
   locale: z.string().optional(),
+  /**
+   * Pinned departure when the operator clicked a specific row in the
+   * catalog detail sheet's Departures section. The booking page uses
+   * this to seed the quote request with the chosen slot.
+   */
+  departureId: z.string().optional(),
+  /** ISO timestamp for the pinned departure — convenience for the header. */
+  departureStartsAt: z.string().optional(),
 })
 
 export type CatalogBookSearchParams = z.infer<typeof catalogBookSearchSchema>

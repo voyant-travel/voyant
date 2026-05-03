@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import type { ProductDayRecord as ProductDay } from "@voyantjs/products-react"
-import { api } from "@/lib/api-client"
+import { ApiError, api } from "@/lib/api-client"
 
 export type Product = {
   id: string
@@ -103,4 +103,63 @@ export function formatAmount(cents: number | null, currency: string): string {
 export function formatMargin(percent: number | null): string {
   if (percent == null) return DEFAULT_NO_VALUE
   return `${(percent / 100).toFixed(2)}%`
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sourced content (catalog-sourced-content §3.3) — owned products return
+// 404 from /v1/admin/products/:id/content; the query catches that and
+// returns null so the UI conditionally renders without a TanStack Query
+// error state.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ProductSourcedContentResponse {
+  data: {
+    content: {
+      product: {
+        id: string
+        name: string
+        description?: string | null
+        highlights?: string[]
+        hero_image_url?: string | null
+        duration_days?: number | null
+        sell_currency?: string | null
+        supplier?: string | null
+        country?: string | null
+      }
+      options: Array<{ id: string; name: string; description?: string | null }>
+      days: Array<{
+        day_number: number
+        title?: string | null
+        description?: string | null
+        location?: string | null
+      }>
+      media: Array<{ url: string; type: string; caption?: string | null }>
+      policies: Array<{ kind: string; body: string }>
+    }
+    served_locale: string
+    match_kind: "exact" | "language_match" | "fallback_chain" | "any"
+    source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
+    served_stale: boolean
+    synthesized: boolean
+    machine_translated: boolean
+  }
+}
+
+export function getProductSourcedContentQueryOptions(productId: string) {
+  return queryOptions({
+    queryKey: ["products", productId, "sourced-content"] as const,
+    queryFn: async (): Promise<ProductSourcedContentResponse | null> => {
+      try {
+        return await api.get<ProductSourcedContentResponse>(
+          `/v1/admin/products/${productId}/content`,
+        )
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 404 || err.status === 503)) {
+          return null
+        }
+        throw err
+      }
+    },
+    staleTime: 60_000,
+  })
 }
