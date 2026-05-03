@@ -24,6 +24,12 @@ import type {
   GetContentResult,
   LiveResolveRequest,
   LiveResolveResult,
+  PushAvailabilityRequest,
+  PushAvailabilityResult,
+  PushBookingRequest,
+  PushBookingResult,
+  PushContentRequest,
+  PushContentResult,
   ReserveRequest,
   ReserveResult,
 } from "@voyantjs/catalog"
@@ -43,6 +49,15 @@ interface CancelBody {
   upstream_ref: string
   reason?: string
 }
+
+/**
+ * In-memory log of pushes received from Voyant. Reset on process
+ * restart and via `POST /pushed/clear`. Sufficient for the demo —
+ * real channels persist + reconcile.
+ */
+const pushedBookings: Array<PushBookingRequest & { upstreamRef: string; receivedAt: string }> = []
+const pushedAvailability: Array<PushAvailabilityRequest & { receivedAt: string }> = []
+const pushedContent: Array<PushContentRequest & { receivedAt: string }> = []
 
 const SOURCE_KIND = "demo"
 /**
@@ -398,6 +413,55 @@ export function createRoutes(db: CatalogDemoDb): Hono {
       refund_amount: order.pricedCents,
       refund_currency: order.currency,
     })
+  })
+
+  // ── Channel push (outbound from Voyant → demo upstream) ────────────────
+  // The demo records each push in-memory so tests/demos can inspect what
+  // was sent. Real channels persist + reconcile; the demo keeps just
+  // enough state to be testable.
+
+  app.post("/push-booking", async (c) => {
+    const request = (await c.req.json()) as PushBookingRequest
+    const upstreamRef = `demo-up-${request.idempotencyKey}`
+    pushedBookings.push({ ...request, upstreamRef, receivedAt: new Date().toISOString() })
+    const result: PushBookingResult = {
+      upstreamRef,
+      externalReference: `DEMO-${pushedBookings.length}`,
+      externalStatus: "confirmed",
+      upstreamPayload: { recordedAt: new Date().toISOString() },
+    }
+    return c.json(result)
+  })
+
+  app.post("/push-availability", async (c) => {
+    const request = (await c.req.json()) as PushAvailabilityRequest
+    pushedAvailability.push({ ...request, receivedAt: new Date().toISOString() })
+    const result: PushAvailabilityResult = {
+      externalStatus: "ok",
+      upstreamPayload: { recordedAt: new Date().toISOString() },
+    }
+    return c.json(result)
+  })
+
+  app.post("/push-content", async (c) => {
+    const request = (await c.req.json()) as PushContentRequest
+    pushedContent.push({ ...request, receivedAt: new Date().toISOString() })
+    const result: PushContentResult = {
+      externalStatus: "ok",
+      acknowledgedHash: request.contentHash,
+    }
+    return c.json(result)
+  })
+
+  // Debug surfaces — tests/demos read these to assert push history.
+  app.get("/pushed-bookings", (c) => c.json({ rows: pushedBookings }))
+  app.get("/pushed-availability", (c) => c.json({ rows: pushedAvailability }))
+  app.get("/pushed-content", (c) => c.json({ rows: pushedContent }))
+  app.post("/pushed/clear", (c) => {
+    pushedBookings.length = 0
+    pushedAvailability.length = 0
+    pushedContent.length = 0
+    return c.json({ ok: true })
   })
 
   // ── Admin / debug surfaces ────────────────────────────────────────────
