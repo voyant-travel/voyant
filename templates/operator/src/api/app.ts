@@ -48,6 +48,7 @@ import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { mountCatalogSearchRoutes } from "./catalog-search"
+import { channelPushBundle } from "./channel-push"
 import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
 import { getDbFromHyperdrive } from "./lib/db"
@@ -223,7 +224,7 @@ export const app = createApp<CloudflareBindings>({
     transactionsBookingExtension,
     distributionBookingExtension,
   ],
-  plugins: [catalogBridgeBundle, netopiaHonoBundle()],
+  plugins: [catalogBridgeBundle, channelPushBundle, netopiaHonoBundle()],
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>
