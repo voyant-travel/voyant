@@ -31,6 +31,12 @@ export {
   cancelEntity,
 } from "./cancel.js"
 export {
+  type CheckoutFinalizeDeps,
+  type CheckoutFinalizeInput,
+  checkoutFinalizeWorkflow,
+  runCheckoutFinalize,
+} from "./checkout-finalize.js"
+export {
   accommodationSubStepV1,
   addonGroupV1,
   addonOfferV1,

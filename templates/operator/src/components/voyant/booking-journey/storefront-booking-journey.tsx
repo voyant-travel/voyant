@@ -100,6 +100,44 @@ export function StorefrontBookingJourney({
     },
   }
 
+  // Default checkout-start handler — when the caller doesn't supply
+  // its own `onContractAccepted`, we POST the acceptance to the
+  // checkout endpoint and route the customer based on the response.
+  const defaultCheckoutHandler = async (acceptance: ContractAcceptanceEvent) => {
+    // Phase 3 ships a stub response. The real payment-intent →
+    // booking-id wiring lands in Phase 4 (card / Netopia) and
+    // Phase 5 (bank transfer). Until then we surface the response
+    // payload in the console so the storefront integration can be
+    // verified end-to-end without the underlying services lighting
+    // up.
+    try {
+      const res = await fetch(`${getApiUrl()}/v1/public/catalog/checkout/start`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          // Phase 4 fills bookingId from a bookEntity call ahead of
+          // the checkout-start invocation; for now we send the
+          // draftId as a placeholder so the request validates.
+          bookingId: draftId,
+          paymentIntent: "card",
+          contractAcceptance: {
+            templateId: acceptance.templateId,
+            templateSlug: acceptance.templateSlug,
+            acceptedTerms: true,
+            acceptedMarketing: acceptance.acceptedMarketing,
+            acceptedAt: acceptance.acceptedAt,
+            renderedHtml: acceptance.renderedHtml,
+          },
+        }),
+      })
+      const json = await res.json()
+      console.info("[storefront] checkout/start response", json)
+    } catch (err) {
+      console.error("[storefront] checkout/start failed", err)
+    }
+  }
+
   return (
     <BookingJourney
       surface="public"
@@ -128,7 +166,7 @@ export function StorefrontBookingJourney({
             }
           : undefined
       }
-      onContractAccepted={onContractAccepted}
+      onContractAccepted={onContractAccepted ?? defaultCheckoutHandler}
       paymentCapabilities={{
         // Storefront defaults — covers the three customer-facing
         // payment paths a typical tour operator wants. The deployment

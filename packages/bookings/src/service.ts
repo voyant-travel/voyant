@@ -2420,7 +2420,12 @@ export const bookingsService = {
         if (!canTransitionBooking(booking.status, "confirmed")) {
           throw new BookingServiceError("invalid_transition")
         }
-        if (booking.status !== "on_hold") {
+        // Accept both the staff-brokered "on_hold" and the customer
+        // checkout flow's "awaiting_payment". Other statuses (draft,
+        // already-confirmed, expired, cancelled) reject — the state
+        // machine catches the rest, but we explicitly forbid the
+        // states that would skip a step in the lifecycle.
+        if (booking.status !== "on_hold" && booking.status !== "awaiting_payment") {
           throw new BookingServiceError("invalid_transition")
         }
         if (booking.hold_expires_at && booking.hold_expires_at < new Date()) {

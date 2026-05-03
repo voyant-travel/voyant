@@ -46,6 +46,7 @@ import { createVideoUploadTicket } from "../lib/video-uploads"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
 import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
+import { catalogCheckoutBundle, mountCatalogCheckoutRoutes } from "./catalog-checkout"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { mountCatalogSearchRoutes } from "./catalog-search"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
@@ -235,7 +236,7 @@ export const app = createApp<CloudflareBindings>({
     transactionsBookingExtension,
     distributionBookingExtension,
   ],
-  plugins: [catalogBridgeBundle, channelPushBundle, netopiaHonoBundle()],
+  plugins: [catalogBridgeBundle, catalogCheckoutBundle, channelPushBundle, netopiaHonoBundle()],
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>
@@ -470,6 +471,7 @@ export const app = createApp<CloudflareBindings>({
     mountCatalogMcpRoutes(hono)
     mountCatalogSearchRoutes(hono)
     mountCatalogBookingRoutes(hono)
+    mountCatalogCheckoutRoutes(hono)
     mountCatalogContentRoutes(hono)
     mountChannelPushAdminRoutes(hono)
     mountFlightRoutes(hono)
