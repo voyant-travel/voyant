@@ -322,7 +322,7 @@ relevant phase.
   We leave it alone for now and add the new flow on the storefront
   only — no regression risk.
 
-## Implementation status (as of 2026-05-03)
+## Implementation status
 
 | Phase | Status | Commits |
 | --- | --- | --- |
@@ -331,42 +331,73 @@ relevant phase.
 | 1.3 finance emits invoice.issued / proforma.issued | ✅ done | aeb200611 |
 | 1.4 SmartBill proforma subscriber | ✅ done | aeb200611 |
 | 2 contract preview dialog + slug-based render endpoint | ✅ done | ba12d6a03 |
-| 3 checkout-start endpoint + finalize workflow scaffold | ✅ done | e5d06d9c8, 6be800a4f |
-| 4 Netopia card path | 🟡 not started — needs sandbox creds + dev tunnel |
-| 5 Bank-transfer path + Mark payment received | 🟡 not started — needs proforma SmartBill flow exercised end-to-end |
-| 6 Inquiry path + observability | 🟡 not started — depends on CRM opportunity wiring |
+| 3 checkout-start endpoint + finalize workflow | ✅ done | e5d06d9c8, 6be800a4f |
+| 4 Netopia card path | ✅ done | a556f0fac |
+| 5 Bank-transfer path | ✅ done | a556f0fac |
+| 6 Inquiry path + observability | 🟡 partial — inquiry is a stub; observability deferred |
 
-What works after Phase 3:
+What works end-to-end after Phase 5:
 
-- The Review step in the storefront opens the contract preview
-  dialog. Variables are mapped via `resolveContractVariables`. The
-  Accept button is gated on the terms checkbox.
-- Acceptance POSTs to `/v1/public/catalog/checkout/start`, which
-  currently returns a typed stub per intent (no booking is created
-  yet — that wiring lands in Phase 4).
-- A `payment.completed` event runs the `checkout-finalize`
-  workflow which calls the real `bookingsService.confirmBooking`.
-  When `auto-generate-contract` is enabled in the legal module, the
-  contract PDF is produced automatically.
+- The Review step opens the contract preview dialog with template
+  variables mapped via `resolveContractVariables`. The Accept gate
+  is the terms checkbox; marketing is optional.
+- The storefront wrapper's default checkout handler:
+  1. POSTs `/v1/public/catalog/book` with the draft → real booking id.
+  2. POSTs `/v1/public/catalog/checkout/start` with the booking id +
+     payment intent + acceptance.
+  3. Routes the customer based on the response kind.
+- `card` intent: creates a payment session targeting the booking,
+  asks the Netopia plugin to start it, returns the redirect URL.
+  Falls back to a confirmation-page poll when Netopia isn't
+  configured (useful for demos without sandbox creds).
+- `bank_transfer` intent: issues a proforma synchronously (which
+  fires SmartBill's proforma subscriber via `invoice.proforma.issued`),
+  creates a payment session targeting the booking, returns IBAN +
+  reference instructions. The customer lands on a confirmation page
+  that displays the instructions out of sessionStorage.
+- The Netopia webhook → `completePaymentSession` → emits
+  `payment.completed` → catalog-checkout bundle runs
+  `checkout-finalize` → confirms the booking + issues the final
+  invoice, with `convertedFromInvoiceId` linking it to the proforma
+  when the bank-transfer path was used.
+- Confirmation page: separate panels for `card_pending`,
+  `bank_transfer`, `inquiry`, `hold`, and the default
+  "booking confirmed" message.
 
-What's missing:
+Mark-payment-received (admin):
 
-1. The checkout-start endpoint needs to call `bookEntity` to
-   actually create the booking in `awaiting_payment` and persist the
-   contract acceptance signature against the new booking id. Right
-   now it accepts a draft id and echoes it back as the booking id.
-2. Netopia plugin needs to emit `payment.completed` from its
-   webhook callback (currently it completes the payment session but
-   doesn't fire the cross-vertical event the workflow listens for).
-3. The bank-transfer path needs `createProformaFromBooking` (a thin
-   wrapper around `issueProformaFromBooking`) called from the
-   checkout-start handler, plus an admin "Mark payment received"
-   button on the booking detail page that emits `payment.completed`.
-4. The inquiry path needs a CRM opportunity creator + a way to
-   convert it back to a booking when the operator follows up.
-5. Workflow `issue_invoice` step is no-op'd. Phase 4/5 should wire
-   it via `issueInvoiceFromBooking` once a booking + items snapshot
-   is reachable from the subscriber.
+- The bank-transfer flow creates a payment session at checkout-start
+  time. Operators mark it received via the existing
+  `POST /v1/admin/finance/payment-sessions/:id/complete` endpoint
+  with `{ status: "paid", captureMode: "manual", paymentMethod:
+  "bank_transfer", ... }`. That fires `payment.completed` and the
+  checkout-finalize workflow runs the same way the card path does.
+
+What's still pending (Phase 6 follow-up):
+
+1. **Real CRM opportunity for inquiry** — the inquiry intent
+   currently returns a stubbed `inq-{bookingId}` and skips the
+   workflow. Wiring it to `crm.opportunities` requires deployment
+   config for the inquiry pipeline + stage; until that's in place,
+   the inquiry path is functionally a "thanks for your interest"
+   page.
+2. **Operator-side "Mark payment received" UI** — the endpoint
+   exists; the booking-detail page in the operator dashboard needs
+   a button that calls it. Pending the dashboard UI sprint.
+3. **Observability dashboard** — there is no `workflow_runs` table
+   yet, so the workflow execution is fire-and-forget. The plan
+   originally called for a "Checkout pipeline" view; that depends
+   on a new schema and is deferred.
+4. **Contract acceptance signature persistence** — the storefront
+   captures acceptance into `bookings.internalNotes` for now. Once
+   a contract row is auto-generated on `booking.confirmed`, a
+   subscriber should turn that note into a real
+   `contract_signatures` row. Trivially done in a follow-up.
+5. **Booking status flip to `awaiting_payment`** — bookings
+   currently sit in `on_hold` between checkout-start and webhook
+   completion. The `awaiting_payment` status is in the schema but
+   the checkout-start handler doesn't transition into it. Cosmetic
+   for ops; the workflow accepts both states.
 
 ## PR sequencing
 

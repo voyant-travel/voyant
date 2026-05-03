@@ -285,6 +285,23 @@ async function handleBankTransferIntent(
     { eventBus },
   )
 
+  // Create a payment session targeting the booking + proforma so the
+  // operator can mark it received via the existing
+  // POST /v1/admin/finance/payment-sessions/:id/complete endpoint.
+  // That endpoint emits payment.completed which fires the
+  // checkout-finalize workflow (final invoice, contract auto-gen).
+  const paymentSession = await financeService.createPaymentSession(db, {
+    bookingId: booking.id,
+    invoiceId: proforma?.id ?? null,
+    amountCents: booking.sellAmountCents ?? 0,
+    currency: booking.sellCurrency ?? "EUR",
+    status: "pending",
+    notes: `Bank transfer for booking ${booking.bookingNumber} (proforma ${
+      proforma?.invoiceNumber ?? "—"
+    })`,
+    targetType: "booking",
+  } as never)
+
   // Bank-transfer instructions come from deployment-level
   // configuration. Until the storefront wires that through, we
   // surface a placeholder so the dev loop is functional.
@@ -294,6 +311,7 @@ async function handleBankTransferIntent(
     bookingId: booking.id,
     proformaId: proforma?.id ?? null,
     proformaNumber: proforma?.invoiceNumber ?? null,
+    paymentSessionId: paymentSession?.id ?? null,
     instructions: {
       beneficiary:
         env.STOREFRONT_BANK_BENEFICIARY ?? "Your company name (BANK_BENEFICIARY env var)",

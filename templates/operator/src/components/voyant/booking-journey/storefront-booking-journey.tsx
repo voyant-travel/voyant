@@ -164,12 +164,27 @@ export function StorefrontBookingJourney({
           returnOrigin: window.location.origin,
         }),
       })
-      const json = (await startRes.json()) as
+      type CheckoutStartResponse =
         | { kind: "card_redirect"; bookingId: string; redirectUrl: string | null }
-        | { kind: "bank_transfer_instructions"; bookingId: string }
+        | {
+            kind: "bank_transfer_instructions"
+            bookingId: string
+            proformaNumber: string | null
+            instructions: {
+              beneficiary: string
+              iban: string
+              bankName: string
+              reference: string
+              amountCents: number
+              currency: string
+              dueAt: string
+            }
+          }
         | { kind: "inquiry_received"; bookingId: string; inquiryId: string }
         | { kind: "hold_placed"; bookingId: string }
         | { error: string }
+
+      const json = (await startRes.json()) as CheckoutStartResponse
 
       if ("error" in json) {
         console.error("[storefront] /checkout/start error", json)
@@ -184,15 +199,36 @@ export function StorefrontBookingJourney({
             navigate({
               to: "/shop/confirmation/$bookingId",
               params: { bookingId: json.bookingId },
+              search: { kind: "card_pending" } as never,
             })
           }
           break
         case "bank_transfer_instructions":
+          // Hand the instructions to the confirmation page so the
+          // customer leaves with the IBAN + reference visible. Stored
+          // in sessionStorage to keep the URL clean — refreshing the
+          // page replays the same instructions.
+          if (typeof sessionStorage !== "undefined") {
+            sessionStorage.setItem(`voyant.checkout.${json.bookingId}`, JSON.stringify(json))
+          }
+          navigate({
+            to: "/shop/confirmation/$bookingId",
+            params: { bookingId: json.bookingId },
+            search: { kind: "bank_transfer" } as never,
+          })
+          break
         case "inquiry_received":
+          navigate({
+            to: "/shop/confirmation/$bookingId",
+            params: { bookingId: json.bookingId },
+            search: { kind: "inquiry" } as never,
+          })
+          break
         case "hold_placed":
           navigate({
             to: "/shop/confirmation/$bookingId",
             params: { bookingId: json.bookingId },
+            search: { kind: "hold" } as never,
           })
           break
       }
