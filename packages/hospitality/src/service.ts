@@ -743,6 +743,7 @@ export const hospitalityService = {
   async listRoomTypes(db: PostgresJsDatabase, query: RoomTypeListQuery) {
     const conditions = []
     if (query.propertyId) conditions.push(eq(roomTypes.propertyId, query.propertyId))
+    if (query.supplierId) conditions.push(eq(roomTypes.supplierId, query.supplierId))
     if (query.active !== undefined) conditions.push(eq(roomTypes.active, query.active))
     if (query.inventoryMode) conditions.push(eq(roomTypes.inventoryMode, query.inventoryMode))
     if (query.search) {

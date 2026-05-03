@@ -338,6 +338,10 @@ export const productsService = {
       conditions.push(eq(products.facilityId, query.facilityId))
     }
 
+    if (query.supplierId) {
+      conditions.push(eq(products.supplierId, query.supplierId))
+    }
+
     if (query.productTypeId) {
       conditions.push(eq(products.productTypeId, query.productTypeId))
     }

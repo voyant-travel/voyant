@@ -67,6 +67,7 @@ export function productExtraRowToProjection(
     ["id", row.id],
     ["code", row.code],
     ["productId", row.productId],
+    ["supplierId", row.supplierId],
     ["createdAt", row.createdAt],
     ["updatedAt", row.updatedAt],
 

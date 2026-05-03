@@ -39,6 +39,7 @@ export const extrasService = {
   async listProductExtras(db: PostgresJsDatabase, query: ProductExtraListQuery) {
     const conditions = []
     if (query.productId) conditions.push(eq(productExtras.productId, query.productId))
+    if (query.supplierId) conditions.push(eq(productExtras.supplierId, query.supplierId))
     if (query.active !== undefined) conditions.push(eq(productExtras.active, query.active))
     if (query.search) {
       const term = `%${query.search}%`

@@ -1322,6 +1322,8 @@ type ProductRow = {
   sellAmountCents: number
   costAmountCents: number
   facilityId?: string
+  /** Index into SUPPLIERS to attach as the operating brand for this product. */
+  supplierIdx?: number
   status: "draft" | "active" | "inactive" | "archived"
   visibility: "private" | "public"
 }
@@ -1334,6 +1336,7 @@ const PRODUCTS: ProductRow[] = [
     sellAmountCents: 79000,
     costAmountCents: 48000,
     facilityId: FACILITIES.hotelThames,
+    supplierIdx: 0,
     status: "active",
     visibility: "public",
   },
@@ -1345,6 +1348,7 @@ const PRODUCTS: ProductRow[] = [
     sellAmountCents: 48000,
     costAmountCents: 32000,
     facilityId: FACILITIES.hotelMontmartre,
+    supplierIdx: 1,
     status: "active",
     visibility: "public",
   },
@@ -1355,6 +1359,7 @@ const PRODUCTS: ProductRow[] = [
     sellCurrency: "EUR",
     sellAmountCents: 7500,
     costAmountCents: 4500,
+    supplierIdx: 2,
     status: "active",
     visibility: "public",
   },
@@ -1366,6 +1371,7 @@ const PRODUCTS: ProductRow[] = [
     sellAmountCents: 12000,
     costAmountCents: 9500,
     facilityId: FACILITIES.transferHubLhr,
+    supplierIdx: 3,
     status: "active",
     visibility: "public",
   },
@@ -1377,6 +1383,7 @@ const PRODUCTS: ProductRow[] = [
     sellAmountCents: 16500,
     costAmountCents: 10500,
     facilityId: FACILITIES.venueEiffel,
+    supplierIdx: 4,
     status: "active",
     visibility: "public",
   },
@@ -1387,6 +1394,7 @@ const PRODUCTS: ProductRow[] = [
     sellCurrency: "GBP",
     sellAmountCents: 185000,
     costAmountCents: 120000,
+    supplierIdx: 5,
     status: "draft",
     visibility: "private",
   },
@@ -1517,6 +1525,7 @@ async function seedProducts() {
         ((p.sellAmountCents - p.costAmountCents) / p.sellAmountCents) * 100,
       ),
       facilityId: p.facilityId ?? null,
+      supplierId: p.supplierIdx != null ? (SUPPLIERS[p.supplierIdx]?.id ?? null) : null,
       description: `${p.name} — ${p.days} day${p.days > 1 ? "s" : ""} of curated experiences.`,
       timezone: p.sellCurrency === "GBP" ? "Europe/London" : "Europe/Paris",
       pax: 2,
