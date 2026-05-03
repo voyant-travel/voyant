@@ -15,6 +15,7 @@ import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
 import { Route as PaySessionIdRouteImport } from './routes/pay_.$sessionId'
 import { Route as WorkspaceFlightsRouteImport } from './routes/_workspace/flights'
+import { Route as WorkspaceChannelSyncRouteImport } from './routes/_workspace/channel-sync'
 import { Route as WorkspaceCatalogRouteImport } from './routes/_workspace/catalog'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
@@ -101,6 +102,11 @@ const PaySessionIdRoute = PaySessionIdRouteImport.update({
 const WorkspaceFlightsRoute = WorkspaceFlightsRouteImport.update({
   id: '/flights',
   path: '/flights',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const WorkspaceChannelSyncRoute = WorkspaceChannelSyncRouteImport.update({
+  id: '/channel-sync',
+  path: '/channel-sync',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceCatalogRoute = WorkspaceCatalogRouteImport.update({
@@ -445,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof authVerifyEmailRoute
   '/account': typeof WorkspaceAccountRoute
   '/catalog': typeof WorkspaceCatalogRoute
+  '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
@@ -508,6 +515,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof authVerifyEmailRoute
   '/account': typeof WorkspaceAccountRoute
   '/catalog': typeof WorkspaceCatalogRoute
+  '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/': typeof WorkspaceIndexRoute
@@ -576,6 +584,7 @@ export interface FileRoutesById {
   '/(auth)/verify-email': typeof authVerifyEmailRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
   '/_workspace/catalog': typeof WorkspaceCatalogRoute
+  '/_workspace/channel-sync': typeof WorkspaceChannelSyncRoute
   '/_workspace/flights': typeof WorkspaceFlightsRoute
   '/pay_/$sessionId': typeof PaySessionIdRoute
   '/_workspace/': typeof WorkspaceIndexRoute
@@ -644,6 +653,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/account'
     | '/catalog'
+    | '/channel-sync'
     | '/flights'
     | '/pay/$sessionId'
     | '/availability/$id'
@@ -707,6 +717,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/account'
     | '/catalog'
+    | '/channel-sync'
     | '/flights'
     | '/pay/$sessionId'
     | '/'
@@ -774,6 +785,7 @@ export interface FileRouteTypes {
     | '/(auth)/verify-email'
     | '/_workspace/account'
     | '/_workspace/catalog'
+    | '/_workspace/channel-sync'
     | '/_workspace/flights'
     | '/pay_/$sessionId'
     | '/_workspace/'
@@ -876,6 +888,13 @@ declare module '@tanstack/react-router' {
       path: '/flights'
       fullPath: '/flights'
       preLoaderRoute: typeof WorkspaceFlightsRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/channel-sync': {
+      id: '/_workspace/channel-sync'
+      path: '/channel-sync'
+      fullPath: '/channel-sync'
+      preLoaderRoute: typeof WorkspaceChannelSyncRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/catalog': {
@@ -1351,6 +1370,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
   WorkspaceCatalogRoute: typeof WorkspaceCatalogRoute
+  WorkspaceChannelSyncRoute: typeof WorkspaceChannelSyncRoute
   WorkspaceFlightsRoute: typeof WorkspaceFlightsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   WorkspaceAvailabilityIdRoute: typeof WorkspaceAvailabilityIdRoute
@@ -1400,6 +1420,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceAccountRoute: WorkspaceAccountRoute,
   WorkspaceCatalogRoute: WorkspaceCatalogRoute,
+  WorkspaceChannelSyncRoute: WorkspaceChannelSyncRoute,
   WorkspaceFlightsRoute: WorkspaceFlightsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
   WorkspaceAvailabilityIdRoute: WorkspaceAvailabilityIdRoute,

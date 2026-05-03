@@ -17,6 +17,7 @@ import {
   Mail,
   Package,
   Plane,
+  Radio,
   Scale,
   Settings,
   Users,
@@ -181,6 +182,12 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
           url: "/legal/number-series",
         },
       ],
+    },
+    {
+      id: "channel-sync",
+      title: "Channel sync",
+      url: "/channel-sync",
+      icon: Radio,
     },
     {
       id: "settings",
