@@ -218,6 +218,7 @@ The hard cases:
 3. **Push succeeds; the upstream later modifies/cancels the booking.** Inbound webhook from the channel. Voyant updates the local booking; user sees the change. This is the inverse direction (channel → us) covered by `webhook_subscriptions` (config) + `channel_webhook_events` (inbound log).
 4. **Availability push falls behind.** Per §12, the next event for the same slot supersedes whatever was in flight, so transient failures don't cascade. After a long outage, the availability reconciler (§13) compares hashes and reissues.
 5. **Content push includes a field the channel doesn't accept.** Adapter returns a structured rejection; we record it on `channel_product_mappings.policy.warnings` and surface a "channel rejected: X" badge in admin. The full request/response is in `webhook_deliveries` for diagnostics.
+6. **Channel rate-limits us harder than our config expected.** Our outbound estimate (§14) is too generous. Symptom: `webhook_deliveries.error_class = "rate_limited"` rows accumulating for that channel. The 429 handler drains the bucket per `Retry-After` so we self-correct in the short term; the dashboard surfaces a recommendation to lower the configured RPS for permanent fix.
 
 ## 10. Migration / rollout
 
@@ -225,21 +226,22 @@ The hard cases:
 - Add the three optional outbound methods + capability flags to `SourceAdapter`.
 - Pure typing change.
 
-**Phase B — Webhook delivery log + distribution schema extension** (2 days):
-- Build `webhook_deliveries` (`packages/db/src/schema/infra/webhook_deliveries.ts`) per §11. Generic primitive — channel push is the first consumer but not the only one.
-- Additive ALTER TABLE migrations on `channel_booking_links` and `channel_product_mappings` per §7.
+**Phase B — Infra primitives + distribution schema extension** (2-3 days):
+- Build `webhook_deliveries` (`packages/db/src/schema/infra/webhook_deliveries.ts`) per §11. Generic primitive.
+- Build `rate_limit_buckets` (`packages/db/src/schema/infra/rate_limit_buckets.ts`) + `acquireToken(scope, config, priority)` per §14. Generic primitive.
+- Additive ALTER TABLE migrations on `channels`, `channel_contracts`, `channel_booking_links`, `channel_product_mappings` per §7 + §14.1.
 - Update `@voyantjs/distribution` types and exports for the new columns.
 - No behavior change yet; subsequent phases populate the schemas.
 
 **Phase C — Booking push for one channel kind** (3-4 days):
-- Implement `pushBookingWorkflow` in `packages/distribution/src/service-push.ts` using `@voyantjs/core/workflows` with per-channel compensation. Each adapter call writes a `webhook_deliveries` row per attempt (§12).
+- Implement `pushBookingWorkflow` in `packages/distribution/src/service-push.ts` using `@voyantjs/core/workflows` with per-channel compensation. Each adapter call goes through `acquireToken` (§14.3) and writes a `webhook_deliveries` row per attempt.
 - Wire `booking.confirmed` event subscriber inside distribution (subscribers register via `distributionModule`, not bookings — bookings stays clean).
-- Operator dashboard: "channel sync" view backed by `channel_booking_links.push_status` + retry endpoint + a delivery-log drilldown reading `webhook_deliveries`.
-- Demo adapter (in `apps/catalog-demo-api` + `@voyantjs/plugin-catalog-demo`) gains an optional `POST /bookings` endpoint that records pushed bookings, so the operator can verify the round-trip end-to-end without an external integration.
+- Operator dashboard: "channel sync" view backed by `channel_booking_links.push_status` + retry endpoint + a delivery-log drilldown + per-channel throttling indicator (§14.5).
+- Demo adapter (in `apps/catalog-demo-api` + `@voyantjs/plugin-catalog-demo`) gains an optional `POST /bookings` endpoint that records pushed bookings, so the operator can verify the round-trip end-to-end without an external integration. Demo adapter advertises configurable rate limits to exercise the throttle path.
 
 **Phase D — Availability push** (2-3 days):
 - Wire `availability.slot.changed` event subscriber in distribution.
-- Implement availability push as **bounded inline retry inside the subscriber** (§12) — not a workflow. Each attempt logs to `webhook_deliveries`. Idempotent on `(slot_id, remaining_pax)`; the next event for the same slot supersedes any in-flight failure.
+- Implement availability push as **bounded inline retry inside the subscriber** (§12) — not a workflow. Pre-call `acquireToken(..., "availability")` with the priority gate; if denied, log to `webhook_deliveries` and bail (next event will supersede). Each successful attempt also logs.
 - Demo adapter gains an availability sink.
 
 **Phase E — Content push** (2-3 days):
@@ -444,22 +446,104 @@ A naive durable-retry queue says "keep trying every failed push until it succeed
 
 The reconciler explicitly **reads current state and reissues from scratch**, rather than re-delivering stale events. That gives correct convergence even after multi-hour outages, without the staleness problems of a durable retry queue.
 
-## 14. Non-goals (v1)
+## 14. Per-channel rate limiting
+
+Real channel APIs throttle: TUI-style endpoints often allow ~10 RPS sustained, GDS endpoints can be as tight as 1-5 RPS, bedbanks vary. Without rate limiting in v1, the first integration will trip an upstream limit, get 429s in cascade, and either back off into incoherence or get the connection blocked. We design it in from day one.
+
+### 14.1. Config: per-channel, per-contract overrides
+
+Rate-limit settings live on the channel (defaults) with optional per-contract overrides — same pattern as commission rules. Additive ALTER TABLE on `channels` and `channel_contracts`:
+
+```sql
+ALTER TABLE channels
+  ADD COLUMN rate_limit_rps              integer,           -- requests per second sustained
+  ADD COLUMN rate_limit_burst            integer,           -- max tokens in bucket
+  ADD COLUMN rate_limit_priority_gates   jsonb;             -- per-priority reserve thresholds
+
+-- channel_contracts overrides the channel defaults for a specific
+-- supplier relationship (e.g. our enterprise contract with TUI gives
+-- us a higher burst than the public default).
+ALTER TABLE channel_contracts
+  ADD COLUMN rate_limit_rps              integer,
+  ADD COLUMN rate_limit_burst            integer,
+  ADD COLUMN rate_limit_priority_gates   jsonb;
+```
+
+`rate_limit_priority_gates` example: `{ "booking": 0, "availability": 0.3, "content": 0.7 }`. Read as: bookings dispatch as long as any tokens are available; availability dispatches when bucket is at least 30% full; content dispatches when bucket is at least 70% full. This way **bookings always pre-empt availability/content**, and the three flows share one upstream budget instead of competing for separately-sized slices that might sum to more than the channel actually allows.
+
+### 14.2. Enforcement: token bucket in shared infra
+
+A generic primitive in `packages/db/src/schema/infra/rate_limit_buckets.ts`:
+
+```sql
+rate_limit_buckets (
+  scope                    text primary key,    -- e.g. "channel:ch_xxx:conn_yyy"
+  tokens_available         numeric not null,
+  capacity                 numeric not null,
+  refill_rate_per_sec      numeric not null,
+  last_refill_at           timestamptz not null,
+  updated_at               timestamptz not null default now()
+)
+```
+
+Generic on purpose: any module that needs token-bucket rate limiting (operator webhooks, third-party integrations, future use cases) can use the same primitive with its own scope key. Channel push wraps it with channel-specific scope construction.
+
+The `acquireToken(scope, config, priority)` function:
+
+1. Atomic UPDATE that refills tokens based on `(now - last_refill_at) × refill_rate`, capped at `capacity`.
+2. If `tokens_available >= priority_gate(priority) × capacity` AND `tokens_available >= 1`, decrement and return `{ acquired: true }`.
+3. Otherwise return `{ acquired: false, retryAfterMs }` computed from how long until enough tokens refill for the priority gate.
+
+The whole thing is one round-trip — small overhead next to the HTTP call we're gating.
+
+### 14.3. Where it runs
+
+**Booking push (workflow):** the per-channel step calls `acquireToken("channel:" + channelId + ":" + connectionId, config, "booking")` before each adapter call. On denial, the workflow's sleep primitive waits `retryAfterMs` and retries. If wait exceeds a max threshold, the step fails with `error_class = "rate_limited"`; the saga moves on, the reconciler picks it up next pass.
+
+**Availability + content push (subscriber):** the subscriber calls `acquireToken(..., "availability")` or `..., "content"` before each adapter call. On denial, **don't sleep** — return immediately. The next event for the same key supersedes anyway (per §12), and waiting in the subscriber blocks downstream events. Log the denial to `webhook_deliveries` with `error_class = "rate_limited"` for observability.
+
+### 14.4. 429 handling
+
+The bucket is our **outbound-side estimate**. The channel itself is authoritative. When the upstream returns 429:
+
+1. Log to `webhook_deliveries` with `error_class = "rate_limited"` and the response's `Retry-After` header.
+2. **Drain the bucket** to zero and set `last_refill_at = now() + retry_after_seconds`. This prevents us from immediately retrying through the same bucket and ensures other concurrent dispatchers also see "no tokens" for the cooldown.
+3. The caller (workflow or subscriber) treats 429 the same as "acquire denied": workflow sleeps + retries; subscriber gives up and waits for the next event.
+
+This way our bucket self-corrects when our config drifts from reality. Operations sees recurring `rate_limited` rows in `webhook_deliveries` for a channel, lowers the configured RPS, and the bucket converges.
+
+### 14.5. Operator surface
+
+Operators don't think in tokens-per-second — they think in "this channel keeps rejecting our pushes." The dashboard surfaces:
+
+- **Per-channel throttling indicator** when `webhook_deliveries.error_class = "rate_limited"` is non-trivial in the last hour.
+- **A simple "throughput" knob** in the channel settings page (slow / medium / fast presets that map to sensible RPS/burst defaults; advanced users can edit raw values).
+- **Recommendation** when the channel returns 429s with `Retry-After` consistently lower than our bucket implies — "your bucket is sized higher than this channel actually allows."
+
+Internal mechanics stay invisible.
+
+### 14.6. v1 scope vs later
+
+In: per-channel/contract config, token-bucket enforcement, priority gates, 429 handling.
+
+Not in: per-region rate limits (some channels rate-limit per geography), per-endpoint rate limits (some channels have stricter limits on specific endpoints like `POST /bookings`), adaptive limiters that learn the channel's actual capacity. All can layer on top of the same primitive when a real integration needs them.
+
+## 15. Non-goals (v1)
 
 - **Bidirectional content reconciliation.** If a channel edits content downstream and pushes back, we don't merge today. The operator's Voyant edit is the source of truth for owned products; channels are read-only consumers. Resolving conflicts when channels can also edit is a follow-up.
 - **Per-traveler PII push.** v1 push payloads include the booking shape but redact encrypted travel details. The channel pulls those via a separate authenticated read on demand if it needs them. Lets us avoid pushing PII through the saga and keeps the audit shape simpler.
 - **Real-time bidirectional inventory sync.** Eventually-consistent is the contract for v1. Sub-second sync is a v2 conversation about message brokers and durable queues.
 - **Channel-push for sourced bookings.** Sourced bookings already commit upstream via `adapter.reserve`; there's no separate channel push because the source IS the channel.
 
-## 15. Open questions
+## 16. Open questions
 
 1. ~~**Where does `booking_channel_links` actually live?**~~ **Resolved (§2, §7):** channel push lives in `packages/distribution`, which already houses `channels`, `channel_contracts`, `channel_product_mappings`, `channel_booking_links`, `channel_webhook_events`, `channel_commission_rules`, `channel_inventory_allotments`, `channel_reconciliation_items`, plus the `distributionBookingExtension` HonoExtension. Channel push is net-new code (workflows, event subscribers, push-status fields) over the existing module — not new tables in bookings/products. Bookings stays clean of channel concepts; distribution depends on bookings via the established extension pattern, never the inverse.
 2. ~~**Webhook-delivery infrastructure reuse.**~~ **Resolved (§11, §12, §13):** `webhook_deliveries` did not exist; it does now (built as part of this work). It's a generic outbound-HTTP delivery LOG (every attempt writes a row for observability + retry-chain history), not a queue — `scheduled_for` is in the schema for a future scheduler but v1 dispatches synchronously inside the caller. Channel push uses workflows + the delivery log for booking push (compensation matters), and bounded inline retry + the delivery log for availability/content (idempotent + eventually-consistent; the event stream is the queue). A reconciler (§13) closes the catch-up gap after long outages, by re-reading current state and reissuing pushes from scratch — never by re-delivering stale events.
-3. **Per-channel rate-limit awareness.** Channels often have rate limits we must respect. The push workflow needs a rate-limiter per (channel, source_connection_id). Standard pattern; not in this doc's scope but flagged.
+3. ~~**Per-channel rate-limit awareness.**~~ **Resolved (§14):** rate limiting is in v1, not deferred. Token-bucket primitive lives at `infra.rate_limit_buckets` (generic — usable by other modules); per-channel/per-contract config holds capacity + refill rate + per-priority gates so bookings always pre-empt availability/content while sharing one upstream budget. Bookings sleep-and-retry on denial inside the workflow; availability/content give up immediately and rely on the next supersession event. 429 responses drain the bucket to align our outbound estimate with the channel's authoritative state.
 4. ~~**What's `channel_id`?**~~ **Resolved (§2):** `channel_id` is the typeid of a row in the existing `distribution.channels` table — not a synthetic from `(source_kind, source_connection_id)`. A channel is a first-class entity with its own contracts, contacts, commission rules, and reconciliation surface; reducing it to a synthetic would lose that structure.
 5. **Bidirectional adapter packaging.** When one upstream is both inbound and outbound, does the same `SourceAdapter` instance carry all methods, or do we ship two adapters per connection? One instance is simpler; that's what the contract assumes today.
 
-## 16. Related documents
+## 17. Related documents
 
 - [`catalog-architecture.md`](./catalog-architecture.md) — Phase 1 inbound contract. Channel push extends the same `SourceAdapter` contract for outbound.
 - [`catalog-sourced-content.md`](./catalog-sourced-content.md) — inbound content fetch. Sibling to this doc; same adapter contract, opposite direction.
