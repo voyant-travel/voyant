@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { z } from "zod"
 
+import { emitProductContentChanged } from "./events.js"
 import { productsService } from "./service.js"
 import {
   destinationListQuerySchema,
@@ -683,9 +684,10 @@ export const productRoutes = new Hono<Env>()
 
   // POST /:id/options — Create option for product
   .post("/:id/options", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.createOption(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       await parseJsonBody(c, insertProductOptionSchema),
     )
 
@@ -693,6 +695,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "option" })
     return c.json({ data: row }, 201)
   })
 
@@ -1251,6 +1254,7 @@ export const productRoutes = new Hono<Env>()
     }
 
     await c.get("eventBus")?.emit("product.updated", { id: row.id })
+    await emitProductContentChanged(c.get("eventBus"), { id: row.id, axis: "product" })
     return c.json({ data: row })
   })
 
@@ -1359,9 +1363,10 @@ export const productRoutes = new Hono<Env>()
 
   // POST /:id/days — Add day to product
   .post("/:id/days", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.createDay(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       await parseJsonBody(c, insertDaySchema),
     )
 
@@ -1369,11 +1374,13 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
     return c.json({ data: row }, 201)
   })
 
   // PATCH /:id/days/:dayId — Update day
   .patch("/:id/days/:dayId", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.updateDay(
       c.get("db"),
       c.req.param("dayId"),
@@ -1384,17 +1391,20 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Day not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
     return c.json({ data: row })
   })
 
   // DELETE /:id/days/:dayId — Delete day
   .delete("/:id/days/:dayId", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.deleteDay(c.get("db"), c.req.param("dayId"))
 
     if (!row) {
       return c.json({ error: "Day not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
     return c.json({ success: true }, 200)
   })
 
@@ -1411,9 +1421,10 @@ export const productRoutes = new Hono<Env>()
 
   // POST /:id/days/:dayId/services — Add service to day
   .post("/:id/days/:dayId/services", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.createDayService(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       c.req.param("dayId"),
       await parseJsonBody(c, insertDayServiceSchema),
     )
@@ -1422,14 +1433,16 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Day not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
     return c.json({ data: row }, 201)
   })
 
   // PATCH /:id/days/:dayId/services/:serviceId — Update service
   .patch("/:id/days/:dayId/services/:serviceId", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.updateDayService(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       c.req.param("serviceId"),
       await parseJsonBody(c, updateDayServiceSchema),
     )
@@ -1438,6 +1451,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Service not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
     return c.json({ data: row })
   })
 
@@ -1608,21 +1622,25 @@ export const productRoutes = new Hono<Env>()
 
   // POST /:id/media — Create media for product
   .post("/:id/media", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.createMedia(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       await parseJsonBody(c, insertProductMediaSchema),
     )
     if (!row) {
       return c.json({ error: "Product not found or invalid dayId" }, 404)
     }
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "media" })
     return c.json({ data: row }, 201)
   })
 
   // POST /:id/media/reorder — Batch reorder media
   .post("/:id/media/reorder", async (c) => {
+    const productId = c.req.param("id")
     const data = await parseJsonBody(c, reorderProductMediaSchema)
     const results = await productsService.reorderMedia(c.get("db"), data)
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "media" })
     return c.json({ data: results })
   })
 
@@ -1639,14 +1657,16 @@ export const productRoutes = new Hono<Env>()
 
   // POST /:id/days/:dayId/media — Create day media
   .post("/:id/days/:dayId/media", async (c) => {
+    const productId = c.req.param("id")
     const body = await parseJsonBody(c, insertProductMediaSchema)
-    const row = await productsService.createMedia(c.get("db"), c.req.param("id"), {
+    const row = await productsService.createMedia(c.get("db"), productId, {
       ...body,
       dayId: c.req.param("dayId"),
     })
     if (!row) {
       return c.json({ error: "Product or day not found" }, 404)
     }
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "media" })
     return c.json({ data: row }, 201)
   })
 

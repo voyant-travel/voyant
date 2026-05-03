@@ -16,6 +16,11 @@ export const availabilityHonoModule: HonoModule = {
 }
 
 export {
+  AVAILABILITY_SLOT_CHANGED_EVENT,
+  type AvailabilitySlotChangedEvent,
+  type AvailabilitySlotChangeSource,
+} from "./events.js"
+export {
   type GenerateAvailabilitySlotsOptions,
   type GenerateAvailabilitySlotsResult,
   generateAvailabilitySlots,

@@ -181,6 +181,49 @@ export interface BookingServiceRuntime {
 }
 
 /**
+ * Payload shape for `availability.slot.changed`. Mirrors the canonical
+ * `AvailabilitySlotChangedEvent` from `@voyantjs/availability` — defined
+ * locally to avoid a runtime dep on availability (we already mirror its
+ * schema via `availabilitySlotsRef` for the same reason). Subscribers
+ * (e.g. channel-push) can import the canonical type directly.
+ *
+ * Per docs/architecture/channel-push-architecture.md §5.1.
+ */
+export interface AvailabilitySlotChangedEventPayload {
+  slotId: string
+  productId: string
+  optionId: string | null
+  startsAt: Date | string
+  remainingPax: number | null
+  unlimited: boolean
+  source: "booking" | "cancel" | "expire" | "modify" | "manual" | "refresh"
+}
+
+/** Stable string identifier for the event. */
+export const AVAILABILITY_SLOT_CHANGED_EVENT = "availability.slot.changed" as const
+
+/**
+ * Emit a batch of slot-change events through the runtime's EventBus.
+ * No-op when no event bus is wired (the common test path). Each emit is
+ * fire-and-forget per the EventBus contract — subscriber errors are
+ * logged, not rethrown — but we await to keep ordering deterministic in
+ * tests that drain the bus before assertions.
+ */
+async function emitSlotChanges(
+  runtime: BookingServiceRuntime,
+  changes: ReadonlyArray<AvailabilitySlotChangedEventPayload>,
+): Promise<void> {
+  const eventBus = runtime.eventBus
+  if (!eventBus || changes.length === 0) return
+  for (const change of changes) {
+    await eventBus.emit(AVAILABILITY_SLOT_CHANGED_EVENT, change, {
+      category: "domain",
+      source: "service",
+    })
+  }
+}
+
+/**
  * Payload shape for `booking.confirmed`. Subscribers should treat unknown
  * fields as forward-compatible additions.
  */
@@ -803,7 +846,36 @@ async function lockAvailabilitySlot(db: PostgresJsDatabase, slotId: string) {
   }
 }
 
-async function adjustSlotCapacity(db: PostgresJsDatabase, slotId: string, delta: number) {
+type SlotChangeSource = AvailabilitySlotChangedEventPayload["source"]
+
+function buildSlotChange(
+  slot: {
+    id: string
+    product_id: string
+    option_id: string | null
+    starts_at: Date | string
+    unlimited: boolean
+  },
+  remainingPax: number | null,
+  source: SlotChangeSource,
+): AvailabilitySlotChangedEventPayload {
+  return {
+    slotId: slot.id,
+    productId: slot.product_id,
+    optionId: slot.option_id,
+    startsAt: slot.starts_at,
+    remainingPax: slot.unlimited ? null : remainingPax,
+    unlimited: slot.unlimited,
+    source,
+  }
+}
+
+async function adjustSlotCapacity(
+  db: PostgresJsDatabase,
+  slotId: string,
+  delta: number,
+  source: SlotChangeSource = "booking",
+) {
   const locked = await lockAvailabilitySlot(db, slotId)
   if (!locked) {
     return { status: "slot_not_found" as const }
@@ -814,7 +886,12 @@ async function adjustSlotCapacity(db: PostgresJsDatabase, slotId: string, delta:
   }
 
   if (locked.unlimited) {
-    return { status: "ok" as const, slot: locked, remainingPax: locked.remaining_pax }
+    return {
+      status: "ok" as const,
+      slot: locked,
+      remainingPax: locked.remaining_pax,
+      slotChange: buildSlotChange(locked, locked.remaining_pax, source),
+    }
   }
 
   const currentRemaining = locked.remaining_pax ?? 0
@@ -844,7 +921,12 @@ async function adjustSlotCapacity(db: PostgresJsDatabase, slotId: string, delta:
     })
     .where(eq(availabilitySlotsRef.id, slotId))
 
-  return { status: "ok" as const, slot: locked, remainingPax: nextRemaining }
+  return {
+    status: "ok" as const,
+    slot: locked,
+    remainingPax: nextRemaining,
+    slotChange: buildSlotChange(locked, nextRemaining, source),
+  }
 }
 
 async function releaseAllocationCapacity(
@@ -853,16 +935,23 @@ async function releaseAllocationCapacity(
     typeof bookingAllocations.$inferSelect,
     "availabilitySlotId" | "quantity" | "status" | "id"
   >,
-) {
+  source: SlotChangeSource = "cancel",
+): Promise<AvailabilitySlotChangedEventPayload | undefined> {
   if (!allocation.availabilitySlotId) {
-    return
+    return undefined
   }
 
   if (allocation.status !== "held" && allocation.status !== "confirmed") {
-    return
+    return undefined
   }
 
-  await adjustSlotCapacity(db, allocation.availabilitySlotId, allocation.quantity)
+  const result = await adjustSlotCapacity(
+    db,
+    allocation.availabilitySlotId,
+    allocation.quantity,
+    source,
+  )
+  return result.status === "ok" ? result.slotChange : undefined
 }
 
 async function reserveBookingFromTransactionSource(
@@ -870,9 +959,11 @@ async function reserveBookingFromTransactionSource(
   source: ReservationSourceBundle,
   data: ReserveBookingFromTransactionInput,
   userId?: string,
+  runtime: BookingServiceRuntime = {},
 ) {
+  const slotChanges: AvailabilitySlotChangedEventPayload[] = []
   try {
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const holdExpiresAt = computeHoldExpiresAt(data)
       const dateRange = deriveBookingDateRange(source.items)
       const pax = deriveBookingPax(source.participants, source.items)
@@ -956,6 +1047,7 @@ async function reserveBookingFromTransactionSource(
             tx as PostgresJsDatabase,
             item.slotId,
             -item.quantity,
+            "booking",
           )
 
           if (capacity.status === "slot_not_found") {
@@ -975,6 +1067,7 @@ async function reserveBookingFromTransactionSource(
           if (item.optionId && item.optionId !== slot.option_id) {
             throw new BookingServiceError("slot_option_mismatch")
           }
+          if (capacity.slotChange) slotChanges.push(capacity.slotChange)
         }
 
         const [bookingItem] = await tx
@@ -1167,6 +1260,10 @@ async function reserveBookingFromTransactionSource(
 
       return { status: "ok" as const, booking }
     })
+    if (result.status === "ok") {
+      await emitSlotChanges(runtime, slotChanges)
+    }
+    return result
   } catch (error) {
     if (error instanceof BookingServiceError) {
       return { status: error.code as Exclude<string, "ok"> }
@@ -1859,6 +1956,7 @@ export const bookingsService = {
     offerId: string,
     data: ReserveBookingFromTransactionInput,
     userId?: string,
+    runtime: BookingServiceRuntime = {},
   ) {
     const [offer] = await db.select().from(offersRef).where(eq(offersRef.id, offerId)).limit(1)
 
@@ -1948,6 +2046,7 @@ export const bookingsService = {
       },
       data,
       userId,
+      runtime,
     )
   },
 
@@ -1956,6 +2055,7 @@ export const bookingsService = {
     orderId: string,
     data: ReserveBookingFromTransactionInput,
     userId?: string,
+    runtime: BookingServiceRuntime = {},
   ) {
     const [order] = await db.select().from(ordersRef).where(eq(ordersRef.id, orderId)).limit(1)
 
@@ -2045,12 +2145,19 @@ export const bookingsService = {
       },
       data,
       userId,
+      runtime,
     )
   },
 
-  async reserveBooking(db: PostgresJsDatabase, data: ReserveBookingInput, userId?: string) {
+  async reserveBooking(
+    db: PostgresJsDatabase,
+    data: ReserveBookingInput,
+    userId?: string,
+    runtime: BookingServiceRuntime = {},
+  ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
     try {
-      return await db.transaction(async (tx) => {
+      const result = await db.transaction(async (tx) => {
         const holdExpiresAt = computeHoldExpiresAt(data)
         const [booking] = await tx
           .insert(bookings)
@@ -2096,6 +2203,7 @@ export const bookingsService = {
             tx as PostgresJsDatabase,
             item.availabilitySlotId,
             -item.quantity,
+            "booking",
           )
 
           if (capacity.status === "slot_not_found") {
@@ -2115,6 +2223,7 @@ export const bookingsService = {
           if (item.optionId && item.optionId !== slot.option_id) {
             throw new BookingServiceError("slot_option_mismatch")
           }
+          if (capacity.slotChange) slotChanges.push(capacity.slotChange)
 
           const [bookingItem] = await tx
             .insert(bookingItems)
@@ -2182,6 +2291,10 @@ export const bookingsService = {
 
         return { status: "ok" as const, booking }
       })
+      if (result.status === "ok") {
+        await emitSlotChanges(runtime, slotChanges)
+      }
+      return result
     } catch (error) {
       if (error instanceof BookingServiceError) {
         return { status: error.code as Exclude<string, "ok"> }
@@ -2461,6 +2574,7 @@ export const bookingsService = {
     userId?: string,
     runtime: BookingServiceRuntime & { cause?: "route" | "sweep" } = {},
   ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
     try {
       const result = await db.transaction(async (tx) => {
         const rows = await tx.execute(
@@ -2495,7 +2609,12 @@ export const bookingsService = {
           .where(eq(bookingAllocations.bookingId, id))
 
         for (const allocation of allocations) {
-          await releaseAllocationCapacity(tx as PostgresJsDatabase, allocation)
+          const change = await releaseAllocationCapacity(
+            tx as PostgresJsDatabase,
+            allocation,
+            "expire",
+          )
+          if (change) slotChanges.push(change)
         }
 
         await tx
@@ -2553,6 +2672,7 @@ export const bookingsService = {
           } satisfies BookingExpiredEvent,
           { category: "domain", source: "service" },
         )
+        await emitSlotChanges(runtime, slotChanges)
       }
 
       return result
@@ -2613,6 +2733,7 @@ export const bookingsService = {
     userId?: string,
     runtime: BookingServiceRuntime = {},
   ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
     try {
       const result = await db.transaction(async (tx) => {
         const rows = await tx.execute(
@@ -2639,7 +2760,12 @@ export const bookingsService = {
           .where(eq(bookingAllocations.bookingId, id))
 
         for (const allocation of allocations) {
-          await releaseAllocationCapacity(tx as PostgresJsDatabase, allocation)
+          const change = await releaseAllocationCapacity(
+            tx as PostgresJsDatabase,
+            allocation,
+            "cancel",
+          )
+          if (change) slotChanges.push(change)
         }
 
         await tx
@@ -2718,6 +2844,7 @@ export const bookingsService = {
           } satisfies BookingCancelledEvent,
           { category: "domain", source: "service" },
         )
+        await emitSlotChanges(runtime, slotChanges)
       }
 
       return { status: result.status, booking: result.booking }
