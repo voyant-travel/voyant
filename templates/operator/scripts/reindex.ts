@@ -205,6 +205,62 @@ for (const cfg of VERTICAL_CONFIGS) {
   }
   const sliceCount = activeSlices.filter((s) => s.vertical === cfg.vertical).length
   console.info(`[reindex] ${cfg.vertical}: done (${done} entities × ${sliceCount} slices)`)
+
+  // Purge stale owned docs whose entity is no longer in Postgres. Without
+  // this, every `pnpm seed` cycle (which re-creates products with fresh
+  // TypeIDs) leaves the previous generation's docs behind and the catalog
+  // UI shows duplicates. Sourced docs are owned by their adapter and are
+  // intentionally NOT purged here — the discovery sync handles them.
+  const liveIds = new Set(rows.map((r) => r.id))
+  for (const slice of activeSlices.filter((s) => s.vertical === cfg.vertical)) {
+    const toDelete = await listOwnedOrphans(slice, liveIds)
+    if (toDelete.length === 0) continue
+    console.info(
+      `[reindex] ${cfg.vertical}/${slice.audience}: purging ${toDelete.length} stale owned doc(s)`,
+    )
+    await indexer.delete(slice, toDelete)
+  }
+}
+
+interface OrphanProbeDoc {
+  id: string
+  ["source.kind"]?: string
+}
+
+async function listOwnedOrphans(
+  slice: IndexerSlice,
+  liveIds: ReadonlySet<string>,
+): Promise<string[]> {
+  // Page through everything in the slice that came from owned source.
+  // Filter by `source.kind:owned` so a future sourced-projection drift
+  // can't accidentally delete a still-live sourced row.
+  const orphans: string[] = []
+  const collection = `${slice.vertical}__${slice.locale}__${slice.audience}__${slice.market}`
+  const perPage = 250
+  let page = 1
+  while (true) {
+    const url = new URL(`${typesenseHost}/collections/${collection}/documents/search`)
+    url.searchParams.set("q", "*")
+    url.searchParams.set("query_by", "name")
+    url.searchParams.set("filter_by", "source.kind:=owned")
+    url.searchParams.set("include_fields", "id,source.kind")
+    url.searchParams.set("per_page", String(perPage))
+    url.searchParams.set("page", String(page))
+    const res = await fetch(url, { headers: { "X-TYPESENSE-API-KEY": typesenseKey ?? "" } })
+    if (!res.ok) break
+    const data = (await res.json()) as {
+      hits?: Array<{ document: OrphanProbeDoc }>
+      found?: number
+    }
+    const hits = data.hits ?? []
+    for (const h of hits) {
+      const id = h.document.id
+      if (id && !liveIds.has(id)) orphans.push(id)
+    }
+    if (hits.length < perPage) break
+    page += 1
+  }
+  return orphans
 }
 
 console.info("[reindex] complete")
