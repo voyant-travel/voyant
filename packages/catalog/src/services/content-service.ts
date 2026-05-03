@@ -31,7 +31,8 @@
  */
 
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { sql } from "drizzle-orm"
+import { and, eq, type SQL, sql } from "drizzle-orm"
+import type { PgColumn, PgTable } from "drizzle-orm/pg-core"
 
 import type { ContentDriftEvent } from "../drift/events.js"
 
@@ -469,6 +470,89 @@ export interface BuiltDriftPredicate {
   entity_id: string
   locale: string | null
   market: string | null
+}
+
+/**
+ * Per-vertical `invalidateOnDrift(db, event)` runner. Built via
+ * `createInvalidateOnDrift(table)` against the vertical's
+ * `*_sourced_content` table. When a `ContentDriftEvent` fires, the
+ * vertical's wired runner sets `fresh_until = now()` on every row
+ * matching `(entity_module, entity_id [, locale [, market]])` so the
+ * next read serves stale + schedules a SWR refresh (sourced-content
+ * §3.4.1).
+ */
+export type InvalidateOnDrift = (
+  db: AnyDrizzleDb,
+  event: ContentDriftEvent,
+) => Promise<{ invalidated: number }>
+
+/**
+ * Column shape every vertical's `*_sourced_content` table satisfies.
+ * The factory uses these to build the WHERE clause without importing
+ * per-vertical tables — keeps the catalog package neutral.
+ */
+export interface VerticalContentInvalidatableTable {
+  entity_id: PgColumn
+  locale: PgColumn
+  market: PgColumn
+  fresh_until: PgColumn
+}
+
+export interface CreateInvalidateOnDriftOptions {
+  /**
+   * Entity module this invalidator handles (e.g. `"products"`,
+   * `"cruises"`). Events targeting other modules are skipped silently.
+   * Templates wire one runner per vertical and dispatch by
+   * `event.entity_module`.
+   */
+  entityModule: string
+}
+
+/**
+ * Build a per-vertical `invalidateOnDrift` runner against the
+ * vertical's `*_sourced_content` drizzle table. The returned function
+ * is the sourced-content §3.4.1 invalidation primitive — verticals
+ * subscribe their runner to the drift-event bus.
+ *
+ * Semantics:
+ *   - Skips events whose `entity_module` doesn't match `options.entityModule`.
+ *     Templates compose runners across verticals; mismatched events are
+ *     not this runner's concern.
+ *   - When the event scopes `locale` and/or `market`, the WHERE clause
+ *     narrows accordingly. Wildcards (event.locale unset / event.market
+ *     unset) match all rows for that axis — full-entity invalidation.
+ *   - Returns `{ invalidated }` count for ops dashboards.
+ */
+export function createInvalidateOnDrift<TTable extends PgTable & VerticalContentInvalidatableTable>(
+  table: TTable,
+  options: CreateInvalidateOnDriftOptions,
+): InvalidateOnDrift {
+  return async function invalidateOnDrift(db, event) {
+    if (event.entity_module !== options.entityModule) {
+      return { invalidated: 0 }
+    }
+
+    const conditions: SQL[] = [eq(table.entity_id, event.entity_id)]
+    if (event.locale) conditions.push(eq(table.locale, event.locale))
+    if (event.market) conditions.push(eq(table.market, event.market))
+
+    const where = conditions.length === 1 ? conditions[0]! : and(...conditions)!
+
+    // Drizzle's update-set typing is generic over the table's
+    // $inferInsert keys; the generic wrapper here narrows away those
+    // keys, so we use raw SQL for the SET clause and the table reference
+    // for the WHERE/RETURNING. This keeps the SQL identical to a
+    // typed-call while the catalog package stays neutral about the
+    // vertical's exact table schema.
+    // biome-ignore lint/suspicious/noExplicitAny: see comment above
+    const updateBuilder: any = db.update(table)
+    const result = (await updateBuilder
+      .set({ fresh_until: sql`now()` })
+      .where(where)
+      .returning({ entity_id: table.entity_id })) as Array<{ entity_id: string }>
+
+    return { invalidated: result.length }
+  }
 }
 
 export function buildDriftInvalidationPredicate(event: ContentDriftEvent): BuiltDriftPredicate {

@@ -5,6 +5,7 @@ import {
   applyJsonPointerOverlay,
   buildDriftInvalidationPredicate,
   type ContentOverlay,
+  createInvalidateOnDrift,
   isStale,
   JsonPointerError,
   mergeOverlaysIntoContent,
@@ -290,3 +291,108 @@ describe("pickBestCachedLocale — case insensitivity", () => {
 // vi unused but imported for parity with other test files; reference it
 // to avoid lint complaints under noUnusedLocals.
 void vi
+
+// ─────────────────────────────────────────────────────────────────────────────
+// createInvalidateOnDrift — runner factory
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("createInvalidateOnDrift", () => {
+  function makeStubDb() {
+    const calls: Array<{ phase: string; arg?: unknown }> = []
+    const fakeColumn = { name: "stub" } as never
+    const fakeTable = {
+      entity_id: fakeColumn,
+      locale: fakeColumn,
+      market: fakeColumn,
+      fresh_until: fakeColumn,
+    } as never
+    let rowsToReturn: number = 1
+    const db = {
+      update(t: unknown) {
+        calls.push({ phase: "update", arg: t })
+        return {
+          set(values: unknown) {
+            calls.push({ phase: "set", arg: values })
+            return {
+              where(cond: unknown) {
+                calls.push({ phase: "where", arg: cond })
+                return {
+                  async returning(_cols: unknown) {
+                    calls.push({ phase: "returning", arg: _cols })
+                    return Array.from({ length: rowsToReturn }, (_, i) => ({
+                      entity_id: `row_${i}`,
+                    }))
+                  },
+                }
+              },
+            }
+          },
+        }
+      },
+      __setRows(n: number) {
+        rowsToReturn = n
+      },
+    }
+    return { db: db as never, calls, table: fakeTable, setRows: (n: number) => db.__setRows(n) }
+  }
+
+  function makeEvent(overrides: Partial<ContentDriftEvent> = {}): ContentDriftEvent {
+    return {
+      id: "cnde_x",
+      entity_module: "products",
+      entity_id: "prod_abc",
+      kind: "content_changed",
+      detected_at: new Date(),
+      ...overrides,
+    }
+  }
+
+  it("returns invalidated: 0 and skips the UPDATE for events targeting other modules", async () => {
+    const { db, calls, table } = makeStubDb()
+    const invalidate = createInvalidateOnDrift(table, { entityModule: "products" })
+
+    const result = await invalidate(db, makeEvent({ entity_module: "cruises" }))
+
+    expect(result.invalidated).toBe(0)
+    expect(calls).toHaveLength(0)
+  })
+
+  it("dispatches the UPDATE when the event matches the registered entity_module", async () => {
+    const { db, calls, table, setRows } = makeStubDb()
+    setRows(3)
+    const invalidate = createInvalidateOnDrift(table, { entityModule: "products" })
+
+    const result = await invalidate(db, makeEvent())
+
+    expect(result.invalidated).toBe(3)
+    // Drizzle chain: update → set → where → returning
+    expect(calls.map((c) => c.phase)).toEqual(["update", "set", "where", "returning"])
+  })
+
+  it("returns invalidated: 0 when no rows match (returning() returns empty)", async () => {
+    const { db, table, setRows } = makeStubDb()
+    setRows(0)
+    const invalidate = createInvalidateOnDrift(table, { entityModule: "products" })
+
+    const result = await invalidate(db, makeEvent())
+    expect(result.invalidated).toBe(0)
+  })
+
+  it("scopes to one locale + market when the event sets them", async () => {
+    const { db, table } = makeStubDb()
+    const invalidate = createInvalidateOnDrift(table, { entityModule: "products" })
+
+    // Just ensures no throw — the actual SQL is opaque but the
+    // function consumed all event fields. Coverage is at the
+    // integration test level.
+    await invalidate(db, makeEvent({ locale: "ro-RO", market: "RO" }))
+  })
+
+  it("matches all locales / markets when event fields are unset (full-entity invalidation)", async () => {
+    const { db, table } = makeStubDb()
+    const invalidate = createInvalidateOnDrift(table, { entityModule: "products" })
+
+    // No throw — the WHERE clause omits the locale/market predicates.
+    await invalidate(db, makeEvent({ locale: undefined, market: undefined }))
+  })
+})

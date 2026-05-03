@@ -11,9 +11,11 @@
 
 import {
   type ContentLocaleResolution,
+  createInvalidateOnDrift,
   fetchOverlaysForEntity,
   type GetContentRequest,
   type GetContentResult,
+  type InvalidateOnDrift,
   isStale,
   type ProvenanceReadResult,
   pickBestCachedLocale,
@@ -375,3 +377,9 @@ function wrapSynthesized(
     machine_translated: false,
   }
 }
+
+/** Drift event consumer for the charters content cache. Per §3.4.1. */
+export const invalidateCharterContentOnDrift: InvalidateOnDrift = createInvalidateOnDrift(
+  chartersSourcedContentTable,
+  { entityModule: "charters" },
+)

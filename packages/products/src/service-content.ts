@@ -20,9 +20,11 @@
 
 import {
   type ContentLocaleResolution,
+  createInvalidateOnDrift,
   fetchOverlaysForEntity,
   type GetContentRequest,
   type GetContentResult,
+  type InvalidateOnDrift,
   isStale,
   type ProvenanceReadResult,
   pickBestCachedLocale,
@@ -466,3 +468,16 @@ function wrapSynthesized(
     machine_translated: false,
   }
 }
+
+/**
+ * Drift event consumer — sets `fresh_until = now()` on every cache row
+ * matching the event's (entity_module, entity_id [, locale [, market]])
+ * scope. The next read serves stale + schedules a SWR refresh.
+ *
+ * Templates subscribe this to the catalog plane's drift-event bus.
+ * Per sourced-content §3.4.1.
+ */
+export const invalidateProductContentOnDrift: InvalidateOnDrift = createInvalidateOnDrift(
+  productsSourcedContentTable,
+  { entityModule: "products" },
+)

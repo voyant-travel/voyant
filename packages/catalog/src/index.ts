@@ -128,12 +128,16 @@ export {
   type ContentLocaleMatchKind,
   type ContentLocaleResolution,
   type ContentOverlay,
+  type CreateInvalidateOnDriftOptions,
+  createInvalidateOnDrift,
+  type InvalidateOnDrift,
   isStale,
   JsonPointerError,
   type MergeOverlaysOptions,
   mergeOverlaysIntoContent,
   parseJsonPointer,
   pickBestCachedLocale,
+  type VerticalContentInvalidatableTable,
   withContentRefreshLock,
 } from "./services/content-service.js"
 export {

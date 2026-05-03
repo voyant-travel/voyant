@@ -16,9 +16,11 @@
 
 import {
   type ContentLocaleResolution,
+  createInvalidateOnDrift,
   fetchOverlaysForEntity,
   type GetContentRequest,
   type GetContentResult,
+  type InvalidateOnDrift,
   isStale,
   type ProvenanceReadResult,
   pickBestCachedLocale,
@@ -380,3 +382,9 @@ function wrapSynthesized(
     machine_translated: false,
   }
 }
+
+/** Drift event consumer for the extras content cache. Per §3.4.1. */
+export const invalidateExtraContentOnDrift: InvalidateOnDrift = createInvalidateOnDrift(
+  extrasSourcedContentTable,
+  { entityModule: "extras" },
+)
