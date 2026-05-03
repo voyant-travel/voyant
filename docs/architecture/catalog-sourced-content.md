@@ -59,13 +59,15 @@ export interface SourceAdapter {
   // ... existing methods unchanged ...
 
   /**
-   * Returns rich entity content for one entity_id. Distinct from
-   * liveResolve — this returns the durable detail-page content
-   * (itinerary, media, options, terms), not volatile live values.
+   * Returns rich entity content for one entity_id, in one locale.
+   * Distinct from liveResolve — this returns the durable detail-page
+   * content (itinerary, media, options, terms), not volatile live
+   * values.
    *
    * Capability-gated by `supportsContentFetch`. The catalog plane's
    * content cache calls this on a refresh cadence (TTL or drift event)
-   * and stores the result in the per-vertical content table.
+   * and stores the result in the per-vertical, per-locale content
+   * table.
    */
   getContent?(
     ctx: SourceAdapterContext,
@@ -76,14 +78,29 @@ export interface SourceAdapter {
 export interface GetContentRequest {
   entity_module: string
   entity_id: string
-  /** Optional locale negotiation. */
-  scope?: { locale?: string; market?: string; currency?: string }
+  /** BCP 47 tag (e.g. "ro-RO", "de-DE", "en-GB"). Required — locale is
+   *  load-bearing in this contract. See §3.5 for the full multi-
+   *  language posture. */
+  locale: string
+  /** Other scope axes — kept separate from locale for clarity. */
+  market?: string
+  currency?: string
 }
 
 export interface GetContentResult {
   entity_module: string
   entity_id: string
   source_ref: string
+  /** The locale this payload is in. May differ from request.locale
+   *  when the upstream did its own fallback (e.g. requested ro-RO,
+   *  returned en-GB because it had no Romanian content). The catalog
+   *  plane records this so subsequent fallback decisions know what's
+   *  actually cached vs. what was requested. */
+  returned_locale: string
+  /** True when the upstream marks the payload as machine-translated.
+   *  Read paths can opt out of machine-translated rows for ops-side
+   *  views (see §3.5.5). */
+  machine_translated?: boolean
   /**
    * Vertical-specific content payload. The catalog plane treats it as
    * opaque; the vertical's content service knows how to read it. The
@@ -104,37 +121,55 @@ export interface AdapterCapabilities {
   // ... existing ...
   /** Whether the adapter implements `getContent`. */
   supportsContentFetch?: boolean
+  /** BCP 47 tags this connection can serve content in. The catalog
+   *  plane uses this to plan backfills (preload all deployment-
+   *  configured locales) and to render an empty-state when the
+   *  requested locale is not supported. Empty / absent → unknown,
+   *  probe per-call. */
+  supportedContentLocales?: ReadonlyArray<string>
 }
 ```
 
 Adapters that don't implement `getContent` (the demo upstream, simple bedbanks that only have prices) declare `supportsContentFetch: false`. The catalog plane then renders thin content from the indexer projection — same as today, no regression.
 
+The locale field is required, not optional. Adapters that genuinely have only one locale (a single-language tour operator) accept any value and return their canonical content with `returned_locale` pointing at what they actually have. The contract is "tell me your best for this locale" — never "give me whatever you have."
+
 ### 3.2. Per-vertical content cache
 
 Each vertical that needs rich content for sourced rows adds a sibling table mirroring its owned-content schema. **Per-vertical, not generic.** Cruises already proves the shape per-vertical works; we formalize the pattern.
+
+The cache is keyed on **(entity_id, locale)** — each language is a separate row, mirroring the existing `product_translations` shape on the owned side. See §3.5 for the multi-language rationale.
 
 Examples:
 
 ```sql
 -- packages/products/src/schema-sourced-content.ts (new)
 products_sourced_content (
-  entity_id              text pk,    -- typeid: prod_*, matches a row in catalog
+  entity_id              text not null,           -- typeid: prod_*, matches catalog
+  locale                 text not null,           -- BCP 47, e.g. "ro-RO"
   source_kind            text not null,
   source_ref             text not null,
   -- denormalized "content" payload, vertical-shaped
-  payload                jsonb not null,    -- { product, options[], days[], media[] }
+  payload                jsonb not null,          -- { product, options[], days[], media[] }
+  returned_locale        text not null,           -- what the upstream actually served
+  machine_translated     boolean not null default false,
   fetched_at             timestamptz not null,
   fresh_until            timestamptz,
   etag                   text,
-  fetch_status           text not null,     -- "ok" | "stale" | "error" | "unsupported"
+  fetch_status           text not null,           -- "ok" | "stale" | "error" | "unsupported"
   fetch_error            text,
+  primary key (entity_id, locale),
 )
+-- index on (locale, fresh_until)             — for "what's stale in ro-RO?"
+-- index on (entity_id, returned_locale)      — for fallback diagnostics
 
 -- packages/cruises/src/schema-sourced-content.ts (new)
 -- replaces the cruises-routes.ts ad-hoc pattern with a shared cache
 cruises_sourced_content (
-  entity_id text pk, source_kind, source_ref, payload jsonb, fetched_at,
-  fresh_until, etag, fetch_status, fetch_error,
+  entity_id text, locale text, source_kind, source_ref, payload jsonb,
+  returned_locale text, machine_translated bool, fetched_at, fresh_until,
+  etag, fetch_status, fetch_error,
+  primary key (entity_id, locale),
 )
 
 -- ... and so on per vertical that adopts the pattern ...
@@ -147,40 +182,50 @@ Why per-vertical rather than one big `catalog_content_cache(payload jsonb)` tabl
 - Drift signals are per-vertical: cruise drift events care about sailing changes, hotel drift events care about room availability. Routing the cache invalidation through the vertical keeps responsibilities clean.
 - Migration is safer: a problem in the products cache doesn't take out cruise rendering.
 
+Why per-locale rows rather than `payload jsonb` keyed by locale: independent TTLs, independent fetch failures, simple "missing locale" SQL queries, per-locale invalidation on drift. See §3.5.2 for the full reasoning.
+
 ### 3.3. Read service with owned-vs-sourced dispatch
 
-Each vertical exposes a `getContentForEntity(db, entityId, scope)` function that:
+Each vertical exposes a `getContentForEntity(db, entityId, scope)` function that takes a locale preference chain and returns the best match:
 
 ```ts
 export async function getProductContent(
   db: AnyDrizzleDb,
   entityId: string,
   scope: ContentScope,
-): Promise<ProductContent | null> {
+): Promise<ContentLocaleResolution<ProductContent> | null> {
   const provenance = await readProvenance(db, "products", entityId)
   if (!provenance || provenance.source_kind === "owned") {
     // Owned path — read from the products tables (current implementation).
+    // Owned content is locale-resolved against product_translations.
     return readOwnedProductContent(db, entityId, scope)
   }
-  // Sourced path — read from the per-vertical content cache.
-  const cached = await readCachedSourcedContent(db, "products", entityId, scope)
-  if (cached && !isStale(cached, scope)) return cached.payload as ProductContent
+  // Sourced path — pick the best cached locale row against the
+  // preference chain (one query, no N+1; see §3.5.3).
+  const best = await pickBestCachedLocale(db, "products", entityId, scope)
+  if (best && !isStale(best, scope)) return resolveCached(best, scope)
 
-  // Cache miss or stale — refresh through the adapter (registered in
-  // the SourceAdapterRegistry) and cache the result.
+  // Cache miss for every preferred locale, or the best match is stale.
+  // Refresh through the adapter and cache.
   const adapter = sourceAdapterRegistry.resolveOrThrow(provenance.source_kind)
   if (!adapter.getContent) {
     // Adapter declared no content fetch — fall back to thin content
-    // synthesized from the indexer projection. This is a degraded mode.
+    // synthesized from the indexer projection. Degraded mode.
     return synthesizeThinContent(db, "products", entityId, scope)
   }
-  const fresh = await adapter.getContent(adapterCtx, { entity_module: "products", entity_id: entityId, scope })
+  const fresh = await adapter.getContent(adapterCtx, {
+    entity_module: "products",
+    entity_id: entityId,
+    locale: scope.preferredLocales[0],
+    market: scope.market,
+    currency: scope.currency,
+  })
   await writeCachedSourcedContent(db, "products", entityId, fresh)
-  return fresh.content as ProductContent
+  return resolveFresh(fresh, scope)
 }
 ```
 
-Detail routes (operator and storefront) call this single function. Owned products keep working unchanged. Sourced products read from cache or freshen via the adapter. Adapters that don't support content fetch render a thin fallback synthesized from the indexed projection — degraded but not broken.
+Detail routes (operator and storefront) call this single function. Owned products keep working unchanged. Sourced products read from cache (locale-resolved) or freshen via the adapter. Adapters that don't support content fetch render a thin fallback synthesized from the indexed projection — degraded but not broken.
 
 ### 3.4. Refresh policy
 
@@ -191,6 +236,95 @@ Three refresh paths:
 3. **Manual** — admin "Refresh from source" button hits a route that calls `adapter.getContent` and updates the cache. Useful for debugging and post-incident recovery.
 
 Refreshes happen **inline** on read for v1 (simple, no background job). At scale, a background refresher reads rows with `fresh_until < now()` and refreshes proactively to avoid latency on hot reads — that's a v2 concern.
+
+## 3.5. Multi-language as a first-class axis
+
+Voyant is multilingual at every layer of the catalog plane it already covers — the indexer is sliced per locale (`IndexerSlice.locale`), the overlay store is keyed on `(entity, field, locale, audience, market)`, owned products carry `product_translations` / `product_option_translations` / `option_unit_translations` tables, BCP 47 codes are the lingua franca (`@voyantjs/utils/languages`). **Sourced content has to match this posture.** Treating it as a "cache afterthought" — one canonical locale stored, translation deferred — silently degrades sourced rows everywhere a non-English customer or operator looks at one.
+
+Real adapters reflect this:
+
+- TUI Connect serves content in 20+ languages; an operator selling TUI inventory in Romania expects ro-RO content, an operator selling in Germany expects de-DE.
+- Bedbanks (Hotelbeds, Expedia) routinely return descriptions per locale.
+- Cruise lines often have CMS content per market (en-US for North America, en-GB + de + fr + es for Europe).
+
+The catalog plane should not flatten that.
+
+### 3.5.1. Adapter contract is locale-aware
+
+The `getContent` request defined in §3.1 takes a required `locale` (BCP 47) and the result returns a `returned_locale` that may differ. This keeps the contract explicit — adapters MUST tell us which locale they served, no inference. `AdapterCapabilities.supportedContentLocales` lets adapters declare ahead of time which locales they can serve, so the catalog plane can plan backfills against deployment-configured locales without per-call probing.
+
+When the upstream produced a machine translation (rather than authored content), the adapter sets `machine_translated: true`. The read service can be told to skip those rows in operator-side views (see §3.5.5).
+
+### 3.5.2. Per-locale cache rows
+
+The cache table from §3.2 is keyed on **(entity_id, locale)** rather than entity_id alone. Why per-locale rows rather than a single row with `payload jsonb` keyed by locale:
+
+- **Per-locale TTLs.** TUI's de-DE content might refresh hourly, ro-RO daily. Independent `fresh_until` per row.
+- **Per-locale fetch failures don't cascade.** If the adapter's en-GB endpoint times out, ro-RO content is still readable.
+- **Backfill queries.** "Which products are missing fr-FR?" is a single SQL query against `(entity_id, locale)`; with a JSON map, it's a JSONB scan.
+- **Per-locale invalidation on drift.** Drift events name a locale; we invalidate just that row.
+- **Symmetric with `product_translations`.** Owned and sourced read paths can share more code.
+
+### 3.5.3. Locale negotiation: read-side fallback chain
+
+`getContentForEntity` takes a **preference chain**, not a single locale. Walks the chain until it finds a row, falls back gracefully when content for the requested locale doesn't exist:
+
+```ts
+export interface ContentLocaleRequest {
+  /** Ordered preference, most-preferred first. The deployment's
+   *  configured fallback chain is appended after caller's preference,
+   *  so a ro-RO storefront request resolves like
+   *  ["ro-RO", "ro", "en-GB", "en", "*any*"]. */
+  preferredLocales: ReadonlyArray<string>
+  /** When true, accept machine-translated content. False for ops-side
+   *  views where operators want to see "real" content from the upstream
+   *  before deciding whether to override. */
+  acceptMachineTranslated?: boolean
+}
+
+export interface ContentLocaleResolution<T = unknown> {
+  content: T
+  /** Which locale was actually served. */
+  served_locale: string
+  /** "exact" — preference matched directly.
+   *  "language_match" — language tag matched but region didn't (asked
+   *      for "fr-CA", got "fr-FR").
+   *  "fallback_chain" — fell through to a deployment-default locale.
+   *  "any" — last resort, served whatever the cache had. */
+  match_kind: "exact" | "language_match" | "fallback_chain" | "any"
+  machine_translated: boolean
+}
+```
+
+The read service does the chain walk in SQL: pull all available locales for the entity in one query, score them against the preference chain, return the best. One query, no N+1. When **no** locale is available (cache miss for every entry), fall through to the live adapter fetch with the most-preferred locale — same path as §3.3 today, just locale-aware.
+
+### 3.5.4. Editorial overlays compose on top
+
+The existing `catalog_overlay` table keys on `(entity, field_path, locale, audience, market)`. **Overlays already work per-locale.** For sourced rows, an operator can curate a `ro-RO` overlay on top of what the adapter served (or didn't serve) — same machinery. Overlay merge happens at read time after locale resolution: pick the best content row, then layer locale-matching overlays on top.
+
+This means an operator can ship Romanian content for a TUI product *before* TUI publishes a ro-RO version — overlay covers it. When TUI later ships ro-RO natively, the operator can decide to keep their override (overlay wins) or remove it (fall back to the upstream).
+
+### 3.5.5. Machine translation: opt-in policy, never implicit
+
+Voyant does not auto-translate sourced content by default. When an operator chooses to (via deployment config: "fill missing locales by machine-translating from English"), the translator runs at content-fetch time and writes a row with `machine_translated: true`. The read service can be told `acceptMachineTranslated: false` to skip those rows in operator-side views.
+
+Translation provider is wired via the existing pattern (Voyant Cloud AI gateway, OpenAI, DeepL, internal model — same provider story as embeddings). Out of scope for this doc; the contract is "machine_translated content rows exist, are flagged, and the read path can include or exclude them."
+
+### 3.5.6. Backfill and supportedContentLocales
+
+When a deployment configures its set of `DEFAULT_SLICES` (operator template ships with en-GB; storefronts add ro-RO, de-DE, etc.), an admin script can call `adapter.capabilities.supportedContentLocales` (when known) and preload content for every entity × deployment-locale matrix. Background job; out of v1 scope but the data shape supports it cleanly.
+
+For adapters that don't declare `supportedContentLocales`, the cache populates lazily — first read in a new locale fetches and caches.
+
+### 3.5.7. The journey + storefront
+
+The booking journey's locale arrives via `BookingDraft.scope.locale` (set from `accept-language` for the storefront, from the operator's preference for admin). It flows down to:
+
+- The Configure / Accommodation / Add-ons sub-step content via `getContentForEntity`.
+- The descriptor's labels (`paxBands[].label`, `addonGroups[].label`) — which themselves come from the content layer, not hardcoded English.
+- The pricing breakdown's line-item labels.
+
+If the wizard runs in ro-RO and the upstream served en-GB content (no Romanian available), the `match_kind` and `served_locale` fields surface in the UI as a small "served in English" hint, so the customer knows. The booking still commits — fallback is a degradation, not a failure.
 
 ## 4. How the booking journey uses it
 
@@ -313,7 +447,7 @@ Each vertical opts in. Verticals that don't yet have detail-page needs (extras, 
 ## 9. Open questions
 
 1. ~~**Content cache vs. catalog snapshot for "what was sold"** — at booking commit, we capture `frozenPayload`. Should that be the live content cache row, or should it be re-fetched from the adapter to get the freshest at-commit snapshot?~~ **Resolved (§5.1):** refresh from the adapter at commit, fall back to the cache on adapter error. If neither is available (no cache row AND adapter fails), fail the commit — we don't snapshot from the indexed projection because that's not audit-grade. The snapshot row records `content_capture.source: "fresh" | "cache_fallback"` so audit can tell the two apart later.
-2. **Multi-locale caching** — TUI returns content in `de-DE`; storefront serves a `ro-RO` user. Cache per locale, or cache one canonical and translate on read? Vertical-specific decision; cache per locale per vertical for v1.
+2. ~~**Multi-locale caching** — TUI returns content in `de-DE`; storefront serves a `ro-RO` user. Cache per locale, or cache one canonical and translate on read?~~ **Resolved (§3.5):** multi-language is a first-class axis. Adapters take a required `locale` and report `returned_locale`; the cache keys on `(entity_id, locale)` per vertical (independent TTLs, independent fetch failures, simple "missing locale" SQL); the read service walks a preference chain in one query and falls back gracefully. Machine translation is opt-in and flagged on the row, never implicit. Editorial overlays compose on top per locale.
 3. **Cache invalidation on overlay change** — editorial overlays already exist for owned content. Do they apply to sourced content too? If yes, is the merge done at read time or at content-fetch time? Lean toward read-time merge so overlay changes don't need to invalidate the content cache.
 4. **Background refresher vs inline-on-read** — Phase C ships inline; v2 considers background. Defer until we see real latency.
 5. **Per-vertical thin-content synthesizer shape** — when an adapter declares `supportsContentFetch: false`, the fallback synthesizer reads the indexed projection and produces a thin content blob. What's its minimum-viable shape per vertical? Each vertical decides.
