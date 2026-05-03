@@ -61,6 +61,7 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
     supportsDriftDetection: false,
     supportsBookingForwarding: true,
     postBookOperations: ["cancel", "status"],
+    supportsContentFetch: false,
   }
 
   async function call<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {

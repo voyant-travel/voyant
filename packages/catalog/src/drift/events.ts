@@ -87,3 +87,58 @@ export function maxDriftSeverity(drifts: FieldDrift[]): DriftSeverity {
 export function blocksBookings(severity: DriftSeverity): boolean {
   return severity === "critical"
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Content drift
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Coarse classification of why a content row drifted. The cache uses this
+ * to decide whether to invalidate (and at what granularity).
+ */
+export type ContentDriftKind =
+  /** Upstream signaled new content via etag / source_updated_at. */
+  | "content_changed"
+  /** Upstream added a locale we didn't previously have. */
+  | "content_locale_added"
+  /** Explicit invalidation (debug tooling, ops escalation). */
+  | "content_invalidated"
+
+/**
+ * Content-shaped drift event. Sibling to `CatalogDriftEvent`.
+ *
+ * The existing `FieldDrift` / `CatalogDriftEvent` shape is field-policy-
+ * bound — `field_path, severity, before, after, had_overlay`. That's right
+ * for indexed-field drift but doesn't speak to *content* drift, which has
+ * different invalidation granularity (per-locale, per-content-section,
+ * per-etag).
+ *
+ * When a content-drift event fires, the cache invalidates rows matching
+ * `(entity_module, entity_id, locale, market)` — wildcards on locale /
+ * market when those event fields are null. The next read for any matched
+ * row goes through SWR's stale-serve + background-refresh path.
+ *
+ * See `docs/architecture/catalog-sourced-content.md` §3.4.1.
+ */
+export interface ContentDriftEvent {
+  /** TypeID of the drift event itself — same lineage as `CatalogDriftEvent`. */
+  id: string
+  entity_module: string
+  entity_id: string
+  /** When known: the locale that drifted. NULL means "all locales". */
+  locale?: string
+  /** When known: the market that drifted. NULL means "all markets". */
+  market?: string
+  kind: ContentDriftKind
+  /** ETag we last cached, when the event source can compare. */
+  previous_etag?: string
+  /** ETag the upstream now reports. */
+  current_etag?: string
+  /**
+   * Optional content-section: when only a section drifted, the cache could
+   * in theory do a section-scoped refresh. v1 always re-pulls the whole
+   * content blob; this field is for future surgical refreshes.
+   */
+  section?: string
+  detected_at: Date
+}

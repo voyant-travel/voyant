@@ -45,6 +45,22 @@ export interface AdapterCapabilities {
    * the cache mechanism.
    */
   cacheTtlSeconds?: number | null
+  /**
+   * Whether the adapter implements `getContent` (rich detail-page content
+   * for sourced rows: itinerary, media, options, terms). When false, the
+   * catalog plane synthesizes thin content from the indexed projection +
+   * editorial overlay instead of calling the adapter.
+   *
+   * See `docs/architecture/catalog-sourced-content.md` §3.1.
+   */
+  supportsContentFetch?: boolean
+  /**
+   * BCP 47 language tags this connection can serve content in. The catalog
+   * plane uses this to plan backfills (preload deployment-configured
+   * locales) and to render an empty-state when the requested locale is not
+   * supported. Empty / absent → unknown; the plane probes per-call.
+   */
+  supportedContentLocales?: ReadonlyArray<string>
 }
 
 /** Connection lifecycle state. Aligned with §5.10's two-mode disconnect model. */
@@ -122,6 +138,88 @@ export interface LiveResolveResult {
   values: Record<string, Record<string, unknown>>
   /** Entities the adapter could not resolve, with reason codes. */
   failed?: Record<string, "timeout" | "not_found" | "unsupported" | "error">
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rich content
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Get-content request. Asks the adapter for one entity's full detail-page
+ * content (itinerary, media, options, terms, room types, departures) in one
+ * locale. Distinct from `liveResolve` — this returns durable content, not
+ * volatile-live values.
+ *
+ * The catalog plane's content cache calls this on a refresh cadence (TTL or
+ * drift event) and stores the result in the per-vertical, per-locale
+ * content table.
+ *
+ * See `docs/architecture/catalog-sourced-content.md` §3.1.
+ */
+export interface GetContentRequest {
+  entity_module: string
+  entity_id: string
+  /**
+   * BCP 47 language tag (e.g. "ro-RO", "de-DE", "en-GB"). Required —
+   * locale is load-bearing in this contract. Adapters that genuinely have
+   * only one locale accept any value and return their canonical content
+   * with `returned_locale` pointing at what they actually have. The
+   * contract is "tell me your best for this locale" — never "give me
+   * whatever you have."
+   */
+  locale: string
+  /** Other scope axes — kept separate from locale for clarity. */
+  market?: string
+  currency?: string
+}
+
+export interface GetContentResult {
+  entity_module: string
+  entity_id: string
+  source_ref: string
+  /**
+   * The locale this payload is in. May differ from `request.locale` when
+   * the upstream did its own fallback (e.g. requested ro-RO, returned
+   * en-GB because it had no Romanian content). The catalog plane records
+   * this so subsequent fallback decisions know what's actually cached vs.
+   * what was requested.
+   */
+  returned_locale: string
+  /**
+   * True when the upstream marks the payload as machine-translated (rather
+   * than authored content). Read paths can opt out of machine-translated
+   * rows for ops-side views.
+   */
+  machine_translated?: boolean
+  /**
+   * Vertical-specific content payload. The catalog plane treats it as
+   * opaque; the vertical's content service knows how to read it (and
+   * validates against `content_schema_version` before writing to the
+   * cache). The shape is the vertical's existing owned-content shape (e.g.
+   * for products: `{ product, options[], days[], media[] }`).
+   */
+  content: unknown
+  /**
+   * Vertical-managed schema version of the `content` payload (e.g.
+   * "products/v3", "cruises/v1"). Cache writes are gated on the vertical's
+   * validator for this version; cache reads ignore rows with an unknown /
+   * older version. Lets us evolve content shapes without invalidating /
+   * mass-rewriting cache rows.
+   */
+  content_schema_version: string
+  /**
+   * When the upstream itself last modified this content (their
+   * `updated_at`, ETag-derived timestamp, etc.). Used by the reconciler /
+   * drift detector and by snapshot audit trails.
+   */
+  source_updated_at?: Date
+  /**
+   * When the upstream considers this content fresh until. Hint for the
+   * catalog plane's cache; not load-bearing if absent.
+   */
+  fresh_until?: Date
+  /** ETag-style marker for HTTP-cache revalidation on the next pull. */
+  etag?: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -221,6 +319,21 @@ export interface SourceAdapter {
    * inventory count). Capability-gated by `supportsLiveResolution`.
    */
   liveResolve?(ctx: SourceAdapterContext, request: LiveResolveRequest): Promise<LiveResolveResult>
+
+  // ── Rich content ──────────────────────────────────────────────────────
+
+  /**
+   * Fetch rich entity content for one entity, in one locale. Returns the
+   * durable detail-page content (itinerary, media, options, terms) — NOT
+   * volatile-live values (`liveResolve` covers those).
+   *
+   * Capability-gated by `supportsContentFetch`. Adapters that don't
+   * implement this leave it undefined; the catalog plane synthesizes thin
+   * content from the indexed projection + editorial overlay instead.
+   *
+   * See `docs/architecture/catalog-sourced-content.md` §3.1.
+   */
+  getContent?(ctx: SourceAdapterContext, request: GetContentRequest): Promise<GetContentResult>
 
   // ── Booking forwarding ────────────────────────────────────────────────
 

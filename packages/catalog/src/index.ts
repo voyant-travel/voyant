@@ -11,6 +11,8 @@ export {
   type ConnectionState,
   type DiscoveryCursor,
   type DiscoveryPage,
+  type GetContentRequest,
+  type GetContentResult,
   type LiveResolveRequest,
   type LiveResolveResult,
   type ReserveRequest,
@@ -23,6 +25,8 @@ export * from "./contract.js"
 export {
   blocksBookings,
   type CatalogDriftEvent,
+  type ContentDriftEvent,
+  type ContentDriftKind,
   type FieldDrift,
   maxDriftSeverity,
 } from "./drift/events.js"
