@@ -148,6 +148,21 @@
         "types": "./dist/booking-engine/schema.d.ts",
         "import": "./dist/booking-engine/schema.js",
         "default": "./dist/booking-engine/schema.js"
+      },
+      "./booking-engine/draft-shape": {
+        "types": "./dist/booking-engine/draft-shape.d.ts",
+        "import": "./dist/booking-engine/draft-shape.js",
+        "default": "./dist/booking-engine/draft-shape.js"
+      },
+      "./booking-engine/contracts": {
+        "types": "./dist/booking-engine/contracts.d.ts",
+        "import": "./dist/booking-engine/contracts.js",
+        "default": "./dist/booking-engine/contracts.js"
+      },
+      "./booking-engine/drafts-schema": {
+        "types": "./dist/booking-engine/drafts-schema.d.ts",
+        "import": "./dist/booking-engine/drafts-schema.js",
+        "default": "./dist/booking-engine/drafts-schema.js"
       }
     },
     "main": "./dist/index.js",

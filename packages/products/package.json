@@ -90,6 +90,11 @@
         "types": "./dist/booking-extension.d.ts",
         "import": "./dist/booking-extension.js",
         "default": "./dist/booking-extension.js"
+      },
+      "./booking-engine": {
+        "types": "./dist/booking-engine/index.d.ts",
+        "import": "./dist/booking-engine/index.js",
+        "default": "./dist/booking-engine/index.js"
       }
     },
     "main": "./dist/index.js",

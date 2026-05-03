@@ -85,6 +85,21 @@
         "types": "./dist/adapters/index.d.ts",
         "import": "./dist/adapters/index.js",
         "default": "./dist/adapters/index.js"
+      },
+      "./booking-engine": {
+        "types": "./dist/booking-engine/index.d.ts",
+        "import": "./dist/booking-engine/index.js",
+        "default": "./dist/booking-engine/index.js"
+      },
+      "./service-content": {
+        "types": "./dist/service-content.d.ts",
+        "import": "./dist/service-content.js",
+        "default": "./dist/service-content.js"
+      },
+      "./service-pricing": {
+        "types": "./dist/service-pricing.d.ts",
+        "import": "./dist/service-pricing.js",
+        "default": "./dist/service-pricing.js"
       }
     },
     "main": "./dist/index.js",

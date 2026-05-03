@@ -68,6 +68,11 @@
         "import": "./dist/hooks/index.js",
         "default": "./dist/hooks/index.js"
       },
+      "./booking-engine": {
+        "types": "./dist/booking-engine/index.d.ts",
+        "import": "./dist/booking-engine/index.js",
+        "default": "./dist/booking-engine/index.js"
+      },
       "./client": {
         "types": "./dist/client.d.ts",
         "import": "./dist/client.js",

@@ -62,6 +62,11 @@
         "types": "./dist/rrule.d.ts",
         "import": "./dist/rrule.js",
         "default": "./dist/rrule.js"
+      },
+      "./service-holds": {
+        "types": "./dist/service-holds.d.ts",
+        "import": "./dist/service-holds.js",
+        "default": "./dist/service-holds.js"
       }
     },
     "main": "./dist/index.js",
