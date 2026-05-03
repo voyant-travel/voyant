@@ -1,0 +1,160 @@
+/**
+ * Products content shape — the rich detail-page content shape returned
+ * by `getContent` and stored in `products_sourced_content.payload`.
+ *
+ * Schema versions are managed by this module: the constant
+ * `PRODUCTS_CONTENT_SCHEMA_VERSION` stamps every cache write; reads
+ * skip rows with an unrecognized version (treated as cache miss). Bump
+ * the version when the shape changes; old cache rows are then evicted
+ * by a single `DELETE WHERE content_schema_version != current`.
+ *
+ * Pure types + Zod + a vertical-specific `mergeOverlaysIntoProductContent`
+ * that wraps the catalog plane's content-shape-aware merger with this
+ * vertical's validator.
+ *
+ * See `docs/architecture/catalog-sourced-content.md` §3.2, §3.5.4, §3.6.
+ */
+
+import {
+  type ContentOverlay,
+  type MergeOverlaysOptions,
+  mergeOverlaysIntoContent,
+} from "@voyantjs/catalog"
+import { z } from "zod"
+
+/**
+ * The current content-schema version. Stamped on every cache write.
+ * Bump when the `productContentSchema` shape changes incompatibly.
+ */
+export const PRODUCTS_CONTENT_SCHEMA_VERSION = "products/v1"
+
+/**
+ * Top-level product summary fields. Maps loosely to the owned `products`
+ * table — the read service synthesizes from indexed projection + overlay
+ * for thin adapters, or stores adapter-served data for rich ones.
+ */
+export const productSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.string().optional(),
+  description: z.string().nullable().optional(),
+  highlights: z.array(z.string()).optional(),
+  hero_image_url: z.string().nullable().optional(),
+  duration_days: z.number().int().nonnegative().nullable().optional(),
+  start_date: z.string().nullable().optional(),
+  end_date: z.string().nullable().optional(),
+  sell_currency: z.string().nullable().optional(),
+  supplier: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  departure_city: z.string().nullable().optional(),
+  tags: z.array(z.string()).optional(),
+})
+
+export const productMediaItemSchema = z.object({
+  url: z.string(),
+  type: z.enum(["image", "video", "document"]).default("image"),
+  caption: z.string().nullable().optional(),
+  alt: z.string().nullable().optional(),
+})
+
+export const productOptionUnitSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  label: z.string().optional(),
+  description: z.string().nullable().optional(),
+  capacity: z.number().int().nonnegative().nullable().optional(),
+})
+
+export const productOptionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  units: z.array(productOptionUnitSchema).optional().default([]),
+  inclusions: z.array(z.string()).optional().default([]),
+})
+
+export const productDaySchema = z.object({
+  day_number: z.number().int().positive(),
+  title: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  services: z.array(z.string()).optional().default([]),
+})
+
+export const productPolicySchema = z.object({
+  kind: z.enum(["cancellation", "payment", "supplier_notes", "requirements"]),
+  body: z.string(),
+  /** Optional structured rules — vertical-specific. */
+  rules: z.unknown().optional(),
+})
+
+/**
+ * The product content payload. Cache writes validate against this
+ * schema; cache reads skip rows that don't validate (treated as cache
+ * miss to surface adapter integration bugs without corrupting reads).
+ */
+export const productContentSchema = z.object({
+  product: productSummarySchema,
+  options: z.array(productOptionSchema).default([]),
+  days: z.array(productDaySchema).default([]),
+  media: z.array(productMediaItemSchema).default([]),
+  policies: z.array(productPolicySchema).default([]),
+})
+
+export type ProductContent = z.infer<typeof productContentSchema>
+export type ProductSummary = z.infer<typeof productSummarySchema>
+export type ProductMediaItem = z.infer<typeof productMediaItemSchema>
+export type ProductOption = z.infer<typeof productOptionSchema>
+export type ProductDay = z.infer<typeof productDaySchema>
+export type ProductPolicy = z.infer<typeof productPolicySchema>
+
+/**
+ * Validate a `ProductContent` payload. Returns the parsed result on
+ * success or a structured failure on rejection. Used by the cache write
+ * path and by `mergeOverlaysIntoProductContent` to gate overlay merges.
+ */
+export function validateProductContent(
+  payload: unknown,
+): { valid: true; content: ProductContent } | { valid: false; reason: string } {
+  const result = productContentSchema.safeParse(payload)
+  if (result.success) {
+    return { valid: true, content: result.data }
+  }
+  // Take the first issue's message — that's enough signal for ops; full
+  // detail is available on `result.error.issues` if a caller cares.
+  const issue = result.error.issues[0]
+  return {
+    valid: false,
+    reason: issue ? `${issue.path.join(".")}: ${issue.message}` : "validation failed",
+  }
+}
+
+/**
+ * Apply a list of editorial overlays to a product content payload via
+ * RFC 6901 JSON pointers. Validates the merged result against the
+ * vertical's Zod schema; overlays that produce an invalid payload are
+ * rolled back and reported via `onOverlayError`.
+ *
+ * Per sourced-content §3.5.4, this is the "content-shape-aware merger"
+ * — the catalog plane stays neutral about the content shape; the
+ * vertical plugs in its validator here.
+ */
+export function mergeOverlaysIntoProductContent(
+  payload: ProductContent,
+  overlays: ReadonlyArray<ContentOverlay>,
+  options: Pick<MergeOverlaysOptions, "onOverlayError"> = {},
+): ProductContent {
+  const merged = mergeOverlaysIntoContent(payload, overlays, {
+    validate(p) {
+      const result = validateProductContent(p)
+      if (result.valid) {
+        return { valid: true }
+      }
+      return { valid: false, reason: result.reason }
+    },
+    onOverlayError: options.onOverlayError,
+  })
+  // The validator gates merges, so a successful merge always parses —
+  // re-parse here to satisfy the return type without an unsafe cast.
+  return productContentSchema.parse(merged)
+}
