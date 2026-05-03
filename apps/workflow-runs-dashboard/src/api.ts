@@ -8,7 +8,11 @@
  * separately from the API.
  */
 
-const API_BASE: string = (import.meta.env.VITE_API_BASE as string | undefined) ?? ""
+// Default to `/api` to match the operator template's `getApiUrl()`
+// convention — the worker mounts admin routes under that prefix.
+// Override via VITE_API_BASE for cross-origin deploys (drop the
+// trailing slash; the SPA appends paths starting with `/v1/...`).
+const API_BASE: string = (import.meta.env.VITE_API_BASE as string | undefined) ?? "/api"
 
 export interface WorkflowRunErrorPayload {
   message: string

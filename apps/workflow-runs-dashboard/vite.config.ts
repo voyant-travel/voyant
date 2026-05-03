@@ -9,12 +9,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 /**
  * Standalone workflow-runs dashboard.
  *
- * - In dev, the SPA proxies `/v1/admin` requests to the operator
- *   template (default port 3300) so the same-origin assumption holds.
- *   Override via `VOYANT_API_TARGET` if your API is elsewhere.
+ * - In dev, the SPA proxies `/api/*` requests to the operator
+ *   template (default port 3300) so same-origin assumptions hold.
+ *   The operator template mounts its API behind `/api`, so the
+ *   SPA's default API base of `/api` works as-is.
+ *   Override via `VOYANT_API_TARGET` if the operator runs elsewhere.
  * - In prod, deploy the static `dist/` to any host. Pass
  *   `VITE_API_BASE` at build time to point the SPA at a non-same-origin
- *   API (e.g. https://operator.example.com).
+ *   API (e.g. https://operator.example.com/api).
  */
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -31,7 +33,7 @@ export default defineConfig({
   server: {
     port: 3500,
     proxy: {
-      "/v1/admin": process.env.VOYANT_API_TARGET ?? "http://127.0.0.1:3300",
+      "/api": process.env.VOYANT_API_TARGET ?? "http://127.0.0.1:3300",
     },
   },
 })
