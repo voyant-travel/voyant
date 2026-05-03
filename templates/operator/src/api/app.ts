@@ -48,7 +48,7 @@ import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { mountCatalogSearchRoutes } from "./catalog-search"
-import { channelPushBundle } from "./channel-push"
+import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
 import { getDbFromHyperdrive } from "./lib/db"
@@ -460,6 +460,7 @@ export const app = createApp<CloudflareBindings>({
     mountCatalogSearchRoutes(hono)
     mountCatalogBookingRoutes(hono)
     mountCatalogContentRoutes(hono)
+    mountChannelPushAdminRoutes(hono)
     mountFlightRoutes(hono)
   },
 })
