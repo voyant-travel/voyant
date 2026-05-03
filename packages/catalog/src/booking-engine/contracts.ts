@@ -339,7 +339,18 @@ export const bookingDraftV1 = z.object({
     .default({ intent: "hold" }),
 
   voucher: z.object({ code: z.string() }).optional(),
+  /**
+   * Operator-only notes — never shown to the customer. Set on
+   * admin-surface review steps (operator dashboard) and surfaced on
+   * the booking detail's notes panel.
+   */
   internalNotes: z.string().optional(),
+  /**
+   * Customer-facing notes — "anything we should know?" Free-text
+   * the customer fills on the storefront review step. Stored on
+   * the booking and visible to ops; treat as untrusted input.
+   */
+  customerNotes: z.string().optional(),
 
   // Engine-controlled — written when /quote returns
   quoteId: z.string().optional(),

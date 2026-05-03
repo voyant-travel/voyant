@@ -329,6 +329,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               isCommitting={commit.isPending}
               onConfirm={onConfirm}
               renderExtras={props.renderReviewExtras}
+              surface={surface}
             />
           ) : null}
 

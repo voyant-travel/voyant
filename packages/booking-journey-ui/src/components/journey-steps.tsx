@@ -1410,13 +1410,22 @@ export function ReviewStep({
   isCommitting,
   onConfirm,
   renderExtras,
+  surface,
 }: {
   draft: Draft
   setDraft: (next: Draft) => void
   isCommitting: boolean
   onConfirm: () => void
   renderExtras?: () => React.ReactNode
+  /**
+   * Drives the notes field. Public storefronts collect
+   * customer-facing "anything we should know?" notes; operator
+   * surfaces collect operator-only internal notes. Defaults to
+   * `admin` so existing operator usage stays unchanged.
+   */
+  surface?: "admin" | "public"
 }): React.ReactElement {
+  const isPublic = surface === "public"
   return (
     <Card>
       <CardHeader>
@@ -1440,14 +1449,26 @@ export function ReviewStep({
             ))}
           </ul>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="bj-internal-notes">Internal notes (operator-only)</Label>
-          <Textarea
-            id="bj-internal-notes"
-            value={draft.internalNotes ?? ""}
-            onChange={(e) => setDraft({ ...draft, internalNotes: e.target.value })}
-          />
-        </div>
+        {isPublic ? (
+          <div className="space-y-1">
+            <Label htmlFor="bj-customer-notes">Notes</Label>
+            <Textarea
+              id="bj-customer-notes"
+              placeholder="Anything we should know? (allergies, accessibility needs, special occasion…)"
+              value={draft.customerNotes ?? ""}
+              onChange={(e) => setDraft({ ...draft, customerNotes: e.target.value })}
+            />
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <Label htmlFor="bj-internal-notes">Internal notes (operator-only)</Label>
+            <Textarea
+              id="bj-internal-notes"
+              value={draft.internalNotes ?? ""}
+              onChange={(e) => setDraft({ ...draft, internalNotes: e.target.value })}
+            />
+          </div>
+        )}
         {renderExtras ? <div>{renderExtras()}</div> : null}
         <Button onClick={onConfirm} disabled={isCommitting}>
           {isCommitting ? "Confirming…" : "Confirm booking"}
