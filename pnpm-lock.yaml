@@ -1071,6 +1071,9 @@ importers:
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      lucide-react:
+        specifier: ^0.475.0
+        version: 0.475.0(react@19.2.4)
       react:
         specifier: ^19.2.4
         version: 19.2.4

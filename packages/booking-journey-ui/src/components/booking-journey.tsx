@@ -229,6 +229,11 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   }
 
   const [contractDialogOpen, setContractDialogOpen] = useState(false)
+  // Tracks the multi-step storefront checkout flow (book →
+  // checkout-start → redirect). The legacy in-process commit has
+  // its own `commit.isPending` so the Confirm button merges both
+  // when deciding whether to show a spinner.
+  const [isHandlingCheckout, setIsHandlingCheckout] = useState(false)
   const contractConfig = props.contract
   const contractVariables = useMemo(() => {
     if (!contractConfig) return {}
@@ -242,6 +247,19 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       quoteId: quote.data.quoteId,
       paymentIntent: { type: draft.payment.intent === "card" ? "card" : "hold" } as never,
     })
+  }
+
+  const handleAccepted = async (acceptance: ContractAcceptanceEvent | null) => {
+    if (!props.onContractAccepted) {
+      await commitDraft()
+      return
+    }
+    setIsHandlingCheckout(true)
+    try {
+      await props.onContractAccepted(acceptance)
+    } finally {
+      setIsHandlingCheckout(false)
+    }
   }
 
   const onConfirm = async () => {
@@ -260,22 +278,12 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       setContractDialogOpen(true)
       return
     }
-    if (props.onContractAccepted) {
-      await props.onContractAccepted(null)
-      return
-    }
-    await commitDraft()
+    await handleAccepted(null)
   }
 
   const onContractAccept = async (acceptance: ContractAcceptanceEvent) => {
     setContractDialogOpen(false)
-    if (props.onContractAccepted) {
-      await props.onContractAccepted(acceptance)
-      return
-    }
-    // No checkout-start handler wired — fall back to the in-process
-    // commit so the dialog is non-destructive to existing flows.
-    await commitDraft()
+    await handleAccepted(acceptance)
   }
 
   return (
@@ -335,7 +343,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             <ReviewStep
               draft={draft}
               setDraft={setDraft}
-              isCommitting={commit.isPending}
+              isCommitting={commit.isPending || isHandlingCheckout}
               onConfirm={onConfirm}
               renderExtras={props.renderReviewExtras}
               surface={surface}

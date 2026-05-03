@@ -18,6 +18,7 @@ import { Label } from "@voyantjs/ui/components/label"
 import { PhoneInput } from "@voyantjs/ui/components/phone-input"
 import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
 import { Textarea } from "@voyantjs/ui/components/textarea"
+import { Loader2 } from "lucide-react"
 
 import {
   type Draft,
@@ -1471,7 +1472,14 @@ export function ReviewStep({
         )}
         {renderExtras ? <div>{renderExtras()}</div> : null}
         <Button onClick={onConfirm} disabled={isCommitting}>
-          {isCommitting ? "Confirming…" : "Confirm booking"}
+          {isCommitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Confirming…
+            </>
+          ) : (
+            "Confirm booking"
+          )}
         </Button>
       </CardContent>
     </Card>
