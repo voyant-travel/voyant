@@ -185,6 +185,12 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/finance/payment-sessions",
     "/v1/public/payment-link-config",
     "/v1/public/payment-link",
+    // Storefront booking journey — quote / book / drafts run
+    // unauthenticated against the customer surface. Per
+    // booking-journey-architecture §10 Phase B (the journey is
+    // auth-less or session-token-bound; this template takes the
+    // auth-less posture and assigns `actor: "customer"`).
+    "/v1/public/catalog",
     // Netopia webhook receiver. Netopia's servers POST here without a
     // session cookie or bearer; the plugin handler matches the inbound
     // payload to a payment session by orderID and validates the
