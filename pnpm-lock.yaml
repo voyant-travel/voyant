@@ -5147,6 +5147,9 @@ importers:
       '@voyantjs/catalog':
         specifier: workspace:*
         version: link:../../packages/catalog
+      '@voyantjs/catalog-demo-adapter':
+        specifier: workspace:*
+        version: link:../../packages/catalog-demo-adapter
       '@voyantjs/catalog-mcp':
         specifier: workspace:*
         version: link:../../packages/catalog-mcp
