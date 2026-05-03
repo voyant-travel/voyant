@@ -322,6 +322,52 @@ relevant phase.
   We leave it alone for now and add the new flow on the storefront
   only — no regression risk.
 
+## Implementation status (as of 2026-05-03)
+
+| Phase | Status | Commits |
+| --- | --- | --- |
+| 1.1 invoiceKind + convertedFromInvoiceId | ✅ done | aeb200611 |
+| 1.2 awaiting_payment status + paidAt | ✅ done | aeb200611 |
+| 1.3 finance emits invoice.issued / proforma.issued | ✅ done | aeb200611 |
+| 1.4 SmartBill proforma subscriber | ✅ done | aeb200611 |
+| 2 contract preview dialog + slug-based render endpoint | ✅ done | ba12d6a03 |
+| 3 checkout-start endpoint + finalize workflow scaffold | ✅ done | e5d06d9c8, 6be800a4f |
+| 4 Netopia card path | 🟡 not started — needs sandbox creds + dev tunnel |
+| 5 Bank-transfer path + Mark payment received | 🟡 not started — needs proforma SmartBill flow exercised end-to-end |
+| 6 Inquiry path + observability | 🟡 not started — depends on CRM opportunity wiring |
+
+What works after Phase 3:
+
+- The Review step in the storefront opens the contract preview
+  dialog. Variables are mapped via `resolveContractVariables`. The
+  Accept button is gated on the terms checkbox.
+- Acceptance POSTs to `/v1/public/catalog/checkout/start`, which
+  currently returns a typed stub per intent (no booking is created
+  yet — that wiring lands in Phase 4).
+- A `payment.completed` event runs the `checkout-finalize`
+  workflow which calls the real `bookingsService.confirmBooking`.
+  When `auto-generate-contract` is enabled in the legal module, the
+  contract PDF is produced automatically.
+
+What's missing:
+
+1. The checkout-start endpoint needs to call `bookEntity` to
+   actually create the booking in `awaiting_payment` and persist the
+   contract acceptance signature against the new booking id. Right
+   now it accepts a draft id and echoes it back as the booking id.
+2. Netopia plugin needs to emit `payment.completed` from its
+   webhook callback (currently it completes the payment session but
+   doesn't fire the cross-vertical event the workflow listens for).
+3. The bank-transfer path needs `createProformaFromBooking` (a thin
+   wrapper around `issueProformaFromBooking`) called from the
+   checkout-start handler, plus an admin "Mark payment received"
+   button on the booking detail page that emits `payment.completed`.
+4. The inquiry path needs a CRM opportunity creator + a way to
+   convert it back to a booking when the operator follows up.
+5. Workflow `issue_invoice` step is no-op'd. Phase 4/5 should wire
+   it via `issueInvoiceFromBooking` once a booking + items snapshot
+   is reachable from the subscriber.
+
 ## PR sequencing
 
 1. Phase 1.1 + 1.2 — schema/state foundations.
