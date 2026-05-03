@@ -8,6 +8,13 @@
       "when": 1777557366029,
       "tag": "0000_catalog_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777794488308,
+      "tag": "0001_sourced_entries",
+      "breakpoints": true
     }
   ]
 }

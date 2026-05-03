@@ -25,11 +25,15 @@
  * `syncSources` is a one-shot bulk pass driven by a CLI or cron job.
  */
 
+import type { AnyDrizzleDb } from "@voyantjs/db"
+
 import type { SourceAdapter, SourceAdapterContext } from "../adapter/contract.js"
 import type { FieldPolicyRegistry } from "../contract.js"
 import type { IndexerDocument, IndexerSlice } from "../indexer/contract.js"
+import { isOwned } from "../provenance.js"
 import type { DocumentBuilder, IndexerService } from "../services/indexer-service.js"
 import { buildIndexerDocument } from "../services/indexer-service.js"
+import { upsertSourcedEntry } from "../services/sourced-entry-service.js"
 
 import type { SourceAdapterRegistry } from "./registry.js"
 
@@ -45,6 +49,19 @@ export interface SyncSourcesOptions {
    * the registry from the indexer service.
    */
   fieldPolicyRegistries: ReadonlyMap<string, FieldPolicyRegistry>
+  /**
+   * Drizzle DB handle. When set, sync upserts a row into
+   * `catalog_sourced_entries` for every sourced projection (the durable
+   * provenance + projection-capture store, sourced-content §2.5). The
+   * upsert is idempotent on `(entity_module, entity_id)` and runs before
+   * the indexer write. Owned projections are skipped — they live in the
+   * vertical's owned schema, not the sourced-entry store.
+   *
+   * Optional only because pure-indexer test setups (no DB) want to use
+   * `syncSources` for indexer-shape coverage. Production wiring always
+   * passes a DB.
+   */
+  db?: AnyDrizzleDb
   /**
    * Optional adapter context override. Most adapters need at minimum
    * a `connection_id`; the demo plugin doesn't care so the default
@@ -86,6 +103,19 @@ export interface SyncAdapterSummary {
    * verticals than the deployment indexes.
    */
   skippedNoRegistry: number
+  /**
+   * Projections that landed in `catalog_sourced_entries` (sourced rows
+   * with a DB handle in scope). Owned projections are not counted —
+   * they're not part of the sourced-entry store.
+   */
+  sourcedEntriesUpserted: number
+  /**
+   * Owned projections passed through unchanged. Owned-flagged
+   * projections via `discover()` are an unusual case (most adapters
+   * emit only sourced rows) but the orchestrator still routes them to
+   * the indexer.
+   */
+  ownedProjections: number
 }
 
 export interface SyncSourcesSummary {
@@ -113,6 +143,8 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
       projectionsSynced: 0,
       verticalsTouched: [],
       skippedNoRegistry: 0,
+      sourcedEntriesUpserted: 0,
+      ownedProjections: 0,
     }
     const verticals = new Set<string>()
 
@@ -135,6 +167,18 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
         }
 
         verticals.add(projection.entity_module)
+
+        // Durable sourced-entry capture (sourced-content §2.5.2).
+        // Owned projections skip — they live in the vertical's owned
+        // schema. Sourced projections upsert before the indexer write so
+        // the sourced-entry store is the canonical local copy of what
+        // discover() said for downstream synthesizer reads.
+        if (isOwned(projection.provenance)) {
+          summary.ownedProjections += 1
+        } else if (options.db) {
+          await upsertSourcedEntry(options.db, { projection })
+          summary.sourcedEntriesUpserted += 1
+        }
 
         const projectionMap = toProjectionMap(projection.fields)
         const baseBuilder: DocumentBuilder = async (

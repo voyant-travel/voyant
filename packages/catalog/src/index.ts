@@ -105,6 +105,13 @@ export {
 } from "./overlay/schema.js"
 // Provenance — every CatalogEntry carries this tuple.
 export * from "./provenance.js"
+// Sourced-entry store — durable provenance + projection capture (sourced-content §2.5).
+export {
+  catalogSourcedEntriesTable,
+  type InsertCatalogSourcedEntry,
+  type SelectCatalogSourcedEntry,
+  type SourcedEntryStatus,
+} from "./schema-sourced-entries.js"
 export {
   type LivePriceFn,
   type LivePriceResult,
@@ -142,6 +149,15 @@ export {
   viewToFrozenPayload,
   viewToOverlayState,
 } from "./services/snapshot-service.js"
+export {
+  createReadProvenance,
+  markSourcedEntryWithdrawn,
+  type OwnedChecker,
+  type ProvenanceReadResult,
+  readSourcedEntry,
+  type UpsertSourcedEntryInput,
+  upsertSourcedEntry,
+} from "./services/sourced-entry-service.js"
 // Booking snapshot graph — frozen views captured at booking commit.
 export {
   bookingCatalogSnapshotTable,

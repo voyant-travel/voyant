@@ -189,6 +189,103 @@ describe("syncSources", () => {
     expect(events).toEqual([2, 1])
   })
 
+  it("counts owned vs sourced projections without a DB handle", async () => {
+    // Adapter that emits one sourced + one owned projection. Without a
+    // DB handle in scope, sync skips the sourced-entry upsert entirely;
+    // it still counts owned vs sourced for diagnostics.
+    const registry = createSourceAdapterRegistry()
+    registry.register({
+      kind: "mixed",
+      capabilities: {
+        verticals: ["products"],
+        supportsLiveResolution: false,
+        supportsDriftDetection: false,
+        supportsBookingForwarding: false,
+        postBookOperations: [],
+      },
+      connect: async () => undefined,
+      pause: async () => undefined,
+      disconnect: async () => undefined,
+      getState: async () => "active",
+      discover: async () => ({
+        projections: [
+          {
+            entity_module: "products",
+            entity_id: "owned_a",
+            provenance: { source_kind: "owned", source_freshness: "static" as const },
+            fields: { id: "owned_a", name: "Owned A", status: "active" },
+          },
+          {
+            entity_module: "products",
+            entity_id: "src_b",
+            provenance: { source_kind: "direct:tui", source_freshness: "sync" as const },
+            fields: { id: "src_b", name: "Sourced B", status: "active" },
+          },
+        ],
+        next_cursor: undefined,
+      }),
+    })
+    const { service } = makeStubIndexer({
+      products: [{ vertical: "products", locale: "en-GB", audience: "staff", market: "default" }],
+    })
+    const fieldPolicyRegistries = new Map([["products", makePassthroughRegistry()]])
+
+    const summary = await syncSources({
+      registry,
+      indexerService: service,
+      fieldPolicyRegistries,
+      // No db handle → sourced-entry upsert path is gated off.
+    })
+
+    expect(summary.adapters[0]?.projectionsSynced).toBe(2)
+    expect(summary.adapters[0]?.ownedProjections).toBe(1)
+    expect(summary.adapters[0]?.sourcedEntriesUpserted).toBe(0)
+  })
+
+  it("upserts sourced-entry rows when a DB handle is in scope (stub)", async () => {
+    // Stub the upsert path by passing a fake `db` and asserting the
+    // counter advances. The integration test covers the actual SQL.
+    const registry = createSourceAdapterRegistry()
+    registry.register(makeAdapter("demo", [{ projections: ["a", "b"], next: undefined }]))
+    const { service } = makeStubIndexer({
+      products: [{ vertical: "products", locale: "en-GB", audience: "staff", market: "default" }],
+    })
+    const fieldPolicyRegistries = new Map([["products", makePassthroughRegistry()]])
+
+    // Stub db whose .insert(...).values(...).onConflictDoUpdate(...).returning()
+    // returns one row. Mirrors enough of the drizzle chain to exercise sync.
+    const upsertCalls: unknown[] = []
+    const stubDb = {
+      insert() {
+        return {
+          values(v: unknown) {
+            upsertCalls.push(v)
+            return {
+              onConflictDoUpdate() {
+                return {
+                  async returning() {
+                    return [{ id: "cse_x", entity_module: "products", entity_id: "a" }]
+                  },
+                }
+              },
+            }
+          },
+        }
+      },
+    }
+
+    const summary = await syncSources({
+      registry,
+      indexerService: service,
+      fieldPolicyRegistries,
+      // biome-ignore lint/suspicious/noExplicitAny: stub mirrors the drizzle chain shape
+      db: stubDb as any,
+    })
+
+    expect(summary.adapters[0]?.sourcedEntriesUpserted).toBe(2)
+    expect(upsertCalls).toHaveLength(2)
+  })
+
   it("applies wrapBuilder to every per-projection builder", async () => {
     const registry = createSourceAdapterRegistry()
     registry.register(makeAdapter("demo", [{ projections: ["a"], next: undefined }]))

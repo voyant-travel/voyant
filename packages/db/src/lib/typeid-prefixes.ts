@@ -313,6 +313,8 @@ export const PREFIXES = {
   booking_catalog_snapshot: "bcsn",
   catalog_drift_event: "cdrf",
   catalog_quotes: "cquo",
+  catalog_sourced_entries: "cse",
+  catalog_content_drift_event: "cnde",
   catalog_demo_inventory: "cdmi",
   catalog_demo_orders: "cdmo",
 } as const

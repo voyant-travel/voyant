@@ -10,6 +10,8 @@
  *   - `catalogOverlayTable`           — editorial overrides (§5.2)
  *   - `bookingCatalogSnapshotTable`   — frozen booking snapshots (§5.3)
  *   - `catalogQuotesTable`            — booking-engine quote records
+ *   - `catalogSourcedEntriesTable`    — durable sourced-entry store
+ *                                       (sourced-content §2.5)
  */
 
 export {
@@ -24,6 +26,12 @@ export {
   type OverlayOrigin,
   type SelectCatalogOverlay,
 } from "./overlay/schema.js"
+export {
+  catalogSourcedEntriesTable,
+  type InsertCatalogSourcedEntry,
+  type SelectCatalogSourcedEntry,
+  type SourcedEntryStatus,
+} from "./schema-sourced-entries.js"
 export {
   bookingCatalogSnapshotTable,
   type InsertBookingCatalogSnapshot,

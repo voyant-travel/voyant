@@ -1,0 +1,204 @@
+/**
+ * Integration tests for the sourced-entry service — exercises the
+ * drizzle-bound surface (`upsertSourcedEntry`, `readSourcedEntry`,
+ * `markSourcedEntryWithdrawn`, `createReadProvenance`) against a real
+ * Postgres test database.
+ *
+ * Skips locally if `TEST_DATABASE_URL` is unset or the connection fails.
+ * Schema must be present — apply
+ * `packages/catalog/migrations/0001_*` (the sourced-entry migration) or
+ * run `drizzle-kit push --force` against the test database first.
+ */
+
+import { newId } from "@voyantjs/db/lib/typeid"
+import { createTestDb } from "@voyantjs/db/test-utils"
+import { eq } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { afterEach, beforeAll, describe, expect, it } from "vitest"
+
+import type { CatalogProjection } from "../../src/adapter/contract.js"
+import { catalogSourcedEntriesTable } from "../../src/schema-sourced-entries.js"
+import {
+  createReadProvenance,
+  markSourcedEntryWithdrawn,
+  type OwnedChecker,
+  readSourcedEntry,
+  upsertSourcedEntry,
+} from "../../src/services/sourced-entry-service.js"
+
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
+let DB_AVAILABLE = false
+
+if (TEST_DATABASE_URL) {
+  try {
+    const probe = createTestDb()
+    await probe.execute(/* sql */ `SELECT 1`)
+    DB_AVAILABLE = true
+  } catch {
+    DB_AVAILABLE = false
+  }
+}
+
+describe.skipIf(!DB_AVAILABLE)("SourcedEntryService integration", () => {
+  let db: PostgresJsDatabase
+
+  beforeAll(() => {
+    db = createTestDb()
+  })
+
+  const testEntityModule = "products"
+  const testIdPrefix = `__test_se_${Date.now()}_`
+  let createdEntityIds: string[] = []
+
+  afterEach(async () => {
+    for (const entityId of createdEntityIds) {
+      await db
+        .delete(catalogSourcedEntriesTable)
+        .where(eq(catalogSourcedEntriesTable.entity_id, entityId))
+    }
+    createdEntityIds = []
+  })
+
+  function makeProjection(
+    overrides: Partial<CatalogProjection> = {},
+    fieldOverrides: Record<string, unknown> = {},
+  ): CatalogProjection {
+    const entityId = `${testIdPrefix}${newId("products")}`
+    createdEntityIds.push(entityId)
+    return {
+      entity_module: testEntityModule,
+      entity_id: entityId,
+      provenance: {
+        source_kind: "direct:tui",
+        source_provider: "tui-uk",
+        source_connection_id: "conn_tui_uk",
+        source_ref: `TUI-${entityId}`,
+        source_freshness: "sync",
+        last_sourced_at: new Date(),
+      },
+      fields: { title: "Sample tour", duration_days: 5, ...fieldOverrides },
+      ...overrides,
+    }
+  }
+
+  it("upserts a fresh sourced-entry row with provenance + projection", async () => {
+    const projection = makeProjection()
+    const row = await upsertSourcedEntry(db, { projection })
+
+    expect(row.entity_module).toBe(testEntityModule)
+    expect(row.entity_id).toBe(projection.entity_id)
+    expect(row.source_kind).toBe("direct:tui")
+    expect(row.source_provider).toBe("tui-uk")
+    expect(row.source_connection_id).toBe("conn_tui_uk")
+    expect(row.source_ref).toBe(projection.provenance.source_ref)
+    expect(row.source_freshness).toBe("sync")
+    expect(row.status).toBe("active")
+    expect(row.projection).toEqual({ title: "Sample tour", duration_days: 5 })
+    expect(row.first_seen_at).toBeInstanceOf(Date)
+    expect(row.last_seen_at).toBeInstanceOf(Date)
+  })
+
+  it("is idempotent on (entity_module, entity_id) — repeated upserts update the same row", async () => {
+    const projection = makeProjection()
+
+    const first = await upsertSourcedEntry(db, { projection })
+    const initialFirstSeen = first.first_seen_at
+
+    // Update the projection's fields (simulate a later discover() pass).
+    const updated: CatalogProjection = {
+      ...projection,
+      fields: { title: "Sample tour (updated)", duration_days: 7 },
+    }
+    const second = await upsertSourcedEntry(db, { projection: updated })
+
+    expect(second.id).toBe(first.id)
+    expect(second.entity_id).toBe(first.entity_id)
+    expect(second.projection).toEqual({
+      title: "Sample tour (updated)",
+      duration_days: 7,
+    })
+    // first_seen_at is preserved; last_seen_at + updated_at advance.
+    expect(second.first_seen_at.getTime()).toBe(initialFirstSeen.getTime())
+    expect(second.last_seen_at.getTime()).toBeGreaterThanOrEqual(first.last_seen_at.getTime())
+  })
+
+  it("rejects owned projections — they don't belong in the sourced-entry store", async () => {
+    const projection = makeProjection({
+      provenance: { source_kind: "owned", source_freshness: "static" },
+    })
+    await expect(upsertSourcedEntry(db, { projection })).rejects.toThrow(/owned/i)
+  })
+
+  it("readSourcedEntry returns the row by Voyant-side identity", async () => {
+    const projection = makeProjection()
+    await upsertSourcedEntry(db, { projection })
+
+    const row = await readSourcedEntry(db, testEntityModule, projection.entity_id)
+    expect(row).not.toBeNull()
+    expect(row?.entity_id).toBe(projection.entity_id)
+  })
+
+  it("readSourcedEntry returns null for entities that aren't in the store", async () => {
+    const row = await readSourcedEntry(db, testEntityModule, "missing_entity_xyz")
+    expect(row).toBeNull()
+  })
+
+  it("markSourcedEntryWithdrawn flips status without deleting the row", async () => {
+    const projection = makeProjection()
+    await upsertSourcedEntry(db, { projection })
+
+    await markSourcedEntryWithdrawn(db, testEntityModule, projection.entity_id)
+
+    const row = await readSourcedEntry(db, testEntityModule, projection.entity_id)
+    expect(row?.status).toBe("withdrawn")
+  })
+
+  describe("createReadProvenance dispatch", () => {
+    it("returns kind: 'sourced' for entities only in the sourced-entry store", async () => {
+      const projection = makeProjection()
+      await upsertSourcedEntry(db, { projection })
+
+      // No owned-checker registered → falls through to sourced lookup.
+      const readProvenance = createReadProvenance({})
+      const result = await readProvenance(db, testEntityModule, projection.entity_id)
+
+      expect(result?.kind).toBe("sourced")
+      if (result?.kind === "sourced") {
+        expect(result.provenance.source_kind).toBe("direct:tui")
+        expect(result.provenance.source_connection_id).toBe("conn_tui_uk")
+        expect(result.entry_id).toMatch(/^cse_/)
+        expect(result.status).toBe("active")
+        expect(result.projection).toEqual({ title: "Sample tour", duration_days: 5 })
+      }
+    })
+
+    it("returns null when neither owned nor sourced-entry store has the row", async () => {
+      const readProvenance = createReadProvenance({})
+      const result = await readProvenance(db, testEntityModule, "missing_xyz")
+      expect(result).toBeNull()
+    })
+
+    it("returns kind: 'owned' when the owned-checker reports the entity owned", async () => {
+      const ownedChecker: OwnedChecker = async (_db, entityId) => entityId.startsWith("__owned_")
+      const readProvenance = createReadProvenance({
+        ownedCheckers: new Map([[testEntityModule, ownedChecker]]),
+      })
+
+      const result = await readProvenance(db, testEntityModule, "__owned_prod_abc")
+      expect(result?.kind).toBe("owned")
+    })
+
+    it("falls through to sourced when the owned-checker returns false", async () => {
+      const projection = makeProjection()
+      await upsertSourcedEntry(db, { projection })
+
+      const ownedChecker: OwnedChecker = async () => false
+      const readProvenance = createReadProvenance({
+        ownedCheckers: new Map([[testEntityModule, ownedChecker]]),
+      })
+
+      const result = await readProvenance(db, testEntityModule, projection.entity_id)
+      expect(result?.kind).toBe("sourced")
+    })
+  })
+})
