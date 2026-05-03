@@ -73,6 +73,7 @@ import { Route as WorkspaceFlightsBookOfferIdRouteImport } from './routes/_works
 import { Route as WorkspaceFinanceInvoicesIdRouteImport } from './routes/_workspace/finance/invoices/$id'
 import { Route as WorkspaceAvailabilityStartTimesIdRouteImport } from './routes/_workspace/availability/start-times/$id'
 import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_workspace/availability/rules/$id'
+import { Route as WorkspaceCatalogBookEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.book.$entityModule.$entityId'
 
 const PayRoute = PayRouteImport.update({
   id: '/pay',
@@ -423,6 +424,12 @@ const WorkspaceAvailabilityRulesIdRoute =
     path: '/availability/rules/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceCatalogBookEntityModuleEntityIdRoute =
+  WorkspaceCatalogBookEntityModuleEntityIdRouteImport.update({
+    id: '/catalog_/book/$entityModule/$entityId',
+    path: '/catalog/book/$entityModule/$entityId',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
@@ -487,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
   '/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
 }
 export interface FileRoutesByTo {
   '/pay': typeof PayRoute
@@ -550,6 +558,7 @@ export interface FileRoutesByTo {
   '/legal/policies': typeof WorkspaceLegalPoliciesIndexRoute
   '/legal/templates': typeof WorkspaceLegalTemplatesIndexRoute
   '/notifications/templates': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -617,6 +626,7 @@ export interface FileRoutesById {
   '/_workspace/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
   '/_workspace/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/_workspace/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/_workspace/catalog_/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -683,6 +693,7 @@ export interface FileRouteTypes {
     | '/legal/policies/'
     | '/legal/templates/'
     | '/notifications/templates/'
+    | '/catalog/book/$entityModule/$entityId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/pay'
@@ -746,6 +757,7 @@ export interface FileRouteTypes {
     | '/legal/policies'
     | '/legal/templates'
     | '/notifications/templates'
+    | '/catalog/book/$entityModule/$entityId'
   id:
     | '__root__'
     | '/(auth)'
@@ -812,6 +824,7 @@ export interface FileRouteTypes {
     | '/_workspace/legal/policies/'
     | '/_workspace/legal/templates/'
     | '/_workspace/notifications/templates/'
+    | '/_workspace/catalog_/book/$entityModule/$entityId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1271,6 +1284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAvailabilityRulesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/catalog_/book/$entityModule/$entityId': {
+      id: '/_workspace/catalog_/book/$entityModule/$entityId'
+      path: '/catalog/book/$entityModule/$entityId'
+      fullPath: '/catalog/book/$entityModule/$entityId'
+      preLoaderRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
   }
 }
 
@@ -1373,6 +1393,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceLegalPoliciesIndexRoute: typeof WorkspaceLegalPoliciesIndexRoute
   WorkspaceLegalTemplatesIndexRoute: typeof WorkspaceLegalTemplatesIndexRoute
   WorkspaceNotificationsTemplatesIndexRoute: typeof WorkspaceNotificationsTemplatesIndexRoute
+  WorkspaceCatalogBookEntityModuleEntityIdRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
@@ -1426,6 +1447,8 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceLegalTemplatesIndexRoute: WorkspaceLegalTemplatesIndexRoute,
   WorkspaceNotificationsTemplatesIndexRoute:
     WorkspaceNotificationsTemplatesIndexRoute,
+  WorkspaceCatalogBookEntityModuleEntityIdRoute:
+    WorkspaceCatalogBookEntityModuleEntityIdRoute,
 }
 
 const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
