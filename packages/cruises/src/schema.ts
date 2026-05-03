@@ -10,3 +10,10 @@ export * from "./schema-itinerary.js"
 export * from "./schema-pricing.js"
 export * from "./schema-search.js"
 export * from "./schema-shared.js"
+export {
+  CRUISES_CONTENT_MARKET_ANY,
+  type CruisesSourcedContentFetchStatus,
+  cruisesSourcedContentTable,
+  type InsertCruisesSourcedContent,
+  type SelectCruisesSourcedContent,
+} from "./schema-sourced-content.js"
