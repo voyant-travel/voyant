@@ -114,25 +114,42 @@ The booking engine's `quoteEntity` / `bookEntity` / `cancelEntity` look up `regi
 
 The registry is intentionally not a dependency-injection container — it's a `Map<string, SourceAdapter>` with a fluent API. Adapters that need credentials, HTTP clients, or DB handles get them through their constructor; the registry just stores the wired instances.
 
-## 5. The demo adapter — `@voyantjs/catalog-demo-adapter`
+## 5. The demo: separate app + thin plugin
 
-The demo adapter is the reference `SourceAdapter` implementation. It:
+The demo follows the same posture as the flights vertical (`apps/flights-demo-api` + `@voyantjs/plugin-flights-demo`): a standalone HTTP service simulates the upstream, and a thin client plugin implements the `SourceAdapter` interface against it. This is load-bearing — operator templates ship **zero demo state**. No demo tables in the operator's DB, no demo seed in the operator's seed script. Swapping `demo` for a real upstream (TUI direct, Hotelbeds, a Voyant Connect peer) is purely an env-var change.
 
-- Declares `kind: "demo"` and `verticals: ["products"]` (extensible to other verticals when needed).
-- Holds its own state in two Postgres tables: `catalog_demo_inventory` (the rows it discovers) and `catalog_demo_orders` (the orders `reserve` creates).
-- Implements `connect` / `disconnect` / `getState` as no-ops on the local-state version (it's always "connected" because it's running in-process); a future networked variant would do HTTP credential validation here.
-- `discover` returns paginated `CatalogProjection`s emitted from `catalog_demo_inventory`. Templates seed a few rows so the operator's catalog page lights up with `source = Demo`.
-- `liveResolve` returns the inventory's current `priceCents` + `available` flag. Hidden / unavailable rows return `failed[id] = "not_found"`.
-- `reserve` writes a `catalog_demo_orders` row with `status = "confirmed"`, returns `upstream_ref = order.id`. Honors `payment_intent.type === "hold"` by writing `status = "held"` (no separate ticket step in the demo).
-- `cancel` flips the order's status to `cancelled` and returns a refund amount equal to the original price.
+### 5.1. `apps/catalog-demo-api` — standalone upstream simulator
 
-The demo adapter doubles as:
+Hono Node service with its own Postgres. Owns:
 
-1. **Operator's first-day demo source.** Without an external integration, the operator template still has a "Source: Demo" tab populated, so the booking lifecycle is clickable end-to-end.
-2. **Integration test fixture.** Booking-engine unit tests register the demo adapter against an in-memory Postgres fixture; quote/book/cancel are tested end-to-end without mocking the adapter contract.
-3. **Reference for adapter authors.** Anyone building a TUI / Hotelbeds / Voyant Connect adapter copies this skeleton and replaces the local-DB calls with their HTTP client.
+- Two tables: `catalog_demo_inventory` (rows the upstream "publishes") and `catalog_demo_orders` (reservations the upstream tracks).
+- REST endpoints mirroring `SourceAdapter` 1:1 — `POST /discover`, `POST /live-resolve`, `POST /reserve`, `POST /cancel`, plus admin surfaces (`GET /inventory`, `POST /inventory/seed`, `GET /orders/:id`, `GET /health`).
+- Auto-seed on first boot when `AUTO_SEED=true` so the booking lifecycle is clickable immediately.
+- Bundled `docker-compose.yml` for a self-contained Postgres on host port `5437`. Database is fully isolated from the operator's `DATABASE_URL`.
 
-The package name is `@voyantjs/catalog-demo-adapter`. The source-kind value is `"demo"` (no namespacing — the package is generic). Templates register it at boot only when they want demo data.
+The service is launched separately (`pnpm -F catalog-demo-api dev`) and listens on `:3330` by default. A real upstream (TUI's API, Voyant Connect's edge) plays the same role — it just happens to live in a different repo and run on different infrastructure. The contract is the same.
+
+### 5.2. `@voyantjs/plugin-catalog-demo` — thin HTTP client
+
+Pure `SourceAdapter` implementation, zero state. `createDemoCatalogAdapter({ baseUrl })` returns an adapter whose lifecycle methods all round-trip to `apps/catalog-demo-api`:
+
+- `connect` / `getState` ping `/health`.
+- `discover` POSTs to `/discover` with the cursor + verticals filter.
+- `liveResolve` POSTs to `/live-resolve`.
+- `reserve` POSTs to `/reserve`.
+- `cancel` POSTs to `/cancel`.
+
+The plugin contains no business logic. Replacing it with `@voyantjs/plugin-voyant-connect` or `@voyantjs/plugin-hotelbeds` is the typical upgrade path — same shape, different upstream.
+
+### 5.3. Why this split matters
+
+Three reasons the demo is structured this way rather than embedded in the operator template:
+
+1. **Adapter authors get a target.** Building a real adapter against an in-process demo with shared DB tables is misleading — the actual upstream is over a network and owns its own state. The demo-api models the real shape so the gap between demo and prod is just URLs and credentials.
+2. **Templates stay clean.** Adding a vertical's demo to the operator template means schemas, migrations, seed code, and dependencies leak into every operator deployment that doesn't actually want the demo. With the app-and-plugin split, the demo simply isn't deployed unless the operator wants it.
+3. **The contract gets exercised over the wire.** A demo that bypasses HTTP can satisfy the type signature without satisfying the actual operational shape (timeouts, partial responses, JSON parsing). The standalone service forces every contract change to hold up over real HTTP.
+
+The demo doubles as the integration test fixture: booking-engine integration tests boot the demo-api against a test Postgres, register the plugin pointing at it, and exercise the full lifecycle without mocking.
 
 ## 6. Owned-vs-sourced: why this isn't a special case
 
@@ -157,14 +174,26 @@ packages/catalog/src/booking-engine/
   errors.ts                      NO_ADAPTER_REGISTERED, QUOTE_EXPIRED, etc.
   index.ts                       exports
 
-packages/catalog-demo-adapter/
-  src/schema.ts                  catalog_demo_inventory + catalog_demo_orders tables
-  src/adapter.ts                 createDemoAdapter() → SourceAdapter
-  src/seed.ts                    seedDemoInventory() helper for templates
+packages/plugins/catalog-demo/   thin HTTP client plugin
+  src/adapter.ts                 createDemoCatalogAdapter({ baseUrl }) → SourceAdapter
   src/index.ts                   barrel
+  README.md
+
+apps/catalog-demo-api/           standalone upstream simulator
+  src/schema.ts                  catalog_demo_inventory + catalog_demo_orders
+  src/store.ts                   DB ops
+  src/seed.ts                    default 3-row inventory + seedInventory()
+  src/routes.ts                  REST mirroring SourceAdapter
+  src/app.ts                     Hono app
+  src/index.ts                   bootstrap (auto-seed + HTTP server)
+  scripts/migrate.ts             apply drizzle migrations
+  drizzle.config.ts              points at its own DB
+  docker-compose.yml             self-contained Postgres on :5437
+  .env.example
+  README.md
 ```
 
-Templates that want the booking engine register `@voyantjs/catalog/booking-engine` routes plus whatever adapters their deployment supports. The operator template registers `@voyantjs/catalog-demo-adapter` so the demo flow is clickable out of the box.
+Templates that want the booking engine register `@voyantjs/catalog/booking-engine` routes and conditionally register adapters based on env. The operator template registers `@voyantjs/plugin-catalog-demo` if `CATALOG_DEMO_API_URL` is set, otherwise the booking engine reports `NO_ADAPTER_REGISTERED` for any `demo` row — the operator's primary DB stays clean either way.
 
 ## 8. Open questions
 

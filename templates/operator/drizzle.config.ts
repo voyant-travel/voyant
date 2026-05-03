@@ -41,7 +41,6 @@ export default defineConfig({
     "../../packages/hospitality/src/schema.ts",
     "../../packages/flights/src/reference/local-postgres.ts",
     "../../packages/catalog/src/schema.ts",
-    "../../packages/catalog-demo-adapter/src/schema.ts",
   ],
   out: "./migrations",
   dialect: "postgresql",

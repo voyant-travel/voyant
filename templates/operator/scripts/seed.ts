@@ -2383,15 +2383,6 @@ async function seedCatalogVerticals() {
   )
 }
 
-async function seedCatalogDemoAdapter() {
-  console.log("→ seeding catalog demo adapter inventory…")
-  const { defaultDemoInventory, seedDemoInventory } = await import(
-    "@voyantjs/catalog-demo-adapter/seed"
-  )
-  const rows = await seedDemoInventory(db, defaultDemoInventory)
-  console.log(`  · demo inventory: ${rows.length} rows`)
-}
-
 async function seedFlightsReference() {
   console.log("→ seeding flights reference data (airlines + airports + aircraft)…")
   const airlineCount = await seedAirlines(db)
@@ -2421,7 +2412,6 @@ async function main() {
     await seedLegal()
     await seedBookingsAndFinance()
     await seedCatalogVerticals()
-    await seedCatalogDemoAdapter()
     await seedFlightsReference()
 
     console.timeEnd("seed")

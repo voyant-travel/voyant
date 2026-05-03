@@ -68,6 +68,58 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
+  apps/catalog-demo-api:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.13.7
+        version: 1.19.12(hono@4.12.10)
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../../packages/catalog
+      '@voyantjs/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      dotenv:
+        specifier: ^17.4.0
+        version: 17.4.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: ^4.12.10
+        version: 4.12.10
+      pg:
+        specifier: ^8.20.0
+        version: 8.20.0
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.2
+        version: 25.5.2
+      '@types/pg':
+        specifier: ^8.15.6
+        version: 8.20.0
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   apps/dev:
     dependencies:
       '@base-ui/react':
@@ -1220,28 +1272,6 @@ importers:
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-
-  packages/catalog-demo-adapter:
-    dependencies:
-      '@voyantjs/catalog':
-        specifier: workspace:*
-        version: link:../catalog
-      '@voyantjs/db':
-        specifier: workspace:*
-        version: link:../db
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
-    devDependencies:
-      '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -3429,6 +3459,22 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/plugins/catalog-demo:
+    dependencies:
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../../catalog
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/plugins/flights-demo:
     devDependencies:
       '@voyantjs/flights':
@@ -5147,9 +5193,6 @@ importers:
       '@voyantjs/catalog':
         specifier: workspace:*
         version: link:../../packages/catalog
-      '@voyantjs/catalog-demo-adapter':
-        specifier: workspace:*
-        version: link:../../packages/catalog-demo-adapter
       '@voyantjs/catalog-mcp':
         specifier: workspace:*
         version: link:../../packages/catalog-mcp
@@ -5261,6 +5304,9 @@ importers:
       '@voyantjs/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
+      '@voyantjs/plugin-catalog-demo':
+        specifier: workspace:*
+        version: link:../../packages/plugins/catalog-demo
       '@voyantjs/plugin-flights-demo':
         specifier: workspace:*
         version: link:../../packages/plugins/flights-demo

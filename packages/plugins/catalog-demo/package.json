@@ -1,12 +1,10 @@
 {
-  "name": "@voyantjs/catalog-demo-adapter",
+  "name": "@voyantjs/plugin-catalog-demo",
   "version": "0.20.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/schema.ts",
-    "./seed": "./src/seed.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -17,9 +15,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/catalog": "workspace:*",
-    "@voyantjs/db": "workspace:*",
-    "drizzle-orm": "^0.45.2"
+    "@voyantjs/catalog": "workspace:*"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",
@@ -36,16 +32,6 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
-      },
-      "./schema": {
-        "types": "./dist/schema.d.ts",
-        "import": "./dist/schema.js",
-        "default": "./dist/schema.js"
-      },
-      "./seed": {
-        "types": "./dist/seed.d.ts",
-        "import": "./dist/seed.js",
-        "default": "./dist/seed.js"
       }
     },
     "main": "./dist/index.js",
@@ -54,12 +40,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
-    "directory": "packages/catalog-demo-adapter"
-  },
-  "voyant": {
-    "schema": "./schema",
-    "requiresSchemas": [
-      "@voyantjs/db"
-    ]
+    "directory": "packages/plugins/catalog-demo"
   }
 }
