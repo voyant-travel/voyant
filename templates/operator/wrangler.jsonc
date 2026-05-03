@@ -29,5 +29,16 @@
       "id": "dev-placeholder",
       "localConnectionString": "postgresql://voyant:voyant@localhost:5434/voyant_operator"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": [
+      // Channel-push reconcilers (per channel-push-architecture.md §13.2).
+      // Booking-link reconciler runs every 15 min; availability hourly;
+      // content nightly. The single scheduled handler in entry.ts runs
+      // the appropriate scanner based on `event.cron`.
+      "*/15 * * * *",
+      "0 * * * *",
+      "0 3 * * *"
+    ]
+  }
 }
