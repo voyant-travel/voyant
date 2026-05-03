@@ -25,11 +25,15 @@
  * See `docs/architecture/storefront-checkout-flow.md` Phase 3.
  */
 
+import { bookingsService } from "@voyantjs/bookings"
 import { runCheckoutFinalize } from "@voyantjs/catalog/booking-engine"
 import { parseJsonBody } from "@voyantjs/hono"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
+
+import { getDbFromHyperdrive } from "./lib/db"
 
 const checkoutStartSchema = z.object({
   bookingId: z.string().min(1),
@@ -116,8 +120,14 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
  */
 export const catalogCheckoutBundle: HonoBundle = {
   name: "catalog-checkout",
-  bootstrap: ({ eventBus }) => {
+  bootstrap: ({ bindings, eventBus }) => {
+    const env = bindings as CloudflareBindings
     eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
+      // The Hyperdrive helper returns a union of postgres-js / neon
+      // drivers; templates configure the node adapter at runtime so
+      // the cast is safe. Bookings + finance services type-check
+      // against PostgresJsDatabase, so we narrow at the boundary.
+      const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
       try {
         await runCheckoutFinalize(
           {
@@ -126,19 +136,24 @@ export const catalogCheckoutBundle: HonoBundle = {
             paymentIntent: data.paymentIntent,
           },
           {
-            // Phase 3 stubs — Phase 4/5 swap these for real services.
-            db: undefined as never,
+            db,
             eventBus,
             confirmBooking: async (bookingId) => {
-              console.warn(
-                `[catalog-checkout] Phase 3 stub: would confirm booking ${bookingId} via bookings service`,
-              )
+              // The booking service emits `booking.confirmed` after
+              // the transition commits, which fans out to the legal
+              // package's auto-generate-contract subscriber.
+              await bookingsService.confirmBooking(db, bookingId, {}, undefined, { eventBus })
             },
             issueInvoice: async ({ bookingId, convertedFromInvoiceId }) => {
+              // Phase 4/5 fill this in by composing
+              // `issueInvoiceFromBooking` (or its proforma-conversion
+              // counterpart) once the booking + items snapshot is
+              // available in this scope. Returning null is treated
+              // as "skipped" so the workflow doesn't fail.
               console.warn(
-                `[catalog-checkout] Phase 3 stub: would issue invoice for booking ${bookingId}` +
+                `[catalog-checkout] invoice issuance not wired yet for booking ${bookingId}` +
                   (convertedFromInvoiceId
-                    ? ` (converting proforma ${convertedFromInvoiceId})`
+                    ? ` (proforma ${convertedFromInvoiceId} pending conversion)`
                     : ""),
               )
               return null
