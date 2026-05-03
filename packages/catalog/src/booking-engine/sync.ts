@@ -1,0 +1,168 @@
+/**
+ * Source discovery sync — pulls projections from every registered
+ * `SourceAdapter` and pushes them into the deployment's indexer so
+ * sourced inventory shows up in the catalog UI alongside owned rows.
+ *
+ * Mirrors the bulk reindex flow (`scripts/reindex.ts` in operator
+ * templates) for owned rows, except the data comes from
+ * `adapter.discover()` instead of a Drizzle table scan.
+ *
+ * The orchestrator is pure: it takes the registry, the indexer service,
+ * and the per-vertical field-policy registries, and returns a summary
+ * of what was synced. Templates wire env / Typesense / embeddings; this
+ * function only touches what was passed in.
+ *
+ * Usage pattern (in a template script):
+ *
+ *   const summary = await syncSources({
+ *     registry,
+ *     indexerService,
+ *     fieldPolicyRegistries,
+ *   })
+ *
+ * Drift events, scheduled re-runs, and concurrency limits are deferred
+ * to the catalog plane's normal drift pipeline (foundation §5.5);
+ * `syncSources` is a one-shot bulk pass driven by a CLI or cron job.
+ */
+
+import type { SourceAdapter, SourceAdapterContext } from "../adapter/contract.js"
+import type { FieldPolicyRegistry } from "../contract.js"
+import type { IndexerDocument, IndexerSlice } from "../indexer/contract.js"
+import type { DocumentBuilder, IndexerService } from "../services/indexer-service.js"
+import { buildIndexerDocument } from "../services/indexer-service.js"
+
+import type { SourceAdapterRegistry } from "./registry.js"
+
+export interface SyncSourcesOptions {
+  /** Booking-engine registry — every registered adapter's `discover` is fanned out. */
+  registry: SourceAdapterRegistry
+  /** Indexer the projections land in. Caller passes the same instance the live route uses. */
+  indexerService: IndexerService
+  /**
+   * Per-vertical field-policy registries keyed by `entity_module`.
+   * Same shape the indexer service is built with; passed separately so
+   * the sync can build documents from projections without re-reading
+   * the registry from the indexer service.
+   */
+  fieldPolicyRegistries: ReadonlyMap<string, FieldPolicyRegistry>
+  /**
+   * Optional adapter context override. Most adapters need at minimum
+   * a `connection_id`; the demo plugin doesn't care so the default
+   * `{ connection_id: adapter.kind }` is sufficient. Templates with
+   * real connections pass their connection id (or build a per-adapter
+   * map keyed by `kind`).
+   */
+  buildAdapterContext?: (adapter: SourceAdapter) => SourceAdapterContext
+  /**
+   * Optional wrapper around the per-projection `DocumentBuilder` — used
+   * to attach embeddings via `withEmbedding` (the operator template's
+   * helper) without coupling this orchestrator to any embedding
+   * provider.
+   */
+  wrapBuilder?: (builder: DocumentBuilder) => DocumentBuilder
+  /** Per-page log hook — called every page so callers can show progress. */
+  onProgress?: (event: SyncProgressEvent) => void
+}
+
+export interface SyncProgressEvent {
+  adapter: string
+  page: number
+  pageSize: number
+  totalSoFar: number
+}
+
+export interface SyncAdapterSummary {
+  adapter: string
+  pages: number
+  projectionsSynced: number
+  /**
+   * Verticals the adapter touched, derived from `entity_module` on
+   * each projection. Useful for the CLI to print per-vertical counts.
+   */
+  verticalsTouched: string[]
+  /**
+   * Projections skipped because no field-policy registry was registered
+   * for their `entity_module`. Common when an adapter declares more
+   * verticals than the deployment indexes.
+   */
+  skippedNoRegistry: number
+}
+
+export interface SyncSourcesSummary {
+  adapters: SyncAdapterSummary[]
+  totalProjections: number
+}
+
+/**
+ * Run a one-shot discovery sync against every registered adapter.
+ * Throws if an adapter doesn't support `discover` (a contract violation —
+ * adapters wishing to participate in the sync must implement it).
+ */
+export async function syncSources(options: SyncSourcesOptions): Promise<SyncSourcesSummary> {
+  const adapters = options.registry.kinds().map((kind) => options.registry.resolveOrThrow(kind))
+  const adapterSummaries: SyncAdapterSummary[] = []
+  let totalProjections = 0
+
+  for (const adapter of adapters) {
+    const adapterCtx = options.buildAdapterContext?.(adapter) ?? {
+      connection_id: adapter.kind,
+    }
+    const summary: SyncAdapterSummary = {
+      adapter: adapter.kind,
+      pages: 0,
+      projectionsSynced: 0,
+      verticalsTouched: [],
+      skippedNoRegistry: 0,
+    }
+    const verticals = new Set<string>()
+
+    let cursor: string | undefined
+    do {
+      const page = await adapter.discover(adapterCtx, cursor)
+      summary.pages += 1
+      options.onProgress?.({
+        adapter: adapter.kind,
+        page: summary.pages,
+        pageSize: page.projections.length,
+        totalSoFar: summary.projectionsSynced + page.projections.length,
+      })
+
+      for (const projection of page.projections) {
+        const registry = options.fieldPolicyRegistries.get(projection.entity_module)
+        if (!registry) {
+          summary.skippedNoRegistry += 1
+          continue
+        }
+
+        verticals.add(projection.entity_module)
+
+        const projectionMap = toProjectionMap(projection.fields)
+        const baseBuilder: DocumentBuilder = async (
+          _entityId: string,
+          slice: IndexerSlice,
+        ): Promise<IndexerDocument | null> =>
+          buildIndexerDocument(registry, projectionMap, slice, projection.entity_id)
+        const builder = options.wrapBuilder ? options.wrapBuilder(baseBuilder) : baseBuilder
+
+        await options.indexerService.reindexEntity(
+          projection.entity_module,
+          projection.entity_id,
+          builder,
+        )
+        summary.projectionsSynced += 1
+        totalProjections += 1
+      }
+
+      cursor = page.next_cursor
+    } while (cursor)
+
+    summary.verticalsTouched = [...verticals]
+    adapterSummaries.push(summary)
+  }
+
+  return { adapters: adapterSummaries, totalProjections }
+}
+
+function toProjectionMap(fields: Record<string, unknown>): ReadonlyMap<string, unknown> {
+  return new Map(Object.entries(fields))
+}

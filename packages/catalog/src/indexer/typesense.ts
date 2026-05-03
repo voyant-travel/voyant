@@ -362,14 +362,42 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
         vectorDimensions,
         collectionPrefix,
       })
-      try {
-        await client.collections().create(schema)
-      } catch {
-        // Collection already exists — try update. (Real Typesense errors on
-        // already-exists; falling through to update is the simplest pattern.
-        // Production deployments may want stricter handling.)
-        await client.collections(schema.name).update({ fields: schema.fields })
+      // Typesense maintains `id` implicitly as the document primary key;
+      // it must not appear in the schema fields list (the server rejects
+      // alters to it with `Field "id" cannot be altered.`). Strip it
+      // unconditionally — if a vertical's field policy declares `id`,
+      // it's covered by the implicit doc id at index time.
+      const fieldsForServer = schema.fields.filter((f) => f.name !== "id")
+      const schemaForCreate: TypesenseCollectionSchema = {
+        ...schema,
+        fields: fieldsForServer,
       }
+
+      try {
+        await client.collections().create(schemaForCreate)
+        return
+      } catch {
+        // Collection already exists — fall through to the update path.
+      }
+
+      // Typesense's `update` only accepts NEW fields (or explicit drops).
+      // Re-sending the full schema would alter existing fields and the
+      // server rejects that. Diff existing vs desired and send only the
+      // additions; existing-field type changes still need a manual
+      // drop+recreate, which is out of scope here.
+      let existing: TypesenseCollectionSchema | undefined
+      try {
+        existing = await client.collections(schema.name).retrieve()
+      } catch {
+        // If retrieve also fails, surface the original create error path
+        // by re-trying create — the second create will throw the real cause.
+        await client.collections().create(schemaForCreate)
+        return
+      }
+      const have = new Set(existing.fields.map((f) => f.name))
+      const additions = fieldsForServer.filter((f) => !have.has(f.name))
+      if (additions.length === 0) return
+      await client.collections(schema.name).update({ fields: additions })
     },
 
     async upsert(slice, documents) {

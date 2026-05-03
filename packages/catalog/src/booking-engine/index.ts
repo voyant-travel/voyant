@@ -68,3 +68,10 @@ export {
   type InsertCatalogQuote,
   type SelectCatalogQuote,
 } from "./schema.js"
+export {
+  type SyncAdapterSummary,
+  type SyncProgressEvent,
+  type SyncSourcesOptions,
+  type SyncSourcesSummary,
+  syncSources,
+} from "./sync.js"
