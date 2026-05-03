@@ -52,8 +52,8 @@ import { StepHeader } from "./step-header.js"
 export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const surface = props.surface ?? "admin"
 
-  const [draft, setDraft] = useState<Draft>(() =>
-    emptyDraft(
+  const [draft, setDraft] = useState<Draft>(() => {
+    const base = emptyDraft(
       {
         module: props.entityModule,
         id: props.entityId,
@@ -64,8 +64,19 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         sourceRef: props.sourceRef,
       },
       { buyerType: props.defaultBuyerType ?? (surface === "admin" ? "B2B" : "B2C") },
-    ),
-  )
+    )
+    // Seed Configure when the caller passed pre-locked state (the
+    // protravel/luxufe pattern: detail page picks departure + pax,
+    // booking flow only handles travelers + addons + payment).
+    if (props.initialConfigure) {
+      base.configure = {
+        ...base.configure,
+        ...props.initialConfigure,
+        pax: { ...base.configure.pax, ...(props.initialConfigure.pax ?? {}) },
+      }
+    }
+    return base
+  })
 
   const fallbackShape: BookingDraftShape = useMemo(
     () => props.fallbackShape ?? defaultMinimalShape(),
@@ -94,9 +105,14 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   })
 
   // Step navigation — only show steps the descriptor says are relevant.
+  const hideConfigure = props.hideConfigure === true
   const steps = useMemo<ReadonlyArray<JourneyStep>>(
-    () => JOURNEY_STEP_ORDER.filter((s) => isStepVisible(s, shape)),
-    [shape],
+    () =>
+      JOURNEY_STEP_ORDER.filter((s) => {
+        if (hideConfigure && s === "configure") return false
+        return isStepVisible(s, shape)
+      }),
+    [shape, hideConfigure],
   )
 
   const [currentStep, setCurrentStep] = useState<JourneyStep>(() => steps[0] ?? "configure")

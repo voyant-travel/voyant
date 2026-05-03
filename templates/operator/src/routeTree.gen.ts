@@ -79,6 +79,7 @@ import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_work
 import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
 import { Route as WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.journey.$entityModule.$entityId'
 import { Route as WorkspaceCatalogBookEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.book.$entityModule.$entityId'
+import { Route as storefrontShopProductsEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.products.$entityModule.$entityId'
 import { Route as storefrontShopBookEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.book.$entityModule.$entityId'
 
 const PayRoute = PayRouteImport.update({
@@ -462,6 +463,12 @@ const WorkspaceCatalogBookEntityModuleEntityIdRoute =
     path: '/catalog/book/$entityModule/$entityId',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const storefrontShopProductsEntityModuleEntityIdRoute =
+  storefrontShopProductsEntityModuleEntityIdRouteImport.update({
+    id: '/shop_/products/$entityModule/$entityId',
+    path: '/shop/products/$entityModule/$entityId',
+    getParentRoute: () => storefrontRouteRoute,
+  } as any)
 const storefrontShopBookEntityModuleEntityIdRoute =
   storefrontShopBookEntityModuleEntityIdRouteImport.update({
     id: '/shop_/book/$entityModule/$entityId',
@@ -536,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
+  '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
   '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
@@ -605,6 +613,7 @@ export interface FileRoutesByTo {
   '/legal/templates': typeof WorkspaceLegalTemplatesIndexRoute
   '/notifications/templates': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
+  '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
   '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
@@ -679,6 +688,7 @@ export interface FileRoutesById {
   '/_workspace/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/_workspace/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/(storefront)/shop_/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
+  '/(storefront)/shop_/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/_workspace/catalog_/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
   '/_workspace/catalog_/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
@@ -751,6 +761,7 @@ export interface FileRouteTypes {
     | '/legal/templates/'
     | '/notifications/templates/'
     | '/shop/book/$entityModule/$entityId'
+    | '/shop/products/$entityModule/$entityId'
     | '/catalog/book/$entityModule/$entityId'
     | '/catalog/journey/$entityModule/$entityId'
   fileRoutesByTo: FileRoutesByTo
@@ -820,6 +831,7 @@ export interface FileRouteTypes {
     | '/legal/templates'
     | '/notifications/templates'
     | '/shop/book/$entityModule/$entityId'
+    | '/shop/products/$entityModule/$entityId'
     | '/catalog/book/$entityModule/$entityId'
     | '/catalog/journey/$entityModule/$entityId'
   id:
@@ -893,6 +905,7 @@ export interface FileRouteTypes {
     | '/_workspace/legal/templates/'
     | '/_workspace/notifications/templates/'
     | '/(storefront)/shop_/book/$entityModule/$entityId'
+    | '/(storefront)/shop_/products/$entityModule/$entityId'
     | '/_workspace/catalog_/book/$entityModule/$entityId'
     | '/_workspace/catalog_/journey/$entityModule/$entityId'
   fileRoutesById: FileRoutesById
@@ -1397,6 +1410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/(storefront)/shop_/products/$entityModule/$entityId': {
+      id: '/(storefront)/shop_/products/$entityModule/$entityId'
+      path: '/shop/products/$entityModule/$entityId'
+      fullPath: '/shop/products/$entityModule/$entityId'
+      preLoaderRoute: typeof storefrontShopProductsEntityModuleEntityIdRouteImport
+      parentRoute: typeof storefrontRouteRoute
+    }
     '/(storefront)/shop_/book/$entityModule/$entityId': {
       id: '/(storefront)/shop_/book/$entityModule/$entityId'
       path: '/shop/book/$entityModule/$entityId'
@@ -1437,6 +1457,7 @@ interface storefrontRouteRouteChildren {
   storefrontShopRoute: typeof storefrontShopRoute
   storefrontShopConfirmationBookingIdRoute: typeof storefrontShopConfirmationBookingIdRoute
   storefrontShopBookEntityModuleEntityIdRoute: typeof storefrontShopBookEntityModuleEntityIdRoute
+  storefrontShopProductsEntityModuleEntityIdRoute: typeof storefrontShopProductsEntityModuleEntityIdRoute
 }
 
 const storefrontRouteRouteChildren: storefrontRouteRouteChildren = {
@@ -1445,6 +1466,8 @@ const storefrontRouteRouteChildren: storefrontRouteRouteChildren = {
     storefrontShopConfirmationBookingIdRoute,
   storefrontShopBookEntityModuleEntityIdRoute:
     storefrontShopBookEntityModuleEntityIdRoute,
+  storefrontShopProductsEntityModuleEntityIdRoute:
+    storefrontShopProductsEntityModuleEntityIdRoute,
 }
 
 const storefrontRouteRouteWithChildren = storefrontRouteRoute._addFileChildren(

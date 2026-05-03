@@ -27,6 +27,7 @@
  * configured public actors. Per booking-journey-architecture §10 Phase B.
  */
 
+import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   BookingEngineError,
   type BookingPaymentIntent,
@@ -52,6 +53,8 @@ import {
 } from "@voyantjs/catalog/booking-engine"
 import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
+import { and, asc, eq, gte } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 
 import {
@@ -162,6 +165,12 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
     hono.delete(`${prefix}/drafts/:id`, handleDraftDelete)
     hono.post(`${prefix}/holds/place`, handleHoldPlace)
     hono.post(`${prefix}/holds/release`, handleHoldRelease)
+    // List available departures / slots for a product. Drives the
+    // storefront's departure-select on the product detail page —
+    // customers pick from real available options, not a free-form
+    // calendar (per booking-journey-architecture §10 + the
+    // protravel/luxufe reference patterns).
+    hono.get(`${prefix}/slots`, handleListSlots)
   }
 
   // Admin-only — order management.
@@ -351,6 +360,54 @@ async function handleGetOrder(c: Context): Promise<Response> {
   const row = await getOrderById(db, id)
   if (!row) return c.json({ error: "order not found" }, 404)
   return c.json(row)
+}
+
+async function handleListSlots(c: Context): Promise<Response> {
+  const url = new URL(c.req.url)
+  const entityModule = url.searchParams.get("entityModule")
+  const entityId = url.searchParams.get("entityId")
+  if (!entityModule || !entityId) {
+    return c.json({ error: "entityModule and entityId are required" }, 400)
+  }
+  // The slots table is keyed by `productId` regardless of
+  // entityModule (cruises / hospitality use the same column for
+  // their respective ids — `productId` is a misnomer that predates
+  // the cross-vertical journey). For now this read works for
+  // products; verticals with vertical-specific scheduling
+  // (cruises sailings, hospitality rate plans) will surface their
+  // own list endpoints in a follow-up.
+  if (entityModule !== "products") {
+    return c.json({ rows: [] })
+  }
+
+  const db = (c.var as { db: AnyDrizzleDb }).db as PostgresJsDatabase
+  const today = new Date().toISOString().slice(0, 10)
+  const rows = await db
+    .select({
+      id: availabilitySlots.id,
+      dateLocal: availabilitySlots.dateLocal,
+      startsAt: availabilitySlots.startsAt,
+      endsAt: availabilitySlots.endsAt,
+      timezone: availabilitySlots.timezone,
+      status: availabilitySlots.status,
+      unlimited: availabilitySlots.unlimited,
+      remainingPax: availabilitySlots.remainingPax,
+      initialPax: availabilitySlots.initialPax,
+      nights: availabilitySlots.nights,
+      days: availabilitySlots.days,
+    })
+    .from(availabilitySlots)
+    .where(
+      and(
+        eq(availabilitySlots.productId, entityId),
+        eq(availabilitySlots.status, "open"),
+        gte(availabilitySlots.dateLocal, today),
+      ),
+    )
+    .orderBy(asc(availabilitySlots.startsAt))
+    .limit(60)
+
+  return c.json({ rows })
 }
 
 async function handleHoldPlace(c: Context): Promise<Response> {

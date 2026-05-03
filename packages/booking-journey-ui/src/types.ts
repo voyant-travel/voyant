@@ -112,6 +112,29 @@ export interface BookingJourneyProps {
    *  first quote response. */
   fallbackShape?: BookingDraftShape
 
+  /**
+   * Pre-locked configure state. When set, the journey skips the
+   * Configure step entirely — Configure already happened on the
+   * product detail page (the protravel/luxufe pattern). Mirrors
+   * the BookingDraft's `configure` shape.
+   */
+  initialConfigure?: {
+    departureSlotId?: string
+    departureDate?: string
+    departureTime?: string
+    pax?: Record<string, number>
+    variantId?: string
+    cabinCategoryId?: string
+    cabinNumberId?: string
+    dateRange?: { checkIn: string; checkOut: string }
+  }
+  /**
+   * When true, the wizard hides Configure regardless of descriptor
+   * flags. Use for storefront flows where the product detail page
+   * already collected those choices.
+   */
+  hideConfigure?: boolean
+
   /** Per-payment-provider capabilities — passed through to the
    *  Payment step's provider widget. */
   paymentCapabilities?: PaymentProviderCapabilities

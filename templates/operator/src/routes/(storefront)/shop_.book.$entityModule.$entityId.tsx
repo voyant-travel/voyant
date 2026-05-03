@@ -5,20 +5,27 @@ import { z } from "zod"
 import { StorefrontBookingJourney } from "@/components/voyant/booking-journey/storefront-booking-journey"
 
 /**
- * Storefront booking-journey route — same shell + hooks as the
- * operator's `/_workspace/catalog/journey/...` route, just wrapped
- * with `<StorefrontBookingJourney />` (surface=public, B2C
- * default, post-commit nav to /shop/confirmation/$bookingId).
+ * Storefront booking-journey route. The customer arrives here from
+ * the product detail page with **departure + pax already
+ * locked in** via search params — that's the protravel / luxufe
+ * pattern. The journey itself only handles travelers + add-ons +
+ * payment; the Configure step is hidden because Configure already
+ * happened upstream.
  *
- * Per booking-journey-architecture §10 Phase B.
+ * Per booking-journey-architecture §10 Phase B + the production
+ * reference engines.
  *
  * **No `sourceKind` in the URL.** The public engine route resolves
- * provenance from `(entityModule, entityId)` server-side via the
- * catalog plane's sourced-entry lookup. Customers shouldn't have
- * to know whether a row is owned vs sourced from a supplier — that's
- * an operator concern.
+ * provenance from `(entityModule, entityId)` server-side.
  */
 const shopBookSearchSchema = z.object({
+  /** Required — departure picked on the detail page. */
+  departureSlotId: z.string().min(1),
+  /** Pax counts per band. Adults default to 1 if absent so the
+   *  validation passes; children + infants default to 0. */
+  adult: z.coerce.number().int().min(0).optional(),
+  child: z.coerce.number().int().min(0).optional(),
+  infant: z.coerce.number().int().min(0).optional(),
   draftId: z.string().optional(),
 })
 
@@ -35,7 +42,17 @@ function ShopBookRouteComponent(): React.ReactElement {
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
   return (
-    <StorefrontBookingJourney entityModule={entityModule} entityId={entityId} draftId={draftId} />
+    <StorefrontBookingJourney
+      entityModule={entityModule}
+      entityId={entityId}
+      draftId={draftId}
+      departureSlotId={search.departureSlotId}
+      paxCounts={{
+        adult: search.adult ?? 1,
+        child: search.child ?? 0,
+        infant: search.infant ?? 0,
+      }}
+    />
   )
 }
 

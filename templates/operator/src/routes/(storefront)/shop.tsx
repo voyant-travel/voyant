@@ -162,11 +162,11 @@ function SearchResults({
                 </p>
               ) : null}
               <Link
-                to="/shop/book/$entityModule/$entityId"
+                to="/shop/products/$entityModule/$entityId"
                 params={{ entityModule: vertical, entityId: hit.id }}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-sm hover:bg-primary/90"
               >
-                Book
+                View &amp; book
               </Link>
             </CardContent>
           </Card>
