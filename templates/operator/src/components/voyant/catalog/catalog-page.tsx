@@ -12,6 +12,7 @@ import { useSuppliers } from "@voyantjs/suppliers-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { useMemo } from "react"
+import { toast } from "sonner"
 
 import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
 
@@ -38,6 +39,12 @@ export function CatalogPage() {
       columns: productColumns,
       filterFields: productFilters,
       detailActions: [
+        {
+          label: "Book this",
+          onClick: (hit) => {
+            void quoteAndBook(hit, "products", navigate)
+          },
+        },
         {
           label: "Open editor",
           onClick: (hit) => navigate({ to: "/products/$id", params: { id: hit.id } }),
@@ -504,4 +511,108 @@ function formatPrice(
     currency,
     maximumFractionDigits: 0,
   }).format(cents / 100)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Booking-engine action: quote + book in one click.
+//
+// The catalog detail sheet's actions API doesn't support per-hit
+// disabling, so this helper is the runtime check: rows without a
+// `source.kind` or with `source.kind = "owned"` toast a friendly
+// "not yet supported" message. Rows with a registered adapter (today
+// just `"demo"`) flow through quote → book and the result is toasted
+// with a link to the orders page.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type AppNavigate = ReturnType<typeof useNavigate>
+
+interface QuoteResponse {
+  quoteId: string
+  expiresAt: string
+  available: boolean
+  invalidReason?: string
+  pricing?: { base_amount: number; currency: string }
+}
+
+interface BookResponse {
+  bookingId: string
+  orderRef: string
+  status: "held" | "confirmed" | "ticketed" | "failed"
+  snapshotId: string
+}
+
+interface ErrorResponse {
+  error?: string
+  code?: string
+}
+
+async function quoteAndBook(
+  hit: CatalogSearchHit,
+  entityModule: string,
+  navigate: AppNavigate,
+): Promise<void> {
+  const sourceKind = stringField(hit, "source.kind", null)
+  if (!sourceKind || sourceKind === "owned") {
+    toast.info("Booking via the catalog engine is only wired for sourced inventory today.", {
+      description:
+        sourceKind === "owned"
+          ? "Owned products go through the existing product workflow — try a Demo source row."
+          : "This row has no source.kind; book through the per-vertical workflow instead.",
+    })
+    return
+  }
+
+  const sourceRef = stringField(hit, "source.ref", null) ?? undefined
+
+  toast.loading("Quoting…", { id: "catalog-book" })
+  try {
+    const quote = await postJson<QuoteResponse | ErrorResponse>("/v1/admin/catalog/quote", {
+      entityModule,
+      entityId: hit.id,
+      sourceKind,
+      sourceRef,
+      scope: { locale: "en-GB", audience: "staff", market: "default" },
+    })
+    if ("error" in quote && quote.error) {
+      toast.error(`Quote failed: ${quote.error}`, { id: "catalog-book" })
+      return
+    }
+    const q = quote as QuoteResponse
+    if (!q.available) {
+      toast.error(`Quote returned unavailable${q.invalidReason ? ` — ${q.invalidReason}` : ""}`, {
+        id: "catalog-book",
+      })
+      return
+    }
+
+    toast.loading("Booking…", { id: "catalog-book" })
+    const book = await postJson<BookResponse | ErrorResponse>("/v1/admin/catalog/book", {
+      quoteId: q.quoteId,
+    })
+    if ("error" in book && book.error) {
+      toast.error(`Book failed: ${book.error}`, { id: "catalog-book" })
+      return
+    }
+    const b = book as BookResponse
+    toast.success(`Booked — order ${b.orderRef.slice(0, 16)}… (${b.status})`, {
+      id: "catalog-book",
+      action: {
+        label: "View orders",
+        onClick: () => navigate({ to: "/orders/catalog" }),
+      },
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    toast.error(`Book request failed: ${message}`, { id: "catalog-book" })
+  }
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    credentials: "include",
+  })
+  return (await res.json()) as T
 }

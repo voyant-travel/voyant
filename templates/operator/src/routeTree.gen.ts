@@ -49,6 +49,7 @@ import { Route as WorkspaceProductsCategoriesRouteImport } from './routes/_works
 import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/products/$id'
 import { Route as WorkspacePeopleIdRouteImport } from './routes/_workspace/people/$id'
 import { Route as WorkspaceOrganizationsIdRouteImport } from './routes/_workspace/organizations/$id'
+import { Route as WorkspaceOrdersCatalogRouteImport } from './routes/_workspace/orders.catalog'
 import { Route as WorkspaceNotificationsReminderRunsRouteImport } from './routes/_workspace/notifications/reminder-runs'
 import { Route as WorkspaceNotificationsReminderRulesRouteImport } from './routes/_workspace/notifications/reminder-rules'
 import { Route as WorkspaceNotificationsDeliveriesRouteImport } from './routes/_workspace/notifications/deliveries'
@@ -281,6 +282,11 @@ const WorkspaceOrganizationsIdRoute =
     path: '/organizations/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceOrdersCatalogRoute = WorkspaceOrdersCatalogRouteImport.update({
+  id: '/orders/catalog',
+  path: '/orders/catalog',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
 const WorkspaceNotificationsReminderRunsRoute =
   WorkspaceNotificationsReminderRunsRouteImport.update({
     id: '/notifications/reminder-runs',
@@ -439,6 +445,7 @@ export interface FileRoutesByFullPath {
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
@@ -501,6 +508,7 @@ export interface FileRoutesByTo {
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
@@ -567,6 +575,7 @@ export interface FileRoutesById {
   '/_workspace/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/_workspace/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/_workspace/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/_workspace/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/_workspace/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/_workspace/people/$id': typeof WorkspacePeopleIdRoute
   '/_workspace/products/$id': typeof WorkspaceProductsIdRoute
@@ -632,6 +641,7 @@ export interface FileRouteTypes {
     | '/notifications/deliveries'
     | '/notifications/reminder-rules'
     | '/notifications/reminder-runs'
+    | '/orders/catalog'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
@@ -694,6 +704,7 @@ export interface FileRouteTypes {
     | '/notifications/deliveries'
     | '/notifications/reminder-rules'
     | '/notifications/reminder-runs'
+    | '/orders/catalog'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
@@ -759,6 +770,7 @@ export interface FileRouteTypes {
     | '/_workspace/notifications/deliveries'
     | '/_workspace/notifications/reminder-rules'
     | '/_workspace/notifications/reminder-runs'
+    | '/_workspace/orders/catalog'
     | '/_workspace/organizations/$id'
     | '/_workspace/people/$id'
     | '/_workspace/products/$id'
@@ -1091,6 +1103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceOrganizationsIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/orders/catalog': {
+      id: '/_workspace/orders/catalog'
+      path: '/orders/catalog'
+      fullPath: '/orders/catalog'
+      preLoaderRoute: typeof WorkspaceOrdersCatalogRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/notifications/reminder-runs': {
       id: '/_workspace/notifications/reminder-runs'
       path: '/notifications/reminder-runs'
@@ -1319,6 +1338,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceNotificationsDeliveriesRoute: typeof WorkspaceNotificationsDeliveriesRoute
   WorkspaceNotificationsReminderRulesRoute: typeof WorkspaceNotificationsReminderRulesRoute
   WorkspaceNotificationsReminderRunsRoute: typeof WorkspaceNotificationsReminderRunsRoute
+  WorkspaceOrdersCatalogRoute: typeof WorkspaceOrdersCatalogRoute
   WorkspaceOrganizationsIdRoute: typeof WorkspaceOrganizationsIdRoute
   WorkspacePeopleIdRoute: typeof WorkspacePeopleIdRoute
   WorkspaceProductsIdRoute: typeof WorkspaceProductsIdRoute
@@ -1368,6 +1388,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
     WorkspaceNotificationsReminderRulesRoute,
   WorkspaceNotificationsReminderRunsRoute:
     WorkspaceNotificationsReminderRunsRoute,
+  WorkspaceOrdersCatalogRoute: WorkspaceOrdersCatalogRoute,
   WorkspaceOrganizationsIdRoute: WorkspaceOrganizationsIdRoute,
   WorkspacePeopleIdRoute: WorkspacePeopleIdRoute,
   WorkspaceProductsIdRoute: WorkspaceProductsIdRoute,

@@ -70,6 +70,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       title: messages.nav.catalog,
       url: "/catalog",
       icon: Library,
+      items: [{ id: "catalog-orders", title: messages.nav.catalogOrders, url: "/orders/catalog" }],
     },
     {
       id: "flights",
