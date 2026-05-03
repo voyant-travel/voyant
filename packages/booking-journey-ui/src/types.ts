@@ -115,19 +115,14 @@ export interface BookingJourneyProps {
   /**
    * Pre-locked configure state. When set, the journey skips the
    * Configure step entirely — Configure already happened on the
-   * product detail page (the protravel/luxufe pattern). Mirrors
-   * the BookingDraft's `configure` shape.
+   * product detail page. Mirrors the BookingDraft's `configure`
+   * shape (loosely typed so storefront callers can pass a
+   * vertical-specific subset without fighting the contract).
    */
-  initialConfigure?: {
-    departureSlotId?: string
-    departureDate?: string
-    departureTime?: string
-    pax?: Record<string, number>
-    variantId?: string
-    cabinCategoryId?: string
-    cabinNumberId?: string
-    dateRange?: { checkIn: string; checkOut: string }
-  }
+  initialConfigure?: Record<string, unknown>
+  /** Pre-locked accommodation slice (room/rate picks made on the
+   *  detail page). Loosely typed for the same reason. */
+  initialAccommodation?: Record<string, unknown>
   /**
    * When true, the wizard hides Configure regardless of descriptor
    * flags. Use for storefront flows where the product detail page

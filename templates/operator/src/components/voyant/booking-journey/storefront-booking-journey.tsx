@@ -31,13 +31,11 @@ export interface StorefrontBookingJourneyProps {
   sourceConnectionId?: string
   sourceRef?: string
   draftId: string
-  /**
-   * Departure picked on the detail page. Required on the storefront
-   * — the journey doesn't render Configure, so without this the
-   * commit path has no slot to bind to.
-   */
-  departureSlotId: string
-  paxCounts: { adult: number; child: number; infant: number }
+  /** Pre-locked configure inputs (departure / sailing / cabin /
+   *  date-range / pax) collected on the detail page. */
+  initialConfigure: Record<string, unknown>
+  /** Pre-locked accommodation slice (room/rate for hospitality). */
+  initialAccommodation?: Record<string, unknown>
   className?: string
 }
 
@@ -48,8 +46,8 @@ export function StorefrontBookingJourney({
   sourceConnectionId,
   sourceRef,
   draftId,
-  departureSlotId,
-  paxCounts,
+  initialConfigure,
+  initialAccommodation,
   className,
 }: StorefrontBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
@@ -82,14 +80,8 @@ export function StorefrontBookingJourney({
       draftId={draftId}
       defaultBuyerType="B2C"
       hideConfigure
-      initialConfigure={{
-        departureSlotId,
-        pax: {
-          adult: paxCounts.adult,
-          child: paxCounts.child,
-          infant: paxCounts.infant,
-        },
-      }}
+      initialConfigure={initialConfigure}
+      initialAccommodation={initialAccommodation}
       paymentCapabilities={{
         // Storefront accepts card; hold-only and ticket-on-credit are
         // operator surface concerns that don't make sense for a

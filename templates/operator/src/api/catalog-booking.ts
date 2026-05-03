@@ -168,8 +168,7 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
     // List available departures / slots for a product. Drives the
     // storefront's departure-select on the product detail page —
     // customers pick from real available options, not a free-form
-    // calendar (per booking-journey-architecture §10 + the
-    // protravel/luxufe reference patterns).
+    // calendar (per booking-journey-architecture §10).
     hono.get(`${prefix}/slots`, handleListSlots)
   }
 

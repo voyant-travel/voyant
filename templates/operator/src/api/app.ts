@@ -191,6 +191,11 @@ export const app = createApp<CloudflareBindings>({
     // auth-less or session-token-bound; this template takes the
     // auth-less posture and assigns `actor: "customer"`).
     "/v1/public/catalog",
+    // Storefront product / cruise / hospitality detail —
+    // drives the `/shop/products/...` page's content fetch.
+    "/v1/public/products",
+    "/v1/public/cruises",
+    "/v1/public/hospitality",
     // Netopia webhook receiver. Netopia's servers POST here without a
     // session cookie or bearer; the plugin handler matches the inbound
     // payload to a payment session by orderID and validates the

@@ -65,15 +65,23 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       },
       { buyerType: props.defaultBuyerType ?? (surface === "admin" ? "B2B" : "B2C") },
     )
-    // Seed Configure when the caller passed pre-locked state (the
-    // protravel/luxufe pattern: detail page picks departure + pax,
-    // booking flow only handles travelers + addons + payment).
+    // Seed Configure when the caller passed pre-locked state —
+    // detail page picks departure + pax, booking flow only handles
+    // travelers + addons + payment.
     if (props.initialConfigure) {
-      base.configure = {
-        ...base.configure,
-        ...props.initialConfigure,
-        pax: { ...base.configure.pax, ...(props.initialConfigure.pax ?? {}) },
-      }
+      const seed = props.initialConfigure as Record<string, unknown>
+      const seedPax = seed.pax as Record<string, number> | undefined
+      base.configure = Object.assign({}, base.configure, seed, {
+        pax: { ...base.configure.pax, ...(seedPax ?? {}) },
+      }) as typeof base.configure
+    }
+    if (props.initialAccommodation) {
+      const seed = props.initialAccommodation as Record<string, unknown>
+      base.accommodation = Object.assign(
+        { rooms: [], travelerAssignments: {} },
+        base.accommodation ?? {},
+        seed,
+      ) as typeof base.accommodation
     }
     return base
   })
