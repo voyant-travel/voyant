@@ -546,20 +546,29 @@ async function handleDraftPut(c: Context): Promise<Response> {
     return c.json(updated)
   }
 
-  if (!body.entityModule || !body.entityId || !body.sourceKind) {
-    return c.json(
-      { error: "entityModule, entityId, sourceKind required when creating a draft" },
-      400,
-    )
+  if (!body.entityModule || !body.entityId) {
+    return c.json({ error: "entityModule and entityId are required when creating a draft" }, 400)
   }
+
+  // Customer-facing surfaces don't carry sourceKind in URLs / drafts —
+  // the engine resolves provenance from (entityModule, entityId) via
+  // the catalog plane's sourced-entry lookup (same as /quote and
+  // /book). Operator surfaces still send it explicitly when known.
+  const provenance = body.sourceKind
+    ? {
+        sourceKind: body.sourceKind,
+        sourceConnectionId: body.sourceConnectionId,
+        sourceRef: body.sourceRef,
+      }
+    : await resolveEntityProvenance(db, body.entityModule, body.entityId)
 
   const created = await createBookingDraft(db, {
     id,
     entityModule: body.entityModule,
     entityId: body.entityId,
-    sourceKind: body.sourceKind,
-    sourceConnectionId: body.sourceConnectionId,
-    sourceRef: body.sourceRef,
+    sourceKind: provenance.sourceKind,
+    sourceConnectionId: provenance.sourceConnectionId,
+    sourceRef: provenance.sourceRef,
     draftPayload: body.draftPayload,
     currentStep: body.currentStep,
     currentQuoteId: body.currentQuoteId,
