@@ -205,9 +205,58 @@ After this lands:
 
 ## 5. Snapshot relationship
 
-When a sourced booking commits, the snapshot graph captures `frozenPayload`. Today that's the indexed projection. **After this proposal lands, `frozenPayload` should include the content blob** so the booking row carries a deep audit-grade record of what was sold, not just the indexed fields.
+When a sourced booking commits, the snapshot graph captures `frozenPayload`. Today that's the indexed projection. **After this proposal lands, `frozenPayload` includes the full content blob** so the booking row carries a deep audit-grade record of what was sold, not just the indexed fields.
 
-The change to `captureSnapshot` callers (in the booking engine) is small — pull `getContentForEntity` and merge into the existing payload. The snapshot table schema already accepts opaque JSONB; no migration there.
+The change to `captureSnapshot` callers (in the booking engine) is small — pull content + merge into the existing payload. The snapshot table schema already accepts opaque JSONB; no migration there.
+
+### 5.1. At-commit content capture: refresh-with-fallback
+
+The snapshot must reflect what the customer actually agreed to at the moment of commit, not whatever the cache happened to hold. So at commit time, the engine **refetches from the adapter** rather than reading the cache. If the refetch fails for any reason (network blip, rate limit, transient adapter outage), the engine **falls back to the cache** — the booking succeeds; the snapshot records whatever the most recent cached content was.
+
+```
+captureContentForSnapshot(adapter, entityModule, entityId, scope):
+  try:
+    fresh = adapter.getContent(ctx, { entity_module, entity_id, scope })
+    writeCachedSourcedContent(db, ..., fresh)   // also refresh cache
+    return { content: fresh.content, source: "fresh", fetched_at: now() }
+  catch err:
+    cached = readCachedSourcedContent(db, ..., includeStale: true)
+    if cached:
+      return { content: cached.payload, source: "cache_fallback",
+               fetched_at: cached.fetched_at, fallback_reason: err.message }
+    // No cache row at all → fail the commit. We do not commit a snapshot
+    // with thin indexed-projection content; refunds and audit would have
+    // nothing real to look at. Operator sees a clear actionable error.
+    throw new SnapshotContentUnavailableError(...)
+```
+
+The snapshot row records both the content blob and a `content_capture` envelope so audit can later distinguish a fresh capture from a fallback:
+
+```ts
+// inside booking_catalog_snapshot.frozen_payload
+{
+  // ... existing fields ...
+  content_capture: {
+    source: "fresh" | "cache_fallback",
+    fetched_at: "2026-...",
+    fallback_reason?: string,    // present when source == "cache_fallback"
+    content_etag?: string,       // mirrors GetContentResult.etag
+  },
+  content: { /* the vertical-shaped content payload */ },
+}
+```
+
+**Why fail-on-no-cache rather than synthesize from the indexed projection.** The indexed projection is search-shaped — name, status, a handful of facets. It's not a record of "what was sold" in any audit-grade sense. Refunding a customer eight months later from a stub document with three fields is worse than the operator getting a clear, actionable error at commit time and resolving it (manual confirmation, retry with backoff during a soft hold, or escalating to the upstream).
+
+### 5.2. The hold/commit timing in practice
+
+For sourced rows, the engine usually places a hold via `adapter.reserve` with `payment_intent.type = "hold"` (soft-hold path) earlier in the journey. By commit time we've typically had a recent successful adapter round-trip, so the refresh-on-commit `getContent` call usually succeeds. The fallback path is for genuine edge cases: long-held drafts (operator sat on a quote for two hours and the upstream had a brief outage during commit), aggressive rate limits, partial outages.
+
+If we observe `cache_fallback` rates above a small percentage in production, that's a signal to investigate — usually either an unstable upstream or a refresh window that's too narrow — not a routine outcome.
+
+### 5.3. Owned bookings
+
+Owned bookings don't go through `getContent` at all (the data is in our DB). Their snapshot reads from the vertical's owned-content service, which is always available. The refresh / fallback machinery is sourced-only.
 
 ## 6. Channel-push relationship
 
@@ -263,7 +312,7 @@ Each vertical opts in. Verticals that don't yet have detail-page needs (extras, 
 
 ## 9. Open questions
 
-1. **Content cache vs. catalog snapshot for "what was sold"** — at booking commit, we capture `frozenPayload`. Should that be the live content cache row, or should it be re-fetched from the adapter to get the freshest at-commit snapshot? Probably the latter; needs decision.
+1. ~~**Content cache vs. catalog snapshot for "what was sold"** — at booking commit, we capture `frozenPayload`. Should that be the live content cache row, or should it be re-fetched from the adapter to get the freshest at-commit snapshot?~~ **Resolved (§5.1):** refresh from the adapter at commit, fall back to the cache on adapter error. If neither is available (no cache row AND adapter fails), fail the commit — we don't snapshot from the indexed projection because that's not audit-grade. The snapshot row records `content_capture.source: "fresh" | "cache_fallback"` so audit can tell the two apart later.
 2. **Multi-locale caching** — TUI returns content in `de-DE`; storefront serves a `ro-RO` user. Cache per locale, or cache one canonical and translate on read? Vertical-specific decision; cache per locale per vertical for v1.
 3. **Cache invalidation on overlay change** — editorial overlays already exist for owned content. Do they apply to sourced content too? If yes, is the merge done at read time or at content-fetch time? Lean toward read-time merge so overlay changes don't need to invalidate the content cache.
 4. **Background refresher vs inline-on-read** — Phase C ships inline; v2 considers background. Defer until we see real latency.
