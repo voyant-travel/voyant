@@ -32,14 +32,36 @@ export function createWorkflowRunsAdminRoutes() {
       }
       // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed
       const db = (c.var as any).db
-      const result = await workflowRunsService.listRuns(db, parsed.data)
-      return c.json(result)
+      try {
+        const result = await workflowRunsService.listRuns(db, parsed.data)
+        return c.json(result)
+      } catch (err) {
+        console.error("[workflow-runs] listRuns failed", err)
+        return c.json(
+          {
+            error: "list_failed",
+            detail: err instanceof Error ? err.message : String(err),
+          },
+          500,
+        )
+      }
     })
     .get("/v1/admin/workflow-runs/:id", async (c) => {
       // biome-ignore lint/suspicious/noExplicitAny: Hono's c.var.db is loosely typed
       const db = (c.var as any).db
-      const result = await workflowRunsService.getRunById(db, c.req.param("id"))
-      if (!result) return c.json({ error: "not_found" }, 404)
-      return c.json({ data: result })
+      try {
+        const result = await workflowRunsService.getRunById(db, c.req.param("id"))
+        if (!result) return c.json({ error: "not_found" }, 404)
+        return c.json({ data: result })
+      } catch (err) {
+        console.error("[workflow-runs] getRunById failed", err)
+        return c.json(
+          {
+            error: "get_failed",
+            detail: err instanceof Error ? err.message : String(err),
+          },
+          500,
+        )
+      }
     })
 }
