@@ -340,20 +340,27 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             </ul>
           ) : null}
 
-          <div className="flex items-center justify-between">
-            <Button type="button" variant="ghost" onClick={props.onCancelled}>
-              Cancel
+          <div className="flex items-center gap-2">
+            {/* Back doubles as "exit the journey" on the first step
+                — when there's no previous step the button navigates
+                via `onCancelled` (back to the storefront / detail
+                page); on inner steps it just walks the wizard. One
+                button to keep the bottom rail uncluttered. */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (prev) goBack()
+                else props.onCancelled?.()
+              }}
+            >
+              Back
             </Button>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" disabled={!prev} onClick={goBack}>
-                Back
+            {next ? (
+              <Button type="button" onClick={advance} disabled={!canAdvance} className="ml-auto">
+                Next
               </Button>
-              {next ? (
-                <Button type="button" onClick={advance} disabled={!canAdvance}>
-                  Next
-                </Button>
-              ) : null}
-            </div>
+            ) : null}
           </div>
 
           {commit.error ? (
