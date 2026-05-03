@@ -13,11 +13,15 @@
  */
 
 import { availabilitySlots } from "@voyantjs/availability/schema"
-import type { PushAvailabilityRequest, SourceAdapterContext } from "@voyantjs/catalog"
+import {
+  AdapterRateLimitedError,
+  type PushAvailabilityRequest,
+  type SourceAdapterContext,
+} from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { and, asc, eq, sql } from "drizzle-orm"
-import { acquireToken, channelScopeKey, type RateLimitConfig } from "../rate-limit.js"
+import { acquireToken, channelScopeKey, drainBucket, type RateLimitConfig } from "../rate-limit.js"
 import {
   channelAvailabilityPushIntents,
   channelInventoryAllotments,
@@ -308,7 +312,18 @@ export async function processAvailabilityPushIntents(
       succeeded += 1
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      await envelope.complete({ errorClass: "adapter_error", errorMessage: message })
+      const isRateLimited = err instanceof AdapterRateLimitedError
+      if (isRateLimited) {
+        await drainBucket(
+          db,
+          channelScopeKey(channel.id, intent.sourceConnectionId),
+          err.retryAfterMs,
+        )
+      }
+      await envelope.complete({
+        errorClass: isRateLimited ? "rate_limited" : "adapter_error",
+        errorMessage: message,
+      })
       await stampIntentError(db, intent.id, intent.attempts + 1, message)
       failed += 1
       logger.error?.(`pushAvailability failed for slot ${slot.id} channel ${channel.id}`, {

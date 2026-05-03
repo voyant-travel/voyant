@@ -17,7 +17,11 @@
  */
 
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
-import type { PushBookingRequest, SourceAdapterContext } from "@voyantjs/catalog"
+import {
+  AdapterRateLimitedError,
+  type PushBookingRequest,
+  type SourceAdapterContext,
+} from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
 import {
@@ -27,7 +31,7 @@ import {
 } from "@voyantjs/distribution/schema"
 import { and, eq, sql } from "drizzle-orm"
 
-import { acquireToken, channelScopeKey, type RateLimitConfig } from "../rate-limit.js"
+import { acquireToken, channelScopeKey, drainBucket, type RateLimitConfig } from "../rate-limit.js"
 import { prepareOutboundEnvelope } from "../webhook-deliveries.js"
 
 import { type ChannelPushDeps, defaultLogger, getChannelPushDepsOrThrow } from "./types.js"
@@ -371,8 +375,16 @@ export async function processBookingPush(
       succeeded += 1
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
+      // 429 from upstream — drain the bucket for the cooldown so
+      // concurrent dispatchers also see "no tokens" until the channel
+      // is ready, and stamp the delivery with the rate-limited class
+      // (per §14.4).
+      const isRateLimited = err instanceof AdapterRateLimitedError
+      if (isRateLimited) {
+        await drainBucket(db, channelScopeKey(channel.id, connectionId), err.retryAfterMs)
+      }
       await envelope.complete({
-        errorClass: "adapter_error",
+        errorClass: isRateLimited ? "rate_limited" : "adapter_error",
         errorMessage: message,
       })
       await markLinkFailed(db, link.id, link.pushAttempts + 1, message)

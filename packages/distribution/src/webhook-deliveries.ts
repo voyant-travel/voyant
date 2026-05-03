@@ -44,6 +44,53 @@ const REDACTED_HEADERS = new Set([
 
 const REDACTION_MARKER = "[REDACTED]"
 
+/**
+ * Body-key names that always redact (case-insensitive). Every match is
+ * replaced with `[REDACTED]` regardless of value type. Per §11.3 — PII
+ * redaction is a library guarantee, not caller discipline.
+ */
+const REDACTED_BODY_KEYS = new Set([
+  // Auth
+  "password",
+  "secret",
+  "token",
+  "accesstoken",
+  "refreshtoken",
+  "apikey",
+  "apitoken",
+  "authorization",
+  // Personal identifiers
+  "email",
+  "phone",
+  "phonenumber",
+  "mobile",
+  "ssn",
+  "passport",
+  "passportnumber",
+  "documentnumber",
+  "nationalid",
+  "taxid",
+  "dob",
+  "dateofbirth",
+  "birthdate",
+  // Payment
+  "cardnumber",
+  "pan",
+  "cvv",
+  "cvc",
+  "iban",
+  "bic",
+  "accountnumber",
+  // Booking-traveler shapes
+  "firstname",
+  "lastname",
+  "fullname",
+  "middlename",
+])
+
+const EMAIL_PATTERN = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi
+const PHONE_PATTERN = /\+?\d[\d\s().-]{6,}\d/g
+
 export interface OutboundEnvelopeInput {
   // ── Provenance ────────────────────────────────────────────────────
   sourceModule: string
@@ -194,12 +241,12 @@ function excerptBody(body: unknown, max = DEFAULT_EXCERPT_BYTES): string | null 
   if (body == null) return null
   let text: string
   if (typeof body === "string") {
-    text = body
+    text = redactStringPii(body)
   } else if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
     text = "[binary]"
   } else {
     try {
-      text = JSON.stringify(body)
+      text = JSON.stringify(redactBodyPii(body))
     } catch {
       text = "[unserializable]"
     }
@@ -208,6 +255,42 @@ function excerptBody(body: unknown, max = DEFAULT_EXCERPT_BYTES): string | null 
     return `${text.slice(0, max - 1)}…`
   }
   return text
+}
+
+/**
+ * Recursively redact PII from a JSON-serializable body. Every key whose
+ * lowercased name matches `REDACTED_BODY_KEYS` is replaced with
+ * `[REDACTED]`; remaining string values get email/phone shapes
+ * scrubbed. This protects channel-push booking payloads (which carry
+ * traveler contact info) from leaking into the delivery log per §11.3.
+ *
+ * Exported for callers that want to redact bodies before passing them
+ * to other sinks (logs, error reporters).
+ */
+export function redactBodyPii(value: unknown): unknown {
+  if (value == null) return value
+  if (typeof value === "string") return redactStringPii(value)
+  if (typeof value !== "object") return value
+  if (Array.isArray(value)) return value.map(redactBodyPii)
+  const out: Record<string, unknown> = {}
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    const normalized = key.toLowerCase().replace(/[_-]/g, "")
+    if (REDACTED_BODY_KEYS.has(normalized)) {
+      out[key] = REDACTION_MARKER
+    } else {
+      out[key] = redactBodyPii(raw)
+    }
+  }
+  return out
+}
+
+/**
+ * Scrub email/phone shapes from a free-text string. The patterns are
+ * coarse on purpose — false positives (e.g. a phone-shaped tracking id)
+ * are preferable to leaks.
+ */
+export function redactStringPii(text: string): string {
+  return text.replace(EMAIL_PATTERN, REDACTION_MARKER).replace(PHONE_PATTERN, REDACTION_MARKER)
 }
 
 /**

@@ -8,27 +8,28 @@
  * Mirrors the shape of `@voyantjs/plugin-flights-demo` for `flights`.
  */
 
-import type {
-  AdapterCapabilities,
-  CancelRequest,
-  CancelResult,
-  ConnectionState,
-  DiscoveryCursor,
-  DiscoveryPage,
-  GetContentRequest,
-  GetContentResult,
-  LiveResolveRequest,
-  LiveResolveResult,
-  PushAvailabilityRequest,
-  PushAvailabilityResult,
-  PushBookingRequest,
-  PushBookingResult,
-  PushContentRequest,
-  PushContentResult,
-  ReserveRequest,
-  ReserveResult,
-  SourceAdapter,
-  SourceAdapterContext,
+import {
+  type AdapterCapabilities,
+  AdapterRateLimitedError,
+  type CancelRequest,
+  type CancelResult,
+  type ConnectionState,
+  type DiscoveryCursor,
+  type DiscoveryPage,
+  type GetContentRequest,
+  type GetContentResult,
+  type LiveResolveRequest,
+  type LiveResolveResult,
+  type PushAvailabilityRequest,
+  type PushAvailabilityResult,
+  type PushBookingRequest,
+  type PushBookingResult,
+  type PushContentRequest,
+  type PushContentResult,
+  type ReserveRequest,
+  type ReserveResult,
+  type SourceAdapter,
+  type SourceAdapterContext,
 } from "@voyantjs/catalog"
 
 /** Stable kind identifier emitted as `source.kind` on every projection. */
@@ -97,6 +98,14 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
       })
       const text = await response.text()
       const data = text ? (JSON.parse(text) as unknown) : undefined
+      // Surface 429 distinctly so the channel-push pipeline can drain
+      // its rate-limit bucket per the upstream's Retry-After hint.
+      if (response.status === 429) {
+        const retryAfterRaw = response.headers.get("Retry-After")
+        const retryAfterSec = retryAfterRaw ? Number.parseInt(retryAfterRaw, 10) : 60
+        const retryAfterMs = (Number.isFinite(retryAfterSec) ? retryAfterSec : 60) * 1000
+        throw new AdapterRateLimitedError(DEMO_SOURCE_KIND, retryAfterMs, path, data)
+      }
       if (!response.ok) {
         const detail =
           data && typeof data === "object" && "error" in data && typeof data.error === "string"
