@@ -15,7 +15,8 @@
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
-    "./service-content-synthesizer": "./src/service-content-synthesizer.ts"
+    "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
+    "./draft-shape": "./src/draft-shape.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

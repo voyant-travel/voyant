@@ -17,6 +17,7 @@ import { newId } from "@voyantjs/db/lib/typeid"
 import type { LiveResolveResult, SourceAdapterContext } from "../adapter/contract.js"
 import type { PricingBasis } from "../snapshot/schema.js"
 
+import type { BookingDraftShape } from "./draft-shape.js"
 import type { SourceAdapterRegistry } from "./registry.js"
 import { catalogQuotesTable, type SelectCatalogQuote } from "./schema.js"
 
@@ -62,10 +63,77 @@ export interface QuoteEntityResult {
   invalidReason?: string
   pricing?: PricingBasis
   upstreamPayload?: Record<string, unknown>
+  /**
+   * The journey wizard descriptor — populated when
+   * `deps.contentEnricher` is wired and the entity is sourced. Tells
+   * the wizard which steps + sub-steps to render. Per
+   * `docs/architecture/booking-journey-architecture.md` §3, this is
+   * returned alongside the quote so the journey can render the
+   * correct shape without a follow-up call.
+   *
+   * Undefined when no enricher is wired (today's behavior — the
+   * journey hardcodes a minimal shape until templates wire content).
+   */
+  shape?: BookingDraftShape
 }
+
+/**
+ * Input the content enricher receives — quote + scope + parameters.
+ * The enricher reads cached content for the entity and projects a
+ * `BookingDraftShape` that drives the wizard. Verticals compose their
+ * `build*DraftShape` builders into one enricher routed by
+ * `entity_module`.
+ */
+export interface QuoteContentEnrichmentInput {
+  db: AnyDrizzleDb
+  entityModule: string
+  entityId: string
+  sourceKind: string
+  sourceConnectionId?: string
+  sourceRef?: string
+  scope: QuoteScope
+  parameters?: Record<string, unknown>
+  adapterContext: SourceAdapterContext
+}
+
+/**
+ * Hook called by `quoteEntity` after the live-resolve step succeeds.
+ * Receives entity identity + scope; returns a `BookingDraftShape` (or
+ * null when content is unavailable / the entity is owned and the
+ * enricher chooses not to surface a shape).
+ *
+ * Templates compose this from per-vertical content services, e.g.:
+ *
+ *   const enricher: QuoteContentEnricher = async (input) => {
+ *     const content = await readContentByModule(input)
+ *     return content ? buildDraftShape(input.entityModule, content, input.scope) : null
+ *   }
+ */
+export type QuoteContentEnricher = (
+  input: QuoteContentEnrichmentInput,
+) => Promise<BookingDraftShape | null>
 
 export interface QuoteEntityDeps {
   registry: SourceAdapterRegistry
+  /**
+   * Optional content-aware enricher. When wired, called after the
+   * adapter's `liveResolve` step succeeds; the returned
+   * `BookingDraftShape` is attached to the quote result so the
+   * journey wizard can render the correct shape without a follow-up
+   * call.
+   *
+   * When not wired (today's default), the quote response omits
+   * `shape` and the journey falls back to its hardcoded minimal
+   * descriptor.
+   *
+   * Errors from the enricher are caught and logged via
+   * `onEnricherError` (defaults to silent) — they MUST NOT fail the
+   * quote because the wizard can render the minimal shape on its
+   * own.
+   */
+  contentEnricher?: QuoteContentEnricher
+  /** Optional sink for enricher errors. */
+  onEnricherError?: (event: { entityModule: string; entityId: string; reason: string }) => void
 }
 
 /**
@@ -139,6 +207,35 @@ export async function quoteEntity(
 
   if (!inserted[0]) throw new Error("quoteEntity: insert returned no rows")
 
+  // Optional content enrichment — per booking-journey-architecture
+  // §3, the quote response carries a BookingDraftShape descriptor
+  // when the engine has the content in front of it. When the hook
+  // throws, we swallow the error (the wizard's minimal-shape fallback
+  // covers it) but surface via onEnricherError for diagnostics.
+  let shape: BookingDraftShape | undefined
+  if (deps.contentEnricher && available) {
+    try {
+      const enriched = await deps.contentEnricher({
+        db,
+        entityModule: request.entityModule,
+        entityId: request.entityId,
+        sourceKind: request.sourceKind,
+        sourceConnectionId: request.sourceConnectionId,
+        sourceRef: request.sourceRef,
+        scope: request.scope,
+        parameters: request.parameters,
+        adapterContext: request.adapterContext,
+      })
+      shape = enriched ?? undefined
+    } catch (err) {
+      deps.onEnricherError?.({
+        entityModule: request.entityModule,
+        entityId: request.entityId,
+        reason: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+
   return {
     quoteId,
     quotedAt,
@@ -147,6 +244,7 @@ export async function quoteEntity(
     invalidReason: failedReason,
     pricing,
     upstreamPayload,
+    shape,
   }
 }
 

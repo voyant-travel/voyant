@@ -31,6 +31,26 @@ export {
   cancelEntity,
 } from "./cancel.js"
 export {
+  type AccommodationSubStep,
+  type AddonGroup,
+  type AddonOffer,
+  type BookingDraftShape,
+  type BookingFieldRequirement,
+  type CabinCategoryOption,
+  type CabinNumberOption,
+  type ConfigureSubStep,
+  DEFAULT_PAX_BANDS,
+  DEFAULT_PAX_TOTAL,
+  defaultBookingFields,
+  defaultDraftShapeFlags,
+  defaultTravelerFields,
+  type ExtensionOption,
+  type PaxBandSpec,
+  paxBandsAllowedTotalFrom,
+  type RoomOption,
+  type TravelerFieldRequirement,
+} from "./draft-shape.js"
+export {
   BookingEngineError,
   type BookingEngineErrorCode,
   NO_ADAPTER_REGISTERED,
@@ -55,6 +75,8 @@ export {
 } from "./orders.js"
 export {
   DEFAULT_QUOTE_TTL_MS,
+  type QuoteContentEnricher,
+  type QuoteContentEnrichmentInput,
   type QuoteEntityDeps,
   type QuoteEntityRequest,
   type QuoteEntityResult,

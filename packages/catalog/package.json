@@ -24,7 +24,8 @@
     "./services/sourced-entry": "./src/services/sourced-entry-service.ts",
     "./services/content": "./src/services/content-service.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
-    "./booking-engine/schema": "./src/booking-engine/schema.ts"
+    "./booking-engine/schema": "./src/booking-engine/schema.ts",
+    "./booking-engine/draft-shape": "./src/booking-engine/draft-shape.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
