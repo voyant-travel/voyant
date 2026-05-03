@@ -57,6 +57,13 @@
       "when": 1777840000000,
       "tag": "0007_catalog_sourced_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777850000000,
+      "tag": "0008_booking_journey",
+      "breakpoints": true
     }
   ]
 }

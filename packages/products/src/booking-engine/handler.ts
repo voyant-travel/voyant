@@ -333,6 +333,37 @@ export function createProductsBookingHandler(
       }
     },
 
+    /**
+     * Place a soft hold on the row. Phase B implementation is a
+     * **stamping no-op** — it returns a token + expiry but does NOT
+     * reserve capacity in the availability layer. Real inventory
+     * reservation against `availabilitySlots` is a Phase C follow-up
+     * that crosses into the availability module.
+     *
+     * The journey's `booking_drafts.hold_expires_at` field already
+     * gives us a time-bounded "user is configuring a draft" signal;
+     * this stub returns a matching token so the contract is honored.
+     */
+    async placeHold(_ctx: OwnedHandlerContext, request) {
+      const token = request.draftId ?? defaultBookingNumber()
+      return {
+        holdToken: token,
+        expiresAt: new Date(Date.now() + request.ttlMs),
+      }
+    },
+
+    async extendHold(_ctx: OwnedHandlerContext, holdToken: string) {
+      return {
+        holdToken,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      }
+    },
+
+    async releaseHold(_ctx: OwnedHandlerContext, _holdToken: string) {
+      // No-op until inventory reservation lands in Phase C. The
+      // reaper still calls this so the contract is exercised.
+    },
+
     async commit(
       ctx: OwnedHandlerContext,
       request: CommitOwnedRequest,

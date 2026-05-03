@@ -130,6 +130,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   })
 
   const canAdvance = canAdvanceFromStep(currentStep, draft, shape, quote.data?.available !== false)
+  const warnings = warningsForStep(currentStep, draft, shape)
 
   const idx = steps.indexOf(currentStep)
   const next = steps[idx + 1]
@@ -223,6 +224,14 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             />
           ) : null}
 
+          {warnings.length > 0 ? (
+            <ul className="space-y-1 rounded border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+              {warnings.map((w) => (
+                <li key={w}>⚠ {w}</li>
+              ))}
+            </ul>
+          ) : null}
+
           <div className="flex items-center justify-between">
             <Button type="button" variant="ghost" onClick={props.onCancelled}>
               Cancel
@@ -295,13 +304,80 @@ function canAdvanceFromStep(
       return c.firstName.length > 0 && c.lastName.length > 0 && c.email.length > 0
     }
     case "travelers": {
-      // Hard-reject from descriptor (resolves §12.5 in the affirmative
-      // for required fields). Soft warnings TBD.
+      // Hard-reject only on canonical traveler fields (firstName,
+      // lastName) — those are always required regardless of
+      // descriptor configuration. All other required fields surface
+      // as warnings so operators can complete the journey and fill
+      // them in later from the booking detail page.
       return draft.travelers.every((t) => t.firstName && t.lastName)
     }
     default:
       return true
   }
+}
+
+/**
+ * Soft warnings for the current step — surfaced inline above the
+ * Next button. Don't block advancement; they're hints. Per
+ * booking-journey-architecture §12.5.
+ *
+ * The hard-reject path stays in `canAdvanceFromStep` for fields
+ * that are physically required to commit (e.g. traveler names);
+ * everything else is a warning here.
+ */
+function warningsForStep(
+  step: JourneyStep,
+  draft: Draft,
+  shape: BookingDraftShape,
+): ReadonlyArray<string> {
+  const warnings: string[] = []
+  switch (step) {
+    case "billing": {
+      const c = draft.billing.contact
+      if (c.phone == null || c.phone.length === 0) {
+        warnings.push("Phone number not set — useful for last-minute supplier contact.")
+      }
+      if (!draft.billing.address.country) {
+        warnings.push("Billing country not set — taxes won't compute until it's filled in.")
+      }
+      if (draft.billing.buyerType === "B2B" && !draft.billing.company?.vatId) {
+        warnings.push("VAT id missing — required for B2B reverse-charge invoicing.")
+      }
+      break
+    }
+    case "travelers": {
+      const requiredKeys = shape.travelerFields.filter((f) => f.required).map((f) => f.key)
+      const skipBaseline = new Set(["firstName", "lastName"])
+      const optionalRequired = requiredKeys.filter((k) => !skipBaseline.has(k))
+      for (const t of draft.travelers) {
+        for (const key of optionalRequired) {
+          const docs = t.documents ?? {}
+          // Email is on the row directly; everything else lives in
+          // the document map.
+          const value = key === "email" ? t.email : (docs as Record<string, unknown>)[key]
+          if (value == null || value === "") {
+            const traveler = `${t.firstName || "Traveler"} ${t.lastName || ""}`.trim()
+            warnings.push(`${traveler}: ${labelForFieldKey(key, shape)} is required.`)
+          }
+        }
+      }
+      break
+    }
+    case "review": {
+      if (!draft.payment.intent) {
+        warnings.push("Payment intent not set — booking will default to hold.")
+      }
+      if (draft.travelers.length === 0) {
+        warnings.push("No travelers added — at least one is recommended for ops handoff.")
+      }
+      break
+    }
+  }
+  return warnings
+}
+
+function labelForFieldKey(key: string, shape: BookingDraftShape): string {
+  return shape.travelerFields.find((f) => f.key === key)?.label ?? key
 }
 
 function defaultMinimalShape(): BookingDraftShape {

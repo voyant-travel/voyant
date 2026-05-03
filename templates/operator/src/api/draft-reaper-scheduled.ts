@@ -23,6 +23,7 @@ import {
   type OwnedBookingHandlerRegistry,
   type SourceAdapterRegistry,
 } from "@voyantjs/catalog/booking-engine"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 
 import {
   type BookingEngineEnv,
@@ -57,6 +58,7 @@ export async function runScheduledDraftReaper(
     if (draft.hold_expires_at) {
       try {
         await releaseHold({
+          db,
           draft,
           ownedHandlers,
           registry,
@@ -93,22 +95,25 @@ export async function runScheduledDraftReaper(
  * follow-up on the contract).
  */
 async function releaseHold({
+  db,
   draft,
   ownedHandlers,
   registry,
 }: {
+  db: AnyDrizzleDb
   draft: Awaited<ReturnType<typeof findExpiredDrafts>>[number]
   ownedHandlers: OwnedBookingHandlerRegistry
   registry: SourceAdapterRegistry
 }): Promise<void> {
   if (draft.source_kind === "owned") {
     const handler = ownedHandlers.resolve(draft.entity_module)
-    // The hold token isn't surfaced on `booking_drafts` today — the
-    // table tracks expiry but not the adapter token. When a handler
-    // implements `releaseHold`, callers must thread the token via
-    // payload. For now, we no-op cleanly when the handler doesn't
-    // expose a release primitive.
     if (!handler?.releaseHold) return
+    // The hold token convention (per the products handler) is
+    // `draft.id` — the draft is the hold receipt. When more
+    // verticals ship handlers with non-trivial hold tokens, we'll
+    // need to surface the token on `booking_drafts.draft_payload`
+    // (or a dedicated column) and pass it through here.
+    await handler.releaseHold({ db, adapterContext: { connection_id: "reaper" } }, draft.id)
     return
   }
   const adapter = draft.source_connection_id
