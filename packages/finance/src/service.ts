@@ -773,6 +773,31 @@ export const financeService = {
       })
     }
 
+    // Emit a generic `payment.completed` so cross-vertical subscribers
+    // (notably the storefront's checkout-finalize workflow) can react
+    // without having to know the specific provider chain. Keyed by
+    // booking when the session targets one — that's the field the
+    // checkout flow needs.
+    if (
+      data.status === "paid" &&
+      txResult.updated &&
+      (session.bookingId || session.orderId || session.invoiceId)
+    ) {
+      await runtime.eventBus?.emit(
+        "payment.completed",
+        {
+          paymentSessionId: id,
+          bookingId: session.bookingId,
+          orderId: session.orderId,
+          invoiceId: session.invoiceId,
+          amountCents: session.amountCents,
+          currency: session.currency,
+          provider: session.provider,
+        },
+        { category: "domain", source: "service" },
+      )
+    }
+
     return txResult.updated
   },
 

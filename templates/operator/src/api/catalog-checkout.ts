@@ -3,32 +3,46 @@
  *
  * `POST /v1/public/catalog/checkout/start` — invoked by the
  * storefront's BookingJourney after the customer accepts the
- * contract preview. Branches by `paymentIntent`:
+ * contract preview. The booking is created via `/v1/public/catalog/book`
+ * before this is called, so the request carries a real `bookingId`.
+ * Branches by `paymentIntent`:
  *
- *   - `card`         → start a card payment session, return its
- *                       redirect URL. (Phase 4: Netopia.)
+ *   - `card`         → create a payment session targeting the
+ *                       booking, ask the Netopia plugin to start it,
+ *                       return its redirect URL.
  *   - `bank_transfer`→ issue a proforma synchronously, return
- *                       bank-details + reference. (Phase 5.)
- *   - `inquiry`      → write a lead, no inventory hold, no charge.
- *                       (Phase 6.)
+ *                       bank-details + reference. Deployment-side
+ *                       config supplies the actual IBAN.
+ *   - `inquiry`      → write a CRM-stub lead. (Phase 6 lights up
+ *                       the real opportunity creation.)
+ *   - `hold`         → no payment workflow; staff broker the booking.
  *
- * Subscribes to `payment.completed`: when the webhook (card) or the
- * admin "Mark payment received" action (bank-transfer) fires the
- * event, runs the `checkout-finalize` workflow which transitions
+ * Subscribes to `payment.completed`: when the Netopia webhook (card)
+ * or the admin "Mark payment received" action (bank-transfer) fires
+ * the event, runs the `checkout-finalize` workflow which transitions
  * the booking to `confirmed` and triggers contract + invoice
  * generation.
  *
- * Contract acceptance is captured in the request body; we forward
- * it to the legal contract record once the booking is created, so
- * the audit trail links the rendered HTML to the booking.
- *
- * See `docs/architecture/storefront-checkout-flow.md` Phase 3.
+ * See `docs/architecture/storefront-checkout-flow.md` Phases 3–5.
  */
 
 import { bookingsService } from "@voyantjs/bookings"
+import { bookings } from "@voyantjs/bookings/schema"
 import { runCheckoutFinalize } from "@voyantjs/catalog/booking-engine"
+import {
+  type CreateInvoiceFromBookingInput,
+  financeService,
+  issueInvoiceFromBooking,
+  issueProformaFromBooking,
+} from "@voyantjs/finance"
 import { parseJsonBody } from "@voyantjs/hono"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
+import {
+  NETOPIA_RUNTIME_CONTAINER_KEY,
+  netopiaService,
+  type ResolvedNetopiaRuntimeOptions,
+} from "@voyantjs/plugin-netopia"
+import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
@@ -48,12 +62,23 @@ const checkoutStartSchema = z.object({
       renderedHtml: z.string().min(1),
     })
     .optional(),
+  /** Buyer email — used for downstream proforma + receipt routing. */
+  payerEmail: z.string().email().optional(),
+  /** Buyer name — used by Netopia's hosted form for placeholder
+   *  billing details (the customer can correct on the form). */
+  payerName: z.string().optional(),
+  /** Storefront origin — used to build absolute return URLs that
+   *  Netopia redirects back to after 3DS. */
+  returnOrigin: z.string().url().optional(),
 })
 
 interface PaymentCompletedPayload {
-  bookingId: string
+  bookingId: string | null
   paymentSessionId?: string
   paymentIntent?: "card" | "bank_transfer" | "hold" | "ticket_on_credit"
+  amountCents?: number
+  currency?: string
+  provider?: string | null
 }
 
 export function mountCatalogCheckoutRoutes(hono: Hono): void {
@@ -68,65 +93,233 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
     return c.json({ error: err instanceof Error ? err.message : "invalid body" }, 400)
   }
 
-  // Phase 3 ships only the routing scaffold + workflow wiring.
-  // Per-intent bodies (Netopia redirect, proforma issuance, inquiry
-  // creation) light up in Phases 4–6 of the storefront-checkout-flow
-  // plan. Returning a structured stub now means the storefront
-  // wrapper can integrate end-to-end and the flesh-out later is a
-  // mechanical fill-in.
+  const db = c.get("db") as PostgresJsDatabase
+  const [booking] = await db.select().from(bookings).where(eq(bookings.id, body.bookingId)).limit(1)
+  if (!booking) return c.json({ error: "booking_not_found" }, 404)
+
+  // Persist the contract acceptance against the booking so the
+  // audit trail keeps the rendered HTML alongside the booking
+  // number. Stored on `internalNotes` for now — Phase 6 promotes
+  // this to a real `contract_signatures` row once the legal
+  // auto-generate-contract subscriber materialises a contract on
+  // booking.confirmed.
+  if (body.contractAcceptance) {
+    const acceptanceMarker = `__contract_acceptance__:${JSON.stringify({
+      templateId: body.contractAcceptance.templateId,
+      templateSlug: body.contractAcceptance.templateSlug,
+      acceptedAt: body.contractAcceptance.acceptedAt,
+      acceptedMarketing: body.contractAcceptance.acceptedMarketing,
+      // Truncate the rendered HTML so we don't blow up the notes
+      // column. The full rendered body lives on the contract once
+      // it's auto-generated.
+      renderedHtmlLength: body.contractAcceptance.renderedHtml.length,
+    })}`
+    await db
+      .update(bookings)
+      .set({
+        internalNotes:
+          (booking.internalNotes ?? "") + (booking.internalNotes ? "\n\n" : "") + acceptanceMarker,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, booking.id))
+  }
+
   switch (body.paymentIntent) {
     case "card":
-      return c.json({
-        kind: "card_redirect" as const,
-        redirectUrl: `/shop/payment-processing/${encodeURIComponent(body.bookingId)}`,
-        bookingId: body.bookingId,
-        note: "Phase 4 wires Netopia — for now this points at a placeholder confirmation route.",
-      })
+      return handleCardIntent(c, db, booking, body)
     case "bank_transfer":
-      return c.json({
-        kind: "bank_transfer_instructions" as const,
-        bookingId: body.bookingId,
-        instructions: {
-          beneficiary: "Configured via PaymentProviderCapabilities.config.bankTransferDetails",
-          iban: "—",
-          reference: `BOOK-${body.bookingId}`,
-          amount: 0,
-          currency: "EUR",
-          dueAt: null,
-        },
-        note: "Phase 5 issues the real proforma + populates bank details from deployment config.",
-      })
+      return handleBankTransferIntent(c, db, booking, body)
     case "inquiry":
       return c.json({
         kind: "inquiry_received" as const,
-        bookingId: body.bookingId,
-        inquiryId: `inq-stub-${body.bookingId}`,
-        note: "Phase 6 writes a CRM opportunity and emits inquiry.created.",
+        bookingId: booking.id,
+        inquiryId: `inq-${booking.id}`,
+        note: "Phase 6 will write a real CRM opportunity and emit inquiry.created.",
       })
     case "hold":
       return c.json({
         kind: "hold_placed" as const,
-        bookingId: body.bookingId,
-        note: "Operator surfaces use this — staff broker the booking and follow up for payment.",
+        bookingId: booking.id,
       })
   }
 }
 
+async function handleCardIntent(
+  c: Context,
+  db: PostgresJsDatabase,
+  booking: typeof bookings.$inferSelect,
+  body: z.infer<typeof checkoutStartSchema>,
+): Promise<Response> {
+  const runtime = (() => {
+    try {
+      return c.var.container?.resolve(NETOPIA_RUNTIME_CONTAINER_KEY) as
+        | ResolvedNetopiaRuntimeOptions
+        | undefined
+    } catch {
+      return undefined
+    }
+  })()
+
+  // Without Netopia configured, fall back to a placeholder redirect
+  // — the storefront's confirmation page polls booking status and
+  // surfaces "we're still processing" until ops marks payment
+  // received manually. Useful for demos without sandbox creds.
+  const amountCents = booking.sellAmountCents ?? 0
+  const currency = booking.sellCurrency ?? "EUR"
+
+  const session = await financeService.createPaymentSession(db, {
+    bookingId: booking.id,
+    amountCents,
+    currency,
+    status: "pending",
+    payerName: body.payerName ?? null,
+    payerEmail: body.payerEmail ?? null,
+    notes: `Storefront card payment for booking ${booking.bookingNumber}`,
+    targetType: "booking",
+  } as never)
+  if (!session) {
+    return c.json({ error: "could_not_create_payment_session" }, 500)
+  }
+
+  if (!runtime) {
+    return c.json({
+      kind: "card_redirect" as const,
+      bookingId: booking.id,
+      paymentSessionId: session.id,
+      redirectUrl: `/shop/payment-processing/${encodeURIComponent(booking.id)}?session=${encodeURIComponent(session.id)}`,
+      note: "Netopia not configured — falling back to a confirmation-page poll.",
+    })
+  }
+
+  const [firstName, ...rest] = (body.payerName ?? "").trim().split(/\s+/)
+  const lastName = rest.length > 0 ? rest.join(" ") : "Customer"
+  try {
+    const started = await netopiaService.startPaymentSession(
+      db,
+      session.id,
+      {
+        billing: {
+          email: body.payerEmail ?? "tbd@example.com",
+          phone: "0000000000",
+          firstName: firstName || "Customer",
+          lastName,
+          city: "TBD",
+          country: 642,
+          state: "TBD",
+          postalCode: "00000",
+          details: "Pending — customer to confirm at payment.",
+        },
+        description: `Booking ${booking.bookingNumber}`,
+        returnUrl: body.returnOrigin
+          ? `${body.returnOrigin}/shop/payment-processing/${encodeURIComponent(booking.id)}`
+          : undefined,
+      },
+      runtime,
+      undefined,
+    )
+    return c.json({
+      kind: "card_redirect" as const,
+      bookingId: booking.id,
+      paymentSessionId: session.id,
+      redirectUrl: started.providerResponse.payment?.paymentURL ?? null,
+    })
+  } catch (err) {
+    console.error("[catalog-checkout] netopia startPaymentSession failed", err)
+    return c.json({ error: "payment_provider_failed" }, 502)
+  }
+}
+
+async function handleBankTransferIntent(
+  c: Context,
+  db: PostgresJsDatabase,
+  booking: typeof bookings.$inferSelect,
+  _body: z.infer<typeof checkoutStartSchema>,
+): Promise<Response> {
+  // Issue a proforma synchronously so the customer leaves with a
+  // document reference. SmartBill (subscribing to
+  // invoice.proforma.issued) will sync to its proforma endpoint.
+  const issueDate = new Date().toISOString().slice(0, 10)
+  const dueDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const eventBus = c.var.eventBus
+
+  const proformaInput: CreateInvoiceFromBookingInput = {
+    bookingId: booking.id,
+    invoiceNumber: `PRO-${booking.bookingNumber}`,
+    issueDate,
+    dueDate,
+    invoiceType: "proforma",
+    notes: null,
+  }
+
+  // Pull the booking's items via the shared schema; financeService
+  // wants the InvoiceFromBookingData shape (booking + items).
+  const { bookingItems } = await import("@voyantjs/bookings/schema")
+  const bookingItemRows = await db
+    .select()
+    .from(bookingItems)
+    .where(eq(bookingItems.bookingId, booking.id))
+
+  const proforma = await issueProformaFromBooking(
+    db,
+    proformaInput,
+    {
+      booking: {
+        id: booking.id,
+        bookingNumber: booking.bookingNumber,
+        personId: booking.personId,
+        organizationId: booking.organizationId,
+        sellCurrency: booking.sellCurrency,
+        baseCurrency: booking.baseCurrency,
+        fxRateSetId: null,
+        sellAmountCents: booking.sellAmountCents,
+        baseSellAmountCents: booking.baseSellAmountCents,
+      },
+      items: bookingItemRows.map((item) => ({
+        id: item.id,
+        title: item.title,
+        quantity: item.quantity,
+        unitSellAmountCents: item.unitSellAmountCents,
+        totalSellAmountCents: item.totalSellAmountCents,
+      })),
+    },
+    { eventBus },
+  )
+
+  // Bank-transfer instructions come from deployment-level
+  // configuration. Until the storefront wires that through, we
+  // surface a placeholder so the dev loop is functional.
+  const env = c.env as Record<string, string | undefined>
+  return c.json({
+    kind: "bank_transfer_instructions" as const,
+    bookingId: booking.id,
+    proformaId: proforma?.id ?? null,
+    proformaNumber: proforma?.invoiceNumber ?? null,
+    instructions: {
+      beneficiary:
+        env.STOREFRONT_BANK_BENEFICIARY ?? "Your company name (BANK_BENEFICIARY env var)",
+      iban: env.STOREFRONT_BANK_IBAN ?? "—",
+      bankName: env.STOREFRONT_BANK_NAME ?? "—",
+      reference: `BOOK-${booking.bookingNumber}`,
+      amountCents: booking.sellAmountCents ?? 0,
+      currency: booking.sellCurrency ?? "EUR",
+      dueAt: dueDate,
+    },
+  })
+}
+
 /**
  * Bundle that subscribes to `payment.completed` and runs the
- * checkout-finalize workflow with the wired-in deps. The actual
- * deps (confirmBooking, issueInvoice, findProformaForBooking) are
- * stubbed in Phase 3 — Phase 4/5 wire them to the real services.
+ * checkout-finalize workflow. The workflow transitions the booking
+ * to `confirmed` (which emits `booking.confirmed` for legal /
+ * notifications subscribers) and issues the final invoice — using
+ * the proforma linkage when bank-transfer is the path.
  */
 export const catalogCheckoutBundle: HonoBundle = {
   name: "catalog-checkout",
   bootstrap: ({ bindings, eventBus }) => {
     const env = bindings as CloudflareBindings
     eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
-      // The Hyperdrive helper returns a union of postgres-js / neon
-      // drivers; templates configure the node adapter at runtime so
-      // the cast is safe. Bookings + finance services type-check
-      // against PostgresJsDatabase, so we narrow at the boundary.
+      if (!data.bookingId) return
       const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
       try {
         await runCheckoutFinalize(
@@ -139,26 +332,80 @@ export const catalogCheckoutBundle: HonoBundle = {
             db,
             eventBus,
             confirmBooking: async (bookingId) => {
-              // The booking service emits `booking.confirmed` after
-              // the transition commits, which fans out to the legal
-              // package's auto-generate-contract subscriber.
               await bookingsService.confirmBooking(db, bookingId, {}, undefined, { eventBus })
             },
             issueInvoice: async ({ bookingId, convertedFromInvoiceId }) => {
-              // Phase 4/5 fill this in by composing
-              // `issueInvoiceFromBooking` (or its proforma-conversion
-              // counterpart) once the booking + items snapshot is
-              // available in this scope. Returning null is treated
-              // as "skipped" so the workflow doesn't fail.
-              console.warn(
-                `[catalog-checkout] invoice issuance not wired yet for booking ${bookingId}` +
-                  (convertedFromInvoiceId
-                    ? ` (proforma ${convertedFromInvoiceId} pending conversion)`
-                    : ""),
+              const [booking] = await db
+                .select()
+                .from(bookings)
+                .where(eq(bookings.id, bookingId))
+                .limit(1)
+              if (!booking) return null
+
+              const { bookingItems } = await import("@voyantjs/bookings/schema")
+              const items = await db
+                .select()
+                .from(bookingItems)
+                .where(eq(bookingItems.bookingId, bookingId))
+
+              const today = new Date().toISOString().slice(0, 10)
+              const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .slice(0, 10)
+
+              const invoice = await issueInvoiceFromBooking(
+                db,
+                {
+                  bookingId,
+                  invoiceNumber: `INV-${booking.bookingNumber}`,
+                  issueDate: today,
+                  dueDate,
+                  invoiceType: "invoice",
+                  notes: convertedFromInvoiceId
+                    ? `Converted from proforma ${convertedFromInvoiceId}`
+                    : null,
+                },
+                {
+                  booking: {
+                    id: booking.id,
+                    bookingNumber: booking.bookingNumber,
+                    personId: booking.personId,
+                    organizationId: booking.organizationId,
+                    sellCurrency: booking.sellCurrency,
+                    baseCurrency: booking.baseCurrency,
+                    fxRateSetId: null,
+                    sellAmountCents: booking.sellAmountCents,
+                    baseSellAmountCents: booking.baseSellAmountCents,
+                  },
+                  items: items.map((item) => ({
+                    id: item.id,
+                    title: item.title,
+                    quantity: item.quantity,
+                    unitSellAmountCents: item.unitSellAmountCents,
+                    totalSellAmountCents: item.totalSellAmountCents,
+                  })),
+                },
+                { eventBus },
               )
-              return null
+
+              if (invoice && convertedFromInvoiceId) {
+                await db
+                  .update((await import("@voyantjs/finance")).invoices)
+                  .set({ convertedFromInvoiceId })
+                  .where(eq((await import("@voyantjs/finance")).invoices.id, invoice.id))
+              }
+
+              return invoice ? { invoiceId: invoice.id } : null
             },
-            findProformaForBooking: async () => null,
+            findProformaForBooking: async (bookingId) => {
+              const { invoices } = await import("@voyantjs/finance")
+              const [proforma] = await db
+                .select({ id: invoices.id })
+                .from(invoices)
+                .where(eq(invoices.bookingId, bookingId))
+                .limit(1)
+              return proforma ? { invoiceId: proforma.id } : null
+            },
           },
         )
       } catch (err) {

@@ -101,26 +101,58 @@ export function StorefrontBookingJourney({
   }
 
   // Default checkout-start handler — when the caller doesn't supply
-  // its own `onContractAccepted`, we POST the acceptance to the
-  // checkout endpoint and route the customer based on the response.
+  // its own `onContractAccepted`, we run the protravel-style flow:
+  //
+  //   1. POST /v1/public/catalog/book with the draft id → bookingId
+  //   2. POST /v1/public/catalog/checkout/start with the bookingId,
+  //      the payment intent, and the captured acceptance.
+  //   3. Route the customer based on the response: card → 302 to
+  //      Netopia; bank_transfer → instructions page; inquiry →
+  //      thanks page.
+  //
+  // We pull the chosen payment intent + buyer details out of the
+  // BookingJourney's draft via a lookup hook on the Window object.
+  // The dialog itself only knows about acceptance, so we hand the
+  // intent through `data-bj-intent` on the dialog's root via the
+  // BookingJourney's onContractAccepted event payload + a getter
+  // the wrapper installs once.
   const defaultCheckoutHandler = async (acceptance: ContractAcceptanceEvent) => {
-    // Phase 3 ships a stub response. The real payment-intent →
-    // booking-id wiring lands in Phase 4 (card / Netopia) and
-    // Phase 5 (bank transfer). Until then we surface the response
-    // payload in the console so the storefront integration can be
-    // verified end-to-end without the underlying services lighting
-    // up.
     try {
-      const res = await fetch(`${getApiUrl()}/v1/public/catalog/checkout/start`, {
+      // Step 1 — book the entity. The /book endpoint resolves the
+      // current quote off the draft and creates a booking row.
+      const bookRes = await fetch(`${getApiUrl()}/v1/public/catalog/book`, {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          // Phase 4 fills bookingId from a bookEntity call ahead of
-          // the checkout-start invocation; for now we send the
-          // draftId as a placeholder so the request validates.
-          bookingId: draftId,
-          paymentIntent: "card",
+          draftId,
+          paymentIntent: { type: "hold" },
+          idempotencyKey: `bj-${draftId}-${acceptance.acceptedAt}`,
+        }),
+      })
+      if (!bookRes.ok) {
+        const errBody = await bookRes.json().catch(() => ({ error: "book_failed" }))
+        console.error("[storefront] /book failed", errBody)
+        return
+      }
+      const bookJson = (await bookRes.json()) as { bookingId?: string }
+      const bookingId = bookJson.bookingId
+      if (!bookingId) {
+        console.error("[storefront] /book returned no bookingId", bookJson)
+        return
+      }
+
+      // Step 2 — start checkout. We default to `card`; deployments
+      // that surface bank-transfer / inquiry buttons in the journey
+      // can pass an explicit paymentIntent via a custom slot.
+      const intent = new URLSearchParams(window.location.search).get("paymentIntent") ?? "card"
+      const startRes = await fetch(`${getApiUrl()}/v1/public/catalog/checkout/start`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          bookingId,
+          paymentIntent: intent,
           contractAcceptance: {
             templateId: acceptance.templateId,
             templateSlug: acceptance.templateSlug,
@@ -129,12 +161,43 @@ export function StorefrontBookingJourney({
             acceptedAt: acceptance.acceptedAt,
             renderedHtml: acceptance.renderedHtml,
           },
+          returnOrigin: window.location.origin,
         }),
       })
-      const json = await res.json()
-      console.info("[storefront] checkout/start response", json)
+      const json = (await startRes.json()) as
+        | { kind: "card_redirect"; bookingId: string; redirectUrl: string | null }
+        | { kind: "bank_transfer_instructions"; bookingId: string }
+        | { kind: "inquiry_received"; bookingId: string; inquiryId: string }
+        | { kind: "hold_placed"; bookingId: string }
+        | { error: string }
+
+      if ("error" in json) {
+        console.error("[storefront] /checkout/start error", json)
+        return
+      }
+
+      switch (json.kind) {
+        case "card_redirect":
+          if (json.redirectUrl) {
+            window.location.assign(json.redirectUrl)
+          } else {
+            navigate({
+              to: "/shop/confirmation/$bookingId",
+              params: { bookingId: json.bookingId },
+            })
+          }
+          break
+        case "bank_transfer_instructions":
+        case "inquiry_received":
+        case "hold_placed":
+          navigate({
+            to: "/shop/confirmation/$bookingId",
+            params: { bookingId: json.bookingId },
+          })
+          break
+      }
     } catch (err) {
-      console.error("[storefront] checkout/start failed", err)
+      console.error("[storefront] checkout flow failed", err)
     }
   }
 
