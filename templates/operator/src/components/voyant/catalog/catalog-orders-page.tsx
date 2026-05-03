@@ -13,6 +13,8 @@ import {
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
+import { getApiUrl } from "@/lib/env"
+
 interface Snapshot {
   id: string
   booking_id: string
@@ -38,7 +40,7 @@ export function CatalogOrdersPage() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetch("/v1/admin/catalog/orders", { credentials: "include" })
+    fetch(`${getApiUrl()}/v1/admin/catalog/orders`, { credentials: "include" })
       .then((r) => r.json() as Promise<ListResponse>)
       .then((data) => {
         if (!cancelled) setRows(data.rows ?? [])
@@ -60,7 +62,7 @@ export function CatalogOrdersPage() {
   const onCancel = async (snapshot: Snapshot) => {
     toast.loading("Cancelling…", { id: `cancel-${snapshot.id}` })
     try {
-      const res = await fetch(`/v1/admin/catalog/orders/${snapshot.id}/cancel`, {
+      const res = await fetch(`${getApiUrl()}/v1/admin/catalog/orders/${snapshot.id}/cancel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

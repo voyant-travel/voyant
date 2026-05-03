@@ -13,7 +13,7 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { useMemo } from "react"
 import { toast } from "sonner"
-
+import { getApiUrl } from "@/lib/env"
 import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
 
 export function CatalogPage() {
@@ -722,7 +722,11 @@ async function quoteAndBook(
 }
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(path, {
+  // The operator API is mounted at `${getApiUrl()}` (origin/api by default
+  // — see `templates/operator/src/lib/env.ts`). Hand-rolled fetches must
+  // prepend the same prefix the SDK clients use; otherwise the request
+  // hits TanStack Start's SPA catch-all and returns the index HTML.
+  const res = await fetch(`${getApiUrl()}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
