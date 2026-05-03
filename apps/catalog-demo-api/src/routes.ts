@@ -43,6 +43,15 @@ interface CancelBody {
 }
 
 const SOURCE_KIND = "demo"
+/**
+ * Synthetic supplier identifier the demo upstream stamps on every
+ * projection. Doesn't resolve in the operator's own `suppliers` table,
+ * so the catalog UI's `formatSupplier` lookup falls through to the raw
+ * value — which is the intentional outcome: a fresh deployment sees
+ * "Demo Tours" verbatim and operators wiring a real adapter would map
+ * the upstream id to a local supplier row.
+ */
+const DEMO_SUPPLIER_ID = "Demo Tours"
 
 export function createRoutes(db: CatalogDemoDb): Hono {
   const app = new Hono()
@@ -79,6 +88,11 @@ export function createRoutes(db: CatalogDemoDb): Hono {
         status: row.available > 0 ? "active" : "inactive",
         activated: row.available > 0,
         visibility: "public",
+        // Demo upstream models its rows as operated by a single brand. A real
+        // adapter (TUI direct, Voyant Connect peer) emits the upstream's
+        // own supplier identifier; the operator maps it to a local
+        // suppliers row at integration time.
+        supplierId: DEMO_SUPPLIER_ID,
         sellAmountCents: row.priceCents,
         sellCurrency: row.currency,
         createdAt: row.createdAt,
