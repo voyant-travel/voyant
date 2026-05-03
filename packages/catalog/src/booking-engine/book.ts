@@ -31,6 +31,7 @@ import {
 } from "./errors.js"
 import type { SourceAdapterRegistry } from "./registry.js"
 import { catalogQuotesTable, type SelectCatalogQuote } from "./schema.js"
+import type { SnapshotContentCapture, SnapshotContentCapturer } from "./snapshot-content.js"
 
 /**
  * Mirrors flights' `paymentIntent` discriminated union from
@@ -63,6 +64,20 @@ export interface BookEntityRequest {
   parameters?: Record<string, unknown>
 
   adapterContext: SourceAdapterContext
+
+  /**
+   * Locale / market / currency scope for snapshot content capture per
+   * sourced-content §5.1. Required when `deps.captureSnapshotContent`
+   * is wired — the engine refreshes content from the adapter at commit
+   * time using this scope and embeds the result as `content_capture`
+   * in `frozen_payload`. When the deps callback isn't set, this field
+   * is ignored and snapshot behavior is unchanged.
+   */
+  contentScope?: {
+    locale: string
+    market?: string
+    currency?: string
+  }
 }
 
 export interface BookEntityResult {
@@ -76,6 +91,23 @@ export interface BookEntityResult {
 
 export interface BookEntityDeps {
   registry: SourceAdapterRegistry
+  /**
+   * Optional snapshot content capture orchestrator (sourced-content
+   * §5.1). When set, called after `adapter.reserve` succeeds. Returns a
+   * `SnapshotContentCapture` envelope embedded in `frozen_payload` so
+   * audit can later distinguish a fresh capture from a cache fallback.
+   *
+   * Throws `SnapshotContentUnavailableError` when neither a fresh
+   * adapter fetch nor a cache fallback can produce content; the engine
+   * propagates that error and aborts the commit. When the entity is
+   * owned (no sourced-entry row), the orchestrator should return null
+   * and the engine skips the capture.
+   *
+   * Implementations live in templates: each template composes per-
+   * vertical content services into one capturer and threads it through
+   * deps.
+   */
+  captureSnapshotContent?: SnapshotContentCapturer
 }
 
 /**
@@ -126,6 +158,47 @@ export async function bookEntity(
   const bookingId = request.bookingId ?? newId("bookings")
   const pricing = readPricingFromQuote(quote)
 
+  // Snapshot content capture per sourced-content §5.1 — refresh from
+  // the adapter, fall back to cache, throw if neither produces content.
+  // Skipped entirely when the deps callback isn't wired (legacy
+  // behavior). Owned entities (no sourced-entry row) return null and
+  // the snapshot behaves as before.
+  let contentCapture: SnapshotContentCapture | null = null
+  if (deps.captureSnapshotContent && request.contentScope) {
+    contentCapture = await deps.captureSnapshotContent({
+      db,
+      entity_module: quote.entity_module,
+      entity_id: quote.entity_id,
+      source_kind: quote.source_kind,
+      source_connection_id: quote.source_connection_id ?? undefined,
+      source_ref: reserveResult.upstream_ref || quote.source_ref || undefined,
+      locale: request.contentScope.locale,
+      market: request.contentScope.market,
+      currency: request.contentScope.currency,
+      adapterContext: request.adapterContext,
+    })
+  }
+
+  const frozenPayload: Record<string, unknown> = {
+    quote: serializeQuote(quote),
+    reserve: reserveResult.upstream_payload ?? null,
+    paymentIntent,
+  }
+  if (contentCapture) {
+    // The content_capture envelope is alongside `content` so audit can
+    // later distinguish a fresh capture from a cache fallback (per
+    // §5.1). Both fields are nested under frozen_payload as opaque
+    // JSONB — no schema migration required.
+    frozenPayload.content = contentCapture.content
+    frozenPayload.content_capture = {
+      source: contentCapture.source,
+      fetched_at: contentCapture.fetched_at,
+      fallback_reason: contentCapture.fallback_reason,
+      content_etag: contentCapture.content_etag,
+      content_schema_version: contentCapture.content_schema_version,
+    }
+  }
+
   const snapshotInput: CaptureSnapshotInput = {
     bookingId,
     entityModule: quote.entity_module,
@@ -134,11 +207,7 @@ export async function bookEntity(
     sourceProvider: quote.source_provider ?? undefined,
     sourceConnectionId: quote.source_connection_id ?? undefined,
     sourceRef: reserveResult.upstream_ref || quote.source_ref || undefined,
-    frozenPayload: {
-      quote: serializeQuote(quote),
-      reserve: reserveResult.upstream_payload ?? null,
-      paymentIntent,
-    },
+    frozenPayload,
     pricingBasis: pricing,
   }
 

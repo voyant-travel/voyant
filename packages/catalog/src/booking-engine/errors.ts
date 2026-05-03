@@ -27,6 +27,15 @@ export const ORDER_NOT_FOUND = "ORDER_NOT_FOUND" as const
 /** The order has already been cancelled. */
 export const ORDER_ALREADY_CANCELLED = "ORDER_ALREADY_CANCELLED" as const
 
+/**
+ * Snapshot content capture failed: neither a fresh adapter fetch nor a
+ * cache fallback produced a content payload. Per sourced-content §5.1,
+ * we deliberately fail the commit rather than snapshot from the
+ * indexed projection — refunds and audit need real "what was sold"
+ * content, not a stub.
+ */
+export const SNAPSHOT_CONTENT_UNAVAILABLE = "SNAPSHOT_CONTENT_UNAVAILABLE" as const
+
 export type BookingEngineErrorCode =
   | typeof NO_ADAPTER_REGISTERED
   | typeof QUOTE_NOT_FOUND
@@ -35,6 +44,7 @@ export type BookingEngineErrorCode =
   | typeof RESERVE_FAILED
   | typeof ORDER_NOT_FOUND
   | typeof ORDER_ALREADY_CANCELLED
+  | typeof SNAPSHOT_CONTENT_UNAVAILABLE
 
 export class BookingEngineError extends Error {
   constructor(
@@ -93,5 +103,20 @@ export class ReserveFailedError extends BookingEngineError {
       upstreamPayload,
     })
     this.name = "ReserveFailedError"
+  }
+}
+
+export class SnapshotContentUnavailableError extends BookingEngineError {
+  constructor(
+    public readonly entityModule: string,
+    public readonly entityId: string,
+    public readonly fallbackReason: string,
+  ) {
+    super(
+      SNAPSHOT_CONTENT_UNAVAILABLE,
+      `cannot capture snapshot content for ${entityModule}:${entityId} — adapter fetch failed and no cache row available (reason: ${fallbackReason})`,
+      { entityModule, entityId, fallbackReason },
+    )
+    this.name = "SnapshotContentUnavailableError"
   }
 }

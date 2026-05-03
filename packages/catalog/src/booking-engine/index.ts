@@ -44,6 +44,8 @@ export {
   QuoteMismatchError,
   RESERVE_FAILED,
   ReserveFailedError,
+  SNAPSHOT_CONTENT_UNAVAILABLE,
+  SnapshotContentUnavailableError,
 } from "./errors.js"
 export {
   getOrderById,
@@ -68,6 +70,13 @@ export {
   type InsertCatalogQuote,
   type SelectCatalogQuote,
 } from "./schema.js"
+export {
+  type ContentSnapshotAdapter,
+  composeSnapshotContentCapturer,
+  type SnapshotContentCapture,
+  type SnapshotContentCaptureInput,
+  type SnapshotContentCapturer,
+} from "./snapshot-content.js"
 export {
   type SyncAdapterSummary,
   type SyncProgressEvent,
