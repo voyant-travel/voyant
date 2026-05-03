@@ -32,6 +32,7 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
+import { PhoneInput } from "@voyantjs/ui/components/phone-input"
 import {
   Select,
   SelectContent,
@@ -408,10 +409,10 @@ function ContactSection({ value, onChange }: ContactSectionProps) {
           />
         </Field>
         <Field label="Phone">
-          <Input
-            type="tel"
-            value={value.phone}
-            onChange={(e) => onChange({ ...value, phone: e.target.value })}
+          <PhoneInput
+            international
+            value={value.phone || undefined}
+            onChange={(v) => onChange({ ...value, phone: v ?? "" })}
             placeholder="+40 7XX XXX XXX"
           />
         </Field>
