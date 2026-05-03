@@ -8,6 +8,9 @@
 
 export {
   type CreateCruiseBookingHandlerOptions,
+  type CruiseCommitBridge,
+  type CruiseCommitBridgeInput,
+  type CruiseCommitBridgeResult,
   type CruiseHandlerLoaders,
   createCruiseBookingHandler,
   type ResolvedCruisePrice,

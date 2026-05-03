@@ -41,6 +41,16 @@ interface DraftLike {
   accommodation?: {
     rooms?: ReadonlyArray<{ optionUnitId: string; quantity: number }>
   }
+  billing?: {
+    contact?: { firstName?: string; lastName?: string; email?: string; phone?: string }
+    address?: { country?: string }
+  }
+  travelers?: Array<{
+    firstName: string
+    lastName: string
+    band?: string
+  }>
+  internalNotes?: string
 }
 
 /**
@@ -54,6 +64,60 @@ export type HospitalityContentLoader = (
   entityId: string,
 ) => Promise<HospitalityContent | null>
 
+/**
+ * Subset of `hospitalityBookingsService.createStayBooking`'s
+ * input. Structural so the handler stays free of a self-import
+ * cycle.
+ */
+export interface HospitalityCommitBridgeInput {
+  propertyId: string
+  roomTypeId: string
+  ratePlanId: string
+  mealPlanId?: string | null
+  checkInDate: string
+  checkOutDate: string
+  roomCount?: number
+  adults?: number
+  children?: number
+  infants?: number
+  dailyRates: Array<{
+    sellCurrency: string
+    sellAmountCents?: number | null
+    costCurrency?: string | null
+    costAmountCents?: number | null
+  }>
+  personId?: string | null
+  organizationId?: string | null
+  contact: {
+    firstName: string
+    lastName: string
+    email?: string | null
+    phone?: string | null
+    country?: string | null
+  }
+  passengers: Array<{
+    firstName: string
+    lastName: string
+    email?: string | null
+    phone?: string | null
+    travelerCategory?: "adult" | "child" | "infant" | "senior" | "other" | null
+    isPrimary?: boolean | null
+  }>
+  notes?: string | null
+}
+
+export interface HospitalityCommitBridgeResult {
+  status: "ok" | "failed"
+  bookingId?: string
+  bookingNumber?: string
+  reason?: string
+}
+
+export type HospitalityCommitBridge = (
+  input: HospitalityCommitBridgeInput,
+  options?: { userId?: string },
+) => Promise<HospitalityCommitBridgeResult>
+
 export interface CreateHospitalityBookingHandlerOptions {
   /** Loader for the property's content payload. */
   loadContent: HospitalityContentLoader
@@ -63,6 +127,20 @@ export interface CreateHospitalityBookingHandlerOptions {
    */
   defaultMinNights?: number
   defaultMaxNights?: number
+  /**
+   * Caller-supplied bridge to
+   * `hospitalityBookingsService.createStayBooking`. When omitted,
+   * commit returns `failed:hospitality_commit_bridge_not_wired`.
+   *
+   * The journey doesn't currently surface room-type / rate-plan
+   * picks at the granularity reserveStay needs (specifically
+   * `ratePlanId` and per-night `dailyRates`). Until the journey's
+   * Accommodation step + content shape extend to expose those, the
+   * caller may map drafts to a "best guess" room/rate from the
+   * descriptor's room-options projection — we leave that decision
+   * to the template.
+   */
+  commitBridge?: HospitalityCommitBridge
 }
 
 export function createHospitalityBookingHandler(
@@ -97,23 +175,126 @@ export function createHospitalityBookingHandler(
 
     async commit(
       _ctx: OwnedHandlerContext,
-      _request: CommitOwnedRequest,
+      request: CommitOwnedRequest,
     ): Promise<CommitOwnedResult> {
-      // Real implementation needs to:
-      //  1. Insert a stayBookingItems row (check-in / check-out /
-      //     room-type / occupancy).
-      //  2. Generate stayDailyRates rows for each night.
-      //  3. Tie back to a parent booking shell created via
-      //     bookingsService.createBookingFromProduct (or a hospitality
-      //     equivalent — the property isn't a `products` row).
-      //
-      // None of that exists in @voyantjs/hospitality today. Until it
-      // does, this stub returns failed so callers fail fast rather
-      // than getting a fake-success snapshot.
+      if (!options.commitBridge) {
+        return {
+          status: "failed",
+          orderRef: "",
+          upstreamPayload: { reason: "hospitality_commit_bridge_not_wired" },
+        }
+      }
+
+      const draft = (request.draft ?? {}) as DraftLike
+      const range = draft.configure?.dateRange
+      if (!range?.checkIn || !range?.checkOut) {
+        return {
+          status: "failed",
+          orderRef: "",
+          upstreamPayload: {
+            reason: "hospitality_commit_missing_inputs",
+            need: ["dateRange.checkIn", "dateRange.checkOut"],
+          },
+        }
+      }
+
+      // Map the draft's room selection into a single (roomType, ratePlan) pair.
+      // The journey's Accommodation step picks an option_unit_id (which is
+      // hospitality's `roomTypeId`); rate plan defaults to the room's first
+      // available — templates can override the default by augmenting the
+      // bridge output. When no room is picked yet, the commit fails fast.
+      const firstRoom = draft.accommodation?.rooms?.[0]
+      if (!firstRoom) {
+        return {
+          status: "failed",
+          orderRef: "",
+          upstreamPayload: {
+            reason: "hospitality_commit_missing_inputs",
+            need: ["accommodation.rooms[0]"],
+          },
+        }
+      }
+
+      const adults = draft.configure?.pax?.adult ?? draft.travelers?.length ?? 1
+      const children = draft.configure?.pax?.child ?? 0
+      const infants = draft.configure?.pax?.infant ?? 0
+
+      const billing = draft.billing ?? {}
+      const contact = {
+        firstName: billing.contact?.firstName ?? "",
+        lastName: billing.contact?.lastName ?? "",
+        email: billing.contact?.email ?? null,
+        phone: billing.contact?.phone ?? null,
+        country: billing.address?.country ?? null,
+      }
+
+      const passengers = (draft.travelers ?? []).map((t, idx) => ({
+        firstName: t.firstName,
+        lastName: t.lastName,
+        travelerCategory:
+          t.band === "child" || t.band === "infant"
+            ? (t.band as "child" | "infant")
+            : ("adult" as const),
+        isPrimary: idx === 0,
+      }))
+      if (passengers.length === 0) {
+        passengers.push({
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          travelerCategory: "adult",
+          isPrimary: true,
+        })
+      }
+
+      // Per-night rate hint from the draft's pricing breakdown
+      // (computed by the handler earlier). The bridge expects
+      // `dailyRates[]` with one entry per night — we replicate the
+      // averaged hint across nights as a placeholder; production
+      // needs supplier-provided rate-plan rows.
+      const nights = nightsBetween(range.checkIn, range.checkOut)
+      const totalCents = readPricingTotalCents(request.pricing)
+      const perNightCents =
+        nights > 0 && totalCents > 0 ? Math.round(totalCents / nights / firstRoom.quantity) : 0
+      const currency = readPricingCurrency(request.pricing) ?? "EUR"
+      const dailyRates = Array.from({ length: nights }, () => ({
+        sellCurrency: currency,
+        sellAmountCents: perNightCents,
+      }))
+
+      const bridge = await options.commitBridge({
+        propertyId: request.entityId,
+        roomTypeId: firstRoom.optionUnitId,
+        // Rate plan id must be supplied by the bridge implementation
+        // when the journey doesn't surface rate-plan choice yet —
+        // empty string here is a sentinel the bridge should reject.
+        ratePlanId: "",
+        checkInDate: range.checkIn,
+        checkOutDate: range.checkOut,
+        roomCount: firstRoom.quantity,
+        adults,
+        children,
+        infants,
+        dailyRates,
+        personId: extractPersonId(request.party),
+        organizationId: extractOrganizationId(request.party),
+        contact,
+        passengers,
+        notes: typeof draft.internalNotes === "string" ? draft.internalNotes : null,
+      })
+
+      if (bridge.status !== "ok" || !bridge.bookingId) {
+        return {
+          status: "failed",
+          orderRef: "",
+          upstreamPayload: { reason: bridge.reason ?? "hospitality_commit_failed" },
+        }
+      }
+
       return {
-        status: "failed",
-        orderRef: "",
-        upstreamPayload: { reason: "hospitality_commit_not_yet_implemented" },
+        status: "held",
+        orderRef: bridge.bookingNumber ?? bridge.bookingId,
+        pricing: request.pricing,
+        upstreamPayload: { bridgeBookingId: bridge.bookingId },
       }
     },
 
@@ -204,4 +385,27 @@ function nightsBetween(checkIn: string, checkOut: string): number {
   if (Number.isNaN(inDate.getTime()) || Number.isNaN(outDate.getTime())) return 0
   const ms = outDate.getTime() - inDate.getTime()
   return Math.round(ms / (1000 * 60 * 60 * 24))
+}
+
+function extractPersonId(party: Record<string, unknown> | undefined): string | undefined {
+  if (!party) return undefined
+  const v = party.personId
+  return typeof v === "string" && v.length > 0 ? v : undefined
+}
+
+function extractOrganizationId(party: Record<string, unknown> | undefined): string | undefined {
+  if (!party) return undefined
+  const v = party.organizationId
+  return typeof v === "string" && v.length > 0 ? v : undefined
+}
+
+function readPricingTotalCents(
+  pricing: { base_amount?: number; taxes?: number } | undefined,
+): number {
+  if (!pricing) return 0
+  return (pricing.base_amount ?? 0) + (pricing.taxes ?? 0)
+}
+
+function readPricingCurrency(pricing: { currency?: string } | undefined): string | undefined {
+  return pricing?.currency
 }

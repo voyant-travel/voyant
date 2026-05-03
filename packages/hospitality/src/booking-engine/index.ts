@@ -8,5 +8,8 @@
 export {
   type CreateHospitalityBookingHandlerOptions,
   createHospitalityBookingHandler,
+  type HospitalityCommitBridge,
+  type HospitalityCommitBridgeInput,
+  type HospitalityCommitBridgeResult,
   type HospitalityContentLoader,
 } from "./handler.js"

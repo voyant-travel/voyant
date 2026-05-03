@@ -26,10 +26,12 @@ import {
   type SourceAdapterRegistry,
   type TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
+import { cruisesBookingService } from "@voyantjs/cruises"
 import { createCruiseBookingHandler } from "@voyantjs/cruises/booking-engine"
 import { getCruiseContent } from "@voyantjs/cruises/service-content"
 import { pricingService as cruisePricingService } from "@voyantjs/cruises/service-pricing"
 import { quickCreateBooking, taxClasses, taxRegimes } from "@voyantjs/finance"
+import { hospitalityBookingsService } from "@voyantjs/hospitality"
 import { createHospitalityBookingHandler } from "@voyantjs/hospitality/booking-engine"
 import { getHospitalityContent } from "@voyantjs/hospitality/service-content"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
@@ -220,6 +222,65 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           )
           return resolved?.content ?? null
         },
+        async commitBridge(input, opts) {
+          // The journey doesn't yet surface rate-plan choice. The
+          // bridge demands a real ratePlanId — when the journey
+          // hasn't supplied one, we fail fast with a helpful reason
+          // rather than guessing from inventory.
+          if (!input.ratePlanId) {
+            return {
+              status: "failed",
+              reason:
+                "hospitality_commit_needs_rate_plan: the journey's Accommodation step must surface a rate plan before commit",
+            }
+          }
+          const db = getDbFromHyperdrive(
+            env as Parameters<typeof getDbFromHyperdrive>[0],
+          ) as PostgresJsDatabase
+          try {
+            const outcome = await hospitalityBookingsService.createStayBooking(
+              db,
+              {
+                propertyId: input.propertyId,
+                roomTypeId: input.roomTypeId,
+                ratePlanId: input.ratePlanId,
+                mealPlanId: input.mealPlanId,
+                checkInDate: input.checkInDate,
+                checkOutDate: input.checkOutDate,
+                roomCount: input.roomCount,
+                adults: input.adults,
+                children: input.children,
+                infants: input.infants,
+                dailyRates: input.dailyRates,
+                personId: input.personId,
+                organizationId: input.organizationId,
+                contact: {
+                  firstName: input.contact.firstName,
+                  lastName: input.contact.lastName,
+                  email: input.contact.email,
+                  phone: input.contact.phone,
+                  country: input.contact.country,
+                },
+                passengers: input.passengers,
+                notes: input.notes,
+              },
+              opts?.userId,
+            )
+            if (outcome.status === "ok") {
+              return {
+                status: "ok",
+                bookingId: outcome.result.bookingId,
+                bookingNumber: outcome.result.bookingNumber,
+              }
+            }
+            return { status: "failed", reason: `hospitality_${outcome.status}` }
+          } catch (err) {
+            return {
+              status: "failed",
+              reason: err instanceof Error ? err.message : String(err),
+            }
+          }
+        },
       }),
     )
 
@@ -260,6 +321,39 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
             pricePerPerson: row.pricePerPerson,
             currency: row.currency,
             fareCode: row.fareCode,
+          }
+        },
+        async commitBridge(input, opts) {
+          const db = getDbFromHyperdrive(
+            env as Parameters<typeof getDbFromHyperdrive>[0],
+          ) as PostgresJsDatabase
+          try {
+            const result = await cruisesBookingService.createCruiseBooking(
+              db,
+              {
+                sailingId: input.sailingId,
+                cabinCategoryId: input.cabinCategoryId,
+                cabinId: input.cabinId,
+                occupancy: input.occupancy,
+                fareCode: input.fareCode,
+                personId: input.personId,
+                organizationId: input.organizationId,
+                contact: input.contact,
+                passengers: input.passengers,
+                notes: input.notes,
+              },
+              opts?.userId,
+            )
+            return {
+              status: "ok",
+              bookingId: result.bookingId,
+              bookingNumber: result.bookingNumber,
+            }
+          } catch (err) {
+            return {
+              status: "failed",
+              reason: err instanceof Error ? err.message : String(err),
+            }
           }
         },
       }),
