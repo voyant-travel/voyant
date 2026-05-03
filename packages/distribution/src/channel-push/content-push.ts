@@ -11,12 +11,16 @@
  * Per docs/architecture/channel-push-architecture.md §6 + §12.3.
  */
 
-import type { PushContentRequest, SourceAdapterContext } from "@voyantjs/catalog"
+import {
+  AdapterRateLimitedError,
+  type PushContentRequest,
+  type SourceAdapterContext,
+} from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { products } from "@voyantjs/products/schema"
 import { and, asc, eq, sql } from "drizzle-orm"
-import { acquireToken, channelScopeKey, type RateLimitConfig } from "../rate-limit.js"
+import { acquireToken, channelScopeKey, drainBucket, type RateLimitConfig } from "../rate-limit.js"
 import { channelContentPushIntents, channelProductMappings, channels } from "../schema.js"
 import { prepareOutboundEnvelope } from "../webhook-deliveries.js"
 
@@ -258,7 +262,18 @@ export async function processContentPushIntents(
       succeeded += 1
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      await envelope.complete({ errorClass: "adapter_error", errorMessage: message })
+      const isRateLimited = err instanceof AdapterRateLimitedError
+      if (isRateLimited) {
+        await drainBucket(
+          db,
+          channelScopeKey(channel.id, intent.sourceConnectionId),
+          err.retryAfterMs,
+        )
+      }
+      await envelope.complete({
+        errorClass: isRateLimited ? "rate_limited" : "adapter_error",
+        errorMessage: message,
+      })
       await stampIntentError(db, intent.id, intent.attempts + 1, message)
       failed += 1
       logger.error?.(`pushContent failed for product ${intent.productId} channel ${channel.id}`, {

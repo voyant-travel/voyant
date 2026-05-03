@@ -544,3 +544,37 @@ export class CapabilityNotSupportedError extends Error {
     this.name = "CapabilityNotSupportedError"
   }
 }
+
+/**
+ * Stable code an adapter throws when an upstream returns 429
+ * (Too Many Requests). The channel-push pipeline catches this,
+ * drains the local rate-limit bucket per `Retry-After`, and stamps the
+ * delivery row with `error_class = "rate_limited"` so the bucket
+ * self-corrects when our outbound estimate drifts from reality.
+ *
+ * Per docs/architecture/channel-push-architecture.md §14.4.
+ */
+export const ADAPTER_RATE_LIMITED = "ADAPTER_RATE_LIMITED" as const
+
+export class AdapterRateLimitedError extends Error {
+  readonly code = ADAPTER_RATE_LIMITED
+  constructor(
+    public readonly adapter_kind: string,
+    /**
+     * Milliseconds to wait before the next attempt, derived from the
+     * upstream's `Retry-After` response header (seconds → ms) or the
+     * adapter's own backoff hint. The processor uses this to drain the
+     * shared rate-limit bucket so concurrent dispatchers also back off.
+     */
+    public readonly retryAfterMs: number,
+    /** Optional context — e.g. which endpoint hit the limit. */
+    public readonly operation?: string,
+    /** Optional upstream payload echoed for diagnostics. */
+    public readonly upstreamPayload?: unknown,
+  ) {
+    super(
+      `adapter "${adapter_kind}" rate-limited${operation ? ` on "${operation}"` : ""} (retry after ${retryAfterMs}ms)`,
+    )
+    this.name = "AdapterRateLimitedError"
+  }
+}

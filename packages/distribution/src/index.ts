@@ -175,6 +175,8 @@ export {
   type OutboundEnvelopeResultInput,
   type PreparedEnvelope,
   prepareOutboundEnvelope,
+  redactBodyPii,
   redactHeaders,
+  redactStringPii,
 } from "./webhook-deliveries.js"
 export { distributionService }
