@@ -114,7 +114,18 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
   }
 
   const db = c.get("db") as PostgresJsDatabase
-  const [booking] = await db.select().from(bookings).where(eq(bookings.id, body.bookingId)).limit(1)
+  let booking: typeof bookings.$inferSelect | null =
+    (await db.select().from(bookings).where(eq(bookings.id, body.bookingId)).limit(1))[0] ?? null
+
+  // Sourced products go through the catalog-snapshot path on
+  // /book — they never write to the `bookings` table directly.
+  // Materialize a minimal row from the snapshot so the rest of the
+  // checkout-start flow (state transitions, payment session, etc)
+  // can operate on a normal booking. Owned products already have
+  // the row written by their OwnedBookingHandler.commit.
+  if (!booking) {
+    booking = await materializeBookingFromSnapshot(db, body.bookingId)
+  }
   if (!booking) return c.json({ error: "booking_not_found" }, 404)
 
   // Persist the contract acceptance against the booking so the
@@ -268,6 +279,61 @@ async function releaseInquiryBooking(
  * silently no-op'd so re-entries (e.g. user reloads the dialog
  * twice) stay idempotent.
  */
+/**
+ * Look up the catalog snapshot for a `bookingId` (the catalog plane
+ * always writes one) and materialize a minimal bookings row from it.
+ * Used when /book went through the sourced arm — sourced adapters
+ * don't write to the bookings table directly, so the checkout flow
+ * has to bridge the snapshot into a real bookings row before it can
+ * place payment sessions, transition status, etc.
+ */
+async function materializeBookingFromSnapshot(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<typeof bookings.$inferSelect | null> {
+  const { bookingCatalogSnapshotTable } = await import("@voyantjs/catalog")
+  const [snapshot] = await db
+    .select()
+    .from(bookingCatalogSnapshotTable)
+    .where(eq(bookingCatalogSnapshotTable.booking_id, bookingId))
+    .limit(1)
+  if (!snapshot) return null
+
+  const baseAmount = snapshot.pricing_base_amount
+    ? Number.parseFloat(String(snapshot.pricing_base_amount))
+    : 0
+  const taxes = snapshot.pricing_taxes ? Number.parseFloat(String(snapshot.pricing_taxes)) : 0
+  const fees = snapshot.pricing_fees ? Number.parseFloat(String(snapshot.pricing_fees)) : 0
+  const surcharges = snapshot.pricing_surcharges
+    ? Number.parseFloat(String(snapshot.pricing_surcharges))
+    : 0
+  const sellAmountCents = Math.round(baseAmount + taxes + fees + surcharges)
+  const sellCurrency = snapshot.pricing_currency ?? "EUR"
+
+  // Booking number — short, human-friendly, derived from the
+  // snapshot id so it's stable across retries with the same
+  // idempotency key.
+  const bookingNumber = `BK-${bookingId.slice(-12).toUpperCase()}`
+
+  const [row] = await db
+    .insert(bookings)
+    .values({
+      id: bookingId,
+      bookingNumber,
+      status: "on_hold",
+      sourceType: "direct",
+      sellCurrency,
+      sellAmountCents,
+    })
+    .onConflictDoNothing({ target: bookings.id })
+    .returning()
+
+  if (row) return row
+  // Race: another request already inserted; re-fetch.
+  const [existing] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+  return existing ?? null
+}
+
 async function markAwaitingPayment(
   db: PostgresJsDatabase,
   booking: typeof bookings.$inferSelect,
