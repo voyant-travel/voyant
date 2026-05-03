@@ -5,6 +5,10 @@
  */
 
 export {
+  type ChannelPushAdminRoutes,
+  createChannelPushAdminRoutes,
+} from "./admin-routes.js"
+export {
   CHANNEL_AVAILABILITY_PUSH_WORKFLOW_ID,
   type ProcessAvailabilityPushInput,
   type ProcessAvailabilityPushResult,

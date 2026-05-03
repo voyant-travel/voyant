@@ -19,17 +19,20 @@
  */
 
 import {
+  createChannelPushAdminRoutes,
   processAvailabilityPushIntents,
   processBookingPush,
   processContentPushIntents,
   resolveAllotmentTargetsForSlot,
   resolveBookingPushTargets,
   resolveContentPushTargets,
+  setChannelPushDeps,
   upsertAvailabilityIntent,
   upsertContentIntent,
   upsertPendingBookingLinks,
 } from "@voyantjs/distribution/channel-push"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
+import type { Hono } from "hono"
 
 import { type BookingEngineEnv, getBookingEngineRegistry } from "./lib/booking-engine-runtime"
 import { getDbFromHyperdrive } from "./lib/db"
@@ -151,4 +154,28 @@ export const channelPushBundle: HonoBundle = {
       },
     )
   },
+}
+
+/**
+ * Mount the channel-push admin API at
+ * `/v1/admin/distribution/channel-push/*`. The operator dashboard's
+ * "channel sync" view consumes these endpoints.
+ *
+ * Wires `setChannelPushDeps` per-request — the admin routes
+ * (`triggerBookingPushForBooking` and the reconciler triggers) read
+ * deps via `getChannelPushDepsOrThrow`, so this hop makes Workers'
+ * per-request DB binding play nicely with the global holder.
+ *
+ * Per docs/architecture/channel-push-architecture.md §9 + §14.5.
+ */
+export function mountChannelPushAdminRoutes(hono: Hono): void {
+  hono.use("/v1/admin/distribution/channel-push/*", async (c, next) => {
+    const env = c.env as CloudflareBindings & BookingEngineEnv
+    setChannelPushDeps({
+      db: getDbFromHyperdrive(env),
+      registry: getBookingEngineRegistry(env),
+    })
+    await next()
+  })
+  hono.route("/v1/admin/distribution/channel-push", createChannelPushAdminRoutes())
 }
