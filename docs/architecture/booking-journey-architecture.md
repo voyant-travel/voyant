@@ -465,19 +465,33 @@ Slots are render-props (function children), not config flags. New slots are adde
 
 #### What templates own
 
-Templates wire the shell, the auth posture, the route tree, the API base URL, and the slot implementations:
+Templates wire the shell, the auth posture, the route tree, the API base URL, and the slot implementations. Both surfaces ship in v1 (Phase B):
 
 ```
-templates/operator/src/routes/_workspace/catalog_.book.$entityModule.$entityId.tsx
-templates/operator/src/components/voyant/catalog/operator-booking-journey.tsx
-  → wraps <BookingJourney /> with operator slots:
-    - renderLeadContactPicker: CRM-backed PersonPicker
-    - defaultBuyerType: "B2B"
-    - onCommitted: navigate to /orders/catalog
-    - renderPaymentProviderWidget: Netopia (when configured)
+operator (admin):
+  templates/operator/src/routes/_workspace/catalog_.book.$entityModule.$entityId.tsx
+  templates/operator/src/components/voyant/catalog/operator-booking-journey.tsx
+    → wraps <BookingJourney /> with operator slots:
+      - apiBase: getApiUrl()  → /v1/admin/...
+      - renderLeadContactPicker: CRM-backed PersonPicker
+      - defaultBuyerType: "B2B"
+      - onCommitted: navigate to /orders/catalog
+      - renderPaymentProviderWidget: Netopia (when configured)
+
+storefront (customer):
+  templates/storefront/src/routes/book/$entityModule/$entityId.tsx
+  templates/storefront/src/components/voyant/catalog/storefront-booking-journey.tsx
+    → wraps <BookingJourney /> with storefront slots:
+      - apiBase: storefront's public-base URL → /v1/public/...
+      - renderLeadContactPicker: omitted (default = inline contact form)
+                                 OR a "Sign in to use saved details" stub
+                                 that swaps to CRM picker on auth
+      - defaultBuyerType: "B2C"
+      - onCommitted: navigate to /confirmation/$bookingId
+      - renderPaymentProviderWidget: storefront's payment-provider widget
 ```
 
-The customer storefront does the same with different slots and different routes. Same shell, same hooks, same engine — different chrome. **Adding a new template (a partner portal, a white-label embed) is a single wiring file plus its own auth.**
+Same shell, same hooks, same engine — different chrome. **Adding a new template (a partner portal, a white-label embed) is a single wiring file plus its own auth.**
 
 ## 9. Schema additions
 
@@ -505,14 +519,16 @@ Three phases. Each is shippable.
 - Existing one-page booking flow on this branch keeps working; it just dispatches into the owned arm for owned rows now.
 - No schema change yet; basic pricing (no taxes) is fine for the first cut.
 
-**Phase B — The shareable wizard** (5-7 days):
+**Phase B — The shareable wizard, both surfaces** (7-10 days):
 - Build `@voyantjs/booking-journey-ui` (new package) with `<BookingJourney />` shell and all seven step section components. Slots typed as render-props (§8.1).
 - Build `@voyantjs/catalog-react/booking-engine` hooks (`useBookingDraft`, `useBookingQuote`, `useBookingCommit`, `useBookingDraftShape`) — TanStack Query under the hood, identical surface for operator and storefront.
 - Wire the existing `bookings-ui` sections (PassengersSection widened, PaymentScheduleSection, RoomsStepperSection, etc.) into the journey shell.
-- Replace the operator template's `/catalog/book/$entityModule/$entityId` page with `<BookingJourney />` + operator slots (CRM picker, B2B default, post-commit navigate).
+- Mount the API surface on **both** `/v1/admin/catalog/{quote,book,drafts/:id}` and `/v1/public/catalog/{quote,book,drafts/:id}` — same engine logic behind both, audience guard differs. Public surface is auth-less or session-token-bound (per the storefront's auth posture); admin surface is staff-actor as today.
+- Replace the operator template's `/catalog/book/$entityModule/$entityId` page with `<BookingJourney />` + operator slots (CRM picker, B2B default, post-commit navigate to `/orders/catalog`).
+- Mount `<BookingJourney />` at the storefront template's customer-facing `/book/$entityModule/$entityId` route with storefront slots (no CRM picker; B2C default; payment provider widget; post-commit handoff to the storefront's confirmation page).
 - Add the `BookingDraftShape` to the quote response; engine returns a hardcoded "minimal shape" until Phase C lands.
 - Travelers step still uses simple name fields — no documents yet.
-- **Storefront viability test:** in Phase B's last day, ship a stub `examples/storefront-booking-journey/` that mounts `<BookingJourney />` with NO slots and verifies the journey works against the public API surface end-to-end. This is the contract test that proves the shell is genuinely surface-agnostic.
+- **Both surfaces are tested in this phase**, not deferred. The shell is surface-agnostic by construction; if it's not, that's a Phase B regression to chase, not a Phase E problem.
 
 **Phase C — Per-product shape, addons, taxes** (5-7 days):
 - Engine populates `BookingDraftShape` from `productContactRequirements` + extras catalog + supplier scheme + market.
@@ -525,13 +541,10 @@ Three phases. Each is shippable.
 - The operator template's `BookingCreateDialog` becomes a thin wrapper around the wizard, OR is retired.
 - The "create booking" entry points across the app (top-level button, from CRM, from product detail page) all open the wizard.
 
-**Phase E — Storefront wiring** (1-2 days, not a rebuild):
-- This is a wiring phase, not a build phase. The shell + hooks + sections all exist and are surface-agnostic from Phase B.
-- Mount `<BookingJourney />` at a public-facing route in the storefront template.
-- Pass storefront-appropriate slots: no CRM picker (or a "log in to use saved details" stub), B2C buyer default, post-commit navigate to a customer order page.
-- Wire the storefront's payment-provider integration into `renderPaymentProviderWidget`.
-- Make sure the public API surface (`/v1/public/catalog/quote`, `/v1/public/catalog/book`, `/v1/public/catalog/drafts/:id`) is mounted alongside the admin one — the engine routes are the same, the only difference is the audience guard.
-- If this phase takes more than 2 days, Phase B over-fitted to operator and we have a regression to chase. The "Storefront viability test" stub from Phase B is the canary.
+**Phase E — Storefront polish** (2-3 days, post-launch hardening):
+- Storefront wiring landed in Phase B; this phase is about the customer-facing chrome around it that operator doesn't need: SEO-friendly entry routes, share/save-itinerary affordances, a "log in to use saved details" upgrade path that swaps in the CRM picker slot mid-journey, abandoned-draft email recovery, anonymous → authenticated draft handoff.
+- Surface-specific edge cases: anonymous draft cleanup, GDPR export of saved drafts, locale negotiation off `accept-language`, currency override for buyer's country.
+- This is NOT where the wizard gets ported to storefront — that's already done. If the customer-facing flow regresses to "we need to rebuild this for storefront," Phase B has a bug to fix, not Phase E.
 
 **Phase F — Cruise-specific shape** (5-7 days, can land in parallel with E):
 - Implement `cabin-category` + `cabin-number` sub-steps in the Configure step.
@@ -557,7 +570,7 @@ Three phases. Each is shippable.
 
 These need answers before Phase B starts:
 
-1. ~~**Storefront vs. operator-only for v1.**~~ **Resolved (Rule 4 + §8.1):** both surfaces from day one, sharing the same wizard shell, hooks, and sections via slot injection. Phase B builds the shareable pieces; Phase E is a wiring exercise (1-2 days), not a rebuild. The remaining sequencing question is whether to ship operator's wiring first or storefront's first — operator is the obvious choice (existing logged-in users, fewer auth/payment moving parts) but the order doesn't change what gets built in Phase B.
+1. ~~**Storefront vs. operator-only for v1.**~~ **Resolved:** both surfaces ship in v1 together, not sequenced. Same wizard shell, hooks, and sections; differences land in slot implementations per surface (Rule 4 + §8.1). Phase B builds the shareable pieces and wires both surfaces in the same phase — see the rewritten §10 phases.
 2. **Where does Configure live for hospitality?** Hotel rooms have date range + occupancy as the *primary* configuration. Either a dedicated Configure step or fold into the entry point (catalog filter chips drive the date range + occupancy). Probably the latter for storefront, the former for operator.
 3. ~~**Single quote table or split.**~~ **Resolved (§5.7):** keep `catalog_quotes` for the live-pricing snapshot; introduce `booking_drafts` for the resumable session-bound hold. Two tables, two lifetimes.
 4. **Per-band pricing rules — adult vs child vs infant — does pricing live with the band declaration, or with the optionUnit row?** Today the answer is the optionUnit row (`pricingCategoryId`). The wizard's pax-bands → traveler-categories mapping needs to be deterministic. Likely needs a stable `pax_bands` lookup keyed off `pricingCategoryId` so the descriptor and the pricing rules agree. *External cruise systems we've worked on keyed pricing off `(cabin_type, occupancy_count)` instead — that's a different axis from per-band, so the patterns we borrowed elsewhere don't transfer here.* Needs a Voyant-side decision on whether band-based or count-based pricing is the canonical primitive.
