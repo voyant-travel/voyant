@@ -144,6 +144,20 @@ const EXTRAS_FIELD_POLICY: FieldPolicyInput[] = [
     overrideFriction: "none",
     sourceFreshness: "sync",
   },
+  {
+    path: "supplierId",
+    class: "structural",
+    merge: "source-only",
+    drift: "high",
+    reindex: "none",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
 
   // ── Snapshot-relevant managed fields ────────────────────────────────────
   // Extras' name/description aren't merchandised standalone — they're

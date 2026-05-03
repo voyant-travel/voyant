@@ -38,6 +38,7 @@ export const products = pgTable(
     costAmountCents: integer("cost_amount_cents"),
     marginPercent: integer("margin_percent"),
     facilityId: text("facility_id"),
+    supplierId: text("supplier_id"),
     startDate: date("start_date"),
     endDate: date("end_date"),
     pax: integer("pax"),
@@ -49,6 +50,7 @@ export const products = pgTable(
   (table) => [
     index("idx_products_status").on(table.status),
     index("idx_products_facility").on(table.facilityId),
+    index("idx_products_supplier").on(table.supplierId),
     index("idx_products_product_type").on(table.productTypeId),
     index("idx_products_status_created").on(table.status, table.createdAt),
     index("idx_products_booking_mode_created").on(table.bookingMode, table.createdAt),
@@ -56,6 +58,7 @@ export const products = pgTable(
     index("idx_products_visibility_created").on(table.visibility, table.createdAt),
     index("idx_products_activated_created").on(table.activated, table.createdAt),
     index("idx_products_facility_created").on(table.facilityId, table.createdAt),
+    index("idx_products_supplier_created").on(table.supplierId, table.createdAt),
     index("idx_products_product_type_created").on(table.productTypeId, table.createdAt),
     index("idx_products_public_created").on(
       table.status,

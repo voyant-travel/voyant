@@ -138,6 +138,20 @@ const HOSPITALITY_FIELD_POLICY: FieldPolicyInput[] = [
     overrideFriction: "none",
     sourceFreshness: "sync",
   },
+  {
+    path: "supplierId",
+    class: "structural",
+    merge: "source-only",
+    drift: "high",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
 
   // ── Merchandisable / marketing ──────────────────────────────────────────
   {
