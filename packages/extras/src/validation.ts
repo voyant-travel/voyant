@@ -34,6 +34,7 @@ export const bookingExtraStatusSchema = z.enum([
 
 export const productExtraCoreSchema = z.object({
   productId: z.string(),
+  supplierId: z.string().nullable().optional(),
   code: z.string().max(100).nullable().optional(),
   name: z.string().min(1).max(255),
   description: z.string().nullable().optional(),
@@ -52,6 +53,7 @@ export const insertProductExtraSchema = productExtraCoreSchema
 export const updateProductExtraSchema = productExtraCoreSchema.partial()
 export const productExtraListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
+  supplierId: z.string().optional(),
   active: booleanQueryParam.optional(),
   search: z.string().optional(),
 })

@@ -41,6 +41,7 @@ export const productExtras = pgTable(
   {
     id: typeId("product_extras"),
     productId: text("product_id").notNull(),
+    supplierId: text("supplier_id"),
     code: text("code"),
     name: text("name").notNull(),
     description: text("description"),
@@ -59,6 +60,11 @@ export const productExtras = pgTable(
   (table) => [
     index("idx_product_extras_sort_name").on(table.sortOrder, table.name),
     index("idx_product_extras_product_sort_name").on(table.productId, table.sortOrder, table.name),
+    index("idx_product_extras_supplier_sort_name").on(
+      table.supplierId,
+      table.sortOrder,
+      table.name,
+    ),
     index("idx_product_extras_active_sort_name").on(table.active, table.sortOrder, table.name),
     uniqueIndex("uidx_product_extras_product_code").on(table.productId, table.code),
   ],

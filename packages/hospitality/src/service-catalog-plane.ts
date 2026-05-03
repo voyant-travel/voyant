@@ -63,6 +63,7 @@ export function roomTypeRowToProjection(
 
     // Cross-module reference
     ["propertyId", row.propertyId],
+    ["supplierId", row.supplierId],
 
     // Merchandisable
     ["name", row.name],

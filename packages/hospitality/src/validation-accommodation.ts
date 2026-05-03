@@ -13,6 +13,7 @@ import {
 
 export const roomTypeCoreSchema = z.object({
   propertyId: z.string(),
+  supplierId: nullableString,
   code: nullableString,
   name: z.string().min(1).max(255),
   description: nullableString,
@@ -38,6 +39,7 @@ export const insertRoomTypeSchema = roomTypeCoreSchema
 export const updateRoomTypeSchema = roomTypeCoreSchema.partial()
 export const roomTypeListQuerySchema = paginationSchema.extend({
   propertyId: z.string().optional(),
+  supplierId: z.string().optional(),
   active: booleanQueryParam.optional(),
   inventoryMode: hospitalityInventoryModeSchema.optional(),
   search: z.string().optional(),

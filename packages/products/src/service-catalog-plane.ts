@@ -92,6 +92,7 @@ export function productRowToProjection(
     ["activated", row.activated],
     ["productTypeId", row.productTypeId],
     ["facilityId", row.facilityId],
+    ["supplierId", row.supplierId],
     ["pax", row.pax],
     ["startDate", row.startDate],
     ["endDate", row.endDate],

@@ -40,9 +40,12 @@ export function CatalogPage() {
       id: "products",
       label: "Products",
       vertical: "products",
-      columns: productColumns,
-      filterFields: productFilters,
-      detailFormatters: { "source.kind": sourceKindFormatter },
+      columns: makeProductColumns(formatSupplier),
+      filterFields: makeProductFilters(formatSupplier),
+      detailFormatters: {
+        supplierId: supplierFormatter,
+        "source.kind": sourceKindFormatter,
+      },
       detailActions: [
         {
           label: "Open editor",
@@ -54,9 +57,12 @@ export function CatalogPage() {
       id: "extras",
       label: "Extras",
       vertical: "extras",
-      columns: extraColumns,
-      filterFields: extraFilters,
-      detailFormatters: { "source.kind": sourceKindFormatter },
+      columns: makeExtraColumns(formatSupplier),
+      filterFields: makeExtraFilters(formatSupplier),
+      detailFormatters: {
+        supplierId: supplierFormatter,
+        "source.kind": sourceKindFormatter,
+      },
     },
     {
       id: "cruises",
@@ -86,9 +92,12 @@ export function CatalogPage() {
       id: "hospitality",
       label: "Hospitality",
       vertical: "hospitality",
-      columns: hospitalityColumns,
-      filterFields: hospitalityFilters,
-      detailFormatters: { "source.kind": sourceKindFormatter },
+      columns: makeHospitalityColumns(formatSupplier),
+      filterFields: makeHospitalityFilters(formatSupplier),
+      detailFormatters: {
+        supplierId: supplierFormatter,
+        "source.kind": sourceKindFormatter,
+      },
     },
   ]
 
@@ -139,25 +148,35 @@ export function CatalogPage() {
 // Per-vertical column definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-const productColumns: ColumnDef<CatalogSearchHit, unknown>[] = [
-  thumbnailColumn(),
-  nameColumn("Untitled product"),
-  statusColumn(),
-  sourceColumn(),
-  textColumn("bookingMode", "Booking mode"),
-  textColumn("pax", "Pax"),
-  priceColumn("sellAmountCents", "sellCurrency"),
-]
+function makeProductColumns(
+  formatSupplier: (id: string | number) => string,
+): ColumnDef<CatalogSearchHit, unknown>[] {
+  return [
+    thumbnailColumn(),
+    nameColumn("Untitled product"),
+    statusColumn(),
+    sourceColumn(),
+    lookupColumn("supplierId", "Supplier", formatSupplier),
+    textColumn("bookingMode", "Booking mode"),
+    textColumn("pax", "Pax"),
+    priceColumn("sellAmountCents", "sellCurrency"),
+  ]
+}
 
-const extraColumns: ColumnDef<CatalogSearchHit, unknown>[] = [
-  thumbnailColumn(),
-  nameColumn("Untitled extra"),
-  activeColumn(),
-  sourceColumn(),
-  textColumn("selectionType", "Selection"),
-  textColumn("pricingMode", "Pricing"),
-  textColumn("defaultQuantity", "Default qty"),
-]
+function makeExtraColumns(
+  formatSupplier: (id: string | number) => string,
+): ColumnDef<CatalogSearchHit, unknown>[] {
+  return [
+    thumbnailColumn(),
+    nameColumn("Untitled extra"),
+    activeColumn(),
+    sourceColumn(),
+    lookupColumn("supplierId", "Supplier", formatSupplier),
+    textColumn("selectionType", "Selection"),
+    textColumn("pricingMode", "Pricing"),
+    textColumn("defaultQuantity", "Default qty"),
+  ]
+}
 
 function makeCruiseColumns(
   formatSupplier: (id: string | number) => string,
@@ -187,68 +206,79 @@ function makeCharterColumns(
   ]
 }
 
-const hospitalityColumns: ColumnDef<CatalogSearchHit, unknown>[] = [
-  thumbnailColumn(),
-  nameColumn("Untitled room"),
-  activeColumn(),
-  sourceColumn(),
-  textColumn("roomClass", "Class"),
-  textColumn("maxOccupancy", "Max pax"),
-  textColumn("bedroomCount", "Bedrooms"),
-]
+function makeHospitalityColumns(
+  formatSupplier: (id: string | number) => string,
+): ColumnDef<CatalogSearchHit, unknown>[] {
+  return [
+    thumbnailColumn(),
+    nameColumn("Untitled room"),
+    activeColumn(),
+    sourceColumn(),
+    lookupColumn("supplierId", "Supplier", formatSupplier),
+    textColumn("roomClass", "Class"),
+    textColumn("maxOccupancy", "Max pax"),
+    textColumn("bedroomCount", "Bedrooms"),
+  ]
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Per-vertical filter sets
 // ─────────────────────────────────────────────────────────────────────────────
 
-const productFilters: CatalogFilterField[] = [
-  { field: "status", label: "Status" },
-  { field: "source.kind", label: "Source", formatValue: formatSourceKind },
-  { field: "bookingMode", label: "Booking mode" },
-  { field: "productTypeId", label: "Type" },
-  { field: "capacityMode", label: "Capacity" },
-  { field: "visibility", label: "Visibility" },
-  { field: "facilityId", label: "Facility" },
-  {
-    kind: "range",
-    field: "sellAmountCents",
-    label: "Price",
-    format: "currency",
-    currency: "EUR",
-    step: 100,
-    minPlaceholder: "0",
-    maxPlaceholder: "Any",
-  },
-  {
-    kind: "range",
-    field: "pax",
-    label: "Pax",
-    minPlaceholder: "0",
-    maxPlaceholder: "Any",
-  },
-]
+function makeProductFilters(formatSupplier: (id: string | number) => string): CatalogFilterField[] {
+  return [
+    { field: "status", label: "Status" },
+    { field: "source.kind", label: "Source", formatValue: formatSourceKind },
+    { field: "supplierId", label: "Supplier", formatValue: formatSupplier },
+    { field: "bookingMode", label: "Booking mode" },
+    { field: "productTypeId", label: "Type" },
+    { field: "capacityMode", label: "Capacity" },
+    { field: "visibility", label: "Visibility" },
+    { field: "facilityId", label: "Facility" },
+    {
+      kind: "range",
+      field: "sellAmountCents",
+      label: "Price",
+      format: "currency",
+      currency: "EUR",
+      step: 100,
+      minPlaceholder: "0",
+      maxPlaceholder: "Any",
+    },
+    {
+      kind: "range",
+      field: "pax",
+      label: "Pax",
+      minPlaceholder: "0",
+      maxPlaceholder: "Any",
+    },
+  ]
+}
 
-const extraFilters: CatalogFilterField[] = [
-  { field: "active", label: "Active" },
-  { field: "source.kind", label: "Source", formatValue: formatSourceKind },
-  { field: "selectionType", label: "Selection" },
-  { field: "pricingMode", label: "Pricing mode" },
-  { field: "pricedPerPerson", label: "Per person" },
-  {
-    kind: "range",
-    field: "minQuantity",
-    label: "Min qty",
-    minPlaceholder: "0",
-    maxPlaceholder: "Any",
-  },
-  {
-    kind: "range",
-    field: "maxQuantity",
-    label: "Max qty",
-    minPlaceholder: "0",
-    maxPlaceholder: "Any",
-  },
-]
+function makeExtraFilters(formatSupplier: (id: string | number) => string): CatalogFilterField[] {
+  return [
+    { field: "active", label: "Active" },
+    { field: "source.kind", label: "Source", formatValue: formatSourceKind },
+    { field: "supplierId", label: "Supplier", formatValue: formatSupplier },
+    { field: "selectionType", label: "Selection" },
+    { field: "pricingMode", label: "Pricing mode" },
+    { field: "pricedPerPerson", label: "Per person" },
+    {
+      kind: "range",
+      field: "minQuantity",
+      label: "Min qty",
+      minPlaceholder: "0",
+      maxPlaceholder: "Any",
+    },
+    {
+      kind: "range",
+      field: "maxQuantity",
+      label: "Max qty",
+      minPlaceholder: "0",
+      maxPlaceholder: "Any",
+    },
+  ]
+}
 
 function makeCruiseFilters(formatSupplier: (id: string | number) => string): CatalogFilterField[] {
   return [
@@ -301,35 +331,40 @@ function makeCharterFilters(formatSupplier: (id: string | number) => string): Ca
   ]
 }
 
-const hospitalityFilters: CatalogFilterField[] = [
-  { field: "active", label: "Active" },
-  { field: "source.kind", label: "Source", formatValue: formatSourceKind },
-  { field: "inventoryMode", label: "Inventory" },
-  { field: "roomClass", label: "Class" },
-  { field: "smokingAllowed", label: "Smoking" },
-  { field: "propertyId", label: "Property" },
-  {
-    kind: "range",
-    field: "maxOccupancy",
-    label: "Max pax",
-    minPlaceholder: "0",
-    maxPlaceholder: "Any",
-  },
-  {
-    kind: "range",
-    field: "bedroomCount",
-    label: "Bedrooms",
-    minPlaceholder: "0",
-    maxPlaceholder: "Any",
-  },
-  {
-    kind: "range",
-    field: "bathroomCount",
-    label: "Bathrooms",
-    minPlaceholder: "0",
-    maxPlaceholder: "Any",
-  },
-]
+function makeHospitalityFilters(
+  formatSupplier: (id: string | number) => string,
+): CatalogFilterField[] {
+  return [
+    { field: "active", label: "Active" },
+    { field: "source.kind", label: "Source", formatValue: formatSourceKind },
+    { field: "supplierId", label: "Supplier", formatValue: formatSupplier },
+    { field: "inventoryMode", label: "Inventory" },
+    { field: "roomClass", label: "Class" },
+    { field: "smokingAllowed", label: "Smoking" },
+    { field: "propertyId", label: "Property" },
+    {
+      kind: "range",
+      field: "maxOccupancy",
+      label: "Max pax",
+      minPlaceholder: "0",
+      maxPlaceholder: "Any",
+    },
+    {
+      kind: "range",
+      field: "bedroomCount",
+      label: "Bedrooms",
+      minPlaceholder: "0",
+      maxPlaceholder: "Any",
+    },
+    {
+      kind: "range",
+      field: "bathroomCount",
+      label: "Bathrooms",
+      minPlaceholder: "0",
+      maxPlaceholder: "Any",
+    },
+  ]
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Column factories — kept generic so each vertical's column array is just a

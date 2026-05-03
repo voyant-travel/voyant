@@ -71,7 +71,7 @@ function pickFacility(facilityIds: string[], idx: number): string | null {
  * (per_person / per_booking / quantity_based / included) so faceted filters
  * have multiple buckets even though extras themselves don't get indexed.
  */
-export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<string[]> {
+export async function seedExtras(db: Db, ctx: CatalogSeedContext): Promise<string[]> {
   // Two synthetic parent products to satisfy the (productId, code) unique
   // index. Plain text columns — no FK enforced at DB level.
   const parentA = newId("products")
@@ -81,6 +81,7 @@ export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<stri
     {
       id: newId("product_extras"),
       productId: parentA,
+      supplierId: pickSupplier(ctx.supplierIds, 0),
       code: "AIRPORT-PRIORITY",
       name: "Airport priority pickup",
       description:
@@ -97,6 +98,7 @@ export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<stri
     {
       id: newId("product_extras"),
       productId: parentA,
+      supplierId: pickSupplier(ctx.supplierIds, 1),
       code: "VEG-MEAL",
       name: "Vegetarian meal plan",
       description: "All included meals swapped for chef-curated vegetarian dishes.",
@@ -112,6 +114,7 @@ export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<stri
     {
       id: newId("product_extras"),
       productId: parentA,
+      supplierId: pickSupplier(ctx.supplierIds, 2),
       code: "WELCOME-CHAMPAGNE",
       name: "Champagne welcome basket",
       description: "Bottle of NV champagne, fresh fruit and chocolates waiting in your suite.",
@@ -127,6 +130,7 @@ export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<stri
     {
       id: newId("product_extras"),
       productId: parentA,
+      supplierId: pickSupplier(ctx.supplierIds, 3),
       code: "ADJACENT-ROOMS",
       name: "Adjacent rooms guarantee",
       description: "We guarantee adjacent or interconnecting rooms for your party.",
@@ -142,6 +146,7 @@ export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<stri
     {
       id: newId("product_extras"),
       productId: parentB,
+      supplierId: pickSupplier(ctx.supplierIds, 4),
       code: "SPA-CREDIT",
       name: "Spa credit (€100)",
       description: "€100 spa treatment credit per guest, redeemable on arrival.",
@@ -157,6 +162,7 @@ export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<stri
     {
       id: newId("product_extras"),
       productId: parentB,
+      supplierId: pickSupplier(ctx.supplierIds, 0),
       code: "LATE-CHECKOUT",
       name: "Late checkout (16:00)",
       description: "Guaranteed 16:00 checkout (subject to room availability waived).",
@@ -172,6 +178,7 @@ export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<stri
     {
       id: newId("product_extras"),
       productId: parentB,
+      supplierId: pickSupplier(ctx.supplierIds, 1),
       code: "EXCURSION-COMBO",
       name: "Excursion combo discount",
       description: "10% off when bundling two or more shore excursions.",
@@ -187,6 +194,7 @@ export async function seedExtras(db: Db, _ctx: CatalogSeedContext): Promise<stri
     {
       id: newId("product_extras"),
       productId: parentB,
+      supplierId: pickSupplier(ctx.supplierIds, 2),
       code: "CHILD-BOOSTER",
       name: "Child seat (booster)",
       description: "Forward-facing booster seat fitted in the transfer vehicle.",
@@ -562,14 +570,17 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     },
   ])
 
-  // Touch ctx so the unused-param check is honest about intent.
-  void ctx
+  // Both hotel properties roll up to the first synthetic supplier (the
+  // "Voyant Hotels" group) — keeps the demo coherent with the seeded
+  // supplier list while still letting individual rooms attribute back.
+  const hospitalitySupplierId = pickSupplier(ctx.supplierIds, 0)
 
   const rows = [
     // ── Hotel Thames London ──
     {
       id: newId("room_types"),
       propertyId: propertyLondonId,
+      supplierId: hospitalitySupplierId,
       code: "DLX-RIVER",
       name: "Deluxe Sea-View Suite",
       description:
@@ -594,6 +605,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyLondonId,
+      supplierId: hospitalitySupplierId,
       code: "EXEC-KING",
       name: "Executive King · City View",
       description:
@@ -617,6 +629,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyLondonId,
+      supplierId: hospitalitySupplierId,
       code: "STD-TWIN",
       name: "Standard Twin Park-Side",
       description:
@@ -640,6 +653,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyLondonId,
+      supplierId: hospitalitySupplierId,
       code: "FAM-CONNECT",
       name: "Family Connecting Rooms",
       description:
@@ -665,6 +679,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyParisId,
+      supplierId: hospitalitySupplierId,
       code: "GARDEN-TWIN",
       name: "Family Garden Twin",
       description:
@@ -689,6 +704,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyParisId,
+      supplierId: hospitalitySupplierId,
       code: "MAISON-SUITE",
       name: "Maison Suite · Sacré-Cœur View",
       description:
@@ -713,6 +729,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyParisId,
+      supplierId: hospitalitySupplierId,
       code: "ATELIER-DBL",
       name: "Atelier Double",
       description:
@@ -737,6 +754,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyParisId,
+      supplierId: hospitalitySupplierId,
       code: "ACCESS-DBL",
       name: "Accessible Garden Double",
       description:

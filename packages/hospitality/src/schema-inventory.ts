@@ -25,6 +25,7 @@ export const roomTypes = pgTable(
     propertyId: typeIdRef("property_id")
       .notNull()
       .references(() => properties.id, { onDelete: "cascade" }),
+    supplierId: text("supplier_id"),
     code: text("code"),
     name: text("name").notNull(),
     description: text("description"),
@@ -50,6 +51,7 @@ export const roomTypes = pgTable(
   },
   (table) => [
     index("idx_room_types_property_sort_name").on(table.propertyId, table.sortOrder, table.name),
+    index("idx_room_types_supplier_sort_name").on(table.supplierId, table.sortOrder, table.name),
     index("idx_room_types_active_sort_name").on(table.active, table.sortOrder, table.name),
     index("idx_room_types_inventory_mode_sort_name").on(
       table.inventoryMode,
