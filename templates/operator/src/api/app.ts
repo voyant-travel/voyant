@@ -40,6 +40,7 @@ import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
+import { createWorkflowRunsAdminRoutes } from "@voyantjs/workflow-runs"
 import { eq, or } from "drizzle-orm"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
@@ -475,5 +476,9 @@ export const app = createApp<CloudflareBindings>({
     mountCatalogContentRoutes(hono)
     mountChannelPushAdminRoutes(hono)
     mountFlightRoutes(hono)
+
+    // Workflow runs admin surface — read-only routes feeding the
+    // standalone dashboard SPA in apps/workflow-runs-dashboard.
+    hono.route("/", createWorkflowRunsAdminRoutes())
   },
 })

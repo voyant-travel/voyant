@@ -43,6 +43,7 @@ import {
   netopiaService,
   type ResolvedNetopiaRuntimeOptions,
 } from "@voyantjs/plugin-netopia"
+import { beginWorkflowRun } from "@voyantjs/workflow-runs"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
@@ -565,6 +566,23 @@ export const catalogCheckoutBundle: HonoBundle = {
     eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
       if (!data.bookingId) return
       const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+      const recorder = await beginWorkflowRun(db, {
+        workflowName: "checkout-finalize",
+        trigger: "payment.completed",
+        correlationId: data.paymentSessionId ?? null,
+        tags: [
+          `bookingId:${data.bookingId}`,
+          ...(data.paymentSessionId ? [`paymentSessionId:${data.paymentSessionId}`] : []),
+          ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
+        ],
+        input: {
+          bookingId: data.bookingId,
+          paymentSessionId: data.paymentSessionId ?? null,
+          paymentIntent: data.paymentIntent ?? null,
+          amountCents: data.amountCents ?? null,
+          currency: data.currency ?? null,
+        },
+      })
       try {
         await runCheckoutFinalize(
           {
@@ -575,6 +593,17 @@ export const catalogCheckoutBundle: HonoBundle = {
           {
             db,
             eventBus,
+            recorder: {
+              startStep: (name) => {
+                void recorder.startStep(name)
+              },
+              completeStep: (name, output) => {
+                void recorder.completeStep(name, output ?? null)
+              },
+              failStep: (name, error) => {
+                void recorder.failStep(name, error)
+              },
+            },
             confirmBooking: async (bookingId) => {
               await bookingsService.confirmBooking(db, bookingId, {}, undefined, { eventBus })
             },
@@ -652,8 +681,10 @@ export const catalogCheckoutBundle: HonoBundle = {
             },
           },
         )
+        await recorder.complete()
       } catch (err) {
         console.error("[catalog-checkout] checkout-finalize workflow failed", err)
+        await recorder.fail(err)
       }
     })
   },

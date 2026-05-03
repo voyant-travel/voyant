@@ -108,6 +108,7 @@
     "@voyantjs/types": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@voyantjs/utils": "workspace:*",
+    "@voyantjs/workflow-runs": "workspace:*",
     "@voyantjs/workflows": "workspace:*",
     "better-auth": "^1.5.6",
     "class-variance-authority": "^0.7.1",

@@ -342,6 +342,14 @@ export const PREFIXES = {
   // booking_id FK and journey holds are pre-booking. A dedicated
   // table is the cleanest fit.
   availability_holds: "avhd",
+
+  // Workflow runs — observability for in-process workflows (the
+  // catalog-checkout finalize spine, follow-up scheduled jobs, etc).
+  // Lives outside the durable @voyantjs/workflows orchestrator so
+  // edge-compatible templates can record runs without spinning up
+  // a separate Node process.
+  workflow_runs: "wfrn",
+  workflow_run_steps: "wfrs",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

@@ -35,9 +35,22 @@ export interface CheckoutFinalizeInput {
   paymentIntent?: "card" | "bank_transfer" | "hold" | "ticket_on_credit"
 }
 
+/**
+ * Optional step-lifecycle hooks the caller can wire to the
+ * `@voyantjs/workflow-runs` recorder (or any other observability
+ * sink). Catalog stays neutral — it just emits the events.
+ */
+export interface CheckoutFinalizeStepRecorder {
+  startStep(name: string): Promise<void> | void
+  completeStep(name: string, output?: Record<string, unknown> | null): Promise<void> | void
+  failStep(name: string, error: unknown): Promise<void> | void
+}
+
 export interface CheckoutFinalizeDeps {
   db: PostgresJsDatabase
   eventBus?: EventBus
+  /** Optional observability sink — see CheckoutFinalizeStepRecorder. */
+  recorder?: CheckoutFinalizeStepRecorder
   /**
    * Confirms the booking — flips it from `awaiting_payment`/`on_hold`
    * to `confirmed`. Implementations should emit `booking.confirmed`
@@ -63,23 +76,50 @@ export interface CheckoutFinalizeDeps {
   findProformaForBooking?: (bookingId: string) => Promise<{ invoiceId: string } | null>
 }
 
+async function runStep<T>(
+  name: string,
+  recorder: CheckoutFinalizeStepRecorder | undefined,
+  fn: () => Promise<T>,
+): Promise<T> {
+  await recorder?.startStep(name)
+  try {
+    const result = await fn()
+    await recorder?.completeStep(name, asRecord(result))
+    return result
+  } catch (err) {
+    await recorder?.failStep(name, err)
+    throw err
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+  return null
+}
+
 export const checkoutFinalizeWorkflow = createWorkflow("checkout-finalize", [
   step<CheckoutFinalizeInput, void>("transition_to_confirmed").run(async (input, ctx) => {
     const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
     if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
-    await deps.confirmBooking(input.bookingId)
+    await runStep("transition_to_confirmed", deps.recorder, () =>
+      deps.confirmBooking(input.bookingId),
+    )
   }),
 
   step<CheckoutFinalizeInput, { invoiceId: string } | null>("issue_invoice").run(
     async (input, ctx) => {
       const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
       if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
-      const proforma = deps.findProformaForBooking
-        ? await deps.findProformaForBooking(input.bookingId)
-        : null
-      return deps.issueInvoice({
-        bookingId: input.bookingId,
-        convertedFromInvoiceId: proforma?.invoiceId ?? null,
+      return runStep("issue_invoice", deps.recorder, async () => {
+        const proforma = deps.findProformaForBooking
+          ? await deps.findProformaForBooking(input.bookingId)
+          : null
+        return deps.issueInvoice({
+          bookingId: input.bookingId,
+          convertedFromInvoiceId: proforma?.invoiceId ?? null,
+        })
       })
     },
   ),
