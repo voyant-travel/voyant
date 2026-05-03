@@ -223,9 +223,10 @@ export async function getProductContent(
   // No cache row at all for any preferred locale — must block on the
   // adapter; we have nothing to serve.
   if (!adapter.getContent) {
-    // Adapter declared no content fetch — fall back to thin content
-    // synthesized from the indexer projection. Degraded mode.
-    return synthesizeThinContent(db, "products", entityId, scope)
+    // Adapter doesn't support content fetch. Synthesize the most
+    // complete content blob we can from projection + overlay + plane
+    // metadata. Same return shape as getContent — see §3.6.
+    return synthesizeContentFromProjection(db, "products", entityId, scope)
   }
   const fresh = await singleflight.do(
     cacheKey("products", entityId, scope.preferredLocales[0]),
@@ -242,7 +243,7 @@ export async function getProductContent(
 }
 ```
 
-Detail routes (operator and storefront) call this single function. Owned products keep working unchanged. Sourced products read from cache (locale-resolved); adapters that don't support content fetch render a thin fallback synthesized from the indexed projection — degraded but not broken.
+Detail routes (operator and storefront) call this single function. Owned products keep working unchanged. Sourced products read from cache (locale-resolved); adapters that don't support content fetch synthesize the most complete content shape they can from projection + overlay + plane metadata (§3.6) — same return type as `getContent`, so consumers don't branch.
 
 ### 3.4. Refresh policy: SWR with singleflight
 
@@ -351,6 +352,33 @@ The booking journey's locale arrives via `BookingDraft.scope.locale` (set from `
 
 If the wizard runs in ro-RO and the upstream served en-GB content (no Romanian available), the `match_kind` and `served_locale` fields surface in the UI as a small "served in English" hint, so the customer knows. The booking still commits — fallback is a degradation, not a failure.
 
+## 3.6. Thin-content fallback: as complete as we can legitimately make it
+
+When an adapter declares `supportsContentFetch: false`, the read service falls through to a per-vertical synthesizer. Its job is **to produce the most complete content blob it can** from what the catalog plane already knows — not a minimum-viable stub. The return shape is identical to what `getContent` produces; consumers (detail pages, the journey, snapshot capture) cannot tell the two paths apart from the type signature. Fields the synthesizer cannot fill render as **typed empty states** (`media: []`, `description: null`), never as missing properties.
+
+Three sources feed the synthesizer, in priority order:
+
+1. **The indexer projection.** Every field the adapter declared via field policy flows through. Whatever the upstream's `discover` emitted — name, status, currency, dates, primary image, summary, supplier reference, and any vertical-specific projection fields — lands in the synthesized output. This is where most of the content comes from in practice, because adapters with `supportsContentFetch: false` typically have rich projections; they just don't have a deep detail-page endpoint.
+2. **The editorial overlay** (`catalog_overlay`). Locale-aware operator-curated content layered on top per §3.5.4. An operator that ships ro-RO copy for a thin-source product fills in fields the adapter never sent. Overlay merge runs at synthesizer time the same way it runs after a full `getContent` — the read paths are symmetric, so an operator's ro-RO description on a TUI product looks identical whether TUI's adapter is rich or thin.
+3. **Catalog plane metadata.** Provenance (`source_kind`, `source_provider`, supplier link, `connection_id`), market / audience scope, drift status, last-seen timestamps. This powers UI hints ("served by Bedbank XYZ", "limited content available") and is part of the synthesized output regardless of which path produced it.
+
+Per-vertical mappings (illustrative — each vertical owns its own synthesizer):
+
+- **Products** (`{ product, options[], days[], media[], policies[] }`): `product` populated from projection + overlay (name, status, summary, dates, currency, supplier, country, duration, departure city if indexed). `media[]` populated from projection's primary image plus any media URLs the projection carries. `policies[]` populated from any indexed cancellation/payment summaries plus overlay-supplied policy bodies. `options[]` and `days[]` empty arrays — adapters that don't implement `getContent` typically don't expose these granularly.
+- **Cruises** (`{ cruise, sailings[], cabinCategories[], itineraryStops[] }`): `cruise` populated from projection (line, ship, marketing copy, hero media). `itineraryStops[]` populated from the projection's port slice when indexed. `sailings[]` populated from indexed departure dates when present. `cabinCategories[]` empty — those need a content fetch.
+- **Hotels** (`{ hotel, roomTypes[], ratePlans[], mealPlans[], amenities[] }`): `hotel` populated (name, location, geo, star rating, hero image, indexed amenities). `amenities[]` from projection's facet array. `roomTypes[]`, `ratePlans[]`, `mealPlans[]` empty.
+
+The principle: **whatever the projection or overlay legitimately knows, surface it; whatever they don't, surface as a typed empty state, not a `null` property**. UI components render around empty collections gracefully — a detail page with no media still renders, just without a gallery. The journey's descriptor builder treats empty options/days as "not bookable through the descriptor flow" and either offers a thin one-step quote path (when the adapter still implements `liveResolve` + `reserve`) or marks the row not bookable.
+
+What the synthesizer **does not** do:
+
+- **Mine prior snapshot rows** for the same `source_ref` to reconstruct content. Snapshots may carry customer-scoped PII and are point-in-time captures of "what was sold to a specific customer," not generic content sources.
+- **Machine-translate fields** to fill missing locales. That's the adapter's `getContent` + `machine_translated: true` path (§3.5.5), not the synthesizer's job. Overlays can supply translations; the synthesizer doesn't generate them.
+- **Synthesize plausible-but-unverified fields.** "Hotels usually have a pool" is not a basis for synthesizing `amenities: ["pool"]`. The synthesizer reflects what we know; it doesn't invent. Empty arrays are honest.
+- **Cache its own output.** The synthesizer is cheap (projection + overlay reads) and its inputs change at projection / overlay write time. A cache layer would just complicate invalidation. The cache table (§3.2) is for `getContent` results.
+
+This means an adapter can ship `supportsContentFetch: false` and still produce a usable detail page when the operator's overlay supplies the gaps — the same surface that catalogs from rich adapters use, just thinner. As the integration matures, switching the adapter to `supportsContentFetch: true` is a transparent upgrade — same return type, same consumers, the cache plumbing kicks in, and the synthesizer becomes a fallback for the rare case where both adapter and overlay are silent.
+
 ## 4. How the booking journey uses it
 
 The journey's Configure / Accommodation / Add-ons steps need departure dates, room types, addon catalogs. Today these are pulled from per-vertical service layers for owned rows; sourced rows have nothing comparable.
@@ -434,7 +462,7 @@ packages/catalog/src/adapter/contract.ts                      — extended with 
 packages/catalog/src/services/content-service.ts              — isStale + drift→cache invalidation + singleflight registry + scheduleBackgroundRefresh
 packages/<vertical>/src/schema-sourced-content.ts             — per-vertical content cache table (entity_id, locale)
 packages/<vertical>/src/service-content.ts                    — getContentForEntity (owned-vs-sourced dispatch, SWR semantics)
-packages/<vertical>/src/service-content-thin.ts               — synthesizeThinContent fallback
+packages/<vertical>/src/service-content-synthesizer.ts        — synthesizeContentFromProjection (projection + overlay + plane metadata; §3.6)
 ```
 
 Each vertical opts in. Verticals that don't yet have detail-page needs (extras, transfers) can defer adopting this — they fall back to thin indexed content, same as today.
@@ -474,7 +502,7 @@ Each vertical opts in. Verticals that don't yet have detail-page needs (extras, 
 2. ~~**Multi-locale caching** — TUI returns content in `de-DE`; storefront serves a `ro-RO` user. Cache per locale, or cache one canonical and translate on read?~~ **Resolved (§3.5):** multi-language is a first-class axis. Adapters take a required `locale` and report `returned_locale`; the cache keys on `(entity_id, locale)` per vertical (independent TTLs, independent fetch failures, simple "missing locale" SQL); the read service walks a preference chain in one query and falls back gracefully. Machine translation is opt-in and flagged on the row, never implicit. Editorial overlays compose on top per locale.
 3. ~~**Cache invalidation on overlay change** — editorial overlays already exist for owned content. Do they apply to sourced content too? If yes, is the merge done at read time or at content-fetch time?~~ **Resolved (§3.5.4):** overlays apply to sourced content using the same `catalog_overlay` machinery, keyed on `(entity, field_path, locale, audience, market)`. Merge happens at **read time** after locale resolution — pick the best content row, then layer locale-matching overlays on top. Operators can curate a `ro-RO` overlay before TUI publishes ro-RO natively, and overlay edits don't need to invalidate the content cache. Content-fetch-time merge would couple two independent edit paths and force a cache rewrite on every overlay change; read-time merge keeps them orthogonal. Cost is a small extra query per read, mitigated by the same caching the overlay store already uses for owned reads.
 4. ~~**Background refresher vs inline-on-read** — Phase C ships inline; v2 considers background.~~ **Resolved (§3.4):** SWR in v1, no scheduled background refresher. Reads always return cached content immediately; stale rows trigger a fire-and-forget adapter refresh in the background so the next read is fresh. Singleflight collapses concurrent refreshes for the same key. A pure-background scheduled refresher is not planned — SWR + drift events covers the same surface without a worker / schedule / backlog monitor.
-5. **Per-vertical thin-content synthesizer shape** — when an adapter declares `supportsContentFetch: false`, the fallback synthesizer reads the indexed projection and produces a thin content blob. What's its minimum-viable shape per vertical? Each vertical decides.
+5. ~~**Per-vertical thin-content synthesizer shape** — when an adapter declares `supportsContentFetch: false`, the fallback synthesizer reads the indexed projection and produces a thin content blob. What's its minimum-viable shape per vertical?~~ **Resolved (§3.6):** the synthesizer is "as complete as we can legitimately make it," not minimum-viable. Returns the same shape as `getContent`, populated from projection + overlay + plane metadata; missing fields render as typed empty states rather than absent properties. It does not mine snapshots, machine-translate, invent plausible-but-unverified fields, or cache its own output. Each vertical owns its synthesizer; the principle is uniform across them.
 6. ~~**Stale-while-revalidate** — when a cache row is stale, do we serve it AND fire a background refresh, or block the read while refreshing?~~ **Resolved (§3.4):** SWR in v1. Stale-but-present rows serve immediately and schedule an async refresh; only true cache miss (no row in any preferred locale) blocks. The booking engine snapshot path (§5.1) deliberately bypasses SWR — snapshot writes need synchronous freshness, reads do not.
 
 ## 10. Related documents
