@@ -48,6 +48,15 @@ export function CountryCombobox({
 
   const itemCodes = React.useMemo(() => COUNTRY_LIST.map((c) => c.code), [])
 
+  // base-ui filters and displays via `itemToStringLabel`; the
+  // `itemToStringValue` prop is for form submission only. We want
+  // searches like "rom" to match Romania, so the label string includes
+  // the country name.
+  const itemToStringLabel = React.useCallback((code: unknown) => {
+    const match = COUNTRY_BY_CODE.get(code as string)
+    return match ? `${match.name} (${match.code})` : (code as string)
+  }, [])
+
   return (
     <Combobox
       items={itemCodes}
@@ -55,10 +64,8 @@ export function CountryCombobox({
       inputValue={inputValue}
       autoHighlight
       disabled={disabled}
-      itemToStringValue={(code) => {
-        const match = COUNTRY_BY_CODE.get(code as string)
-        return match ? `${match.name} (${match.code})` : (code as string)
-      }}
+      itemToStringLabel={itemToStringLabel}
+      itemToStringValue={(code) => code as string}
       onInputValueChange={(next) => {
         setInputValue(next)
         if (!next) onChange(null)

@@ -137,6 +137,7 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const inventory = await store.getInventoryByIds(db, body.ids)
     const requestedDepartureId = readDepartureId(body.parameters)
+    const billablePax = readBillablePax(body.parameters)
     const values: Record<string, Record<string, unknown>> = {}
     const failed: Record<string, "timeout" | "not_found" | "unsupported" | "error"> = {}
     for (const id of body.ids) {
@@ -164,11 +165,18 @@ export function createRoutes(db: CatalogDemoDb): Hono {
           continue
         }
       }
-      const slotPrice = departure?.lowest_price_cents ?? row.priceCents
+      const perPaxPrice = departure?.lowest_price_cents ?? row.priceCents
       const slotCurrency = departure?.currency ?? row.currency
+      // Demo products are guided tours — priced per billable pax
+      // (adults + children, infants free). Per-stay verticals would
+      // not multiply here; that's a real adapter concern, not a demo
+      // contract.
+      const totalPrice = perPaxPrice * billablePax
       values[id] = {
         available: true,
-        priceCents: slotPrice,
+        priceCents: totalPrice,
+        unitPriceCents: perPaxPrice,
+        billablePax,
         currency: slotCurrency,
         name: row.name,
         metadata: row.metadata ?? null,
@@ -178,7 +186,8 @@ export function createRoutes(db: CatalogDemoDb): Hono {
                 id: departure.id,
                 starts_at: departure.starts_at,
                 ends_at: departure.ends_at ?? null,
-                priceCents: slotPrice,
+                priceCents: totalPrice,
+                unitPriceCents: perPaxPrice,
                 currency: slotCurrency,
               },
             }
@@ -527,6 +536,22 @@ function mapArray<T>(value: unknown, project: (item: unknown) => T): T[] {
 function readDepartureId(parameters: Record<string, unknown> | undefined): string | null {
   const raw = parameters?.departure_id
   return typeof raw === "string" && raw.length > 0 ? raw : null
+}
+
+/**
+ * Pull the billable-pax count off the draft the catalog plane forwards
+ * to the adapter. Demo products price per adult + child (infants ride
+ * free, in keeping with most guided-tour pricing). Defaults to 1 when
+ * no draft is in flight (e.g. cache-warming probes).
+ */
+function readBillablePax(parameters: Record<string, unknown> | undefined): number {
+  const draft = parameters?.draft as { configure?: { pax?: Record<string, unknown> } } | undefined
+  const pax = draft?.configure?.pax
+  if (!pax || typeof pax !== "object") return 1
+  const adult = numberOr((pax as Record<string, unknown>).adult, 0) ?? 0
+  const child = numberOr((pax as Record<string, unknown>).child, 0) ?? 0
+  const total = adult + child
+  return total > 0 ? total : 1
 }
 
 interface DemoDeparture {

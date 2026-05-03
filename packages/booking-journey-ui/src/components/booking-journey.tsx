@@ -169,6 +169,10 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   useEffect(() => {
     if (currentStep === "configure" || !holdSignature) return
     if (holdState.current.signature === holdSignature) return
+    // Inquiry mode is the lead-form path — capture the lead without
+    // burning capacity. The operator follows up before any inventory
+    // is touched.
+    if (draft.payment.intent === "inquiry") return
     const previousToken = holdState.current.holdToken
     holdState.current = { signature: holdSignature }
     void holdApi
@@ -229,8 +233,8 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 
   return (
     <div className={props.className}>
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 space-y-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-8 md:items-start">
+        <div className="space-y-6 md:col-span-5">
           <StepHeader
             current={currentStep}
             visited={[...visited]}
@@ -321,11 +325,16 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           ) : null}
         </div>
 
-        <aside className="w-full lg:w-80">
+        <aside className="md:sticky md:top-4 md:col-span-3">
           <PriceSidePanel
             pricing={quote.data?.pricing ?? null}
             isQuoting={quote.isQuoting}
             invalidReason={quote.data?.invalidReason}
+            entitySummary={props.entitySummary}
+            currentStep={currentStep}
+            steps={steps}
+            shape={shape}
+            draft={draft}
             className={props.sidePanelClassName}
           />
         </aside>
@@ -467,6 +476,10 @@ function defaultMinimalShape(): BookingDraftShape {
     paxBandsAllowedTotal: paxBandsAllowedTotalFrom(DEFAULT_PAX_BANDS),
     travelerFields: defaultTravelerFields(),
     bookingFields: defaultBookingFields(),
-    paymentIntents: ["hold"],
+    // Engine-level allow list. Capabilities (per-deployment toggles)
+    // narrow further at render time — listing every supported intent
+    // here means consumers can opt in via PaymentProviderCapabilities
+    // without needing a custom fallbackShape.
+    paymentIntents: ["card", "bank_transfer", "hold", "inquiry", "ticket_on_credit"],
   }
 }

@@ -238,7 +238,7 @@ export interface BookingDraftShape {
   }
 
   // ── Payment ───────────────────────────────────────────────────────
-  paymentIntents: ReadonlyArray<"hold" | "card" | "ticket_on_credit">
+  paymentIntents: ReadonlyArray<"hold" | "card" | "bank_transfer" | "ticket_on_credit" | "inquiry">
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,8 +250,21 @@ export interface BookingDraftShape {
  * that don't distinguish bands. Verticals override when they have
  * supplier-specific age cutoffs (cruise lines especially).
  */
+/**
+ * Default pax bands used when a descriptor doesn't supply its own.
+ * Mirrors the convention surfaced in the storefront's traveler
+ * widget (Adults 12+ / Children 2–11 / Infants under 2) so the
+ * booking journey's age-vs-band mismatch warnings have something to
+ * key off and can suggest moving a row to the right band.
+ *
+ * Verticals override per product when they have stricter rules
+ * (e.g. cruises with senior bands, or family hotels with a
+ * teenager band).
+ */
 export const DEFAULT_PAX_BANDS: ReadonlyArray<PaxBandSpec> = [
-  { code: "adult", label: "Adult", minCount: 1, maxCount: 8 },
+  { code: "adult", label: "Adult", minAge: 12, minCount: 1, maxCount: 8 },
+  { code: "child", label: "Child", minAge: 2, maxAge: 11, minCount: 0, maxCount: 6 },
+  { code: "infant", label: "Infant", maxAge: 1, minCount: 0, maxCount: 4 },
 ]
 
 /** Sensible default total-pax window. Verticals override per product. */
@@ -304,14 +317,46 @@ export function defaultDraftShapeFlags(): Pick<
 }
 
 /**
- * Standard traveler-field set: first/last/email. Verticals append
- * required document fields (passport, national ID) per supplier.
+ * Standard traveler-field set covering the data every supplier
+ * eventually wants — name, contact, age, and travel documents.
+ * Verticals can override per supplier (e.g. to make a passport
+ * mandatory for international cruises) or add carrier-specific
+ * fields like loyalty number / meal preference.
+ *
+ * `appliesToBands` is honored by the wizard — DOB shows for every
+ * traveler but is *required* only for child/infant bands; document
+ * fields stay adult-only by default.
  */
 export function defaultTravelerFields(): ReadonlyArray<TravelerFieldRequirement> {
   return [
     { key: "firstName", label: "First name", type: "text", required: true },
     { key: "lastName", label: "Last name", type: "text", required: true },
     { key: "email", label: "Email", type: "email", required: false },
+    {
+      key: "phone",
+      label: "Phone",
+      type: "phone",
+      required: false,
+      appliesToBands: ["adult", "senior", "student", "other"],
+    },
+    {
+      key: "dateOfBirth",
+      label: "Date of birth",
+      type: "date",
+      required: false,
+    },
+    {
+      key: "documentType",
+      label: "Document type",
+      type: "select",
+      required: false,
+      options: [
+        { value: "passport", label: "Passport" },
+        { value: "national_id", label: "National ID" },
+      ],
+    },
+    { key: "documentNumber", label: "Document number", type: "text", required: false },
+    { key: "documentExpiry", label: "Document expiry", type: "date", required: false },
   ]
 }
 

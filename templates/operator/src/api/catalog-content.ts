@@ -102,12 +102,14 @@ async function handleHospitalityContent(c: Context): Promise<Response> {
   }
 
   return c.json({
-    data: result.content,
-    served_locale: result.resolution.served_locale,
-    match_kind: result.resolution.match_kind,
-    source: result.source,
-    served_stale: result.served_stale,
-    synthesized: result.synthesized,
-    machine_translated: result.machine_translated,
+    data: {
+      content: result.content,
+      served_locale: result.resolution.served_locale,
+      match_kind: result.resolution.match_kind,
+      source: result.source,
+      served_stale: result.served_stale,
+      synthesized: result.synthesized,
+      machine_translated: result.machine_translated,
+    },
   })
 }

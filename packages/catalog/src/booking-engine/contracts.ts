@@ -190,7 +190,7 @@ export const bookingDraftShapeV1 = z.object({
       groups: z.array(addonGroupV1).optional(),
     })
     .optional(),
-  paymentIntents: z.array(z.enum(["hold", "card", "ticket_on_credit"])),
+  paymentIntents: z.array(z.enum(["hold", "card", "bank_transfer", "ticket_on_credit", "inquiry"])),
 })
 
 // ─────────────────────────────────────────────────────────────────
@@ -331,7 +331,9 @@ export const bookingDraftV1 = z.object({
   // Step 6 — Payment
   payment: z
     .object({
-      intent: z.enum(["hold", "card", "ticket_on_credit"]).default("hold"),
+      intent: z
+        .enum(["hold", "card", "bank_transfer", "ticket_on_credit", "inquiry"])
+        .default("hold"),
       schedule: z.unknown().optional(),
     })
     .default({ intent: "hold" }),

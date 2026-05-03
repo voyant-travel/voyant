@@ -53,6 +53,7 @@ import {
 } from "@voyantjs/catalog/booking-engine"
 import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
+import { getProductContent } from "@voyantjs/products/service-content"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
@@ -240,7 +241,7 @@ async function handleQuote(c: Context): Promise<Response> {
         },
       },
     )
-    return c.json(result)
+    return c.json({ ...result, pricing: toPricingBreakdownV1(result.pricing) })
   } catch (err) {
     return errorResponse(c, err)
   }
@@ -292,7 +293,7 @@ async function handleBook(c: Context): Promise<Response> {
         adapterContext: { connection_id: "engine", correlation_id: correlationId },
       },
     )
-    return c.json(result)
+    return c.json({ ...result, pricing: toPricingBreakdownV1(result.pricing) })
   } catch (err) {
     return errorResponse(c, err)
   }
@@ -368,18 +369,57 @@ async function handleListSlots(c: Context): Promise<Response> {
   if (!entityModule || !entityId) {
     return c.json({ error: "entityModule and entityId are required" }, 400)
   }
-  // The slots table is keyed by `productId` regardless of
-  // entityModule (cruises / hospitality use the same column for
-  // their respective ids — `productId` is a misnomer that predates
-  // the cross-vertical journey). For now this read works for
-  // products; verticals with vertical-specific scheduling
-  // (cruises sailings, hospitality rate plans) will surface their
-  // own list endpoints in a follow-up.
+  // Cruises + hospitality have vertical-specific scheduling
+  // (sailings, rate plans) surfaced by the detail page directly off
+  // their content payloads. This endpoint only serves products.
   if (entityModule !== "products") {
     return c.json({ rows: [] })
   }
 
   const db = (c.var as { db: AnyDrizzleDb }).db as PostgresJsDatabase
+
+  // Sourced products carry their schedule in the sourced-content
+  // payload — the upstream's `getContent` is the source of truth, not
+  // any owned `availability_slots` row. Owned products keep using the
+  // owned table since `buildOwnedProductContent` doesn't project
+  // availability_slots into ProductContent.departures.
+  const sourcedEntry = await readSourcedEntry(db, "products", entityId)
+  if (sourcedEntry) {
+    const registry = getBookingEngineRegistryFromContext(c)
+    const acceptHeader = c.req.header("accept-language") ?? ""
+    const preferredLocales = acceptHeader
+      .split(",")
+      .map((s) => s.split(";")[0]?.trim())
+      .filter((s): s is string => Boolean(s))
+    const resolved = await getProductContent(
+      db,
+      entityId,
+      { preferredLocales: preferredLocales.length > 0 ? preferredLocales : ["en-GB"] },
+      { registry },
+    )
+    const today = new Date().toISOString().slice(0, 10)
+    const rows = (resolved?.content.departures ?? [])
+      .filter((d) => {
+        if (d.status === "sold_out" || d.status === "closed") return false
+        return d.starts_at.slice(0, 10) >= today
+      })
+      .slice(0, 60)
+      .map((d) => ({
+        id: d.id,
+        dateLocal: d.starts_at.slice(0, 10),
+        startsAt: d.starts_at,
+        endsAt: d.ends_at ?? null,
+        timezone: "UTC",
+        status: d.status ?? "open",
+        unlimited: d.capacity == null && d.remaining == null,
+        remainingPax: d.remaining ?? null,
+        initialPax: d.capacity ?? null,
+        nights: null,
+        days: null,
+      }))
+    return c.json({ rows })
+  }
+
   const today = new Date().toISOString().slice(0, 10)
   const rows = await db
     .select({
@@ -592,4 +632,85 @@ function cryptoRandom(): string {
     return globalThis.crypto.randomUUID()
   }
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+interface PricingBasisShape {
+  base_amount: number
+  taxes: number
+  fees: number
+  surcharges: number
+  currency: string
+  breakdown?: Record<string, unknown>
+}
+
+/**
+ * Map the engine's `PricingBasis` (base/taxes/fees/surcharges totals)
+ * onto the wire shape `pricingBreakdownV1` (lines + tax rows + totals)
+ * that V1 clients expect. The basis is what adapters report; the
+ * breakdown is what the storefront renders. A line-aware breakdown
+ * may eventually flow through the engine and override this projection.
+ */
+function toPricingBreakdownV1(basis: PricingBasisShape | undefined):
+  | {
+      currency: string
+      lines: Array<{
+        kind: "base" | "addon" | "accommodation" | "supplement" | "discount" | "fee"
+        label: string
+        quantity?: number
+        unitAmount: number
+        totalAmount: number
+      }>
+      taxes: Array<{ code: string; label: string; rate: number; amount: number; base: number }>
+      subtotal: number
+      taxTotal: number
+      total: number
+    }
+  | undefined {
+  if (!basis) return undefined
+  const lines: Array<{
+    kind: "base" | "fee" | "supplement"
+    label: string
+    quantity?: number
+    unitAmount: number
+    totalAmount: number
+  }> = [
+    {
+      kind: "base",
+      label: "Base",
+      quantity: 1,
+      unitAmount: basis.base_amount,
+      totalAmount: basis.base_amount,
+    },
+  ]
+  if (basis.fees > 0) {
+    lines.push({ kind: "fee", label: "Fees", unitAmount: basis.fees, totalAmount: basis.fees })
+  }
+  if (basis.surcharges > 0) {
+    lines.push({
+      kind: "supplement",
+      label: "Surcharges",
+      unitAmount: basis.surcharges,
+      totalAmount: basis.surcharges,
+    })
+  }
+  const subtotal = basis.base_amount + basis.fees + basis.surcharges
+  return {
+    currency: basis.currency,
+    lines,
+    taxes:
+      basis.taxes > 0
+        ? [
+            {
+              code: "tax",
+              label: "Tax",
+              rate: 0,
+              amount: basis.taxes,
+              base: basis.base_amount,
+            },
+          ]
+        : [],
+    subtotal,
+    taxTotal: basis.taxes,
+    total: subtotal + basis.taxes,
+  }
 }

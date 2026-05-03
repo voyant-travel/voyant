@@ -15,7 +15,11 @@
  */
 
 import { useNavigate } from "@tanstack/react-router"
-import { BookingJourney, type BookingJourneyProps } from "@voyantjs/booking-journey-ui"
+import {
+  type BookingEntitySummary,
+  BookingJourney,
+  type BookingJourneyProps,
+} from "@voyantjs/booking-journey-ui"
 
 export interface StorefrontBookingJourneyProps {
   entityModule: string
@@ -36,6 +40,10 @@ export interface StorefrontBookingJourneyProps {
   initialConfigure: Record<string, unknown>
   /** Pre-locked accommodation slice (room/rate for hospitality). */
   initialAccommodation?: Record<string, unknown>
+  /** Optional summary of the entity being booked — surfaces in the
+   *  side panel so the customer keeps context while filling out the
+   *  journey. */
+  entitySummary?: BookingEntitySummary
   className?: string
 }
 
@@ -48,6 +56,7 @@ export function StorefrontBookingJourney({
   draftId,
   initialConfigure,
   initialAccommodation,
+  entitySummary,
   className,
 }: StorefrontBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
@@ -82,13 +91,26 @@ export function StorefrontBookingJourney({
       hideConfigure
       initialConfigure={initialConfigure}
       initialAccommodation={initialAccommodation}
+      entitySummary={entitySummary}
       paymentCapabilities={{
-        // Storefront accepts card; hold-only and ticket-on-credit are
-        // operator surface concerns that don't make sense for a
-        // self-serve customer flow.
+        // Storefront defaults — covers the three customer-facing
+        // payment paths a typical tour operator wants. The deployment
+        // can override per-product (e.g. high-ticket cruises that
+        // should always go through inquiry first).
+        //
+        //  - acceptsCard: real-time card via the configured PSP
+        //    (renderPaymentProviderStep supplies the widget — when
+        //    absent we fall back to a "we'll email a link" message).
+        //  - acceptsBankTransfer: lock inventory, send bank details
+        //    out of band, reconcile on receipt of funds.
+        //  - acceptsInquiry: lead-only path. No inventory hold, no
+        //    charge — operator follows up manually. Useful for
+        //    custom itineraries / availability-on-request products.
         acceptsCard: true,
+        acceptsBankTransfer: true,
         acceptsHold: false,
         acceptsTicketOnCredit: false,
+        acceptsInquiry: true,
       }}
       className={className}
       {...slots}

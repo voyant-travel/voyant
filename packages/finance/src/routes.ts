@@ -646,13 +646,18 @@ export const financeRoutes = new Hono<Env>()
     )
   })
 
-  // POST /invoices/from-booking — Create draft invoice from booking + booking items
+  // POST /invoices/from-booking — Create + issue invoice (or proforma) from booking + booking items
   .post("/invoices/from-booking", async (c) => {
     const input = await parseJsonBody(c, invoiceFromBookingSchema)
     const db = c.get("db")
-    const [{ bookingItems, bookings }, { eq }] = await Promise.all([
+    const [
+      { bookingItems, bookings },
+      { eq },
+      { issueInvoiceFromBooking, issueProformaFromBooking },
+    ] = await Promise.all([
       import("@voyantjs/bookings/schema"),
       import("drizzle-orm"),
+      import("./service-issue.js"),
     ])
 
     const [booking] = await db
@@ -667,26 +672,42 @@ export const financeRoutes = new Hono<Env>()
 
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, booking.id))
 
-    const row = await financeService.createInvoiceFromBooking(db, input, {
-      booking: {
-        id: booking.id,
-        bookingNumber: booking.bookingNumber,
-        personId: booking.personId,
-        organizationId: booking.organizationId,
-        sellCurrency: booking.sellCurrency,
-        baseCurrency: booking.baseCurrency,
-        fxRateSetId: null,
-        sellAmountCents: booking.sellAmountCents,
-        baseSellAmountCents: booking.baseSellAmountCents,
+    const runtime = (() => {
+      try {
+        return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+      } catch {
+        return undefined
+      }
+    })()
+
+    const issuer =
+      input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
+
+    const row = await issuer(
+      db,
+      input,
+      {
+        booking: {
+          id: booking.id,
+          bookingNumber: booking.bookingNumber,
+          personId: booking.personId,
+          organizationId: booking.organizationId,
+          sellCurrency: booking.sellCurrency,
+          baseCurrency: booking.baseCurrency,
+          fxRateSetId: null,
+          sellAmountCents: booking.sellAmountCents,
+          baseSellAmountCents: booking.baseSellAmountCents,
+        },
+        items: items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          quantity: item.quantity,
+          unitSellAmountCents: item.unitSellAmountCents,
+          totalSellAmountCents: item.totalSellAmountCents,
+        })),
       },
-      items: items.map((item) => ({
-        id: item.id,
-        title: item.title,
-        quantity: item.quantity,
-        unitSellAmountCents: item.unitSellAmountCents,
-        totalSellAmountCents: item.totalSellAmountCents,
-      })),
-    })
+      { eventBus: runtime?.eventBus },
+    )
 
     return c.json({ data: row }, 201)
   })

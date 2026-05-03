@@ -34,6 +34,7 @@ export {
   totalPax,
 } from "./lib/draft-state.js"
 export {
+  type BookingEntitySummary,
   type BookingJourneyProps,
   JOURNEY_STEP_ORDER,
   type JourneyHeaderState,

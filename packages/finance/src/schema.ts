@@ -717,6 +717,15 @@ export const invoices = pgTable(
 
     invoiceNumber: text("invoice_number").notNull().unique(),
     invoiceType: invoiceTypeEnum("invoice_type").notNull().default("invoice"),
+    /**
+     * Source proforma when this row is the final invoice that
+     * superseded one. Lets the bank-transfer flow link the proforma
+     * issued at checkout to the invoice issued after payment lands —
+     * SmartBill's "convert proforma" call returns the same number
+     * series, but the local rows stay distinct so the audit trail
+     * shows both documents.
+     */
+    convertedFromInvoiceId: text("converted_from_invoice_id"),
     seriesId: typeIdRef("series_id"),
     sequence: integer("sequence"),
     templateId: typeIdRef("template_id"),
@@ -760,6 +769,7 @@ export const invoices = pgTable(
     index("idx_invoices_fx_rate_set").on(table.fxRateSetId),
     index("idx_invoices_number").on(table.invoiceNumber),
     index("idx_invoices_due_date").on(table.dueDate),
+    index("idx_invoices_converted_from").on(table.convertedFromInvoiceId),
     // base_currency covers every base_*_cents column. If any base amount is
     // present, base_currency must be set so reporting can interpret it.
     check(

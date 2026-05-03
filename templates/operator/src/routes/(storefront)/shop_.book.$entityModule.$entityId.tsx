@@ -1,8 +1,14 @@
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useParams, useSearch } from "@tanstack/react-router"
+import type { BookingEntitySummary } from "@voyantjs/booking-journey-ui"
+import type { CruiseContent } from "@voyantjs/cruises/content-shape"
+import type { HospitalityContent } from "@voyantjs/hospitality/content-shape"
+import type { ProductContent } from "@voyantjs/products/content-shape"
 import { useMemo } from "react"
 import { z } from "zod"
 
 import { StorefrontBookingJourney } from "@/components/voyant/booking-journey/storefront-booking-journey"
+import { getApiUrl } from "@/lib/env"
 
 /**
  * Storefront booking-journey route. The customer arrives here from
@@ -83,6 +89,8 @@ function ShopBookRouteComponent(): React.ReactElement {
       }
     : undefined
 
+  const entitySummary = useEntitySummary(entityModule, entityId, search)
+
   return (
     <StorefrontBookingJourney
       entityModule={entityModule}
@@ -90,9 +98,119 @@ function ShopBookRouteComponent(): React.ReactElement {
       draftId={draftId}
       initialConfigure={initialConfigure}
       initialAccommodation={initialAccommodation}
+      entitySummary={entitySummary}
     />
   )
 }
+
+/**
+ * Pull the entity content for the side-panel summary. Three
+ * vertical-specific endpoints share the same `{ data: { content,
+ * served_locale, ... } }` envelope; we map each into a
+ * vertical-agnostic `BookingEntitySummary`.
+ */
+function useEntitySummary(
+  entityModule: string,
+  entityId: string,
+  search: ShopBookSearch,
+): BookingEntitySummary | undefined {
+  const url =
+    entityModule === "cruises"
+      ? `${getApiUrl()}/v1/public/cruises/${encodeURIComponent(entityId)}/content`
+      : entityModule === "hospitality"
+        ? `${getApiUrl()}/v1/public/hospitality/${encodeURIComponent(entityId)}/content`
+        : entityModule === "products"
+          ? `${getApiUrl()}/v1/public/products/${encodeURIComponent(entityId)}/content`
+          : null
+
+  const { data } = useQuery({
+    queryKey: ["public-entity-summary", entityModule, entityId],
+    queryFn: async (): Promise<unknown> => {
+      if (!url) return null
+      const res = await fetch(url, { credentials: "include" })
+      if (!res.ok) return null
+      const json = (await res.json()) as { data?: { content?: unknown } }
+      return json.data?.content ?? null
+    },
+    enabled: Boolean(url),
+    staleTime: 60_000,
+  })
+
+  return useMemo<BookingEntitySummary | undefined>(() => {
+    if (!data) return undefined
+    if (entityModule === "products") {
+      const c = data as ProductContent
+      const subtitleParts = [
+        c.product.duration_days
+          ? `${c.product.duration_days} day${c.product.duration_days === 1 ? "" : "s"}`
+          : null,
+        c.product.country ?? null,
+      ].filter(Boolean) as string[]
+      const dep = c.departures?.find((d) => d.id === search.departureSlotId)
+      return {
+        name: c.product.name,
+        subtitle: subtitleParts.join(" · ") || undefined,
+        heroImageUrl: c.product.hero_image_url ?? c.media?.[0]?.url ?? undefined,
+        vertical: "products",
+        whenLabel: dep ? formatDate(dep.starts_at) : undefined,
+        locationLabel: c.product.departure_city ?? c.product.country ?? undefined,
+      }
+    }
+    if (entityModule === "cruises") {
+      const c = data as CruiseContent
+      const sailing = c.sailings.find((s) => s.id === search.departureSlotId)
+      const subtitleParts = [
+        c.cruise.duration_nights
+          ? `${c.cruise.duration_nights} night${c.cruise.duration_nights === 1 ? "" : "s"}`
+          : null,
+        c.ship?.name ?? null,
+      ].filter(Boolean) as string[]
+      const route = sailing
+        ? sailing.embarkation_port && sailing.disembarkation_port
+          ? `${sailing.embarkation_port} → ${sailing.disembarkation_port}`
+          : (sailing.embarkation_port ?? null)
+        : null
+      return {
+        name: c.cruise.name,
+        subtitle: subtitleParts.join(" · ") || undefined,
+        heroImageUrl: c.cruise.hero_image_url ?? undefined,
+        vertical: "cruises",
+        whenLabel: sailing ? formatDate(sailing.start_date) : undefined,
+        locationLabel: route ?? undefined,
+      }
+    }
+    if (entityModule === "hospitality") {
+      const c = data as HospitalityContent
+      const stars = c.hotel.star_rating ? "★".repeat(Math.floor(c.hotel.star_rating)) : null
+      return {
+        name: c.hotel.name,
+        subtitle: stars ?? undefined,
+        heroImageUrl: c.hotel.hero_image_url ?? undefined,
+        vertical: "hospitality",
+        whenLabel:
+          search.checkIn && search.checkOut
+            ? `${formatDate(search.checkIn)} → ${formatDate(search.checkOut)}`
+            : undefined,
+      }
+    }
+    return undefined
+  }, [data, entityModule, search.departureSlotId, search.checkIn, search.checkOut])
+}
+
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
+  } catch {
+    return iso
+  }
+}
+
+type ShopBookSearch = z.infer<typeof shopBookSearchSchema>
 
 function generateDraftId(): string {
   if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.randomUUID) {

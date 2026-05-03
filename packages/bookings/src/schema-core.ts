@@ -59,6 +59,8 @@ export const bookings = pgTable(
     expiredAt: timestamp("expired_at", { withTimezone: true }),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    awaitingPaymentAt: timestamp("awaiting_payment_at", { withTimezone: true }),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
     redeemedAt: timestamp("redeemed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

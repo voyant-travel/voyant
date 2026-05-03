@@ -84,6 +84,12 @@ export const invoiceFromBookingSchema = z.object({
   issueDate: z.string().min(1),
   dueDate: z.string().min(1),
   notes: z.string().optional().nullable(),
+  /**
+   * Document kind. Defaults to a regular invoice; bank-transfer
+   * checkout flows pass `proforma` to issue a placeholder doc until
+   * payment lands and a real invoice replaces it.
+   */
+  invoiceType: z.enum(["invoice", "proforma"]).default("invoice"),
 })
 
 const lineItemCoreSchema = z.object({

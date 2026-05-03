@@ -34,10 +34,20 @@ interface ContentResolution {
   machine_translated?: boolean
 }
 
-type ContentResponse<T> = {
-  data?: T
+/**
+ * Server response shape per `catalog-sourced-content.md`. The
+ * payload + resolution metadata may sit either at the top level or
+ * nested under a `data` envelope (different routes wrap differently).
+ */
+interface ContentEnvelope<T> extends ContentResolution {
   content?: T
-} & ContentResolution
+  /** Some routes flatten the payload directly into the envelope. */
+  synthesized?: boolean
+}
+
+type ContentResponse<T> = ContentEnvelope<T> & {
+  data?: ContentEnvelope<T>
+}
 
 /**
  * Build a BCP-47 preference chain from the browser. Sent as
@@ -66,16 +76,17 @@ async function fetchContent<T>(
     throw new Error(`Content request failed: ${res.status}`)
   }
   const json = (await res.json()) as ContentResponse<T>
-  const content = json.data ?? json.content
+  const envelope: ContentEnvelope<T> = json.data ?? json
+  const content = envelope.content
   if (!content) return null
   return {
     content,
     resolution: {
-      served_locale: json.served_locale,
-      match_kind: json.match_kind,
-      source: json.source,
-      served_stale: json.served_stale,
-      machine_translated: json.machine_translated,
+      served_locale: envelope.served_locale,
+      match_kind: envelope.match_kind,
+      source: envelope.synthesized ? "synthesized" : envelope.source,
+      served_stale: envelope.served_stale,
+      machine_translated: envelope.machine_translated,
     },
   }
 }
@@ -916,9 +927,9 @@ function BookingSidebar({
   disabled: boolean
   onBook: () => void
 }): React.ReactElement {
-  const totalLabel =
+  const priceLabel =
     totalCents > 0 && currency
-      ? formatMoney(totalCents, currency)
+      ? `from ${formatMoney(totalCents, currency)}`
       : quoteData?.invalidReason
         ? "—"
         : "Pending"
@@ -941,8 +952,8 @@ function BookingSidebar({
             {isQuoting && !quoteData ? <Skeleton className="h-4 w-20" /> : null}
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="font-medium">Total</span>
-            <span className="font-medium text-xl">{totalLabel}</span>
+            <span className="font-medium">Subtotal</span>
+            <span className="font-medium text-xl">{priceLabel}</span>
           </div>
           {quoteData?.invalidReason ? (
             <p className="text-amber-600 text-xs">
@@ -965,7 +976,7 @@ function BookingSidebar({
             <div className="text-muted-foreground text-xs">
               {totalPax} {totalPax === 1 ? "guest" : "guests"}
             </div>
-            <div className="font-medium">{totalLabel}</div>
+            <div className="font-medium">{priceLabel}</div>
           </div>
           <Button type="button" disabled={disabled} onClick={onBook}>
             Book

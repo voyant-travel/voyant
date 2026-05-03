@@ -173,7 +173,7 @@ export {
   voucherStatusEnum,
   vouchers,
 } from "./schema.js"
-export type { InvoiceFromBookingData } from "./service.js"
+export type { CreateInvoiceFromBookingInput, InvoiceFromBookingData } from "./service.js"
 export { financeService, renderInvoiceBody } from "./service.js"
 export type {
   BookingDualCreatedEvent,
@@ -215,6 +215,8 @@ export {
   defaultStorageBackedInvoiceDocumentSerializer,
   financeDocumentsService,
 } from "./service-documents.js"
+export type { InvoiceIssuedEvent, InvoiceIssueRuntime } from "./service-issue.js"
+export { issueInvoiceFromBooking, issueProformaFromBooking } from "./service-issue.js"
 export type {
   FinanceSettlementRuntimeOptions,
   InvoiceSettledEvent,
