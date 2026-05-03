@@ -42,6 +42,9 @@ interface DraftLike {
     cabinCategoryId?: string
     cabinNumberId?: string
     variantId?: string
+    /** Air-arrangement intent picked in the Configure step's
+     *  cruise-specific sub-step. */
+    airArrangement?: "cruise_line" | "independent" | "none"
   }
   billing?: {
     contact?: {
@@ -117,6 +120,8 @@ export interface CruiseCommitBridgeInput {
     dateOfBirth?: string | null
     travelerCategory?: "adult" | "child" | "infant" | null
   }>
+  /** Air-arrangement intent — see CreateCruiseBookingInput. */
+  airArrangement?: "cruise_line" | "independent" | "none" | null
   notes?: string | null
 }
 
@@ -155,6 +160,11 @@ export function createCruiseBookingHandler(
 ): OwnedBookingHandler {
   return {
     entityModule: "cruises",
+    // Cruise lines commonly hold cabin capacity for 24h after a
+    // journey times out (the "I'll be right back" pattern). Per
+    // booking-journey-architecture §12.9. Templates can override
+    // by replacing the handler at boot.
+    holdReleaseGraceMs: 24 * 60 * 60 * 1000,
 
     async computeQuote(
       ctx: OwnedHandlerContext,
@@ -303,6 +313,7 @@ export function createCruiseBookingHandler(
         organizationId: extractOrganizationId(request.party),
         contact,
         passengers,
+        airArrangement: draft.configure?.airArrangement ?? null,
         notes: draft.internalNotes ?? null,
       })
 

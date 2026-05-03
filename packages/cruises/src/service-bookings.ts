@@ -54,6 +54,16 @@ export type CreateCruiseBookingInput = {
   contact: CruiseBookingContact
   passengers: CruiseBookingPassenger[]
   notes?: string | null
+  /**
+   * Air-arrangement intent for this cruise. The cruise booking
+   * itself only carries the cabin line; the actual flight booking
+   * lives in the flights vertical (or with the customer when
+   * "independent"). Per booking-journey-architecture §7.
+   */
+  airArrangement?: "cruise_line" | "independent" | "none" | null
+  /** Optional pointer to a linked flight booking when the composer
+   *  ties cabin + flight lines together. */
+  linkedFlightBookingId?: string | null
 }
 
 export type CreateCruiseBookingResult = {
@@ -185,6 +195,8 @@ export const cruisesBookingService = {
         quotedComponentsJson: quote.components,
         connectorBookingRef: null,
         connectorStatus: null,
+        airArrangement: input.airArrangement ?? null,
+        linkedFlightBookingId: input.linkedFlightBookingId ?? null,
         notes: input.notes ?? null,
       })
 

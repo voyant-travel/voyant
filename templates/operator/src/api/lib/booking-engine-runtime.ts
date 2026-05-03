@@ -385,6 +385,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
                 organizationId: input.organizationId,
                 contact: input.contact,
                 passengers: input.passengers,
+                airArrangement: input.airArrangement,
                 notes: input.notes,
               },
               opts?.userId,

@@ -129,6 +129,17 @@ export type ConfigureSubStep =
   | { kind: "cabin-number"; perCategory: Record<string, ReadonlyArray<CabinNumberOption>> }
   | { kind: "date-range"; minNights: number; maxNights: number }
   | { kind: "occupancy"; bands: ReadonlyArray<PaxBandSpec> }
+  | {
+      /** Air-arrangement choice for cruises (per
+       *  booking-journey-architecture §7). The wizard renders
+       *  "Cruise-line-arranged flights" / "Independent flights" /
+       *  "No flights" tiles. */
+      kind: "air-arrangement"
+      /** When true, the user must pick before advancing. Cruise
+       *  lines that mandate the choice set this; "no flights"
+       *  remains a valid pick. */
+      required?: boolean
+    }
 
 /** Accommodation step sub-step union. */
 export type AccommodationSubStep =

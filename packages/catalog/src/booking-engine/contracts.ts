@@ -119,6 +119,10 @@ export const configureSubStepV1 = z.discriminatedUnion("kind", [
     maxNights: z.number().int().positive(),
   }),
   z.object({ kind: z.literal("occupancy"), bands: z.array(paxBandSpecV1) }),
+  z.object({
+    kind: z.literal("air-arrangement"),
+    required: z.boolean().optional(),
+  }),
 ])
 
 export const accommodationSubStepV1 = z.discriminatedUnion("kind", [
@@ -253,6 +257,9 @@ export const bookingDraftV1 = z.object({
           checkOut: z.string(),
         })
         .optional(),
+      /** Air-arrangement intent for cruises. Per
+       *  booking-journey-architecture §7. Other verticals ignore. */
+      airArrangement: z.enum(["cruise_line", "independent", "none"]).optional(),
     })
     .default(() => ({ pax: {} })),
 

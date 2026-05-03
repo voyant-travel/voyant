@@ -39,6 +39,9 @@ export interface ReaperResult {
   released: number
   releaseErrors: number
   deleted: number
+  /** Drafts skipped this tick because they're still within the
+   *  per-supplier hold-release grace window. */
+  inGrace: number
 }
 
 export async function runScheduledDraftReaper(
@@ -53,8 +56,23 @@ export async function runScheduledDraftReaper(
   let released = 0
   let releaseErrors = 0
   let deleted = 0
+  let inGrace = 0
 
+  const now = Date.now()
   for (const draft of expired) {
+    // Per-vertical grace period — defer release for graceMs past
+    // the draft's expiry. Per booking-journey-architecture §12.9.
+    const grace = resolveGraceMs(draft, ownedHandlers, registry)
+    if (grace > 0) {
+      const effectiveExpiry = new Date(draft.expires_at).getTime() + grace
+      if (now < effectiveExpiry) {
+        // Still inside the grace window — leave the draft alone.
+        // The next reaper tick will revisit it.
+        inGrace++
+        continue
+      }
+    }
+
     if (draft.hold_expires_at) {
       try {
         await releaseHold({
@@ -84,7 +102,29 @@ export async function runScheduledDraftReaper(
     }
   }
 
-  return { scanned: expired.length, released, releaseErrors, deleted }
+  return { scanned: expired.length, released, releaseErrors, deleted, inGrace }
+}
+
+/**
+ * Resolve the hold-release grace for a draft. Owned drafts read
+ * `OwnedBookingHandler.holdReleaseGraceMs`; sourced drafts read
+ * `AdapterCapabilities.holdReleaseGraceMs` off the registered
+ * adapter. Defaults to 0 (immediate) when no adapter / handler is
+ * found — keeps the reaper conservative.
+ */
+function resolveGraceMs(
+  draft: Awaited<ReturnType<typeof findExpiredDrafts>>[number],
+  ownedHandlers: OwnedBookingHandlerRegistry,
+  registry: SourceAdapterRegistry,
+): number {
+  if (draft.source_kind === "owned") {
+    const handler = ownedHandlers.resolve(draft.entity_module)
+    return handler?.holdReleaseGraceMs ?? 0
+  }
+  const adapter = draft.source_connection_id
+    ? registry.resolveByConnection(draft.source_connection_id)
+    : undefined
+  return adapter?.capabilities.holdReleaseGraceMs ?? 0
 }
 
 /**

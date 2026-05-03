@@ -136,3 +136,25 @@ CREATE INDEX IF NOT EXISTS "idx_availability_holds_draft" ON "availability_holds
 CREATE INDEX IF NOT EXISTS "idx_availability_holds_token" ON "availability_holds" ("hold_token");
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_availability_holds_expires" ON "availability_holds" ("expires_at");
+--> statement-breakpoint
+
+-- 7. Cruise air-arrangement choice on booking_cruise_details
+-- Per booking-journey-architecture §7.
+DO $$ BEGIN
+  CREATE TYPE "public"."cruise_air_arrangement"
+    AS ENUM('cruise_line', 'independent', 'none');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+
+ALTER TABLE "booking_cruise_details"
+  ADD COLUMN IF NOT EXISTS "air_arrangement" "cruise_air_arrangement";
+--> statement-breakpoint
+
+ALTER TABLE "booking_cruise_details"
+  ADD COLUMN IF NOT EXISTS "linked_flight_booking_id" text;
+--> statement-breakpoint
+
+CREATE INDEX IF NOT EXISTS "idx_bcd_air_arrangement"
+  ON "booking_cruise_details" ("air_arrangement");

@@ -136,6 +136,16 @@ export interface OwnedBookingHandler {
   readonly entityModule: string
 
   /**
+   * Per-vertical hold-release grace period in milliseconds. The
+   * reaper defers calling `releaseHold` for `grace` past a draft's
+   * expiry. Default `0` (immediate release).
+   *
+   * Mirrors `AdapterCapabilities.holdReleaseGraceMs` for sourced
+   * holds. Per booking-journey-architecture §12.9.
+   */
+  readonly holdReleaseGraceMs?: number
+
+  /**
    * Live-quote an owned row for a draft. The engine calls this on
    * every meaningful input change. Returns shape + pricing +
    * availability.

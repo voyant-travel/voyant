@@ -19,17 +19,18 @@ const richContent: CruiseContent = cruiseContentSchema.parse({
 })
 
 describe("buildCruiseDraftShape", () => {
-  it("emits an occupancy sub-step (only) when content has no sailings + no cabins", () => {
+  it("emits occupancy + air-arrangement when content has no sailings + no cabins", () => {
     const shape = buildCruiseDraftShape(minimalContent)
     expect(shape.configureSubSteps).toEqual([
       { kind: "occupancy", bands: DEFAULT_CRUISE_PAX_BANDS },
+      { kind: "air-arrangement", required: false },
     ])
   })
 
-  it("emits departure → cabin-category → occupancy when content carries sailings + categories", () => {
+  it("emits departure → cabin-category → occupancy → air-arrangement when content carries sailings + categories", () => {
     const shape = buildCruiseDraftShape(richContent)
     const kinds = (shape.configureSubSteps ?? []).map((s) => s.kind)
-    expect(kinds).toEqual(["departure", "cabin-category", "occupancy"])
+    expect(kinds).toEqual(["departure", "cabin-category", "occupancy", "air-arrangement"])
   })
 
   it("projects cabin_categories into cabin-category sub-step options", () => {
@@ -46,7 +47,13 @@ describe("buildCruiseDraftShape", () => {
   it("includes a cabin-number sub-step when forceCabinNumberSubStep is true", () => {
     const shape = buildCruiseDraftShape(richContent, { forceCabinNumberSubStep: true })
     const kinds = (shape.configureSubSteps ?? []).map((s) => s.kind)
-    expect(kinds).toEqual(["departure", "cabin-category", "cabin-number", "occupancy"])
+    expect(kinds).toEqual([
+      "departure",
+      "cabin-category",
+      "cabin-number",
+      "occupancy",
+      "air-arrangement",
+    ])
   })
 
   it("includes an insurance addon group when includeInsurance is true", () => {

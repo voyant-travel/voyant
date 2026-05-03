@@ -179,6 +179,9 @@ function DepartureFields({ draft, setDraft, shape }: StepCommonProps): React.Rea
             />
           )
         }
+        if (sub.kind === "air-arrangement") {
+          return <AirArrangementFields key="air-arrangement" draft={draft} setDraft={setDraft} />
+        }
         // "occupancy" — already rendered as PaxBands above; no sub-row.
         return null
       })}
@@ -299,6 +302,61 @@ function CabinCategoryFields({
               {cat.description ? (
                 <div className="text-muted-foreground text-xs">{cat.description}</div>
               ) : null}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function AirArrangementFields({
+  draft,
+  setDraft,
+}: {
+  draft: Draft
+  setDraft: (next: Draft) => void
+}): React.ReactElement {
+  const current = draft.configure.airArrangement
+  const options: Array<{
+    value: "cruise_line" | "independent" | "none"
+    label: string
+    description: string
+  }> = [
+    {
+      value: "cruise_line",
+      label: "Cruise-line-arranged flights",
+      description:
+        "The cruise line books your flights in a coordinated package. Operator follows up with the air desk.",
+    },
+    {
+      value: "independent",
+      label: "Independent flights",
+      description: "Book flights yourself or via a separate flight booking line.",
+    },
+    {
+      value: "none",
+      label: "No flights needed",
+      description: "Regional cruise / driving to the port.",
+    },
+  ]
+  return (
+    <div className="space-y-2">
+      <Label>Air arrangements</Label>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {options.map((opt) => {
+          const selected = current === opt.value
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              className={`rounded border p-3 text-left text-sm ${
+                selected ? "border-primary ring-2 ring-primary" : ""
+              }`}
+              onClick={() => setDraft(patchConfigure(draft, { airArrangement: opt.value }))}
+            >
+              <div className="font-medium">{opt.label}</div>
+              <div className="text-muted-foreground text-xs">{opt.description}</div>
             </button>
           )
         })}

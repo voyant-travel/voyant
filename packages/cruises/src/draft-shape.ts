@@ -99,6 +99,11 @@ export function buildCruiseDraftShape(
   }
   configureSubSteps.push({ kind: "occupancy", bands: paxBands })
 
+  // Air-arrangement choice — cruises always render this; the
+  // wizard's three tiles cover cruise-line-arranged, independent,
+  // and no-flights flows. Per booking-journey-architecture §7.
+  configureSubSteps.push({ kind: "air-arrangement", required: false })
+
   return {
     ...defaultDraftShapeFlags(),
     paxBands,

@@ -26,6 +26,18 @@ import type { QuoteComponent } from "./service-pricing.js"
 
 export const cruiseBookingModeEnum = pgEnum("cruise_booking_mode", ["inquiry", "reserve"])
 
+/**
+ * Air-arrangement choice on a cruise booking. Per
+ * booking-journey-architecture §7. The cruise booking carries the
+ * intent; the flight booking line itself lives in the flights
+ * vertical (or with the customer when "independent").
+ */
+export const cruiseAirArrangementEnum = pgEnum("cruise_air_arrangement", [
+  "cruise_line",
+  "independent",
+  "none",
+])
+
 // ---------- schemas ----------
 
 export const bookingCruiseDetails = pgTable(
@@ -54,6 +66,26 @@ export const bookingCruiseDetails = pgTable(
     quotedComponentsJson: jsonb("quoted_components_json").$type<QuoteComponent[]>().default([]),
     connectorBookingRef: text("connector_booking_ref"),
     connectorStatus: text("connector_status"),
+    /**
+     * Air-arrangement choice carried alongside the cruise. Per
+     * booking-journey-architecture §7 — cruises take the booking
+     * line for the cabin; the actual flight booking lives in the
+     * flights vertical and is the multi-line composer's concern.
+     * This column captures the customer's intent so ops can route
+     * follow-up:
+     *   - "cruise_line"  — operator must arrange flights with the
+     *                      cruise line's air desk.
+     *   - "independent"  — customer is booking flights themselves
+     *                      (or via a separate flight-booking line
+     *                      orchestrated by the composer).
+     *   - "none"         — no flights needed (regional / drive-to).
+     *   - null           — choice not collected (legacy bookings).
+     */
+    airArrangement: cruiseAirArrangementEnum("air_arrangement"),
+    /** Free-form pointer to the linked flight booking when the
+     *  composer ties cabin + flight lines together. Plain text per
+     *  schema-discipline (cross-domain refs go through links). */
+    linkedFlightBookingId: text("linked_flight_booking_id"),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -64,6 +96,7 @@ export const bookingCruiseDetails = pgTable(
     index("idx_bcd_cabin_category").on(t.cabinCategoryId),
     index("idx_bcd_connector_ref").on(t.connectorBookingRef),
     index("idx_bcd_provider").on(t.sourceProvider),
+    index("idx_bcd_air_arrangement").on(t.airArrangement),
   ],
 )
 
@@ -126,6 +159,8 @@ const cruiseDetailUpsertSchema = z
     quotedComponentsJson: z.array(z.unknown()).optional().nullable(),
     connectorBookingRef: z.string().optional().nullable(),
     connectorStatus: z.string().optional().nullable(),
+    airArrangement: z.enum(["cruise_line", "independent", "none"]).optional().nullable(),
+    linkedFlightBookingId: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
   })
   .superRefine((value, ctx) => {
