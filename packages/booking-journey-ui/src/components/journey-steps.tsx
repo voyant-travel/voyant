@@ -1304,9 +1304,12 @@ export function PaymentStep({
               })}
             </div>
           ) : (
+            // Most deployments use a redirect-style PSP (Netopia / Stripe
+            // Checkout / etc) where the journey hands off to a hosted
+            // payment page after the customer accepts the contract. Inline
+            // card collection is opt-in via `renderPaymentProviderStep`.
             <p className="text-muted-foreground text-sm">
-              Card payment provider not wired — the operator will email a secure payment link after
-              confirming the booking.
+              You'll be redirected to our secure payment page after confirming the booking.
             </p>
           )
         ) : null}
