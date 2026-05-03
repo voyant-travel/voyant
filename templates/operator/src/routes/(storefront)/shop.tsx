@@ -101,7 +101,7 @@ function SearchUnavailable(): React.ReactElement {
           dashboard and visit:
         </p>
         <p>
-          <code>/shop/book/products/&lt;productId&gt;?sourceKind=owned</code>
+          <code>/shop/book/products/&lt;productId&gt;</code>
         </p>
       </CardContent>
     </Card>
@@ -142,9 +142,6 @@ function SearchResults({
         const fields = hit.document.fields
         const name = readString(fields.name) ?? readString(fields.title) ?? hit.id
         const description = readString(fields.description) ?? readString(fields.summary)
-        const sourceKind = readString(fields.source_kind) ?? "owned"
-        const sourceConnectionId = readString(fields.source_connection_id)
-        const sourceRef = readString(fields.source_ref)
         const price = readNumber(fields.price_cents) ?? readNumber(fields.sell_amount_cents)
         const currency = readString(fields.currency) ?? readString(fields.sell_currency) ?? ""
         return (
@@ -167,11 +164,6 @@ function SearchResults({
               <Link
                 to="/shop/book/$entityModule/$entityId"
                 params={{ entityModule: vertical, entityId: hit.id }}
-                search={{
-                  sourceKind,
-                  ...(sourceConnectionId ? { sourceConnectionId } : {}),
-                  ...(sourceRef ? { sourceRef } : {}),
-                }}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-sm hover:bg-primary/90"
               >
                 Book

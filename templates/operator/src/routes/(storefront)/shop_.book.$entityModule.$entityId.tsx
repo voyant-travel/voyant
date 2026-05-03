@@ -11,11 +11,14 @@ import { StorefrontBookingJourney } from "@/components/voyant/booking-journey/st
  * default, post-commit nav to /shop/confirmation/$bookingId).
  *
  * Per booking-journey-architecture §10 Phase B.
+ *
+ * **No `sourceKind` in the URL.** The public engine route resolves
+ * provenance from `(entityModule, entityId)` server-side via the
+ * catalog plane's sourced-entry lookup. Customers shouldn't have
+ * to know whether a row is owned vs sourced from a supplier — that's
+ * an operator concern.
  */
 const shopBookSearchSchema = z.object({
-  sourceKind: z.string().min(1),
-  sourceConnectionId: z.string().optional(),
-  sourceRef: z.string().optional(),
   draftId: z.string().optional(),
 })
 
@@ -32,14 +35,7 @@ function ShopBookRouteComponent(): React.ReactElement {
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
   return (
-    <StorefrontBookingJourney
-      entityModule={entityModule}
-      entityId={entityId}
-      sourceKind={search.sourceKind}
-      sourceConnectionId={search.sourceConnectionId}
-      sourceRef={search.sourceRef}
-      draftId={draftId}
-    />
+    <StorefrontBookingJourney entityModule={entityModule} entityId={entityId} draftId={draftId} />
   )
 }
 

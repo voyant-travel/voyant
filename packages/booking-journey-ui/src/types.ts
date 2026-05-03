@@ -86,7 +86,14 @@ export interface BookingJourneyProps {
   /** What to book. */
   entityModule: string
   entityId: string
-  sourceKind: string
+  /**
+   * Source pointer fields. Optional on the public surface — the
+   * engine resolves provenance server-side from
+   * `(entityModule, entityId)` via the catalog plane's
+   * sourced-entry lookup. Operator surfaces should still pass
+   * `sourceKind` explicitly when known.
+   */
+  sourceKind?: string
   sourceConnectionId?: string
   sourceRef?: string
 

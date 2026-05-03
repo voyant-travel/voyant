@@ -42,6 +42,7 @@ import {
   NO_HANDLER_REGISTERED,
   ORDER_ALREADY_CANCELLED,
   ORDER_NOT_FOUND,
+  OWNED_SOURCE_KIND,
   QUOTE_EXPIRED,
   QUOTE_MISMATCH,
   QUOTE_NOT_FOUND,
@@ -49,6 +50,7 @@ import {
   RESERVE_FAILED,
   updateBookingDraft,
 } from "@voyantjs/catalog/booking-engine"
+import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { Context, Hono } from "hono"
 
@@ -59,6 +61,35 @@ import {
 
 function getDb(c: Context): AnyDrizzleDb {
   return (c.var as { db: AnyDrizzleDb }).db
+}
+
+/**
+ * Resolve provenance for an `(entity_module, entity_id)` pair.
+ * Sourced rows live in `catalog_sourced_entries` and carry their
+ * upstream pointer; everything else is owned. Customer-facing
+ * surfaces shouldn't have to know which is which — they pass the
+ * entity, the engine resolves the kind.
+ */
+async function resolveEntityProvenance(
+  db: AnyDrizzleDb,
+  entityModule: string,
+  entityId: string,
+): Promise<{
+  sourceKind: string
+  sourceProvider?: string
+  sourceConnectionId?: string
+  sourceRef?: string
+}> {
+  const row = await readSourcedEntry(db, entityModule, entityId)
+  if (!row) {
+    return { sourceKind: OWNED_SOURCE_KIND }
+  }
+  return {
+    sourceKind: row.source_kind,
+    sourceProvider: row.source_provider ?? undefined,
+    sourceConnectionId: row.source_connection_id ?? undefined,
+    sourceRef: row.source_ref ?? undefined,
+  }
 }
 
 interface QuoteBody {
@@ -151,14 +182,27 @@ async function handleQuote(c: Context): Promise<Response> {
     body = {}
   }
 
-  if (!body.entityModule || !body.entityId || !body.sourceKind) {
-    return c.json({ error: "entityModule, entityId, and sourceKind are required" }, 400)
+  if (!body.entityModule || !body.entityId) {
+    return c.json({ error: "entityModule and entityId are required" }, 400)
   }
 
   const db = getDb(c)
   const registry = getBookingEngineRegistryFromContext(c)
   const ownedHandlers = getOwnedBookingHandlerRegistryFromContext(c)
   const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+
+  // Resolve source provenance from the catalog plane when the
+  // caller hasn't supplied it. Customer-facing surfaces don't (and
+  // shouldn't) carry source kind in URLs — it's an operator
+  // concern. Operator surfaces still pass it explicitly.
+  const provenance = body.sourceKind
+    ? {
+        sourceKind: body.sourceKind,
+        sourceProvider: body.sourceProvider,
+        sourceConnectionId: body.sourceConnectionId,
+        sourceRef: body.sourceRef,
+      }
+    : await resolveEntityProvenance(db, body.entityModule, body.entityId)
 
   try {
     const result = await quoteEntity(
@@ -167,10 +211,10 @@ async function handleQuote(c: Context): Promise<Response> {
       {
         entityModule: body.entityModule,
         entityId: body.entityId,
-        sourceKind: body.sourceKind,
-        sourceProvider: body.sourceProvider,
-        sourceConnectionId: body.sourceConnectionId,
-        sourceRef: body.sourceRef,
+        sourceKind: provenance.sourceKind,
+        sourceProvider: provenance.sourceProvider,
+        sourceConnectionId: provenance.sourceConnectionId,
+        sourceRef: provenance.sourceRef,
         scope: {
           locale: body.scope?.locale ?? "en-GB",
           audience: body.scope?.audience ?? defaultAudienceForPath(c),
@@ -183,7 +227,7 @@ async function handleQuote(c: Context): Promise<Response> {
         parameters: { ...body.parameters, draft: body.draft },
         ttlMs: body.ttlMs,
         adapterContext: {
-          connection_id: body.sourceConnectionId ?? body.sourceKind,
+          connection_id: provenance.sourceConnectionId ?? provenance.sourceKind,
           correlation_id: correlationId,
         },
       },

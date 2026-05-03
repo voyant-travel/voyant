@@ -57,7 +57,9 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       {
         module: props.entityModule,
         id: props.entityId,
-        sourceKind: props.sourceKind,
+        // Empty when storefront — the public engine route resolves
+        // it server-side from (entityModule, entityId).
+        sourceKind: props.sourceKind ?? "",
         sourceConnectionId: props.sourceConnectionId,
         sourceRef: props.sourceRef,
       },

@@ -14,6 +14,11 @@ export type Draft = BookingDraftV1
 export interface DraftEntityIdentity {
   module: string
   id: string
+  /**
+   * Source kind. Empty string on the storefront before the engine's
+   * server-side resolver fills it in; operator-side wiring sets
+   * the real kind upfront.
+   */
   sourceKind: string
   sourceConnectionId?: string
   sourceRef?: string

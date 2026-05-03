@@ -20,7 +20,14 @@ import { BookingJourney, type BookingJourneyProps } from "@voyantjs/booking-jour
 export interface StorefrontBookingJourneyProps {
   entityModule: string
   entityId: string
-  sourceKind: string
+  /**
+   * Source provenance — optional on the storefront. When absent,
+   * the public engine route resolves it from
+   * `(entityModule, entityId)` via the catalog plane's
+   * sourced-entry lookup. Operator surfaces still pass it
+   * explicitly via `<OperatorBookingJourney />`.
+   */
+  sourceKind?: string
   sourceConnectionId?: string
   sourceRef?: string
   draftId: string

@@ -91,12 +91,15 @@ async function runQuote(
   draft: BookingDraftV1,
   scope: UseBookingQuoteOptions["scope"],
 ): Promise<QuoteResponseV1> {
-  return api.request<QuoteResponseV1>("POST", "/quote", quoteResponseV1, {
+  // Storefront callers don't surface `sourceKind` in URLs (the
+  // server resolves provenance from (module, id) via the catalog
+  // plane). Operator callers know the kind upfront and pass it.
+  // Either way, only send the source pointer fields when the
+  // caller actually has them — empty strings would otherwise fail
+  // the server-side validation that requires a non-empty kind.
+  const body: Record<string, unknown> = {
     entityModule: draft.entity.module,
     entityId: draft.entity.id,
-    sourceKind: draft.entity.sourceKind,
-    sourceConnectionId: draft.entity.sourceConnectionId,
-    sourceRef: draft.entity.sourceRef,
     scope: {
       locale: scope?.locale ?? "en-GB",
       audience: scope?.audience ?? defaultAudience(api.apiBase),
@@ -104,7 +107,11 @@ async function runQuote(
       currency: scope?.currency,
     },
     draft,
-  })
+  }
+  if (draft.entity.sourceKind) body.sourceKind = draft.entity.sourceKind
+  if (draft.entity.sourceConnectionId) body.sourceConnectionId = draft.entity.sourceConnectionId
+  if (draft.entity.sourceRef) body.sourceRef = draft.entity.sourceRef
+  return api.request<QuoteResponseV1>("POST", "/quote", quoteResponseV1, body)
 }
 
 function defaultAudience(apiBase: string): "staff" | "customer" | "partner" | "supplier" {
