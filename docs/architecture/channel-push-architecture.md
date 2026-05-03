@@ -30,8 +30,16 @@ Per the booking-journey doc's "reuse before add" rule:
 - **EventBus** — `packages/core/src/event-bus.ts`. `booking.confirmed`, `availability.changed`, `product.updated` events fire today; channel-push handlers subscribe.
 - **Workflows** — `packages/core/src/workflows.ts`. Saga primitive with compensation. Channel push for a booking that fans out to multiple channels uses this for rollback on partial push failure.
 - **Webhooks** — `webhook_subscriptions` / `webhook_deliveries` schemas already model outbound HTTP calls with retries. Channel push could ride on this infrastructure for the simple case (HTTP webhook to an upstream URL).
-- **Bookings module's `bookingChannelLinks`** — if a table linking bookings to upstream channel refs doesn't exist yet, we'd add it (see §6).
-- **Products' `external_refs`** — `packages/external-refs/` already models per-entity upstream identifiers. Channel push reads these to know which upstream id to push to.
+- **`packages/distribution`** — **the home for channel push.** Already ships:
+  - `channels` (kind, status, metadata) and `channel_contracts` (per-channel commercial terms)
+  - `channel_product_mappings` (id, channelId, productId, externalProductId, externalRateId, externalCategoryId, active)
+  - `channel_booking_links` (id, channelId, bookingId, externalBookingId, externalReference, externalStatus, lastSyncedAt)
+  - `channel_webhook_events` (inbound side: events received from channels)
+  - `channel_commission_rules`, `channel_inventory_allotments`, `channel_reconciliation_items`
+  - `distributionBookingExtension` HonoExtension — the canonical "extend bookings without bookings depending on us" pattern (matches `bookingProductExtension`, `bookingCrmExtension`, etc.)
+
+  This means channel push is **net-new code over an existing module**, not a new module. Bookings and products stay clean of channel concepts; distribution depends on them via the established extension pattern.
+- **Products' `external_refs`** — `packages/external-refs/` already models per-entity upstream identifiers. A complement to `channel_product_mappings` for cases where we identify a product across systems but don't actively syndicate it.
 
 ## 3. Adapter contract extension
 
@@ -50,8 +58,8 @@ export interface SourceAdapter {
    * key from (booking_id, channel_id) so retries don't double-push.
    *
    * Returns the upstream channel's reference id, which the engine
-   * stores in booking_channel_links for subsequent ops (modify,
-   * cancel) against the same upstream booking.
+   * stores in `channel_booking_links` (in distribution) for subsequent
+   * ops (modify, cancel) against the same upstream booking.
    */
   pushBooking?(
     ctx: SourceAdapterContext,
@@ -105,10 +113,10 @@ The same adapter package may declare both directions, sharing one `connection_id
 
 Triggered by a `booking.confirmed` event. The handler:
 
-1. Reads the booking's `bookingItems` and resolves each item's product → upstream channel mappings (via `bookingChannelLinks` lookup or product's `external_refs`).
-2. For each (booking_item × channel) pair: if the channel's adapter declares `supportsBookingPush: true`, enqueue a push.
-3. Pushes run in a workflow (`@voyantjs/core/workflows`) with per-channel compensation. If a channel fails repeatedly (after the adapter's retry budget), the saga marks that channel's link as `push_failed`, surfaces the failure to operators, and (depending on policy) either rolls back the booking or continues with the channels that succeeded.
-4. On success, the workflow writes a `bookingChannelLinks` row with the upstream's reference id and `push_status: ok`.
+1. Reads the booking's `bookingItems` and resolves each item's product → upstream channel mappings via `channel_product_mappings` (in distribution).
+2. For each (booking_item × channel) pair where the mapping has `push_bookings = true` and the channel's adapter declares `supportsBookingPush: true`, enqueue a push.
+3. Pushes run in a workflow (`@voyantjs/core/workflows`) with per-channel compensation. If a channel fails repeatedly (after the adapter's retry budget), the saga marks that channel's link as `push_status = 'failed'`, surfaces the failure to operators, and (depending on policy) either rolls back the booking or continues with the channels that succeeded.
+4. On success, the workflow upserts a `channel_booking_links` row (scoped by `booking_item_id` for fan-out) with the upstream's reference id and `push_status = 'ok'`.
 
 ```ts
 // Pseudocode
@@ -144,48 +152,52 @@ The push payload mirrors what the inbound `getContent` adapter method returns (p
 
 Versioned: each content push carries a `content_version` (monotonic per product). Upstream channels can deduplicate / reject older versions if they receive them out of order.
 
-## 7. Schema additions
+## 7. Schema changes
+
+Channel push **does not add new tables**. It extends two tables that already exist in `packages/distribution` (`channel_booking_links` and `channel_product_mappings`) with operational push fields. Additive migration; no breaking changes.
+
+### 7.1. `channel_booking_links` — additive columns
 
 ```sql
--- packages/bookings/src/schema-channels.ts (new)
-booking_channel_links (
-  id                    text pk           -- typeid: bcli
-  booking_item_id       text not null     -- per-item, not per-booking; fan-out granularity
-  channel_id            text not null     -- which channel this push targets
-  source_kind           text not null     -- "voyant-connect", "direct:tui", etc.
-  source_connection_id  text              -- specific connection
-  upstream_ref          text              -- channel's reference id once push succeeds
-  push_status           text not null     -- "pending" | "ok" | "failed" | "compensated"
-  push_attempts         integer not null default 0
-  last_push_at          timestamptz
-  last_error            text
-  pushed_payload_hash   text              -- detect drift in subsequent pushes
-  created_at            timestamptz not null default now()
-  updated_at            timestamptz not null default now()
-)
--- index on (booking_item_id, channel_id) unique
--- index on (push_status, last_push_at) for retry sweepers
+-- packages/distribution/src/schema-core.ts (extend existing table)
+ALTER TABLE channel_booking_links
+  ADD COLUMN booking_item_id      text,                          -- nullable; null = booking-level link
+  ADD COLUMN source_kind          text,                          -- mirrors adapter kind for routing
+  ADD COLUMN source_connection_id text,
+  ADD COLUMN push_status          text NOT NULL DEFAULT 'pending', -- "pending" | "ok" | "failed" | "compensated"
+  ADD COLUMN push_attempts        integer NOT NULL DEFAULT 0,
+  ADD COLUMN last_push_at         timestamptz,
+  ADD COLUMN last_error           text,
+  ADD COLUMN pushed_payload_hash  text;                          -- detect drift in subsequent pushes
 
--- packages/products/src/schema-channels.ts (new)
-product_channel_mappings (
-  id                    text pk
-  product_id            text not null
-  channel_id            text not null
-  source_kind           text not null
-  source_connection_id  text not null
-  upstream_product_ref  text not null     -- the channel's id for this product
-  active                boolean not null default true
-  push_availability     boolean not null default true
-  push_content          boolean not null default true
-  push_bookings         boolean not null default true
-  -- per-mapping policy: which fields get pushed, override priority, etc.
-  policy                jsonb
-  created_at            timestamptz not null default now()
-  updated_at            timestamptz not null default now()
-)
+CREATE INDEX idx_channel_booking_links_push_status
+  ON channel_booking_links (push_status, last_push_at);
+CREATE INDEX idx_channel_booking_links_booking_item
+  ON channel_booking_links (booking_item_id) WHERE booking_item_id IS NOT NULL;
 ```
 
-This adds two tables to existing modules (`packages/bookings`, `packages/products`). They're not in the catalog plane — channel mappings are a per-vertical operational concern; the catalog plane stays neutral.
+`booking_item_id` is nullable: existing rows (booking-level) keep working; new fan-out-per-item rows fill it in. A booking that syndicates one line to channel A and another line to channel B has two rows, each scoped by `booking_item_id`. A booking that fully syndicates to one channel has either one row with `booking_item_id = NULL` or one row per item — operator policy.
+
+### 7.2. `channel_product_mappings` — additive columns
+
+```sql
+-- packages/distribution/src/schema-core.ts (extend existing table)
+ALTER TABLE channel_product_mappings
+  ADD COLUMN source_kind          text,                          -- "voyant-connect", "direct:tui", etc.
+  ADD COLUMN source_connection_id text,
+  ADD COLUMN push_availability    boolean NOT NULL DEFAULT true,
+  ADD COLUMN push_content         boolean NOT NULL DEFAULT true,
+  ADD COLUMN push_bookings        boolean NOT NULL DEFAULT true,
+  ADD COLUMN policy               jsonb;                         -- per-mapping policy (rate caps, field include/exclude)
+```
+
+The existing columns (`externalProductId`, `externalRateId`, `externalCategoryId`, `active`) already cover the upstream-identifier shape; the new columns add per-mapping push toggles and policy.
+
+### 7.3. Why no new package, no new module
+
+Distribution is purpose-built for "we sell our products through external channels." Its existing schemas already model channels, contracts, mappings, booking links, webhook events, commissions, allotments, and reconciliation. Channel push is the operational arm that's missing — adding it inside distribution keeps the surface coherent. Putting these columns or the push workflow anywhere else would split a single concept across modules.
+
+The catalog plane stays neutral: it owns the inbound `SourceAdapter` contract and the outbound contract extension (§3), but the channel-push operational state (status, retries, mappings) lives in distribution where it belongs operationally.
 
 ## 8. The owned-arm + channel push interaction
 
@@ -213,27 +225,32 @@ The hard cases:
 - Add the three optional outbound methods + capability flags to `SourceAdapter`.
 - Pure typing change.
 
-**Phase B — Booking push for one channel kind** (3-4 days):
-- Add `booking_channel_links` and `product_channel_mappings` schemas.
-- Implement `pushBookingWorkflow` using `@voyantjs/core/workflows` with per-channel compensation.
-- Wire `booking.confirmed` event subscriber.
+**Phase B — Distribution schema extension** (1 day):
+- Additive ALTER TABLE migrations on `channel_booking_links` and `channel_product_mappings` per §7.
+- Update `@voyantjs/distribution` types and exports for the new columns.
+- No behavior change yet; subsequent phases populate the columns.
+
+**Phase C — Booking push for one channel kind** (3-4 days):
+- Implement `pushBookingWorkflow` in `packages/distribution/src/service-push.ts` using `@voyantjs/core/workflows` with per-channel compensation.
+- Wire `booking.confirmed` event subscriber inside distribution (subscribers register via `distributionModule`, not bookings — bookings stays clean).
+- Operator dashboard: "channel sync" view backed by `channel_booking_links.push_status` + retry endpoint.
 - Demo adapter (in `apps/catalog-demo-api` + `@voyantjs/plugin-catalog-demo`) gains an optional `POST /bookings` endpoint that records pushed bookings, so the operator can verify the round-trip end-to-end without an external integration.
 
-**Phase C — Availability push** (2-3 days):
-- Wire `availability.slot.changed` event subscriber.
-- Implement `pushAvailabilityWorkflow` (lighter than booking push — eventually consistent, no compensation).
+**Phase D — Availability push** (2-3 days):
+- Wire `availability.slot.changed` event subscriber in distribution.
+- Implement `pushAvailabilityWorkflow` (lighter than booking push — eventually consistent, no compensation; idempotent on `(slot_id, remaining_pax)`).
 - Demo adapter gains an availability sink.
 
-**Phase D — Content push** (2-3 days):
-- Wire `product.updated` event subscriber.
+**Phase E — Content push** (2-3 days):
+- Wire `product.updated` event subscriber in distribution.
 - Versioned content payloads.
 - Demo adapter content sink.
 
-**Phase E — First real channel adapter** (per integration; 5-10 days each):
+**Phase F — First real channel adapter** (per integration; 5-10 days each):
 - Implement the contract for a real upstream — TUI, a Voyant Connect peer, etc.
 - Each integration's auth, rate limits, and content-shape translation are upstream-specific work that lands per channel.
 
-Phases A-D give us the **channel-push framework**; Phase E onward is per-channel integration work that scales with the number of channels we support.
+Phases A-E give us the **channel-push framework** entirely inside `packages/distribution`; Phase F onward is per-channel integration work that scales with the number of channels we support.
 
 ## 11. Non-goals (v1)
 
@@ -244,10 +261,10 @@ Phases A-D give us the **channel-push framework**; Phase E onward is per-channel
 
 ## 12. Open questions
 
-1. **Where does `booking_channel_links` actually live?** Bookings module makes sense (it's a per-booking-item concern). But it implies bookings depends on channel concepts. Acceptable since most channel work *is* booking-related, but worth confirming.
-2. **Webhook-delivery infrastructure reuse.** The `webhook_deliveries` table already models retried HTTP outbound calls. Should channel push ride on top, or is its retry/compensation policy too different (workflow saga vs. simple retry queue)? Probably channel push uses workflows for booking push (compensation matters) and webhook-deliveries for availability/content push (idempotent retries are enough).
+1. ~~**Where does `booking_channel_links` actually live?**~~ **Resolved (§2, §7):** channel push lives in `packages/distribution`, which already houses `channels`, `channel_contracts`, `channel_product_mappings`, `channel_booking_links`, `channel_webhook_events`, `channel_commission_rules`, `channel_inventory_allotments`, `channel_reconciliation_items`, plus the `distributionBookingExtension` HonoExtension. Channel push is net-new code (workflows, event subscribers, push-status fields) over the existing module — not new tables in bookings/products. Bookings stays clean of channel concepts; distribution depends on bookings via the established extension pattern, never the inverse.
+2. **Webhook-delivery infrastructure reuse.** The `webhook_deliveries` table already models retried HTTP outbound calls. Should channel push ride on top, or is its retry/compensation policy too different (workflow saga vs. simple retry queue)? Lean: channel push uses workflows for booking push (compensation matters) and webhook-deliveries for availability/content push (idempotent retries are enough).
 3. **Per-channel rate-limit awareness.** Channels often have rate limits we must respect. The push workflow needs a rate-limiter per (channel, source_connection_id). Standard pattern; not in this doc's scope but flagged.
-4. **What's `channel_id`?** A new lookup table, or a synthetic id derived from `(source_kind, source_connection_id)`? Lean toward synthetic — fewer tables, fewer joins.
+4. ~~**What's `channel_id`?**~~ **Resolved (§2):** `channel_id` is the typeid of a row in the existing `distribution.channels` table — not a synthetic from `(source_kind, source_connection_id)`. A channel is a first-class entity with its own contracts, contacts, commission rules, and reconciliation surface; reducing it to a synthetic would lose that structure.
 5. **Bidirectional adapter packaging.** When one upstream is both inbound and outbound, does the same `SourceAdapter` instance carry all methods, or do we ship two adapters per connection? One instance is simpler; that's what the contract assumes today.
 
 ## 13. Related documents
