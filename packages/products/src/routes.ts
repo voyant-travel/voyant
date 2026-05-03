@@ -397,9 +397,10 @@ export const productRoutes = new Hono<Env>()
   })
 
   .post("/:id/features", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.createFeature(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       await parseJsonBody(c, insertProductFeatureSchema),
     )
 
@@ -407,6 +408,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "feature" })
     return c.json({ data: row }, 201)
   })
 
@@ -421,6 +423,9 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product feature not found" }, 404)
     }
 
+    if (row.productId) {
+      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "feature" })
+    }
     return c.json({ data: row })
   })
 
@@ -431,6 +436,9 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product feature not found" }, 404)
     }
 
+    if ("productId" in row && typeof row.productId === "string") {
+      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "feature" })
+    }
     return c.json({ success: true }, 200)
   })
 
@@ -449,9 +457,10 @@ export const productRoutes = new Hono<Env>()
   })
 
   .post("/:id/faqs", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.createFaq(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       await parseJsonBody(c, insertProductFaqSchema),
     )
 
@@ -459,6 +468,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "faq" })
     return c.json({ data: row }, 201)
   })
 
@@ -473,6 +483,9 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product FAQ not found" }, 404)
     }
 
+    if (row.productId) {
+      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "faq" })
+    }
     return c.json({ data: row })
   })
 
@@ -481,6 +494,9 @@ export const productRoutes = new Hono<Env>()
 
     if (!row) {
       return c.json({ error: "Product FAQ not found" }, 404)
+    }
+    if ("productId" in row && typeof row.productId === "string") {
+      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "faq" })
     }
 
     return c.json({ success: true }, 200)
@@ -501,9 +517,10 @@ export const productRoutes = new Hono<Env>()
   })
 
   .post("/:id/locations", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.createLocation(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       await parseJsonBody(c, insertProductLocationSchema),
     )
 
@@ -511,6 +528,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "location" })
     return c.json({ data: row }, 201)
   })
 
@@ -525,6 +543,9 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product location not found" }, 404)
     }
 
+    if (row.productId) {
+      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "location" })
+    }
     return c.json({ data: row })
   })
 
@@ -535,6 +556,9 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product location not found" }, 404)
     }
 
+    if ("productId" in row && typeof row.productId === "string") {
+      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "location" })
+    }
     return c.json({ success: true }, 200)
   })
 
@@ -634,9 +658,10 @@ export const productRoutes = new Hono<Env>()
   })
 
   .post("/:id/destinations", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.assignProductDestination(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       await parseJsonBody(c, insertProductDestinationSchema),
     )
 
@@ -644,13 +669,15 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product or destination not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "destination" })
     return c.json({ data: row }, 201)
   })
 
   .delete("/:id/destinations/:destinationId", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.removeProductDestination(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       c.req.param("destinationId"),
     )
 
@@ -658,6 +685,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product destination link not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "destination" })
     return c.json({ success: true }, 200)
   })
 
@@ -711,6 +739,9 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product option not found" }, 404)
     }
 
+    if (row.productId) {
+      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "option" })
+    }
     return c.json({ data: row })
   })
 
@@ -722,6 +753,9 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product option not found" }, 404)
     }
 
+    if ("productId" in row && typeof row.productId === "string") {
+      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "option" })
+    }
     return c.json({ success: true }, 200)
   })
 
@@ -810,9 +844,10 @@ export const productRoutes = new Hono<Env>()
   })
 
   .post("/:id/translations", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.createProductTranslation(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       await parseJsonBody(c, insertProductTranslationSchema),
     )
 
@@ -820,6 +855,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "translation" })
     return c.json({ data: row }, 201)
   })
 
@@ -834,6 +870,12 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product translation not found" }, 404)
     }
 
+    if (row.productId) {
+      await emitProductContentChanged(c.get("eventBus"), {
+        id: row.productId,
+        axis: "translation",
+      })
+    }
     return c.json({ data: row })
   })
 
@@ -847,6 +889,12 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Product translation not found" }, 404)
     }
 
+    if ("productId" in row && typeof row.productId === "string") {
+      await emitProductContentChanged(c.get("eventBus"), {
+        id: row.productId,
+        axis: "translation",
+      })
+    }
     return c.json({ success: true }, 200)
   })
 
@@ -1457,9 +1505,10 @@ export const productRoutes = new Hono<Env>()
 
   // DELETE /:id/days/:dayId/services/:serviceId — Delete service
   .delete("/:id/days/:dayId/services/:serviceId", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.deleteDayService(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       c.req.param("serviceId"),
     )
 
@@ -1467,6 +1516,7 @@ export const productRoutes = new Hono<Env>()
       return c.json({ error: "Service not found" }, 404)
     }
 
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
     return c.json({ success: true }, 200)
   })
 
