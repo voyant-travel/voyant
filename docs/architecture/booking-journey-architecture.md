@@ -657,7 +657,15 @@ Each addition is justified against §0.7's reuse table — the question we answe
 
 ## 10. Migration / rollout
 
-Three phases. Each is shippable.
+Six phases. Each is shippable. Phase B has external prerequisites (see below).
+
+**Phase B prerequisites — these block Phase B but parallel each other:**
+
+- The `OwnedBookingHandler` interface (Phase A of this doc).
+- At least the products vertical's content cache (Phase C of [`catalog-sourced-content.md`](./catalog-sourced-content.md)) — without it, the journey's Configure / Accommodation / Add-ons steps can't read sourced content.
+- The `SourceAdapter` outbound contract additions (Phase A of [`channel-push-architecture.md`](./channel-push-architecture.md)) — typing-only; the engine's commit hooks need to know they exist.
+
+The full channel-push integration work (real adapters per channel) parallels Phase B/C of the journey, not blocks it.
 
 **Phase A — Minimal owned handler for products vertical only** (2-3 days):
 - Add `OwnedBookingHandler` interface + `OwnedBookingHandlerRegistry` to `@voyantjs/catalog/booking-engine`. Pure contract — no vertical imports.
@@ -707,11 +715,15 @@ Three phases. Each is shippable.
 - **Multi-line / composed itineraries** (flight + hotel + tour, cruise + air, customer-built routes across verticals). This is explicitly the [travel-composer](./ai-travel-experience-composition.md)'s job, not the journey's. The journey commits ONE bookable line; the composer orchestrates N journeys-worth of quote/hold/book primitives into one customer experience with one consolidated checkout. See §0.5 for the seam. The journey's design (per-line draft, per-line quote, optional Payment step, multi-vertical descriptor) is intentionally non-blocking for the composer; building the composer is a separate body of work.
 - **Group bookings** beyond shared-room (corporate event, school trip).
 - **Loyalty program** integration (frequent-cruiser numbers are stored as a traveler field but don't drive pricing or perks in v1).
-- **Channel manager** push (forwarding the booking to upstream channels).
 - **Partial cancellations** (cancel only some travelers from a booking).
 - **Wizard for hospitality direct-from-search** without going through the catalog page. Stage 1 entry point is the Catalog UI's "Book this".
 - **Multi-cabin cruise parties** (one booking, two cabins, party split). v1 is single-cabin-per-booking; multi-cabin is a v2 feature that materializes as N drafts under a `bookingGroups` row.
 - **Cruise-line-arranged air** (CL-FLIGHT). Air is a separate vertical; v1 cruise bookings don't include flights. Customer adds them as a second booking against the flights vertical.
+
+**Moved out of non-goals — these ARE v1 (specified in sibling docs):**
+
+- ~~**Channel manager push**~~ — promoted to v1. Real deployments integrate with TUI, Voyant Connect peers, OTAs, and similar channels from day one; the journey isn't useful without it. Specified in [`channel-push-architecture.md`](./channel-push-architecture.md). The journey doesn't drive the push (post-commit subscriber territory) but the engine's `bookEntity` commit fires the events that channel push consumes.
+- ~~**Rich content for sourced rows**~~ — promoted to v1 prerequisite. Today's catalog plane has no shared "give me this sourced row's full content" path; cruises has a vertical-specific workaround. The journey's Configure / Accommodation / Add-ons steps need this content. Specified in [`catalog-sourced-content.md`](./catalog-sourced-content.md). **Phase B of the journey is blocked on at least the products vertical adopting the content cache.**
 
 ## 12. Open questions for design / product
 
@@ -735,6 +747,8 @@ These need answers before Phase B starts:
 
 - [`catalog-architecture.md`](./catalog-architecture.md) — the Phase 1 foundation (provenance, snapshot graph, source-adapter contract).
 - [`catalog-booking-engine.md`](./catalog-booking-engine.md) — the cross-vertical lifecycle (quote / book / cancel) the wizard speaks to.
+- [`catalog-sourced-content.md`](./catalog-sourced-content.md) — **prerequisite for Phase B.** Specifies the rich-content layer for sourced rows (itinerary / media / departures / options / terms) so the journey's Configure / Accommodation / Add-ons steps work for sourced rows the way they work for owned products.
+- [`channel-push-architecture.md`](./channel-push-architecture.md) — outbound supplier integration. The journey's commit triggers the booking-push subscriber. Contract additions block Phase B; full channel integrations parallel.
 - [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) — the flights vertical's specialized booking flow. The wizard described here borrows shape but does not replace it; flights stays special-case.
 - [`payments-architecture.md`](./payments-architecture.md) — payment intent + schedule. The Payment step calls into the same primitives.
 - [`ai-travel-experience-composition.md`](./ai-travel-experience-composition.md) — the proposed travel-composer module that orchestrates multi-line itineraries. The single-line journey designed here is one of the composer's leaf primitives (§0.5). Don't ship architectural decisions in this doc that block what the composer needs.
