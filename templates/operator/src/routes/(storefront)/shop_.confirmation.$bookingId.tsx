@@ -9,12 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/component
  * endpoint) — for the dual-surface validation, just acknowledging
  * the commit is sufficient.
  */
-export const Route = createFileRoute("/(storefront)/shop/confirmation/$bookingId")({
+export const Route = createFileRoute("/(storefront)/shop_/confirmation/$bookingId")({
   component: ShopConfirmationRouteComponent,
 })
 
 function ShopConfirmationRouteComponent(): React.ReactElement {
-  const { bookingId } = useParams({ from: "/(storefront)/shop/confirmation/$bookingId" })
+  const { bookingId } = useParams({ from: "/(storefront)/shop_/confirmation/$bookingId" })
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <Card>

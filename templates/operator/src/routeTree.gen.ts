@@ -76,10 +76,10 @@ import { Route as WorkspaceFlightsBookOfferIdRouteImport } from './routes/_works
 import { Route as WorkspaceFinanceInvoicesIdRouteImport } from './routes/_workspace/finance/invoices/$id'
 import { Route as WorkspaceAvailabilityStartTimesIdRouteImport } from './routes/_workspace/availability/start-times/$id'
 import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_workspace/availability/rules/$id'
-import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop.confirmation.$bookingId'
+import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
 import { Route as WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.journey.$entityModule.$entityId'
 import { Route as WorkspaceCatalogBookEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.book.$entityModule.$entityId'
-import { Route as storefrontShopBookEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop.book.$entityModule.$entityId'
+import { Route as storefrontShopBookEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.book.$entityModule.$entityId'
 
 const PayRoute = PayRouteImport.update({
   id: '/pay',
@@ -446,9 +446,9 @@ const WorkspaceAvailabilityRulesIdRoute =
   } as any)
 const storefrontShopConfirmationBookingIdRoute =
   storefrontShopConfirmationBookingIdRouteImport.update({
-    id: '/confirmation/$bookingId',
-    path: '/confirmation/$bookingId',
-    getParentRoute: () => storefrontShopRoute,
+    id: '/shop_/confirmation/$bookingId',
+    path: '/shop/confirmation/$bookingId',
+    getParentRoute: () => storefrontRouteRoute,
   } as any)
 const WorkspaceCatalogJourneyEntityModuleEntityIdRoute =
   WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport.update({
@@ -464,9 +464,9 @@ const WorkspaceCatalogBookEntityModuleEntityIdRoute =
   } as any)
 const storefrontShopBookEntityModuleEntityIdRoute =
   storefrontShopBookEntityModuleEntityIdRouteImport.update({
-    id: '/book/$entityModule/$entityId',
-    path: '/book/$entityModule/$entityId',
-    getParentRoute: () => storefrontShopRoute,
+    id: '/shop_/book/$entityModule/$entityId',
+    path: '/shop/book/$entityModule/$entityId',
+    getParentRoute: () => storefrontRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -481,7 +481,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof authSignInRoute
   '/sign-up': typeof authSignUpRoute
   '/verify-email': typeof authVerifyEmailRoute
-  '/shop': typeof storefrontShopRouteWithChildren
+  '/shop': typeof storefrontShopRoute
   '/account': typeof WorkspaceAccountRoute
   '/catalog': typeof WorkspaceCatalogRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
@@ -549,7 +549,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof authSignInRoute
   '/sign-up': typeof authSignUpRoute
   '/verify-email': typeof authVerifyEmailRoute
-  '/shop': typeof storefrontShopRouteWithChildren
+  '/shop': typeof storefrontShopRoute
   '/account': typeof WorkspaceAccountRoute
   '/catalog': typeof WorkspaceCatalogRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
@@ -623,7 +623,7 @@ export interface FileRoutesById {
   '/(auth)/sign-in': typeof authSignInRoute
   '/(auth)/sign-up': typeof authSignUpRoute
   '/(auth)/verify-email': typeof authVerifyEmailRoute
-  '/(storefront)/shop': typeof storefrontShopRouteWithChildren
+  '/(storefront)/shop': typeof storefrontShopRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
   '/_workspace/catalog': typeof WorkspaceCatalogRoute
   '/_workspace/channel-sync': typeof WorkspaceChannelSyncRoute
@@ -659,7 +659,7 @@ export interface FileRoutesById {
   '/_workspace/resources/': typeof WorkspaceResourcesIndexRoute
   '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/_workspace/suppliers/': typeof WorkspaceSuppliersIndexRoute
-  '/(storefront)/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
+  '/(storefront)/shop_/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/_workspace/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/_workspace/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
   '/_workspace/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
@@ -678,7 +678,7 @@ export interface FileRoutesById {
   '/_workspace/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
   '/_workspace/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/_workspace/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
-  '/(storefront)/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
+  '/(storefront)/shop_/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/_workspace/catalog_/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
   '/_workspace/catalog_/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
@@ -873,7 +873,7 @@ export interface FileRouteTypes {
     | '/_workspace/resources/'
     | '/_workspace/settings/'
     | '/_workspace/suppliers/'
-    | '/(storefront)/shop/confirmation/$bookingId'
+    | '/(storefront)/shop_/confirmation/$bookingId'
     | '/_workspace/availability/rules/$id'
     | '/_workspace/availability/start-times/$id'
     | '/_workspace/finance/invoices/$id'
@@ -892,7 +892,7 @@ export interface FileRouteTypes {
     | '/_workspace/legal/policies/'
     | '/_workspace/legal/templates/'
     | '/_workspace/notifications/templates/'
-    | '/(storefront)/shop/book/$entityModule/$entityId'
+    | '/(storefront)/shop_/book/$entityModule/$entityId'
     | '/_workspace/catalog_/book/$entityModule/$entityId'
     | '/_workspace/catalog_/journey/$entityModule/$entityId'
   fileRoutesById: FileRoutesById
@@ -1376,12 +1376,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAvailabilityRulesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/(storefront)/shop/confirmation/$bookingId': {
-      id: '/(storefront)/shop/confirmation/$bookingId'
-      path: '/confirmation/$bookingId'
+    '/(storefront)/shop_/confirmation/$bookingId': {
+      id: '/(storefront)/shop_/confirmation/$bookingId'
+      path: '/shop/confirmation/$bookingId'
       fullPath: '/shop/confirmation/$bookingId'
       preLoaderRoute: typeof storefrontShopConfirmationBookingIdRouteImport
-      parentRoute: typeof storefrontShopRoute
+      parentRoute: typeof storefrontRouteRoute
     }
     '/_workspace/catalog_/journey/$entityModule/$entityId': {
       id: '/_workspace/catalog_/journey/$entityModule/$entityId'
@@ -1397,12 +1397,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/(storefront)/shop/book/$entityModule/$entityId': {
-      id: '/(storefront)/shop/book/$entityModule/$entityId'
-      path: '/book/$entityModule/$entityId'
+    '/(storefront)/shop_/book/$entityModule/$entityId': {
+      id: '/(storefront)/shop_/book/$entityModule/$entityId'
+      path: '/shop/book/$entityModule/$entityId'
       fullPath: '/shop/book/$entityModule/$entityId'
       preLoaderRoute: typeof storefrontShopBookEntityModuleEntityIdRouteImport
-      parentRoute: typeof storefrontShopRoute
+      parentRoute: typeof storefrontRouteRoute
     }
   }
 }
@@ -1433,28 +1433,18 @@ const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
   authRouteRouteChildren,
 )
 
-interface storefrontShopRouteChildren {
+interface storefrontRouteRouteChildren {
+  storefrontShopRoute: typeof storefrontShopRoute
   storefrontShopConfirmationBookingIdRoute: typeof storefrontShopConfirmationBookingIdRoute
   storefrontShopBookEntityModuleEntityIdRoute: typeof storefrontShopBookEntityModuleEntityIdRoute
 }
 
-const storefrontShopRouteChildren: storefrontShopRouteChildren = {
+const storefrontRouteRouteChildren: storefrontRouteRouteChildren = {
+  storefrontShopRoute: storefrontShopRoute,
   storefrontShopConfirmationBookingIdRoute:
     storefrontShopConfirmationBookingIdRoute,
   storefrontShopBookEntityModuleEntityIdRoute:
     storefrontShopBookEntityModuleEntityIdRoute,
-}
-
-const storefrontShopRouteWithChildren = storefrontShopRoute._addFileChildren(
-  storefrontShopRouteChildren,
-)
-
-interface storefrontRouteRouteChildren {
-  storefrontShopRoute: typeof storefrontShopRouteWithChildren
-}
-
-const storefrontRouteRouteChildren: storefrontRouteRouteChildren = {
-  storefrontShopRoute: storefrontShopRouteWithChildren,
 }
 
 const storefrontRouteRouteWithChildren = storefrontRouteRoute._addFileChildren(

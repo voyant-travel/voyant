@@ -19,16 +19,16 @@ const shopBookSearchSchema = z.object({
   draftId: z.string().optional(),
 })
 
-export const Route = createFileRoute("/(storefront)/shop/book/$entityModule/$entityId")({
+export const Route = createFileRoute("/(storefront)/shop_/book/$entityModule/$entityId")({
   component: ShopBookRouteComponent,
   validateSearch: shopBookSearchSchema,
 })
 
 function ShopBookRouteComponent(): React.ReactElement {
   const { entityModule, entityId } = useParams({
-    from: "/(storefront)/shop/book/$entityModule/$entityId",
+    from: "/(storefront)/shop_/book/$entityModule/$entityId",
   })
-  const search = useSearch({ from: "/(storefront)/shop/book/$entityModule/$entityId" })
+  const search = useSearch({ from: "/(storefront)/shop_/book/$entityModule/$entityId" })
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
   return (
@@ -45,7 +45,7 @@ function ShopBookRouteComponent(): React.ReactElement {
 
 function generateDraftId(): string {
   if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.randomUUID) {
-    return `bdrf_${globalThis.crypto.randomUUID().replace(/-/g, "")}`
+    return `bdrf_${globalThis.crypto.randomUUID().replace(/-/g, ``)}`
   }
   return `bdrf_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
 }
