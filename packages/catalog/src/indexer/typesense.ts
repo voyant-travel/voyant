@@ -380,11 +380,13 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
         // Collection already exists — fall through to the update path.
       }
 
-      // Typesense's `update` only accepts NEW fields (or explicit drops).
-      // Re-sending the full schema would alter existing fields and the
-      // server rejects that. Diff existing vs desired and send only the
-      // additions; existing-field type changes still need a manual
-      // drop+recreate, which is out of scope here.
+      // Typesense's `update` only accepts new fields, drops, and
+      // drop+add as the way to "alter" an existing field. Diff existing
+      // vs desired and emit:
+      //   - additions for fields that don't exist yet
+      //   - drop+add pairs for fields whose facet/type drifted (so a
+      //     policy change like reindex:"entry" → "facet-affecting" gets
+      //     picked up without operators having to nuke the collection)
       let existing: TypesenseCollectionSchema | undefined
       try {
         existing = await client.collections(schema.name).retrieve()
@@ -394,10 +396,24 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
         await client.collections().create(schemaForCreate)
         return
       }
-      const have = new Set(existing.fields.map((f) => f.name))
-      const additions = fieldsForServer.filter((f) => !have.has(f.name))
-      if (additions.length === 0) return
-      await client.collections(schema.name).update({ fields: additions })
+      const existingByName = new Map(existing.fields.map((f) => [f.name, f]))
+      const updates: Array<TypesenseFieldSchema & { drop?: boolean }> = []
+      for (const desired of fieldsForServer) {
+        const current = existingByName.get(desired.name)
+        if (!current) {
+          updates.push(desired)
+          continue
+        }
+        if (
+          current.type !== desired.type ||
+          (current.facet ?? false) !== (desired.facet ?? false)
+        ) {
+          updates.push({ name: desired.name, type: desired.type, drop: true })
+          updates.push(desired)
+        }
+      }
+      if (updates.length === 0) return
+      await client.collections(schema.name).update({ fields: updates as TypesenseFieldSchema[] })
     },
 
     async upsert(slice, documents) {

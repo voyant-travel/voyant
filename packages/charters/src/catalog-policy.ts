@@ -26,7 +26,7 @@ const CHARTER_FIELD_POLICY: FieldPolicyInput[] = [
     class: "managed",
     merge: "source-only",
     drift: "critical",
-    reindex: "entry",
+    reindex: "facet-affecting",
     snapshot: "on-book",
     query: "indexed-column",
     localized: false,
