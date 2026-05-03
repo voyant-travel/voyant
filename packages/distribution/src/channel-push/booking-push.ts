@@ -17,17 +17,23 @@
  */
 
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
-import type { PushBookingRequest, SourceAdapterContext } from "@voyantjs/catalog"
+import {
+  AdapterRateLimitedError,
+  type PushBookingRequest,
+  type SourceAdapter,
+  type SourceAdapterContext,
+} from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
 import {
   channelBookingLinks,
+  channelContracts,
   channelProductMappings,
   channels,
 } from "@voyantjs/distribution/schema"
-import { and, eq, sql } from "drizzle-orm"
+import { and, asc, eq, lte, or, sql } from "drizzle-orm"
 
-import { acquireToken, channelScopeKey, type RateLimitConfig } from "../rate-limit.js"
+import { acquireToken, channelScopeKey, drainBucket, type RateLimitConfig } from "../rate-limit.js"
 import { prepareOutboundEnvelope } from "../webhook-deliveries.js"
 
 import { type ChannelPushDeps, defaultLogger, getChannelPushDepsOrThrow } from "./types.js"
@@ -44,15 +50,38 @@ export interface ProcessBookingPushResult {
   attempted: number
   succeeded: number
   failed: number
+  /**
+   * Number of succeeded links that were compensated (rolled back via
+   * `adapter.cancel`) because the contract's `compensation` policy is
+   * `"strict-atomic"` and at least one sibling failed. Always 0 under
+   * the default `"eventually-consistent"` policy.
+   */
+  compensated: number
   /** Per-link outcomes for diagnostics. */
   outcomes: Array<{
     channelId: string
     bookingItemId: string | null
-    status: "ok" | "failed" | "skipped"
+    status: "ok" | "failed" | "skipped" | "compensated"
     upstreamRef?: string
     error?: string
   }>
 }
+
+/**
+ * Compensation modes per `channel_contracts.policy.compensation`.
+ *
+ * - `eventually-consistent` (default): partial successes stay; ops gets
+ *   alerted via `webhook_deliveries` and retries via the reconciler.
+ *   Usually correct for travel inventory — succeeded channels know
+ *   about the booking and will honor it; the failed ones converge.
+ * - `strict-atomic`: on any per-link failure, the engine calls
+ *   `adapter.cancel` for succeeded siblings and marks them
+ *   `push_status = 'compensated'`. Use only when ALL channels MUST
+ *   agree on the booking's existence (rare).
+ *
+ * Per docs/architecture/channel-push-architecture.md §4.2 + §9.
+ */
+export type CompensationPolicy = "strict-atomic" | "eventually-consistent"
 
 /**
  * Build the stable idempotency key the upstream uses to dedupe pushes
@@ -228,7 +257,14 @@ export async function processBookingPush(
   }>
 
   if (links.length === 0) {
-    return { bookingId: input.bookingId, attempted: 0, succeeded: 0, failed: 0, outcomes }
+    return {
+      bookingId: input.bookingId,
+      attempted: 0,
+      succeeded: 0,
+      failed: 0,
+      compensated: 0,
+      outcomes,
+    }
   }
 
   const [booking] = (await db
@@ -239,11 +275,27 @@ export async function processBookingPush(
 
   if (!booking) {
     logger.error?.(`processBookingPush: booking ${input.bookingId} not found`, {})
-    return { bookingId: input.bookingId, attempted: 0, succeeded: 0, failed: 0, outcomes }
+    return {
+      bookingId: input.bookingId,
+      attempted: 0,
+      succeeded: 0,
+      failed: 0,
+      compensated: 0,
+      outcomes,
+    }
   }
 
   let succeeded = 0
   let failed = 0
+  // Track succeeded links so we can compensate them if a sibling fails
+  // and the contract policy demands strict-atomicity. Per §4.2.
+  const successList: Array<{
+    link: typeof channelBookingLinks.$inferSelect
+    channel: typeof channels.$inferSelect
+    adapter: SourceAdapter
+    adapterCtx: SourceAdapterContext
+    upstreamRef: string
+  }> = []
 
   for (const { link, channel } of links) {
     const connectionId = link.sourceConnectionId ?? channel.id
@@ -369,10 +421,19 @@ export async function processBookingPush(
         upstreamRef: result.upstreamRef,
       })
       succeeded += 1
+      successList.push({ link, channel, adapter, adapterCtx, upstreamRef: result.upstreamRef })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
+      // 429 from upstream — drain the bucket for the cooldown so
+      // concurrent dispatchers also see "no tokens" until the channel
+      // is ready, and stamp the delivery with the rate-limited class
+      // (per §14.4).
+      const isRateLimited = err instanceof AdapterRateLimitedError
+      if (isRateLimited) {
+        await drainBucket(db, channelScopeKey(channel.id, connectionId), err.retryAfterMs)
+      }
       await envelope.complete({
-        errorClass: "adapter_error",
+        errorClass: isRateLimited ? "rate_limited" : "adapter_error",
         errorMessage: message,
       })
       await markLinkFailed(db, link.id, link.pushAttempts + 1, message)
@@ -387,13 +448,146 @@ export async function processBookingPush(
     }
   }
 
+  // Compensation pass: if any link failed and the channel-contract
+  // policy is strict-atomic, roll back succeeded siblings so all
+  // channels see a consistent "no booking" state. Per §4.2.
+  let compensated = 0
+  if (failed > 0 && successList.length > 0) {
+    const policy = await resolveCompensationPolicy(db, links[0]?.channel.id ?? null)
+    if (policy === "strict-atomic") {
+      for (const entry of successList) {
+        const success = await compensateSucceededLink(db, entry, input.bookingId, logger)
+        if (success) {
+          compensated += 1
+          // Update the existing outcome row to compensated.
+          for (const outcome of outcomes) {
+            if (
+              outcome.channelId === entry.channel.id &&
+              outcome.bookingItemId === (entry.link.bookingItemId ?? null) &&
+              outcome.status === "ok"
+            ) {
+              outcome.status = "compensated"
+              break
+            }
+          }
+        }
+      }
+      if (compensated > 0) {
+        logger.warn?.(
+          `processBookingPush: compensated ${compensated} succeeded link(s) under strict-atomic policy`,
+          { bookingId: input.bookingId, compensated, failed },
+        )
+      }
+    }
+  }
+
   return {
     bookingId: input.bookingId,
     attempted: links.length,
     succeeded,
     failed,
+    compensated,
     outcomes,
   }
+}
+
+/**
+ * Read the compensation policy for a channel by walking
+ * `channel_contracts` (most-recent active contract wins). Returns
+ * `eventually-consistent` when no contract exists or no compensation
+ * key is set — that's the doc-default safe behavior for travel
+ * inventory.
+ */
+async function resolveCompensationPolicy(
+  db: AnyDrizzleDb,
+  channelId: string | null,
+): Promise<CompensationPolicy> {
+  if (!channelId) return "eventually-consistent"
+  const today = new Date().toISOString().slice(0, 10)
+  const [contract] = (await db
+    .select({ policy: channelContracts.policy })
+    .from(channelContracts)
+    .where(
+      and(
+        eq(channelContracts.channelId, channelId),
+        eq(channelContracts.status, "active"),
+        or(sql`${channelContracts.endsAt} IS NULL`, lte(channelContracts.startsAt, today)),
+      ),
+    )
+    .orderBy(asc(channelContracts.startsAt))
+    .limit(1)) as Array<{ policy: Record<string, unknown> | null }>
+
+  const raw = contract?.policy?.compensation
+  return raw === "strict-atomic" ? "strict-atomic" : "eventually-consistent"
+}
+
+/**
+ * Roll back a succeeded link by calling `adapter.cancel` for the
+ * upstream reference. Marks the link `compensated` regardless of the
+ * cancel call's outcome — leaving it `ok` would lie to the operator
+ * dashboard. Per §4.2.
+ */
+async function compensateSucceededLink(
+  db: AnyDrizzleDb,
+  entry: {
+    link: typeof channelBookingLinks.$inferSelect
+    channel: typeof channels.$inferSelect
+    adapter: SourceAdapter
+    adapterCtx: SourceAdapterContext
+    upstreamRef: string
+  },
+  bookingId: string,
+  logger: {
+    error?: (message: string, meta?: Record<string, unknown>) => void
+    warn?: (message: string, meta?: Record<string, unknown>) => void
+  },
+): Promise<boolean> {
+  let cancelError: string | null = null
+  if (entry.adapter.cancel) {
+    const envelope = await prepareOutboundEnvelope(db, {
+      sourceModule: "distribution",
+      sourceEvent: "channel.booking.compensate",
+      sourceEntityModule: "bookings",
+      sourceEntityId: bookingId,
+      targetUrl: `adapter:${entry.adapter.kind}`,
+      targetKind: `channel:${entry.adapter.kind}`,
+      targetRef: entry.channel.id,
+      requestMethod: "POST",
+      requestBody: { upstream_ref: entry.upstreamRef, reason: "channel-push-compensation" },
+      attemptNumber: 1,
+      idempotencyKey: `compensate:${entry.link.id}`,
+    })
+    try {
+      const result = await entry.adapter.cancel(entry.adapterCtx, {
+        upstream_ref: entry.upstreamRef,
+        reason: "channel-push-compensation",
+      })
+      await envelope.complete({ responseStatus: 200, responseBody: result })
+    } catch (err) {
+      cancelError = err instanceof Error ? err.message : String(err)
+      await envelope.complete({ errorClass: "adapter_error", errorMessage: cancelError })
+      logger.warn?.(`compensateSucceededLink: cancel failed for ${entry.link.id}`, {
+        error: cancelError,
+      })
+    }
+  } else {
+    cancelError = "adapter does not implement cancel"
+    logger.warn?.(`compensateSucceededLink: ${entry.adapter.kind} has no cancel method`, {
+      linkId: entry.link.id,
+    })
+  }
+
+  const now = new Date()
+  await db
+    .update(channelBookingLinks)
+    .set({
+      pushStatus: "compensated",
+      lastPushAt: now,
+      lastError: cancelError,
+      updatedAt: now,
+    })
+    .where(eq(channelBookingLinks.id, entry.link.id))
+  return true
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

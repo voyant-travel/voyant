@@ -2,7 +2,9 @@
 
 // Public source-adapter contract.
 export {
+  ADAPTER_RATE_LIMITED,
   type AdapterCapabilities,
+  AdapterRateLimitedError,
   CAPABILITY_NOT_SUPPORTED,
   type CancelRequest,
   type CancelResult,

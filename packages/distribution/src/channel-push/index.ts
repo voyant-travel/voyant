@@ -5,6 +5,10 @@
  */
 
 export {
+  type ChannelPushAdminRoutes,
+  createChannelPushAdminRoutes,
+} from "./admin-routes.js"
+export {
   CHANNEL_AVAILABILITY_PUSH_WORKFLOW_ID,
   type ProcessAvailabilityPushInput,
   type ProcessAvailabilityPushResult,
@@ -59,3 +63,12 @@ export {
   getChannelPushDepsOrThrow,
   setChannelPushDeps,
 } from "./types.js"
+// Importing this module registers all three durable workflows in the
+// process-local @voyantjs/workflows registry. Hosts that don't run an
+// orchestrator (e.g. the operator template's inline drain) can still
+// import safely — registration is a no-op without a runtime to dispatch.
+export {
+  channelAvailabilityPushWorkflow,
+  channelBookingPushWorkflow,
+  channelContentPushWorkflow,
+} from "./workflows.js"
