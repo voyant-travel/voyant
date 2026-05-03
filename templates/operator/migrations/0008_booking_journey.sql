@@ -110,3 +110,29 @@ ALTER TABLE "booking_catalog_snapshot"
 CREATE UNIQUE INDEX IF NOT EXISTS "booking_catalog_snapshot_idempotency_uniq"
   ON "booking_catalog_snapshot" ("idempotency_key")
   WHERE "idempotency_key" IS NOT NULL;
+--> statement-breakpoint
+
+-- 6. availability_holds (per booking-journey-architecture §5.7 + §6)
+CREATE TABLE IF NOT EXISTS "availability_holds" (
+  "id" text PRIMARY KEY NOT NULL,
+  "draft_id" text NOT NULL,
+  "hold_token" text NOT NULL,
+  "product_id" text NOT NULL,
+  "slot_id" text NOT NULL,
+  "pax_count" integer NOT NULL,
+  "expires_at" timestamp with time zone NOT NULL,
+  "released_at" timestamp with time zone,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "availability_holds_slot_id_fkey"
+    FOREIGN KEY ("slot_id") REFERENCES "availability_slots"("id") ON DELETE cascade
+);
+--> statement-breakpoint
+
+CREATE INDEX IF NOT EXISTS "idx_availability_holds_slot" ON "availability_holds" ("slot_id");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_availability_holds_draft" ON "availability_holds" ("draft_id");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_availability_holds_token" ON "availability_holds" ("hold_token");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_availability_holds_expires" ON "availability_holds" ("expires_at");

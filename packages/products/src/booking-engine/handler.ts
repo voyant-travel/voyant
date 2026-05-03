@@ -220,6 +220,33 @@ export interface OwnedProductsShapeLoaders {
   ) => Promise<ResolvedTaxRate | null>
 }
 
+/**
+ * Caller-supplied availability-hold bridge — keeps the products
+ * package free of an `@voyantjs/availability` dependency. When
+ * wired, the handler's `placeHold/extendHold/releaseHold` route
+ * through `availability_holds` (real inventory locks). When
+ * omitted, the handler falls back to stamping no-ops.
+ */
+export interface AvailabilityHoldBridge {
+  place: (input: {
+    draftId: string
+    productId: string
+    slotId: string
+    paxCount: number
+    ttlMs: number
+    holdToken?: string
+  }) => Promise<
+    | { status: "ok"; holdToken: string; expiresAt: Date }
+    | { status: "slot_not_found" }
+    | { status: "insufficient_capacity"; remaining: number; needed: number }
+  >
+  extend: (input: {
+    holdToken: string
+    ttlMs: number
+  }) => Promise<{ status: "ok"; expiresAt: Date } | { status: "not_found" }>
+  release: (holdToken: string) => Promise<void>
+}
+
 export interface CreateProductsBookingHandlerOptions extends OwnedProductsShapeLoaders {
   /**
    * Caller-supplied bridge to `bookingsQuickCreate`. Wired by the
@@ -233,6 +260,14 @@ export interface CreateProductsBookingHandlerOptions extends OwnedProductsShapeL
    * (operator: numbering plugin) override.
    */
   generateBookingNumber?: () => string
+  /**
+   * Optional inventory-hold bridge. When wired, `placeHold`
+   * decrements `availability_slots.remainingPax` against the
+   * draft's chosen slot; `releaseHold` restores it. When omitted,
+   * the handler returns a stamping token without touching
+   * inventory.
+   */
+  holds?: AvailabilityHoldBridge
 }
 
 export function createProductsBookingHandler(
@@ -334,34 +369,69 @@ export function createProductsBookingHandler(
     },
 
     /**
-     * Place a soft hold on the row. Phase B implementation is a
-     * **stamping no-op** — it returns a token + expiry but does NOT
-     * reserve capacity in the availability layer. Real inventory
-     * reservation against `availabilitySlots` is a Phase C follow-up
-     * that crosses into the availability module.
+     * Place a soft hold on the row's chosen slot. When the
+     * `holds` bridge is wired, decrements
+     * `availability_slots.remainingPax` against the slot for the
+     * pax count; concurrent placeHold attempts are serialized via
+     * a row-level lock inside the bridge. When omitted, returns a
+     * stamping token without touching inventory.
      *
-     * The journey's `booking_drafts.hold_expires_at` field already
-     * gives us a time-bounded "user is configuring a draft" signal;
-     * this stub returns a matching token so the contract is honored.
+     * The slot id and pax count are pulled off
+     * `request.parameters.slotId` / `request.parameters.paxCount`
+     * — the journey wizard threads these from the draft's
+     * Configure step (`departureSlotId` + summed `pax`).
      */
     async placeHold(_ctx: OwnedHandlerContext, request) {
       const token = request.draftId ?? defaultBookingNumber()
-      return {
-        holdToken: token,
-        expiresAt: new Date(Date.now() + request.ttlMs),
+      const expiresAt = new Date(Date.now() + request.ttlMs)
+      if (!options.holds) {
+        return { holdToken: token, expiresAt }
       }
+      const params = (request.parameters ?? {}) as {
+        slotId?: string
+        paxCount?: number
+        productId?: string
+      }
+      const slotId = params.slotId
+      const paxCount = params.paxCount ?? 1
+      if (!slotId || !request.draftId) {
+        // No slot chosen yet → no inventory to lock. Return a
+        // stamping token so the journey can still call extend /
+        // release.
+        return { holdToken: token, expiresAt }
+      }
+      const result = await options.holds.place({
+        draftId: request.draftId,
+        productId: params.productId ?? request.entityId,
+        slotId,
+        paxCount,
+        ttlMs: request.ttlMs,
+        holdToken: token,
+      })
+      if (result.status === "ok") {
+        return { holdToken: result.holdToken, expiresAt: result.expiresAt }
+      }
+      // Capacity / lookup failures fall back to a stamping token
+      // — the journey commit will revalidate via the engine's
+      // re-quote and reject if capacity has dried up.
+      return { holdToken: token, expiresAt }
     },
 
     async extendHold(_ctx: OwnedHandlerContext, holdToken: string) {
-      return {
-        holdToken,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      const ttlMs = 30 * 60 * 1000
+      if (options.holds) {
+        const result = await options.holds.extend({ holdToken, ttlMs })
+        if (result.status === "ok") {
+          return { holdToken, expiresAt: result.expiresAt }
+        }
       }
+      return { holdToken, expiresAt: new Date(Date.now() + ttlMs) }
     },
 
-    async releaseHold(_ctx: OwnedHandlerContext, _holdToken: string) {
-      // No-op until inventory reservation lands in Phase C. The
-      // reaper still calls this so the contract is exercised.
+    async releaseHold(_ctx: OwnedHandlerContext, holdToken: string) {
+      if (options.holds) {
+        await options.holds.release(holdToken)
+      }
     },
 
     async commit(

@@ -334,6 +334,14 @@ export const PREFIXES = {
   // Per-product per-occupancy rate tier table for non-cruise
   // verticals. Cruises keep their specialized cruise_prices table.
   product_pax_pricing_tiers: "ppt",
+
+  // --- AVAILABILITY (extension for booking-journey holds) ---
+  // Soft holds against availability_slots tied to booking_drafts.
+  // Per booking-journey-architecture §5.7 + §6 — the doc proposes
+  // bookingAllocations for owned holds, but those require a
+  // booking_id FK and journey holds are pre-booking. A dedicated
+  // table is the cleanest fit.
+  availability_holds: "avhd",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

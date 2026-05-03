@@ -28,10 +28,11 @@ import {
   useBookingCommit,
   useBookingDraft,
   useBookingDraftShape,
+  useBookingHold,
   useBookingQuote,
 } from "@voyantjs/catalog-react/booking-engine"
 import { Button } from "@voyantjs/ui/components/button"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
 import { type BookingJourneyProps, JOURNEY_STEP_ORDER, type JourneyStep } from "../types.js"
@@ -128,6 +129,45 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     draftId: props.draftId,
     onCommitted: props.onCommitted,
   })
+
+  // Inventory hold — fired when the user advances past Configure
+  // with a slot + pax picked. Failures are non-blocking (the engine
+  // re-validates capacity at commit time anyway); we just don't
+  // want to silently let two shoppers race past Configure with one
+  // capacity unit between them.
+  const holdApi = useBookingHold({ surface })
+  const holdState = useRef<{ holdToken?: string; signature?: string }>({})
+  const holdSignature = makeHoldSignature(draft, props.entityModule, props.entityId)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: signature change is the only trigger; refs + closure read latest values
+  useEffect(() => {
+    if (currentStep === "configure" || !holdSignature) return
+    if (holdState.current.signature === holdSignature) return
+    const previousToken = holdState.current.holdToken
+    holdState.current = { signature: holdSignature }
+    void holdApi
+      .place({
+        entityModule: props.entityModule,
+        entityId: props.entityId,
+        draftId: props.draftId,
+        parameters: {
+          slotId: draft.configure.departureSlotId,
+          paxCount: totalPax(draft),
+          productId: props.entityId,
+        },
+      })
+      .then((result) => {
+        holdState.current = { holdToken: result.holdToken, signature: holdSignature }
+      })
+      .catch(() => {
+        // Non-blocking — see comment above.
+      })
+    if (previousToken) {
+      void holdApi
+        .release({ entityModule: props.entityModule, holdToken: previousToken })
+        .catch(() => {})
+    }
+  }, [holdSignature, currentStep])
 
   const canAdvance = canAdvanceFromStep(currentStep, draft, shape, quote.data?.available !== false)
   const warnings = warningsForStep(currentStep, draft, shape)
@@ -378,6 +418,20 @@ function warningsForStep(
 
 function labelForFieldKey(key: string, shape: BookingDraftShape): string {
   return shape.travelerFields.find((f) => f.key === key)?.label ?? key
+}
+
+/**
+ * Compose a stable signature off the inputs the hold cares about.
+ * Includes entity + slot + pax so any change re-issues the hold;
+ * excludes billing / traveler details so cosmetic edits don't
+ * thrash the inventory layer.
+ */
+function makeHoldSignature(draft: Draft, entityModule: string, entityId: string): string | null {
+  const slot = draft.configure.departureSlotId
+  if (!slot) return null
+  const pax = totalPax(draft)
+  if (pax <= 0) return null
+  return `${entityModule}/${entityId}/${slot}/${pax}`
 }
 
 function defaultMinimalShape(): BookingDraftShape {

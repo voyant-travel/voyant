@@ -296,7 +296,17 @@ export const bookingDraftV1 = z.object({
   // Step 4 — Accommodation
   accommodation: z
     .object({
-      rooms: z.array(z.object({ optionUnitId: z.string(), quantity: z.number().int().min(1) })),
+      rooms: z.array(
+        z.object({
+          optionUnitId: z.string(),
+          quantity: z.number().int().min(1),
+          /** Selected rate plan (hospitality). When the descriptor's
+           *  `RoomOption.ratePlans` is non-empty, the journey
+           *  requires this before the Accommodation step is
+           *  considered complete. */
+          ratePlanId: z.string().optional(),
+        }),
+      ),
       travelerAssignments: z.record(z.string(), z.string()).default({}),
       sharedRoom: z
         .object({

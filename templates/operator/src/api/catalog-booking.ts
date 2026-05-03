@@ -108,6 +108,19 @@ interface DraftBody {
   ttlMs?: number
 }
 
+interface HoldPlaceBody {
+  entityModule?: string
+  entityId?: string
+  draftId?: string
+  ttlMs?: number
+  parameters?: Record<string, unknown>
+}
+
+interface HoldReleaseBody {
+  entityModule?: string
+  holdToken?: string
+}
+
 export function mountCatalogBookingRoutes(hono: Hono): void {
   // /quote — both surfaces
   for (const prefix of ["/v1/admin/catalog", "/v1/public/catalog"]) {
@@ -116,6 +129,8 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
     hono.put(`${prefix}/drafts/:id`, handleDraftPut)
     hono.get(`${prefix}/drafts/:id`, handleDraftGet)
     hono.delete(`${prefix}/drafts/:id`, handleDraftDelete)
+    hono.post(`${prefix}/holds/place`, handleHoldPlace)
+    hono.post(`${prefix}/holds/release`, handleHoldRelease)
   }
 
   // Admin-only — order management.
@@ -292,6 +307,74 @@ async function handleGetOrder(c: Context): Promise<Response> {
   const row = await getOrderById(db, id)
   if (!row) return c.json({ error: "order not found" }, 404)
   return c.json(row)
+}
+
+async function handleHoldPlace(c: Context): Promise<Response> {
+  let body: HoldPlaceBody
+  try {
+    body = await c.req.json<HoldPlaceBody>()
+  } catch {
+    body = {}
+  }
+
+  if (!body.entityModule || !body.entityId || !body.draftId) {
+    return c.json({ error: "entityModule, entityId, and draftId are required" }, 400)
+  }
+
+  const ownedHandlers = getOwnedBookingHandlerRegistryFromContext(c)
+  const handler = ownedHandlers.resolve(body.entityModule)
+  if (!handler?.placeHold) {
+    return c.json({ error: "no hold primitive registered for this vertical" }, 503)
+  }
+
+  const db = getDb(c)
+  const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+  try {
+    const result = await handler.placeHold(
+      { db, adapterContext: { connection_id: "engine", correlation_id: correlationId } },
+      {
+        entityModule: body.entityModule,
+        entityId: body.entityId,
+        draftId: body.draftId,
+        ttlMs: body.ttlMs ?? 30 * 60 * 1000,
+        parameters: body.parameters,
+      },
+    )
+    return c.json({ holdToken: result.holdToken, expiresAt: result.expiresAt.toISOString() })
+  } catch (err) {
+    return errorResponse(c, err)
+  }
+}
+
+async function handleHoldRelease(c: Context): Promise<Response> {
+  let body: HoldReleaseBody
+  try {
+    body = await c.req.json<HoldReleaseBody>()
+  } catch {
+    body = {}
+  }
+
+  if (!body.entityModule || !body.holdToken) {
+    return c.json({ error: "entityModule and holdToken are required" }, 400)
+  }
+
+  const ownedHandlers = getOwnedBookingHandlerRegistryFromContext(c)
+  const handler = ownedHandlers.resolve(body.entityModule)
+  if (!handler?.releaseHold) {
+    return c.body(null, 204) // graceful no-op
+  }
+
+  const db = getDb(c)
+  const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+  try {
+    await handler.releaseHold(
+      { db, adapterContext: { connection_id: "engine", correlation_id: correlationId } },
+      body.holdToken,
+    )
+    return c.body(null, 204)
+  } catch (err) {
+    return errorResponse(c, err)
+  }
 }
 
 async function handleDraftPut(c: Context): Promise<Response> {

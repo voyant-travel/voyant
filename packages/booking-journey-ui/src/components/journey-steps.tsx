@@ -685,43 +685,70 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
           <div className="space-y-3">
             {rooms.map((room) => {
               const current = accommodation.rooms.find((r) => r.optionUnitId === room.id)
+              const ratePlans = room.ratePlans ?? []
               return (
-                <div key={room.id} className="flex items-center justify-between rounded border p-3">
-                  <div>
-                    <div className="font-medium">{room.name}</div>
-                    {room.description ? (
-                      <div className="text-muted-foreground text-xs">{room.description}</div>
-                    ) : null}
+                <div key={room.id} className="space-y-3 rounded border p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{room.name}</div>
+                      {room.description ? (
+                        <div className="text-muted-foreground text-xs">{room.description}</div>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          const list = accommodation.rooms.filter((r) => r.optionUnitId !== room.id)
+                          const qty = (current?.quantity ?? 0) - 1
+                          if (qty > 0) {
+                            list.push({
+                              optionUnitId: room.id,
+                              quantity: qty,
+                              ratePlanId: current?.ratePlanId,
+                            })
+                          }
+                          setDraft(setAccommodation(draft, { ...accommodation, rooms: list }))
+                        }}
+                      >
+                        −
+                      </Button>
+                      <span className="min-w-6 text-center">{current?.quantity ?? 0}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          const list = accommodation.rooms.filter((r) => r.optionUnitId !== room.id)
+                          const qty = (current?.quantity ?? 0) + 1
+                          // Auto-select the only rate plan when there's
+                          // exactly one — saves a click on the common case.
+                          const ratePlanId =
+                            current?.ratePlanId ??
+                            (ratePlans.length === 1 ? ratePlans[0]?.id : undefined)
+                          list.push({ optionUnitId: room.id, quantity: qty, ratePlanId })
+                          setDraft(setAccommodation(draft, { ...accommodation, rooms: list }))
+                        }}
+                      >
+                        +
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const list = accommodation.rooms.filter((r) => r.optionUnitId !== room.id)
-                        const qty = (current?.quantity ?? 0) - 1
-                        if (qty > 0) list.push({ optionUnitId: room.id, quantity: qty })
+                  {current && current.quantity > 0 && ratePlans.length > 0 ? (
+                    <RatePlanPicker
+                      roomId={room.id}
+                      ratePlans={ratePlans}
+                      selected={current.ratePlanId}
+                      onSelect={(planId) => {
+                        const list = accommodation.rooms.map((r) =>
+                          r.optionUnitId === room.id ? { ...r, ratePlanId: planId } : r,
+                        )
                         setDraft(setAccommodation(draft, { ...accommodation, rooms: list }))
                       }}
-                    >
-                      −
-                    </Button>
-                    <span className="min-w-6 text-center">{current?.quantity ?? 0}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const list = accommodation.rooms.filter((r) => r.optionUnitId !== room.id)
-                        const qty = (current?.quantity ?? 0) + 1
-                        list.push({ optionUnitId: room.id, quantity: qty })
-                        setDraft(setAccommodation(draft, { ...accommodation, rooms: list }))
-                      }}
-                    >
-                      +
-                    </Button>
-                  </div>
+                    />
+                  ) : null}
                 </div>
               )
             })}
@@ -737,6 +764,61 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
         )}
       </CardContent>
     </Card>
+  )
+}
+
+function RatePlanPicker({
+  roomId,
+  ratePlans,
+  selected,
+  onSelect,
+}: {
+  roomId: string
+  ratePlans: ReadonlyArray<{
+    id: string
+    name: string
+    description?: string | null
+    chargeFrequency?: "per_night" | "per_stay"
+    cancellationPolicy?: string | null
+    inclusions?: ReadonlyArray<string>
+  }>
+  selected?: string
+  onSelect: (id: string) => void
+}): React.ReactElement {
+  return (
+    <div className="space-y-2 border-t pt-3">
+      <Label htmlFor={`bj-rate-plan-${roomId}`}>Rate plan</Label>
+      <div className="space-y-2">
+        {ratePlans.map((plan) => {
+          const isSelected = plan.id === selected
+          return (
+            <button
+              key={plan.id}
+              type="button"
+              onClick={() => onSelect(plan.id)}
+              className={`w-full rounded border p-2 text-left text-sm ${
+                isSelected ? "border-primary ring-2 ring-primary" : ""
+              }`}
+            >
+              <div className="font-medium">{plan.name}</div>
+              {plan.description ? (
+                <div className="text-muted-foreground text-xs">{plan.description}</div>
+              ) : null}
+              {plan.cancellationPolicy ? (
+                <div className="text-muted-foreground text-xs">
+                  Cancellation: {plan.cancellationPolicy}
+                </div>
+              ) : null}
+              {plan.inclusions && plan.inclusions.length > 0 ? (
+                <div className="text-muted-foreground text-xs">
+                  Includes: {plan.inclusions.join(", ")}
+                </div>
+              ) : null}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 

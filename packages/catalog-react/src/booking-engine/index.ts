@@ -31,6 +31,11 @@ export {
   useBookingDraftShape,
 } from "./use-booking-draft-shape.js"
 export {
+  type PlaceHoldInput,
+  type ReleaseHoldInput,
+  useBookingHold,
+} from "./use-booking-hold.js"
+export {
   type BookingJourneyApiOptions,
   type UseBookingJourneyApi,
   useBookingJourneyApi,

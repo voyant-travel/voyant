@@ -6,6 +6,7 @@
  */
 
 export {
+  type AvailabilityHoldBridge,
   buildOwnedProductDraftShape,
   type CreateProductsBookingHandlerOptions,
   createProductsBookingHandler,

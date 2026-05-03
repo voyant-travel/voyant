@@ -66,6 +66,22 @@ export interface CabinNumberOption {
   hasAccessibilityFeatures?: boolean
 }
 
+/** A rate-plan option attached to a `RoomOption` (hospitality only, today). */
+export interface RatePlanOption {
+  id: string
+  name: string
+  description?: string | null
+  /** "per_night" | "per_stay". */
+  chargeFrequency?: "per_night" | "per_stay"
+  /** Cancellation policy display string ("free until 7 days before",
+   *  "non-refundable", etc). */
+  cancellationPolicy?: string | null
+  /** Free-form inclusions ("breakfast", "wifi", "spa credit"). */
+  inclusions?: ReadonlyArray<string>
+  /** Currency for this plan's prices. */
+  currency?: string
+}
+
 /** A room option (hospitality + multi-day tours w/ rooms). */
 export interface RoomOption {
   id: string
@@ -75,6 +91,11 @@ export interface RoomOption {
   /** Per-night base price hint, if the upstream surfaced one. Pricing
    *  is volatile-live — this is a rendering hint only. */
   baseRateHint?: number | null
+  /** Rate plans bookable against this room. Empty = no plan picker
+   *  needed (e.g. simple multi-day-tour rooms). When non-empty, the
+   *  journey's Accommodation step renders a rate-plan dropdown per
+   *  picked room. */
+  ratePlans?: ReadonlyArray<RatePlanOption>
 }
 
 /** A pre/post extension option (cruises only, today). */

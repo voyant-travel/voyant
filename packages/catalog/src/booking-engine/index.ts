@@ -88,6 +88,7 @@ export {
   type ExtensionOption,
   type PaxBandSpec,
   paxBandsAllowedTotalFrom,
+  type RatePlanOption,
   type RoomOption,
   type TravelerFieldRequirement,
 } from "./draft-shape.js"

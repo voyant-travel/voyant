@@ -18,6 +18,11 @@
  * lifetime.
  */
 
+import {
+  extendAvailabilityHold,
+  placeAvailabilityHold,
+  releaseAvailabilityHold,
+} from "@voyantjs/availability/service-holds"
 import { bookingRequirementsService } from "@voyantjs/booking-requirements"
 import {
   createOwnedBookingHandlerRegistry,
@@ -30,7 +35,12 @@ import { cruisesBookingService } from "@voyantjs/cruises"
 import { createCruiseBookingHandler } from "@voyantjs/cruises/booking-engine"
 import { getCruiseContent } from "@voyantjs/cruises/service-content"
 import { pricingService as cruisePricingService } from "@voyantjs/cruises/service-pricing"
-import { quickCreateBooking, taxClasses, taxRegimes } from "@voyantjs/finance"
+import {
+  bookingPaymentSchedules,
+  quickCreateBooking,
+  taxClasses,
+  taxRegimes,
+} from "@voyantjs/finance"
 import { hospitalityBookingsService } from "@voyantjs/hospitality"
 import { createHospitalityBookingHandler } from "@voyantjs/hospitality/booking-engine"
 import { getHospitalityContent } from "@voyantjs/hospitality/service-content"
@@ -77,6 +87,50 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
     const registry = createOwnedBookingHandlerRegistry()
     registry.register(
       createProductsBookingHandler({
+        holds: {
+          async place(input) {
+            const db = getDbFromHyperdrive(
+              env as Parameters<typeof getDbFromHyperdrive>[0],
+            ) as PostgresJsDatabase
+            const result = await placeAvailabilityHold(db, input)
+            if (result.status === "ok") {
+              return {
+                status: "ok",
+                holdToken: result.hold.holdToken,
+                expiresAt: result.hold.expiresAt,
+              }
+            }
+            if (result.status === "slot_unlimited") {
+              return {
+                status: "ok",
+                holdToken: result.holdToken,
+                expiresAt: result.expiresAt,
+              }
+            }
+            if (result.status === "slot_not_found") {
+              return { status: "slot_not_found" }
+            }
+            return {
+              status: "insufficient_capacity",
+              remaining: result.remaining,
+              needed: result.needed,
+            }
+          },
+          async extend(input) {
+            const db = getDbFromHyperdrive(
+              env as Parameters<typeof getDbFromHyperdrive>[0],
+            ) as PostgresJsDatabase
+            const result = await extendAvailabilityHold(db, input)
+            if (result.status === "ok") return { status: "ok", expiresAt: result.expiresAt }
+            return { status: "not_found" }
+          },
+          async release(holdToken) {
+            const db = getDbFromHyperdrive(
+              env as Parameters<typeof getDbFromHyperdrive>[0],
+            ) as PostgresJsDatabase
+            await releaseAvailabilityHold(db, holdToken)
+          },
+        },
         // Bridge into bookingsQuickCreate. The handler builds the
         // input shape; the bridge provides the transactional commit.
         // env is captured by the closure so the bridge can resolve
@@ -223,17 +277,8 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           return resolved?.content ?? null
         },
         async commitBridge(input, opts) {
-          // The journey doesn't yet surface rate-plan choice. The
-          // bridge demands a real ratePlanId — when the journey
-          // hasn't supplied one, we fail fast with a helpful reason
-          // rather than guessing from inventory.
-          if (!input.ratePlanId) {
-            return {
-              status: "failed",
-              reason:
-                "hospitality_commit_needs_rate_plan: the journey's Accommodation step must surface a rate plan before commit",
-            }
-          }
+          // The handler validates `ratePlanId` upstream — defensive
+          // double-check here would be redundant.
           const db = getDbFromHyperdrive(
             env as Parameters<typeof getDbFromHyperdrive>[0],
           ) as PostgresJsDatabase
@@ -344,6 +389,49 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
               },
               opts?.userId,
             )
+
+            // Cruise installments (per booking-journey-architecture
+            // §7): deposit at book + balance due 90 days before
+            // sail. The handler echoes the pricing total via the
+            // bridge input's pricing context — for now we read it
+            // off the quote stored in cruise_details (the cruise
+            // service already snapshotted it). When the journey
+            // surfaces explicit installment overrides, they flow
+            // through `input.installments` (TBD).
+            const totalCents = priceCentsFromString(result.cruiseDetails.quotedTotalForCabin)
+            if (totalCents > 0) {
+              const depositCents = Math.round(totalCents * 0.25)
+              const balanceCents = totalCents - depositCents
+              const today = new Date()
+              const sailDate = result.cruiseDetails.sailingId
+                ? // TODO: resolve sail date from sailings table when wired
+                  // — until then balance defaults to today + 60d.
+                  null
+                : null
+              const balanceDue = sailDate ?? new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000)
+              const depositDue = today
+              await db.insert(bookingPaymentSchedules).values([
+                {
+                  bookingId: result.bookingId,
+                  scheduleType: "deposit",
+                  status: "due",
+                  dueDate: depositDue.toISOString().slice(0, 10),
+                  currency: result.cruiseDetails.quotedCurrency,
+                  amountCents: depositCents,
+                  notes: "Deposit at booking (per cruise journey §7)",
+                },
+                {
+                  bookingId: result.bookingId,
+                  scheduleType: "balance",
+                  status: "pending",
+                  dueDate: balanceDue.toISOString().slice(0, 10),
+                  currency: result.cruiseDetails.quotedCurrency,
+                  amountCents: balanceCents,
+                  notes: "Balance due before sail",
+                },
+              ])
+            }
+
             return {
               status: "ok",
               bookingId: result.bookingId,
@@ -366,6 +454,19 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
 
 export interface BookingEngineEnv {
   CATALOG_DEMO_API_URL?: string
+}
+
+/** Parse a numeric major-unit price string (e.g. cruise_prices'
+ *  decimal column shape) into integer cents. */
+function priceCentsFromString(s: string): number {
+  const negative = s.startsWith("-")
+  const abs = negative ? s.slice(1) : s
+  const parts = abs.split(".")
+  const whole = parts[0] ?? "0"
+  const frac = parts[1] ?? ""
+  const fracPadded = `${frac}00`.slice(0, 2)
+  const cents = Number(whole) * 100 + Number(fracPadded)
+  return negative ? -cents : cents
 }
 
 function humanizeFieldKey(key: string): string {

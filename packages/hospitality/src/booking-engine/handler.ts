@@ -39,7 +39,7 @@ interface DraftLike {
     dateRange?: { checkIn?: string; checkOut?: string }
   }
   accommodation?: {
-    rooms?: ReadonlyArray<{ optionUnitId: string; quantity: number }>
+    rooms?: ReadonlyArray<{ optionUnitId: string; quantity: number; ratePlanId?: string }>
   }
   billing?: {
     contact?: { firstName?: string; lastName?: string; email?: string; phone?: string }
@@ -261,13 +261,25 @@ export function createHospitalityBookingHandler(
         sellAmountCents: perNightCents,
       }))
 
+      // The journey now surfaces rate-plan choice via the descriptor's
+      // `RoomOption.ratePlans`. When the user hasn't picked one — e.g.
+      // the property has no rate plans configured — the commit fails
+      // with a helpful reason; the bridge no longer guesses.
+      if (!firstRoom.ratePlanId) {
+        return {
+          status: "failed",
+          orderRef: "",
+          upstreamPayload: {
+            reason: "hospitality_commit_missing_inputs",
+            need: ["accommodation.rooms[0].ratePlanId"],
+          },
+        }
+      }
+
       const bridge = await options.commitBridge({
         propertyId: request.entityId,
         roomTypeId: firstRoom.optionUnitId,
-        // Rate plan id must be supplied by the bridge implementation
-        // when the journey doesn't surface rate-plan choice yet —
-        // empty string here is a sentinel the bridge should reject.
-        ratePlanId: "",
+        ratePlanId: firstRoom.ratePlanId,
         checkInDate: range.checkIn,
         checkOutDate: range.checkOut,
         roomCount: firstRoom.quantity,
