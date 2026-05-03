@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router"
 import { type BookingDraftV1, bookingDraftV1 } from "@voyantjs/catalog/booking-engine"
 import { useBookingQuote } from "@voyantjs/catalog-react/booking-engine"
+import type { CruiseContent } from "@voyantjs/cruises/content-shape"
+import type { HospitalityContent } from "@voyantjs/hospitality/content-shape"
+import type { ProductContent } from "@voyantjs/products/content-shape"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { Input } from "@voyantjs/ui/components/input"
@@ -12,6 +15,70 @@ import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { useEffect, useMemo, useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
+
+/**
+ * Per `catalog-sourced-content.md` §3.5.3, the content endpoints
+ * return both the payload and locale-resolution metadata. The
+ * detail page surfaces a small "served in <locale>" hint when the
+ * fallback chain kicked in, and a "limited content available" hint
+ * when the synthesizer (§3.6) produced the payload from the durable
+ * sourced-entry projection rather than a real getContent fetch.
+ */
+interface ContentResolution {
+  /** Locale actually served — may differ from the user's preference. */
+  served_locale?: string
+  match_kind?: "exact" | "language_match" | "fallback_chain" | "any"
+  /** Where the content came from. "synthesized" = thin fallback. */
+  source?: "owned" | "sourced-cache" | "sourced-fresh" | "synthesized"
+  served_stale?: boolean
+  machine_translated?: boolean
+}
+
+type ContentResponse<T> = {
+  data?: T
+  content?: T
+} & ContentResolution
+
+/**
+ * Build a BCP-47 preference chain from the browser. Sent as
+ * `Accept-Language` so the public content endpoints can honor the
+ * user's locale preference per §3.5.3.
+ */
+function getPreferredLocaleHeader(): string {
+  if (typeof navigator === "undefined") return "en-GB"
+  const langs = (navigator.languages?.length ? navigator.languages : [navigator.language]).filter(
+    Boolean,
+  )
+  return langs.join(",")
+}
+
+async function fetchContent<T>(
+  url: string,
+): Promise<{ content: T; resolution: ContentResolution } | null> {
+  const res = await fetch(url, {
+    credentials: "include",
+    headers: {
+      "accept-language": getPreferredLocaleHeader(),
+    },
+  })
+  if (!res.ok) {
+    if (res.status === 404) return null
+    throw new Error(`Content request failed: ${res.status}`)
+  }
+  const json = (await res.json()) as ContentResponse<T>
+  const content = json.data ?? json.content
+  if (!content) return null
+  return {
+    content,
+    resolution: {
+      served_locale: json.served_locale,
+      match_kind: json.match_kind,
+      source: json.source,
+      served_stale: json.served_stale,
+      machine_translated: json.machine_translated,
+    },
+  }
+}
 
 /**
  * Catalog detail page — single route serving products / cruises /
@@ -58,32 +125,6 @@ interface AvailabilitySlot {
   days?: number | null
 }
 
-interface ProductContent {
-  product: {
-    id: string
-    name: string
-    description?: string | null
-    highlights?: ReadonlyArray<string>
-  }
-  days?: ReadonlyArray<{
-    day_number: number
-    title?: string | null
-    description?: string | null
-    location?: string | null
-    services?: ReadonlyArray<string>
-  }>
-  media?: ReadonlyArray<{
-    url: string
-    type: "image" | "video" | "document"
-    caption?: string | null
-    alt?: string | null
-  }>
-  policies?: ReadonlyArray<{
-    title: string
-    body?: string | null
-  }>
-}
-
 function ProductDetailPageProducts({
   entityModule,
   entityId,
@@ -108,18 +149,10 @@ function ProductDetailPageProducts({
 
   const content = useQuery({
     queryKey: ["public-product-content", entityModule, entityId],
-    queryFn: async (): Promise<ProductContent | null> => {
-      const res = await fetch(
+    queryFn: () =>
+      fetchContent<ProductContent>(
         `${getApiUrl()}/v1/public/products/${encodeURIComponent(entityId)}/content`,
-        { credentials: "include" },
-      )
-      if (!res.ok) {
-        if (res.status === 404) return null
-        throw new Error(`Content request failed: ${res.status}`)
-      }
-      const json = (await res.json()) as { data?: ProductContent; content?: ProductContent }
-      return json.data ?? json.content ?? null
-    },
+      ),
     staleTime: 30_000,
   })
 
@@ -156,7 +189,8 @@ function ProductDetailPageProducts({
         <ProductDetailBody
           entityModule={entityModule}
           entityId={entityId}
-          content={content.data ?? null}
+          content={content.data?.content ?? null}
+          resolution={content.data?.resolution ?? null}
           isLoading={content.isLoading}
         />
       }
@@ -207,11 +241,13 @@ function ProductDetailBody({
   entityModule,
   entityId,
   content,
+  resolution,
   isLoading,
 }: {
   entityModule: string
   entityId: string
   content: ProductContent | null
+  resolution: ContentResolution | null
   isLoading: boolean
 }): React.ReactElement {
   if (isLoading) return <BodySkeleton />
@@ -228,6 +264,7 @@ function ProductDetailBody({
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">{content.product.name}</CardTitle>
+          <ContentResolutionHint resolution={resolution} />
         </CardHeader>
         <CardContent className="space-y-4">
           {content.product.description ? (
@@ -307,8 +344,8 @@ function ProductDetailBody({
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {content.policies.map((p) => (
-              <div key={p.title}>
-                <div className="font-medium">{p.title}</div>
+              <div key={p.kind}>
+                <div className="font-medium capitalize">{p.kind.replace(/_/g, " ")}</div>
                 {p.body ? (
                   <p className="whitespace-pre-line text-muted-foreground">{p.body}</p>
                 ) : null}
@@ -325,58 +362,15 @@ function ProductDetailBody({
 // Cruises vertical
 // ─────────────────────────────────────────────────────────────────
 
-interface CruiseContent {
-  cruise: {
-    id: string
-    name: string
-    description?: string | null
-    duration_nights?: number | null
-  }
-  ship?: {
-    name: string
-    description?: string | null
-  } | null
-  sailings: ReadonlyArray<{
-    id: string
-    departs_at: string
-    arrives_at?: string | null
-    embark_port?: string | null
-    debark_port?: string | null
-    nights?: number | null
-    lowest_price_cents?: number | null
-    currency?: string | null
-    availability?: string | null
-  }>
-  cabin_categories: ReadonlyArray<{
-    id: string
-    name: string
-    description?: string | null
-    type?: string | null
-    capacity_min?: number | null
-    capacity_max?: number | null
-    price_per_person_cents?: number | null
-    currency?: string | null
-  }>
-  media?: ReadonlyArray<{ url: string; type: string; alt?: string | null }>
-}
-
 function CruiseDetailPage({ entityId }: { entityId: string }): React.ReactElement {
   const navigate = useNavigate()
 
   const content = useQuery({
     queryKey: ["public-cruise-content", entityId],
-    queryFn: async (): Promise<CruiseContent | null> => {
-      const res = await fetch(
+    queryFn: () =>
+      fetchContent<CruiseContent>(
         `${getApiUrl()}/v1/public/cruises/${encodeURIComponent(entityId)}/content`,
-        { credentials: "include" },
-      )
-      if (!res.ok) {
-        if (res.status === 404) return null
-        throw new Error(`Cruise content request failed: ${res.status}`)
-      }
-      const json = (await res.json()) as { data?: CruiseContent; content?: CruiseContent }
-      return json.data ?? json.content ?? null
-    },
+      ),
     staleTime: 30_000,
   })
 
@@ -386,7 +380,7 @@ function CruiseDetailPage({ entityId }: { entityId: string }): React.ReactElemen
   )
   const [occupancy, setOccupancy] = useState(2)
 
-  const firstSailingId = content.data?.sailings.find((s) => s.availability !== "sold_out")?.id
+  const firstSailingId = content.data?.content.sailings.find((s) => s.status !== "sold_out")?.id
   useEffect(() => {
     if (firstSailingId && !selectedSailingId) setSelectedSailingId(firstSailingId)
   }, [firstSailingId, selectedSailingId])
@@ -405,7 +399,7 @@ function CruiseDetailPage({ entityId }: { entityId: string }): React.ReactElemen
 
   const quote = useBookingQuote({ surface: "public", draft: probeDraft })
   const totalCents = quote.data?.pricing?.total ?? 0
-  const currency = quote.data?.pricing?.currency ?? content.data?.cabin_categories[0]?.currency
+  const currency = quote.data?.pricing?.currency
 
   return (
     <DetailLayout
@@ -416,7 +410,8 @@ function CruiseDetailPage({ entityId }: { entityId: string }): React.ReactElemen
           <BodyMissing entityModule="cruises" entityId={entityId} />
         ) : (
           <CruiseDetailBody
-            content={content.data}
+            content={content.data.content}
+            resolution={content.data.resolution}
             selectedSailingId={selectedSailingId}
             onSelectSailing={(id) => {
               setSelectedSailingId(id)
@@ -470,6 +465,7 @@ function CruiseDetailPage({ entityId }: { entityId: string }): React.ReactElemen
 
 function CruiseDetailBody({
   content,
+  resolution,
   selectedSailingId,
   onSelectSailing,
   selectedCabinCategoryId,
@@ -477,22 +473,23 @@ function CruiseDetailBody({
   occupancy,
 }: {
   content: CruiseContent
+  resolution: ContentResolution | null
   selectedSailingId: string | undefined
   onSelectSailing: (id: string) => void
   selectedCabinCategoryId: string | undefined
   onSelectCabinCategory: (id: string) => void
   occupancy: number
 }): React.ReactElement {
-  const heroImage = content.media?.find((m) => m.type === "image")
   return (
     <div className="space-y-4">
-      {heroImage ? (
-        <HeroImage url={heroImage.url} alt={heroImage.alt ?? content.cruise.name} />
+      {content.cruise.hero_image_url ? (
+        <HeroImage url={content.cruise.hero_image_url} alt={content.cruise.name} />
       ) : null}
 
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">{content.cruise.name}</CardTitle>
+          <ContentResolutionHint resolution={resolution} />
         </CardHeader>
         <CardContent className="space-y-3">
           {content.ship?.name ? (
@@ -522,12 +519,12 @@ function CruiseDetailBody({
                   <th className="py-2">Date</th>
                   <th className="py-2">Route</th>
                   <th className="py-2">Nights</th>
-                  <th className="py-2 text-right">From</th>
+                  <th className="py-2 text-right">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {content.sailings.map((sailing) => {
-                  const soldOut = sailing.availability === "sold_out"
+                  const soldOut = sailing.status === "sold_out"
                   const selected = sailing.id === selectedSailingId
                   return (
                     <tr
@@ -539,20 +536,14 @@ function CruiseDetailBody({
                         if (!soldOut) onSelectSailing(sailing.id)
                       }}
                     >
-                      <td className="py-2">{formatSailingDate(sailing.departs_at)}</td>
+                      <td className="py-2">{formatSailingDate(sailing.start_date)}</td>
                       <td className="py-2">
-                        {sailing.embark_port && sailing.debark_port
-                          ? `${sailing.embark_port} → ${sailing.debark_port}`
-                          : (sailing.embark_port ?? "—")}
+                        {sailing.embarkation_port && sailing.disembarkation_port
+                          ? `${sailing.embarkation_port} → ${sailing.disembarkation_port}`
+                          : (sailing.embarkation_port ?? "—")}
                       </td>
-                      <td className="py-2">{sailing.nights ?? "—"}</td>
-                      <td className="py-2 text-right">
-                        {soldOut
-                          ? "Sold out"
-                          : sailing.lowest_price_cents != null && sailing.currency
-                            ? `from ${formatMoney(sailing.lowest_price_cents, sailing.currency)}`
-                            : "—"}
-                      </td>
+                      <td className="py-2">{sailing.duration_nights ?? "—"}</td>
+                      <td className="py-2 text-right">{soldOut ? "Sold out" : "Available"}</td>
                     </tr>
                   )
                 })}
@@ -570,10 +561,6 @@ function CruiseDetailBody({
           <CardContent className="space-y-2">
             {content.cabin_categories.map((cat) => {
               const selected = cat.id === selectedCabinCategoryId
-              const perPax =
-                cat.price_per_person_cents != null && cat.currency
-                  ? formatMoney(cat.price_per_person_cents, cat.currency)
-                  : null
               return (
                 <button
                   key={cat.id}
@@ -589,13 +576,10 @@ function CruiseDetailBody({
                       {cat.description ? (
                         <div className="text-muted-foreground text-xs">{cat.description}</div>
                       ) : null}
+                      {cat.type ? (
+                        <div className="text-muted-foreground text-xs uppercase">{cat.type}</div>
+                      ) : null}
                     </div>
-                    {perPax ? (
-                      <div className="text-right">
-                        <div className="font-medium">{perPax}</div>
-                        <div className="text-muted-foreground text-xs">per guest</div>
-                      </div>
-                    ) : null}
                   </div>
                 </button>
               )
@@ -615,49 +599,15 @@ function CruiseDetailBody({
 // Hospitality vertical
 // ─────────────────────────────────────────────────────────────────
 
-interface HospitalityContent {
-  hotel: {
-    id: string
-    name: string
-    description?: string | null
-    star_rating?: number | null
-  }
-  room_types: ReadonlyArray<{
-    id: string
-    name: string
-    description?: string | null
-    max_occupancy?: number | null
-    max_adults?: number | null
-  }>
-  rate_plans: ReadonlyArray<{
-    id: string
-    name: string
-    description?: string | null
-    charge_frequency?: "per_night" | "per_stay"
-    applies_to_room_type_ids?: ReadonlyArray<string>
-    cancellation_policy?: string | null
-    inclusions?: ReadonlyArray<string>
-  }>
-  media?: ReadonlyArray<{ url: string; type: string; alt?: string | null }>
-}
-
 function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactElement {
   const navigate = useNavigate()
 
   const content = useQuery({
     queryKey: ["public-hospitality-content", entityId],
-    queryFn: async (): Promise<HospitalityContent | null> => {
-      const res = await fetch(
+    queryFn: () =>
+      fetchContent<HospitalityContent>(
         `${getApiUrl()}/v1/public/hospitality/${encodeURIComponent(entityId)}/content`,
-        { credentials: "include" },
-      )
-      if (!res.ok) {
-        if (res.status === 404) return null
-        throw new Error(`Hospitality content request failed: ${res.status}`)
-      }
-      const json = (await res.json()) as { data?: HospitalityContent; content?: HospitalityContent }
-      return json.data ?? json.content ?? null
-    },
+      ),
     staleTime: 30_000,
   })
 
@@ -672,14 +622,14 @@ function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactE
   const [adultCount, setAdultCount] = useState(2)
   const [childCount, setChildCount] = useState(0)
 
-  const firstRoomId = content.data?.room_types[0]?.id
+  const firstRoomId = content.data?.content.room_types[0]?.id
   useEffect(() => {
     if (firstRoomId && !selectedRoomId) setSelectedRoomId(firstRoomId)
   }, [firstRoomId, selectedRoomId])
 
   const ratePlansForRoom = useMemo(() => {
     if (!content.data || !selectedRoomId) return []
-    return content.data.rate_plans.filter(
+    return content.data.content.rate_plans.filter(
       (rp) =>
         !rp.applies_to_room_type_ids ||
         rp.applies_to_room_type_ids.length === 0 ||
@@ -730,7 +680,8 @@ function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactE
           <BodyMissing entityModule="hospitality" entityId={entityId} />
         ) : (
           <HospitalityDetailBody
-            content={content.data}
+            content={content.data.content}
+            resolution={content.data.resolution}
             selectedRoomId={selectedRoomId}
             onSelectRoom={(id) => {
               setSelectedRoomId(id)
@@ -812,6 +763,7 @@ function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactE
 
 function HospitalityDetailBody({
   content,
+  resolution,
   selectedRoomId,
   onSelectRoom,
   selectedRatePlanId,
@@ -819,17 +771,17 @@ function HospitalityDetailBody({
   ratePlansForRoom,
 }: {
   content: HospitalityContent
+  resolution: ContentResolution | null
   selectedRoomId: string | undefined
   onSelectRoom: (id: string) => void
   selectedRatePlanId: string | undefined
   onSelectRatePlan: (id: string) => void
   ratePlansForRoom: ReadonlyArray<HospitalityContent["rate_plans"][number]>
 }): React.ReactElement {
-  const heroImage = content.media?.find((m) => m.type === "image")
   return (
     <div className="space-y-4">
-      {heroImage ? (
-        <HeroImage url={heroImage.url} alt={heroImage.alt ?? content.hotel.name} />
+      {content.hotel.hero_image_url ? (
+        <HeroImage url={content.hotel.hero_image_url} alt={content.hotel.name} />
       ) : null}
 
       <Card>
@@ -837,9 +789,12 @@ function HospitalityDetailBody({
           <CardTitle className="text-2xl">
             {content.hotel.name}
             {content.hotel.star_rating ? (
-              <span className="ml-2 text-amber-500">{"★".repeat(content.hotel.star_rating)}</span>
+              <span className="ml-2 text-amber-500">
+                {"★".repeat(Math.floor(content.hotel.star_rating))}
+              </span>
             ) : null}
           </CardTitle>
+          <ContentResolutionHint resolution={resolution} />
         </CardHeader>
         <CardContent className="space-y-3">
           {content.hotel.description ? (
@@ -1148,6 +1103,29 @@ function PaxStepper({
       </div>
     </div>
   )
+}
+
+function ContentResolutionHint({
+  resolution,
+}: {
+  resolution: ContentResolution | null
+}): React.ReactElement | null {
+  if (!resolution) return null
+  const hints: string[] = []
+  if (resolution.match_kind && resolution.match_kind !== "exact" && resolution.served_locale) {
+    hints.push(`Served in ${resolution.served_locale}`)
+  }
+  if (resolution.machine_translated) {
+    hints.push("Machine-translated")
+  }
+  if (resolution.source === "synthesized") {
+    hints.push("Limited content available")
+  }
+  if (resolution.served_stale) {
+    hints.push("Refreshing in the background")
+  }
+  if (hints.length === 0) return null
+  return <div className="text-muted-foreground text-xs">{hints.join(" · ")}</div>
 }
 
 function HeroImage({ url, alt }: { url: string; alt: string }): React.ReactElement {
