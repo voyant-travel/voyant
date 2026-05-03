@@ -31,6 +31,7 @@ import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
 import { catalogBridgeBundle } from "./catalog-bridge"
+import { mountCatalogContentRoutes } from "./catalog-content"
 import { createInvitationsRoutes } from "./invitations"
 import { getDbFromHyperdrive } from "./lib/db"
 import { createMediaStorage, guessMimeType, resolveDocumentDownloadUrl } from "./lib/storage"
@@ -211,5 +212,6 @@ export const app = createApp<CloudflareBindings>({
 
     mountCatalogMcpRoutes(hono)
     mountCatalogSearchRoutes(hono)
+    mountCatalogContentRoutes(hono)
   },
 })

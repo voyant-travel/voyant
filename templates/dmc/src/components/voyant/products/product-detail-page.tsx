@@ -39,6 +39,7 @@ import {
 } from "./product-detail-shared"
 import { ProductDialog } from "./product-dialog"
 import { ServiceDialog } from "./product-service-dialog"
+import { ProductSourcedContentSection } from "./product-sourced-content-section"
 
 export function ProductDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
@@ -358,6 +359,8 @@ export function ProductDetailPage({ id }: { id: string }) {
           ))}
         </CardContent>
       </Card>
+
+      <ProductSourcedContentSection productId={id} />
 
       <ProductDialog
         open={editOpen}

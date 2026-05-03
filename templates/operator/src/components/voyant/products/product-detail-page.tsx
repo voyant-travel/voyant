@@ -17,6 +17,7 @@ import {
 } from "./product-detail-sections"
 import { ProductDetailSkeleton } from "./product-detail-skeleton"
 import { ScheduleDialog } from "./product-schedule-dialog"
+import { ProductSourcedContentSection } from "./product-sourced-content-section"
 import { useProductDetailData } from "./use-product-detail-data"
 import { useProductDetailDialogs } from "./use-product-detail-dialogs"
 
@@ -119,6 +120,8 @@ export function ProductDetailPage({ id }: { id: string }) {
           />
 
           <ProductOrganizeSection product={product} onEdit={dialogs.edit.openNow} />
+
+          <ProductSourcedContentSection productId={id} />
         </div>
       </div>
 
