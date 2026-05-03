@@ -60,10 +60,16 @@ export function mountCatalogSearchRoutes(hono: Hono): void {
         ? "keyword"
         : requestedMode
 
+    // Audience tracks the route surface — admin mount stays as the
+    // template's default (typically "staff"); public mount switches
+    // to "customer" so visibility / overlay scoping resolves the
+    // customer-facing projection.
+    const isPublic = c.req.path.startsWith("/v1/public/")
+    const audience = isPublic ? "customer" : ctx.defaultScope.audience
     const slice = {
       vertical: body.vertical,
       locale: body.locale ?? ctx.defaultScope.locale,
-      audience: ctx.defaultScope.audience,
+      audience,
       market: body.market ?? ctx.defaultScope.market,
     }
 
@@ -99,4 +105,8 @@ export function mountCatalogSearchRoutes(hono: Hono): void {
   }
 
   hono.post("/v1/admin/catalog/search", handle)
+  // Public surface for the storefront. The publicPaths entry in
+  // app.ts stamps `actor: "customer"`; the audience swap above
+  // narrows the slice scope to the customer projection.
+  hono.post("/v1/public/catalog/search", handle)
 }

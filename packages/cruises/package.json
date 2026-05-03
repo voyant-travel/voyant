@@ -17,7 +17,9 @@
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
     "./routes-content": "./src/routes-content.ts",
-    "./draft-shape": "./src/draft-shape.ts"
+    "./draft-shape": "./src/draft-shape.ts",
+    "./booking-engine": "./src/booking-engine/index.ts",
+    "./service-pricing": "./src/service-pricing.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -13,7 +13,8 @@
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
-    "./draft-shape": "./src/draft-shape.ts"
+    "./draft-shape": "./src/draft-shape.ts",
+    "./booking-engine": "./src/booking-engine/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

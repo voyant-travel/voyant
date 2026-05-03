@@ -26,7 +26,12 @@ import {
   type SourceAdapterRegistry,
   type TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
+import { createCruiseBookingHandler } from "@voyantjs/cruises/booking-engine"
+import { getCruiseContent } from "@voyantjs/cruises/service-content"
+import { pricingService as cruisePricingService } from "@voyantjs/cruises/service-pricing"
 import { quickCreateBooking, taxClasses, taxRegimes } from "@voyantjs/finance"
+import { createHospitalityBookingHandler } from "@voyantjs/hospitality/booking-engine"
+import { getHospitalityContent } from "@voyantjs/hospitality/service-content"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
 import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
 import { products as productsTable } from "@voyantjs/products/schema"
@@ -193,6 +198,73 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         },
       }),
     )
+    // Hospitality vertical — Phase B stub. computeQuote serves the
+    // descriptor + best-effort pricing from getHospitalityContent;
+    // commit returns failed:not_yet_implemented (real
+    // stayBookingItems insert is a follow-up).
+    //
+    // The hospitality content service requires the source-adapter
+    // registry (it falls through to the upstream when the cache is
+    // stale). We capture `_registry` lazily inside the closure so
+    // hot-reloads of the source registry are picked up.
+    registry.register(
+      createHospitalityBookingHandler({
+        async loadContent(ctx, entityId) {
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const sourceRegistry = getBookingEngineRegistry(env)
+          const resolved = await getHospitalityContent(
+            db,
+            entityId,
+            { preferredLocales: ["en-GB"] },
+            { registry: sourceRegistry },
+          )
+          return resolved?.content ?? null
+        },
+      }),
+    )
+
+    // Cruises vertical — Phase F skeleton. computeQuote serves the
+    // descriptor + per-occupancy pricing from cruise_prices; commit
+    // returns failed:not_yet_implemented (cabin allocation +
+    // supplier hold + per-installment payment schedule are
+    // follow-ups).
+    registry.register(
+      createCruiseBookingHandler({
+        async loadContent(ctx, entityId) {
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const sourceRegistry = getBookingEngineRegistry(env)
+          const resolved = await getCruiseContent(
+            db,
+            entityId,
+            { preferredLocales: ["en-GB"] },
+            { registry: sourceRegistry },
+          )
+          return resolved?.content ?? null
+        },
+        async loadPrice(ctx, args) {
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const row = await cruisePricingService.lowestAvailablePrice(db, {
+            sailingId: args.sailingId,
+            occupancy: args.occupancy,
+          })
+          if (!row) return null
+          // Match by category — `lowestAvailablePrice` returns the
+          // cheapest across categories. When the user has pinned a
+          // specific category, narrow the lookup. Phase F+ swaps to
+          // a per-(category, occupancy) selector once the wizard
+          // surfaces explicit fare-code choice.
+          if (args.cabinCategoryId && row.cabinCategoryId !== args.cabinCategoryId) {
+            return null
+          }
+          return {
+            pricePerPerson: row.pricePerPerson,
+            currency: row.currency,
+            fareCode: row.fareCode,
+          }
+        },
+      }),
+    )
+
     _ownedHandlers = registry
   }
   return _ownedHandlers
