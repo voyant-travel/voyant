@@ -334,7 +334,7 @@ relevant phase.
 | 3 checkout-start endpoint + finalize workflow | ✅ done | e5d06d9c8, 6be800a4f |
 | 4 Netopia card path | ✅ done | a556f0fac |
 | 5 Bank-transfer path | ✅ done | a556f0fac |
-| 6 Inquiry path + observability | 🟢 mostly done — observability dashboard deferred |
+| 6 Inquiry path + observability | ✅ done — workflow runs dashboard ships at apps/workflow-runs-dashboard |
 
 What works end-to-end after Phase 5:
 
@@ -401,12 +401,25 @@ Followups landed alongside Phase 6:
    `awaiting_payment` at checkout-start so ops sees the right state
    while waiting on the webhook / manual mark-received.
 
-Still pending (deferred):
+### Observability (now landed)
 
-1. **Observability dashboard** — there is no `workflow_runs` table
-   yet, so the workflow execution is fire-and-forget. The plan
-   originally called for a "Checkout pipeline" view; that depends
-   on a new schema and is deferred.
+`@voyantjs/workflow-runs` is the lightweight observability layer
+for in-process workflows. The catalog-checkout subscriber wraps the
+`runCheckoutFinalize` call with a recorder that writes
+`workflow_runs` + `workflow_run_steps` rows, tagged with the
+booking id, payment session id, and payment intent. The standalone
+dashboard SPA at `apps/workflow-runs-dashboard/` reads the admin
+routes (`/v1/admin/workflow-runs[/:id]`) the operator template
+mounts via `additionalRoutes`. Run it alongside the operator
+(`pnpm -F @voyantjs/workflow-runs-dashboard dev`) or build the SPA
+with `VITE_API_BASE` for a separate-origin deployment.
+
+This observability sits beside the durable `@voyantjs/workflows`
+SDK + `apps/workflows-local-dashboard`. That stack remains the
+right home for *durable* workflows (anything that needs persistence
+across process restarts, fan-out, scheduling). The lightweight
+recorder + SPA fill the gap for in-process sagas like
+checkout-finalize that don't need that machinery.
 
 ## PR sequencing
 
