@@ -18,6 +18,7 @@ export const PREFIXES = {
   // --- INFRA ---
   webhook_subscriptions: "hksub",
   webhook_deliveries: "whde",
+  rate_limit_buckets: "rlbk",
   domains: "dom",
   email_domain_records: "emdr",
   idempotency_keys: "ikey",
@@ -153,6 +154,8 @@ export const PREFIXES = {
   channel_release_schedules: "chrs",
   channel_remittance_exceptions: "chre",
   channel_settlement_approvals: "chap",
+  channel_availability_push_intents: "cavi",
+  channel_content_push_intents: "ccpi",
   facilities: "fac",
   facility_contacts: "fcon",
   facility_features: "ffea",

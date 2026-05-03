@@ -1,5 +1,6 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 import { app as apiApp } from "./api/app"
+import { runScheduledChannelPushReconciler } from "./api/channel-push-scheduled"
 
 const startHandler = createStartHandler(defaultStreamHandler)
 
@@ -18,5 +19,16 @@ export default {
 
     // Everything else → TanStack Start SSR
     return startHandler(request)
+  },
+
+  // Cloudflare Workers cron entrypoint. Triggers are declared in
+  // wrangler.jsonc; the channel-push reconciler picks the right scanner
+  // based on `event.cron`.
+  async scheduled(
+    event: ScheduledController,
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    ctx.waitUntil(runScheduledChannelPushReconciler(event, env))
   },
 }

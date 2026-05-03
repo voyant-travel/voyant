@@ -19,6 +19,12 @@ import type {
   GetContentResult,
   LiveResolveRequest,
   LiveResolveResult,
+  PushAvailabilityRequest,
+  PushAvailabilityResult,
+  PushBookingRequest,
+  PushBookingResult,
+  PushContentRequest,
+  PushContentResult,
   ReserveRequest,
   ReserveResult,
   SourceAdapter,
@@ -69,6 +75,13 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
     // synthesizer fallback can flip this and the catalog content
     // service falls through to synthesizeProductContent.
     supportsContentFetch: true,
+
+    // Channel push (outbound). The demo upstream advertises all three
+    // flows so templates can exercise the channel-push pipeline
+    // end-to-end without a real channel integration.
+    supportsBookingPush: true,
+    supportsAvailabilityPush: true,
+    supportsContentPush: true,
   }
 
   async function call<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
@@ -161,6 +174,40 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
       request: GetContentRequest,
     ): Promise<GetContentResult> {
       return call<GetContentResult>("/get-content", {
+        method: "POST",
+        body: request,
+      })
+    },
+
+    // ── Channel push (outbound) ─────────────────────────────────────
+    // The demo-api records pushed bookings/availability/content for
+    // tests and demos to inspect.
+
+    async pushBooking(
+      _ctx: SourceAdapterContext,
+      request: PushBookingRequest,
+    ): Promise<PushBookingResult> {
+      return call<PushBookingResult>("/push-booking", {
+        method: "POST",
+        body: request,
+      })
+    },
+
+    async pushAvailability(
+      _ctx: SourceAdapterContext,
+      request: PushAvailabilityRequest,
+    ): Promise<PushAvailabilityResult> {
+      return call<PushAvailabilityResult>("/push-availability", {
+        method: "POST",
+        body: request,
+      })
+    },
+
+    async pushContent(
+      _ctx: SourceAdapterContext,
+      request: PushContentRequest,
+    ): Promise<PushContentResult> {
+      return call<PushContentResult>("/push-content", {
         method: "POST",
         body: request,
       })

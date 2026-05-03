@@ -1,6 +1,8 @@
+import type { EventBus } from "@voyantjs/core"
 import { and, asc, desc, eq, getTableColumns, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { AVAILABILITY_SLOT_CHANGED_EVENT, type AvailabilitySlotChangedEvent } from "./events.js"
 import { productsRef } from "./products-ref.js"
 import {
   availabilityCloseouts,
@@ -196,10 +198,29 @@ export async function createSlot(db: PostgresJsDatabase, data: CreateAvailabilit
   return row
 }
 
+export interface UpdateSlotRuntime {
+  /**
+   * Optional event bus. When wired, `updateSlot` emits
+   * `availability.slot.changed` after a successful update so channel-push
+   * (and other availability subscribers) can react to operator edits and
+   * scheduled refresh recomputations.
+   *
+   * Per docs/architecture/channel-push-architecture.md §5.1.
+   */
+  eventBus?: EventBus
+  /**
+   * Origin of the change. Defaults to `"manual"` (operator edit). The
+   * scheduled-refresh job passes `"refresh"` so dashboards can attribute
+   * drift correctly.
+   */
+  source?: AvailabilitySlotChangedEvent["source"]
+}
+
 export async function updateSlot(
   db: PostgresJsDatabase,
   id: string,
   data: UpdateAvailabilitySlotInput,
+  runtime: UpdateSlotRuntime = {},
 ) {
   const patch = {
     ...data,
@@ -213,7 +234,30 @@ export async function updateSlot(
     .set(patch)
     .where(eq(availabilitySlots.id, id))
     .returning()
-  return row ?? null
+  if (!row) return null
+
+  // Emit on every successful update — subscribers decide what to do with
+  // the signal (channel-push only acts on availability-affecting fields).
+  // The intent table on the channel-push side collapses by (channelId,
+  // slotId) so duplicate or noisy emits are harmless. Per §5.1.
+  const eventBus = runtime.eventBus
+  if (eventBus) {
+    const payload: AvailabilitySlotChangedEvent = {
+      slotId: row.id,
+      productId: row.productId,
+      optionId: row.optionId ?? null,
+      startsAt: row.startsAt,
+      remainingPax: row.unlimited ? null : (row.remainingPax ?? null),
+      unlimited: row.unlimited,
+      source: runtime.source ?? "manual",
+    }
+    await eventBus.emit(AVAILABILITY_SLOT_CHANGED_EVENT, payload, {
+      category: "domain",
+      source: "service",
+    })
+  }
+
+  return row
 }
 
 export async function deleteSlot(db: PostgresJsDatabase, id: string) {

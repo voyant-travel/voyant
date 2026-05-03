@@ -5,6 +5,11 @@ import { productRoutes } from "./routes.js"
 import { publicProductRoutes } from "./routes-public.js"
 
 export { productsBookingExtension } from "./booking-extension.js"
+export {
+  emitProductContentChanged,
+  PRODUCT_CONTENT_CHANGED_EVENT,
+  type ProductContentChangedEvent,
+} from "./events.js"
 export type { ProductRoutes } from "./routes.js"
 export type { PublicProductRoutes } from "./routes-public.js"
 export { publicProductRoutes } from "./routes-public.js"

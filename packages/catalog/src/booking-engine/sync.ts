@@ -129,13 +129,23 @@ export interface SyncSourcesSummary {
  * adapters wishing to participate in the sync must implement it).
  */
 export async function syncSources(options: SyncSourcesOptions): Promise<SyncSourcesSummary> {
-  const adapters = options.registry.kinds().map((kind) => options.registry.resolveOrThrow(kind))
+  // Iterate every registered (connection_id, adapter) pair — multiple
+  // connections of the same kind each get their own discovery pass.
+  // Skip adapters that don't implement `discover` (outbound-only
+  // channel-push adapters).
+  const entries = options.registry
+    .connections()
+    .map((connectionId) => ({
+      connectionId,
+      adapter: options.registry.resolveByConnectionOrThrow(connectionId),
+    }))
+    .filter((e) => typeof e.adapter.discover === "function")
   const adapterSummaries: SyncAdapterSummary[] = []
   let totalProjections = 0
 
-  for (const adapter of adapters) {
+  for (const { connectionId, adapter } of entries) {
     const adapterCtx = options.buildAdapterContext?.(adapter) ?? {
-      connection_id: adapter.kind,
+      connection_id: connectionId,
     }
     const summary: SyncAdapterSummary = {
       adapter: adapter.kind,
@@ -150,7 +160,10 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
 
     let cursor: string | undefined
     do {
-      const page = await adapter.discover(adapterCtx, cursor)
+      // `discover` is optional in the contract; the filter above
+      // ensures we only iterate adapters that implement it.
+      const page = await adapter.discover?.(adapterCtx, cursor)
+      if (!page) break
       summary.pages += 1
       options.onProgress?.({
         adapter: adapter.kind,

@@ -194,6 +194,7 @@ export const availabilityCoreRoutes = new Hono<Env>()
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updateAvailabilitySlotSchema),
+      { eventBus: c.get("eventBus"), source: "manual" },
     )
     return row ? c.json({ data: row }) : notFound(c, "Availability slot not found")
   })

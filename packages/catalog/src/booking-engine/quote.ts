@@ -150,7 +150,14 @@ export async function quoteEntity(
   deps: QuoteEntityDeps,
   request: QuoteEntityRequest,
 ): Promise<QuoteEntityResult> {
-  const adapter = deps.registry.resolveOrThrow(request.sourceKind)
+  // Prefer per-connection routing when a connection id is available
+  // (provenance.source_connection_id is the load-bearing field on
+  // sourced rows). Fall back to kind-only resolution for the
+  // single-connection-per-kind / legacy path.
+  const adapter = request.sourceConnectionId
+    ? (deps.registry.resolveByConnection(request.sourceConnectionId) ??
+      deps.registry.resolveOrThrow(request.sourceKind))
+    : deps.registry.resolveOrThrow(request.sourceKind)
   const ttlMs = request.ttlMs ?? DEFAULT_QUOTE_TTL_MS
   const quotedAt = new Date()
   const expiresAt = new Date(quotedAt.getTime() + ttlMs)

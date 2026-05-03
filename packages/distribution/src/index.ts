@@ -16,6 +16,17 @@ export const distributionHonoModule: HonoModule = {
 }
 
 export { distributionBookingExtension } from "./booking-extension.js"
+export {
+  type AcquireTokenAcquired,
+  type AcquireTokenDenied,
+  type AcquireTokenResult,
+  acquireToken,
+  type ChannelPushPriority,
+  channelScopeKey,
+  DEFAULT_PRIORITY_GATES,
+  drainBucket,
+  type RateLimitConfig,
+} from "./rate-limit.js"
 export type {
   Channel,
   ChannelBookingLink,
@@ -85,6 +96,16 @@ export {
   channels,
   channelWebhookEvents,
 } from "./schema.js"
+export type {
+  ChannelAvailabilityPushIntent,
+  ChannelContentPushIntent,
+  NewChannelAvailabilityPushIntent,
+  NewChannelContentPushIntent,
+} from "./schema-push-intents.js"
+export {
+  channelAvailabilityPushIntents,
+  channelContentPushIntents,
+} from "./schema-push-intents.js"
 export {
   channelBookingLinkListQuerySchema,
   channelCommissionRuleListQuerySchema,
@@ -149,4 +170,11 @@ export {
   updateChannelSettlementRunSchema,
   updateChannelWebhookEventSchema,
 } from "./validation.js"
+export {
+  type OutboundEnvelopeInput,
+  type OutboundEnvelopeResultInput,
+  type PreparedEnvelope,
+  prepareOutboundEnvelope,
+  redactHeaders,
+} from "./webhook-deliveries.js"
 export { distributionService }
