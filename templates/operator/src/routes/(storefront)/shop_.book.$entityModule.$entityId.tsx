@@ -99,6 +99,12 @@ function ShopBookRouteComponent(): React.ReactElement {
       initialConfigure={initialConfigure}
       initialAccommodation={initialAccommodation}
       entitySummary={entitySummary}
+      // No `contractTemplateSlug` — the wrapper resolves whichever
+      // customer-scope template the operator has marked active via
+      // /v1/public/legal/contracts/templates/default. Per-product
+      // overrides plug in here once products grow a
+      // `contractTemplateSlug` field.
+      contractMarketingLabel="Email me occasional updates about new tours and promotions."
     />
   )
 }

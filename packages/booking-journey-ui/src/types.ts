@@ -219,7 +219,14 @@ export interface BookingJourneyProps {
    * workflow. Receives the rendered HTML so it can be stored
    * verbatim for the audit trail.
    */
-  onContractAccepted?: (acceptance: ContractAcceptanceEvent) => void | Promise<void>
+  /**
+   * Called when the user clicks Confirm on the Review step. Receives
+   * the rendered contract acceptance when the contract dialog was
+   * shown; receives `null` when the journey skipped the dialog
+   * (no template configured — the storefront still wants to drive
+   * the post-confirm /checkout/start flow).
+   */
+  onContractAccepted?: (acceptance: ContractAcceptanceEvent | null) => void | Promise<void>
 }
 
 export interface ContractAcceptanceEvent {

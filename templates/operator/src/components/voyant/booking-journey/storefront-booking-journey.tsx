@@ -14,6 +14,7 @@
  * lift this component (and the route group) verbatim.
  */
 
+import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import {
   type BookingEntitySummary,
@@ -49,20 +50,22 @@ export interface StorefrontBookingJourneyProps {
    *  journey. */
   entitySummary?: BookingEntitySummary
   /**
-   * Slug of the contract template the storefront uses for this
-   * product. When set, the Review step opens the preview dialog
-   * (rendered HTML + terms/marketing checkboxes) and acceptance is
-   * forwarded to `onContractAccepted` so the route can call
-   * /v1/public/catalog/checkout/start with the captured payload.
+   * Per-product override for the contract template. When unset (the
+   * default), the storefront resolves the active customer-scope
+   * template via /v1/public/legal/contracts/templates/default —
+   * whichever one the operator has marked as the customer default
+   * in the legal admin. Set this when a specific product/cruise/
+   * hotel needs a non-default contract.
    */
   contractTemplateSlug?: string
   /** Optional marketing-opt-in label — when set, an extra checkbox
    *  is rendered in the contract dialog. */
   contractMarketingLabel?: string
-  /** Fired after the user accepts the contract. The route handles
-   *  the actual checkout-start dispatch + redirect to Netopia /
-   *  bank-transfer instructions. */
-  onContractAccepted?: (acceptance: ContractAcceptanceEvent) => void | Promise<void>
+  /** Fired after the user accepts the contract (or, when no
+   *  template is configured, when they click Confirm on Review).
+   *  The route handles the actual checkout-start dispatch + redirect
+   *  to Netopia / bank-transfer instructions. */
+  onContractAccepted?: (acceptance: ContractAcceptanceEvent | null) => void | Promise<void>
   className?: string
 }
 
@@ -82,6 +85,14 @@ export function StorefrontBookingJourney({
   className,
 }: StorefrontBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
+
+  // Resolve the contract template the journey will preview. The
+  // per-product override wins when set; otherwise we fetch
+  // whatever the operator marked as the active customer-scope
+  // template in `legal/contract_templates`. A 404 means no template
+  // has been seeded — the journey skips the preview dialog and
+  // commits without a contract.
+  const resolvedSlug = useResolvedContractSlug(contractTemplateSlug)
 
   // Storefront-specific slot wiring. NO CRM picker — customers fill
   // an inline contact form, which is the BookingJourney's default
@@ -116,8 +127,9 @@ export function StorefrontBookingJourney({
   // intent through `data-bj-intent` on the dialog's root via the
   // BookingJourney's onContractAccepted event payload + a getter
   // the wrapper installs once.
-  const defaultCheckoutHandler = async (acceptance: ContractAcceptanceEvent) => {
+  const defaultCheckoutHandler = async (acceptance: ContractAcceptanceEvent | null) => {
     try {
+      const idempotencyKey = `bj-${draftId}-${acceptance?.acceptedAt ?? "noaccept"}`
       // Step 1 — book the entity. The /book endpoint resolves the
       // current quote off the draft and creates a booking row.
       const bookRes = await fetch(`${getApiUrl()}/v1/public/catalog/book`, {
@@ -127,7 +139,7 @@ export function StorefrontBookingJourney({
         body: JSON.stringify({
           draftId,
           paymentIntent: { type: "hold" },
-          idempotencyKey: `bj-${draftId}-${acceptance.acceptedAt}`,
+          idempotencyKey,
         }),
       })
       if (!bookRes.ok) {
@@ -153,14 +165,18 @@ export function StorefrontBookingJourney({
         body: JSON.stringify({
           bookingId,
           paymentIntent: intent,
-          contractAcceptance: {
-            templateId: acceptance.templateId,
-            templateSlug: acceptance.templateSlug,
-            acceptedTerms: true,
-            acceptedMarketing: acceptance.acceptedMarketing,
-            acceptedAt: acceptance.acceptedAt,
-            renderedHtml: acceptance.renderedHtml,
-          },
+          ...(acceptance
+            ? {
+                contractAcceptance: {
+                  templateId: acceptance.templateId,
+                  templateSlug: acceptance.templateSlug,
+                  acceptedTerms: true as const,
+                  acceptedMarketing: acceptance.acceptedMarketing,
+                  acceptedAt: acceptance.acceptedAt,
+                  renderedHtml: acceptance.renderedHtml,
+                },
+              }
+            : {}),
           returnOrigin: window.location.origin,
         }),
       })
@@ -252,11 +268,11 @@ export function StorefrontBookingJourney({
       initialAccommodation={initialAccommodation}
       entitySummary={entitySummary}
       contract={
-        contractTemplateSlug
+        resolvedSlug
           ? {
-              templateSlug: contractTemplateSlug,
+              templateSlug: resolvedSlug,
               previewUrl: `${getApiUrl()}/v1/public/legal/contracts/templates/by-slug/${encodeURIComponent(
-                contractTemplateSlug,
+                resolvedSlug,
               )}/preview`,
               acceptLanguage: typeof navigator !== "undefined" ? navigator.language : undefined,
               resolveVariables: (draft) =>
@@ -290,4 +306,40 @@ export function StorefrontBookingJourney({
       {...slots}
     />
   )
+}
+
+/**
+ * Resolve which contract template to preview at the Review step.
+ *
+ * Order:
+ *   1. The per-product `contractTemplateSlug` override the caller
+ *      passed in (skips the network call).
+ *   2. The active customer-scope template returned by
+ *      `GET /v1/public/legal/contracts/templates/default?scope=customer`.
+ *
+ * Returns `undefined` while the request is in flight or when the
+ * deployment hasn't seeded a customer template — the journey then
+ * skips the dialog and routes Confirm straight to the
+ * checkout-start handler.
+ */
+function useResolvedContractSlug(override: string | undefined): string | undefined {
+  const language = typeof navigator !== "undefined" ? navigator.language?.split("-")[0] : undefined
+  const { data } = useQuery({
+    queryKey: ["public-legal-default-template", "customer", language ?? "en"],
+    queryFn: async (): Promise<string | null> => {
+      const params = new URLSearchParams({ scope: "customer" })
+      if (language) params.set("language", language)
+      const res = await fetch(
+        `${getApiUrl()}/v1/public/legal/contracts/templates/default?${params.toString()}`,
+        { credentials: "include" },
+      )
+      if (!res.ok) return null
+      const json = (await res.json()) as { data?: { slug?: string } }
+      return json.data?.slug ?? null
+    },
+    enabled: !override,
+    staleTime: 5 * 60 * 1000,
+  })
+  if (override) return override
+  return data ?? undefined
 }

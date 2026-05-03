@@ -246,13 +246,22 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 
   const onConfirm = async () => {
     if (!quote.data?.quoteId) return
-    // When a contract is wired, we hand off to the dialog. The
-    // dialog's onAccept fires `onContractAccepted` if the caller
-    // wired one (the storefront's checkout-start path), otherwise
-    // we fall through to the legacy commit flow so the operator
-    // dashboard's existing usage keeps working.
+    // 1. Contract is wired → open the dialog. Acceptance triggers
+    //    onContractAccepted (the storefront's checkout-start path).
+    // 2. No contract but onContractAccepted is wired → call it
+    //    directly without an acceptance payload. The storefront uses
+    //    this to drive the /book + /checkout/start handoff so card
+    //    intents redirect to the PSP. Skipping the dialog when no
+    //    template is configured is intentional — the dialog is an
+    //    optional gate, not a required step.
+    // 3. Neither wired → in-process commit (the operator dashboard's
+    //    legacy path).
     if (contractConfig) {
       setContractDialogOpen(true)
+      return
+    }
+    if (props.onContractAccepted) {
+      await props.onContractAccepted(null)
       return
     }
     await commitDraft()
