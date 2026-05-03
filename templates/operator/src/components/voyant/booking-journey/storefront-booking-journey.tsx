@@ -19,7 +19,11 @@ import {
   type BookingEntitySummary,
   BookingJourney,
   type BookingJourneyProps,
+  type ContractAcceptanceEvent,
 } from "@voyantjs/booking-journey-ui"
+
+import { getApiUrl } from "@/lib/env"
+import { resolveContractVariables } from "./resolve-contract-variables"
 
 export interface StorefrontBookingJourneyProps {
   entityModule: string
@@ -44,6 +48,21 @@ export interface StorefrontBookingJourneyProps {
    *  side panel so the customer keeps context while filling out the
    *  journey. */
   entitySummary?: BookingEntitySummary
+  /**
+   * Slug of the contract template the storefront uses for this
+   * product. When set, the Review step opens the preview dialog
+   * (rendered HTML + terms/marketing checkboxes) and acceptance is
+   * forwarded to `onContractAccepted` so the route can call
+   * /v1/public/catalog/checkout/start with the captured payload.
+   */
+  contractTemplateSlug?: string
+  /** Optional marketing-opt-in label — when set, an extra checkbox
+   *  is rendered in the contract dialog. */
+  contractMarketingLabel?: string
+  /** Fired after the user accepts the contract. The route handles
+   *  the actual checkout-start dispatch + redirect to Netopia /
+   *  bank-transfer instructions. */
+  onContractAccepted?: (acceptance: ContractAcceptanceEvent) => void | Promise<void>
   className?: string
 }
 
@@ -57,6 +76,9 @@ export function StorefrontBookingJourney({
   initialConfigure,
   initialAccommodation,
   entitySummary,
+  contractTemplateSlug,
+  contractMarketingLabel,
+  onContractAccepted,
   className,
 }: StorefrontBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
@@ -92,6 +114,21 @@ export function StorefrontBookingJourney({
       initialConfigure={initialConfigure}
       initialAccommodation={initialAccommodation}
       entitySummary={entitySummary}
+      contract={
+        contractTemplateSlug
+          ? {
+              templateSlug: contractTemplateSlug,
+              previewUrl: `${getApiUrl()}/v1/public/legal/contracts/templates/by-slug/${encodeURIComponent(
+                contractTemplateSlug,
+              )}/preview`,
+              acceptLanguage: typeof navigator !== "undefined" ? navigator.language : undefined,
+              resolveVariables: (draft) =>
+                resolveContractVariables(draft, { entityModule, entityId, entitySummary }),
+              ...(contractMarketingLabel ? { marketingLabel: contractMarketingLabel } : {}),
+            }
+          : undefined
+      }
+      onContractAccepted={onContractAccepted}
       paymentCapabilities={{
         // Storefront defaults — covers the three customer-facing
         // payment paths a typical tour operator wants. The deployment

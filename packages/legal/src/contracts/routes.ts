@@ -379,38 +379,67 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
 export const contractsAdminRoutes = createContractsAdminRoutes()
 
 export function createContractsPublicRoutes() {
-  return new Hono<Env>()
-    .get("/templates/default", async (c) => {
-      const query = parseQuery(c, contractTemplateDefaultQuerySchema)
-      const row = await contractsService.getDefaultTemplate(c.get("db"), query)
-      if (!row) return c.json({ error: "Template not found" }, 404)
-      return c.json({ data: row })
-    })
-    .post("/templates/:id/preview", async (c) => {
-      const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
-      const template = await contractsService.getTemplateById(c.get("db"), c.req.param("id"))
-      if (!template?.active) return c.json({ error: "Template not found" }, 404)
-      const rendered = contractsService.renderPreview({
-        variables: input.variables,
-        body: template.body,
+  return (
+    new Hono<Env>()
+      .get("/templates/default", async (c) => {
+        const query = parseQuery(c, contractTemplateDefaultQuerySchema)
+        const row = await contractsService.getDefaultTemplate(c.get("db"), query)
+        if (!row) return c.json({ error: "Template not found" }, 404)
+        return c.json({ data: row })
       })
-      return c.json({ data: { rendered } })
-    })
-    .get("/:id", async (c) => {
-      const row = await contractsService.getContractById(c.get("db"), c.req.param("id"))
-      if (!row) return c.json({ error: "Contract not found" }, 404)
-      const { metadata: _metadata, ...publicContract } = row
-      return c.json({ data: publicContract })
-    })
-    .post("/:id/sign", async (c) => {
-      const input = await parseJsonBody(c, insertContractSignatureSchema)
-      const result = await contractsService.signContract(c.get("db"), c.req.param("id"), input)
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_signable") {
-        return c.json({ error: "Contract is not in a signable state" }, 409)
-      }
-      return c.json({ data: { signature: result.signature } })
-    })
+      .post("/templates/:id/preview", async (c) => {
+        const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
+        const template = await contractsService.getTemplateById(c.get("db"), c.req.param("id"))
+        if (!template?.active) return c.json({ error: "Template not found" }, 404)
+        const rendered = contractsService.renderPreview({
+          variables: input.variables,
+          body: template.body,
+        })
+        return c.json({ data: { rendered } })
+      })
+      /**
+       * Slug-based variant — storefronts wire products to a contract
+       * template via slug at config time, not id, so they can render the
+       * preview in the booking journey before any contract row exists.
+       * The dialog at /shop/book/... POSTs here with the draft variables.
+       */
+      .post("/templates/by-slug/:slug/preview", async (c) => {
+        const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
+        const template = await contractsService.findTemplateBySlug(c.get("db"), c.req.param("slug"))
+        if (!template?.active) return c.json({ error: "Template not found" }, 404)
+        const rendered = contractsService.renderPreview({
+          variables: input.variables,
+          body: template.body,
+        })
+        return c.json({
+          data: {
+            template: {
+              id: template.id,
+              slug: template.slug,
+              name: template.name,
+              language: template.language,
+              scope: template.scope,
+            },
+            rendered,
+          },
+        })
+      })
+      .get("/:id", async (c) => {
+        const row = await contractsService.getContractById(c.get("db"), c.req.param("id"))
+        if (!row) return c.json({ error: "Contract not found" }, 404)
+        const { metadata: _metadata, ...publicContract } = row
+        return c.json({ data: publicContract })
+      })
+      .post("/:id/sign", async (c) => {
+        const input = await parseJsonBody(c, insertContractSignatureSchema)
+        const result = await contractsService.signContract(c.get("db"), c.req.param("id"), input)
+        if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+        if (result.status === "not_signable") {
+          return c.json({ error: "Contract is not in a signable state" }, 409)
+        }
+        return c.json({ data: { signature: result.signature } })
+      })
+  )
 }
 
 export const contractsPublicRoutes = createContractsPublicRoutes()

@@ -11,6 +11,11 @@
 
 export { BookingJourney } from "./components/booking-journey.js"
 export {
+  type ContractAcceptance,
+  ContractPreviewDialog,
+  type ContractPreviewDialogProps,
+} from "./components/contract-preview-dialog.js"
+export {
   AccommodationStep,
   AddonsStep,
   BillingStep,
@@ -36,6 +41,7 @@ export {
 export {
   type BookingEntitySummary,
   type BookingJourneyProps,
+  type ContractAcceptanceEvent,
   JOURNEY_STEP_ORDER,
   type JourneyHeaderState,
   type JourneyStep,

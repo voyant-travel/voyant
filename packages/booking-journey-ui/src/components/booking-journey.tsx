@@ -35,7 +35,13 @@ import { Button } from "@voyantjs/ui/components/button"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
-import { type BookingJourneyProps, JOURNEY_STEP_ORDER, type JourneyStep } from "../types.js"
+import {
+  type BookingJourneyProps,
+  type ContractAcceptanceEvent,
+  JOURNEY_STEP_ORDER,
+  type JourneyStep,
+} from "../types.js"
+import { ContractPreviewDialog } from "./contract-preview-dialog.js"
 
 import {
   AccommodationStep,
@@ -222,13 +228,45 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     setCurrentStep(step)
   }
 
-  const onConfirm = async () => {
+  const [contractDialogOpen, setContractDialogOpen] = useState(false)
+  const contractConfig = props.contract
+  const contractVariables = useMemo(() => {
+    if (!contractConfig) return {}
+    return contractConfig.resolveVariables(draft)
+  }, [contractConfig, draft])
+
+  const commitDraft = async () => {
     if (!quote.data?.quoteId) return
     await commit.mutateAsync({
       draft: { ...draft, quoteId: quote.data.quoteId },
       quoteId: quote.data.quoteId,
       paymentIntent: { type: draft.payment.intent === "card" ? "card" : "hold" } as never,
     })
+  }
+
+  const onConfirm = async () => {
+    if (!quote.data?.quoteId) return
+    // When a contract is wired, we hand off to the dialog. The
+    // dialog's onAccept fires `onContractAccepted` if the caller
+    // wired one (the storefront's checkout-start path), otherwise
+    // we fall through to the legacy commit flow so the operator
+    // dashboard's existing usage keeps working.
+    if (contractConfig) {
+      setContractDialogOpen(true)
+      return
+    }
+    await commitDraft()
+  }
+
+  const onContractAccept = async (acceptance: ContractAcceptanceEvent) => {
+    setContractDialogOpen(false)
+    if (props.onContractAccepted) {
+      await props.onContractAccepted(acceptance)
+      return
+    }
+    // No checkout-start handler wired — fall back to the in-process
+    // commit so the dialog is non-destructive to existing flows.
+    await commitDraft()
   }
 
   return (
@@ -339,6 +377,19 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           />
         </aside>
       </div>
+
+      {contractConfig ? (
+        <ContractPreviewDialog
+          open={contractDialogOpen}
+          onOpenChange={setContractDialogOpen}
+          previewUrl={contractConfig.previewUrl}
+          acceptLanguage={contractConfig.acceptLanguage}
+          variables={contractVariables}
+          marketingLabel={contractConfig.marketingLabel as string | undefined}
+          termsLabel={contractConfig.termsLabel}
+          onAccept={onContractAccept}
+        />
+      ) : null}
     </div>
   )
 }

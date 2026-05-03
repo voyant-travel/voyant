@@ -187,6 +187,49 @@ export interface BookingJourneyProps {
    * fields (cruises have ports, hospitality has check-in/out, etc.).
    */
   entitySummary?: BookingEntitySummary
+
+  /**
+   * Contract preview integration. When `templateSlug` is set, the
+   * Review step's "Continue to checkout" button opens the contract
+   * preview dialog with the rendered template instead of committing
+   * directly. The journey then surfaces the acceptance back to the
+   * caller via `onContractAccepted` so the storefront can call its
+   * own `/checkout/start` endpoint.
+   *
+   * - `previewUrl` — absolute URL of the public render endpoint.
+   * - `resolveVariables` — maps the draft to the template's variable
+   *   schema. The storefront supplies a default mapper that covers
+   *   passenger / billing / room / dates.
+   * - `marketingLabel` — when set, an additional opt-in checkbox is
+   *   rendered in the dialog. Marketing consent is optional and is
+   *   passed through `onContractAccepted` so the caller can decide
+   *   what to do with it.
+   */
+  contract?: {
+    templateSlug: string
+    previewUrl: string
+    acceptLanguage?: string
+    resolveVariables: (draft: BookingDraftV1) => Record<string, unknown>
+    marketingLabel?: ReactNode
+    termsLabel?: ReactNode
+  }
+  /**
+   * Fired when the user accepts the contract in the preview dialog.
+   * The caller persists the acceptance + dispatches the checkout
+   * workflow. Receives the rendered HTML so it can be stored
+   * verbatim for the audit trail.
+   */
+  onContractAccepted?: (acceptance: ContractAcceptanceEvent) => void | Promise<void>
+}
+
+export interface ContractAcceptanceEvent {
+  templateId: string
+  templateSlug: string
+  templateName: string
+  acceptedTerms: true
+  acceptedMarketing: boolean
+  acceptedAt: string
+  renderedHtml: string
 }
 
 /**
