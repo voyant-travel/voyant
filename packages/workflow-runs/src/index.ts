@@ -22,7 +22,7 @@ export {
   beginWorkflowRun,
   type WorkflowRunRecorder,
 } from "./recorder.js"
-export { createWorkflowRunsAdminRoutes } from "./routes.js"
+export { mountWorkflowRunsAdminRoutes } from "./routes.js"
 export {
   type NewWorkflowRun,
   type NewWorkflowRunStep,
