@@ -38,9 +38,92 @@ Importantly, **content is NOT what gets indexed**. The indexer takes a search-sh
 - **`bookingCatalogSnapshot.frozenPayload`** — captured at book time. Deep, but only for committed bookings; can't be the source for a pre-book detail page. (`packages/catalog/src/snapshot/schema.ts`)
 - **Cruises' ad-hoc fetch** — `CruiseAdapter.fetchCruise(sourceRef)` directly called from the cruises module's routes. Vertical-specific. Not part of the catalog-plane contract. (`packages/cruises/src/routes.ts:265`)
 - **No cache table** — no `*_sourced_content`, `catalog_content_cache`, or similar exists.
-- **Drift events** — fire on field-policy field changes; carry `before` and `after` values. They detect drift in *indexed* fields, not content drift.
+- **No durable sourced-entry store** — `sync.ts` discovers projections into the indexer + field-policy registry but does NOT persist a local sourced-entry row (`packages/catalog/src/booking-engine/sync.ts:121`). `Provenance` is a TypeScript interface (`packages/catalog/src/provenance.ts:33`), not a table. The `catalog` package's `schema.ts` exports overlay, snapshots, and quotes only — no provenance storage. This is a foundational gap; before the content cache can dispatch owned-vs-sourced reads, sourced-entry identity, provenance, last-seen, and source refs must live somewhere durable.
+- **Drift events are field-level only** — `FieldDrift` carries `field_path, severity, before, after, had_overlay`. No locale, no content-section, no etag. Adequate for indexed-field drift; insufficient for content drift (`packages/catalog/src/drift/events.ts:18`).
+- **Overlay resolver is field-policy-bound** — `resolveOverlay` iterates only over fields keyed in the field-policy registry (`packages/catalog/src/overlay/resolver.ts:210`). Nested content blobs (`days[]`, `media[]`, `cabinCategories[]`) are not addressable by the current resolver.
 
-The cruise-style ad-hoc pattern works for one vertical but doesn't generalize. We need a contract.
+The cruise-style ad-hoc pattern works for one vertical but doesn't generalize, and three of the catalog plane's primitives (provenance store, drift event shape, overlay resolver scope) need extension before a content cache can be built on top of them. We address each as part of this proposal.
+
+## 2.5. Prerequisite: durable sourced-entry store
+
+This is the load-bearing prerequisite. The content cache, the read service, drift invalidation, and snapshot capture all assume there's a durable local row per sourced entity that records *what we know about it locally*. Today there isn't. We add one before anything else.
+
+### 2.5.1. Schema
+
+```sql
+-- packages/catalog/src/schema-sourced-entries.ts (new)
+catalog_sourced_entries (
+  id                       text primary key,    -- typeid: cse_*; canonical Voyant-side id
+  entity_module            text not null,       -- "products", "cruises", "hospitality", ...
+  entity_id                text not null,       -- typeid in the vertical (prod_*, crus_*, ...)
+
+  -- Provenance (mirrors Provenance interface, made durable)
+  source_kind              text not null,
+  source_provider          text,
+  source_connection_id     text,
+  source_ref               text,
+  source_freshness         text not null,       -- "static" | "volatile" | "live"
+  last_sourced_at          timestamptz,
+
+  -- Lifecycle
+  status                   text not null default 'active', -- "active" | "withdrawn" | "delisted"
+  first_seen_at            timestamptz not null default now(),
+  last_seen_at             timestamptz not null,
+
+  -- Indexed-projection capture (denormalized snapshot of what discover()
+  -- returned, persisted locally so thin fallback and synthesizer reads
+  -- have a canonical source — not a search index round-trip; see §3.6).
+  projection               jsonb not null,
+  projection_etag          text,
+  projection_seen_at       timestamptz not null,
+
+  created_at               timestamptz not null default now(),
+  updated_at               timestamptz not null default now(),
+
+  unique (entity_module, entity_id),
+  unique (source_kind, source_connection_id, source_ref)
+)
+-- index on (entity_module, source_kind)             — vertical × source listings
+-- index on (status, last_seen_at)                    — withdrawal sweepers
+-- index on (source_kind, source_connection_id, last_sourced_at) — per-connection age
+```
+
+`catalog_sourced_entries` is the single durable record keyed two ways: by Voyant-side `(entity_module, entity_id)` for read-path lookup, and by upstream-side `(source_kind, source_connection_id, source_ref)` for discover-time idempotency.
+
+### 2.5.2. Discover writes here
+
+`sync.ts` is extended: each projection from `adapter.discover` upserts a sourced-entry row before the indexer write. The projection itself is stored in `projection jsonb` — this is the **canonical local copy of what the adapter said**, used by:
+
+- The read service to dispatch owned-vs-sourced (§3.3).
+- The thin-content synthesizer when no `getContent` is available (§3.6) — pulled from this column, NOT from Typesense.
+- The `pickBestCachedLocale` query when there's no cache row yet but a projection exists.
+
+Owned products do NOT have a row here — `provenance.source_kind === "owned"` reads provenance from the vertical's owned schema, not from `catalog_sourced_entries`. The sourced-entry store is sourced-only.
+
+### 2.5.3. Provenance reads
+
+The `readProvenance(db, entityModule, entityId)` helper (referenced throughout this doc) becomes:
+
+```ts
+async function readProvenance(db, entityModule, entityId): Promise<Provenance & { entry_id: string } | null> {
+  // Owned check first — vertical-specific. If the vertical's table has
+  // a row with no source link, treat as owned.
+  const ownedRow = await readOwnedRow(db, entityModule, entityId)
+  if (ownedRow) return { source_kind: "owned", source_freshness: "static" }
+
+  // Sourced — read from catalog_sourced_entries.
+  const entry = await db.select().from(catalogSourcedEntries)
+    .where(and(eq(.entity_module, entityModule), eq(.entity_id, entityId)))
+    .limit(1)
+  return entry ?? null
+}
+```
+
+This single function anchors every owned-vs-sourced dispatch in the doc.
+
+### 2.5.4. Why catalog and not per-vertical
+
+Provenance is a property of the catalog plane (every adapter produces it), not of any vertical (the products module shouldn't know how to read TUI's connection id). One table in `packages/catalog` keeps the contract uniform; verticals consume it via the read service. Per-vertical *content* still goes in per-vertical tables (§3.2) — only the entry/provenance + projection capture are centralized.
 
 ## 3. Proposed shape
 
@@ -103,15 +186,24 @@ export interface GetContentResult {
   machine_translated?: boolean
   /**
    * Vertical-specific content payload. The catalog plane treats it as
-   * opaque; the vertical's content service knows how to read it. The
-   * shape is the vertical's existing owned-content shape (e.g. for
-   * products: { product, options[], days[], media[] }).
+   * opaque; the vertical's content service knows how to read it (and
+   * validates against `content_schema_version` before writing to the
+   * cache). The shape is the vertical's existing owned-content shape
+   * (e.g. for products: { product, options[], days[], media[] }).
    */
   content: unknown
-  /**
-   * When the upstream considers this content fresh until. Hint for the
-   * catalog plane's cache; not load-bearing if absent.
-   */
+  /** Vertical-managed schema version of the `content` payload (e.g.
+   *  "products/v3", "cruises/v1"). Cache writes are gated on the
+   *  vertical's validator for this version; cache reads ignore rows
+   *  with an unknown / older version. Lets us evolve content shapes
+   *  without invalidating mass-rewriting cache rows. */
+  content_schema_version: string
+  /** When the upstream itself last modified this content (their
+   *  updated_at, ETag-derived timestamp, etc.). Used by the reconciler
+   *  / drift detector and by snapshot audit trails. */
+  source_updated_at?: Date
+  /** When the upstream considers this content fresh until. Hint for
+   *  the catalog plane's cache; not load-bearing if absent. */
   fresh_until?: Date
   /** ETag-style marker for HTTP-cache revalidation on the next pull. */
   etag?: string
@@ -138,7 +230,7 @@ The locale field is required, not optional. Adapters that genuinely have only on
 
 Each vertical that needs rich content for sourced rows adds a sibling table mirroring its owned-content schema. **Per-vertical, not generic.** Cruises already proves the shape per-vertical works; we formalize the pattern.
 
-The cache is keyed on **(entity_id, locale)** — each language is a separate row, mirroring the existing `product_translations` shape on the owned side. See §3.5 for the multi-language rationale.
+The cache is keyed on **(entity_id, locale, market)** — locale is the dominant content axis (§3.5); `market` is included because some adapters serve content per market (cruise lines often have different itineraries / inclusions for the EU vs. US market; bedbanks sometimes vary descriptions per source-market). `market` is nullable: when the adapter declares no market sensitivity, all reads use `market = NULL` and there's one row per locale. Source identity is NOT in the key — the entity_id resolves through `catalog_sourced_entries` (§2.5) to the (source_kind, source_connection_id, source_ref) tuple, so we don't duplicate that across cache rows.
 
 Examples:
 
@@ -147,33 +239,38 @@ Examples:
 products_sourced_content (
   entity_id              text not null,           -- typeid: prod_*, matches catalog
   locale                 text not null,           -- BCP 47, e.g. "ro-RO"
-  source_kind            text not null,
-  source_ref             text not null,
-  -- denormalized "content" payload, vertical-shaped
+  market                 text not null default '*', -- '*' = no market sensitivity
+  -- denormalized "content" payload, vertical-shaped + versioned
   payload                jsonb not null,          -- { product, options[], days[], media[] }
+  content_schema_version text not null,           -- e.g. "products/v3"
   returned_locale        text not null,           -- what the upstream actually served
   machine_translated     boolean not null default false,
+  source_updated_at      timestamptz,             -- upstream's own last-modified
   fetched_at             timestamptz not null,
   fresh_until            timestamptz,
   etag                   text,
   fetch_status           text not null,           -- "ok" | "stale" | "error" | "unsupported"
   fetch_error            text,
-  primary key (entity_id, locale),
+  primary key (entity_id, locale, market),
 )
--- index on (locale, fresh_until)             — for "what's stale in ro-RO?"
--- index on (entity_id, returned_locale)      — for fallback diagnostics
+-- index on (locale, fresh_until)                 — for "what's stale in ro-RO?"
+-- index on (entity_id, returned_locale)          — for fallback diagnostics
+-- index on (content_schema_version)              — for migrations / cache flushes per version
 
 -- packages/cruises/src/schema-sourced-content.ts (new)
 -- replaces the cruises-routes.ts ad-hoc pattern with a shared cache
 cruises_sourced_content (
-  entity_id text, locale text, source_kind, source_ref, payload jsonb,
-  returned_locale text, machine_translated bool, fetched_at, fresh_until,
+  entity_id text, locale text, market text default '*', payload jsonb,
+  content_schema_version text, returned_locale text, machine_translated bool,
+  source_updated_at timestamptz, fetched_at, fresh_until,
   etag, fetch_status, fetch_error,
-  primary key (entity_id, locale),
+  primary key (entity_id, locale, market),
 )
 
 -- ... and so on per vertical that adopts the pattern ...
 ```
+
+**Validation before write.** Every vertical exports a Zod (or equivalent) validator for its `content_schema_version`. The cache write goes through the validator; rows that don't validate are rejected (and surfaced to ops as adapter integration bugs) rather than written. On read, rows with a `content_schema_version` the vertical no longer recognizes are treated as cache misses — same path as a stale row. Cache flushes on schema bumps are a single `DELETE WHERE content_schema_version != current` per vertical, no migration of jsonb payloads.
 
 Why per-vertical rather than one big `catalog_content_cache(payload jsonb)` table:
 
@@ -245,23 +342,78 @@ export async function getProductContent(
 
 Detail routes (operator and storefront) call this single function. Owned products keep working unchanged. Sourced products read from cache (locale-resolved); adapters that don't support content fetch synthesize the most complete content shape they can from projection + overlay + plane metadata (§3.6) — same return type as `getContent`, so consumers don't branch.
 
-### 3.4. Refresh policy: SWR with singleflight
+### 3.4. Refresh policy: SWR with cross-worker singleflight
 
 Two refresh paths, both invisible to operators:
 
 1. **TTL** — `fresh_until` from the adapter, or a vertical default (cruises: 24h, hotels: 4h, products: 24h). On read, if `fresh_until < now()`, the read returns the **stale row immediately** and schedules a fire-and-forget refresh. Next read sees the fresh row. This is stale-while-revalidate (SWR): customer-facing latency is always cache latency, never adapter latency, even when the adapter is slow or briefly down.
-2. **Drift events** — when a drift event fires for `(entity_module, entity_id)`, the catalog plane invalidates affected cache rows (sets `fresh_until = now()`). The next read serves stale + triggers refresh, same as TTL expiry.
+2. **Drift events** — when a content-drift event fires (§3.4.1), the catalog plane invalidates affected cache rows (sets `fresh_until = now()`). The next read serves stale + triggers refresh, same as TTL expiry.
 
-Two correctness guards:
+#### Cross-worker singleflight
 
-- **Singleflight on the cache key** — concurrent reads that all see "stale" or "miss" for the same `(entity_module, entity_id, locale)` collapse into one in-flight adapter call. Background refreshes triggered by SWR participate in the same registry, so a hot row never produces a thundering herd of `getContent` calls.
-- **Cache miss is the one blocking case** — if there's no row at all in any preferred locale, the read MUST wait for the adapter (we have nothing to return). This is rare in steady state because backfill / first-discovery populates the cache before customer reads land on a row.
+In-process `Map`-based singleflight only dedupes within one worker. Voyant deployments routinely run N workers concurrently (CF Workers, Node fleet, multi-pod), so a hot stale row would otherwise trigger N concurrent `getContent` calls — once per worker. We need DB-level dedup.
 
-There is **no manual "refresh from source" admin action**. Operators don't think in cache terms; the cache is an internal optimization, not a surface they manage. If something is wrong, drift events handle it; if drift is missing, that's a bug in the adapter integration, not something an operator should be working around with a button.
+Two equivalent options; pick one per vertical:
+
+- **Postgres advisory lock** — `pg_try_advisory_lock(hashtext('content:' || entity_module || ':' || entity_id || ':' || locale || ':' || market))` before refresh; release after write. Concurrent stale-readers across workers either get the lock (refresh) or skip (return stale, let the lock-holder do the work). Zero schema cost.
+- **`content_refresh_inflight` table** keyed on `(entity_module, entity_id, locale, market)` with `started_at` and `worker_id`. Caller `INSERT ON CONFLICT DO NOTHING`; row-presence acts as the lock. Slightly heavier (a row write) but visible in queries — useful for "what's currently refreshing" diagnostics.
+
+In-process Map *also* runs as a fast-path inside each worker so two requests on the same worker still collapse before they hit the DB.
+
+#### Cache miss is the one blocking case
+
+If there's no row at all for any preferred locale, the read MUST wait for the adapter (we have nothing to return). This is rare in steady state because discovery / backfill populates the sourced-entry projection (§2.5) before customer reads land — and the synthesizer (§3.6) can serve from that projection while a real `getContent` is in flight.
+
+#### No operator-facing manual refresh button
+
+Operators don't think in cache terms; the cache is an internal optimization, not a surface they manage. If something is wrong, drift events handle it; if drift is missing, that's an adapter-integration bug to fix, not something an operator should paper over with a button.
+
+**Engineering / SRE debug tooling can manually invalidate cache rows** (an internal CLI script, a `wrangler` command, or an `/internal/_debug/...` route gated behind a developer flag). This is for cases where drift detection misfires or a faulty cache row needs surgical eviction during incident response. It is not part of the operator UI surface.
+
+#### Snapshot bypass
 
 Snapshot capture (§5.1) is the one exception that bypasses SWR: the booking engine MUST refresh synchronously at commit time so the snapshot reflects what the customer actually agreed to. That path is documented as refresh-with-fallback in §5.1 — it's not a read, it's a write-time freshness guarantee.
 
-A pure-background scheduled refresher (a worker that walks expired rows and refreshes proactively) is **not planned**. SWR + drift events covers the same surface area without a worker, schedule, backlog monitor, or dead-letter queue. If we ever observe high p99 latency on first-reads of cold rows, we'd revisit — but that's a backfill problem, not a refresh problem.
+#### No scheduled background refresher
+
+A worker that walks expired rows and refreshes proactively is **not planned**. SWR + drift events covers the same surface area without a worker, schedule, backlog monitor, or dead-letter queue. If we ever observe high p99 latency on first-reads of cold rows, we'd revisit — but that's a backfill problem, not a refresh problem.
+
+### 3.4.1. Content drift events
+
+The existing `FieldDrift` / `CatalogDriftEvent` shape (`packages/catalog/src/drift/events.ts`) is field-policy-bound — it carries `field_path, severity, before, after, had_overlay`. That's right for indexed-field drift but doesn't speak to content drift, which has different invalidation granularity (per-locale, per-content-section, per-etag).
+
+Add a sibling event type:
+
+```ts
+export interface ContentDriftEvent {
+  /** TypeID — same lineage as CatalogDriftEvent. */
+  id: string
+  entity_module: string
+  entity_id: string
+  /** When known: the locale that drifted. NULL means "all locales". */
+  locale?: string
+  /** When known: market that drifted. NULL means "all markets". */
+  market?: string
+  /** Coarse classification of what changed. */
+  kind:
+    | "content_changed"        // upstream signaled new content via etag/source_updated_at
+    | "content_locale_added"   // upstream added a locale we didn't previously have
+    | "content_invalidated"    // explicit invalidation (debug tooling, ops escalation)
+  /** ETag we last cached, when the event source can compare. */
+  previous_etag?: string
+  /** ETag the upstream now reports. */
+  current_etag?: string
+  /** Optional content-section: when only a section drifted, the cache
+   *  could in theory do a section-scoped refresh. v1 always re-pulls the
+   *  whole content blob; this field is for future surgical refreshes. */
+  section?: string
+  detected_at: Date
+}
+```
+
+When a content-drift event fires, the cache invalidates rows matching `(entity_module, entity_id, locale, market)` — wildcards on locale/market when those event fields are null. The next read for any matched row goes through SWR's stale-serve + background-refresh path.
+
+Owned products use the existing `FieldDrift` events; sourced products use `ContentDriftEvent` for content-shaped invalidation. Field-level drift (e.g. `name` changed on the projection) still uses `FieldDrift` because the projection IS field-policy-shaped.
 
 ## 3.5. Multi-language as a first-class axis
 
@@ -324,11 +476,33 @@ export interface ContentLocaleResolution<T = unknown> {
 
 The read service does the chain walk in SQL: pull all available locales for the entity in one query, score them against the preference chain, return the best. One query, no N+1. When **no** locale is available (cache miss for every entry), fall through to the live adapter fetch with the most-preferred locale — same path as §3.3 today, just locale-aware.
 
-### 3.5.4. Editorial overlays compose on top
+### 3.5.4. Editorial overlays compose on top — content-shape-aware merger
 
 The existing `catalog_overlay` table keys on `(entity, field_path, locale, audience, market)`. **Overlays already work per-locale.** For sourced rows, an operator can curate a `ro-RO` overlay on top of what the adapter served (or didn't serve) — same machinery. Overlay merge happens at read time after locale resolution: pick the best content row, then layer locale-matching overlays on top.
 
-This means an operator can ship Romanian content for a TUI product *before* TUI publishes a ro-RO version — overlay covers it. When TUI later ships ro-RO natively, the operator can decide to keep their override (overlay wins) or remove it (fall back to the upstream).
+But the existing `resolveOverlay` (`packages/catalog/src/overlay/resolver.ts`) is field-policy-bound — it walks only the fields declared in the field-policy registry, which are flat indexed fields like `title` and `cancellation_policy_rules`. Content blobs are nested (`days[3].description`, `media[0].caption`, `cabinCategories[]`) and not addressable by the current resolver. We need a richer merge engine for content.
+
+Two changes:
+
+1. **`field_path` becomes a JSON-pointer** for content overlays: `/days/3/description`, `/media/0/caption`, `/options/cabin_balcony/inclusions/2`. This is a superset of the current `title` / `cancellation_policy_rules` style — flat names work as `/title`, `/cancellation_policy_rules`. Owned content keeps its existing flat-path overlays unchanged; sourced content rows can carry deeper paths.
+2. **A per-vertical content-shape-aware merger.** Each vertical that adopts content cache exports a `mergeOverlaysIntoContent(payload, overlays)` function. It walks `overlays` and applies each one to the content payload via the JSON-pointer path. Verticals own this because the content shape is theirs; the catalog plane stays neutral.
+
+Read-time merge order, after locale resolution picks the best content row:
+
+```
+content = cached.payload
+for overlay in overlaysFor(entity, locale, audience, market) where field_path startsWith content-content:
+  applyJsonPointerOverlay(content, overlay.field_path, overlay.value)
+return content
+```
+
+Overlay edits do NOT invalidate the content cache (read-time merge keeps them orthogonal — covered earlier). The overlay store's existing per-(entity, locale) caching applies to sourced reads symmetrically.
+
+This means an operator can ship Romanian content for a TUI product *before* TUI publishes a ro-RO version — an overlay row at `/description` with `locale = "ro-RO"` covers it. When TUI later ships ro-RO natively, the operator can decide to keep their override (overlay wins) or remove it (fall back to the upstream).
+
+#### Validation guard
+
+The content-shape-aware merger validates the result against the vertical's `content_schema_version` validator (§3.2). An overlay that produces an invalid content shape (operator typo, schema mismatch) is logged + skipped at merge time rather than corrupting the read; the dashboard surfaces "overlay X failed validation" so ops can fix it. This is necessary because content overlays can write arbitrary JSON into nested positions where the type matters.
 
 ### 3.5.5. Machine translation: opt-in policy, never implicit
 
@@ -358,8 +532,8 @@ When an adapter declares `supportsContentFetch: false`, the read service falls t
 
 Three sources feed the synthesizer, in priority order:
 
-1. **The indexer projection.** Every field the adapter declared via field policy flows through. Whatever the upstream's `discover` emitted — name, status, currency, dates, primary image, summary, supplier reference, and any vertical-specific projection fields — lands in the synthesized output. This is where most of the content comes from in practice, because adapters with `supportsContentFetch: false` typically have rich projections; they just don't have a deep detail-page endpoint.
-2. **The editorial overlay** (`catalog_overlay`). Locale-aware operator-curated content layered on top per §3.5.4. An operator that ships ro-RO copy for a thin-source product fills in fields the adapter never sent. Overlay merge runs at synthesizer time the same way it runs after a full `getContent` — the read paths are symmetric, so an operator's ro-RO description on a TUI product looks identical whether TUI's adapter is rich or thin.
+1. **The durable sourced-entry projection** (`catalog_sourced_entries.projection`, §2.5). Every field the adapter declared via field policy at `discover` time was persisted there. This is the canonical local copy — NOT a Typesense round-trip. Search indexes are optimized for full-text/facet queries, not point-reads of rich detail; reading from the durable store is faster, schema-stable, and survives Typesense rebuilds. (Earlier doc revisions said "from the indexer projection" — that was wrong; corrected here.)
+2. **The editorial overlay** (`catalog_overlay`). Locale-aware operator-curated content layered on top per §3.5.4 — JSON-pointer paths, content-shape-aware merger. An operator that ships ro-RO copy for a thin-source product fills in fields the adapter never sent. Overlay merge runs at synthesizer time the same way it runs after a full `getContent` — the read paths are symmetric, so an operator's ro-RO description on a TUI product looks identical whether TUI's adapter is rich or thin.
 3. **Catalog plane metadata.** Provenance (`source_kind`, `source_provider`, supplier link, `connection_id`), market / audience scope, drift status, last-seen timestamps. This powers UI hints ("served by Bedbank XYZ", "limited content available") and is part of the synthesized output regardless of which path produced it.
 
 Per-vertical mappings (illustrative — each vertical owns its own synthesizer):
@@ -394,7 +568,15 @@ After this lands:
 
 When a sourced booking commits, the snapshot graph captures `frozenPayload`. Today that's the indexed projection. **After this proposal lands, `frozenPayload` includes the full content blob** so the booking row carries a deep audit-grade record of what was sold, not just the indexed fields.
 
-The change to `captureSnapshot` callers (in the booking engine) is small — pull content + merge into the existing payload. The snapshot table schema already accepts opaque JSONB; no migration there.
+The integration in `bookEntity` (`packages/catalog/src/booking-engine/book.ts`) is a **modest dependency expansion**, not a one-line merge:
+
+- `bookEntity` gains a content-service dependency injected via the engine context (`ctx.contentService`).
+- The booking flow needs to forward the original quote's `scope` (locale, market, currency) into snapshot capture so we refresh the right locale.
+- Adapter context for the refresh call (the same `connection_id`, `correlation_id`) must propagate from the original quote/reserve through to the snapshot step.
+- A new failure mode (`SnapshotContentUnavailableError`, §5.1) needs an HTTP status mapping in the booking-engine route handlers and an operator-dashboard surface.
+- The snapshot table schema accepts opaque JSONB — no migration there — but the `frozen_payload` shape grows the `content_capture` envelope (§5.1) and audit consumers (refund flows, invoice rendering) need to read it.
+
+It's not a refactor, but it's not "merge a field" either. Plan a few days of integration plus tests, not an afternoon.
 
 ### 5.1. At-commit content capture: refresh-with-fallback
 
@@ -458,11 +640,16 @@ See [`channel-push-architecture.md`](./channel-push-architecture.md) for the out
 ## 7. Package layout
 
 ```
-packages/catalog/src/adapter/contract.ts                      — extended with getContent + supportsContentFetch + supportedContentLocales
-packages/catalog/src/services/content-service.ts              — isStale + drift→cache invalidation + singleflight registry + scheduleBackgroundRefresh
-packages/<vertical>/src/schema-sourced-content.ts             — per-vertical content cache table (entity_id, locale)
-packages/<vertical>/src/service-content.ts                    — getContentForEntity (owned-vs-sourced dispatch, SWR semantics)
-packages/<vertical>/src/service-content-synthesizer.ts        — synthesizeContentFromProjection (projection + overlay + plane metadata; §3.6)
+packages/catalog/src/schema-sourced-entries.ts                — catalog_sourced_entries (§2.5) — durable provenance + projection capture
+packages/catalog/src/adapter/contract.ts                      — extended with getContent + capabilities + content versioning fields
+packages/catalog/src/drift/events.ts                          — extended with ContentDriftEvent (§3.4.1)
+packages/catalog/src/overlay/resolver.ts                      — extended to handle JSON-pointer field paths (§3.5.4)
+packages/catalog/src/services/content-service.ts              — isStale + ContentDriftEvent→cache invalidation + cross-worker singleflight (advisory lock or refresh-inflight) + applyJsonPointerOverlay primitives
+packages/catalog/src/services/sourced-entry-service.ts        — readProvenance + sync.ts integration for sourced-entry upserts
+packages/<vertical>/src/schema-sourced-content.ts             — per-vertical content cache (entity_id, locale, market) with content_schema_version
+packages/<vertical>/src/service-content.ts                    — getContentForEntity (owned-vs-sourced dispatch, SWR, validator-gated writes)
+packages/<vertical>/src/service-content-synthesizer.ts        — synthesizeContentFromProjection (durable sourced-entry projection + overlay + plane metadata; §3.6)
+packages/<vertical>/src/content-shape.ts                      — vertical-specific content type, Zod validator, mergeOverlaysIntoContent
 ```
 
 Each vertical opts in. Verticals that don't yet have detail-page needs (extras, transfers) can defer adopting this — they fall back to thin indexed content, same as today.
@@ -470,31 +657,43 @@ Each vertical opts in. Verticals that don't yet have detail-page needs (extras, 
 ## 8. Migration / rollout
 
 **Phase A — Extend the contract** (1 day):
-- Add `getContent` (optional) and `supportsContentFetch` to `SourceAdapter` and `AdapterCapabilities`.
-- Pure typing change; no implementations yet. The demo adapter declares `supportsContentFetch: false`.
+- Add `getContent` (optional), `supportsContentFetch`, `supportedContentLocales`, and content versioning fields to `SourceAdapter` / `AdapterCapabilities` / `GetContentRequest` / `GetContentResult`.
+- Add `ContentDriftEvent` to the drift event taxonomy alongside existing `CatalogDriftEvent` (§3.4.1).
+- Extend `field_path` semantics in `catalog_overlay` to accept JSON-pointers (§3.5.4) — schema-compatible since `field_path` is already `text`.
+- Pure typing / contract changes. Demo adapter declares `supportsContentFetch: false`.
 
-**Phase B — Generic service helpers** (1-2 days):
-- Add `packages/catalog/src/services/content-service.ts` with `isStale`, `invalidateOnDrift`, and content-cache utilities.
+**Phase B — Durable sourced-entry store** (2-3 days):
+- Add `catalog_sourced_entries` schema (§2.5).
+- Extend `sync.ts` to upsert sourced-entry rows on every `discover` page (writing the projection JSONB alongside the indexer write). Owned products do NOT participate.
+- Add `readProvenance(db, entityModule, entityId)` helper.
+- Backfill: a one-shot script re-runs `discover` for each existing connection to populate the new table for any sourced rows already in the indexer.
+- No content cache yet; this phase only establishes the prerequisite.
+
+**Phase C — Catalog content service primitives** (1-2 days):
+- Add `packages/catalog/src/services/content-service.ts` with `isStale`, cross-worker singleflight (advisory-lock or refresh-inflight variant per deployment), `invalidateOnDrift` (consumes `ContentDriftEvent`), and `pickBestCachedLocale` query helpers.
+- Add the content-shape-aware overlay merger primitives (`applyJsonPointerOverlay`, validator hookup).
 - No vertical adopts yet.
 
-**Phase C — Products vertical adopts** (3 days):
-- Add `products_sourced_content` schema + service.
-- Wire `getProductContent` (owned-vs-sourced dispatch).
-- Operator template's product detail route uses the new service.
-- Demo upstream remains thin (declares `supportsContentFetch: false`); detail page renders fallback content for demo products.
+**Phase D — Products vertical adopts** (3-4 days):
+- Add `products_sourced_content` schema with `content_schema_version "products/v1"` (§3.2).
+- Add the products-vertical content shape definition (`{ product, options[], days[], media[], policies[] }`) + Zod validator + `mergeOverlaysIntoContent` function.
+- Wire `getProductContent` (owned-vs-sourced dispatch via `readProvenance`, locale-resolved cache reads, SWR refresh, synthesizer fallback).
+- Operator template's product detail route + storefront detail route use the new service.
+- Demo upstream remains thin (declares `supportsContentFetch: false`); detail page renders synthesizer output from the durable projection (§3.6).
 
-**Phase D — Cruises vertical migrates** (2-3 days):
-- Replace the ad-hoc `adapter.fetchCruise()` pattern in `packages/cruises/src/routes.ts:265` with the new content-cache pattern.
-- Cruises' adapter implements `getContent` (returning the existing `ExternalCruise` shape wrapped in `GetContentResult`).
-- Detail route reads from cache; existing route shape stays the same from the caller's perspective.
+**Phase E — Cruises vertical migrates** (3-4 days):
+- Define the **cruise content aggregate**: `{ cruise, ship, sailings[], cabinCategories[], itineraryStops[], policies[] }` is one content payload, returned by a single `getContent`. Pricing stays out — it's volatile and continues to flow through `liveResolve`. The cruise adapter's existing `fetchCruise / fetchSailing / fetchShip / fetchItinerary` methods compose internally to produce one `GetContentResult.content` blob; the public adapter contract gets one method, not five.
+- Add `cruises_sourced_content` schema with `content_schema_version "cruises/v1"`.
+- Replace the ad-hoc `adapter.fetchCruise()` pattern in `packages/cruises/src/routes.ts` with the new content service.
+- Detail route reads from cache; existing route shape stays the same from the caller's perspective. The cruises adapter retains its internal multi-call composition; only the public surface narrows.
 
-**Phase E — Hospitality / charters / extras** (2-3 days each, as needed):
-- Adopt the pattern per vertical when first sourced integration ships.
+**Phase F — Hospitality / charters / extras** (2-3 days each, as needed):
+- Adopt the pattern per vertical when first sourced integration ships. Each vertical defines its content aggregate boundary (which sub-fetches roll into one `getContent`, what stays in `liveResolve`).
 
-**Phase F — Booking journey integration** (parallel to journey Phase B):
+**Phase G — Booking journey integration** (parallel to journey Phase B):
 - Journey's `BookingDraftShape` builder reads from `getContentForEntity`.
-- Live pricing in `quoteEntity` consults content.
-- Snapshot at commit captures content.
+- Live pricing in `quoteEntity` consults content for option-pricing.
+- `bookEntity` gains the snapshot-content-capture path (§5).
 
 ## 9. Open questions
 
