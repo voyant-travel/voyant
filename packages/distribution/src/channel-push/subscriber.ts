@@ -13,10 +13,20 @@
 import type { EventEnvelope, Subscriber } from "@voyantjs/core"
 
 import {
+  processAvailabilityPushIntents,
+  resolveAllotmentTargetsForSlot,
+  upsertAvailabilityIntent,
+} from "./availability-push.js"
+import {
   processBookingPush,
   resolveBookingPushTargets,
   upsertPendingBookingLinks,
 } from "./booking-push.js"
+import {
+  processContentPushIntents,
+  resolveContentPushTargets,
+  upsertContentIntent,
+} from "./content-push.js"
 import {
   type ChannelPushDeps,
   defaultLogger,
@@ -30,12 +40,47 @@ interface BookingConfirmedPayload {
   actorId?: string | null
 }
 
+interface ProductContentChangedPayload {
+  id: string
+  axis?: string
+}
+
+interface AvailabilitySlotChangedPayload {
+  slotId: string
+  productId: string
+  optionId: string | null
+  startsAt: Date | string
+  remainingPax: number | null
+  unlimited: boolean
+  source: string
+}
+
 function coerceBookingConfirmed(envelope: EventEnvelope<unknown>): BookingConfirmedPayload | null {
   const data = envelope.data
   if (data == null || typeof data !== "object") return null
   const maybe = data as Record<string, unknown>
   if (typeof maybe.bookingId !== "string") return null
   return maybe as unknown as BookingConfirmedPayload
+}
+
+function coerceSlotChanged(
+  envelope: EventEnvelope<unknown>,
+): AvailabilitySlotChangedPayload | null {
+  const data = envelope.data
+  if (data == null || typeof data !== "object") return null
+  const maybe = data as Record<string, unknown>
+  if (typeof maybe.slotId !== "string" || typeof maybe.productId !== "string") return null
+  return maybe as unknown as AvailabilitySlotChangedPayload
+}
+
+function coerceContentChanged(
+  envelope: EventEnvelope<unknown>,
+): ProductContentChangedPayload | null {
+  const data = envelope.data
+  if (data == null || typeof data !== "object") return null
+  const maybe = data as Record<string, unknown>
+  if (typeof maybe.id !== "string") return null
+  return maybe as unknown as ProductContentChangedPayload
 }
 
 export interface ChannelPushSubscribersOptions {
@@ -95,11 +140,90 @@ export function createChannelPushSubscribers(
     }
   }
 
+  const slotHandler = async (envelope: EventEnvelope<unknown>): Promise<void> => {
+    const payload = coerceSlotChanged(envelope)
+    if (!payload) return
+
+    const deps = options.deps ?? getChannelPushDeps()
+    if (!deps) return
+    const logger = deps.logger ?? defaultLogger
+
+    try {
+      const targets = await resolveAllotmentTargetsForSlot(deps.db, {
+        slotId: payload.slotId,
+        productId: payload.productId,
+        optionId: payload.optionId,
+      })
+      if (targets.length === 0) return
+
+      const startsAt =
+        payload.startsAt instanceof Date ? payload.startsAt : new Date(payload.startsAt)
+
+      // One intent per (channel, slot) pair — supersession collapses
+      // concurrent events.
+      for (const target of targets) {
+        await upsertAvailabilityIntent(deps.db, {
+          channelId: target.channelId,
+          sourceConnectionId: target.sourceConnectionId,
+          slotId: payload.slotId,
+          productId: payload.productId,
+          optionId: payload.optionId,
+          startsAt,
+        })
+      }
+
+      if (drainInline) {
+        // Drain only this channel's intents to keep latency bounded.
+        // (v1 dev behavior; production runs the scheduled workflow.)
+        for (const target of targets) {
+          await processAvailabilityPushIntents({ channelId: target.channelId, limit: 50 }, deps)
+        }
+      }
+    } catch (err) {
+      logger.error("[channel-push] availability.slot.changed subscriber failed", {
+        slotId: payload.slotId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+
+  const contentHandler = async (envelope: EventEnvelope<unknown>): Promise<void> => {
+    const payload = coerceContentChanged(envelope)
+    if (!payload) return
+
+    const deps = options.deps ?? getChannelPushDeps()
+    if (!deps) return
+    const logger = deps.logger ?? defaultLogger
+
+    try {
+      const targets = await resolveContentPushTargets(deps.db, payload.id)
+      if (targets.length === 0) return
+
+      for (const target of targets) {
+        await upsertContentIntent(deps.db, {
+          channelId: target.channelId,
+          sourceConnectionId: target.sourceConnectionId,
+          productId: payload.id,
+        })
+      }
+
+      if (drainInline) {
+        for (const target of targets) {
+          await processContentPushIntents({ channelId: target.channelId, limit: 50 }, deps)
+        }
+      }
+    } catch (err) {
+      logger.error("[channel-push] product.content.changed subscriber failed", {
+        productId: payload.id,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+
   return [
-    {
-      event: "booking.confirmed",
-      handler,
-    },
+    { event: "booking.confirmed", handler },
+    { event: "availability.slot.changed", handler: slotHandler },
+    { event: "product.content.changed", handler: contentHandler },
   ]
 }
 
