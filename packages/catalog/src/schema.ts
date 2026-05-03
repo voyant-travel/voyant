@@ -15,6 +15,11 @@
  */
 
 export {
+  bookingDraftsTable,
+  type InsertBookingDraft,
+  type SelectBookingDraft,
+} from "./booking-engine/drafts-schema.js"
+export {
   catalogQuotesTable,
   type InsertCatalogQuote,
   type SelectCatalogQuote,

@@ -320,6 +320,20 @@ export const PREFIXES = {
   catalog_content_drift_event: "cnde",
   catalog_demo_inventory: "cdmi",
   catalog_demo_orders: "cdmo",
+  // Resumable session-bound draft for the unified booking journey.
+  // Per docs/architecture/booking-journey-architecture.md §5.7 +
+  // §12.10 (chose option B: ship as a sibling table to
+  // booking_session_states).
+  booking_drafts: "bdrf",
+
+  // --- FINANCE (extensions for journey tax computation) ---
+  // Per booking-journey-architecture §9. The classes are the per-
+  // product treatment decision; tax_regimes remains the
+  // jurisdictional rate catalog and is unchanged.
+  tax_classes: "txcl",
+  // Per-product per-occupancy rate tier table for non-cruise
+  // verticals. Cruises keep their specialized cruise_prices table.
+  product_pax_pricing_tiers: "ppt",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

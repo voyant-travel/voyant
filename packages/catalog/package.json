@@ -25,7 +25,9 @@
     "./services/content": "./src/services/content-service.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
     "./booking-engine/schema": "./src/booking-engine/schema.ts",
-    "./booking-engine/draft-shape": "./src/booking-engine/draft-shape.ts"
+    "./booking-engine/draft-shape": "./src/booking-engine/draft-shape.ts",
+    "./booking-engine/contracts": "./src/booking-engine/contracts.ts",
+    "./booking-engine/drafts-schema": "./src/booking-engine/drafts-schema.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

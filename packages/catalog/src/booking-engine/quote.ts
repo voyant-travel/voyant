@@ -18,6 +18,8 @@ import type { LiveResolveResult, SourceAdapterContext } from "../adapter/contrac
 import type { PricingBasis } from "../snapshot/schema.js"
 
 import type { BookingDraftShape } from "./draft-shape.js"
+import type { OwnedBookingHandlerRegistry } from "./owned-handler.js"
+import { OWNED_SOURCE_KIND } from "./owned-handler.js"
 import type { SourceAdapterRegistry } from "./registry.js"
 import { catalogQuotesTable, type SelectCatalogQuote } from "./schema.js"
 
@@ -116,6 +118,17 @@ export type QuoteContentEnricher = (
 export interface QuoteEntityDeps {
   registry: SourceAdapterRegistry
   /**
+   * Owned-arm dispatch — when set and the request's source kind is
+   * `"owned"`, the engine routes to a handler keyed by
+   * `entityModule` instead of the SourceAdapterRegistry. Per
+   * booking-journey-architecture §6.
+   *
+   * Templates that ship owned products MUST wire this; templates
+   * that only proxy sourced rows can leave it undefined and the
+   * engine falls through to the legacy adapter path.
+   */
+  ownedHandlers?: OwnedBookingHandlerRegistry
+  /**
    * Optional content-aware enricher. When wired, called after the
    * adapter's `liveResolve` step succeeds; the returned
    * `BookingDraftShape` is attached to the quote result so the
@@ -150,38 +163,64 @@ export async function quoteEntity(
   deps: QuoteEntityDeps,
   request: QuoteEntityRequest,
 ): Promise<QuoteEntityResult> {
-  // Prefer per-connection routing when a connection id is available
-  // (provenance.source_connection_id is the load-bearing field on
-  // sourced rows). Fall back to kind-only resolution for the
-  // single-connection-per-kind / legacy path.
-  const adapter = request.sourceConnectionId
-    ? (deps.registry.resolveByConnection(request.sourceConnectionId) ??
-      deps.registry.resolveOrThrow(request.sourceKind))
-    : deps.registry.resolveOrThrow(request.sourceKind)
   const ttlMs = request.ttlMs ?? DEFAULT_QUOTE_TTL_MS
   const quotedAt = new Date()
   const expiresAt = new Date(quotedAt.getTime() + ttlMs)
 
-  let liveResolve: LiveResolveResult = { values: {} }
-  if (adapter.liveResolve) {
-    liveResolve = await adapter.liveResolve(request.adapterContext, {
-      ids: [request.entityId],
-      scope: {
-        locale: request.scope.locale,
-        audience: request.scope.audience,
-        market: request.scope.market,
-        currency: request.scope.currency,
+  // Two dispatch arms:
+  //   - Owned: handler registry keyed by entity_module. Returns a
+  //     ComputeQuoteResult directly — pricing, shape, availability.
+  //   - Sourced: SourceAdapterRegistry keyed by connection_id (with
+  //     a kind-only fallback for legacy single-connection-per-kind).
+  let available: boolean
+  let failedReason: string | undefined
+  let pricing: PricingBasis | undefined
+  let upstreamPayload: Record<string, unknown> | undefined
+  let ownedShape: BookingDraftShape | undefined
+
+  if (request.sourceKind === OWNED_SOURCE_KIND && deps.ownedHandlers) {
+    const handler = deps.ownedHandlers.resolveOrThrow(request.entityModule)
+    const result = await handler.computeQuote(
+      { db, adapterContext: request.adapterContext },
+      {
+        entityModule: request.entityModule,
+        entityId: request.entityId,
+        scope: request.scope,
+        parameters: request.parameters,
+        draft: (request.parameters as { draft?: unknown } | undefined)?.draft,
       },
-      parameters: request.parameters,
-    })
+    )
+    available = result.available
+    failedReason = result.invalidReason
+    pricing = result.pricing
+    upstreamPayload = result.upstreamPayload
+    ownedShape = result.shape
+  } else {
+    const adapter = request.sourceConnectionId
+      ? (deps.registry.resolveByConnection(request.sourceConnectionId) ??
+        deps.registry.resolveOrThrow(request.sourceKind))
+      : deps.registry.resolveOrThrow(request.sourceKind)
+
+    let liveResolve: LiveResolveResult = { values: {} }
+    if (adapter.liveResolve) {
+      liveResolve = await adapter.liveResolve(request.adapterContext, {
+        ids: [request.entityId],
+        scope: {
+          locale: request.scope.locale,
+          audience: request.scope.audience,
+          market: request.scope.market,
+          currency: request.scope.currency,
+        },
+        parameters: request.parameters,
+      })
+    }
+
+    failedReason = liveResolve.failed?.[request.entityId]
+    const liveValues = liveResolve.values[request.entityId]
+    available = !failedReason && liveValues !== undefined
+    pricing = available ? liveValuesToPricing(liveValues, request.scope.currency) : undefined
+    upstreamPayload = liveValues as Record<string, unknown> | undefined
   }
-
-  const failedReason = liveResolve.failed?.[request.entityId]
-  const liveValues = liveResolve.values[request.entityId]
-  const available = !failedReason && liveValues !== undefined
-
-  const pricing = available ? liveValuesToPricing(liveValues, request.scope.currency) : undefined
-  const upstreamPayload = liveValues as Record<string, unknown> | undefined
 
   const quoteId = newId("catalog_quotes")
   const inserted = (await db
@@ -219,8 +258,11 @@ export async function quoteEntity(
   // when the engine has the content in front of it. When the hook
   // throws, we swallow the error (the wizard's minimal-shape fallback
   // covers it) but surface via onEnricherError for diagnostics.
-  let shape: BookingDraftShape | undefined
-  if (deps.contentEnricher && available) {
+  //
+  // Owned handlers are authoritative for their own products — when
+  // they returned a shape, the enricher is not consulted.
+  let shape: BookingDraftShape | undefined = ownedShape
+  if (!shape && deps.contentEnricher && available) {
     try {
       const enriched = await deps.contentEnricher({
         db,

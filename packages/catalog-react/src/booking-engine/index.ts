@@ -1,0 +1,41 @@
+/**
+ * `@voyantjs/catalog-react/booking-engine` — React Query hooks
+ * driving the unified booking journey shell.
+ *
+ * Per `docs/architecture/booking-journey-architecture.md` §8.1.
+ *
+ * Hooks:
+ *   - `useBookingDraft`       — local draft state with server sync
+ *   - `useBookingQuote`       — debounced live quote on draft change
+ *   - `useBookingDraftShape`  — convenience accessor on the latest quote
+ *   - `useBookingCommit`      — final book mutation, triggers handoff
+ *
+ * The hooks share a `useBookingJourneyApi()` accessor that derives
+ * the API base from the surrounding `VoyantCatalogProvider` and
+ * lets callers override the surface (`/v1/admin` vs `/v1/public`).
+ *
+ * Identical surface for operator and storefront — Phase B's "build
+ * once, ship everywhere" rule (§ Rule 4).
+ */
+
+export {
+  type UseBookingCommitOptions,
+  useBookingCommit,
+} from "./use-booking-commit.js"
+export {
+  type UseBookingDraftOptions,
+  useBookingDraft,
+} from "./use-booking-draft.js"
+export {
+  type UseBookingDraftShapeOptions,
+  useBookingDraftShape,
+} from "./use-booking-draft-shape.js"
+export {
+  type BookingJourneyApiOptions,
+  type UseBookingJourneyApi,
+  useBookingJourneyApi,
+} from "./use-booking-journey-api.js"
+export {
+  type UseBookingQuoteOptions,
+  useBookingQuote,
+} from "./use-booking-quote.js"
