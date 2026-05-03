@@ -89,6 +89,33 @@ export const productPolicySchema = z.object({
 })
 
 /**
+ * A single bookable departure / time slot — the "when" surface of the
+ * product. ISO 8601 timestamps for `starts_at` / `ends_at` so locale
+ * formatting happens at render time, never in the cache.
+ *
+ * Owned products derive these from `availability_slots`; sourced
+ * adapters return them via `getContent`. Empty array = "always-on"
+ * product (e.g. an evergreen transfer service) or one whose schedule
+ * is on-request.
+ */
+export const productDepartureSchema = z.object({
+  id: z.string(),
+  starts_at: z.string(),
+  ends_at: z.string().nullable().optional(),
+  /** "open" | "limited" | "sold_out" | "closed" | "on_request" — display only. */
+  status: z.string().nullable().optional(),
+  /** Total capacity for the slot, when known. */
+  capacity: z.number().int().nonnegative().nullable().optional(),
+  /** Remaining capacity. Null = unknown / not surfaced; 0 = sold out. */
+  remaining: z.number().int().nonnegative().nullable().optional(),
+  /** Lowest pricing hint in cents — display only. Real price comes via liveResolve. */
+  lowest_price_cents: z.number().int().nonnegative().nullable().optional(),
+  currency: z.string().nullable().optional(),
+  /** Free-form note (weather caveat, sales window, etc). */
+  note: z.string().nullable().optional(),
+})
+
+/**
  * The product content payload. Cache writes validate against this
  * schema; cache reads skip rows that don't validate (treated as cache
  * miss to surface adapter integration bugs without corrupting reads).
@@ -99,12 +126,14 @@ export const productContentSchema = z.object({
   days: z.array(productDaySchema).default([]),
   media: z.array(productMediaItemSchema).default([]),
   policies: z.array(productPolicySchema).default([]),
+  departures: z.array(productDepartureSchema).default([]),
 })
 
 export type ProductContent = z.infer<typeof productContentSchema>
 export type ProductSummary = z.infer<typeof productSummarySchema>
 export type ProductMediaItem = z.infer<typeof productMediaItemSchema>
 export type ProductOption = z.infer<typeof productOptionSchema>
+export type ProductDeparture = z.infer<typeof productDepartureSchema>
 export type ProductDay = z.infer<typeof productDaySchema>
 export type ProductPolicy = z.infer<typeof productPolicySchema>
 

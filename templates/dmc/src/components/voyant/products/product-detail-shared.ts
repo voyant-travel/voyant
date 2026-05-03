@@ -138,7 +138,7 @@ export interface ProductSourcedContentResponse {
     }
     served_locale: string
     match_kind: "exact" | "language_match" | "fallback_chain" | "any"
-    source: "sourced-cache" | "sourced-fresh" | "synthesized"
+    source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
     served_stale: boolean
     synthesized: boolean
     machine_translated: boolean

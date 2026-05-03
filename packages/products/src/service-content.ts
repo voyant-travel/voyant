@@ -49,6 +49,7 @@ import {
   productsSourcedContentTable,
   type SelectProductsSourcedContent,
 } from "./schema-sourced-content.js"
+import { buildOwnedProductContent } from "./service-content-owned.js"
 import {
   type SynthesizedProductContent,
   synthesizeProductContent,
@@ -104,8 +105,8 @@ export interface GetProductContentOptions {
 export interface ResolvedProductContent {
   content: ProductContent
   resolution: ContentLocaleResolution<{ locale: string; payload: ProductContent }>
-  /** `"sourced-cache" | "sourced-fresh" | "synthesized"`. */
-  source: "sourced-cache" | "sourced-fresh" | "synthesized"
+  /** Where the resolved content came from. */
+  source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
   /** True when the cache row was stale and a background refresh was scheduled. */
   served_stale: boolean
   /** True for synthesizer output. */
@@ -127,7 +128,44 @@ export async function getProductContent(
   options: GetProductContentOptions,
 ): Promise<ResolvedProductContent | null> {
   const sourcedEntry = await readSourcedEntry(db, "products", entityId)
-  if (!sourcedEntry) return null
+
+  if (!sourcedEntry) {
+    // Owned-product path. Read from the products module's own tables
+    // and project to ProductContent — locale resolution against
+    // product_translations + product_option_translations uses the
+    // same pickBestCachedLocale scoring the sourced cache reads use.
+    // Overlay merge applies the same way it does for sourced rows.
+    const owned = await buildOwnedProductContent(db, entityId, {
+      preferredLocales: scope.preferredLocales,
+    })
+    if (!owned) return null
+    const overlays = await fetchOverlaysForEntity(db, "products", entityId)
+    const merged = mergeOverlaysIntoProductContent(
+      owned.content,
+      overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
+      {
+        onOverlayError: options.onOverlayError
+          ? (e) =>
+              options.onOverlayError!({
+                field_path: e.overlay.field_path,
+                reason: e.reason,
+              })
+          : undefined,
+      },
+    )
+    return {
+      content: merged,
+      resolution: {
+        candidate: { locale: owned.servedLocale, payload: merged },
+        served_locale: owned.servedLocale,
+        match_kind: owned.matchKind,
+      },
+      source: "owned",
+      served_stale: false,
+      synthesized: false,
+      machine_translated: false,
+    }
+  }
 
   // Wrap the entry as a ProvenanceReadResult so the synthesizer can
   // consume it without re-reading.
@@ -323,7 +361,13 @@ async function writeCacheRow(
 ): Promise<void> {
   const market = request.market ?? PRODUCTS_CONTENT_MARKET_ANY
   const now = new Date()
-  const freshUntil = result.fresh_until ?? new Date(now.getTime() + PRODUCTS_DEFAULT_TTL_MS)
+  // Date-like fields may arrive as strings when the adapter is an HTTP
+  // client (JSON.parse doesn't deserialize ISO timestamps to Date).
+  // Coerce at the cache-write boundary so the drizzle timestamp column
+  // gets a real Date — `value.toISOString is not a function` otherwise.
+  const sourceUpdatedAt = toDateOrNull(result.source_updated_at)
+  const freshUntil =
+    toDateOrNull(result.fresh_until) ?? new Date(now.getTime() + PRODUCTS_DEFAULT_TTL_MS)
 
   await db
     .insert(productsSourcedContentTable)
@@ -335,7 +379,7 @@ async function writeCacheRow(
       content_schema_version: result.content_schema_version,
       returned_locale: result.returned_locale,
       machine_translated: result.machine_translated ?? false,
-      source_updated_at: result.source_updated_at ?? null,
+      source_updated_at: sourceUpdatedAt,
       fetched_at: now,
       fresh_until: freshUntil,
       etag: result.etag ?? null,
@@ -353,7 +397,7 @@ async function writeCacheRow(
         content_schema_version: result.content_schema_version,
         returned_locale: result.returned_locale,
         machine_translated: result.machine_translated ?? false,
-        source_updated_at: result.source_updated_at ?? null,
+        source_updated_at: sourceUpdatedAt,
         fetched_at: now,
         fresh_until: freshUntil,
         etag: result.etag ?? null,
@@ -361,6 +405,13 @@ async function writeCacheRow(
         fetch_error: null,
       },
     })
+}
+
+function toDateOrNull(value: Date | string | null | undefined): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return value
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

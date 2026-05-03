@@ -1,0 +1,1 @@
+ALTER TABLE "catalog_demo_orders" ADD COLUMN "parameters" jsonb;

@@ -285,10 +285,21 @@ export interface ProductSourcedContentResponse {
       }>
       media: Array<{ url: string; type: string; caption?: string | null }>
       policies: Array<{ kind: string; body: string }>
+      departures?: Array<{
+        id: string
+        starts_at: string
+        ends_at?: string | null
+        status?: string | null
+        capacity?: number | null
+        remaining?: number | null
+        lowest_price_cents?: number | null
+        currency?: string | null
+        note?: string | null
+      }>
     }
     served_locale: string
     match_kind: "exact" | "language_match" | "fallback_chain" | "any"
-    source: "sourced-cache" | "sourced-fresh" | "synthesized"
+    source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
     served_stale: boolean
     synthesized: boolean
     machine_translated: boolean

@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import {
+  type CatalogDetailEnrichment,
   type CatalogFilterField,
   CatalogSearchPage,
   type CatalogSearchTab,
@@ -13,7 +14,8 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { useMemo } from "react"
 import { toast } from "sonner"
-
+import type { ProductSourcedContentResponse } from "@/components/voyant/products/product-detail-shared"
+import { ApiError, api } from "@/lib/api-client"
 import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
 
 export function CatalogPage() {
@@ -61,6 +63,8 @@ export function CatalogPage() {
           onClick: (hit) => navigate({ to: "/products/$id", params: { id: hit.id } }),
         },
       ],
+      onLoadDetail: (hit) => loadProductDetail(hit, formatSupplier),
+      onBookDeparture: (hit, departure) => goToBookingPage(hit, "products", navigate, departure),
     },
     {
       id: "extras",
@@ -638,7 +642,17 @@ function formatPrice(
 
 type AppNavigate = ReturnType<typeof useNavigate>
 
-function goToBookingPage(hit: CatalogSearchHit, entityModule: string, navigate: AppNavigate): void {
+interface BookingDeparture {
+  id: string
+  startsAt: string
+}
+
+function goToBookingPage(
+  hit: CatalogSearchHit,
+  entityModule: string,
+  navigate: AppNavigate,
+  departure?: BookingDeparture,
+): void {
   const sourceKind = stringField(hit, "source.kind", null)
   if (!sourceKind || sourceKind === "owned") {
     toast.info("Booking via the catalog engine is only wired for sourced inventory today.", {
@@ -661,6 +675,87 @@ function goToBookingPage(hit: CatalogSearchHit, entityModule: string, navigate: 
       ...(sourceRef ? { sourceRef } : {}),
       ...(name ? { name } : {}),
       ...(supplierId ? { supplierId } : {}),
+      ...(departure ? { departureId: departure.id, departureStartsAt: departure.startsAt } : {}),
     },
   })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Detail enrichment: fetch the rich content shape for the products tab.
+//
+// The catalog detail sheet calls this when it opens a hit. We hit
+// /v1/admin/products/:id/content (which getProductContent backs) to get
+// the unified content shape — works for owned + sourced products.
+// Returns null on 404 / 503 so the sheet falls back to the indexed
+// projection without surfacing an error.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadProductDetail(
+  hit: CatalogSearchHit,
+  formatSupplier: (id: string | number) => string,
+): Promise<CatalogDetailEnrichment | null> {
+  let response: ProductSourcedContentResponse | null = null
+  try {
+    response = await api.get<ProductSourcedContentResponse>(`/v1/admin/products/${hit.id}/content`)
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 503)) {
+      return null
+    }
+    throw err
+  }
+
+  const {
+    content,
+    served_locale,
+    match_kind,
+    source,
+    served_stale,
+    synthesized,
+    machine_translated,
+  } = response.data
+  const supplierName =
+    typeof content.product.supplier === "string"
+      ? formatSupplier(content.product.supplier)
+      : (content.product.supplier ?? null)
+
+  return {
+    description: content.product.description ?? null,
+    highlights: content.product.highlights ?? [],
+    heroImageUrl: content.product.hero_image_url ?? null,
+    supplier: supplierName,
+    itinerary: content.days.map((d) => ({
+      dayNumber: d.day_number,
+      title: d.title ?? null,
+      description: d.description ?? null,
+      location: d.location ?? null,
+    })),
+    media: content.media.map((m) => ({
+      url: m.url,
+      type: m.type,
+      caption: m.caption ?? null,
+    })),
+    options: content.options.map((o) => ({
+      id: o.id,
+      name: o.name,
+      description: o.description ?? null,
+    })),
+    policies: content.policies.map((p) => ({ kind: p.kind, body: p.body })),
+    departures: (content.departures ?? []).map((d) => ({
+      id: d.id,
+      startsAt: d.starts_at,
+      endsAt: d.ends_at ?? null,
+      status: d.status ?? null,
+      capacity: d.capacity ?? null,
+      remaining: d.remaining ?? null,
+      lowestPriceCents: d.lowest_price_cents ?? null,
+      currency: d.currency ?? null,
+      note: d.note ?? null,
+    })),
+    servedLocale: served_locale,
+    matchKind: match_kind,
+    source,
+    servedStale: served_stale,
+    synthesized,
+    machineTranslated: machine_translated,
+  }
 }

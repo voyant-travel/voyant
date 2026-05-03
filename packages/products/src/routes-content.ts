@@ -1,18 +1,21 @@
 /**
- * Product content routes — sourced-aware detail endpoint.
+ * Product content routes — unified owned + sourced detail endpoint.
  *
  *   GET /:id/content
  *
- * Returns the full `ProductContent` payload for a sourced product:
- * cache hit → cached row + overlay merge; cache miss with rich adapter
- * → adapter fetch + write-through; cache miss with thin adapter →
- * synthesizer fallback (sourced-content §3.3, §3.4, §3.6).
+ * Returns the full `ProductContent` payload for ANY product:
+ *   - **Sourced**: cache hit → cached row + overlay merge; cache miss
+ *     with rich adapter → adapter fetch + write-through; cache miss
+ *     with thin adapter → synthesizer fallback (sourced-content §3.3,
+ *     §3.4, §3.6).
+ *   - **Owned**: read from the products module's own tables and
+ *     project to ProductContent. Overlay merge applies the same way.
+ *     Marked `source: "owned"` in the response.
  *
- * Owned products return 404 from this route — they have no
- * sourced-entry row. Owned-product detail reads use the existing
- * `/:id` route (via `productsService`); the read-aware dispatch unifying
- * owned vs. sourced is the natural follow-up once the operator UI
- * adopts a unified shape.
+ * 404 only when the entity doesn't exist (no sourced-entry row AND
+ * no owned product row). The catalog detail sheet calls this on
+ * click to enrich the indexed projection with itinerary, media,
+ * options, and policies.
  *
  * Templates mount this router under their preferred prefix; the
  * factory takes a `resolveRegistry` callback so the catalog
@@ -79,7 +82,7 @@ export function createProductContentRoutes(
       return c.json(
         {
           error: "not_found",
-          detail: `Product ${entityId} has no sourced-content row. Owned products use GET /:id; unknown ids return this 404.`,
+          detail: `Product ${entityId} not found (no owned row + no sourced-entry row).`,
         },
         404,
       )

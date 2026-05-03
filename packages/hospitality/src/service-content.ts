@@ -251,7 +251,10 @@ async function writeCacheRow(
 ): Promise<void> {
   const market = request.market ?? HOSPITALITY_CONTENT_MARKET_ANY
   const now = new Date()
-  const freshUntil = result.fresh_until ?? new Date(now.getTime() + HOSPITALITY_DEFAULT_TTL_MS)
+  // Coerce JSON-string dates to Date — see products writeCacheRow.
+  const sourceUpdatedAt = toDateOrNull(result.source_updated_at)
+  const freshUntil =
+    toDateOrNull(result.fresh_until) ?? new Date(now.getTime() + HOSPITALITY_DEFAULT_TTL_MS)
 
   await db
     .insert(hospitalitySourcedContentTable)
@@ -263,7 +266,7 @@ async function writeCacheRow(
       content_schema_version: result.content_schema_version,
       returned_locale: result.returned_locale,
       machine_translated: result.machine_translated ?? false,
-      source_updated_at: result.source_updated_at ?? null,
+      source_updated_at: sourceUpdatedAt,
       fetched_at: now,
       fresh_until: freshUntil,
       etag: result.etag ?? null,
@@ -281,7 +284,7 @@ async function writeCacheRow(
         content_schema_version: result.content_schema_version,
         returned_locale: result.returned_locale,
         machine_translated: result.machine_translated ?? false,
-        source_updated_at: result.source_updated_at ?? null,
+        source_updated_at: sourceUpdatedAt,
         fetched_at: now,
         fresh_until: freshUntil,
         etag: result.etag ?? null,
@@ -392,3 +395,10 @@ export const invalidateHospitalityContentOnDrift: InvalidateOnDrift = createInva
   hospitalitySourcedContentTable,
   { entityModule: "hospitality" },
 )
+
+function toDateOrNull(value: Date | string | null | undefined): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return value
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}

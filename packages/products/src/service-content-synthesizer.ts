@@ -94,6 +94,7 @@ export function synthesizeProductContent(
     days: [],
     media,
     policies,
+    departures: [],
   }
 
   let merged = baseContent

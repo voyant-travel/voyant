@@ -139,6 +139,7 @@ export function CatalogBookingPage() {
           audience: "staff",
           market: "default",
         },
+        parameters: search.departureId ? { departure_id: search.departureId } : undefined,
       })
       if ("error" in res && res.error) {
         setQuoteError(res.error)
@@ -151,7 +152,14 @@ export function CatalogBookingPage() {
     } finally {
       setQuoteLoading(false)
     }
-  }, [params.entityModule, params.entityId, search.sourceKind, search.sourceRef, search.locale])
+  }, [
+    params.entityModule,
+    params.entityId,
+    search.sourceKind,
+    search.sourceRef,
+    search.locale,
+    search.departureId,
+  ])
 
   useEffect(() => {
     void refreshQuote()
@@ -180,7 +188,10 @@ export function CatalogBookingPage() {
           travelers,
           notes: notes.trim() || undefined,
         },
-        parameters: notes.trim() ? { notes: notes.trim() } : {},
+        parameters: {
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
+          ...(search.departureId ? { departure_id: search.departureId } : {}),
+        },
         paymentIntent: { type: paymentIntent },
       })
       if ("error" in res && res.error) {
@@ -223,6 +234,7 @@ export function CatalogBookingPage() {
         entityModule={params.entityModule}
         sourceKind={search.sourceKind}
         supplierId={search.supplierId}
+        departureStartsAt={search.departureStartsAt}
         quote={quote}
         quoteLoading={quoteLoading}
         quoteError={quoteError}
@@ -257,6 +269,7 @@ interface SourcedEntitySummaryProps {
   entityModule: string
   sourceKind: string
   supplierId: string | undefined
+  departureStartsAt: string | undefined
   quote: QuoteResponse | null
   quoteLoading: boolean
   quoteError: string | null
@@ -268,6 +281,7 @@ function SourcedEntitySummary({
   entityModule,
   sourceKind,
   supplierId,
+  departureStartsAt,
   quote,
   quoteLoading,
   quoteError,
@@ -287,6 +301,14 @@ function SourcedEntitySummary({
             {supplierId && <span className="text-muted-foreground text-xs">· {supplierId}</span>}
           </div>
           <h2 className="mt-2 truncate font-semibold text-lg">{name ?? "Untitled row"}</h2>
+          {departureStartsAt && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Departure ·{" "}
+              <span className="font-medium text-foreground">
+                {formatDepartureLabel(departureStartsAt)}
+              </span>
+            </p>
+          )}
         </div>
         <Button variant="outline" size="sm" onClick={onRefresh} disabled={quoteLoading}>
           {quoteLoading ? (
@@ -610,6 +632,18 @@ function Field({
       {children}
     </div>
   )
+}
+
+function formatDepartureLabel(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d)
 }
 
 function formatPrice(pricing: PricingBasis): string {

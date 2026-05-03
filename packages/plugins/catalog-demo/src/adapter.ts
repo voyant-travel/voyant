@@ -15,6 +15,8 @@ import type {
   ConnectionState,
   DiscoveryCursor,
   DiscoveryPage,
+  GetContentRequest,
+  GetContentResult,
   LiveResolveRequest,
   LiveResolveResult,
   ReserveRequest,
@@ -61,7 +63,12 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
     supportsDriftDetection: false,
     supportsBookingForwarding: true,
     postBookOperations: ["cancel", "status"],
-    supportsContentFetch: false,
+    // Demo upstream now serves rich content (highlights, days,
+    // options, media, policies) via /get-content — same contract as
+    // real adapters. Templates that want to demonstrate the thin-
+    // synthesizer fallback can flip this and the catalog content
+    // service falls through to synthesizeProductContent.
+    supportsContentFetch: true,
   }
 
   async function call<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
@@ -144,6 +151,16 @@ export function createDemoCatalogAdapter(options: DemoCatalogAdapterOptions): So
 
     async cancel(_ctx: SourceAdapterContext, request: CancelRequest): Promise<CancelResult> {
       return call<CancelResult>("/cancel", {
+        method: "POST",
+        body: request,
+      })
+    },
+
+    async getContent(
+      _ctx: SourceAdapterContext,
+      request: GetContentRequest,
+    ): Promise<GetContentResult> {
+      return call<GetContentResult>("/get-content", {
         method: "POST",
         body: request,
       })

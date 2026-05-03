@@ -11,13 +11,55 @@ import {
   SheetTitle,
 } from "@voyantjs/ui/components/sheet"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { Check, ExternalLink, Minus } from "lucide-react"
-import type { ReactNode } from "react"
+import { Check, ExternalLink, Loader2, Minus } from "lucide-react"
+import { type ReactNode, useEffect, useState } from "react"
 
 export interface CatalogDetailAction {
   label: string
   onClick: (hit: CatalogSearchHit) => void
   variant?: "default" | "secondary" | "outline" | "ghost"
+}
+
+/**
+ * Rich detail enrichment loaded on-demand when the sheet opens.
+ * Fetched separately from the search index — the index keeps a lean
+ * facetable projection; the enrichment carries everything else via the
+ * catalog content service (description, itinerary, media, options,
+ * policies, supplier).
+ */
+export interface CatalogDetailEnrichment {
+  description?: string | null
+  shortDescription?: string | null
+  highlights?: ReadonlyArray<string>
+  heroImageUrl?: string | null
+  supplier?: string | null
+  itinerary?: ReadonlyArray<{
+    dayNumber: number
+    title?: string | null
+    description?: string | null
+    location?: string | null
+  }>
+  media?: ReadonlyArray<{ url: string; type?: string; caption?: string | null }>
+  options?: ReadonlyArray<{ id: string; name: string; description?: string | null }>
+  policies?: ReadonlyArray<{ kind: string; body: string }>
+  departures?: ReadonlyArray<{
+    id: string
+    startsAt: string
+    endsAt?: string | null
+    status?: string | null
+    capacity?: number | null
+    remaining?: number | null
+    lowestPriceCents?: number | null
+    currency?: string | null
+    note?: string | null
+  }>
+  /** Resolution metadata — drives the chips at the top. */
+  servedLocale?: string
+  matchKind?: string
+  source?: string
+  servedStale?: boolean
+  synthesized?: boolean
+  machineTranslated?: boolean
 }
 
 export interface CatalogDetailSheetProps {
@@ -26,6 +68,22 @@ export interface CatalogDetailSheetProps {
   formatters?: Record<string, (value: unknown) => ReactNode>
   actions?: CatalogDetailAction[]
   imageField?: string
+  /**
+   * Called once when the sheet opens for a hit. The result is rendered
+   * in dedicated sections (description, highlights, itinerary, media,
+   * options, policies). Errors swallowed silently — the sheet still
+   * shows the indexed-projection fallback.
+   */
+  onLoadDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  /**
+   * Called when the operator clicks a per-departure Book button. When
+   * omitted, departures render without a book affordance — the
+   * sheet-level `actions` (e.g. "Book this") still apply.
+   */
+  onBookDeparture?: (
+    hit: CatalogSearchHit,
+    departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
+  ) => void
 }
 
 const HIDDEN_FIELDS = new Set([
@@ -54,14 +112,51 @@ export function CatalogDetailSheet({
   formatters,
   actions,
   imageField = "thumbnailUrl",
+  onLoadDetail,
+  onBookDeparture,
 }: CatalogDetailSheetProps) {
   const open = hit != null
   const fields = hit?.document.fields ?? {}
   const name = stringOr(fields.name, "Untitled")
   const status = stringOr(fields.status, null)
-  const description = stringOr(fields.description, null)
-  const shortDescription = stringOr(fields.shortDescription, null)
-  const imageUrl = stringOr(fields[imageField], null)
+
+  // Enrichment fetch — fires when the sheet opens for a hit. The
+  // useEffect dep list includes hit.id so re-opening a different row
+  // refetches; the result is local to the open instance, so closing
+  // the sheet clears it.
+  const [enrichment, setEnrichment] = useState<CatalogDetailEnrichment | null>(null)
+  const [enrichmentLoading, setEnrichmentLoading] = useState(false)
+  useEffect(() => {
+    if (!hit || !onLoadDetail) {
+      setEnrichment(null)
+      setEnrichmentLoading(false)
+      return
+    }
+    let cancelled = false
+    setEnrichmentLoading(true)
+    setEnrichment(null)
+    onLoadDetail(hit)
+      .then((result) => {
+        if (!cancelled) {
+          setEnrichment(result ?? null)
+          setEnrichmentLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEnrichment(null)
+          setEnrichmentLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [hit, onLoadDetail])
+
+  const description = stringOr(enrichment?.description, null) ?? stringOr(fields.description, null)
+  const shortDescription =
+    stringOr(enrichment?.shortDescription, null) ?? stringOr(fields.shortDescription, null)
+  const imageUrl = stringOr(enrichment?.heroImageUrl, null) ?? stringOr(fields[imageField], null)
 
   const allEntries = Object.entries(fields).filter(([k]) => !HIDDEN_FIELDS.has(k))
   const arrayEntries: Array<[string, unknown]> = []
@@ -75,7 +170,7 @@ export function CatalogDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full p-0 sm:max-w-xl">
+      <SheetContent className="w-full p-0 max-w-3xl!">
         <div className="flex h-full flex-col">
           {/* Header */}
           <SheetHeader className="border-b bg-muted/20 px-6 py-5">
@@ -108,6 +203,34 @@ export function CatalogDetailSheet({
                       {hit.id}
                     </code>
                   )}
+                  {enrichment?.servedLocale && (
+                    <Badge variant="outline" className="font-normal">
+                      {enrichment.servedLocale}
+                    </Badge>
+                  )}
+                  {enrichment?.matchKind && enrichment.matchKind !== "exact" && (
+                    <Badge variant="outline" className="font-normal">
+                      match: {enrichment.matchKind}
+                    </Badge>
+                  )}
+                  {enrichment?.source && (
+                    <Badge
+                      variant={enrichment.source === "synthesized" ? "outline" : "secondary"}
+                      className="font-normal"
+                    >
+                      {enrichment.source}
+                    </Badge>
+                  )}
+                  {enrichment?.servedStale && (
+                    <Badge variant="outline" className="font-normal">
+                      stale
+                    </Badge>
+                  )}
+                  {enrichment?.machineTranslated && (
+                    <Badge variant="outline" className="font-normal">
+                      MT
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
@@ -116,6 +239,13 @@ export function CatalogDetailSheet({
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-6 py-5">
             <div className="flex flex-col gap-6">
+              {enrichmentLoading && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Loading full content…
+                </div>
+              )}
+
               {(shortDescription || description) && (
                 <Section>
                   {shortDescription && (
@@ -128,6 +258,174 @@ export function CatalogDetailSheet({
                       {description}
                     </p>
                   )}
+                </Section>
+              )}
+
+              {enrichment?.highlights && enrichment.highlights.length > 0 && (
+                <Section title="Highlights">
+                  <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
+                    {enrichment.highlights.map((h) => (
+                      <li key={h}>{h}</li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {enrichment?.supplier && (
+                <Section title="Supplier">
+                  <p className="text-sm text-foreground">{enrichment.supplier}</p>
+                </Section>
+              )}
+
+              {enrichment?.itinerary && enrichment.itinerary.length > 0 && (
+                <Section title="Itinerary">
+                  <ol className="space-y-2">
+                    {enrichment.itinerary.map((d) => (
+                      <li
+                        key={d.dayNumber}
+                        className="rounded-md border border-border bg-muted/10 px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            Day {d.dayNumber}
+                          </span>
+                          {d.title && <span className="font-medium">{d.title}</span>}
+                          {d.location && (
+                            <span className="text-xs text-muted-foreground">· {d.location}</span>
+                          )}
+                        </div>
+                        {d.description && (
+                          <p className="mt-1 text-xs text-muted-foreground">{d.description}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </Section>
+              )}
+
+              {enrichment?.departures && enrichment.departures.length > 0 && (
+                <Section title="Departures">
+                  <ul className="divide-y rounded-md border">
+                    {enrichment.departures.slice(0, 12).map((d) => {
+                      const soldOut =
+                        d.status === "sold_out" ||
+                        d.status === "closed" ||
+                        d.status === "cancelled" ||
+                        (typeof d.remaining === "number" && d.remaining <= 0)
+                      return (
+                        <li
+                          key={d.id}
+                          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2 text-sm"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{formatDeparture(d.startsAt)}</span>
+                            {d.endsAt && (
+                              <span className="text-xs text-muted-foreground">
+                                ends {formatDeparture(d.endsAt)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {typeof d.remaining === "number" && (
+                              <span className="text-xs text-muted-foreground">
+                                {d.remaining} left
+                              </span>
+                            )}
+                            {typeof d.lowestPriceCents === "number" && (
+                              <span className="font-medium tabular-nums">
+                                {formatPriceCents(d.lowestPriceCents, d.currency)}
+                              </span>
+                            )}
+                            {d.status && (
+                              <Badge variant="outline" className="font-normal">
+                                {d.status}
+                              </Badge>
+                            )}
+                            {onBookDeparture && hit && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={soldOut}
+                                onClick={() => onBookDeparture(hit, d)}
+                              >
+                                Book
+                              </Button>
+                            )}
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </Section>
+              )}
+
+              {enrichment?.media && enrichment.media.length > 0 && (
+                <Section title="Media">
+                  <div className="grid grid-cols-3 gap-2">
+                    {enrichment.media.slice(0, 9).map((m, idx) =>
+                      m.type === "image" || m.type == null ? (
+                        <a
+                          // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only and ordering is stable per response
+                          key={`${m.url}-${idx}`}
+                          href={m.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block aspect-square overflow-hidden rounded-md ring-1 ring-border hover:ring-primary"
+                        >
+                          <img
+                            src={m.url}
+                            alt={m.caption ?? ""}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        </a>
+                      ) : (
+                        <a
+                          // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only
+                          key={`${m.url}-${idx}`}
+                          href={m.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex aspect-square items-center justify-center rounded-md bg-muted text-xs text-muted-foreground ring-1 ring-border hover:ring-primary"
+                        >
+                          {m.type}
+                        </a>
+                      ),
+                    )}
+                  </div>
+                </Section>
+              )}
+
+              {enrichment?.options && enrichment.options.length > 0 && (
+                <Section title="Options">
+                  <ul className="space-y-1.5 text-sm">
+                    {enrichment.options.map((o) => (
+                      <li key={o.id} className="rounded-md border border-border px-3 py-2">
+                        <div className="font-medium">{o.name}</div>
+                        {o.description && (
+                          <div className="text-xs text-muted-foreground">{o.description}</div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {enrichment?.policies && enrichment.policies.length > 0 && (
+                <Section title="Policies & terms">
+                  <dl className="space-y-2 text-sm">
+                    {enrichment.policies.map((p, idx) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: ordering is stable per render
+                      <div key={`${p.kind}-${idx}`}>
+                        <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          {p.kind.replace(/_/g, " ")}
+                        </dt>
+                        <dd className="mt-0.5 whitespace-pre-line text-muted-foreground">
+                          {p.body}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
                 </Section>
               )}
 
@@ -355,4 +653,24 @@ function initialsOf(name: string): string {
 
 function stringOr<T>(value: unknown, fallback: T): string | T {
   return typeof value === "string" && value.length > 0 ? value : fallback
+}
+
+function formatDeparture(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d)
+}
+
+function formatPriceCents(cents: number, currency?: string | null): string {
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: currency ?? "EUR",
+    maximumFractionDigits: 0,
+  }).format(cents / 100)
 }

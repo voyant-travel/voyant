@@ -57,6 +57,9 @@ export const catalogDemoOrders = pgTable(
     currency: text("currency").notNull(),
     party: jsonb("party").$type<Record<string, unknown>>(),
     paymentIntent: jsonb("payment_intent").$type<Record<string, unknown>>(),
+    /** Vertical-specific parameters echoed from `reserve.parameters`. Carries
+     * `departure_id` when the operator pinned a slot at quote time. */
+    parameters: jsonb("parameters").$type<Record<string, unknown>>(),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     cancelledReason: text("cancelled_reason"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
