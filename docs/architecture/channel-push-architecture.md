@@ -27,8 +27,8 @@ The three should share an adapter contract but should NOT share a code path — 
 Per the booking-journey doc's "reuse before add" rule:
 
 - **`SourceAdapter`** — already used for inbound. Extending it for outbound is the obvious move; the same connection holds credentials for both directions.
-- **EventBus** — `packages/core/src/event-bus.ts`. `booking.confirmed`, `availability.changed`, `product.updated` events fire today; channel-push handlers subscribe.
-- **Workflows** — `packages/core/src/workflows.ts`. Saga primitive with compensation. Channel push for a booking that fans out to multiple channels uses this for rollback on partial push failure.
+- **EventBus** — `packages/core/src/events.ts`. **In-process, sequential, fire-and-forget, non-durable** by explicit policy ([`event-delivery-and-durable-execution-policy.md`](./event-delivery-and-durable-execution-policy.md): "Do not describe the current event bus as a queue, a durable stream, or a reliable delivery mechanism"). `EventBus.emit` awaits each handler in turn, so handlers that do real work (HTTP, retries) BLOCK the emitter. Channel push subscribers MUST NOT do HTTP work directly — they write durable intent rows and return immediately (§4.5). `booking.confirmed` exists today (`packages/bookings/src/service.ts:2364`) but its payload is minimal: `{ bookingId, bookingNumber, actorId }`. Channel push subscribers re-fetch booking state from the row — they don't trust event payloads to carry it.
+- **Durable workflow runtime** — `packages/workflows` (the actual durable engine, with `WorkflowConfig.{retry, timeout, schedule, concurrency, defaultRuntime}`). NOT `packages/core/src/workflows.ts`, which its own docblock explicitly says is "NOT a durable workflow engine — execution lives entirely within a single process." All channel-push work that crosses an HTTP boundary runs inside `@voyantjs/workflows` workflows so retries, sleeps, and resumption survive worker restarts.
 - **`webhook_subscriptions`** (already exists, `packages/db/src/schema/infra/webhook_subscriptions.ts`) — control-plane configuration for outbound webhook subscriptions: URL, events, secret, max retries, failure count. **`webhook_deliveries`** does NOT exist yet (the typeid prefix `whde` is reserved but no table backs it). Channel push is the first concrete consumer that needs an outbound delivery log, so we build it now as part of this work — see §11. It's designed to be a generic primitive (any module making outbound HTTP calls writes to it for observability + retry-chain history), not channel-specific. Distinct from `channel_webhook_events` (which logs events received **from** channels — inbound, opposite direction).
 - **`packages/distribution`** — **the home for channel push.** Already ships:
   - `channels` (kind, status, metadata) and `channel_contracts` (per-channel commercial terms)
@@ -101,60 +101,204 @@ export interface AdapterCapabilities {
 
 Sourced-only adapters (TUI direct API where we sell their inventory) declare all three as `false`. Channel adapters (a Voyant Connect peer where we sell our inventory through them, or TUI's reseller API) declare the relevant ones as `true`.
 
-**Important contract distinction:** an adapter can be inbound-only, outbound-only, or both:
+**Important contract distinction:** an adapter can be inbound-only, outbound-only, or both. To support outbound-only, the existing `SourceAdapter` contract — which today requires inbound lifecycle methods like `connect`/`discover` (`packages/catalog/src/adapter/contract.ts:174`) — needs ALL methods (inbound + outbound) made optional, gated by capability flags rather than method presence. Outbound-only adapters declare `supportsContentFetch: false`, leave `discover` undefined, and are still valid registry entries.
 
 - **Inbound-only**: bedbank that sells us hotel inventory. We display + book; they don't care about our bookings.
 - **Outbound-only**: a channel where we syndicate our owned products. They sell our stuff; we never source from them.
 - **Bidirectional**: a Voyant Connect peer who both sells us things AND resells our things.
 
-The same adapter package may declare both directions, sharing one `connection_id` and credentials.
+The same adapter package may declare both directions, sharing one `connection_id` and credentials (per Q5 in §16).
+
+### 3.1. Registry shape
+
+The current adapter registry (`packages/catalog/src/booking-engine/registry.ts`) is keyed only by `sourceKind`, so two connections of the same kind (e.g. TUI dev + TUI prod) cannot both be registered. Channel push routinely needs per-connection routing — different credentials, different rate buckets, different `channel_id` mappings. The registry MUST be reshaped before channel push can work:
+
+```ts
+export interface SourceAdapterRegistry {
+  /** Register an adapter instance for a specific connection. The
+   *  registry is keyed by `connection_id` (the typeid of the row in
+   *  whichever table holds connections — `channels` for outbound,
+   *  the catalog plane's connection store for inbound), with
+   *  `source_kind` as a secondary index for "list all adapters of
+   *  kind X" queries. */
+  register(connectionId: string, adapter: SourceAdapter): void
+
+  /** Resolve by connection. Hot path. */
+  resolveByConnection(connectionId: string): SourceAdapter | undefined
+  resolveByConnectionOrThrow(connectionId: string): SourceAdapter
+
+  /** Secondary lookup by kind — returns all adapters registered for
+   *  this kind, useful for "rotate to next available connection"
+   *  policies. */
+  byKind(sourceKind: string): ReadonlyArray<{ connection_id: string; adapter: SourceAdapter }>
+}
+```
+
+Migration: the inbound code paths that today call `registry.resolveOrThrow(sourceKind)` need to thread a `connection_id` through. Sourced rows already carry `source_connection_id` in their provenance (`packages/catalog/src/provenance.ts`), so the change is mechanical, not a re-architecture.
 
 ## 4. Booking push flow
 
-Triggered by a `booking.confirmed` event. The handler:
+Triggered by `booking.confirmed`. Because the EventBus is in-process / sequential / non-durable (§2), the subscriber MUST NOT do HTTP work directly — its only job is to write durable intent rows and return. A separate durable workflow (in `@voyantjs/workflows`) processes the intents.
 
-1. Reads the booking's `bookingItems` and resolves each item's product → upstream channel mappings via `channel_product_mappings` (in distribution).
-2. For each (booking_item × channel) pair where the mapping has `push_bookings = true` and the channel's adapter declares `supportsBookingPush: true`, enqueue a push.
-3. Pushes run in a workflow (`@voyantjs/core/workflows`) with per-channel compensation. If a channel fails repeatedly (after the adapter's retry budget), the saga marks that channel's link as `push_status = 'failed'`, surfaces the failure to operators, and (depending on policy) either rolls back the booking or continues with the channels that succeeded.
-4. On success, the workflow upserts a `channel_booking_links` row (scoped by `booking_item_id` for fan-out) with the upstream's reference id and `push_status = 'ok'`.
+### 4.1. Subscriber: write intent, return immediately
 
 ```ts
-// Pseudocode
-eventBus.subscribe<BookingConfirmedPayload>("booking.confirmed", async ({ data }) => {
-  const channels = await resolveChannelsForBooking(db, data.bookingId)
-  if (channels.length === 0) return // owned product not syndicated; nothing to push
-  await runWorkflow(channelPushWorkflow, { bookingId: data.bookingId, channels })
+// In packages/distribution — registers via distributionModule, not bookings.
+eventBus.subscribe<BookingConfirmedEvent>("booking.confirmed", async ({ data }) => {
+  // Re-fetch state — booking.confirmed payload is intentionally minimal.
+  const booking = await readBookingWithItems(db, data.bookingId)
+  const channels = await resolveChannelsForBooking(db, booking)
+  if (channels.length === 0) return  // owned product not syndicated
+
+  // For each (booking_item × channel) pair, write a pending row.
+  // This is the durable handoff. EventBus contract is satisfied here
+  // — no HTTP, no waits, just inserts.
+  for (const { itemId, channel } of channels) {
+    if (!channel.mapping.pushBookings) continue
+    if (!channel.adapter.capabilities.supportsBookingPush) continue
+    await upsertChannelBookingLink(db, {
+      bookingId: booking.id,
+      bookingItemId: itemId,
+      channelId: channel.id,
+      sourceConnectionId: channel.connectionId,
+      pushStatus: "pending",
+      idempotencyKey: stableKey(booking.id, itemId, channel.id),
+    })
+  }
+
+  // Trigger the durable workflow. workflows.trigger() is itself durable
+  // (writes to the workflow runtime's table) — safe to call here.
+  await workflows.trigger("channel.booking.push", { bookingId: booking.id })
 })
 ```
 
-For multi-line bookings (composer-driven, per `booking-journey-architecture.md` §0.5), the push happens per line: each line's product has its own channel mapping; the saga fans out per (line × channel).
+The subscriber returns after the row writes (a few ms). The emitter — `bookingService.confirm()` — is unblocked.
+
+### 4.2. Durable workflow: fan out, compensate on partial failure
+
+```ts
+// packages/distribution/src/workflows/booking-push.ts
+export const channelBookingPushWorkflow = workflow({
+  id: "channel.booking.push",
+  retry: { strategy: "exponential", maxAttempts: 5 },
+  timeout: "1h",
+  concurrency: { perKey: ({ bookingId }) => bookingId, max: 1 },
+  async run({ bookingId }, ctx) {
+    const links = await ctx.db.select().from(channelBookingLinks)
+      .where(and(eq(.bookingId, bookingId), eq(.pushStatus, "pending")))
+
+    const succeeded: Array<{ link: ChannelBookingLink, upstreamRef: string }> = []
+    for (const link of links) {
+      try {
+        const adapter = registry.resolveByConnectionOrThrow(link.sourceConnectionId)
+        await rateLimits.acquire("channel:" + link.channelId + ":" + link.sourceConnectionId, "booking")
+        const result = await adapter.pushBooking!(adapterCtx, buildRequest(link))
+        await markLinkOk(db, link.id, result.upstreamRef, sha256(result.payload))
+        succeeded.push({ link, upstreamRef: result.upstreamRef })
+      } catch (err) {
+        await markLinkFailed(db, link.id, err)
+        // Compensation policy decides whether to cancel succeeded ones
+        // or leave them and surface the partial-sync state to ops.
+      }
+    }
+
+    return { succeeded: succeeded.length, failed: links.length - succeeded.length }
+  },
+})
+```
+
+The workflow is durable: if the worker crashes mid-fanout, it resumes from the last completed step. Each adapter call still goes through `acquireToken` (§14) and writes a `webhook_deliveries` row per attempt (§11). For booking commits where some channels succeeded and one failed, the compensation step decides per `channel_contracts.policy` whether to cancel the succeeded ones (strict atomicity) or leave them and alert ops (eventually-consistent partial sync — usually correct for travel inventory).
+
+For multi-line bookings (composer-driven, per `booking-journey-architecture.md` §0.5), the per-line × per-channel fanout happens naturally because the subscriber wrote one row per `(booking_item_id, channel_id)`.
+
+### 4.3. Why subscribers are write-only
+
+The subscriber boundary is non-negotiable for ALL three flows: subscribers MUST NOT do HTTP, MUST NOT retry, MUST NOT block on rate-limit acquisition. They write durable rows + trigger workflows. Reasons:
+
+- **EventBus is sequential.** Any HTTP latency in a subscriber blocks the emitter and its downstream subscribers. A booking-confirmed handler doing 5 channel HTTP calls × 200ms each adds 1s to every booking commit.
+- **EventBus is non-durable.** A subscriber that does HTTP and crashes mid-call has lost the work. Durable intent rows survive restarts.
+- **EventBus is fire-and-forget.** A subscriber that throws is logged-and-skipped, not retried. Durable intent rows let a scheduled worker retry on its own cadence.
+
+Every flow in this doc obeys this rule: subscriber writes intent + triggers durable work; durable workflow does HTTP.
 
 ## 5. Availability push flow
 
-Triggered by `availability.slot.changed` events fired when:
+Same durable-intent pattern, simpler workflow because availability is idempotent and eventually-consistent.
 
-- A booking commits (debits the slot).
-- A booking cancels (credits back).
-- An operator edits the slot manually.
-- A scheduled refresh recomputes effective availability.
+### 5.1. Source events (must be added in groundwork)
 
-The handler reads the new slot state, resolves which channels syndicate this product, and pushes to each. Eventually-consistent — losing a single push event isn't catastrophic, but repeated drift causes overbooking.
+`availability.slot.changed` does NOT exist in the codebase today (verified — no emissions found in `packages/availability` or `packages/bookings`). It must be added as part of channel-push groundwork (§10 Phase B), emitted from:
 
-For channels with high-frequency syndication (TUI bedbank-style with sub-minute SLAs), the events fire in real time. For lower-frequency channels, batching every N minutes is acceptable.
+- `bookings/src/service.ts` — `confirm()`, `cancel()`, modify-pax operations (after the durable state change).
+- `availability/src/service.ts` — manual operator edits, scheduled refresh recomputations.
+- Any other path that mutates effective slot remaining-pax.
 
-Idempotency: the upstream usually accepts `(slot_id, remaining_pax, version)` as the natural key; pushing the same triple twice is a no-op. The adapter must be implemented to be safely retriable.
+Payload: `{ slotId, productId, optionId?, startsAt, remainingPax, source: "booking" | "cancel" | "manual" | "refresh" }`. Subscribers re-read current state for correctness — the payload is the trigger, not the source of truth.
+
+### 5.2. Subscriber writes intent
+
+```ts
+eventBus.subscribe("availability.slot.changed", async ({ data }) => {
+  // Resolve via channel_inventory_allotments (NOT channel_product_mappings)
+  // — allotments carry per-slot/per-option targeting; mappings are
+  // product-level and used at booking time. See §7.4.
+  const targets = await resolveAllotmentTargetsForSlot(db, data.slotId)
+  for (const target of targets) {
+    if (!target.mapping.pushAvailability) continue
+    await upsertAvailabilityIntent(db, {
+      slotId: data.slotId,
+      channelId: target.channelId,
+      sourceConnectionId: target.connectionId,
+      requestedAt: new Date(),
+    })
+  }
+})
+```
+
+The intent table is keyed on `(channelId, slotId)` — concurrent supersession events for the same slot collapse to one row, and the worker reads the *current* slot state when it processes (so stale events naturally don't propagate).
+
+### 5.3. Scheduled worker drains the intent table
+
+```ts
+export const channelAvailabilityPushWorkflow = workflow({
+  id: "channel.availability.push",
+  schedule: { every: "30s" },        // tunable per channel via policy
+  concurrency: { perKey: ({ channelId }) => channelId, max: 1 },
+  async run({ channelId }, ctx) {
+    const intents = await selectPendingIntents(db, channelId, { limit: 100 })
+    for (const intent of intents) {
+      const slot = await readSlot(db, intent.slotId)   // current state
+      try {
+        await rateLimits.acquire("channel:" + channelId + ":" + intent.sourceConnectionId, "availability")
+        await adapter.pushAvailability!(adapterCtx, buildRequest(slot))
+        await deleteIntent(db, intent.id)              // success drains the intent
+      } catch (err) {
+        await stampError(db, intent.id, err)           // intent stays for next pass
+      }
+    }
+  },
+})
+```
+
+The worker batches per channel for adapter efficiency. Idempotency comes from the upstream's `(slot_id, remaining_pax)` key — pushing twice is a no-op. Stale-event protection comes from reading current slot state at processing time, not at intent-creation time.
 
 ## 6. Content push flow
 
-Triggered by `product.updated` events. Lower volume than availability; usually triggered by operator content edits.
+Same pattern. Bigger gap to fix in source events: `product.updated` only fires today on the top-level product PATCH route (`packages/products/src/routes.ts:1253`), not on the many child content/itinerary/media/option/day edits. Channel push needs a `product.content.changed` event emitted from every content-affecting service path. See §10 Phase B groundwork.
 
-The push payload mirrors what the inbound `getContent` adapter method returns (per `catalog-sourced-content.md`) — same vertical-specific shape, just outbound. Channels store our updates and re-render their own listing pages.
+### 6.1. Content revision: hash, not version counter
 
-Versioned: each content push carries a `content_version` (monotonic per product). Upstream channels can deduplicate / reject older versions if they receive them out of order.
+The doc previously assumed monotonic `content_version`. Reality: `product_versions` are explicit operator-triggered snapshots (`packages/products/src/schema-itinerary.ts:98`), not auto-bumped per edit. Trying to wire a version counter into every edit path is invasive.
+
+Use a **content-revision hash** computed at push time: `sha256(canonicalJson(content))`. Idempotency is then "skip the push if the upstream's last-known hash equals the current hash." The hash lives on `channel_content_intents` rows when the worker processes them and is mirrored on the eventually-pushed `channel_product_mappings` row in a new `last_pushed_content_hash` column. No new version semantics required; we hash what we have.
+
+### 6.2. Subscriber and worker
+
+Same shape as availability — subscriber writes an intent row; scheduled worker drains. Unique per `(productId, channelId)` so concurrent edits collapse to one push.
 
 ## 7. Schema changes
 
-Channel push **does not add new tables**. It extends two tables that already exist in `packages/distribution` (`channel_booking_links` and `channel_product_mappings`) with operational push fields. Additive migration; no breaking changes.
+Channel push adds no new **channel-specific** tables — it extends two existing tables in `packages/distribution` (`channel_booking_links` and `channel_product_mappings`) with operational push fields, and adds two **intent tables** that hold the durable-handoff rows between subscriber and worker. It also relies on two generic infra tables built in Phase B (`webhook_deliveries` §11, `rate_limit_buckets` §14) that future modules will share.
 
 ### 7.1. `channel_booking_links` — additive columns
 
@@ -178,6 +322,8 @@ CREATE INDEX idx_channel_booking_links_booking_item
 
 `booking_item_id` is nullable: existing rows (booking-level) keep working; new fan-out-per-item rows fill it in. A booking that syndicates one line to channel A and another line to channel B has two rows, each scoped by `booking_item_id`. A booking that fully syndicates to one channel has either one row with `booking_item_id = NULL` or one row per item — operator policy.
 
+A `UNIQUE (channel_id, booking_id, COALESCE(booking_item_id, ''))` constraint enforces idempotency — the subscriber's `INSERT ... ON CONFLICT DO NOTHING` is a true durable handoff with no doubled-push risk.
+
 ### 7.2. `channel_product_mappings` — additive columns
 
 ```sql
@@ -193,7 +339,55 @@ ALTER TABLE channel_product_mappings
 
 The existing columns (`externalProductId`, `externalRateId`, `externalCategoryId`, `active`) already cover the upstream-identifier shape; the new columns add per-mapping push toggles and policy.
 
-### 7.3. Why no new package, no new module
+### 7.3. Intent tables for durable handoff
+
+Two new lightweight tables hold the durable rows that subscribers write and workers drain (§4-§6). They're per-flow because the keys differ.
+
+```sql
+-- packages/distribution/src/schema-push-intents.ts (new)
+channel_availability_push_intents (
+  id                       text primary key,    -- typeid: cavi
+  channel_id               text not null,
+  source_connection_id     text not null,
+  slot_id                  text not null,
+  product_id               text not null,
+  option_id                text,                -- nullable per allotment shape
+  starts_at                timestamptz not null,
+  requested_at             timestamptz not null default now(),
+  attempts                 integer not null default 0,
+  last_error               text,
+  unique (channel_id, slot_id)                  -- supersession collapses
+)
+
+channel_content_push_intents (
+  id                       text primary key,    -- typeid: ccpi
+  channel_id               text not null,
+  source_connection_id     text not null,
+  product_id               text not null,
+  requested_at             timestamptz not null default now(),
+  attempts                 integer not null default 0,
+  last_error               text,
+  unique (channel_id, product_id)               -- collapses concurrent edits
+)
+```
+
+Booking push doesn't need its own intent table — `channel_booking_links` already serves both roles (the row exists with `push_status = 'pending'` for in-flight, becomes `'ok'` on success). Availability/content needed dedicated intent tables because their natural rows (`channel_inventory_allotments`, `channel_product_mappings`) are configuration, not operational queue state, and shouldn't carry per-event lifecycle.
+
+### 7.4. Mappings vs. allotments — when to use which
+
+`packages/distribution` carries two tables with overlapping semantics; channel push uses them at different points:
+
+- **`channel_product_mappings`** is **product-level identity**: "this Voyant product corresponds to upstream product/rate/category X on channel Y." Used at **booking push time** to translate Voyant booking-item → upstream product reference. One row per `(channel, product)`.
+- **`channel_inventory_allotments`** is **per-slot/per-option/per-start-time inventory targeting**: "this channel sells N units of option O for product P starting at T." Used at **availability push time** to know which slots that channel cares about. Many rows per `(channel, product)` — one per slot/option/window.
+
+Picking the wrong one is the most likely correctness bug:
+
+- Booking push that resolves channels via `channel_inventory_allotments` may miss channels mapped to the product but with no per-slot allotment yet (sold "on request" without a fixed inventory split). Use `channel_product_mappings` for booking push.
+- Availability push that resolves channels via `channel_product_mappings` will push every slot to every channel mapped to that product, even ones that have no allotment for that specific slot — wasted calls, possible upstream rejection. Use `channel_inventory_allotments` for availability push.
+
+Content push uses `channel_product_mappings` (product-level — content is product-shaped, not slot-shaped).
+
+### 7.5. Why no new package, no new module
 
 Distribution is purpose-built for "we sell our products through external channels." Its existing schemas already model channels, contracts, mappings, booking links, webhook events, commissions, allotments, and reconciliation. Channel push is the operational arm that's missing — adding it inside distribution keeps the surface coherent. Putting these columns or the push workflow anywhere else would split a single concept across modules.
 
@@ -222,43 +416,52 @@ The hard cases:
 
 ## 10. Migration / rollout
 
-**Phase A — Adapter contract extension** (1 day):
+**Phase A — Adapter contract + registry reshape** (1-2 days):
 - Add the three optional outbound methods + capability flags to `SourceAdapter`.
-- Pure typing change.
+- Make all inbound methods (`connect`, `discover`, `liveResolve`, `reserve`, `cancel`) optional too, so outbound-only adapters are valid.
+- Reshape the registry to key by `connection_id` (with `source_kind` as a secondary index per §3.1). Thread `connection_id` through inbound dispatch sites — `provenance.source_connection_id` is already present, so this is mechanical.
 
-**Phase B — Infra primitives + distribution schema extension** (2-3 days):
-- Build `webhook_deliveries` (`packages/db/src/schema/infra/webhook_deliveries.ts`) per §11. Generic primitive.
-- Build `rate_limit_buckets` (`packages/db/src/schema/infra/rate_limit_buckets.ts`) + `acquireToken(scope, config, priority)` per §14. Generic primitive.
-- Additive ALTER TABLE migrations on `channels`, `channel_contracts`, `channel_booking_links`, `channel_product_mappings` per §7 + §14.1.
-- Update `@voyantjs/distribution` types and exports for the new columns.
-- No behavior change yet; subsequent phases populate the schemas.
+**Phase B — Source-event groundwork** (2-3 days):
+The doc assumes events that don't exist at the needed fidelity. Fix that first:
+- **`availability.slot.changed`** — does not exist today. Emit from `bookings/src/service.ts` (confirm, cancel, modify-pax) and `availability/src/service.ts` (manual edits, refresh recomputes), AFTER the durable state change per the event-delivery policy. Payload: `{ slotId, productId, optionId?, startsAt, remainingPax, source }`.
+- **`product.content.changed`** — `product.updated` only fires on top-level PATCH (`packages/products/src/routes.ts:1253`). Emit a sibling event from every content-affecting service path (itinerary, media, options, days, descriptions). Or extend `product.updated` to fire from those paths — pick one and document.
+- **`booking.confirmed`** payload — leave as-is (`{ bookingId, bookingNumber, actorId }`); subscribers re-fetch state. Document this expectation prominently.
 
-**Phase C — Booking push for one channel kind** (3-4 days):
-- Implement `pushBookingWorkflow` in `packages/distribution/src/service-push.ts` using `@voyantjs/core/workflows` with per-channel compensation. Each adapter call goes through `acquireToken` (§14.3) and writes a `webhook_deliveries` row per attempt.
-- Wire `booking.confirmed` event subscriber inside distribution (subscribers register via `distributionModule`, not bookings — bookings stays clean).
-- Operator dashboard: "channel sync" view backed by `channel_booking_links.push_status` + retry endpoint + a delivery-log drilldown + per-channel throttling indicator (§14.5).
-- Demo adapter (in `apps/catalog-demo-api` + `@voyantjs/plugin-catalog-demo`) gains an optional `POST /bookings` endpoint that records pushed bookings, so the operator can verify the round-trip end-to-end without an external integration. Demo adapter advertises configurable rate limits to exercise the throttle path.
+**Phase C — Infra primitives + distribution schema extension** (2-3 days):
+- Build `webhook_deliveries` (§11) with `prepareOutboundEnvelope` redaction helper as the only allowed write path.
+- Build `rate_limit_buckets` + `acquireToken(scope, config, priority)` (§14).
+- Additive ALTER TABLE migrations on `channels`, `channel_contracts`, `channel_booking_links`, `channel_product_mappings` per §7 + §14.1, including the `UNIQUE (channel_id, booking_id, COALESCE(booking_item_id, ''))` idempotency constraint.
+- Add `channel_availability_push_intents` and `channel_content_push_intents` tables (§7.3).
+- Update `@voyantjs/distribution` types and exports.
+- No behavior change yet.
 
-**Phase D — Availability push** (2-3 days):
-- Wire `availability.slot.changed` event subscriber in distribution.
-- Implement availability push as **bounded inline retry inside the subscriber** (§12) — not a workflow. Pre-call `acquireToken(..., "availability")` with the priority gate; if denied, log to `webhook_deliveries` and bail (next event will supersede). Each successful attempt also logs.
-- Demo adapter gains an availability sink.
+**Phase D — Booking push for one channel kind** (3-4 days):
+- Implement the durable `channel.booking.push` workflow in `packages/workflows`-style (`@voyantjs/workflows`, NOT `@voyantjs/core/workflows`) per §4.2 + §12.1.
+- Wire `booking.confirmed` subscriber inside distribution: re-fetch booking, write pending `channel_booking_links` rows, trigger workflow. Subscriber returns in ms.
+- Each adapter call goes through `acquireToken` and `prepareOutboundEnvelope` → `webhook_deliveries`.
+- Operator dashboard: "channel sync" view backed by `channel_booking_links.push_status` + retry endpoint + delivery-log drilldown + per-channel throttling indicator (§14.5).
+- Demo adapter (in `apps/catalog-demo-api` + `@voyantjs/plugin-catalog-demo`) gains an optional `POST /bookings` endpoint that records pushed bookings; advertises configurable rate limits to exercise the throttle path.
 
-**Phase E — Content push** (2-3 days):
-- Wire `product.updated` event subscriber in distribution.
-- Same bounded-inline-retry pattern as availability (§12). Versioned content payloads keyed on `(entity_id, content_version)`.
+**Phase E — Availability push** (2-3 days):
+- `availability.slot.changed` subscriber writes/upserts `channel_availability_push_intents` rows. Resolves channels via `channel_inventory_allotments` (§7.4), NOT `channel_product_mappings`.
+- Scheduled `channel.availability.push` workflow (§12.2) drains intents per channel.
+- Demo adapter availability sink.
+
+**Phase F — Content push** (2-3 days):
+- `product.content.changed` subscriber writes/upserts `channel_content_push_intents` rows. Resolves channels via `channel_product_mappings`.
+- Scheduled `channel.content.push` workflow (§12.3); compares current content hash vs. `last_pushed_content_hash` for idempotency.
 - Demo adapter content sink.
 
-**Phase F — Reconciler** (3-4 days):
-- Scheduled job that walks `channel_booking_links` and `channel_product_mappings` looking for divergence between Voyant state and last-known channel state (per `pushed_payload_hash` + adapter-side queries when supported).
-- Reissues pushes for divergent rows. Handles the "channel was offline for hours, our retries gave up, state has drifted" case (§13).
-- v1: runs hourly per (channel, source_connection_id), respects rate limits, surfaces unresolvable divergences to ops.
+**Phase G — Reconciler** (3-4 days):
+- Scheduled job per (channel, connection) that re-reads current state from owned tables and recreates intent rows for divergent ones.
+- Handles long-outage drift; works through the same intent + worker pipeline rather than a parallel push path (§12.5).
+- v1 cadences: 15min booking, hourly availability, nightly content. Tunable per channel.
 
-**Phase G — First real channel adapter** (per integration; 5-10 days each):
+**Phase H — First real channel adapter** (per integration; 5-10 days each):
 - Implement the contract for a real upstream — TUI, a Voyant Connect peer, etc.
 - Each integration's auth, rate limits, and content-shape translation are upstream-specific work that lands per channel.
 
-Phases A-F give us the **channel-push framework** entirely inside `packages/distribution` (plus the cross-cutting `webhook_deliveries` infra); Phase G onward is per-channel integration work that scales with the number of channels we support.
+Phases A-G give us the **channel-push framework** entirely inside `packages/distribution` (plus the cross-cutting `webhook_deliveries` + `rate_limit_buckets` infra and the source-event groundwork in `packages/bookings`/`packages/availability`/`packages/products`); Phase H onward is per-channel integration work that scales with the number of channels we support.
 
 ## 11. The webhook delivery log
 
@@ -338,7 +541,7 @@ webhook_deliveries (
 - **No worker / scheduler in v1.** `scheduled_for` is part of the schema so a future worker can `SELECT WHERE status='pending' AND scheduled_for <= now()` without a migration, but v1 dispatches synchronously inside the caller (workflow or subscriber). The table is an **observability primitive**, not a queue.
 - **Retention.** Successful rows older than 90 days roll off; failed/abandoned rows retain longer (180 days) for diagnostics. Tunable per deployment.
 - **Body size.** `request_body_excerpt` and `response_body_excerpt` are bounded (4 KB each) — full bodies live in object storage if a channel agreement requires it; the table holds an excerpt + hash.
-- **PII redaction.** Headers are redacted before write (auth tokens, cookies). Body excerpts are stored verbatim — callers MUST avoid sending PII in payloads, or rely on the same redaction the adapter applied. The booking push payload (per §11 in non-goals — now §14) is already PII-redacted upstream; this table inherits that posture.
+- **PII redaction is a library guarantee, not caller discipline.** A shared `prepareOutboundEnvelope(request, response, scope)` helper wraps every write to `webhook_deliveries`. It (a) drops auth headers and cookies, (b) runs request and response bodies through a per-flow redactor that strips known PII shapes (email patterns, phone patterns, document numbers, names from booking-traveler payloads — same redaction surface used by structured logging), (c) bounds excerpts to 4 KB. Direct INSERTs into `webhook_deliveries` from anywhere except this helper are a lint violation. Booking push specifically would otherwise be a likely PII leak vector, so the redaction must be enforced by the library, not promised by callers.
 
 ### 11.4. Future consumers
 
@@ -350,72 +553,51 @@ The reason to build this generically rather than channel-specific:
 
 Building it once means we don't have to rebuild "track outbound HTTP calls" each time a new outbound use case appears.
 
-## 12. Push strategy: workflows for booking, inline retry for availability/content
+## 12. Push strategy: durable intent for all three flows
 
-The three flows have genuinely different reliability semantics, and they get genuinely different code paths.
+Earlier drafts of this doc proposed "workflows for booking, bounded inline retry in subscribers for availability/content." That is wrong given the EventBus contract — subscribers can't do HTTP without blocking the emitter, and even if they could, in-process retries lose work on crash. The corrected v1 strategy is uniform: **all three flows use durable intent rows + a durable workflow worker** (`@voyantjs/workflows`). The three flows differ in *intent shape and worker cadence*, not in mechanism.
 
-### 12.1. Booking push: workflow with compensation
+### 12.1. Booking push: per-booking saga workflow with compensation
 
-A booking commits locally and fans out to N channels. Partial success is the hard case — channel A accepts, channel B rejects. We need:
+Subscriber writes pending `channel_booking_links` rows (§4.1). A durable workflow `channel.booking.push` runs **per booking** with `concurrency.perKey = bookingId, max = 1`. The workflow:
 
-- **Compensation** when one channel fails after others succeeded (cancel on the successful channels, or surface the partial-success state to ops).
-- **Sequential or bounded-parallel dispatch** with rate limits per channel.
-- **Bounded retry** per channel with backoff.
-- **Durable progress** so the workflow can resume after a worker restart.
+- Reads pending links.
+- Calls `acquireToken(...)` per link (rate limit per channel).
+- Calls `adapter.pushBooking(...)`; writes a `webhook_deliveries` row per attempt via `prepareOutboundEnvelope`.
+- On per-link failure, applies the compensation policy from `channel_contracts.policy`: strict-atomic (cancel succeeded ones) or eventually-consistent (mark partial-sync, alert ops).
+- On retry, the workflow runtime resumes from the last completed step; partial fanout doesn't redo successes.
 
-This is a saga. Use `@voyantjs/core/workflows`:
+Per-channel compensation is the unique thing booking push needs. Workflow is the right tool.
 
-```ts
-const channelPushWorkflow = createWorkflow("channel.booking.push", [
-  step("resolve-channels").run(resolveChannelsForBooking),
-  step("push-each-channel").run(pushOneChannelPerStep)
-                            .compensate(cancelOnSuccessfulChannels),
-  step("finalize").run(updateBookingPushStatus),
-])
-```
+### 12.2. Availability push: scheduled-batch workflow drains the intent table
 
-Each adapter call inside the workflow writes a `webhook_deliveries` row (per §11). The workflow's own state is in the workflow runtime; the per-call observability lives in the delivery log.
+Subscriber writes/upserts `channel_availability_push_intents` rows (§5.2). A durable workflow `channel.availability.push` runs **on a schedule** (`schedule: { every: "30s" }`, tunable per channel) with `concurrency.perKey = channelId, max = 1`. The workflow:
 
-### 12.2. Availability + content push: bounded inline retry
+- Selects up to N pending intents for one channel (batched per channel for adapter efficiency).
+- For each intent: read **current** slot state (idempotency comes from current state, not stored event payload).
+- Acquire token, call `adapter.pushAvailability(...)`, write delivery log.
+- On success, delete the intent row (drains the queue).
+- On failure, increment `attempts` + stamp `last_error`; intent stays for next pass.
 
-Availability events fire frequently (every commit / cancel / manual edit / scheduled refresh), are idempotent on `(slot_id, remaining_pax)`, and are eventually-consistent by design. Content events fire on operator edits, are idempotent on `(entity_id, content_version)`, and are also eventually-consistent.
+Stale-event protection is automatic — concurrent supersession events for the same `(channel_id, slot_id)` collapse to one intent row (UNIQUE constraint), and the worker reads current slot state when it processes. We never push a stale value.
 
-For these, **don't build a queue**. The event stream itself is the queue:
+### 12.3. Content push: same scheduled-batch shape, longer cadence
 
-```ts
-eventBus.subscribe("availability.slot.changed", async ({ data }) => {
-  const channels = await resolveChannelsForProduct(db, data.productId)
-  for (const channel of channels) {
-    if (!channel.mapping.pushAvailability) continue
-    await retryWithBackoff(
-      () => pushAvailabilityToChannel(channel, data),
-      { maxAttempts: 3, baseMs: 200, logTo: webhookDeliveries },
-    )
-    // On persistent failure: stamp last_error and move on. The next
-    // availability event for this product will overwrite whatever was
-    // in flight — re-delivering an old event is wrong, not just
-    // unnecessary, because the in-flight value is already stale.
-  }
-})
-```
+Subscriber writes/upserts `channel_content_push_intents` rows (§6.2). Workflow `channel.content.push` runs `schedule: { every: "5m" }` (content drift is rarely time-critical). Idempotency via `last_pushed_content_hash` comparison — skip if upstream's last-known hash equals current hash.
 
-Why no queue:
-- **Idempotent + eventually consistent** means re-delivering a stale event is a regression, not a recovery. The newest event always wins.
-- **High frequency** would fill a queue table fast, then need aggressive cleanup.
-- **The event stream IS the durable queue.** If we miss a delivery, the next event for the same key supersedes it. State converges automatically.
-- **The delivery log (§11) is enough observability.** Every attempt — success, failure, retry — has a row. Ops can see what's happening; we just don't need a separate scheduler walking it.
+### 12.4. Why uniform durable-intent and not subscriber-side retries
 
-The exception: **catastrophic outage** where the channel was unreachable for hours and many supersession events fired but none landed. The last event we tried might also have failed, and now the channel's view of remaining_pax is wrong. That's the **reconciler's** job (§13) — not the push subscriber's.
+The earlier draft argued "the event stream is the queue" — that's wrong for the codebase's EventBus, which is in-process / sequential / non-durable / fire-and-forget by explicit policy ([`event-delivery-and-durable-execution-policy.md`](./event-delivery-and-durable-execution-policy.md)). Subscribers that retry HTTP inline:
 
-### 12.3. Why not workflows for availability/content too
+- **Block the emitter.** A `booking.confirmed` handler doing 5 channel HTTP calls × 200ms each adds 1s to every booking commit. Other subscribers (analytics, notifications) wait too.
+- **Lose work on crash.** A subscriber retrying when the worker restarts has nothing durable.
+- **Don't dedupe across workers.** Two workers receiving the same event (or two emissions of the same event) double-push.
 
-We could put everything in workflows for one mental model, but:
+Durable intent rows fix all three: subscriber returns in ms; workers retry on their cadence; uniqueness constraints in the intent tables prevent doubled work. Cost is ~50 lines of intent-table boilerplate per flow — much less than an unsound design that breaks under load.
 
-- A workflow per availability event is heavyweight — a workflow runtime row, status tracking, retry orchestration — for an `idempotent fire-and-forget call`. The cost-benefit is bad.
-- Workflows imply "this should eventually succeed and we'll keep at it." Availability pushes are "succeed now or be superseded" — different semantics.
-- The compensation primitive that justifies workflows for booking push is unused for availability (there's nothing to compensate; the next event corrects state).
+### 12.5. The reconciler is still useful
 
-Use the right tool. Workflows where compensation matters; bounded inline retry where the event stream provides convergence.
+Even with durable intents, long outages can produce divergence (intent rows abandoned after N retries, channel went away for hours). The reconciler (§13) re-reads current state from owned tables and re-creates intent rows for divergent ones — a self-healing layer on top of the intent + worker pattern.
 
 ## 13. The reconciler: catch-up after outage
 
@@ -538,7 +720,7 @@ Not in: per-region rate limits (some channels rate-limit per geography), per-end
 ## 16. Open questions
 
 1. ~~**Where does `booking_channel_links` actually live?**~~ **Resolved (§2, §7):** channel push lives in `packages/distribution`, which already houses `channels`, `channel_contracts`, `channel_product_mappings`, `channel_booking_links`, `channel_webhook_events`, `channel_commission_rules`, `channel_inventory_allotments`, `channel_reconciliation_items`, plus the `distributionBookingExtension` HonoExtension. Channel push is net-new code (workflows, event subscribers, push-status fields) over the existing module — not new tables in bookings/products. Bookings stays clean of channel concepts; distribution depends on bookings via the established extension pattern, never the inverse.
-2. ~~**Webhook-delivery infrastructure reuse.**~~ **Resolved (§11, §12, §13):** `webhook_deliveries` did not exist; it does now (built as part of this work). It's a generic outbound-HTTP delivery LOG (every attempt writes a row for observability + retry-chain history), not a queue — `scheduled_for` is in the schema for a future scheduler but v1 dispatches synchronously inside the caller. Channel push uses workflows + the delivery log for booking push (compensation matters), and bounded inline retry + the delivery log for availability/content (idempotent + eventually-consistent; the event stream is the queue). A reconciler (§13) closes the catch-up gap after long outages, by re-reading current state and reissuing pushes from scratch — never by re-delivering stale events.
+2. ~~**Webhook-delivery infrastructure reuse.**~~ **Resolved (§11, §12, §13):** `webhook_deliveries` does not exist yet (typeid prefix `whde` is reserved with no table behind it); built as part of this work in Phase C. It's a generic outbound-HTTP delivery LOG with a mandatory `prepareOutboundEnvelope` redactor as the only allowed write path. Channel push uses durable intent tables + scheduled workflows in `@voyantjs/workflows` for ALL three flows (per §12, corrected from earlier "subscriber-side retry for availability/content" which was unsound given the in-process EventBus contract). A reconciler (§13) closes the catch-up gap after long outages by re-reading current state and recreating intent rows — same intent + worker pipeline, not a parallel path.
 3. ~~**Per-channel rate-limit awareness.**~~ **Resolved (§14):** rate limiting is in v1, not deferred. Token-bucket primitive lives at `infra.rate_limit_buckets` (generic — usable by other modules); per-channel/per-contract config holds capacity + refill rate + per-priority gates so bookings always pre-empt availability/content while sharing one upstream budget. Bookings sleep-and-retry on denial inside the workflow; availability/content give up immediately and rely on the next supersession event. 429 responses drain the bucket to align our outbound estimate with the channel's authoritative state.
 4. ~~**What's `channel_id`?**~~ **Resolved (§2):** `channel_id` is the typeid of a row in the existing `distribution.channels` table — not a synthetic from `(source_kind, source_connection_id)`. A channel is a first-class entity with its own contracts, contacts, commission rules, and reconciliation surface; reducing it to a synthetic would lose that structure.
 5. ~~**Bidirectional adapter packaging.**~~ **Resolved (§3, §14):** one `SourceAdapter` instance per connection carries all methods (inbound + outbound). Real channels share auth and the upstream RPS budget across directions — two instances would force two credential lookups and either two rate-limit buckets (wrong: we'd over-throttle ourselves) or a shared-bucket lookup that's more complex than just keying both directions on `connection_id`. Capability flags (`supportsContentFetch`, `supportsBookingPush`, `supportsAvailabilityPush`, `supportsContentPush`) already separate directions cleanly; TypeScript's optional methods let pure-inbound or pure-outbound adapters skip the irrelevant ones without stubbing. Each upstream ships as one npm package with one factory (`createTuiAdapter(config) → SourceAdapter`). When an adapter genuinely needs distinct read/write credentials (rare), it composes separate inbound/outbound HTTP clients **internally** under one public `SourceAdapter` — that's an implementation organization choice, not a public-contract change.
