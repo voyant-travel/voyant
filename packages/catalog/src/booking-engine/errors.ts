@@ -58,9 +58,15 @@ export class BookingEngineError extends Error {
 }
 
 export class NoAdapterRegisteredError extends BookingEngineError {
-  constructor(sourceKind: string) {
-    super(NO_ADAPTER_REGISTERED, `no SourceAdapter registered for source.kind = "${sourceKind}"`, {
-      sourceKind,
+  /**
+   * Thrown when the registry has no adapter for the given identifier.
+   * The identifier is a connection id when dispatched per-connection
+   * (channel push, sourced bookings with a known connection) or a source
+   * kind when the caller has no connection id (legacy dispatch).
+   */
+  constructor(identifier: string) {
+    super(NO_ADAPTER_REGISTERED, `no SourceAdapter registered for "${identifier}"`, {
+      identifier,
     })
     this.name = "NoAdapterRegisteredError"
   }

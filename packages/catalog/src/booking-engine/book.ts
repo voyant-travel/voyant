@@ -132,7 +132,12 @@ export async function bookEntity(
   const quote = await loadQuote(db, request.quoteId)
   assertQuoteUsable(quote)
 
-  const adapter = deps.registry.resolveOrThrow(quote.source_kind)
+  // Prefer per-connection routing when the quote carries a connection
+  // id; fall back to kind-only resolution otherwise.
+  const adapter = quote.source_connection_id
+    ? (deps.registry.resolveByConnection(quote.source_connection_id) ??
+      deps.registry.resolveOrThrow(quote.source_kind))
+    : deps.registry.resolveOrThrow(quote.source_kind)
   if (!adapter.reserve) {
     throw new BookingEngineError(
       "RESERVE_FAILED",

@@ -52,7 +52,10 @@ export async function cancelEntity(
   request: CancelEntityRequest,
 ): Promise<CancelEntityResult> {
   const snapshot = await loadSnapshot(db, request.bookingId, request.entityModule, request.entityId)
-  const adapter = deps.registry.resolveOrThrow(snapshot.source_kind)
+  const adapter = snapshot.source_connection_id
+    ? (deps.registry.resolveByConnection(snapshot.source_connection_id) ??
+      deps.registry.resolveOrThrow(snapshot.source_kind))
+    : deps.registry.resolveOrThrow(snapshot.source_kind)
   if (!adapter.cancel) {
     return {
       status: "refused",

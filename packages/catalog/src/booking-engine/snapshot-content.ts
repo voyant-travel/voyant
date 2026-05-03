@@ -149,7 +149,10 @@ export function composeSnapshotContentCapturer(options: {
       // No content service for this vertical → owned or out-of-scope.
       return null
     }
-    const sourceAdapter = options.registry.get(input.source_kind)
+    const sourceAdapter = input.source_connection_id
+      ? (options.registry.resolveByConnection(input.source_connection_id) ??
+        options.registry.byKind(input.source_kind)[0]?.adapter)
+      : options.registry.byKind(input.source_kind)[0]?.adapter
     if (!sourceAdapter) {
       // No source adapter registered. Try cache fallback first; if
       // even that fails, signal unavailable so the engine can abort.

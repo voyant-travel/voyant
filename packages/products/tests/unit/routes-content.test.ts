@@ -53,12 +53,18 @@ describe("parseAcceptLanguage", () => {
 function makeStubRegistry(): SourceAdapterRegistry {
   return {
     register: vi.fn(),
-    get: vi.fn(() => undefined),
+    resolveByConnection: vi.fn(() => undefined),
+    resolveByConnectionOrThrow: vi.fn(() => {
+      throw new Error("not implemented")
+    }),
     resolveOrThrow: vi.fn(() => {
       throw new Error("not implemented")
     }),
-    has: vi.fn(() => false),
+    byKind: vi.fn(() => []),
+    connections: vi.fn(() => []),
     kinds: vi.fn(() => []),
+    has: vi.fn(() => false),
+    hasKind: vi.fn(() => false),
   }
 }
 

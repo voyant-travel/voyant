@@ -104,7 +104,10 @@ export async function getHospitalityContent(
     last_seen_at: sourcedEntry.last_seen_at,
   }
 
-  const adapter = options.registry.get(sourcedEntry.source_kind)
+  const adapter = sourcedEntry.source_connection_id
+    ? (options.registry.resolveByConnection(sourcedEntry.source_connection_id) ??
+      options.registry.byKind(sourcedEntry.source_kind)[0]?.adapter)
+    : options.registry.byKind(sourcedEntry.source_kind)[0]?.adapter
   const adapterCtx: SourceAdapterContext = options.buildAdapterContext?.(adapter!) ?? {
     connection_id: sourcedEntry.source_connection_id ?? sourcedEntry.source_kind,
   }

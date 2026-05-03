@@ -1,82 +1,192 @@
 /**
- * `SourceAdapterRegistry` — process-local map keyed by `source.kind` that
- * the booking engine consults when dispatching a quote / book / cancel.
+ * `SourceAdapterRegistry` — process-local map keyed by `connection_id` that
+ * the booking engine and channel-push pipeline consult when dispatching a
+ * quote / book / cancel / push call.
  *
- * Templates wire the registry at process start, registering whichever
- * adapters their deployment supports (the demo adapter, Voyant Connect,
- * Hotelbeds, an operator-built GDS connector). The booking engine reads
- * the registry on every dispatch and fails with `NoAdapterRegisteredError`
- * if a row's `source.kind` doesn't have a registered handler.
+ * Templates wire the registry at process start, registering one adapter
+ * instance per upstream connection. Two connections of the same kind
+ * (e.g. TUI dev + TUI prod, or two different Voyant Connect peers) get
+ * two registry entries with two distinct `connection_id`s — different
+ * credentials, different rate buckets, different `channel_id` mappings.
  *
- * The registry is intentionally a thin wrapper over `Map<string,
- * SourceAdapter>`. Adapters carry their own credentials, HTTP clients,
- * and DB handles through their constructors; the registry just stores
- * the wired instances.
+ * `kind` remains a useful secondary index — "list all adapters of this
+ * kind" supports rotate-to-next-available policies and admin debug
+ * surfaces. But routing dispatches by `connection_id` because that's
+ * what the data carries (provenance.source_connection_id on sourced
+ * rows, channels.id on outbound mappings).
  *
- * Not a DI container: there is no scoping, no factory resolution, no
- * lifetime management. Per architecture §4 of
- * `docs/architecture/catalog-booking-engine.md`.
+ * Per channel-push-architecture §3.1 and catalog-booking-engine §4.
  */
 
 import type { SourceAdapter } from "../adapter/contract.js"
 
 import { NoAdapterRegisteredError } from "./errors.js"
 
+/**
+ * One registry entry. `connectionId` is the typed-id key (the row in
+ * whichever table holds the connection record — `channels` for outbound,
+ * the catalog plane's connection store for inbound). For adapters with
+ * no upstream connection record (e.g. the demo adapter at boot), pass a
+ * stable synthetic id like `"default:<kind>"`.
+ */
+export interface RegisteredAdapter {
+  connectionId: string
+  adapter: SourceAdapter
+}
+
 export interface SourceAdapterRegistry {
   /**
-   * Register an adapter under its declared `kind`. Re-registering the
-   * same kind replaces the previous adapter — used at hot-reload time
-   * in dev. Production registrations happen once at process start.
+   * Register an adapter under a connection id. The connection id is the
+   * primary key — re-registering the same connection id replaces the
+   * previous adapter (used at hot-reload time). Production registrations
+   * happen once at process start, one entry per upstream connection.
+   */
+  register(connectionId: string, adapter: SourceAdapter): void
+
+  /**
+   * Backward-compat overload — register an adapter without an explicit
+   * connection id. Stored under the synthetic id `"default:<kind>"`.
+   * Use this for single-deployment adapters where there's no separate
+   * connection record (e.g. demo adapters, single-tenant integrations).
+   * New code paths that route per-connection should prefer the explicit
+   * `register(connectionId, adapter)` form.
    */
   register(adapter: SourceAdapter): void
 
   /**
-   * Retrieve the adapter for a given source kind. Returns `undefined`
-   * when no adapter is registered; callers typically prefer `resolveOrThrow`
-   * for non-recoverable dispatches.
+   * Resolve by connection id. Hot path for the booking engine (sourced
+   * bookings) and the channel-push pipeline (outbound dispatches).
+   * Returns `undefined` when no adapter is registered.
    */
-  get(sourceKind: string): SourceAdapter | undefined
+  resolveByConnection(connectionId: string): SourceAdapter | undefined
+
+  /** Like `resolveByConnection` but throws `NoAdapterRegisteredError` on miss. */
+  resolveByConnectionOrThrow(connectionId: string): SourceAdapter
 
   /**
-   * Like `get` but throws `NoAdapterRegisteredError` when no adapter
-   * matches. Use this in the booking engine's hot dispatch paths.
+   * Resolve by source kind. Returns the FIRST adapter registered for this
+   * kind. Useful for legacy dispatch paths that don't yet thread a
+   * connection id, and for the common single-connection-per-kind case.
+   * New code that supports multiple connections per kind should use
+   * `byKind` to pick deliberately.
    */
   resolveOrThrow(sourceKind: string): SourceAdapter
 
   /**
-   * Returns the registered source kinds. Used by the operator template's
-   * `/v1/admin/catalog/sources` debug surface and integration tests.
+   * Returns every adapter registered for this kind, paired with its
+   * connection id. Order is registration order. Use for "rotate to next
+   * available connection" policies and admin debug surfaces.
    */
+  byKind(sourceKind: string): ReadonlyArray<RegisteredAdapter>
+
+  /** Returns the registered connection ids. */
+  connections(): ReadonlyArray<string>
+
+  /** Returns the registered source kinds. */
   kinds(): ReadonlyArray<string>
 
-  /** Returns `true` iff an adapter is registered for the given kind. */
-  has(sourceKind: string): boolean
+  /** True iff a connection id is registered. */
+  has(connectionId: string): boolean
+
+  /** True iff at least one adapter of this kind is registered. */
+  hasKind(sourceKind: string): boolean
 }
 
 /**
  * Construct a fresh registry. Templates create one at process start and
- * pass it to the booking-engine route handlers.
+ * pass it to the booking-engine route handlers + channel-push wiring.
  */
 export function createSourceAdapterRegistry(): SourceAdapterRegistry {
-  const adapters = new Map<string, SourceAdapter>()
+  const byConnection = new Map<string, SourceAdapter>()
+  const kindIndex = new Map<string, Set<string>>()
+
+  function indexAdd(kind: string, connectionId: string): void {
+    let set = kindIndex.get(kind)
+    if (!set) {
+      set = new Set()
+      kindIndex.set(kind, set)
+    }
+    set.add(connectionId)
+  }
+
+  function indexRemove(kind: string, connectionId: string): void {
+    const set = kindIndex.get(kind)
+    if (!set) return
+    set.delete(connectionId)
+    if (set.size === 0) kindIndex.delete(kind)
+  }
+
+  function register(arg1: string | SourceAdapter, arg2?: SourceAdapter): void {
+    let connectionId: string
+    let adapter: SourceAdapter
+    if (typeof arg1 === "string") {
+      if (!arg2) {
+        throw new TypeError("register(connectionId, adapter): adapter argument is required")
+      }
+      connectionId = arg1
+      adapter = arg2
+    } else {
+      adapter = arg1
+      connectionId = `default:${adapter.kind}`
+    }
+
+    const previous = byConnection.get(connectionId)
+    if (previous) {
+      indexRemove(previous.kind, connectionId)
+    }
+    byConnection.set(connectionId, adapter)
+    indexAdd(adapter.kind, connectionId)
+  }
+
+  function resolveByConnection(connectionId: string): SourceAdapter | undefined {
+    return byConnection.get(connectionId)
+  }
+
+  function resolveByConnectionOrThrow(connectionId: string): SourceAdapter {
+    const adapter = byConnection.get(connectionId)
+    if (!adapter) throw new NoAdapterRegisteredError(connectionId)
+    return adapter
+  }
+
+  function byKind(sourceKind: string): ReadonlyArray<RegisteredAdapter> {
+    const set = kindIndex.get(sourceKind)
+    if (!set || set.size === 0) return []
+    const out: RegisteredAdapter[] = []
+    for (const connectionId of set) {
+      const adapter = byConnection.get(connectionId)
+      if (adapter) out.push({ connectionId, adapter })
+    }
+    return out
+  }
+
+  function resolveOrThrow(sourceKind: string): SourceAdapter {
+    const set = kindIndex.get(sourceKind)
+    if (!set || set.size === 0) throw new NoAdapterRegisteredError(sourceKind)
+    const first = set.values().next().value
+    if (!first) throw new NoAdapterRegisteredError(sourceKind)
+    const adapter = byConnection.get(first)
+    if (!adapter) throw new NoAdapterRegisteredError(sourceKind)
+    return adapter
+  }
 
   return {
-    register(adapter) {
-      adapters.set(adapter.kind, adapter)
-    },
-    get(sourceKind) {
-      return adapters.get(sourceKind)
-    },
-    resolveOrThrow(sourceKind) {
-      const adapter = adapters.get(sourceKind)
-      if (!adapter) throw new NoAdapterRegisteredError(sourceKind)
-      return adapter
+    register: register as SourceAdapterRegistry["register"],
+    resolveByConnection,
+    resolveByConnectionOrThrow,
+    resolveOrThrow,
+    byKind,
+    connections() {
+      return [...byConnection.keys()]
     },
     kinds() {
-      return [...adapters.keys()]
+      return [...kindIndex.keys()]
     },
-    has(sourceKind) {
-      return adapters.has(sourceKind)
+    has(connectionId) {
+      return byConnection.has(connectionId)
+    },
+    hasKind(sourceKind) {
+      const set = kindIndex.get(sourceKind)
+      return !!set && set.size > 0
     },
   }
 }
