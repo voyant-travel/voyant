@@ -202,40 +202,65 @@ export async function getProductContent(
   }
   // Sourced path — pick the best cached locale row against the
   // preference chain (one query, no N+1; see §3.5.3).
-  const best = await pickBestCachedLocale(db, "products", entityId, scope)
-  if (best && !isStale(best, scope)) return resolveCached(best, scope)
-
-  // Cache miss for every preferred locale, or the best match is stale.
-  // Refresh through the adapter and cache.
   const adapter = sourceAdapterRegistry.resolveOrThrow(provenance.source_kind)
+  const best = await pickBestCachedLocale(db, "products", entityId, scope)
+
+  if (best && !isStale(best, scope)) {
+    // Fresh cache hit — return it, no adapter round-trip.
+    return resolveCached(best, scope)
+  }
+
+  if (best && isStale(best, scope)) {
+    // SWR — return the stale row immediately, schedule a fire-and-
+    // forget refresh so the *next* read sees fresh content. Concurrent
+    // stale reads for the same (entity, locale) dedupe via the
+    // singleflight registry below; only one adapter call is in flight
+    // at a time.
+    scheduleBackgroundRefresh(adapter, "products", entityId, scope)
+    return resolveCached(best, scope)
+  }
+
+  // No cache row at all for any preferred locale — must block on the
+  // adapter; we have nothing to serve.
   if (!adapter.getContent) {
     // Adapter declared no content fetch — fall back to thin content
     // synthesized from the indexer projection. Degraded mode.
     return synthesizeThinContent(db, "products", entityId, scope)
   }
-  const fresh = await adapter.getContent(adapterCtx, {
-    entity_module: "products",
-    entity_id: entityId,
-    locale: scope.preferredLocales[0],
-    market: scope.market,
-    currency: scope.currency,
-  })
+  const fresh = await singleflight.do(
+    cacheKey("products", entityId, scope.preferredLocales[0]),
+    () => adapter.getContent!(adapterCtx, {
+      entity_module: "products",
+      entity_id: entityId,
+      locale: scope.preferredLocales[0],
+      market: scope.market,
+      currency: scope.currency,
+    }),
+  )
   await writeCachedSourcedContent(db, "products", entityId, fresh)
   return resolveFresh(fresh, scope)
 }
 ```
 
-Detail routes (operator and storefront) call this single function. Owned products keep working unchanged. Sourced products read from cache (locale-resolved) or freshen via the adapter. Adapters that don't support content fetch render a thin fallback synthesized from the indexed projection — degraded but not broken.
+Detail routes (operator and storefront) call this single function. Owned products keep working unchanged. Sourced products read from cache (locale-resolved); adapters that don't support content fetch render a thin fallback synthesized from the indexed projection — degraded but not broken.
 
-### 3.4. Refresh policy
+### 3.4. Refresh policy: SWR with singleflight
 
-Three refresh paths:
+Two refresh paths, both invisible to operators:
 
-1. **TTL** — `fresh_until` from the adapter, or a vertical default (cruises: 24h, hotels: 4h, products: 24h). On read, if `fresh_until < now()`, refresh inline before returning.
-2. **Drift events** — when a drift event fires for `(entity_module, entity_id)`, the catalog plane invalidates that row's cache (sets `fresh_until = now()`). Next read refreshes.
-3. **Manual** — admin "Refresh from source" button hits a route that calls `adapter.getContent` and updates the cache. Useful for debugging and post-incident recovery.
+1. **TTL** — `fresh_until` from the adapter, or a vertical default (cruises: 24h, hotels: 4h, products: 24h). On read, if `fresh_until < now()`, the read returns the **stale row immediately** and schedules a fire-and-forget refresh. Next read sees the fresh row. This is stale-while-revalidate (SWR): customer-facing latency is always cache latency, never adapter latency, even when the adapter is slow or briefly down.
+2. **Drift events** — when a drift event fires for `(entity_module, entity_id)`, the catalog plane invalidates affected cache rows (sets `fresh_until = now()`). The next read serves stale + triggers refresh, same as TTL expiry.
 
-Refreshes happen **inline** on read for v1 (simple, no background job). At scale, a background refresher reads rows with `fresh_until < now()` and refreshes proactively to avoid latency on hot reads — that's a v2 concern.
+Two correctness guards:
+
+- **Singleflight on the cache key** — concurrent reads that all see "stale" or "miss" for the same `(entity_module, entity_id, locale)` collapse into one in-flight adapter call. Background refreshes triggered by SWR participate in the same registry, so a hot row never produces a thundering herd of `getContent` calls.
+- **Cache miss is the one blocking case** — if there's no row at all in any preferred locale, the read MUST wait for the adapter (we have nothing to return). This is rare in steady state because backfill / first-discovery populates the cache before customer reads land on a row.
+
+There is **no manual "refresh from source" admin action**. Operators don't think in cache terms; the cache is an internal optimization, not a surface they manage. If something is wrong, drift events handle it; if drift is missing, that's a bug in the adapter integration, not something an operator should be working around with a button.
+
+Snapshot capture (§5.1) is the one exception that bypasses SWR: the booking engine MUST refresh synchronously at commit time so the snapshot reflects what the customer actually agreed to. That path is documented as refresh-with-fallback in §5.1 — it's not a read, it's a write-time freshness guarantee.
+
+A pure-background scheduled refresher (a worker that walks expired rows and refreshes proactively) is **not planned**. SWR + drift events covers the same surface area without a worker, schedule, backlog monitor, or dead-letter queue. If we ever observe high p99 latency on first-reads of cold rows, we'd revisit — but that's a backfill problem, not a refresh problem.
 
 ## 3.5. Multi-language as a first-class axis
 
@@ -405,12 +430,11 @@ See [`channel-push-architecture.md`](./channel-push-architecture.md) for the out
 ## 7. Package layout
 
 ```
-packages/catalog/src/adapter/contract.ts                      — extended with getContent + supportsContentFetch
-packages/catalog/src/services/content-service.ts              — generic isStale + drift→cache invalidation helpers
-packages/<vertical>/src/schema-sourced-content.ts             — per-vertical content cache table
-packages/<vertical>/src/service-content.ts                    — getContentForEntity (owned-vs-sourced dispatch)
+packages/catalog/src/adapter/contract.ts                      — extended with getContent + supportsContentFetch + supportedContentLocales
+packages/catalog/src/services/content-service.ts              — isStale + drift→cache invalidation + singleflight registry + scheduleBackgroundRefresh
+packages/<vertical>/src/schema-sourced-content.ts             — per-vertical content cache table (entity_id, locale)
+packages/<vertical>/src/service-content.ts                    — getContentForEntity (owned-vs-sourced dispatch, SWR semantics)
 packages/<vertical>/src/service-content-thin.ts               — synthesizeThinContent fallback
-templates/operator/scripts/refresh-sourced-content.ts         — admin batch refresher (optional)
 ```
 
 Each vertical opts in. Verticals that don't yet have detail-page needs (extras, transfers) can defer adopting this — they fall back to thin indexed content, same as today.
@@ -449,9 +473,9 @@ Each vertical opts in. Verticals that don't yet have detail-page needs (extras, 
 1. ~~**Content cache vs. catalog snapshot for "what was sold"** — at booking commit, we capture `frozenPayload`. Should that be the live content cache row, or should it be re-fetched from the adapter to get the freshest at-commit snapshot?~~ **Resolved (§5.1):** refresh from the adapter at commit, fall back to the cache on adapter error. If neither is available (no cache row AND adapter fails), fail the commit — we don't snapshot from the indexed projection because that's not audit-grade. The snapshot row records `content_capture.source: "fresh" | "cache_fallback"` so audit can tell the two apart later.
 2. ~~**Multi-locale caching** — TUI returns content in `de-DE`; storefront serves a `ro-RO` user. Cache per locale, or cache one canonical and translate on read?~~ **Resolved (§3.5):** multi-language is a first-class axis. Adapters take a required `locale` and report `returned_locale`; the cache keys on `(entity_id, locale)` per vertical (independent TTLs, independent fetch failures, simple "missing locale" SQL); the read service walks a preference chain in one query and falls back gracefully. Machine translation is opt-in and flagged on the row, never implicit. Editorial overlays compose on top per locale.
 3. ~~**Cache invalidation on overlay change** — editorial overlays already exist for owned content. Do they apply to sourced content too? If yes, is the merge done at read time or at content-fetch time?~~ **Resolved (§3.5.4):** overlays apply to sourced content using the same `catalog_overlay` machinery, keyed on `(entity, field_path, locale, audience, market)`. Merge happens at **read time** after locale resolution — pick the best content row, then layer locale-matching overlays on top. Operators can curate a `ro-RO` overlay before TUI publishes ro-RO natively, and overlay edits don't need to invalidate the content cache. Content-fetch-time merge would couple two independent edit paths and force a cache rewrite on every overlay change; read-time merge keeps them orthogonal. Cost is a small extra query per read, mitigated by the same caching the overlay store already uses for owned reads.
-4. **Background refresher vs inline-on-read** — Phase C ships inline; v2 considers background. Defer until we see real latency.
+4. ~~**Background refresher vs inline-on-read** — Phase C ships inline; v2 considers background.~~ **Resolved (§3.4):** SWR in v1, no scheduled background refresher. Reads always return cached content immediately; stale rows trigger a fire-and-forget adapter refresh in the background so the next read is fresh. Singleflight collapses concurrent refreshes for the same key. A pure-background scheduled refresher is not planned — SWR + drift events covers the same surface without a worker / schedule / backlog monitor.
 5. **Per-vertical thin-content synthesizer shape** — when an adapter declares `supportsContentFetch: false`, the fallback synthesizer reads the indexed projection and produces a thin content blob. What's its minimum-viable shape per vertical? Each vertical decides.
-6. **Stale-while-revalidate** — when a cache row is stale, do we serve it AND fire a background refresh, or block the read while refreshing? Block for v1 (simpler); SWR is a v2 ergonomic.
+6. ~~**Stale-while-revalidate** — when a cache row is stale, do we serve it AND fire a background refresh, or block the read while refreshing?~~ **Resolved (§3.4):** SWR in v1. Stale-but-present rows serve immediately and schedule an async refresh; only true cache miss (no row in any preferred locale) blocks. The booking engine snapshot path (§5.1) deliberately bypasses SWR — snapshot writes need synchronous freshness, reads do not.
 
 ## 10. Related documents
 
