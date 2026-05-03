@@ -221,6 +221,7 @@ async function handleBook(c: Context): Promise<Response> {
         party: body.party,
         paymentIntent: body.paymentIntent,
         parameters: { ...body.parameters, draft: draftPayload ?? body.parameters?.draft },
+        idempotencyKey: body.idempotencyKey,
         adapterContext: { connection_id: "engine", correlation_id: correlationId },
       },
     )

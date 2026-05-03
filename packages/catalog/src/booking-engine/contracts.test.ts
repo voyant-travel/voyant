@@ -77,6 +77,18 @@ describe("V1 contracts", () => {
       const result = bookRequestV1.safeParse({ quoteId: "q1", idempotencyKey: "abc" })
       expect(result.success).toBe(false)
     })
+
+    it("accepts idempotency keys in the 8–128 range", () => {
+      expect(bookRequestV1.safeParse({ quoteId: "q1", idempotencyKey: "12345678" }).success).toBe(
+        true,
+      )
+      expect(
+        bookRequestV1.safeParse({ quoteId: "q1", idempotencyKey: "x".repeat(128) }).success,
+      ).toBe(true)
+      expect(
+        bookRequestV1.safeParse({ quoteId: "q1", idempotencyKey: "x".repeat(129) }).success,
+      ).toBe(false)
+    })
   })
 
   describe("pricingBreakdownV1", () => {

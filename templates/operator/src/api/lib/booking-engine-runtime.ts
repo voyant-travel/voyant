@@ -26,9 +26,11 @@ import {
   type SourceAdapterRegistry,
   type TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
-import { quickCreateBooking } from "@voyantjs/finance"
+import { quickCreateBooking, taxClasses, taxRegimes } from "@voyantjs/finance"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
 import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
+import { products as productsTable } from "@voyantjs/products/schema"
+import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -132,6 +134,62 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
             })
           }
           return fields
+        },
+        async loadTaxRate(ctx, args) {
+          // Walk: products.tax_class_id → tax_classes.default_regime_id
+          // → tax_regimes.rate_percent. Returns null when any link is
+          // missing — the engine renders the breakdown without a tax
+          // line.
+          //
+          // The buyer-country axis is not yet enforced (the demo
+          // operator runs in a single jurisdiction). Per
+          // booking-journey-architecture §9, the per-buyer-country
+          // resolution is a follow-up that reads
+          // tax_classes.lines[].applies_to.
+          //
+          // The buyerCountry / buyerType arguments are accepted but
+          // currently unused — kept on the signature so the
+          // jurisdictional follow-up doesn't change the contract.
+          void args.buyerCountry
+          void args.buyerType
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const productRows = await db
+            .select({ taxClassId: productsTable.taxClassId })
+            .from(productsTable)
+            .where(eq(productsTable.id, args.productId))
+            .limit(1)
+          const taxClassId = productRows[0]?.taxClassId
+          if (!taxClassId) return null
+
+          const classRows = await db
+            .select({
+              defaultRegimeId: taxClasses.defaultRegimeId,
+              code: taxClasses.code,
+              label: taxClasses.label,
+            })
+            .from(taxClasses)
+            .where(eq(taxClasses.id, taxClassId))
+            .limit(1)
+          const klass = classRows[0]
+          if (!klass?.defaultRegimeId) return null
+
+          const regimeRows = await db
+            .select({
+              ratePercent: taxRegimes.ratePercent,
+              code: taxRegimes.code,
+              name: taxRegimes.name,
+            })
+            .from(taxRegimes)
+            .where(eq(taxRegimes.id, klass.defaultRegimeId))
+            .limit(1)
+          const regime = regimeRows[0]
+          if (!regime || regime.ratePercent == null) return null
+
+          return {
+            code: `${klass.code}/${regime.code}`,
+            label: regime.name,
+            rate: regime.ratePercent / 100,
+          }
         },
       }),
     )

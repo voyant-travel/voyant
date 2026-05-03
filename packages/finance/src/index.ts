@@ -166,6 +166,7 @@ export {
   paymentSessions,
   payments,
   supplierPayments,
+  taxClasses,
   taxRegimes,
   voucherRedemptions,
   voucherSourceTypeEnum,

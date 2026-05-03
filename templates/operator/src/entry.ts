@@ -1,6 +1,7 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 import { app as apiApp } from "./api/app"
 import { runScheduledChannelPushReconciler } from "./api/channel-push-scheduled"
+import { DRAFT_REAPER_CRON, runScheduledDraftReaper } from "./api/draft-reaper-scheduled"
 
 const startHandler = createStartHandler(defaultStreamHandler)
 
@@ -29,6 +30,14 @@ export default {
     env: CloudflareBindings,
     ctx: ExecutionContext,
   ): Promise<void> {
+    if (event.cron === DRAFT_REAPER_CRON) {
+      ctx.waitUntil(
+        runScheduledDraftReaper(event, env).then((result) => {
+          console.info("[draft-reaper] result", result)
+        }),
+      )
+      return
+    }
     ctx.waitUntil(runScheduledChannelPushReconciler(event, env))
   },
 }

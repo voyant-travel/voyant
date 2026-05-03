@@ -363,7 +363,7 @@ export function BillingStep({
         contact: {
           firstName: contact.firstName,
           lastName: contact.lastName,
-          email: contact.email,
+          email: contact.email ?? "",
           phone: contact.phone,
         },
       }),

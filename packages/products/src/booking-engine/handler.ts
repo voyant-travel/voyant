@@ -165,10 +165,21 @@ export function buildOwnedProductDraftShape(
 // Handler
 // ─────────────────────────────────────────────────────────────────
 
+/** A resolved tax-rate decision — resolved from `tax_classes` ×
+ *  `tax_regimes` × buyer country at quote time. */
+export interface ResolvedTaxRate {
+  /** Stable code (e.g. "vat-ro-19", "exempt-art311"). */
+  code: string
+  /** Display label for the breakdown. */
+  label: string
+  /** Rate as a fraction (0..1). 0 means exempt / zero-rated. */
+  rate: number
+}
+
 /** Caller-supplied loaders for descriptor enrichment. Each is
  *  optional — when omitted the handler returns the default shape.
  *  Templates wire these to the modules they have on hand
- *  (booking-requirements, extras). */
+ *  (booking-requirements, extras, finance). */
 export interface OwnedProductsShapeLoaders {
   /**
    * Resolve per-traveler field requirements from
@@ -189,6 +200,24 @@ export interface OwnedProductsShapeLoaders {
     ctx: OwnedHandlerContext,
     productId: string,
   ) => Promise<ReadonlyArray<AddonOffer>>
+
+  /**
+   * Resolve the tax rate for a given (product, buyer country) pair.
+   * Templates wire this to a function that reads
+   * `products.tax_class_id`, `tax_classes.default_regime_id`, and
+   * `tax_regimes.rate_percent`. Returns null when tax can't be
+   * resolved — the engine renders the breakdown without a tax line.
+   *
+   * Per booking-journey-architecture §9.
+   */
+  loadTaxRate?: (
+    ctx: OwnedHandlerContext,
+    args: {
+      productId: string
+      buyerCountry?: string
+      buyerType?: "B2C" | "B2B"
+    },
+  ) => Promise<ResolvedTaxRate | null>
 }
 
 export interface CreateProductsBookingHandlerOptions extends OwnedProductsShapeLoaders {
@@ -230,11 +259,16 @@ export function createProductsBookingHandler(
       }
 
       const draft = (request.draft ?? {}) as DraftLike
-      // Concurrent enrichment — both calls are pure reads and don't
-      // depend on each other.
-      const [travelerFields, addonCatalog] = await Promise.all([
+      // Concurrent enrichment — all three calls are pure reads and
+      // don't depend on each other.
+      const [travelerFields, addonCatalog, taxRate] = await Promise.all([
         options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
         options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadTaxRate?.(ctx, {
+          productId: request.entityId,
+          buyerCountry: draft.billing?.address?.country,
+          buyerType: draft.billing?.buyerType,
+        }) ?? Promise.resolve(null),
       ])
       const paxCount = sumPax(draft.configure?.pax)
       // Per-pax pricing fallback: when no pax is supplied yet, quote a
@@ -244,11 +278,17 @@ export function createProductsBookingHandler(
       const unitCents = product.sellAmountCents ?? 0
       const totalCents = unitCents * effectivePax
 
+      // Tax computation. The base is taxable; addons/accommodation
+      // get the same rate in this MVP cut. Per-line override (the
+      // `applies_to` axis on tax_classes.lines) lands in a follow-up
+      // when the catalog actually carries mixed treatments.
+      const taxCents = taxRate && taxRate.rate > 0 ? Math.round(totalCents * taxRate.rate) : 0
+
       const pricing =
         unitCents > 0
           ? {
               base_amount: totalCents,
-              taxes: 0,
+              taxes: taxCents,
               fees: 0,
               surcharges: 0,
               currency: product.sellCurrency,
@@ -262,6 +302,21 @@ export function createProductsBookingHandler(
                     totalAmount: totalCents,
                   },
                 ],
+                taxes:
+                  taxRate && taxCents > 0
+                    ? [
+                        {
+                          code: taxRate.code,
+                          label: taxRate.label,
+                          rate: taxRate.rate,
+                          amount: taxCents,
+                          base: totalCents,
+                        },
+                      ]
+                    : [],
+                subtotal: totalCents,
+                taxTotal: taxCents,
+                total: totalCents + taxCents,
                 paxCount: effectivePax,
               } as Record<string, unknown>,
             }

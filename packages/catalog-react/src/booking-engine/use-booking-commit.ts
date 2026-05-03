@@ -42,12 +42,19 @@ export function useBookingCommit(options: UseBookingCommitOptions = {}) {
 
   return useMutation<BookResponseV1, Error, CommitInput>({
     mutationFn: async (input) => {
+      // Auto-generate an idempotency key when the caller didn't pass
+      // one — protects against double-clicks. The key is stable for
+      // the lifetime of the mutation function call (one user click =
+      // one key); a manual retry from the journey shell uses the same
+      // key by passing it explicitly.
+      const idempotencyKey =
+        input.idempotencyKey ?? generateIdempotencyKey(input.draft?.entity?.id ?? input.quoteId)
       const body: Record<string, unknown> = {
         quoteId: input.quoteId ?? input.draft?.quoteId,
         draftId: options.draftId,
         party: input.party,
         paymentIntent: input.paymentIntent,
-        idempotencyKey: input.idempotencyKey,
+        idempotencyKey,
       }
       if (input.draft) {
         body.parameters = { draft: input.draft }
@@ -58,4 +65,12 @@ export function useBookingCommit(options: UseBookingCommitOptions = {}) {
       options.onCommitted?.(result)
     },
   })
+}
+
+function generateIdempotencyKey(seed: string | undefined): string {
+  const base = seed ?? "anon"
+  if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.randomUUID) {
+    return `${base.slice(0, 32)}_${globalThis.crypto.randomUUID().replace(/-/g, "")}`
+  }
+  return `${base.slice(0, 32)}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`
 }

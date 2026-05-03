@@ -20,7 +20,11 @@ import { eq } from "drizzle-orm"
 
 import type { ReserveRequest, SourceAdapterContext } from "../adapter/contract.js"
 import { type CaptureSnapshotInput, captureSnapshot } from "../services/snapshot-service.js"
-import type { PricingBasis, SelectBookingCatalogSnapshot } from "../snapshot/schema.js"
+import {
+  bookingCatalogSnapshotTable,
+  type PricingBasis,
+  type SelectBookingCatalogSnapshot,
+} from "../snapshot/schema.js"
 
 import {
   BookingEngineError,
@@ -64,6 +68,14 @@ export interface BookEntityRequest {
 
   /** Vertical-specific parameters passed to the adapter. */
   parameters?: Record<string, unknown>
+
+  /**
+   * Caller-supplied idempotency key. When set, a duplicate
+   * `bookEntity` call within the snapshot table's lifetime returns
+   * the prior booking instead of creating a new one. Length 8–128.
+   * Per booking-journey-architecture §12.6.
+   */
+  idempotencyKey?: string
 
   adapterContext: SourceAdapterContext
 
@@ -138,6 +150,28 @@ export async function bookEntity(
   deps: BookEntityDeps,
   request: BookEntityRequest,
 ): Promise<BookEntityResult> {
+  // Idempotency check — when the caller supplies a key, look for a
+  // prior snapshot with the same key and short-circuit. Snapshot rows
+  // outlive quotes (audit), so the lookup works even if the quote
+  // has been consumed or expired.
+  if (request.idempotencyKey) {
+    const prior = await loadSnapshotByIdempotencyKey(db, request.idempotencyKey)
+    if (prior) {
+      return {
+        bookingId: prior.booking_id,
+        orderRef: prior.source_ref ?? prior.id,
+        // Status comes from the prior commit's payload; default to
+        // "held" since we don't persist the original status column.
+        // Callers that need the precise status should re-read the
+        // booking row.
+        status: "held",
+        snapshotId: prior.id,
+        pricing: snapshotToPricing(prior),
+        upstreamPayload: undefined,
+      }
+    }
+  }
+
   const quote = await loadQuote(db, request.quoteId)
   assertQuoteUsable(quote)
 
@@ -184,6 +218,7 @@ export async function bookEntity(
       sourceRef: commitResult.orderRef || quote.source_ref || undefined,
       frozenPayload: ownedFrozenPayload,
       pricingBasis: finalPricing,
+      idempotencyKey: request.idempotencyKey,
     })
     await markQuoteConsumed(db, quote.id, bookingId)
 
@@ -275,6 +310,7 @@ export async function bookEntity(
     sourceRef: reserveResult.upstream_ref || quote.source_ref || undefined,
     frozenPayload,
     pricingBasis: pricing,
+    idempotencyKey: request.idempotencyKey,
   }
 
   const snapshot = await captureSnapshot(db, snapshotInput)
@@ -291,6 +327,35 @@ export async function bookEntity(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+async function loadSnapshotByIdempotencyKey(
+  db: AnyDrizzleDb,
+  idempotencyKey: string,
+): Promise<SelectBookingCatalogSnapshot | undefined> {
+  const rows = (await db
+    .select()
+    .from(bookingCatalogSnapshotTable)
+    .where(eq(bookingCatalogSnapshotTable.idempotency_key, idempotencyKey))
+    .limit(1)) as SelectBookingCatalogSnapshot[]
+  return rows[0]
+}
+
+function snapshotToPricing(snapshot: SelectBookingCatalogSnapshot): PricingBasis | undefined {
+  if (snapshot.pricing_base_amount == null || !snapshot.pricing_currency) return undefined
+  const base =
+    typeof snapshot.pricing_base_amount === "string"
+      ? Number.parseFloat(snapshot.pricing_base_amount)
+      : Number(snapshot.pricing_base_amount)
+  if (!Number.isFinite(base)) return undefined
+  return {
+    base_amount: base,
+    taxes: numericOrZero(snapshot.pricing_taxes),
+    fees: numericOrZero(snapshot.pricing_fees),
+    surcharges: numericOrZero(snapshot.pricing_surcharges),
+    currency: snapshot.pricing_currency,
+    breakdown: snapshot.pricing_breakdown ?? undefined,
+  }
+}
 
 async function loadQuote(db: AnyDrizzleDb, quoteId: string): Promise<SelectCatalogQuote> {
   const rows = (await db

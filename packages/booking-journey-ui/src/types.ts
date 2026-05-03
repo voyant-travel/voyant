@@ -40,11 +40,14 @@ export interface JourneySurface {
 }
 
 export interface LeadContactPickerProps {
-  /** Apply a picked contact to the draft's billing fields. */
+  /** Apply a picked contact to the draft's billing fields. Email is
+   *  optional because CRM-backed people may not have one stored —
+   *  the billing form will surface it as empty for the operator to
+   *  fill in. */
   apply: (contact: {
     firstName: string
     lastName: string
-    email: string
+    email?: string
     phone?: string
     personId?: string
   }) => void
