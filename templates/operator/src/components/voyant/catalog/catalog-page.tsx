@@ -20,7 +20,11 @@ export function CatalogPage() {
   const navigate = useNavigate()
   const search = Route.useSearch()
   const routeNavigate = Route.useNavigate()
-  const suppliersQuery = useSuppliers({ limit: 200 })
+  // `supplierListQuerySchema` caps `limit` at 100. For deployments with
+  // more suppliers than that, the Supplier facet would need a paginated
+  // lookup endpoint rather than an in-memory map — flag for follow-up
+  // when a real operator hits the cap.
+  const suppliersQuery = useSuppliers({ limit: 100 })
   const supplierMap = useMemo(() => {
     const m = new Map<string, string>()
     for (const s of suppliersQuery.data?.data ?? []) m.set(s.id, s.name)
