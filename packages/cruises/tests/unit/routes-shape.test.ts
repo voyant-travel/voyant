@@ -27,19 +27,23 @@ const seedSailing: ExternalSailing = {
   salesStatus: "open",
 }
 
-describe("admin routes — external key dispatch (no adapter registered)", () => {
+describe("admin routes — external key dispatch (no catalog registry configured)", () => {
+  // Per the catalog-sourced-content migration, the /:key external
+  // branch dispatches through getCruiseContent — which needs the
+  // catalog SourceAdapterRegistry set on c.var. Without it, the route
+  // returns 503 with a clear "configure the registry" message.
   const app = mountTestApp(cruiseAdminRoutes, { db: undefined })
 
-  it("returns 501 + adapter_not_registered on GET /:key when no adapter exists", async () => {
+  it("returns 503 + registry_not_configured on GET /:key when no registry is set", async () => {
     const res = await app.request("/voyant-connect:cnx_abc")
-    expect(res.status).toBe(501)
+    expect(res.status).toBe(503)
     const body = (await res.json()) as { error: string }
-    expect(body.error).toBe("adapter_not_registered")
+    expect(body.error).toBe("registry_not_configured")
   })
 
-  it("returns 501 on POST /:key/refresh when no adapter exists", async () => {
+  it("returns 503 on POST /:key/refresh when no registry is set", async () => {
     const res = await app.request("/voyant-connect:cnx_abc/refresh", { method: "POST" })
-    expect(res.status).toBe(501)
+    expect(res.status).toBe(503)
   })
 })
 
@@ -111,30 +115,14 @@ describe("admin routes — invalid keys + local detach guards", () => {
 })
 
 describe("admin routes — external dispatch via registered adapter", () => {
-  it("GET /:key returns the external cruise when adapter is registered", async () => {
-    const adapter = new MockCruiseAdapter({ name: "voyant-connect" })
-    adapter.addCruise(seedCruise, [seedSailing])
-    registerCruiseAdapter(adapter)
-    const app = mountTestApp(cruiseAdminRoutes, { db: undefined })
-
-    const res = await app.request("/voyant-connect:ext-cru-1")
-    expect(res.status).toBe(200)
-    const body = (await res.json()) as {
-      data: { source: string; sourceProvider: string; cruise: { name: string } }
-    }
-    expect(body.data.source).toBe("external")
-    expect(body.data.sourceProvider).toBe("voyant-connect")
-    expect(body.data.cruise.name).toBe("Norwegian Fjords")
-  })
-
-  it("GET /:key returns 404 when the adapter has no matching cruise", async () => {
-    registerCruiseAdapter(new MockCruiseAdapter({ name: "voyant-connect" }))
-    const app = mountTestApp(cruiseAdminRoutes, { db: undefined })
-
-    const res = await app.request("/voyant-connect:not-real")
-    expect(res.status).toBe(404)
-  })
-
+  // Note: GET /:key (cruise detail) and POST /:key/refresh now
+  // dispatch through getCruiseContent (catalog content service), which
+  // requires both a SourceAdapterRegistry on c.var and a sourced-entry
+  // row in the DB. The "happy-path" adapter-dispatch tests for those
+  // paths live in routes-content.test.ts (which exercises the
+  // identical getCruiseContent logic with a mocked module). Per-key
+  // sailings + ships routes below remain on the cruise vertical's own
+  // adapter registry path.
   it("GET /:key/sailings returns the external sailings", async () => {
     const adapter = new MockCruiseAdapter({ name: "voyant-connect" })
     adapter.addCruise(seedCruise, [seedSailing])
@@ -190,18 +178,11 @@ describe("admin routes — external dispatch via registered adapter", () => {
     expect(body.data.itinerary).toHaveLength(1)
   })
 
-  it("POST /:key/refresh re-fetches and returns timestamped data", async () => {
-    const adapter = new MockCruiseAdapter({ name: "voyant-connect" })
-    adapter.addCruise(seedCruise)
-    registerCruiseAdapter(adapter)
-    const app = mountTestApp(cruiseAdminRoutes, { db: undefined })
-
-    const res = await app.request("/voyant-connect:ext-cru-1/refresh", { method: "POST" })
-    expect(res.status).toBe(200)
-    const body = (await res.json()) as { data: { refreshedAt: string; cruise: { name: string } } }
-    expect(body.data.refreshedAt).toBeDefined()
-    expect(body.data.cruise.name).toBe("Norwegian Fjords")
-  })
+  // POST /:key/refresh happy-path coverage moves to routes-content
+  // tests once the SWR-aware refresh path lives there. The route's
+  // contract (registry required, dispatch via getCruiseContent +
+  // invalidateCruiseContentOnDrift) is identical to GET /:key external
+  // — see the "registry not configured" tests above for the boundary.
 
   it("POST /sailings/:key/quote composes a quote from upstream pricing", async () => {
     const adapter = new MockCruiseAdapter({ name: "voyant-connect" })
