@@ -22,6 +22,7 @@
     "./services/snapshot": "./src/services/snapshot-service.ts",
     "./services/indexer": "./src/services/indexer-service.ts",
     "./services/sourced-entry": "./src/services/sourced-entry-service.ts",
+    "./services/content": "./src/services/content-service.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
     "./booking-engine/schema": "./src/booking-engine/schema.ts"
   },
@@ -129,6 +130,11 @@
         "types": "./dist/services/sourced-entry-service.d.ts",
         "import": "./dist/services/sourced-entry-service.js",
         "default": "./dist/services/sourced-entry-service.js"
+      },
+      "./services/content": {
+        "types": "./dist/services/content-service.d.ts",
+        "import": "./dist/services/content-service.js",
+        "default": "./dist/services/content-service.js"
       },
       "./booking-engine": {
         "types": "./dist/booking-engine/index.d.ts",

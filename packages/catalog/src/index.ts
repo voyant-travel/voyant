@@ -120,6 +120,22 @@ export {
   type RerankParameters,
   rerank,
 } from "./search/rerank.js"
+// Content-service primitives (sourced-content §3.4 / §3.5).
+export {
+  applyJsonPointerOverlay,
+  type BuiltDriftPredicate,
+  buildDriftInvalidationPredicate,
+  type ContentLocaleMatchKind,
+  type ContentLocaleResolution,
+  type ContentOverlay,
+  isStale,
+  JsonPointerError,
+  type MergeOverlaysOptions,
+  mergeOverlaysIntoContent,
+  parseJsonPointer,
+  pickBestCachedLocale,
+  withContentRefreshLock,
+} from "./services/content-service.js"
 export {
   buildIndexerDocument,
   createIndexerService,
