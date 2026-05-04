@@ -207,21 +207,32 @@ export async function getProductContent(
     scope.preferredLocales,
   )
 
-  if (best && !isStale(best.candidate)) {
+  const shouldRefreshLegacyAvailability = best
+    ? hasLegacyDepartureAvailabilityGap(best.candidate)
+    : false
+
+  if (best && !isStale(best.candidate) && !shouldRefreshLegacyAvailability) {
     return finalizeFromCache(db, entityId, best, "sourced-cache", false, options)
   }
 
-  if (best && isStale(best.candidate)) {
-    // SWR — return stale immediately, schedule a fire-and-forget
-    // refresh. Concurrent stale reads dedupe via the advisory lock.
+  if (best && (isStale(best.candidate) || shouldRefreshLegacyAvailability)) {
+    // SWR for ordinary stale reads. Legacy demo content without
+    // departure capacity is refreshed synchronously so operator
+    // availability surfaces do not show effectively-unlimited slots.
     if (adapter?.getContent) {
-      void scheduleRefresh(db, adapter, adapterCtx, {
+      const refreshRequest = {
         entity_module: "products",
         entity_id: entityId,
         locale: scope.preferredLocales[0] ?? best.candidate.locale,
         market,
         currency: scope.currency,
-      })
+      }
+      if (shouldRefreshLegacyAvailability) {
+        const fresh = await fetchFreshContent(db, adapter, adapterCtx, refreshRequest, options)
+        if (fresh) return finalizeFresh(db, entityId, fresh, scope, options)
+      } else {
+        void scheduleRefresh(db, adapter, adapterCtx, refreshRequest)
+      }
     }
     return finalizeFromCache(db, entityId, best, "sourced-cache", true, options)
   }
@@ -293,6 +304,14 @@ async function fetchCacheCandidates(
       ),
     )
   return rows
+}
+
+function hasLegacyDepartureAvailabilityGap(row: SelectProductsSourcedContent): boolean {
+  const validation = validateProductContent(row.payload)
+  if (!validation.valid) return false
+  return validation.content.departures.some(
+    (departure) => departure.capacity == null && departure.remaining == null,
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import {
   useBookingGroup,
   useBookingGroupForBooking,
   useBookingGroupMemberMutation,
+  useBookingItems,
   useBookingPrimaryProduct,
 } from "@voyantjs/bookings-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
@@ -27,12 +28,23 @@ export interface BookingGroupSectionProps {
    * to override.
    */
   optionUnitId?: string | null
+  /**
+   * When true (default), the section hides itself when the booking
+   * has no `accommodation` items AND no existing group — shared-room
+   * pairing only makes sense for bookings that include a room. Tours,
+   * ground-transfer, and inquiry bookings see no Shared-Room card.
+   *
+   * Set to `false` to always render the section (e.g. legacy
+   * dashboards that display it for every booking regardless).
+   */
+  hideWithoutAccommodation?: boolean
 }
 
 export function BookingGroupSection({
   bookingId,
   productId,
   optionUnitId,
+  hideWithoutAccommodation = true,
 }: BookingGroupSectionProps) {
   const [linkDialogOpen, setLinkDialogOpen] = React.useState(false)
   const messages = useBookingsUiMessagesOrDefault()
@@ -45,14 +57,29 @@ export function BookingGroupSection({
   const effectiveOptionUnitId =
     optionUnitId === undefined ? autoResolved.optionUnitId : optionUnitId
 
+  // Fetch items to detect whether the booking has accommodation —
+  // shared-room pairing is meaningful only for room-style products.
+  // The `useBookingItems` query is already in cache from
+  // `useBookingPrimaryProduct` above, so this is a free read.
+  const { data: itemsData } = useBookingItems(bookingId)
+  const items = itemsData?.data ?? []
+  const hasAccommodationItem = items.some((i) => i.itemType === "accommodation")
+
   const { data: groupForBookingData } = useBookingGroupForBooking(bookingId)
   const group = groupForBookingData?.data ?? null
   const groupId = group?.id ?? null
 
   const { data: groupDetail } = useBookingGroup(groupId, { enabled: Boolean(groupId) })
   const members = groupDetail?.data?.members ?? []
-
   const { remove: removeMember } = useBookingGroupMemberMutation()
+
+  // Hide the section entirely when there's nothing to render or
+  // pair: no group exists yet AND the booking has no accommodation
+  // line item. Operators on tour-only bookings shouldn't see a card
+  // they can't usefully act on.
+  if (hideWithoutAccommodation && !group && !hasAccommodationItem) {
+    return null
+  }
 
   const handleRemove = async () => {
     if (!groupId) return

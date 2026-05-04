@@ -19,7 +19,6 @@
    workspace packages — auto-detection only scans this template's own src/.
    Without these, classes like `min-w-[320px]` or `basis-72` declared inside
    a -ui package are stripped from the bundle. */
-@source "../../../packages/booking-journey-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/bookings-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/catalog-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/crm-ui/src/**/*.{ts,tsx}";

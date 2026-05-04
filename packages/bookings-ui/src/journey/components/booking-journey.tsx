@@ -237,8 +237,8 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const contractConfig = props.contract
   const contractVariables = useMemo(() => {
     if (!contractConfig) return {}
-    return contractConfig.resolveVariables(draft)
-  }, [contractConfig, draft])
+    return contractConfig.resolveVariables({ draft, pricing: quote.data?.pricing ?? null })
+  }, [contractConfig, draft, quote.data?.pricing])
 
   const commitDraft = async () => {
     if (!quote.data?.quoteId) return

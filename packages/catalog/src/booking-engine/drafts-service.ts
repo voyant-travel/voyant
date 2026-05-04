@@ -56,9 +56,29 @@ export async function createBookingDraft(
     expires_at: expiresAt,
   }
 
+  // Upsert (not just insert) — the storefront fires multiple PUTs to
+  // the same draft id in quick succession (step transition + live
+  // re-quote), and the route's find-or-create flow can race two
+  // concurrent calls into colliding INSERTs. Rolling the create + on-
+  // conflict update into a single statement makes the route
+  // idempotent regardless of ordering.
   const [row] = (await db
     .insert(bookingDraftsTable)
     .values(values)
+    .onConflictDoUpdate({
+      target: bookingDraftsTable.id,
+      set: {
+        // Refresh the mutable journey state — we DON'T overwrite
+        // `id`, `created_at`, `created_by`, or the entity pointers
+        // on conflict (those are immutable identity).
+        draft_payload: values.draft_payload,
+        current_step: values.current_step,
+        current_quote_id: values.current_quote_id,
+        hold_expires_at: values.hold_expires_at,
+        updated_at: now,
+        expires_at: expiresAt,
+      },
+    })
     .returning()) as SelectBookingDraft[]
   if (!row) throw new Error("createBookingDraft: insert returned no rows")
   return row

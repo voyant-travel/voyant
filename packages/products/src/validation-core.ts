@@ -10,6 +10,19 @@ import {
   z,
 } from "./validation-shared.js"
 
+const productDepositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+const productCustomerPaymentPolicySchema = z.object({
+  deposit: productDepositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
 const productCoreSchema = z.object({
   name: z.string().min(1).max(255),
   status: productStatusSchema.default("draft"),
@@ -27,6 +40,7 @@ const productCoreSchema = z.object({
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
   pax: z.number().int().positive().optional().nullable(),
+  customerPaymentPolicy: productCustomerPaymentPolicySchema.optional().nullable(),
   tags: z.array(z.string()).default([]),
 })
 

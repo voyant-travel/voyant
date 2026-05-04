@@ -494,8 +494,8 @@ Per Rule 4 (§overview), every piece of the journey except the wired-up route co
 |---------|---------|----------------|
 | Engine endpoints + types (`POST /quote`, `POST /book`, `BookingDraftShape`, `PricingBreakdown`) | `@voyantjs/catalog/booking-engine` | Existing — extend |
 | React hooks (`useBookingDraft`, `useBookingQuote`, `useBookingCommit`, `useBookingDraftShape`) | `@voyantjs/catalog-react/booking-engine` *(new sub-path)* | New |
-| Wizard shell (`<BookingJourney />`, step navigation, sticky footer, draft persistence) | `@voyantjs/booking-journey-ui` *(new package)* | **New** — the missing piece. Modeled on `@voyantjs/flights-ui`'s `FlightBookingShell`. |
-| Step section components (Configure, Billing, Travelers, Accommodation, Add-ons, Payment, Review) | `@voyantjs/booking-journey-ui` | New, with renderers per sub-step `kind` |
+| Wizard shell (`<BookingJourney />`, step navigation, sticky footer, draft persistence) | `@voyantjs/bookings-ui/journey` | **New** — the missing piece. Modeled on `@voyantjs/flights-ui`'s `FlightBookingShell`. |
+| Step section components (Configure, Billing, Travelers, Accommodation, Add-ons, Payment, Review) | `@voyantjs/bookings-ui/journey` | New, with renderers per sub-step `kind` |
 | Reusable form sections that pre-date the journey | `@voyantjs/bookings-ui` (PassengersSection, PaymentScheduleSection, RoomsStepperSection, SharedRoomSection, VoucherPickerSection, PriceBreakdownSection) | Existing — widen as §8 table notes |
 | Owned-handler interface + registry (`OwnedBookingHandler`, `OwnedBookingHandlerRegistry`) | `@voyantjs/catalog/booking-engine` | New (interface only — no vertical imports) |
 | Per-vertical owned handlers (e.g. `createProductsBookingHandler`) | each vertical's `<vertical>/src/booking-engine/handler.ts` | New per vertical, lands incrementally per phase |
@@ -675,7 +675,7 @@ The full channel-push integration work (real adapters per channel) parallels Pha
 - **Out of scope for Phase A:** taxes, addons, hospitality stays, encrypted travel details, draft persistence (still uses `catalog_quotes` with the ephemeral 10-min TTL), idempotency keys. Each lands in its own follow-up phase. This is the smallest credible "doesn't 503 anymore" milestone.
 
 **Phase B — The shareable wizard, both surfaces** (7-10 days):
-- Build `@voyantjs/booking-journey-ui` (new package) with `<BookingJourney />` shell and all seven step section components. Slots typed as render-props (§8.1).
+- Build `@voyantjs/bookings-ui/journey` with `<BookingJourney />` shell and all seven step section components. Slots typed as render-props (§8.1).
 - Build `@voyantjs/catalog-react/booking-engine` hooks (`useBookingDraft`, `useBookingQuote`, `useBookingCommit`, `useBookingDraftShape`) — TanStack Query under the hood, identical surface for operator and storefront.
 - Wire the existing `bookings-ui` sections (PassengersSection widened, PaymentScheduleSection, RoomsStepperSection, etc.) into the journey shell.
 - Mount the API surface on **both** `/v1/admin/catalog/{quote,book,drafts/:id}` and `/v1/public/catalog/{quote,book,drafts/:id}` — same engine logic behind both, audience guard differs. Public surface is auth-less or session-token-bound (per the storefront's auth posture); admin surface is staff-actor as today.

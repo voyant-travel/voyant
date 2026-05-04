@@ -1233,6 +1233,12 @@ function formatMoney(cents: number, currency: string): string {
 
 function humanizeInvalidReason(reason: string): string {
   switch (reason) {
+    case "unavailable":
+      return "This product is currently unavailable."
+    case "departure_not_found":
+      return "This departure is no longer available. Choose another departure."
+    case "departure_unavailable":
+      return "This departure is sold out or closed. Choose another departure."
     case "no_sell_amount_configured":
       return "Pricing isn't configured for this item yet."
     case "product_not_found":

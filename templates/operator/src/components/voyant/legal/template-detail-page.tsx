@@ -19,11 +19,10 @@ import {
   CardTitle,
   ContractTemplateAuthoringHelp,
 } from "@voyantjs/ui/components"
-import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { legalQueryClient } from "./legal-query-client"
 import { TemplateDialog } from "./template-dialog"
-import { TemplateVersionDialog } from "./template-version-dialog"
 
 type EnsureQueryData = QueryClient["ensureQueryData"]
 
@@ -42,7 +41,6 @@ export function TemplateDetailPage({ id }: { id: string }) {
   const { remove } = useLegalContractTemplateMutation()
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
   const [editOpen, setEditOpen] = useState(false)
-  const [versionDialogOpen, setVersionDialogOpen] = useState(false)
   const variableGroups = useMemo(
     () =>
       variableCatalog.map((group) => ({
@@ -103,13 +101,9 @@ export function TemplateDetailPage({ id }: { id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+          <Button size="sm" onClick={() => setEditOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit
-          </Button>
-          <Button size="sm" onClick={() => setVersionDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Version
           </Button>
           <Button
             variant="destructive"
@@ -229,22 +223,17 @@ export function TemplateDetailPage({ id }: { id: string }) {
         template={template}
         onSuccess={() => {
           setEditOpen(false)
+          // Body edits auto-create a new version server-side, so we
+          // need to invalidate the versions query alongside the
+          // template/templates queries — the new version appears
+          // only after this refetch completes.
           void Promise.all([
             queryClient.invalidateQueries({ queryKey: legalQueryKeys.templates() }),
             queryClient.invalidateQueries({ queryKey: legalQueryKeys.template(template.id) }),
+            queryClient.invalidateQueries({
+              queryKey: legalQueryKeys.templateVersions(template.id),
+            }),
           ])
-        }}
-      />
-
-      <TemplateVersionDialog
-        open={versionDialogOpen}
-        onOpenChange={setVersionDialogOpen}
-        templateId={template.id}
-        onSuccess={() => {
-          setVersionDialogOpen(false)
-          void queryClient.invalidateQueries({
-            queryKey: legalQueryKeys.templateVersions(template.id),
-          })
         }}
       />
     </div>
@@ -254,7 +243,7 @@ export function TemplateDetailPage({ id }: { id: string }) {
 function TemplateBodyPreview({ body }: { body: string }) {
   if (!body.trim().startsWith("<")) {
     return (
-      <div className="prose prose-sm max-w-none rounded-md border bg-muted/30 p-4">
+      <div className="max-h-[70vh] overflow-auto rounded-md border bg-muted/30 p-4">
         <pre className="whitespace-pre-wrap text-sm">{body}</pre>
       </div>
     )
@@ -262,7 +251,7 @@ function TemplateBodyPreview({ body }: { body: string }) {
 
   return (
     <div
-      className="prose prose-sm max-w-none rounded-md border bg-muted/30 p-4 [&_.variable-node]:inline-flex [&_.variable-node]:items-center [&_.variable-node]:rounded-md [&_.variable-node]:border [&_.variable-node]:border-emerald-500/30 [&_.variable-node]:bg-emerald-500/10 [&_.variable-node]:px-1.5 [&_.variable-node]:py-0.5 [&_.variable-node]:font-mono [&_.variable-node]:text-xs [&_.variable-node]:text-emerald-200"
+      className="prose prose-sm max-w-none overflow-auto rounded-md border bg-muted/30 p-4 [&_.variable-node]:inline-flex [&_.variable-node]:items-center [&_.variable-node]:rounded-md [&_.variable-node]:border [&_.variable-node]:border-emerald-500/30 [&_.variable-node]:bg-emerald-500/10 [&_.variable-node]:px-1.5 [&_.variable-node]:py-0.5 [&_.variable-node]:font-mono [&_.variable-node]:text-xs [&_.variable-node]:text-emerald-200"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: Template body is trusted admin-authored HTML rendered for preview.
       dangerouslySetInnerHTML={{ __html: body }}
     />

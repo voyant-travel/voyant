@@ -82,7 +82,7 @@ need to write".
 | Netopia plugin | `packages/plugins/netopia/` | `startPaymentSession`, finance routes, webhook callback |
 | EventBus | `packages/core/src/events.ts` | `emit / subscribe`, fire-and-forget |
 | Workflows | `packages/core/src/workflows.ts` + `apps/workflows-tenant-worker` | `createWorkflow`, `step`, async via JobRunner |
-| Booking journey UI | `packages/booking-journey-ui/` | `<BookingJourney />`, descriptor-driven Review step, render-prop slots |
+| Booking journey UI | `packages/bookings-ui/src/journey/` | `<BookingJourney />`, descriptor-driven Review step, render-prop slots |
 
 ## Gaps to close
 
@@ -180,14 +180,14 @@ unchanged).
    /v1/{admin,public}/legal/contracts/preview`. Accepts
    `{ templateSlug | templateId, variables }`, returns rendered HTML.
    No persistence.
-2. `packages/booking-journey-ui/src/components/contract-preview-dialog.tsx`
+2. `packages/bookings-ui/src/journey/components/contract-preview-dialog.tsx`
    (new) — full-screen `<Dialog>` with iframe/srcdoc rendering the
    HTML, two `<Checkbox>` controls (terms + marketing), Accept
    disabled until both are checked. Decline closes the dialog.
-3. `packages/booking-journey-ui/src/components/journey-steps.tsx` —
+3. `packages/bookings-ui/src/journey/components/journey-steps.tsx` —
    ReviewStep gets a "Continue to checkout" button that opens the
    dialog instead of calling commit directly.
-4. `packages/booking-journey-ui/src/types.ts` — extend
+4. `packages/bookings-ui/src/journey/types.ts` — extend
    `BookingJourneyProps` with `contractTemplateSlug?: string` and
    `resolveContractVariables?: (draft) => Record<string, unknown>`.
    The storefront wrapper supplies a default that maps the draft to

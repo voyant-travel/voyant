@@ -405,6 +405,7 @@ export const bookingsUiEn = {
     empty: "No items yet.",
     values: {
       totalUnavailable: "-",
+      costUnavailable: "-",
       serviceDateUnavailable: "-",
     },
     columns: {
@@ -413,7 +414,16 @@ export const bookingsUiEn = {
       status: "Status",
       quantity: "Qty",
       total: "Total",
+      cost: "Cost",
       serviceDate: "Service date",
+    },
+    detail: {
+      description: "Description",
+      dates: "Dates",
+      cost: "Cost",
+      catalogSource: "Catalog source",
+      productLink: "Open product",
+      noDescription: "No description captured for this item.",
     },
     actions: {
       deleteConfirm: "Delete this item?",

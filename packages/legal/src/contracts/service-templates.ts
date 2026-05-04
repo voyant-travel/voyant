@@ -104,13 +104,73 @@ export const contractTemplatesService = {
     const [row] = await db.insert(contractTemplates).values(data).returning()
     return row ?? null
   },
+  /**
+   * Update a contract template. When `data.body` is supplied AND differs
+   * from the row's current body, this also auto-creates a new
+   * `contract_template_versions` row and points `currentVersionId` at
+   * it — so every body edit produces a versioned record without a
+   * separate "Add Version" action.
+   *
+   * Edits that don't touch the body (rename, scope/language change,
+   * active toggle, description) DON'T create a version — those are
+   * metadata-only and don't affect rendering.
+   *
+   * Wraps both writes in a single transaction so a failure halfway
+   * through can't leave the parent's `body` and `currentVersionId`
+   * out of sync with the versions table.
+   */
   async updateTemplate(db: PostgresJsDatabase, id: string, data: UpdateContractTemplateInput) {
-    const [row] = await db
-      .update(contractTemplates)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(contractTemplates.id, id))
-      .returning()
-    return row ?? null
+    return db.transaction(async (tx) => {
+      // Read the current row first so we can detect whether the body
+      // actually changed. Without this we'd version-bump on every
+      // save even when the operator only touched the description.
+      const [existing] = await tx
+        .select()
+        .from(contractTemplates)
+        .where(eq(contractTemplates.id, id))
+        .limit(1)
+      if (!existing) return null
+
+      const changedBody =
+        typeof data.body === "string" && data.body !== existing.body ? data.body : null
+
+      let nextCurrentVersionId = existing.currentVersionId
+      if (changedBody !== null) {
+        const [maxRow] = await tx
+          .select({ max: sql<number>`coalesce(max(${contractTemplateVersions.version}), 0)::int` })
+          .from(contractTemplateVersions)
+          .where(eq(contractTemplateVersions.templateId, id))
+        const nextVersion = (maxRow?.max ?? 0) + 1
+        const [version] = await tx
+          .insert(contractTemplateVersions)
+          .values({
+            templateId: id,
+            version: nextVersion,
+            body: changedBody,
+            variableSchema: null,
+            // No explicit changelog supplied — auto-stamp with the
+            // version number so the versions table still tells a
+            // coherent story without forcing the operator to type one.
+            changelog: `Auto-versioned from edit (v${nextVersion})`,
+            createdBy: null,
+          })
+          .returning()
+        if (version) {
+          nextCurrentVersionId = version.id
+        }
+      }
+
+      const [row] = await tx
+        .update(contractTemplates)
+        .set({
+          ...data,
+          ...(changedBody !== null ? { currentVersionId: nextCurrentVersionId } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(contractTemplates.id, id))
+        .returning()
+      return row ?? null
+    })
   },
   async deleteTemplate(db: PostgresJsDatabase, id: string) {
     const [row] = await db

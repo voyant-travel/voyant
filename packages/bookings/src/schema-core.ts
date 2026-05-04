@@ -54,6 +54,19 @@ export const bookings = pgTable(
     endDate: date("end_date"),
     pax: integer("pax"),
     internalNotes: text("internal_notes"),
+    /**
+     * Booking-level customer payment policy override. When set, this
+     * booking's payment schedule uses these terms instead of the
+     * cascade default. Wins over listing / category / supplier /
+     * operator default. Shape mirrors `PaymentPolicy` from
+     * `@voyantjs/finance`.
+     *
+     * `null` means "use the resolved cascade policy" — most bookings
+     * never set this; it's reserved for ops adjustments where a
+     * specific deal warrants different terms (goodwill, channel-
+     * specific deal, etc.).
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
     holdExpiresAt: timestamp("hold_expires_at", { withTimezone: true }),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     expiredAt: timestamp("expired_at", { withTimezone: true }),

@@ -51,6 +51,15 @@ export const products = pgTable(
      * market-level default. Per booking-journey-architecture §9.
      */
     taxClassId: text("tax_class_id"),
+    /**
+     * Per-listing customer payment policy override. Wins over the
+     * product's category and supplier policies in the cascade. Shape
+     * mirrors `PaymentPolicy` from `@voyantjs/finance`.
+     *
+     * `null` means "inherit from category / supplier / operator
+     * default" — most products leave this empty.
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
     tags: jsonb("tags").$type<string[]>().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

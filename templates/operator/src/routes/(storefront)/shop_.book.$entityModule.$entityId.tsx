@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useParams, useSearch } from "@tanstack/react-router"
-import type { BookingEntitySummary } from "@voyantjs/booking-journey-ui"
+import type { BookingEntitySummary } from "@voyantjs/bookings-ui/journey"
 import type { CruiseContent } from "@voyantjs/cruises/content-shape"
 import type { HospitalityContent } from "@voyantjs/hospitality/content-shape"
 import type { ProductContent } from "@voyantjs/products/content-shape"
@@ -160,6 +160,9 @@ function useEntitySummary(
         vertical: "products",
         whenLabel: dep ? formatDate(dep.starts_at) : undefined,
         locationLabel: c.product.departure_city ?? c.product.country ?? undefined,
+        startDate: dep?.starts_at ?? undefined,
+        endDate: dep?.ends_at ?? undefined,
+        destination: c.product.country ?? c.product.departure_city ?? undefined,
       }
     }
     if (entityModule === "cruises") {
@@ -183,6 +186,9 @@ function useEntitySummary(
         vertical: "cruises",
         whenLabel: sailing ? formatDate(sailing.start_date) : undefined,
         locationLabel: route ?? undefined,
+        startDate: sailing?.start_date ?? undefined,
+        endDate: sailing?.end_date ?? undefined,
+        destination: route ?? undefined,
       }
     }
     if (entityModule === "hospitality") {
@@ -197,6 +203,9 @@ function useEntitySummary(
           search.checkIn && search.checkOut
             ? `${formatDate(search.checkIn)} → ${formatDate(search.checkOut)}`
             : undefined,
+        startDate: search.checkIn ?? undefined,
+        endDate: search.checkOut ?? undefined,
+        destination: c.hotel.city ?? c.hotel.country ?? undefined,
       }
     }
     return undefined

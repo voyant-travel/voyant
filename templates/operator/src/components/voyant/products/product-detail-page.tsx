@@ -16,6 +16,7 @@ import {
   ProductSchedulesSection,
 } from "./product-detail-sections"
 import { ProductDetailSkeleton } from "./product-detail-skeleton"
+import { ProductPaymentPolicySection } from "./product-payment-policy-section"
 import { ScheduleDialog } from "./product-schedule-dialog"
 import { ProductSourcedContentSection } from "./product-sourced-content-section"
 import { useProductDetailData } from "./use-product-detail-data"
@@ -108,6 +109,8 @@ export function ProductDetailPage({ id }: { id: string }) {
           <ProductDetailItinerarySection productId={id} />
 
           <ProductOptionsSection productId={id} />
+
+          <ProductPaymentPolicySection product={product} onSuccess={invalidateProduct} />
         </div>
 
         {/* ── Right column (sidebar) ── */}

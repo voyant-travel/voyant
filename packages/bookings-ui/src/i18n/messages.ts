@@ -377,6 +377,7 @@ export type BookingsUiMessages = {
     empty: string
     values: {
       totalUnavailable: string
+      costUnavailable: string
       serviceDateUnavailable: string
     }
     columns: {
@@ -385,7 +386,17 @@ export type BookingsUiMessages = {
       status: string
       quantity: string
       total: string
+      cost: string
       serviceDate: string
+    }
+    /** Labels for the per-item expanded panel (description / dates / etc). */
+    detail: {
+      description: string
+      dates: string
+      cost: string
+      catalogSource: string
+      productLink: string
+      noDescription: string
     }
     actions: {
       deleteConfirm: string
@@ -696,6 +707,7 @@ export type BookingsUiMessages = {
     title: string
     empty: string
     columns: {
+      /** Allocated invoice — shown as a secondary "For" link, not lead. */
       invoice: string
       method: string
       status: string

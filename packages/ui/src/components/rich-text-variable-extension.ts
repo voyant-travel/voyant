@@ -2,7 +2,12 @@ import type { Editor } from "@tiptap/core"
 import { InputRule, mergeAttributes, Node, PasteRule } from "@tiptap/core"
 
 const variableInputRegex = /(?:^|\s)(\{\{\s*([^}]+)\s*\}\})$/
-const variablePasteRegex = /(?:^|\s)(\{\{\s*([^}]+)\s*\}\})/g
+// Paste accepts `{{ ... }}` regardless of what precedes it. The
+// live-typing rule above keeps requiring whitespace so we don't gobble
+// braces mid-word, but pasted content commonly has the variable
+// tucked between punctuation (`Document ({{ customer.document.type }}):`,
+// `["{{ foo }}"]`, etc.) and we still want those tokenised.
+const variablePasteRegex = /\{\{\s*([^}]+?)\s*\}\}/g
 
 export const RichTextVariable = Node.create({
   name: "variable",
@@ -115,13 +120,12 @@ export const RichTextVariable = Node.create({
       new PasteRule({
         find: variablePasteRegex,
         handler: ({ state, range, match }) => {
-          if (!match[2]) return
+          if (!match[1]) return
 
-          const variableContent = match[2].trim()
-          const addedPosition = match[0].startsWith(" ") ? 1 : 0
+          const variableContent = match[1].trim()
 
           state.tr.replaceWith(
-            range.from + addedPosition,
+            range.from,
             range.to,
             this.type.create({
               content: variableContent,

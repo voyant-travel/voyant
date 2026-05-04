@@ -44,6 +44,7 @@ import { NotificationTemplateAuthoringHelp } from "./notification-template-autho
 import { NotificationTemplateDetailPage } from "./notification-template-detail-page"
 import { NotificationTemplatesPage } from "./notification-templates-page"
 import { OverviewMetric } from "./overview-metric"
+import { RadioGroup, RadioGroupItem } from "./radio-group"
 import { RichTextEditor } from "./rich-text-editor"
 import { ScrollArea, ScrollBar } from "./scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
@@ -241,6 +242,8 @@ export {
   NotificationTemplateDetailPage,
   NotificationTemplatesPage,
   OverviewMetric,
+  RadioGroup,
+  RadioGroupItem,
   RichTextEditor,
   ScrollArea,
   ScrollBar,

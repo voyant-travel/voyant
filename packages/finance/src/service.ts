@@ -966,6 +966,81 @@ export const financeService = {
     return row ?? null
   },
 
+  /**
+   * Persist a payment schedule that was already computed elsewhere
+   * (typically by `computePaymentSchedule()` from the policy primitive).
+   *
+   * Idempotency: when `replace: true` (the default), any existing
+   * pending/due schedule rows on the booking are cleared first so a
+   * re-fire of the same hook doesn't pile up duplicate rows. Set
+   * `replace: false` to insert alongside existing rows (e.g. when
+   * inserting a manually-added one-off installment).
+   *
+   * Skips silently when the booking row doesn't exist (returns
+   * `null`) or when there are no entries to persist.
+   */
+  async applyComputedPaymentSchedule(
+    db: PostgresJsDatabase,
+    bookingId: string,
+    entries: Array<{
+      // `"full"` is accepted from the policy primitive and stored as
+      // `"balance"` (the DB enum doesn't have a "full" variant).
+      scheduleType: "deposit" | "balance" | "installment" | "hold" | "other" | "full"
+      amountCents: number
+      currency: string
+      dueDate: string
+      notes?: string | null
+    }>,
+    options: { replace?: boolean } = {},
+  ) {
+    if (entries.length === 0) return []
+
+    const [booking] = await db
+      .select({ id: bookings.id })
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1)
+    if (!booking) return null
+
+    const replace = options.replace ?? true
+    if (replace) {
+      await db
+        .delete(bookingPaymentSchedules)
+        .where(
+          and(
+            eq(bookingPaymentSchedules.bookingId, bookingId),
+            or(
+              eq(bookingPaymentSchedules.status, "pending"),
+              eq(bookingPaymentSchedules.status, "due"),
+            ),
+          ),
+        )
+    }
+
+    const today = startOfUtcDay(new Date())
+    const rows = entries.map((entry) => {
+      const due = parseDateString(entry.dueDate) ?? today
+      // The `full` schedule kind from the policy primitive collapses
+      // to a `balance` row in the DB (the table only has
+      // deposit/installment/balance/hold/other) — semantically the
+      // single full-payment row IS the balance to settle.
+      const persistedType =
+        (entry.scheduleType as string) === "full" ? "balance" : entry.scheduleType
+      return {
+        bookingId,
+        bookingItemId: null,
+        scheduleType: persistedType as "deposit" | "balance" | "installment" | "hold" | "other",
+        status: (due <= today ? "due" : "pending") as "pending" | "due",
+        dueDate: entry.dueDate,
+        currency: entry.currency,
+        amountCents: Math.max(0, Math.round(entry.amountCents)),
+        notes: entry.notes ?? null,
+      }
+    })
+
+    return db.insert(bookingPaymentSchedules).values(rows).returning()
+  },
+
   async applyDefaultBookingPaymentPlan(
     db: PostgresJsDatabase,
     bookingId: string,
@@ -1695,6 +1770,13 @@ export const financeService = {
       return sum + (commission.amountCents ?? 0)
     }, 0)
 
+    // The `ck_invoices_base_currency_amounts` constraint requires
+    // that whenever ANY base_*_cents column is non-null, base_currency
+    // must be set too. Bookings without an FX-rate set leave
+    // baseCurrency null — propagate that NULL across every base_*
+    // field so the constraint stays satisfied.
+    const hasBaseCurrency = Boolean(booking.baseCurrency)
+
     return db.transaction(async (tx) => {
       const [invoice] = await tx
         .insert(invoices)
@@ -1708,15 +1790,15 @@ export const financeService = {
           baseCurrency: booking.baseCurrency,
           fxRateSetId: booking.fxRateSetId,
           subtotalCents,
-          baseSubtotalCents: booking.baseSellAmountCents,
+          baseSubtotalCents: hasBaseCurrency ? (booking.baseSellAmountCents ?? null) : null,
           taxCents,
           baseTaxCents: null,
           totalCents,
-          baseTotalCents: booking.baseSellAmountCents,
+          baseTotalCents: hasBaseCurrency ? (booking.baseSellAmountCents ?? null) : null,
           paidCents: 0,
-          basePaidCents: 0,
+          basePaidCents: hasBaseCurrency ? 0 : null,
           balanceDueCents: totalCents,
-          baseBalanceDueCents: booking.baseSellAmountCents,
+          baseBalanceDueCents: hasBaseCurrency ? (booking.baseSellAmountCents ?? null) : null,
           commissionAmountCents: commissionAmountCents > 0 ? commissionAmountCents : null,
           issueDate: data.issueDate,
           dueDate: data.dueDate,

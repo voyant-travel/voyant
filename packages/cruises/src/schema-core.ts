@@ -48,6 +48,13 @@ export const cruises = pgTable(
     earliestDepartureCached: date("earliest_departure_cached"),
     latestDepartureCached: date("latest_departure_cached"),
     externalRefs: jsonb("external_refs").$type<Record<string, string>>().default({}),
+    /**
+     * Cruise-level customer payment policy override. Lowest precedence
+     * inside the cruise vertical — overridden by per-sailing or per-
+     * cabin-category policies. Shape mirrors `PaymentPolicy` from
+     * `@voyantjs/finance`.
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -82,6 +89,12 @@ export const cruiseSailings = pgTable(
     isCharter: boolean("is_charter").notNull().default(false),
     salesStatus: sailingSalesStatusEnum("sales_status").notNull().default("open"),
     externalRefs: jsonb("external_refs").$type<Record<string, string>>().default({}),
+    /**
+     * Per-sailing customer payment policy override. Wins over the
+     * parent cruise's policy. Useful for high-season departures with
+     * stricter terms (gala sailings, holiday-week premiums, …).
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

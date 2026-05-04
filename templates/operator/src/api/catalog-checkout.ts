@@ -27,8 +27,13 @@
  */
 
 import { bookingsService, canTransitionBooking, transitionBooking } from "@voyantjs/bookings"
-import { bookings } from "@voyantjs/bookings/schema"
-import { runCheckoutFinalize } from "@voyantjs/catalog/booking-engine"
+import { bookingActivityLog, bookings } from "@voyantjs/bookings/schema"
+import {
+  type CheckoutFinalizeDeps,
+  type CheckoutFinalizeInput,
+  OWNED_SOURCE_KIND,
+  runCheckoutFinalize,
+} from "@voyantjs/catalog/booking-engine"
 import type { EventBus } from "@voyantjs/core"
 import {
   type CreateInvoiceFromBookingInput,
@@ -43,8 +48,12 @@ import {
   netopiaService,
   type ResolvedNetopiaRuntimeOptions,
 } from "@voyantjs/plugin-netopia"
-import { beginWorkflowRun } from "@voyantjs/workflow-runs"
-import { eq } from "drizzle-orm"
+import {
+  beginWorkflowRun,
+  type WorkflowRunnerRegistry,
+  type WorkflowRunRecorder,
+} from "@voyantjs/workflow-runs"
+import { and, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
@@ -98,6 +107,11 @@ interface StoredAcceptance {
   templateSlug: string
   acceptedAt: string
   acceptedMarketing: boolean
+  /** IP captured from request headers at acceptance time. Empty when
+   *  the upstream proxy didn't set any of the recognised headers. */
+  clientIp?: string
+  /** User-Agent header at acceptance time. */
+  userAgent?: string
   renderedHtmlLength: number
 }
 
@@ -128,31 +142,30 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
   }
   if (!booking) return c.json({ error: "booking_not_found" }, 404)
 
-  // Persist the contract acceptance against the booking so the
-  // audit trail keeps the rendered HTML alongside the booking
-  // number. Stored on `internalNotes` for now — Phase 6 promotes
-  // this to a real `contract_signatures` row once the legal
-  // auto-generate-contract subscriber materialises a contract on
-  // booking.confirmed.
+  // Pre-create a draft contract carrying the acceptance fingerprint
+  // in `metadata.acceptance`. The auto-generate-contract subscriber
+  // (fired by `booking.confirmed` after payment) detects this draft
+  // by booking_id, populates the rendered body + variables from the
+  // confirmed booking state, and issues + generates the PDF —
+  // allocating the contract number at issue time. The signature
+  // promotion path then reads `metadata.acceptance` straight off
+  // the contract row instead of relaying through internal_notes.
+  //
+  // Idempotency: re-entering /checkout/start (e.g. customer hits
+  // Back then resubmits) finds the existing draft and updates its
+  // metadata in place — no duplicate contract rows, no duplicate
+  // acceptance fingerprints.
   if (body.contractAcceptance) {
-    const acceptanceMarker = `__contract_acceptance__:${JSON.stringify({
-      templateId: body.contractAcceptance.templateId,
-      templateSlug: body.contractAcceptance.templateSlug,
-      acceptedAt: body.contractAcceptance.acceptedAt,
-      acceptedMarketing: body.contractAcceptance.acceptedMarketing,
-      // Truncate the rendered HTML so we don't blow up the notes
-      // column. The full rendered body lives on the contract once
-      // it's auto-generated.
-      renderedHtmlLength: body.contractAcceptance.renderedHtml.length,
-    })}`
-    await db
-      .update(bookings)
-      .set({
-        internalNotes:
-          (booking.internalNotes ?? "") + (booking.internalNotes ? "\n\n" : "") + acceptanceMarker,
-        updatedAt: new Date(),
-      })
-      .where(eq(bookings.id, booking.id))
+    try {
+      await persistAcceptanceDraftContract(db, c, booking, body.contractAcceptance)
+    } catch (err) {
+      // Acceptance recording is best-effort during checkout-start —
+      // the customer still needs to reach payment even if our
+      // legal-side pre-create stumbles. Surfacing as a 5xx here
+      // would block real bookings on a contract-template mis-config;
+      // we log and proceed so payment can land.
+      console.error("[catalog-checkout] persistAcceptanceDraftContract failed", err)
+    }
   }
 
   switch (body.paymentIntent) {
@@ -325,19 +338,21 @@ async function materializeBookingFromSnapshot(
     .where(eq(bookingDraftsTable.consumed_booking_id, bookingId))
     .limit(1)
   const draftPayload = (draftRow?.draft_payload ?? {}) as DraftPayload
+  const frozenPayload = (snapshot.frozen_payload ?? {}) as Record<string, unknown>
+  const bookingDates = extractBookingDates(
+    {
+      frozen_payload: frozenPayload,
+    },
+    draftPayload,
+  )
 
   const billingContact = draftPayload.billing?.contact
   const billingAddress = draftPayload.billing?.address
   const config = draftPayload.configure
   const pax = config?.pax
   const totalPax = pax ? (pax.adult ?? 0) + (pax.child ?? 0) + (pax.infant ?? 0) : null
-  const startDate =
-    typeof config?.dateRange?.checkIn === "string"
-      ? config.dateRange.checkIn
-      : typeof config?.departureDate === "string"
-        ? config.departureDate
-        : null
-  const endDate = typeof config?.dateRange?.checkOut === "string" ? config.dateRange.checkOut : null
+  const startDate = bookingDates.startDate
+  const endDate = bookingDates.endDate
 
   const bookingNumber = `BK-${bookingId.slice(-12).toUpperCase()}`
 
@@ -374,7 +389,27 @@ async function materializeBookingFromSnapshot(
   // re-entry (race or retry) because we only run this when the
   // bookings row was just inserted.
   if (inserted) {
-    await materializeChildren(db, inserted, snapshot, draftPayload)
+    await materializeChildren(
+      db,
+      inserted,
+      {
+        id: snapshot.id,
+        entity_module: snapshot.entity_module,
+        entity_id: snapshot.entity_id,
+        source_kind: snapshot.source_kind,
+        source_provider: snapshot.source_provider,
+        source_ref: snapshot.source_ref,
+        frozen_payload: (snapshot.frozen_payload ?? {}) as Record<string, unknown>,
+        pricing_base_amount:
+          snapshot.pricing_base_amount != null ? String(snapshot.pricing_base_amount) : null,
+        pricing_taxes: snapshot.pricing_taxes != null ? String(snapshot.pricing_taxes) : null,
+        pricing_fees: snapshot.pricing_fees != null ? String(snapshot.pricing_fees) : null,
+        pricing_surcharges:
+          snapshot.pricing_surcharges != null ? String(snapshot.pricing_surcharges) : null,
+        pricing_currency: snapshot.pricing_currency,
+      },
+      draftPayload,
+    )
   }
 
   if (inserted) return inserted
@@ -401,6 +436,7 @@ interface DraftPayload {
   }
   configure?: {
     pax?: { adult?: number; child?: number; infant?: number }
+    departureSlotId?: string
     departureDate?: string
     dateRange?: { checkIn?: string; checkOut?: string }
   }
@@ -417,13 +453,37 @@ interface DraftPayload {
   internalNotes?: string
 }
 
+/**
+ * Snapshot subset `materializeChildren` reads from. The catalog table
+ * has more columns (idempotency_key, captured_at, etc.), but children
+ * materialization only needs the parts that drive line items + supplier
+ * statuses.
+ */
+type MaterializationSnapshot = {
+  /** Snapshot id — stamped on each `booking_items.source_snapshot_id`. */
+  id?: string
+  entity_module: string
+  entity_id: string
+  source_kind: string
+  source_provider: string | null
+  source_ref: string | null
+  frozen_payload: Record<string, unknown> | null
+  pricing_base_amount: string | null
+  pricing_taxes: string | null
+  pricing_fees: string | null
+  pricing_surcharges: string | null
+  pricing_currency: string | null
+}
+
 async function materializeChildren(
   db: PostgresJsDatabase,
   booking: typeof bookings.$inferSelect,
-  snapshot: { entity_module: string; entity_id: string },
+  snapshot: MaterializationSnapshot,
   draftPayload: DraftPayload,
 ): Promise<void> {
-  const { bookingTravelers, bookingItems } = await import("@voyantjs/bookings/schema")
+  const { bookingTravelers, bookingItems, bookingSupplierStatuses } = await import(
+    "@voyantjs/bookings/schema"
+  )
 
   const travelers = draftPayload.travelers ?? []
   if (travelers.length > 0) {
@@ -448,26 +508,521 @@ async function materializeChildren(
   // empty. Real verticals (cruises with cabin lines, hospitality with
   // room lines) fan this out per their own conventions; this is the
   // generic fallback so sourced products show up in the UI.
+  //
+  // Resolve a real product title rather than the dumb fallback
+  // "Tour booking". For sourced products, the projection captured
+  // by `catalog_sourced_entries` carries the upstream name; for
+  // owned products, the local `products.title` is canonical.
+  const resolvedTitle = await resolveLineItemTitle(db, snapshot)
+  const itemDates = extractItemDates(snapshot, draftPayload, booking)
+  const itemDescription = extractItemDescription(snapshot)
+
+  // Item-level cost mirrors the booking-level cost we set later: when
+  // the upstream provides a net rate (Bokun-style net/gross split),
+  // use it; otherwise fall back to sell. Owned bookings skip cost on
+  // the item — the operator IS the supplier, no "cost" makes sense.
+  const sellAmountCents = booking.sellAmountCents ?? 0
+  const upstreamCostCents =
+    snapshot.source_kind !== OWNED_SOURCE_KIND ? await resolveUpstreamCostCents(db, snapshot) : null
+  const itemCostAmountCents =
+    snapshot.source_kind !== OWNED_SOURCE_KIND ? (upstreamCostCents ?? sellAmountCents) : null
+  const itemQuantity = booking.pax ?? 1
+
   await db
     .insert(bookingItems)
     .values({
       bookingId: booking.id,
-      title:
-        snapshot.entity_module === "products"
-          ? "Tour booking"
-          : `Booking (${snapshot.entity_module})`,
+      title: resolvedTitle,
+      description: itemDescription,
       productId: snapshot.entity_module === "products" ? snapshot.entity_id : null,
-      quantity: booking.pax ?? 1,
+      quantity: itemQuantity,
       itemType: "service",
       status: "on_hold",
+      serviceDate: itemDates.serviceDate ?? null,
+      startsAt: itemDates.startsAt ?? null,
+      endsAt: itemDates.endsAt ?? null,
       unitSellAmountCents:
         booking.pax && booking.pax > 0 && booking.sellAmountCents
           ? Math.round(booking.sellAmountCents / booking.pax)
           : (booking.sellAmountCents ?? 0),
       totalSellAmountCents: booking.sellAmountCents ?? 0,
       sellCurrency: booking.sellCurrency,
+      ...(itemCostAmountCents != null
+        ? {
+            costCurrency: booking.sellCurrency,
+            unitCostAmountCents:
+              itemQuantity > 0
+                ? Math.round(itemCostAmountCents / itemQuantity)
+                : itemCostAmountCents,
+            totalCostAmountCents: itemCostAmountCents,
+          }
+        : {}),
+      sourceSnapshotId: (snapshot as { id?: string }).id ?? null,
     })
     .onConflictDoNothing()
+
+  // Sourced bookings: auto-populate the supplier-status row + booking
+  // cost columns from the catalog snapshot. Without this the operator
+  // sees an empty "Furnizori" tab and "Cost / Marja —" on a deal
+  // we already know the supplier for. Owned bookings skip — the
+  // operator IS the supplier.
+  if (snapshot.source_kind !== OWNED_SOURCE_KIND) {
+    const supplierInfo = await resolveSupplierFromSnapshot(db, snapshot)
+    if (supplierInfo) {
+      // Cost = sell as a working assumption (zero-markup default).
+      // Operators with a configured net/gross split should override
+      // via the supplier-status edit form. We mark the row's notes so
+      // it's clear this came from auto-fill, not from a real
+      // supplier confirmation.
+      const costAmountCents = supplierInfo.upstreamCostCents ?? sellAmountCents
+      const costCurrency = booking.sellCurrency
+
+      try {
+        await db
+          .insert(bookingSupplierStatuses)
+          .values({
+            bookingId: booking.id,
+            supplierServiceId: supplierInfo.supplierServiceId ?? null,
+            serviceName: supplierInfo.serviceName,
+            supplierReference: supplierInfo.supplierReference ?? null,
+            costCurrency,
+            costAmountCents,
+            status: "pending",
+            notes:
+              `Auto-populated from ${snapshot.source_kind} catalog snapshot. ` +
+              "Verify against supplier confirmation when it lands.",
+          })
+          .onConflictDoNothing()
+      } catch (err) {
+        console.warn("[catalog-checkout] auto supplier-status insert failed", err)
+      }
+
+      // Stamp booking-level cost so the header's Cost/Marja card
+      // shows something meaningful. Margin computed against the
+      // current cost+sell — when sell == cost, margin is 0; that's
+      // accurate for our zero-markup default until the operator
+      // updates the cost.
+      try {
+        const margin =
+          sellAmountCents > 0
+            ? Math.round(((sellAmountCents - costAmountCents) / sellAmountCents) * 100)
+            : 0
+        const baseCurrencyMatches =
+          booking.baseCurrency != null && booking.baseCurrency === booking.sellCurrency
+        await db
+          .update(bookings)
+          .set({
+            costAmountCents,
+            // Only set base_cost_amount_cents when base_currency is
+            // already set on the booking. The check constraint
+            // `ck_bookings_base_currency_amounts` rejects setting
+            // base_*_amount with no base_currency.
+            baseCostAmountCents: baseCurrencyMatches
+              ? costAmountCents
+              : booking.baseCostAmountCents,
+            marginPercent: margin,
+            updatedAt: new Date(),
+          })
+          .where(eq(bookings.id, booking.id))
+      } catch (err) {
+        console.warn("[catalog-checkout] booking cost update failed", err)
+      }
+    }
+  }
+}
+
+/**
+ * Resolve supplier info for the booking from the catalog snapshot.
+ * Pulls from:
+ *   1. `catalog_sourced_entries.projection.supplierId` — supplier
+ *      name/id captured at sync time (covers Bokun, demo adapter, etc.).
+ *   2. The frozen payload's `upstream_payload.supplierId` — fallback
+ *      when the sourced-entries row is missing (legacy bookings).
+ *   3. `frozen_payload.reserve.orderId` — used as `supplierReference`
+ *      so operators can match up against the upstream provider's
+ *      booking reference.
+ *
+ * Returns null when no supplier can be resolved — the caller treats
+ * that as "skip auto-fill, leave blank for manual entry".
+ */
+async function resolveSupplierFromSnapshot(
+  db: PostgresJsDatabase,
+  snapshot: MaterializationSnapshot,
+): Promise<{
+  serviceName: string
+  supplierReference: string | null
+  supplierServiceId: string | null
+  upstreamCostCents: number | null
+} | null> {
+  let supplierName: string | null = null
+  let serviceName: string | null = null
+  let upstreamCostCents: number | null = null
+
+  // Layer 1: sourced entry projection.
+  try {
+    const { catalogSourcedEntriesTable } = await import("@voyantjs/catalog")
+    const [sourcedEntry] = await db
+      .select({ projection: catalogSourcedEntriesTable.projection })
+      .from(catalogSourcedEntriesTable)
+      .where(
+        and(
+          eq(catalogSourcedEntriesTable.entity_module, snapshot.entity_module),
+          eq(catalogSourcedEntriesTable.entity_id, snapshot.entity_id),
+        ),
+      )
+      .limit(1)
+    if (sourcedEntry?.projection) {
+      const p = sourcedEntry.projection as Record<string, unknown>
+      supplierName = pickString(p.supplierName, p.supplier_name, p.supplierId)
+      serviceName = pickString(p.name, p.title)
+      const cost = p.upstreamCostCents ?? p.netPriceCents ?? p.costCents
+      if (typeof cost === "number" && Number.isFinite(cost)) upstreamCostCents = cost
+    }
+  } catch {
+    // continue
+  }
+
+  // Layer 2: frozen upstream payload.
+  if (!supplierName || !serviceName) {
+    const upstream = (snapshot.frozen_payload?.quote as Record<string, unknown> | undefined)
+      ?.upstream_payload as Record<string, unknown> | undefined
+    if (upstream) {
+      supplierName = supplierName ?? pickString(upstream.supplierName, upstream.supplierId)
+      serviceName = serviceName ?? pickString(upstream.name, upstream.title)
+    }
+  }
+
+  // Layer 3: fallback labels.
+  if (!serviceName) serviceName = `${snapshot.entity_module} booking`
+
+  // Reserve.orderId is the upstream provider's reference for this
+  // booking — operators reconcile against it when the supplier
+  // sends a confirmation. Falls back to the snapshot's source_ref.
+  const reserve = snapshot.frozen_payload?.reserve as Record<string, unknown> | undefined
+  const supplierReference =
+    pickString(reserve?.orderId, reserve?.upstream_ref) ?? snapshot.source_ref
+
+  // Compose the human label: "$serviceName" if no supplier name,
+  // "$supplierName · $serviceName" otherwise — gives operators the
+  // most useful one-line scan in the supplier statuses table.
+  const composedName = supplierName ? `${supplierName} · ${serviceName}` : serviceName
+
+  return {
+    serviceName: composedName,
+    supplierReference,
+    supplierServiceId: null,
+    upstreamCostCents,
+  }
+}
+
+function pickString(...candidates: unknown[]): string | null {
+  for (const c of candidates) if (typeof c === "string" && c.length > 0) return c
+  return null
+}
+
+/**
+ * Resolve booking-level dates from the draft and frozen source data.
+ * `start_date`/`end_date` drive the admin booking header, while item
+ * dates drive the line table. A storefront product selection usually
+ * carries only `departureSlotId`, so we resolve that id against the
+ * quote/reserve/content payload before falling back to free-form dates.
+ */
+function extractBookingDates(
+  snapshot: Pick<MaterializationSnapshot, "frozen_payload">,
+  draftPayload: DraftPayload,
+): { startDate: string | null; endDate: string | null } {
+  const range = draftPayload.configure?.dateRange
+  if (range?.checkIn) {
+    return {
+      startDate: range.checkIn.slice(0, 10),
+      endDate: range.checkOut ? range.checkOut.slice(0, 10) : null,
+    }
+  }
+
+  const selectedDeparture = findSelectedDeparture(snapshot, draftPayload)
+  if (selectedDeparture?.startsRaw) {
+    return {
+      startDate: selectedDeparture.startsRaw.slice(0, 10),
+      endDate: selectedDeparture.endsRaw ? selectedDeparture.endsRaw.slice(0, 10) : null,
+    }
+  }
+
+  if (typeof draftPayload.configure?.departureDate === "string") {
+    return {
+      startDate: draftPayload.configure.departureDate.slice(0, 10),
+      endDate: null,
+    }
+  }
+
+  return { startDate: null, endDate: null }
+}
+
+/**
+ * Pull start/end dates for a booking-item from the most reliable
+ * source available. Order:
+ *   1. The selected `departureSlotId` resolved against reserve /
+ *      quote / captured content payloads.
+ *   2. `frozen_payload.quote.upstream_payload.metadata.days[]` —
+ *      Bokun-style itinerary captured at quote time, gives us per-day
+ *      dates with full timezone fidelity.
+ *   3. Draft `configure.dateRange.checkIn`/`checkOut` — what the
+ *      customer selected on the storefront before booking.
+ *   4. Draft `configure.departureDate` — single-day tour selection.
+ *   5. Booking row's own `start_date` / `end_date` columns — the
+ *      caller already populated these from the same draft when
+ *      writing the booking row, so this is a final safety net.
+ *
+ * Returns nulls when nothing resolves — the caller treats that as
+ * "no date data, leave NULL" rather than fabricating one.
+ */
+function extractItemDates(
+  snapshot: MaterializationSnapshot,
+  draftPayload: DraftPayload,
+  booking: typeof bookings.$inferSelect,
+): { serviceDate: string | null; startsAt: Date | null; endsAt: Date | null } {
+  // Layer 1: concrete selected departure/sailing.
+  const selectedDeparture = findSelectedDeparture(snapshot, draftPayload)
+  if (selectedDeparture?.startsRaw) {
+    const startsAt = new Date(selectedDeparture.startsRaw)
+    const endsAt = selectedDeparture.endsRaw ? new Date(selectedDeparture.endsRaw) : null
+    if (Number.isFinite(startsAt.getTime())) {
+      return {
+        serviceDate: selectedDeparture.startsRaw.slice(0, 10),
+        startsAt,
+        endsAt: endsAt && Number.isFinite(endsAt.getTime()) ? endsAt : null,
+      }
+    }
+  }
+
+  // Layer 2: upstream metadata.days[] — flat array of {date, ...} or
+  // {startAt/endAt} entries.
+  const days = (
+    (snapshot.frozen_payload?.quote as Record<string, unknown> | undefined)?.upstream_payload as
+      | Record<string, unknown>
+      | undefined
+  )?.metadata as Record<string, unknown> | undefined
+  const daysArray = (days?.days ?? days) as Array<Record<string, unknown>> | undefined
+  if (Array.isArray(daysArray) && daysArray.length > 0) {
+    const first = daysArray[0]
+    const last = daysArray[daysArray.length - 1]
+    const startsRaw = pickString(first?.startAt, first?.startsAt, first?.date)
+    const endsRaw = pickString(last?.endAt, last?.endsAt, last?.date)
+    if (startsRaw) {
+      const startsAt = new Date(startsRaw)
+      const endsAt = endsRaw ? new Date(endsRaw) : null
+      if (Number.isFinite(startsAt.getTime())) {
+        return {
+          serviceDate: startsRaw.slice(0, 10),
+          startsAt,
+          endsAt: endsAt && Number.isFinite(endsAt.getTime()) ? endsAt : null,
+        }
+      }
+    }
+  }
+
+  // Layer 3: draft date range.
+  const range = draftPayload.configure?.dateRange
+  if (range?.checkIn) {
+    const startsAt = new Date(range.checkIn)
+    const endsAt = range.checkOut ? new Date(range.checkOut) : null
+    if (Number.isFinite(startsAt.getTime())) {
+      return {
+        serviceDate: range.checkIn.slice(0, 10),
+        startsAt,
+        endsAt: endsAt && Number.isFinite(endsAt.getTime()) ? endsAt : null,
+      }
+    }
+  }
+
+  // Layer 4: single-day tour.
+  if (typeof draftPayload.configure?.departureDate === "string") {
+    const startsAt = new Date(draftPayload.configure.departureDate)
+    if (Number.isFinite(startsAt.getTime())) {
+      return {
+        serviceDate: draftPayload.configure.departureDate.slice(0, 10),
+        startsAt,
+        endsAt: null,
+      }
+    }
+  }
+
+  // Layer 5: booking row dates (already populated from the draft).
+  if (booking.startDate) {
+    return {
+      serviceDate: booking.startDate,
+      startsAt: new Date(booking.startDate),
+      endsAt: booking.endDate ? new Date(booking.endDate) : null,
+    }
+  }
+
+  return { serviceDate: null, startsAt: null, endsAt: null }
+}
+
+function findSelectedDeparture(
+  snapshot: Pick<MaterializationSnapshot, "frozen_payload">,
+  draftPayload: DraftPayload,
+): { startsRaw: string | null; endsRaw: string | null } | null {
+  const slotId = pickString(draftPayload.configure?.departureSlotId)
+  const frozen = snapshot.frozen_payload ?? {}
+  const reserve = frozen.reserve as Record<string, unknown> | null | undefined
+  const quote = frozen.quote as Record<string, unknown> | null | undefined
+  const quotePayload = quote?.upstream_payload as Record<string, unknown> | null | undefined
+  const content = frozen.content as Record<string, unknown> | null | undefined
+
+  const direct = departureDatesFromRecord(
+    asRecord(reserve?.departure) ?? asRecord(quotePayload?.departure),
+  )
+  if (direct?.startsRaw && (!slotId || direct.id === slotId)) {
+    return direct
+  }
+
+  if (!slotId) return direct?.startsRaw ? direct : null
+
+  const candidates = [
+    content?.departures,
+    (content?.product as Record<string, unknown> | undefined)?.departures,
+    quotePayload?.departures,
+    (quotePayload?.metadata as Record<string, unknown> | undefined)?.departures,
+  ]
+
+  for (const candidate of candidates) {
+    if (!Array.isArray(candidate)) continue
+    for (const item of candidate) {
+      const row = asRecord(item)
+      if (!row || row.id !== slotId) continue
+      const dates = departureDatesFromRecord(row)
+      if (dates?.startsRaw) return dates
+    }
+  }
+
+  return null
+}
+
+function departureDatesFromRecord(
+  row: Record<string, unknown> | undefined,
+): { id: string | null; startsRaw: string | null; endsRaw: string | null } | null {
+  if (!row) return null
+  const startsRaw = pickString(
+    row.starts_at,
+    row.startsAt,
+    row.start_at,
+    row.startAt,
+    row.start_date,
+    row.startDate,
+    row.date,
+  )
+  if (!startsRaw) return null
+  return {
+    id: pickString(row.id),
+    startsRaw,
+    endsRaw: pickString(row.ends_at, row.endsAt, row.end_at, row.endAt, row.end_date, row.endDate),
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined
+}
+
+/**
+ * Pull a description for the booking item from the upstream payload.
+ * Sourced products typically carry rich descriptions on the upstream
+ * entry; surfacing a short snippet on the item helps operators scan
+ * a multi-item booking without clicking into each line.
+ */
+function extractItemDescription(snapshot: MaterializationSnapshot): string | null {
+  const upstream = (snapshot.frozen_payload?.quote as Record<string, unknown> | undefined)
+    ?.upstream_payload as Record<string, unknown> | undefined
+  const desc = pickString(upstream?.description, upstream?.summary, upstream?.short_description)
+  if (!desc) return null
+  // Cap at 600 chars — anything longer belongs in the catalog source
+  // sheet rather than on every booking-item row.
+  return desc.length > 600 ? `${desc.slice(0, 597)}…` : desc
+}
+
+/**
+ * Look up the upstream cost (net rate the operator pays the supplier)
+ * for a sourced entity. Returns null when the adapter doesn't expose
+ * a net/gross split — caller falls back to sell-as-cost (zero-markup
+ * default).
+ */
+async function resolveUpstreamCostCents(
+  db: PostgresJsDatabase,
+  snapshot: MaterializationSnapshot,
+): Promise<number | null> {
+  try {
+    const { catalogSourcedEntriesTable } = await import("@voyantjs/catalog")
+    const [sourced] = await db
+      .select({ projection: catalogSourcedEntriesTable.projection })
+      .from(catalogSourcedEntriesTable)
+      .where(
+        and(
+          eq(catalogSourcedEntriesTable.entity_module, snapshot.entity_module),
+          eq(catalogSourcedEntriesTable.entity_id, snapshot.entity_id),
+        ),
+      )
+      .limit(1)
+    if (sourced?.projection) {
+      const p = sourced.projection as Record<string, unknown>
+      const cost = p.upstreamCostCents ?? p.netPriceCents ?? p.costCents
+      if (typeof cost === "number" && Number.isFinite(cost)) return cost
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+/**
+ * Resolve a human title for the booking line item. Tries:
+ *   1. `catalog_sourced_entries.projection.name` — sourced products
+ *      (demo, Bokun, …) all carry the upstream title there.
+ *   2. `products.title` — owned products from this template's own
+ *      products module.
+ *   3. A generic "$module booking" fallback.
+ *
+ * Errors fall through quietly — a title is purely cosmetic, the
+ * booking-item row should always insert successfully.
+ */
+async function resolveLineItemTitle(
+  db: PostgresJsDatabase,
+  snapshot: { entity_module: string; entity_id: string },
+): Promise<string> {
+  try {
+    const { catalogSourcedEntriesTable } = await import("@voyantjs/catalog")
+    const [sourcedEntry] = await db
+      .select({ projection: catalogSourcedEntriesTable.projection })
+      .from(catalogSourcedEntriesTable)
+      .where(
+        and(
+          eq(catalogSourcedEntriesTable.entity_module, snapshot.entity_module),
+          eq(catalogSourcedEntriesTable.entity_id, snapshot.entity_id),
+        ),
+      )
+      .limit(1)
+    if (sourcedEntry?.projection) {
+      const projection = sourcedEntry.projection as Record<string, unknown>
+      const candidate = projection.name ?? projection.title
+      if (typeof candidate === "string" && candidate.length > 0) {
+        return candidate
+      }
+    }
+  } catch {
+    // continue to owned-products fallback
+  }
+
+  if (snapshot.entity_module === "products") {
+    try {
+      const { productsService } = await import("@voyantjs/products")
+      const product = await productsService.getProductById(db, snapshot.entity_id)
+      if (product?.name) return product.name
+    } catch {
+      // continue to generic fallback
+    }
+  }
+
+  return `${snapshot.entity_module} booking`
 }
 
 function travelerBandToCategory(
@@ -685,23 +1240,125 @@ async function handleBankTransferIntent(
 }
 
 /**
- * Pull the storefront's acceptance marker out of `bookings.internalNotes`
- * and turn it into a real `contract_signatures` row once the contract
- * has been auto-generated. The marker is the JSON-stringified payload
- * the checkout-start endpoint stashed at acceptance time; we keep it
- * keyed by prefix so unrelated notes survive untouched.
+ * Read the acceptance fingerprint stashed by the storefront from the
+ * contract's own metadata. The pre-create flow (see
+ * `persistAcceptanceDraftContract`) writes it to `contract.metadata.acceptance`
+ * at /checkout/start time; this is the canonical home — no relay
+ * through `bookings.internal_notes`.
+ *
+ * Older contracts created via the legacy marker-on-internal-notes
+ * pattern fall back to the per-booking marker reader so existing
+ * bookings finish their signature flow without manual re-entry.
  */
-function readStoredAcceptance(internalNotes: string | null): StoredAcceptance | null {
-  if (!internalNotes) return null
-  for (const line of internalNotes.split("\n")) {
+function readContractAcceptance(
+  contractMetadata: unknown,
+  internalNotesFallback: string | null,
+): StoredAcceptance | null {
+  if (contractMetadata && typeof contractMetadata === "object") {
+    const meta = contractMetadata as Record<string, unknown>
+    if (meta.acceptance && typeof meta.acceptance === "object") {
+      return meta.acceptance as StoredAcceptance
+    }
+  }
+  if (!internalNotesFallback) return null
+  for (const line of internalNotesFallback.split("\n")) {
     if (!line.startsWith(ACCEPTANCE_MARKER_PREFIX)) continue
     try {
       return JSON.parse(line.slice(ACCEPTANCE_MARKER_PREFIX.length)) as StoredAcceptance
     } catch {
-      // Bad marker — fall through and try the next line.
+      // Bad marker — try next line.
     }
   }
   return null
+}
+
+/**
+ * Pre-create (or update) a draft contract carrying the acceptance
+ * fingerprint in `metadata.acceptance`. Called from /checkout/start
+ * when the customer accepts the contract preview, BEFORE payment
+ * lands.
+ *
+ * The draft has:
+ *   - status="draft" (no number yet — issued post-payment)
+ *   - templateVersionId pointing at the slug's current version
+ *   - bookingId / personId / organizationId from the booking
+ *   - metadata.acceptance with templateId/Slug, acceptedAt,
+ *     acceptedMarketing, ipAddress, userAgent, renderedHtmlLength
+ *
+ * The body is left empty; `autoGenerateContractForBooking` (fired by
+ * `booking.confirmed`) detects the existing draft, fills in the
+ * fully-resolved variables, then issues + generates the PDF.
+ *
+ * Idempotency: a re-entry of /checkout/start finds the existing draft
+ * and updates its `metadata.acceptance` in place (last acceptance
+ * wins — typical when customer hits Back, edits acceptance, resubmits).
+ */
+async function persistAcceptanceDraftContract(
+  db: PostgresJsDatabase,
+  c: Context,
+  booking: typeof bookings.$inferSelect,
+  acceptance: NonNullable<z.infer<typeof checkoutStartSchema>["contractAcceptance"]>,
+): Promise<void> {
+  const { contractsService } = await import("@voyantjs/legal/contracts")
+
+  const template = await contractsService.findTemplateBySlug(db, acceptance.templateSlug)
+  if (!template?.currentVersionId) {
+    console.warn(
+      `[catalog-checkout] persistAcceptanceDraftContract: template "${acceptance.templateSlug}" not found or has no current version; skipping.`,
+    )
+    return
+  }
+
+  const clientIp =
+    c.req.header("cf-connecting-ip") ??
+    c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+    c.req.header("x-real-ip") ??
+    ""
+  const userAgent = c.req.header("user-agent") ?? ""
+  const acceptanceMetadata: StoredAcceptance = {
+    templateId: acceptance.templateId,
+    templateSlug: acceptance.templateSlug,
+    acceptedAt: acceptance.acceptedAt,
+    acceptedMarketing: acceptance.acceptedMarketing,
+    clientIp,
+    userAgent,
+    renderedHtmlLength: acceptance.renderedHtml.length,
+  }
+
+  // Look for an existing draft contract on this booking. Storefront
+  // re-submissions hit this branch.
+  const existingList = await contractsService.listContracts(db, {
+    bookingId: booking.id,
+    limit: 1,
+    offset: 0,
+  })
+  const existing = existingList.data[0]
+
+  if (existing) {
+    const prior = (existing.metadata as Record<string, unknown> | null) ?? {}
+    await contractsService.updateContract(db, existing.id, {
+      metadata: { ...prior, acceptance: acceptanceMetadata },
+    })
+    return
+  }
+
+  await contractsService.createContract(db, {
+    scope: "customer",
+    status: "draft",
+    title: `${template.name} — ${booking.bookingNumber}`,
+    templateVersionId: template.currentVersionId,
+    seriesId: null,
+    bookingId: booking.id,
+    personId: booking.personId ?? null,
+    organizationId: booking.organizationId ?? null,
+    language: template.language,
+    variables: {},
+    metadata: {
+      autoGenerated: true,
+      trigger: "storefront.checkout-acceptance",
+      acceptance: acceptanceMetadata,
+    },
+  })
 }
 
 async function persistAcceptanceSignature(
@@ -724,20 +1381,32 @@ async function persistAcceptanceSignature(
     .limit(1)
   if (!booking) return
 
-  const acceptance = readStoredAcceptance(booking.internalNotes)
+  // Prefer the contract's own metadata (the new pre-create path);
+  // fall back to the legacy internal_notes marker for old contracts.
+  const acceptance = readContractAcceptance(contract.metadata, booking.internalNotes)
   if (!acceptance) return
 
-  // Already signed for this contract? `signContract` requires status
-  // ∈ {issued, sent}; idempotency comes from listSignatures.
+  // Already signed? `signContract` requires status ∈ {issued, sent};
+  // idempotency comes from listSignatures.
   const existing = await contractsService.listSignatures(db, contractId)
   if (existing.length > 0) return
 
+  // Prefer the booking's contact name when available so the signer
+  // line on the contract reads as the human, not the booking ref.
+  const contactName = [booking.contactFirstName, booking.contactLastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim()
   const signerName =
-    [booking.bookingNumber, "lead booker"].filter(Boolean).join(" — ") || "Storefront customer"
+    contactName ||
+    `Storefront customer${booking.bookingNumber ? ` (${booking.bookingNumber})` : ""}`
 
   const result = await contractsService.signContract(db, contractId, {
     signerName,
+    signerEmail: booking.contactEmail ?? null,
     method: "electronic" as const,
+    ipAddress: acceptance.clientIp ? acceptance.clientIp.slice(0, 64) : null,
+    userAgent: acceptance.userAgent ? acceptance.userAgent.slice(0, 500) : null,
     metadata: {
       source: "storefront-checkout",
       templateId: acceptance.templateId,
@@ -752,159 +1421,460 @@ async function persistAcceptanceSignature(
     console.warn(
       `[catalog-checkout] could not record acceptance signature for ${contractId}: ${result.status}`,
     )
+    return
+  }
+
+  // Legacy cleanup: strip any leftover marker from internal_notes for
+  // contracts that came through the old relay path. New contracts
+  // (created via persistAcceptanceDraftContract) never had a marker
+  // written, so this branch no-ops.
+  if (booking.internalNotes?.includes(ACCEPTANCE_MARKER_PREFIX)) {
+    const cleanedNotes = booking.internalNotes
+      .split("\n")
+      .filter((line) => !line.startsWith(ACCEPTANCE_MARKER_PREFIX))
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+    await db
+      .update(bookings)
+      .set({
+        internalNotes: cleanedNotes.length > 0 ? cleanedNotes : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, booking.id))
   }
 }
 
 /**
- * Bundle that subscribes to `payment.completed` and runs the
- * checkout-finalize workflow. The workflow transitions the booking
- * to `confirmed` (which emits `booking.confirmed` for legal /
- * notifications subscribers) and issues the final invoice — using
- * the proforma linkage when bank-transfer is the path.
+ * Optional callback that generates (or fetches existing) the
+ * contract PDF for a booking. Wired into `createCatalogCheckoutBundle`
+ * by `app.ts` and forwarded into `CheckoutFinalizeDeps.generateContractPdf`
+ * so the explicit `generate_contract_pdf` workflow step can run.
  *
- * Also subscribes to `contract.document.generated` so once the
- * legal package's auto-generate-contract subscriber materialises a
- * contract, we promote the storefront's acceptance marker into a
- * real `contract_signatures` row.
+ * Idempotent — if a contract document already exists for this
+ * booking (because the legal subscriber on `booking.confirmed` won
+ * the race, or because a prior run completed this step), the
+ * implementation should return the existing ids rather than
+ * generating a new contract.
  */
-export const catalogCheckoutBundle: HonoBundle = {
-  name: "catalog-checkout",
-  bootstrap: ({ bindings, eventBus }) => {
-    const env = bindings as CloudflareBindings
-    eventBus.subscribe<ContractDocumentGeneratedPayload>(
-      "contract.document.generated",
-      async ({ data }) => {
-        const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
-        try {
-          await persistAcceptanceSignature(db, data.contractId)
-        } catch (err) {
-          console.error("[catalog-checkout] persistAcceptanceSignature failed", err)
-        }
+export type CatalogCheckoutContractPdfGenerator = (input: {
+  env: CloudflareBindings
+  db: PostgresJsDatabase
+  eventBus: EventBus
+  bookingId: string
+}) => Promise<{ contractId: string; attachmentId: string } | null>
+
+/**
+ * Build the deps object the `checkout-finalize` workflow expects,
+ * binding to the supplied db / eventBus / recorder. Lifted out of
+ * the event subscriber so the rerun / resume runners share the same
+ * implementation — keeping rerun semantics in lockstep with the
+ * normal "fired by payment.completed" path.
+ */
+function buildCheckoutFinalizeDeps(
+  env: CloudflareBindings,
+  db: PostgresJsDatabase,
+  eventBus: EventBus,
+  recorder: WorkflowRunRecorder,
+  generateContractPdf?: CatalogCheckoutContractPdfGenerator,
+): CheckoutFinalizeDeps {
+  return {
+    db,
+    eventBus,
+    recorder: {
+      startStep: (name) => {
+        void recorder.startStep(name)
       },
-    )
-    eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
-      if (!data.bookingId) return
-      const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
-      const recorder = await beginWorkflowRun(db, {
-        workflowName: "checkout-finalize",
-        trigger: "payment.completed",
-        correlationId: data.paymentSessionId ?? null,
-        tags: [
-          `bookingId:${data.bookingId}`,
-          ...(data.paymentSessionId ? [`paymentSessionId:${data.paymentSessionId}`] : []),
-          ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
-        ],
-        input: {
-          bookingId: data.bookingId,
-          paymentSessionId: data.paymentSessionId ?? null,
-          paymentIntent: data.paymentIntent ?? null,
-          amountCents: data.amountCents ?? null,
-          currency: data.currency ?? null,
+      completeStep: (name, output) => {
+        void recorder.completeStep(name, output ?? null)
+      },
+      failStep: (name, error) => {
+        void recorder.failStep(name, error)
+      },
+    },
+    confirmBooking: async (bookingId) => {
+      await bookingsService.confirmBooking(db, bookingId, {}, undefined, { eventBus })
+    },
+    issueInvoice: async ({ bookingId, convertedFromInvoiceId }) => {
+      const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+      if (!booking) return null
+
+      const { bookingItems } = await import("@voyantjs/bookings/schema")
+      const items = await db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, bookingId))
+
+      const today = new Date().toISOString().slice(0, 10)
+      const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+      const invoice = await issueInvoiceFromBooking(
+        db,
+        {
+          bookingId,
+          invoiceNumber: `INV-${booking.bookingNumber}`,
+          issueDate: today,
+          dueDate,
+          invoiceType: "invoice",
+          notes: convertedFromInvoiceId
+            ? `Converted from proforma ${convertedFromInvoiceId}`
+            : null,
+        },
+        {
+          booking: {
+            id: booking.id,
+            bookingNumber: booking.bookingNumber,
+            personId: booking.personId,
+            organizationId: booking.organizationId,
+            sellCurrency: booking.sellCurrency,
+            baseCurrency: booking.baseCurrency,
+            fxRateSetId: null,
+            sellAmountCents: booking.sellAmountCents,
+            baseSellAmountCents: booking.baseSellAmountCents,
+          },
+          items: items.map((item) => ({
+            id: item.id,
+            title: item.title,
+            quantity: item.quantity,
+            unitSellAmountCents: item.unitSellAmountCents,
+            totalSellAmountCents: item.totalSellAmountCents,
+          })),
+        },
+        { eventBus },
+      )
+
+      if (invoice && convertedFromInvoiceId) {
+        await db
+          .update((await import("@voyantjs/finance")).invoices)
+          .set({ convertedFromInvoiceId })
+          .where(eq((await import("@voyantjs/finance")).invoices.id, invoice.id))
+      }
+
+      return invoice ? { invoiceId: invoice.id } : null
+    },
+    findProformaForBooking: async (bookingId) => {
+      const { invoices } = await import("@voyantjs/finance")
+      const [proforma] = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(eq(invoices.bookingId, bookingId))
+        .limit(1)
+      return proforma ? { invoiceId: proforma.id } : null
+    },
+    generateContractPdf: generateContractPdf
+      ? async ({ bookingId }) => generateContractPdf({ env, db, eventBus, bookingId })
+      : undefined,
+    linkPaymentToInvoice: async ({ bookingId, invoiceId, paymentSessionId }) => {
+      // Find paid sessions targeting this booking that aren't yet
+      // linked to an invoice. There's usually exactly one (the
+      // checkout session the customer just paid), but the loop covers
+      // edge cases like split deposits paid through multiple sessions.
+      const { paymentSessions } = await import("@voyantjs/finance/schema")
+      const { financeService } = await import("@voyantjs/finance")
+      const paidSessions = await db
+        .select()
+        .from(paymentSessions)
+        .where(
+          and(
+            eq(paymentSessions.bookingId, bookingId),
+            eq(paymentSessions.status, "paid"),
+            isNull(paymentSessions.invoiceId),
+          ),
+        )
+
+      let firstPaymentId: string | null = null
+      let sessionsLinked = 0
+
+      for (const session of paidSessions) {
+        // 1. Back-link the session to the invoice for audit / future
+        //    queries (`SELECT * FROM payment_sessions WHERE invoice_id = ?`).
+        await db
+          .update(paymentSessions)
+          .set({ invoiceId, updatedAt: new Date() })
+          .where(eq(paymentSessions.id, session.id))
+
+        // 2. Record a `payments` row tying real money received to the
+        //    invoice. `financeService.createPayment` runs in a
+        //    transaction that recalculates `paid_cents` /
+        //    `balance_due_cents` and flips the invoice to "paid"
+        //    when the totals match.
+        const payment = await financeService.createPayment(db, invoiceId, {
+          amountCents: session.amountCents,
+          currency: session.currency,
+          paymentMethod: session.paymentMethod ?? "credit_card",
+          paymentInstrumentId: session.paymentInstrumentId ?? null,
+          paymentAuthorizationId: session.paymentAuthorizationId ?? null,
+          paymentCaptureId: session.paymentCaptureId ?? null,
+          status: "completed",
+          referenceNumber:
+            session.providerPaymentId ??
+            session.externalReference ??
+            session.providerSessionId ??
+            session.id,
+          paymentDate: (session.completedAt ?? new Date()).toISOString().slice(0, 10),
+          notes:
+            `Checkout-finalize linkage from session ${session.id}` +
+            (paymentSessionId && session.id !== paymentSessionId
+              ? ` (workflow input session: ${paymentSessionId})`
+              : ""),
+        })
+
+        // 3. Stamp the session with the payments.id so the operator
+        //    UI can resolve session → payment in one hop.
+        if (payment?.id) {
+          await db
+            .update(paymentSessions)
+            .set({ paymentId: payment.id, updatedAt: new Date() })
+            .where(eq(paymentSessions.id, session.id))
+          if (!firstPaymentId) firstPaymentId = payment.id
+        }
+        sessionsLinked++
+      }
+
+      return { paymentId: firstPaymentId, sessionsLinked }
+    },
+  }
+}
+
+interface DispatchCheckoutFinalizeParams {
+  env: CloudflareBindings
+  db: PostgresJsDatabase
+  eventBus: EventBus
+  /** Workflow input — booking + payment metadata. */
+  input: CheckoutFinalizeInput
+  /** Run-row metadata: trigger string, correlationId, tags. */
+  trigger: string
+  correlationId: string | null
+  tags: ReadonlyArray<string>
+  /** When set, run is recorded as a child of this parent run. */
+  parentRunId?: string | null
+  /** User who triggered the run (for audit). */
+  triggeredByUserId?: string | null
+  /** When set, run is resumed at this step. */
+  resumeFromStep?: string
+  /** Pre-seeded step results from the parent (resume path). */
+  seedResults?: Record<string, unknown>
+  /** Optional contract-PDF generator forwarded into deps. */
+  generateContractPdf?: CatalogCheckoutContractPdfGenerator
+}
+
+/**
+ * Begin a `checkout-finalize` run, execute the workflow, and finalize
+ * the run row. Used by the `payment.completed` subscriber and the
+ * rerun/resume runners. Returns the new run id.
+ *
+ * Recorder failures don't mask workflow failures — `recorder.fail` is
+ * fire-and-forget and we still propagate the original error to the
+ * caller (the runner) for HTTP error reporting.
+ */
+async function dispatchCheckoutFinalize(
+  params: DispatchCheckoutFinalizeParams,
+): Promise<{ runId: string }> {
+  const recorder = await beginWorkflowRun(params.db, {
+    workflowName: "checkout-finalize",
+    trigger: params.trigger,
+    correlationId: params.correlationId ?? null,
+    tags: [...params.tags],
+    input: params.input as unknown as Record<string, unknown>,
+    parentRunId: params.parentRunId ?? null,
+    triggeredByUserId: params.triggeredByUserId ?? null,
+    resumeFromStep: params.resumeFromStep ?? null,
+  })
+
+  // Manual rerun/resume — write a `system_action` activity row on
+  // the booking so the customer-facing booking detail page surfaces
+  // an entry like "checkout-finalize was manually resumed from
+  // issue_invoice by Mihai". The recorded `workflow_runs` row
+  // already exists (one above), but operators land on the booking
+  // page first and shouldn't have to cross-reference the dashboard
+  // to know a workflow was retried.
+  if (params.parentRunId) {
+    try {
+      const action = params.resumeFromStep ? "resumed" : "rerun"
+      const description = params.resumeFromStep
+        ? `Workflow checkout-finalize ${action} from step "${params.resumeFromStep}"`
+        : `Workflow checkout-finalize ${action}`
+      await params.db.insert(bookingActivityLog).values({
+        bookingId: params.input.bookingId,
+        actorId: params.triggeredByUserId ?? null,
+        activityType: "system_action",
+        description,
+        metadata: {
+          kind: "workflow_rerun",
+          workflowName: "checkout-finalize",
+          parentRunId: params.parentRunId,
+          newRunId: recorder.runId,
+          resumeFromStep: params.resumeFromStep ?? null,
         },
       })
-      try {
-        await runCheckoutFinalize(
-          {
-            bookingId: data.bookingId,
-            paymentSessionId: data.paymentSessionId,
-            paymentIntent: data.paymentIntent,
-          },
-          {
+    } catch (err) {
+      console.warn("[catalog-checkout] failed to write rerun activity log", err)
+    }
+  }
+
+  // Resume path: write skipped step rows for everything before the
+  // resume target so the UI shows the full step list with the source
+  // of each output (parent run output, marked "skipped").
+  if (params.resumeFromStep && params.seedResults) {
+    for (const [stepName, output] of Object.entries(params.seedResults)) {
+      // Skip the synthetic deps step — it has no observable meaning
+      // in the dashboard, and re-recording it as "skipped" would
+      // confuse users.
+      if (stepName === "__deps") continue
+      await recorder.recordSkippedStep(
+        stepName,
+        output && typeof output === "object" ? (output as Record<string, unknown>) : null,
+      )
+    }
+  }
+
+  const deps = buildCheckoutFinalizeDeps(
+    params.env,
+    params.db,
+    params.eventBus,
+    recorder,
+    params.generateContractPdf,
+  )
+  try {
+    await runCheckoutFinalize(params.input, deps, {
+      skipUntil: params.resumeFromStep,
+      seedResults: params.seedResults,
+    })
+    await recorder.complete()
+    return { runId: recorder.runId }
+  } catch (err) {
+    console.error("[catalog-checkout] checkout-finalize workflow failed", err)
+    await recorder.fail(err)
+    throw err
+  }
+}
+
+/**
+ * Bundle factory that subscribes to `payment.completed` (running the
+ * `checkout-finalize` workflow) and `contract.document.generated`
+ * (promoting the storefront's acceptance marker into a real
+ * `contract_signatures` row), and registers the `checkout-finalize`
+ * runner with the supplied {@link WorkflowRunnerRegistry} so the
+ * dashboard's "Rerun" / "Resume" buttons work.
+ *
+ * The runner is declared `idempotency: "unsafe"` because a fresh
+ * rerun would attempt to re-issue the invoice (which collides on
+ * `INV-${bookingNumber}`). The dashboard requires a confirm dialog
+ * before sending `confirm: true`. The Resume path is always safe —
+ * it skips already-completed steps.
+ */
+export function createCatalogCheckoutBundle(opts: {
+  workflowRunnerRegistry?: WorkflowRunnerRegistry
+  /**
+   * Hook the explicit `generate_contract_pdf` step in the workflow
+   * to a real implementation. Operators that wire this also rely on
+   * `autoGenerateContractForBooking` being idempotent (it is) so the
+   * legal package's `booking.confirmed` subscriber and this step
+   * coexist without double-generating.
+   *
+   * Omit to skip the step (returns `null`) — useful for deploys that
+   * don't want explicit-step recording, falling back to the
+   * subscriber-only path.
+   */
+  generateContractPdf?: CatalogCheckoutContractPdfGenerator
+}): HonoBundle {
+  return {
+    name: "catalog-checkout",
+    bootstrap: ({ bindings, eventBus }) => {
+      const env = bindings as CloudflareBindings
+      eventBus.subscribe<ContractDocumentGeneratedPayload>(
+        "contract.document.generated",
+        async ({ data }) => {
+          const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+          try {
+            await persistAcceptanceSignature(db, data.contractId)
+          } catch (err) {
+            console.error("[catalog-checkout] persistAcceptanceSignature failed", err)
+          }
+        },
+      )
+      eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
+        if (!data.bookingId) return
+        const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+        try {
+          await dispatchCheckoutFinalize({
+            env,
             db,
             eventBus,
-            recorder: {
-              startStep: (name) => {
-                void recorder.startStep(name)
-              },
-              completeStep: (name, output) => {
-                void recorder.completeStep(name, output ?? null)
-              },
-              failStep: (name, error) => {
-                void recorder.failStep(name, error)
-              },
+            input: {
+              bookingId: data.bookingId,
+              paymentSessionId: data.paymentSessionId,
+              paymentIntent: data.paymentIntent,
             },
-            confirmBooking: async (bookingId) => {
-              await bookingsService.confirmBooking(db, bookingId, {}, undefined, { eventBus })
-            },
-            issueInvoice: async ({ bookingId, convertedFromInvoiceId }) => {
-              const [booking] = await db
-                .select()
-                .from(bookings)
-                .where(eq(bookings.id, bookingId))
-                .limit(1)
-              if (!booking) return null
+            trigger: "payment.completed",
+            correlationId: data.paymentSessionId ?? null,
+            tags: [
+              `bookingId:${data.bookingId}`,
+              ...(data.paymentSessionId ? [`paymentSessionId:${data.paymentSessionId}`] : []),
+              ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
+            ],
+            generateContractPdf: opts.generateContractPdf,
+          })
+        } catch {
+          // dispatchCheckoutFinalize already logged + recorded the
+          // failure; swallow here so the event-bus callback doesn't
+          // bubble to the dispatch caller.
+        }
+      })
 
-              const { bookingItems } = await import("@voyantjs/bookings/schema")
-              const items = await db
-                .select()
-                .from(bookingItems)
-                .where(eq(bookingItems.bookingId, bookingId))
-
-              const today = new Date().toISOString().slice(0, 10)
-              const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .slice(0, 10)
-
-              const invoice = await issueInvoiceFromBooking(
-                db,
-                {
-                  bookingId,
-                  invoiceNumber: `INV-${booking.bookingNumber}`,
-                  issueDate: today,
-                  dueDate,
-                  invoiceType: "invoice",
-                  notes: convertedFromInvoiceId
-                    ? `Converted from proforma ${convertedFromInvoiceId}`
-                    : null,
-                },
-                {
-                  booking: {
-                    id: booking.id,
-                    bookingNumber: booking.bookingNumber,
-                    personId: booking.personId,
-                    organizationId: booking.organizationId,
-                    sellCurrency: booking.sellCurrency,
-                    baseCurrency: booking.baseCurrency,
-                    fxRateSetId: null,
-                    sellAmountCents: booking.sellAmountCents,
-                    baseSellAmountCents: booking.baseSellAmountCents,
-                  },
-                  items: items.map((item) => ({
-                    id: item.id,
-                    title: item.title,
-                    quantity: item.quantity,
-                    unitSellAmountCents: item.unitSellAmountCents,
-                    totalSellAmountCents: item.totalSellAmountCents,
-                  })),
-                },
-                { eventBus },
-              )
-
-              if (invoice && convertedFromInvoiceId) {
-                await db
-                  .update((await import("@voyantjs/finance")).invoices)
-                  .set({ convertedFromInvoiceId })
-                  .where(eq((await import("@voyantjs/finance")).invoices.id, invoice.id))
-              }
-
-              return invoice ? { invoiceId: invoice.id } : null
-            },
-            findProformaForBooking: async (bookingId) => {
-              const { invoices } = await import("@voyantjs/finance")
-              const [proforma] = await db
-                .select({ id: invoices.id })
-                .from(invoices)
-                .where(eq(invoices.bookingId, bookingId))
-                .limit(1)
-              return proforma ? { invoiceId: proforma.id } : null
-            },
+      if (opts.workflowRunnerRegistry) {
+        opts.workflowRunnerRegistry.register({
+          name: "checkout-finalize",
+          idempotency: "unsafe",
+          description:
+            "Confirms the booking and issues the final invoice. A fresh rerun re-issues the invoice (collides on existing INV- numbers); use Resume to retry from a failed step.",
+          rerun: async (rawInput, ctx) => {
+            const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+            const input = rawInput as CheckoutFinalizeInput | null
+            if (!input?.bookingId) {
+              throw new Error("checkout-finalize rerun: recorded input has no bookingId")
+            }
+            return dispatchCheckoutFinalize({
+              env,
+              db,
+              eventBus,
+              input,
+              trigger: "manual.rerun",
+              correlationId: ctx.correlationId,
+              tags: [...ctx.tags, "rerun:true"],
+              parentRunId: ctx.parentRunId,
+              triggeredByUserId: ctx.triggeredByUserId,
+              generateContractPdf: opts.generateContractPdf,
+            })
           },
-        )
-        await recorder.complete()
-      } catch (err) {
-        console.error("[catalog-checkout] checkout-finalize workflow failed", err)
-        await recorder.fail(err)
+          resume: async (rawInput, ctx) => {
+            const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+            const input = rawInput as CheckoutFinalizeInput | null
+            if (!input?.bookingId) {
+              throw new Error("checkout-finalize resume: recorded input has no bookingId")
+            }
+            return dispatchCheckoutFinalize({
+              env,
+              db,
+              eventBus,
+              input,
+              trigger: "manual.resume",
+              correlationId: ctx.correlationId,
+              tags: [...ctx.tags, "resume:true"],
+              parentRunId: ctx.parentRunId,
+              triggeredByUserId: ctx.triggeredByUserId,
+              resumeFromStep: ctx.resumeFromStep,
+              seedResults: ctx.seedResults,
+              generateContractPdf: opts.generateContractPdf,
+            })
+          },
+        })
       }
-    })
-  },
+    },
+  }
 }
+
+/** @deprecated Kept for callers that still import the static bundle —
+ *  use {@link createCatalogCheckoutBundle} so the rerun/resume
+ *  runner is registered with the dashboard. */
+export const catalogCheckoutBundle = createCatalogCheckoutBundle({})

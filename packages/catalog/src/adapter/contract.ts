@@ -171,7 +171,16 @@ export interface LiveResolveResult {
   /** Entity-keyed live field values. */
   values: Record<string, Record<string, unknown>>
   /** Entities the adapter could not resolve, with reason codes. */
-  failed?: Record<string, "timeout" | "not_found" | "unsupported" | "error">
+  failed?: Record<
+    string,
+    | "timeout"
+    | "not_found"
+    | "unavailable"
+    | "departure_not_found"
+    | "departure_unavailable"
+    | "unsupported"
+    | "error"
+  >
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

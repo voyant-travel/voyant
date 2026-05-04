@@ -350,6 +350,8 @@ export const PREFIXES = {
   // a separate Node process.
   workflow_runs: "wfrn",
   workflow_run_steps: "wfrs",
+  // --- Operator-template-local settings ---
+  operator_settings: "opset",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

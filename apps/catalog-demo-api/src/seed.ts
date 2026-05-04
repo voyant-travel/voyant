@@ -31,17 +31,30 @@ function futureDepartures(
   hour: number,
   minute: number,
   durationMinutes: number,
-): Array<{ id: string; starts_at: string; ends_at: string }> {
+  capacity: number,
+): Array<{
+  id: string
+  starts_at: string
+  ends_at: string
+  status: "open"
+  capacity: number
+  remaining: number
+}> {
   const now = new Date()
+  const bookedPattern = [0, 1, 2, 3, 0, 2, 4, 1]
   return daysAheadList.map((daysAhead, idx) => {
     const start = new Date(now)
     start.setUTCDate(start.getUTCDate() + daysAhead)
     start.setUTCHours(hour, minute, 0, 0)
     const end = new Date(start.getTime() + durationMinutes * 60_000)
+    const booked = Math.min(bookedPattern[idx % bookedPattern.length] ?? 0, capacity - 1)
     return {
       id: `dep_${idx + 1}`,
       starts_at: start.toISOString(),
       ends_at: end.toISOString(),
+      status: "open",
+      capacity,
+      remaining: capacity - booked,
     }
   })
 }
@@ -127,7 +140,7 @@ function defaultDemoInventoryRaw(): ReadonlyArray<DemoInventoryInput> {
             caption: "Catamaran on the Tagus",
           },
         ],
-        departures: futureDepartures([1, 2, 3, 4, 5, 7, 9, 12], 17, 30, 120),
+        departures: futureDepartures([1, 2, 3, 4, 5, 7, 9, 12], 17, 30, 120, 28),
       },
     },
     {
@@ -180,7 +193,7 @@ function defaultDemoInventoryRaw(): ReadonlyArray<DemoInventoryInput> {
             caption: "Truffle hunt with Lagotto",
           },
         ],
-        departures: futureDepartures([3, 5, 8, 10, 14, 17, 21], 9, 0, 240),
+        departures: futureDepartures([3, 5, 8, 10, 14, 17, 21], 9, 0, 240, 6),
       },
     },
     {
@@ -238,7 +251,7 @@ function defaultDemoInventoryRaw(): ReadonlyArray<DemoInventoryInput> {
             caption: "Photographer-guide setting up",
           },
         ],
-        departures: futureDepartures([2, 3, 4, 6, 8, 11, 14, 18], 20, 30, 270),
+        departures: futureDepartures([2, 3, 4, 6, 8, 11, 14, 18], 20, 30, 270, 19),
       },
     },
   ]

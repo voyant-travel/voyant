@@ -21,10 +21,20 @@ import {
   BookingJourney,
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
-} from "@voyantjs/booking-journey-ui"
+} from "@voyantjs/bookings-ui/journey"
+import {
+  computePaymentSchedule,
+  noDepositPolicy,
+  type PaymentPolicy,
+  type PaymentPolicySource,
+} from "@voyantjs/finance"
 
 import { getApiUrl } from "@/lib/env"
-import { resolveContractVariables } from "./resolve-contract-variables"
+import { type OperatorInfoVariables, resolveContractVariables } from "./resolve-contract-variables"
+
+interface PublicOperatorProfile extends OperatorInfoVariables {
+  customerPaymentPolicy?: PaymentPolicy | null
+}
 
 export interface StorefrontBookingJourneyProps {
   entityModule: string
@@ -93,6 +103,8 @@ export function StorefrontBookingJourney({
   // has been seeded — the journey skips the preview dialog and
   // commits without a contract.
   const resolvedSlug = useResolvedContractSlug(contractTemplateSlug)
+  const operatorProfile = usePublicOperatorSettings()
+  const resolvedPolicy = useResolvedPaymentPolicy(entityModule, entityId)
 
   // Storefront-specific slot wiring. NO CRM picker — customers fill
   // an inline contact form, which is the BookingJourney's default
@@ -112,7 +124,8 @@ export function StorefrontBookingJourney({
   }
 
   // Default checkout-start handler — when the caller doesn't supply
-  // its own `onContractAccepted`, we run the protravel-style flow:
+  // its own `onContractAccepted`, we run the standard storefront
+  // checkout flow:
   //
   //   1. POST /v1/public/catalog/book with the draft id → bookingId
   //   2. POST /v1/public/catalog/checkout/start with the bookingId,
@@ -275,8 +288,37 @@ export function StorefrontBookingJourney({
                 resolvedSlug,
               )}/preview`,
               acceptLanguage: typeof navigator !== "undefined" ? navigator.language : undefined,
-              resolveVariables: (draft) =>
-                resolveContractVariables(draft, { entityModule, entityId, entitySummary }),
+              resolveVariables: ({ draft, pricing }) => {
+                // Use the server-resolved cascade when the public
+                // /v1/public/payment-policy/resolve endpoint has
+                // come back; while the request is in flight, fall
+                // back to the operator default so the customer sees
+                // a sensible preview rather than an empty schedule.
+                const policy =
+                  resolvedPolicy?.policy ??
+                  operatorProfile?.customerPaymentPolicy ??
+                  noDepositPolicy
+                const source: PaymentPolicySource = resolvedPolicy?.source ?? "operator_default"
+                const schedule = pricing
+                  ? computePaymentSchedule(
+                      {
+                        totalCents: pricing.total,
+                        currency: pricing.currency,
+                        departureDate: entitySummary?.startDate ?? null,
+                      },
+                      policy,
+                    )
+                  : []
+                return resolveContractVariables(draft, {
+                  entityModule,
+                  entityId,
+                  entitySummary,
+                  pricing,
+                  operatorInfo: operatorProfile,
+                  paymentSchedule: schedule,
+                  paymentPolicySource: source,
+                })
+              },
               ...(contractMarketingLabel ? { marketingLabel: contractMarketingLabel } : {}),
             }
           : undefined
@@ -341,5 +383,72 @@ function useResolvedContractSlug(override: string | undefined): string | undefin
     staleTime: 5 * 60 * 1000,
   })
   if (override) return override
+  return data ?? undefined
+}
+
+/**
+ * Fetch the operator profile (name / legal name / address / license /
+ * default customer payment policy) from the deployment's public
+ * settings endpoint. The result is cached for 5 minutes — operator
+ * details rarely change, and stale-while-revalidate is fine for the
+ * contract preview UI.
+ *
+ * Returns `undefined` while the request is in flight or when the
+ * deployment hasn't filled in Settings → Operator yet — the contract
+ * preview then renders the operator block with `-` placeholders (the
+ * template renderer's missing-value substitution kicks in).
+ */
+function usePublicOperatorSettings(): PublicOperatorProfile | undefined {
+  const { data } = useQuery({
+    queryKey: ["public-operator-settings"],
+    queryFn: async (): Promise<PublicOperatorProfile | null> => {
+      const res = await fetch(`${getApiUrl()}/v1/public/settings/operator`, {
+        credentials: "include",
+      })
+      if (!res.ok) return null
+      const json = (await res.json()) as { data?: PublicOperatorProfile | null }
+      return json.data ?? null
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+  return data ?? undefined
+}
+
+/**
+ * Server-side cascade resolution for the storefront preview.
+ *
+ * Calls `POST /v1/public/payment-policy/resolve` with the entity
+ * coordinates and returns the resolved policy + which cascade layer
+ * supplied it (operator_default | supplier | category | listing).
+ *
+ * Resolves at entity granularity only — the journey's later
+ * sailing / cabin / rate-plan selections refine the cascade
+ * server-side at booking-confirmed time. Storefront preview shows
+ * the entity-level result, which is correct for the common case
+ * (single sailing per cruise, single rate plan picked at booking
+ * time, etc.) and gracefully degrades to a less-specific layer when
+ * the journey hasn't picked yet.
+ */
+function useResolvedPaymentPolicy(
+  entityModule: string,
+  entityId: string,
+): { policy: PaymentPolicy; source: PaymentPolicySource } | undefined {
+  const { data } = useQuery({
+    queryKey: ["public-payment-policy", entityModule, entityId],
+    queryFn: async (): Promise<{ policy: PaymentPolicy; source: PaymentPolicySource } | null> => {
+      const res = await fetch(`${getApiUrl()}/v1/public/payment-policy/resolve`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ entityModule, entityId }),
+      })
+      if (!res.ok) return null
+      const json = (await res.json()) as {
+        data?: { policy: PaymentPolicy; source: PaymentPolicySource } | null
+      }
+      return json.data ?? null
+    },
+    staleTime: 5 * 60 * 1000,
+  })
   return data ?? undefined
 }

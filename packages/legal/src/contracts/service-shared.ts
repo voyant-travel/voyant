@@ -64,12 +64,27 @@ function resolvePath(obj: unknown, path: string): unknown {
   return current
 }
 
+/**
+ * Default placeholder for output tags whose value is null / undefined
+ * / empty-string. Applied to every contract render — preview at the
+ * storefront, manual previews from the admin, AND the post-confirm
+ * auto-generated PDFs — so authored templates don't have to spell out
+ * `| default: "-"` on every variable.
+ *
+ * Authors who prefer a different fallback for a specific variable can
+ * still write `{{ foo | default: "TBD" }}` and the renderer leaves
+ * their explicit chain alone.
+ */
+const CONTRACT_MISSING_VALUE_PLACEHOLDER = "-"
+
 export function renderTemplate(
   body: string,
   bodyFormat: "markdown" | "html" | "lexical_json",
   variables: Record<string, unknown>,
 ): string {
-  return renderStructuredTemplate(body, bodyFormat, variables)
+  return renderStructuredTemplate(body, bodyFormat, variables, {
+    missingValuePlaceholder: CONTRACT_MISSING_VALUE_PLACEHOLDER,
+  })
 }
 
 export function validateTemplateVariables(

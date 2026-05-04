@@ -1,5 +1,5 @@
 /**
- * `@voyantjs/booking-journey-ui` — the unified booking journey shell.
+ * `@voyantjs/bookings-ui/journey` — the unified booking journey shell.
  *
  * Per `docs/architecture/booking-journey-architecture.md`.
  *

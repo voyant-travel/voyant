@@ -722,6 +722,52 @@ export const bookingRoutes = new Hono<Env>()
     return c.json({ data: travelers.map((row) => redactTravelerIdentity(row)) })
   })
 
+  /**
+   * GET /:id/travelers/:travelerId/reveal
+   *
+   * Per-traveler unmasked read. The list endpoint masks PII for
+   * non-superuser staff; this endpoint reveals on a single click so
+   * the operator can confirm a phone / email when actually needed,
+   * with the access logged as `traveler_reveal`. Authorization uses
+   * the same policy as `/travel-details` (staff or `bookings-pii:read`
+   * scope), so it Just Works for the dashboard's normal staff session.
+   *
+   * Returns 404 when the traveler isn't found, 403 when the caller
+   * isn't authorized to see PII.
+   */
+  .get("/:id/travelers/:travelerId/reveal", async (c) => {
+    const bookingId = c.req.param("id")
+    const travelerId = c.req.param("travelerId")
+    const auth = await authorizeBookingPiiAccess(c, {
+      bookingId,
+      travelerId,
+      action: "read",
+    })
+    if (!auth.allowed) return auth.response
+
+    const traveler = await bookingsService.getTravelerRecordById(c.get("db"), bookingId, travelerId)
+    if (!traveler) {
+      await logBookingPiiAccess(c, {
+        bookingId,
+        travelerId,
+        action: "read",
+        outcome: "denied",
+        reason: "traveler_not_found",
+      })
+      return c.json({ error: "Traveler not found" }, 404)
+    }
+
+    await logBookingPiiAccess(c, {
+      bookingId,
+      travelerId,
+      action: "read",
+      outcome: "allowed",
+      reason: "traveler_reveal",
+    })
+
+    return c.json({ data: traveler })
+  })
+
   .get("/:id/travelers/:travelerId/travel-details", async (c) => {
     const auth = await authorizeBookingPiiAccess(c, {
       bookingId: c.req.param("id"),

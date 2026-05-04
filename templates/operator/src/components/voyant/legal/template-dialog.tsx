@@ -28,6 +28,7 @@ import {
   insertVariableToken,
 } from "@voyantjs/ui/components/rich-text-variable-extension"
 import { Switch } from "@voyantjs/ui/components/switch"
+import { languages } from "@voyantjs/utils"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -64,6 +65,18 @@ const SCOPES = [
   { value: "channel", label: "Channel" },
   { value: "other", label: "Other" },
 ] as const
+
+/**
+ * Language picker options derived from the canonical ISO 639-1 list
+ * shipped by `@voyantjs/utils`. Sorted alphabetically by the English
+ * display name for predictable scanning. Lifted to module scope so
+ * the array reference is stable across re-renders (otherwise the
+ * Select primitive's `items` identity changes every render and
+ * forces internal state churn).
+ */
+const LANGUAGE_ITEMS: Array<{ value: string; label: string }> = Object.entries(languages)
+  .map(([code, label]) => ({ value: code, label: `${label} (${code})` }))
+  .sort((a, b) => a.label.localeCompare(b.label))
 
 export function TemplateDialog({ open, onOpenChange, template, onSuccess }: TemplateDialogProps) {
   const isEditing = !!template
@@ -138,7 +151,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
           <DialogTitle>{isEditing ? "Edit Template" : "New Template"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <DialogBody className="grid gap-4">
+          <DialogBody className="grid gap-4 max-h-[70vh]">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>Name</Label>
@@ -178,7 +191,24 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
               </div>
               <div className="flex flex-col gap-2">
                 <Label>Language</Label>
-                <Input {...form.register("language")} placeholder="en" maxLength={10} />
+                <Select
+                  items={LANGUAGE_ITEMS}
+                  value={form.watch("language") ?? "en"}
+                  onValueChange={(value) =>
+                    form.setValue("language", value ?? "en", { shouldDirty: true })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGE_ITEMS.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -204,7 +234,12 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
               />
               {form.formState.errors.body ? (
                 <p className="text-xs text-destructive">{form.formState.errors.body.message}</p>
-              ) : null}
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Editing the body automatically creates a new version. Metadata-only changes (name,
+                  scope, description) update in place without versioning.
+                </p>
+              )}
             </div>
 
             <ContractTemplateAuthoringHelp

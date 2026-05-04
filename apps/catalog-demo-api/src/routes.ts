@@ -139,11 +139,15 @@ export function createRoutes(db: CatalogDemoDb): Hono {
     const requestedDepartureId = readDepartureId(body.parameters)
     const billablePax = readBillablePax(body.parameters)
     const values: Record<string, Record<string, unknown>> = {}
-    const failed: Record<string, "timeout" | "not_found" | "unsupported" | "error"> = {}
+    const failed: LiveResolveResult["failed"] = {}
     for (const id of body.ids) {
       const row = inventory.get(id)
-      if (!row || row.available <= 0) {
+      if (!row) {
         failed[id] = "not_found"
+        continue
+      }
+      if (row.available <= 0) {
+        failed[id] = "unavailable"
         continue
       }
       let departure: ReturnType<typeof findDeparture> = null
@@ -151,9 +155,9 @@ export function createRoutes(db: CatalogDemoDb): Hono {
         departure = findDeparture(row.metadata, requestedDepartureId)
         if (!departure) {
           // Slot wasn't found in the upstream's current schedule — probably
-          // expired or rotated out. Surfaces as "invalid_reason: not_found"
-          // on the quote so the operator can re-pick.
-          failed[id] = "not_found"
+          // expired or rotated out. Keep it distinct from a missing product
+          // so callers can ask the customer to re-pick a departure.
+          failed[id] = "departure_not_found"
           continue
         }
         if (
@@ -161,7 +165,11 @@ export function createRoutes(db: CatalogDemoDb): Hono {
           departure.status === "closed" ||
           departure.status === "cancelled"
         ) {
-          failed[id] = "not_found"
+          failed[id] = "departure_unavailable"
+          continue
+        }
+        if (typeof departure.remaining === "number" && departure.remaining < billablePax) {
+          failed[id] = "departure_unavailable"
           continue
         }
       }
@@ -265,13 +273,15 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const departures = mapArray(meta.departures, (d) => {
       const dr = d as Record<string, unknown>
+      const capacity = numberOr(dr.capacity, row.available)
+      const remaining = Math.min(numberOr(dr.remaining, capacity), capacity)
       return {
         id: stringOr(dr.id, "") ?? "",
         starts_at: stringOr(dr.starts_at, "") ?? "",
         ends_at: stringOr(dr.ends_at, null),
         status: stringOr(dr.status, null),
-        capacity: numberOr(dr.capacity, null),
-        remaining: numberOr(dr.remaining, null),
+        capacity,
+        remaining,
         lowest_price_cents: numberOr(dr.lowest_price_cents, row.priceCents),
         currency: stringOr(dr.currency, row.currency),
         note: stringOr(dr.note, null),
@@ -337,6 +347,7 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const requestedDepartureId = readDepartureId(body.parameters)
     let departure: ReturnType<typeof findDeparture> = null
+    const billablePax = readBillablePax(body.parameters)
     if (requestedDepartureId) {
       departure = findDeparture(row.metadata, requestedDepartureId)
       if (!departure) {
@@ -344,6 +355,19 @@ export function createRoutes(db: CatalogDemoDb): Hono {
           upstream_ref: "",
           status: "failed",
           upstream_payload: { reason: "departure_not_found", departureId: requestedDepartureId },
+        }
+        return c.json(result)
+      }
+      if (typeof departure.remaining === "number" && departure.remaining < billablePax) {
+        const result: ReserveResult = {
+          upstream_ref: "",
+          status: "failed",
+          upstream_payload: {
+            reason: "departure_unavailable",
+            departureId: requestedDepartureId,
+            remaining: departure.remaining,
+            needed: billablePax,
+          },
         }
         return c.json(result)
       }
@@ -366,6 +390,9 @@ export function createRoutes(db: CatalogDemoDb): Hono {
       parameters: body.parameters ?? null,
     })
     await store.decrementAvailability(db, row.id)
+    if (requestedDepartureId) {
+      await store.adjustDepartureRemaining(db, row.id, requestedDepartureId, -billablePax)
+    }
 
     const result: ReserveResult = {
       upstream_ref: order.id,
@@ -415,6 +442,15 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const cancelled = await store.markOrderCancelled(db, order.id, body.reason ?? null)
     if (cancelled?.inventoryId) {
+      const departureId = readDepartureId(cancelled.parameters ?? undefined)
+      if (departureId) {
+        await store.adjustDepartureRemaining(
+          db,
+          cancelled.inventoryId,
+          departureId,
+          readBillablePax(cancelled.parameters ?? undefined),
+        )
+      }
       await store.incrementAvailability(db, cancelled.inventoryId)
     }
     return c.json({
@@ -561,6 +597,8 @@ interface DemoDeparture {
   status?: string | null
   lowest_price_cents?: number
   currency?: string
+  capacity?: number
+  remaining?: number
 }
 
 function findDeparture(
@@ -579,6 +617,8 @@ function findDeparture(
         lowest_price_cents:
           typeof r.lowest_price_cents === "number" ? r.lowest_price_cents : undefined,
         currency: typeof r.currency === "string" ? r.currency : undefined,
+        capacity: typeof r.capacity === "number" ? r.capacity : undefined,
+        remaining: typeof r.remaining === "number" ? r.remaining : undefined,
       }
     }
   }

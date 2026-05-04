@@ -37,6 +37,21 @@ export const supplierConfirmationStatusSchema = z.enum([
   "cancelled",
 ])
 
+const bookingDepositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+export const bookingPaymentPolicySchema = z.object({
+  deposit: bookingDepositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
+export type BookingPaymentPolicy = z.infer<typeof bookingPaymentPolicySchema>
+
 export const bookingRecordSchema = z.object({
   id: z.string(),
   bookingNumber: z.string(),
@@ -51,6 +66,7 @@ export const bookingRecordSchema = z.object({
   endDate: z.string().nullable(),
   pax: z.number().int().nullable(),
   internalNotes: z.string().nullable(),
+  customerPaymentPolicy: bookingPaymentPolicySchema.nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -266,6 +282,7 @@ export const bookingGroupForBookingResponse = z.object({
 })
 export type BookingGroupForBookingRecord = z.infer<typeof bookingGroupForBookingSchema>
 export const bookingTravelersResponse = arrayEnvelope(bookingTravelerRecordSchema)
+export const bookingTravelerSingleResponse = singleEnvelope(bookingTravelerRecordSchema)
 export const bookingPassengersResponse = bookingTravelersResponse
 export const bookingItemParticipantsResponse = bookingItemTravelersResponse
 export const bookingSupplierStatusesResponse = arrayEnvelope(bookingSupplierStatusRecordSchema)

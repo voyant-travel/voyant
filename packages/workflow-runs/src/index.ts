@@ -24,6 +24,13 @@ export {
 } from "./recorder.js"
 export { mountWorkflowRunsAdminRoutes } from "./routes.js"
 export {
+  type WorkflowIdempotency,
+  type WorkflowRerunContext,
+  type WorkflowResumeContext,
+  type WorkflowRunner,
+  WorkflowRunnerRegistry,
+} from "./runner.js"
+export {
   type NewWorkflowRun,
   type NewWorkflowRunStep,
   type WorkflowRun,

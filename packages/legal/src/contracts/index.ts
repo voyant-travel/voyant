@@ -72,6 +72,18 @@ export {
   defaultStorageBackedContractDocumentSerializer,
 } from "./service-documents.js"
 export type {
+  CloudBrowserGoToOptions,
+  CloudBrowserPdfInput,
+  CloudBrowserPdfOptions,
+  CloudBrowserRenderClient,
+  CloudBrowserWaitUntil,
+  CreateBrowserRenderedPdfContractDocumentSerializerOptions,
+} from "./service-documents-browser.js"
+export {
+  createBrowserRenderedPdfContractDocumentSerializer,
+  defaultContractHtmlWrapper,
+} from "./service-documents-browser.js"
+export type {
   ContractTemplateLiquidSnippet,
   ContractTemplateVariableCategory,
   ContractTemplateVariableDefinition,

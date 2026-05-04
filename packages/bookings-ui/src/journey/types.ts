@@ -209,7 +209,10 @@ export interface BookingJourneyProps {
     templateSlug: string
     previewUrl: string
     acceptLanguage?: string
-    resolveVariables: (draft: BookingDraftV1) => Record<string, unknown>
+    resolveVariables: (input: {
+      draft: BookingDraftV1
+      pricing: PricingBreakdownV1 | null
+    }) => Record<string, unknown>
     marketingLabel?: ReactNode
     termsLabel?: ReactNode
   }
@@ -256,6 +259,15 @@ export interface BookingEntitySummary {
   whenLabel?: string
   /** Optional location label — e.g. "Reykjavík", "Mediterranean", "Bucharest". */
   locationLabel?: string
+  /** ISO start date (YYYY-MM-DD or full ISO) — used by the contract
+   *  preview when the draft only carries a slot id. */
+  startDate?: string
+  /** ISO end date — paired with `startDate` for ranges and contract
+   *  variables like `departure.end_date`. */
+  endDate?: string
+  /** Free-form destination / route string — surfaced as
+   *  `product.destination` in contract variables. */
+  destination?: string
 }
 
 export interface JourneyHeaderState {

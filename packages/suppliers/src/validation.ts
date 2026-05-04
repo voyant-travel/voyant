@@ -26,6 +26,19 @@ const rateUnitSchema = z.enum(["per_person", "per_group", "per_night", "per_vehi
 
 // ---------- suppliers ----------
 
+const depositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+const customerPaymentPolicySchema = z.object({
+  deposit: depositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
 const supplierCoreSchema = z.object({
   name: z.string().min(1).max(255),
   type: supplierTypeSchema,
@@ -43,6 +56,7 @@ const supplierCoreSchema = z.object({
   contactEmail: z.string().email().optional().nullable(),
   contactPhone: z.string().optional().nullable(),
   paymentTermsDays: z.number().int().positive().optional().nullable(),
+  customerPaymentPolicy: customerPaymentPolicySchema.optional().nullable(),
   tags: z.array(z.string()).default([]),
 })
 

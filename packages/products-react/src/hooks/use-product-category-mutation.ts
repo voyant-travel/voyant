@@ -6,7 +6,7 @@ import { z } from "zod"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantProductsContext } from "../provider.js"
 import { productsQueryKeys } from "../query-keys.js"
-import { productCategorySingleResponse } from "../schemas.js"
+import { type ProductCategoryPaymentPolicy, productCategorySingleResponse } from "../schemas.js"
 
 export interface CreateProductCategoryInput {
   name: string
@@ -15,6 +15,7 @@ export interface CreateProductCategoryInput {
   description?: string | null
   sortOrder?: number
   active?: boolean
+  customerPaymentPolicy?: ProductCategoryPaymentPolicy | null
   metadata?: Record<string, unknown> | null
 }
 

@@ -50,6 +50,24 @@ interface CloudflareBindings {
   API_BASE_URL: string
   CORS_ALLOWLIST: string
   DASH_BASE_URL: string
+  /**
+   * Public base URL Cloudflare Browser Rendering uses to fetch any
+   * external resources referenced from contract / invoice / document
+   * templates (logos, signatures, fonts, etc.). Must be reachable from
+   * the public internet — `localhost` or private hostnames will break
+   * PDF generation because CF's headless browser can't resolve them.
+   *
+   * Production: set to a public URL (e.g. `https://api-1.example.io`)
+   * pointing at this operator deployment. Variables resolver injects
+   * it as `documents.base_url` for Liquid templates.
+   *
+   * Dev: leave unset. Templates that reference public assets (real
+   * logos hosted on a CDN, etc.) will work; templates that try to
+   * pull from `${documents.base_url}/...` will render with broken
+   * resources, but the PDF still generates from the inline HTML so
+   * local development isn't blocked.
+   */
+  DOCUMENTS_BASE_URL?: string
 
   // Netopia (pay-by-link card processor). `NETOPIA_MODE` selects sandbox
   // vs live (defaults to sandbox); `NETOPIA_URL` is an optional override

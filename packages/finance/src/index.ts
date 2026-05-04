@@ -87,6 +87,24 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
 
 export const financeHonoModule: HonoModule = createFinanceHonoModule()
 
+export type {
+  ComputedScheduleEntry,
+  ComputeScheduleInput,
+  DepositKind,
+  DepositRule,
+  PaymentPolicy,
+  PaymentPolicyCascadeLayers,
+  PaymentPolicySource,
+  PaymentScheduleEntryType,
+  ResolvedPaymentPolicy,
+} from "./payment-policy.js"
+export {
+  computePaymentSchedule,
+  isPaymentPolicyEmpty,
+  noDepositPolicy,
+  policyShouldRequireFullPayment,
+  resolveEffectivePaymentPolicy,
+} from "./payment-policy.js"
 export {
   buildFinanceRouteRuntime,
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,

@@ -287,3 +287,57 @@ describe("createWorkflow", () => {
     await expect(wf.run()).rejects.toBe(original)
   })
 })
+
+describe("createWorkflow resume", () => {
+  it("skips steps before skipUntil and seeds their outputs from seedResults", async () => {
+    const ran: string[] = []
+    const wf = createWorkflow("resumeable", [
+      step<unknown, number>("a").run(() => {
+        ran.push("a")
+        return 1
+      }),
+      step<unknown, number>("b").run(() => {
+        ran.push("b")
+        return 2
+      }),
+      step<unknown, number>("c").run((_, ctx) => {
+        ran.push("c")
+        return (ctx.results.a as number) + (ctx.results.b as number)
+      }),
+    ])
+    const result = await wf.run({
+      skipUntil: "c",
+      seedResults: { a: 1, b: 2 },
+    })
+    expect(ran).toEqual(["c"])
+    expect(result.results).toEqual({ a: 1, b: 2, c: 3 })
+  })
+
+  it("does not run compensation for skipped steps when a later step fails", async () => {
+    const compensated: string[] = []
+    const wf = createWorkflow("no-compensate-skipped", [
+      step<unknown, string>("a")
+        .run(() => "a-out")
+        .compensate(() => {
+          compensated.push("a")
+        }),
+      step<unknown, string>("b")
+        .run(() => "b-out")
+        .compensate(() => {
+          compensated.push("b")
+        }),
+      step("c").run(() => {
+        throw new Error("boom")
+      }),
+    ])
+    await expect(
+      wf.run({ skipUntil: "c", seedResults: { a: "a-out", b: "b-out" } }),
+    ).rejects.toThrow("boom")
+    expect(compensated).toEqual([])
+  })
+
+  it("throws when skipUntil names a step that does not exist", async () => {
+    const wf = createWorkflow("missing-skip-target", [step("a").run(() => "a")])
+    await expect(wf.run({ skipUntil: "z" })).rejects.toThrow(/cannot resume.*"z"/)
+  })
+})

@@ -188,9 +188,9 @@ export function ContractPreviewDialog({
           {loadState === "ready" ? (
             <iframe
               title={`${template?.name ?? "Contract"} preview`}
-              srcDoc={renderedHtml}
+              srcDoc={wrapPreviewHtml(renderedHtml)}
               sandbox=""
-              className="h-full w-full border-0 bg-background"
+              className="h-full w-full border-0 bg-white"
             />
           ) : null}
         </div>
@@ -238,4 +238,41 @@ export function ContractPreviewDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+/**
+ * Wrap the rendered template body in a self-contained light-theme HTML
+ * document. Templates author their own typography but rarely set a
+ * background, so without this the iframe inherits the browser default
+ * (transparent) and we'd see whatever shows through — which on the
+ * storefront's dark dialog reads as black-on-black.
+ */
+function wrapPreviewHtml(body: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; background: #ffffff; color: #111827; }
+  body {
+    padding: 1.5rem 2rem;
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #0f172a; }
+  h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+  h2 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+  p { margin: 0.5rem 0; }
+  ul, ol { padding-left: 1.5rem; }
+  strong { color: #0f172a; }
+  a { color: #2563eb; }
+  table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; }
+  th, td { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; text-align: left; }
+  th { background: #f9fafb; }
+</style>
+</head>
+<body>${body}</body>
+</html>`
 }

@@ -69,6 +69,23 @@ export const suppliers = pgTable(
       onDelete: "set null",
     }),
 
+    /**
+     * Customer-facing payment policy override. When set, sourced
+     * bookings against this supplier inherit these terms instead of
+     * the deployment's default policy. Shape mirrors `PaymentPolicy`
+     * from `@voyantjs/finance` (jsonb so the shape can evolve
+     * without per-field column adds).
+     *
+     * `null` means "inherit from operator default" — most suppliers
+     * leave this empty unless they impose their own deposit / balance
+     * window.
+     *
+     * Distinct from `paymentTermsDays` above, which governs when the
+     * operator pays the supplier (Net 14 / Net 30) — the inverse
+     * cash-flow direction.
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
+
     // Metadata
     tags: jsonb("tags").$type<string[]>().default([]),
 

@@ -37,6 +37,21 @@ export const rateUnitSchema = z.enum([
   "flat",
 ])
 
+const depositRuleClientSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+export const supplierCustomerPaymentPolicySchema = z.object({
+  deposit: depositRuleClientSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
+export type SupplierCustomerPaymentPolicy = z.infer<typeof supplierCustomerPaymentPolicySchema>
+
 export const supplierSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -53,6 +68,8 @@ export const supplierSchema = z.object({
   contactName: z.string().nullable(),
   contactEmail: z.string().nullable(),
   contactPhone: z.string().nullable(),
+  paymentTermsDays: z.number().int().nullable().optional(),
+  customerPaymentPolicy: supplierCustomerPaymentPolicySchema.nullable().optional(),
   tags: z.array(z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),

@@ -42,6 +42,16 @@ export interface BeginWorkflowRunInput {
   correlationId?: string | null
   tags?: ReadonlyArray<string>
   input?: Record<string, unknown> | null
+  /** Set when this run is a rerun/resume of a prior run. */
+  parentRunId?: string | null
+  /** User who triggered this run via the dashboard. */
+  triggeredByUserId?: string | null
+  /**
+   * For resume runs — the step name from which to resume. The
+   * executor seeds ctx.results with prior step outputs and skips
+   * everything before this step.
+   */
+  resumeFromStep?: string | null
 }
 
 export interface WorkflowRunRecorder {
@@ -49,6 +59,13 @@ export interface WorkflowRunRecorder {
   startStep(name: string): Promise<{ stepId: string | null }>
   completeStep(name: string, output?: Record<string, unknown> | null): Promise<void>
   failStep(name: string, error: unknown): Promise<void>
+  /**
+   * Record a step that was skipped by a resume run. Writes a row
+   * with `status: "skipped"` and the supplied output (the value the
+   * parent run produced). Used by the resume orchestrator so the UI
+   * shows the full step list with the source of each output.
+   */
+  recordSkippedStep(name: string, output?: Record<string, unknown> | null): Promise<void>
   complete(result?: Record<string, unknown> | null): Promise<void>
   fail(error: unknown, opts?: { stepName?: string }): Promise<void>
   cancel(reason?: string): Promise<void>
@@ -74,6 +91,9 @@ export async function beginWorkflowRun(
     tags: [...(input.tags ?? [])],
     input: input.input ?? null,
     status: "running",
+    parentRunId: input.parentRunId ?? null,
+    triggeredByUserId: input.triggeredByUserId ?? null,
+    resumeFromStep: input.resumeFromStep ?? null,
   }
 
   let runId: string | null = null
@@ -155,6 +175,26 @@ export async function beginWorkflowRun(
       }
     },
 
+    async recordSkippedStep(name, output) {
+      const sequence = nextSequence++
+      const now = new Date()
+      const insertStep: NewWorkflowRunStep = {
+        runId,
+        stepName: name,
+        sequence,
+        status: "skipped",
+        output: output ?? null,
+        startedAt: now,
+        completedAt: now,
+        durationMs: 0,
+      }
+      try {
+        await db.insert(workflowRunSteps).values(insertStep)
+      } catch (err) {
+        console.warn(`[workflow-runs] step skipped "${name}" insert failed:`, err)
+      }
+    },
+
     complete: (result) => finalize(db, runId, "succeeded", result, null),
     fail: (error, opts) =>
       finalize(db, runId, "failed", null, serializeError(error, opts?.stepName)),
@@ -220,6 +260,9 @@ function noopRecorder(): WorkflowRunRecorder {
       // no-op
     },
     async failStep() {
+      // no-op
+    },
+    async recordSkippedStep() {
       // no-op
     },
     async complete() {

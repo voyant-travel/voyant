@@ -1,5 +1,13 @@
 export interface FinanceInvoiceListFilters {
   search?: string | undefined
+  /**
+   * Filter to invoices for a specific booking. Drives the booking
+   * detail page's "Facturi" card. Server-side check is by exact
+   * `bookings.id`, no fuzzy matching.
+   */
+  bookingId?: string | undefined
+  /** Filter by invoice status (draft, sent, paid, …). */
+  status?: string | undefined
   limit?: number | undefined
   offset?: number | undefined
 }
@@ -60,6 +68,8 @@ export const financeQueryKeys = {
     [...financeQueryKeys.publicCheckout(), "booking-documents", bookingId] as const,
   publicBookingPayments: (bookingId: string) =>
     [...financeQueryKeys.publicCheckout(), "booking-payments", bookingId] as const,
+  adminBookingPayments: (bookingId: string) =>
+    [...financeQueryKeys.all, "admin-booking-payments", bookingId] as const,
   publicBookingPaymentOptions: (bookingId: string, filters: PublicBookingPaymentOptionsFilters) =>
     [...financeQueryKeys.publicCheckout(), "booking-payment-options", bookingId, filters] as const,
   publicPaymentSession: (sessionId: string) =>

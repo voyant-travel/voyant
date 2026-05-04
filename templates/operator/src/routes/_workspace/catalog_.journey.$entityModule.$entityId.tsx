@@ -6,7 +6,7 @@ import { OperatorBookingJourney } from "@/components/voyant/booking-journey/oper
 
 /**
  * Unified booking journey route. The shareable wizard from
- * `@voyantjs/booking-journey-ui`, wrapped with operator slots
+ * `@voyantjs/bookings-ui/journey`, wrapped with operator slots
  * (CRM picker, B2B default, post-commit nav to /orders/catalog).
  *
  * Per booking-journey-architecture §10 Phase B.

@@ -9,7 +9,7 @@ import {
   setPayment,
   setTravelers,
   totalPax,
-} from "../../src/lib/draft-state.js"
+} from "../../src/journey/lib/draft-state.js"
 
 const ENTITY = {
   module: "products",

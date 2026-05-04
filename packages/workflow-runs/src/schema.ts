@@ -50,6 +50,20 @@ export const workflowRuns = pgTable(
     result: jsonb("result").$type<Record<string, unknown> | null>(),
     /** Compact error payload — message + optional code + step name. */
     error: jsonb("error").$type<WorkflowRunErrorPayload | null>(),
+    /**
+     * Parent run id when this run was triggered as a rerun/resume of
+     * another run. Self-references the same table; nullable because
+     * the original run has no parent.
+     */
+    parentRunId: text("parent_run_id"),
+    /** User who triggered the rerun/resume (null for system runs). */
+    triggeredByUserId: text("triggered_by_user_id"),
+    /**
+     * When set, the run is a resume — the executor skips steps until
+     * (and not including) this step name, hydrating ctx.results from
+     * the parent run's recorded step outputs.
+     */
+    resumeFromStep: text("resume_from_step"),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     durationMs: integer("duration_ms"),
@@ -60,6 +74,7 @@ export const workflowRuns = pgTable(
     index("idx_workflow_runs_workflow").on(table.workflowName, table.startedAt),
     index("idx_workflow_runs_status_started").on(table.status, table.startedAt),
     index("idx_workflow_runs_correlation").on(table.correlationId),
+    index("idx_workflow_runs_parent").on(table.parentRunId),
     // GIN index on tags so `tags @> '["bookingId:bk_…"]'::jsonb` is fast.
     index("idx_workflow_runs_tags_gin").using("gin", sql`${table.tags}`),
     check(

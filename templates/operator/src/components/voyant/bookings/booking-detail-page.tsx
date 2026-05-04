@@ -6,7 +6,6 @@ import { bookingStatusBadgeVariant, useBooking, useBookingMutation } from "@voya
 import { BookingActivityTimeline } from "@voyantjs/bookings-ui/components/booking-activity-timeline"
 import { BookingCancellationDialog } from "@voyantjs/bookings-ui/components/booking-cancellation-dialog"
 import { BookingDialog } from "@voyantjs/bookings-ui/components/booking-dialog"
-import { BookingDocumentList } from "@voyantjs/bookings-ui/components/booking-document-list"
 import { BookingGroupSection } from "@voyantjs/bookings-ui/components/booking-group-section"
 import { BookingGuaranteeList } from "@voyantjs/bookings-ui/components/booking-guarantee-list"
 import { BookingItemList } from "@voyantjs/bookings-ui/components/booking-item-list"
@@ -17,7 +16,6 @@ import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-chan
 import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
 import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
 import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
-import { BookingContractCard } from "@voyantjs/legal-ui/components/booking-contract-card"
 import { Badge, Button, Card, CardContent } from "@voyantjs/ui/components"
 import {
   DropdownMenu,
@@ -41,8 +39,15 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { useAdminMessages } from "@/lib/admin-i18n"
+import { visibleInternalNotes } from "@/lib/internal-notes"
+import { BookingCatalogSourceCard } from "./booking-catalog-source-card"
 import { BookingDetailSkeleton } from "./booking-detail-skeleton"
+import { BookingDocumentsTable } from "./booking-documents-table"
+import { BookingInvoicesCard } from "./booking-invoices-card"
+import { BookingPaidPaymentSessions } from "./booking-paid-payment-sessions"
+import { BookingPaymentPolicyCard } from "./booking-payment-policy-card"
 import { BookingPendingPaymentSessions } from "./booking-pending-payment-sessions"
+import { BookingPricingSummaryCard } from "./booking-pricing-summary-card"
 
 function formatAmount(
   cents: number | null,
@@ -253,18 +258,29 @@ export function BookingDetailPage({ id }: { id: string }) {
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 flex flex-col gap-6">
+          <BookingCatalogSourceCard bookingId={id} />
           <BookingItemList bookingId={id} />
+          <BookingPricingSummaryCard bookingId={id} defaultCurrency={booking.sellCurrency} />
           <BookingGroupSection bookingId={id} />
-          {booking.internalNotes ? (
-            <Card>
-              <CardContent className="py-5">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  {detailMessages.internalNotesLabel}
-                </p>
-                <p className="whitespace-pre-wrap text-sm">{booking.internalNotes}</p>
-              </CardContent>
-            </Card>
-          ) : null}
+          {(() => {
+            // Strip internal markers (`__contract_acceptance__:`,
+            // `__payment_policy_source__:`) before rendering — those
+            // are server-side relays, not human-readable notes.
+            // Their canonical home is on the contract signature row
+            // / schedule history; surfacing them here just confuses
+            // operators with raw JSON.
+            const visible = visibleInternalNotes(booking.internalNotes)
+            return visible ? (
+              <Card>
+                <CardContent className="py-5">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    {detailMessages.internalNotesLabel}
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm">{visible}</p>
+                </CardContent>
+              </Card>
+            ) : null
+          })()}
         </TabsContent>
 
         <TabsContent value="travelers" className="mt-4">
@@ -276,7 +292,10 @@ export function BookingDetailPage({ id }: { id: string }) {
             <Button onClick={() => setCollectPaymentOpen(true)}>Collect payment</Button>
           </div>
           <BookingPendingPaymentSessions bookingId={id} />
-          <BookingPaymentsSummary bookingId={id} />
+          <BookingPaidPaymentSessions bookingId={id} />
+          <BookingInvoicesCard bookingId={id} />
+          <BookingPaymentsSummary bookingId={id} variant="admin" />
+          <BookingPaymentPolicyCard booking={booking} />
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />
         </TabsContent>
@@ -286,8 +305,7 @@ export function BookingDetailPage({ id }: { id: string }) {
         </TabsContent>
 
         <TabsContent value="documents" className="mt-4 flex flex-col gap-4">
-          <BookingContractCard bookingId={id} />
-          <BookingDocumentList bookingId={id} />
+          <BookingDocumentsTable bookingId={id} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4 flex flex-col gap-6">

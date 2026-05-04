@@ -15,6 +15,8 @@ export interface ListWorkflowRunsQuery {
   status?: "running" | "succeeded" | "failed" | "cancelled"
   /** Filter by tag membership — exact tag string match. */
   tag?: string
+  /** Filter to runs that descend from this parent (children only). */
+  parentRunId?: string
   limit?: number
   offset?: number
 }
@@ -36,6 +38,7 @@ export const workflowRunsService = {
     const conds = []
     if (query.workflowName) conds.push(eq(workflowRuns.workflowName, query.workflowName))
     if (query.status) conds.push(eq(workflowRuns.status, query.status))
+    if (query.parentRunId) conds.push(eq(workflowRuns.parentRunId, query.parentRunId))
     if (query.tag) {
       // jsonb contains — `tags @> '["bookingId:bk_…"]'::jsonb`
       conds.push(sql`${workflowRuns.tags} @> ${JSON.stringify([query.tag])}::jsonb`)

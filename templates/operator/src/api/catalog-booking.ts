@@ -39,6 +39,7 @@ import {
   getBookingDraft,
   getOrderById,
   listOrders,
+  markDraftConsumed,
   NO_ADAPTER_REGISTERED,
   NO_HANDLER_REGISTERED,
   ORDER_ALREADY_CANCELLED,
@@ -177,6 +178,13 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
   hono.post("/v1/admin/catalog/orders/:id/cancel", handleCancel)
   hono.get("/v1/admin/catalog/orders", handleListOrders)
   hono.get("/v1/admin/catalog/orders/:id", handleGetOrder)
+
+  // Admin-only — read the catalog snapshot tied to a booking.
+  // Backs the BookingCatalogSourceCard on the booking detail page;
+  // surfaces the frozen entity reference + pricing + (optionally) the
+  // captured content payload so operators can see exactly what the
+  // customer was quoted at booking time.
+  hono.get("/v1/admin/bookings/:id/catalog-snapshot", handleGetBookingSnapshot)
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -233,7 +241,7 @@ async function handleQuote(c: Context): Promise<Response> {
         // Both `parameters` and the optional draft are forwarded; the
         // engine routes the draft into the owned handler / sourced
         // adapter when present.
-        parameters: { ...body.parameters, draft: body.draft },
+        parameters: engineParametersFromDraft(body.parameters, body.draft),
         ttlMs: body.ttlMs,
         adapterContext: {
           connection_id: provenance.sourceConnectionId ?? provenance.sourceKind,
@@ -288,11 +296,32 @@ async function handleBook(c: Context): Promise<Response> {
         bookingId: body.bookingId,
         party: body.party,
         paymentIntent: body.paymentIntent,
-        parameters: { ...body.parameters, draft: draftPayload ?? body.parameters?.draft },
+        parameters: engineParametersFromDraft(
+          body.parameters,
+          draftPayload ?? body.parameters?.draft,
+        ),
         idempotencyKey: body.idempotencyKey,
         adapterContext: { connection_id: "engine", correlation_id: correlationId },
       },
     )
+
+    // Link the draft → booking so downstream materialization (lazy
+    // booking row creation in /checkout/start, or the rerun runner)
+    // can find the customer-entered travelers + billing contact via
+    // `consumed_booking_id`. Without this the booking ends up with
+    // empty traveler / contact / dates fields even though the draft
+    // captured them. See booking-journey-architecture §5.7.
+    if (body.draftId) {
+      try {
+        await markDraftConsumed(db, body.draftId, result.bookingId)
+      } catch (err) {
+        // Don't fail the booking if the draft consume update races
+        // with another request — the booking is the source of truth
+        // post-commit, the draft link is for cosmetic / audit purposes.
+        console.warn("[catalog-booking] markDraftConsumed failed:", err)
+      }
+    }
+
     return c.json({ ...result, pricing: toPricingBreakdownV1(result.pricing) })
   } catch (err) {
     return errorResponse(c, err)
@@ -608,6 +637,57 @@ function extractActorId(c: Context): string | null {
   return typeof userId === "string" ? userId : null
 }
 
+function engineParametersFromDraft(
+  parameters: Record<string, unknown> | undefined,
+  draftPayload: unknown,
+): Record<string, unknown> {
+  const draft = asRecord(draftPayload)
+  const configure = asRecord(draft?.configure)
+  const departureSlotId = stringValue(configure?.departureSlotId)
+  const paxCount = sumDraftPax(configure?.pax)
+  const next: Record<string, unknown> = {
+    ...(parameters ?? {}),
+    ...(draft ? { draft } : {}),
+  }
+
+  if (departureSlotId) {
+    // The journey's canonical field is `configure.departureSlotId`.
+    // Older/source adapters, including the demo adapter, still read
+    // `departure_id`; owned hold bridges read `slotId`. Send all
+    // aliases so quote and reserve operate on the same selected slot.
+    if (next.departureSlotId == null) next.departureSlotId = departureSlotId
+    if (next.departure_id == null) next.departure_id = departureSlotId
+    if (next.slotId == null) next.slotId = departureSlotId
+  }
+  if (paxCount > 0 && next.paxCount == null) {
+    next.paxCount = paxCount
+  }
+
+  return next
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
+function sumDraftPax(value: unknown): number {
+  const pax = asRecord(value)
+  if (!pax) return 0
+  let total = 0
+  for (const count of Object.values(pax)) {
+    if (typeof count === "number" && Number.isFinite(count) && count > 0) {
+      total += count
+    }
+  }
+  return total
+}
+
 function errorResponse(c: Context, err: unknown): Response {
   if (err instanceof BookingEngineError) {
     const status = statusForCode(err.code)
@@ -722,4 +802,169 @@ function toPricingBreakdownV1(basis: PricingBasisShape | undefined):
     taxTotal: basis.taxes,
     total: subtotal + basis.taxes,
   }
+}
+
+/**
+ * GET /v1/admin/bookings/:id/catalog-snapshot
+ *
+ * Returns the `booking_catalog_snapshot` row for this booking — the
+ * frozen view of what the customer actually purchased: which entity
+ * (product / cruise / hospitality), which source (owned / Bokun / Mews),
+ * the quoted pricing breakdown, and the captured content payload.
+ *
+ * The response is **enriched server-side** with operator-friendly
+ * resolved fields so the admin UI doesn't have to chase ids:
+ *   - `resolved.entity.title`       — human title from the sourced
+ *     projection (`name`/`title`) or the owned product's `name`.
+ *   - `resolved.entity.description` — short description when present.
+ *   - `resolved.entity.supplierName` — supplier label when present.
+ *   - `resolved.source.label`       — friendly source name.
+ *
+ * Used by the booking detail page's "Catalog source" card so
+ * operators see "Demo · Reykjavík Northern Lights Hunt" instead of
+ * `cdmi_01kqp28138f69btmp1n15yjj7r`. Returns 404 when no snapshot
+ * exists (legacy bookings).
+ */
+async function handleGetBookingSnapshot(c: Context): Promise<Response> {
+  const bookingId = c.req.param("id")
+  if (!bookingId) return c.json({ error: "id is required" }, 400)
+  const db = getDb(c)
+
+  const { bookingCatalogSnapshotTable } = await import("@voyantjs/catalog")
+  const [snapshot] = await db
+    .select()
+    .from(bookingCatalogSnapshotTable)
+    .where(eq(bookingCatalogSnapshotTable.booking_id, bookingId))
+    .limit(1)
+
+  if (!snapshot) {
+    return c.json({ error: "snapshot_not_found" }, 404)
+  }
+
+  const resolved = await resolveSnapshotForAdmin(db as unknown as PostgresJsDatabase, {
+    entity_module: snapshot.entity_module,
+    entity_id: snapshot.entity_id,
+    source_kind: snapshot.source_kind,
+    source_provider: snapshot.source_provider,
+    frozen_payload: (snapshot.frozen_payload ?? {}) as Record<string, unknown>,
+  })
+  return c.json({ data: { ...snapshot, resolved } })
+}
+
+interface ResolvedSnapshotEntity {
+  title: string | null
+  description: string | null
+  supplierName: string | null
+  imageUrl: string | null
+}
+
+interface ResolvedSnapshotSource {
+  label: string
+  providerLabel: string | null
+}
+
+/**
+ * Resolve admin-friendly labels for a booking_catalog_snapshot row.
+ * Tries the sourced-entry projection first (covers demo, Bokun, etc.),
+ * falls back to owned products. Returns null fields rather than
+ * throwing when sources are missing — the admin UI treats nulls as
+ * "fall back to id".
+ */
+async function resolveSnapshotForAdmin(
+  db: PostgresJsDatabase,
+  snapshot: {
+    entity_module: string
+    entity_id: string
+    source_kind: string
+    source_provider: string | null
+    frozen_payload: Record<string, unknown>
+  },
+): Promise<{ entity: ResolvedSnapshotEntity; source: ResolvedSnapshotSource }> {
+  const entity: ResolvedSnapshotEntity = {
+    title: null,
+    description: null,
+    supplierName: null,
+    imageUrl: null,
+  }
+
+  // Attempt 1: sourced_entries projection. Covers demo + every
+  // upstream provider that registers via the sourced-entry write path.
+  try {
+    const { catalogSourcedEntriesTable } = await import("@voyantjs/catalog")
+    const [sourced] = await db
+      .select({ projection: catalogSourcedEntriesTable.projection })
+      .from(catalogSourcedEntriesTable)
+      .where(
+        and(
+          eq(catalogSourcedEntriesTable.entity_module, snapshot.entity_module),
+          eq(catalogSourcedEntriesTable.entity_id, snapshot.entity_id),
+        ),
+      )
+      .limit(1)
+    if (sourced?.projection) {
+      const p = sourced.projection as Record<string, unknown>
+      entity.title = pickString(p.name, p.title)
+      entity.description = pickString(p.description, p.summary)
+      entity.supplierName = pickString(p.supplierId, p.supplier_name, p.supplierName)
+      entity.imageUrl = pickString(p.heroImageUrl, p.image_url, p.imageUrl)
+    }
+  } catch {
+    // ignore, fall through
+  }
+
+  // Attempt 2: owned products row.
+  if (!entity.title && snapshot.entity_module === "products") {
+    try {
+      const { productsService } = await import("@voyantjs/products")
+      const product = await productsService.getProductById(db, snapshot.entity_id)
+      if (product) {
+        entity.title = product.name
+        entity.description = product.description
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Attempt 3: pull from the snapshot's frozen upstream payload as
+  // last resort (sourced quotes capture the upstream object inline).
+  if (!entity.title) {
+    const upstream = (snapshot.frozen_payload?.quote as Record<string, unknown> | undefined)
+      ?.upstream_payload as Record<string, unknown> | undefined
+    if (upstream) {
+      entity.title = pickString(upstream.name, upstream.title)
+      entity.description = pickString(upstream.description, upstream.summary)
+    }
+  }
+
+  const source: ResolvedSnapshotSource = {
+    label: friendlySourceLabel(snapshot.source_kind),
+    providerLabel: snapshot.source_provider,
+  }
+
+  return { entity, source }
+}
+
+function pickString(...candidates: unknown[]): string | null {
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim().length > 0) return c
+  }
+  return null
+}
+
+/**
+ * Map raw `source_kind` strings to the labels operators recognise.
+ * "demo" → "Demo Catalog", "owned" → "Owned (this operator)", etc.
+ * Anything we don't recognise comes back title-cased.
+ */
+function friendlySourceLabel(sourceKind: string): string {
+  const map: Record<string, string> = {
+    demo: "Demo Catalog",
+    owned: "Owned (this operator)",
+    bokun: "Bókun",
+    mews: "Mews",
+    fareharbor: "FareHarbor",
+    rezdy: "Rezdy",
+  }
+  return map[sourceKind] ?? sourceKind.replace(/^./, (c) => c.toUpperCase())
 }

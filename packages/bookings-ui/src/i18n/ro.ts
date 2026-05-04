@@ -405,6 +405,7 @@ export const bookingsUiRo = {
     empty: "Nu exista articole inca.",
     values: {
       totalUnavailable: "-",
+      costUnavailable: "-",
       serviceDateUnavailable: "-",
     },
     columns: {
@@ -413,7 +414,16 @@ export const bookingsUiRo = {
       status: "Status",
       quantity: "Cant.",
       total: "Total",
+      cost: "Cost",
       serviceDate: "Data serviciu",
+    },
+    detail: {
+      description: "Descriere",
+      dates: "Date",
+      cost: "Cost",
+      catalogSource: "Sursa catalog",
+      productLink: "Deschide produs",
+      noDescription: "Nu exista descriere pentru acest articol.",
     },
     actions: {
       deleteConfirm: "Stergi acest articol?",

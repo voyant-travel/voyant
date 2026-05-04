@@ -14,7 +14,7 @@ import {
 import { AttachmentDialog } from "@voyantjs/legal-ui/components/attachment-dialog"
 import { SignatureDialog } from "@voyantjs/legal-ui/components/signature-dialog"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, ExternalLink, FileText, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { ContractDialog } from "./contract-dialog"
 import { legalQueryClient } from "./legal-query-client"
@@ -42,7 +42,7 @@ export function loadContractDetailPage(id: string, ensureQueryData: EnsureQueryD
 export function ContractDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { remove, issue, send, execute, voidContract } = useLegalContractMutation()
+  const { remove, issue, voidContract } = useLegalContractMutation()
   const { remove: removeAttachment } = useLegalContractAttachmentMutation()
 
   const [editOpen, setEditOpen] = useState(false)
@@ -113,21 +113,16 @@ export function ContractDetailPage({ id }: { id: string }) {
               Issue
             </Button>
           ) : null}
-          {status === "issued" ? (
-            <Button size="sm" onClick={() => send.mutate(id)} disabled={send.isPending}>
-              Send
-            </Button>
-          ) : null}
-          {status === "issued" || status === "sent" ? (
-            <Button size="sm" onClick={() => setSignOpen(true)}>
-              Sign
-            </Button>
-          ) : null}
-          {status === "signed" ? (
-            <Button size="sm" onClick={() => execute.mutate(id)} disabled={execute.isPending}>
-              Execute
-            </Button>
-          ) : null}
+          {/*
+            Send / Sign / Execute actions removed from the operator
+            view. The customer-facing flow handles signing via the
+            storefront's contract acceptance step (auto-promoted to a
+            real signature when the booking confirms), and the
+            execute transition happens server-side once the signature
+            persists. Operators never need to manually click Send or
+            Sign — those buttons added confusion without unblocking
+            any real workflow.
+          */}
           {status !== "void" ? (
             <Button
               size="sm"
@@ -244,18 +239,13 @@ export function ContractDetailPage({ id }: { id: string }) {
         </Card>
       </div>
 
-      {contract.renderedBody ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Rendered Body</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none rounded-md border bg-muted/30 p-4">
-              <pre className="whitespace-pre-wrap text-sm">{contract.renderedBody}</pre>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+      {/*
+        Rendered Body block intentionally omitted from the operator
+        view. The raw HTML wall isn't useful for ops — what matters
+        is the generated PDF (see Attachments below) and the signed-
+        signature record. Engineers debugging template variables can
+        hit `GET /v1/admin/legal/contracts/:id` directly.
+      */}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -331,11 +321,32 @@ export function ContractDetailPage({ id }: { id: string }) {
                 <tbody>
                   {attachments.map((attachment) => (
                     <tr key={attachment.id} className="border-b last:border-b-0">
-                      <td className="p-2">{attachment.name}</td>
+                      <td className="p-2">
+                        {/*
+                          Click-to-open: the download endpoint
+                          returns a 302 to a fresh signed URL, so a
+                          plain `<a target="_blank">` lets the
+                          browser follow the redirect and render the
+                          PDF inline. Operators don't need a
+                          separate "Download" action when the name
+                          itself is the affordance — fewer buttons,
+                          one obvious click target.
+                        */}
+                        <a
+                          href={`/api/v1/admin/legal/contracts/attachments/${attachment.id}/download`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 hover:underline"
+                        >
+                          <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                          <span className="truncate">{attachment.name}</span>
+                          <ExternalLink className="h-3 w-3 opacity-60" />
+                        </a>
+                      </td>
                       <td className="p-2">{attachment.kind}</td>
                       <td className="p-2">{attachment.mimeType ?? "-"}</td>
                       <td className="p-2">
-                        {attachment.fileSize ? `${attachment.fileSize} B` : "-"}
+                        {attachment.fileSize != null ? formatBytes(attachment.fileSize) : "-"}
                       </td>
                       <td className="p-2">
                         <div className="flex items-center gap-1">
@@ -405,4 +416,16 @@ export function ContractDetailPage({ id }: { id: string }) {
       />
     </div>
   )
+}
+
+/**
+ * Render a byte count as a human-readable size — `250060` becomes
+ * `244 KB`, `1572864` becomes `1.5 MB`. Operators scanning the
+ * attachments table want a quick "is this too big to email?" read,
+ * not raw bytes.
+ */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }

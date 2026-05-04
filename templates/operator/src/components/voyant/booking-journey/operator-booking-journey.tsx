@@ -9,8 +9,8 @@
  */
 
 import { useNavigate } from "@tanstack/react-router"
-import { BookingJourney, type BookingJourneyProps } from "@voyantjs/booking-journey-ui"
 import { PersonPickerSection, type PersonPickerValue } from "@voyantjs/bookings-ui"
+import { BookingJourney, type BookingJourneyProps } from "@voyantjs/bookings-ui/journey"
 import { useState } from "react"
 
 const emptyPersonPickerValue: PersonPickerValue = {

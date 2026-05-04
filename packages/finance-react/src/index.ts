@@ -7,6 +7,7 @@ export {
 } from "./client.js"
 export * from "./hooks/index.js"
 export {
+  getAdminBookingPayments,
   getPublicBookingDocuments,
   getPublicBookingPaymentOptions,
   getPublicBookingPayments,
@@ -24,6 +25,7 @@ export {
 } from "./provider.js"
 export { financeQueryKeys } from "./query-keys.js"
 export {
+  getAdminBookingPaymentsQueryOptions,
   getBookingGuaranteesQueryOptions,
   getBookingPaymentSchedulesQueryOptions,
   getInvoiceCreditNotesQueryOptions,

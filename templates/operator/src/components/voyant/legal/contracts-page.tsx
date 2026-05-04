@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
+import { usePerson } from "@voyantjs/crm-react"
 import {
   getLegalContractsQueryOptions,
   type LegalContractRecord,
@@ -101,9 +102,7 @@ export function ContractsPage() {
       {
         accessorKey: "personId",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Person" />,
-        cell: ({ row }) => (
-          <span className="font-mono text-xs">{row.original.personId ?? "-"}</span>
-        ),
+        cell: ({ row }) => <PersonNameCell personId={row.original.personId} />,
       },
       {
         accessorKey: "createdAt",
@@ -204,4 +203,35 @@ export function ContractsPage() {
       />
     </div>
   )
+}
+
+/**
+ * Render the person column for one contract row. Resolves the
+ * person id to "First Last" client-side via the CRM hook so
+ * operators see a name instead of `pers_…` typeids.
+ *
+ * Lives as its own component (not an inline function inside the
+ * column `cell`) because hooks can't be called from a `cell`
+ * arrow without re-rendering the whole table on each row's state
+ * change. React Query dedupes identical person fetches across
+ * rows, so multiple contracts for the same person make exactly
+ * one network call.
+ */
+function PersonNameCell({ personId }: { personId: string | null }): React.ReactElement {
+  const { data, isLoading } = usePerson(personId ?? undefined, {
+    enabled: Boolean(personId),
+  })
+  if (!personId) return <span className="text-muted-foreground">—</span>
+  if (isLoading) return <span className="text-muted-foreground text-xs">…</span>
+  if (!data) {
+    // 404 / error — fall back to the truncated id so we show
+    // something rather than a permanent loader.
+    return (
+      <span className="font-mono text-xs text-muted-foreground" title={personId}>
+        {personId.slice(0, 16)}…
+      </span>
+    )
+  }
+  const name = `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim()
+  return <span className="text-sm">{name || personId.slice(0, 16)}</span>
 }

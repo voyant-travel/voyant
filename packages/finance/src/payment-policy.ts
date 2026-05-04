@@ -1,0 +1,280 @@
+/**
+ * Customer-facing payment policy primitive.
+ *
+ * Decides how to split a booking total into a payment schedule: full
+ * payment up-front, or a deposit now + balance due before departure.
+ * Pure function — no DB, no IO. Two policies in (the operator default
+ * + any per-supplier / per-category / per-listing override) plus the
+ * booking total + departure date, schedule rows out.
+ *
+ * Behaviour:
+ *
+ *   1. If `policy.deposit.kind === "none"` → one row, full total, due
+ *      immediately. Skips the rest of the rules.
+ *   2. If departure is too close (`< minDaysBeforeDepartureForDeposit`
+ *      from today) → also full payment now. The agency doesn't have
+ *      time to chase a balance.
+ *   3. Otherwise → two rows:
+ *        - deposit row, due today, amount = percent × total OR fixed
+ *          cents (capped at total).
+ *        - balance row, amount = total − deposit, due
+ *          `balanceDueDaysBeforeDeparture` before departure, but never
+ *          sooner than `balanceDueMinDaysFromNow` days from now.
+ *
+ * Cascade resolution lives in {@link resolveEffectivePaymentPolicy}:
+ * the most-specific layer that defines a policy wins (booking >
+ * listing > category > supplier > operator default), no field-level
+ * merging — so the audit trail is "this whole policy applied".
+ */
+
+export type DepositKind = "none" | "percent" | "fixed_cents"
+
+export interface DepositRule {
+  kind: DepositKind
+  /** Required when `kind === "percent"`. 0–100 inclusive. */
+  percent?: number
+  /** Required when `kind === "fixed_cents"`. Capped at total. */
+  amountCents?: number
+}
+
+export interface PaymentPolicy {
+  deposit: DepositRule
+  /** Below this many days before departure, deposits are rejected and
+   *  the booking is invoiced for the full amount up-front. */
+  minDaysBeforeDepartureForDeposit: number
+  /** When the balance is due (days BEFORE departure). */
+  balanceDueDaysBeforeDeparture: number
+  /** Floor on the balance due date so it's never sooner than this
+   *  many days from "now". Protects the customer from a tight squeeze
+   *  when departure is barely outside the deposit window. */
+  balanceDueMinDaysFromNow: number
+}
+
+/** Default policy: 100% up-front, no deposit. Safe fallback for
+ *  agencies that haven't configured anything yet. */
+export const noDepositPolicy: PaymentPolicy = {
+  deposit: { kind: "none" },
+  minDaysBeforeDepartureForDeposit: 0,
+  balanceDueDaysBeforeDeparture: 0,
+  balanceDueMinDaysFromNow: 0,
+}
+
+export type PaymentScheduleEntryType = "deposit" | "balance" | "full"
+
+export interface ComputedScheduleEntry {
+  scheduleType: PaymentScheduleEntryType
+  amountCents: number
+  currency: string
+  /** ISO `YYYY-MM-DD`. */
+  dueDate: string
+}
+
+export interface ComputeScheduleInput {
+  totalCents: number
+  currency: string
+  /** ISO `YYYY-MM-DD` (or full ISO string — we only look at the date). */
+  departureDate: string | null | undefined
+  /** Defaults to `new Date()`. Injectable for deterministic tests. */
+  today?: Date
+}
+
+/**
+ * Compute the customer-facing payment schedule for a booking.
+ *
+ * Always returns at least one row. When the policy resolves to no
+ * deposit (or the gate denies one), the single row is a `full`
+ * scheduled for today.
+ */
+export function computePaymentSchedule(
+  input: ComputeScheduleInput,
+  policy: PaymentPolicy,
+): ComputedScheduleEntry[] {
+  const total = Math.max(0, Math.round(input.totalCents))
+  const today = input.today ?? new Date()
+  const todayIso = isoDate(today)
+
+  if (total === 0) {
+    return [{ scheduleType: "full", amountCents: 0, currency: input.currency, dueDate: todayIso }]
+  }
+
+  if (policy.deposit.kind === "none") {
+    return [
+      { scheduleType: "full", amountCents: total, currency: input.currency, dueDate: todayIso },
+    ]
+  }
+
+  const departure = parseIsoDate(input.departureDate)
+  if (!departure) {
+    // Without a departure date we can't anchor the balance, so fall
+    // back to full upfront — the operator can still split manually
+    // via a booking-level override later.
+    return [
+      { scheduleType: "full", amountCents: total, currency: input.currency, dueDate: todayIso },
+    ]
+  }
+
+  const daysUntilDeparture = wholeDaysBetween(today, departure)
+  if (daysUntilDeparture < policy.minDaysBeforeDepartureForDeposit) {
+    return [
+      { scheduleType: "full", amountCents: total, currency: input.currency, dueDate: todayIso },
+    ]
+  }
+
+  const depositCents = clampCents(computeDepositCents(total, policy.deposit), 0, total)
+  const balanceCents = total - depositCents
+  if (depositCents <= 0 || balanceCents <= 0) {
+    // Edge: a policy that resolves to 0% deposit or 100% deposit
+    // collapses to a single row rather than emitting a zero-cent
+    // partner.
+    return [
+      { scheduleType: "full", amountCents: total, currency: input.currency, dueDate: todayIso },
+    ]
+  }
+
+  const rawBalanceDue = addDays(departure, -policy.balanceDueDaysBeforeDeparture)
+  const earliestBalanceDue = addDays(today, policy.balanceDueMinDaysFromNow)
+  const balanceDue =
+    rawBalanceDue.getTime() > earliestBalanceDue.getTime() ? rawBalanceDue : earliestBalanceDue
+
+  return [
+    {
+      scheduleType: "deposit",
+      amountCents: depositCents,
+      currency: input.currency,
+      dueDate: todayIso,
+    },
+    {
+      scheduleType: "balance",
+      amountCents: balanceCents,
+      currency: input.currency,
+      dueDate: isoDate(balanceDue),
+    },
+  ]
+}
+
+function computeDepositCents(total: number, rule: DepositRule): number {
+  if (rule.kind === "percent") {
+    const pct = clampNumber(rule.percent ?? 0, 0, 100)
+    return Math.round((total * pct) / 100)
+  }
+  if (rule.kind === "fixed_cents") {
+    return Math.max(0, Math.round(rule.amountCents ?? 0))
+  }
+  return 0
+}
+
+/** True when this policy is empty / "inherit from parent". */
+export function isPaymentPolicyEmpty(policy: PaymentPolicy | null | undefined): boolean {
+  if (!policy) return true
+  if (policy.deposit.kind === "none") return true
+  if (
+    policy.deposit.kind === "percent" &&
+    (policy.deposit.percent === undefined || policy.deposit.percent === 0)
+  ) {
+    return true
+  }
+  if (
+    policy.deposit.kind === "fixed_cents" &&
+    (policy.deposit.amountCents === undefined || policy.deposit.amountCents === 0)
+  ) {
+    return true
+  }
+  return false
+}
+
+export type PaymentPolicySource =
+  | "booking"
+  | "listing"
+  | "category"
+  | "supplier"
+  | "operator_default"
+
+export interface PaymentPolicyCascadeLayers {
+  bookingPolicy?: PaymentPolicy | null
+  listingPolicy?: PaymentPolicy | null
+  categoryPolicy?: PaymentPolicy | null
+  supplierPolicy?: PaymentPolicy | null
+  operatorDefault: PaymentPolicy
+}
+
+export interface ResolvedPaymentPolicy {
+  policy: PaymentPolicy
+  source: PaymentPolicySource
+}
+
+/**
+ * Most-specific-wins cascade. Returns both the policy and which
+ * layer it came from so contracts and ops UIs can show the trace.
+ *
+ * A layer is "set" when it's not null/undefined AND not effectively
+ * empty (deposit kind === "none" with no other meaningful fields).
+ * That way operators who declare an explicit "no deposit" policy on
+ * a supplier override their parent's "50% deposit" — they pass an
+ * explicit `deposit: { kind: "none" }` AND set non-zero day fields
+ * to mark the layer as intentional.
+ *
+ * For v1 we rely on null/undefined to mean "inherit". The settings
+ * API stores `null` for "use parent". An explicit "none" policy
+ * needs to be modeled with a different deposit kind later if it
+ * proves useful.
+ */
+export function resolveEffectivePaymentPolicy(
+  layers: PaymentPolicyCascadeLayers,
+): ResolvedPaymentPolicy {
+  if (layers.bookingPolicy) return { policy: layers.bookingPolicy, source: "booking" }
+  if (layers.listingPolicy) return { policy: layers.listingPolicy, source: "listing" }
+  if (layers.categoryPolicy) return { policy: layers.categoryPolicy, source: "category" }
+  if (layers.supplierPolicy) return { policy: layers.supplierPolicy, source: "supplier" }
+  return { policy: layers.operatorDefault, source: "operator_default" }
+}
+
+/**
+ * Predicate the storefront UI uses to decide whether to surface the
+ * "deposit + balance" copy or just "pay full now". Returns true when
+ * the policy + departure date resolve to a single full-payment row.
+ */
+export function policyShouldRequireFullPayment(
+  policy: PaymentPolicy,
+  departureDate: string | null | undefined,
+  today: Date = new Date(),
+): boolean {
+  if (policy.deposit.kind === "none") return true
+  const departure = parseIsoDate(departureDate)
+  if (!departure) return true
+  return wholeDaysBetween(today, departure) < policy.minDaysBeforeDepartureForDeposit
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────
+
+function parseIsoDate(value: string | null | undefined): Date | null {
+  if (!value) return null
+  const trimmed = value.length >= 10 ? value.slice(0, 10) : value
+  const parsed = new Date(`${trimmed}T00:00:00Z`)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10)
+}
+
+function wholeDaysBetween(from: Date, to: Date): number {
+  const fromMs = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate())
+  const toMs = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate())
+  return Math.floor((toMs - fromMs) / (24 * 60 * 60 * 1000))
+}
+
+function addDays(d: Date, days: number): Date {
+  const next = new Date(d.getTime())
+  next.setUTCDate(next.getUTCDate() + days)
+  return next
+}
+
+function clampCents(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, Math.round(value)))
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}

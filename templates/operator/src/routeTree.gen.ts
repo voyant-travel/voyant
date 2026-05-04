@@ -46,6 +46,7 @@ import { Route as WorkspaceSettingsProductTypesRouteImport } from './routes/_wor
 import { Route as WorkspaceSettingsProductTagsRouteImport } from './routes/_workspace/settings/product-tags'
 import { Route as WorkspaceSettingsPricingCategoriesRouteImport } from './routes/_workspace/settings/pricing-categories'
 import { Route as WorkspaceSettingsPriceCatalogsRouteImport } from './routes/_workspace/settings/price-catalogs'
+import { Route as WorkspaceSettingsOperatorRouteImport } from './routes/_workspace/settings/operator'
 import { Route as WorkspaceSettingsChannelsRouteImport } from './routes/_workspace/settings/channels'
 import { Route as WorkspaceResourcesIdRouteImport } from './routes/_workspace/resources/$id'
 import { Route as WorkspaceProductsCategoriesRouteImport } from './routes/_workspace/products/categories'
@@ -268,6 +269,12 @@ const WorkspaceSettingsPriceCatalogsRoute =
     path: '/price-catalogs',
     getParentRoute: () => WorkspaceSettingsRouteRoute,
   } as any)
+const WorkspaceSettingsOperatorRoute =
+  WorkspaceSettingsOperatorRouteImport.update({
+    id: '/operator',
+    path: '/operator',
+    getParentRoute: () => WorkspaceSettingsRouteRoute,
+  } as any)
 const WorkspaceSettingsChannelsRoute =
   WorkspaceSettingsChannelsRouteImport.update({
     id: '/channels',
@@ -485,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/resources/$id': typeof WorkspaceResourcesIdRoute
   '/settings/channels': typeof WorkspaceSettingsChannelsRoute
+  '/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
   '/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
@@ -552,6 +560,7 @@ export interface FileRoutesByTo {
   '/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/resources/$id': typeof WorkspaceResourcesIdRoute
   '/settings/channels': typeof WorkspaceSettingsChannelsRoute
+  '/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
   '/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
@@ -624,6 +633,7 @@ export interface FileRoutesById {
   '/_workspace/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/_workspace/resources/$id': typeof WorkspaceResourcesIdRoute
   '/_workspace/settings/channels': typeof WorkspaceSettingsChannelsRoute
+  '/_workspace/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/_workspace/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
   '/_workspace/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/_workspace/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
@@ -694,6 +704,7 @@ export interface FileRouteTypes {
     | '/products/categories'
     | '/resources/$id'
     | '/settings/channels'
+    | '/settings/operator'
     | '/settings/price-catalogs'
     | '/settings/pricing-categories'
     | '/settings/product-tags'
@@ -761,6 +772,7 @@ export interface FileRouteTypes {
     | '/products/categories'
     | '/resources/$id'
     | '/settings/channels'
+    | '/settings/operator'
     | '/settings/price-catalogs'
     | '/settings/pricing-categories'
     | '/settings/product-tags'
@@ -832,6 +844,7 @@ export interface FileRouteTypes {
     | '/_workspace/products/categories'
     | '/_workspace/resources/$id'
     | '/_workspace/settings/channels'
+    | '/_workspace/settings/operator'
     | '/_workspace/settings/price-catalogs'
     | '/_workspace/settings/pricing-categories'
     | '/_workspace/settings/product-tags'
@@ -1141,6 +1154,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSettingsPriceCatalogsRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
     }
+    '/_workspace/settings/operator': {
+      id: '/_workspace/settings/operator'
+      path: '/operator'
+      fullPath: '/settings/operator'
+      preLoaderRoute: typeof WorkspaceSettingsOperatorRouteImport
+      parentRoute: typeof WorkspaceSettingsRouteRoute
+    }
     '/_workspace/settings/channels': {
       id: '/_workspace/settings/channels'
       path: '/channels'
@@ -1417,6 +1437,7 @@ const storefrontRouteRouteWithChildren = storefrontRouteRoute._addFileChildren(
 
 interface WorkspaceSettingsRouteRouteChildren {
   WorkspaceSettingsChannelsRoute: typeof WorkspaceSettingsChannelsRoute
+  WorkspaceSettingsOperatorRoute: typeof WorkspaceSettingsOperatorRoute
   WorkspaceSettingsPriceCatalogsRoute: typeof WorkspaceSettingsPriceCatalogsRoute
   WorkspaceSettingsPricingCategoriesRoute: typeof WorkspaceSettingsPricingCategoriesRoute
   WorkspaceSettingsProductTagsRoute: typeof WorkspaceSettingsProductTagsRoute
@@ -1428,6 +1449,7 @@ interface WorkspaceSettingsRouteRouteChildren {
 const WorkspaceSettingsRouteRouteChildren: WorkspaceSettingsRouteRouteChildren =
   {
     WorkspaceSettingsChannelsRoute: WorkspaceSettingsChannelsRoute,
+    WorkspaceSettingsOperatorRoute: WorkspaceSettingsOperatorRoute,
     WorkspaceSettingsPriceCatalogsRoute: WorkspaceSettingsPriceCatalogsRoute,
     WorkspaceSettingsPricingCategoriesRoute:
       WorkspaceSettingsPricingCategoriesRoute,

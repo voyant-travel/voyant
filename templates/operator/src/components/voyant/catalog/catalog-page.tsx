@@ -647,6 +647,19 @@ interface BookingDeparture {
   startsAt: string
 }
 
+interface CatalogSlotAvailability {
+  id: string
+  startsAt: string
+  status: string
+  unlimited: boolean
+  remainingPax: number | null
+  initialPax: number | null
+}
+
+interface CatalogSlotsResponse {
+  rows: CatalogSlotAvailability[]
+}
+
 function goToBookingPage(
   hit: CatalogSearchHit,
   entityModule: string,
@@ -717,6 +730,7 @@ async function loadProductDetail(
     typeof content.product.supplier === "string"
       ? formatSupplier(content.product.supplier)
       : (content.product.supplier ?? null)
+  const availabilityById = await loadProductSlotAvailability(hit.id)
 
   return {
     description: content.product.description ?? null,
@@ -744,9 +758,10 @@ async function loadProductDetail(
       id: d.id,
       startsAt: d.starts_at,
       endsAt: d.ends_at ?? null,
-      status: d.status ?? null,
-      capacity: d.capacity ?? null,
-      remaining: d.remaining ?? null,
+      status: availabilityById.get(d.id)?.status ?? d.status ?? null,
+      unlimited: availabilityById.get(d.id)?.unlimited ?? null,
+      capacity: availabilityById.get(d.id)?.initialPax ?? d.capacity ?? null,
+      remaining: availabilityById.get(d.id)?.remainingPax ?? d.remaining ?? null,
       lowestPriceCents: d.lowest_price_cents ?? null,
       currency: d.currency ?? null,
       note: d.note ?? null,
@@ -757,5 +772,18 @@ async function loadProductDetail(
     servedStale: served_stale,
     synthesized,
     machineTranslated: machine_translated,
+  }
+}
+
+async function loadProductSlotAvailability(
+  productId: string,
+): Promise<Map<string, CatalogSlotAvailability>> {
+  try {
+    const response = await api.get<CatalogSlotsResponse>(
+      `/v1/admin/catalog/slots?entityModule=products&entityId=${encodeURIComponent(productId)}`,
+    )
+    return new Map(response.rows.map((slot) => [slot.id, slot]))
+  } catch {
+    return new Map()
   }
 }

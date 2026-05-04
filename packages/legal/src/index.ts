@@ -100,6 +100,7 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
               const result = await autoGenerateContractForBooking(db, event.data, auto, {
                 generator,
                 eventBus,
+                bindings: bindings as Record<string, unknown>,
               })
               if (result.status !== "ok") {
                 console.error(

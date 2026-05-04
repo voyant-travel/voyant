@@ -1,0 +1,1 @@
+ALTER TABLE "product_categories" ADD COLUMN "customer_payment_policy" jsonb;
