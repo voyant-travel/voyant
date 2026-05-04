@@ -281,17 +281,24 @@ async function releaseInquiryBooking(
  */
 /**
  * Look up the catalog snapshot for a `bookingId` (the catalog plane
- * always writes one) and materialize a minimal bookings row from it.
- * Used when /book went through the sourced arm — sourced adapters
- * don't write to the bookings table directly, so the checkout flow
- * has to bridge the snapshot into a real bookings row before it can
- * place payment sessions, transition status, etc.
+ * always writes one) and materialize a real bookings row plus the
+ * traveler / item children. Used when /book went through the sourced
+ * arm — sourced adapters don't write to the bookings table directly,
+ * so the checkout flow has to bridge the snapshot into normal
+ * booking shape before it can place payment sessions, transition
+ * status, etc.
+ *
+ * The booking_drafts table carries the customer-entered detail
+ * (passengers, billing contact, configure pax / dates) — we look
+ * up the draft via `consumed_booking_id` and pull contact + traveler
+ * rows out of it. Snapshot supplies pricing + entity refs.
  */
 async function materializeBookingFromSnapshot(
   db: PostgresJsDatabase,
   bookingId: string,
 ): Promise<typeof bookings.$inferSelect | null> {
   const { bookingCatalogSnapshotTable } = await import("@voyantjs/catalog")
+  const { bookingDraftsTable } = await import("@voyantjs/catalog/booking-engine")
   const [snapshot] = await db
     .select()
     .from(bookingCatalogSnapshotTable)
@@ -310,9 +317,28 @@ async function materializeBookingFromSnapshot(
   const sellAmountCents = Math.round(baseAmount + taxes + fees + surcharges)
   const sellCurrency = snapshot.pricing_currency ?? "EUR"
 
-  // Booking number — short, human-friendly, derived from the
-  // snapshot id so it's stable across retries with the same
-  // idempotency key.
+  // Pull the consuming draft so we can copy the customer-entered
+  // billing contact + travelers + dates into the booking row.
+  const [draftRow] = await db
+    .select()
+    .from(bookingDraftsTable)
+    .where(eq(bookingDraftsTable.consumed_booking_id, bookingId))
+    .limit(1)
+  const draftPayload = (draftRow?.draft_payload ?? {}) as DraftPayload
+
+  const billingContact = draftPayload.billing?.contact
+  const billingAddress = draftPayload.billing?.address
+  const config = draftPayload.configure
+  const pax = config?.pax
+  const totalPax = pax ? (pax.adult ?? 0) + (pax.child ?? 0) + (pax.infant ?? 0) : null
+  const startDate =
+    typeof config?.dateRange?.checkIn === "string"
+      ? config.dateRange.checkIn
+      : typeof config?.departureDate === "string"
+        ? config.departureDate
+        : null
+  const endDate = typeof config?.dateRange?.checkOut === "string" ? config.dateRange.checkOut : null
+
   const bookingNumber = `BK-${bookingId.slice(-12).toUpperCase()}`
 
   const [row] = await db
@@ -324,14 +350,131 @@ async function materializeBookingFromSnapshot(
       sourceType: "direct",
       sellCurrency,
       sellAmountCents,
+      contactFirstName: billingContact?.firstName ?? null,
+      contactLastName: billingContact?.lastName ?? null,
+      contactEmail: billingContact?.email ?? null,
+      contactPhone: billingContact?.phone ?? null,
+      contactCountry: billingAddress?.country ?? null,
+      contactCity: billingAddress?.city ?? null,
+      contactAddressLine1: billingAddress?.line1 ?? null,
+      contactPostalCode: billingAddress?.postal ?? null,
+      startDate,
+      endDate,
+      pax: totalPax && totalPax > 0 ? totalPax : null,
+      internalNotes:
+        typeof draftPayload.internalNotes === "string" ? draftPayload.internalNotes : null,
     })
     .onConflictDoNothing({ target: bookings.id })
     .returning()
 
-  if (row) return row
+  const inserted = row ?? null
+
+  // Materialize travelers + a single line item per booked entity so
+  // the operator detail page has something to render. No-ops on
+  // re-entry (race or retry) because we only run this when the
+  // bookings row was just inserted.
+  if (inserted) {
+    await materializeChildren(db, inserted, snapshot, draftPayload)
+  }
+
+  if (inserted) return inserted
   // Race: another request already inserted; re-fetch.
   const [existing] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
   return existing ?? null
+}
+
+interface DraftPayload {
+  billing?: {
+    contact?: {
+      firstName?: string
+      lastName?: string
+      email?: string
+      phone?: string
+    }
+    address?: {
+      country?: string
+      city?: string
+      line1?: string
+      line2?: string
+      postal?: string
+    }
+  }
+  configure?: {
+    pax?: { adult?: number; child?: number; infant?: number }
+    departureDate?: string
+    dateRange?: { checkIn?: string; checkOut?: string }
+  }
+  travelers?: Array<{
+    rowId?: string
+    firstName?: string
+    lastName?: string
+    email?: string
+    phone?: string
+    band?: string
+    dateOfBirth?: string
+  }>
+  entity?: { module?: string; id?: string }
+  internalNotes?: string
+}
+
+async function materializeChildren(
+  db: PostgresJsDatabase,
+  booking: typeof bookings.$inferSelect,
+  snapshot: { entity_module: string; entity_id: string },
+  draftPayload: DraftPayload,
+): Promise<void> {
+  const { bookingTravelers, bookingItems } = await import("@voyantjs/bookings/schema")
+
+  const travelers = draftPayload.travelers ?? []
+  if (travelers.length > 0) {
+    const rows = travelers
+      .filter((t) => (t.firstName?.length ?? 0) > 0 || (t.lastName?.length ?? 0) > 0)
+      .map((t, idx) => ({
+        bookingId: booking.id,
+        firstName: t.firstName ?? "Traveler",
+        lastName: t.lastName ?? `${idx + 1}`,
+        email: t.email ?? null,
+        phone: t.phone ?? null,
+        dateOfBirth: t.dateOfBirth ?? null,
+        category: travelerBandToCategory(t.band),
+        isPrimary: idx === 0,
+      }))
+    if (rows.length > 0) {
+      await db.insert(bookingTravelers).values(rows).onConflictDoNothing()
+    }
+  }
+
+  // One item summarizing the booked entity, so the items tab isn't
+  // empty. Real verticals (cruises with cabin lines, hospitality with
+  // room lines) fan this out per their own conventions; this is the
+  // generic fallback so sourced products show up in the UI.
+  await db
+    .insert(bookingItems)
+    .values({
+      bookingId: booking.id,
+      title:
+        snapshot.entity_module === "products"
+          ? "Tour booking"
+          : `Booking (${snapshot.entity_module})`,
+      productId: snapshot.entity_module === "products" ? snapshot.entity_id : null,
+      quantity: booking.pax ?? 1,
+      itemType: "service",
+      status: "on_hold",
+      unitSellAmountCents:
+        booking.pax && booking.pax > 0 && booking.sellAmountCents
+          ? Math.round(booking.sellAmountCents / booking.pax)
+          : (booking.sellAmountCents ?? 0),
+      totalSellAmountCents: booking.sellAmountCents ?? 0,
+      sellCurrency: booking.sellCurrency,
+    })
+    .onConflictDoNothing()
+}
+
+function travelerBandToCategory(
+  band: string | undefined,
+): "adult" | "child" | "infant" | "senior" | "student" | "other" {
+  if (band === "child" || band === "infant" || band === "senior" || band === "student") return band
+  return "adult"
 }
 
 async function markAwaitingPayment(

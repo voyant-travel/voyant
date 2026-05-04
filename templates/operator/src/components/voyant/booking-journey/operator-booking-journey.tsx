@@ -58,7 +58,7 @@ export function OperatorBookingJourney({
       return <CrmLeadPicker apply={apply} variant="traveler" />
     },
     onCommitted(result) {
-      navigate({ to: "/orders/catalog", search: { highlight: result.bookingId } as never })
+      navigate({ to: "/bookings", search: { highlight: result.bookingId } as never })
     },
     onCancelled() {
       navigate({ to: "/catalog" })
