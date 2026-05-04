@@ -9,6 +9,7 @@ export const bookingsUiRo = {
     bookingStatusLabels: {
       draft: "Ciorna",
       on_hold: "In asteptare",
+      awaiting_payment: "Asteapta plata",
       confirmed: "Confirmata",
       in_progress: "In desfasurare",
       cancelled: "Anulata",

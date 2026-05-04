@@ -9,6 +9,7 @@ export const bookingsUiEn = {
     bookingStatusLabels: {
       draft: "Draft",
       on_hold: "On hold",
+      awaiting_payment: "Awaiting payment",
       confirmed: "Confirmed",
       in_progress: "In progress",
       cancelled: "Cancelled",

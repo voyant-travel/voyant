@@ -20,6 +20,7 @@ export const successEnvelope = z.object({ success: z.boolean() })
 export const bookingStatusSchema = z.enum([
   "draft",
   "on_hold",
+  "awaiting_payment",
   "confirmed",
   "in_progress",
   "completed",

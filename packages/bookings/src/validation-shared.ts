@@ -3,6 +3,7 @@ import { z } from "zod"
 export const bookingStatusSchema = z.enum([
   "draft",
   "on_hold",
+  "awaiting_payment",
   "confirmed",
   "in_progress",
   "completed",
