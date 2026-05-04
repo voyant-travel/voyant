@@ -88,7 +88,9 @@ export function ContractPreviewDialog({
     null,
   )
   const [acceptedTerms, setAcceptedTerms] = React.useState(false)
-  const [acceptedMarketing, setAcceptedMarketing] = React.useState(false)
+  // Marketing consent defaults to opted-in; the customer can untick
+  // before accepting. Terms still require an explicit tick.
+  const [acceptedMarketing, setAcceptedMarketing] = React.useState(true)
 
   // Stringify the variables once so the effect re-fetches only on
   // meaningful changes — equivalent to a deep-equality check, but
@@ -104,7 +106,7 @@ export function ContractPreviewDialog({
     setLoadState("loading")
     setErrorMessage(null)
     setAcceptedTerms(false)
-    setAcceptedMarketing(false)
+    setAcceptedMarketing(true)
     void fetch(previewUrl, {
       method: "POST",
       credentials: "include",
@@ -210,17 +212,18 @@ export function ContractPreviewDialog({
                 )}
               </span>
             </label>
-            {marketingLabel ? (
-              // biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the input element under the hood
-              <label className="flex items-start gap-2">
-                <Checkbox
-                  checked={acceptedMarketing}
-                  onCheckedChange={(v) => setAcceptedMarketing(v === true)}
-                  className="mt-0.5"
-                />
-                <span>{marketingLabel}</span>
-              </label>
-            ) : null}
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the input element under the hood */}
+            <label className="flex items-start gap-2">
+              <Checkbox
+                checked={acceptedMarketing}
+                onCheckedChange={(v) => setAcceptedMarketing(v === true)}
+                className="mt-0.5"
+              />
+              <span>
+                {marketingLabel ??
+                  "I'd like to receive occasional travel offers and updates by email. (You can unsubscribe at any time.)"}
+              </span>
+            </label>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

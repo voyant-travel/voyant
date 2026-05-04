@@ -65,11 +65,15 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
 
   const module: Module = {
     ...financeModule,
-    bootstrap: ({ bindings, container }) => {
-      container.register(
-        FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
-        buildFinanceRouteRuntime(bindings as Record<string, unknown>, options),
-      )
+    bootstrap: ({ bindings, container, eventBus }) => {
+      const runtime = buildFinanceRouteRuntime(bindings as Record<string, unknown>, options)
+      // Wire the framework's eventBus into the route runtime so subscribers
+      // (notably the storefront's checkout-finalize workflow on
+      // `payment.completed`) actually receive emissions from
+      // `financeService.completePaymentSession`. Without this, the Netopia
+      // webhook silently no-ops because the runtime has no bus attached.
+      if (!runtime.eventBus && eventBus) runtime.eventBus = eventBus
+      container.register(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, runtime)
     },
   }
 

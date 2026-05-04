@@ -198,6 +198,11 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/products",
     "/v1/public/cruises",
     "/v1/public/hospitality",
+    // Storefront contract preview — the booking journey resolves the
+    // active customer-scope template and renders its preview HTML
+    // before the customer accepts. Both the slug-resolution lookup
+    // and the by-slug preview render live under this prefix.
+    "/v1/public/legal",
     // Netopia webhook receiver. Netopia's servers POST here without a
     // session cookie or bearer; the plugin handler matches the inbound
     // payload to a payment session by orderID and validates the
