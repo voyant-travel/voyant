@@ -386,11 +386,16 @@ async function handleCardIntent(
   }
 
   if (!runtime) {
+    // No Netopia configured — surface the booking on the standard
+    // confirmation page in `card_pending` mode. The page polls
+    // booking status and unlocks contract/invoice download links
+    // once the operator marks payment received via the booking
+    // detail's pending-payment-sessions panel.
     return c.json({
       kind: "card_redirect" as const,
       bookingId: booking.id,
       paymentSessionId: session.id,
-      redirectUrl: `/shop/payment-processing/${encodeURIComponent(booking.id)}?session=${encodeURIComponent(session.id)}`,
+      redirectUrl: `/shop/confirmation/${encodeURIComponent(booking.id)}?kind=card_pending&session=${encodeURIComponent(session.id)}`,
       note: "Netopia not configured — falling back to a confirmation-page poll.",
     })
   }
@@ -414,8 +419,13 @@ async function handleCardIntent(
           details: "Pending — customer to confirm at payment.",
         },
         description: `Booking ${booking.bookingNumber}`,
+        // Netopia redirects the customer back to this URL after 3DS.
+        // Land them on the confirmation page in card_pending mode —
+        // the webhook (NETOPIA_NOTIFY_URL) does the actual booking
+        // confirmation in the background; this page just polls until
+        // the booking flips to `confirmed`.
         returnUrl: body.returnOrigin
-          ? `${body.returnOrigin}/shop/payment-processing/${encodeURIComponent(booking.id)}`
+          ? `${body.returnOrigin}/shop/confirmation/${encodeURIComponent(booking.id)}?kind=card_pending`
           : undefined,
       },
       runtime,
