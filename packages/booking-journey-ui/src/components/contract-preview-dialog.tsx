@@ -67,7 +67,8 @@ interface PreviewResponse {
       language?: string
       scope?: string
     }
-    rendered?: { body?: string; format?: string }
+    /** Rendered HTML — the legal package returns a bare string. */
+    rendered?: string
   }
 }
 
@@ -122,7 +123,7 @@ export function ContractPreviewDialog({
         }
         const json = (await res.json()) as PreviewResponse
         if (cancelled) return
-        const body = json.data?.rendered?.body ?? ""
+        const body = json.data?.rendered ?? ""
         const tmpl = json.data?.template
         if (!body || !tmpl) {
           throw new Error("Preview response missing rendered body or template metadata")
