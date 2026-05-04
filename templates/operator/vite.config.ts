@@ -41,7 +41,6 @@ const config = defineConfig({
         "zod",
         "react-hook-form",
         "swr",
-        "moment",
       ],
     },
   },

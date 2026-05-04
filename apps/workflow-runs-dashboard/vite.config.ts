@@ -33,7 +33,10 @@ export default defineConfig({
   server: {
     port: 3500,
     proxy: {
-      "/api": process.env.VOYANT_API_TARGET ?? "http://127.0.0.1:3300",
+      // `localhost` (not 127.0.0.1) — vite often binds the operator
+      // template to IPv6 loopback only; resolving via localhost lets
+      // Node fall back across address families.
+      "/api": process.env.VOYANT_API_TARGET ?? "http://localhost:3300",
     },
   },
 })
