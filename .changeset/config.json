@@ -71,7 +71,6 @@
       "@voyantjs/next",
       "@voyantjs/notifications",
       "@voyantjs/octo",
-      "@voyantjs/plugin-flights-demo",
       "@voyantjs/plugin-netopia",
       "@voyantjs/plugin-payload-cms",
       "@voyantjs/plugin-sanity-cms",
@@ -113,7 +112,12 @@
     ]
   ],
   "linked": [],
-  "ignore": ["@voyantjs/voyant-test-utils", "@voyantjs/voyant-typescript-config"],
+  "ignore": [
+    "@voyantjs/plugin-catalog-demo",
+    "@voyantjs/plugin-flights-demo",
+    "@voyantjs/voyant-test-utils",
+    "@voyantjs/voyant-typescript-config"
+  ],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch"
