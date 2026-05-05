@@ -1,3 +1,12 @@
+"use client"
+
+import type {
+  AvailabilityPickupPointRow,
+  AvailabilityRuleRow,
+  AvailabilitySlotRow,
+  ProductOption,
+} from "@voyantjs/availability-react"
+import { formatDateTime, productNameById } from "@voyantjs/availability-react"
 import {
   Button,
   Card,
@@ -13,19 +22,31 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import { CalendarDays, Clock3, Package, Search, Truck } from "lucide-react"
-import type {
-  AvailabilityPickupPointRow,
-  AvailabilityRuleRow,
-  AvailabilitySlotRow,
-  ProductOption,
-} from "@/components/voyant/availability/availability-shared"
-import {
-  formatDateTime,
-  productNameById,
-} from "@/components/voyant/availability/availability-shared"
-import { useAdminMessages } from "@/lib/admin-i18n"
+import { type AvailabilityColumnsMessages, getSlotStatusLabel } from "./availability-columns.js"
+
+export interface AvailabilityOverviewMessages extends AvailabilityColumnsMessages {
+  allProducts: string
+  clearFilters: string
+  searchPlaceholder: string
+  overview: {
+    openSlotsTitle: string
+    openSlotsDescription: string
+    constrainedSlotsTitle: string
+    constrainedSlotsDescription: string
+    activeRulesTitle: string
+    activeRulesDescription: string
+    pickupPointsTitle: string
+    pickupPointsDescription: string
+    capacityWatchlistTitle: string
+    capacityWatchlistEmpty: string
+    coverageGapsTitle: string
+    coverageGapsEmpty: string
+    coverageGapDescription: string
+  }
+}
 
 export function AvailabilityOverview({
+  messages,
   products,
   constrainedSlots,
   filteredRules,
@@ -40,6 +61,7 @@ export function AvailabilityOverview({
   onOpenSlot,
   onOpenProduct,
 }: {
+  messages: AvailabilityOverviewMessages
   products: ProductOption[]
   constrainedSlots: AvailabilitySlotRow[]
   filteredRules: AvailabilityRuleRow[]
@@ -54,7 +76,6 @@ export function AvailabilityOverview({
   onOpenSlot: (slotId: string) => void
   onOpenProduct: (productId: string) => void
 }) {
-  const messages = useAdminMessages()
   const openSlotsCount = constrainedSlots.filter((slot) => slot.status === "open").length
   const activeRulesCount = filteredRules.filter((rule) => rule.active).length
   const activePickupPointsCount = filteredPickupPoints.filter(
@@ -65,27 +86,27 @@ export function AvailabilityOverview({
     <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <OverviewMetric
-          title={messages.availability.overview.openSlotsTitle}
+          title={messages.overview.openSlotsTitle}
           value={openSlotsCount}
-          description={messages.availability.overview.openSlotsDescription}
+          description={messages.overview.openSlotsDescription}
           icon={CalendarDays}
         />
         <OverviewMetric
-          title={messages.availability.overview.constrainedSlotsTitle}
+          title={messages.overview.constrainedSlotsTitle}
           value={constrainedSlots.length}
-          description={messages.availability.overview.constrainedSlotsDescription}
+          description={messages.overview.constrainedSlotsDescription}
           icon={Clock3}
         />
         <OverviewMetric
-          title={messages.availability.overview.activeRulesTitle}
+          title={messages.overview.activeRulesTitle}
           value={activeRulesCount}
-          description={messages.availability.overview.activeRulesDescription}
+          description={messages.overview.activeRulesDescription}
           icon={Package}
         />
         <OverviewMetric
-          title={messages.availability.overview.pickupPointsTitle}
+          title={messages.overview.pickupPointsTitle}
           value={activePickupPointsCount}
-          description={messages.availability.overview.pickupPointsDescription}
+          description={messages.overview.pickupPointsDescription}
           icon={Truck}
         />
       </div>
@@ -93,13 +114,11 @@ export function AvailabilityOverview({
       <div className="grid gap-4 xl:grid-cols-2">
         <Card size="sm">
           <CardHeader>
-            <CardTitle>{messages.availability.overview.capacityWatchlistTitle}</CardTitle>
+            <CardTitle>{messages.overview.capacityWatchlistTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {constrainedSlots.length === 0 ? (
-              <p className="text-muted-foreground">
-                {messages.availability.overview.capacityWatchlistEmpty}
-              </p>
+              <p className="text-muted-foreground">{messages.overview.capacityWatchlistEmpty}</p>
             ) : (
               constrainedSlots.slice(0, 4).map((slot) => (
                 <button
@@ -112,17 +131,8 @@ export function AvailabilityOverview({
                     {productNameById(products, slot.productId, slot.productName)} · {slot.dateLocal}
                   </div>
                   <div className="text-muted-foreground">
-                    {formatDateTime(slot.startsAt)} ·{" "}
-                    {
-                      {
-                        open: messages.availability.statusOpen,
-                        closed: messages.availability.statusClosed,
-                        sold_out: messages.availability.statusSoldOut,
-                        cancelled: messages.availability.statusCancelled,
-                      }[slot.status]
-                    }{" "}
-                    · {messages.availability.remainingPaxLabel}:{" "}
-                    {slot.remainingPax ?? messages.availability.details.noValue}
+                    {formatDateTime(slot.startsAt)} · {getSlotStatusLabel(slot.status, messages)} ·{" "}
+                    {messages.remainingPaxLabel}: {slot.remainingPax ?? messages.details.noValue}
                   </div>
                 </button>
               ))
@@ -132,13 +142,11 @@ export function AvailabilityOverview({
 
         <Card size="sm">
           <CardHeader>
-            <CardTitle>{messages.availability.overview.coverageGapsTitle}</CardTitle>
+            <CardTitle>{messages.overview.coverageGapsTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {productsWithoutActiveRules.length === 0 ? (
-              <p className="text-muted-foreground">
-                {messages.availability.overview.coverageGapsEmpty}
-              </p>
+              <p className="text-muted-foreground">{messages.overview.coverageGapsEmpty}</p>
             ) : (
               productsWithoutActiveRules.slice(0, 4).map((product) => (
                 <button
@@ -149,7 +157,7 @@ export function AvailabilityOverview({
                 >
                   <div className="font-medium">{product.name}</div>
                   <div className="text-muted-foreground">
-                    {messages.availability.overview.coverageGapDescription}
+                    {messages.overview.coverageGapDescription}
                   </div>
                 </button>
               ))
@@ -163,7 +171,7 @@ export function AvailabilityOverview({
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={messages.availability.searchPlaceholder}
+              placeholder={messages.searchPlaceholder}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pl-9"
@@ -171,10 +179,10 @@ export function AvailabilityOverview({
           </div>
           <Select value={productFilter} onValueChange={(value) => setProductFilter(value ?? "all")}>
             <SelectTrigger className="w-full md:w-56">
-              <SelectValue placeholder={messages.availability.allProducts} />
+              <SelectValue placeholder={messages.allProducts} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{messages.availability.allProducts}</SelectItem>
+              <SelectItem value="all">{messages.allProducts}</SelectItem>
               {products.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
                   {product.name}
@@ -185,7 +193,7 @@ export function AvailabilityOverview({
         </div>
         {hasFilters ? (
           <Button variant="outline" onClick={onClearFilters}>
-            {messages.availability.clearFilters}
+            {messages.clearFilters}
           </Button>
         ) : null}
       </div>

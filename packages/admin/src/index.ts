@@ -9,11 +9,37 @@
  *   resolution and persistence.
  * - Query client factory: `makeQueryClient()` with Voyant's admin defaults.
  * - `AdminProvider` composing QueryClient + ThemeProvider + LocaleProvider.
+ * - Operator admin shell helpers for API, i18n, and domain provider wiring.
+ * - Operator admin sidebar, navigation, and workspace layout helpers.
  * - Admin extension helpers for navigation contributions and widget slots.
  * - User utilities: `getInitials`, `getDisplayName`.
  * - Types: `AdminUser`, `NavItem`, `NavSubItem`, `AuthActions`, `ThemeMode`.
  */
 
+export {
+  AdminNavGroup,
+  type AdminNavGroupProps,
+} from "./components/admin-nav-group.js"
+export {
+  type AdminNavLinkComponent,
+  type AdminNavLinkProps,
+  DefaultAdminNavLink,
+} from "./components/admin-nav-link.js"
+export {
+  AdminWidgetSlotRenderer,
+  type AdminWidgetSlotRendererProps,
+} from "./components/admin-widget-slot.js"
+export {
+  DefaultOperatorAdminBrand,
+  OperatorAdminSidebar,
+  type OperatorAdminSidebarProps,
+  OperatorAdminWorkspaceLayout,
+  type OperatorAdminWorkspaceLayoutProps,
+} from "./components/operator-admin-sidebar.js"
+export {
+  OperatorAdminUserMenu,
+  type OperatorAdminUserMenuProps,
+} from "./components/operator-admin-user-menu.js"
 export {
   type AdminExtension,
   type AdminNavigationContribution,
@@ -38,6 +64,12 @@ export {
   useMessages,
 } from "./lib/i18n.js"
 export { getDisplayName, getInitials } from "./lib/initials.js"
+export {
+  type CreateOperatorAdminNavigationOptions,
+  createOperatorAdminNavigation,
+  type OperatorAdminNavigationIconName,
+  type OperatorAdminNavigationIcons,
+} from "./navigation/operator-navigation.js"
 export { AdminProvider, type AdminProviderProps } from "./providers/admin-provider.js"
 export {
   DEFAULT_ADMIN_LOCALE,
@@ -48,6 +80,31 @@ export {
   resolveAdminLocale,
   useLocale,
 } from "./providers/locale.js"
+export {
+  type AdminLocalePreferenceSource,
+  AdminLocalePreferenceSync,
+  type AdminLocalePreferenceSyncProps,
+} from "./providers/locale-preferences.js"
+export {
+  getOperatorAdminMessageOverridesFromUiPrefs,
+  type OperatorAdminMessageOverrides,
+  type OperatorAdminMessages,
+  OperatorAdminMessagesProvider,
+  useOperatorAdminI18n,
+  useOperatorAdminMessages,
+  useOptionalOperatorAdminI18n,
+  useOptionalOperatorAdminMessages,
+} from "./providers/operator-admin-messages.js"
+export {
+  type AdminChildProvider,
+  type AdminDomainMessagesProvider,
+  type AdminDomainMessagesProviderProps,
+  AdminDomainMessagesProviderStack,
+  AdminProviderSequence,
+  type AdminProviderSequenceProps,
+  OperatorAdminShellProvider,
+  type OperatorAdminShellProviderProps,
+} from "./providers/operator-admin-shell.js"
 export { makeQueryClient } from "./providers/query-client.js"
 export {
   type ThemeContextValue,

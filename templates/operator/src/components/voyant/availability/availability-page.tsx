@@ -2,6 +2,15 @@ import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { RowSelectionState } from "@tanstack/react-table"
 import { formatMessage } from "@voyantjs/admin"
+import {
+  AvailabilityBodySkeleton,
+  AvailabilityCloseoutsTab,
+  AvailabilityOverview,
+  AvailabilityPickupPointsTab,
+  AvailabilityRulesTab,
+  AvailabilitySlotsTab,
+  AvailabilityStartTimesTab,
+} from "@voyantjs/availability-ui"
 import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -32,17 +41,6 @@ import {
   AvailabilitySlotDialog,
   AvailabilityStartTimeDialog,
 } from "./availability-dialogs"
-import { AvailabilityOverview } from "./availability-overview"
-import { AvailabilityBodySkeleton } from "./availability-page-skeleton"
-import {
-  AvailabilityRulesTab,
-  AvailabilitySlotsTab,
-  AvailabilityStartTimesTab,
-} from "./availability-tabs-primary"
-import {
-  AvailabilityCloseoutsTab,
-  AvailabilityPickupPointsTab,
-} from "./availability-tabs-secondary"
 
 export function AvailabilityPage() {
   const messages = useAdminMessages()
@@ -290,6 +288,7 @@ export function AvailabilityPage() {
       ) : (
         <>
           <AvailabilityOverview
+            messages={messages.availability}
             products={products}
             constrainedSlots={constrainedSlots}
             filteredRules={filteredRules}
@@ -324,6 +323,7 @@ export function AvailabilityPage() {
             </TabsList>
 
             <AvailabilitySlotsTab
+              messages={messages.availability}
               products={products}
               filteredSlots={filteredSlots}
               slotSelection={slotSelection}
@@ -344,6 +344,7 @@ export function AvailabilityPage() {
               }}
             />
             <AvailabilityRulesTab
+              messages={messages.availability}
               products={products}
               filteredRules={filteredRules}
               ruleSelection={ruleSelection}
@@ -364,6 +365,7 @@ export function AvailabilityPage() {
               }}
             />
             <AvailabilityStartTimesTab
+              messages={messages.availability}
               products={products}
               filteredStartTimes={filteredStartTimes}
               startTimeSelection={startTimeSelection}
@@ -384,6 +386,7 @@ export function AvailabilityPage() {
               }}
             />
             <AvailabilityCloseoutsTab
+              messages={messages.availability}
               products={products}
               filteredCloseouts={filteredCloseouts}
               closeoutSelection={closeoutSelection}
@@ -400,6 +403,7 @@ export function AvailabilityPage() {
               }}
             />
             <AvailabilityPickupPointsTab
+              messages={messages.availability}
               products={products}
               filteredPickupPoints={filteredPickupPoints}
               pickupPointSelection={pickupPointSelection}

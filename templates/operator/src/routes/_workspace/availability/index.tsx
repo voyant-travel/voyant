@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { AvailabilityPageSkeleton } from "@voyantjs/availability-ui"
 import { AvailabilityPage } from "@/components/voyant/availability/availability-page"
-import { AvailabilityPageSkeleton } from "@/components/voyant/availability/availability-page-skeleton"
 import {
   getAvailabilityCloseoutsQueryOptions,
   getAvailabilityPickupPointsQueryOptions,

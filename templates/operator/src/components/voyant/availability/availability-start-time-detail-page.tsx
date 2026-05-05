@@ -2,12 +2,12 @@ import type { QueryClient } from "@tanstack/react-query"
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useLocale } from "@voyantjs/admin"
+import { AvailabilityStartTimeDetailSkeleton } from "@voyantjs/availability-ui"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Clock3, Package, Trash2 } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { getSlotStatusLabel } from "./availability-shared"
-import { AvailabilityStartTimeDetailSkeleton } from "./availability-start-time-detail-skeleton"
 
 type StartTimeDetail = {
   id: string
@@ -226,8 +226,9 @@ export function AvailabilityStartTimeDetailPage({ id }: { id: string }) {
                     {slot.dateLocal} · {formatDateTime(slot.startsAt, noValue)}
                   </div>
                   <div className="text-muted-foreground">
-                    {messages.availability.statusLabel}: {getSlotStatusLabel(slot.status, messages)}{" "}
-                    · {messages.availability.remainingPaxLabel}: {slot.remainingPax ?? noValue}
+                    {messages.availability.statusLabel}:{" "}
+                    {getSlotStatusLabel(slot.status, messages.availability)} ·{" "}
+                    {messages.availability.remainingPaxLabel}: {slot.remainingPax ?? noValue}
                   </div>
                 </button>
               ))

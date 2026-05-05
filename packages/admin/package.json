@@ -6,7 +6,16 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./components/admin-nav-group": "./src/components/admin-nav-group.tsx",
+    "./components/admin-nav-link": "./src/components/admin-nav-link.tsx",
+    "./components/admin-widget-slot": "./src/components/admin-widget-slot.tsx",
+    "./components/operator-admin-sidebar": "./src/components/operator-admin-sidebar.tsx",
+    "./components/operator-admin-user-menu": "./src/components/operator-admin-user-menu.tsx",
     "./extensions": "./src/extensions.ts",
+    "./navigation/operator-navigation": "./src/navigation/operator-navigation.ts",
+    "./providers/locale-preferences": "./src/providers/locale-preferences.tsx",
+    "./providers/operator-admin-shell": "./src/providers/operator-admin-shell.tsx",
+    "./providers/operator-admin-messages": "./src/providers/operator-admin-messages.tsx",
     "./providers/theme": "./src/providers/theme.tsx",
     "./providers/locale": "./src/providers/locale.tsx",
     "./providers/query-client": "./src/providers/query-client.ts",
@@ -25,11 +34,14 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/ui": "workspace:*",
+    "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:*"
+    "@voyantjs/i18n": "workspace:*",
+    "@voyantjs/react": "workspace:*"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",
@@ -37,7 +49,9 @@
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/ui": "workspace:*",
     "jsdom": "^25.0.0",
+    "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "^6.0.2",
@@ -54,10 +68,55 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
+      "./components/admin-nav-group": {
+        "types": "./dist/components/admin-nav-group.d.ts",
+        "import": "./dist/components/admin-nav-group.js",
+        "default": "./dist/components/admin-nav-group.js"
+      },
+      "./components/admin-nav-link": {
+        "types": "./dist/components/admin-nav-link.d.ts",
+        "import": "./dist/components/admin-nav-link.js",
+        "default": "./dist/components/admin-nav-link.js"
+      },
+      "./components/admin-widget-slot": {
+        "types": "./dist/components/admin-widget-slot.d.ts",
+        "import": "./dist/components/admin-widget-slot.js",
+        "default": "./dist/components/admin-widget-slot.js"
+      },
+      "./components/operator-admin-sidebar": {
+        "types": "./dist/components/operator-admin-sidebar.d.ts",
+        "import": "./dist/components/operator-admin-sidebar.js",
+        "default": "./dist/components/operator-admin-sidebar.js"
+      },
+      "./components/operator-admin-user-menu": {
+        "types": "./dist/components/operator-admin-user-menu.d.ts",
+        "import": "./dist/components/operator-admin-user-menu.js",
+        "default": "./dist/components/operator-admin-user-menu.js"
+      },
       "./extensions": {
         "types": "./dist/extensions.d.ts",
         "import": "./dist/extensions.js",
         "default": "./dist/extensions.js"
+      },
+      "./navigation/operator-navigation": {
+        "types": "./dist/navigation/operator-navigation.d.ts",
+        "import": "./dist/navigation/operator-navigation.js",
+        "default": "./dist/navigation/operator-navigation.js"
+      },
+      "./providers/locale-preferences": {
+        "types": "./dist/providers/locale-preferences.d.ts",
+        "import": "./dist/providers/locale-preferences.js",
+        "default": "./dist/providers/locale-preferences.js"
+      },
+      "./providers/operator-admin-shell": {
+        "types": "./dist/providers/operator-admin-shell.d.ts",
+        "import": "./dist/providers/operator-admin-shell.js",
+        "default": "./dist/providers/operator-admin-shell.js"
+      },
+      "./providers/operator-admin-messages": {
+        "types": "./dist/providers/operator-admin-messages.d.ts",
+        "import": "./dist/providers/operator-admin-messages.js",
+        "default": "./dist/providers/operator-admin-messages.js"
       },
       "./providers/theme": {
         "types": "./dist/providers/theme.d.ts",

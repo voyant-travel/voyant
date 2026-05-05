@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Navigate } from "@tanstack/react-router"
 import { type BankTransferInstructions, PaymentLinkLandingPage } from "@voyantjs/checkout-ui"
 import { usePublicPaymentSession } from "@voyantjs/finance-react"
-import { VoyantReactProvider } from "@voyantjs/react"
 import { Loader2 } from "lucide-react"
 
 import { getApiUrl } from "@/lib/env"
@@ -19,16 +18,8 @@ import { getApiUrl } from "@/lib/env"
  * See `docs/architecture/payments-architecture.md` §Core Rule 4.
  */
 export const Route = createFileRoute("/pay_/$sessionId")({
-  component: PayLandingPage,
+  component: PayLandingInner,
 })
-
-function PayLandingPage() {
-  return (
-    <VoyantReactProvider baseUrl={getApiUrl()}>
-      <PayLandingInner />
-    </VoyantReactProvider>
-  )
-}
 
 interface PaymentLinkConfigResponse {
   data: {

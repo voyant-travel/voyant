@@ -15,13 +15,13 @@ import {
   getSlotResourcesQueryOptions as getSlotResourcesQueryOptionsBase,
   slotStatusVariant,
 } from "@voyantjs/availability-react"
+import { AvailabilitySlotDetailSkeleton } from "@voyantjs/availability-ui"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, CalendarDays, Package, Trash2, Truck, Wrench } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { getApiUrl } from "@/lib/env"
 import { getSlotStatusLabel } from "./availability-shared"
-import { AvailabilitySlotDetailSkeleton } from "./availability-slot-detail-skeleton"
 
 const client = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
 
@@ -148,7 +148,7 @@ export function AvailabilitySlotDetailPage({ id }: { id: string }) {
           </h1>
           <div className="mt-1 flex items-center gap-2">
             <Badge variant={slotStatusVariant[slot.status]}>
-              {getSlotStatusLabel(slot.status, messages)}
+              {getSlotStatusLabel(slot.status, messages.availability)}
             </Badge>
             <Badge variant="outline">{slot.timezone}</Badge>
           </div>
