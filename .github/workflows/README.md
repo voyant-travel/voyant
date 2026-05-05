@@ -8,10 +8,12 @@ This directory contains GitHub Actions workflows for CI and npm releases.
 
 Runs the main repository checks for pull requests and pushes to `main` and `develop`:
 
-- build
 - lint
 - typecheck
 - test
+- architecture checks
+- package export checks
+- i18n checks
 
 ### `release.yml`
 

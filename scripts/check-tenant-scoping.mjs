@@ -8,8 +8,8 @@
  * so they're scoped out.
  *
  * If you intentionally introduce tenant-scoping middleware, you are
- * proposing to revisit ADR-0001 — do that explicitly, not by adding
- * to this allowlist.
+ * proposing to revisit ADR-0001; do that explicitly, not by adding to this
+ * allowlist.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
@@ -24,11 +24,11 @@ const FORBIDDEN_PATTERNS = [
   /\borgScopedDb\b/,
   /\bcreateOrgScopedDbClient\b/,
   /\btenantScopedDb\b/,
-] as const
+]
 
 const SKIP_DIRS = new Set(["node_modules", "dist", ".turbo", ".next", "coverage"])
 
-function* walkTs(dir: string): Generator<string> {
+function* walkTs(dir) {
   for (const entry of readdirSync(dir)) {
     if (SKIP_DIRS.has(entry)) continue
     const full = join(dir, entry)
@@ -41,11 +41,9 @@ function* walkTs(dir: string): Generator<string> {
   }
 }
 
-const violations: Array<{ file: string; line: number; pattern: RegExp; text: string }> = []
+const violations = []
 
 for (const file of walkTs(PACKAGES_DIR)) {
-  // Don't flag this checker file itself.
-  if (file === join(ROOT, "scripts", "check-tenant-scoping.ts")) continue
   const lines = readFileSync(file, "utf-8").split("\n")
   for (let i = 0; i < lines.length; i++) {
     const text = lines[i] ?? ""
@@ -65,7 +63,7 @@ if (violations.length > 0) {
     console.error(`    ${v.text}`)
   }
   console.error(
-    "\nIf you are proposing to revisit ADR-0001, do so explicitly in a follow-up ADR — do not add to this script's allowlist.",
+    "\nIf you are proposing to revisit ADR-0001, do so explicitly in a follow-up ADR; do not add to this script's allowlist.",
   )
   process.exit(1)
 }
