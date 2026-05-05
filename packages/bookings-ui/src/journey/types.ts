@@ -101,6 +101,24 @@ export interface PaymentProviderStepRenderProps {
   capabilities: PaymentProviderCapabilities
 }
 
+export type BookingJourneyTransitionGuardResult =
+  | undefined
+  | boolean
+  | { allow: boolean; message?: string; draft?: BookingDraftV1 }
+
+export interface BookingJourneyTransitionGuardContext {
+  currentStep: JourneyStep
+  nextStep: JourneyStep
+  draft: BookingDraftV1
+  pricing: PricingBreakdownV1 | null
+  quoteId?: string
+  surface: "admin" | "public"
+}
+
+export type BookingJourneyTransitionGuard = (
+  context: BookingJourneyTransitionGuardContext,
+) => BookingJourneyTransitionGuardResult | Promise<BookingJourneyTransitionGuardResult>
+
 export interface BookingJourneyProps {
   /** What to book. */
   entityModule: string
@@ -161,6 +179,14 @@ export interface BookingJourneyProps {
    *  PaymentStep is the canonical implementation. When omitted, the
    *  shell renders a "Hold only — no card collected" stub. */
   renderPaymentProviderStep?: (props: PaymentProviderStepRenderProps) => ReactNode
+
+  /**
+   * Runs before a forward step transition. Return `false` or
+   * `{ allow: false, message }` to keep the current step active and
+   * surface an inline navigation error; return `{ allow: true,
+   * draft }` to continue with an updated draft snapshot.
+   */
+  onBeforeStepAdvance?: BookingJourneyTransitionGuard
 
   /** Optional pre/post-step extension slots — useful when a
    *  template wants to inject a custom block (e.g. coupon code

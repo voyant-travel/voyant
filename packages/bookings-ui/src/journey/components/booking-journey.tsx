@@ -207,13 +207,60 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 
   const canAdvance = canAdvanceFromStep(currentStep, draft, shape, quote.data?.available !== false)
   const warnings = warningsForStep(currentStep, draft, shape)
+  const [isAdvanceGuardPending, setIsAdvanceGuardPending] = useState(false)
+  const [advanceGuardError, setAdvanceGuardError] = useState<string | null>(null)
 
   const idx = steps.indexOf(currentStep)
   const next = steps[idx + 1]
   const prev = steps[idx - 1]
 
-  const advance = () => {
-    if (!next || !canAdvance) return
+  const advance = async () => {
+    if (!next || !canAdvance || isAdvanceGuardPending) return
+    setAdvanceGuardError(null)
+
+    if (props.onBeforeStepAdvance) {
+      setIsAdvanceGuardPending(true)
+      try {
+        const guardResult = await props.onBeforeStepAdvance({
+          currentStep,
+          nextStep: next,
+          draft,
+          pricing: quote.data?.pricing ?? null,
+          quoteId: quote.data?.quoteId,
+          surface,
+        })
+        if (
+          guardResult &&
+          typeof guardResult === "object" &&
+          "draft" in guardResult &&
+          guardResult.draft
+        ) {
+          setDraft(guardResult.draft)
+        }
+
+        if (guardResult === false) {
+          setAdvanceGuardError("Complete this step before continuing.")
+          return
+        }
+        if (
+          guardResult &&
+          typeof guardResult === "object" &&
+          "allow" in guardResult &&
+          guardResult.allow === false
+        ) {
+          setAdvanceGuardError(guardResult.message ?? "Complete this step before continuing.")
+          return
+        }
+      } catch (error) {
+        setAdvanceGuardError(
+          error instanceof Error ? error.message : "Unable to continue. Please try again.",
+        )
+        return
+      } finally {
+        setIsAdvanceGuardPending(false)
+      }
+    }
+
     setCurrentStep(next)
     setVisited((s) => new Set(s).add(next))
   }
@@ -371,6 +418,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             <Button
               type="button"
               variant="outline"
+              disabled={isAdvanceGuardPending}
               onClick={() => {
                 if (prev) goBack()
                 else props.onCancelled?.()
@@ -379,11 +427,22 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               Back
             </Button>
             {next ? (
-              <Button type="button" onClick={advance} disabled={!canAdvance} className="ml-auto">
-                Next
+              <Button
+                type="button"
+                onClick={() => void advance()}
+                disabled={!canAdvance || isAdvanceGuardPending}
+                className="ml-auto"
+              >
+                {isAdvanceGuardPending ? "Checking..." : "Next"}
               </Button>
             ) : null}
           </div>
+
+          {advanceGuardError ? (
+            <p className="text-destructive text-sm" role="alert" aria-live="polite">
+              {advanceGuardError}
+            </p>
+          ) : null}
 
           {commit.error ? (
             <p className="text-destructive text-sm">
