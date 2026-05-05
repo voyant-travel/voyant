@@ -12,9 +12,11 @@ pnpm add @voyantjs/admin
 
 ```typescript
 import { AdminProvider } from "@voyantjs/admin/providers/admin-provider"
+import { OperatorAdminShellProvider } from "@voyantjs/admin/providers/operator-admin-shell"
 import { ThemeProvider, useTheme } from "@voyantjs/admin/providers/theme"
 import { makeQueryClient } from "@voyantjs/admin/providers/query-client"
 import { getInitials, getDisplayName } from "@voyantjs/admin/lib/initials"
+import { OperatorAdminWorkspaceLayout } from "@voyantjs/admin/components/operator-admin-sidebar"
 import {
   createAdminExtensionRegistry,
   defineAdminExtension,
@@ -35,8 +37,17 @@ function App() {
 | Entry | Description |
 | --- | --- |
 | `.` | Barrel re-exports |
+| `./components/admin-nav-group` | Sidebar navigation group renderer |
+| `./components/admin-nav-link` | Navigation link adapter types and default anchor link |
+| `./components/admin-widget-slot` | Widget slot renderer for admin extension widgets |
+| `./components/operator-admin-sidebar` | Operator sidebar and workspace layout |
+| `./components/operator-admin-user-menu` | Operator user/account/theme/locale menu |
 | `./extensions` | Admin extension types and helpers |
+| `./navigation/operator-navigation` | Base operator admin navigation factory |
 | `./providers/admin-provider` | `AdminProvider` composing QueryClient + Theme |
+| `./providers/locale-preferences` | `AdminLocalePreferenceSync` for user locale/timezone defaults |
+| `./providers/operator-admin-shell` | `OperatorAdminShellProvider` and provider stack helpers |
+| `./providers/operator-admin-messages` | Operator admin message provider and hooks |
 | `./providers/theme` | `ThemeProvider`, `useTheme` with system-theme support |
 | `./providers/query-client` | `makeQueryClient(config?)` factory with Voyant defaults |
 | `./lib/initials` | `getInitials`, `getDisplayName` helpers |
@@ -65,6 +76,89 @@ Templates can merge those contributions into their base navigation with
 `resolveAdminNavigation(...)` and expose widget slots with
 `resolveAdminWidgets(...)`. When a template wants one explicit source-controlled
 registry, compose it with `createAdminExtensionRegistry(...)`.
+
+Render widgets from a template-owned registry with `AdminWidgetSlotRenderer`:
+
+```tsx
+import { AdminWidgetSlotRenderer, createAdminExtensionRegistry } from "@voyantjs/admin"
+
+const adminExtensions = createAdminExtensionRegistry(financeExtension)
+
+function DashboardHeader({ dashboard }) {
+  return (
+    <AdminWidgetSlotRenderer
+      extensions={adminExtensions}
+      slot="dashboard.header"
+      props={{ dashboard }}
+    />
+  )
+}
+```
+
+The operator template currently exposes these stable slots:
+`dashboard.header`, `dashboard.after-kpis`, `dashboard.footer`,
+`booking.details.header`, `booking.details.after-summary`,
+`invoice.details.header`, and `invoice.details.after-summary`.
+
+## Operator Shell
+
+Operator apps can centralize the standard provider order with
+`OperatorAdminShellProvider`. It composes `AdminProvider`,
+`VoyantReactProvider`, operator admin messages, optional app-level providers,
+and optional domain UI message providers that accept `{ locale, children }`.
+
+```tsx
+import {
+  type AdminDomainMessagesProvider,
+  OperatorAdminShellProvider,
+} from "@voyantjs/admin"
+import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
+
+const domainMessageProviders = [
+  BookingsUiMessagesProvider,
+] satisfies readonly AdminDomainMessagesProvider[]
+
+function App({ queryClient }: { queryClient: QueryClient }) {
+  return (
+    <OperatorAdminShellProvider
+      baseUrl="/api"
+      queryClient={queryClient}
+      domainMessageProviders={domainMessageProviders}
+    >
+      <Dashboard />
+    </OperatorAdminShellProvider>
+  )
+}
+```
+
+Use `OperatorAdminWorkspaceLayout` to reuse the standard sidebar chrome while
+keeping app-owned routing and sign-out behavior explicit:
+
+```tsx
+import { Link, useRouterState } from "@tanstack/react-router"
+import { OperatorAdminWorkspaceLayout } from "@voyantjs/admin"
+
+const AdminLink = ({ children, href, onClick, target }) => (
+  <Link to={href} onClick={onClick} target={target}>
+    {children}
+  </Link>
+)
+
+function Workspace({ children, user }) {
+  const currentPath = useRouterState({ select: (s) => s.location.pathname })
+
+  return (
+    <OperatorAdminWorkspaceLayout
+      currentPath={currentPath}
+      linkComponent={AdminLink}
+      user={user}
+      onSignOut={() => signOut({ redirectTo: "/sign-in" })}
+    >
+      {children}
+    </OperatorAdminWorkspaceLayout>
+  )
+}
+```
 
 ## License
 

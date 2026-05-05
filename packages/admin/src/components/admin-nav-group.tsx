@@ -1,0 +1,176 @@
+"use client"
+
+import {
+  Badge,
+  cn,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  useSidebar,
+} from "@voyantjs/ui/components"
+import * as React from "react"
+
+import { type BETA, COMING_SOON, type NavItem } from "../types.js"
+import { type AdminNavLinkComponent, DefaultAdminNavLink } from "./admin-nav-link.js"
+
+export interface AdminNavGroupProps {
+  className?: string
+  currentPath: string
+  items: ReadonlyArray<NavItem>
+  label?: string
+  linkComponent?: AdminNavLinkComponent
+}
+
+function isExternalUrl(url: string) {
+  return url.startsWith("http://") || url.startsWith("https://")
+}
+
+function isActivePath(currentPath: string, url: string) {
+  if (url === "/") {
+    return currentPath === "/"
+  }
+
+  if (currentPath.startsWith(url)) {
+    const nextChar = currentPath.charAt(url.length)
+    return nextChar === "/" || nextChar === "" || currentPath === url
+  }
+
+  return false
+}
+
+function renderBadge(status?: typeof COMING_SOON | typeof BETA) {
+  if (!status) return null
+
+  if (status === COMING_SOON) {
+    return (
+      <Badge variant="outline" className="ml-auto text-xs">
+        Soon
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge variant="secondary" className="ml-auto text-xs">
+      Beta
+    </Badge>
+  )
+}
+
+export function AdminNavGroup({
+  className,
+  currentPath,
+  items,
+  label,
+  linkComponent: LinkComponent = DefaultAdminNavLink,
+}: AdminNavGroupProps) {
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
+
+  return (
+    <SidebarGroup className={className}>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+      <SidebarMenu>
+        {items.map((item) => {
+          const key = item.id ?? item.url ?? item.title
+          const icon = item.icon ? React.createElement(item.icon, { className: "h-4 w-4" }) : null
+
+          if (item.items?.length) {
+            const parentActive = isActivePath(currentPath, item.url)
+            const anyChildActive = item.items.some((sub) => isActivePath(currentPath, sub.url))
+            const expanded = parentActive || anyChildActive
+
+            return (
+              <SidebarMenuItem key={key}>
+                <SidebarMenuButton asChild tooltip={item.title} isActive={parentActive}>
+                  <LinkComponent
+                    href={item.url}
+                    onClick={handleLinkClick}
+                    target={item.target ?? "_self"}
+                  >
+                    {icon}
+                    <span>{item.title}</span>
+                    {renderBadge(item.status)}
+                  </LinkComponent>
+                </SidebarMenuButton>
+                {expanded && (
+                  <SidebarMenuSub>
+                    {item.items.map((subItem) => (
+                      <SidebarMenuSubItem key={subItem.id ?? subItem.url ?? subItem.title}>
+                        {subItem.status === COMING_SOON ? (
+                          <SidebarMenuSubButton
+                            className={cn(subItem.status === COMING_SOON && "opacity-50")}
+                          >
+                            <span>{subItem.title}</span>
+                            {renderBadge(subItem.status)}
+                          </SidebarMenuSubButton>
+                        ) : (
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={
+                              !isExternalUrl(subItem.url) && isActivePath(currentPath, subItem.url)
+                            }
+                          >
+                            <LinkComponent
+                              href={subItem.url}
+                              onClick={handleLinkClick}
+                              target={subItem.target ?? "_self"}
+                            >
+                              <span>{subItem.title}</span>
+                              {renderBadge(subItem.status)}
+                            </LinkComponent>
+                          </SidebarMenuSubButton>
+                        )}
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
+            )
+          }
+
+          if (item.status === COMING_SOON) {
+            return (
+              <SidebarMenuItem key={key}>
+                <SidebarMenuButton tooltip={item.title} disabled>
+                  {icon}
+                  <span>{item.title}</span>
+                  {renderBadge(item.status)}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          }
+
+          return (
+            <SidebarMenuItem key={key}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={!isExternalUrl(item.url) && isActivePath(currentPath, item.url)}
+              >
+                <LinkComponent
+                  href={item.url}
+                  onClick={handleLinkClick}
+                  target={item.target ?? "_self"}
+                >
+                  {icon}
+                  <span>{item.title}</span>
+                  {renderBadge(item.status)}
+                </LinkComponent>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  )
+}

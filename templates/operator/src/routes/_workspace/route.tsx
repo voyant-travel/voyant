@@ -1,25 +1,78 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
-import { useLocale } from "@voyantjs/admin"
-import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
-import { CrmUiMessagesProvider } from "@voyantjs/crm-ui/i18n"
-import { FinanceUiMessagesProvider } from "@voyantjs/finance-ui/i18n"
-import { LegalUiMessagesProvider } from "@voyantjs/legal-ui/i18n"
-import { ProductsUiMessagesProvider } from "@voyantjs/products-ui/i18n"
-import { VoyantReactProvider } from "@voyantjs/react"
-import { ResourcesUiMessagesProvider } from "@voyantjs/resources-ui/i18n"
-import { SuppliersUiMessagesProvider } from "@voyantjs/suppliers-ui/i18n"
-import { SidebarProvider } from "@voyantjs/ui/components"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { AppSidebar } from "@/components/navigation/app-sidebar"
+import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router"
+import {
+  AdminLocalePreferenceSync,
+  type AdminNavLinkProps,
+  type OperatorAdminNavigationIcons,
+  OperatorAdminWorkspaceLayout,
+} from "@voyantjs/admin"
+import {
+  Building,
+  Building2,
+  CalendarCheck,
+  CalendarDays,
+  DollarSign,
+  LayoutDashboard,
+  Library,
+  Loader2,
+  Mail,
+  Package,
+  Plane,
+  Radio,
+  Scale,
+  Settings,
+  Users,
+  Wrench,
+} from "lucide-react"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
+import { adminExtensions } from "@/lib/admin-extensions"
 import {
   AdminI18nProvider,
   getAdminMessageOverridesFromUiPrefs,
   useAdminMessages,
 } from "@/lib/admin-i18n"
+import { useSignOut } from "@/lib/auth"
 import { getCurrentUser } from "@/lib/current-user"
-import { getApiUrl } from "@/lib/env"
+
+const operatorNavigationIcons = {
+  availability: CalendarDays,
+  bookings: CalendarCheck,
+  catalog: Library,
+  channelSync: Radio,
+  dashboard: LayoutDashboard,
+  finance: DollarSign,
+  flights: Plane,
+  legal: Scale,
+  notifications: Mail,
+  organizations: Building,
+  people: Users,
+  products: Package,
+  resources: Wrench,
+  settings: Settings,
+  suppliers: Building2,
+} satisfies OperatorAdminNavigationIcons
+
+function AdminRouterLink({ children, href, onClick, target }: AdminNavLinkProps) {
+  const external = href.startsWith("http://") || href.startsWith("https://")
+
+  if (external) {
+    return (
+      <a
+        href={href}
+        target={target}
+        rel={target === "_blank" ? "noopener noreferrer" : undefined}
+        onClick={onClick}
+      >
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <Link to={href} target={target} onClick={onClick}>
+      {children}
+    </Link>
+  )
+}
 
 export const Route = createFileRoute("/_workspace")({
   loader: async ({ location }) => {
@@ -54,36 +107,15 @@ function WorkspaceLayout() {
   const { user } = Route.useLoaderData()
 
   return (
-    <VoyantReactProvider baseUrl={getApiUrl()}>
-      <UserProvider initialUser={user}>
-        <WorkspaceContent />
-      </UserProvider>
-    </VoyantReactProvider>
+    <UserProvider initialUser={user}>
+      <WorkspaceContent />
+    </UserProvider>
   )
 }
 
 function WorkspaceContent() {
   const { user, isLoading } = useUser()
-  const { locale, resolvedLocale, setLocale, setTimeZone, timeZone } = useLocale()
   const messages = useAdminMessages()
-
-  useEffect(() => {
-    if (!user || typeof window === "undefined") {
-      return
-    }
-
-    if (!window.localStorage.getItem("admin-locale") && user.locale && user.locale !== locale) {
-      setLocale(user.locale)
-    }
-
-    if (
-      !window.localStorage.getItem("admin-timezone") &&
-      user.timezone &&
-      user.timezone !== timeZone
-    ) {
-      setTimeZone(user.timezone)
-    }
-  }, [locale, setLocale, setTimeZone, timeZone, user])
 
   if (isLoading) {
     return (
@@ -102,42 +134,35 @@ function WorkspaceContent() {
 
   return (
     <AdminI18nProvider overrides={getAdminMessageOverridesFromUiPrefs(user.uiPrefs)}>
-      <BookingsUiMessagesProvider locale={resolvedLocale}>
-        <ProductsUiMessagesProvider locale={resolvedLocale}>
-          <LegalUiMessagesProvider locale={resolvedLocale}>
-            <CrmUiMessagesProvider locale={resolvedLocale}>
-              <ResourcesUiMessagesProvider locale={resolvedLocale}>
-                <FinanceUiMessagesProvider locale={resolvedLocale}>
-                  <SuppliersUiMessagesProvider locale={resolvedLocale}>
-                    <WorkspaceInner user={user} />
-                  </SuppliersUiMessagesProvider>
-                </FinanceUiMessagesProvider>
-              </ResourcesUiMessagesProvider>
-            </CrmUiMessagesProvider>
-          </LegalUiMessagesProvider>
-        </ProductsUiMessagesProvider>
-      </BookingsUiMessagesProvider>
+      <AdminLocalePreferenceSync source={user} />
+      <WorkspaceInner user={user} />
     </AdminI18nProvider>
   )
 }
 
 function WorkspaceInner({ user }: { user: NonNullable<ReturnType<typeof useUser>["user"]> }) {
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ")
+  const currentPath = useRouterState({ select: (s) => s.location.pathname })
+  const signOut = useSignOut()
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        user={{
-          name: displayName,
-          firstName: user.firstName ?? undefined,
-          lastName: user.lastName ?? undefined,
-          email: user.email,
-          avatar: user.profilePictureUrl ?? undefined,
-        }}
-      />
-      <main className="flex-1">
-        <Outlet />
-      </main>
-    </SidebarProvider>
+    <OperatorAdminWorkspaceLayout
+      currentPath={currentPath}
+      extensions={adminExtensions}
+      icons={operatorNavigationIcons}
+      linkComponent={AdminRouterLink}
+      onSignOut={() => signOut({ redirectTo: "/sign-in" })}
+      user={{
+        name: displayName,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        avatar: user.profilePictureUrl,
+        locale: user.locale,
+        timeZone: user.timezone,
+      }}
+    >
+      <Outlet />
+    </OperatorAdminWorkspaceLayout>
   )
 }

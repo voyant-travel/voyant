@@ -1,17 +1,21 @@
+"use client"
+
 import { Button } from "@voyantjs/ui/components"
 import { Plus } from "lucide-react"
 
-export function SectionHeader({
-  title,
-  description,
-  actionLabel,
-  onAction,
-}: {
-  title: string
-  description: string
+export interface AvailabilitySectionHeaderProps {
   actionLabel: string
+  description: string
   onAction: () => void
-}) {
+  title: string
+}
+
+export function AvailabilitySectionHeader({
+  actionLabel,
+  description,
+  onAction,
+  title,
+}: AvailabilitySectionHeaderProps) {
   return (
     <div className="flex items-center justify-between gap-4">
       <div>

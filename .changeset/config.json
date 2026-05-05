@@ -9,6 +9,7 @@
       "@voyantjs/auth-react",
       "@voyantjs/availability",
       "@voyantjs/availability-react",
+      "@voyantjs/availability-ui",
       "@voyantjs/booking-requirements",
       "@voyantjs/booking-requirements-react",
       "@voyantjs/booking-requirements-ui",

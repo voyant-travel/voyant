@@ -1,0 +1,59 @@
+"use client"
+
+import { useEffect } from "react"
+
+import { useLocale } from "./locale.js"
+
+export interface AdminLocalePreferenceSource {
+  locale?: string | null
+  timeZone?: string | null
+  timezone?: string | null
+}
+
+export interface AdminLocalePreferenceSyncProps {
+  source: AdminLocalePreferenceSource | null | undefined
+  localeStorageKey?: string | null
+  timeZoneStorageKey?: string | null
+}
+
+export function AdminLocalePreferenceSync({
+  source,
+  localeStorageKey = "admin-locale",
+  timeZoneStorageKey = "admin-timezone",
+}: AdminLocalePreferenceSyncProps) {
+  const { locale, setLocale, setTimeZone, timeZone } = useLocale()
+  const preferredTimeZone = source?.timeZone ?? source?.timezone ?? null
+
+  useEffect(() => {
+    if (!source || typeof window === "undefined") {
+      return
+    }
+
+    if (
+      source.locale &&
+      source.locale !== locale &&
+      (!localeStorageKey || !window.localStorage.getItem(localeStorageKey))
+    ) {
+      setLocale(source.locale)
+    }
+
+    if (
+      preferredTimeZone &&
+      preferredTimeZone !== timeZone &&
+      (!timeZoneStorageKey || !window.localStorage.getItem(timeZoneStorageKey))
+    ) {
+      setTimeZone(preferredTimeZone)
+    }
+  }, [
+    locale,
+    localeStorageKey,
+    preferredTimeZone,
+    setLocale,
+    setTimeZone,
+    source,
+    timeZone,
+    timeZoneStorageKey,
+  ])
+
+  return null
+}

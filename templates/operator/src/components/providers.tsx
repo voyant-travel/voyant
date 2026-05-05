@@ -1,8 +1,31 @@
 import type { QueryClient } from "@tanstack/react-query"
-import { AdminProvider } from "@voyantjs/admin"
+import {
+  type AdminChildProvider,
+  type AdminDomainMessagesProvider,
+  OperatorAdminShellProvider,
+} from "@voyantjs/admin"
+import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
+import { CrmUiMessagesProvider } from "@voyantjs/crm-ui/i18n"
+import { FinanceUiMessagesProvider } from "@voyantjs/finance-ui/i18n"
+import { LegalUiMessagesProvider } from "@voyantjs/legal-ui/i18n"
+import { ProductsUiMessagesProvider } from "@voyantjs/products-ui/i18n"
+import { ResourcesUiMessagesProvider } from "@voyantjs/resources-ui/i18n"
+import { SuppliersUiMessagesProvider } from "@voyantjs/suppliers-ui/i18n"
 import { TooltipProvider } from "@voyantjs/ui/components/tooltip"
 import type * as React from "react"
-import { AdminI18nProvider } from "@/lib/admin-i18n"
+import { getApiUrl } from "@/lib/env"
+
+const appProviders = [TooltipProvider] satisfies readonly AdminChildProvider[]
+
+const domainMessageProviders = [
+  BookingsUiMessagesProvider,
+  ProductsUiMessagesProvider,
+  LegalUiMessagesProvider,
+  CrmUiMessagesProvider,
+  ResourcesUiMessagesProvider,
+  FinanceUiMessagesProvider,
+  SuppliersUiMessagesProvider,
+] satisfies readonly AdminDomainMessagesProvider[]
 
 export function Providers({
   children,
@@ -12,10 +35,13 @@ export function Providers({
   queryClient: QueryClient
 }) {
   return (
-    <AdminProvider queryClient={queryClient}>
-      <AdminI18nProvider>
-        <TooltipProvider>{children}</TooltipProvider>
-      </AdminI18nProvider>
-    </AdminProvider>
+    <OperatorAdminShellProvider
+      baseUrl={getApiUrl()}
+      queryClient={queryClient}
+      providers={appProviders}
+      domainMessageProviders={domainMessageProviders}
+    >
+      {children}
+    </OperatorAdminShellProvider>
   )
 }

@@ -1,11 +1,11 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { AvailabilityRuleDetailSkeleton } from "@voyantjs/availability-ui"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, CalendarDays, Package, Trash2 } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
-import { AvailabilityRuleDetailSkeleton } from "./availability-rule-detail-skeleton"
 import { getSlotStatusLabel } from "./availability-shared"
 
 type RuleDetail = {
@@ -226,7 +226,9 @@ export function AvailabilityRuleDetailPage({ id }: { id: string }) {
                 onClick={() => void navigate({ to: "/availability/$id", params: { id: slot.id } })}
               >
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">{getSlotStatusLabel(slot.status, messages)}</Badge>
+                  <Badge variant="outline">
+                    {getSlotStatusLabel(slot.status, messages.availability)}
+                  </Badge>
                   <span>
                     {slot.dateLocal} · {formatDateTime(slot.startsAt)}
                   </span>

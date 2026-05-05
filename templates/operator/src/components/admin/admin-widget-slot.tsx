@@ -1,6 +1,7 @@
-import { type AdminWidgetSlot, resolveAdminWidgets } from "@voyantjs/admin"
-import type { ComponentType } from "react"
-import { Fragment } from "react"
+import {
+  type AdminWidgetSlot,
+  AdminWidgetSlotRenderer as SharedAdminWidgetSlotRenderer,
+} from "@voyantjs/admin"
 import { adminExtensions } from "@/lib/admin-extensions"
 
 type AdminWidgetSlotProps = {
@@ -9,26 +10,5 @@ type AdminWidgetSlotProps = {
 }
 
 export function AdminWidgetSlotRenderer({ slot, props = {} }: AdminWidgetSlotProps) {
-  const widgets = resolveAdminWidgets({
-    slot,
-    extensions: adminExtensions,
-  })
-
-  if (widgets.length === 0) {
-    return null
-  }
-
-  return (
-    <>
-      {widgets.map((widget) => {
-        const Component = widget.component as ComponentType<Record<string, unknown>>
-
-        return (
-          <Fragment key={widget.id}>
-            <Component {...props} />
-          </Fragment>
-        )
-      })}
-    </>
-  )
+  return <SharedAdminWidgetSlotRenderer extensions={adminExtensions} props={props} slot={slot} />
 }
