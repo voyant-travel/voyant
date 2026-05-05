@@ -1,5 +1,20 @@
 # @voyantjs/sellability
 
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [6427bad]
+  - @voyantjs/availability@0.21.0
+  - @voyantjs/core@0.21.0
+  - @voyantjs/db@0.21.0
+  - @voyantjs/distribution@0.21.0
+  - @voyantjs/hono@0.21.0
+  - @voyantjs/markets@0.21.0
+  - @voyantjs/pricing@0.21.0
+  - @voyantjs/products@0.21.0
+  - @voyantjs/transactions@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes
