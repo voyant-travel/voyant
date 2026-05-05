@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   getStorefrontDeparture,
   getStorefrontDepartureItinerary,
+  getStorefrontProductAvailabilitySummary,
   getStorefrontProductExtensions,
   listStorefrontProductDepartures,
   previewStorefrontDeparturePrice,
@@ -15,6 +16,7 @@ import {
   type StorefrontPaymentMethod,
   type StorefrontPaymentMethodCode,
   type StorefrontPaymentMethodInput,
+  type StorefrontProductAvailabilitySummaryQuery,
   type StorefrontPromotionalOffer,
   type StorefrontSettings,
   type StorefrontSettingsInput,
@@ -24,17 +26,39 @@ import {
 
 export interface StorefrontServiceOptions {
   settings?: StorefrontSettingsInput
-  offers?: {
-    listApplicableOffers?: (input: {
+  resolveSettings?: (
+    context: StorefrontRequestContext,
+  ) => Promise<StorefrontSettingsInput> | StorefrontSettingsInput
+  offers?: StorefrontOfferResolvers
+  resolveOffers?: (
+    context: StorefrontRequestContext,
+  ) =>
+    | Promise<StorefrontOfferResolvers | null | undefined>
+    | StorefrontOfferResolvers
+    | null
+    | undefined
+}
+
+export interface StorefrontRequestContext {
+  db?: PostgresJsDatabase
+  env?: unknown
+  context?: unknown
+}
+
+export interface StorefrontOfferResolvers {
+  listApplicableOffers?: (
+    input: {
       productId: string
       departureId?: string
       locale?: string
-    }) => Promise<StorefrontPromotionalOffer[]> | StorefrontPromotionalOffer[]
-    getOfferBySlug?: (input: {
+    } & StorefrontRequestContext,
+  ) => Promise<StorefrontPromotionalOffer[]> | StorefrontPromotionalOffer[]
+  getOfferBySlug?: (
+    input: {
       slug: string
       locale?: string
-    }) => Promise<StorefrontPromotionalOffer | null> | StorefrontPromotionalOffer | null
-  }
+    } & StorefrontRequestContext,
+  ) => Promise<StorefrontPromotionalOffer | null> | StorefrontPromotionalOffer | null
 }
 
 const defaultPaymentLabels: Record<StorefrontPaymentMethodCode, string> = {
@@ -102,10 +126,23 @@ export function resolveStorefrontSettings(input?: StorefrontSettingsInput): Stor
 export function createStorefrontService(options?: StorefrontServiceOptions) {
   const settings = resolveStorefrontSettings(options?.settings)
 
+  async function resolveSettings(context: StorefrontRequestContext = {}) {
+    if (!options?.resolveSettings) {
+      return settings
+    }
+
+    return resolveStorefrontSettings(await options.resolveSettings(context))
+  }
+
+  async function resolveOffers(context: StorefrontRequestContext = {}) {
+    return (await options?.resolveOffers?.(context)) ?? options?.offers
+  }
+
   return {
     getSettings(): StorefrontSettings {
       return settings
     },
+    resolveSettings,
     getDeparture(db: PostgresJsDatabase, departureId: string) {
       return getStorefrontDeparture(db, departureId)
     },
@@ -126,6 +163,13 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
     getProductExtensions(db: PostgresJsDatabase, productId: string, optionId?: string) {
       return getStorefrontProductExtensions(db, productId, optionId)
     },
+    getProductAvailabilitySummary(
+      db: PostgresJsDatabase,
+      productId: string,
+      query: StorefrontProductAvailabilitySummaryQuery,
+    ) {
+      return getStorefrontProductAvailabilitySummary(db, productId, query)
+    },
     getDepartureItinerary(
       db: PostgresJsDatabase,
       input: { departureId: string; productId: string },
@@ -136,15 +180,25 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
       productId: string
       departureId?: string
       locale?: string
+      context?: StorefrontRequestContext
     }): Promise<StorefrontPromotionalOffer[]> {
-      const offers = await options?.offers?.listApplicableOffers?.(input)
+      const { context, ...offerInput } = input
+      const offers = await resolveOffers(context)?.then((resolvers) =>
+        resolvers?.listApplicableOffers?.({ ...offerInput, ...(context ?? {}) }),
+      )
       return offers ?? []
     },
     async getOfferBySlug(input: {
       slug: string
       locale?: string
+      context?: StorefrontRequestContext
     }): Promise<StorefrontPromotionalOffer | null> {
-      return (await options?.offers?.getOfferBySlug?.(input)) ?? null
+      const { context, ...offerInput } = input
+      return (
+        (await resolveOffers(context)?.then((resolvers) =>
+          resolvers?.getOfferBySlug?.({ ...offerInput, ...(context ?? {}) }),
+        )) ?? null
+      )
     },
   }
 }

@@ -49,6 +49,7 @@ export function AvailabilityOverview({
   messages,
   products,
   constrainedSlots,
+  openSlotsCount: providedOpenSlotsCount,
   filteredRules,
   filteredPickupPoints,
   productsWithoutActiveRules,
@@ -64,6 +65,7 @@ export function AvailabilityOverview({
   messages: AvailabilityOverviewMessages
   products: ProductOption[]
   constrainedSlots: AvailabilitySlotRow[]
+  openSlotsCount?: number
   filteredRules: AvailabilityRuleRow[]
   filteredPickupPoints: AvailabilityPickupPointRow[]
   productsWithoutActiveRules: ProductOption[]
@@ -76,7 +78,8 @@ export function AvailabilityOverview({
   onOpenSlot: (slotId: string) => void
   onOpenProduct: (productId: string) => void
 }) {
-  const openSlotsCount = constrainedSlots.filter((slot) => slot.status === "open").length
+  const openSlotsCount =
+    providedOpenSlotsCount ?? constrainedSlots.filter((slot) => slot.status === "open").length
   const activeRulesCount = filteredRules.filter((rule) => rule.active).length
   const activePickupPointsCount = filteredPickupPoints.filter(
     (pickupPoint) => pickupPoint.active,

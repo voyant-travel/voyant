@@ -1,10 +1,16 @@
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import type { Context } from "hono"
 import { Hono } from "hono"
 
-import { createStorefrontService, type StorefrontServiceOptions } from "./service.js"
+import {
+  createStorefrontService,
+  type StorefrontRequestContext,
+  type StorefrontServiceOptions,
+} from "./service.js"
 import {
   storefrontDepartureListQuerySchema,
   storefrontDeparturePricePreviewInputSchema,
+  storefrontProductAvailabilitySummaryQuerySchema,
   storefrontProductExtensionsQuerySchema,
   storefrontPromotionalOfferListQuerySchema,
 } from "./validation.js"
@@ -18,9 +24,17 @@ type Env = {
 export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions) {
   const storefrontService = createStorefrontService(options)
 
+  function getRequestContext(c: Context<Env>): StorefrontRequestContext {
+    return {
+      db: c.get("db" as never) as StorefrontRequestContext["db"],
+      env: c.env,
+      context: c,
+    } satisfies StorefrontRequestContext
+  }
+
   return new Hono<Env>()
-    .get("/settings", (c) => {
-      return c.json({ data: storefrontService.getSettings() })
+    .get("/settings", async (c) => {
+      return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) })
     })
     .get("/departures/:departureId", async (c) => {
       const departure = await storefrontService.getDeparture(
@@ -63,6 +77,15 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         ),
       })
     })
+    .get("/products/:productId/availability", async (c) => {
+      return c.json({
+        data: await storefrontService.getProductAvailabilitySummary(
+          c.get("db" as never),
+          c.req.param("productId"),
+          await parseQuery(c, storefrontProductAvailabilitySummaryQuerySchema),
+        ),
+      })
+    })
     .get("/products/:productId/departures/:departureId/itinerary", async (c) => {
       const itinerary = await storefrontService.getDepartureItinerary(c.get("db" as never), {
         departureId: c.req.param("departureId"),
@@ -81,6 +104,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
           productId: c.req.param("productId"),
           departureId: query.departureId,
           locale: query.locale,
+          context: getRequestContext(c),
         }),
       })
     })
@@ -89,6 +113,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       const offer = await storefrontService.getOfferBySlug({
         slug: c.req.param("slug"),
         locale: query.locale,
+        context: getRequestContext(c),
       })
 
       return offer ? c.json({ data: offer }) : c.json({ error: "Storefront offer not found" }, 404)

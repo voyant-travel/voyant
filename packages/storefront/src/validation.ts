@@ -218,6 +218,67 @@ export const storefrontDepartureListResponseSchema = z.object({
   offset: z.number().int(),
 })
 
+export const storefrontProductAvailabilityStateSchema = z.enum([
+  "available",
+  "sold_out",
+  "closed",
+  "cancelled",
+  "on_request",
+  "past_cutoff",
+  "too_early",
+  "unavailable",
+])
+
+export const storefrontProductAvailabilitySummaryQuerySchema = z.object({
+  optionId: z.string().optional(),
+  status: storefrontDepartureStatusSchema.optional(),
+  dateFrom: z.string().date().optional(),
+  dateTo: z.string().date().optional(),
+  locale: languageTagSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(250).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+
+export const storefrontProductAvailabilitySlotSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  optionId: z.string().nullable(),
+  dateLocal: z.string().nullable(),
+  startAt: z.string().nullable(),
+  endAt: z.string().nullable(),
+  timezone: z.string(),
+  status: storefrontDepartureStatusSchema,
+  availabilityState: storefrontProductAvailabilityStateSchema,
+  capacity: z.number().int().nullable(),
+  remaining: z.number().int().nullable(),
+  pastCutoff: z.boolean(),
+  tooEarly: z.boolean(),
+})
+
+export const storefrontProductAvailabilitySummarySchema = z.object({
+  productId: z.string(),
+  availabilityState: storefrontProductAvailabilityStateSchema,
+  counts: z.object({
+    total: z.number().int(),
+    open: z.number().int(),
+    closed: z.number().int(),
+    soldOut: z.number().int(),
+    cancelled: z.number().int(),
+    onRequest: z.number().int(),
+    pastCutoff: z.number().int(),
+    tooEarly: z.number().int(),
+    available: z.number().int(),
+  }),
+  departures: z.array(storefrontProductAvailabilitySlotSchema),
+  total: z.number().int(),
+  limit: z.number().int(),
+  offset: z.number().int(),
+})
+
+export const storefrontProductAvailabilitySummaryResponseSchema = z.object({
+  data: storefrontProductAvailabilitySummarySchema,
+})
+
 export const storefrontDeparturePricePreviewInputSchema = z.object({
   pax: z
     .object({
@@ -367,6 +428,9 @@ export type StorefrontPaymentMethodCode = z.infer<typeof storefrontPaymentMethod
 export type StorefrontSettingsInput = z.infer<typeof storefrontSettingsInputSchema>
 export type StorefrontSettings = z.infer<typeof storefrontSettingsSchema>
 export type StorefrontDepartureListQuery = z.infer<typeof storefrontDepartureListQuerySchema>
+export type StorefrontProductAvailabilitySummaryQuery = z.infer<
+  typeof storefrontProductAvailabilitySummaryQuerySchema
+>
 export type StorefrontDeparturePricePreviewInput = z.infer<
   typeof storefrontDeparturePricePreviewInputSchema
 >

@@ -227,6 +227,57 @@ export type ProductsUiMessages = {
       saveDay: string
     }
   }
+  productDayServiceForm: {
+    fields: {
+      supplierService: string
+      serviceType: string
+      countryCode: string
+      name: string
+      description: string
+      costCurrency: string
+      costAmount: string
+      quantity: string
+      sortOrder: string
+      notes: string
+    }
+    placeholders: {
+      supplierService: string
+      countryCode: string
+      name: string
+      description: string
+      notes: string
+    }
+    serviceTypes: {
+      accommodation: string
+      transfer: string
+      experience: string
+      guide: string
+      meal: string
+      other: string
+    }
+    validation: {
+      nameRequired: string
+      currencyRequired: string
+      costNonNegative: string
+      quantityMin: string
+      saveFailed: string
+    }
+    actions: {
+      addService: string
+      saveService: string
+    }
+  }
+  productItineraryDayRow: {
+    dayLabel: string
+    emptyServices: string
+    servicesLoadingError: string
+    columns: {
+      name: string
+      type: string
+      cost: string
+      quantity: string
+    }
+  }
   productItineraryDialog: {
     titles: {
       create: string

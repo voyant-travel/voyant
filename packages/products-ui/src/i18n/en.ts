@@ -229,6 +229,57 @@ export const productsUiEn = {
       saveDay: "Save day",
     },
   },
+  productDayServiceForm: {
+    fields: {
+      supplierService: "Supplier service",
+      serviceType: "Service type",
+      countryCode: "Country code",
+      name: "Name",
+      description: "Description",
+      costCurrency: "Currency",
+      costAmount: "Cost",
+      quantity: "Quantity",
+      sortOrder: "Sort order",
+      notes: "Notes",
+    },
+    placeholders: {
+      supplierService: "Optional supplier service id",
+      countryCode: "RO",
+      name: "Hotel stay",
+      description: "Operational service details",
+      notes: "Internal notes",
+    },
+    serviceTypes: {
+      accommodation: "Accommodation",
+      transfer: "Transfer",
+      experience: "Experience",
+      guide: "Guide",
+      meal: "Meal",
+      other: "Other",
+    },
+    validation: {
+      nameRequired: "Service name is required.",
+      currencyRequired: "Currency must be a 3-letter ISO code.",
+      costNonNegative: "Cost must be zero or greater.",
+      quantityMin: "Quantity must be at least 1.",
+      saveFailed: "Failed to save service.",
+    },
+    actions: {
+      addService: "Add service",
+      saveService: "Save service",
+    },
+  },
+  productItineraryDayRow: {
+    dayLabel: "Day {dayNumber}",
+    emptyServices: "No services configured for this day.",
+    servicesLoadingError: "Failed to load day services.",
+    columns: {
+      name: "Name",
+      type: "Type",
+      cost: "Cost",
+      quantity: "Quantity",
+    },
+  },
   productItineraryDialog: {
     titles: {
       create: "New itinerary",

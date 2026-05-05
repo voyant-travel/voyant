@@ -16,6 +16,22 @@ export {
 export { ProductDayDialog, type ProductDayDialogProps } from "./components/product-day-dialog"
 export { ProductDayForm, type ProductDayFormProps } from "./components/product-day-form"
 export {
+  ProductDayMediaTray,
+  type ProductDayMediaTrayProps,
+} from "./components/product-day-media-tray"
+export {
+  ProductDayServiceForm,
+  type ProductDayServiceFormHelpers,
+  type ProductDayServiceFormProps,
+  type ProductDayServiceSupplierServiceFieldProps,
+  type ProductDayServiceSupplierServiceOption,
+} from "./components/product-day-service-form"
+export {
+  ProductItineraryDayRow,
+  type ProductItineraryDayRowProps,
+  type ProductItineraryDayRowRenderContext,
+} from "./components/product-itinerary-day-row"
+export {
   ProductItineraryDialog,
   type ProductItineraryDialogProps,
 } from "./components/product-itinerary-dialog"

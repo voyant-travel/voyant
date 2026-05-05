@@ -291,6 +291,7 @@ export function AvailabilityPage() {
             messages={messages.availability}
             products={products}
             constrainedSlots={constrainedSlots}
+            openSlotsCount={filteredSlots.filter((slot) => slot.status === "open").length}
             filteredRules={filteredRules}
             filteredPickupPoints={filteredPickupPoints}
             productsWithoutActiveRules={productsWithoutActiveRules}

@@ -161,6 +161,39 @@ describe("createStorefrontPublicRoutes", () => {
     })
   })
 
+  it("resolves storefront settings from request context", async () => {
+    const requestDb = { tenant: "tenant_123" }
+    const app = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db" as never, requestDb)
+        await next()
+      })
+      .route(
+        "/",
+        createStorefrontPublicRoutes({
+          resolveSettings({ db, context }) {
+            expect(db).toBe(requestDb)
+            const honoContext = context as { req: { header: (name: string) => string | undefined } }
+
+            return {
+              support: {
+                email: `${honoContext.req.header("x-storefront") ?? "default"}@example.com`,
+              },
+            }
+          },
+        }),
+      )
+
+    const res = await app.request("/settings", {
+      headers: {
+        "x-storefront": "bucharest",
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect((await res.json()).data.support.email).toBe("bucharest@example.com")
+  })
+
   it("returns applicable promotional offers from the injected resolver", async () => {
     const app = new Hono().route(
       "/",
@@ -262,5 +295,56 @@ describe("createStorefrontPublicRoutes", () => {
 
     expect(res.status).toBe(200)
     expect((await res.json()).data.slug).toBe("early-booking")
+  })
+
+  it("resolves promotional offers from request context", async () => {
+    const requestDb = { tenant: "tenant_123" }
+    const app = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db" as never, requestDb)
+        await next()
+      })
+      .route(
+        "/",
+        createStorefrontPublicRoutes({
+          resolveOffers({ db }) {
+            expect(db).toBe(requestDb)
+
+            return {
+              listApplicableOffers({ productId, db: callbackDb }) {
+                expect(productId).toBe("prod_123")
+                expect(callbackDb).toBe(requestDb)
+
+                return [
+                  {
+                    id: "offer_context",
+                    name: "Context offer",
+                    slug: "context-offer",
+                    description: null,
+                    discountType: "percentage",
+                    discountValue: "10",
+                    currency: null,
+                    applicableProductIds: ["prod_123"],
+                    applicableDepartureIds: [],
+                    validFrom: null,
+                    validTo: null,
+                    minTravelers: null,
+                    imageMobileUrl: null,
+                    imageDesktopUrl: null,
+                    stackable: false,
+                    createdAt: "2026-04-01T00:00:00.000Z",
+                    updatedAt: "2026-04-01T00:00:00.000Z",
+                  },
+                ]
+              },
+            }
+          },
+        }),
+      )
+
+    const res = await app.request("/products/prod_123/offers")
+
+    expect(res.status).toBe(200)
+    expect((await res.json()).data[0].id).toBe("offer_context")
   })
 })
