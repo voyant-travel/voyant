@@ -2,6 +2,7 @@ import { createFileRoute, Link, useParams, useSearch } from "@tanstack/react-rou
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { useEffect, useState } from "react"
 import { z } from "zod"
+import { getApiUrl } from "@/lib/env"
 
 /**
  * Post-checkout confirmation page for the storefront flow.
@@ -22,21 +23,26 @@ import { z } from "zod"
 
 const confirmationSearchSchema = z.object({
   kind: z.enum(["card_pending", "bank_transfer", "inquiry", "hold"]).optional(),
+  session: z.string().optional(),
+  orderId: z.string().optional(),
+  ref: z.string().optional(),
 })
 
 interface BankTransferStash {
   kind: "bank_transfer_instructions"
   bookingId: string
   proformaNumber: string | null
-  instructions: {
-    beneficiary: string
-    iban: string
-    bankName: string
-    reference: string
-    amountCents: number
-    currency: string
-    dueAt: string
-  }
+  instructions: BankTransferInstructions
+}
+
+interface BankTransferInstructions {
+  beneficiary: string
+  iban: string
+  bankName: string
+  reference: string
+  amountCents: number
+  currency: string
+  dueAt: string | null
 }
 
 export const Route = createFileRoute("/(storefront)/shop_/confirmation/$bookingId")({
@@ -54,7 +60,10 @@ function ShopConfirmationRouteComponent(): React.ReactElement {
       {kind === "bank_transfer" ? (
         <BankTransferPanel bookingId={bookingId} />
       ) : kind === "card_pending" ? (
-        <CardPendingPanel bookingId={bookingId} />
+        <CardPendingPanel
+          bookingId={bookingId}
+          paymentRef={search.session ?? search.orderId ?? search.ref}
+        />
       ) : kind === "inquiry" ? (
         <InquiryPanel bookingId={bookingId} />
       ) : kind === "hold" ? (
@@ -69,6 +78,11 @@ function ShopConfirmationRouteComponent(): React.ReactElement {
 
 function BankTransferPanel({ bookingId }: { bookingId: string }): React.ReactElement {
   const [stash, setStash] = useState<BankTransferStash | null>(null)
+  const status = useCheckoutStatus(bookingId)
+  const liveInstructions = status?.bankTransferInstructions ?? null
+  const instructions = liveInstructions ?? stash?.instructions ?? null
+  const proformaNumber = liveInstructions?.proformaNumber ?? stash?.proformaNumber ?? null
+
   useEffect(() => {
     if (typeof sessionStorage === "undefined") return
     const raw = sessionStorage.getItem(`voyant.checkout.${bookingId}`)
@@ -92,21 +106,19 @@ function BankTransferPanel({ bookingId }: { bookingId: string }): React.ReactEle
           when you initiate the bank transfer — please include the reference exactly so we can match
           the payment to your booking.
         </p>
-        {stash ? (
+        {instructions ? (
           <dl className="space-y-2 rounded border bg-muted/30 p-4">
             <Row label="Booking reference" value={bookingId} />
-            {stash.proformaNumber ? (
-              <Row label="Proforma number" value={stash.proformaNumber} />
-            ) : null}
-            <Row label="Beneficiary" value={stash.instructions.beneficiary} />
-            <Row label="Bank" value={stash.instructions.bankName} />
-            <Row label="IBAN" value={stash.instructions.iban} />
-            <Row label="Reference" value={stash.instructions.reference} />
+            {proformaNumber ? <Row label="Proforma number" value={proformaNumber} /> : null}
+            <Row label="Beneficiary" value={instructions.beneficiary} />
+            <Row label="Bank" value={instructions.bankName} />
+            <Row label="IBAN" value={instructions.iban} />
+            <Row label="Reference" value={instructions.reference} />
             <Row
               label="Amount"
-              value={formatMoney(stash.instructions.amountCents, stash.instructions.currency)}
+              value={formatMoney(instructions.amountCents, instructions.currency)}
             />
-            <Row label="Due by" value={stash.instructions.dueAt} />
+            {instructions.dueAt ? <Row label="Due by" value={instructions.dueAt} /> : null}
           </dl>
         ) : (
           <p className="text-muted-foreground">
@@ -122,7 +134,53 @@ function BankTransferPanel({ bookingId }: { bookingId: string }): React.ReactEle
   )
 }
 
-function CardPendingPanel({ bookingId }: { bookingId: string }): React.ReactElement {
+interface CheckoutStatus {
+  bookingId: string
+  bookingNumber: string
+  bookingStatus: string
+  paymentStatus: "paid" | "pending" | "failed"
+  session: {
+    id: string
+    status: string
+    amountCents: number
+    currency: string
+    completedAt: string | null
+  } | null
+  bankTransferInstructions: (BankTransferInstructions & { proformaNumber: string | null }) | null
+}
+
+function CardPendingPanel({
+  bookingId,
+  paymentRef,
+}: {
+  bookingId: string
+  paymentRef?: string
+}): React.ReactElement {
+  const status = useCheckoutStatus(bookingId, paymentRef)
+
+  if (status?.paymentStatus === "paid") {
+    return <PaymentSuccessPanel bookingId={bookingId} status={status} />
+  }
+
+  if (status?.paymentStatus === "failed") {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Payment not completed</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>
+            Booking reference: <code>{status.bookingNumber || bookingId}</code>
+          </p>
+          <p className="text-muted-foreground">
+            The card processor did not confirm this payment. If money left your account, contact us
+            with the booking reference so we can reconcile it.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -140,6 +198,76 @@ function CardPendingPanel({ bookingId }: { bookingId: string }): React.ReactElem
       </CardContent>
     </Card>
   )
+}
+
+function PaymentSuccessPanel({
+  bookingId,
+  status,
+}: {
+  bookingId: string
+  status: CheckoutStatus
+}): React.ReactElement {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Thank you — your booking is confirmed</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <p>
+          Booking reference: <code>{status.bookingNumber || bookingId}</code>
+        </p>
+        {status.session ? (
+          <p>
+            Payment received:{" "}
+            <strong>{formatMoney(status.session.amountCents, status.session.currency)}</strong>
+          </p>
+        ) : null}
+        <p className="text-muted-foreground">
+          We'll email your contract and invoice shortly. You can safely close this tab.
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function useCheckoutStatus(bookingId: string, paymentRef?: string): CheckoutStatus | null {
+  const [status, setStatus] = useState<CheckoutStatus | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    let timeoutId: number | undefined
+
+    const poll = async () => {
+      const url = new URL(
+        `${getApiUrl()}/v1/public/bookings/${encodeURIComponent(bookingId)}/checkout-status`,
+      )
+      if (paymentRef) url.searchParams.set("ref", paymentRef)
+      try {
+        const res = await fetch(url, { credentials: "include" })
+        if (res.ok) {
+          const json = (await res.json()) as { data?: CheckoutStatus }
+          if (!cancelled && json.data) {
+            setStatus(json.data)
+            if (json.data.paymentStatus !== "pending") return
+          }
+        }
+      } catch {
+        // Keep polling; transient local/dev errors should not pin the page forever.
+      }
+
+      if (!cancelled) {
+        timeoutId = window.setTimeout(poll, 3000)
+      }
+    }
+
+    void poll()
+    return () => {
+      cancelled = true
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId)
+    }
+  }, [bookingId, paymentRef])
+
+  return status
 }
 
 function InquiryPanel({ bookingId }: { bookingId: string }): React.ReactElement {

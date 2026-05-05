@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { formatMessage } from "@voyantjs/admin"
 import { describeRRule } from "@voyantjs/availability/rrule"
@@ -11,9 +12,10 @@ import {
   DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
 import { Separator } from "@voyantjs/ui/components/separator"
-import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import { Download, FileText, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
+import { api } from "@/lib/api-client"
 import type { DepartureSlot } from "./product-departure-dialog"
 import {
   type AvailabilityRule,
@@ -22,7 +24,6 @@ import {
   formatAmount,
   formatCapacityLabel,
   formatDuration,
-  formatMargin,
   formatSlotDate,
   formatSlotTime,
   getDepartureStatusLabel,
@@ -82,6 +83,44 @@ export function EmptyState({ message }: { message: string }) {
   return <p className="py-6 text-center text-sm text-muted-foreground">{message}</p>
 }
 
+type OptionPriceRuleSummary = {
+  id: string
+  active: boolean
+}
+
+type OptionUnitPriceRuleSummary = {
+  sellAmountCents: number | null
+  active: boolean
+}
+
+type TaxClassSummary = {
+  id: string
+  label: string
+}
+
+async function getProductStartingFromCents(productId: string): Promise<number | null> {
+  const rules = await api.get<{ data: OptionPriceRuleSummary[] }>(
+    `/v1/pricing/option-price-rules?productId=${encodeURIComponent(productId)}&limit=100&active=true`,
+  )
+  const ruleIds = rules.data.filter((rule) => rule.active).map((rule) => rule.id)
+  if (ruleIds.length === 0) return null
+
+  const unitPriceResponses = await Promise.all(
+    ruleIds.map((ruleId) =>
+      api.get<{ data: OptionUnitPriceRuleSummary[] }>(
+        `/v1/pricing/option-unit-price-rules?optionPriceRuleId=${encodeURIComponent(ruleId)}&limit=100&active=true`,
+      ),
+    ),
+  )
+  const prices = unitPriceResponses
+    .flatMap((response) => response.data)
+    .filter((rule) => rule.active)
+    .map((rule) => rule.sellAmountCents)
+    .filter((amount): amount is number => amount != null && amount > 0)
+
+  return prices.length > 0 ? Math.min(...prices) : null
+}
+
 export function ProductDetailsSection({
   product,
   onEdit,
@@ -91,6 +130,13 @@ export function ProductDetailsSection({
 }) {
   const messages = useAdminMessages()
   const productMessages = messages.products.core
+  const startingFromQuery = useQuery({
+    queryKey: ["product-starting-from", product.id],
+    queryFn: () => getProductStartingFromCents(product.id),
+  })
+  const startingFromCents = startingFromQuery.data ?? null
+  const usesOptionUnitPricing = startingFromQuery.isPending || startingFromCents != null
+
   return (
     <Section
       title={productMessages.detailsTitle}
@@ -108,7 +154,19 @@ export function ProductDetailsSection({
           {product.description}
         </div>
       ) : null}
-      {product.sellAmountCents != null ? (
+      {usesOptionUnitPricing ? (
+        <DetailRow
+          label={productMessages.startingFromLabel}
+          value={
+            <span className="font-mono">
+              {startingFromCents != null
+                ? formatAmount(startingFromCents, product.sellCurrency)
+                : productMessages.noValue}
+            </span>
+          }
+        />
+      ) : null}
+      {!usesOptionUnitPricing && product.sellAmountCents != null ? (
         <DetailRow
           label={productMessages.sellLabel}
           value={
@@ -118,7 +176,7 @@ export function ProductDetailsSection({
           }
         />
       ) : null}
-      {product.costAmountCents != null ? (
+      {!usesOptionUnitPricing && product.costAmountCents != null ? (
         <DetailRow
           label={productMessages.costLabel}
           value={
@@ -126,12 +184,6 @@ export function ProductDetailsSection({
               {formatAmount(product.costAmountCents, product.sellCurrency)}
             </span>
           }
-        />
-      ) : null}
-      {product.marginPercent != null ? (
-        <DetailRow
-          label={productMessages.marginLabel}
-          value={<span className="font-mono">{formatMargin(product.marginPercent)}</span>}
         />
       ) : null}
     </Section>
@@ -419,6 +471,12 @@ export function ProductOrganizeSection({
 }) {
   const messages = useAdminMessages()
   const productMessages = messages.products.core
+  const taxClassQuery = useQuery({
+    queryKey: ["tax-class", product.taxClassId],
+    enabled: !!product.taxClassId,
+    queryFn: () =>
+      api.get<{ data: TaxClassSummary }>(`/v1/finance/tax-classes/${product.taxClassId}`),
+  })
   return (
     <Section
       title={productMessages.organizeTitle}
@@ -451,6 +509,77 @@ export function ProductOrganizeSection({
         label={productMessages.typeLabel}
         value={<span>{getProductBookingModeLabel(product.bookingMode, messages)}</span>}
       />
+      <DetailRow
+        label={productMessages.taxClassLabel}
+        value={
+          taxClassQuery.data?.data.label ? (
+            <span>{taxClassQuery.data.data.label}</span>
+          ) : (
+            <span className="text-muted-foreground">{productMessages.taxClassNone}</span>
+          )
+        }
+      />
+    </Section>
+  )
+}
+
+export function ProductBrochureSection({
+  brochure,
+  isGenerating,
+  onGenerate,
+}: {
+  brochure: ProductMediaItem | null
+  isGenerating: boolean
+  onGenerate: () => void
+}) {
+  const messages = useAdminMessages()
+  const productMessages = messages.products.core
+
+  return (
+    <Section title={productMessages.brochureTitle}>
+      <div className="flex flex-col gap-3">
+        {brochure ? (
+          <div className="flex items-start gap-3 rounded-md border bg-muted/20 p-3">
+            <div className="mt-0.5 rounded-md bg-background p-2 text-muted-foreground">
+              <FileText className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{brochure.name}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {formatMessage(productMessages.brochureMeta, {
+                  version: brochure.brochureVersion ?? 1,
+                  size: formatFileSize(brochure.fileSize),
+                })}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{productMessages.brochureEmpty}</p>
+        )}
+
+        <div className="flex gap-2">
+          {brochure ? (
+            <a href={brochure.url} target="_blank" rel="noreferrer" className="flex-1">
+              <Button variant="outline" size="sm" className="w-full">
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                {productMessages.downloadBrochure}
+              </Button>
+            </a>
+          ) : null}
+          <Button
+            variant={brochure ? "secondary" : "default"}
+            size="sm"
+            className="flex-1"
+            disabled={isGenerating}
+            onClick={onGenerate}
+          >
+            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isGenerating ? "animate-spin" : ""}`} />
+            {brochure ? productMessages.regenerateBrochure : productMessages.generateBrochure}
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted-foreground">{productMessages.brochureSizeHint}</p>
+      </div>
     </Section>
   )
 }
@@ -485,4 +614,10 @@ export function ProductMediaSection({
       </div>
     </Section>
   )
+}
+
+function formatFileSize(value: number | null): string {
+  if (value == null) return "-"
+  if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`
 }

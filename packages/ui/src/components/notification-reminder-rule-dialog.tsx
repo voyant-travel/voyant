@@ -19,19 +19,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 
 const reminderRuleFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  slug: z
-    .string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
   status: z.enum(["draft", "active", "archived"]).default("draft"),
-  targetType: z.enum(["booking_payment_schedule", "invoice"]),
+  targetType: z.enum([
+    "booking_confirmed",
+    "booking_payment_schedule",
+    "payment_complete",
+    "booking_cancelled_non_payment",
+  ]),
   channel: z.enum(["email", "sms"]),
   templateId: z.string().min(1, "Template is required"),
   relativeDaysFromDueDate: z.number().int().min(-365).max(365),
 })
 
+const reminderTargetOptions = [
+  { value: "booking_confirmed", label: "Booking confirmed" },
+  { value: "payment_complete", label: "Payment complete" },
+  { value: "booking_cancelled_non_payment", label: "Booking cancelled (non-payment)" },
+  { value: "booking_payment_schedule", label: "Booking payment schedule" },
+] as const
+
 type FormValues = z.input<typeof reminderRuleFormSchema>
 type FormOutput = z.output<typeof reminderRuleFormSchema>
+
+const dueDateTargetTypes = new Set<FormValues["targetType"]>(["booking_payment_schedule"])
+
+function slugifyReminderRule(value: string) {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  return slug || "notification-rule"
+}
 
 type NotificationReminderRuleDialogProps = {
   open: boolean
@@ -52,7 +71,6 @@ export function NotificationReminderRuleDialog({
     resolver: zodResolver(reminderRuleFormSchema),
     defaultValues: {
       name: "",
-      slug: "",
       status: "draft",
       targetType: "booking_payment_schedule",
       channel: "email",
@@ -61,6 +79,8 @@ export function NotificationReminderRuleDialog({
     },
   })
   const channel = form.watch("channel")
+  const targetType = form.watch("targetType")
+  const usesDueDateTiming = dueDateTargetTypes.has(targetType)
   const { data: templates } = useNotificationTemplates({
     channel,
     status: "active",
@@ -79,9 +99,8 @@ export function NotificationReminderRuleDialog({
 
       form.reset({
         name: rule.name,
-        slug: rule.slug,
         status: rule.status,
-        targetType: rule.targetType,
+        targetType: rule.targetType === "invoice" ? "booking_payment_schedule" : rule.targetType,
         channel: rule.channel,
         templateId: resolvedTemplateId,
         relativeDaysFromDueDate: rule.relativeDaysFromDueDate,
@@ -97,14 +116,18 @@ export function NotificationReminderRuleDialog({
   const onSubmit = async (values: FormOutput) => {
     const payload = {
       name: values.name,
-      slug: values.slug,
+      slug:
+        rule?.slug ??
+        `${slugifyReminderRule(values.targetType)}-${slugifyReminderRule(values.name)}`,
       status: values.status,
       targetType: values.targetType,
       channel: values.channel,
       provider: null,
       templateId: values.templateId,
       templateSlug: null,
-      relativeDaysFromDueDate: values.relativeDaysFromDueDate,
+      relativeDaysFromDueDate: dueDateTargetTypes.has(values.targetType)
+        ? values.relativeDaysFromDueDate
+        : 0,
       isSystem: rule?.isSystem ?? false,
       metadata: rule?.metadata ?? null,
     }
@@ -128,25 +151,15 @@ export function NotificationReminderRuleDialog({
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Invoice due in 3 days" />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>Slug</Label>
-                <Input {...form.register("slug")} placeholder="invoice-due-minus-3" />
-              </div>
+            <div className="flex flex-col gap-2">
+              <Label>Name</Label>
+              <Input {...form.register("name")} placeholder="Payment due in 3 days" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>Target</Label>
                 <Select
-                  items={[
-                    { label: "Booking payment schedule", value: "booking_payment_schedule" },
-                    { label: "Invoice", value: "invoice" },
-                  ]}
                   value={form.watch("targetType")}
                   onValueChange={(value) => {
                     if (!value) return
@@ -157,21 +170,17 @@ export function NotificationReminderRuleDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="booking_payment_schedule">
-                      Booking payment schedule
-                    </SelectItem>
-                    <SelectItem value="invoice">Invoice</SelectItem>
+                    {reminderTargetOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
                 <Label>Status</Label>
                 <Select
-                  items={[
-                    { label: "Draft", value: "draft" },
-                    { label: "Active", value: "active" },
-                    { label: "Archived", value: "archived" },
-                  ]}
                   value={form.watch("status")}
                   onValueChange={(value) => {
                     if (!value) return
@@ -190,14 +199,10 @@ export function NotificationReminderRuleDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className={usesDueDateTiming ? "grid grid-cols-2 gap-4" : "grid gap-4"}>
               <div className="flex flex-col gap-2">
                 <Label>Channel</Label>
                 <Select
-                  items={[
-                    { label: "Email", value: "email" },
-                    { label: "SMS", value: "sms" },
-                  ]}
                   value={form.watch("channel")}
                   onValueChange={(value) => {
                     if (!value) return
@@ -213,28 +218,29 @@ export function NotificationReminderRuleDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label>Offset days</Label>
-                <Input
-                  type="number"
-                  value={form.watch("relativeDaysFromDueDate")}
-                  onChange={(event) =>
-                    form.setValue(
-                      "relativeDaysFromDueDate",
-                      Number.parseInt(event.target.value || "0", 10),
-                    )
-                  }
-                />
-              </div>
+              {usesDueDateTiming ? (
+                <div className="flex flex-col gap-2">
+                  <Label>Send timing</Label>
+                  <Input
+                    type="number"
+                    value={form.watch("relativeDaysFromDueDate")}
+                    onChange={(event) =>
+                      form.setValue(
+                        "relativeDaysFromDueDate",
+                        Number.parseInt(event.target.value || "0", 10),
+                      )
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Days from due date: -3 sends 3 days before, 0 on the due date, 3 after.
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-2">
               <Label>Template</Label>
               <Select
-                items={(templates?.data ?? []).map((template) => ({
-                  label: `${template.name} (${template.slug})`,
-                  value: template.id,
-                }))}
                 value={form.watch("templateId")}
                 onValueChange={(value) => {
                   if (!value) return

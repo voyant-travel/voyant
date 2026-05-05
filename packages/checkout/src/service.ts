@@ -7,7 +7,11 @@ import {
   invoices,
   type PaymentSession,
 } from "@voyantjs/finance"
-import type { NotificationDelivery, NotificationService } from "@voyantjs/notifications"
+import type {
+  NotificationDelivery,
+  NotificationReminderRun,
+  NotificationService,
+} from "@voyantjs/notifications"
 import {
   notificationDeliveries,
   notificationReminderRules,
@@ -141,7 +145,7 @@ export interface CheckoutReminderRunSummary {
   reminderRuleId: string
   reminderRuleSlug: string | null
   reminderRuleName: string | null
-  targetType: "booking_payment_schedule" | "invoice"
+  targetType: NotificationReminderRun["targetType"]
   targetId: string
   bookingId: string | null
   paymentSessionId: string | null

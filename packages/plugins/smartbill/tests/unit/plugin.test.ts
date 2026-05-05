@@ -1,5 +1,5 @@
+import type { Plugin } from "@voyantjs/core"
 import { describe, expect, it, vi } from "vitest"
-
 import { smartbillPlugin } from "../../src/plugin.js"
 import type { SmartbillFetch } from "../../src/types.js"
 
@@ -46,20 +46,31 @@ function makeLogger() {
   }
 }
 
+function subscriberFor(plugin: Plugin, event: string) {
+  const subscriber = plugin.subscribers?.find((candidate) => candidate.event === event)
+  if (!subscriber) throw new Error(`Missing SmartBill subscriber for ${event}`)
+  return subscriber
+}
+
 describe("smartbillPlugin structure", () => {
   it("returns a Plugin with name and version", () => {
     const fetchMock = vi.fn<SmartbillFetch>()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock })
     expect(plugin.name).toBe("smartbill")
     expect(plugin.version).toBe("0.1.0")
-    expect(plugin.subscribers).toHaveLength(3)
+    expect(plugin.subscribers).toHaveLength(4)
   })
 
   it("subscribes to default event names", () => {
     const fetchMock = vi.fn<SmartbillFetch>()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock })
     const events = plugin.subscribers!.map((s) => s.event)
-    expect(events).toEqual(["invoice.issued", "invoice.voided", "invoice.external.sync.requested"])
+    expect(events).toEqual([
+      "invoice.issued",
+      "invoice.proforma.issued",
+      "invoice.voided",
+      "invoice.external.sync.requested",
+    ])
   })
 
   it("subscribes to custom event names", () => {
@@ -74,7 +85,12 @@ describe("smartbillPlugin structure", () => {
       },
     })
     const events = plugin.subscribers!.map((s) => s.event)
-    expect(events).toEqual(["custom.issued", "custom.voided", "custom.sync"])
+    expect(events).toEqual([
+      "custom.issued",
+      "invoice.proforma.issued",
+      "custom.voided",
+      "custom.sync",
+    ])
   })
 
   it("fails fast on invalid plugin options", () => {
@@ -94,7 +110,7 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
     )
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![0]!.handler
+    const handler = subscriberFor(plugin, "invoice.issued").handler
 
     await handler(
       eventEnvelope({
@@ -120,7 +136,7 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(500, "boom"))
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![0]!.handler
+    const handler = subscriberFor(plugin, "invoice.issued").handler
 
     // Should not throw
     await handler(eventEnvelope({ id: "inv_fail", lineItems: [] }))
@@ -133,14 +149,14 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
   it("ignores null data", async () => {
     const fetchMock = vi.fn<SmartbillFetch>()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock })
-    await plugin.subscribers![0]!.handler(eventEnvelope(null))
+    await subscriberFor(plugin, "invoice.issued").handler(eventEnvelope(null))
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it("ignores data without id", async () => {
     const fetchMock = vi.fn<SmartbillFetch>()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock })
-    await plugin.subscribers![0]!.handler(eventEnvelope({ noId: true }))
+    await subscriberFor(plugin, "invoice.issued").handler(eventEnvelope({ noId: true }))
     expect(fetchMock).not.toHaveBeenCalled()
   })
 })
@@ -150,7 +166,7 @@ describe("smartbillPlugin — invoice.voided subscriber", () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(200, {}))
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![1]!.handler
+    const handler = subscriberFor(plugin, "invoice.voided").handler
 
     await handler(
       eventEnvelope({
@@ -174,7 +190,7 @@ describe("smartbillPlugin — invoice.voided subscriber", () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(200, {}))
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![1]!.handler
+    const handler = subscriberFor(plugin, "invoice.voided").handler
 
     await handler(eventEnvelope({ id: "inv_void2", invoiceNumber: "99" }))
 
@@ -187,7 +203,7 @@ describe("smartbillPlugin — invoice.voided subscriber", () => {
     const fetchMock = vi.fn<SmartbillFetch>()
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![1]!.handler
+    const handler = subscriberFor(plugin, "invoice.voided").handler
 
     await handler(eventEnvelope({ id: "inv_no_num" }))
 
@@ -200,7 +216,7 @@ describe("smartbillPlugin — invoice.voided subscriber", () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(500, "error"))
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![1]!.handler
+    const handler = subscriberFor(plugin, "invoice.voided").handler
 
     await handler(eventEnvelope({ id: "inv_err", externalNumber: "1" }))
 
@@ -216,7 +232,7 @@ describe("smartbillPlugin — invoice.external.sync.requested subscriber", () =>
     )
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![2]!.handler
+    const handler = subscriberFor(plugin, "invoice.external.sync.requested").handler
 
     await handler(eventEnvelope({ id: "inv_sync", externalNumber: "55" }))
 
@@ -231,7 +247,7 @@ describe("smartbillPlugin — invoice.external.sync.requested subscriber", () =>
     const fetchMock = vi.fn<SmartbillFetch>()
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![2]!.handler
+    const handler = subscriberFor(plugin, "invoice.external.sync.requested").handler
 
     await handler(eventEnvelope({ id: "inv_no_num" }))
 
@@ -244,7 +260,7 @@ describe("smartbillPlugin — invoice.external.sync.requested subscriber", () =>
     const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(500, "timeout"))
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
-    const handler = plugin.subscribers![2]!.handler
+    const handler = subscriberFor(plugin, "invoice.external.sync.requested").handler
 
     await handler(eventEnvelope({ id: "inv_err", externalNumber: "1" }))
 
@@ -272,7 +288,7 @@ describe("smartbillPlugin — custom mapEvent", () => {
       logger,
       mapEvent: customMapper,
     })
-    const handler = plugin.subscribers![0]!.handler
+    const handler = subscriberFor(plugin, "invoice.issued").handler
 
     await handler(eventEnvelope({ id: "inv_custom" }))
 

@@ -308,6 +308,11 @@ function enrichPaymentSession(value: unknown) {
         : typeof session.paymentMethod === "string"
           ? session.paymentMethod
           : null,
+    isPaid:
+      session.status === "paid" ||
+      session.status === "completed" ||
+      session.status === "succeeded" ||
+      Boolean(session.completedAt),
   }
 }
 
@@ -373,16 +378,25 @@ export function normalizeNotificationTemplateData(data: Record<string, unknown>)
   const invoice = enrichInvoice(data.invoice)
   const paymentSession = enrichPaymentSession(data.paymentSession)
   const paymentSchedule = enrichPaymentSchedule(data.paymentSchedule)
+  const suppliedPayment =
+    data.payment && typeof data.payment === "object" && !Array.isArray(data.payment)
+      ? (data.payment as Record<string, unknown>)
+      : null
   const documents = Array.isArray(data.documents)
     ? data.documents.map((document) => enrichDocument(document))
     : []
   const items = Array.isArray(data.items) ? data.items.map((item) => enrichBookingItem(item)) : []
 
-  const payment =
+  const derivedPayment =
     paymentSchedule && typeof paymentSchedule === "object"
       ? {
           amount: (paymentSchedule as Record<string, unknown>).amountDue ?? null,
-          currency: (paymentSchedule as Record<string, unknown>).currency ?? null,
+          currency:
+            (paymentSchedule as Record<string, unknown>).currency ??
+            (invoice as Record<string, unknown> | null)?.currency ??
+            (paymentSession as Record<string, unknown> | null)?.currency ??
+            (booking as Record<string, unknown> | null)?.currency ??
+            null,
           dueDate: (paymentSchedule as Record<string, unknown>).dueDate ?? null,
           daysLeft: (paymentSchedule as Record<string, unknown>).daysLeft ?? null,
           reference:
@@ -395,8 +409,15 @@ export function normalizeNotificationTemplateData(data: Record<string, unknown>)
             null,
           link: (paymentSession as Record<string, unknown> | null)?.paymentUrl ?? null,
           payMode: (paymentSchedule as Record<string, unknown>).type ?? null,
-          paidAmount: (invoice as Record<string, unknown> | null)?.paidAmount ?? null,
-          balanceDue: (invoice as Record<string, unknown> | null)?.balanceDueAmount ?? null,
+          paidAmount:
+            (invoice as Record<string, unknown> | null)?.paidAmount ??
+            ((paymentSession as Record<string, unknown> | null)?.isPaid
+              ? (paymentSession as Record<string, unknown>).amount
+              : null),
+          balanceDue:
+            (invoice as Record<string, unknown> | null)?.balanceDueAmount ??
+            (paymentSchedule as Record<string, unknown>).amountDue ??
+            null,
           isPaidInFull:
             ((invoice as Record<string, unknown> | null)?.balanceDueAmount as number | null) === 0,
         }
@@ -416,7 +437,34 @@ export function normalizeNotificationTemplateData(data: Record<string, unknown>)
               ((invoice as Record<string, unknown> | null)?.balanceDueAmount as number | null) ===
               0,
           }
-        : null
+        : invoice && typeof invoice === "object"
+          ? {
+              amount: (invoice as Record<string, unknown>).balanceDueAmount ?? null,
+              currency: (invoice as Record<string, unknown>).currency ?? null,
+              dueDate: (invoice as Record<string, unknown>).dueDate ?? null,
+              daysLeft: null,
+              reference:
+                (booking as Record<string, unknown> | null)?.reference ??
+                (invoice as Record<string, unknown>).number ??
+                null,
+              method:
+                (paymentSession as Record<string, unknown> | null)?.method ??
+                (paymentSession as Record<string, unknown> | null)?.provider ??
+                null,
+              link: (paymentSession as Record<string, unknown> | null)?.paymentUrl ?? null,
+              payMode: null,
+              paidAmount: (invoice as Record<string, unknown>).paidAmount ?? null,
+              balanceDue: (invoice as Record<string, unknown>).balanceDueAmount ?? null,
+              isPaidInFull:
+                ((invoice as Record<string, unknown>).balanceDueAmount as number | null) === 0,
+            }
+          : null
+  const payment = derivedPayment
+    ? {
+        ...derivedPayment,
+        ...suppliedPayment,
+      }
+    : suppliedPayment
 
   const product =
     items.length > 0 && items[0] && typeof items[0] === "object"

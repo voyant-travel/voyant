@@ -9,7 +9,13 @@ export interface NotificationTemplatesListFilters {
 
 export interface NotificationReminderRulesListFilters {
   search?: string | undefined
-  targetType?: "booking_payment_schedule" | "invoice" | undefined
+  targetType?:
+    | "booking_confirmed"
+    | "booking_payment_schedule"
+    | "payment_complete"
+    | "booking_cancelled_non_payment"
+    | "invoice"
+    | undefined
   channel?: "email" | "sms" | undefined
   status?: "draft" | "active" | "archived" | undefined
   limit?: number | undefined
@@ -43,7 +49,13 @@ export interface NotificationDeliveriesListFilters {
 
 export interface NotificationReminderRunsListFilters {
   reminderRuleId?: string | undefined
-  targetType?: "booking_payment_schedule" | "invoice" | undefined
+  targetType?:
+    | "booking_confirmed"
+    | "booking_payment_schedule"
+    | "payment_complete"
+    | "booking_cancelled_non_payment"
+    | "invoice"
+    | undefined
   targetId?: string | undefined
   scheduleId?: string | undefined
   invoiceId?: string | undefined

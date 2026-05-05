@@ -7,10 +7,9 @@
  * and missing-rate cases.
  */
 
-import { exchangeRates, fxRateSets } from "@voyantjs/markets/schema"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
-
+import { exchangeRates, fxRateSets } from "../../../markets/src/schema.js"
 import { bookings } from "../../src/schema.js"
 import { bookingsService } from "../../src/service.js"
 

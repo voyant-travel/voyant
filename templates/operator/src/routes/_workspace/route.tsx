@@ -64,7 +64,7 @@ function WorkspaceLayout() {
 
 function WorkspaceContent() {
   const { user, isLoading } = useUser()
-  const { resolvedLocale, setLocale, setTimeZone } = useLocale()
+  const { locale, resolvedLocale, setLocale, setTimeZone, timeZone } = useLocale()
   const messages = useAdminMessages()
 
   useEffect(() => {
@@ -72,14 +72,18 @@ function WorkspaceContent() {
       return
     }
 
-    if (!window.localStorage.getItem("admin-locale") && user.locale) {
+    if (!window.localStorage.getItem("admin-locale") && user.locale && user.locale !== locale) {
       setLocale(user.locale)
     }
 
-    if (!window.localStorage.getItem("admin-timezone") && user.timezone) {
+    if (
+      !window.localStorage.getItem("admin-timezone") &&
+      user.timezone &&
+      user.timezone !== timeZone
+    ) {
       setTimeZone(user.timezone)
     }
-  }, [setLocale, setTimeZone, user])
+  }, [locale, setLocale, setTimeZone, timeZone, user])
 
   if (isLoading) {
     return (

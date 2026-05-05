@@ -69,6 +69,7 @@ export const supplierSchema = z.object({
   contactEmail: z.string().nullable(),
   contactPhone: z.string().nullable(),
   paymentTermsDays: z.number().int().nullable().optional(),
+  reservationTimeoutMinutes: z.number().int().nullable().optional(),
   customerPaymentPolicy: supplierCustomerPaymentPolicySchema.nullable().optional(),
   tags: z.array(z.string()),
   createdAt: z.string(),

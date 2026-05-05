@@ -243,6 +243,10 @@ function UnitPriceMatrix({
 
   const units = (unitsData?.data ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder)
   const categories = categoriesData?.data ?? []
+  const columns =
+    categories.length > 0
+      ? categories.map((category) => ({ id: category.id, name: category.name }))
+      : [{ id: null, name: priceRuleMessages.defaultBadge }]
   const cells = cellsData?.data ?? []
   const findCell = (unitId: string, categoryId: string | null) =>
     cells.find(
@@ -251,13 +255,6 @@ function UnitPriceMatrix({
 
   if (units.length === 0) {
     return <p className="text-xs italic text-muted-foreground">{priceRuleMessages.addUnitsHint}</p>
-  }
-  if (categories.length === 0) {
-    return (
-      <p className="text-xs italic text-muted-foreground">
-        {priceRuleMessages.createCategoriesHint}
-      </p>
-    )
   }
 
   return (
@@ -272,8 +269,8 @@ function UnitPriceMatrix({
           <thead>
             <tr className="border-b bg-muted/50 text-muted-foreground">
               <th className="p-2 text-left font-medium">{priceRuleMessages.tableUnit}</th>
-              {categories.map((category) => (
-                <th key={category.id} className="p-2 text-left font-medium">
+              {columns.map((category) => (
+                <th key={category.id ?? "__default__"} className="p-2 text-left font-medium">
                   {category.name}
                 </th>
               ))}
@@ -288,10 +285,10 @@ function UnitPriceMatrix({
                     ({getUnitTypeLabel(unit.unitType, unitMessages)})
                   </span>
                 </td>
-                {categories.map((category) => {
+                {columns.map((category) => {
                   const cell = findCell(unit.id, category.id)
                   return (
-                    <td key={category.id} className="p-2">
+                    <td key={category.id ?? "__default__"} className="p-2">
                       {cell ? (
                         <div className="flex items-center gap-1">
                           <button

@@ -1,6 +1,6 @@
 import type { VoyantCloudClient } from "@voyantjs/cloud-sdk"
 
-import type { NotificationProvider, NotificationResult } from "../types.js"
+import type { NotificationAttachment, NotificationProvider, NotificationResult } from "../types.js"
 
 export interface VoyantCloudEmailRendered {
   subject: string
@@ -26,6 +26,26 @@ export interface VoyantCloudEmailProviderOptions {
   ) => Promise<VoyantCloudEmailRendered> | VoyantCloudEmailRendered
 }
 
+function mapAttachments(attachments: ReadonlyArray<NotificationAttachment> | undefined) {
+  if (!attachments || attachments.length === 0) return undefined
+  return attachments.map((attachment) => ({
+    filename: attachment.filename,
+    ...(attachment.contentBase64 ? { content: attachment.contentBase64 } : {}),
+    ...(attachment.path ? { path: attachment.path } : {}),
+    ...(attachment.contentType ? { contentType: attachment.contentType } : {}),
+    ...(attachment.contentId ? { contentId: attachment.contentId } : {}),
+  }))
+}
+
+function attachEmailRequestContext(error: unknown, request: Record<string, unknown>) {
+  if (!error || typeof error !== "object") return
+  Object.defineProperty(error, "notificationRequest", {
+    configurable: true,
+    enumerable: true,
+    value: request,
+  })
+}
+
 /**
  * Notification provider that delivers email through the Voyant Cloud
  * `/email/v1/messages` endpoint.
@@ -49,15 +69,38 @@ export function createVoyantCloudEmailProvider(
             subject: payload.subject ?? payload.template,
             text: JSON.stringify(payload.data ?? {}),
           }
-
-      const message = await options.client.email.sendMessage({
+      const attachments = mapAttachments(payload.attachments)
+      const request = {
         from: payload.from ?? options.from,
         to: [payload.to],
         subject: payload.subject ?? rendered.subject,
         html: payload.html ?? rendered.html ?? null,
         text: payload.text ?? rendered.text ?? null,
-        replyTo: options.replyTo ? [...options.replyTo] : null,
-      })
+        ...(attachments ? { attachments } : {}),
+        ...(options.replyTo ? { replyTo: [...options.replyTo] } : {}),
+      }
+
+      let message: Awaited<ReturnType<typeof options.client.email.sendMessage>>
+      try {
+        message = await options.client.email.sendMessage(request)
+      } catch (error) {
+        attachEmailRequestContext(error, {
+          from: request.from,
+          to: request.to,
+          replyTo: "replyTo" in request ? request.replyTo : null,
+          subject: request.subject,
+          attachmentCount: attachments?.length ?? 0,
+          attachments:
+            attachments?.map((attachment) => ({
+              filename: attachment.filename,
+              path: attachment.path ?? null,
+              contentType: attachment.contentType ?? null,
+              contentId: attachment.contentId ?? null,
+              hasContent: Boolean(attachment.content),
+            })) ?? [],
+        })
+        throw error
+      }
 
       return { id: message.id, provider: "voyant-cloud-email" }
     },

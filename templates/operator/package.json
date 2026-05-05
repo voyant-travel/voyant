@@ -78,6 +78,7 @@
     "@voyantjs/plugin-catalog-demo": "workspace:*",
     "@voyantjs/plugin-flights-demo": "workspace:*",
     "@voyantjs/plugin-netopia": "workspace:*",
+    "@voyantjs/plugin-smartbill": "workspace:*",
     "@voyantjs/hospitality": "workspace:*",
     "@voyantjs/i18n": "workspace:*",
     "@voyantjs/identity": "workspace:*",

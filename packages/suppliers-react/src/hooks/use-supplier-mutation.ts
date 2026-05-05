@@ -27,6 +27,7 @@ export interface CreateSupplierInput {
   contactEmail?: string | null
   contactPhone?: string | null
   paymentTermsDays?: number | null
+  reservationTimeoutMinutes?: number | null
   customerPaymentPolicy?: SupplierCustomerPaymentPolicy | null
   tags?: string[]
 }

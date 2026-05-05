@@ -24,6 +24,9 @@ import {
   paymentSessions,
   payments,
   supplierPayments,
+  taxClasses,
+  taxPolicyProfiles,
+  taxPolicyRules,
   taxRegimes,
 } from "./schema.js"
 import { getFinanceAggregates } from "./service-aggregates.js"
@@ -58,6 +61,9 @@ import type {
   insertPaymentSchema,
   insertPaymentSessionSchema,
   insertSupplierPaymentSchema,
+  insertTaxClassSchema,
+  insertTaxPolicyProfileSchema,
+  insertTaxPolicyRuleSchema,
   insertTaxRegimeSchema,
   invoiceFromBookingSchema,
   invoiceListQuerySchema,
@@ -72,6 +78,9 @@ import type {
   renderInvoiceInputSchema,
   revenueReportQuerySchema,
   supplierPaymentListQuerySchema,
+  taxClassListQuerySchema,
+  taxPolicyProfileListQuerySchema,
+  taxPolicyRuleListQuerySchema,
   taxRegimeListQuerySchema,
   updateBookingGuaranteeSchema,
   updateBookingItemCommissionSchema,
@@ -88,6 +97,9 @@ import type {
   updatePaymentInstrumentSchema,
   updatePaymentSessionSchema,
   updateSupplierPaymentSchema,
+  updateTaxClassSchema,
+  updateTaxPolicyProfileSchema,
+  updateTaxPolicyRuleSchema,
   updateTaxRegimeSchema,
 } from "./validation.js"
 
@@ -139,6 +151,15 @@ type UpdateInvoiceRenditionInput = z.infer<typeof updateInvoiceRenditionSchema>
 type TaxRegimeListQuery = z.infer<typeof taxRegimeListQuerySchema>
 type CreateTaxRegimeInput = z.infer<typeof insertTaxRegimeSchema>
 type UpdateTaxRegimeInput = z.infer<typeof updateTaxRegimeSchema>
+type TaxClassListQuery = z.infer<typeof taxClassListQuerySchema>
+type CreateTaxClassInput = z.infer<typeof insertTaxClassSchema>
+type UpdateTaxClassInput = z.infer<typeof updateTaxClassSchema>
+type TaxPolicyProfileListQuery = z.infer<typeof taxPolicyProfileListQuerySchema>
+type CreateTaxPolicyProfileInput = z.infer<typeof insertTaxPolicyProfileSchema>
+type UpdateTaxPolicyProfileInput = z.infer<typeof updateTaxPolicyProfileSchema>
+type TaxPolicyRuleListQuery = z.infer<typeof taxPolicyRuleListQuerySchema>
+type CreateTaxPolicyRuleInput = z.infer<typeof insertTaxPolicyRuleSchema>
+type UpdateTaxPolicyRuleInput = z.infer<typeof updateTaxPolicyRuleSchema>
 type CreateInvoiceExternalRefInput = z.infer<typeof insertInvoiceExternalRefSchema>
 type RenderInvoiceInput = z.infer<typeof renderInvoiceInputSchema>
 type MarkPaymentSessionRequiresRedirectInput = z.infer<
@@ -175,6 +196,36 @@ export interface InvoiceFromBookingData {
     unitSellAmountCents: number | null
     totalSellAmountCents: number | null
   }>
+}
+
+function bookingItemToInvoiceLine(
+  item: InvoiceFromBookingData["items"][number],
+  taxes: Array<typeof bookingItemTaxLines.$inferSelect>,
+  sortOrder: number,
+) {
+  const quantity = Math.max(item.quantity, 1)
+  const totalCents =
+    item.totalSellAmountCents ?? (item.unitSellAmountCents ?? 0) * Math.max(item.quantity, 1)
+  const firstTaxWithRate = taxes.find(
+    (tax) => tax.scope !== "withheld" && tax.rateBasisPoints != null,
+  )
+
+  return {
+    bookingItemId: item.id,
+    description: item.title,
+    quantity: item.quantity,
+    unitPriceCents:
+      item.unitSellAmountCents ??
+      (item.totalSellAmountCents !== null && item.totalSellAmountCents !== undefined
+        ? Math.floor(item.totalSellAmountCents / quantity)
+        : 0),
+    totalCents,
+    taxRate:
+      firstTaxWithRate?.rateBasisPoints != null
+        ? Math.round(firstTaxWithRate.rateBasisPoints / 100)
+        : null,
+    sortOrder,
+  }
 }
 
 function toTimestamp(value?: string | null) {
@@ -1729,22 +1780,17 @@ export const financeService = {
             .from(bookingItemCommissions)
             .where(or(...itemIds.map((id) => eq(bookingItemCommissions.bookingItemId, id))))
 
+    const taxesByBookingItemId = new Map<string, typeof taxes>()
+    for (const tax of taxes) {
+      const existing = taxesByBookingItemId.get(tax.bookingItemId) ?? []
+      existing.push(tax)
+      taxesByBookingItemId.set(tax.bookingItemId, existing)
+    }
+
     const lineItems =
       items.length > 0
         ? items.map((item, sortOrder) => ({
-            bookingItemId: item.id,
-            description: item.title,
-            quantity: item.quantity,
-            unitPriceCents:
-              item.unitSellAmountCents ??
-              (item.totalSellAmountCents !== null && item.totalSellAmountCents !== undefined
-                ? Math.floor(item.totalSellAmountCents / Math.max(item.quantity, 1))
-                : 0),
-            totalCents:
-              item.totalSellAmountCents ??
-              (item.unitSellAmountCents ?? 0) * Math.max(item.quantity, 1),
-            taxRate: null,
-            sortOrder,
+            ...bookingItemToInvoiceLine(item, taxesByBookingItemId.get(item.id) ?? [], sortOrder),
           }))
         : [
             {
@@ -1758,13 +1804,17 @@ export const financeService = {
             },
           ]
 
-    const subtotalCents = lineItems.reduce((sum, line) => sum + line.totalCents, 0)
-    const taxCents = taxes.reduce((sum, tax) => {
-      if (tax.scope === "withheld" || tax.includedInPrice) {
-        return sum
-      }
+    const grossLineTotalCents = lineItems.reduce((sum, line) => sum + line.totalCents, 0)
+    const includedTaxCents = taxes.reduce((sum, tax) => {
+      if (tax.scope === "withheld" || !tax.includedInPrice) return sum
       return sum + tax.amountCents
     }, 0)
+    const excludedTaxCents = taxes.reduce((sum, tax) => {
+      if (tax.scope === "withheld" || tax.includedInPrice) return sum
+      return sum + tax.amountCents
+    }, 0)
+    const subtotalCents = Math.max(0, grossLineTotalCents - includedTaxCents)
+    const taxCents = includedTaxCents + excludedTaxCents
     const totalCents = subtotalCents + taxCents
     const commissionAmountCents = commissions.reduce((sum, commission) => {
       return sum + (commission.amountCents ?? 0)
@@ -2456,6 +2506,199 @@ export const financeService = {
       .delete(taxRegimes)
       .where(eq(taxRegimes.id, id))
       .returning({ id: taxRegimes.id })
+    return row ?? null
+  },
+
+  // ============================================================================
+  // Tax classes
+  // ============================================================================
+
+  async listTaxClasses(db: PostgresJsDatabase, query: TaxClassListQuery) {
+    const conditions = []
+    if (query.code) conditions.push(eq(taxClasses.code, query.code))
+    if (typeof query.active === "boolean") conditions.push(eq(taxClasses.active, query.active))
+    const where = conditions.length ? and(...conditions) : undefined
+    return paginate(
+      db
+        .select()
+        .from(taxClasses)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(desc(taxClasses.updatedAt)),
+      db.select({ total: sql<number>`count(*)::int` }).from(taxClasses).where(where),
+      query.limit,
+      query.offset,
+    )
+  },
+
+  async getTaxClassById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db.select().from(taxClasses).where(eq(taxClasses.id, id)).limit(1)
+    return row ?? null
+  },
+
+  async createTaxClass(db: PostgresJsDatabase, data: CreateTaxClassInput) {
+    const [row] = await db
+      .insert(taxClasses)
+      .values({
+        code: data.code,
+        label: data.label,
+        description: data.description ?? null,
+        defaultRegimeId: data.defaultRegimeId ?? null,
+        lines: data.lines ?? null,
+        active: data.active,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async updateTaxClass(db: PostgresJsDatabase, id: string, data: UpdateTaxClassInput) {
+    const [row] = await db
+      .update(taxClasses)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(taxClasses.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteTaxClass(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(taxClasses)
+      .where(eq(taxClasses.id, id))
+      .returning({ id: taxClasses.id })
+    return row ?? null
+  },
+
+  // ============================================================================
+  // Tax policy profiles
+  // ============================================================================
+
+  async listTaxPolicyProfiles(db: PostgresJsDatabase, query: TaxPolicyProfileListQuery) {
+    const conditions = []
+    if (query.code) conditions.push(eq(taxPolicyProfiles.code, query.code))
+    if (query.jurisdiction) conditions.push(eq(taxPolicyProfiles.jurisdiction, query.jurisdiction))
+    if (typeof query.active === "boolean") {
+      conditions.push(eq(taxPolicyProfiles.active, query.active))
+    }
+    const where = conditions.length ? and(...conditions) : undefined
+    return paginate(
+      db
+        .select()
+        .from(taxPolicyProfiles)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(desc(taxPolicyProfiles.updatedAt)),
+      db.select({ total: sql<number>`count(*)::int` }).from(taxPolicyProfiles).where(where),
+      query.limit,
+      query.offset,
+    )
+  },
+
+  async getTaxPolicyProfileById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select()
+      .from(taxPolicyProfiles)
+      .where(eq(taxPolicyProfiles.id, id))
+      .limit(1)
+    return row ?? null
+  },
+
+  async createTaxPolicyProfile(db: PostgresJsDatabase, data: CreateTaxPolicyProfileInput) {
+    const [row] = await db
+      .insert(taxPolicyProfiles)
+      .values({
+        code: data.code,
+        name: data.name,
+        jurisdiction: data.jurisdiction ?? null,
+        description: data.description ?? null,
+        active: data.active,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async updateTaxPolicyProfile(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateTaxPolicyProfileInput,
+  ) {
+    const [row] = await db
+      .update(taxPolicyProfiles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(taxPolicyProfiles.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteTaxPolicyProfile(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(taxPolicyProfiles)
+      .where(eq(taxPolicyProfiles.id, id))
+      .returning({ id: taxPolicyProfiles.id })
+    return row ?? null
+  },
+
+  // ============================================================================
+  // Tax policy rules
+  // ============================================================================
+
+  async listTaxPolicyRules(db: PostgresJsDatabase, query: TaxPolicyRuleListQuery) {
+    const conditions = []
+    if (query.profileId) conditions.push(eq(taxPolicyRules.profileId, query.profileId))
+    if (query.side) conditions.push(eq(taxPolicyRules.side, query.side))
+    if (typeof query.active === "boolean") conditions.push(eq(taxPolicyRules.active, query.active))
+    const where = conditions.length ? and(...conditions) : undefined
+    return paginate(
+      db
+        .select()
+        .from(taxPolicyRules)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(asc(taxPolicyRules.priority), desc(taxPolicyRules.updatedAt)),
+      db.select({ total: sql<number>`count(*)::int` }).from(taxPolicyRules).where(where),
+      query.limit,
+      query.offset,
+    )
+  },
+
+  async getTaxPolicyRuleById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db.select().from(taxPolicyRules).where(eq(taxPolicyRules.id, id)).limit(1)
+    return row ?? null
+  },
+
+  async createTaxPolicyRule(db: PostgresJsDatabase, data: CreateTaxPolicyRuleInput) {
+    const [row] = await db
+      .insert(taxPolicyRules)
+      .values({
+        profileId: data.profileId,
+        side: data.side,
+        priority: data.priority,
+        name: data.name,
+        appliesTo: data.appliesTo,
+        condition: data.condition ?? null,
+        taxRegimeId: data.taxRegimeId,
+        active: data.active,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async updateTaxPolicyRule(db: PostgresJsDatabase, id: string, data: UpdateTaxPolicyRuleInput) {
+    const [row] = await db
+      .update(taxPolicyRules)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(taxPolicyRules.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteTaxPolicyRule(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(taxPolicyRules)
+      .where(eq(taxPolicyRules.id, id))
+      .returning({ id: taxPolicyRules.id })
     return row ?? null
   },
 

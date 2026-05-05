@@ -46,6 +46,16 @@ const getSupplierFormSchema = (messages: ReturnType<typeof useAdminMessages>) =>
       .max(3, messages.suppliers.dialogs.supplier.validationIsoCurrency)
       .optional()
       .nullable(),
+    reservationTimeoutMinutes: z
+      .union([
+        z.literal(""),
+        z.coerce
+          .number()
+          .int()
+          .min(0, messages.suppliers.dialogs.supplier.validationReservationTimeout),
+      ])
+      .optional()
+      .nullable(),
     contactName: z.string().optional().nullable(),
     contactEmail: z.string().email().optional().or(z.literal("")).nullable(),
     contactPhone: z.string().optional().nullable(),
@@ -85,6 +95,7 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
       city: "",
       country: "",
       defaultCurrency: "",
+      reservationTimeoutMinutes: "",
       contactName: "",
       contactEmail: "",
       contactPhone: "",
@@ -105,6 +116,10 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
         city: supplier.city ?? "",
         country: supplier.country ?? "",
         defaultCurrency: supplier.defaultCurrency ?? "",
+        reservationTimeoutMinutes:
+          supplier.reservationTimeoutMinutes == null
+            ? ""
+            : String(supplier.reservationTimeoutMinutes),
         contactName: supplier.contactName ?? "",
         contactEmail: supplier.contactEmail ?? "",
         contactPhone: supplier.contactPhone ?? "",
@@ -125,6 +140,12 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
       city: values.city || null,
       country: values.country || null,
       defaultCurrency: values.defaultCurrency || null,
+      reservationTimeoutMinutes:
+        values.reservationTimeoutMinutes === "" ||
+        values.reservationTimeoutMinutes === null ||
+        values.reservationTimeoutMinutes === undefined
+          ? null
+          : values.reservationTimeoutMinutes,
       contactName: values.contactName || null,
       contactEmail: values.contactEmail || null,
       contactPhone: values.contactPhone || null,
@@ -268,6 +289,23 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
                 maxLength={3}
                 className="max-w-[120px]"
               />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>{dialogMessages.reservationTimeoutLabel}</Label>
+              <Input
+                {...form.register("reservationTimeoutMinutes")}
+                type="number"
+                min={0}
+                max={24 * 60}
+                placeholder={dialogMessages.reservationTimeoutPlaceholder}
+                className="max-w-[160px]"
+              />
+              {form.formState.errors.reservationTimeoutMinutes && (
+                <p className="text-xs text-destructive">
+                  {form.formState.errors.reservationTimeoutMinutes.message}
+                </p>
+              )}
             </div>
 
             <div className="border-t pt-4">

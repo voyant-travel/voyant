@@ -229,7 +229,16 @@ export interface BookingJourneyProps {
    * (no template configured — the storefront still wants to drive
    * the post-confirm /checkout/start flow).
    */
-  onContractAccepted?: (acceptance: ContractAcceptanceEvent | null) => void | Promise<void>
+  onContractAccepted?: (
+    acceptance: ContractAcceptanceEvent | null,
+    context: BookingJourneyCheckoutContext,
+  ) => void | Promise<void>
+}
+
+export interface BookingJourneyCheckoutContext {
+  draft: BookingDraftV1
+  pricing: PricingBreakdownV1 | null
+  quoteId?: string
 }
 
 export interface ContractAcceptanceEvent {

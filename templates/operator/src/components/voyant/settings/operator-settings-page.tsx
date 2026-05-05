@@ -22,6 +22,11 @@ import {
   CardTitle,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
@@ -47,6 +52,14 @@ interface OperatorSettingsRecord {
   signatoryName?: string | null
   signatoryRole?: string | null
   customerPaymentPolicy?: PaymentPolicy | null
+  taxPriceMode?: "inclusive" | "exclusive"
+  taxPolicyProfileId?: string | null
+}
+
+interface TaxPolicyProfileRecord {
+  id: string
+  name: string
+  jurisdiction?: string | null
 }
 
 const EMPTY_FORM: OperatorSettingsRecord = {
@@ -65,6 +78,8 @@ const EMPTY_FORM: OperatorSettingsRecord = {
   signatoryName: "",
   signatoryRole: "",
   customerPaymentPolicy: null,
+  taxPriceMode: "inclusive",
+  taxPolicyProfileId: null,
 }
 
 export function OperatorSettingsPage() {
@@ -79,6 +94,20 @@ export function OperatorSettingsPage() {
       if (!res.ok) return null
       const json = (await res.json()) as { data?: OperatorSettingsRecord | null }
       return json.data ?? null
+    },
+  })
+  const taxPolicyProfilesQuery = useQuery({
+    queryKey: ["tax-policy-profiles"],
+    queryFn: async (): Promise<TaxPolicyProfileRecord[]> => {
+      const res = await fetch(
+        `${getApiUrl()}/v1/finance/tax-policy-profiles?limit=100&active=true`,
+        {
+          credentials: "include",
+        },
+      )
+      if (!res.ok) return []
+      const json = (await res.json()) as { data?: TaxPolicyProfileRecord[] }
+      return json.data ?? []
     },
   })
 
@@ -115,6 +144,8 @@ export function OperatorSettingsPage() {
           signatoryName: next.signatoryName ?? null,
           signatoryRole: next.signatoryRole ?? null,
           customerPaymentPolicy: next.customerPaymentPolicy ?? null,
+          taxPriceMode: next.taxPriceMode ?? "inclusive",
+          taxPolicyProfileId: next.taxPolicyProfileId ?? null,
         }),
       })
       if (!res.ok) {
@@ -342,6 +373,71 @@ export function OperatorSettingsPage() {
             inheritable={false}
           />
           <PaymentPolicyPreview policy={form.customerPaymentPolicy ?? noDepositPolicy} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Tax pricing</CardTitle>
+          <CardDescription>
+            Controls whether catalog prices entered in products and option pricing already include
+            tax or have tax added on top at quote time.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <Label>Catalog price mode</Label>
+            <Select
+              value={form.taxPriceMode ?? "inclusive"}
+              onValueChange={(value) =>
+                setField("taxPriceMode", value === "exclusive" ? "exclusive" : "inclusive")
+              }
+              items={[
+                { value: "inclusive", label: "Tax inclusive" },
+                { value: "exclusive", label: "Tax exclusive" },
+              ]}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inclusive">Tax inclusive</SelectItem>
+                <SelectItem value="exclusive">Tax exclusive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Tax policy profile</Label>
+            <Select
+              value={form.taxPolicyProfileId ?? "__auto__"}
+              onValueChange={(value) =>
+                setField("taxPolicyProfileId", value === "__auto__" ? null : value)
+              }
+              items={[
+                { value: "__auto__", label: "Automatic active profile" },
+                ...(taxPolicyProfilesQuery.data ?? []).map((profile) => ({
+                  value: profile.id,
+                  label: profile.jurisdiction
+                    ? `${profile.name} (${profile.jurisdiction})`
+                    : profile.name,
+                })),
+              ]}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__auto__">Automatic active profile</SelectItem>
+                {(taxPolicyProfilesQuery.data ?? []).map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    {profile.jurisdiction
+                      ? `${profile.name} (${profile.jurisdiction})`
+                      : profile.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 

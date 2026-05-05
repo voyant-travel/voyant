@@ -14,6 +14,31 @@ import { Input } from "./input"
 import { NotificationReminderRuleDialog } from "./notification-reminder-rule-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 
+const reminderTargetLabels = {
+  booking_confirmed: "Booking confirmed",
+  booking_payment_schedule: "Booking payment schedule",
+  payment_complete: "Payment complete",
+  booking_cancelled_non_payment: "Booking cancelled (non-payment)",
+} as const
+
+const dueDateTargetTypes = new Set<UseNotificationReminderRulesOptions["targetType"]>([
+  "booking_payment_schedule",
+])
+
+function getReminderTargetLabel(targetType: NotificationReminderRuleRecord["targetType"]) {
+  if (targetType === "invoice") return "Invoice"
+  return reminderTargetLabels[targetType] ?? targetType
+}
+
+function formatReminderTiming(
+  targetType: NotificationReminderRuleRecord["targetType"],
+  days: number,
+) {
+  if (!dueDateTargetTypes.has(targetType)) return "Event"
+  if (days === 0) return "Due date"
+  return days < 0 ? `${Math.abs(days)} days before` : `${days} days after`
+}
+
 export function NotificationReminderRulesPage() {
   const [search, setSearch] = useState("")
   const [channel, setChannel] = useState<UseNotificationReminderRulesOptions["channel"] | "all">(
@@ -38,7 +63,8 @@ export function NotificationReminderRulesPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Reminder Rules</h1>
           <p className="text-sm text-muted-foreground">
-            Schedule invoice and payment reminders against templates and channels.
+            Schedule booking payment reminders and event notifications against templates and
+            channels.
           </p>
         </div>
         <Button
@@ -68,8 +94,11 @@ export function NotificationReminderRulesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All targets</SelectItem>
-            <SelectItem value="booking_payment_schedule">Booking payment schedule</SelectItem>
-            <SelectItem value="invoice">Invoice</SelectItem>
+            {Object.entries(reminderTargetLabels).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={channel} onValueChange={(value) => setChannel(value ?? "all")}>
@@ -115,7 +144,7 @@ export function NotificationReminderRulesPage() {
                 <th className="px-4 py-3">Rule</th>
                 <th className="px-4 py-3">Target</th>
                 <th className="px-4 py-3">Channel</th>
-                <th className="px-4 py-3">Offset</th>
+                <th className="px-4 py-3">Timing</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -125,13 +154,14 @@ export function NotificationReminderRulesPage() {
                 <tr key={rule.id} className="border-t">
                   <td className="px-4 py-3">
                     <div className="font-medium">{rule.name}</div>
-                    <div className="font-mono text-xs text-muted-foreground">{rule.slug}</div>
                   </td>
-                  <td className="px-4 py-3">{rule.targetType}</td>
+                  <td className="px-4 py-3">{getReminderTargetLabel(rule.targetType)}</td>
                   <td className="px-4 py-3">
                     <Badge variant="outline">{rule.channel}</Badge>
                   </td>
-                  <td className="px-4 py-3">{rule.relativeDaysFromDueDate} days</td>
+                  <td className="px-4 py-3">
+                    {formatReminderTiming(rule.targetType, rule.relativeDaysFromDueDate)}
+                  </td>
                   <td className="px-4 py-3">
                     <Badge variant={rule.status === "active" ? "default" : "secondary"}>
                       {rule.status}

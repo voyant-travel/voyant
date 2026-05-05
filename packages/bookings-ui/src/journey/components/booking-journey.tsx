@@ -256,7 +256,11 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     }
     setIsHandlingCheckout(true)
     try {
-      await props.onContractAccepted(acceptance)
+      await props.onContractAccepted(acceptance, {
+        draft,
+        pricing: quote.data?.pricing ?? null,
+        quoteId: quote.data?.quoteId,
+      })
     } finally {
       setIsHandlingCheckout(false)
     }

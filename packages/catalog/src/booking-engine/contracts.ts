@@ -212,6 +212,8 @@ export const pricingTaxV1 = z.object({
   rate: z.number().nonnegative(),
   amount: z.number().int(),
   base: z.number().int(),
+  includedInPrice: z.boolean().optional(),
+  scope: z.enum(["included", "excluded", "withheld"]).optional(),
 })
 
 export const pricingBreakdownV1 = z.object({

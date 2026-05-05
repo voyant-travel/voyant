@@ -14,6 +14,7 @@ import type { VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 
+import { resolveEmailReplyTo } from "../../lib/notifications"
 import { getDbFromHyperdrive } from "../lib/db"
 
 const auth = new Hono<{ Bindings: CloudflareBindings }>()
@@ -73,6 +74,7 @@ function getBetterAuth(env: CloudflareBindings) {
   const db = getDbFromHyperdrive(env)
   const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
+  const emailReplyTo = resolveEmailReplyTo(env)
 
   return createBetterAuth({
     db,
@@ -90,6 +92,7 @@ function getBetterAuth(env: CloudflareBindings) {
         to: [user.email],
         subject: "Reset your password",
         html: `<p>Hi ${user.name},</p><p>Click <a href="${url}">here</a> to reset your password.</p><p>If you didn't request this, you can safely ignore this email.</p>`,
+        ...(emailReplyTo ? { replyTo: emailReplyTo } : {}),
       })
     },
     sendVerificationOTP: async ({ email, otp, type }) => {
@@ -104,6 +107,7 @@ function getBetterAuth(env: CloudflareBindings) {
         to: [email],
         subject: type === "email-verification" ? "Verify your email" : "Your verification code",
         html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`,
+        ...(emailReplyTo ? { replyTo: emailReplyTo } : {}),
       })
     },
   })

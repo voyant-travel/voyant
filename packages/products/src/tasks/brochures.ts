@@ -21,6 +21,7 @@ export interface GenerateAndStoreProductBrochureOptions {
   keyPrefix?: string
   filename?: string | ((generated: { productId: string; filename: string }) => string)
   signedUrlExpiresIn?: number
+  maxSizeBytes?: number
 }
 
 export async function generateAndStoreProductBrochure(
@@ -62,6 +63,12 @@ export async function generateAndStoreProductBrochure(
         : options.filename?.trim() || generated.filename
     pdfBytes = generated.pdfBytes
     sizeBytes = generated.sizeBytes
+  }
+
+  if (options.maxSizeBytes != null && sizeBytes > options.maxSizeBytes) {
+    throw new Error(
+      `Generated brochure is too large (${sizeBytes} bytes). Max allowed is ${options.maxSizeBytes} bytes.`,
+    )
   }
 
   const keyPrefix = options.keyPrefix?.trim() || `brochures/products/${productId}`

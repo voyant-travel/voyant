@@ -26,7 +26,13 @@
  * See `docs/architecture/storefront-checkout-flow.md` Phases 3–5.
  */
 
-import { bookingsService, canTransitionBooking, transitionBooking } from "@voyantjs/bookings"
+import {
+  bookingsService,
+  buildBookingRouteRuntime,
+  canTransitionBooking,
+  createBookingPiiService,
+  transitionBooking,
+} from "@voyantjs/bookings"
 import { bookingActivityLog, bookings } from "@voyantjs/bookings/schema"
 import {
   type CheckoutFinalizeDeps,
@@ -36,6 +42,7 @@ import {
 } from "@voyantjs/catalog/booking-engine"
 import type { EventBus } from "@voyantjs/core"
 import {
+  bookingItemTaxLines,
   type CreateInvoiceFromBookingInput,
   financeService,
   issueInvoiceFromBooking,
@@ -59,6 +66,8 @@ import type { Context, Hono } from "hono"
 import { z } from "zod"
 
 import { getDbFromHyperdrive } from "./lib/db"
+import { computeBookingItemTaxLine, resolveOperatorSellTaxRate } from "./lib/operator-tax-policy"
+import { getOperatorSettings } from "./settings"
 
 const checkoutStartSchema = z.object({
   bookingId: z.string().min(1),
@@ -138,9 +147,16 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
   // can operate on a normal booking. Owned products already have
   // the row written by their OwnedBookingHandler.commit.
   if (!booking) {
-    booking = await materializeBookingFromSnapshot(db, body.bookingId)
+    booking = await materializeBookingFromSnapshot(db, body.bookingId, c.env as CloudflareBindings)
   }
   if (!booking) return c.json({ error: "booking_not_found" }, 404)
+  if (
+    (body.paymentIntent === "card" || body.paymentIntent === "bank_transfer") &&
+    booking.holdExpiresAt &&
+    booking.holdExpiresAt <= new Date()
+  ) {
+    return c.json({ error: "hold_expired" }, 409)
+  }
 
   // Pre-create a draft contract carrying the acceptance fingerprint
   // in `metadata.acceptance`. The auto-generate-contract subscriber
@@ -309,6 +325,7 @@ async function releaseInquiryBooking(
 async function materializeBookingFromSnapshot(
   db: PostgresJsDatabase,
   bookingId: string,
+  env: CloudflareBindings,
 ): Promise<typeof bookings.$inferSelect | null> {
   const { bookingCatalogSnapshotTable } = await import("@voyantjs/catalog")
   const { bookingDraftsTable } = await import("@voyantjs/catalog/booking-engine")
@@ -409,6 +426,7 @@ async function materializeBookingFromSnapshot(
         pricing_currency: snapshot.pricing_currency,
       },
       draftPayload,
+      env,
     )
   }
 
@@ -448,6 +466,16 @@ interface DraftPayload {
     phone?: string
     band?: string
     dateOfBirth?: string
+    nationality?: string
+    passportNumber?: string
+    passportExpiry?: string
+    dietaryRequirements?: string
+    accessibilityNeeds?: string
+    preferredLanguage?: string
+    specialRequests?: string
+    isPrimary?: boolean
+    isLeadTraveler?: boolean
+    documents?: Record<string, unknown>
   }>
   entity?: { module?: string; id?: string }
   internalNotes?: string
@@ -480,6 +508,7 @@ async function materializeChildren(
   booking: typeof bookings.$inferSelect,
   snapshot: MaterializationSnapshot,
   draftPayload: DraftPayload,
+  env: CloudflareBindings,
 ): Promise<void> {
   const { bookingTravelers, bookingItems, bookingSupplierStatuses } = await import(
     "@voyantjs/bookings/schema"
@@ -487,20 +516,39 @@ async function materializeChildren(
 
   const travelers = draftPayload.travelers ?? []
   if (travelers.length > 0) {
-    const rows = travelers
-      .filter((t) => (t.firstName?.length ?? 0) > 0 || (t.lastName?.length ?? 0) > 0)
+    const travelerRows = travelers
       .map((t, idx) => ({
-        bookingId: booking.id,
-        firstName: t.firstName ?? "Traveler",
-        lastName: t.lastName ?? `${idx + 1}`,
-        email: t.email ?? null,
-        phone: t.phone ?? null,
-        dateOfBirth: t.dateOfBirth ?? null,
-        category: travelerBandToCategory(t.band),
-        isPrimary: idx === 0,
+        draftTraveler: t,
+        row: {
+          bookingId: booking.id,
+          firstName: t.firstName ?? "Traveler",
+          lastName: t.lastName ?? `${idx + 1}`,
+          email: t.email ?? null,
+          phone: t.phone ?? null,
+          travelerCategory: travelerBandToCategory(t.band),
+          preferredLanguage: t.preferredLanguage ?? null,
+          specialRequests: t.specialRequests ?? null,
+          isPrimary: t.isPrimary ?? t.isLeadTraveler ?? idx === 0,
+        },
       }))
+      .filter(({ draftTraveler }) => {
+        return (
+          (draftTraveler.firstName?.length ?? 0) > 0 || (draftTraveler.lastName?.length ?? 0) > 0
+        )
+      })
+    const rows = travelerRows.map(({ row }) => row)
     if (rows.length > 0) {
-      await db.insert(bookingTravelers).values(rows).onConflictDoNothing()
+      const insertedTravelers = await db.insert(bookingTravelers).values(rows).returning()
+      try {
+        await materializeTravelerTravelDetails(
+          db,
+          insertedTravelers,
+          travelerRows.map(({ draftTraveler }) => draftTraveler),
+          env,
+        )
+      } catch (err) {
+        console.warn("[catalog-checkout] traveler travel-details materialization failed", err)
+      }
     }
   }
 
@@ -528,7 +576,7 @@ async function materializeChildren(
     snapshot.source_kind !== OWNED_SOURCE_KIND ? (upstreamCostCents ?? sellAmountCents) : null
   const itemQuantity = booking.pax ?? 1
 
-  await db
+  const insertedItems = await db
     .insert(bookingItems)
     .values({
       bookingId: booking.id,
@@ -560,6 +608,17 @@ async function materializeChildren(
       sourceSnapshotId: (snapshot as { id?: string }).id ?? null,
     })
     .onConflictDoNothing()
+    .returning()
+
+  for (const item of insertedItems) {
+    await materializeBookingItemTaxLine(
+      db,
+      booking,
+      item.id,
+      item.totalSellAmountCents ?? 0,
+      snapshot,
+    )
+  }
 
   // Sourced bookings: auto-populate the supplier-status row + booking
   // cost columns from the catalog snapshot. Without this the operator
@@ -629,6 +688,147 @@ async function materializeChildren(
       }
     }
   }
+}
+
+async function materializeBookingItemTaxLine(
+  db: PostgresJsDatabase,
+  booking: typeof bookings.$inferSelect,
+  bookingItemId: string,
+  amountCents: number,
+  snapshot: MaterializationSnapshot,
+) {
+  const taxRate = await resolveOperatorSellTaxRate(db, {
+    productId: snapshot.entity_module === "products" ? snapshot.entity_id : null,
+    facts: inferSnapshotTaxFacts(snapshot),
+  })
+  const taxLine = computeBookingItemTaxLine(
+    taxRate,
+    amountCents,
+    booking.sellCurrency ?? snapshot.pricing_currency ?? "EUR",
+  )
+  if (!taxLine) return
+
+  await db
+    .insert(bookingItemTaxLines)
+    .values({
+      bookingItemId,
+      ...taxLine,
+    })
+    .onConflictDoNothing()
+}
+
+function inferSnapshotTaxFacts(snapshot: MaterializationSnapshot) {
+  const content = snapshot.frozen_payload?.content
+  const accommodationCountries = extractAccommodationCountries(content)
+  return {
+    hasAccommodation: accommodationCountries.length > 0,
+    accommodationCountries,
+  }
+}
+
+function extractAccommodationCountries(value: unknown): string[] {
+  const countries = new Set<string>()
+  collectAccommodationCountries(value, countries, 0)
+  return [...countries]
+}
+
+function collectAccommodationCountries(value: unknown, countries: Set<string>, depth: number) {
+  if (depth > 6 || value == null) return
+  if (Array.isArray(value)) {
+    for (const item of value) collectAccommodationCountries(item, countries, depth + 1)
+    return
+  }
+  if (typeof value !== "object") return
+
+  const record = value as Record<string, unknown>
+  const typeValue = pickString(record.type, record.kind, record.serviceType, record.service_type)
+  const looksLikeAccommodation =
+    typeValue?.toLowerCase().includes("accommodation") ||
+    typeValue?.toLowerCase().includes("hotel") ||
+    typeValue?.toLowerCase().includes("lodging")
+  if (looksLikeAccommodation) {
+    const country = pickString(record.countryCode, record.country_code, record.country)
+    if (country && /^[a-z]{2}$/i.test(country)) countries.add(country.toUpperCase())
+  }
+
+  for (const child of Object.values(record)) {
+    collectAccommodationCountries(child, countries, depth + 1)
+  }
+}
+
+async function materializeTravelerTravelDetails(
+  db: PostgresJsDatabase,
+  insertedTravelers: Array<{ id: string }>,
+  draftTravelers: NonNullable<DraftPayload["travelers"]>,
+  env: CloudflareBindings,
+): Promise<void> {
+  const runtime = buildBookingRouteRuntime(env)
+  const pii = createBookingPiiService({ kms: await runtime.getKmsProvider() })
+
+  for (const [index, traveler] of insertedTravelers.entries()) {
+    const draftTraveler = draftTravelers[index]
+    if (!draftTraveler) continue
+
+    const details = extractDraftTravelerTravelDetails(draftTraveler, index)
+    if (!hasTravelDetails(details)) continue
+
+    await pii.upsertTravelerTravelDetails(db, traveler.id, details, "system")
+  }
+}
+
+function extractDraftTravelerTravelDetails(
+  traveler: NonNullable<DraftPayload["travelers"]>[number],
+  index: number,
+) {
+  const documents = traveler.documents ?? {}
+  return {
+    nationality: pickString(traveler.nationality, documents.nationality, documents.country),
+    passportNumber: pickString(
+      traveler.passportNumber,
+      documents.passportNumber,
+      documents.passport_number,
+      documents.documentNumber,
+      documents.document_number,
+      documents.passport,
+    ),
+    passportExpiry: pickString(
+      traveler.passportExpiry,
+      documents.passportExpiry,
+      documents.passport_expiry,
+      documents.documentExpiry,
+      documents.document_expiry,
+      documents.passportExpiresAt,
+    ),
+    dateOfBirth: pickString(
+      traveler.dateOfBirth,
+      documents.dateOfBirth,
+      documents.date_of_birth,
+      documents.dob,
+    ),
+    dietaryRequirements: pickString(
+      traveler.dietaryRequirements,
+      documents.dietaryRequirements,
+      documents.dietary,
+    ),
+    accessibilityNeeds: pickString(
+      traveler.accessibilityNeeds,
+      documents.accessibilityNeeds,
+      documents.accessibility,
+    ),
+    isLeadTraveler: traveler.isLeadTraveler ?? traveler.isPrimary ?? index === 0,
+  }
+}
+
+function hasTravelDetails(input: ReturnType<typeof extractDraftTravelerTravelDetails>): boolean {
+  return (
+    Boolean(input.nationality) ||
+    Boolean(input.passportNumber) ||
+    Boolean(input.passportExpiry) ||
+    Boolean(input.dateOfBirth) ||
+    Boolean(input.dietaryRequirements) ||
+    Boolean(input.accessibilityNeeds) ||
+    input.isLeadTraveler
+  )
 }
 
 /**
@@ -1027,8 +1227,8 @@ async function resolveLineItemTitle(
 
 function travelerBandToCategory(
   band: string | undefined,
-): "adult" | "child" | "infant" | "senior" | "student" | "other" {
-  if (band === "child" || band === "infant" || band === "senior" || band === "student") return band
+): "adult" | "child" | "infant" | "senior" | "other" {
+  if (band === "child" || band === "infant" || band === "senior") return band
   return "adult"
 }
 
@@ -1074,6 +1274,7 @@ async function handleCardIntent(
     amountCents,
     currency,
     status: "pending",
+    expiresAt: booking.holdExpiresAt?.toISOString() ?? null,
     payerName: body.payerName ?? null,
     payerEmail: body.payerEmail ?? null,
     notes: `Storefront card payment for booking ${booking.bookingNumber}`,
@@ -1210,16 +1411,16 @@ async function handleBankTransferIntent(
     amountCents: booking.sellAmountCents ?? 0,
     currency: booking.sellCurrency ?? "EUR",
     status: "pending",
+    paymentMethod: "bank_transfer",
+    expiresAt: booking.holdExpiresAt?.toISOString() ?? null,
     notes: `Bank transfer for booking ${booking.bookingNumber} (proforma ${
       proforma?.invoiceNumber ?? "—"
     })`,
     targetType: "booking",
   } as never)
 
-  // Bank-transfer instructions come from deployment-level
-  // configuration. Until the storefront wires that through, we
-  // surface a placeholder so the dev loop is functional.
   const env = c.env as Record<string, string | undefined>
+  const bankTransfer = await resolveBankTransferInstructions(db, env)
   return c.json({
     kind: "bank_transfer_instructions" as const,
     bookingId: booking.id,
@@ -1227,16 +1428,32 @@ async function handleBankTransferIntent(
     proformaNumber: proforma?.invoiceNumber ?? null,
     paymentSessionId: paymentSession?.id ?? null,
     instructions: {
-      beneficiary:
-        env.STOREFRONT_BANK_BENEFICIARY ?? "Your company name (BANK_BENEFICIARY env var)",
-      iban: env.STOREFRONT_BANK_IBAN ?? "—",
-      bankName: env.STOREFRONT_BANK_NAME ?? "—",
+      beneficiary: bankTransfer.beneficiary,
+      iban: bankTransfer.iban,
+      bankName: bankTransfer.bankName,
       reference: `BOOK-${booking.bookingNumber}`,
       amountCents: booking.sellAmountCents ?? 0,
       currency: booking.sellCurrency ?? "EUR",
       dueAt: dueDate,
     },
   })
+}
+
+async function resolveBankTransferInstructions(
+  db: PostgresJsDatabase,
+  env: Record<string, string | undefined>,
+) {
+  const operator = await getOperatorSettings(db)
+  return {
+    beneficiary:
+      operator?.legalName ||
+      operator?.name ||
+      env.BANK_TRANSFER_BENEFICIARY ||
+      env.STOREFRONT_BANK_BENEFICIARY ||
+      "—",
+    iban: operator?.iban || env.BANK_TRANSFER_IBAN || env.STOREFRONT_BANK_IBAN || "—",
+    bankName: operator?.bank || env.BANK_TRANSFER_BANK_NAME || env.STOREFRONT_BANK_NAME || "—",
+  }
 }
 
 /**
@@ -1493,7 +1710,24 @@ function buildCheckoutFinalizeDeps(
       },
     },
     confirmBooking: async (bookingId) => {
-      await bookingsService.confirmBooking(db, bookingId, {}, undefined, { eventBus })
+      const result = await bookingsService.confirmBooking(db, bookingId, {}, undefined, {
+        eventBus,
+      })
+      if (result.status === "ok") return
+
+      if (result.status === "hold_expired") {
+        const recovered = await bookingsService.recoverExpiredPaidBooking(
+          db,
+          bookingId,
+          { note: "Recovered after late payment completion" },
+          undefined,
+          { eventBus },
+        )
+        if (recovered.status === "ok") return
+        throw new Error(`checkout-finalize: late payment recovery failed (${recovered.status})`)
+      }
+
+      throw new Error(`checkout-finalize: booking confirmation failed (${result.status})`)
     },
     issueInvoice: async ({ bookingId, convertedFromInvoiceId }) => {
       const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)

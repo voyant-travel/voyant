@@ -158,6 +158,54 @@ describe("renderNotificationTemplate", () => {
     expect(rendered).toContain('"bookingId":"book_1"')
     expect(rendered).toContain('"booking_id":"book_1"')
   })
+
+  it("normalizes booking payment context for Pro Travel templates", () => {
+    const rendered = renderNotificationTemplate(
+      '{% if payment.method == "bank_transfer" %}Pay {{ payment.balanceDue }} {{ booking.currency }} by {{ payment.dueDate }} at {{ payment.link }}{% elsif payment.isPaidInFull %}Paid{% endif %}',
+      {
+        booking: { bookingNumber: "B-1", sellCurrency: "RON" },
+        invoice: { balanceDueCents: 125000, paidCents: 50000, currency: "RON" },
+        paymentSchedule: { dueDate: "2026-05-15", amountCents: 125000, currency: "RON" },
+        paymentSession: {
+          paymentMethod: "bank_transfer",
+          redirectUrl: "https://pay.example.test/session",
+        },
+      },
+    )
+
+    expect(rendered).toBe("Pay 1250 RON by 2026-05-15 at https://pay.example.test/session")
+  })
+
+  it("fills confirmation payment fields from a paid session and open balance schedule", () => {
+    const rendered = renderNotificationTemplate(
+      "Paid {{ payment.paidAmount }} {{ payment.currency }}; balance {{ payment.balanceDue }} {{ payment.currency }} by {{ payment.dueDate }}",
+      {
+        booking: { bookingNumber: "B-1", sellCurrency: "EUR" },
+        paymentSchedule: {
+          dueDate: "2026-05-04",
+          amountCents: 8900,
+          currency: "EUR",
+          scheduleType: "balance",
+        },
+        paymentSession: {
+          status: "paid",
+          amountCents: 1000,
+          currency: "EUR",
+          completedAt: "2026-05-04T10:00:00.000Z",
+        },
+      },
+    )
+
+    expect(rendered).toBe("Paid 10 EUR; balance 89 EUR by 2026-05-04")
+  })
+
+  it("preserves explicit payment data when no finance context is present", () => {
+    expect(
+      renderNotificationTemplate("{% if payment.isPaidInFull %}Paid{% endif %}", {
+        payment: { isPaidInFull: true },
+      }),
+    ).toBe("Paid")
+  })
 })
 
 describe("resolveReminderRecipient", () => {

@@ -182,6 +182,19 @@ export function SupplierDetailPage({ id }: { id: string }) {
                 <span>{supplier.defaultCurrency}</span>
               </div>
             )}
+            <div>
+              <span className="text-muted-foreground">
+                {detailMessages.reservationTimeoutLabel}:
+              </span>{" "}
+              <span>
+                {supplier.reservationTimeoutMinutes && supplier.reservationTimeoutMinutes > 0
+                  ? detailMessages.reservationTimeoutValue.replace(
+                      "{count}",
+                      String(supplier.reservationTimeoutMinutes),
+                    )
+                  : detailMessages.reservationTimeoutInherited}
+              </span>
+            </div>
           </CardContent>
         </Card>
 

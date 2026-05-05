@@ -697,6 +697,7 @@ export type BookingsUiMessages = {
       sellAmount: string
       pax: string
       startDate: string
+      endDate: string
     }
     loadingError: string
     empty: string

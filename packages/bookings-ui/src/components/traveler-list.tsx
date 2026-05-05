@@ -1,7 +1,10 @@
 "use client"
 
 import {
+  type BookingTravelerDocumentRecord,
   type BookingTravelerRecord,
+  type BookingTravelerRevealRecord,
+  useBookingTravelerDocuments,
   useRevealTraveler,
   useTravelerMutation,
   useTravelers,
@@ -15,17 +18,29 @@ import { TravelerDialog } from "./traveler-dialog"
 
 export interface TravelerListProps {
   bookingId: string
+  autoReveal?: boolean
 }
 
-export function TravelerList({ bookingId }: TravelerListProps) {
+export function TravelerList({ bookingId, autoReveal = false }: TravelerListProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<BookingTravelerRecord | undefined>(undefined)
   const [revealedIds, setRevealedIds] = React.useState<Set<string>>(new Set())
   const { data } = useTravelers(bookingId)
+  const documentsQuery = useBookingTravelerDocuments(bookingId)
   const { remove } = useTravelerMutation(bookingId)
   const messages = useBookingsUiMessagesOrDefault()
 
   const travelers = data?.data ?? []
+  const documentsByTraveler = React.useMemo(() => {
+    const grouped = new Map<string, BookingTravelerDocumentRecord[]>()
+    for (const document of documentsQuery.data?.data ?? []) {
+      if (!document.travelerId) continue
+      const bucket = grouped.get(document.travelerId) ?? []
+      bucket.push(document)
+      grouped.set(document.travelerId, bucket)
+    }
+    return grouped
+  }, [documentsQuery.data?.data])
 
   // Detect whether the list endpoint already returned unmasked data
   // (caller has bookings-pii:* scope or similar). If so, don't show
@@ -68,8 +83,8 @@ export function TravelerList({ bookingId }: TravelerListProps) {
             {messages.travelerList.empty}
           </p>
         ) : (
-          <div className="rounded border bg-background">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded border bg-background">
+            <table className="w-full min-w-[980px] text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
                   <th className="p-2 text-left font-medium">
@@ -81,6 +96,9 @@ export function TravelerList({ bookingId }: TravelerListProps) {
                   <th className="p-2 text-left font-medium">
                     {messages.travelerList.columns.phone}
                   </th>
+                  <th className="p-2 text-left font-medium">Role</th>
+                  <th className="p-2 text-left font-medium">DOB / age</th>
+                  <th className="p-2 text-left font-medium">Documents</th>
                   <th className="w-20 p-2" />
                 </tr>
               </thead>
@@ -90,9 +108,10 @@ export function TravelerList({ bookingId }: TravelerListProps) {
                     key={traveler.id}
                     bookingId={bookingId}
                     traveler={traveler}
-                    revealed={revealedIds.has(traveler.id)}
+                    documents={documentsByTraveler.get(traveler.id) ?? []}
+                    revealed={autoReveal || revealedIds.has(traveler.id)}
                     onToggleReveal={
-                      allAlreadyRevealed ? undefined : () => toggleReveal(traveler.id)
+                      autoReveal || allAlreadyRevealed ? undefined : () => toggleReveal(traveler.id)
                     }
                     emailUnavailable={messages.travelerList.values.emailUnavailable}
                     phoneUnavailable={messages.travelerList.values.phoneUnavailable}
@@ -139,6 +158,7 @@ export function TravelerList({ bookingId }: TravelerListProps) {
 function TravelerRow({
   bookingId,
   traveler,
+  documents,
   revealed,
   onToggleReveal,
   emailUnavailable,
@@ -148,6 +168,7 @@ function TravelerRow({
 }: {
   bookingId: string
   traveler: BookingTravelerRecord
+  documents: BookingTravelerDocumentRecord[]
   revealed: boolean
   /** When undefined, the reveal toggle is hidden (data is already unmasked). */
   onToggleReveal?: () => void
@@ -161,60 +182,102 @@ function TravelerRow({
   // the masked row from the list endpoint. This keeps the UI snappy
   // — the masked row renders instantly, then swaps to unmasked the
   // moment the network returns.
-  const display = revealed && reveal.data?.data ? reveal.data.data : traveler
+  const revealedTraveler = reveal.data?.data as BookingTravelerRevealRecord | undefined
+  const display: BookingTravelerRecord | BookingTravelerRevealRecord =
+    revealed && revealedTraveler ? revealedTraveler : traveler
+  const travelDetails: BookingTravelerRevealRecord["travelDetails"] =
+    revealed && revealedTraveler ? revealedTraveler.travelDetails : null
   const showLoading = revealed && reveal.isLoading
   const revealError = revealed && reveal.error
 
   return (
-    <tr className="border-b last:border-b-0">
-      <td className="p-2">
-        {showLoading ? (
-          <RowLoading />
-        ) : (
-          `${display.firstName ?? ""} ${display.lastName ?? ""}`.trim()
-        )}
-      </td>
-      <td className="p-2">{showLoading ? <RowLoading /> : (display.email ?? emailUnavailable)}</td>
-      <td className="p-2">{showLoading ? <RowLoading /> : (display.phone ?? phoneUnavailable)}</td>
-      <td className="p-2">
-        <div className="flex items-center gap-1">
-          {onToggleReveal ? (
+    <>
+      <tr className="border-b">
+        <td className="p-2">
+          {showLoading ? (
+            <RowLoading />
+          ) : (
+            `${display.firstName ?? ""} ${display.lastName ?? ""}`.trim()
+          )}
+        </td>
+        <td className="p-2">
+          {showLoading ? <RowLoading /> : (display.email ?? emailUnavailable)}
+        </td>
+        <td className="p-2">
+          {showLoading ? <RowLoading /> : (display.phone ?? phoneUnavailable)}
+        </td>
+        <td className="p-2">
+          <div className="flex flex-wrap gap-1.5">
+            {display.isPrimary ? <MiniPill>Primary</MiniPill> : null}
+            {travelDetails?.isLeadTraveler ? <MiniPill>Lead</MiniPill> : null}
+            {display.travelerCategory ? <MiniPill>{display.travelerCategory}</MiniPill> : null}
+          </div>
+        </td>
+        <td className="p-2">
+          {showLoading ? <RowLoading /> : formatDobAge(travelDetails?.dateOfBirth)}
+        </td>
+        <td className="p-2">
+          {documents.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {documents.slice(0, 2).map((document) => (
+                <MiniPill key={document.id}>{document.type.replaceAll("_", " ")}</MiniPill>
+              ))}
+              {documents.length > 2 ? <MiniPill>+{documents.length - 2}</MiniPill> : null}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          )}
+        </td>
+        <td className="p-2">
+          <div className="flex items-center gap-1">
+            {onToggleReveal ? (
+              <button
+                type="button"
+                onClick={onToggleReveal}
+                className="text-muted-foreground hover:text-foreground"
+                title={revealed ? "Hide details" : "Reveal contact details"}
+                aria-label={
+                  revealed ? "Hide traveler contact details" : "Reveal traveler contact details"
+                }
+              >
+                {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            ) : null}
             <button
               type="button"
-              onClick={onToggleReveal}
+              onClick={onEdit}
               className="text-muted-foreground hover:text-foreground"
-              title={revealed ? "Hide details" : "Reveal contact details"}
-              aria-label={
-                revealed ? "Hide traveler contact details" : "Reveal traveler contact details"
-              }
+              aria-label="Edit traveler"
             >
-              {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              <Pencil className="h-3.5 w-3.5" />
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={onEdit}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label="Edit traveler"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="text-muted-foreground hover:text-destructive"
-            aria-label="Delete traveler"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-        {revealError ? (
-          <div className="mt-1 text-[10px] text-destructive">
-            {revealError instanceof Error ? revealError.message : "Reveal failed"}
+            <button
+              type="button"
+              onClick={onDelete}
+              className="text-muted-foreground hover:text-destructive"
+              aria-label="Delete traveler"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           </div>
-        ) : null}
-      </td>
-    </tr>
+          {revealError ? (
+            <div className="mt-1 text-[10px] text-destructive">
+              {revealError instanceof Error ? revealError.message : "Reveal failed"}
+            </div>
+          ) : null}
+        </td>
+      </tr>
+      <tr className="border-b last:border-b-0">
+        <td colSpan={7} className="bg-muted/20 px-2 py-3">
+          <TravelerContextGrid
+            traveler={display}
+            travelDetails={travelDetails}
+            documents={documents}
+            loading={showLoading}
+          />
+        </td>
+      </tr>
+    </>
   )
 }
 
@@ -225,6 +288,88 @@ function RowLoading() {
       <span className="text-xs">Decrypting…</span>
     </span>
   )
+}
+
+function TravelerContextGrid({
+  traveler,
+  travelDetails,
+  documents,
+  loading,
+}: {
+  traveler: BookingTravelerRecord | BookingTravelerRevealRecord
+  travelDetails: BookingTravelerRevealRecord["travelDetails"]
+  documents: BookingTravelerDocumentRecord[]
+  loading: boolean
+}) {
+  if (loading) return <RowLoading />
+
+  const fields = [
+    ["Nationality", travelDetails?.nationality],
+    ["Passport", travelDetails?.passportNumber],
+    ["Passport expiry", formatDateValue(travelDetails?.passportExpiry)],
+    ["Language", traveler.preferredLanguage],
+    ["Dietary", travelDetails?.dietaryRequirements],
+    ["Accessibility", travelDetails?.accessibilityNeeds],
+    ["Special requests", traveler.specialRequests],
+    ["Notes", traveler.notes],
+  ] as const
+  const visibleFields = fields.filter(([, value]) => Boolean(value))
+
+  if (visibleFields.length === 0 && documents.length === 0) {
+    return <span className="text-xs text-muted-foreground">No additional traveler context</span>
+  }
+
+  return (
+    <div className="grid gap-3 md:grid-cols-4">
+      {visibleFields.map(([label, value]) => (
+        <DetailField key={label} label={label} value={value ?? "-"} />
+      ))}
+      {documents.map((document) => (
+        <DetailField
+          key={document.id}
+          label={`Document · ${document.type.replaceAll("_", " ")}`}
+          value={document.fileName}
+        />
+      ))}
+    </div>
+  )
+}
+
+function DetailField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[10px] font-medium uppercase text-muted-foreground">{label}</div>
+      <div className="truncate text-xs text-foreground">{value}</div>
+    </div>
+  )
+}
+
+function MiniPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex h-5 items-center rounded-full border px-2 text-[11px] capitalize text-muted-foreground">
+      {children}
+    </span>
+  )
+}
+
+function formatDobAge(value: string | null | undefined): string {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const today = new Date()
+  let age = today.getFullYear() - date.getFullYear()
+  const birthdayPassed =
+    today.getMonth() > date.getMonth() ||
+    (today.getMonth() === date.getMonth() && today.getDate() >= date.getDate())
+  if (!birthdayPassed) age -= 1
+  return `${formatDateValue(value)} · ${age}`
+}
+
+function formatDateValue(value: string | null | undefined): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
 }
 
 /**

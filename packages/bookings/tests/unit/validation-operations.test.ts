@@ -16,7 +16,7 @@ import {
 } from "../../src/validation.js"
 
 describe("Reservation schemas", () => {
-  it("parses reserve booking input with defaults", () => {
+  it("parses reserve booking input with policy-resolved hold minutes", () => {
     const result = reserveBookingSchema.parse({
       bookingNumber: "BK-RES-001",
       sellCurrency: "USD",
@@ -30,7 +30,7 @@ describe("Reservation schemas", () => {
       ],
     })
 
-    expect(result.holdMinutes).toBe(30)
+    expect(result.holdMinutes).toBeUndefined()
     expect(result.sourceType).toBe("manual")
     expect(result.items[0]?.itemType).toBe("unit")
     expect(result.items[0]?.allocationType).toBe("unit")
@@ -83,13 +83,13 @@ describe("Reservation schemas", () => {
     expect(result.status).toBe("confirmed")
   })
 
-  it("parses reserve-from-transaction payload with defaults", () => {
+  it("parses reserve-from-transaction payload with policy-resolved hold minutes", () => {
     const result = reserveBookingFromTransactionSchema.parse({
       bookingNumber: "BK-TXN-001",
     })
 
     expect(result.bookingNumber).toBe("BK-TXN-001")
-    expect(result.holdMinutes).toBe(30)
+    expect(result.holdMinutes).toBeUndefined()
     expect(result.sourceType).toBe("internal")
     expect(result.includeParticipants).toBe(true)
   })

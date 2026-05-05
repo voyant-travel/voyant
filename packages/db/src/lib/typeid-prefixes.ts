@@ -331,6 +331,8 @@ export const PREFIXES = {
   // product treatment decision; tax_regimes remains the
   // jurisdictional rate catalog and is unchanged.
   tax_classes: "txcl",
+  tax_policy_profiles: "txpp",
+  tax_policy_rules: "txpr",
   // Per-product per-occupancy rate tier table for non-cruise
   // verticals. Cruises keep their specialized cruise_prices table.
   product_pax_pricing_tiers: "ppt",

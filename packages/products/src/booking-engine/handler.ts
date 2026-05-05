@@ -83,6 +83,18 @@ export interface QuickCreateBridgeInput {
     amountCents: number
     notes?: string | null
   }>
+  taxLines?: Array<{
+    code?: string | null
+    name: string
+    jurisdiction?: string | null
+    scope?: "included" | "excluded" | "withheld"
+    currency: string
+    amountCents: number
+    rateBasisPoints?: number | null
+    includedInPrice?: boolean
+    remittanceParty?: string | null
+    sortOrder?: number
+  }>
 }
 
 export interface QuickCreateBridgeResult {
@@ -174,6 +186,8 @@ export interface ResolvedTaxRate {
   label: string
   /** Rate as a fraction (0..1). 0 means exempt / zero-rated. */
   rate: number
+  /** Whether the configured product price already includes this tax. */
+  priceMode?: "inclusive" | "exclusive"
 }
 
 /** Caller-supplied loaders for descriptor enrichment. Each is
@@ -311,18 +325,26 @@ export function createProductsBookingHandler(
       // total before the user picks counts.
       const effectivePax = paxCount > 0 ? paxCount : 1
       const unitCents = product.sellAmountCents ?? 0
-      const totalCents = unitCents * effectivePax
+      const grossCents = unitCents * effectivePax
 
       // Tax computation. The base is taxable; addons/accommodation
       // get the same rate in this MVP cut. Per-line override (the
       // `applies_to` axis on tax_classes.lines) lands in a follow-up
       // when the catalog actually carries mixed treatments.
-      const taxCents = taxRate && taxRate.rate > 0 ? Math.round(totalCents * taxRate.rate) : 0
+      const taxIsInclusive = taxRate?.priceMode === "inclusive"
+      const taxCents =
+        taxRate && taxRate.rate > 0
+          ? taxIsInclusive
+            ? Math.round(grossCents - grossCents / (1 + taxRate.rate))
+            : Math.round(grossCents * taxRate.rate)
+          : 0
+      const netCents = taxIsInclusive ? grossCents - taxCents : grossCents
+      const payableCents = taxIsInclusive ? grossCents : netCents + taxCents
 
       const pricing =
         unitCents > 0
           ? {
-              base_amount: totalCents,
+              base_amount: netCents,
               taxes: taxCents,
               fees: 0,
               surcharges: 0,
@@ -334,7 +356,8 @@ export function createProductsBookingHandler(
                     label: product.name,
                     quantity: effectivePax,
                     unitAmount: unitCents,
-                    totalAmount: totalCents,
+                    totalAmount: grossCents,
+                    taxIncluded: taxIsInclusive,
                   },
                 ],
                 taxes:
@@ -345,13 +368,15 @@ export function createProductsBookingHandler(
                           label: taxRate.label,
                           rate: taxRate.rate,
                           amount: taxCents,
-                          base: totalCents,
+                          base: netCents,
+                          includedInPrice: taxIsInclusive,
+                          scope: taxIsInclusive ? "included" : "excluded",
                         },
                       ]
                     : [],
-                subtotal: totalCents,
+                subtotal: netCents,
                 taxTotal: taxCents,
-                total: totalCents + taxCents,
+                total: payableCents,
                 paxCount: effectivePax,
               } as Record<string, unknown>,
             }
@@ -417,8 +442,8 @@ export function createProductsBookingHandler(
       return { holdToken: token, expiresAt }
     },
 
-    async extendHold(_ctx: OwnedHandlerContext, holdToken: string) {
-      const ttlMs = 30 * 60 * 1000
+    async extendHold(_ctx: OwnedHandlerContext, holdToken: string, request?: { ttlMs?: number }) {
+      const ttlMs = request?.ttlMs ?? 30 * 60 * 1000
       if (options.holds) {
         const result = await options.holds.extend({ holdToken, ttlMs })
         if (result.status === "ok") {
@@ -470,6 +495,7 @@ export function createProductsBookingHandler(
         organizationId: extractOrganizationId(request.party),
         internalNotes: extractInternalNotes(request.party),
         travelers: travelers.length > 0 ? travelers : undefined,
+        taxLines: extractTaxLines(request.pricing),
       })
 
       if (bridge.status !== "ok" || !bridge.bookingId) {
@@ -532,6 +558,47 @@ function extractInternalNotes(party: Record<string, unknown> | undefined): strin
   if (!party) return undefined
   const v = party.internalNotes
   return typeof v === "string" && v.length > 0 ? v : undefined
+}
+
+function extractTaxLines(
+  pricing: CommitOwnedRequest["pricing"],
+): QuickCreateBridgeInput["taxLines"] {
+  const breakdown = pricing?.breakdown
+  if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return undefined
+  const taxes = (breakdown as { taxes?: unknown }).taxes
+  if (!Array.isArray(taxes)) return undefined
+
+  const lines: NonNullable<QuickCreateBridgeInput["taxLines"]> = []
+  for (const [index, tax] of taxes.entries()) {
+    if (!tax || typeof tax !== "object" || Array.isArray(tax)) continue
+    const row = tax as Record<string, unknown>
+    const amountCents = asFiniteInteger(row.amount)
+    const rate = typeof row.rate === "number" && Number.isFinite(row.rate) ? row.rate : null
+    const currency =
+      typeof pricing?.currency === "string" && pricing.currency.length === 3
+        ? pricing.currency
+        : "EUR"
+    const name = typeof row.label === "string" && row.label.length > 0 ? row.label : "Tax"
+    if (!amountCents || amountCents <= 0) continue
+    const includedInPrice = row.includedInPrice === true || row.scope === "included"
+    lines.push({
+      code: typeof row.code === "string" ? row.code : null,
+      name,
+      scope: includedInPrice ? "included" : "excluded",
+      currency,
+      amountCents,
+      rateBasisPoints: rate == null ? null : Math.round(rate * 10_000),
+      includedInPrice,
+      sortOrder: index,
+    })
+  }
+
+  return lines.length ? lines : undefined
+}
+
+function asFiniteInteger(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null
+  return Math.round(value)
 }
 
 function defaultBookingNumber(): string {

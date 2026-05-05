@@ -148,7 +148,7 @@ describe.skipIf(!DB_AVAILABLE)("Markets routes (integration)", () => {
 
   /** Seed a channel row directly into DB (cross-module, no routes) */
   async function seedChannelDirect() {
-    const { channels } = await import("@voyantjs/distribution/schema")
+    const { channels } = await import("../../../distribution/src/schema.js")
     const [row] = await db
       .insert(channels)
       .values({ name: `Channel ${nextSeq()}`, kind: "direct" })

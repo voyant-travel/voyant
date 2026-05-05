@@ -42,6 +42,7 @@ export interface UseProductDetailDataResult {
     uploadMedia: ReturnType<typeof useMutation<unknown, Error, { file: File; dayId?: string }>>
     deleteMedia: ReturnType<typeof useMutation<unknown, Error, string>>
     setCover: ReturnType<typeof useMutation<unknown, Error, string>>
+    generateBrochure: ReturnType<typeof useMutation<unknown, Error, void>>
   }
   invalidateProduct: () => void
 }
@@ -141,6 +142,11 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
     onSuccess: () => void mediaQuery.refetch(),
   })
 
+  const generateBrochure = useMutation({
+    mutationFn: () => api.post(`/v1/admin/products/${productId}/brochure/generate`, {}),
+    onSuccess: () => void mediaQuery.refetch(),
+  })
+
   const itineraryNameById = useMemo(
     () =>
       new Map(
@@ -180,6 +186,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
       uploadMedia,
       deleteMedia,
       setCover,
+      generateBrochure,
     },
     invalidateProduct,
   }

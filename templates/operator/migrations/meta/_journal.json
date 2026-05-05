@@ -134,6 +134,41 @@
       "when": 1777890490890,
       "tag": "0018_workflow_runs_rerun",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1777891100000,
+      "tag": "0019_supplier_reservation_timeout",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777891200000,
+      "tag": "0020_notification_reminder_targets",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1777891300000,
+      "tag": "0021_operator_tax_price_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1777891400000,
+      "tag": "0022_tax_policy_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1777891500000,
+      "tag": "0023_product_day_service_country",
+      "breakpoints": true
     }
   ]
 }

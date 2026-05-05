@@ -28,7 +28,10 @@ export type RegistryNotificationsMessages = {
       failed: string
     }
     targetTypeLabels: {
+      booking_confirmed: string
       booking_payment_schedule: string
+      payment_complete: string
+      booking_cancelled_non_payment: string
       invoice: string
     }
     cancel: string
@@ -78,6 +81,10 @@ export type RegistryNotificationsMessages = {
       channel: string
       provider: string
       status: string
+      attachments: string
+      attachmentContract: string
+      attachmentInvoice: string
+      attachmentBrochure: string
       fromAddress: string
       subject: string
       htmlBody: string
@@ -118,6 +125,10 @@ export type RegistryNotificationsMessages = {
     }
     empty: string
     daysSuffix: string
+    timingEvent: string
+    timingDueDate: string
+    timingBeforeSuffix: string
+    timingAfterSuffix: string
     columns: {
       rule: string
       target: string
@@ -133,25 +144,22 @@ export type RegistryNotificationsMessages = {
     titleEdit: string
     fields: {
       name: string
-      slug: string
       target: string
       status: string
       channel: string
       provider: string
-      offsetDays: string
+      sendTiming: string
       template: string
     }
     placeholders: {
       name: string
-      slug: string
       template: string
     }
     errors: {
       nameRequired: string
-      slugRequired: string
-      kebabCase: string
       templateRequired: string
     }
+    timingHelp: string
     actions: {
       create: string
     }

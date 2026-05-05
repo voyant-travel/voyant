@@ -15,6 +15,7 @@ import {
 import {
   getDeliveryById,
   listDeliveries,
+  resendDelivery,
   sendInvoiceNotification,
   sendNotification,
   sendPaymentSessionNotification,
@@ -44,6 +45,7 @@ export const notificationsService = {
   previewNotificationTemplate,
   listDeliveries,
   getDeliveryById,
+  resendDelivery,
   sendNotification,
   listReminderRules,
   getReminderRuleById,

@@ -95,6 +95,12 @@ export interface GetProductContentOptions {
    * content-shape-aware merger.
    */
   onOverlayError?: (event: { field_path: string; reason: string }) => void
+  /**
+   * Bypass a fresh cache row and fetch directly from the source adapter.
+   * Use this for volatile fields embedded in content payloads, such as
+   * sourced departure capacity, where a 24h rich-content TTL is too coarse.
+   */
+  forceFresh?: boolean
 }
 
 /**
@@ -197,6 +203,25 @@ export async function getProductContent(
   }
   const market = scope.market ?? PRODUCTS_CONTENT_MARKET_ANY
   const acceptMT = scope.acceptMachineTranslated ?? true
+
+  if (options.forceFresh && adapter?.getContent) {
+    const fresh = await fetchFreshContent(
+      db,
+      adapter,
+      adapterCtx,
+      {
+        entity_module: "products",
+        entity_id: entityId,
+        locale: scope.preferredLocales[0] ?? "en-GB",
+        market,
+        currency: scope.currency,
+      },
+      options,
+    )
+    if (fresh) {
+      return finalizeFresh(db, entityId, fresh, scope, options)
+    }
+  }
 
   // 1. Look up cached candidates across all locales for this entity.
   const cachedRows = await fetchCacheCandidates(db, entityId, market)

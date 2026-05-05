@@ -31,7 +31,7 @@ import {
   channelProductMappings,
   channels,
 } from "@voyantjs/distribution/schema"
-import { and, asc, eq, lte, or, sql } from "drizzle-orm"
+import { and, asc, eq, inArray, lte, or, sql } from "drizzle-orm"
 
 import { acquireToken, channelScopeKey, drainBucket, type RateLimitConfig } from "../rate-limit.js"
 import { prepareOutboundEnvelope } from "../webhook-deliveries.js"
@@ -143,7 +143,7 @@ export async function resolveBookingPushTargets(
       and(
         eq(channelProductMappings.active, true),
         eq(channelProductMappings.pushBookings, true),
-        sql`${channelProductMappings.productId} = ANY(${productIds})`,
+        inArray(channelProductMappings.productId, productIds),
         eq(channels.status, "active"),
       ),
     )) as Array<{

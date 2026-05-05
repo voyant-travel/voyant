@@ -26,6 +26,7 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm"
 import { Hono } from "hono"
 import { z } from "zod"
 
+import { resolveEmailReplyTo } from "../lib/notifications"
 import { getDbFromHyperdrive } from "./lib/db"
 
 type InvitationsBindings = CloudflareBindings
@@ -162,11 +163,13 @@ export function createInvitationsRoutes() {
     if (cloud) {
       try {
         const from = c.env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
+        const replyTo = resolveEmailReplyTo(c.env)
         await cloud.email.sendMessage({
           from,
           to: [normalizedEmail],
           subject: "You've been invited to Voyant",
           html: `<p>You've been invited to join a Voyant workspace.</p><p><a href="${acceptUrl}">Accept invitation</a></p><p>The link expires in ${hours} hours.</p>`,
+          ...(replyTo ? { replyTo } : {}),
         })
         emailSent = true
       } catch (error) {

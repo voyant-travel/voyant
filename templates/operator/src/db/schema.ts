@@ -77,6 +77,14 @@ export const operatorSettings = pgTable("operator_settings", {
    */
   customerPaymentPolicy: jsonb("customer_payment_policy"),
 
+  /**
+   * Whether catalog prices entered by operators include tax already.
+   * This is an admin setting because it controls commercial behavior,
+   * not deployment/runtime configuration.
+   */
+  taxPriceMode: text("tax_price_mode").notNull().default("inclusive"),
+  taxPolicyProfileId: text("tax_policy_profile_id"),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })

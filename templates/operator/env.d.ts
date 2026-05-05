@@ -21,6 +21,7 @@ interface CloudflareBindings {
   VOYANT_CLOUD_API_KEY: string
   VOYANT_CLOUD_API_URL?: string
   EMAIL_FROM: string
+  EMAIL_REPLY_TO?: string
 
   // KMS provider selection
   KMS_PROVIDER: "gcp" | "aws" | "env" | "local"
@@ -99,6 +100,21 @@ interface CloudflareBindings {
    * env var only matters when the caller doesn't supply one.
    */
   NETOPIA_LANGUAGE?: string
+
+  // SmartBill (Romanian e-invoicing). When configured, invoice.issued and
+  // invoice.proforma.issued events sync to SmartBill and store an external ref.
+  SMARTBILL_USERNAME?: string
+  /** Preferred token name. SMARTBILL_TOKEN is also supported for Protravel compatibility. */
+  SMARTBILL_API_TOKEN?: string
+  SMARTBILL_TOKEN?: string
+  SMARTBILL_COMPANY_VAT_CODE?: string
+  /** Default series for both invoices and proformas unless overridden below. */
+  SMARTBILL_SERIES_NAME?: string
+  SMARTBILL_INVOICE_SERIES_NAME?: string
+  SMARTBILL_PROFORMA_SERIES_NAME?: string
+  SMARTBILL_API_URL?: string
+  SMARTBILL_LANGUAGE?: string
+  SMARTBILL_ART_311_SPECIAL_REGIME?: string
 
   /**
    * Base URL of the standalone `flights-demo-api` service (e.g.

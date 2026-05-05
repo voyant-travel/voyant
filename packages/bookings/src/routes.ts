@@ -757,15 +757,26 @@ export const bookingRoutes = new Hono<Env>()
       return c.json({ error: "Traveler not found" }, 404)
     }
 
-    await logBookingPiiAccess(c, {
-      bookingId,
-      travelerId,
-      action: "read",
-      outcome: "allowed",
-      reason: "traveler_reveal",
-    })
+    try {
+      const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
+      const travelDetails = await pii.getTravelerTravelDetails(
+        c.get("db"),
+        traveler.id,
+        c.get("userId"),
+      )
 
-    return c.json({ data: traveler })
+      await logBookingPiiAccess(c, {
+        bookingId,
+        travelerId,
+        action: "read",
+        outcome: "allowed",
+        reason: "traveler_reveal",
+      })
+
+      return c.json({ data: { ...traveler, travelDetails } })
+    } catch (error) {
+      return handleKmsConfigError(c, error)
+    }
   })
 
   .get("/:id/travelers/:travelerId/travel-details", async (c) => {

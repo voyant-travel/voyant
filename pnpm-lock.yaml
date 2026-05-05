@@ -1180,9 +1180,6 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/markets':
-        specifier: workspace:*
-        version: link:../markets
       '@voyantjs/products':
         specifier: workspace:*
         version: link:../products
@@ -3279,9 +3276,6 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/distribution':
-        specifier: workspace:*
-        version: link:../distribution
       '@voyantjs/products':
         specifier: workspace:*
         version: link:../products
@@ -5408,6 +5402,9 @@ importers:
       '@voyantjs/plugin-netopia':
         specifier: workspace:*
         version: link:../../packages/plugins/netopia
+      '@voyantjs/plugin-smartbill':
+        specifier: workspace:*
+        version: link:../../packages/plugins/smartbill
       '@voyantjs/pricing':
         specifier: workspace:*
         version: link:../../packages/pricing

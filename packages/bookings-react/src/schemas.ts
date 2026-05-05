@@ -64,8 +64,21 @@ export const bookingRecordSchema = z.object({
   marginPercent: z.number().int().nullable(),
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),
+  startsAt: z.string().nullable().optional(),
+  endsAt: z.string().nullable().optional(),
   pax: z.number().int().nullable(),
   internalNotes: z.string().nullable(),
+  communicationLanguage: z.string().nullable().optional(),
+  contactFirstName: z.string().nullable().optional(),
+  contactLastName: z.string().nullable().optional(),
+  contactEmail: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactPreferredLanguage: z.string().nullable().optional(),
+  contactCountry: z.string().nullable().optional(),
+  contactRegion: z.string().nullable().optional(),
+  contactCity: z.string().nullable().optional(),
+  contactAddressLine1: z.string().nullable().optional(),
+  contactPostalCode: z.string().nullable().optional(),
   customerPaymentPolicy: bookingPaymentPolicySchema.nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -90,7 +103,26 @@ export const bookingTravelerRecordSchema = z.object({
   updatedAt: z.string().optional(),
 })
 
+export const bookingTravelerTravelDetailsSchema = z.object({
+  travelerId: z.string(),
+  nationality: z.string().nullable(),
+  passportNumber: z.string().nullable(),
+  passportExpiry: z.string().nullable(),
+  dateOfBirth: z.string().nullable(),
+  dietaryRequirements: z.string().nullable(),
+  accessibilityNeeds: z.string().nullable(),
+  isLeadTraveler: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export const bookingTravelerRevealRecordSchema = bookingTravelerRecordSchema.extend({
+  travelDetails: bookingTravelerTravelDetailsSchema.nullable(),
+})
+
 export type BookingTravelerRecord = z.infer<typeof bookingTravelerRecordSchema>
+export type BookingTravelerTravelDetailsRecord = z.infer<typeof bookingTravelerTravelDetailsSchema>
+export type BookingTravelerRevealRecord = z.infer<typeof bookingTravelerRevealRecordSchema>
 
 export const bookingSupplierStatusRecordSchema = z.object({
   id: z.string(),
@@ -282,7 +314,7 @@ export const bookingGroupForBookingResponse = z.object({
 })
 export type BookingGroupForBookingRecord = z.infer<typeof bookingGroupForBookingSchema>
 export const bookingTravelersResponse = arrayEnvelope(bookingTravelerRecordSchema)
-export const bookingTravelerSingleResponse = singleEnvelope(bookingTravelerRecordSchema)
+export const bookingTravelerSingleResponse = singleEnvelope(bookingTravelerRevealRecordSchema)
 export const bookingPassengersResponse = bookingTravelersResponse
 export const bookingItemParticipantsResponse = bookingItemTravelersResponse
 export const bookingSupplierStatusesResponse = arrayEnvelope(bookingSupplierStatusRecordSchema)

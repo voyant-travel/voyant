@@ -45,6 +45,17 @@ function createR2BucketStorage(
 
 const DEFAULT_DOCUMENT_URL_EXPIRES_IN = 60 * 5
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  let binary = ""
+  const chunkSize = 0x8000
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize)
+    binary += String.fromCharCode(...chunk)
+  }
+  return btoa(binary)
+}
+
 /**
  * Resolve the media storage provider from the environment.
  *
@@ -108,6 +119,15 @@ export function createDocumentStorage(env: CloudflareBindings): StorageProvider 
   return createR2BucketStorage(env.DOCUMENTS_BUCKET)
 }
 
+export async function readDocumentContentBase64(
+  env: CloudflareBindings,
+  storageKey: string,
+): Promise<string | null> {
+  const object = await env.DOCUMENTS_BUCKET?.get(storageKey)
+  if (!object) return null
+  return arrayBufferToBase64(await object.arrayBuffer())
+}
+
 export async function resolveDocumentDownloadUrl(
   env: CloudflareBindings,
   storageKey: string,
@@ -124,9 +144,11 @@ export async function resolveDocumentDownloadUrl(
   //
   // Detect the "key passed through" case (no scheme prefix) and
   // rewrite it to an ABSOLUTE URL on the operator's
-  // `/v1/admin/documents/files/*` streaming proxy. We must use
-  // APP_URL (e.g. `http://localhost:3300/api`) — not a root-
-  // relative path — because:
+  // `/v1/admin/documents/files/*` streaming proxy. Prefer
+  // DOCUMENTS_BASE_URL when set because external systems (Cloud email
+  // attachments, Cloudflare Browser Rendering, Resend, etc.) cannot
+  // fetch localhost. Fall back to APP_URL for local browser/admin
+  // flows. Use an absolute URL — not a root-relative path — because:
   //   1. The Vite dev server mounts the API under `/api`, but the
   //      worker mounts its routes under `/v1/...`. A redirect to
   //      `/v1/admin/...` lands on the SPA's 404 handler instead of
@@ -139,7 +161,12 @@ export async function resolveDocumentDownloadUrl(
     return signed
   }
   if (!signed) return null
-  const apiBase = (env.APP_URL ?? env.API_BASE_URL ?? "").replace(/\/$/, "")
+  const apiBase = (
+    env.DOCUMENTS_BASE_URL?.trim() ||
+    env.APP_URL?.trim() ||
+    env.API_BASE_URL?.trim() ||
+    ""
+  ).replace(/\/$/, "")
   if (!apiBase) {
     // Without a configured API base we have no way to compose an
     // absolute URL. Fall back to a root-relative URL with no `/api`

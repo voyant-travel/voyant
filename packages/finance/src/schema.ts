@@ -1151,6 +1151,8 @@ export const taxClassAppliesToEnum = pgEnum("tax_class_applies_to", [
   "all",
 ])
 
+export const taxPolicySideEnum = pgEnum("tax_policy_side", ["sell", "buy"])
+
 export const taxClasses = pgTable(
   "tax_classes",
   {
@@ -1187,6 +1189,63 @@ export const taxClasses = pgTable(
 
 export type TaxClass = typeof taxClasses.$inferSelect
 export type NewTaxClass = typeof taxClasses.$inferInsert
+
+// ---------- tax_policy_profiles ----------
+//
+// Operator/jurisdiction-specific tax decision profiles. Profiles are
+// implementation presets such as "Romanian travel operator"; rules under
+// the profile map product/order facts to tax regimes for sell-side and
+// buy-side tax decisions.
+
+export const taxPolicyProfiles = pgTable(
+  "tax_policy_profiles",
+  {
+    id: typeId("tax_policy_profiles"),
+    code: text("code").notNull(),
+    name: text("name").notNull(),
+    jurisdiction: text("jurisdiction"),
+    description: text("description"),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_tax_policy_profiles_code").on(table.code),
+    index("idx_tax_policy_profiles_active").on(table.active),
+  ],
+)
+
+export type TaxPolicyProfile = typeof taxPolicyProfiles.$inferSelect
+export type NewTaxPolicyProfile = typeof taxPolicyProfiles.$inferInsert
+
+export const taxPolicyRules = pgTable(
+  "tax_policy_rules",
+  {
+    id: typeId("tax_policy_rules"),
+    profileId: text("profile_id").notNull(),
+    side: taxPolicySideEnum("side").notNull().default("sell"),
+    priority: integer("priority").notNull().default(100),
+    name: text("name").notNull(),
+    appliesTo: taxClassAppliesToEnum("applies_to").notNull().default("all"),
+    condition: jsonb("condition").$type<Record<string, unknown>>(),
+    taxRegimeId: text("tax_regime_id").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_tax_policy_rules_profile").on(table.profileId),
+    index("idx_tax_policy_rules_profile_side_priority").on(
+      table.profileId,
+      table.side,
+      table.priority,
+    ),
+    index("idx_tax_policy_rules_active").on(table.active),
+  ],
+)
+
+export type TaxPolicyRule = typeof taxPolicyRules.$inferSelect
+export type NewTaxPolicyRule = typeof taxPolicyRules.$inferInsert
 
 // ---------- invoice_external_refs ----------
 

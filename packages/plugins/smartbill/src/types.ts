@@ -20,6 +20,7 @@ export interface SmartbillProduct {
   price: number
   currency: string
   isTaxIncluded: boolean
+  taxName?: string
   taxPercentage?: number
   isService?: boolean
   saveToDb?: boolean

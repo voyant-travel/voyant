@@ -42,6 +42,7 @@ import { Route as WorkspaceBookingsIndexRouteImport } from './routes/_workspace/
 import { Route as WorkspaceAvailabilityIndexRouteImport } from './routes/_workspace/availability/index'
 import { Route as WorkspaceSuppliersIdRouteImport } from './routes/_workspace/suppliers/$id'
 import { Route as WorkspaceSettingsTeamRouteImport } from './routes/_workspace/settings/team'
+import { Route as WorkspaceSettingsTaxesRouteImport } from './routes/_workspace/settings/taxes'
 import { Route as WorkspaceSettingsProductTypesRouteImport } from './routes/_workspace/settings/product-types'
 import { Route as WorkspaceSettingsProductTagsRouteImport } from './routes/_workspace/settings/product-tags'
 import { Route as WorkspaceSettingsPricingCategoriesRouteImport } from './routes/_workspace/settings/pricing-categories'
@@ -243,6 +244,11 @@ const WorkspaceSuppliersIdRoute = WorkspaceSuppliersIdRouteImport.update({
 const WorkspaceSettingsTeamRoute = WorkspaceSettingsTeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => WorkspaceSettingsRouteRoute,
+} as any)
+const WorkspaceSettingsTaxesRoute = WorkspaceSettingsTaxesRouteImport.update({
+  id: '/taxes',
+  path: '/taxes',
   getParentRoute: () => WorkspaceSettingsRouteRoute,
 } as any)
 const WorkspaceSettingsProductTypesRoute =
@@ -497,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
   '/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
+  '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
   '/suppliers/$id': typeof WorkspaceSuppliersIdRoute
   '/availability/': typeof WorkspaceAvailabilityIndexRoute
@@ -565,6 +572,7 @@ export interface FileRoutesByTo {
   '/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
   '/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
+  '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
   '/suppliers/$id': typeof WorkspaceSuppliersIdRoute
   '/availability': typeof WorkspaceAvailabilityIndexRoute
@@ -638,6 +646,7 @@ export interface FileRoutesById {
   '/_workspace/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/_workspace/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
   '/_workspace/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
+  '/_workspace/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/_workspace/settings/team': typeof WorkspaceSettingsTeamRoute
   '/_workspace/suppliers/$id': typeof WorkspaceSuppliersIdRoute
   '/_workspace/availability/': typeof WorkspaceAvailabilityIndexRoute
@@ -709,6 +718,7 @@ export interface FileRouteTypes {
     | '/settings/pricing-categories'
     | '/settings/product-tags'
     | '/settings/product-types'
+    | '/settings/taxes'
     | '/settings/team'
     | '/suppliers/$id'
     | '/availability/'
@@ -777,6 +787,7 @@ export interface FileRouteTypes {
     | '/settings/pricing-categories'
     | '/settings/product-tags'
     | '/settings/product-types'
+    | '/settings/taxes'
     | '/settings/team'
     | '/suppliers/$id'
     | '/availability'
@@ -849,6 +860,7 @@ export interface FileRouteTypes {
     | '/_workspace/settings/pricing-categories'
     | '/_workspace/settings/product-tags'
     | '/_workspace/settings/product-types'
+    | '/_workspace/settings/taxes'
     | '/_workspace/settings/team'
     | '/_workspace/suppliers/$id'
     | '/_workspace/availability/'
@@ -1124,6 +1136,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/settings/team'
       preLoaderRoute: typeof WorkspaceSettingsTeamRouteImport
+      parentRoute: typeof WorkspaceSettingsRouteRoute
+    }
+    '/_workspace/settings/taxes': {
+      id: '/_workspace/settings/taxes'
+      path: '/taxes'
+      fullPath: '/settings/taxes'
+      preLoaderRoute: typeof WorkspaceSettingsTaxesRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
     }
     '/_workspace/settings/product-types': {
@@ -1442,6 +1461,7 @@ interface WorkspaceSettingsRouteRouteChildren {
   WorkspaceSettingsPricingCategoriesRoute: typeof WorkspaceSettingsPricingCategoriesRoute
   WorkspaceSettingsProductTagsRoute: typeof WorkspaceSettingsProductTagsRoute
   WorkspaceSettingsProductTypesRoute: typeof WorkspaceSettingsProductTypesRoute
+  WorkspaceSettingsTaxesRoute: typeof WorkspaceSettingsTaxesRoute
   WorkspaceSettingsTeamRoute: typeof WorkspaceSettingsTeamRoute
   WorkspaceSettingsIndexRoute: typeof WorkspaceSettingsIndexRoute
 }
@@ -1455,6 +1475,7 @@ const WorkspaceSettingsRouteRouteChildren: WorkspaceSettingsRouteRouteChildren =
       WorkspaceSettingsPricingCategoriesRoute,
     WorkspaceSettingsProductTagsRoute: WorkspaceSettingsProductTagsRoute,
     WorkspaceSettingsProductTypesRoute: WorkspaceSettingsProductTypesRoute,
+    WorkspaceSettingsTaxesRoute: WorkspaceSettingsTaxesRoute,
     WorkspaceSettingsTeamRoute: WorkspaceSettingsTeamRoute,
     WorkspaceSettingsIndexRoute: WorkspaceSettingsIndexRoute,
   }

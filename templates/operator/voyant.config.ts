@@ -32,7 +32,7 @@ export default defineVoyantConfig({
     "@voyantjs/external-refs",
     "@voyantjs/extras",
   ],
-  plugins: [],
+  plugins: ["@voyantjs/plugin-smartbill"],
   featureFlags: {
     links_enabled: true,
     query_graph: true,

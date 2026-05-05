@@ -29,6 +29,19 @@ export function NotificationReminderRulesPage() {
   const [targetType, setTargetType] = useState<string>("all")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<NotificationReminderRuleRecord | undefined>()
+  const targetTypeItems = Object.entries(messages.common.targetTypeLabels).filter(
+    ([value]) => value !== "invoice",
+  )
+  const dueDateTargetTypes = new Set(["booking_payment_schedule"])
+  const getTargetTypeLabel = (targetType: NotificationReminderRuleRecord["targetType"]) =>
+    messages.common.targetTypeLabels[targetType] ?? targetType
+  const formatReminderTiming = (rule: NotificationReminderRuleRecord) => {
+    if (!dueDateTargetTypes.has(rule.targetType)) return pageMessages.timingEvent
+    if (rule.relativeDaysFromDueDate === 0) return pageMessages.timingDueDate
+    return rule.relativeDaysFromDueDate < 0
+      ? `${Math.abs(rule.relativeDaysFromDueDate)} ${pageMessages.timingBeforeSuffix}`
+      : `${rule.relativeDaysFromDueDate} ${pageMessages.timingAfterSuffix}`
+  }
   const { data, isPending, refetch } = useNotificationReminderRules({
     search,
     channel,
@@ -70,10 +83,11 @@ export function NotificationReminderRulesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{pageMessages.filters.targetAll}</SelectItem>
-            <SelectItem value="booking_payment_schedule">
-              {messages.common.targetTypeLabels.booking_payment_schedule}
-            </SelectItem>
-            <SelectItem value="invoice">{messages.common.targetTypeLabels.invoice}</SelectItem>
+            {targetTypeItems.map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={channel} onValueChange={setChannel}>
@@ -132,18 +146,15 @@ export function NotificationReminderRulesPage() {
                 <tr key={rule.id} className="border-t">
                   <td className="px-4 py-3">
                     <div className="font-medium">{rule.name}</div>
-                    <div className="font-mono text-xs text-muted-foreground">{rule.slug}</div>
                   </td>
-                  <td className="px-4 py-3">{messages.common.targetTypeLabels[rule.targetType]}</td>
+                  <td className="px-4 py-3">{getTargetTypeLabel(rule.targetType)}</td>
                   <td className="px-4 py-3">
                     <Badge variant="outline">{messages.common.channelLabels[rule.channel]}</Badge>
                   </td>
                   <td className="px-4 py-3">
                     {messages.common.providerLabels[rule.provider ?? "automatic"]}
                   </td>
-                  <td className="px-4 py-3">
-                    {rule.relativeDaysFromDueDate} {pageMessages.daysSuffix}
-                  </td>
+                  <td className="px-4 py-3">{formatReminderTiming(rule)}</td>
                   <td className="px-4 py-3">
                     <Badge variant={rule.status === "active" ? "default" : "secondary"}>
                       {messages.common.templateStatusLabels[rule.status]}

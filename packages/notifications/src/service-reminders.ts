@@ -1,11 +1,17 @@
 import { bookings, bookingTravelers } from "@voyantjs/bookings/schema"
-import { bookingPaymentSchedules, invoices } from "@voyantjs/finance"
-import { and, desc, eq, gt, or } from "drizzle-orm"
+import { bookingPaymentSchedules, invoices, paymentSessions } from "@voyantjs/finance"
+import { and, asc, desc, eq, gt, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { notificationReminderRules, notificationReminderRuns } from "./schema.js"
+import {
+  type BookingDocumentAttachmentResolver,
+  bookingDocumentNotificationsService,
+  createDefaultBookingDocumentAttachment,
+} from "./service-booking-documents.js"
 import { sendInvoiceNotification, sendNotification } from "./service-deliveries.js"
 import type {
+  BookingDocumentBundleItem,
   BookingPaymentScheduleRow,
   NotificationReminderRuleRow,
   NotificationService,
@@ -22,10 +28,171 @@ import {
   toDateString,
   toTimestamp,
 } from "./service-shared.js"
+import type { NotificationAttachment } from "./types.js"
 
 type ReminderDeliveryEnqueuer = (input: { reminderRunId: string }) => Promise<void>
 
 type NotificationReminderRunRow = typeof notificationReminderRuns.$inferSelect
+type ReminderTargetType = NotificationReminderRuleRow["targetType"]
+type BookingEventReminderTargetType = Extract<
+  ReminderTargetType,
+  "booking_confirmed" | "payment_complete" | "booking_cancelled_non_payment"
+>
+
+export interface BookingEventReminderRuntimeOptions {
+  documentAttachmentResolver?: BookingDocumentAttachmentResolver
+}
+
+async function getBookingPaymentNotificationContext(db: PostgresJsDatabase, bookingId: string) {
+  const [[paymentSchedule], [invoice], [paymentSession]] = await Promise.all([
+    db
+      .select()
+      .from(bookingPaymentSchedules)
+      .where(
+        and(
+          eq(bookingPaymentSchedules.bookingId, bookingId),
+          or(
+            eq(bookingPaymentSchedules.status, "pending"),
+            eq(bookingPaymentSchedules.status, "due"),
+          ),
+        ),
+      )
+      .orderBy(asc(bookingPaymentSchedules.dueDate), asc(bookingPaymentSchedules.createdAt))
+      .limit(1),
+    db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.bookingId, bookingId))
+      .orderBy(desc(invoices.createdAt))
+      .limit(1),
+    db
+      .select()
+      .from(paymentSessions)
+      .where(eq(paymentSessions.bookingId, bookingId))
+      .orderBy(desc(paymentSessions.createdAt))
+      .limit(1),
+  ])
+
+  return {
+    paymentSchedule: paymentSchedule ?? null,
+    invoice: invoice ?? null,
+    paymentSession: paymentSession ?? null,
+  }
+}
+
+async function getBookingEventDocumentContext(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  attachmentResolver?: BookingDocumentAttachmentResolver,
+): Promise<{
+  documents: BookingDocumentBundleItem[]
+  attachments: NotificationAttachment[]
+}> {
+  const bundle = await bookingDocumentNotificationsService.listBookingDocumentBundle(db, bookingId)
+  const documents = bundle?.documents ?? []
+  if (documents.length === 0) {
+    return { documents, attachments: [] }
+  }
+
+  const resolver =
+    attachmentResolver ??
+    (async (document: BookingDocumentBundleItem) =>
+      createDefaultBookingDocumentAttachment(document))
+  const attachments = (await Promise.all(documents.map((document) => resolver(document)))).filter(
+    (attachment): attachment is NotificationAttachment => Boolean(attachment),
+  )
+
+  return { documents, attachments }
+}
+
+function serializeBookingPaymentContext(
+  context: Awaited<ReturnType<typeof getBookingPaymentNotificationContext>>,
+  paymentScheduleOverride?: BookingPaymentScheduleRow | null,
+) {
+  const schedule = paymentScheduleOverride ?? context.paymentSchedule
+
+  return {
+    invoice: context.invoice
+      ? {
+          id: context.invoice.id,
+          invoiceNumber: context.invoice.invoiceNumber,
+          invoiceType: context.invoice.invoiceType,
+          status: context.invoice.status,
+          currency: context.invoice.currency,
+          subtotalCents: context.invoice.subtotalCents,
+          taxCents: context.invoice.taxCents,
+          totalCents: context.invoice.totalCents,
+          paidCents: context.invoice.paidCents,
+          balanceDueCents: context.invoice.balanceDueCents,
+          issueDate: context.invoice.issueDate,
+          dueDate: context.invoice.dueDate,
+        }
+      : null,
+    paymentSession: context.paymentSession
+      ? {
+          id: context.paymentSession.id,
+          status: context.paymentSession.status,
+          provider: context.paymentSession.provider,
+          currency: context.paymentSession.currency,
+          amountCents: context.paymentSession.amountCents,
+          redirectUrl: context.paymentSession.redirectUrl,
+          returnUrl: context.paymentSession.returnUrl,
+          cancelUrl: context.paymentSession.cancelUrl,
+          expiresAt: context.paymentSession.expiresAt,
+          paymentMethod: context.paymentSession.paymentMethod,
+          externalReference: context.paymentSession.externalReference,
+        }
+      : null,
+    paymentSchedule: schedule
+      ? {
+          id: schedule.id,
+          dueDate: schedule.dueDate,
+          amountCents: schedule.amountCents,
+          currency: schedule.currency,
+          scheduleType: schedule.scheduleType,
+          status: schedule.status,
+        }
+      : null,
+  }
+}
+
+async function hasOutstandingBookingBalance(db: PostgresJsDatabase, bookingId: string) {
+  const [openSchedule] = await db
+    .select({ id: bookingPaymentSchedules.id })
+    .from(bookingPaymentSchedules)
+    .where(
+      and(
+        eq(bookingPaymentSchedules.bookingId, bookingId),
+        or(
+          eq(bookingPaymentSchedules.status, "pending"),
+          eq(bookingPaymentSchedules.status, "due"),
+        ),
+      ),
+    )
+    .limit(1)
+
+  if (openSchedule) {
+    return true
+  }
+
+  const [openInvoice] = await db
+    .select({ id: invoices.id })
+    .from(invoices)
+    .where(
+      and(
+        eq(invoices.bookingId, bookingId),
+        gt(invoices.balanceDueCents, 0),
+        or(
+          eq(invoices.status, "sent"),
+          eq(invoices.status, "partially_paid"),
+          eq(invoices.status, "overdue"),
+        ),
+      ),
+    )
+    .limit(1)
+
+  return Boolean(openInvoice)
+}
 
 function buildReminderSweepSummary(): ReminderSweepResult {
   return {
@@ -205,7 +372,7 @@ async function queueBookingPaymentScheduleReminder(
             .insert(notificationReminderRuns)
             .values({
               reminderRuleId: rule.id,
-              targetType: "booking_payment_schedule",
+              targetType: rule.targetType,
               targetId: schedule.id,
               dedupeKey,
               bookingId: schedule.bookingId,
@@ -398,7 +565,7 @@ async function sendBookingPaymentScheduleReminder(
       .insert(notificationReminderRuns)
       .values({
         reminderRuleId: rule.id,
-        targetType: "booking_payment_schedule",
+        targetType: rule.targetType,
         targetId: schedule.id,
         dedupeKey,
         bookingId: schedule.bookingId,
@@ -420,7 +587,7 @@ async function sendBookingPaymentScheduleReminder(
     return run ?? null
   }
 
-  const [participants, items] = await Promise.all([
+  const [participants, items, paymentContext] = await Promise.all([
     db
       .select({
         id: bookingTravelers.id,
@@ -434,6 +601,7 @@ async function sendBookingPaymentScheduleReminder(
       .where(eq(bookingTravelers.bookingId, booking.id))
       .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt),
     listBookingNotificationItems(db, booking.id),
+    getBookingPaymentNotificationContext(db, booking.id),
   ])
 
   const recipient = resolveReminderRecipient(booking, participants)
@@ -441,7 +609,7 @@ async function sendBookingPaymentScheduleReminder(
     .insert(notificationReminderRuns)
     .values({
       reminderRuleId: rule.id,
-      targetType: "booking_payment_schedule",
+      targetType: rule.targetType,
       targetId: schedule.id,
       dedupeKey,
       bookingId: booking.id,
@@ -507,14 +675,7 @@ async function sendBookingPaymentScheduleReminder(
           sellCurrency: booking.sellCurrency,
           sellAmountCents: booking.sellAmountCents,
         },
-        paymentSchedule: {
-          id: schedule.id,
-          dueDate: schedule.dueDate,
-          amountCents: schedule.amountCents,
-          currency: schedule.currency,
-          scheduleType: schedule.scheduleType,
-          status: schedule.status,
-        },
+        ...serializeBookingPaymentContext(paymentContext, schedule),
         items,
       },
       targetType: "booking_payment_schedule",
@@ -704,7 +865,7 @@ async function sendQueuedBookingPaymentScheduleReminder(
     return markReminderRunSkipped(db, run.id, now, "Booking not found for payment schedule")
   }
 
-  const [participants, items] = await Promise.all([
+  const [participants, items, paymentContext] = await Promise.all([
     db
       .select({
         id: bookingTravelers.id,
@@ -718,6 +879,7 @@ async function sendQueuedBookingPaymentScheduleReminder(
       .where(eq(bookingTravelers.bookingId, booking.id))
       .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt),
     listBookingNotificationItems(db, booking.id),
+    getBookingPaymentNotificationContext(db, booking.id),
   ])
 
   const fallbackRecipient = resolveReminderRecipient(booking, participants)
@@ -767,14 +929,7 @@ async function sendQueuedBookingPaymentScheduleReminder(
           sellCurrency: booking.sellCurrency,
           sellAmountCents: booking.sellAmountCents,
         },
-        paymentSchedule: {
-          id: schedule.id,
-          dueDate: schedule.dueDate,
-          amountCents: schedule.amountCents,
-          currency: schedule.currency,
-          scheduleType: schedule.scheduleType,
-          status: schedule.status,
-        },
+        ...serializeBookingPaymentContext(paymentContext, schedule),
         items,
       },
       targetType: "booking_payment_schedule",
@@ -825,6 +980,225 @@ async function sendQueuedInvoiceReminder(
   }
 
   return markReminderRunSent(db, run.id, new Date(), delivery.id ?? null)
+}
+
+async function sendBookingEventReminder(
+  db: PostgresJsDatabase,
+  dispatcher: NotificationService,
+  rule: NotificationReminderRuleRow,
+  input: {
+    targetType: BookingEventReminderTargetType
+    bookingId: string
+    paymentSessionId?: string | null
+    eventData?: Record<string, unknown>
+  },
+  runtime: BookingEventReminderRuntimeOptions = {},
+) {
+  const now = new Date()
+  const dedupeKey = buildReminderDedupeKey(rule.id, input.bookingId, input.targetType)
+
+  const [existingRun] = await db
+    .select({ id: notificationReminderRuns.id })
+    .from(notificationReminderRuns)
+    .where(eq(notificationReminderRuns.dedupeKey, dedupeKey))
+    .limit(1)
+  if (existingRun) {
+    return null
+  }
+
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, input.bookingId))
+    .limit(1)
+  if (!booking) {
+    const [run] = await db
+      .insert(notificationReminderRuns)
+      .values({
+        reminderRuleId: rule.id,
+        targetType: input.targetType,
+        targetId: input.bookingId,
+        dedupeKey,
+        bookingId: input.bookingId,
+        personId: null,
+        organizationId: null,
+        paymentSessionId: input.paymentSessionId ?? null,
+        notificationDeliveryId: null,
+        status: "skipped",
+        recipient: null,
+        scheduledFor: now,
+        processedAt: now,
+        errorMessage: "Booking not found for notification event",
+        metadata: {
+          eventTargetType: input.targetType,
+          ...(input.eventData ?? {}),
+        },
+      })
+      .returning()
+    return run ?? null
+  }
+
+  const [participants, items, paymentContext, documentContext] = await Promise.all([
+    db
+      .select({
+        id: bookingTravelers.id,
+        firstName: bookingTravelers.firstName,
+        lastName: bookingTravelers.lastName,
+        email: bookingTravelers.email,
+        participantType: bookingTravelers.participantType,
+        isPrimary: bookingTravelers.isPrimary,
+      })
+      .from(bookingTravelers)
+      .where(eq(bookingTravelers.bookingId, booking.id))
+      .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt),
+    listBookingNotificationItems(db, booking.id),
+    getBookingPaymentNotificationContext(db, booking.id),
+    input.targetType === "booking_confirmed" && rule.channel === "email"
+      ? getBookingEventDocumentContext(db, booking.id, runtime.documentAttachmentResolver)
+      : Promise.resolve({ documents: [], attachments: [] }),
+  ])
+
+  const recipient = resolveReminderRecipient(booking, participants)
+  const [processingRun] = await db
+    .insert(notificationReminderRuns)
+    .values({
+      reminderRuleId: rule.id,
+      targetType: input.targetType,
+      targetId: booking.id,
+      dedupeKey,
+      bookingId: booking.id,
+      personId: booking.personId ?? null,
+      organizationId: booking.organizationId ?? null,
+      paymentSessionId: input.paymentSessionId ?? null,
+      notificationDeliveryId: null,
+      status: "processing",
+      recipient: recipient?.email ?? null,
+      scheduledFor: now,
+      processedAt: now,
+      errorMessage: null,
+      metadata: {
+        eventTargetType: input.targetType,
+        bookingNumber: booking.bookingNumber,
+        ...(input.eventData ?? {}),
+      },
+    })
+    .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+    .returning()
+
+  if (!processingRun) {
+    return null
+  }
+
+  if (!recipient?.email) {
+    return markReminderRunSkipped(
+      db,
+      processingRun.id,
+      now,
+      "No traveler email available for booking notification event",
+    )
+  }
+
+  try {
+    const delivery = await sendNotification(db, dispatcher, {
+      templateId: rule.templateId ?? null,
+      templateSlug: rule.templateSlug ?? null,
+      channel: rule.channel,
+      provider: rule.provider ?? null,
+      to: recipient.email,
+      data: {
+        bookingId: booking.id,
+        bookingNumber: booking.bookingNumber,
+        trigger: input.targetType,
+        event: input.eventData ?? {},
+        traveler: {
+          firstName: recipient.firstName,
+          lastName: recipient.lastName,
+          email: recipient.email,
+          participantType: recipient.participantType,
+          isPrimary: recipient.isPrimary,
+        },
+        travelers: participants,
+        booking: {
+          id: booking.id,
+          bookingNumber: booking.bookingNumber,
+          status: booking.status,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          sellCurrency: booking.sellCurrency,
+          sellAmountCents: booking.sellAmountCents,
+        },
+        ...serializeBookingPaymentContext(paymentContext),
+        payment:
+          input.targetType === "payment_complete"
+            ? {
+                isPaidInFull: true,
+                paymentSessionId: input.paymentSessionId ?? null,
+              }
+            : null,
+        documents: documentContext.documents,
+        items,
+      },
+      attachments: documentContext.attachments.length > 0 ? documentContext.attachments : null,
+      targetType: input.targetType === "payment_complete" ? "payment_session" : "booking",
+      targetId:
+        input.targetType === "payment_complete"
+          ? (input.paymentSessionId ?? booking.id)
+          : booking.id,
+      bookingId: booking.id,
+      paymentSessionId: input.paymentSessionId ?? null,
+      personId: booking.personId ?? null,
+      organizationId: booking.organizationId ?? null,
+      metadata: {
+        reminderRuleId: rule.id,
+        reminderRunId: processingRun.id,
+        eventTargetType: input.targetType,
+        bookingDocumentKeys: documentContext.documents.map((document) => document.key),
+      },
+      scheduledFor: now.toISOString(),
+    })
+
+    return markReminderRunSent(db, processingRun.id, new Date(), delivery?.id ?? null)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Notification event delivery failed"
+    return markReminderRunFailed(db, processingRun.id, new Date(), message)
+  }
+}
+
+export async function dispatchReminderEventRules(
+  db: PostgresJsDatabase,
+  dispatcher: NotificationService,
+  input: {
+    targetType: BookingEventReminderTargetType
+    bookingId: string
+    paymentSessionId?: string | null
+    eventData?: Record<string, unknown>
+  },
+  runtime: BookingEventReminderRuntimeOptions = {},
+) {
+  const rules = await db
+    .select()
+    .from(notificationReminderRules)
+    .where(
+      and(
+        eq(notificationReminderRules.status, "active"),
+        eq(notificationReminderRules.targetType, input.targetType),
+      ),
+    )
+    .orderBy(notificationReminderRules.createdAt)
+
+  const results = []
+  for (const rule of rules) {
+    results.push(await sendBookingEventReminder(db, dispatcher, rule, input, runtime))
+  }
+
+  return results
+}
+
+export async function bookingIsPaidInFullForNotification(
+  db: PostgresJsDatabase,
+  bookingId: string,
+) {
+  return !(await hasOutstandingBookingBalance(db, bookingId))
 }
 
 export async function queueDueReminders(

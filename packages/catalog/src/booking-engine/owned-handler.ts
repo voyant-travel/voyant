@@ -166,7 +166,11 @@ export interface OwnedBookingHandler {
 
   /** Optional: place / extend / release a soft hold on the row. */
   placeHold?(ctx: OwnedHandlerContext, request: HoldRequest): Promise<HoldResult>
-  extendHold?(ctx: OwnedHandlerContext, holdToken: string): Promise<HoldResult>
+  extendHold?(
+    ctx: OwnedHandlerContext,
+    holdToken: string,
+    request?: Pick<HoldRequest, "ttlMs" | "parameters">,
+  ): Promise<HoldResult>
   releaseHold?(ctx: OwnedHandlerContext, holdToken: string): Promise<void>
 }
 

@@ -2,6 +2,7 @@
 
 export * from "./use-notification-deliveries.js"
 export * from "./use-notification-delivery.js"
+export * from "./use-notification-delivery-mutation.js"
 export * from "./use-notification-reminder-rule.js"
 export * from "./use-notification-reminder-rule-mutation.js"
 export * from "./use-notification-reminder-rules.js"

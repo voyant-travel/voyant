@@ -17,6 +17,7 @@ interface CloudflareBindings {
   VOYANT_CLOUD_API_KEY: string
   VOYANT_CLOUD_API_URL?: string
   EMAIL_FROM: string
+  EMAIL_REPLY_TO?: string
 
   // App URLs
   APP_URL: string

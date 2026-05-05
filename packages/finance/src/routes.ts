@@ -35,6 +35,9 @@ import {
   insertPaymentSchema,
   insertPaymentSessionSchema,
   insertSupplierPaymentSchema,
+  insertTaxClassSchema,
+  insertTaxPolicyProfileSchema,
+  insertTaxPolicyRuleSchema,
   insertTaxRegimeSchema,
   insertVoucherSchema,
   invoiceFromBookingSchema,
@@ -51,6 +54,9 @@ import {
   renderInvoiceInputSchema,
   revenueReportQuerySchema,
   supplierPaymentListQuerySchema,
+  taxClassListQuerySchema,
+  taxPolicyProfileListQuerySchema,
+  taxPolicyRuleListQuerySchema,
   taxRegimeListQuerySchema,
   updateBookingGuaranteeSchema,
   updateBookingItemCommissionSchema,
@@ -66,6 +72,9 @@ import {
   updatePaymentInstrumentSchema,
   updatePaymentSessionSchema,
   updateSupplierPaymentSchema,
+  updateTaxClassSchema,
+  updateTaxPolicyProfileSchema,
+  updateTaxPolicyRuleSchema,
   updateTaxRegimeSchema,
   updateVoucherSchema,
   voucherListQuerySchema,
@@ -1069,6 +1078,123 @@ export const financeRoutes = new Hono<Env>()
   .delete("/tax-regimes/:id", async (c) => {
     const row = await financeService.deleteTaxRegime(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Tax regime not found" }, 404)
+    return c.json({ success: true })
+  })
+
+  // ========================================================================
+  // Tax Classes
+  // ========================================================================
+
+  .get("/tax-classes", async (c) => {
+    const query = parseQuery(c, taxClassListQuerySchema)
+    return c.json(await financeService.listTaxClasses(c.get("db"), query))
+  })
+
+  .post("/tax-classes", async (c) => {
+    const row = await financeService.createTaxClass(
+      c.get("db"),
+      await parseJsonBody(c, insertTaxClassSchema),
+    )
+    return c.json({ data: row }, 201)
+  })
+
+  .get("/tax-classes/:id", async (c) => {
+    const row = await financeService.getTaxClassById(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax class not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .patch("/tax-classes/:id", async (c) => {
+    const row = await financeService.updateTaxClass(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateTaxClassSchema),
+    )
+    if (!row) return c.json({ error: "Tax class not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .delete("/tax-classes/:id", async (c) => {
+    const row = await financeService.deleteTaxClass(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax class not found" }, 404)
+    return c.json({ success: true })
+  })
+
+  // ========================================================================
+  // Tax Policy Profiles
+  // ========================================================================
+
+  .get("/tax-policy-profiles", async (c) => {
+    const query = parseQuery(c, taxPolicyProfileListQuerySchema)
+    return c.json(await financeService.listTaxPolicyProfiles(c.get("db"), query))
+  })
+
+  .post("/tax-policy-profiles", async (c) => {
+    const row = await financeService.createTaxPolicyProfile(
+      c.get("db"),
+      await parseJsonBody(c, insertTaxPolicyProfileSchema),
+    )
+    return c.json({ data: row }, 201)
+  })
+
+  .get("/tax-policy-profiles/:id", async (c) => {
+    const row = await financeService.getTaxPolicyProfileById(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .patch("/tax-policy-profiles/:id", async (c) => {
+    const row = await financeService.updateTaxPolicyProfile(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateTaxPolicyProfileSchema),
+    )
+    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .delete("/tax-policy-profiles/:id", async (c) => {
+    const row = await financeService.deleteTaxPolicyProfile(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
+    return c.json({ success: true })
+  })
+
+  // ========================================================================
+  // Tax Policy Rules
+  // ========================================================================
+
+  .get("/tax-policy-rules", async (c) => {
+    const query = parseQuery(c, taxPolicyRuleListQuerySchema)
+    return c.json(await financeService.listTaxPolicyRules(c.get("db"), query))
+  })
+
+  .post("/tax-policy-rules", async (c) => {
+    const row = await financeService.createTaxPolicyRule(
+      c.get("db"),
+      await parseJsonBody(c, insertTaxPolicyRuleSchema),
+    )
+    return c.json({ data: row }, 201)
+  })
+
+  .get("/tax-policy-rules/:id", async (c) => {
+    const row = await financeService.getTaxPolicyRuleById(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .patch("/tax-policy-rules/:id", async (c) => {
+    const row = await financeService.updateTaxPolicyRule(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateTaxPolicyRuleSchema),
+    )
+    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .delete("/tax-policy-rules/:id", async (c) => {
+    const row = await financeService.deleteTaxPolicyRule(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
     return c.json({ success: true })
   })
 

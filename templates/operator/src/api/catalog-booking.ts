@@ -33,6 +33,7 @@ import {
   type BookingPaymentIntent,
   bookEntity,
   cancelEntity,
+  catalogQuotesTable,
   createBookingDraft,
   DEFAULT_DRAFT_TTL_MS,
   deleteBookingDraft,
@@ -54,7 +55,9 @@ import {
 } from "@voyantjs/catalog/booking-engine"
 import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
+import { products } from "@voyantjs/products"
 import { getProductContent } from "@voyantjs/products/service-content"
+import { suppliers } from "@voyantjs/suppliers"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
@@ -63,6 +66,9 @@ import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
 } from "./lib/booking-engine-runtime"
+import { computeBookingItemTaxLine, resolveOperatorSellTaxRate } from "./lib/operator-tax-policy"
+
+const DEFAULT_HOLD_TTL_MS = 30 * 60 * 1000
 
 function getDb(c: Context): AnyDrizzleDb {
   return (c.var as { db: AnyDrizzleDb }).db
@@ -249,7 +255,14 @@ async function handleQuote(c: Context): Promise<Response> {
         },
       },
     )
-    return c.json({ ...result, pricing: toPricingBreakdownV1(result.pricing) })
+    const resultWithTax = await applyOperatorTaxToQuoteResult(
+      db,
+      result,
+      body.entityModule,
+      body.entityId,
+      provenance.sourceKind,
+    )
+    return c.json({ ...resultWithTax, pricing: toPricingBreakdownV1(resultWithTax.pricing) })
   } catch (err) {
     return errorResponse(c, err)
   }
@@ -424,7 +437,7 @@ async function handleListSlots(c: Context): Promise<Response> {
       db,
       entityId,
       { preferredLocales: preferredLocales.length > 0 ? preferredLocales : ["en-GB"] },
-      { registry },
+      { registry, forceFresh: true },
     )
     const today = new Date().toISOString().slice(0, 10)
     const rows = (resolved?.content.departures ?? [])
@@ -478,6 +491,46 @@ async function handleListSlots(c: Context): Promise<Response> {
   return c.json({ rows })
 }
 
+function positiveMinutes(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null
+}
+
+async function resolveHoldTtlMs(
+  db: AnyDrizzleDb,
+  entityModule: string,
+  entityId: string,
+): Promise<number> {
+  if (entityModule !== "products") {
+    return DEFAULT_HOLD_TTL_MS
+  }
+
+  const [product] = await db
+    .select({
+      supplierId: products.supplierId,
+      reservationTimeoutMinutes: products.reservationTimeoutMinutes,
+    })
+    .from(products)
+    .where(eq(products.id, entityId))
+    .limit(1)
+
+  const productMinutes = positiveMinutes(product?.reservationTimeoutMinutes)
+  if (productMinutes !== null) {
+    return productMinutes * 60 * 1000
+  }
+
+  if (!product?.supplierId) {
+    return DEFAULT_HOLD_TTL_MS
+  }
+
+  const [supplier] = await db
+    .select({ reservationTimeoutMinutes: suppliers.reservationTimeoutMinutes })
+    .from(suppliers)
+    .where(eq(suppliers.id, product.supplierId))
+    .limit(1)
+
+  return (positiveMinutes(supplier?.reservationTimeoutMinutes) ?? 30) * 60 * 1000
+}
+
 async function handleHoldPlace(c: Context): Promise<Response> {
   let body: HoldPlaceBody
   try {
@@ -497,6 +550,7 @@ async function handleHoldPlace(c: Context): Promise<Response> {
   }
 
   const db = getDb(c)
+  const ttlMs = body.ttlMs ?? (await resolveHoldTtlMs(db, body.entityModule, body.entityId))
   const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
   try {
     const result = await handler.placeHold(
@@ -505,7 +559,7 @@ async function handleHoldPlace(c: Context): Promise<Response> {
         entityModule: body.entityModule,
         entityId: body.entityId,
         draftId: body.draftId,
-        ttlMs: body.ttlMs ?? 30 * 60 * 1000,
+        ttlMs,
         parameters: body.parameters,
       },
     )
@@ -732,6 +786,76 @@ interface PricingBasisShape {
   breakdown?: Record<string, unknown>
 }
 
+async function applyOperatorTaxToQuoteResult(
+  db: AnyDrizzleDb,
+  result: Awaited<ReturnType<typeof quoteEntity>>,
+  entityModule: string,
+  entityId: string,
+  sourceKind: string,
+): Promise<Awaited<ReturnType<typeof quoteEntity>>> {
+  if (!result.available || !result.pricing || sourceKind === OWNED_SOURCE_KIND) return result
+  if (result.pricing.taxes > 0) return result
+
+  const pricing = result.pricing
+  const taxableCents = pricing.base_amount
+  const taxRate = await resolveOperatorSellTaxRate(db as PostgresJsDatabase, {
+    productId: entityModule === "products" ? entityId : null,
+    facts: { hasAccommodation: false, accommodationCountries: [] },
+  })
+  const taxLine = computeBookingItemTaxLine(taxRate, taxableCents, pricing.currency)
+  if (!taxLine) return result
+
+  const inclusive = taxLine.includedInPrice
+  const subtotal = inclusive ? Math.max(0, taxableCents - taxLine.amountCents) : taxableCents
+  const total = inclusive ? taxableCents : taxableCents + taxLine.amountCents
+  const adjustedPricing = {
+    ...pricing,
+    base_amount: subtotal,
+    taxes: taxLine.amountCents,
+    breakdown: {
+      currency: pricing.currency,
+      lines: [
+        {
+          kind: "base",
+          label: "Base",
+          quantity: 1,
+          unitAmount: taxableCents,
+          totalAmount: taxableCents,
+          taxIncluded: inclusive,
+        },
+      ],
+      taxes: [
+        {
+          code: taxLine.code ?? "tax",
+          label: taxLine.name,
+          rate: (taxLine.rateBasisPoints ?? 0) / 10_000,
+          amount: taxLine.amountCents,
+          base: subtotal,
+          includedInPrice: inclusive,
+          scope: taxLine.scope,
+        },
+      ],
+      subtotal,
+      taxTotal: taxLine.amountCents,
+      total,
+    },
+  }
+
+  await (db as PostgresJsDatabase)
+    .update(catalogQuotesTable)
+    .set({
+      pricing_base_amount: String(adjustedPricing.base_amount),
+      pricing_taxes: String(adjustedPricing.taxes),
+      pricing_fees: String(adjustedPricing.fees),
+      pricing_surcharges: String(adjustedPricing.surcharges),
+      pricing_currency: adjustedPricing.currency,
+      pricing_breakdown: adjustedPricing.breakdown,
+    })
+    .where(eq(catalogQuotesTable.id, result.quoteId))
+
+  return { ...result, pricing: adjustedPricing }
+}
+
 /**
  * Map the engine's `PricingBasis` (base/taxes/fees/surcharges totals)
  * onto the wire shape `pricingBreakdownV1` (lines + tax rows + totals)
@@ -756,6 +880,12 @@ function toPricingBreakdownV1(basis: PricingBasisShape | undefined):
     }
   | undefined {
   if (!basis) return undefined
+  if (basis.breakdown) {
+    const breakdown = basis.breakdown as ReturnType<typeof toPricingBreakdownV1>
+    if (breakdown?.currency && Array.isArray(breakdown.lines) && Array.isArray(breakdown.taxes)) {
+      return breakdown
+    }
+  }
   const lines: Array<{
     kind: "base" | "fee" | "supplement"
     label: string

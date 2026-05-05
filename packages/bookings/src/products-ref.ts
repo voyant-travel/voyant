@@ -8,13 +8,20 @@ export const productsRef = pgTable("products", {
   description: text("description"),
   visibility: text("visibility").notNull(),
   activated: boolean("activated").notNull().default(false),
+  reservationTimeoutMinutes: integer("reservation_timeout_minutes"),
   sellCurrency: text("sell_currency").notNull(),
   sellAmountCents: integer("sell_amount_cents"),
   costAmountCents: integer("cost_amount_cents"),
   marginPercent: integer("margin_percent"),
+  supplierId: text("supplier_id"),
   startDate: date("start_date"),
   endDate: date("end_date"),
   pax: integer("pax"),
+})
+
+export const suppliersRef = pgTable("suppliers", {
+  id: typeId("suppliers").primaryKey(),
+  reservationTimeoutMinutes: integer("reservation_timeout_minutes"),
 })
 
 export const productOptionsRef = pgTable("product_options", {

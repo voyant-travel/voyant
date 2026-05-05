@@ -8,6 +8,7 @@ import { ProductDialog } from "./product-detail-dialog"
 import { ProductDetailHeader } from "./product-detail-header"
 import { ProductDetailItinerarySection } from "./product-detail-itinerary-section"
 import {
+  ProductBrochureSection,
   ProductChannelsSection,
   ProductDeparturesSection,
   ProductDetailsSection,
@@ -16,6 +17,7 @@ import {
   ProductSchedulesSection,
 } from "./product-detail-sections"
 import { ProductDetailSkeleton } from "./product-detail-skeleton"
+import { PricingPanel } from "./product-options-pricing"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section"
 import { ScheduleDialog } from "./product-schedule-dialog"
 import { ProductSourcedContentSection } from "./product-sourced-content-section"
@@ -32,6 +34,11 @@ export function ProductDetailPage({ id }: { id: string }) {
 
   const { product, isPending, slots, rules, channels, mappings, media, itineraryNameById } = data
   const { mutations, refetch, invalidateProduct } = data
+  const brochure =
+    media.find((item) => item.isBrochure && item.isBrochureCurrent) ??
+    media.find((item) => item.isBrochure) ??
+    null
+  const galleryMedia = media.filter((item) => !item.isBrochure)
 
   if (isPending) {
     return <ProductDetailSkeleton />
@@ -72,7 +79,7 @@ export function ProductDetailPage({ id }: { id: string }) {
 
           <ProductMediaSection
             productId={id}
-            media={media}
+            media={galleryMedia}
             isUploading={mutations.uploadMedia.isPending}
             onUpload={(file) => mutations.uploadMedia.mutate({ file })}
             onSetCover={(mediaId) => mutations.setCover.mutate(mediaId)}
@@ -108,7 +115,10 @@ export function ProductDetailPage({ id }: { id: string }) {
 
           <ProductDetailItinerarySection productId={id} />
 
-          <ProductOptionsSection productId={id} />
+          <ProductOptionsSection
+            productId={id}
+            renderOptionDetails={(option) => <PricingPanel productId={id} optionId={option.id} />}
+          />
 
           <ProductPaymentPolicySection product={product} onSuccess={invalidateProduct} />
         </div>
@@ -123,6 +133,12 @@ export function ProductDetailPage({ id }: { id: string }) {
           />
 
           <ProductOrganizeSection product={product} onEdit={dialogs.edit.openNow} />
+
+          <ProductBrochureSection
+            brochure={brochure}
+            isGenerating={mutations.generateBrochure.isPending}
+            onGenerate={() => mutations.generateBrochure.mutate()}
+          />
 
           <ProductSourcedContentSection productId={id} />
         </div>

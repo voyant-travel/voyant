@@ -40,6 +40,8 @@ const paymentPolicySchema = z.object({
   balanceDueMinDaysFromNow: z.number().int().min(0),
 })
 
+const taxPriceModeSchema = z.enum(["inclusive", "exclusive"])
+
 const updateOperatorSettingsSchema = z.object({
   name: z.string().nullable().optional(),
   legalName: z.string().nullable().optional(),
@@ -56,6 +58,8 @@ const updateOperatorSettingsSchema = z.object({
   signatoryName: z.string().nullable().optional(),
   signatoryRole: z.string().nullable().optional(),
   customerPaymentPolicy: paymentPolicySchema.nullable().optional(),
+  taxPriceMode: taxPriceModeSchema.optional(),
+  taxPolicyProfileId: z.string().nullable().optional(),
 })
 
 export type UpdateOperatorSettingsInput = z.infer<typeof updateOperatorSettingsSchema>
@@ -119,6 +123,8 @@ export function toPublicOperatorSettings(
     license: row.license ?? "",
     licenseAuthority: row.licenseAuthority ?? "",
     customerPaymentPolicy: (row.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
+    taxPriceMode: row.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
+    taxPolicyProfileId: row.taxPolicyProfileId ?? null,
   }
 }
 
@@ -134,6 +140,8 @@ export interface PublicOperatorSettings {
   /** Public-safe — the storefront uses it to compute the preview
    *  schedule. Banking / signatory / vatId stay private. */
   customerPaymentPolicy: PaymentPolicy | null
+  taxPriceMode: "inclusive" | "exclusive"
+  taxPolicyProfileId: string | null
 }
 
 async function handleGetOperatorSettings(c: Context): Promise<Response> {

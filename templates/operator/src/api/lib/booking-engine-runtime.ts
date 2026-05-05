@@ -24,6 +24,7 @@ import {
   releaseAvailabilityHold,
 } from "@voyantjs/availability/service-holds"
 import { bookingRequirementsService } from "@voyantjs/booking-requirements"
+import { bookingItems } from "@voyantjs/bookings/schema"
 import {
   createOwnedBookingHandlerRegistry,
   createSourceAdapterRegistry,
@@ -35,23 +36,18 @@ import { cruisesBookingService } from "@voyantjs/cruises"
 import { createCruiseBookingHandler } from "@voyantjs/cruises/booking-engine"
 import { getCruiseContent } from "@voyantjs/cruises/service-content"
 import { pricingService as cruisePricingService } from "@voyantjs/cruises/service-pricing"
-import {
-  bookingPaymentSchedules,
-  quickCreateBooking,
-  taxClasses,
-  taxRegimes,
-} from "@voyantjs/finance"
+import { bookingItemTaxLines, bookingPaymentSchedules, quickCreateBooking } from "@voyantjs/finance"
 import { hospitalityBookingsService } from "@voyantjs/hospitality"
 import { createHospitalityBookingHandler } from "@voyantjs/hospitality/booking-engine"
 import { getHospitalityContent } from "@voyantjs/hospitality/service-content"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
 import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
-import { products as productsTable } from "@voyantjs/products/schema"
-import { eq } from "drizzle-orm"
+import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 import { getDbFromHyperdrive } from "./db"
+import { resolveOperatorSellTaxRate } from "./operator-tax-policy"
 
 let _registry: SourceAdapterRegistry | undefined
 let _ownedHandlers: OwnedBookingHandlerRegistry | undefined
@@ -146,6 +142,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           ) as PostgresJsDatabase
           const outcome = await quickCreateBooking(db, input, opts)
           if (outcome.status === "ok") {
+            await persistQuickCreateTaxLines(db, outcome.result.booking.id, input.taxLines)
             return {
               status: "ok",
               bookingId: outcome.result.booking.id,
@@ -197,60 +194,10 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           return fields
         },
         async loadTaxRate(ctx, args) {
-          // Walk: products.tax_class_id → tax_classes.default_regime_id
-          // → tax_regimes.rate_percent. Returns null when any link is
-          // missing — the engine renders the breakdown without a tax
-          // line.
-          //
-          // The buyer-country axis is not yet enforced (the demo
-          // operator runs in a single jurisdiction). Per
-          // booking-journey-architecture §9, the per-buyer-country
-          // resolution is a follow-up that reads
-          // tax_classes.lines[].applies_to.
-          //
-          // The buyerCountry / buyerType arguments are accepted but
-          // currently unused — kept on the signature so the
-          // jurisdictional follow-up doesn't change the contract.
           void args.buyerCountry
           void args.buyerType
           const db = ctx.db as unknown as PostgresJsDatabase
-          const productRows = await db
-            .select({ taxClassId: productsTable.taxClassId })
-            .from(productsTable)
-            .where(eq(productsTable.id, args.productId))
-            .limit(1)
-          const taxClassId = productRows[0]?.taxClassId
-          if (!taxClassId) return null
-
-          const classRows = await db
-            .select({
-              defaultRegimeId: taxClasses.defaultRegimeId,
-              code: taxClasses.code,
-              label: taxClasses.label,
-            })
-            .from(taxClasses)
-            .where(eq(taxClasses.id, taxClassId))
-            .limit(1)
-          const klass = classRows[0]
-          if (!klass?.defaultRegimeId) return null
-
-          const regimeRows = await db
-            .select({
-              ratePercent: taxRegimes.ratePercent,
-              code: taxRegimes.code,
-              name: taxRegimes.name,
-            })
-            .from(taxRegimes)
-            .where(eq(taxRegimes.id, klass.defaultRegimeId))
-            .limit(1)
-          const regime = regimeRows[0]
-          if (!regime || regime.ratePercent == null) return null
-
-          return {
-            code: `${klass.code}/${regime.code}`,
-            label: regime.name,
-            rate: regime.ratePercent / 100,
-          }
+          return resolveOperatorSellTaxRate(db, { productId: args.productId })
         },
       }),
     )
@@ -455,6 +402,73 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
 
 export interface BookingEngineEnv {
   CATALOG_DEMO_API_URL?: string
+}
+
+async function persistQuickCreateTaxLines(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  taxLines:
+    | Array<{
+        code?: string | null
+        name: string
+        jurisdiction?: string | null
+        scope?: "included" | "excluded" | "withheld"
+        currency: string
+        amountCents: number
+        rateBasisPoints?: number | null
+        includedInPrice?: boolean
+        remittanceParty?: string | null
+        sortOrder?: number
+      }>
+    | undefined,
+) {
+  if (!taxLines?.length) return
+  const items = await db
+    .select({
+      id: bookingItems.id,
+      totalSellAmountCents: bookingItems.totalSellAmountCents,
+    })
+    .from(bookingItems)
+    .where(eq(bookingItems.bookingId, bookingId))
+    .orderBy(asc(bookingItems.createdAt))
+  if (!items.length) return
+
+  const total = items.reduce((sum, item) => sum + (item.totalSellAmountCents ?? 0), 0)
+  const rows = taxLines.flatMap((taxLine) =>
+    distributeTaxLine(taxLine.amountCents, items, total).map(({ itemId, amountCents }) => ({
+      bookingItemId: itemId,
+      code: taxLine.code ?? null,
+      name: taxLine.name,
+      jurisdiction: taxLine.jurisdiction ?? null,
+      scope: taxLine.scope ?? (taxLine.includedInPrice ? "included" : "excluded"),
+      currency: taxLine.currency,
+      amountCents,
+      rateBasisPoints: taxLine.rateBasisPoints ?? null,
+      includedInPrice: taxLine.includedInPrice ?? taxLine.scope === "included",
+      remittanceParty: taxLine.remittanceParty ?? null,
+      sortOrder: taxLine.sortOrder ?? 0,
+    })),
+  )
+  if (rows.length) await db.insert(bookingItemTaxLines).values(rows)
+}
+
+function distributeTaxLine(
+  amountCents: number,
+  items: Array<{ id: string; totalSellAmountCents: number | null }>,
+  totalCents: number,
+) {
+  if (items.length === 1 || totalCents <= 0) {
+    return [{ itemId: items[0]!.id, amountCents }]
+  }
+  let remaining = amountCents
+  return items.map((item, index) => {
+    const isLast = index === items.length - 1
+    const allocated = isLast
+      ? remaining
+      : Math.round(amountCents * ((item.totalSellAmountCents ?? 0) / totalCents))
+    remaining -= allocated
+    return { itemId: item.id, amountCents: allocated }
+  })
 }
 
 /** Parse a numeric major-unit price string (e.g. cruise_prices'

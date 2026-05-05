@@ -56,6 +56,13 @@ const supplierCoreSchema = z.object({
   contactEmail: z.string().email().optional().nullable(),
   contactPhone: z.string().optional().nullable(),
   paymentTermsDays: z.number().int().positive().optional().nullable(),
+  reservationTimeoutMinutes: z
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 60)
+    .optional()
+    .nullable(),
   customerPaymentPolicy: customerPaymentPolicySchema.optional().nullable(),
   tags: z.array(z.string()).default([]),
 })

@@ -19,6 +19,7 @@ import { useNavigate } from "@tanstack/react-router"
 import {
   type BookingEntitySummary,
   BookingJourney,
+  type BookingJourneyCheckoutContext,
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
 } from "@voyantjs/bookings-ui/journey"
@@ -75,7 +76,10 @@ export interface StorefrontBookingJourneyProps {
    *  template is configured, when they click Confirm on Review).
    *  The route handles the actual checkout-start dispatch + redirect
    *  to Netopia / bank-transfer instructions. */
-  onContractAccepted?: (acceptance: ContractAcceptanceEvent | null) => void | Promise<void>
+  onContractAccepted?: (
+    acceptance: ContractAcceptanceEvent | null,
+    context: BookingJourneyCheckoutContext,
+  ) => void | Promise<void>
   className?: string
 }
 
@@ -134,14 +138,14 @@ export function StorefrontBookingJourney({
   //      Netopia; bank_transfer → instructions page; inquiry →
   //      thanks page.
   //
-  // We pull the chosen payment intent + buyer details out of the
-  // BookingJourney's draft via a lookup hook on the Window object.
-  // The dialog itself only knows about acceptance, so we hand the
-  // intent through `data-bj-intent` on the dialog's root via the
-  // BookingJourney's onContractAccepted event payload + a getter
-  // the wrapper installs once.
-  const defaultCheckoutHandler = async (acceptance: ContractAcceptanceEvent | null) => {
+  const defaultCheckoutHandler = async (
+    acceptance: ContractAcceptanceEvent | null,
+    context: BookingJourneyCheckoutContext,
+  ) => {
     try {
+      const intent = checkoutIntentFromDraft(context.draft.payment.intent)
+      const contact = context.draft.billing?.contact
+      const payerName = [contact?.firstName, contact?.lastName].filter(Boolean).join(" ").trim()
       const idempotencyKey = `bj-${draftId}-${acceptance?.acceptedAt ?? "noaccept"}`
       // Step 1 — book the entity. The /book endpoint resolves the
       // current quote off the draft and creates a booking row.
@@ -167,10 +171,10 @@ export function StorefrontBookingJourney({
         return
       }
 
-      // Step 2 — start checkout. We default to `card`; deployments
-      // that surface bank-transfer / inquiry buttons in the journey
-      // can pass an explicit paymentIntent via a custom slot.
-      const intent = new URLSearchParams(window.location.search).get("paymentIntent") ?? "card"
+      // Step 2 — start checkout with the payment method selected in
+      // the journey's Payment step. Card goes to the PSP; bank
+      // transfer returns IBAN/reference instructions; inquiry skips
+      // inventory/payment.
       const startRes = await fetch(`${getApiUrl()}/v1/public/catalog/checkout/start`, {
         method: "POST",
         credentials: "include",
@@ -190,6 +194,8 @@ export function StorefrontBookingJourney({
                 },
               }
             : {}),
+          ...(contact?.email ? { payerEmail: contact.email } : {}),
+          ...(payerName ? { payerName } : {}),
           returnOrigin: window.location.origin,
         }),
       })
@@ -348,6 +354,13 @@ export function StorefrontBookingJourney({
       {...slots}
     />
   )
+}
+
+function checkoutIntentFromDraft(
+  intent: BookingJourneyCheckoutContext["draft"]["payment"]["intent"],
+): "card" | "bank_transfer" | "hold" | "inquiry" {
+  if (intent === "card" || intent === "bank_transfer" || intent === "inquiry") return intent
+  return "hold"
 }
 
 /**

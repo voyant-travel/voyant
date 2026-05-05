@@ -193,6 +193,7 @@ const dayServiceCoreSchema = z.object({
   serviceType: serviceTypeSchema,
   name: z.string().min(1).max(255),
   description: z.string().optional().nullable(),
+  countryCode: z.string().min(2).max(2).optional().nullable(),
   supplierServiceId: z.string().optional().nullable(),
   costCurrency: z.string().min(3).max(3),
   costAmountCents: z.number().int().min(0),

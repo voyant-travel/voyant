@@ -65,6 +65,7 @@ export const suppliers = pgTable(
     // Defaults
     defaultCurrency: text("default_currency"),
     paymentTermsDays: integer("payment_terms_days"),
+    reservationTimeoutMinutes: integer("reservation_timeout_minutes"),
     primaryFacilityId: typeIdRef("primary_facility_id").references(() => facilities.id, {
       onDelete: "set null",
     }),

@@ -17,7 +17,7 @@ import {
   createFinanceHonoModule,
   financeService,
 } from "@voyantjs/finance"
-import { bookingPaymentSchedules, paymentSessions } from "@voyantjs/finance/schema"
+import { bookingPaymentSchedules, invoices, paymentSessions } from "@voyantjs/finance/schema"
 import { createApp } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
 import {
@@ -42,7 +42,12 @@ import {
   type ResolvedNetopiaRuntimeOptions,
 } from "@voyantjs/plugin-netopia"
 import { pricingHonoModule } from "@voyantjs/pricing"
-import { productsBookingExtension, productsHonoModule } from "@voyantjs/products"
+import {
+  createDefaultProductBrochureTemplate,
+  generateAndStoreProductBrochure,
+  productsBookingExtension,
+  productsHonoModule,
+} from "@voyantjs/products"
 import { resourcesHonoModule } from "@voyantjs/resources"
 import { sellabilityHonoModule } from "@voyantjs/sellability"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
@@ -50,8 +55,9 @@ import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-ver
 import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyantjs/workflow-runs"
-import { asc, eq, or } from "drizzle-orm"
+import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { createProductBrochurePrinter } from "../lib/brochure-printer"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
 import { tryGetCloudClient } from "../lib/voyant-cloud"
@@ -75,15 +81,29 @@ import {
   createDocumentStorage,
   createMediaStorage,
   guessMimeType,
+  readDocumentContentBase64,
   resolveDocumentDownloadUrl,
 } from "./lib/storage"
 import { mountCatalogMcpRoutes } from "./mcp"
 import { getOperatorSettings, mountOperatorSettingsRoutes } from "./settings"
+import { createSmartbillSettlementPollers, smartbillOperatorBundle } from "./smartbill"
 
 const notificationsHonoModule = createNotificationsHonoModule({
   resolveProviders: resolveNotificationProviders,
   resolveDocumentAttachmentResolver: (bindings) => async (document) => {
     if (document.storageKey) {
+      const contentBase64 = await readDocumentContentBase64(
+        bindings as unknown as CloudflareBindings,
+        document.storageKey,
+      )
+      if (contentBase64) {
+        return {
+          filename: document.name,
+          contentBase64,
+          contentType: document.mimeType ?? undefined,
+        }
+      }
+
       const path = await resolveDocumentDownloadUrl(
         bindings as unknown as CloudflareBindings,
         document.storageKey,
@@ -144,6 +164,62 @@ function resolveBankTransferDetails(
   }
 }
 
+function bankTransferDetailsFromOperatorSettings(
+  operatorProfile: Awaited<ReturnType<typeof getOperatorSettings>>,
+  bindings: Record<string, unknown>,
+): CheckoutBankTransferDetails | null {
+  const envDetails = resolveBankTransferDetails(bindings)
+  const beneficiary = operatorProfile?.legalName || operatorProfile?.name || envDetails?.beneficiary
+  const iban = operatorProfile?.iban || envDetails?.iban
+  if (!beneficiary || !iban) return null
+  return {
+    provider: "bank-transfer",
+    beneficiary,
+    iban,
+    bankName: operatorProfile?.bank || envDetails?.bankName || null,
+    notes: envDetails?.notes ?? null,
+  }
+}
+
+async function buildPublicBankTransferInstructions(
+  db: PostgresJsDatabase,
+  bookingNumber: string,
+  session: {
+    invoiceId: string | null
+    amountCents: number
+    currency: string
+  },
+  bindings: Record<string, unknown>,
+) {
+  const operatorProfile = await getOperatorSettings(db)
+  const details = bankTransferDetailsFromOperatorSettings(operatorProfile, bindings)
+  if (!details) return null
+
+  const [invoice] = session.invoiceId
+    ? await db
+        .select({
+          invoiceNumber: invoices.invoiceNumber,
+          dueDate: invoices.dueDate,
+          balanceDueCents: invoices.balanceDueCents,
+          currency: invoices.currency,
+        })
+        .from(invoices)
+        .where(eq(invoices.id, session.invoiceId))
+        .limit(1)
+    : []
+
+  return {
+    beneficiary: details.beneficiary,
+    iban: details.iban,
+    bankName: details.bankName ?? "—",
+    reference: `BOOK-${bookingNumber}`,
+    amountCents: invoice?.balanceDueCents ?? session.amountCents,
+    currency: invoice?.currency ?? session.currency,
+    dueAt: invoice?.dueDate ?? null,
+    proformaNumber: invoice?.invoiceNumber ?? null,
+  }
+}
+
 const checkoutHonoModule = createCheckoutHonoModule({
   resolveProviders: resolveNotificationProviders,
   resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
@@ -168,6 +244,8 @@ const customerPortalHonoModule = createCustomerPortalHonoModule({
 const financeModule = createFinanceHonoModule({
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
+  resolveInvoiceSettlementPollers: (bindings) =>
+    createSmartbillSettlementPollers(bindings as unknown as CloudflareBindings),
 })
 /**
  * Build the `ContractDocumentGenerator` configured for this template.
@@ -230,6 +308,7 @@ function resolveContractDocumentGenerator(
  * — lookup is by name, not id.
  */
 const DEFAULT_CONTRACT_SERIES_NAME = "customer-contracts"
+const MAX_BROCHURE_PDF_BYTES = 5 * 1024 * 1024
 
 const AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
   enabled: true,
@@ -603,6 +682,9 @@ export const app = createApp<CloudflareBindings>({
     // auth-less or session-token-bound; this template takes the
     // auth-less posture and assigns `actor: "customer"`).
     "/v1/public/catalog",
+    // Storefront post-card-payment status poll. The booking id is a
+    // TypeID in the redirect URL; the response exposes only non-PII state.
+    "/v1/public/bookings",
     // Storefront product / cruise / hospitality detail —
     // drives the `/shop/products/...` page's content fetch.
     "/v1/public/products",
@@ -635,7 +717,6 @@ export const app = createApp<CloudflareBindings>({
     crmHonoModule,
     availabilityHonoModule,
     identityHonoModule,
-    notificationsHonoModule,
     externalRefsHonoModule,
     extrasHonoModule,
     bookingRequirementsHonoModule,
@@ -650,6 +731,7 @@ export const app = createApp<CloudflareBindings>({
     bookingsHonoModule,
     financeModule,
     legalModule,
+    notificationsHonoModule,
     storefrontHonoModule,
     customerPortalHonoModule,
     storefrontVerificationHonoModule,
@@ -674,6 +756,7 @@ export const app = createApp<CloudflareBindings>({
       generateContractPdf: ({ env, db, eventBus, bookingId }) =>
         generateContractPdfForBooking(env, db, eventBus, bookingId),
     }),
+    smartbillOperatorBundle,
     channelPushBundle,
     netopiaHonoBundle(),
   ],
@@ -709,6 +792,49 @@ export const app = createApp<CloudflareBindings>({
     // POST /v1/uploads — upload public/editorial media via the configured
     // media storage provider. Sensitive documents should use private
     // document-aware flows instead of this route.
+    hono.post("/v1/admin/products/:id/brochure/generate", async (c) => {
+      const storage = createMediaStorage(c.env)
+      if (!storage) {
+        return c.json({ error: "Storage not configured" }, 503)
+      }
+
+      const productId = c.req.param("id")
+      const cloud = tryGetCloudClient(c.env)
+      let generated: Awaited<ReturnType<typeof generateAndStoreProductBrochure>>
+      try {
+        generated = await generateAndStoreProductBrochure(c.get("db"), productId, {
+          storage,
+          template: createDefaultProductBrochureTemplate(),
+          ...(cloud ? { printer: createProductBrochurePrinter(c.env) } : {}),
+          keyPrefix: `brochures/products/${productId}`,
+          filename: ({ productId: generatedProductId, filename }) =>
+            `brochure-${generatedProductId}-${Date.now()}-${filename}`,
+          maxSizeBytes: MAX_BROCHURE_PDF_BYTES,
+        })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        if (message.includes("Generated brochure is too large")) {
+          return c.json({ error: message }, 413)
+        }
+        throw err
+      }
+
+      await c.get("eventBus")?.emit("product.content.changed", {
+        id: productId,
+        axis: "media",
+      })
+
+      return c.json({
+        data: generated.brochure,
+        metadata: {
+          filename: generated.filename,
+          sizeBytes: generated.sizeBytes,
+          storageKey: generated.storageKey,
+          url: generated.url,
+        },
+      })
+    })
+
     hono.post("/v1/uploads", async (c) => {
       const storage = createMediaStorage(c.env)
       if (!storage) {
@@ -823,7 +949,12 @@ export const app = createApp<CloudflareBindings>({
     // instructions when configured, plus the brand context so the page
     // can render a header. Intentionally minimal — no PII, no secrets.
     hono.get("/v1/public/payment-link-config", async (c) => {
-      const bankTransfer = resolveBankTransferDetails(c.env as Record<string, unknown>)
+      const db = getDbFromHyperdrive(c.env) as PostgresJsDatabase
+      const operatorProfile = await getOperatorSettings(db)
+      const bankTransfer = bankTransferDetailsFromOperatorSettings(
+        operatorProfile,
+        c.env as Record<string, unknown>,
+      )
       return c.json({
         data: {
           bankTransfer,
@@ -962,6 +1093,119 @@ export const app = createApp<CloudflareBindings>({
         const message = err instanceof Error ? err.message : "Failed to start card payment"
         return c.json({ error: message }, 502)
       }
+    })
+
+    // GET /v1/public/bookings/:bookingId/checkout-status — minimal
+    // customer-facing status for the storefront confirmation page.
+    // It intentionally exposes only non-PII state: booking status and
+    // latest payment-session status. The page polls this after a card
+    // redirect so it can move from "processing" to "thank you" once
+    // the webhook/admin reconciliation has marked the session paid.
+    hono.get("/v1/public/bookings/:bookingId/checkout-status", async (c) => {
+      const bookingId = c.req.param("bookingId")
+      const ref = c.req.query("session") ?? c.req.query("orderId") ?? c.req.query("ref") ?? null
+      const db = getDbFromHyperdrive(c.env)
+
+      const [booking] = await db
+        .select({
+          id: bookings.id,
+          bookingNumber: bookings.bookingNumber,
+          status: bookings.status,
+          updatedAt: bookings.updatedAt,
+        })
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
+      if (!booking) return c.json({ error: "Booking not found" }, 404)
+
+      const sessionRefFilter = ref
+        ? or(
+            eq(paymentSessions.id, ref),
+            eq(paymentSessions.clientReference, ref),
+            eq(paymentSessions.externalReference, ref),
+            eq(paymentSessions.providerSessionId, ref),
+            eq(paymentSessions.providerPaymentId, ref),
+          )
+        : undefined
+      const sessionWhere = sessionRefFilter
+        ? and(eq(paymentSessions.bookingId, bookingId), sessionRefFilter)
+        : eq(paymentSessions.bookingId, bookingId)
+
+      let sessions = await db
+        .select({
+          id: paymentSessions.id,
+          status: paymentSessions.status,
+          amountCents: paymentSessions.amountCents,
+          currency: paymentSessions.currency,
+          invoiceId: paymentSessions.invoiceId,
+          paymentMethod: paymentSessions.paymentMethod,
+          completedAt: paymentSessions.completedAt,
+          failedAt: paymentSessions.failedAt,
+          updatedAt: paymentSessions.updatedAt,
+        })
+        .from(paymentSessions)
+        .where(sessionWhere)
+        .orderBy(desc(paymentSessions.createdAt))
+        .limit(5)
+
+      // Some processors echo a reference that differs from our
+      // payment_sessions id. If the ref-specific lookup missed, fall
+      // back to the booking's sessions so a completed payment still
+      // unlocks the thank-you state.
+      if (sessions.length === 0 && ref) {
+        sessions = await db
+          .select({
+            id: paymentSessions.id,
+            status: paymentSessions.status,
+            amountCents: paymentSessions.amountCents,
+            currency: paymentSessions.currency,
+            invoiceId: paymentSessions.invoiceId,
+            paymentMethod: paymentSessions.paymentMethod,
+            completedAt: paymentSessions.completedAt,
+            failedAt: paymentSessions.failedAt,
+            updatedAt: paymentSessions.updatedAt,
+          })
+          .from(paymentSessions)
+          .where(eq(paymentSessions.bookingId, bookingId))
+          .orderBy(desc(paymentSessions.createdAt))
+          .limit(5)
+      }
+
+      const paidSession = sessions.find(
+        (session) => session.status === "paid" || session.status === "authorized",
+      )
+      const latestSession = paidSession ?? sessions[0] ?? null
+      const isBankTransferSession =
+        latestSession?.paymentMethod === "bank_transfer" ||
+        (booking.status === "awaiting_payment" && Boolean(latestSession?.invoiceId))
+      const bankTransferInstructions =
+        isBankTransferSession && latestSession
+          ? await buildPublicBankTransferInstructions(
+              db as PostgresJsDatabase,
+              booking.bookingNumber,
+              latestSession,
+              c.env as Record<string, unknown>,
+            )
+          : null
+      const failedStatuses = new Set(["failed", "cancelled", "expired"])
+      const paymentStatus =
+        booking.status === "confirmed" || paidSession
+          ? "paid"
+          : sessions.length > 0 && sessions.every((session) => failedStatuses.has(session.status))
+            ? "failed"
+            : "pending"
+
+      return c.json({
+        data: {
+          bookingId: booking.id,
+          bookingNumber: booking.bookingNumber,
+          bookingStatus: booking.status,
+          paymentStatus,
+          session: latestSession,
+          bankTransferInstructions,
+          updatedAt: (latestSession?.updatedAt ?? booking.updatedAt)?.toISOString?.() ?? null,
+        },
+      })
     })
 
     mountCatalogMcpRoutes(hono)

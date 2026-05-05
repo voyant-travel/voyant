@@ -88,6 +88,7 @@ export const contractRecordsService = {
         .select()
         .from(contracts)
         .where(eq(contracts.id, contractId))
+        .for("update")
         .limit(1)
       if (!contract) return { status: "not_found" as const }
       if (contract.status !== "draft") return { status: "not_draft" as const }

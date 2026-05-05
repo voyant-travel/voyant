@@ -2,7 +2,12 @@
 
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useLocale } from "@voyantjs/admin"
-import { bookingStatusBadgeVariant, useBooking, useBookingMutation } from "@voyantjs/bookings-react"
+import {
+  type BookingRecord,
+  bookingStatusBadgeVariant,
+  useBooking,
+  useBookingMutation,
+} from "@voyantjs/bookings-react"
 import { BookingActivityTimeline } from "@voyantjs/bookings-ui/components/booking-activity-timeline"
 import { BookingCancellationDialog } from "@voyantjs/bookings-ui/components/booking-cancellation-dialog"
 import { BookingDialog } from "@voyantjs/bookings-ui/components/booking-dialog"
@@ -16,7 +21,7 @@ import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-chan
 import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
 import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
 import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
-import { Badge, Button, Card, CardContent } from "@voyantjs/ui/components"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,8 +34,12 @@ import {
   Ban,
   Calendar,
   ChevronRight,
+  CreditCard,
+  Mail,
+  MapPin,
   MoreHorizontal,
   Pencil,
+  Phone,
   RefreshCw,
   Trash2,
   Users,
@@ -283,8 +292,9 @@ export function BookingDetailPage({ id }: { id: string }) {
           })()}
         </TabsContent>
 
-        <TabsContent value="travelers" className="mt-4">
-          <TravelerList bookingId={id} />
+        <TabsContent value="travelers" className="mt-4 flex flex-col gap-6">
+          <BookingBillingContextCard booking={booking} />
+          <TravelerList bookingId={id} autoReveal />
         </TabsContent>
 
         <TabsContent value="finance" className="mt-4 flex flex-col gap-6">
@@ -360,6 +370,68 @@ function SummaryStat({
       </div>
       <div className="text-base font-semibold tabular-nums">{value}</div>
       {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
+    </div>
+  )
+}
+
+function BookingBillingContextCard({ booking }: { booking: BookingRecord }) {
+  const payerName = [booking.contactFirstName, booking.contactLastName].filter(Boolean).join(" ")
+  const address = [
+    booking.contactAddressLine1,
+    booking.contactCity,
+    booking.contactRegion,
+    booking.contactPostalCode,
+    booking.contactCountry,
+  ]
+    .filter(Boolean)
+    .join(", ")
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <CreditCard className="h-4 w-4" />
+          Billing contact
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 md:grid-cols-4">
+        <BillingField label="Payer" value={payerName || "-"} />
+        <BillingField
+          label="Email"
+          value={booking.contactEmail ?? "-"}
+          icon={<Mail className="h-3.5 w-3.5" />}
+        />
+        <BillingField
+          label="Phone"
+          value={booking.contactPhone ?? "-"}
+          icon={<Phone className="h-3.5 w-3.5" />}
+        />
+        <BillingField
+          label="Address"
+          value={address || "-"}
+          icon={<MapPin className="h-3.5 w-3.5" />}
+        />
+      </CardContent>
+    </Card>
+  )
+}
+
+function BillingField({
+  label,
+  value,
+  icon,
+}: {
+  label: string
+  value: string
+  icon?: React.ReactNode
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <div className="truncate text-sm font-medium">{value}</div>
     </div>
   )
 }

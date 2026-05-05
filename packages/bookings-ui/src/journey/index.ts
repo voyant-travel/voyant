@@ -40,6 +40,7 @@ export {
 } from "./lib/draft-state.js"
 export {
   type BookingEntitySummary,
+  type BookingJourneyCheckoutContext,
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
   JOURNEY_STEP_ORDER,

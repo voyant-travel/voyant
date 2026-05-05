@@ -163,7 +163,7 @@ export const reserveBookingSchema = bookingCoreSchema
       .int()
       .positive()
       .max(24 * 60)
-      .default(30),
+      .optional(),
     holdExpiresAt: z.string().datetime().optional().nullable(),
     items: z.array(reserveBookingItemSchema).min(1),
   })
@@ -242,7 +242,7 @@ export const reserveBookingFromTransactionSchema = bookingCoreSchema
       .int()
       .positive()
       .max(24 * 60)
-      .default(30),
+      .optional(),
     holdExpiresAt: z.string().datetime().optional().nullable(),
     note: z.string().optional().nullable(),
     includeParticipants: z.boolean().default(true),

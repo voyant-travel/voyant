@@ -38,7 +38,6 @@ describe("createVoyantCloudEmailProvider", () => {
       subject: "Hello",
       html: "<p>Hi</p>",
       text: "Hi",
-      replyTo: null,
     })
     expect(result).toEqual({ id: "em_42", provider: "voyant-cloud-email" })
   })
@@ -90,6 +89,51 @@ describe("createVoyantCloudEmailProvider", () => {
         subject: "Override",
         html: "<b>Body</b>",
         replyTo: ["support@example.com"],
+      }),
+    )
+  })
+
+  it("forwards email attachments to the cloud client", async () => {
+    const { sendMessage, client } = makeFakeClient({ id: "em_46" })
+
+    const provider = createVoyantCloudEmailProvider({
+      client,
+      from: "noreply@example.com",
+    })
+
+    await provider.send({
+      to: "x@example.com",
+      channel: "email",
+      template: "welcome",
+      subject: "Documents",
+      attachments: [
+        {
+          filename: "contract.pdf",
+          path: "https://cdn.example.com/contract.pdf",
+          contentType: "application/pdf",
+        },
+        {
+          filename: "terms.txt",
+          contentBase64: "SGVsbG8=",
+          contentId: "terms",
+        },
+      ],
+    })
+
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachments: [
+          {
+            filename: "contract.pdf",
+            path: "https://cdn.example.com/contract.pdf",
+            contentType: "application/pdf",
+          },
+          {
+            filename: "terms.txt",
+            content: "SGVsbG8=",
+            contentId: "terms",
+          },
+        ],
       }),
     )
   })

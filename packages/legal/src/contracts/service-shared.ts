@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { contractNumberSeries } from "./schema.js"
+import { contractNumberSeries, contracts } from "./schema.js"
 import type {
   contractListQuerySchema,
   contractTemplateListQuerySchema,
@@ -145,8 +145,26 @@ export async function allocateContractNumber(
     const shouldReset =
       boundary !== null && (resetAt === null || resetAt.getTime() < boundary.getTime())
 
-    const nextSequence = shouldReset ? 1 : currentSequence + 1
+    let nextSequence = shouldReset ? 1 : currentSequence + 1
     const nextResetAt = strategy === "never" ? resetAt : boundary
+    let nextNumber = formatNumber(prefix, separator, nextSequence, padLength)
+
+    // Series counters can drift behind real data after manual imports,
+    // seed resets, or duplicate legacy series. The contract number itself is
+    // globally unique, so advance until we find a free value before stamping
+    // the series counter.
+    for (let attempts = 0; attempts < 1000; attempts++) {
+      const existing = await tx
+        .select({ id: contracts.id })
+        .from(contracts)
+        .where(sql`${contracts.contractNumber} = ${nextNumber}`)
+        .limit(1)
+
+      if (existing.length === 0) break
+
+      nextSequence += 1
+      nextNumber = formatNumber(prefix, separator, nextSequence, padLength)
+    }
 
     await tx
       .update(contractNumberSeries)
@@ -154,7 +172,7 @@ export async function allocateContractNumber(
       .where(sql`${contractNumberSeries.id} = ${seriesId}`)
 
     return {
-      number: formatNumber(prefix, separator, nextSequence, padLength),
+      number: nextNumber,
       sequence: nextSequence,
     }
   })

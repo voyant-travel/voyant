@@ -52,6 +52,90 @@ function normalizeAttachments(
   }))
 }
 
+function truncateLogValue(value: string, maxLength = 4000) {
+  if (value.length <= maxLength) return value
+  return `${value.slice(0, maxLength)}…`
+}
+
+function readErrorField(error: unknown, field: string) {
+  if (!error || typeof error !== "object" || !(field in error)) return null
+  const value = (error as Record<string, unknown>)[field]
+  if (typeof value === "string") return truncateLogValue(value)
+  if (typeof value === "number" || typeof value === "boolean") return value
+  if (value == null) return null
+  try {
+    return truncateLogValue(JSON.stringify(value))
+  } catch {
+    return String(value)
+  }
+}
+
+function serializeNotificationError(error: unknown) {
+  const base =
+    error instanceof Error
+      ? {
+          name: error.name,
+          message: truncateLogValue(error.message),
+          stack: error.stack ? truncateLogValue(error.stack) : null,
+          cause:
+            error.cause instanceof Error
+              ? {
+                  name: error.cause.name,
+                  message: truncateLogValue(error.cause.message),
+                  stack: error.cause.stack ? truncateLogValue(error.cause.stack) : null,
+                }
+              : readErrorField(error, "cause"),
+        }
+      : {
+          name: typeof error,
+          message: truncateLogValue(String(error)),
+          stack: null,
+          cause: null,
+        }
+
+  return {
+    ...base,
+    code: readErrorField(error, "code"),
+    status: readErrorField(error, "status"),
+    statusCode: readErrorField(error, "statusCode"),
+    responseStatus: readErrorField(error, "responseStatus"),
+    responseBody: readErrorField(error, "responseBody") ?? readErrorField(error, "body"),
+    data: readErrorField(error, "data"),
+    notificationRequest: readErrorField(error, "notificationRequest"),
+  }
+}
+
+function metadataWithoutFailureLog(metadata: Record<string, unknown> | null | undefined) {
+  if (!metadata) return null
+  const rest = { ...metadata }
+  delete rest.failureLog
+  return rest
+}
+
+function isAttachmentSummary(value: unknown): value is NotificationAttachment {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const record = value as Record<string, unknown>
+  return (
+    typeof record.filename === "string" &&
+    record.filename.length > 0 &&
+    (typeof record.path === "string" || typeof record.contentBase64 === "string")
+  )
+}
+
+function attachmentsFromMetadata(metadata: Record<string, unknown> | null | undefined) {
+  const rawAttachments = metadata?.attachments
+  if (!Array.isArray(rawAttachments)) return undefined
+  const attachments = rawAttachments.filter(isAttachmentSummary).map((attachment) => ({
+    filename: attachment.filename,
+    ...(attachment.contentBase64 ? { contentBase64: attachment.contentBase64 } : {}),
+    ...(attachment.path ? { path: attachment.path } : {}),
+    ...(attachment.contentType ? { contentType: attachment.contentType } : {}),
+    ...(attachment.disposition ? { disposition: attachment.disposition } : {}),
+    ...(attachment.contentId ? { contentId: attachment.contentId } : {}),
+  }))
+  return attachments.length > 0 ? attachments : undefined
+}
+
 export async function listDeliveries(db: PostgresJsDatabase, query: NotificationDeliveryListQuery) {
   const conditions = []
   if (query.channel) conditions.push(eq(notificationDeliveries.channel, query.channel))
@@ -93,6 +177,43 @@ export async function getDeliveryById(db: PostgresJsDatabase, id: string) {
     .where(eq(notificationDeliveries.id, id))
     .limit(1)
   return row ?? null
+}
+
+export async function resendDelivery(
+  db: PostgresJsDatabase,
+  dispatcher: NotificationService,
+  id: string,
+) {
+  const original = await getDeliveryById(db, id)
+  if (!original) return null
+
+  const previousMetadata = metadataWithoutFailureLog(original.metadata)
+  return sendNotification(db, dispatcher, {
+    templateId: original.templateId,
+    templateSlug: original.templateSlug,
+    channel: original.channel,
+    provider: original.provider,
+    to: original.toAddress,
+    from: original.fromAddress,
+    subject: original.subject,
+    html: original.htmlBody,
+    text: original.textBody,
+    attachments: attachmentsFromMetadata(original.metadata),
+    data: original.payloadData,
+    targetType: original.targetType,
+    targetId: original.targetId,
+    bookingId: original.bookingId,
+    invoiceId: original.invoiceId,
+    paymentSessionId: original.paymentSessionId,
+    personId: original.personId,
+    organizationId: original.organizationId,
+    metadata: {
+      ...(previousMetadata ?? {}),
+      resendOfDeliveryId: original.id,
+      previousStatus: original.status,
+    },
+    scheduledFor: null,
+  })
 }
 
 export async function sendNotification(
@@ -212,12 +333,17 @@ export async function sendNotification(
     return sent ?? null
   } catch (error) {
     const message = error instanceof Error ? error.message : "Notification send failed"
+    const failureLog = serializeNotificationError(error)
     const [failed] = await db
       .update(notificationDeliveries)
       .set({
         status: "failed",
         failedAt: new Date(),
         errorMessage: message,
+        metadata: {
+          ...(pending.metadata ?? {}),
+          failureLog,
+        },
         updatedAt: new Date(),
       })
       .where(eq(notificationDeliveries.id, pending.id))
