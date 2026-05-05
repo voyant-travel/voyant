@@ -50,6 +50,7 @@ const product = {
   visibility: "public",
   activated: true,
   reservationTimeoutMinutes: null,
+  taxClassId: null,
   sellCurrency: "EUR",
   sellAmountCents: null,
   costAmountCents: null,
