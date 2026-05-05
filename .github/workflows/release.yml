@@ -55,8 +55,7 @@ jobs:
       - name: Determine release version
         id: version
         run: |
-          VERSION=$(node -p "require('./packages/cli/package.json').version")
-          node -e "const semver = require('semver'); const version = process.argv[1]; if (!semver.valid(version)) { throw new Error(`Invalid release version: ${version}`); }" "$VERSION"
+          VERSION=$(node scripts/print-release-version.cjs)
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Package starter archives
@@ -153,8 +152,7 @@ jobs:
         if: steps.changesets.outputs.published == 'true' || steps.publish_pending.outputs.published == 'true'
         id: version
         run: |
-          VERSION=$(node -p "require('./packages/cli/package.json').version")
-          node -e "const semver = require('semver'); const version = process.argv[1]; if (!semver.valid(version)) { throw new Error(`Invalid release version: ${version}`); }" "$VERSION"
+          VERSION=$(node scripts/print-release-version.cjs)
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Package starter archives
