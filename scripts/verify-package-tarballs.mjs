@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process"
 import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
 import { promisify } from "node:util"
 
@@ -82,10 +83,52 @@ function collectExportTargets(value, targets) {
 function getPackJson(stdout) {
   const trimmed = stdout.trim()
   const arrayStart = trimmed.indexOf("[")
-  if (arrayStart === -1) {
+  const objectStart = trimmed.indexOf("{")
+  const jsonStart =
+    arrayStart === -1
+      ? objectStart
+      : objectStart === -1
+        ? arrayStart
+        : Math.min(arrayStart, objectStart)
+
+  if (jsonStart === -1) {
     throw new Error("npm pack did not return JSON output")
   }
-  return JSON.parse(trimmed.slice(arrayStart))
+
+  const parsed = JSON.parse(trimmed.slice(jsonStart))
+  return Array.isArray(parsed) ? parsed : [parsed]
+}
+
+async function readPackedManifest(tarballPath) {
+  const result = await execFileAsync("tar", ["-xOf", tarballPath, "package/package.json"], {
+    encoding: "utf8",
+    maxBuffer: 8 * 1024 * 1024,
+  })
+
+  return JSON.parse(result.stdout)
+}
+
+function collectWorkspaceProtocolDependencies(pkg) {
+  const problems = []
+  const dependencyFields = [
+    "dependencies",
+    "peerDependencies",
+    "optionalDependencies",
+    "devDependencies",
+  ]
+
+  for (const field of dependencyFields) {
+    const dependencies = pkg[field]
+    if (!dependencies || typeof dependencies !== "object") continue
+
+    for (const [name, version] of Object.entries(dependencies)) {
+      if (typeof version === "string" && version.startsWith("workspace:")) {
+        problems.push(`${field}.${name}=${version}`)
+      }
+    }
+  }
+
+  return problems
 }
 
 function getPublishedTargets(pkg) {
@@ -119,44 +162,55 @@ async function verifyPackage(packageDir) {
 
   if (pkg.private) return null
 
-  const expectedTargets = getPublishedTargets(pkg)
-  if (expectedTargets.length === 0) return null
   const sourceFiles = new Set(listPackageFiles(packageDir))
+  const packDestination = fs.mkdtempSync(path.join(os.tmpdir(), "voyant-pack-"))
 
   let stdout
+  let packInfo
+  let packedManifest
   try {
-    // --ignore-scripts skips prepack (= `pnpm run build` in every package). The
-    // Build packages CI step already populated `dist/` for every workspace
-    // package, so npm pack just needs to enumerate files, not rebuild them.
+    // npm pack does not apply pnpm's publish-time manifest rewrites, including
+    // publishConfig exports and workspace: dependency replacement. The release
+    // job publishes through pnpm, so verify the same packed manifest consumers
+    // receive while still skipping prepack because CI already built dist/.
     const result = await execFileAsync(
-      "npm",
-      ["--cache", "/tmp/npm-cache", "pack", "--dry-run", "--json", "--ignore-scripts"],
+      "pnpm",
+      ["pack", "--json", "--pack-destination", packDestination],
       {
         cwd: packageDir,
         encoding: "utf8",
         maxBuffer: 64 * 1024 * 1024,
+        env: {
+          ...process.env,
+          npm_config_ignore_scripts: "true",
+        },
       },
     )
     stdout = result.stdout
   } catch (error) {
+    fs.rmSync(packDestination, { recursive: true, force: true })
     return {
       name: pkg.name,
       packageDir,
-      problems: [`npm pack failed: ${error.stderr?.toString().trim() || error.message}`],
+      problems: [`pnpm pack failed: ${error.stderr?.toString().trim() || error.message}`],
     }
   }
 
-  let packInfo
   try {
     ;[packInfo] = getPackJson(stdout)
+    packedManifest = await readPackedManifest(packInfo.filename)
   } catch (error) {
+    fs.rmSync(packDestination, { recursive: true, force: true })
     return {
       name: pkg.name,
       packageDir,
-      problems: [`could not parse npm pack output: ${error.message}`],
+      problems: [`could not parse pnpm pack output: ${error.message}`],
     }
+  } finally {
+    fs.rmSync(packDestination, { recursive: true, force: true })
   }
 
+  const expectedTargets = getPublishedTargets(packedManifest)
   const tarballFiles = new Set(packInfo.files.map((file) => file.path))
   const missingTargets = expectedTargets.filter(
     (target) =>
@@ -172,6 +226,14 @@ async function verifyPackage(packageDir) {
   const problems = []
   if (missingTargets.length > 0) {
     problems.push(`missing published targets: ${missingTargets.join(", ")}`)
+  }
+  const workspaceProtocolDependencies = collectWorkspaceProtocolDependencies(packedManifest)
+  if (workspaceProtocolDependencies.length > 0) {
+    problems.push(
+      `packed manifest contains workspace protocol dependencies: ${workspaceProtocolDependencies.join(
+        ", ",
+      )}`,
+    )
   }
   if (suspiciousFiles.length > 0) {
     problems.push(`unexpected packaged build paths: ${suspiciousFiles.join(", ")}`)

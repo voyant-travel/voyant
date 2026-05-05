@@ -101,6 +101,7 @@
       "@voyantjs/ui",
       "@voyantjs/utils",
       "@voyantjs/storage",
+      "@voyantjs/workflow-runs",
       "@voyantjs/workflows",
       "@voyantjs/workflows-bindings",
       "@voyantjs/workflows-config",
