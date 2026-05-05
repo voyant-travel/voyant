@@ -5,7 +5,11 @@ import { createStorefrontPublicRoutes } from "./routes-public.js"
 
 export type { StorefrontPublicRoutes } from "./routes-public.js"
 export { createStorefrontPublicRoutes } from "./routes-public.js"
-export type { StorefrontServiceOptions } from "./service.js"
+export type {
+  StorefrontOfferResolvers,
+  StorefrontRequestContext,
+  StorefrontServiceOptions,
+} from "./service.js"
 export { createStorefrontService, resolveStorefrontSettings } from "./service.js"
 export type {
   StorefrontDepartureListQuery,
@@ -14,6 +18,7 @@ export type {
   StorefrontPaymentMethod,
   StorefrontPaymentMethodCode,
   StorefrontPaymentMethodInput,
+  StorefrontProductAvailabilitySummaryQuery,
   StorefrontPromotionalOffer,
   StorefrontSettings,
   StorefrontSettingsInput,
@@ -32,6 +37,11 @@ export {
   storefrontPaymentMethodCodeSchema,
   storefrontPaymentMethodInputSchema,
   storefrontPaymentMethodSchema,
+  storefrontProductAvailabilitySlotSchema,
+  storefrontProductAvailabilityStateSchema,
+  storefrontProductAvailabilitySummaryQuerySchema,
+  storefrontProductAvailabilitySummaryResponseSchema,
+  storefrontProductAvailabilitySummarySchema,
   storefrontProductExtensionsQuerySchema,
   storefrontProductExtensionsResponseSchema,
   storefrontPromotionalOfferListQuerySchema,

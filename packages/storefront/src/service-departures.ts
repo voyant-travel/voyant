@@ -24,6 +24,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type {
   StorefrontDepartureListQuery,
   StorefrontDeparturePricePreviewInput,
+  StorefrontProductAvailabilitySummaryQuery,
 } from "./validation.js"
 
 type SlotRow = {
@@ -298,6 +299,7 @@ async function listSlots(
     dateTo?: string
     limit?: number
     offset?: number
+    includeCancelled?: boolean
   } = {},
 ) {
   const conditions = [
@@ -320,7 +322,7 @@ async function listSlots(
 
   if (filters.status) {
     conditions.push(eq(availabilitySlots.status, filters.status))
-  } else {
+  } else if (!filters.includeCancelled) {
     conditions.push(ne(availabilitySlots.status, "cancelled"))
   }
 
@@ -374,6 +376,7 @@ async function countSlots(
     status?: "open" | "closed" | "sold_out" | "cancelled"
     dateFrom?: string
     dateTo?: string
+    includeCancelled?: boolean
   } = {},
 ) {
   const conditions = [
@@ -396,7 +399,7 @@ async function countSlots(
 
   if (filters.status) {
     conditions.push(eq(availabilitySlots.status, filters.status))
-  } else {
+  } else if (!filters.includeCancelled) {
     conditions.push(ne(availabilitySlots.status, "cancelled"))
   }
 
@@ -911,6 +914,169 @@ export async function listStorefrontProductDepartures(
   return {
     data,
     total,
+    limit: query.limit,
+    offset: query.offset,
+  }
+}
+
+type StorefrontProductAvailabilityState =
+  | "available"
+  | "sold_out"
+  | "closed"
+  | "cancelled"
+  | "on_request"
+  | "past_cutoff"
+  | "too_early"
+  | "unavailable"
+
+function todayLocalDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function buildAvailabilityState(args: {
+  status: "open" | "closed" | "sold_out" | "cancelled" | "on_request"
+  remaining: number | null
+  capacity: number | null
+  pastCutoff: boolean
+  tooEarly: boolean
+}): StorefrontProductAvailabilityState {
+  if (args.status === "cancelled") return "cancelled"
+  if (args.status === "closed") return "closed"
+  if (args.status === "sold_out") return "sold_out"
+  if (args.status === "on_request") return "on_request"
+  if (args.pastCutoff) return "past_cutoff"
+  if (args.tooEarly) return "too_early"
+  if (args.capacity != null && args.remaining === 0) return "sold_out"
+
+  return "available"
+}
+
+function summarizeProductAvailability(
+  departures: Array<{
+    availabilityState: StorefrontProductAvailabilityState
+    status: "open" | "closed" | "sold_out" | "cancelled" | "on_request"
+  }>,
+): StorefrontProductAvailabilityState {
+  if (departures.some((departure) => departure.availabilityState === "available")) {
+    return "available"
+  }
+  if (departures.some((departure) => departure.availabilityState === "on_request")) {
+    return "on_request"
+  }
+  if (departures.some((departure) => departure.availabilityState === "too_early")) {
+    return "too_early"
+  }
+  if (departures.some((departure) => departure.availabilityState === "past_cutoff")) {
+    return "past_cutoff"
+  }
+  if (departures.some((departure) => departure.availabilityState === "sold_out")) {
+    return "sold_out"
+  }
+  if (departures.some((departure) => departure.availabilityState === "closed")) {
+    return "closed"
+  }
+  if (departures.some((departure) => departure.availabilityState === "cancelled")) {
+    return "cancelled"
+  }
+
+  return "unavailable"
+}
+
+export async function getStorefrontProductAvailabilitySummary(
+  db: PostgresJsDatabase,
+  productId: string,
+  query: StorefrontProductAvailabilitySummaryQuery,
+) {
+  const requestedStatus = query.status
+  const persistedStatus = requestedStatus === "on_request" ? "open" : requestedStatus
+  const filters = {
+    productId,
+    optionId: query.optionId,
+    status: persistedStatus,
+    dateFrom: query.dateFrom ?? todayLocalDate(),
+    dateTo: query.dateTo,
+    includeCancelled: true,
+  }
+  const [slots, total] = await Promise.all([
+    listSlots(db, {
+      ...filters,
+      limit: query.limit,
+      offset: query.offset,
+    }),
+    countSlots(db, filters),
+  ])
+  const [meetingPointByProduct, defaultItineraryByProduct] = await Promise.all([
+    listMeetingPointsByProductIds(db, [productId]),
+    listDefaultItineraryIdsByProductIds(db, [productId]),
+  ])
+  const departures = (
+    await Promise.all(
+      slots.map(async (slot) => {
+        const departure = await buildDeparture(
+          db,
+          slot,
+          defaultItineraryByProduct,
+          meetingPointByProduct,
+        )
+        const availabilityState = buildAvailabilityState({
+          status: departure.departureStatus,
+          remaining: departure.remaining,
+          capacity: departure.capacity,
+          pastCutoff: slot.pastCutoff,
+          tooEarly: slot.tooEarly,
+        })
+
+        return {
+          id: departure.id,
+          productId: departure.productId,
+          optionId: departure.optionId,
+          dateLocal: departure.dateLocal,
+          startAt: departure.startAt,
+          endAt: departure.endAt,
+          timezone: departure.timezone,
+          status: departure.departureStatus,
+          availabilityState,
+          capacity: departure.capacity,
+          remaining: departure.remaining,
+          pastCutoff: slot.pastCutoff,
+          tooEarly: slot.tooEarly,
+        }
+      }),
+    )
+  ).filter((departure) => !requestedStatus || departure.status === requestedStatus)
+
+  const counts = departures.reduce(
+    (acc, departure) => {
+      acc.total += 1
+      if (departure.status === "open") acc.open += 1
+      if (departure.status === "closed") acc.closed += 1
+      if (departure.status === "sold_out") acc.soldOut += 1
+      if (departure.status === "cancelled") acc.cancelled += 1
+      if (departure.status === "on_request") acc.onRequest += 1
+      if (departure.availabilityState === "past_cutoff") acc.pastCutoff += 1
+      if (departure.availabilityState === "too_early") acc.tooEarly += 1
+      if (departure.availabilityState === "available") acc.available += 1
+      return acc
+    },
+    {
+      total: 0,
+      open: 0,
+      closed: 0,
+      soldOut: 0,
+      cancelled: 0,
+      onRequest: 0,
+      pastCutoff: 0,
+      tooEarly: 0,
+      available: 0,
+    },
+  )
+
+  return {
+    productId,
+    availabilityState: summarizeProductAvailability(departures),
+    counts,
+    departures,
+    total: requestedStatus === "on_request" ? departures.length : total,
     limit: query.limit,
     offset: query.offset,
   }

@@ -212,6 +212,48 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
     const detailRes = await app.request(`/departures/${slot.id}`)
     expect(detailRes.status).toBe(200)
     expect((await detailRes.json()).data.id).toBe(slot.id)
+
+    const availabilityRes = await app.request(
+      `/products/${product.id}/availability?dateFrom=2026-08-01`,
+    )
+    expect(availabilityRes.status).toBe(200)
+    expect(await availabilityRes.json()).toEqual({
+      data: {
+        productId: product.id,
+        availabilityState: "available",
+        counts: {
+          total: 1,
+          open: 1,
+          closed: 0,
+          soldOut: 0,
+          cancelled: 0,
+          onRequest: 0,
+          pastCutoff: 0,
+          tooEarly: 0,
+          available: 1,
+        },
+        departures: [
+          {
+            id: slot.id,
+            productId: product.id,
+            optionId: option.id,
+            dateLocal: "2026-08-01",
+            startAt: "2026-08-01T05:30:00.000Z",
+            endAt: "2026-08-01T13:30:00.000Z",
+            timezone: "Europe/Bucharest",
+            status: "open",
+            availabilityState: "available",
+            capacity: 24,
+            remaining: 12,
+            pastCutoff: false,
+            tooEarly: false,
+          },
+        ],
+        total: 1,
+        limit: 100,
+        offset: 0,
+      },
+    })
   })
 
   it("returns a departure price preview with extras", async () => {

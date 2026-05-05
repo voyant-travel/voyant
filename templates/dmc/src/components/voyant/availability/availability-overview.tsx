@@ -28,6 +28,7 @@ import { useAdminMessages } from "@/lib/admin-i18n"
 export function AvailabilityOverview({
   products,
   constrainedSlots,
+  openSlotsCount: providedOpenSlotsCount,
   filteredRules,
   filteredPickupPoints,
   productsWithoutActiveRules,
@@ -42,6 +43,7 @@ export function AvailabilityOverview({
 }: {
   products: ProductOption[]
   constrainedSlots: AvailabilitySlotRow[]
+  openSlotsCount?: number
   filteredRules: AvailabilityRuleRow[]
   filteredPickupPoints: AvailabilityPickupPointRow[]
   productsWithoutActiveRules: ProductOption[]
@@ -55,7 +57,8 @@ export function AvailabilityOverview({
   onOpenProduct: (productId: string) => void
 }) {
   const messages = useAdminMessages()
-  const openSlotsCount = constrainedSlots.filter((slot) => slot.status === "open").length
+  const openSlotsCount =
+    providedOpenSlotsCount ?? constrainedSlots.filter((slot) => slot.status === "open").length
   const activeRulesCount = filteredRules.filter((rule) => rule.active).length
   const activePickupPointsCount = filteredPickupPoints.filter(
     (pickupPoint) => pickupPoint.active,

@@ -229,6 +229,57 @@ export const productsUiRo = {
       saveDay: "Salveaza ziua",
     },
   },
+  productDayServiceForm: {
+    fields: {
+      supplierService: "Serviciu furnizor",
+      serviceType: "Tip serviciu",
+      countryCode: "Cod tara",
+      name: "Nume",
+      description: "Descriere",
+      costCurrency: "Moneda",
+      costAmount: "Cost",
+      quantity: "Cantitate",
+      sortOrder: "Ordine sortare",
+      notes: "Note",
+    },
+    placeholders: {
+      supplierService: "ID serviciu furnizor optional",
+      countryCode: "RO",
+      name: "Cazare hotel",
+      description: "Detalii operationale ale serviciului",
+      notes: "Note interne",
+    },
+    serviceTypes: {
+      accommodation: "Cazare",
+      transfer: "Transfer",
+      experience: "Experienta",
+      guide: "Ghid",
+      meal: "Masa",
+      other: "Altul",
+    },
+    validation: {
+      nameRequired: "Numele serviciului este obligatoriu.",
+      currencyRequired: "Moneda trebuie sa fie un cod ISO din 3 litere.",
+      costNonNegative: "Costul trebuie sa fie zero sau mai mare.",
+      quantityMin: "Cantitatea trebuie sa fie cel putin 1.",
+      saveFailed: "Salvarea serviciului a esuat.",
+    },
+    actions: {
+      addService: "Adauga serviciu",
+      saveService: "Salveaza serviciul",
+    },
+  },
+  productItineraryDayRow: {
+    dayLabel: "Ziua {dayNumber}",
+    emptyServices: "Nu exista servicii configurate pentru aceasta zi.",
+    servicesLoadingError: "Incarcarea serviciilor zilei a esuat.",
+    columns: {
+      name: "Nume",
+      type: "Tip",
+      cost: "Cost",
+      quantity: "Cantitate",
+    },
+  },
   productItineraryDialog: {
     titles: {
       create: "Itinerar nou",
