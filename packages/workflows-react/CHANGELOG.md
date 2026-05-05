@@ -1,5 +1,12 @@
 # @voyantjs/workflows-react
 
+## 0.21.1
+
+### Patch Changes
+
+- @voyantjs/workflows@0.21.1
+- @voyantjs/workflows-errors@0.21.1
+
 ## 0.21.0
 
 ### Patch Changes

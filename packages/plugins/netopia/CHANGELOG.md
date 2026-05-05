@@ -1,5 +1,15 @@
 # @voyantjs/plugin-netopia
 
+## 0.21.1
+
+### Patch Changes
+
+- @voyantjs/checkout@0.21.1
+- @voyantjs/core@0.21.1
+- @voyantjs/finance@0.21.1
+- @voyantjs/hono@0.21.1
+- @voyantjs/notifications@0.21.1
+
 ## 0.21.0
 
 ### Patch Changes

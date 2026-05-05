@@ -1,5 +1,11 @@
 # @voyantjs/admin
 
+## 0.21.1
+
+### Patch Changes
+
+- @voyantjs/i18n@0.21.1
+
 ## 0.21.0
 
 ### Patch Changes
