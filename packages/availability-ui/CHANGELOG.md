@@ -1,5 +1,16 @@
 # @voyantjs/availability-ui
 
+## 0.23.0
+
+### Minor Changes
+
+- d177a55: Add request-aware storefront settings and offer resolution, a public product availability summary endpoint, itinerary day extension components for products UI, and an explicit open slots metric for availability overview surfaces.
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.23.0
+- @voyantjs/ui@0.23.0
+
 ## 0.22.0
 
 ### Minor Changes
