@@ -3,9 +3,9 @@
  * Templates that consume this package should `@import` this CSS so Tailwind
  * scans these component files for utility classes:
  *
- *   @import "@voyantjs/flights-ui/styles.css";
+ *   @import "@voyantjs/admin/styles.css";
  *
- * Without it, classes that only appear inside this package (e.g. flight booking
- * and seat map utilities) won't be compiled into the final bundle.
+ * Without it, classes that only appear inside this package (e.g. sidebar and
+ * navigation layout utilities) won't be compiled into the final bundle.
  */
 @source "./components/**/*.{ts,tsx}";

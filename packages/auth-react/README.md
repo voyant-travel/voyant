@@ -1,12 +1,12 @@
 # @voyantjs/auth-react
 
-React runtime package for Voyant authentication and workspace state.
+React runtime package for Voyant authentication and optional workspace state.
 
 This package wraps the shared Voyant auth HTTP contract:
 
 - `/auth/me`
 - `/auth/status`
-- `/auth/workspace`
+- `/auth/workspace/current`
 - `/auth/workspace/active-organization`
 - `/auth/organization/list-members`
 - `/auth/organization/list-invitations`
@@ -17,7 +17,20 @@ This package wraps the shared Voyant auth HTTP contract:
 
 It provides reusable React surfaces for:
 
-- current user and workspace state
+- current user state
+- optional workspace and organization state
 - organization member listing
 - organization invitation listing
 - invite, cancel, remove, and role update mutations
+
+## Single-Tenant Apps
+
+Single-tenant operator apps should bootstrap their shell from `useCurrentUser()`
+or `/auth/me` only. `useCurrentWorkspace()`, `useWorkspaceMutation()`,
+organization member hooks, and invitation hooks are opt-in team/workspace
+surfaces for apps that expose Better Auth organization routes.
+
+Do not make workspace queries part of the base admin loading gate unless the app
+intentionally requires organization switching or team management. Apps that do
+not mount the organization routes can still use the current-user hooks without
+providing `/auth/workspace/current` or `/auth/organization/*` endpoints.

@@ -45,6 +45,23 @@ That gives Voyant a better product shape than a monolithic starter-only UI and a
 - filter bars
 - page sections and module-specific UI building blocks
 
+## Tailwind v4 Package Styles
+
+Packages that render Tailwind classes from shipped component code must expose a
+CSS helper at `@voyantjs/<package>/styles.css`. Consumers should import only the
+helpers for packages they install, for example:
+
+```css
+@import "@voyantjs/ui/styles.css";
+@import "@voyantjs/admin/styles.css";
+@import "@voyantjs/bookings-ui/styles.css";
+```
+
+`@voyantjs/ui/styles.css` is the canonical base import and includes the shared
+Voyant UI globals. Domain UI helpers such as
+`@voyantjs/bookings-ui/styles.css` and `@voyantjs/availability-ui/styles.css`
+only expose Tailwind source-detection directives for package components.
+
 ## What Does Not Belong In `-react`
 
 - core business rules already owned by `@voyantjs/<module>`

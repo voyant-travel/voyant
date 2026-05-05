@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
@@ -8,7 +8,18 @@ interface ExportCheck {
   requiredExports: string[]
 }
 
+interface PackageJson {
+  name?: string
+  exports?: Record<string, unknown>
+  files?: string[]
+  publishConfig?: {
+    exports?: Record<string, unknown>
+  }
+}
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
+const uiStylesExport = "./styles.css"
+const uiStylesSource = "./src/styles.css"
 
 const checks: ExportCheck[] = [
   {
@@ -395,8 +406,86 @@ const checks: ExportCheck[] = [
   },
 ]
 
+function readPackageJson(packageDir: string): PackageJson {
+  return JSON.parse(readFileSync(path.join(packageDir, "package.json"), "utf8")) as PackageJson
+}
+
+function hasStylesExport(exportsMap: Record<string, unknown> | undefined): boolean {
+  const value = exportsMap?.[uiStylesExport]
+
+  if (typeof value === "string") {
+    return value === uiStylesSource
+  }
+
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return (value as { default?: unknown }).default === uiStylesSource
+  }
+
+  return false
+}
+
+function getCssHelperPackageDirs(): string[] {
+  const packagesDir = path.join(repoRoot, "packages")
+
+  return readdirSync(packagesDir, { withFileTypes: true })
+    .filter((dirent) => dirent.isDirectory())
+    .map((dirent) => path.join(packagesDir, dirent.name))
+    .filter((packageDir) => {
+      const packageJsonPath = path.join(packageDir, "package.json")
+      const componentsDir = path.join(packageDir, "src", "components")
+
+      if (!existsSync(packageJsonPath) || !existsSync(componentsDir)) {
+        return false
+      }
+
+      const packageJson = readPackageJson(packageDir)
+      const packageName = packageJson.name ?? ""
+
+      return (
+        packageName === "@voyantjs/admin" ||
+        packageName === "@voyantjs/ui" ||
+        packageName.endsWith("-ui")
+      )
+    })
+}
+
+function verifyCssHelperExports(failures: string[]) {
+  for (const packageDir of getCssHelperPackageDirs()) {
+    const packageJson = readPackageJson(packageDir)
+    const packageName = packageJson.name ?? path.relative(repoRoot, packageDir)
+    const stylesPath = path.join(packageDir, "src", "styles.css")
+
+    if (!existsSync(stylesPath)) {
+      failures.push(`${packageName}: missing Tailwind helper file at src/styles.css`)
+      continue
+    }
+
+    if (!hasStylesExport(packageJson.exports)) {
+      failures.push(`${packageName}: missing source export ${uiStylesExport}`)
+    }
+
+    if (!hasStylesExport(packageJson.publishConfig?.exports)) {
+      failures.push(`${packageName}: missing publishConfig export ${uiStylesExport}`)
+    }
+
+    if (!packageJson.files?.includes("src/styles.css")) {
+      failures.push(`${packageName}: package files must include src/styles.css`)
+    }
+
+    const stylesSource = readFileSync(stylesPath, "utf8")
+    if (
+      !stylesSource.includes("@source") &&
+      !stylesSource.includes('@import "./styles/globals.css"')
+    ) {
+      failures.push(`${packageName}: src/styles.css must expose Tailwind source detection`)
+    }
+  }
+}
+
 async function main() {
   const failures: string[] = []
+
+  verifyCssHelperExports(failures)
 
   for (const check of checks) {
     const entryPath = path.join(repoRoot, check.entry)

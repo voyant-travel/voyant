@@ -31,7 +31,7 @@ export const getCurrentWorkspace = createServerFn({ method: "GET" })
       method: "GET",
     })
 
-    if (response.status === 401) {
+    if (response.status === 401 || response.status === 404) {
       return null
     }
 

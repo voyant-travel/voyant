@@ -160,6 +160,11 @@ function Workspace({ children, user }) {
 }
 ```
 
+`OperatorAdminShellProvider` and `OperatorAdminWorkspaceLayout` do not fetch or
+require Better Auth organizations. Single-tenant operator apps should load the
+current authenticated user first, then render this shell with the `user` prop.
+Workspace switching and team-management routes remain app-owned opt-ins.
+
 ## License
 
 Apache-2.0
