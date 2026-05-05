@@ -1,6 +1,12 @@
 # Catalog Booking Route Module Plan
 
-Status: proposed for [issue #418](https://github.com/voyantjs/voyant/issues/418)
+Status: first implementation slice in progress for
+[issue #418](https://github.com/voyantjs/voyant/issues/418)
+
+Implementation note: the initial route module keeps the reusable quote, draft,
+hold, and book contract in `@voyantjs/catalog/booking-engine`; operator-specific
+slots, order management, checkout start, and snapshot enrichment remain in the
+operator template.
 
 ## Problem
 

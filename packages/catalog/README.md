@@ -25,6 +25,7 @@ pnpm add @voyantjs/catalog
 - **`./drift/events`** — drift event types for upstream change detection.
 - **`./events/taxonomy`** — catalog event names + visibility-filtered payload builders, emitted via `@voyantjs/core/events` and consumed by the existing webhook pipeline.
 - **`./adapter/contract`** — public source-adapter contract. Voyant Connect, third-party providers, operator-built adapters all implement this.
+- **`./booking-engine`** — quote/book services plus the Hono route module that backs `@voyantjs/catalog-react/booking-engine` and `@voyantjs/bookings-ui/journey`.
 
 ## Architectural rules
 
@@ -62,3 +63,31 @@ export const productCatalogPolicy = defineFieldPolicy([
 ```
 
 See `docs/architecture/catalog-architecture.md` for the full contract and worked examples.
+
+## BookingJourney HTTP routes
+
+`@voyantjs/catalog/booking-engine` exports `createCatalogBookingHonoModule(...)`
+and `createCatalogBookingRoutes(...)` for the BookingJourney server contract.
+The module mounts the shared quote, draft, hold, and book endpoints on both
+catalog API surfaces:
+
+- `/v1/admin/catalog/*`
+- `/v1/public/catalog/*`
+
+Templates provide the runtime dependencies instead of the package importing
+deployment code:
+
+```typescript
+import { createCatalogBookingHonoModule } from "@voyantjs/catalog/booking-engine"
+
+export const catalogBookingModule = createCatalogBookingHonoModule({
+  resolveDb: (c) => c.get("db"),
+  resolveSourceRegistry: (c) => getBookingEngineRegistryFromContext(c),
+  resolveOwnedHandlers: (c) => getOwnedBookingHandlerRegistryFromContext(c),
+})
+```
+
+Apps that protect public routes by default must allow
+`/v1/public/catalog`. Template-specific routes such as slots, admin order
+management, checkout start, and booking snapshot enrichment stay in the
+template.
