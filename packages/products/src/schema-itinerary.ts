@@ -78,6 +78,7 @@ export const productDayServices = pgTable(
     serviceType: serviceTypeEnum("service_type").notNull(),
     name: text("name").notNull(),
     description: text("description"),
+    countryCode: text("country_code"),
     costCurrency: text("cost_currency").notNull(),
     costAmountCents: integer("cost_amount_cents").notNull(),
     quantity: integer("quantity").notNull().default(1),

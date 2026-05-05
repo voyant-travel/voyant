@@ -40,6 +40,7 @@ export type ProductData = {
   description: string | null
   bookingMode: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
   productTypeId: string | null
+  taxClassId: string | null
   sellCurrency: string
   tags: string[]
 }
@@ -48,6 +49,13 @@ type ProductTypeOption = {
   id: string
   name: string
   code: string
+  active: boolean
+}
+
+type TaxClassOption = {
+  id: string
+  code: string
+  label: string
   active: boolean
 }
 
@@ -65,6 +73,7 @@ function initialValues(product: ProductData | undefined) {
       description: product.description ?? "",
       bookingMode: product.bookingMode,
       productTypeId: product.productTypeId ?? "",
+      taxClassId: product.taxClassId ?? "",
       sellCurrency: product.sellCurrency,
       tags: product.tags ?? [],
     }
@@ -75,6 +84,7 @@ function initialValues(product: ProductData | undefined) {
     description: "",
     bookingMode: "itinerary" as const,
     productTypeId: "",
+    taxClassId: "",
     sellCurrency: "EUR",
     tags: [] as string[],
   }
@@ -90,6 +100,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
     description: z.string().optional().nullable(),
     bookingMode: z.enum(["date", "date_time", "open", "stay", "transfer", "itinerary", "other"]),
     productTypeId: z.string().optional().nullable(),
+    taxClassId: z.string().optional().nullable(),
     sellCurrency: z
       .string()
       .min(3, productMessages.validationIsoCurrency)
@@ -126,7 +137,14 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
       api.get<{ data: ProductTypeOption[] }>("/v1/products/product-types?limit=25&active=true"),
   })
 
+  const { data: taxClassesData } = useQuery({
+    queryKey: ["tax-classes"],
+    queryFn: () =>
+      api.get<{ data: TaxClassOption[] }>("/v1/finance/tax-classes?limit=100&active=true"),
+  })
+
   const productTypes = typesData?.data ?? []
+  const taxClasses = taxClassesData?.data ?? []
 
   useEffect(() => {
     form.reset(initialValues(product))
@@ -140,6 +158,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
       description: values.description || null,
       bookingMode: values.bookingMode,
       productTypeId: values.productTypeId || null,
+      taxClassId: values.taxClassId || null,
       sellCurrency: values.sellCurrency,
       tags: values.tags,
     }
@@ -287,6 +306,36 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
                   {productStatuses.map((s) => (
                     <SelectItem key={s.value} value={s.value}>
                       {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>{productMessages.taxClassLabel}</Label>
+              <Select
+                value={form.watch("taxClassId") ?? ""}
+                onValueChange={(v) =>
+                  form.setValue("taxClassId", v === "__none__" ? null : v, {
+                    shouldDirty: true,
+                  })
+                }
+                items={[
+                  { value: "__none__", label: productMessages.taxClassNone },
+                  ...taxClasses.map((taxClass) => ({
+                    value: taxClass.id,
+                    label: taxClass.label,
+                  })),
+                ]}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={productMessages.taxClassNone} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">{productMessages.taxClassNone}</SelectItem>
+                  {taxClasses.map((taxClass) => (
+                    <SelectItem key={taxClass.id} value={taxClass.id}>
+                      {taxClass.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

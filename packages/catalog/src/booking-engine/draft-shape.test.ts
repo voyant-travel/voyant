@@ -42,14 +42,18 @@ describe("paxBandsAllowedTotalFrom", () => {
     expect(paxBandsAllowedTotalFrom([])).toEqual({ min: 0, max: 0 })
   })
 
-  it("handles single-band lists", () => {
-    expect(paxBandsAllowedTotalFrom(DEFAULT_PAX_BANDS)).toEqual({ min: 1, max: 8 })
+  it("handles the default multi-band list", () => {
+    expect(paxBandsAllowedTotalFrom(DEFAULT_PAX_BANDS)).toEqual({ min: 1, max: 18 })
   })
 })
 
 describe("DEFAULT_PAX_BANDS / DEFAULT_PAX_TOTAL constants", () => {
-  it("DEFAULT_PAX_BANDS is adult-only with 1-8 capacity", () => {
-    expect(DEFAULT_PAX_BANDS).toEqual([{ code: "adult", label: "Adult", minCount: 1, maxCount: 8 }])
+  it("DEFAULT_PAX_BANDS covers adults, children, and infants", () => {
+    expect(DEFAULT_PAX_BANDS).toEqual([
+      { code: "adult", label: "Adult", minAge: 12, minCount: 1, maxCount: 8 },
+      { code: "child", label: "Child", minAge: 2, maxAge: 11, minCount: 0, maxCount: 6 },
+      { code: "infant", label: "Infant", maxAge: 1, minCount: 0, maxCount: 4 },
+    ])
   })
 
   it("DEFAULT_PAX_TOTAL is 1-8", () => {
@@ -58,9 +62,18 @@ describe("DEFAULT_PAX_BANDS / DEFAULT_PAX_TOTAL constants", () => {
 })
 
 describe("default field requirement sets", () => {
-  it("defaultTravelerFields includes firstName + lastName + email", () => {
+  it("defaultTravelerFields includes identity, contact, and document fields", () => {
     const fields = defaultTravelerFields()
-    expect(fields.map((f) => f.key)).toEqual(["firstName", "lastName", "email"])
+    expect(fields.map((f) => f.key)).toEqual([
+      "firstName",
+      "lastName",
+      "email",
+      "phone",
+      "dateOfBirth",
+      "documentType",
+      "documentNumber",
+      "documentExpiry",
+    ])
     expect(fields.find((f) => f.key === "firstName")?.required).toBe(true)
     expect(fields.find((f) => f.key === "email")?.required).toBe(false)
   })

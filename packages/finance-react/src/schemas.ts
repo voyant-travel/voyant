@@ -38,25 +38,38 @@ export const invoiceStatusSchema = z.enum([
 export const paymentStatusSchema = z.enum(["pending", "completed", "failed", "refunded"])
 export const creditNoteStatusSchema = z.enum(["draft", "issued", "applied"])
 
-export const invoiceRecordSchema = z.object({
-  id: z.string(),
-  invoiceNumber: z.string(),
-  bookingId: z.string(),
-  personId: z.string().nullable(),
-  organizationId: z.string().nullable(),
-  status: invoiceStatusSchema,
-  currency: z.string(),
-  subtotalCents: z.number().int(),
-  taxCents: z.number().int(),
-  totalCents: z.number().int(),
-  paidCents: z.number().int(),
-  balanceDueCents: z.number().int(),
-  issueDate: z.string(),
-  dueDate: z.string(),
-  notes: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
+export const invoiceTypeSchema = z.enum(["invoice", "proforma", "credit_note"])
+
+export const invoiceRecordSchema = z
+  .object({
+    id: z.string(),
+    invoiceNumber: z.string(),
+    bookingId: z.string(),
+    personId: z.string().nullable(),
+    organizationId: z.string().nullable(),
+    /**
+     * `invoice` (final), `proforma` (placeholder pending bank transfer),
+     * or `credit_note` (refund / cancellation). Drives the type badge
+     * + filename on the booking detail page.
+     */
+    invoiceType: invoiceTypeSchema.optional(),
+    status: invoiceStatusSchema,
+    currency: z.string(),
+    subtotalCents: z.number().int(),
+    taxCents: z.number().int(),
+    totalCents: z.number().int(),
+    paidCents: z.number().int(),
+    balanceDueCents: z.number().int(),
+    issueDate: z.string(),
+    dueDate: z.string(),
+    notes: z.string().nullable(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  })
+  // Permissive on extra columns the server may return (e.g.
+  // `convertedFromInvoiceId`, `baseCurrency`). Adding them all to the
+  // schema invites churn; passthrough lets the UI use what it needs.
+  .passthrough()
 
 export type InvoiceRecord = z.infer<typeof invoiceRecordSchema>
 

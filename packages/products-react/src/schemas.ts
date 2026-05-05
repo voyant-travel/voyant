@@ -26,6 +26,21 @@ export const arrayEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ dat
 
 export const successEnvelope = z.object({ success: z.boolean() })
 
+const productListingDepositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+export const productPaymentPolicySchema = z.object({
+  deposit: productListingDepositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
+export type ProductPaymentPolicy = z.infer<typeof productPaymentPolicySchema>
+
 export const productRecordSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -46,6 +61,8 @@ export const productRecordSchema = z.object({
   endDate: z.string().nullable(),
   pax: z.number().int().nullable(),
   productTypeId: z.string().nullable(),
+  taxClassId: z.string().nullable(),
+  customerPaymentPolicy: productPaymentPolicySchema.nullable().optional(),
   tags: z.array(z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -67,6 +84,21 @@ export const productTypeRecordSchema = z.object({
 
 export type ProductTypeRecord = z.infer<typeof productTypeRecordSchema>
 
+const productCategoryDepositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+export const productCategoryPaymentPolicySchema = z.object({
+  deposit: productCategoryDepositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
+export type ProductCategoryPaymentPolicy = z.infer<typeof productCategoryPaymentPolicySchema>
+
 export const productCategoryRecordSchema = z.object({
   id: z.string(),
   parentId: z.string().nullable(),
@@ -75,6 +107,7 @@ export const productCategoryRecordSchema = z.object({
   description: z.string().nullable(),
   sortOrder: z.number().int(),
   active: z.boolean(),
+  customerPaymentPolicy: productCategoryPaymentPolicySchema.nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -160,6 +193,7 @@ export const productDayServiceRecordSchema = z.object({
   serviceType: z.enum(["accommodation", "transfer", "experience", "guide", "meal", "other"]),
   name: z.string(),
   description: z.string().nullable(),
+  countryCode: z.string().nullable(),
   costCurrency: z.string(),
   costAmountCents: z.number().int(),
   quantity: z.number().int(),

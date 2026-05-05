@@ -20,7 +20,7 @@ import {
 } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
-import { and, asc, eq, sql } from "drizzle-orm"
+import { and, asc, eq, inArray, sql } from "drizzle-orm"
 import { acquireToken, channelScopeKey, drainBucket, type RateLimitConfig } from "../rate-limit.js"
 import {
   channelAvailabilityPushIntents,
@@ -98,7 +98,7 @@ export async function resolveAllotmentTargetsForSlot(
         eq(channelProductMappings.productId, input.productId),
         eq(channelProductMappings.active, true),
         eq(channelProductMappings.pushAvailability, true),
-        sql`${channelProductMappings.channelId} = ANY(${channelIds})`,
+        inArray(channelProductMappings.channelId, channelIds),
       ),
     )) as Array<{
     mapping: typeof channelProductMappings.$inferSelect

@@ -10,6 +10,19 @@ import {
   z,
 } from "./validation-shared.js"
 
+const productDepositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+const productCustomerPaymentPolicySchema = z.object({
+  deposit: productDepositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
 const productCoreSchema = z.object({
   name: z.string().min(1).max(255),
   status: productStatusSchema.default("draft"),
@@ -24,9 +37,11 @@ const productCoreSchema = z.object({
   facilityId: z.string().optional().nullable(),
   supplierId: z.string().optional().nullable(),
   productTypeId: z.string().optional().nullable(),
+  taxClassId: z.string().optional().nullable(),
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
   pax: z.number().int().positive().optional().nullable(),
+  customerPaymentPolicy: productCustomerPaymentPolicySchema.optional().nullable(),
   tags: z.array(z.string()).default([]),
 })
 
@@ -54,6 +69,7 @@ export const productListQuerySchema = z.object({
   facilityId: z.string().optional(),
   supplierId: z.string().optional(),
   productTypeId: z.string().optional(),
+  taxClassId: z.string().optional(),
   categoryId: z.string().optional(),
   tag: z.string().optional(),
   search: z.string().optional(),

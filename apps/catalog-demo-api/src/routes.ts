@@ -102,8 +102,8 @@ export function createRoutes(db: CatalogDemoDb): Hono {
         id: row.id,
         name: row.name,
         description: row.description,
-        status: row.available > 0 ? "active" : "inactive",
-        activated: row.available > 0,
+        status: isInventorySellable(row.available, row.metadata) ? "active" : "inactive",
+        activated: isInventorySellable(row.available, row.metadata),
         visibility: "public",
         // Demo upstream models its rows as operated by a single brand. A real
         // adapter (TUI direct, Voyant Connect peer) emits the upstream's
@@ -137,11 +137,12 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const inventory = await store.getInventoryByIds(db, body.ids)
     const requestedDepartureId = readDepartureId(body.parameters)
+    const billablePax = readBillablePax(body.parameters)
     const values: Record<string, Record<string, unknown>> = {}
-    const failed: Record<string, "timeout" | "not_found" | "unsupported" | "error"> = {}
+    const failed: LiveResolveResult["failed"] = {}
     for (const id of body.ids) {
       const row = inventory.get(id)
-      if (!row || row.available <= 0) {
+      if (!row) {
         failed[id] = "not_found"
         continue
       }
@@ -150,25 +151,35 @@ export function createRoutes(db: CatalogDemoDb): Hono {
         departure = findDeparture(row.metadata, requestedDepartureId)
         if (!departure) {
           // Slot wasn't found in the upstream's current schedule — probably
-          // expired or rotated out. Surfaces as "invalid_reason: not_found"
-          // on the quote so the operator can re-pick.
-          failed[id] = "not_found"
+          // expired or rotated out. Keep it distinct from a missing product
+          // so callers can ask the customer to re-pick a departure.
+          failed[id] = "departure_not_found"
           continue
         }
-        if (
-          departure.status === "sold_out" ||
-          departure.status === "closed" ||
-          departure.status === "cancelled"
-        ) {
-          failed[id] = "not_found"
+        if (isClosedDeparture(departure)) {
+          failed[id] = "departure_unavailable"
           continue
         }
+        if (typeof departure.remaining === "number" && departure.remaining < billablePax) {
+          failed[id] = "departure_unavailable"
+          continue
+        }
+      } else if (!isInventorySellable(row.available, row.metadata)) {
+        failed[id] = "unavailable"
+        continue
       }
-      const slotPrice = departure?.lowest_price_cents ?? row.priceCents
+      const perPaxPrice = departure?.lowest_price_cents ?? row.priceCents
       const slotCurrency = departure?.currency ?? row.currency
+      // Demo products are guided tours — priced per billable pax
+      // (adults + children, infants free). Per-stay verticals would
+      // not multiply here; that's a real adapter concern, not a demo
+      // contract.
+      const totalPrice = perPaxPrice * billablePax
       values[id] = {
         available: true,
-        priceCents: slotPrice,
+        priceCents: totalPrice,
+        unitPriceCents: perPaxPrice,
+        billablePax,
         currency: slotCurrency,
         name: row.name,
         metadata: row.metadata ?? null,
@@ -178,7 +189,8 @@ export function createRoutes(db: CatalogDemoDb): Hono {
                 id: departure.id,
                 starts_at: departure.starts_at,
                 ends_at: departure.ends_at ?? null,
-                priceCents: slotPrice,
+                priceCents: totalPrice,
+                unitPriceCents: perPaxPrice,
                 currency: slotCurrency,
               },
             }
@@ -256,13 +268,15 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const departures = mapArray(meta.departures, (d) => {
       const dr = d as Record<string, unknown>
+      const capacity = numberOr(dr.capacity, row.available)
+      const remaining = Math.min(numberOr(dr.remaining, capacity), capacity)
       return {
         id: stringOr(dr.id, "") ?? "",
         starts_at: stringOr(dr.starts_at, "") ?? "",
         ends_at: stringOr(dr.ends_at, null),
         status: stringOr(dr.status, null),
-        capacity: numberOr(dr.capacity, null),
-        remaining: numberOr(dr.remaining, null),
+        capacity,
+        remaining,
         lowest_price_cents: numberOr(dr.lowest_price_cents, row.priceCents),
         currency: stringOr(dr.currency, row.currency),
         note: stringOr(dr.note, null),
@@ -273,7 +287,7 @@ export function createRoutes(db: CatalogDemoDb): Hono {
       product: {
         id: row.id,
         name: row.name,
-        status: row.available > 0 ? "active" : "inactive",
+        status: isInventorySellable(row.available, row.metadata) ? "active" : "inactive",
         description: row.description ?? null,
         highlights,
         hero_image_url: heroImageUrl,
@@ -317,7 +331,7 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const inventory = await store.getInventoryByIds(db, [body.entity_id])
     const row = inventory.get(body.entity_id)
-    if (!row || row.available <= 0) {
+    if (!row) {
       const result: ReserveResult = {
         upstream_ref: "",
         status: "failed",
@@ -328,6 +342,7 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const requestedDepartureId = readDepartureId(body.parameters)
     let departure: ReturnType<typeof findDeparture> = null
+    const billablePax = readBillablePax(body.parameters)
     if (requestedDepartureId) {
       departure = findDeparture(row.metadata, requestedDepartureId)
       if (!departure) {
@@ -338,6 +353,34 @@ export function createRoutes(db: CatalogDemoDb): Hono {
         }
         return c.json(result)
       }
+      if (isClosedDeparture(departure)) {
+        const result: ReserveResult = {
+          upstream_ref: "",
+          status: "failed",
+          upstream_payload: { reason: "departure_unavailable", departureId: requestedDepartureId },
+        }
+        return c.json(result)
+      }
+      if (typeof departure.remaining === "number" && departure.remaining < billablePax) {
+        const result: ReserveResult = {
+          upstream_ref: "",
+          status: "failed",
+          upstream_payload: {
+            reason: "departure_unavailable",
+            departureId: requestedDepartureId,
+            remaining: departure.remaining,
+            needed: billablePax,
+          },
+        }
+        return c.json(result)
+      }
+    } else if (!isInventorySellable(row.available, row.metadata)) {
+      const result: ReserveResult = {
+        upstream_ref: "",
+        status: "failed",
+        upstream_payload: { reason: "inventory_unavailable", entityId: body.entity_id },
+      }
+      return c.json(result)
     }
 
     const intentType = readIntentType(body.payment_intent)
@@ -356,7 +399,11 @@ export function createRoutes(db: CatalogDemoDb): Hono {
       paymentIntent: body.payment_intent ?? null,
       parameters: body.parameters ?? null,
     })
-    await store.decrementAvailability(db, row.id)
+    if (requestedDepartureId) {
+      await store.adjustDepartureRemaining(db, row.id, requestedDepartureId, -billablePax)
+    } else {
+      await store.decrementAvailability(db, row.id)
+    }
 
     const result: ReserveResult = {
       upstream_ref: order.id,
@@ -406,7 +453,17 @@ export function createRoutes(db: CatalogDemoDb): Hono {
 
     const cancelled = await store.markOrderCancelled(db, order.id, body.reason ?? null)
     if (cancelled?.inventoryId) {
-      await store.incrementAvailability(db, cancelled.inventoryId)
+      const departureId = readDepartureId(cancelled.parameters ?? undefined)
+      if (departureId) {
+        await store.adjustDepartureRemaining(
+          db,
+          cancelled.inventoryId,
+          departureId,
+          readBillablePax(cancelled.parameters ?? undefined),
+        )
+      } else {
+        await store.incrementAvailability(db, cancelled.inventoryId)
+      }
     }
     return c.json({
       status: "cancelled",
@@ -529,6 +586,22 @@ function readDepartureId(parameters: Record<string, unknown> | undefined): strin
   return typeof raw === "string" && raw.length > 0 ? raw : null
 }
 
+/**
+ * Pull the billable-pax count off the draft the catalog plane forwards
+ * to the adapter. Demo products price per adult + child (infants ride
+ * free, in keeping with most guided-tour pricing). Defaults to 1 when
+ * no draft is in flight (e.g. cache-warming probes).
+ */
+function readBillablePax(parameters: Record<string, unknown> | undefined): number {
+  const draft = parameters?.draft as { configure?: { pax?: Record<string, unknown> } } | undefined
+  const pax = draft?.configure?.pax
+  if (!pax || typeof pax !== "object") return 1
+  const adult = numberOr((pax as Record<string, unknown>).adult, 0) ?? 0
+  const child = numberOr((pax as Record<string, unknown>).child, 0) ?? 0
+  const total = adult + child
+  return total > 0 ? total : 1
+}
+
 interface DemoDeparture {
   id: string
   starts_at: string
@@ -536,6 +609,42 @@ interface DemoDeparture {
   status?: string | null
   lowest_price_cents?: number
   currency?: string
+  capacity?: number
+  remaining?: number
+}
+
+function isInventorySellable(
+  available: number,
+  metadata: Record<string, unknown> | null | undefined,
+): boolean {
+  if (available > 0) return true
+  return hasSellableDeparture(metadata)
+}
+
+function hasSellableDeparture(metadata: Record<string, unknown> | null | undefined): boolean {
+  const list = metadata && Array.isArray(metadata.departures) ? metadata.departures : []
+  for (const departure of list) {
+    if (!departure || typeof departure !== "object") continue
+    const row = departure as Record<string, unknown>
+    const parsed: DemoDeparture = {
+      id: typeof row.id === "string" ? row.id : "",
+      starts_at: typeof row.starts_at === "string" ? row.starts_at : "",
+      status: typeof row.status === "string" ? row.status : null,
+      remaining: typeof row.remaining === "number" ? row.remaining : undefined,
+    }
+    if (!isClosedDeparture(parsed) && (parsed.remaining == null || parsed.remaining > 0)) {
+      return true
+    }
+  }
+  return false
+}
+
+function isClosedDeparture(departure: DemoDeparture): boolean {
+  return (
+    departure.status === "sold_out" ||
+    departure.status === "closed" ||
+    departure.status === "cancelled"
+  )
 }
 
 function findDeparture(
@@ -554,6 +663,8 @@ function findDeparture(
         lowest_price_cents:
           typeof r.lowest_price_cents === "number" ? r.lowest_price_cents : undefined,
         currency: typeof r.currency === "string" ? r.currency : undefined,
+        capacity: typeof r.capacity === "number" ? r.capacity : undefined,
+        remaining: typeof r.remaining === "number" ? r.remaining : undefined,
       }
     }
   }

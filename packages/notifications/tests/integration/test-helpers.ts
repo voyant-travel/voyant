@@ -102,7 +102,13 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
     await db.execute(sql`
       DO $$
       BEGIN
-        CREATE TYPE notification_reminder_target_type AS ENUM ('booking_payment_schedule', 'invoice');
+        CREATE TYPE notification_reminder_target_type AS ENUM (
+          'booking_confirmed',
+          'booking_payment_schedule',
+          'payment_complete',
+          'booking_cancelled_non_payment',
+          'invoice'
+        );
       EXCEPTION
         WHEN duplicate_object THEN NULL;
       END $$;

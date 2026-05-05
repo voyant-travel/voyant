@@ -25,6 +25,13 @@ const buildServiceFormSchema = (messages: ServiceMessages) =>
     serviceType: z.enum(["accommodation", "transfer", "experience", "guide", "meal", "other"]),
     name: z.string().min(1, messages.validationNameRequired),
     description: z.string().optional().nullable(),
+    countryCode: z
+      .string()
+      .trim()
+      .max(2, messages.validationCountryCode)
+      .optional()
+      .or(z.literal(""))
+      .nullable(),
     supplierServiceId: z.string().optional().nullable(),
     costCurrency: z.string().min(3).max(3, messages.validationIsoCurrency),
     costAmount: z.coerce.number().min(0, messages.validationCostNonNegative),
@@ -42,6 +49,7 @@ export type DayServiceData = {
   serviceType: "accommodation" | "transfer" | "experience" | "guide" | "meal" | "other"
   name: string
   description: string | null
+  countryCode: string | null
   supplierServiceId: string | null
   costCurrency: string
   costAmountCents: number
@@ -72,6 +80,7 @@ function initialValues(service: DayServiceData | undefined): ServiceFormValues {
       serviceType: service.serviceType,
       name: service.name,
       description: service.description ?? "",
+      countryCode: service.countryCode ?? "",
       supplierServiceId: service.supplierServiceId ?? "",
       costCurrency: service.costCurrency,
       costAmount: service.costAmountCents / 100,
@@ -84,6 +93,7 @@ function initialValues(service: DayServiceData | undefined): ServiceFormValues {
     serviceType: "accommodation",
     name: "",
     description: "",
+    countryCode: "",
     supplierServiceId: "",
     costCurrency: "EUR",
     costAmount: 0,
@@ -177,6 +187,7 @@ export function ServiceForm({ productId, dayId, service, onSuccess, onCancel }: 
       serviceType: values.serviceType,
       name: values.name,
       description: values.description || null,
+      countryCode: values.countryCode?.trim().toUpperCase() || null,
       supplierServiceId: values.supplierServiceId || null,
       costCurrency: values.costCurrency,
       costAmountCents: Math.round(values.costAmount * 100),
@@ -266,6 +277,23 @@ export function ServiceForm({ productId, dayId, service, onSuccess, onCancel }: 
             {...form.register("description")}
             placeholder={serviceMessages.descriptionPlaceholder}
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <Label>{serviceMessages.countryCodeLabel}</Label>
+            <Input
+              {...form.register("countryCode")}
+              placeholder={serviceMessages.countryCodePlaceholder}
+              maxLength={2}
+              className="uppercase"
+            />
+            {form.formState.errors.countryCode && (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.countryCode.message}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">

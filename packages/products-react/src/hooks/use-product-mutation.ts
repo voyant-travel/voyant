@@ -6,7 +6,7 @@ import { z } from "zod"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantProductsContext } from "../provider.js"
 import { productsQueryKeys } from "../query-keys.js"
-import { productSingleResponse } from "../schemas.js"
+import { type ProductPaymentPolicy, productSingleResponse } from "../schemas.js"
 
 export interface CreateProductInput {
   name: string
@@ -24,9 +24,11 @@ export interface CreateProductInput {
   marginPercent?: number | null
   facilityId?: string | null
   productTypeId?: string | null
+  taxClassId?: string | null
   startDate?: string | null
   endDate?: string | null
   pax?: number | null
+  customerPaymentPolicy?: ProductPaymentPolicy | null
   tags?: string[]
 }
 

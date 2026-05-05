@@ -22,6 +22,7 @@ describe("createSmartbillSyncRuntime", () => {
     expect(runtime.logger).toBe(console)
     expect(runtime.eventNames).toEqual({
       issued: "invoice.issued",
+      proformaIssued: "invoice.proforma.issued",
       voided: "invoice.voided",
       syncRequested: "invoice.external.sync.requested",
     })
@@ -66,6 +67,7 @@ describe("createSmartbillSyncRuntime", () => {
     expect(runtime.mapEvent).toBe(mapEvent)
     expect(runtime.eventNames).toEqual({
       issued: "custom.issued",
+      proformaIssued: "invoice.proforma.issued",
       voided: "custom.voided",
       syncRequested: "custom.sync",
     })

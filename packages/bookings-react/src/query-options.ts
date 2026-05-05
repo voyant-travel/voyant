@@ -28,6 +28,7 @@ import {
   bookingSingleResponse,
   bookingSupplierStatusesResponse,
   bookingTravelerDocumentsResponse,
+  bookingTravelerSingleResponse,
   bookingTravelersResponse,
   pricingPreviewResponse,
   publicBookingSessionResponse,
@@ -130,6 +131,33 @@ export function getTravelersQueryOptions(
     queryKey: bookingsQueryKeys.travelers(bookingId ?? ""),
     queryFn: () =>
       fetchWithValidation(`/v1/bookings/${bookingId}/travelers`, bookingTravelersResponse, client),
+  })
+}
+
+/**
+ * Fetch a single traveler with PII unmasked. Backend authorizes via
+ * the same policy as `/travel-details` (staff or `bookings-pii:read`)
+ * and audit-logs the access. Used by the "click to reveal" eye button
+ * in the operator's traveler list — fetched lazily so unauthenticated
+ * pageloads don't trigger reveal logs.
+ */
+export function getTravelerRevealQueryOptions(
+  client: FetchWithValidationOptions,
+  bookingId: string | null | undefined,
+  travelerId: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: ["voyant-bookings", "traveler-reveal", bookingId ?? "", travelerId ?? ""],
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/bookings/${bookingId}/travelers/${travelerId}/reveal`,
+        bookingTravelerSingleResponse,
+        client,
+      ),
+    // Don't cache reveals — every reveal should hit the audit log so
+    // operators can't avoid logging by re-rendering the dashboard.
+    staleTime: 0,
+    gcTime: 0,
   })
 }
 

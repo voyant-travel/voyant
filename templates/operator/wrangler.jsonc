@@ -38,7 +38,11 @@
       // the appropriate scanner based on `event.cron`.
       "*/15 * * * *",
       "0 * * * *",
-      "0 3 * * *"
+      "0 3 * * *",
+      // Draft reaper (per booking-journey-architecture.md §5.7) — drops
+      // expired booking_drafts hourly at :05 to avoid colliding with the
+      // hourly availability reconciler at :00.
+      "5 * * * *"
     ]
   }
 }

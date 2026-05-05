@@ -70,6 +70,21 @@ export interface AdapterCapabilities {
    */
   supportedContentLocales?: ReadonlyArray<string>
 
+  /**
+   * Per-supplier hold-release grace period in milliseconds. When the
+   * booking-journey reaper finds an expired draft, it defers calling
+   * the supplier's release primitive until `expires_at + grace` has
+   * passed.
+   *
+   * Cruise lines and luxury suppliers commonly hold capacity for
+   * 24–72h after a journey times out to handle "I'll be right back"
+   * scenarios; mass-market verticals release immediately.
+   *
+   * Per booking-journey-architecture §12.9. Default `0` (immediate
+   * release).
+   */
+  holdReleaseGraceMs?: number
+
   // ── Outbound (channel push) ───────────────────────────────────────────
   // Per channel-push-architecture §3. Three independent flags so an
   // adapter can opt into each push direction independently.
@@ -156,7 +171,16 @@ export interface LiveResolveResult {
   /** Entity-keyed live field values. */
   values: Record<string, Record<string, unknown>>
   /** Entities the adapter could not resolve, with reason codes. */
-  failed?: Record<string, "timeout" | "not_found" | "unsupported" | "error">
+  failed?: Record<
+    string,
+    | "timeout"
+    | "not_found"
+    | "unavailable"
+    | "departure_not_found"
+    | "departure_unavailable"
+    | "unsupported"
+    | "error"
+  >
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

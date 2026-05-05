@@ -36,7 +36,7 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
   const [offset, setOffset] = React.useState(0)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<BookingRecord | undefined>(undefined)
-  const { formatNumber } = useBookingsUiI18nOrDefault()
+  const { formatDateTime, formatNumber } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
 
   const { data, isPending, isError } = useBookings({
@@ -96,24 +96,25 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
               <TableHead>{messages.bookingList.columns.sellAmount}</TableHead>
               <TableHead>{messages.bookingList.columns.pax}</TableHead>
               <TableHead>{messages.bookingList.columns.startDate}</TableHead>
+              <TableHead>{messages.bookingList.columns.endDate}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isPending ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   <Loader2 className="mx-auto size-4 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-sm text-destructive">
+                <TableCell colSpan={6} className="h-24 text-center text-sm text-destructive">
                   {messages.bookingList.loadingError}
                 </TableCell>
               </TableRow>
             ) : bookings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
                   {messages.bookingList.empty}
                 </TableCell>
               </TableRow>
@@ -139,7 +140,12 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
                         })} ${booking.sellCurrency}`}
                   </TableCell>
                   <TableCell>{booking.pax ?? "—"}</TableCell>
-                  <TableCell>{booking.startDate ?? "—"}</TableCell>
+                  <TableCell>
+                    {formatBookingDateTime(booking.startsAt ?? booking.startDate, formatDateTime)}
+                  </TableCell>
+                  <TableCell>
+                    {formatBookingDateTime(booking.endsAt ?? booking.endDate, formatDateTime)}
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -190,4 +196,15 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
       />
     </div>
   )
+}
+
+function formatBookingDateTime(
+  value: string | null | undefined,
+  formatDateTime: (value: Date | string | number) => string,
+) {
+  if (!value) return "—"
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return formatDateTime(`${value}T00:00:00`)
+  }
+  return formatDateTime(value)
 }

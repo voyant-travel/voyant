@@ -6,7 +6,7 @@ import {
   useBookingItems,
 } from "@voyantjs/bookings-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { ChevronDown, ChevronRight, Package, Pencil, Plus, Trash2 } from "lucide-react"
+import { Calendar, ChevronDown, ChevronRight, Package, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
@@ -57,11 +57,11 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
+          <p className="py-4 text-center text-muted-foreground text-sm">
             {messages.bookingItemList.empty}
           </p>
         ) : (
-          <div className="rounded border bg-background">
+          <div className="overflow-x-auto rounded border bg-background">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
@@ -81,6 +81,9 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                   <th className="p-2 text-right font-medium">
                     {messages.bookingItemList.columns.total}
                   </th>
+                  <th className="p-2 text-right font-medium">
+                    {messages.bookingItemList.columns.cost}
+                  </th>
                   <th className="p-2 text-left font-medium">
                     {messages.bookingItemList.columns.serviceDate}
                   </th>
@@ -92,12 +95,19 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                   const isExpanded = expandedItemId === item.id
                   return (
                     <React.Fragment key={item.id}>
-                      <tr className="border-b">
+                      <tr
+                        className="cursor-pointer border-b hover:bg-muted/30"
+                        onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                      >
                         <td className="p-2">
                           <button
                             type="button"
-                            onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedItemId(isExpanded ? null : item.id)
+                            }}
                             className="text-muted-foreground hover:text-foreground"
+                            aria-label={isExpanded ? "Collapse item" : "Expand item"}
                           >
                             {isExpanded ? (
                               <ChevronDown className="h-3.5 w-3.5" />
@@ -121,30 +131,39 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                             ? messages.bookingItemList.values.totalUnavailable
                             : formatCurrency(item.totalSellAmountCents / 100, item.sellCurrency)}
                         </td>
-                        <td className="p-2">
-                          {item.serviceDate ??
+                        <td className="p-2 text-right font-mono text-muted-foreground">
+                          {item.totalCostAmountCents == null || !item.costCurrency
+                            ? messages.bookingItemList.values.costUnavailable
+                            : formatCurrency(item.totalCostAmountCents / 100, item.costCurrency)}
+                        </td>
+                        <td className="p-2 text-xs">
+                          {formatItemDateRange(item) ??
                             messages.bookingItemList.values.serviceDateUnavailable}
                         </td>
                         <td className="p-2">
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 setEditing(item)
                                 setDialogOpen(true)
                               }}
                               className="text-muted-foreground hover:text-foreground"
+                              aria-label="Edit item"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 if (confirm(messages.bookingItemList.actions.deleteConfirm)) {
                                   remove.mutate(item.id)
                                 }
                               }}
                               className="text-muted-foreground hover:text-destructive"
+                              aria-label="Delete item"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -152,9 +171,10 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                         </td>
                       </tr>
                       {isExpanded && (
-                        <tr className="border-b last:border-b-0">
-                          <td colSpan={8} className="p-2">
-                            <BookingItemTravelers bookingId={bookingId} itemId={item.id} />
+                        <tr className="border-b last:border-b-0 bg-muted/10">
+                          <td />
+                          <td colSpan={8} className="p-3">
+                            <ItemDetailPanel bookingId={bookingId} item={item} />
                           </td>
                         </tr>
                       )}
@@ -183,4 +203,130 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
       />
     </Card>
   )
+}
+
+/**
+ * Expanded panel for one item — shows the metadata an operator
+ * usually needs to act on the line: short description, full date
+ * range (timestamps when present, else just the date), cost
+ * breakdown (unit × qty), the linked product/snapshot ids, and the
+ * per-item travelers list. Compact two-column layout on wide
+ * screens, stacks on narrow ones.
+ */
+function ItemDetailPanel({
+  bookingId,
+  item,
+}: {
+  bookingId: string
+  item: BookingItemRecord
+}): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
+  const { formatCurrency } = useBookingsUiI18nOrDefault()
+  const dateRange = formatItemDateRange(item)
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <DetailBlock label={messages.bookingItemList.detail.description}>
+          {item.description ? (
+            <p className="whitespace-pre-wrap text-sm">{item.description}</p>
+          ) : (
+            <p className="text-muted-foreground text-xs italic">
+              {messages.bookingItemList.detail.noDescription}
+            </p>
+          )}
+        </DetailBlock>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <DetailBlock label={messages.bookingItemList.detail.dates}>
+            <div className="flex items-baseline gap-1.5 text-sm">
+              <Calendar className="h-3.5 w-3.5 self-center text-muted-foreground" />
+              {dateRange ?? (
+                <span className="text-muted-foreground text-xs">
+                  {messages.bookingItemList.values.serviceDateUnavailable}
+                </span>
+              )}
+            </div>
+          </DetailBlock>
+
+          <DetailBlock label={messages.bookingItemList.detail.cost}>
+            {item.totalCostAmountCents != null && item.costCurrency ? (
+              <div className="text-sm">
+                <span className="font-mono">
+                  {formatCurrency(item.totalCostAmountCents / 100, item.costCurrency)}
+                </span>
+                {item.unitCostAmountCents != null && item.quantity > 1 ? (
+                  <span className="ml-1.5 text-muted-foreground text-xs">
+                    ({formatCurrency(item.unitCostAmountCents / 100, item.costCurrency)} ×{" "}
+                    {item.quantity})
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <span className="text-muted-foreground text-xs">
+                {messages.bookingItemList.values.costUnavailable}
+              </span>
+            )}
+          </DetailBlock>
+        </div>
+      </div>
+
+      <BookingItemTravelers bookingId={bookingId} itemId={item.id} />
+    </div>
+  )
+}
+
+function DetailBlock({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}): React.ReactElement {
+  return (
+    <div className="space-y-1">
+      <div className="text-muted-foreground text-xs uppercase tracking-wide">{label}</div>
+      <div>{children}</div>
+    </div>
+  )
+}
+
+/**
+ * Compose the most informative date label we can from the item:
+ *   - When `startsAt`+`endsAt` differ → "Mar 5 → Mar 8 2026"
+ *   - When only `serviceDate` is set → "Mar 5 2026"
+ *   - When everything is null → null (caller renders the unavailable
+ *     placeholder)
+ *
+ * Uses Intl date formatting against the runtime locale; the booking
+ * detail page renders Romanian by default but the formatter respects
+ * whatever the consumer's locale is.
+ */
+function formatItemDateRange(item: BookingItemRecord): string | null {
+  const start = item.startsAt ? new Date(item.startsAt) : null
+  const end = item.endsAt ? new Date(item.endsAt) : null
+  if (start && Number.isFinite(start.getTime())) {
+    if (end && Number.isFinite(end.getTime()) && end.getTime() !== start.getTime()) {
+      return `${formatDate(start)} → ${formatDate(end)}`
+    }
+    return formatDate(start)
+  }
+  if (item.serviceDate) {
+    const d = new Date(item.serviceDate)
+    if (Number.isFinite(d.getTime())) return formatDate(d)
+    return item.serviceDate
+  }
+  return null
+}
+
+function formatDate(d: Date): string {
+  try {
+    return d.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
+  } catch {
+    return d.toISOString().slice(0, 10)
+  }
 }

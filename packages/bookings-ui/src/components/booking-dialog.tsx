@@ -32,7 +32,16 @@ import { BookingCreateDialog } from "./booking-create-dialog"
 function createBookingFormSchema(messages: ReturnType<typeof useBookingsUiMessagesOrDefault>) {
   return z.object({
     bookingNumber: z.string().min(1, messages.bookingDialog.validation.bookingNumberRequired),
-    status: z.enum(["draft", "confirmed", "in_progress", "completed", "cancelled"]),
+    status: z.enum([
+      "draft",
+      "on_hold",
+      "awaiting_payment",
+      "confirmed",
+      "in_progress",
+      "completed",
+      "expired",
+      "cancelled",
+    ]),
     sellCurrency: z.string().min(3).max(3, messages.bookingDialog.validation.sellCurrencyInvalid),
     sellAmountCents: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
     costAmountCents: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),

@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useLocale } from "@voyantjs/admin"
+import type { PaymentPolicy } from "@voyantjs/finance"
+import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyantjs/finance-ui"
 import {
+  type SupplierCustomerPaymentPolicy,
   useSupplierMutation,
   useSupplierNoteMutation,
   useSupplierRateMutation,
@@ -13,12 +16,14 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   Textarea,
 } from "@voyantjs/ui/components"
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { RateDialog } from "./rate-dialog"
 import { ServiceDialog } from "./service-dialog"
@@ -56,6 +61,17 @@ export function SupplierDetailPage({ id }: { id: string }) {
   const { data: supplierData, isPending } = useQuery(getSupplierQueryOptions(id))
   const { data: servicesData } = useQuery(getSupplierServicesQueryOptions(id))
   const { data: notesData } = useQuery(getSupplierNotesQueryOptions(id))
+
+  const persistedPolicy =
+    (supplierData?.data?.customerPaymentPolicy as PaymentPolicy | null) ?? null
+  const [policyDraft, setPolicyDraft] = useState<PaymentPolicy | null>(persistedPolicy)
+  // One-way sync persisted → draft so a successful save (or a fresh
+  // GET via query invalidation) refreshes the form. Re-fires only
+  // when the persisted policy reference actually changes, so typing
+  // mid-flight isn't clobbered by every render.
+  useEffect(() => {
+    setPolicyDraft(persistedPolicy)
+  }, [persistedPolicy])
 
   if (isPending) {
     return <SupplierDetailSkeleton />
@@ -166,6 +182,19 @@ export function SupplierDetailPage({ id }: { id: string }) {
                 <span>{supplier.defaultCurrency}</span>
               </div>
             )}
+            <div>
+              <span className="text-muted-foreground">
+                {detailMessages.reservationTimeoutLabel}:
+              </span>{" "}
+              <span>
+                {supplier.reservationTimeoutMinutes && supplier.reservationTimeoutMinutes > 0
+                  ? detailMessages.reservationTimeoutValue.replace(
+                      "{count}",
+                      String(supplier.reservationTimeoutMinutes),
+                    )
+                  : detailMessages.reservationTimeoutInherited}
+              </span>
+            </div>
           </CardContent>
         </Card>
 
@@ -214,6 +243,58 @@ export function SupplierDetailPage({ id }: { id: string }) {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer payment policy</CardTitle>
+          <CardDescription>
+            When set, sourced bookings against this supplier inherit these terms instead of the
+            operator default. Leave inheriting to fall back to the deployment-wide policy.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+          <PaymentPolicyForm
+            value={policyDraft}
+            onChange={setPolicyDraft}
+            inheritable={true}
+            currency={supplier.defaultCurrency ?? "EUR"}
+            disabled={supplierMutation.update.isPending}
+          />
+          <div className="flex flex-col gap-3">
+            <PaymentPolicyPreview
+              policy={policyDraft}
+              currency={supplier.defaultCurrency ?? "EUR"}
+            />
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                disabled={supplierMutation.update.isPending}
+                onClick={() => {
+                  supplierMutation.update.mutate(
+                    {
+                      id,
+                      input: {
+                        customerPaymentPolicy:
+                          (policyDraft as SupplierCustomerPaymentPolicy | null) ?? null,
+                      },
+                    },
+                    {
+                      onSuccess: () => toast.success("Customer payment policy saved"),
+                      onError: (err) =>
+                        toast.error(err instanceof Error ? err.message : "Failed to save policy"),
+                    },
+                  )
+                }}
+              >
+                {supplierMutation.update.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Save policy
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

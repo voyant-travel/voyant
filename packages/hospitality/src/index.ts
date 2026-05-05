@@ -94,6 +94,14 @@ export {
   stayServicePosts,
 } from "./schema.js"
 export {
+  type CreateStayBookingInput,
+  type CreateStayBookingOutcome,
+  type CreateStayBookingResult,
+  hospitalityBookingsService,
+  type StayBookingContact,
+  type StayBookingPassenger,
+} from "./service-bookings.js"
+export {
   hospitalityGuaranteeModeSchema,
   hospitalityHousekeepingTaskStatusSchema,
   hospitalityInventoryModeSchema,

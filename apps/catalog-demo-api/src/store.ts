@@ -130,6 +130,58 @@ export async function incrementAvailability(db: CatalogDemoDb, inventoryId: stri
     .where(eq(catalogDemoInventory.id, inventoryId))
 }
 
+export async function adjustDepartureRemaining(
+  db: CatalogDemoDb,
+  inventoryId: string,
+  departureId: string,
+  delta: number,
+): Promise<void> {
+  if (!Number.isFinite(delta) || delta === 0) return
+
+  const rows = (await db
+    .select({ metadata: catalogDemoInventory.metadata })
+    .from(catalogDemoInventory)
+    .where(eq(catalogDemoInventory.id, inventoryId))
+    .limit(1)) as Array<{ metadata: Record<string, unknown> | null }>
+  const metadata = rows[0]?.metadata
+  const departures = metadata?.departures
+  if (!Array.isArray(departures)) return
+
+  let changed = false
+  const nextDepartures = departures.map((departure) => {
+    if (
+      !departure ||
+      typeof departure !== "object" ||
+      (departure as Record<string, unknown>).id !== departureId
+    ) {
+      return departure
+    }
+
+    const row = departure as Record<string, unknown>
+    const capacity = typeof row.capacity === "number" ? row.capacity : null
+    const current =
+      typeof row.remaining === "number" ? row.remaining : capacity != null ? capacity : null
+    if (current == null) return departure
+
+    const nextRemaining =
+      capacity == null
+        ? Math.max(0, current + delta)
+        : Math.max(0, Math.min(capacity, current + delta))
+    if (nextRemaining === current) return departure
+    changed = true
+    return { ...row, remaining: nextRemaining }
+  })
+
+  if (!changed) return
+  await db
+    .update(catalogDemoInventory)
+    .set({
+      metadata: { ...metadata, departures: nextDepartures },
+      updatedAt: new Date(),
+    })
+    .where(eq(catalogDemoInventory.id, inventoryId))
+}
+
 export async function getOrder(db: CatalogDemoDb, id: string): Promise<CatalogDemoOrderRow | null> {
   const rows = (await db
     .select()

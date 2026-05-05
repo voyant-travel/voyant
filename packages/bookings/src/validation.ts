@@ -20,6 +20,19 @@ import {
 
 // ---------- bookings ----------
 
+const bookingDepositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+const bookingCustomerPaymentPolicySchema = z.object({
+  deposit: bookingDepositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
 const bookingCoreSchema = z.object({
   bookingNumber: z.string().min(1).max(50),
   status: bookingStatusSchema.default("draft"),
@@ -49,6 +62,7 @@ const bookingCoreSchema = z.object({
   endDate: z.string().optional().nullable(),
   pax: z.number().int().positive().optional().nullable(),
   internalNotes: z.string().optional().nullable(),
+  customerPaymentPolicy: bookingCustomerPaymentPolicySchema.optional().nullable(),
   holdExpiresAt: z.string().datetime().optional().nullable(),
   confirmedAt: z.string().datetime().optional().nullable(),
   expiredAt: z.string().datetime().optional().nullable(),
@@ -149,7 +163,7 @@ export const reserveBookingSchema = bookingCoreSchema
       .int()
       .positive()
       .max(24 * 60)
-      .default(30),
+      .optional(),
     holdExpiresAt: z.string().datetime().optional().nullable(),
     items: z.array(reserveBookingItemSchema).min(1),
   })
@@ -228,7 +242,7 @@ export const reserveBookingFromTransactionSchema = bookingCoreSchema
       .int()
       .positive()
       .max(24 * 60)
-      .default(30),
+      .optional(),
     holdExpiresAt: z.string().datetime().optional().nullable(),
     note: z.string().optional().nullable(),
     includeParticipants: z.boolean().default(true),

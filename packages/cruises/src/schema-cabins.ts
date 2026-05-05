@@ -93,6 +93,13 @@ export const cruiseCabinCategories = pgTable(
     floorplanImages: jsonb("floorplan_images").$type<string[]>().default([]),
     gradeCodes: jsonb("grade_codes").$type<string[]>().default([]),
     externalRefs: jsonb("external_refs").$type<Record<string, string>>().default({}),
+    /**
+     * Per-cabin-category customer payment policy override. Most-
+     * specific layer in the cruise vertical — wins over per-sailing
+     * and per-cruise. Suite categories often carry stricter non-
+     * refundable terms than interior/balcony at the same sailing.
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

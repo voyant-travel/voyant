@@ -89,6 +89,7 @@ export {
   type UsePublicBookingSessionStateOptions,
   usePublicBookingSessionState,
 } from "./use-public-booking-session-state.js"
+export { type UseRevealTravelerOptions, useRevealTraveler } from "./use-reveal-traveler.js"
 export {
   type CreateSupplierStatusInput,
   type UpdateSupplierStatusInput,

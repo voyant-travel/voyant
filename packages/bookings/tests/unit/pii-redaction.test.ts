@@ -21,9 +21,9 @@ describe("shouldRevealBookingPii()", () => {
     expect(shouldRevealBookingPii({ scopes: ["bookings-pii:read"] })).toBe(true)
   })
 
-  it("does NOT reveal for plain staff sessions without the scope", () => {
-    expect(shouldRevealBookingPii({ actor: "staff", scopes: [] })).toBe(false)
-    expect(shouldRevealBookingPii({ actor: "staff", scopes: ["bookings:read"] })).toBe(false)
+  it("reveals for staff dashboard sessions", () => {
+    expect(shouldRevealBookingPii({ actor: "staff", scopes: [] })).toBe(true)
+    expect(shouldRevealBookingPii({ actor: "staff", scopes: ["bookings:read"] })).toBe(true)
   })
 
   it("does NOT reveal for customer / partner / supplier actors", () => {

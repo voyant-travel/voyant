@@ -20,6 +20,7 @@ import {
   defaultTravelerFields,
   type PaxBandSpec,
   paxBandsAllowedTotalFrom,
+  type RatePlanOption,
   type RoomOption,
 } from "@voyantjs/catalog/booking-engine"
 
@@ -54,12 +55,38 @@ export function buildHospitalityDraftShape(
   const maxNights = options.maxNights ?? 30
   const sharedRoomAllowed = options.sharedRoomAllowed ?? true
 
+  // Project each rate plan once. The journey filters per-room based
+  // on `applies_to_room_type_ids` (empty = applies to all rooms).
+  const planByRoom = new Map<string, RatePlanOption[]>()
+  for (const rt of content.room_types) {
+    planByRoom.set(rt.id, [])
+  }
+  for (const plan of content.rate_plans) {
+    const rooms =
+      plan.applies_to_room_type_ids.length === 0
+        ? content.room_types.map((r) => r.id)
+        : plan.applies_to_room_type_ids
+    const planOption: RatePlanOption = {
+      id: plan.id,
+      name: plan.name,
+      description: plan.description ?? null,
+      chargeFrequency: plan.charge_frequency,
+      cancellationPolicy: plan.cancellation_policy ?? null,
+      inclusions: plan.inclusions,
+    }
+    for (const roomId of rooms) {
+      const list = planByRoom.get(roomId)
+      if (list) list.push(planOption)
+    }
+  }
+
   const roomOptions: RoomOption[] = content.room_types.map((rt) => ({
     id: rt.id,
     name: rt.name,
     description: rt.description ?? null,
     capacity: rt.max_occupancy ?? rt.max_adults ?? null,
     baseRateHint: null,
+    ratePlans: planByRoom.get(rt.id) ?? [],
   }))
 
   return {

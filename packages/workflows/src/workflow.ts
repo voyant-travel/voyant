@@ -83,8 +83,19 @@ globalRef[REGISTRY_KEY] = REGISTRY
 export function workflow<TInput = unknown, TOutput = unknown>(
   config: WorkflowConfig<TInput, TOutput>,
 ): WorkflowDefinition<TInput, TOutput> {
+  // Vite / Cloudflare workerd HMR re-evaluates modules in place, so a
+  // workflow file that registers ids at import-time will be re-imported
+  // on every save. Throwing on duplicate ids would surface real
+  // collisions but also kills the entire dev loop. The CLI's pre-flight
+  // (`voyant workflows build`) is the right place to catch genuine
+  // duplicates across files; here we replace + warn so HMR keeps
+  // working. Production bundles run this once at startup, so the
+  // duplicate path is effectively dev-only.
   if (REGISTRY.has(config.id)) {
-    throw new Error(`workflow id "${config.id}" is already registered`)
+    console.warn(
+      `[workflows] workflow id "${config.id}" re-registered — assuming HMR re-import. ` +
+        `If this is a real duplicate, \`voyant workflows build\` will reject the bundle.`,
+    )
   }
   const def: WorkflowDefinition<TInput, TOutput> = {
     id: config.id,

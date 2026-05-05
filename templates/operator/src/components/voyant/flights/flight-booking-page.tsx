@@ -265,8 +265,8 @@ export function FlightBookingPage() {
         }}
         onBooked={(order) => {
           navigate({
-            to: "/flights/orders/$orderId",
-            params: { orderId: order.orderId },
+            to: "/bookings/$id",
+            params: { id: order.orderId },
           })
         }}
       />

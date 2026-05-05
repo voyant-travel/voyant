@@ -45,6 +45,17 @@ function createR2BucketStorage(
 
 const DEFAULT_DOCUMENT_URL_EXPIRES_IN = 60 * 5
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  let binary = ""
+  const chunkSize = 0x8000
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize)
+    binary += String.fromCharCode(...chunk)
+  }
+  return btoa(binary)
+}
+
 /**
  * Resolve the media storage provider from the environment.
  *
@@ -108,6 +119,15 @@ export function createDocumentStorage(env: CloudflareBindings): StorageProvider 
   return createR2BucketStorage(env.DOCUMENTS_BUCKET)
 }
 
+export async function readDocumentContentBase64(
+  env: CloudflareBindings,
+  storageKey: string,
+): Promise<string | null> {
+  const object = await env.DOCUMENTS_BUCKET?.get(storageKey)
+  if (!object) return null
+  return arrayBufferToBase64(await object.arrayBuffer())
+}
+
 export async function resolveDocumentDownloadUrl(
   env: CloudflareBindings,
   storageKey: string,
@@ -115,5 +135,52 @@ export async function resolveDocumentDownloadUrl(
 ): Promise<string | null> {
   const storage = createDocumentStorage(env)
   if (!storage) return null
-  return storage.signedUrl(storageKey, expiresIn)
+  const signed = await storage.signedUrl(storageKey, expiresIn)
+  // R2's bucket binding doesn't natively produce signed URLs — the
+  // storage provider's `signedUrl` falls back to returning the raw
+  // storage key when no SigV4 signer is configured. That's not a
+  // usable URL: a redirect to "contracts/cont_…/contract.pdf"
+  // resolves relative to the request URL and 404s.
+  //
+  // Detect the "key passed through" case (no scheme prefix) and
+  // rewrite it to an ABSOLUTE URL on the operator's
+  // `/v1/admin/documents/files/*` streaming proxy. Prefer
+  // DOCUMENTS_BASE_URL when set because external systems (Cloud email
+  // attachments, Cloudflare Browser Rendering, Resend, etc.) cannot
+  // fetch localhost. Fall back to APP_URL for local browser/admin
+  // flows. Use an absolute URL — not a root-relative path — because:
+  //   1. The Vite dev server mounts the API under `/api`, but the
+  //      worker mounts its routes under `/v1/...`. A redirect to
+  //      `/v1/admin/...` lands on the SPA's 404 handler instead of
+  //      the API; only `${APP_URL}/v1/admin/...` reaches the worker.
+  //   2. Production deploys may host the API on a separate origin
+  //      from the dashboard — a relative path can't bridge that.
+  // In production with a real S3 signer, the signed `https://…`
+  // URL is returned as-is and used directly without any rewrite.
+  if (signed && /^https?:\/\//i.test(signed)) {
+    return signed
+  }
+  if (!signed) return null
+  const apiBase = (
+    env.DOCUMENTS_BASE_URL?.trim() ||
+    env.APP_URL?.trim() ||
+    env.API_BASE_URL?.trim() ||
+    ""
+  ).replace(/\/$/, "")
+  if (!apiBase) {
+    // Without a configured API base we have no way to compose an
+    // absolute URL. Fall back to a root-relative URL with no `/api`
+    // prefix — same-origin same-path deploys (no SPA mount) will
+    // work; reverse-proxied deploys won't, but that's a configuration
+    // issue surfaced as a 404, not a silent corruption.
+    return `/v1/admin/documents/files/${encodeStorageKeyPath(signed)}`
+  }
+  return `${apiBase}/v1/admin/documents/files/${encodeStorageKeyPath(signed)}`
+}
+
+function encodeStorageKeyPath(key: string): string {
+  return key
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/")
 }

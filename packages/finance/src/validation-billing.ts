@@ -84,6 +84,12 @@ export const invoiceFromBookingSchema = z.object({
   issueDate: z.string().min(1),
   dueDate: z.string().min(1),
   notes: z.string().optional().nullable(),
+  /**
+   * Document kind. Defaults to a regular invoice; bank-transfer
+   * checkout flows pass `proforma` to issue a placeholder doc until
+   * payment lands and a real invoice replaces it.
+   */
+  invoiceType: z.enum(["invoice", "proforma"]).default("invoice"),
 })
 
 const lineItemCoreSchema = z.object({
@@ -226,6 +232,62 @@ export const updateTaxRegimeSchema = taxRegimeCoreSchema.partial()
 export const taxRegimeListQuerySchema = paginationSchema.extend({
   code: taxRegimeCodeSchema.optional(),
   jurisdiction: z.string().optional(),
+  active: z.coerce.boolean().optional(),
+})
+
+const taxClassLineSchema = z.object({
+  regime_id: z.string().min(1),
+  applies_to: z.enum(["base", "addon", "accommodation", "all"]),
+})
+
+const taxClassCoreSchema = z.object({
+  code: z.string().min(1).max(100),
+  label: z.string().min(1).max(255),
+  description: z.string().max(2000).optional().nullable(),
+  defaultRegimeId: z.string().optional().nullable(),
+  lines: z.array(taxClassLineSchema).optional().nullable(),
+  active: z.boolean().default(true),
+})
+export const insertTaxClassSchema = taxClassCoreSchema
+export const updateTaxClassSchema = taxClassCoreSchema.partial()
+export const taxClassListQuerySchema = paginationSchema.extend({
+  code: z.string().optional(),
+  active: z.coerce.boolean().optional(),
+})
+
+const taxPolicySideSchema = z.enum(["sell", "buy"])
+const taxPolicyAppliesToSchema = z.enum(["base", "addon", "accommodation", "all"])
+const taxPolicyProfileCoreSchema = z.object({
+  code: z.string().min(1).max(100),
+  name: z.string().min(1).max(255),
+  jurisdiction: z.string().max(10).optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
+  active: z.boolean().default(true),
+})
+export const insertTaxPolicyProfileSchema = taxPolicyProfileCoreSchema
+export const updateTaxPolicyProfileSchema = taxPolicyProfileCoreSchema.partial()
+export const taxPolicyProfileListQuerySchema = paginationSchema.extend({
+  code: z.string().optional(),
+  jurisdiction: z.string().optional(),
+  active: z.coerce.boolean().optional(),
+})
+
+const taxPolicyConditionSchema = z.record(z.string(), z.unknown()).optional().nullable()
+const taxPolicyRuleCoreSchema = z.object({
+  profileId: z.string().min(1),
+  side: taxPolicySideSchema.default("sell"),
+  priority: z.number().int().min(0).default(100),
+  name: z.string().min(1).max(255),
+  appliesTo: taxPolicyAppliesToSchema.default("all"),
+  condition: taxPolicyConditionSchema,
+  taxRegimeId: z.string().min(1),
+  active: z.boolean().default(true),
+})
+export const insertTaxPolicyRuleSchema = taxPolicyRuleCoreSchema
+export const updateTaxPolicyRuleSchema = taxPolicyRuleCoreSchema.partial()
+export const taxPolicyRuleListQuerySchema = paginationSchema.extend({
+  profileId: z.string().optional(),
+  side: taxPolicySideSchema.optional(),
   active: z.coerce.boolean().optional(),
 })
 

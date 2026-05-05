@@ -177,6 +177,14 @@ export const ratePlans = pgTable(
     refundable: boolean("refundable").notNull().default(true),
     active: boolean("active").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
+    /**
+     * Per-rate-plan customer payment policy override. Hospitality
+     * vertical's listing-level layer — non-refundable advance-
+     * purchase rates carry stricter deposit terms than flexible
+     * best-available rates at the same property. Shape mirrors
+     * `PaymentPolicy` from `@voyantjs/finance`.
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

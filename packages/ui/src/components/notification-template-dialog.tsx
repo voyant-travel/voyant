@@ -8,13 +8,14 @@ import {
   useNotificationTemplateTools,
 } from "@voyantjs/notifications-react"
 import { Loader2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod/v4"
 
 import { zodResolver } from "../lib/zod-resolver"
 import { Button } from "./button"
+import { Checkbox } from "./checkbox"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./index"
 import { Input } from "./input"
 import { Label } from "./label"
@@ -22,7 +23,6 @@ import { NotificationTemplateAuthoringHelp } from "./notification-template-autho
 import { RichTextEditor } from "./rich-text-editor"
 import { insertPlainText, insertVariableToken } from "./rich-text-variable-extension"
 import { ScrollArea } from "./scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 import { Switch } from "./switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs"
 import { Textarea } from "./textarea"
@@ -38,6 +38,17 @@ const STATUS_ITEMS = [
   { label: "Archived", value: "archived" },
 ] as const
 
+const ATTACHMENT_ITEMS = [
+  { label: "Contract", value: "contract" },
+  { label: "Invoice", value: "invoice" },
+  { label: "Brochure", value: "brochure" },
+] as const
+
+const nativeSelectClassName =
+  "h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
+
+const templateAttachmentSchema = z.enum(["contract", "invoice", "brochure"])
+
 const templateFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z
@@ -50,11 +61,13 @@ const templateFormSchema = z.object({
   htmlTemplate: z.string().optional(),
   textTemplate: z.string().optional(),
   fromAddress: z.string().optional(),
+  attachments: z.array(templateAttachmentSchema).default([]),
   active: z.boolean(),
 })
 
 type FormValues = z.input<typeof templateFormSchema>
 type FormOutput = z.output<typeof templateFormSchema>
+type TemplateAttachment = z.infer<typeof templateAttachmentSchema>
 
 type NotificationTemplateDialogProps = {
   open: boolean
@@ -132,7 +145,51 @@ function variableReference(key: string) {
   return `{{ ${key} }}`
 }
 
-export function NotificationTemplateDialog({
+function getMetadataRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null
+  }
+  return value as Record<string, unknown>
+}
+
+function readTemplateAttachments(metadata: unknown): TemplateAttachment[] {
+  const record = getMetadataRecord(metadata)
+  const value = record?.attachments
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const allowed = new Set(ATTACHMENT_ITEMS.map((item) => item.value))
+  return ATTACHMENT_ITEMS.map((item) => item.value).filter(
+    (attachment) => allowed.has(attachment) && value.includes(attachment),
+  )
+}
+
+function buildTemplateMetadata(
+  metadata: unknown,
+  attachments: ReadonlyArray<TemplateAttachment>,
+): Record<string, unknown> | null {
+  const current = getMetadataRecord(metadata)
+  const next = current ? { ...current } : {}
+
+  if (attachments.length > 0) {
+    next.attachments = [...attachments]
+  } else {
+    delete next.attachments
+  }
+
+  return Object.keys(next).length > 0 ? next : null
+}
+
+export function NotificationTemplateDialog(props: NotificationTemplateDialogProps) {
+  if (!props.open) {
+    return null
+  }
+
+  return <NotificationTemplateDialogInner {...props} />
+}
+
+function NotificationTemplateDialogInner({
   open,
   onOpenChange,
   template,
@@ -141,6 +198,8 @@ export function NotificationTemplateDialog({
   const isEditing = Boolean(template)
   const { create, update } = useNotificationTemplateMutation()
   const { preview, testSend } = useNotificationTemplateTools()
+  const previewResetRef = useRef(preview.reset)
+  const testSendResetRef = useRef(testSend.reset)
   const { variableCatalog, liquidSnippets } = useNotificationTemplateAuthoring()
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
   const [insertionTarget, setInsertionTarget] = useState<InsertionTarget>("body")
@@ -173,11 +232,15 @@ export function NotificationTemplateDialog({
       htmlTemplate: "",
       textTemplate: "",
       fromAddress: "",
+      attachments: [],
       active: true,
     },
   })
 
   const channel = form.watch("channel")
+  const attachments = form.watch("attachments") ?? []
+  previewResetRef.current = preview.reset
+  testSendResetRef.current = testSend.reset
 
   useEffect(() => {
     if (open && template) {
@@ -190,6 +253,7 @@ export function NotificationTemplateDialog({
         htmlTemplate: template.htmlTemplate ?? "",
         textTemplate: template.textTemplate ?? "",
         fromAddress: template.fromAddress ?? "",
+        attachments: template.channel === "email" ? readTemplateAttachments(template.metadata) : [],
         active: template.status === "active",
       })
       return
@@ -202,18 +266,28 @@ export function NotificationTemplateDialog({
 
   useEffect(() => {
     if (!open) return
-    setInsertionTarget((current) =>
-      channel === "sms" ? "text" : current === "text" ? "body" : current,
-    )
+    setInsertionTarget((current) => {
+      const next = channel === "sms" ? "text" : current === "text" ? "body" : current
+      return next === current ? current : next
+    })
   }, [channel, open])
+
+  useEffect(() => {
+    if (!open || channel === "email" || (form.getValues("attachments") ?? []).length === 0) return
+    form.setValue("attachments", [], {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+  }, [channel, form, open])
 
   useEffect(() => {
     if (!open) return
     setPreviewDataInput(defaultPreviewData)
     setTestRecipient("")
-    preview.reset()
-    testSend.reset()
-  }, [defaultPreviewData, open, preview, testSend])
+    previewResetRef.current()
+    testSendResetRef.current()
+  }, [defaultPreviewData, open])
 
   const onSubmit = async (values: FormOutput) => {
     const payload = {
@@ -224,10 +298,13 @@ export function NotificationTemplateDialog({
       status: values.active ? (values.status === "archived" ? "active" : values.status) : "draft",
       subjectTemplate: values.channel === "email" ? values.subjectTemplate || null : null,
       htmlTemplate: values.channel === "email" ? values.htmlTemplate || null : null,
-      textTemplate: values.textTemplate || null,
+      textTemplate: values.channel === "sms" ? values.textTemplate || null : null,
       fromAddress: values.channel === "email" ? values.fromAddress || null : null,
       isSystem: template?.isSystem ?? false,
-      metadata: template?.metadata ?? null,
+      metadata:
+        values.channel === "email"
+          ? buildTemplateMetadata(template?.metadata, values.attachments)
+          : buildTemplateMetadata(template?.metadata, []),
     }
 
     if (isEditing && template) {
@@ -285,7 +362,7 @@ export function NotificationTemplateDialog({
         fromAddress: channel === "email" ? form.getValues("fromAddress") || null : null,
         subjectTemplate: channel === "email" ? form.getValues("subjectTemplate") || null : null,
         htmlTemplate: channel === "email" ? form.getValues("htmlTemplate") || null : null,
-        textTemplate: form.getValues("textTemplate") || null,
+        textTemplate: channel === "sms" ? form.getValues("textTemplate") || null : null,
         data,
       })
     } catch (error) {
@@ -310,7 +387,7 @@ export function NotificationTemplateDialog({
         from: channel === "email" ? form.getValues("fromAddress") || null : null,
         subject: channel === "email" ? form.getValues("subjectTemplate") || null : null,
         html: channel === "email" ? form.getValues("htmlTemplate") || null : null,
-        text: form.getValues("textTemplate") || null,
+        text: channel === "sms" ? form.getValues("textTemplate") || null : null,
         data,
         targetType: "other",
       })
@@ -318,6 +395,19 @@ export function NotificationTemplateDialog({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Test send failed")
     }
+  }
+
+  const setAttachmentSelected = (attachment: TemplateAttachment, checked: boolean) => {
+    const current = form.getValues("attachments") ?? []
+    const next = checked
+      ? [...current, attachment].filter((value, index, values) => values.indexOf(value) === index)
+      : current.filter((value) => value !== attachment)
+
+    form.setValue("attachments", next, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
   }
 
   return (
@@ -354,52 +444,78 @@ export function NotificationTemplateDialog({
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>Channel</Label>
-                  <Select
-                    items={CHANNEL_ITEMS}
+                  <select
+                    className={nativeSelectClassName}
                     value={form.watch("channel")}
-                    onValueChange={(value) => {
-                      if (!value) return
-                      form.setValue("channel", value as FormValues["channel"])
+                    onChange={(event) => {
+                      const nextChannel = event.target.value as FormValues["channel"]
+                      if (form.getValues("channel") === nextChannel) return
+                      form.setValue("channel", nextChannel, {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      })
                     }}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CHANNEL_ITEMS.map((item) => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {CHANNEL_ITEMS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>Status</Label>
-                  <Select
-                    items={STATUS_ITEMS}
+                  <select
+                    className={nativeSelectClassName}
                     value={form.watch("status")}
-                    onValueChange={(value) => {
-                      if (!value) return
-                      form.setValue("status", value as FormValues["status"])
+                    onChange={(event) => {
+                      const nextStatus = event.target.value as FormValues["status"]
+                      if (form.getValues("status") === nextStatus) return
+                      form.setValue("status", nextStatus, {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      })
                     }}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUS_ITEMS.map((item) => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {STATUS_ITEMS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               {channel === "email" ? (
                 <>
+                  <div className="flex flex-col gap-2">
+                    <Label>Attachments</Label>
+                    <div className="flex flex-wrap gap-3">
+                      {ATTACHMENT_ITEMS.map((item) => (
+                        <div
+                          key={item.value}
+                          className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm"
+                        >
+                          <Checkbox
+                            id={`notification-template-attachment-${item.value}`}
+                            checked={attachments.includes(item.value)}
+                            onCheckedChange={(checked) =>
+                              setAttachmentSelected(item.value, checked === true)
+                            }
+                          />
+                          <Label
+                            htmlFor={`notification-template-attachment-${item.value}`}
+                            className="cursor-pointer text-sm font-normal"
+                          >
+                            {item.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
                       <Label>From address</Label>
@@ -436,19 +552,17 @@ export function NotificationTemplateDialog({
                 </>
               ) : null}
 
-              <div className="flex flex-col gap-2">
-                <Label>{channel === "sms" ? "SMS body" : "Plain-text fallback"}</Label>
-                <Textarea
-                  {...form.register("textTemplate")}
-                  placeholder={
-                    channel === "sms"
-                      ? 'Hi {{ traveler.firstName | default: "traveler" }}, your booking is confirmed.'
-                      : "Optional plain-text version for email clients."
-                  }
-                  rows={6}
-                  className="font-mono text-xs"
-                />
-              </div>
+              {channel === "sms" ? (
+                <div className="flex flex-col gap-2">
+                  <Label>SMS body</Label>
+                  <Textarea
+                    {...form.register("textTemplate")}
+                    placeholder='Hi {{ traveler.firstName | default: "traveler" }}, your booking is confirmed.'
+                    rows={6}
+                    className="font-mono text-xs"
+                  />
+                </div>
+              ) : null}
 
               <Tabs defaultValue="authoring">
                 <TabsList className="w-full">
@@ -460,40 +574,19 @@ export function NotificationTemplateDialog({
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:items-center">
                     <div className="flex flex-col gap-1.5">
                       <Label>Insert into</Label>
-                      <Select
-                        items={[
-                          ...(channel === "email"
-                            ? [
-                                { label: "Subject", value: "subject" },
-                                { label: "HTML body", value: "body" },
-                              ]
-                            : []),
-                          {
-                            label: channel === "sms" ? "SMS body" : "Plain-text fallback",
-                            value: "text",
-                          },
-                        ]}
+                      <select
+                        className={nativeSelectClassName}
                         value={insertionTarget}
-                        onValueChange={(value) => {
-                          if (!value) return
-                          setInsertionTarget(value as InsertionTarget)
+                        onChange={(event) => {
+                          const nextTarget = event.target.value as InsertionTarget
+                          if (nextTarget === insertionTarget) return
+                          setInsertionTarget(nextTarget)
                         }}
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {channel === "email" ? (
-                            <SelectItem value="subject">Subject</SelectItem>
-                          ) : null}
-                          {channel === "email" ? (
-                            <SelectItem value="body">HTML body</SelectItem>
-                          ) : null}
-                          <SelectItem value="text">
-                            {channel === "sms" ? "SMS body" : "Plain-text fallback"}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                        {channel === "email" ? <option value="subject">Subject</option> : null}
+                        {channel === "email" ? <option value="body">HTML body</option> : null}
+                        {channel === "sms" ? <option value="text">SMS body</option> : null}
+                      </select>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Variables insert as Liquid tags in text fields and as inline chips in the
@@ -571,15 +664,6 @@ export function NotificationTemplateDialog({
                                   </div>
                                 )}
                               </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                                Plain-text fallback
-                              </div>
-                              <pre className="whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-3 text-xs">
-                                {preview.data?.text || "No plain-text content rendered yet."}
-                              </pre>
                             </div>
                           </div>
                         ) : (

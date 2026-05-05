@@ -615,6 +615,46 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  apps/workflow-runs-dashboard:
+    dependencies:
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      lucide-react:
+        specifier: ^0.475.0
+        version: 0.475.0(react@19.2.4)
+    devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.1.11
+        version: 4.2.2(vite@6.4.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      '@types/react':
+        specifier: ^19.1.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.1.0
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(vite@6.4.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      react:
+        specifier: ^19.1.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.2.4(react@19.2.4)
+      tailwindcss:
+        specifier: ^4.1.11
+        version: 4.2.2
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
+
   apps/workflows-local-dashboard:
     dependencies:
       '@codemirror/lang-json':
@@ -1140,9 +1180,6 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/markets':
-        specifier: workspace:*
-        version: link:../markets
       '@voyantjs/products':
         specifier: workspace:*
         version: link:../products
@@ -1211,6 +1248,12 @@ importers:
       '@voyantjs/bookings-react':
         specifier: workspace:*
         version: link:../bookings-react
+      '@voyantjs/catalog':
+        specifier: workspace:*
+        version: link:../catalog
+      '@voyantjs/catalog-react':
+        specifier: workspace:*
+        version: link:../catalog-react
       '@voyantjs/crm-react':
         specifier: workspace:*
         version: link:../crm-react
@@ -2561,6 +2604,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/finance':
+        specifier: workspace:*
+        version: link:../finance
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../finance-react
@@ -3230,9 +3276,6 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@voyantjs/distribution':
-        specifier: workspace:*
-        version: link:../distribution
       '@voyantjs/products':
         specifier: workspace:*
         version: link:../products
@@ -3820,6 +3863,12 @@ importers:
       '@voyantjs/catalog-react':
         specifier: workspace:*
         version: link:../catalog-react
+      '@voyantjs/finance':
+        specifier: workspace:*
+        version: link:../finance
+      '@voyantjs/finance-ui':
+        specifier: workspace:*
+        version: link:../finance-ui
       '@voyantjs/pricing-react':
         specifier: workspace:*
         version: link:../pricing-react
@@ -4642,6 +4691,37 @@ importers:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/workflow-runs:
+    dependencies:
+      '@voyantjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@voyantjs/db':
+        specifier: workspace:*
+        version: link:../db
+      '@voyantjs/hono':
+        specifier: workspace:*
+        version: link:../hono
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: ^4.12.10
+        version: 4.12.10
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/workflows:
     dependencies:
       '@voyantjs/workflows-errors':
@@ -5322,6 +5402,9 @@ importers:
       '@voyantjs/plugin-netopia':
         specifier: workspace:*
         version: link:../../packages/plugins/netopia
+      '@voyantjs/plugin-smartbill':
+        specifier: workspace:*
+        version: link:../../packages/plugins/smartbill
       '@voyantjs/pricing':
         specifier: workspace:*
         version: link:../../packages/pricing
@@ -5385,6 +5468,9 @@ importers:
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@voyantjs/workflow-runs':
+        specifier: workspace:*
+        version: link:../../packages/workflow-runs
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../../packages/workflows
@@ -14355,6 +14441,13 @@ snapshots:
       tailwindcss: 4.2.2
       vite: 6.4.2(@types/node@20.19.39)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
 
+  '@tailwindcss/vite@4.2.2(vite@6.4.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))':
+    dependencies:
+      '@tailwindcss/node': 4.2.2
+      '@tailwindcss/oxide': 4.2.2
+      tailwindcss: 4.2.2
+      vite: 6.4.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
+
   '@tailwindcss/vite@4.2.2(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@tailwindcss/node': 4.2.2
@@ -14980,6 +15073,18 @@ snapshots:
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
       vite: 6.4.2(@types/node@20.19.39)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@vitejs/plugin-react@4.7.0(vite@6.4.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.29.0)
+      '@babel/plugin-transform-react-jsx-source': 7.27.1(@babel/core@7.29.0)
+      '@rolldown/pluginutils': 1.0.0-beta.27
+      '@types/babel__core': 7.20.5
+      react-refresh: 0.17.0
+      vite: 6.4.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
     transitivePeerDependencies:
       - supports-color
 

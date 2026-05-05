@@ -1,6 +1,6 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { bookingsService } from "../service.js"
+import { type BookingServiceRuntime, bookingsService } from "../service.js"
 
 export interface ExpireStaleBookingHoldsInput {
   before?: string | null
@@ -17,6 +17,7 @@ export async function expireStaleBookingHolds(
   db: PostgresJsDatabase,
   input: ExpireStaleBookingHoldsInput = {},
   userId = "system",
+  runtime: BookingServiceRuntime = {},
 ): Promise<ExpireStaleBookingHoldsResult> {
   return bookingsService.expireStaleBookings(
     db,
@@ -25,5 +26,6 @@ export async function expireStaleBookingHolds(
       note: input.note ?? null,
     },
     userId,
+    runtime,
   )
 }

@@ -201,11 +201,11 @@ export function CatalogBookingPage() {
       const b = res as BookResponse
       toast.success(`Booked — order ${b.orderRef.slice(0, 16)}… (${b.status})`, {
         action: {
-          label: "View orders",
-          onClick: () => navigate({ to: "/orders/catalog" }),
+          label: "View bookings",
+          onClick: () => navigate({ to: "/bookings" }),
         },
       })
-      navigate({ to: "/orders/catalog" })
+      navigate({ to: "/bookings" })
     } catch (err) {
       toast.error(`Book request failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {

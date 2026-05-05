@@ -1,0 +1,257 @@
+/**
+ * `checkoutFinalize` workflow — runs on `payment.completed` for
+ * bookings created through the storefront's checkout-start path.
+ *
+ * Steps:
+ *   1. transition_to_confirmed — flip the booking from
+ *      `awaiting_payment` to `confirmed`, stamping `paidAt`. This
+ *      emits `booking.confirmed` which fans out to:
+ *        - legal's auto-generate-contract subscriber (if wired)
+ *        - finance's auto-generate-invoice subscriber (Phase 5)
+ *   2. issue_invoice — explicit fallback when finance auto-generation
+ *      isn't wired. Idempotent — checks if an invoice already exists.
+ *
+ * Compensation: if `issue_invoice` fails after the booking is
+ * already confirmed, we don't roll back to `awaiting_payment` — the
+ * payment was real and the booking is real. Instead the workflow
+ * leaves the booking in `confirmed` and rethrows so the workflow
+ * runs view surfaces the failed step for ops.
+ *
+ * This is a thin adapter on top of `createWorkflow` from
+ * `@voyantjs/core/workflows` — no durability, no event-await; the
+ * caller subscribes to `payment.completed` and runs the workflow
+ * inline. Phase 6 of the storefront-checkout-flow plan elaborates
+ * with workflow-runs surfacing.
+ */
+
+import type { EventBus } from "@voyantjs/core"
+import { createWorkflow, step } from "@voyantjs/core/workflows"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+
+export interface CheckoutFinalizeInput {
+  bookingId: string
+  /** Optional payment metadata for audit logging. */
+  paymentSessionId?: string
+  paymentIntent?: "card" | "bank_transfer" | "hold" | "ticket_on_credit"
+}
+
+/**
+ * Optional step-lifecycle hooks the caller can wire to the
+ * `@voyantjs/workflow-runs` recorder (or any other observability
+ * sink). Catalog stays neutral — it just emits the events.
+ */
+export interface CheckoutFinalizeStepRecorder {
+  startStep(name: string): Promise<void> | void
+  completeStep(name: string, output?: Record<string, unknown> | null): Promise<void> | void
+  failStep(name: string, error: unknown): Promise<void> | void
+}
+
+export interface CheckoutFinalizeDeps {
+  db: PostgresJsDatabase
+  eventBus?: EventBus
+  /** Optional observability sink — see CheckoutFinalizeStepRecorder. */
+  recorder?: CheckoutFinalizeStepRecorder
+  /**
+   * Confirms the booking — flips it from `awaiting_payment`/`on_hold`
+   * to `confirmed`. Implementations should emit `booking.confirmed`
+   * once the transaction commits so downstream subscribers fan out.
+   */
+  confirmBooking: (bookingId: string) => Promise<void>
+  /**
+   * Issues the final invoice for the booking. When `convertedFromInvoiceId`
+   * is supplied (proforma → invoice path), implementations should
+   * preserve the linkage. Returning `null` is treated as "skipped"
+   * (e.g. invoice already issued) and not an error.
+   */
+  issueInvoice: (input: {
+    bookingId: string
+    convertedFromInvoiceId?: string | null
+  }) => Promise<{ invoiceId: string } | null>
+  /**
+   * Look up an existing proforma for this booking so we can pass
+   * its id into `issueInvoice` (for the conversion linkage). Return
+   * `null` if there isn't one — the booking went through card or
+   * inquiry rather than bank-transfer.
+   */
+  findProformaForBooking?: (bookingId: string) => Promise<{ invoiceId: string } | null>
+  /**
+   * Generate (or fetch existing) the contract PDF for the booking.
+   * The implementation is expected to be **idempotent** — if a
+   * contract document already exists for this booking, return its
+   * id without re-rendering. This keeps the explicit workflow step
+   * compatible with the legal package's `booking.confirmed`
+   * subscriber, which races with the step in storefront flows.
+   *
+   * Returning `null` is treated as "no contract template wired" and
+   * skipped silently — the operator may not have configured one,
+   * which is a deployment choice rather than a workflow failure.
+   *
+   * Optional: when omitted, the workflow skips this step entirely
+   * (operators that don't want explicit-step recording leave it
+   * unset and rely on the subscriber).
+   */
+  generateContractPdf?: (input: {
+    bookingId: string
+  }) => Promise<{ contractId: string; attachmentId: string } | null>
+  /**
+   * Reconcile paid `payment_sessions` for the booking against the
+   * just-issued invoice: update each paid session's `invoice_id`
+   * pointer and write a `payments` row so the invoice flips to paid.
+   *
+   * The session was created at storefront-checkout time with
+   * `target_type: "booking"` and `invoice_id: NULL` because the
+   * invoice didn't exist yet. Without this back-link, the invoice
+   * permanently reads as unpaid even though the customer's money is
+   * sitting in the paid session.
+   *
+   * Idempotency: implementations should skip sessions that already
+   * have an `invoice_id` set or already have a `payment_id`. Returns
+   * the count of newly-linked sessions for observability.
+   */
+  linkPaymentToInvoice?: (input: {
+    bookingId: string
+    invoiceId: string
+    /** Hint from the workflow input — when set, prefer linking this session. */
+    paymentSessionId?: string
+  }) => Promise<{ paymentId: string | null; sessionsLinked: number }>
+}
+
+async function runStep<T>(
+  name: string,
+  recorder: CheckoutFinalizeStepRecorder | undefined,
+  fn: () => Promise<T>,
+): Promise<T> {
+  await recorder?.startStep(name)
+  try {
+    const result = await fn()
+    await recorder?.completeStep(name, asRecord(result))
+    return result
+  } catch (err) {
+    await recorder?.failStep(name, err)
+    throw err
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+  return null
+}
+
+export const checkoutFinalizeWorkflow = createWorkflow("checkout-finalize", [
+  step<CheckoutFinalizeInput, void>("transition_to_confirmed").run(async (input, ctx) => {
+    const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
+    if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
+    await runStep("transition_to_confirmed", deps.recorder, () =>
+      deps.confirmBooking(input.bookingId),
+    )
+  }),
+
+  step<CheckoutFinalizeInput, { invoiceId: string } | null>("issue_invoice").run(
+    async (input, ctx) => {
+      const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
+      if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
+      return runStep("issue_invoice", deps.recorder, async () => {
+        const proforma = deps.findProformaForBooking
+          ? await deps.findProformaForBooking(input.bookingId)
+          : null
+        return deps.issueInvoice({
+          bookingId: input.bookingId,
+          convertedFromInvoiceId: proforma?.invoiceId ?? null,
+        })
+      })
+    },
+  ),
+
+  step<CheckoutFinalizeInput, { paymentId: string | null; sessionsLinked: number } | null>(
+    "link_payment_to_invoice",
+  ).run(async (input, ctx) => {
+    const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
+    if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
+    if (!deps.linkPaymentToInvoice) return null
+
+    const issueOutput = ctx.results.issue_invoice as { invoiceId: string } | null | undefined
+    if (!issueOutput?.invoiceId) {
+      // Invoice generation was skipped (returned null) — there's
+      // nothing to link a payment to. Skip silently rather than
+      // throwing so the workflow continues for "hold"-only checkouts.
+      return null
+    }
+
+    return runStep("link_payment_to_invoice", deps.recorder, () =>
+      deps.linkPaymentToInvoice!({
+        bookingId: input.bookingId,
+        invoiceId: issueOutput.invoiceId,
+        paymentSessionId: input.paymentSessionId,
+      }),
+    )
+  }),
+
+  step<CheckoutFinalizeInput, { contractId: string; attachmentId: string } | null>(
+    "generate_contract_pdf",
+  ).run(async (input, ctx) => {
+    const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
+    if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
+    // Optional step — when no generator is wired, the workflow
+    // proceeds without a contract document (some operators don't
+    // attach a customer-facing contract). Returning null also keeps
+    // the dashboard's step row, which is the point of having this
+    // as an explicit step rather than a fire-and-forget subscriber.
+    if (!deps.generateContractPdf) return null
+    return runStep("generate_contract_pdf", deps.recorder, () =>
+      deps.generateContractPdf!({ bookingId: input.bookingId }),
+    )
+  }),
+])
+
+export interface RunCheckoutFinalizeOptions {
+  /**
+   * For resume runs — name of the step to resume from. Steps before
+   * this one are skipped and their outputs hydrated from
+   * {@link RunCheckoutFinalizeOptions.seedResults}.
+   */
+  skipUntil?: string
+  /** Step outputs from the parent run, keyed by step name. */
+  seedResults?: Record<string, unknown>
+}
+
+/**
+ * Run the workflow with deps seeded. Wraps `checkoutFinalizeWorkflow.run`
+ * with the dependency-injection plumbing — the workflow primitive
+ * doesn't carry a "deps" concept on its own, so we pass them through
+ * `ctx.results` keyed under `__deps`.
+ *
+ * Resume support: when `skipUntil` is set, the seeded `__deps` step
+ * is added to `seedResults` automatically so the resumed step still
+ * sees `ctx.results.__deps`. The caller doesn't need to know about
+ * the deps-injection mechanism.
+ */
+export async function runCheckoutFinalize(
+  input: CheckoutFinalizeInput,
+  deps: CheckoutFinalizeDeps,
+  options: RunCheckoutFinalizeOptions = {},
+): Promise<void> {
+  // Seed deps into ctx.results before the first step runs by passing
+  // them as a synthetic step output. The step name MUST match the
+  // key the downstream steps read (`__deps`) — a previous spelling
+  // (`__seed_deps`) silently broke this because step outputs are
+  // keyed by name.
+  const seeded = createWorkflow("checkout-finalize", [
+    step<CheckoutFinalizeInput, CheckoutFinalizeDeps>("__deps").run(() => deps),
+    ...checkoutFinalizeWorkflow.steps,
+  ])
+  // For resume: the synthetic "__deps" step would otherwise be
+  // skipped (and produce no value), starving downstream steps of
+  // their dependencies. Inject deps into seedResults so the skipped
+  // path still hydrates them.
+  const seedResults =
+    options.skipUntil !== undefined
+      ? { ...(options.seedResults ?? {}), __deps: deps as unknown as Record<string, unknown> }
+      : options.seedResults
+  await seeded.run({
+    input,
+    skipUntil: options.skipUntil,
+    seedResults,
+  })
+}

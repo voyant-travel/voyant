@@ -73,7 +73,7 @@ export const publicCreateBookingSessionSchema = z.object({
     .int()
     .positive()
     .max(24 * 60)
-    .default(30),
+    .optional(),
   holdExpiresAt: isoDateTimeSchema.nullable().optional(),
   items: z.array(publicCreateBookingSessionItemSchema).min(1),
   travelers: z.array(publicBookingSessionTravelerInputSchema).optional(),

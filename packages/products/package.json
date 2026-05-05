@@ -18,7 +18,8 @@
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
     "./routes-content": "./src/routes-content.ts",
-    "./draft-shape": "./src/draft-shape.ts"
+    "./draft-shape": "./src/draft-shape.ts",
+    "./booking-engine": "./src/booking-engine/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -89,6 +90,11 @@
         "types": "./dist/booking-extension.d.ts",
         "import": "./dist/booking-extension.js",
         "default": "./dist/booking-extension.js"
+      },
+      "./booking-engine": {
+        "types": "./dist/booking-engine/index.d.ts",
+        "import": "./dist/booking-engine/index.js",
+        "default": "./dist/booking-engine/index.js"
       }
     },
     "main": "./dist/index.js",

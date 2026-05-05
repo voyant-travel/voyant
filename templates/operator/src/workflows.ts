@@ -1,5 +1,7 @@
 import { expireStaleBookingHolds } from "@voyantjs/bookings/tasks"
 import { createDbClient } from "@voyantjs/db"
+import { financeService } from "@voyantjs/finance"
+import { paymentSessions } from "@voyantjs/finance/schema"
 import {
   deliverQueuedNotificationReminder,
   sendDueNotificationReminders,
@@ -10,6 +12,7 @@ import {
   renderProductBrochureTemplate,
 } from "@voyantjs/products/tasks"
 import { workflow } from "@voyantjs/workflows"
+import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { createProductBrochurePrinter } from "./lib/brochure-printer.js"
@@ -47,7 +50,25 @@ workflow<
   defaultRuntime: "node",
   schedule: { cron: "*/5 * * * *" },
   async run(input) {
-    return expireStaleBookingHolds(getDb(), input, "system")
+    return expireStaleBookingHolds(getDb(), input, "system", {
+      expirePaymentSessionsForBooking: async (db, bookingId) => {
+        const staleSessions = await db
+          .select({ id: paymentSessions.id })
+          .from(paymentSessions)
+          .where(
+            and(
+              eq(paymentSessions.bookingId, bookingId),
+              inArray(paymentSessions.status, ["pending", "requires_redirect", "processing"]),
+            ),
+          )
+
+        for (const session of staleSessions) {
+          await financeService.expirePaymentSession(db, session.id, {
+            notes: "Booking hold expired",
+          })
+        }
+      },
+    })
   },
 })
 

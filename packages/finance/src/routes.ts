@@ -35,6 +35,9 @@ import {
   insertPaymentSchema,
   insertPaymentSessionSchema,
   insertSupplierPaymentSchema,
+  insertTaxClassSchema,
+  insertTaxPolicyProfileSchema,
+  insertTaxPolicyRuleSchema,
   insertTaxRegimeSchema,
   insertVoucherSchema,
   invoiceFromBookingSchema,
@@ -51,6 +54,9 @@ import {
   renderInvoiceInputSchema,
   revenueReportQuerySchema,
   supplierPaymentListQuerySchema,
+  taxClassListQuerySchema,
+  taxPolicyProfileListQuerySchema,
+  taxPolicyRuleListQuerySchema,
   taxRegimeListQuerySchema,
   updateBookingGuaranteeSchema,
   updateBookingItemCommissionSchema,
@@ -66,6 +72,9 @@ import {
   updatePaymentInstrumentSchema,
   updatePaymentSessionSchema,
   updateSupplierPaymentSchema,
+  updateTaxClassSchema,
+  updateTaxPolicyProfileSchema,
+  updateTaxPolicyRuleSchema,
   updateTaxRegimeSchema,
   updateVoucherSchema,
   voucherListQuerySchema,
@@ -646,13 +655,18 @@ export const financeRoutes = new Hono<Env>()
     )
   })
 
-  // POST /invoices/from-booking — Create draft invoice from booking + booking items
+  // POST /invoices/from-booking — Create + issue invoice (or proforma) from booking + booking items
   .post("/invoices/from-booking", async (c) => {
     const input = await parseJsonBody(c, invoiceFromBookingSchema)
     const db = c.get("db")
-    const [{ bookingItems, bookings }, { eq }] = await Promise.all([
+    const [
+      { bookingItems, bookings },
+      { eq },
+      { issueInvoiceFromBooking, issueProformaFromBooking },
+    ] = await Promise.all([
       import("@voyantjs/bookings/schema"),
       import("drizzle-orm"),
+      import("./service-issue.js"),
     ])
 
     const [booking] = await db
@@ -667,26 +681,42 @@ export const financeRoutes = new Hono<Env>()
 
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, booking.id))
 
-    const row = await financeService.createInvoiceFromBooking(db, input, {
-      booking: {
-        id: booking.id,
-        bookingNumber: booking.bookingNumber,
-        personId: booking.personId,
-        organizationId: booking.organizationId,
-        sellCurrency: booking.sellCurrency,
-        baseCurrency: booking.baseCurrency,
-        fxRateSetId: null,
-        sellAmountCents: booking.sellAmountCents,
-        baseSellAmountCents: booking.baseSellAmountCents,
+    const runtime = (() => {
+      try {
+        return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+      } catch {
+        return undefined
+      }
+    })()
+
+    const issuer =
+      input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
+
+    const row = await issuer(
+      db,
+      input,
+      {
+        booking: {
+          id: booking.id,
+          bookingNumber: booking.bookingNumber,
+          personId: booking.personId,
+          organizationId: booking.organizationId,
+          sellCurrency: booking.sellCurrency,
+          baseCurrency: booking.baseCurrency,
+          fxRateSetId: null,
+          sellAmountCents: booking.sellAmountCents,
+          baseSellAmountCents: booking.baseSellAmountCents,
+        },
+        items: items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          quantity: item.quantity,
+          unitSellAmountCents: item.unitSellAmountCents,
+          totalSellAmountCents: item.totalSellAmountCents,
+        })),
       },
-      items: items.map((item) => ({
-        id: item.id,
-        title: item.title,
-        quantity: item.quantity,
-        unitSellAmountCents: item.unitSellAmountCents,
-        totalSellAmountCents: item.totalSellAmountCents,
-      })),
-    })
+      { eventBus: runtime?.eventBus },
+    )
 
     return c.json({ data: row }, 201)
   })
@@ -1052,6 +1082,123 @@ export const financeRoutes = new Hono<Env>()
   })
 
   // ========================================================================
+  // Tax Classes
+  // ========================================================================
+
+  .get("/tax-classes", async (c) => {
+    const query = parseQuery(c, taxClassListQuerySchema)
+    return c.json(await financeService.listTaxClasses(c.get("db"), query))
+  })
+
+  .post("/tax-classes", async (c) => {
+    const row = await financeService.createTaxClass(
+      c.get("db"),
+      await parseJsonBody(c, insertTaxClassSchema),
+    )
+    return c.json({ data: row }, 201)
+  })
+
+  .get("/tax-classes/:id", async (c) => {
+    const row = await financeService.getTaxClassById(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax class not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .patch("/tax-classes/:id", async (c) => {
+    const row = await financeService.updateTaxClass(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateTaxClassSchema),
+    )
+    if (!row) return c.json({ error: "Tax class not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .delete("/tax-classes/:id", async (c) => {
+    const row = await financeService.deleteTaxClass(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax class not found" }, 404)
+    return c.json({ success: true })
+  })
+
+  // ========================================================================
+  // Tax Policy Profiles
+  // ========================================================================
+
+  .get("/tax-policy-profiles", async (c) => {
+    const query = parseQuery(c, taxPolicyProfileListQuerySchema)
+    return c.json(await financeService.listTaxPolicyProfiles(c.get("db"), query))
+  })
+
+  .post("/tax-policy-profiles", async (c) => {
+    const row = await financeService.createTaxPolicyProfile(
+      c.get("db"),
+      await parseJsonBody(c, insertTaxPolicyProfileSchema),
+    )
+    return c.json({ data: row }, 201)
+  })
+
+  .get("/tax-policy-profiles/:id", async (c) => {
+    const row = await financeService.getTaxPolicyProfileById(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .patch("/tax-policy-profiles/:id", async (c) => {
+    const row = await financeService.updateTaxPolicyProfile(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateTaxPolicyProfileSchema),
+    )
+    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .delete("/tax-policy-profiles/:id", async (c) => {
+    const row = await financeService.deleteTaxPolicyProfile(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax policy profile not found" }, 404)
+    return c.json({ success: true })
+  })
+
+  // ========================================================================
+  // Tax Policy Rules
+  // ========================================================================
+
+  .get("/tax-policy-rules", async (c) => {
+    const query = parseQuery(c, taxPolicyRuleListQuerySchema)
+    return c.json(await financeService.listTaxPolicyRules(c.get("db"), query))
+  })
+
+  .post("/tax-policy-rules", async (c) => {
+    const row = await financeService.createTaxPolicyRule(
+      c.get("db"),
+      await parseJsonBody(c, insertTaxPolicyRuleSchema),
+    )
+    return c.json({ data: row }, 201)
+  })
+
+  .get("/tax-policy-rules/:id", async (c) => {
+    const row = await financeService.getTaxPolicyRuleById(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .patch("/tax-policy-rules/:id", async (c) => {
+    const row = await financeService.updateTaxPolicyRule(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateTaxPolicyRuleSchema),
+    )
+    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .delete("/tax-policy-rules/:id", async (c) => {
+    const row = await financeService.deleteTaxPolicyRule(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Tax policy rule not found" }, 404)
+    return c.json({ success: true })
+  })
+
+  // ========================================================================
   // Invoice Renditions & External Refs (nested under invoice)
   // ========================================================================
 
@@ -1150,6 +1297,28 @@ export const financeRoutes = new Hono<Env>()
       }
       throw error
     }
+  })
+
+  // ========================================================================
+  // Booking-scoped reads (admin)
+  // ========================================================================
+  // Mirror the customer-portal's `/v1/public/finance/bookings/:bookingId/payments`
+  // endpoint on the admin surface. The admin actor guard
+  // (`requireActor("staff")`) blocks staff sessions from hitting the
+  // public path, but operators absolutely need to see the canonical
+  // `payments` rows on the booking detail page. This handler reuses
+  // the same publicFinanceService helper so the response shape is
+  // identical to the customer-portal flow.
+  .get("/bookings/:bookingId/payments", async (c) => {
+    const { publicFinanceService } = await import("./service-public.js")
+    const result = await publicFinanceService.getBookingPayments(
+      c.get("db"),
+      c.req.param("bookingId"),
+    )
+    if (!result) {
+      return c.json({ error: "Booking payments not found" }, 404)
+    }
+    return c.json({ data: result })
   })
 
 export type FinanceRoutes = typeof financeRoutes

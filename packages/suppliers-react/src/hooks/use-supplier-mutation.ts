@@ -5,7 +5,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantSuppliersContext } from "../provider.js"
 import { suppliersQueryKeys } from "../query-keys.js"
-import { deleteSuccessResponse, supplierDetailResponse } from "../schemas.js"
+import {
+  deleteSuccessResponse,
+  type SupplierCustomerPaymentPolicy,
+  supplierDetailResponse,
+} from "../schemas.js"
 
 export interface CreateSupplierInput {
   name: string
@@ -22,6 +26,9 @@ export interface CreateSupplierInput {
   contactName?: string | null
   contactEmail?: string | null
   contactPhone?: string | null
+  paymentTermsDays?: number | null
+  reservationTimeoutMinutes?: number | null
+  customerPaymentPolicy?: SupplierCustomerPaymentPolicy | null
   tags?: string[]
 }
 

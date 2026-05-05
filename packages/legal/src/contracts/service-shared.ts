@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { contractNumberSeries } from "./schema.js"
+import { contractNumberSeries, contracts } from "./schema.js"
 import type {
   contractListQuerySchema,
   contractTemplateListQuerySchema,
@@ -64,12 +64,27 @@ function resolvePath(obj: unknown, path: string): unknown {
   return current
 }
 
+/**
+ * Default placeholder for output tags whose value is null / undefined
+ * / empty-string. Applied to every contract render — preview at the
+ * storefront, manual previews from the admin, AND the post-confirm
+ * auto-generated PDFs — so authored templates don't have to spell out
+ * `| default: "-"` on every variable.
+ *
+ * Authors who prefer a different fallback for a specific variable can
+ * still write `{{ foo | default: "TBD" }}` and the renderer leaves
+ * their explicit chain alone.
+ */
+const CONTRACT_MISSING_VALUE_PLACEHOLDER = "-"
+
 export function renderTemplate(
   body: string,
   bodyFormat: "markdown" | "html" | "lexical_json",
   variables: Record<string, unknown>,
 ): string {
-  return renderStructuredTemplate(body, bodyFormat, variables)
+  return renderStructuredTemplate(body, bodyFormat, variables, {
+    missingValuePlaceholder: CONTRACT_MISSING_VALUE_PLACEHOLDER,
+  })
 }
 
 export function validateTemplateVariables(
@@ -130,8 +145,26 @@ export async function allocateContractNumber(
     const shouldReset =
       boundary !== null && (resetAt === null || resetAt.getTime() < boundary.getTime())
 
-    const nextSequence = shouldReset ? 1 : currentSequence + 1
+    let nextSequence = shouldReset ? 1 : currentSequence + 1
     const nextResetAt = strategy === "never" ? resetAt : boundary
+    let nextNumber = formatNumber(prefix, separator, nextSequence, padLength)
+
+    // Series counters can drift behind real data after manual imports,
+    // seed resets, or duplicate legacy series. The contract number itself is
+    // globally unique, so advance until we find a free value before stamping
+    // the series counter.
+    for (let attempts = 0; attempts < 1000; attempts++) {
+      const existing = await tx
+        .select({ id: contracts.id })
+        .from(contracts)
+        .where(sql`${contracts.contractNumber} = ${nextNumber}`)
+        .limit(1)
+
+      if (existing.length === 0) break
+
+      nextSequence += 1
+      nextNumber = formatNumber(prefix, separator, nextSequence, padLength)
+    }
 
     await tx
       .update(contractNumberSeries)
@@ -139,7 +172,7 @@ export async function allocateContractNumber(
       .where(sql`${contractNumberSeries.id} = ${seriesId}`)
 
     return {
-      number: formatNumber(prefix, separator, nextSequence, padLength),
+      number: nextNumber,
       sequence: nextSequence,
     }
   })

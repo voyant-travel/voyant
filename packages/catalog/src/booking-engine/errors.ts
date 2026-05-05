@@ -9,6 +9,14 @@
 /** No SourceAdapter was registered for the row's `source.kind`. */
 export const NO_ADAPTER_REGISTERED = "NO_ADAPTER_REGISTERED" as const
 
+/**
+ * No OwnedBookingHandler was registered for the row's `entity_module`.
+ * Sibling to `NO_ADAPTER_REGISTERED` — sourced rows dispatch through
+ * adapters keyed by connection, owned rows dispatch through handlers
+ * keyed by entity module. Per booking-journey-architecture §6.
+ */
+export const NO_HANDLER_REGISTERED = "NO_HANDLER_REGISTERED" as const
+
 /** The supplied `quoteId` is unknown or already consumed. */
 export const QUOTE_NOT_FOUND = "QUOTE_NOT_FOUND" as const
 
@@ -38,6 +46,7 @@ export const SNAPSHOT_CONTENT_UNAVAILABLE = "SNAPSHOT_CONTENT_UNAVAILABLE" as co
 
 export type BookingEngineErrorCode =
   | typeof NO_ADAPTER_REGISTERED
+  | typeof NO_HANDLER_REGISTERED
   | typeof QUOTE_NOT_FOUND
   | typeof QUOTE_EXPIRED
   | typeof QUOTE_MISMATCH
@@ -69,6 +78,17 @@ export class NoAdapterRegisteredError extends BookingEngineError {
       identifier,
     })
     this.name = "NoAdapterRegisteredError"
+  }
+}
+
+export class NoOwnedHandlerRegisteredError extends BookingEngineError {
+  /** Thrown when the owned-handler registry has no entry for the
+   *  given `entity_module`. */
+  constructor(entityModule: string) {
+    super(NO_HANDLER_REGISTERED, `no OwnedBookingHandler registered for "${entityModule}"`, {
+      entityModule,
+    })
+    this.name = "NoOwnedHandlerRegisteredError"
   }
 }
 

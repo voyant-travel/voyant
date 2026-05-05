@@ -17,6 +17,7 @@ export type BookingStatusBadgeVariant = "default" | "secondary" | "outline" | "d
 export const bookingStatusBadgeVariant: Record<BookingStatus, BookingStatusBadgeVariant> = {
   draft: "outline",
   on_hold: "secondary",
+  awaiting_payment: "secondary",
   confirmed: "default",
   in_progress: "secondary",
   completed: "default",

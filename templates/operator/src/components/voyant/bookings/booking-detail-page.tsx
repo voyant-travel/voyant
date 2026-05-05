@@ -2,11 +2,15 @@
 
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useLocale } from "@voyantjs/admin"
-import { bookingStatusBadgeVariant, useBooking, useBookingMutation } from "@voyantjs/bookings-react"
+import {
+  type BookingRecord,
+  bookingStatusBadgeVariant,
+  useBooking,
+  useBookingMutation,
+} from "@voyantjs/bookings-react"
 import { BookingActivityTimeline } from "@voyantjs/bookings-ui/components/booking-activity-timeline"
 import { BookingCancellationDialog } from "@voyantjs/bookings-ui/components/booking-cancellation-dialog"
 import { BookingDialog } from "@voyantjs/bookings-ui/components/booking-dialog"
-import { BookingDocumentList } from "@voyantjs/bookings-ui/components/booking-document-list"
 import { BookingGroupSection } from "@voyantjs/bookings-ui/components/booking-group-section"
 import { BookingGuaranteeList } from "@voyantjs/bookings-ui/components/booking-guarantee-list"
 import { BookingItemList } from "@voyantjs/bookings-ui/components/booking-item-list"
@@ -17,8 +21,7 @@ import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-chan
 import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
 import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
 import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
-import { BookingContractCard } from "@voyantjs/legal-ui/components/booking-contract-card"
-import { Badge, Button, Card, CardContent } from "@voyantjs/ui/components"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,8 +34,12 @@ import {
   Ban,
   Calendar,
   ChevronRight,
+  CreditCard,
+  Mail,
+  MapPin,
   MoreHorizontal,
   Pencil,
+  Phone,
   RefreshCw,
   Trash2,
   Users,
@@ -41,7 +48,15 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { useAdminMessages } from "@/lib/admin-i18n"
+import { visibleInternalNotes } from "@/lib/internal-notes"
+import { BookingCatalogSourceCard } from "./booking-catalog-source-card"
 import { BookingDetailSkeleton } from "./booking-detail-skeleton"
+import { BookingDocumentsTable } from "./booking-documents-table"
+import { BookingInvoicesCard } from "./booking-invoices-card"
+import { BookingPaidPaymentSessions } from "./booking-paid-payment-sessions"
+import { BookingPaymentPolicyCard } from "./booking-payment-policy-card"
+import { BookingPendingPaymentSessions } from "./booking-pending-payment-sessions"
+import { BookingPricingSummaryCard } from "./booking-pricing-summary-card"
 
 function formatAmount(
   cents: number | null,
@@ -252,29 +267,45 @@ export function BookingDetailPage({ id }: { id: string }) {
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 flex flex-col gap-6">
+          <BookingCatalogSourceCard bookingId={id} />
           <BookingItemList bookingId={id} />
+          <BookingPricingSummaryCard bookingId={id} defaultCurrency={booking.sellCurrency} />
           <BookingGroupSection bookingId={id} />
-          {booking.internalNotes ? (
-            <Card>
-              <CardContent className="py-5">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  {detailMessages.internalNotesLabel}
-                </p>
-                <p className="whitespace-pre-wrap text-sm">{booking.internalNotes}</p>
-              </CardContent>
-            </Card>
-          ) : null}
+          {(() => {
+            // Strip internal markers (`__contract_acceptance__:`,
+            // `__payment_policy_source__:`) before rendering — those
+            // are server-side relays, not human-readable notes.
+            // Their canonical home is on the contract signature row
+            // / schedule history; surfacing them here just confuses
+            // operators with raw JSON.
+            const visible = visibleInternalNotes(booking.internalNotes)
+            return visible ? (
+              <Card>
+                <CardContent className="py-5">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    {detailMessages.internalNotesLabel}
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm">{visible}</p>
+                </CardContent>
+              </Card>
+            ) : null
+          })()}
         </TabsContent>
 
-        <TabsContent value="travelers" className="mt-4">
-          <TravelerList bookingId={id} />
+        <TabsContent value="travelers" className="mt-4 flex flex-col gap-6">
+          <BookingBillingContextCard booking={booking} />
+          <TravelerList bookingId={id} autoReveal />
         </TabsContent>
 
         <TabsContent value="finance" className="mt-4 flex flex-col gap-6">
           <div className="flex items-center justify-end">
             <Button onClick={() => setCollectPaymentOpen(true)}>Collect payment</Button>
           </div>
-          <BookingPaymentsSummary bookingId={id} />
+          <BookingPendingPaymentSessions bookingId={id} />
+          <BookingPaidPaymentSessions bookingId={id} />
+          <BookingInvoicesCard bookingId={id} />
+          <BookingPaymentsSummary bookingId={id} variant="admin" />
+          <BookingPaymentPolicyCard booking={booking} />
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />
         </TabsContent>
@@ -284,8 +315,7 @@ export function BookingDetailPage({ id }: { id: string }) {
         </TabsContent>
 
         <TabsContent value="documents" className="mt-4 flex flex-col gap-4">
-          <BookingContractCard bookingId={id} />
-          <BookingDocumentList bookingId={id} />
+          <BookingDocumentsTable bookingId={id} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4 flex flex-col gap-6">
@@ -340,6 +370,68 @@ function SummaryStat({
       </div>
       <div className="text-base font-semibold tabular-nums">{value}</div>
       {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
+    </div>
+  )
+}
+
+function BookingBillingContextCard({ booking }: { booking: BookingRecord }) {
+  const payerName = [booking.contactFirstName, booking.contactLastName].filter(Boolean).join(" ")
+  const address = [
+    booking.contactAddressLine1,
+    booking.contactCity,
+    booking.contactRegion,
+    booking.contactPostalCode,
+    booking.contactCountry,
+  ]
+    .filter(Boolean)
+    .join(", ")
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <CreditCard className="h-4 w-4" />
+          Billing contact
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 md:grid-cols-4">
+        <BillingField label="Payer" value={payerName || "-"} />
+        <BillingField
+          label="Email"
+          value={booking.contactEmail ?? "-"}
+          icon={<Mail className="h-3.5 w-3.5" />}
+        />
+        <BillingField
+          label="Phone"
+          value={booking.contactPhone ?? "-"}
+          icon={<Phone className="h-3.5 w-3.5" />}
+        />
+        <BillingField
+          label="Address"
+          value={address || "-"}
+          icon={<MapPin className="h-3.5 w-3.5" />}
+        />
+      </CardContent>
+    </Card>
+  )
+}
+
+function BillingField({
+  label,
+  value,
+  icon,
+}: {
+  label: string
+  value: string
+  icon?: React.ReactNode
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <div className="truncate text-sm font-medium">{value}</div>
     </div>
   )
 }

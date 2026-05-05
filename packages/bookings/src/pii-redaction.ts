@@ -32,15 +32,13 @@ export interface PiiAccessContext {
 /**
  * Returns true when the caller has earned the right to see PII in the clear.
  *
- * Internal requests (server-to-server inside the trust boundary) and API
- * keys with explicit `bookings-pii:read` scope (or superuser `*`) reveal.
- * Plain staff sessions WITHOUT the scope do NOT reveal — staff are
- * authorised to see *some* booking data but not necessarily the contact
- * identifiers. This makes "give the new agent a read-only role" safe by
- * default; granting `bookings-pii:read` is an explicit decision.
+ * Internal requests (server-to-server inside the trust boundary), staff
+ * dashboard sessions, and API keys with explicit `bookings-pii:read`
+ * scope (or superuser `*`) reveal.
  */
 export function shouldRevealBookingPii(ctx: PiiAccessContext): boolean {
   if (ctx.isInternalRequest) return true
+  if (ctx.actor === "staff") return true
   const scopes = ctx.scopes ?? []
   return (
     scopes.includes(SUPERUSER_SCOPE) ||

@@ -11,6 +11,7 @@
  */
 
 import { typeId } from "@voyantjs/db/lib/typeid-column"
+import { sql } from "drizzle-orm"
 import { jsonb, numeric, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 /**
@@ -73,6 +74,14 @@ export const bookingCatalogSnapshotTable = pgTable(
     pricing_currency: text("pricing_currency"),
     pricing_breakdown: jsonb("pricing_breakdown").$type<Record<string, unknown>>(),
 
+    /**
+     * Caller-supplied idempotency key for the commit. When set, a
+     * second `bookEntity` call with the same key returns this row's
+     * booking instead of creating a new one. Per
+     * booking-journey-architecture §12.6.
+     */
+    idempotency_key: text("idempotency_key"),
+
     captured_at: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -84,6 +93,10 @@ export const bookingCatalogSnapshotTable = pgTable(
       table.entity_module,
       table.entity_id,
     ),
+    // Partial unique on idempotency_key — only enforced when set.
+    uniqueIndex("booking_catalog_snapshot_idempotency_uniq")
+      .on(table.idempotency_key)
+      .where(sql`idempotency_key is not null`),
   ],
 )
 

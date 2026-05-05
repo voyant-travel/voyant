@@ -57,6 +57,118 @@
       "when": 1777840000000,
       "tag": "0007_catalog_sourced_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777850000000,
+      "tag": "0008_booking_journey",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777846087308,
+      "tag": "0009_brown_layla_miller",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777874280049,
+      "tag": "0010_operator_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777876514256,
+      "tag": "0011_supplier_customer_payment_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777877677688,
+      "tag": "0012_product_category_payment_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1777878412648,
+      "tag": "0013_product_payment_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1777879162582,
+      "tag": "0014_booking_payment_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1777880902753,
+      "tag": "0015_booking_activity_system_action",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1777881164254,
+      "tag": "0016_cruise_payment_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1777881706195,
+      "tag": "0017_rate_plan_payment_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1777890490890,
+      "tag": "0018_workflow_runs_rerun",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1777891100000,
+      "tag": "0019_supplier_reservation_timeout",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777891200000,
+      "tag": "0020_notification_reminder_targets",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1777891300000,
+      "tag": "0021_operator_tax_price_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1777891400000,
+      "tag": "0022_tax_policy_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1777891500000,
+      "tag": "0023_product_day_service_country",
+      "breakpoints": true
     }
   ]
 }

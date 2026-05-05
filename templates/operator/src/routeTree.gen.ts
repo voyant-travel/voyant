@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PayRouteImport } from './routes/pay'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
+import { Route as storefrontRouteRouteImport } from './routes/(storefront)/route'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
 import { Route as PaySessionIdRouteImport } from './routes/pay_.$sessionId'
@@ -18,6 +19,7 @@ import { Route as WorkspaceFlightsRouteImport } from './routes/_workspace/flight
 import { Route as WorkspaceChannelSyncRouteImport } from './routes/_workspace/channel-sync'
 import { Route as WorkspaceCatalogRouteImport } from './routes/_workspace/catalog'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
+import { Route as storefrontShopRouteImport } from './routes/(storefront)/shop'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
 import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
@@ -40,17 +42,18 @@ import { Route as WorkspaceBookingsIndexRouteImport } from './routes/_workspace/
 import { Route as WorkspaceAvailabilityIndexRouteImport } from './routes/_workspace/availability/index'
 import { Route as WorkspaceSuppliersIdRouteImport } from './routes/_workspace/suppliers/$id'
 import { Route as WorkspaceSettingsTeamRouteImport } from './routes/_workspace/settings/team'
+import { Route as WorkspaceSettingsTaxesRouteImport } from './routes/_workspace/settings/taxes'
 import { Route as WorkspaceSettingsProductTypesRouteImport } from './routes/_workspace/settings/product-types'
 import { Route as WorkspaceSettingsProductTagsRouteImport } from './routes/_workspace/settings/product-tags'
 import { Route as WorkspaceSettingsPricingCategoriesRouteImport } from './routes/_workspace/settings/pricing-categories'
 import { Route as WorkspaceSettingsPriceCatalogsRouteImport } from './routes/_workspace/settings/price-catalogs'
+import { Route as WorkspaceSettingsOperatorRouteImport } from './routes/_workspace/settings/operator'
 import { Route as WorkspaceSettingsChannelsRouteImport } from './routes/_workspace/settings/channels'
 import { Route as WorkspaceResourcesIdRouteImport } from './routes/_workspace/resources/$id'
 import { Route as WorkspaceProductsCategoriesRouteImport } from './routes/_workspace/products/categories'
 import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/products/$id'
 import { Route as WorkspacePeopleIdRouteImport } from './routes/_workspace/people/$id'
 import { Route as WorkspaceOrganizationsIdRouteImport } from './routes/_workspace/organizations/$id'
-import { Route as WorkspaceOrdersCatalogRouteImport } from './routes/_workspace/orders.catalog'
 import { Route as WorkspaceNotificationsReminderRunsRouteImport } from './routes/_workspace/notifications/reminder-runs'
 import { Route as WorkspaceNotificationsReminderRulesRouteImport } from './routes/_workspace/notifications/reminder-rules'
 import { Route as WorkspaceNotificationsDeliveriesRouteImport } from './routes/_workspace/notifications/deliveries'
@@ -61,7 +64,6 @@ import { Route as WorkspaceLegalTemplatesIndexRouteImport } from './routes/_work
 import { Route as WorkspaceLegalPoliciesIndexRouteImport } from './routes/_workspace/legal/policies/index'
 import { Route as WorkspaceLegalNumberSeriesIndexRouteImport } from './routes/_workspace/legal/number-series/index'
 import { Route as WorkspaceLegalContractsIndexRouteImport } from './routes/_workspace/legal/contracts/index'
-import { Route as WorkspaceFlightsOrdersIndexRouteImport } from './routes/_workspace/flights_.orders.index'
 import { Route as WorkspaceResourcesPoolsIdRouteImport } from './routes/_workspace/resources/pools/$id'
 import { Route as WorkspaceResourcesAssignmentsIdRouteImport } from './routes/_workspace/resources/assignments/$id'
 import { Route as WorkspaceResourcesAllocationsIdRouteImport } from './routes/_workspace/resources/allocations/$id'
@@ -69,12 +71,15 @@ import { Route as WorkspaceNotificationsTemplatesIdRouteImport } from './routes/
 import { Route as WorkspaceLegalTemplatesIdRouteImport } from './routes/_workspace/legal/templates/$id'
 import { Route as WorkspaceLegalPoliciesIdRouteImport } from './routes/_workspace/legal/policies/$id'
 import { Route as WorkspaceLegalContractsIdRouteImport } from './routes/_workspace/legal/contracts/$id'
-import { Route as WorkspaceFlightsOrdersOrderIdRouteImport } from './routes/_workspace/flights_.orders.$orderId'
 import { Route as WorkspaceFlightsBookOfferIdRouteImport } from './routes/_workspace/flights_.book.$offerId'
 import { Route as WorkspaceFinanceInvoicesIdRouteImport } from './routes/_workspace/finance/invoices/$id'
 import { Route as WorkspaceAvailabilityStartTimesIdRouteImport } from './routes/_workspace/availability/start-times/$id'
 import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_workspace/availability/rules/$id'
+import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
+import { Route as WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.journey.$entityModule.$entityId'
 import { Route as WorkspaceCatalogBookEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.book.$entityModule.$entityId'
+import { Route as storefrontShopProductsEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.products.$entityModule.$entityId'
+import { Route as storefrontShopBookEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.book.$entityModule.$entityId'
 
 const PayRoute = PayRouteImport.update({
   id: '/pay',
@@ -83,6 +88,10 @@ const PayRoute = PayRouteImport.update({
 } as any)
 const WorkspaceRouteRoute = WorkspaceRouteRouteImport.update({
   id: '/_workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const storefrontRouteRoute = storefrontRouteRouteImport.update({
+  id: '/(storefront)',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authRouteRoute = authRouteRouteImport.update({
@@ -118,6 +127,11 @@ const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const storefrontShopRoute = storefrontShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => storefrontRouteRoute,
 } as any)
 const authVerifyEmailRoute = authVerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -232,6 +246,11 @@ const WorkspaceSettingsTeamRoute = WorkspaceSettingsTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => WorkspaceSettingsRouteRoute,
 } as any)
+const WorkspaceSettingsTaxesRoute = WorkspaceSettingsTaxesRouteImport.update({
+  id: '/taxes',
+  path: '/taxes',
+  getParentRoute: () => WorkspaceSettingsRouteRoute,
+} as any)
 const WorkspaceSettingsProductTypesRoute =
   WorkspaceSettingsProductTypesRouteImport.update({
     id: '/product-types',
@@ -254,6 +273,12 @@ const WorkspaceSettingsPriceCatalogsRoute =
   WorkspaceSettingsPriceCatalogsRouteImport.update({
     id: '/price-catalogs',
     path: '/price-catalogs',
+    getParentRoute: () => WorkspaceSettingsRouteRoute,
+  } as any)
+const WorkspaceSettingsOperatorRoute =
+  WorkspaceSettingsOperatorRouteImport.update({
+    id: '/operator',
+    path: '/operator',
     getParentRoute: () => WorkspaceSettingsRouteRoute,
   } as any)
 const WorkspaceSettingsChannelsRoute =
@@ -289,11 +314,6 @@ const WorkspaceOrganizationsIdRoute =
     path: '/organizations/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
-const WorkspaceOrdersCatalogRoute = WorkspaceOrdersCatalogRouteImport.update({
-  id: '/orders/catalog',
-  path: '/orders/catalog',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
 const WorkspaceNotificationsReminderRunsRoute =
   WorkspaceNotificationsReminderRunsRouteImport.update({
     id: '/notifications/reminder-runs',
@@ -352,12 +372,6 @@ const WorkspaceLegalContractsIndexRoute =
     path: '/legal/contracts/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
-const WorkspaceFlightsOrdersIndexRoute =
-  WorkspaceFlightsOrdersIndexRouteImport.update({
-    id: '/flights_/orders/',
-    path: '/flights/orders/',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
 const WorkspaceResourcesPoolsIdRoute =
   WorkspaceResourcesPoolsIdRouteImport.update({
     id: '/resources/pools/$id',
@@ -400,12 +414,6 @@ const WorkspaceLegalContractsIdRoute =
     path: '/legal/contracts/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
-const WorkspaceFlightsOrdersOrderIdRoute =
-  WorkspaceFlightsOrdersOrderIdRouteImport.update({
-    id: '/flights_/orders/$orderId',
-    path: '/flights/orders/$orderId',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
 const WorkspaceFlightsBookOfferIdRoute =
   WorkspaceFlightsBookOfferIdRouteImport.update({
     id: '/flights_/book/$offerId',
@@ -430,11 +438,35 @@ const WorkspaceAvailabilityRulesIdRoute =
     path: '/availability/rules/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const storefrontShopConfirmationBookingIdRoute =
+  storefrontShopConfirmationBookingIdRouteImport.update({
+    id: '/shop_/confirmation/$bookingId',
+    path: '/shop/confirmation/$bookingId',
+    getParentRoute: () => storefrontRouteRoute,
+  } as any)
+const WorkspaceCatalogJourneyEntityModuleEntityIdRoute =
+  WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport.update({
+    id: '/catalog_/journey/$entityModule/$entityId',
+    path: '/catalog/journey/$entityModule/$entityId',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceCatalogBookEntityModuleEntityIdRoute =
   WorkspaceCatalogBookEntityModuleEntityIdRouteImport.update({
     id: '/catalog_/book/$entityModule/$entityId',
     path: '/catalog/book/$entityModule/$entityId',
     getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
+const storefrontShopProductsEntityModuleEntityIdRoute =
+  storefrontShopProductsEntityModuleEntityIdRouteImport.update({
+    id: '/shop_/products/$entityModule/$entityId',
+    path: '/shop/products/$entityModule/$entityId',
+    getParentRoute: () => storefrontRouteRoute,
+  } as any)
+const storefrontShopBookEntityModuleEntityIdRoute =
+  storefrontShopBookEntityModuleEntityIdRouteImport.update({
+    id: '/shop_/book/$entityModule/$entityId',
+    path: '/shop/book/$entityModule/$entityId',
+    getParentRoute: () => storefrontRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -449,6 +481,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof authSignInRoute
   '/sign-up': typeof authSignUpRoute
   '/verify-email': typeof authVerifyEmailRoute
+  '/shop': typeof storefrontShopRoute
   '/account': typeof WorkspaceAccountRoute
   '/catalog': typeof WorkspaceCatalogRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
@@ -459,17 +492,18 @@ export interface FileRoutesByFullPath {
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
-  '/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
   '/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/resources/$id': typeof WorkspaceResourcesIdRoute
   '/settings/channels': typeof WorkspaceSettingsChannelsRoute
+  '/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
   '/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
   '/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
+  '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
   '/suppliers/$id': typeof WorkspaceSuppliersIdRoute
   '/availability/': typeof WorkspaceAvailabilityIndexRoute
@@ -483,11 +517,11 @@ export interface FileRoutesByFullPath {
   '/resources/': typeof WorkspaceResourcesIndexRoute
   '/settings/': typeof WorkspaceSettingsIndexRoute
   '/suppliers/': typeof WorkspaceSuppliersIndexRoute
+  '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
   '/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
   '/flights/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
-  '/flights/orders/$orderId': typeof WorkspaceFlightsOrdersOrderIdRoute
   '/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
@@ -495,13 +529,15 @@ export interface FileRoutesByFullPath {
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
-  '/flights/orders/': typeof WorkspaceFlightsOrdersIndexRoute
   '/legal/contracts/': typeof WorkspaceLegalContractsIndexRoute
   '/legal/number-series/': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
   '/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
+  '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
+  '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 export interface FileRoutesByTo {
   '/pay': typeof PayRoute
@@ -513,6 +549,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof authSignInRoute
   '/sign-up': typeof authSignUpRoute
   '/verify-email': typeof authVerifyEmailRoute
+  '/shop': typeof storefrontShopRoute
   '/account': typeof WorkspaceAccountRoute
   '/catalog': typeof WorkspaceCatalogRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
@@ -524,17 +561,18 @@ export interface FileRoutesByTo {
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
-  '/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
   '/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/resources/$id': typeof WorkspaceResourcesIdRoute
   '/settings/channels': typeof WorkspaceSettingsChannelsRoute
+  '/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
   '/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
   '/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
+  '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
   '/suppliers/$id': typeof WorkspaceSuppliersIdRoute
   '/availability': typeof WorkspaceAvailabilityIndexRoute
@@ -548,11 +586,11 @@ export interface FileRoutesByTo {
   '/resources': typeof WorkspaceResourcesIndexRoute
   '/settings': typeof WorkspaceSettingsIndexRoute
   '/suppliers': typeof WorkspaceSuppliersIndexRoute
+  '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
   '/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
   '/flights/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
-  '/flights/orders/$orderId': typeof WorkspaceFlightsOrdersOrderIdRoute
   '/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
@@ -560,17 +598,20 @@ export interface FileRoutesByTo {
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
-  '/flights/orders': typeof WorkspaceFlightsOrdersIndexRoute
   '/legal/contracts': typeof WorkspaceLegalContractsIndexRoute
   '/legal/number-series': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/legal/policies': typeof WorkspaceLegalPoliciesIndexRoute
   '/legal/templates': typeof WorkspaceLegalTemplatesIndexRoute
   '/notifications/templates': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
+  '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
+  '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(auth)': typeof authRouteRouteWithChildren
+  '/(storefront)': typeof storefrontRouteRouteWithChildren
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/pay': typeof PayRoute
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
@@ -582,6 +623,7 @@ export interface FileRoutesById {
   '/(auth)/sign-in': typeof authSignInRoute
   '/(auth)/sign-up': typeof authSignUpRoute
   '/(auth)/verify-email': typeof authVerifyEmailRoute
+  '/(storefront)/shop': typeof storefrontShopRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
   '/_workspace/catalog': typeof WorkspaceCatalogRoute
   '/_workspace/channel-sync': typeof WorkspaceChannelSyncRoute
@@ -593,17 +635,18 @@ export interface FileRoutesById {
   '/_workspace/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/_workspace/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
   '/_workspace/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
-  '/_workspace/orders/catalog': typeof WorkspaceOrdersCatalogRoute
   '/_workspace/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/_workspace/people/$id': typeof WorkspacePeopleIdRoute
   '/_workspace/products/$id': typeof WorkspaceProductsIdRoute
   '/_workspace/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/_workspace/resources/$id': typeof WorkspaceResourcesIdRoute
   '/_workspace/settings/channels': typeof WorkspaceSettingsChannelsRoute
+  '/_workspace/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/_workspace/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
   '/_workspace/settings/pricing-categories': typeof WorkspaceSettingsPricingCategoriesRoute
   '/_workspace/settings/product-tags': typeof WorkspaceSettingsProductTagsRoute
   '/_workspace/settings/product-types': typeof WorkspaceSettingsProductTypesRoute
+  '/_workspace/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/_workspace/settings/team': typeof WorkspaceSettingsTeamRoute
   '/_workspace/suppliers/$id': typeof WorkspaceSuppliersIdRoute
   '/_workspace/availability/': typeof WorkspaceAvailabilityIndexRoute
@@ -617,11 +660,11 @@ export interface FileRoutesById {
   '/_workspace/resources/': typeof WorkspaceResourcesIndexRoute
   '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/_workspace/suppliers/': typeof WorkspaceSuppliersIndexRoute
+  '/(storefront)/shop_/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/_workspace/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/_workspace/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
   '/_workspace/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
   '/_workspace/flights_/book/$offerId': typeof WorkspaceFlightsBookOfferIdRoute
-  '/_workspace/flights_/orders/$orderId': typeof WorkspaceFlightsOrdersOrderIdRoute
   '/_workspace/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/_workspace/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/_workspace/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
@@ -629,13 +672,15 @@ export interface FileRoutesById {
   '/_workspace/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/_workspace/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/_workspace/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
-  '/_workspace/flights_/orders/': typeof WorkspaceFlightsOrdersIndexRoute
   '/_workspace/legal/contracts/': typeof WorkspaceLegalContractsIndexRoute
   '/_workspace/legal/number-series/': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/_workspace/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
   '/_workspace/legal/templates/': typeof WorkspaceLegalTemplatesIndexRoute
   '/_workspace/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
+  '/(storefront)/shop_/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
+  '/(storefront)/shop_/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
   '/_workspace/catalog_/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
+  '/_workspace/catalog_/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -651,6 +696,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
+    | '/shop'
     | '/account'
     | '/catalog'
     | '/channel-sync'
@@ -661,17 +707,18 @@ export interface FileRouteTypes {
     | '/notifications/deliveries'
     | '/notifications/reminder-rules'
     | '/notifications/reminder-runs'
-    | '/orders/catalog'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
     | '/products/categories'
     | '/resources/$id'
     | '/settings/channels'
+    | '/settings/operator'
     | '/settings/price-catalogs'
     | '/settings/pricing-categories'
     | '/settings/product-tags'
     | '/settings/product-types'
+    | '/settings/taxes'
     | '/settings/team'
     | '/suppliers/$id'
     | '/availability/'
@@ -685,11 +732,11 @@ export interface FileRouteTypes {
     | '/resources/'
     | '/settings/'
     | '/suppliers/'
+    | '/shop/confirmation/$bookingId'
     | '/availability/rules/$id'
     | '/availability/start-times/$id'
     | '/finance/invoices/$id'
     | '/flights/book/$offerId'
-    | '/flights/orders/$orderId'
     | '/legal/contracts/$id'
     | '/legal/policies/$id'
     | '/legal/templates/$id'
@@ -697,13 +744,15 @@ export interface FileRouteTypes {
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
     | '/resources/pools/$id'
-    | '/flights/orders/'
     | '/legal/contracts/'
     | '/legal/number-series/'
     | '/legal/policies/'
     | '/legal/templates/'
     | '/notifications/templates/'
+    | '/shop/book/$entityModule/$entityId'
+    | '/shop/products/$entityModule/$entityId'
     | '/catalog/book/$entityModule/$entityId'
+    | '/catalog/journey/$entityModule/$entityId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/pay'
@@ -715,6 +764,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
+    | '/shop'
     | '/account'
     | '/catalog'
     | '/channel-sync'
@@ -726,17 +776,18 @@ export interface FileRouteTypes {
     | '/notifications/deliveries'
     | '/notifications/reminder-rules'
     | '/notifications/reminder-runs'
-    | '/orders/catalog'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
     | '/products/categories'
     | '/resources/$id'
     | '/settings/channels'
+    | '/settings/operator'
     | '/settings/price-catalogs'
     | '/settings/pricing-categories'
     | '/settings/product-tags'
     | '/settings/product-types'
+    | '/settings/taxes'
     | '/settings/team'
     | '/suppliers/$id'
     | '/availability'
@@ -750,11 +801,11 @@ export interface FileRouteTypes {
     | '/resources'
     | '/settings'
     | '/suppliers'
+    | '/shop/confirmation/$bookingId'
     | '/availability/rules/$id'
     | '/availability/start-times/$id'
     | '/finance/invoices/$id'
     | '/flights/book/$offerId'
-    | '/flights/orders/$orderId'
     | '/legal/contracts/$id'
     | '/legal/policies/$id'
     | '/legal/templates/$id'
@@ -762,16 +813,19 @@ export interface FileRouteTypes {
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
     | '/resources/pools/$id'
-    | '/flights/orders'
     | '/legal/contracts'
     | '/legal/number-series'
     | '/legal/policies'
     | '/legal/templates'
     | '/notifications/templates'
+    | '/shop/book/$entityModule/$entityId'
+    | '/shop/products/$entityModule/$entityId'
     | '/catalog/book/$entityModule/$entityId'
+    | '/catalog/journey/$entityModule/$entityId'
   id:
     | '__root__'
     | '/(auth)'
+    | '/(storefront)'
     | '/_workspace'
     | '/pay'
     | '/_workspace/settings'
@@ -783,6 +837,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in'
     | '/(auth)/sign-up'
     | '/(auth)/verify-email'
+    | '/(storefront)/shop'
     | '/_workspace/account'
     | '/_workspace/catalog'
     | '/_workspace/channel-sync'
@@ -794,17 +849,18 @@ export interface FileRouteTypes {
     | '/_workspace/notifications/deliveries'
     | '/_workspace/notifications/reminder-rules'
     | '/_workspace/notifications/reminder-runs'
-    | '/_workspace/orders/catalog'
     | '/_workspace/organizations/$id'
     | '/_workspace/people/$id'
     | '/_workspace/products/$id'
     | '/_workspace/products/categories'
     | '/_workspace/resources/$id'
     | '/_workspace/settings/channels'
+    | '/_workspace/settings/operator'
     | '/_workspace/settings/price-catalogs'
     | '/_workspace/settings/pricing-categories'
     | '/_workspace/settings/product-tags'
     | '/_workspace/settings/product-types'
+    | '/_workspace/settings/taxes'
     | '/_workspace/settings/team'
     | '/_workspace/suppliers/$id'
     | '/_workspace/availability/'
@@ -818,11 +874,11 @@ export interface FileRouteTypes {
     | '/_workspace/resources/'
     | '/_workspace/settings/'
     | '/_workspace/suppliers/'
+    | '/(storefront)/shop_/confirmation/$bookingId'
     | '/_workspace/availability/rules/$id'
     | '/_workspace/availability/start-times/$id'
     | '/_workspace/finance/invoices/$id'
     | '/_workspace/flights_/book/$offerId'
-    | '/_workspace/flights_/orders/$orderId'
     | '/_workspace/legal/contracts/$id'
     | '/_workspace/legal/policies/$id'
     | '/_workspace/legal/templates/$id'
@@ -830,17 +886,20 @@ export interface FileRouteTypes {
     | '/_workspace/resources/allocations/$id'
     | '/_workspace/resources/assignments/$id'
     | '/_workspace/resources/pools/$id'
-    | '/_workspace/flights_/orders/'
     | '/_workspace/legal/contracts/'
     | '/_workspace/legal/number-series/'
     | '/_workspace/legal/policies/'
     | '/_workspace/legal/templates/'
     | '/_workspace/notifications/templates/'
+    | '/(storefront)/shop_/book/$entityModule/$entityId'
+    | '/(storefront)/shop_/products/$entityModule/$entityId'
     | '/_workspace/catalog_/book/$entityModule/$entityId'
+    | '/_workspace/catalog_/journey/$entityModule/$entityId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   authRouteRoute: typeof authRouteRouteWithChildren
+  storefrontRouteRoute: typeof storefrontRouteRouteWithChildren
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
   PayRoute: typeof PayRoute
   PaySessionIdRoute: typeof PaySessionIdRoute
@@ -860,6 +919,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof WorkspaceRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(storefront)': {
+      id: '/(storefront)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof storefrontRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)': {
@@ -910,6 +976,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/account'
       preLoaderRoute: typeof WorkspaceAccountRouteImport
       parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/(storefront)/shop': {
+      id: '/(storefront)/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof storefrontShopRouteImport
+      parentRoute: typeof storefrontRouteRoute
     }
     '/(auth)/verify-email': {
       id: '/(auth)/verify-email'
@@ -1065,6 +1138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSettingsTeamRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
     }
+    '/_workspace/settings/taxes': {
+      id: '/_workspace/settings/taxes'
+      path: '/taxes'
+      fullPath: '/settings/taxes'
+      preLoaderRoute: typeof WorkspaceSettingsTaxesRouteImport
+      parentRoute: typeof WorkspaceSettingsRouteRoute
+    }
     '/_workspace/settings/product-types': {
       id: '/_workspace/settings/product-types'
       path: '/product-types'
@@ -1091,6 +1171,13 @@ declare module '@tanstack/react-router' {
       path: '/price-catalogs'
       fullPath: '/settings/price-catalogs'
       preLoaderRoute: typeof WorkspaceSettingsPriceCatalogsRouteImport
+      parentRoute: typeof WorkspaceSettingsRouteRoute
+    }
+    '/_workspace/settings/operator': {
+      id: '/_workspace/settings/operator'
+      path: '/operator'
+      fullPath: '/settings/operator'
+      preLoaderRoute: typeof WorkspaceSettingsOperatorRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
     }
     '/_workspace/settings/channels': {
@@ -1133,13 +1220,6 @@ declare module '@tanstack/react-router' {
       path: '/organizations/$id'
       fullPath: '/organizations/$id'
       preLoaderRoute: typeof WorkspaceOrganizationsIdRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/orders/catalog': {
-      id: '/_workspace/orders/catalog'
-      path: '/orders/catalog'
-      fullPath: '/orders/catalog'
-      preLoaderRoute: typeof WorkspaceOrdersCatalogRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/notifications/reminder-runs': {
@@ -1212,13 +1292,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceLegalContractsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/_workspace/flights_/orders/': {
-      id: '/_workspace/flights_/orders/'
-      path: '/flights/orders'
-      fullPath: '/flights/orders/'
-      preLoaderRoute: typeof WorkspaceFlightsOrdersIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/_workspace/resources/pools/$id': {
       id: '/_workspace/resources/pools/$id'
       path: '/resources/pools/$id'
@@ -1268,13 +1341,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceLegalContractsIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/_workspace/flights_/orders/$orderId': {
-      id: '/_workspace/flights_/orders/$orderId'
-      path: '/flights/orders/$orderId'
-      fullPath: '/flights/orders/$orderId'
-      preLoaderRoute: typeof WorkspaceFlightsOrdersOrderIdRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/_workspace/flights_/book/$offerId': {
       id: '/_workspace/flights_/book/$offerId'
       path: '/flights/book/$offerId'
@@ -1303,12 +1369,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAvailabilityRulesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/(storefront)/shop_/confirmation/$bookingId': {
+      id: '/(storefront)/shop_/confirmation/$bookingId'
+      path: '/shop/confirmation/$bookingId'
+      fullPath: '/shop/confirmation/$bookingId'
+      preLoaderRoute: typeof storefrontShopConfirmationBookingIdRouteImport
+      parentRoute: typeof storefrontRouteRoute
+    }
+    '/_workspace/catalog_/journey/$entityModule/$entityId': {
+      id: '/_workspace/catalog_/journey/$entityModule/$entityId'
+      path: '/catalog/journey/$entityModule/$entityId'
+      fullPath: '/catalog/journey/$entityModule/$entityId'
+      preLoaderRoute: typeof WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/catalog_/book/$entityModule/$entityId': {
       id: '/_workspace/catalog_/book/$entityModule/$entityId'
       path: '/catalog/book/$entityModule/$entityId'
       fullPath: '/catalog/book/$entityModule/$entityId'
       preLoaderRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/(storefront)/shop_/products/$entityModule/$entityId': {
+      id: '/(storefront)/shop_/products/$entityModule/$entityId'
+      path: '/shop/products/$entityModule/$entityId'
+      fullPath: '/shop/products/$entityModule/$entityId'
+      preLoaderRoute: typeof storefrontShopProductsEntityModuleEntityIdRouteImport
+      parentRoute: typeof storefrontRouteRoute
+    }
+    '/(storefront)/shop_/book/$entityModule/$entityId': {
+      id: '/(storefront)/shop_/book/$entityModule/$entityId'
+      path: '/shop/book/$entityModule/$entityId'
+      fullPath: '/shop/book/$entityModule/$entityId'
+      preLoaderRoute: typeof storefrontShopBookEntityModuleEntityIdRouteImport
+      parentRoute: typeof storefrontRouteRoute
     }
   }
 }
@@ -1339,12 +1433,35 @@ const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
   authRouteRouteChildren,
 )
 
+interface storefrontRouteRouteChildren {
+  storefrontShopRoute: typeof storefrontShopRoute
+  storefrontShopConfirmationBookingIdRoute: typeof storefrontShopConfirmationBookingIdRoute
+  storefrontShopBookEntityModuleEntityIdRoute: typeof storefrontShopBookEntityModuleEntityIdRoute
+  storefrontShopProductsEntityModuleEntityIdRoute: typeof storefrontShopProductsEntityModuleEntityIdRoute
+}
+
+const storefrontRouteRouteChildren: storefrontRouteRouteChildren = {
+  storefrontShopRoute: storefrontShopRoute,
+  storefrontShopConfirmationBookingIdRoute:
+    storefrontShopConfirmationBookingIdRoute,
+  storefrontShopBookEntityModuleEntityIdRoute:
+    storefrontShopBookEntityModuleEntityIdRoute,
+  storefrontShopProductsEntityModuleEntityIdRoute:
+    storefrontShopProductsEntityModuleEntityIdRoute,
+}
+
+const storefrontRouteRouteWithChildren = storefrontRouteRoute._addFileChildren(
+  storefrontRouteRouteChildren,
+)
+
 interface WorkspaceSettingsRouteRouteChildren {
   WorkspaceSettingsChannelsRoute: typeof WorkspaceSettingsChannelsRoute
+  WorkspaceSettingsOperatorRoute: typeof WorkspaceSettingsOperatorRoute
   WorkspaceSettingsPriceCatalogsRoute: typeof WorkspaceSettingsPriceCatalogsRoute
   WorkspaceSettingsPricingCategoriesRoute: typeof WorkspaceSettingsPricingCategoriesRoute
   WorkspaceSettingsProductTagsRoute: typeof WorkspaceSettingsProductTagsRoute
   WorkspaceSettingsProductTypesRoute: typeof WorkspaceSettingsProductTypesRoute
+  WorkspaceSettingsTaxesRoute: typeof WorkspaceSettingsTaxesRoute
   WorkspaceSettingsTeamRoute: typeof WorkspaceSettingsTeamRoute
   WorkspaceSettingsIndexRoute: typeof WorkspaceSettingsIndexRoute
 }
@@ -1352,11 +1469,13 @@ interface WorkspaceSettingsRouteRouteChildren {
 const WorkspaceSettingsRouteRouteChildren: WorkspaceSettingsRouteRouteChildren =
   {
     WorkspaceSettingsChannelsRoute: WorkspaceSettingsChannelsRoute,
+    WorkspaceSettingsOperatorRoute: WorkspaceSettingsOperatorRoute,
     WorkspaceSettingsPriceCatalogsRoute: WorkspaceSettingsPriceCatalogsRoute,
     WorkspaceSettingsPricingCategoriesRoute:
       WorkspaceSettingsPricingCategoriesRoute,
     WorkspaceSettingsProductTagsRoute: WorkspaceSettingsProductTagsRoute,
     WorkspaceSettingsProductTypesRoute: WorkspaceSettingsProductTypesRoute,
+    WorkspaceSettingsTaxesRoute: WorkspaceSettingsTaxesRoute,
     WorkspaceSettingsTeamRoute: WorkspaceSettingsTeamRoute,
     WorkspaceSettingsIndexRoute: WorkspaceSettingsIndexRoute,
   }
@@ -1378,7 +1497,6 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceNotificationsDeliveriesRoute: typeof WorkspaceNotificationsDeliveriesRoute
   WorkspaceNotificationsReminderRulesRoute: typeof WorkspaceNotificationsReminderRulesRoute
   WorkspaceNotificationsReminderRunsRoute: typeof WorkspaceNotificationsReminderRunsRoute
-  WorkspaceOrdersCatalogRoute: typeof WorkspaceOrdersCatalogRoute
   WorkspaceOrganizationsIdRoute: typeof WorkspaceOrganizationsIdRoute
   WorkspacePeopleIdRoute: typeof WorkspacePeopleIdRoute
   WorkspaceProductsIdRoute: typeof WorkspaceProductsIdRoute
@@ -1399,7 +1517,6 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceAvailabilityStartTimesIdRoute: typeof WorkspaceAvailabilityStartTimesIdRoute
   WorkspaceFinanceInvoicesIdRoute: typeof WorkspaceFinanceInvoicesIdRoute
   WorkspaceFlightsBookOfferIdRoute: typeof WorkspaceFlightsBookOfferIdRoute
-  WorkspaceFlightsOrdersOrderIdRoute: typeof WorkspaceFlightsOrdersOrderIdRoute
   WorkspaceLegalContractsIdRoute: typeof WorkspaceLegalContractsIdRoute
   WorkspaceLegalPoliciesIdRoute: typeof WorkspaceLegalPoliciesIdRoute
   WorkspaceLegalTemplatesIdRoute: typeof WorkspaceLegalTemplatesIdRoute
@@ -1407,13 +1524,13 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceResourcesAllocationsIdRoute: typeof WorkspaceResourcesAllocationsIdRoute
   WorkspaceResourcesAssignmentsIdRoute: typeof WorkspaceResourcesAssignmentsIdRoute
   WorkspaceResourcesPoolsIdRoute: typeof WorkspaceResourcesPoolsIdRoute
-  WorkspaceFlightsOrdersIndexRoute: typeof WorkspaceFlightsOrdersIndexRoute
   WorkspaceLegalContractsIndexRoute: typeof WorkspaceLegalContractsIndexRoute
   WorkspaceLegalNumberSeriesIndexRoute: typeof WorkspaceLegalNumberSeriesIndexRoute
   WorkspaceLegalPoliciesIndexRoute: typeof WorkspaceLegalPoliciesIndexRoute
   WorkspaceLegalTemplatesIndexRoute: typeof WorkspaceLegalTemplatesIndexRoute
   WorkspaceNotificationsTemplatesIndexRoute: typeof WorkspaceNotificationsTemplatesIndexRoute
   WorkspaceCatalogBookEntityModuleEntityIdRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
+  WorkspaceCatalogJourneyEntityModuleEntityIdRoute: typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
@@ -1430,7 +1547,6 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
     WorkspaceNotificationsReminderRulesRoute,
   WorkspaceNotificationsReminderRunsRoute:
     WorkspaceNotificationsReminderRunsRoute,
-  WorkspaceOrdersCatalogRoute: WorkspaceOrdersCatalogRoute,
   WorkspaceOrganizationsIdRoute: WorkspaceOrganizationsIdRoute,
   WorkspacePeopleIdRoute: WorkspacePeopleIdRoute,
   WorkspaceProductsIdRoute: WorkspaceProductsIdRoute,
@@ -1452,7 +1568,6 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
     WorkspaceAvailabilityStartTimesIdRoute,
   WorkspaceFinanceInvoicesIdRoute: WorkspaceFinanceInvoicesIdRoute,
   WorkspaceFlightsBookOfferIdRoute: WorkspaceFlightsBookOfferIdRoute,
-  WorkspaceFlightsOrdersOrderIdRoute: WorkspaceFlightsOrdersOrderIdRoute,
   WorkspaceLegalContractsIdRoute: WorkspaceLegalContractsIdRoute,
   WorkspaceLegalPoliciesIdRoute: WorkspaceLegalPoliciesIdRoute,
   WorkspaceLegalTemplatesIdRoute: WorkspaceLegalTemplatesIdRoute,
@@ -1461,7 +1576,6 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceResourcesAllocationsIdRoute: WorkspaceResourcesAllocationsIdRoute,
   WorkspaceResourcesAssignmentsIdRoute: WorkspaceResourcesAssignmentsIdRoute,
   WorkspaceResourcesPoolsIdRoute: WorkspaceResourcesPoolsIdRoute,
-  WorkspaceFlightsOrdersIndexRoute: WorkspaceFlightsOrdersIndexRoute,
   WorkspaceLegalContractsIndexRoute: WorkspaceLegalContractsIndexRoute,
   WorkspaceLegalNumberSeriesIndexRoute: WorkspaceLegalNumberSeriesIndexRoute,
   WorkspaceLegalPoliciesIndexRoute: WorkspaceLegalPoliciesIndexRoute,
@@ -1470,6 +1584,8 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
     WorkspaceNotificationsTemplatesIndexRoute,
   WorkspaceCatalogBookEntityModuleEntityIdRoute:
     WorkspaceCatalogBookEntityModuleEntityIdRoute,
+  WorkspaceCatalogJourneyEntityModuleEntityIdRoute:
+    WorkspaceCatalogJourneyEntityModuleEntityIdRoute,
 }
 
 const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
@@ -1478,6 +1594,7 @@ const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   authRouteRoute: authRouteRouteWithChildren,
+  storefrontRouteRoute: storefrontRouteRouteWithChildren,
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
   PayRoute: PayRoute,
   PaySessionIdRoute: PaySessionIdRoute,

@@ -193,6 +193,7 @@ const dayServiceCoreSchema = z.object({
   serviceType: serviceTypeSchema,
   name: z.string().min(1).max(255),
   description: z.string().optional().nullable(),
+  countryCode: z.string().min(2).max(2).optional().nullable(),
   supplierServiceId: z.string().optional().nullable(),
   costCurrency: z.string().min(3).max(3),
   costAmountCents: z.number().int().min(0),
@@ -271,6 +272,19 @@ export const productTypeListQuerySchema = z.object({
 export type InsertProductType = z.infer<typeof insertProductTypeSchema>
 export type UpdateProductType = z.infer<typeof updateProductTypeSchema>
 
+const productCategoryDepositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+const productCategoryPaymentPolicySchema = z.object({
+  deposit: productCategoryDepositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
 const productCategoryCoreSchema = z.object({
   name: z.string().min(1).max(255),
   slug: z.string().min(1).max(255),
@@ -278,6 +292,7 @@ const productCategoryCoreSchema = z.object({
   description: z.string().optional().nullable(),
   sortOrder: z.number().int().default(0),
   active: z.boolean().default(true),
+  customerPaymentPolicy: productCategoryPaymentPolicySchema.optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 export const insertProductCategorySchema = productCategoryCoreSchema

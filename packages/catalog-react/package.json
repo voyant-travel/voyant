@@ -13,7 +13,8 @@
     ".": "./src/index.ts",
     "./provider": "./src/provider.tsx",
     "./hooks": "./src/hooks/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./booking-engine": "./src/booking-engine/index.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -66,6 +67,11 @@
         "types": "./dist/hooks/index.d.ts",
         "import": "./dist/hooks/index.js",
         "default": "./dist/hooks/index.js"
+      },
+      "./booking-engine": {
+        "types": "./dist/booking-engine/index.d.ts",
+        "import": "./dist/booking-engine/index.js",
+        "default": "./dist/booking-engine/index.js"
       },
       "./client": {
         "types": "./dist/client.d.ts",

@@ -47,6 +47,7 @@ export interface CatalogDetailEnrichment {
     startsAt: string
     endsAt?: string | null
     status?: string | null
+    unlimited?: boolean | null
     capacity?: number | null
     remaining?: number | null
     lowestPriceCents?: number | null
@@ -312,6 +313,7 @@ export function CatalogDetailSheet({
                         d.status === "closed" ||
                         d.status === "cancelled" ||
                         (typeof d.remaining === "number" && d.remaining <= 0)
+                      const availabilityLabel = formatDepartureAvailability(d)
                       return (
                         <li
                           key={d.id}
@@ -326,9 +328,9 @@ export function CatalogDetailSheet({
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            {typeof d.remaining === "number" && (
+                            {availabilityLabel && (
                               <span className="text-xs text-muted-foreground">
-                                {d.remaining} left
+                                {availabilityLabel}
                               </span>
                             )}
                             {typeof d.lowestPriceCents === "number" && (
@@ -673,4 +675,17 @@ function formatPriceCents(cents: number, currency?: string | null): string {
     currency: currency ?? "EUR",
     maximumFractionDigits: 0,
   }).format(cents / 100)
+}
+
+function formatDepartureAvailability(
+  departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
+): string | null {
+  if (departure.unlimited) return "Unlimited"
+  if (typeof departure.capacity === "number" && typeof departure.remaining === "number") {
+    return `${departure.remaining} / ${departure.capacity} left`
+  }
+  if (typeof departure.remaining === "number") return `${departure.remaining} left`
+  if (typeof departure.capacity === "number") return `${departure.capacity} capacity`
+  if (departure.status && departure.status !== "open") return humanize(departure.status)
+  return null
 }

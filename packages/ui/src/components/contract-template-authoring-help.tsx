@@ -1,6 +1,6 @@
 "use client"
 
-import { SearchIcon, SparklesIcon } from "lucide-react"
+import { CheckIcon, CopyIcon, SearchIcon, SparklesIcon } from "lucide-react"
 import * as React from "react"
 
 import { cn } from "../lib/utils"
@@ -36,7 +36,15 @@ export type TemplateAuthoringSnippet = {
 type ContractTemplateAuthoringHelpProps = {
   variableGroups: TemplateAuthoringVariableGroup[]
   snippets?: TemplateAuthoringSnippet[]
+  /**
+   * @deprecated Variables now expose a copy-to-clipboard button instead of
+   * an inline insert. Kept for prop-shape compatibility with older callers.
+   */
   onInsertVariable?: (variable: TemplateAuthoringVariable) => void
+  /**
+   * @deprecated Snippets now expose a copy-to-clipboard button instead of
+   * an inline insert. Kept for prop-shape compatibility with older callers.
+   */
   onInsertSnippet?: (snippet: TemplateAuthoringSnippet) => void
   className?: string
   title?: string
@@ -49,10 +57,52 @@ type ContractTemplateAuthoringHelpProps = {
     searchPlaceholder?: string
     noVariables?: string
     example?: string
-    insert?: string
+    copy?: string
+    copied?: string
     liquidUsage?: string
     noLiquidSnippets?: string
   }
+}
+
+function useCopyToClipboard(timeoutMs = 1200) {
+  const [copiedId, setCopiedId] = React.useState<string | null>(null)
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
+
+  const copy = React.useCallback(
+    async (id: string, text: string) => {
+      try {
+        if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text)
+        } else if (typeof document !== "undefined") {
+          // Fallback for browsers without the async clipboard API.
+          const textarea = document.createElement("textarea")
+          textarea.value = text
+          textarea.setAttribute("readonly", "")
+          textarea.style.position = "fixed"
+          textarea.style.opacity = "0"
+          document.body.appendChild(textarea)
+          textarea.select()
+          document.execCommand("copy")
+          document.body.removeChild(textarea)
+        }
+        setCopiedId(id)
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        timeoutRef.current = setTimeout(() => setCopiedId(null), timeoutMs)
+      } catch {
+        // Silent — copy failures are surfaced by the lack of the
+        // confirmation state. Better than spamming a toast we don't own.
+      }
+    },
+    [timeoutMs],
+  )
+
+  return { copiedId, copy }
 }
 
 function matchesSearch(haystack: string, query: string) {
@@ -62,8 +112,8 @@ function matchesSearch(haystack: string, query: string) {
 export function ContractTemplateAuthoringHelp({
   variableGroups,
   snippets = [],
-  onInsertVariable,
-  onInsertSnippet,
+  onInsertVariable: _deprecatedOnInsertVariable,
+  onInsertSnippet: _deprecatedOnInsertSnippet,
   className,
   title = "Template variables",
   description = "Templates render with Liquid. Use output tags for variables and control tags for loops and conditionals.",
@@ -71,6 +121,9 @@ export function ContractTemplateAuthoringHelp({
 }: ContractTemplateAuthoringHelpProps) {
   const [search, setSearch] = React.useState("")
   const normalizedQuery = search.trim().toLowerCase()
+  const { copiedId, copy } = useCopyToClipboard()
+  const copyLabel = messages?.copy ?? "Copy"
+  const copiedLabel = messages?.copied ?? "Copied"
 
   const filteredGroups = React.useMemo(() => {
     if (!normalizedQuery) {
@@ -181,16 +234,25 @@ export function ContractTemplateAuthoringHelp({
                               </p>
                             </div>
 
-                            {onInsertVariable ? (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => onInsertVariable(variable)}
-                              >
-                                {messages?.insert ?? "Insert"}
-                              </Button>
-                            ) : null}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              aria-label={`${copyLabel} ${variable.key}`}
+                              onClick={() => copy(`var:${variable.key}`, `{{ ${variable.key} }}`)}
+                            >
+                              {copiedId === `var:${variable.key}` ? (
+                                <>
+                                  <CheckIcon className="mr-1.5 h-3.5 w-3.5" />
+                                  {copiedLabel}
+                                </>
+                              ) : (
+                                <>
+                                  <CopyIcon className="mr-1.5 h-3.5 w-3.5" />
+                                  {copyLabel}
+                                </>
+                              )}
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -222,16 +284,25 @@ export function ContractTemplateAuthoringHelp({
                         <p className="text-sm font-medium">{snippet.label}</p>
                         <p className="text-xs text-muted-foreground">{snippet.description}</p>
                       </div>
-                      {onInsertSnippet ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onInsertSnippet(snippet)}
-                        >
-                          {messages?.insert ?? "Insert"}
-                        </Button>
-                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        aria-label={`${copyLabel} ${snippet.label}`}
+                        onClick={() => copy(`snippet:${snippet.id}`, snippet.code)}
+                      >
+                        {copiedId === `snippet:${snippet.id}` ? (
+                          <>
+                            <CheckIcon className="mr-1.5 h-3.5 w-3.5" />
+                            {copiedLabel}
+                          </>
+                        ) : (
+                          <>
+                            <CopyIcon className="mr-1.5 h-3.5 w-3.5" />
+                            {copyLabel}
+                          </>
+                        )}
+                      </Button>
                     </div>
                     <pre className="whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-xs text-foreground">
                       {snippet.code}

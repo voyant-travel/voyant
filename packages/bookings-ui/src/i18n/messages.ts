@@ -5,7 +5,14 @@ export type BookingsUiMessages = {
     add: string
     loading: string
     bookingStatusLabels: Record<
-      "draft" | "on_hold" | "confirmed" | "in_progress" | "completed" | "expired" | "cancelled",
+      | "draft"
+      | "on_hold"
+      | "awaiting_payment"
+      | "confirmed"
+      | "in_progress"
+      | "completed"
+      | "expired"
+      | "cancelled",
       string
     >
     supplierStatusLabels: Record<"pending" | "confirmed" | "rejected" | "cancelled", string>
@@ -370,6 +377,7 @@ export type BookingsUiMessages = {
     empty: string
     values: {
       totalUnavailable: string
+      costUnavailable: string
       serviceDateUnavailable: string
     }
     columns: {
@@ -378,7 +386,17 @@ export type BookingsUiMessages = {
       status: string
       quantity: string
       total: string
+      cost: string
       serviceDate: string
+    }
+    /** Labels for the per-item expanded panel (description / dates / etc). */
+    detail: {
+      description: string
+      dates: string
+      cost: string
+      catalogSource: string
+      productLink: string
+      noDescription: string
     }
     actions: {
       deleteConfirm: string
@@ -679,6 +697,7 @@ export type BookingsUiMessages = {
       sellAmount: string
       pax: string
       startDate: string
+      endDate: string
     }
     loadingError: string
     empty: string
@@ -689,6 +708,7 @@ export type BookingsUiMessages = {
     title: string
     empty: string
     columns: {
+      /** Allocated invoice — shown as a secondary "For" link, not lead. */
       invoice: string
       method: string
       status: string

@@ -47,6 +47,19 @@ export const productCategories = pgTable(
     description: text("description"),
     sortOrder: integer("sort_order").notNull().default(0),
     active: boolean("active").notNull().default(true),
+    /**
+     * Customer-facing payment policy override. When set, bookings
+     * for products in this category inherit these terms (unless
+     * the listing or booking sets its own override). Shape mirrors
+     * `PaymentPolicy` from `@voyantjs/finance`.
+     *
+     * `null` means "inherit from supplier / operator default".
+     *
+     * Multi-category products: the cascade picks the FIRST category
+     * (ordered by `productCategoryProducts.sortOrder` ascending) that
+     * has a non-null policy.
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

@@ -107,6 +107,28 @@ export interface WorkflowRunOptions {
   input?: unknown
   /** JobRunner — required when the workflow contains async steps. */
   jobRunner?: JobRunner
+  /**
+   * Pre-seeded `ctx.results` entries — used by resume runs to expose
+   * prior step outputs (from a parent run) without re-executing the
+   * step. Steps whose name appears in `seedResults` are skipped at
+   * the executor level: their entry is copied into ctx.results and
+   * `runFn` is not invoked. Compensation for skipped steps is also
+   * suppressed (the parent run's output remains canonical).
+   *
+   * Pairs with {@link skipUntil} — typically you set both to the
+   * same set so callers don't need to coordinate. When `skipUntil`
+   * is set, every step before that name MUST appear in `seedResults`
+   * so dependent steps see the values they expect.
+   */
+  seedResults?: Record<string, unknown>
+  /**
+   * Resume sentinel — when set, the executor skips steps until it
+   * reaches this name (then runs normally from there onward). Steps
+   * before the sentinel are still added to ctx.results from
+   * {@link seedResults}. Throws if the named step doesn't exist in
+   * the workflow.
+   */
+  skipUntil?: string
 }
 
 /**
@@ -175,14 +197,38 @@ export function createWorkflow(
     const ctx: WorkflowContext = {
       workflowName: name,
       jobRunner: options.jobRunner,
-      results: {},
+      results: { ...(options.seedResults ?? {}) },
     }
     const input = options.input
     const completed: Array<{ def: StepDefinition; output: unknown }> = []
 
+    // Validate skipUntil up-front so callers get a clear error
+    // before any steps run (vs a silent no-op if the name is wrong).
+    if (options.skipUntil !== undefined) {
+      const found = steps.some((b) => b.definition.name === options.skipUntil)
+      if (!found) {
+        throw new WorkflowError(
+          `Workflow "${name}" cannot resume: step "${options.skipUntil}" not found`,
+        )
+      }
+    }
+
+    let skipping = options.skipUntil !== undefined
+
     try {
       for (const builder of steps) {
         const def = builder.definition
+        if (skipping) {
+          if (def.name === options.skipUntil) {
+            skipping = false
+          } else {
+            // Step is skipped: keep its seeded result in ctx.results
+            // (or null if none was seeded) and move on. Compensation
+            // is suppressed for skipped steps — the parent run's
+            // output is canonical, we shouldn't roll it back.
+            continue
+          }
+        }
         if (def.isAsync) {
           if (!ctx.jobRunner) {
             throw new WorkflowError(

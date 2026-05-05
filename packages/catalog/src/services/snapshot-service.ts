@@ -47,6 +47,9 @@ export interface CaptureSnapshotInput {
   overlayStateAtCapture?: unknown
   /** Structured pricing breakdown alongside the JSONB blob. */
   pricingBasis?: PricingBasis
+  /** Caller-supplied idempotency key — when set, a duplicate
+   *  `bookEntity` call returns the prior result. */
+  idempotencyKey?: string
 }
 
 /**
@@ -83,6 +86,7 @@ export async function captureSnapshot(
         input.pricingBasis?.surcharges != null ? String(input.pricingBasis.surcharges) : undefined,
       pricing_currency: input.pricingBasis?.currency,
       pricing_breakdown: input.pricingBasis?.breakdown,
+      idempotency_key: input.idempotencyKey,
     })
     .returning()
 

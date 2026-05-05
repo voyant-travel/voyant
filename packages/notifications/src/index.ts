@@ -12,6 +12,10 @@ import {
 import { notificationsModule } from "./schema.js"
 import { createNotificationService } from "./service.js"
 import { bookingDocumentNotificationsService } from "./service-booking-documents.js"
+import {
+  bookingIsPaidInFullForNotification,
+  dispatchReminderEventRules,
+} from "./service-reminders.js"
 
 export {
   notificationLiquidEngine,
@@ -75,6 +79,10 @@ export type {
   SendBookingDocumentsRuntimeOptions,
 } from "./service-booking-documents.js"
 export { bookingDocumentNotificationsService } from "./service-booking-documents.js"
+export {
+  bookingIsPaidInFullForNotification,
+  dispatchReminderEventRules,
+} from "./service-reminders.js"
 export type {
   NotificationTaskEnv,
   NotificationTaskRuntime,
@@ -215,6 +223,151 @@ export function createNotificationsHonoModule(
               const message = error instanceof Error ? error.message : String(error)
               console.error(
                 `[notifications] auto-dispatch failed for booking ${event.data.bookingId}: ${message}`,
+              )
+            }
+          },
+        )
+      }
+
+      if (options?.resolveDb) {
+        const resolveDb = options.resolveDb
+        const runtime = buildNotificationsRouteRuntime(bindings as Record<string, unknown>, options)
+        const dispatcher = createNotificationService(runtime.providers)
+
+        eventBus.subscribe(
+          "booking.confirmed",
+          async (event: {
+            data: { bookingId: string; bookingNumber: string; actorId: string | null }
+          }) => {
+            try {
+              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
+              await dispatchReminderEventRules(
+                db,
+                dispatcher,
+                {
+                  targetType: "booking_confirmed",
+                  bookingId: event.data.bookingId,
+                  eventData: event.data,
+                },
+                { documentAttachmentResolver: runtime.documentAttachmentResolver },
+              )
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error)
+              console.error(
+                `[notifications] booking_confirmed reminder rules failed for booking ${event.data.bookingId}: ${message}`,
+              )
+            }
+          },
+        )
+
+        eventBus.subscribe(
+          "payment.completed",
+          async (event: {
+            data: {
+              paymentSessionId: string
+              bookingId?: string | null
+              orderId?: string | null
+              invoiceId?: string | null
+              amountCents: number
+              currency: string
+              provider: string
+            }
+          }) => {
+            if (!event.data.bookingId) {
+              return
+            }
+
+            try {
+              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
+              const isPaidInFull = await bookingIsPaidInFullForNotification(
+                db,
+                event.data.bookingId,
+              )
+              if (!isPaidInFull) {
+                return
+              }
+
+              await dispatchReminderEventRules(
+                db,
+                dispatcher,
+                {
+                  targetType: "payment_complete",
+                  bookingId: event.data.bookingId,
+                  paymentSessionId: event.data.paymentSessionId,
+                  eventData: event.data,
+                },
+                { documentAttachmentResolver: runtime.documentAttachmentResolver },
+              )
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error)
+              console.error(
+                `[notifications] payment_complete reminder rules failed for booking ${event.data.bookingId}: ${message}`,
+              )
+            }
+          },
+        )
+
+        eventBus.subscribe(
+          "booking.cancelled",
+          async (event: {
+            data: {
+              bookingId: string
+              bookingNumber: string
+              previousStatus: "draft" | "on_hold" | "confirmed" | "in_progress"
+              actorId: string | null
+            }
+          }) => {
+            if (event.data.previousStatus !== "on_hold") {
+              return
+            }
+
+            try {
+              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
+              await dispatchReminderEventRules(
+                db,
+                dispatcher,
+                {
+                  targetType: "booking_cancelled_non_payment",
+                  bookingId: event.data.bookingId,
+                  eventData: event.data,
+                },
+                { documentAttachmentResolver: runtime.documentAttachmentResolver },
+              )
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error)
+              console.error(
+                `[notifications] booking_cancelled_non_payment reminder rules failed for booking ${event.data.bookingId}: ${message}`,
+              )
+            }
+          },
+        )
+
+        eventBus.subscribe(
+          "booking.expired",
+          async (event: {
+            data: {
+              bookingId: string
+              bookingNumber: string
+              cause: "route" | "sweep"
+              actorId: string | null
+            }
+          }) => {
+            try {
+              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
+              await dispatchReminderEventRules(
+                db,
+                dispatcher,
+                {
+                  targetType: "booking_cancelled_non_payment",
+                  bookingId: event.data.bookingId,
+                  eventData: event.data,
+                },
+                { documentAttachmentResolver: runtime.documentAttachmentResolver },
+              )
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error)
+              console.error(
+                `[notifications] booking_cancelled_non_payment reminder rules failed for expired booking ${event.data.bookingId}: ${message}`,
               )
             }
           },

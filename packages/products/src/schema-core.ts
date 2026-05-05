@@ -43,6 +43,23 @@ export const products = pgTable(
     endDate: date("end_date"),
     pax: integer("pax"),
     productTypeId: text("product_type_id"),
+    /**
+     * Per-product tax class — drives the engine's tax computation at
+     * quote time. Plain text (no FK) since `tax_classes` lives in
+     * @voyantjs/finance and cross-domain refs go through the link
+     * service per schema-discipline. Default null → falls through to a
+     * market-level default. Per booking-journey-architecture §9.
+     */
+    taxClassId: text("tax_class_id"),
+    /**
+     * Per-listing customer payment policy override. Wins over the
+     * product's category and supplier policies in the cascade. Shape
+     * mirrors `PaymentPolicy` from `@voyantjs/finance`.
+     *
+     * `null` means "inherit from category / supplier / operator
+     * default" — most products leave this empty.
+     */
+    customerPaymentPolicy: jsonb("customer_payment_policy"),
     tags: jsonb("tags").$type<string[]>().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -135,3 +152,40 @@ export const optionUnits = pgTable(
 
 export type OptionUnit = typeof optionUnits.$inferSelect
 export type NewOptionUnit = typeof optionUnits.$inferInsert
+
+/**
+ * Per-product per-occupancy rate tiers for non-cruise verticals.
+ * Cruises keep the specialized `cruise_prices` table; everyone else
+ * uses this. Per booking-journey-architecture §9.
+ *
+ * `tier_pax` is the occupancy count the rate applies to (1-supp, 2-default,
+ * 3-share, 4). Falls back to `option_unit_tiers` (quantity-based, not
+ * occupancy-based) when no occupancy tier exists.
+ */
+export const productPaxPricingTiers = pgTable(
+  "product_pax_pricing_tiers",
+  {
+    id: typeId("product_pax_pricing_tiers"),
+    productId: typeIdRef("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    optionUnitId: typeIdRef("option_unit_id").references(() => optionUnits.id, {
+      onDelete: "cascade",
+    }),
+    tierPax: integer("tier_pax").notNull(),
+    pricePerPaxCents: integer("price_per_pax_cents").notNull(),
+    promoPricePerPaxCents: integer("promo_price_per_pax_cents"),
+    effectiveFrom: date("effective_from"),
+    effectiveTo: date("effective_to"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_pax_tiers_product").on(table.productId),
+    index("idx_pax_tiers_unit").on(table.optionUnitId),
+    uniqueIndex("uidx_pax_tiers_unit_pax").on(table.optionUnitId, table.tierPax),
+  ],
+)
+
+export type ProductPaxPricingTier = typeof productPaxPricingTiers.$inferSelect
+export type NewProductPaxPricingTier = typeof productPaxPricingTiers.$inferInsert

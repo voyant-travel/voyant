@@ -66,6 +66,22 @@ export interface CabinNumberOption {
   hasAccessibilityFeatures?: boolean
 }
 
+/** A rate-plan option attached to a `RoomOption` (hospitality only, today). */
+export interface RatePlanOption {
+  id: string
+  name: string
+  description?: string | null
+  /** "per_night" | "per_stay". */
+  chargeFrequency?: "per_night" | "per_stay"
+  /** Cancellation policy display string ("free until 7 days before",
+   *  "non-refundable", etc). */
+  cancellationPolicy?: string | null
+  /** Free-form inclusions ("breakfast", "wifi", "spa credit"). */
+  inclusions?: ReadonlyArray<string>
+  /** Currency for this plan's prices. */
+  currency?: string
+}
+
 /** A room option (hospitality + multi-day tours w/ rooms). */
 export interface RoomOption {
   id: string
@@ -75,6 +91,11 @@ export interface RoomOption {
   /** Per-night base price hint, if the upstream surfaced one. Pricing
    *  is volatile-live — this is a rendering hint only. */
   baseRateHint?: number | null
+  /** Rate plans bookable against this room. Empty = no plan picker
+   *  needed (e.g. simple multi-day-tour rooms). When non-empty, the
+   *  journey's Accommodation step renders a rate-plan dropdown per
+   *  picked room. */
+  ratePlans?: ReadonlyArray<RatePlanOption>
 }
 
 /** A pre/post extension option (cruises only, today). */
@@ -108,6 +129,17 @@ export type ConfigureSubStep =
   | { kind: "cabin-number"; perCategory: Record<string, ReadonlyArray<CabinNumberOption>> }
   | { kind: "date-range"; minNights: number; maxNights: number }
   | { kind: "occupancy"; bands: ReadonlyArray<PaxBandSpec> }
+  | {
+      /** Air-arrangement choice for cruises (per
+       *  booking-journey-architecture §7). The wizard renders
+       *  "Cruise-line-arranged flights" / "Independent flights" /
+       *  "No flights" tiles. */
+      kind: "air-arrangement"
+      /** When true, the user must pick before advancing. Cruise
+       *  lines that mandate the choice set this; "no flights"
+       *  remains a valid pick. */
+      required?: boolean
+    }
 
 /** Accommodation step sub-step union. */
 export type AccommodationSubStep =
@@ -206,7 +238,7 @@ export interface BookingDraftShape {
   }
 
   // ── Payment ───────────────────────────────────────────────────────
-  paymentIntents: ReadonlyArray<"hold" | "card" | "ticket_on_credit">
+  paymentIntents: ReadonlyArray<"hold" | "card" | "bank_transfer" | "ticket_on_credit" | "inquiry">
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -218,8 +250,21 @@ export interface BookingDraftShape {
  * that don't distinguish bands. Verticals override when they have
  * supplier-specific age cutoffs (cruise lines especially).
  */
+/**
+ * Default pax bands used when a descriptor doesn't supply its own.
+ * Mirrors the convention surfaced in the storefront's traveler
+ * widget (Adults 12+ / Children 2–11 / Infants under 2) so the
+ * booking journey's age-vs-band mismatch warnings have something to
+ * key off and can suggest moving a row to the right band.
+ *
+ * Verticals override per product when they have stricter rules
+ * (e.g. cruises with senior bands, or family hotels with a
+ * teenager band).
+ */
 export const DEFAULT_PAX_BANDS: ReadonlyArray<PaxBandSpec> = [
-  { code: "adult", label: "Adult", minCount: 1, maxCount: 8 },
+  { code: "adult", label: "Adult", minAge: 12, minCount: 1, maxCount: 8 },
+  { code: "child", label: "Child", minAge: 2, maxAge: 11, minCount: 0, maxCount: 6 },
+  { code: "infant", label: "Infant", maxAge: 1, minCount: 0, maxCount: 4 },
 ]
 
 /** Sensible default total-pax window. Verticals override per product. */
@@ -272,14 +317,46 @@ export function defaultDraftShapeFlags(): Pick<
 }
 
 /**
- * Standard traveler-field set: first/last/email. Verticals append
- * required document fields (passport, national ID) per supplier.
+ * Standard traveler-field set covering the data every supplier
+ * eventually wants — name, contact, age, and travel documents.
+ * Verticals can override per supplier (e.g. to make a passport
+ * mandatory for international cruises) or add carrier-specific
+ * fields like loyalty number / meal preference.
+ *
+ * `appliesToBands` is honored by the wizard — DOB shows for every
+ * traveler but is *required* only for child/infant bands; document
+ * fields stay adult-only by default.
  */
 export function defaultTravelerFields(): ReadonlyArray<TravelerFieldRequirement> {
   return [
     { key: "firstName", label: "First name", type: "text", required: true },
     { key: "lastName", label: "Last name", type: "text", required: true },
     { key: "email", label: "Email", type: "email", required: false },
+    {
+      key: "phone",
+      label: "Phone",
+      type: "phone",
+      required: false,
+      appliesToBands: ["adult", "senior", "student", "other"],
+    },
+    {
+      key: "dateOfBirth",
+      label: "Date of birth",
+      type: "date",
+      required: false,
+    },
+    {
+      key: "documentType",
+      label: "Document type",
+      type: "select",
+      required: false,
+      options: [
+        { value: "passport", label: "Passport" },
+        { value: "national_id", label: "National ID" },
+      ],
+    },
+    { key: "documentNumber", label: "Document number", type: "text", required: false },
+    { key: "documentExpiry", label: "Document expiry", type: "date", required: false },
   ]
 }
 

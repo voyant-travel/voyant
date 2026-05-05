@@ -5,6 +5,7 @@ import type { VoyantInvoiceEvent } from "./types.js"
 
 export interface ResolvedSmartbillSyncEventNames {
   issued: string
+  proformaIssued: string
   voided: string
   syncRequested: string
 }
@@ -31,6 +32,7 @@ export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): Sma
     ((event: VoyantInvoiceEvent) => mapVoyantInvoiceToSmartbill(event, mappingOptions))
   const eventNames: ResolvedSmartbillSyncEventNames = {
     issued: options.events?.issued ?? "invoice.issued",
+    proformaIssued: options.events?.proformaIssued ?? "invoice.proforma.issued",
     voided: options.events?.voided ?? "invoice.voided",
     syncRequested: options.events?.syncRequested ?? "invoice.external.sync.requested",
   }

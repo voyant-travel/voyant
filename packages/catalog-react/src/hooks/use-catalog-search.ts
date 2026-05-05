@@ -31,6 +31,13 @@ export interface UseCatalogSearchOptions {
   market?: string
   /** Override `defaultScope.locale`. */
   locale?: string
+  /**
+   * Surface to call against. Operator dashboards pass `"admin"`
+   * (default); storefront / partner / embedded surfaces pass
+   * `"public"`. Switches the path between
+   * `/v1/admin/catalog/search` and `/v1/public/catalog/search`.
+   */
+  surface?: "admin" | "public"
   /** Disable the query — useful when `query` is empty and you don't want to hit the network. */
   enabled?: boolean
   /** TanStack Query stale time, milliseconds. Default 30s. */
@@ -51,6 +58,7 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
     query_embedding,
     market,
     locale,
+    surface = "admin",
     enabled = true,
     staleTime = 30_000,
   } = options
@@ -58,6 +66,7 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
   return useQuery<CatalogSearchResponse>({
     queryKey: [
       "catalog-search",
+      surface,
       vertical,
       query,
       mode,
@@ -72,7 +81,7 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
     ],
     queryFn: () =>
       fetchWithValidation(
-        "/v1/admin/catalog/search",
+        `/v1/${surface}/catalog/search`,
         catalogSearchResponseSchema,
         { baseUrl, fetcher },
         {

@@ -26,6 +26,7 @@ export type DayService = {
   serviceType: "accommodation" | "transfer" | "experience" | "guide" | "meal" | "other"
   name: string
   description: string | null
+  countryCode: string | null
   costCurrency: string
   costAmountCents: number
   quantity: number
@@ -61,6 +62,9 @@ export type ProductMediaItem = {
   altText: string | null
   sortOrder: number
   isCover: boolean
+  isBrochure: boolean
+  isBrochureCurrent: boolean
+  brochureVersion: number | null
   createdAt: string
   updatedAt: string
 }

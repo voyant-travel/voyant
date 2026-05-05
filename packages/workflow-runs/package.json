@@ -1,0 +1,67 @@
+{
+  "name": "@voyantjs/workflow-runs",
+  "version": "0.20.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./service": "./src/service.ts",
+    "./routes": "./src/routes.ts",
+    "./recorder": "./src/recorder.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@voyantjs/core": "workspace:*",
+    "@voyantjs/db": "workspace:*",
+    "@voyantjs/hono": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
+      },
+      "./routes": {
+        "types": "./dist/routes.d.ts",
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
+      },
+      "./recorder": {
+        "types": "./dist/recorder.d.ts",
+        "import": "./dist/recorder.js",
+        "default": "./dist/recorder.js"
+      }
+    }
+  }
+}

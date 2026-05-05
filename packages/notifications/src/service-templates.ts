@@ -27,7 +27,7 @@ function normalizeDateTime(value: Date | string | null | undefined) {
 function normalizeReminderRun(row: {
   id: string
   reminderRuleId: string
-  targetType: "booking_payment_schedule" | "invoice"
+  targetType: NotificationReminderRunRecord["targetType"]
   targetId: string
   dedupeKey: string
   bookingId: string | null
@@ -46,7 +46,7 @@ function normalizeReminderRun(row: {
   ruleSlug: string
   ruleName: string
   ruleStatus: "draft" | "active" | "archived"
-  ruleTargetType: "booking_payment_schedule" | "invoice"
+  ruleTargetType: NotificationReminderRunRecord["targetType"]
   ruleChannel: "email" | "sms"
   ruleProvider: string | null
   ruleTemplateId: string | null

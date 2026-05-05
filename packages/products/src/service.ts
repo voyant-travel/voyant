@@ -2119,6 +2119,7 @@ export const productsService = {
               serviceType: service.serviceType,
               name: service.name,
               description: service.description,
+              countryCode: service.countryCode,
               costCurrency: service.costCurrency,
               costAmountCents: service.costAmountCents,
               quantity: service.quantity,

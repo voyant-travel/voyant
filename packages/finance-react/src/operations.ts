@@ -40,6 +40,20 @@ export function getPublicBookingPayments(client: FetchWithValidationOptions, boo
   )
 }
 
+/**
+ * Admin variant — same response shape as `getPublicBookingPayments`,
+ * but hits the admin endpoint (`/v1/admin/finance/bookings/:id/payments`)
+ * so a staff actor can read it. The customer-portal continues to use
+ * the public path; the operator dashboard uses this one.
+ */
+export function getAdminBookingPayments(client: FetchWithValidationOptions, bookingId: string) {
+  return fetchWithValidation(
+    `/v1/admin/finance/bookings/${bookingId}/payments`,
+    publicBookingFinancePaymentsResponse,
+    client,
+  )
+}
+
 export function getPublicBookingPaymentOptions(
   client: FetchWithValidationOptions,
   bookingId: string,

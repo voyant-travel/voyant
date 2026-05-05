@@ -9,6 +9,7 @@ import { smartbillPluginOptionsSchema } from "./validation.js"
 
 export interface SmartbillSyncEventNames {
   issued?: string
+  proformaIssued?: string
   voided?: string
   syncRequested?: string
 }
@@ -55,6 +56,28 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         } catch (err) {
           logger.error(
             `[smartbill] createInvoice on "${eventNames.issued}" failed for ${event.id}`,
+            err,
+          )
+        }
+      },
+    },
+    {
+      event: eventNames.proformaIssued,
+      handler: async (envelope) => {
+        const event = coerceEvent(envelope.data)
+        if (!event) return
+        try {
+          // Same shape as createInvoice — SmartBill's `/proforma`
+          // endpoint accepts the same body as `/invoice`.
+          const body = mapEvent(event)
+          const result = await client.createProforma(body)
+          logger.info?.(
+            `[smartbill] proforma created: ${result.series}-${result.number} for ${event.id}`,
+            result,
+          )
+        } catch (err) {
+          logger.error(
+            `[smartbill] createProforma on "${eventNames.proformaIssued}" failed for ${event.id}`,
             err,
           )
         }

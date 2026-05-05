@@ -41,6 +41,11 @@ export default defineConfig({
     "../../packages/hospitality/src/schema.ts",
     "../../packages/flights/src/reference/local-postgres.ts",
     "../../packages/catalog/src/schema.ts",
+    "../../packages/workflow-runs/src/schema.ts",
+    // Operator-template-local tables (agency profile + default
+    // customer payment policy). Lives in-template since the shape
+    // is deployment-flavored.
+    "./src/db/schema.ts",
   ],
   out: "./migrations",
   dialect: "postgresql",

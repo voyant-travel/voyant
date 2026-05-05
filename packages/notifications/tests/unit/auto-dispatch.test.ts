@@ -24,7 +24,7 @@ describe("createNotificationsHonoModule — autoConfirmAndDispatch", () => {
     expect(subscribeSpy).not.toHaveBeenCalled()
   })
 
-  it("does NOT subscribe when autoConfirmAndDispatch.enabled is false", async () => {
+  it("only subscribes rule dispatchers when autoConfirmAndDispatch.enabled is false", async () => {
     const eventBus = createEventBus()
     const container = createContainer()
     const subscribeSpy = vi.spyOn(eventBus, "subscribe")
@@ -36,7 +36,12 @@ describe("createNotificationsHonoModule — autoConfirmAndDispatch", () => {
 
     await module.module.bootstrap?.({ bindings: fakeBindings(), container, eventBus })
 
-    expect(subscribeSpy).not.toHaveBeenCalled()
+    expect(subscribeSpy.mock.calls.map((call) => call[0])).toEqual([
+      "booking.confirmed",
+      "payment.completed",
+      "booking.cancelled",
+      "booking.expired",
+    ])
   })
 
   it("does NOT subscribe when resolveDb is missing — guard against partial config", async () => {

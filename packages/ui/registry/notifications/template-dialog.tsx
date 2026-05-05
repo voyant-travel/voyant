@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogBody,
   DialogContent,
@@ -26,11 +27,6 @@ import {
   Label,
   NotificationTemplateAuthoringHelp,
   RichTextEditor,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Switch,
   Textarea,
 } from "@/components/ui"
@@ -44,7 +40,56 @@ type NotificationTemplateDialogProps = {
   onSuccess: () => void
 }
 
-export function NotificationTemplateDialog({
+const nativeSelectClassName =
+  "h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
+
+const templateAttachmentSchema = z.enum(["contract", "invoice", "brochure"])
+type TemplateAttachment = z.infer<typeof templateAttachmentSchema>
+
+function getMetadataRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null
+  }
+  return value as Record<string, unknown>
+}
+
+function readTemplateAttachments(metadata: unknown): TemplateAttachment[] {
+  const record = getMetadataRecord(metadata)
+  const value = record?.attachments
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return (["contract", "invoice", "brochure"] as const).filter((attachment) =>
+    value.includes(attachment),
+  )
+}
+
+function buildTemplateMetadata(
+  metadata: unknown,
+  attachments: ReadonlyArray<TemplateAttachment>,
+): Record<string, unknown> | null {
+  const current = getMetadataRecord(metadata)
+  const next = current ? { ...current } : {}
+
+  if (attachments.length > 0) {
+    next.attachments = [...attachments]
+  } else {
+    delete next.attachments
+  }
+
+  return Object.keys(next).length > 0 ? next : null
+}
+
+export function NotificationTemplateDialog(props: NotificationTemplateDialogProps) {
+  if (!props.open) {
+    return null
+  }
+
+  return <NotificationTemplateDialogInner {...props} />
+}
+
+function NotificationTemplateDialogInner({
   open,
   onOpenChange,
   template,
@@ -58,6 +103,11 @@ export function NotificationTemplateDialog({
   const CHANNEL_ITEMS = [
     { label: messages.common.channelLabels.email, value: "email" },
     { label: messages.common.channelLabels.sms, value: "sms" },
+  ] as const
+  const ATTACHMENT_ITEMS = [
+    { label: dialogMessages.fields.attachmentContract, value: "contract" },
+    { label: dialogMessages.fields.attachmentInvoice, value: "invoice" },
+    { label: dialogMessages.fields.attachmentBrochure, value: "brochure" },
   ] as const
   const PROVIDER_ITEMS = [
     { label: messages.common.providerLabels.automatic, value: "automatic" },
@@ -82,6 +132,7 @@ export function NotificationTemplateDialog({
     htmlTemplate: z.string().optional(),
     textTemplate: z.string().optional(),
     fromAddress: z.string().optional(),
+    attachments: z.array(templateAttachmentSchema).default([]),
     active: z.boolean(),
   })
   type FormValues = z.input<typeof templateFormSchema>
@@ -112,11 +163,13 @@ export function NotificationTemplateDialog({
       htmlTemplate: "",
       textTemplate: "",
       fromAddress: "",
+      attachments: [],
       active: true,
     },
   })
 
   const channel = form.watch("channel")
+  const attachments = form.watch("attachments") ?? []
 
   useEffect(() => {
     if (open && template) {
@@ -133,6 +186,7 @@ export function NotificationTemplateDialog({
         htmlTemplate: template.htmlTemplate ?? "",
         textTemplate: template.textTemplate ?? "",
         fromAddress: template.fromAddress ?? "",
+        attachments: template.channel === "email" ? readTemplateAttachments(template.metadata) : [],
         active: template.status === "active",
       })
       return
@@ -143,6 +197,15 @@ export function NotificationTemplateDialog({
     }
   }, [open, template, form])
 
+  useEffect(() => {
+    if (!open || channel === "email" || (form.getValues("attachments") ?? []).length === 0) return
+    form.setValue("attachments", [], {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+  }, [channel, form, open])
+
   const onSubmit = async (values: FormOutput) => {
     const payload = {
       name: values.name,
@@ -152,10 +215,13 @@ export function NotificationTemplateDialog({
       status: values.active ? (values.status === "archived" ? "active" : values.status) : "draft",
       subjectTemplate: values.channel === "email" ? values.subjectTemplate || null : null,
       htmlTemplate: values.channel === "email" ? values.htmlTemplate || null : null,
-      textTemplate: values.textTemplate || null,
+      textTemplate: values.channel === "sms" ? values.textTemplate || null : null,
       fromAddress: values.channel === "email" ? values.fromAddress || null : null,
       isSystem: template?.isSystem ?? false,
-      metadata: template?.metadata ?? null,
+      metadata:
+        values.channel === "email"
+          ? buildTemplateMetadata(template?.metadata, values.attachments)
+          : buildTemplateMetadata(template?.metadata, []),
     }
 
     if (isEditing && template) {
@@ -168,6 +234,19 @@ export function NotificationTemplateDialog({
   }
 
   const isPending = create.isPending || update.isPending
+
+  const setAttachmentSelected = (attachment: TemplateAttachment, checked: boolean) => {
+    const current = form.getValues("attachments") ?? []
+    const next = checked
+      ? [...current, attachment].filter((value, index, values) => values.indexOf(value) === index)
+      : current.filter((value) => value !== attachment)
+
+    form.setValue("attachments", next, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -199,69 +278,100 @@ export function NotificationTemplateDialog({
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{dialogMessages.fields.channel}</Label>
-                <Select
-                  items={CHANNEL_ITEMS}
+                <select
+                  className={nativeSelectClassName}
                   value={form.watch("channel")}
-                  onValueChange={(value) =>
-                    form.setValue("channel", value as FormValues["channel"])
-                  }
+                  onChange={(event) => {
+                    const nextChannel = event.target.value as FormValues["channel"]
+                    if (form.getValues("channel") === nextChannel) return
+                    form.setValue("channel", nextChannel, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    })
+                  }}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CHANNEL_ITEMS.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {CHANNEL_ITEMS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{dialogMessages.fields.provider}</Label>
-                <Select
-                  items={PROVIDER_ITEMS}
+                <select
+                  className={nativeSelectClassName}
                   value={form.watch("provider")}
-                  onValueChange={(value) =>
-                    form.setValue("provider", value as FormValues["provider"])
-                  }
+                  onChange={(event) => {
+                    const nextProvider = event.target.value as FormValues["provider"]
+                    if (form.getValues("provider") === nextProvider) return
+                    form.setValue("provider", nextProvider, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    })
+                  }}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROVIDER_ITEMS.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {PROVIDER_ITEMS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{dialogMessages.fields.status}</Label>
-                <Select
-                  items={STATUS_ITEMS}
+                <select
+                  className={nativeSelectClassName}
                   value={form.watch("status")}
-                  onValueChange={(value) => form.setValue("status", value as FormValues["status"])}
+                  onChange={(event) => {
+                    const nextStatus = event.target.value as FormValues["status"]
+                    if (form.getValues("status") === nextStatus) return
+                    form.setValue("status", nextStatus, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    })
+                  }}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_ITEMS.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {STATUS_ITEMS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
             {channel === "email" ? (
               <>
+                <div className="flex flex-col gap-2">
+                  <Label>{dialogMessages.fields.attachments}</Label>
+                  <div className="flex flex-wrap gap-3">
+                    {ATTACHMENT_ITEMS.map((item) => (
+                      <div
+                        key={item.value}
+                        className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm"
+                      >
+                        <Checkbox
+                          id={`notification-template-attachment-${item.value}`}
+                          checked={attachments.includes(item.value)}
+                          onCheckedChange={(checked) =>
+                            setAttachmentSelected(item.value, checked === true)
+                          }
+                        />
+                        <Label
+                          htmlFor={`notification-template-attachment-${item.value}`}
+                          className="cursor-pointer text-sm font-normal"
+                        >
+                          {item.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <Label>{dialogMessages.fields.fromAddress}</Label>
@@ -298,22 +408,16 @@ export function NotificationTemplateDialog({
               </>
             ) : null}
 
-            <div className="flex flex-col gap-2">
-              <Label>
-                {channel === "sms"
-                  ? dialogMessages.fields.textBodySms
-                  : dialogMessages.fields.textFallback}
-              </Label>
-              <Textarea
-                {...form.register("textTemplate")}
-                placeholder={
-                  channel === "sms"
-                    ? dialogMessages.placeholders.textBodySms
-                    : dialogMessages.placeholders.textFallback
-                }
-                rows={6}
-              />
-            </div>
+            {channel === "sms" ? (
+              <div className="flex flex-col gap-2">
+                <Label>{dialogMessages.fields.textBodySms}</Label>
+                <Textarea
+                  {...form.register("textTemplate")}
+                  placeholder={dialogMessages.placeholders.textBodySms}
+                  rows={6}
+                />
+              </div>
+            ) : null}
 
             <NotificationTemplateAuthoringHelp
               variableGroups={variableGroups}
@@ -328,6 +432,7 @@ export function NotificationTemplateDialog({
                   insertPlainText(editorInstance, snippet.code)
                   return
                 }
+                if (channel !== "sms") return
                 const current = form.getValues("textTemplate") ?? ""
                 form.setValue(
                   "textTemplate",

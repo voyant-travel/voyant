@@ -1,5 +1,5 @@
+import { DEFAULT_PAX_BANDS } from "@voyantjs/catalog/booking-engine"
 import { describe, expect, it } from "vitest"
-
 import type { ProductContent } from "../../src/content-shape.js"
 import { productContentSchema } from "../../src/content-shape.js"
 import { buildProductDraftShape } from "../../src/draft-shape.js"
@@ -34,7 +34,7 @@ describe("buildProductDraftShape", () => {
     expect(shape.configureSubSteps).toEqual([
       {
         kind: "occupancy",
-        bands: [{ code: "adult", label: "Adult", minCount: 1, maxCount: 8 }],
+        bands: DEFAULT_PAX_BANDS,
       },
     ])
   })

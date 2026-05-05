@@ -20,6 +20,7 @@ import type { UseSupplierPaymentsOptions } from "./hooks/use-supplier-payments.j
 import type { UseVoucherOptions } from "./hooks/use-voucher.js"
 import type { UseVouchersOptions } from "./hooks/use-vouchers.js"
 import {
+  getAdminBookingPayments,
   getPublicBookingDocuments,
   getPublicBookingPaymentOptions,
   getPublicBookingPayments,
@@ -88,6 +89,8 @@ export function getInvoicesQueryOptions(
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.search) params.set("search", filters.search)
+      if (filters.bookingId) params.set("bookingId", filters.bookingId)
+      if (filters.status) params.set("status", filters.status)
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
@@ -292,6 +295,21 @@ export function getPublicBookingPaymentsQueryOptions(
       }
 
       return getPublicBookingPayments(client, bookingId)
+    },
+  })
+}
+
+export function getAdminBookingPaymentsQueryOptions(
+  client: FetchWithValidationOptions,
+  bookingId: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.adminBookingPayments(bookingId ?? ""),
+    queryFn: async () => {
+      if (!bookingId) {
+        throw new Error("getAdminBookingPaymentsQueryOptions requires a bookingId")
+      }
+      return getAdminBookingPayments(client, bookingId)
     },
   })
 }

@@ -3,6 +3,13 @@ import { pgEnum } from "drizzle-orm/pg-core"
 export const bookingStatusEnum = pgEnum("booking_status", [
   "draft",
   "on_hold",
+  /**
+   * Inventory is reserved and money is expected. The customer has
+   * accepted the contract and a payment session (card redirect, bank
+   * transfer proforma) is in flight. Differs from `on_hold`, which
+   * is the staff-brokering status with no money expected.
+   */
+  "awaiting_payment",
   "confirmed",
   "in_progress",
   "completed",
@@ -36,6 +43,10 @@ export const bookingActivityTypeEnum = pgEnum("booking_activity_type", [
   "supplier_update",
   "passenger_update",
   "note_added",
+  // System-issued activity rows (e.g. payment-schedule
+  // regeneration). Distinct from `note_added` so the UI can filter
+  // operator-authored notes from automated audit entries.
+  "system_action",
 ])
 
 export const bookingDocumentTypeEnum = pgEnum("booking_document_type", [

@@ -1,7 +1,10 @@
 "use client"
 
+import type { PaymentPolicy } from "@voyantjs/finance"
+import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyantjs/finance-ui"
 import {
   type CreateProductCategoryInput,
+  type ProductCategoryPaymentPolicy,
   type ProductCategoryRecord,
   useProductCategoryMutation,
 } from "@voyantjs/products-react"
@@ -31,6 +34,7 @@ interface FormState {
   description: string
   sortOrder: string
   active: boolean
+  customerPaymentPolicy: PaymentPolicy | null
 }
 
 function initialState(mode: Mode): FormState {
@@ -43,6 +47,8 @@ function initialState(mode: Mode): FormState {
       description: category.description ?? "",
       sortOrder: String(category.sortOrder),
       active: category.active,
+      customerPaymentPolicy:
+        (category.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
     }
   }
 
@@ -53,6 +59,7 @@ function initialState(mode: Mode): FormState {
     description: "",
     sortOrder: "0",
     active: true,
+    customerPaymentPolicy: null,
   }
 }
 
@@ -64,6 +71,8 @@ function toPayload(state: FormState): CreateProductCategoryInput {
     description: state.description.trim() || null,
     sortOrder: Number(state.sortOrder) || 0,
     active: state.active,
+    customerPaymentPolicy:
+      (state.customerPaymentPolicy as ProductCategoryPaymentPolicy | null) ?? null,
   }
 }
 
@@ -175,6 +184,25 @@ export function ProductCategoryForm({ mode, onSuccess, onCancel }: ProductCatego
             onCheckedChange={(active) => setState((prev) => ({ ...prev, active }))}
           />
           <Label>{messages.productCategoryForm.fields.active}</Label>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-md border bg-muted/10 p-4">
+        <div>
+          <h3 className="text-sm font-medium">Customer payment policy</h3>
+          <p className="text-muted-foreground text-xs">
+            When set, products in this category inherit these terms unless the listing or booking
+            sets its own override. Wins over the supplier-level policy.
+          </p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+          <PaymentPolicyForm
+            value={state.customerPaymentPolicy}
+            onChange={(next) => setState((prev) => ({ ...prev, customerPaymentPolicy: next }))}
+            inheritable={true}
+            disabled={isSubmitting}
+          />
+          <PaymentPolicyPreview policy={state.customerPaymentPolicy} />
         </div>
       </div>
 

@@ -60,6 +60,7 @@ export function mapLineItems(
     price: asNumber(item.unitPrice ?? item.price, 0),
     currency: asString(item.currency ?? event.currency, "RON"),
     isTaxIncluded: options.isTaxIncluded ?? true,
+    taxName: asStringOrUndefined(item.taxName),
     taxPercentage: item.taxPercentage != null ? asNumber(item.taxPercentage, 0) : undefined,
     isService: item.isService === true,
     saveToDb: false,

@@ -57,19 +57,19 @@ describe("renderTemplate — mustache (markdown/html)", () => {
     ).toBe("Item: ABC-123 × 2")
   })
 
-  it("returns empty string for missing top-level variables", () => {
-    expect(renderTemplate("Hello {{name}}!", "markdown", {})).toBe("Hello !")
+  it("substitutes the missing-value placeholder for missing top-level variables", () => {
+    expect(renderTemplate("Hello {{name}}!", "markdown", {})).toBe("Hello -!")
   })
 
-  it("returns empty string for missing nested paths", () => {
+  it("substitutes the missing-value placeholder for missing nested paths", () => {
     expect(renderTemplate("Street: {{address.line1}}", "markdown", { address: {} })).toBe(
-      "Street: ",
+      "Street: -",
     )
   })
 
-  it("returns empty string for out-of-bounds array index", () => {
+  it("substitutes the missing-value placeholder for out-of-bounds array index", () => {
     expect(renderTemplate("Name: {{arr[5].name}}", "markdown", { arr: [{ name: "Only" }] })).toBe(
-      "Name: ",
+      "Name: -",
     )
   })
 
@@ -101,8 +101,8 @@ describe("renderTemplate — mustache (markdown/html)", () => {
     )
   })
 
-  it("treats null and undefined as empty string", () => {
-    expect(renderTemplate("A:{{a}}|B:{{b}}", "markdown", { a: null, b: undefined })).toBe("A:|B:")
+  it("treats null and undefined as the missing-value placeholder", () => {
+    expect(renderTemplate("A:{{a}}|B:{{b}}", "markdown", { a: null, b: undefined })).toBe("A:-|B:-")
   })
 
   it("supports liquid loops and conditionals in html/markdown templates", () => {

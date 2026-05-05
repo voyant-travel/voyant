@@ -122,6 +122,22 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
       if (!row) return c.json({ error: "Notification delivery not found" }, 404)
       return c.json({ data: row })
     })
+    .post("/deliveries/:id/resend", async (c) => {
+      try {
+        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
+        const dispatcher = createNotificationService(runtime.providers)
+        const row = await notificationsService.resendDelivery(
+          c.get("db"),
+          dispatcher,
+          c.req.param("id"),
+        )
+        if (!row) return c.json({ error: "Notification delivery not found" }, 404)
+        return c.json({ data: row }, 201)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Notification resend failed"
+        return c.json({ error: message }, 400)
+      }
+    })
     .get("/reminder-rules", async (c) => {
       const query = parseQuery(c, notificationReminderRuleListQuerySchema)
       return c.json(await notificationsService.listReminderRules(c.get("db"), query))

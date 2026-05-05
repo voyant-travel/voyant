@@ -1,0 +1,17 @@
+{
+  "extends": "@voyantjs/voyant-typescript-config/react.json",
+  "compilerOptions": {
+    "types": ["react"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": false,
+    "skipLibCheck": true
+  },
+  "include": ["src", "vite.config.ts"],
+  "exclude": ["dist", "node_modules"]
+}

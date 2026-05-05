@@ -16,6 +16,7 @@ import {
   productOptionsRef,
   productsRef,
   productTicketSettingsRef,
+  suppliersRef,
 } from "./products-ref.js"
 import {
   bookingActivityLog,
@@ -178,6 +179,10 @@ type OptionUnitReference = typeof optionUnitsRef.$inferSelect
  */
 export interface BookingServiceRuntime {
   eventBus?: EventBus
+  expirePaymentSessionsForBooking?: (
+    db: PostgresJsDatabase,
+    bookingId: string,
+  ) => Promise<void> | void
 }
 
 /**
@@ -689,13 +694,122 @@ async function getConvertProductData(
   }
 }
 
-function computeHoldExpiresAt(input: { holdMinutes?: number; holdExpiresAt?: string | null }) {
+const DEFAULT_HOLD_MINUTES = 30
+
+function positiveHoldMinutes(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null
+}
+
+function isUndefinedTableError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "42P01"
+  )
+}
+
+async function resolvePolicyHoldMinutes(
+  db: PostgresJsDatabase,
+  items: ReadonlyArray<{
+    productId?: string | null
+    availabilitySlotId?: string | null
+    slotId?: string | null
+  }>,
+) {
+  const productIds = new Set<string>()
+  const slotIds = new Set<string>()
+
+  for (const item of items) {
+    if (item.productId) productIds.add(item.productId)
+    const slotId = item.availabilitySlotId ?? item.slotId
+    if (slotId) slotIds.add(slotId)
+  }
+
+  if (slotIds.size > 0) {
+    const slotRows = await db
+      .select({ productId: availabilitySlotsRef.productId })
+      .from(availabilitySlotsRef)
+      .where(inArray(availabilitySlotsRef.id, [...slotIds]))
+
+    for (const slot of slotRows) {
+      if (slot.productId) productIds.add(slot.productId)
+    }
+  }
+
+  if (productIds.size === 0) {
+    return DEFAULT_HOLD_MINUTES
+  }
+
+  const productRows = await db
+    .select({
+      id: productsRef.id,
+      supplierId: productsRef.supplierId,
+      reservationTimeoutMinutes: productsRef.reservationTimeoutMinutes,
+    })
+    .from(productsRef)
+    .where(inArray(productsRef.id, [...productIds]))
+    .catch((error: unknown) => {
+      if (isUndefinedTableError(error)) return []
+      throw error
+    })
+
+  const supplierIds = [
+    ...new Set(productRows.map((product) => product.supplierId).filter(Boolean) as string[]),
+  ]
+  const supplierRows =
+    supplierIds.length > 0
+      ? await db
+          .select({
+            id: suppliersRef.id,
+            reservationTimeoutMinutes: suppliersRef.reservationTimeoutMinutes,
+          })
+          .from(suppliersRef)
+          .where(inArray(suppliersRef.id, supplierIds))
+          .catch((error: unknown) => {
+            if (isUndefinedTableError(error)) return []
+            throw error
+          })
+      : []
+
+  const supplierTimeouts = new Map(
+    supplierRows.map((supplier) => [
+      supplier.id,
+      positiveHoldMinutes(supplier.reservationTimeoutMinutes),
+    ]),
+  )
+  const candidates: number[] = []
+
+  for (const product of productRows) {
+    const productMinutes = positiveHoldMinutes(product.reservationTimeoutMinutes)
+    if (productMinutes !== null) {
+      candidates.push(productMinutes)
+      continue
+    }
+
+    const supplierMinutes = product.supplierId ? supplierTimeouts.get(product.supplierId) : null
+    if (supplierMinutes !== null && supplierMinutes !== undefined) {
+      candidates.push(supplierMinutes)
+    }
+  }
+
+  return candidates.length > 0 ? Math.min(...candidates) : DEFAULT_HOLD_MINUTES
+}
+
+async function computeHoldExpiresAt(
+  db: PostgresJsDatabase,
+  input: { holdMinutes?: number; holdExpiresAt?: string | null },
+  items: ReadonlyArray<{
+    productId?: string | null
+    availabilitySlotId?: string | null
+    slotId?: string | null
+  }> = [],
+) {
   if (input.holdExpiresAt) {
     return new Date(input.holdExpiresAt)
   }
-  const now = Date.now()
-  const minutes = input.holdMinutes ?? 30
-  return new Date(now + minutes * 60 * 1000)
+  const minutes = input.holdMinutes ?? (await resolvePolicyHoldMinutes(db, items))
+  return new Date(Date.now() + minutes * 60 * 1000)
 }
 
 /**
@@ -964,7 +1078,7 @@ async function reserveBookingFromTransactionSource(
   const slotChanges: AvailabilitySlotChangedEventPayload[] = []
   try {
     const result = await db.transaction(async (tx) => {
-      const holdExpiresAt = computeHoldExpiresAt(data)
+      const holdExpiresAt = await computeHoldExpiresAt(tx as PostgresJsDatabase, data, source.items)
       const dateRange = deriveBookingDateRange(source.items)
       const pax = deriveBookingPax(source.participants, source.items)
 
@@ -1739,9 +1853,40 @@ export const bookingsService = {
         .orderBy(desc(bookings.createdAt)),
       db.select({ count: sql<number>`count(*)::int` }).from(bookings).where(where),
     ])
+    const bookingIds = rows.map((row) => row.id)
+    const itemTimes =
+      bookingIds.length > 0
+        ? await db
+            .select({
+              bookingId: bookingItems.bookingId,
+              startsAt: bookingItems.startsAt,
+              endsAt: bookingItems.endsAt,
+            })
+            .from(bookingItems)
+            .where(inArray(bookingItems.bookingId, bookingIds))
+        : []
+
+    const ranges = new Map<string, { startsAt: Date | null; endsAt: Date | null }>()
+    for (const item of itemTimes) {
+      const current = ranges.get(item.bookingId) ?? { startsAt: null, endsAt: null }
+      if (item.startsAt && (!current.startsAt || item.startsAt < current.startsAt)) {
+        current.startsAt = item.startsAt
+      }
+      if (item.endsAt && (!current.endsAt || item.endsAt > current.endsAt)) {
+        current.endsAt = item.endsAt
+      }
+      ranges.set(item.bookingId, current)
+    }
 
     return {
-      data: rows,
+      data: rows.map((row) => {
+        const range = ranges.get(row.id)
+        return {
+          ...row,
+          startsAt: range?.startsAt?.toISOString() ?? null,
+          endsAt: range?.endsAt?.toISOString() ?? null,
+        }
+      }),
       total: countResult[0]?.count ?? 0,
       limit: query.limit,
       offset: query.offset,
@@ -2158,7 +2303,7 @@ export const bookingsService = {
     const slotChanges: AvailabilitySlotChangedEventPayload[] = []
     try {
       const result = await db.transaction(async (tx) => {
-        const holdExpiresAt = computeHoldExpiresAt(data)
+        const holdExpiresAt = await computeHoldExpiresAt(tx as PostgresJsDatabase, data, data.items)
         const [booking] = await tx
           .insert(bookings)
           .values({
@@ -2420,7 +2565,12 @@ export const bookingsService = {
         if (!canTransitionBooking(booking.status, "confirmed")) {
           throw new BookingServiceError("invalid_transition")
         }
-        if (booking.status !== "on_hold") {
+        // Accept both the staff-brokered "on_hold" and the customer
+        // checkout flow's "awaiting_payment". Other statuses (draft,
+        // already-confirmed, expired, cancelled) reject — the state
+        // machine catches the rest, but we explicitly forbid the
+        // states that would skip a step in the lifecycle.
+        if (booking.status !== "on_hold" && booking.status !== "awaiting_payment") {
           throw new BookingServiceError("invalid_transition")
         }
         if (booking.hold_expires_at && booking.hold_expires_at < new Date()) {
@@ -2498,6 +2648,154 @@ export const bookingsService = {
     }
   },
 
+  async recoverExpiredPaidBooking(
+    db: PostgresJsDatabase,
+    id: string,
+    data: ConfirmBookingInput = {},
+    userId?: string,
+    runtime: BookingServiceRuntime = {},
+  ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
+    try {
+      const result = await db.transaction(async (tx) => {
+        const rows = await tx.execute(
+          sql`SELECT id, booking_number, status
+              FROM ${bookings}
+              WHERE ${bookings.id} = ${id}
+              FOR UPDATE`,
+        )
+        const booking = (
+          rows as unknown as Array<{
+            id: string
+            booking_number: string
+            status: BookingStatus
+          }>
+        )[0]
+
+        if (!booking) {
+          throw new BookingServiceError("not_found")
+        }
+        if (booking.status !== "awaiting_payment" && booking.status !== "expired") {
+          throw new BookingServiceError("invalid_transition")
+        }
+
+        const allocations = await tx
+          .select()
+          .from(bookingAllocations)
+          .where(eq(bookingAllocations.bookingId, id))
+
+        for (const allocation of allocations) {
+          if (allocation.status === "confirmed") {
+            continue
+          }
+          if (allocation.status !== "held" && allocation.status !== "expired") {
+            throw new BookingServiceError("invalid_transition")
+          }
+          if (!allocation.availabilitySlotId || allocation.status === "held") {
+            continue
+          }
+
+          const capacity = await adjustSlotCapacity(
+            tx as PostgresJsDatabase,
+            allocation.availabilitySlotId,
+            -allocation.quantity,
+            "booking",
+          )
+          if (capacity.status === "slot_not_found") {
+            throw new BookingServiceError("slot_not_found")
+          }
+          if (capacity.status === "slot_unavailable") {
+            throw new BookingServiceError("slot_unavailable")
+          }
+          if (capacity.status === "insufficient_capacity") {
+            throw new BookingServiceError("insufficient_capacity")
+          }
+          if (capacity.slotChange) slotChanges.push(capacity.slotChange)
+        }
+
+        const now = new Date()
+        await tx
+          .update(bookingAllocations)
+          .set({
+            status: "confirmed",
+            confirmedAt: now,
+            releasedAt: null,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(bookingAllocations.bookingId, id),
+              inArray(bookingAllocations.status, ["held", "expired"]),
+            ),
+          )
+
+        await tx
+          .update(bookingItems)
+          .set({ status: "confirmed", updatedAt: now })
+          .where(
+            and(
+              eq(bookingItems.bookingId, id),
+              inArray(bookingItems.status, ["on_hold", "expired"]),
+            ),
+          )
+
+        const [row] = await tx
+          .update(bookings)
+          .set({
+            status: "confirmed",
+            confirmedAt: now,
+            paidAt: now,
+            expiredAt: null,
+            holdExpiresAt: null,
+            updatedAt: now,
+          })
+          .where(eq(bookings.id, id))
+          .returning()
+
+        await syncTransactionOnBookingConfirmed(tx as PostgresJsDatabase, id)
+        await autoIssueFulfillmentsForBooking(tx as PostgresJsDatabase, id, userId)
+
+        await tx.insert(bookingActivityLog).values({
+          bookingId: id,
+          actorId: userId ?? "system",
+          activityType: "booking_confirmed",
+          description: `Late payment recovered and booking ${booking.booking_number} confirmed`,
+          metadata: { recoveredFromStatus: booking.status },
+        })
+
+        if (data.note) {
+          await tx.insert(bookingNotes).values({
+            bookingId: id,
+            authorId: userId ?? "system",
+            content: data.note,
+          })
+        }
+
+        return { status: "ok" as const, booking: row ?? null }
+      })
+
+      if (result.status === "ok" && result.booking) {
+        await runtime.eventBus?.emit(
+          "booking.confirmed",
+          {
+            bookingId: result.booking.id,
+            bookingNumber: result.booking.bookingNumber,
+            actorId: userId ?? null,
+          } satisfies BookingConfirmedEvent,
+          { category: "domain", source: "service" },
+        )
+        await emitSlotChanges(runtime, slotChanges)
+      }
+
+      return result
+    } catch (error) {
+      if (error instanceof BookingServiceError) {
+        return { status: error.code as Exclude<string, "ok"> }
+      }
+      throw error
+    }
+  },
+
   async extendBookingHold(
     db: PostgresJsDatabase,
     id: string,
@@ -2523,14 +2821,14 @@ export const bookingsService = {
         if (!booking) {
           throw new BookingServiceError("not_found")
         }
-        if (booking.status !== "on_hold") {
+        if (booking.status !== "on_hold" && booking.status !== "awaiting_payment") {
           throw new BookingServiceError("invalid_transition")
         }
         if (booking.hold_expires_at && booking.hold_expires_at < new Date()) {
           throw new BookingServiceError("hold_expired")
         }
 
-        const holdExpiresAt = computeHoldExpiresAt(data)
+        const holdExpiresAt = await computeHoldExpiresAt(tx as PostgresJsDatabase, data)
 
         await tx
           .update(bookingAllocations)
@@ -2673,6 +2971,7 @@ export const bookingsService = {
           { category: "domain", source: "service" },
         )
         await emitSlotChanges(runtime, slotChanges)
+        await runtime.expirePaymentSessionsForBooking?.(db, result.booking.id)
       }
 
       return result
@@ -2696,7 +2995,7 @@ export const bookingsService = {
       .from(bookings)
       .where(
         and(
-          eq(bookings.status, "on_hold"),
+          inArray(bookings.status, ["on_hold", "awaiting_payment"]),
           sql`${bookings.holdExpiresAt} IS NOT NULL`,
           lte(bookings.holdExpiresAt, cutoff),
         ),

@@ -70,6 +70,9 @@ import {
   invoices,
   invoiceTemplates,
   payments,
+  taxClasses,
+  taxPolicyProfiles,
+  taxPolicyRules,
   taxRegimes,
 } from "@voyantjs/finance/schema"
 import {
@@ -224,6 +227,9 @@ async function reset() {
     "payments",
     "booking_guarantees",
     "booking_payment_schedules",
+    "tax_policy_rules",
+    "tax_policy_profiles",
+    "tax_classes",
     "tax_regimes",
     // Booking extensions + bookings
     "booking_item_product_details",
@@ -418,9 +424,23 @@ async function seedAuth() {
 // ---------- 2. Markets + tax regimes + invoice templates ----------
 
 const MARKETS = { uk: newId("markets"), fr: newId("markets") } as const
-const TAX_STD = newId("tax_regimes")
-const TAX_REDUCED = newId("tax_regimes")
-const TAX_ART311 = newId("tax_regimes")
+const TAX_NORM_REGIME = newId("tax_regimes")
+const TAX_REDUSA_REGIME = newId("tax_regimes")
+const TAX_VECHE_REGIME = newId("tax_regimes")
+const TAX_REVERSE_REGIME = newId("tax_regimes")
+const TAX_SFDD_REGIME = newId("tax_regimes")
+const TAX_SDD_REGIME = newId("tax_regimes")
+const TAX_INCLUDED_REGIME = newId("tax_regimes")
+const TAX_NORM_CLASS = newId("tax_classes")
+const TAX_REDUSA_CLASS = newId("tax_classes")
+const TAX_VECHE_CLASS = newId("tax_classes")
+const TAX_REVERSE_CLASS = newId("tax_classes")
+const TAX_SFDD_CLASS = newId("tax_classes")
+const TAX_SDD_CLASS = newId("tax_classes")
+const TAX_INCLUDED_CLASS = newId("tax_classes")
+const TAX_POLICY_RO_TRAVEL = newId("tax_policy_profiles")
+const TAX_RULE_RO_ACCOMMODATION = newId("tax_policy_rules")
+const TAX_RULE_RO_FALLBACK = newId("tax_policy_rules")
 const INV_SERIES = newId("invoice_number_series")
 const INV_TMPL = newId("invoice_templates")
 
@@ -502,9 +522,154 @@ async function seedMarketsAndFinanceSetup() {
   ])
 
   await db.insert(taxRegimes).values([
-    { id: TAX_STD, code: "standard", name: "Standard VAT", rate: "20" },
-    { id: TAX_REDUCED, code: "reduced", name: "Reduced VAT", rate: "5" },
-    { id: TAX_ART311, code: "margin_scheme_art311", name: "Art. 311 margin scheme", rate: "0" },
+    {
+      id: TAX_NORM_REGIME,
+      code: "standard",
+      name: "Normala",
+      jurisdiction: "RO",
+      ratePercent: 21,
+    },
+    {
+      id: TAX_REDUSA_REGIME,
+      code: "reduced",
+      name: "Redusa",
+      jurisdiction: "RO",
+      ratePercent: 11,
+    },
+    {
+      id: TAX_VECHE_REGIME,
+      code: "standard",
+      name: "Veche",
+      jurisdiction: "RO",
+      ratePercent: 19,
+    },
+    {
+      id: TAX_REVERSE_REGIME,
+      code: "reverse_charge",
+      name: "Taxare inversa",
+      jurisdiction: "RO",
+      ratePercent: 0,
+    },
+    {
+      id: TAX_SFDD_REGIME,
+      code: "zero_rated",
+      name: "SFDD",
+      jurisdiction: "RO",
+      ratePercent: 0,
+    },
+    {
+      id: TAX_SDD_REGIME,
+      code: "zero_rated",
+      name: "SDD",
+      jurisdiction: "RO",
+      ratePercent: 0,
+    },
+    {
+      id: TAX_INCLUDED_REGIME,
+      code: "other",
+      name: "TVA Inclus",
+      jurisdiction: "RO",
+      ratePercent: 0,
+    },
+  ])
+
+  await db.insert(taxClasses).values([
+    {
+      id: TAX_NORM_CLASS,
+      code: "normala",
+      label: "Normala",
+      description: "Normala (21%)",
+      defaultRegimeId: TAX_NORM_REGIME,
+      active: true,
+    },
+    {
+      id: TAX_REDUSA_CLASS,
+      code: "redusa",
+      label: "Redusa",
+      description: "Redusa (11%)",
+      defaultRegimeId: TAX_REDUSA_REGIME,
+      active: true,
+    },
+    {
+      id: TAX_VECHE_CLASS,
+      code: "veche",
+      label: "Veche",
+      description: "Veche (19%)",
+      defaultRegimeId: TAX_VECHE_REGIME,
+      active: true,
+    },
+    {
+      id: TAX_REVERSE_CLASS,
+      code: "taxare-inversa",
+      label: "Taxare inversa",
+      description: "Taxare inversa (0%)",
+      defaultRegimeId: TAX_REVERSE_REGIME,
+      active: true,
+    },
+    {
+      id: TAX_SFDD_CLASS,
+      code: "sfdd",
+      label: "SFDD",
+      description: "SFDD (0%)",
+      defaultRegimeId: TAX_SFDD_REGIME,
+      active: true,
+    },
+    {
+      id: TAX_SDD_CLASS,
+      code: "sdd",
+      label: "SDD",
+      description: "SDD (0%)",
+      defaultRegimeId: TAX_SDD_REGIME,
+      active: true,
+    },
+    {
+      id: TAX_INCLUDED_CLASS,
+      code: "tva-inclus",
+      label: "TVA Inclus",
+      description: "TVA Inclus (0%)",
+      defaultRegimeId: TAX_INCLUDED_REGIME,
+      active: true,
+    },
+  ])
+
+  await db.insert(taxPolicyProfiles).values({
+    id: TAX_POLICY_RO_TRAVEL,
+    code: "ro-travel-operator",
+    name: "Romanian travel operator",
+    jurisdiction: "RO",
+    description:
+      "Sell-side Romanian travel operator VAT policy: Romanian accommodation uses reduced VAT, all other catalog items use standard VAT.",
+    active: true,
+  })
+
+  await db.insert(taxPolicyRules).values([
+    {
+      id: TAX_RULE_RO_ACCOMMODATION,
+      profileId: TAX_POLICY_RO_TRAVEL,
+      side: "sell",
+      priority: 10,
+      name: "Accommodation in Romania",
+      appliesTo: "all",
+      condition: {
+        all: [
+          { fact: "hasAccommodation", eq: true },
+          { fact: "accommodationCountries", contains: "RO" },
+        ],
+      },
+      taxRegimeId: TAX_REDUSA_REGIME,
+      active: true,
+    },
+    {
+      id: TAX_RULE_RO_FALLBACK,
+      profileId: TAX_POLICY_RO_TRAVEL,
+      side: "sell",
+      priority: 100,
+      name: "Standard sell-side VAT",
+      appliesTo: "all",
+      condition: { always: true },
+      taxRegimeId: TAX_NORM_REGIME,
+      active: true,
+    },
   ])
 
   await db.insert(invoiceNumberSeries).values({
@@ -1548,6 +1713,7 @@ async function seedProducts() {
       ),
       facilityId: p.facilityId ?? null,
       supplierId: p.supplierIdx != null ? (SUPPLIERS[p.supplierIdx]?.id ?? null) : null,
+      taxClassId: TAX_NORM_CLASS,
       description: `${p.name} — ${p.days} day${p.days > 1 ? "s" : ""} of curated experiences.`,
       timezone: p.sellCurrency === "GBP" ? "Europe/London" : "Europe/Paris",
       pax: 2,
@@ -2290,7 +2456,7 @@ async function seedBookingsAndFinance() {
         invoiceType: "invoice",
         seriesId: INV_SERIES,
         templateId: INV_TMPL,
-        taxRegimeId: TAX_STD,
+        taxRegimeId: TAX_NORM_REGIME,
         language: "en",
         bookingId,
         personId: people_ids[b.personIdx]!,

@@ -1,45 +1,106 @@
 /**
  * Catalog booking-engine routes for the operator template.
  *
- * Mounts the cross-vertical lifecycle from `@voyantjs/catalog/booking-engine`:
+ * Mounts the cross-vertical lifecycle from `@voyantjs/catalog/booking-engine`
+ * on **two** surfaces:
  *
- *   POST /v1/admin/catalog/quote                  → quoteEntity
- *   POST /v1/admin/catalog/book                   → bookEntity
- *   POST /v1/admin/catalog/orders/:id/cancel      → cancelEntity (id = snapshot id)
- *   GET  /v1/admin/catalog/orders                 → listOrders
- *   GET  /v1/admin/catalog/orders/:id             → getOrderById
+ *   /v1/admin/catalog/...   (staff actor — operator dashboard)
+ *   /v1/public/catalog/...  (customer / partner / supplier — storefront,
+ *                            partner portal, embedded widgets)
+ *
+ * Endpoints:
+ *
+ *   POST /v1/{admin,public}/catalog/quote          → quoteEntity
+ *   POST /v1/{admin,public}/catalog/book           → bookEntity
+ *   POST /v1/admin/catalog/orders/:id/cancel       → cancelEntity
+ *   GET  /v1/admin/catalog/orders                  → listOrders
+ *   GET  /v1/admin/catalog/orders/:id              → getOrderById
+ *   PUT  /v1/{admin,public}/catalog/drafts/:id     → upsert booking draft
+ *   GET  /v1/{admin,public}/catalog/drafts/:id     → read booking draft
+ *   DELETE /v1/{admin,public}/catalog/drafts/:id   → delete booking draft
  *
  * The handlers parse minimal JSON bodies, delegate to the engine, and
- * translate `BookingEngineError` codes into appropriate HTTP statuses
- * (4xx vs 5xx). Authorization comes from the operator template's
- * `requireAuth` chain — this file doesn't add additional checks.
+ * translate `BookingEngineError` codes into appropriate HTTP statuses.
+ *
+ * Auth posture comes from the operator template's `createApp` middleware
+ * chain — `/v1/admin/...` requires staff, `/v1/public/...` accepts the
+ * configured public actors. Per booking-journey-architecture §10 Phase B.
  */
 
+import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   BookingEngineError,
   type BookingPaymentIntent,
   bookEntity,
   cancelEntity,
+  catalogQuotesTable,
+  createBookingDraft,
+  DEFAULT_DRAFT_TTL_MS,
+  deleteBookingDraft,
+  getBookingDraft,
   getOrderById,
   listOrders,
+  markDraftConsumed,
   NO_ADAPTER_REGISTERED,
+  NO_HANDLER_REGISTERED,
   ORDER_ALREADY_CANCELLED,
   ORDER_NOT_FOUND,
+  OWNED_SOURCE_KIND,
   QUOTE_EXPIRED,
   QUOTE_MISMATCH,
   QUOTE_NOT_FOUND,
   quoteEntity,
   RESERVE_FAILED,
+  updateBookingDraft,
 } from "@voyantjs/catalog/booking-engine"
+import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
+import { products } from "@voyantjs/products"
+import { getProductContent } from "@voyantjs/products/service-content"
+import { suppliers } from "@voyantjs/suppliers"
+import { and, asc, eq, gte } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 
-import { getBookingEngineRegistryFromContext } from "./lib/booking-engine-runtime"
+import {
+  getBookingEngineRegistryFromContext,
+  getOwnedBookingHandlerRegistryFromContext,
+} from "./lib/booking-engine-runtime"
+import { computeBookingItemTaxLine, resolveOperatorSellTaxRate } from "./lib/operator-tax-policy"
 
-// `c.var.db` is set by the createApp DB middleware; the global ContextVariableMap
-// doesn't declare it, so we cast at the call site to keep type-safety local.
+const DEFAULT_HOLD_TTL_MS = 30 * 60 * 1000
+
 function getDb(c: Context): AnyDrizzleDb {
   return (c.var as { db: AnyDrizzleDb }).db
+}
+
+/**
+ * Resolve provenance for an `(entity_module, entity_id)` pair.
+ * Sourced rows live in `catalog_sourced_entries` and carry their
+ * upstream pointer; everything else is owned. Customer-facing
+ * surfaces shouldn't have to know which is which — they pass the
+ * entity, the engine resolves the kind.
+ */
+async function resolveEntityProvenance(
+  db: AnyDrizzleDb,
+  entityModule: string,
+  entityId: string,
+): Promise<{
+  sourceKind: string
+  sourceProvider?: string
+  sourceConnectionId?: string
+  sourceRef?: string
+}> {
+  const row = await readSourcedEntry(db, entityModule, entityId)
+  if (!row) {
+    return { sourceKind: OWNED_SOURCE_KIND }
+  }
+  return {
+    sourceKind: row.source_kind,
+    sourceProvider: row.source_provider ?? undefined,
+    sourceConnectionId: row.source_connection_id ?? undefined,
+    sourceRef: row.source_ref ?? undefined,
+  }
 }
 
 interface QuoteBody {
@@ -51,6 +112,9 @@ interface QuoteBody {
   sourceRef?: string
   scope?: { locale?: string; audience?: string; market?: string; currency?: string }
   parameters?: Record<string, unknown>
+  /** Optional draft state — when present, the engine reads pax / addons /
+   *  accommodation / billing country off this for live re-quoting. */
+  draft?: Record<string, unknown>
   ttlMs?: number
 }
 
@@ -60,6 +124,11 @@ interface BookBody {
   party?: Record<string, unknown>
   paymentIntent?: BookingPaymentIntent
   parameters?: Record<string, unknown>
+  /** Optional draft id — when present, the engine resolves the most
+   *  recent quote and full draft payload from `booking_drafts`. */
+  draftId?: string
+  /** Idempotency key — same key in 24h returns the existing booking. */
+  idempotencyKey?: string
 }
 
 interface CancelBody {
@@ -69,159 +138,608 @@ interface CancelBody {
   reason?: string
 }
 
+interface DraftBody {
+  entityModule?: string
+  entityId?: string
+  sourceKind?: string
+  sourceConnectionId?: string
+  sourceRef?: string
+  draftPayload?: Record<string, unknown>
+  currentStep?: string
+  currentQuoteId?: string
+  ttlMs?: number
+}
+
+interface HoldPlaceBody {
+  entityModule?: string
+  entityId?: string
+  draftId?: string
+  ttlMs?: number
+  parameters?: Record<string, unknown>
+}
+
+interface HoldReleaseBody {
+  entityModule?: string
+  holdToken?: string
+}
+
 export function mountCatalogBookingRoutes(hono: Hono): void {
-  hono.post("/v1/admin/catalog/quote", async (c) => {
-    let body: QuoteBody
-    try {
-      body = await c.req.json<QuoteBody>()
-    } catch {
-      body = {}
-    }
+  // /quote — both surfaces
+  for (const prefix of ["/v1/admin/catalog", "/v1/public/catalog"]) {
+    hono.post(`${prefix}/quote`, handleQuote)
+    hono.post(`${prefix}/book`, handleBook)
+    hono.put(`${prefix}/drafts/:id`, handleDraftPut)
+    hono.get(`${prefix}/drafts/:id`, handleDraftGet)
+    hono.delete(`${prefix}/drafts/:id`, handleDraftDelete)
+    hono.post(`${prefix}/holds/place`, handleHoldPlace)
+    hono.post(`${prefix}/holds/release`, handleHoldRelease)
+    // List available departures / slots for a product. Drives the
+    // storefront's departure-select on the product detail page —
+    // customers pick from real available options, not a free-form
+    // calendar (per booking-journey-architecture §10).
+    hono.get(`${prefix}/slots`, handleListSlots)
+  }
 
-    if (!body.entityModule || !body.entityId || !body.sourceKind) {
-      return c.json({ error: "entityModule, entityId, and sourceKind are required" }, 400)
-    }
+  // Admin-only — order management.
+  hono.post("/v1/admin/catalog/orders/:id/cancel", handleCancel)
+  hono.get("/v1/admin/catalog/orders", handleListOrders)
+  hono.get("/v1/admin/catalog/orders/:id", handleGetOrder)
 
-    const db = getDb(c)
-    const registry = getBookingEngineRegistryFromContext(c)
-    const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+  // Admin-only — read the catalog snapshot tied to a booking.
+  // Backs the BookingCatalogSourceCard on the booking detail page;
+  // surfaces the frozen entity reference + pricing + (optionally) the
+  // captured content payload so operators can see exactly what the
+  // customer was quoted at booking time.
+  hono.get("/v1/admin/bookings/:id/catalog-snapshot", handleGetBookingSnapshot)
+}
 
-    try {
-      const result = await quoteEntity(
-        db,
-        { registry },
-        {
-          entityModule: body.entityModule,
-          entityId: body.entityId,
-          sourceKind: body.sourceKind,
-          sourceProvider: body.sourceProvider,
-          sourceConnectionId: body.sourceConnectionId,
-          sourceRef: body.sourceRef,
-          scope: {
-            locale: body.scope?.locale ?? "en-GB",
-            audience: body.scope?.audience ?? "staff",
-            market: body.scope?.market ?? "default",
-            currency: body.scope?.currency,
-          },
-          parameters: body.parameters,
-          ttlMs: body.ttlMs,
-          adapterContext: {
-            connection_id: body.sourceConnectionId ?? body.sourceKind,
-            correlation_id: correlationId,
-          },
+// ─────────────────────────────────────────────────────────────────
+// Handlers
+// ─────────────────────────────────────────────────────────────────
+
+async function handleQuote(c: Context): Promise<Response> {
+  let body: QuoteBody
+  try {
+    body = await c.req.json<QuoteBody>()
+  } catch {
+    body = {}
+  }
+
+  if (!body.entityModule || !body.entityId) {
+    return c.json({ error: "entityModule and entityId are required" }, 400)
+  }
+
+  const db = getDb(c)
+  const registry = getBookingEngineRegistryFromContext(c)
+  const ownedHandlers = getOwnedBookingHandlerRegistryFromContext(c)
+  const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+
+  // Resolve source provenance from the catalog plane when the
+  // caller hasn't supplied it. Customer-facing surfaces don't (and
+  // shouldn't) carry source kind in URLs — it's an operator
+  // concern. Operator surfaces still pass it explicitly.
+  const provenance = body.sourceKind
+    ? {
+        sourceKind: body.sourceKind,
+        sourceProvider: body.sourceProvider,
+        sourceConnectionId: body.sourceConnectionId,
+        sourceRef: body.sourceRef,
+      }
+    : await resolveEntityProvenance(db, body.entityModule, body.entityId)
+
+  try {
+    const result = await quoteEntity(
+      db,
+      { registry, ownedHandlers },
+      {
+        entityModule: body.entityModule,
+        entityId: body.entityId,
+        sourceKind: provenance.sourceKind,
+        sourceProvider: provenance.sourceProvider,
+        sourceConnectionId: provenance.sourceConnectionId,
+        sourceRef: provenance.sourceRef,
+        scope: {
+          locale: body.scope?.locale ?? "en-GB",
+          audience: body.scope?.audience ?? defaultAudienceForPath(c),
+          market: body.scope?.market ?? "default",
+          currency: body.scope?.currency,
         },
-      )
-      return c.json(result)
-    } catch (err) {
-      return errorResponse(c, err)
-    }
-  })
-
-  hono.post("/v1/admin/catalog/book", async (c) => {
-    let body: BookBody
-    try {
-      body = await c.req.json<BookBody>()
-    } catch {
-      body = {}
-    }
-
-    if (!body.quoteId) {
-      return c.json({ error: "quoteId is required" }, 400)
-    }
-
-    const db = getDb(c)
-    const registry = getBookingEngineRegistryFromContext(c)
-    const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
-
-    try {
-      const result = await bookEntity(
-        db,
-        { registry },
-        {
-          quoteId: body.quoteId,
-          bookingId: body.bookingId,
-          party: body.party,
-          paymentIntent: body.paymentIntent,
-          parameters: body.parameters,
-          adapterContext: { connection_id: "engine", correlation_id: correlationId },
+        // Both `parameters` and the optional draft are forwarded; the
+        // engine routes the draft into the owned handler / sourced
+        // adapter when present.
+        parameters: engineParametersFromDraft(body.parameters, body.draft),
+        ttlMs: body.ttlMs,
+        adapterContext: {
+          connection_id: provenance.sourceConnectionId ?? provenance.sourceKind,
+          correlation_id: correlationId,
         },
-      )
-      return c.json(result)
-    } catch (err) {
-      return errorResponse(c, err)
+      },
+    )
+    const resultWithTax = await applyOperatorTaxToQuoteResult(
+      db,
+      result,
+      body.entityModule,
+      body.entityId,
+      provenance.sourceKind,
+    )
+    return c.json({ ...resultWithTax, pricing: toPricingBreakdownV1(resultWithTax.pricing) })
+  } catch (err) {
+    return errorResponse(c, err)
+  }
+}
+
+async function handleBook(c: Context): Promise<Response> {
+  let body: BookBody
+  try {
+    body = await c.req.json<BookBody>()
+  } catch {
+    body = {}
+  }
+
+  if (!body.quoteId && !body.draftId) {
+    return c.json({ error: "either quoteId or draftId is required" }, 400)
+  }
+
+  const db = getDb(c)
+  const registry = getBookingEngineRegistryFromContext(c)
+  const ownedHandlers = getOwnedBookingHandlerRegistryFromContext(c)
+  const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+
+  // When the caller passes a draftId without a quoteId, resolve the
+  // current quote off the draft. Phase B's draft-first flow.
+  let quoteId = body.quoteId
+  let draftPayload: Record<string, unknown> | undefined
+  if (!quoteId && body.draftId) {
+    const draft = await getBookingDraft(db, body.draftId)
+    if (!draft) return c.json({ error: "draft not found" }, 404)
+    if (!draft.current_quote_id) {
+      return c.json({ error: "draft has no current quote — call /quote first" }, 409)
     }
+    quoteId = draft.current_quote_id
+    draftPayload = draft.draft_payload
+  }
+  if (!quoteId) return c.json({ error: "quoteId could not be resolved" }, 400)
+
+  try {
+    const result = await bookEntity(
+      db,
+      { registry, ownedHandlers },
+      {
+        quoteId,
+        bookingId: body.bookingId,
+        party: body.party,
+        paymentIntent: body.paymentIntent,
+        parameters: engineParametersFromDraft(
+          body.parameters,
+          draftPayload ?? body.parameters?.draft,
+        ),
+        idempotencyKey: body.idempotencyKey,
+        adapterContext: { connection_id: "engine", correlation_id: correlationId },
+      },
+    )
+
+    // Link the draft → booking so downstream materialization (lazy
+    // booking row creation in /checkout/start, or the rerun runner)
+    // can find the customer-entered travelers + billing contact via
+    // `consumed_booking_id`. Without this the booking ends up with
+    // empty traveler / contact / dates fields even though the draft
+    // captured them. See booking-journey-architecture §5.7.
+    if (body.draftId) {
+      try {
+        await markDraftConsumed(db, body.draftId, result.bookingId)
+      } catch (err) {
+        // Don't fail the booking if the draft consume update races
+        // with another request — the booking is the source of truth
+        // post-commit, the draft link is for cosmetic / audit purposes.
+        console.warn("[catalog-booking] markDraftConsumed failed:", err)
+      }
+    }
+
+    return c.json({ ...result, pricing: toPricingBreakdownV1(result.pricing) })
+  } catch (err) {
+    return errorResponse(c, err)
+  }
+}
+
+async function handleCancel(c: Context): Promise<Response> {
+  let body: CancelBody
+  try {
+    body = await c.req.json<CancelBody>()
+  } catch {
+    body = {}
+  }
+
+  if (!body.bookingId || !body.entityModule || !body.entityId) {
+    return c.json({ error: "bookingId, entityModule, and entityId are required in the body" }, 400)
+  }
+
+  const db = getDb(c)
+  const registry = getBookingEngineRegistryFromContext(c)
+  const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+
+  try {
+    const result = await cancelEntity(
+      db,
+      { registry },
+      {
+        bookingId: body.bookingId,
+        entityModule: body.entityModule,
+        entityId: body.entityId,
+        reason: body.reason,
+        adapterContext: { connection_id: "engine", correlation_id: correlationId },
+      },
+    )
+    return c.json(result)
+  } catch (err) {
+    return errorResponse(c, err)
+  }
+}
+
+async function handleListOrders(c: Context): Promise<Response> {
+  const db = getDb(c)
+  const url = new URL(c.req.url)
+  const bookingId = url.searchParams.get("bookingId") ?? undefined
+  const entityModule = url.searchParams.get("entityModule") ?? undefined
+  const sourceKindsParam = url.searchParams.get("sourceKinds")
+  const sourceKinds = sourceKindsParam ? sourceKindsParam.split(",") : undefined
+  const limit = Number.parseInt(url.searchParams.get("limit") ?? "50", 10)
+  const offset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10)
+
+  const result = await listOrders(db, {
+    bookingId,
+    entityModule,
+    sourceKinds,
+    limit: Number.isFinite(limit) ? limit : 50,
+    offset: Number.isFinite(offset) ? offset : 0,
   })
+  return c.json({ rows: result.rows })
+}
 
-  hono.post("/v1/admin/catalog/orders/:id/cancel", async (c) => {
-    let body: CancelBody
-    try {
-      body = await c.req.json<CancelBody>()
-    } catch {
-      body = {}
-    }
+async function handleGetOrder(c: Context): Promise<Response> {
+  const db = getDb(c)
+  const id = c.req.param("id")
+  if (!id) return c.json({ error: "id is required" }, 400)
+  const row = await getOrderById(db, id)
+  if (!row) return c.json({ error: "order not found" }, 404)
+  return c.json(row)
+}
 
-    // The path id is the snapshot row id; cancellation needs the
-    // (booking_id, entity_module, entity_id) triple. The body carries
-    // those because a single snapshot id is not unique across the cancel
-    // dispatch shape (kept for forward compatibility with multi-line
-    // orders sharing a booking id).
-    if (!body.bookingId || !body.entityModule || !body.entityId) {
-      return c.json(
-        { error: "bookingId, entityModule, and entityId are required in the body" },
-        400,
-      )
-    }
+async function handleListSlots(c: Context): Promise<Response> {
+  const url = new URL(c.req.url)
+  const entityModule = url.searchParams.get("entityModule")
+  const entityId = url.searchParams.get("entityId")
+  if (!entityModule || !entityId) {
+    return c.json({ error: "entityModule and entityId are required" }, 400)
+  }
+  // Cruises + hospitality have vertical-specific scheduling
+  // (sailings, rate plans) surfaced by the detail page directly off
+  // their content payloads. This endpoint only serves products.
+  if (entityModule !== "products") {
+    return c.json({ rows: [] })
+  }
 
-    const db = getDb(c)
+  const db = (c.var as { db: AnyDrizzleDb }).db as PostgresJsDatabase
+
+  // Sourced products carry their schedule in the sourced-content
+  // payload — the upstream's `getContent` is the source of truth, not
+  // any owned `availability_slots` row. Owned products keep using the
+  // owned table since `buildOwnedProductContent` doesn't project
+  // availability_slots into ProductContent.departures.
+  const sourcedEntry = await readSourcedEntry(db, "products", entityId)
+  if (sourcedEntry) {
     const registry = getBookingEngineRegistryFromContext(c)
-    const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+    const acceptHeader = c.req.header("accept-language") ?? ""
+    const preferredLocales = acceptHeader
+      .split(",")
+      .map((s) => s.split(";")[0]?.trim())
+      .filter((s): s is string => Boolean(s))
+    const resolved = await getProductContent(
+      db,
+      entityId,
+      { preferredLocales: preferredLocales.length > 0 ? preferredLocales : ["en-GB"] },
+      { registry, forceFresh: true },
+    )
+    const today = new Date().toISOString().slice(0, 10)
+    const rows = (resolved?.content.departures ?? [])
+      .filter((d) => {
+        if (d.status === "sold_out" || d.status === "closed") return false
+        return d.starts_at.slice(0, 10) >= today
+      })
+      .slice(0, 60)
+      .map((d) => ({
+        id: d.id,
+        dateLocal: d.starts_at.slice(0, 10),
+        startsAt: d.starts_at,
+        endsAt: d.ends_at ?? null,
+        timezone: "UTC",
+        status: d.status ?? "open",
+        unlimited: d.capacity == null && d.remaining == null,
+        remainingPax: d.remaining ?? null,
+        initialPax: d.capacity ?? null,
+        nights: null,
+        days: null,
+      }))
+    return c.json({ rows })
+  }
 
-    try {
-      const result = await cancelEntity(
-        db,
-        { registry },
-        {
-          bookingId: body.bookingId,
-          entityModule: body.entityModule,
-          entityId: body.entityId,
-          reason: body.reason,
-          adapterContext: { connection_id: "engine", correlation_id: correlationId },
-        },
-      )
-      return c.json(result)
-    } catch (err) {
-      return errorResponse(c, err)
-    }
-  })
-
-  hono.get("/v1/admin/catalog/orders", async (c) => {
-    const db = getDb(c)
-    const url = new URL(c.req.url)
-    const bookingId = url.searchParams.get("bookingId") ?? undefined
-    const entityModule = url.searchParams.get("entityModule") ?? undefined
-    const sourceKindsParam = url.searchParams.get("sourceKinds")
-    const sourceKinds = sourceKindsParam ? sourceKindsParam.split(",") : undefined
-    const limit = Number.parseInt(url.searchParams.get("limit") ?? "50", 10)
-    const offset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10)
-
-    const result = await listOrders(db, {
-      bookingId,
-      entityModule,
-      sourceKinds,
-      limit: Number.isFinite(limit) ? limit : 50,
-      offset: Number.isFinite(offset) ? offset : 0,
+  const today = new Date().toISOString().slice(0, 10)
+  const rows = await db
+    .select({
+      id: availabilitySlots.id,
+      dateLocal: availabilitySlots.dateLocal,
+      startsAt: availabilitySlots.startsAt,
+      endsAt: availabilitySlots.endsAt,
+      timezone: availabilitySlots.timezone,
+      status: availabilitySlots.status,
+      unlimited: availabilitySlots.unlimited,
+      remainingPax: availabilitySlots.remainingPax,
+      initialPax: availabilitySlots.initialPax,
+      nights: availabilitySlots.nights,
+      days: availabilitySlots.days,
     })
-    return c.json({ rows: result.rows })
-  })
+    .from(availabilitySlots)
+    .where(
+      and(
+        eq(availabilitySlots.productId, entityId),
+        eq(availabilitySlots.status, "open"),
+        gte(availabilitySlots.dateLocal, today),
+      ),
+    )
+    .orderBy(asc(availabilitySlots.startsAt))
+    .limit(60)
 
-  hono.get("/v1/admin/catalog/orders/:id", async (c) => {
-    const db = getDb(c)
-    const id = c.req.param("id")
-    if (!id) return c.json({ error: "id is required" }, 400)
-    const row = await getOrderById(db, id)
-    if (!row) return c.json({ error: "order not found" }, 404)
-    return c.json(row)
+  return c.json({ rows })
+}
+
+function positiveMinutes(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null
+}
+
+async function resolveHoldTtlMs(
+  db: AnyDrizzleDb,
+  entityModule: string,
+  entityId: string,
+): Promise<number> {
+  if (entityModule !== "products") {
+    return DEFAULT_HOLD_TTL_MS
+  }
+
+  const [product] = await db
+    .select({
+      supplierId: products.supplierId,
+      reservationTimeoutMinutes: products.reservationTimeoutMinutes,
+    })
+    .from(products)
+    .where(eq(products.id, entityId))
+    .limit(1)
+
+  const productMinutes = positiveMinutes(product?.reservationTimeoutMinutes)
+  if (productMinutes !== null) {
+    return productMinutes * 60 * 1000
+  }
+
+  if (!product?.supplierId) {
+    return DEFAULT_HOLD_TTL_MS
+  }
+
+  const [supplier] = await db
+    .select({ reservationTimeoutMinutes: suppliers.reservationTimeoutMinutes })
+    .from(suppliers)
+    .where(eq(suppliers.id, product.supplierId))
+    .limit(1)
+
+  return (positiveMinutes(supplier?.reservationTimeoutMinutes) ?? 30) * 60 * 1000
+}
+
+async function handleHoldPlace(c: Context): Promise<Response> {
+  let body: HoldPlaceBody
+  try {
+    body = await c.req.json<HoldPlaceBody>()
+  } catch {
+    body = {}
+  }
+
+  if (!body.entityModule || !body.entityId || !body.draftId) {
+    return c.json({ error: "entityModule, entityId, and draftId are required" }, 400)
+  }
+
+  const ownedHandlers = getOwnedBookingHandlerRegistryFromContext(c)
+  const handler = ownedHandlers.resolve(body.entityModule)
+  if (!handler?.placeHold) {
+    return c.json({ error: "no hold primitive registered for this vertical" }, 503)
+  }
+
+  const db = getDb(c)
+  const ttlMs = body.ttlMs ?? (await resolveHoldTtlMs(db, body.entityModule, body.entityId))
+  const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+  try {
+    const result = await handler.placeHold(
+      { db, adapterContext: { connection_id: "engine", correlation_id: correlationId } },
+      {
+        entityModule: body.entityModule,
+        entityId: body.entityId,
+        draftId: body.draftId,
+        ttlMs,
+        parameters: body.parameters,
+      },
+    )
+    return c.json({ holdToken: result.holdToken, expiresAt: result.expiresAt.toISOString() })
+  } catch (err) {
+    return errorResponse(c, err)
+  }
+}
+
+async function handleHoldRelease(c: Context): Promise<Response> {
+  let body: HoldReleaseBody
+  try {
+    body = await c.req.json<HoldReleaseBody>()
+  } catch {
+    body = {}
+  }
+
+  if (!body.entityModule || !body.holdToken) {
+    return c.json({ error: "entityModule and holdToken are required" }, 400)
+  }
+
+  const ownedHandlers = getOwnedBookingHandlerRegistryFromContext(c)
+  const handler = ownedHandlers.resolve(body.entityModule)
+  if (!handler?.releaseHold) {
+    return c.body(null, 204) // graceful no-op
+  }
+
+  const db = getDb(c)
+  const correlationId = c.req.header("x-request-id") ?? cryptoRandom()
+  try {
+    await handler.releaseHold(
+      { db, adapterContext: { connection_id: "engine", correlation_id: correlationId } },
+      body.holdToken,
+    )
+    return c.body(null, 204)
+  } catch (err) {
+    return errorResponse(c, err)
+  }
+}
+
+async function handleDraftPut(c: Context): Promise<Response> {
+  const id = c.req.param("id")
+  if (!id) return c.json({ error: "id is required" }, 400)
+
+  let body: DraftBody
+  try {
+    body = await c.req.json<DraftBody>()
+  } catch {
+    body = {}
+  }
+
+  if (!body.draftPayload) {
+    return c.json({ error: "draftPayload is required" }, 400)
+  }
+
+  const db = getDb(c)
+
+  // Upsert: if a draft exists, patch; else create with the supplied id.
+  const existing = await getBookingDraft(db, id)
+  if (existing) {
+    const updated = await updateBookingDraft(db, id, {
+      draftPayload: body.draftPayload,
+      currentStep: body.currentStep,
+      currentQuoteId: body.currentQuoteId,
+      refreshTtlMs: body.ttlMs ?? DEFAULT_DRAFT_TTL_MS,
+    })
+    return c.json(updated)
+  }
+
+  if (!body.entityModule || !body.entityId) {
+    return c.json({ error: "entityModule and entityId are required when creating a draft" }, 400)
+  }
+
+  // Customer-facing surfaces don't carry sourceKind in URLs / drafts —
+  // the engine resolves provenance from (entityModule, entityId) via
+  // the catalog plane's sourced-entry lookup (same as /quote and
+  // /book). Operator surfaces still send it explicitly when known.
+  const provenance = body.sourceKind
+    ? {
+        sourceKind: body.sourceKind,
+        sourceConnectionId: body.sourceConnectionId,
+        sourceRef: body.sourceRef,
+      }
+    : await resolveEntityProvenance(db, body.entityModule, body.entityId)
+
+  const created = await createBookingDraft(db, {
+    id,
+    entityModule: body.entityModule,
+    entityId: body.entityId,
+    sourceKind: provenance.sourceKind,
+    sourceConnectionId: provenance.sourceConnectionId,
+    sourceRef: provenance.sourceRef,
+    draftPayload: body.draftPayload,
+    currentStep: body.currentStep,
+    currentQuoteId: body.currentQuoteId,
+    createdBy: extractActorId(c),
+    ttlMs: body.ttlMs,
   })
+  return c.json(created, 201)
+}
+
+async function handleDraftGet(c: Context): Promise<Response> {
+  const id = c.req.param("id")
+  if (!id) return c.json({ error: "id is required" }, 400)
+  const db = getDb(c)
+  const row = await getBookingDraft(db, id)
+  if (!row) return c.json({ error: "draft not found" }, 404)
+  return c.json(row)
+}
+
+async function handleDraftDelete(c: Context): Promise<Response> {
+  const id = c.req.param("id")
+  if (!id) return c.json({ error: "id is required" }, 400)
+  const db = getDb(c)
+  await deleteBookingDraft(db, id)
+  return c.body(null, 204)
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────
+
+function defaultAudienceForPath(c: Context): string {
+  return c.req.path.startsWith("/v1/public/") ? "customer" : "staff"
+}
+
+function extractActorId(c: Context): string | null {
+  const userId = (c.var as { userId?: string }).userId
+  return typeof userId === "string" ? userId : null
+}
+
+function engineParametersFromDraft(
+  parameters: Record<string, unknown> | undefined,
+  draftPayload: unknown,
+): Record<string, unknown> {
+  const draft = asRecord(draftPayload)
+  const configure = asRecord(draft?.configure)
+  const departureSlotId = stringValue(configure?.departureSlotId)
+  const paxCount = sumDraftPax(configure?.pax)
+  const next: Record<string, unknown> = {
+    ...(parameters ?? {}),
+    ...(draft ? { draft } : {}),
+  }
+
+  if (departureSlotId) {
+    // The journey's canonical field is `configure.departureSlotId`.
+    // Older/source adapters, including the demo adapter, still read
+    // `departure_id`; owned hold bridges read `slotId`. Send all
+    // aliases so quote and reserve operate on the same selected slot.
+    if (next.departureSlotId == null) next.departureSlotId = departureSlotId
+    if (next.departure_id == null) next.departure_id = departureSlotId
+    if (next.slotId == null) next.slotId = departureSlotId
+  }
+  if (paxCount > 0 && next.paxCount == null) {
+    next.paxCount = paxCount
+  }
+
+  return next
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
+function sumDraftPax(value: unknown): number {
+  const pax = asRecord(value)
+  if (!pax) return 0
+  let total = 0
+  for (const count of Object.values(pax)) {
+    if (typeof count === "number" && Number.isFinite(count) && count > 0) {
+      total += count
+    }
+  }
+  return total
 }
 
 function errorResponse(c: Context, err: unknown): Response {
@@ -236,6 +754,7 @@ function errorResponse(c: Context, err: unknown): Response {
 function statusForCode(code: string): number {
   switch (code) {
     case NO_ADAPTER_REGISTERED:
+    case NO_HANDLER_REGISTERED:
       return 503
     case QUOTE_NOT_FOUND:
     case ORDER_NOT_FOUND:
@@ -252,10 +771,330 @@ function statusForCode(code: string): number {
 }
 
 function cryptoRandom(): string {
-  // Lightweight correlation id for environments without `crypto.randomUUID`
-  // available — falls back to timestamp-prefixed random hex.
   if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.randomUUID) {
     return globalThis.crypto.randomUUID()
   }
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+interface PricingBasisShape {
+  base_amount: number
+  taxes: number
+  fees: number
+  surcharges: number
+  currency: string
+  breakdown?: Record<string, unknown>
+}
+
+async function applyOperatorTaxToQuoteResult(
+  db: AnyDrizzleDb,
+  result: Awaited<ReturnType<typeof quoteEntity>>,
+  entityModule: string,
+  entityId: string,
+  sourceKind: string,
+): Promise<Awaited<ReturnType<typeof quoteEntity>>> {
+  if (!result.available || !result.pricing || sourceKind === OWNED_SOURCE_KIND) return result
+  if (result.pricing.taxes > 0) return result
+
+  const pricing = result.pricing
+  const taxableCents = pricing.base_amount
+  const taxRate = await resolveOperatorSellTaxRate(db as PostgresJsDatabase, {
+    productId: entityModule === "products" ? entityId : null,
+    facts: { hasAccommodation: false, accommodationCountries: [] },
+  })
+  const taxLine = computeBookingItemTaxLine(taxRate, taxableCents, pricing.currency)
+  if (!taxLine) return result
+
+  const inclusive = taxLine.includedInPrice
+  const subtotal = inclusive ? Math.max(0, taxableCents - taxLine.amountCents) : taxableCents
+  const total = inclusive ? taxableCents : taxableCents + taxLine.amountCents
+  const adjustedPricing = {
+    ...pricing,
+    base_amount: subtotal,
+    taxes: taxLine.amountCents,
+    breakdown: {
+      currency: pricing.currency,
+      lines: [
+        {
+          kind: "base",
+          label: "Base",
+          quantity: 1,
+          unitAmount: taxableCents,
+          totalAmount: taxableCents,
+          taxIncluded: inclusive,
+        },
+      ],
+      taxes: [
+        {
+          code: taxLine.code ?? "tax",
+          label: taxLine.name,
+          rate: (taxLine.rateBasisPoints ?? 0) / 10_000,
+          amount: taxLine.amountCents,
+          base: subtotal,
+          includedInPrice: inclusive,
+          scope: taxLine.scope,
+        },
+      ],
+      subtotal,
+      taxTotal: taxLine.amountCents,
+      total,
+    },
+  }
+
+  await (db as PostgresJsDatabase)
+    .update(catalogQuotesTable)
+    .set({
+      pricing_base_amount: String(adjustedPricing.base_amount),
+      pricing_taxes: String(adjustedPricing.taxes),
+      pricing_fees: String(adjustedPricing.fees),
+      pricing_surcharges: String(adjustedPricing.surcharges),
+      pricing_currency: adjustedPricing.currency,
+      pricing_breakdown: adjustedPricing.breakdown,
+    })
+    .where(eq(catalogQuotesTable.id, result.quoteId))
+
+  return { ...result, pricing: adjustedPricing }
+}
+
+/**
+ * Map the engine's `PricingBasis` (base/taxes/fees/surcharges totals)
+ * onto the wire shape `pricingBreakdownV1` (lines + tax rows + totals)
+ * that V1 clients expect. The basis is what adapters report; the
+ * breakdown is what the storefront renders. A line-aware breakdown
+ * may eventually flow through the engine and override this projection.
+ */
+function toPricingBreakdownV1(basis: PricingBasisShape | undefined):
+  | {
+      currency: string
+      lines: Array<{
+        kind: "base" | "addon" | "accommodation" | "supplement" | "discount" | "fee"
+        label: string
+        quantity?: number
+        unitAmount: number
+        totalAmount: number
+      }>
+      taxes: Array<{ code: string; label: string; rate: number; amount: number; base: number }>
+      subtotal: number
+      taxTotal: number
+      total: number
+    }
+  | undefined {
+  if (!basis) return undefined
+  if (basis.breakdown) {
+    const breakdown = basis.breakdown as ReturnType<typeof toPricingBreakdownV1>
+    if (breakdown?.currency && Array.isArray(breakdown.lines) && Array.isArray(breakdown.taxes)) {
+      return breakdown
+    }
+  }
+  const lines: Array<{
+    kind: "base" | "fee" | "supplement"
+    label: string
+    quantity?: number
+    unitAmount: number
+    totalAmount: number
+  }> = [
+    {
+      kind: "base",
+      label: "Base",
+      quantity: 1,
+      unitAmount: basis.base_amount,
+      totalAmount: basis.base_amount,
+    },
+  ]
+  if (basis.fees > 0) {
+    lines.push({ kind: "fee", label: "Fees", unitAmount: basis.fees, totalAmount: basis.fees })
+  }
+  if (basis.surcharges > 0) {
+    lines.push({
+      kind: "supplement",
+      label: "Surcharges",
+      unitAmount: basis.surcharges,
+      totalAmount: basis.surcharges,
+    })
+  }
+  const subtotal = basis.base_amount + basis.fees + basis.surcharges
+  return {
+    currency: basis.currency,
+    lines,
+    taxes:
+      basis.taxes > 0
+        ? [
+            {
+              code: "tax",
+              label: "Tax",
+              rate: 0,
+              amount: basis.taxes,
+              base: basis.base_amount,
+            },
+          ]
+        : [],
+    subtotal,
+    taxTotal: basis.taxes,
+    total: subtotal + basis.taxes,
+  }
+}
+
+/**
+ * GET /v1/admin/bookings/:id/catalog-snapshot
+ *
+ * Returns the `booking_catalog_snapshot` row for this booking — the
+ * frozen view of what the customer actually purchased: which entity
+ * (product / cruise / hospitality), which source (owned / Bokun / Mews),
+ * the quoted pricing breakdown, and the captured content payload.
+ *
+ * The response is **enriched server-side** with operator-friendly
+ * resolved fields so the admin UI doesn't have to chase ids:
+ *   - `resolved.entity.title`       — human title from the sourced
+ *     projection (`name`/`title`) or the owned product's `name`.
+ *   - `resolved.entity.description` — short description when present.
+ *   - `resolved.entity.supplierName` — supplier label when present.
+ *   - `resolved.source.label`       — friendly source name.
+ *
+ * Used by the booking detail page's "Catalog source" card so
+ * operators see "Demo · Reykjavík Northern Lights Hunt" instead of
+ * `cdmi_01kqp28138f69btmp1n15yjj7r`. Returns 404 when no snapshot
+ * exists (legacy bookings).
+ */
+async function handleGetBookingSnapshot(c: Context): Promise<Response> {
+  const bookingId = c.req.param("id")
+  if (!bookingId) return c.json({ error: "id is required" }, 400)
+  const db = getDb(c)
+
+  const { bookingCatalogSnapshotTable } = await import("@voyantjs/catalog")
+  const [snapshot] = await db
+    .select()
+    .from(bookingCatalogSnapshotTable)
+    .where(eq(bookingCatalogSnapshotTable.booking_id, bookingId))
+    .limit(1)
+
+  if (!snapshot) {
+    return c.json({ error: "snapshot_not_found" }, 404)
+  }
+
+  const resolved = await resolveSnapshotForAdmin(db as unknown as PostgresJsDatabase, {
+    entity_module: snapshot.entity_module,
+    entity_id: snapshot.entity_id,
+    source_kind: snapshot.source_kind,
+    source_provider: snapshot.source_provider,
+    frozen_payload: (snapshot.frozen_payload ?? {}) as Record<string, unknown>,
+  })
+  return c.json({ data: { ...snapshot, resolved } })
+}
+
+interface ResolvedSnapshotEntity {
+  title: string | null
+  description: string | null
+  supplierName: string | null
+  imageUrl: string | null
+}
+
+interface ResolvedSnapshotSource {
+  label: string
+  providerLabel: string | null
+}
+
+/**
+ * Resolve admin-friendly labels for a booking_catalog_snapshot row.
+ * Tries the sourced-entry projection first (covers demo, Bokun, etc.),
+ * falls back to owned products. Returns null fields rather than
+ * throwing when sources are missing — the admin UI treats nulls as
+ * "fall back to id".
+ */
+async function resolveSnapshotForAdmin(
+  db: PostgresJsDatabase,
+  snapshot: {
+    entity_module: string
+    entity_id: string
+    source_kind: string
+    source_provider: string | null
+    frozen_payload: Record<string, unknown>
+  },
+): Promise<{ entity: ResolvedSnapshotEntity; source: ResolvedSnapshotSource }> {
+  const entity: ResolvedSnapshotEntity = {
+    title: null,
+    description: null,
+    supplierName: null,
+    imageUrl: null,
+  }
+
+  // Attempt 1: sourced_entries projection. Covers demo + every
+  // upstream provider that registers via the sourced-entry write path.
+  try {
+    const { catalogSourcedEntriesTable } = await import("@voyantjs/catalog")
+    const [sourced] = await db
+      .select({ projection: catalogSourcedEntriesTable.projection })
+      .from(catalogSourcedEntriesTable)
+      .where(
+        and(
+          eq(catalogSourcedEntriesTable.entity_module, snapshot.entity_module),
+          eq(catalogSourcedEntriesTable.entity_id, snapshot.entity_id),
+        ),
+      )
+      .limit(1)
+    if (sourced?.projection) {
+      const p = sourced.projection as Record<string, unknown>
+      entity.title = pickString(p.name, p.title)
+      entity.description = pickString(p.description, p.summary)
+      entity.supplierName = pickString(p.supplierId, p.supplier_name, p.supplierName)
+      entity.imageUrl = pickString(p.heroImageUrl, p.image_url, p.imageUrl)
+    }
+  } catch {
+    // ignore, fall through
+  }
+
+  // Attempt 2: owned products row.
+  if (!entity.title && snapshot.entity_module === "products") {
+    try {
+      const { productsService } = await import("@voyantjs/products")
+      const product = await productsService.getProductById(db, snapshot.entity_id)
+      if (product) {
+        entity.title = product.name
+        entity.description = product.description
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Attempt 3: pull from the snapshot's frozen upstream payload as
+  // last resort (sourced quotes capture the upstream object inline).
+  if (!entity.title) {
+    const upstream = (snapshot.frozen_payload?.quote as Record<string, unknown> | undefined)
+      ?.upstream_payload as Record<string, unknown> | undefined
+    if (upstream) {
+      entity.title = pickString(upstream.name, upstream.title)
+      entity.description = pickString(upstream.description, upstream.summary)
+    }
+  }
+
+  const source: ResolvedSnapshotSource = {
+    label: friendlySourceLabel(snapshot.source_kind),
+    providerLabel: snapshot.source_provider,
+  }
+
+  return { entity, source }
+}
+
+function pickString(...candidates: unknown[]): string | null {
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim().length > 0) return c
+  }
+  return null
+}
+
+/**
+ * Map raw `source_kind` strings to the labels operators recognise.
+ * "demo" → "Demo Catalog", "owned" → "Owned (this operator)", etc.
+ * Anything we don't recognise comes back title-cased.
+ */
+function friendlySourceLabel(sourceKind: string): string {
+  const map: Record<string, string> = {
+    demo: "Demo Catalog",
+    owned: "Owned (this operator)",
+    bokun: "Bókun",
+    mews: "Mews",
+    fareharbor: "FareHarbor",
+    rezdy: "Rezdy",
+  }
+  return map[sourceKind] ?? sourceKind.replace(/^./, (c) => c.toUpperCase())
 }

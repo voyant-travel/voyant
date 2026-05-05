@@ -346,7 +346,16 @@ export const contractDocumentsService = {
         variables: (prepared.contract.variables as Record<string, unknown> | null) ?? {},
         bindings: runtime.bindings ?? {},
       })
-    } catch {
+    } catch (err) {
+      // Generator failures (Cloud SDK 5xx, R2 outage, malformed
+      // template) are silently fatal at this layer — the caller
+      // (subscriber / workflow step) only sees `generator_failed`
+      // and can't tell why. Log here so the wrangler dev log /
+      // production observability captures the actual cause.
+      console.error(
+        `[legal] contract document generator failed for contract ${contractId}:`,
+        err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : err,
+      )
       return { status: "generator_failed" }
     }
 

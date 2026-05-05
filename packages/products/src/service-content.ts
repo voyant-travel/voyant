@@ -95,6 +95,12 @@ export interface GetProductContentOptions {
    * content-shape-aware merger.
    */
   onOverlayError?: (event: { field_path: string; reason: string }) => void
+  /**
+   * Bypass a fresh cache row and fetch directly from the source adapter.
+   * Use this for volatile fields embedded in content payloads, such as
+   * sourced departure capacity, where a 24h rich-content TTL is too coarse.
+   */
+  forceFresh?: boolean
 }
 
 /**
@@ -198,6 +204,25 @@ export async function getProductContent(
   const market = scope.market ?? PRODUCTS_CONTENT_MARKET_ANY
   const acceptMT = scope.acceptMachineTranslated ?? true
 
+  if (options.forceFresh && adapter?.getContent) {
+    const fresh = await fetchFreshContent(
+      db,
+      adapter,
+      adapterCtx,
+      {
+        entity_module: "products",
+        entity_id: entityId,
+        locale: scope.preferredLocales[0] ?? "en-GB",
+        market,
+        currency: scope.currency,
+      },
+      options,
+    )
+    if (fresh) {
+      return finalizeFresh(db, entityId, fresh, scope, options)
+    }
+  }
+
   // 1. Look up cached candidates across all locales for this entity.
   const cachedRows = await fetchCacheCandidates(db, entityId, market)
   const eligibleRows = acceptMT ? cachedRows : cachedRows.filter((r) => !r.machine_translated)
@@ -207,21 +232,32 @@ export async function getProductContent(
     scope.preferredLocales,
   )
 
-  if (best && !isStale(best.candidate)) {
+  const shouldRefreshLegacyAvailability = best
+    ? hasLegacyDepartureAvailabilityGap(best.candidate)
+    : false
+
+  if (best && !isStale(best.candidate) && !shouldRefreshLegacyAvailability) {
     return finalizeFromCache(db, entityId, best, "sourced-cache", false, options)
   }
 
-  if (best && isStale(best.candidate)) {
-    // SWR — return stale immediately, schedule a fire-and-forget
-    // refresh. Concurrent stale reads dedupe via the advisory lock.
+  if (best && (isStale(best.candidate) || shouldRefreshLegacyAvailability)) {
+    // SWR for ordinary stale reads. Legacy demo content without
+    // departure capacity is refreshed synchronously so operator
+    // availability surfaces do not show effectively-unlimited slots.
     if (adapter?.getContent) {
-      void scheduleRefresh(db, adapter, adapterCtx, {
+      const refreshRequest = {
         entity_module: "products",
         entity_id: entityId,
         locale: scope.preferredLocales[0] ?? best.candidate.locale,
         market,
         currency: scope.currency,
-      })
+      }
+      if (shouldRefreshLegacyAvailability) {
+        const fresh = await fetchFreshContent(db, adapter, adapterCtx, refreshRequest, options)
+        if (fresh) return finalizeFresh(db, entityId, fresh, scope, options)
+      } else {
+        void scheduleRefresh(db, adapter, adapterCtx, refreshRequest)
+      }
     }
     return finalizeFromCache(db, entityId, best, "sourced-cache", true, options)
   }
@@ -293,6 +329,14 @@ async function fetchCacheCandidates(
       ),
     )
   return rows
+}
+
+function hasLegacyDepartureAvailabilityGap(row: SelectProductsSourcedContent): boolean {
+  const validation = validateProductContent(row.payload)
+  if (!validation.valid) return false
+  return validation.content.departures.some(
+    (departure) => departure.capacity == null && departure.remaining == null,
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
