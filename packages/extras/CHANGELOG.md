@@ -1,5 +1,14 @@
 # @voyantjs/extras
 
+## 0.24.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.24.0
+- @voyantjs/core@0.24.0
+- @voyantjs/db@0.24.0
+- @voyantjs/hono@0.24.0
+
 ## 0.23.0
 
 ### Patch Changes
