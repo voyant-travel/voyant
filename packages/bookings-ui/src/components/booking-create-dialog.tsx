@@ -35,41 +35,41 @@ import {
   formatMessage,
   useBookingsUiI18nOrDefault,
   useBookingsUiMessagesOrDefault,
-} from "../i18n/provider"
+} from "../i18n/provider.js"
 
 import {
   emptyPassengerListValue,
   type PassengerListValue,
   PassengersSection,
   type RoomUnitOption,
-} from "./passengers-section"
+} from "./passengers-section.js"
 import {
   emptyPaymentScheduleValue,
   PaymentScheduleSection,
   type PaymentScheduleValue,
-} from "./payment-schedule-section"
+} from "./payment-schedule-section.js"
 import {
   emptyPersonPickerValue,
   PersonPickerSection,
   type PersonPickerValue,
-} from "./person-picker-section"
-import { PriceBreakdownSection } from "./price-breakdown-section"
-import { ProductPickerSection, type ProductPickerValue } from "./product-picker-section"
+} from "./person-picker-section.js"
+import { PriceBreakdownSection } from "./price-breakdown-section.js"
+import { ProductPickerSection, type ProductPickerValue } from "./product-picker-section.js"
 import {
   emptyRoomsStepperValue,
   RoomsStepperSection,
   type RoomsStepperValue,
-} from "./rooms-stepper-section"
+} from "./rooms-stepper-section.js"
 import {
   emptySharedRoomValue,
   SharedRoomSection,
   type SharedRoomValue,
-} from "./shared-room-section"
+} from "./shared-room-section.js"
 import {
   emptyVoucherPickerValue,
   VoucherPickerSection,
   type VoucherPickerValue,
-} from "./voucher-picker-section"
+} from "./voucher-picker-section.js"
 
 function generateBookingNumber(): string {
   const now = new Date()

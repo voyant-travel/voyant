@@ -30,8 +30,8 @@ import {
 import { Badge, Button } from "@voyantjs/ui/components"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { ExternalLink } from "lucide-react"
-import type { DistributionUiMessages } from "../i18n"
-import { type DistributionUiI18n, getDistributionUiI18n } from "../i18n"
+import type { DistributionUiMessages } from "../i18n/index.js"
+import { type DistributionUiI18n, getDistributionUiI18n } from "../i18n/index.js"
 
 export type BatchMutationResponse<T = unknown> = {
   data?: T[]

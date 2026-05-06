@@ -16,7 +16,7 @@ import {
   communicationDirectionEnum,
   recordStatusEnum,
   relationTypeEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const organizations = pgTable(
   "organizations",

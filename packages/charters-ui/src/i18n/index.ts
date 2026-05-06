@@ -1,10 +1,10 @@
-export { chartersUiEn } from "./en"
+export { chartersUiEn } from "./en.js"
 export type {
   CharterBookingMode,
   CharterSuiteAvailability,
   CharterSuiteCategory,
   ChartersUiMessages,
-} from "./messages"
+} from "./messages.js"
 export {
   type ChartersUiMessageOverrides,
   ChartersUiMessagesProvider,
@@ -15,5 +15,5 @@ export {
   useChartersUiI18nOrDefault,
   useChartersUiMessages,
   useChartersUiMessagesOrDefault,
-} from "./provider"
-export { chartersUiRo } from "./ro"
+} from "./provider.js"
+export { chartersUiRo } from "./ro.js"

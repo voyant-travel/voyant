@@ -2,9 +2,13 @@ import type { Quote } from "@voyantjs/cruises-react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { ExternalCruiseBadge } from "./components/external-badge"
-import { QuoteDisplay } from "./components/quote-display"
-import { CruisesUiMessagesProvider, getCruisesUiI18n, resolveCruisesUiMessages } from "./i18n"
+import { ExternalCruiseBadge } from "./components/external-badge.js"
+import { QuoteDisplay } from "./components/quote-display.js"
+import {
+  CruisesUiMessagesProvider,
+  getCruisesUiI18n,
+  resolveCruisesUiMessages,
+} from "./i18n/index.js"
 
 const quote: Quote = {
   fareCode: "SAVER",

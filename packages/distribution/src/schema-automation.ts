@@ -1,13 +1,13 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { boolean, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
-import { channelContracts, channels } from "./schema-core"
-import { channelInventoryReleaseRules } from "./schema-inventory"
+import { channelContracts, channels } from "./schema-core.js"
+import { channelInventoryReleaseRules } from "./schema-inventory.js"
 import {
   channelReconciliationPolicyFrequencyEnum,
   channelReleaseScheduleKindEnum,
   channelSettlementPolicyFrequencyEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const channelSettlementPolicies = pgTable(
   "channel_settlement_policies",

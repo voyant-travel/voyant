@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
-import { useChartersUiI18nOrDefault } from "../i18n"
+import { useChartersUiI18nOrDefault } from "../i18n/index.js"
 
 export interface VoyageSuiteGridProps extends React.HTMLAttributes<HTMLDivElement> {
   suites: CharterSuiteRecord[]

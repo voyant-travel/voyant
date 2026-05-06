@@ -10,7 +10,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { optionUnits, productOptions, products } from "./schema-core"
+import { optionUnits, productOptions, products } from "./schema-core.js"
 import {
   productActivationModeEnum,
   productCapabilityEnum,
@@ -18,7 +18,7 @@ import {
   productFeatureTypeEnum,
   productLocationTypeEnum,
   productTicketFulfillmentEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const productActivationSettings = pgTable(
   "product_activation_settings",

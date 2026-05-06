@@ -3,7 +3,7 @@
 import { usePublicVoucherValidationMutation } from "@voyantjs/finance-react"
 import { Button, Input, Label } from "@voyantjs/ui/components"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 /** Details of a successfully-validated voucher. */
 export interface PickedVoucher {

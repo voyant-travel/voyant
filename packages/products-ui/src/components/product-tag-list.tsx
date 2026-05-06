@@ -25,8 +25,8 @@ import {
 import { Loader2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { ProductTagDialog } from "./product-tag-dialog"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { ProductTagDialog } from "./product-tag-dialog.js"
 
 export interface ProductTagListProps {
   pageSize?: number

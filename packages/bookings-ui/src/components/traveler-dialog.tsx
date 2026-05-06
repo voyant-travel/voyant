@@ -19,7 +19,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 function createTravelerFormSchema(messages: ReturnType<typeof useBookingsUiMessagesOrDefault>) {
   return z.object({

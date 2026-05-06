@@ -1,10 +1,10 @@
-export { resourcesUiEn } from "./en"
+export { resourcesUiEn } from "./en.js"
 export type {
   AllocationMode,
   AssignmentStatus,
   ResourceKind,
   ResourcesUiMessages,
-} from "./messages"
+} from "./messages.js"
 export {
   getResourcesUiI18n,
   type ResourcesUiMessageOverrides,
@@ -15,5 +15,5 @@ export {
   useResourcesUiI18nOrDefault,
   useResourcesUiMessages,
   useResourcesUiMessagesOrDefault,
-} from "./provider"
-export { resourcesUiRo } from "./ro"
+} from "./provider.js"
+export { resourcesUiRo } from "./ro.js"

@@ -1,23 +1,23 @@
 import { relations } from "drizzle-orm"
 
 import { availabilitySlotsRef } from "./availability-ref.js"
-import { bookings, bookingTravelers } from "./schema-core"
-import { bookingGroupMembers, bookingGroups } from "./schema-groups"
+import { bookings, bookingTravelers } from "./schema-core.js"
+import { bookingGroupMembers, bookingGroups } from "./schema-groups.js"
 import {
   bookingAllocations,
   bookingFulfillments,
   bookingItems,
   bookingItemTravelers,
   bookingRedemptionEvents,
-} from "./schema-items"
+} from "./schema-items.js"
 import {
   bookingActivityLog,
   bookingDocuments,
   bookingNotes,
   bookingSessionStates,
   bookingSupplierStatuses,
-} from "./schema-operations"
-import { bookingStaffAssignments } from "./schema-staff"
+} from "./schema-operations.js"
+import { bookingStaffAssignments } from "./schema-staff.js"
 
 export const bookingsRelations = relations(bookings, ({ many }) => ({
   participants: many(bookingTravelers),

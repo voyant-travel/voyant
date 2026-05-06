@@ -23,8 +23,8 @@ import {
   formatMessage,
   useBookingsUiI18nOrDefault,
   useBookingsUiMessagesOrDefault,
-} from "../i18n/provider"
-import { BookingDialog } from "./booking-dialog"
+} from "../i18n/provider.js"
+import { BookingDialog } from "./booking-dialog.js"
 
 export interface BookingListProps {
   pageSize?: number

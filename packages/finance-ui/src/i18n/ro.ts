@@ -1,4 +1,4 @@
-import type { FinanceUiMessages } from "./messages"
+import type { FinanceUiMessages } from "./messages.js"
 
 export const financeUiRo = {
   common: {

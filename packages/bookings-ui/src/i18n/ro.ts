@@ -1,4 +1,4 @@
-import type { BookingsUiMessages } from "./messages"
+import type { BookingsUiMessages } from "./messages.js"
 
 export const bookingsUiRo = {
   common: {

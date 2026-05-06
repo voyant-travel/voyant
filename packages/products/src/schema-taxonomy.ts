@@ -11,7 +11,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { products } from "./schema-core"
+import { products } from "./schema-core.js"
 
 export const productTypes = pgTable(
   "product_types",

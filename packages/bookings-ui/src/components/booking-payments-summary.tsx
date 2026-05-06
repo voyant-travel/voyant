@@ -4,7 +4,7 @@ import { useAdminBookingPayments, usePublicBookingPayments } from "@voyantjs/fin
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Banknote, CreditCard, Receipt, Ticket, Wallet } from "lucide-react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 /**
  * Map payment status to a badge variant — completed/pending visible

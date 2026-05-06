@@ -1,9 +1,9 @@
 import type * as React from "react"
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
-import { Card, CardContent, CardHeader, CardTitle } from "./card"
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "./chart"
-import { Skeleton } from "./skeleton"
+import { Card, CardContent, CardHeader, CardTitle } from "./card.js"
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "./chart.js"
+import { Skeleton } from "./skeleton.js"
 
 const monthLabelFormatter = new Intl.DateTimeFormat(undefined, { month: "short" })
 

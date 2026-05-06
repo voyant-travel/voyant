@@ -14,7 +14,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { offerItems, offers } from "./schema-offers"
+import { offerItems, offers } from "./schema-offers.js"
 import {
   orderStatusEnum,
   orderTermAcceptanceStatusEnum,
@@ -24,7 +24,7 @@ import {
   transactionItemTypeEnum,
   transactionParticipantTypeEnum,
   transactionTravelerCategoryEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const orders = pgTable(
   "orders",

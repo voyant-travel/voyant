@@ -1,4 +1,4 @@
-import type { ProductsUiMessages } from "./messages"
+import type { ProductsUiMessages } from "./messages.js"
 
 export const productsUiRo = {
   common: {

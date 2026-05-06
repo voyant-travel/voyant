@@ -1,12 +1,12 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
-import { bookings, bookingTravelers } from "./schema-core"
+import { bookings, bookingTravelers } from "./schema-core.js"
 import {
   bookingActivityTypeEnum,
   bookingDocumentTypeEnum,
   supplierConfirmationStatusEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const bookingSupplierStatuses = pgTable(
   "booking_supplier_statuses",

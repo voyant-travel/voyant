@@ -1,11 +1,11 @@
-export { legalUiEn } from "./en"
+export { legalUiEn } from "./en.js"
 export type {
   LegalContractStatus,
   LegalRefundType,
   LegalRuleType,
   LegalSignatureMethod,
   LegalUiMessages,
-} from "./messages"
+} from "./messages.js"
 export {
   getLegalUiI18n,
   type LegalUiMessageOverrides,
@@ -16,5 +16,5 @@ export {
   useLegalUiI18nOrDefault,
   useLegalUiMessages,
   useLegalUiMessagesOrDefault,
-} from "./provider"
-export { legalUiRo } from "./ro"
+} from "./provider.js"
+export { legalUiRo } from "./ro.js"

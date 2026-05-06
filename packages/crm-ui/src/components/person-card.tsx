@@ -8,8 +8,8 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Mail, Phone } from "lucide-react"
 import type * as React from "react"
 
-import { useCrmUiMessagesOrDefault } from "../i18n"
-import type { CrmRelationType } from "../i18n/messages"
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import type { CrmRelationType } from "../i18n/messages.js"
 
 export interface PersonCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
   person: PersonRecord

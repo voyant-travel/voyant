@@ -1,10 +1,10 @@
 export {
   EnrichmentProgramList,
   type EnrichmentProgramListProps,
-} from "./components/enrichment-program-list"
-export { ExternalCruiseBadge, type ExternalCruiseBadgeProps } from "./components/external-badge"
-export { PricingGrid, type PricingGridProps } from "./components/pricing-grid"
-export { QuoteDisplay, type QuoteDisplayProps } from "./components/quote-display"
+} from "./components/enrichment-program-list.js"
+export { ExternalCruiseBadge, type ExternalCruiseBadgeProps } from "./components/external-badge.js"
+export { PricingGrid, type PricingGridProps } from "./components/pricing-grid.js"
+export { QuoteDisplay, type QuoteDisplayProps } from "./components/quote-display.js"
 export {
   type CruisePriceAvailability,
   type CruiseQuoteComponentKind,
@@ -21,4 +21,4 @@ export {
   useCruisesUiI18nOrDefault,
   useCruisesUiMessages,
   useCruisesUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

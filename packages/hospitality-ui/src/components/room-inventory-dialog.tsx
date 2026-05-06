@@ -18,8 +18,8 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
-import { RoomTypeCombobox } from "./room-type-combobox"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
+import { RoomTypeCombobox } from "./room-type-combobox.js"
 
 export type RoomInventoryData = RoomInventoryRecord
 

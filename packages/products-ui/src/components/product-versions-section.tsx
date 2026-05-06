@@ -12,8 +12,8 @@ import {
 import { FileText, Loader2, Plus } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiI18nOrDefault, useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { ProductVersionDialog } from "./product-version-dialog"
+import { useProductsUiI18nOrDefault, useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { ProductVersionDialog } from "./product-version-dialog.js"
 
 export interface ProductVersionsSectionProps {
   productId: string

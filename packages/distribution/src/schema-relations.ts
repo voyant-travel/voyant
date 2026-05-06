@@ -6,7 +6,7 @@ import {
   channelReconciliationPolicies,
   channelReleaseSchedules,
   channelSettlementPolicies,
-} from "./schema-automation"
+} from "./schema-automation.js"
 import {
   channelBookingLinks,
   channelCommissionRules,
@@ -15,7 +15,7 @@ import {
   channelProductMappings,
   channels,
   channelWebhookEvents,
-} from "./schema-core"
+} from "./schema-core.js"
 import {
   channelReconciliationItems,
   channelReconciliationRuns,
@@ -23,13 +23,13 @@ import {
   channelSettlementApprovals,
   channelSettlementItems,
   channelSettlementRuns,
-} from "./schema-finance"
+} from "./schema-finance.js"
 import {
   channelInventoryAllotments,
   channelInventoryAllotmentTargets,
   channelInventoryReleaseExecutions,
   channelInventoryReleaseRules,
-} from "./schema-inventory"
+} from "./schema-inventory.js"
 
 export const channelsRelations = relations(channels, ({ many, one }) => ({
   contracts: many(channelContracts),

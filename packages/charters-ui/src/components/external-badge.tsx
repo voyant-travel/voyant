@@ -5,7 +5,7 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
-import { useChartersUiI18nOrDefault } from "../i18n"
+import { useChartersUiI18nOrDefault } from "../i18n/index.js"
 
 export interface ExternalCharterBadgeProps extends React.ComponentPropsWithoutRef<typeof Badge> {
   /** The adapter that sourced the charter (e.g. "voyant-connect", "custom"). */

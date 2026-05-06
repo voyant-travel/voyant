@@ -1,6 +1,6 @@
 import type * as React from "react"
-import { Button } from "./button"
-import { Card, CardContent } from "./card"
+import { Button } from "./button.js"
+import { Card, CardContent } from "./card.js"
 
 function SelectionActionBar({
   selectedCount,

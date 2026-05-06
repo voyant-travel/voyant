@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm"
 import { boolean, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
-import { typeId, typeIdSchema } from "../../lib"
+import { typeId, typeIdSchema } from "../../lib/index.js"
 
 /**
  * Organization webhook subscriptions

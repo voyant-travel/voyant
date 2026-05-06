@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 const GROUP_NONE = "__none__"
 

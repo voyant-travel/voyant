@@ -15,9 +15,9 @@ import {
   Undo,
 } from "lucide-react"
 import { useEffect } from "react"
-import { cn } from "../lib/utils"
-import { Button } from "./button"
-import { RichTextVariable } from "./rich-text-variable-extension"
+import { cn } from "../lib/utils.js"
+import { Button } from "./button.js"
+import { RichTextVariable } from "./rich-text-variable-extension.js"
 
 export type RichTextEditorProps = {
   value: string

@@ -18,10 +18,10 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
-import type { Weekday } from "../i18n/messages"
-import { RatePlanCombobox } from "./rate-plan-combobox"
-import { RoomTypeCombobox } from "./room-type-combobox"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
+import type { Weekday } from "../i18n/messages.js"
+import { RatePlanCombobox } from "./rate-plan-combobox.js"
+import { RoomTypeCombobox } from "./room-type-combobox.js"
 
 export type StayRuleData = StayRuleRecord
 

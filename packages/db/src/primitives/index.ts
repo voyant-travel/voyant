@@ -1,3 +1,3 @@
-export * from "./catalog"
-export * from "./catalog-schemas"
-export * from "./offers"
+export * from "./catalog.js"
+export * from "./catalog-schemas.js"
+export * from "./offers.js"

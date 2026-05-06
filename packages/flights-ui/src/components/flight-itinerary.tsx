@@ -5,7 +5,7 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Plane } from "lucide-react"
 
-import { AirlineLogo } from "./airline-logo"
+import { AirlineLogo } from "./airline-logo.js"
 
 export interface FlightItineraryProps {
   itinerary: Itinerary

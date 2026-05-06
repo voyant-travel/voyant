@@ -1,4 +1,4 @@
-import { cn } from "../lib/utils"
+import { cn } from "../lib/utils.js"
 
 interface SkeletonProps extends Omit<React.ComponentPropsWithoutRef<"div">, "style"> {
   className?: string

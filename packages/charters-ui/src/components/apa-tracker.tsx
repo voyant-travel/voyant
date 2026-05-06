@@ -8,7 +8,7 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { CheckCircle2 } from "lucide-react"
 import type * as React from "react"
 
-import { useChartersUiI18nOrDefault } from "../i18n"
+import { useChartersUiI18nOrDefault } from "../i18n/index.js"
 
 export interface ApaTrackerProps extends React.ComponentPropsWithoutRef<typeof Card> {
   detail: BookingCharterDetailRecord

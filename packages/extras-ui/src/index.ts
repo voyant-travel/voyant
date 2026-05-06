@@ -1,4 +1,4 @@
-export { ProductCombobox } from "./components/product-combobox"
+export { ProductCombobox } from "./components/product-combobox.js"
 export {
   type ExtrasUiMessageOverrides,
   type ExtrasUiMessages,
@@ -12,4 +12,4 @@ export {
   useExtrasUiI18nOrDefault,
   useExtrasUiMessages,
   useExtrasUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

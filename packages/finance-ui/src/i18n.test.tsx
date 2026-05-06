@@ -1,14 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
-import { InvoiceDialog } from "./components/invoice-dialog"
-import { SupplierPaymentDialog } from "./components/supplier-payment-dialog"
+import { InvoiceDialog } from "./components/invoice-dialog.js"
+import { SupplierPaymentDialog } from "./components/supplier-payment-dialog.js"
 import {
   FinanceUiMessagesProvider,
   getFinanceUiI18n,
   resolveFinanceUiMessages,
   useFinanceUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 vi.mock("@voyantjs/finance-react", () => ({
   useInvoiceMutation: () => ({

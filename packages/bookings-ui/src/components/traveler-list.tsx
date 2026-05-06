@@ -13,8 +13,8 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/c
 import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
 
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
-import { TravelerDialog } from "./traveler-dialog"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { TravelerDialog } from "./traveler-dialog.js"
 
 export interface TravelerListProps {
   bookingId: string

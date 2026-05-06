@@ -11,7 +11,7 @@ import { Label } from "@voyantjs/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
-import { useCrmUiMessagesOrDefault } from "../i18n"
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 
 type Mode = { kind: "create" } | { kind: "edit"; organization: OrganizationRecord }
 

@@ -3,8 +3,8 @@ import { facilities } from "@voyantjs/facilities/schema"
 import { identityAddresses } from "@voyantjs/identity/schema"
 import { index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
-import { groundDispatches } from "./schema-dispatch"
-import { groundDrivers, groundOperators, groundVehicles } from "./schema-operators"
+import { groundDispatches } from "./schema-dispatch.js"
+import { groundDrivers, groundOperators, groundVehicles } from "./schema-operators.js"
 import {
   groundAssignmentSourceEnum,
   groundCheckpointStatusEnum,
@@ -13,7 +13,7 @@ import {
   groundExecutionEventTypeEnum,
   groundIncidentResolutionStatusEnum,
   groundIncidentSeverityEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const groundExecutionEvents = pgTable(
   "ground_execution_events",

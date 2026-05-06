@@ -1,5 +1,5 @@
-export { BookingRequirementsContactTab } from "./components/booking-requirements-contact-tab"
-export { BookingRequirementsQuestionsTab } from "./components/booking-requirements-questions-tab"
+export { BookingRequirementsContactTab } from "./components/booking-requirements-contact-tab.js"
+export { BookingRequirementsQuestionsTab } from "./components/booking-requirements-questions-tab.js"
 export {
   type BookingRequirementsUiMessageOverrides,
   type BookingRequirementsUiMessages,
@@ -13,4 +13,4 @@ export {
   useBookingRequirementsUiI18nOrDefault,
   useBookingRequirementsUiMessages,
   useBookingRequirementsUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

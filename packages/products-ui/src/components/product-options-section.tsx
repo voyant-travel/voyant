@@ -30,9 +30,9 @@ import {
 import { ChevronDown, ChevronRight, Copy, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { OptionUnitDialog } from "./option-unit-dialog"
-import { ProductOptionDialog } from "./product-option-dialog"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { OptionUnitDialog } from "./option-unit-dialog.js"
+import { ProductOptionDialog } from "./product-option-dialog.js"
 
 const optionStatusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "outline",

@@ -1,14 +1,14 @@
 import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
-import { authUser } from "./auth"
+import { authUser } from "./auth.js"
 import {
   type KmsEnvelope,
   kmsEnvelopeSchema,
   loyaltyProgramSchema,
   personalInsurancePolicySchema,
   travelDocumentSchema,
-} from "./kms"
+} from "./kms.js"
 
 /**
  * Seating preference enum for flights

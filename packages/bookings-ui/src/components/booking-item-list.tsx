@@ -9,9 +9,9 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { Calendar, ChevronDown, ChevronRight, Package, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
-import { BookingItemDialog } from "./booking-item-dialog"
-import { BookingItemTravelers } from "./booking-item-travelers"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { BookingItemDialog } from "./booking-item-dialog.js"
+import { BookingItemTravelers } from "./booking-item-travelers.js"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "outline",

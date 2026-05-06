@@ -28,8 +28,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import type { ChargeType } from "../i18n/messages"
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
+import type { ChargeType } from "../i18n/messages.js"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 
 function createRuleFormSchema(_messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
   return z.object({

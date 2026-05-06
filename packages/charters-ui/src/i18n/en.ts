@@ -1,4 +1,4 @@
-import type { ChartersUiMessages } from "./messages"
+import type { ChartersUiMessages } from "./messages.js"
 
 export const chartersUiEn: ChartersUiMessages = {
   common: {

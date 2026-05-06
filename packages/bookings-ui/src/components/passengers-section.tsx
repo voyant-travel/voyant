@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import { Trash2 } from "lucide-react"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export type PassengerRole = "lead" | "adult" | "child" | "infant"
 

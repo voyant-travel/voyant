@@ -8,7 +8,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "./combobox"
+} from "./combobox.js"
 
 type Country = { name: string; code: string }
 

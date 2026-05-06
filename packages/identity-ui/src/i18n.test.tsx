@@ -6,15 +6,15 @@ import type {
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
-import { AddressDialog } from "./components/address-dialog"
-import { ContactPointDialog } from "./components/contact-point-dialog"
-import { NamedContactDialog } from "./components/named-contact-dialog"
+import { AddressDialog } from "./components/address-dialog.js"
+import { ContactPointDialog } from "./components/contact-point-dialog.js"
+import { NamedContactDialog } from "./components/named-contact-dialog.js"
 import {
   getIdentityUiI18n,
   IdentityUiMessagesProvider,
   resolveIdentityUiMessages,
   useIdentityUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 const address = {
   id: "address-1",

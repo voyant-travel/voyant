@@ -1,7 +1,7 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { index, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
-import { bookings } from "./schema-core"
+import { bookings } from "./schema-core.js"
 
 export const bookingGroupKindEnum = pgEnum("booking_group_kind", [
   "shared_room",

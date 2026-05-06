@@ -1,6 +1,6 @@
 // audit_log: REMOVED - migrated to Tinybird (audit_log.datasource)
-export * from "./domains"
-export * from "./idempotency_keys"
-export * from "./rate_limit_buckets"
-export * from "./webhook_deliveries"
-export * from "./webhook_subscriptions"
+export * from "./domains.js"
+export * from "./idempotency_keys.js"
+export * from "./rate_limit_buckets.js"
+export * from "./webhook_deliveries.js"
+export * from "./webhook_subscriptions.js"

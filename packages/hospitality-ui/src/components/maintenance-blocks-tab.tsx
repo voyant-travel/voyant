@@ -13,10 +13,10 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
-import type { MaintenanceBlockStatus } from "../i18n/messages"
-import { MaintenanceBlockDialog } from "./maintenance-block-dialog"
-import { PaginationFooter } from "./pagination-footer"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
+import type { MaintenanceBlockStatus } from "../i18n/messages.js"
+import { MaintenanceBlockDialog } from "./maintenance-block-dialog.js"
+import { PaginationFooter } from "./pagination-footer.js"
 
 export interface MaintenanceBlocksTabProps {
   propertyId: string

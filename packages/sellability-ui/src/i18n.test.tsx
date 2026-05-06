@@ -4,13 +4,13 @@ import type { ProductOptionRecord, ProductRecord } from "@voyantjs/products-reac
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
-import { ChannelCombobox } from "./components/channel-combobox"
+import { ChannelCombobox } from "./components/channel-combobox.js"
 import {
   getSellabilityUiI18n,
   resolveSellabilityUiMessages,
   SellabilityUiMessagesProvider,
   useSellabilityUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 const channel = {
   id: "channel-1",

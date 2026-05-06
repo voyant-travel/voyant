@@ -1,7 +1,7 @@
 import type { PackageI18nValue } from "@voyantjs/i18n"
 import { formatMessage } from "@voyantjs/i18n"
 import type { SlotOption } from "@voyantjs/resources-react"
-import type { ResourcesUiMessages } from "./messages"
+import type { ResourcesUiMessages } from "./messages.js"
 
 export const RESOURCE_KIND_VALUES = [
   "guide",

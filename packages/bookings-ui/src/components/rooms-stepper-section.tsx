@@ -3,7 +3,7 @@
 import { useSlotUnitAvailability } from "@voyantjs/availability-react"
 import { Button, Label } from "@voyantjs/ui/components"
 import { Minus, Plus } from "lucide-react"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 /** Quantity per option_unit id; omitted ids are treated as 0. */
 export interface RoomsStepperValue {

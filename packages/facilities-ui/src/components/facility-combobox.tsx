@@ -12,7 +12,7 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
-import { useFacilitiesUiMessagesOrDefault } from "../i18n/provider"
+import { useFacilitiesUiMessagesOrDefault } from "../i18n/provider.js"
 
 type Props = {
   value: string | null | undefined

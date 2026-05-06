@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components
 import { PlusCircle, X } from "lucide-react"
 import type { ReactNode } from "react"
 
-import { AirlineLogo } from "./airline-logo"
+import { AirlineLogo } from "./airline-logo.js"
 
 export interface FlightFiltersValue {
   /** Selected carrier IATA codes (empty = no carrier filter). */

@@ -2,8 +2,8 @@ import { relations, sql } from "drizzle-orm"
 import { index, pgEnum, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
-import { typeId, typeIdRef, typeIdSchema } from "../../lib"
-import { domainsTable } from "./domains"
+import { typeId, typeIdRef, typeIdSchema } from "../../lib/index.js"
+import { domainsTable } from "./domains.js"
 
 /**
  * Email Domain Records

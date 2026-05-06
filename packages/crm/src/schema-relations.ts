@@ -8,14 +8,14 @@ import {
   personNotes,
   segmentMembers,
   segments,
-} from "./schema-accounts"
+} from "./schema-accounts.js"
 import {
   activities,
   activityLinks,
   activityParticipants,
   customFieldDefinitions,
   customFieldValues,
-} from "./schema-activities"
+} from "./schema-activities.js"
 import {
   opportunities,
   opportunityParticipants,
@@ -24,7 +24,7 @@ import {
   quoteLines,
   quotes,
   stages,
-} from "./schema-sales"
+} from "./schema-sales.js"
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   people: many(people),

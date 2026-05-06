@@ -11,9 +11,9 @@ import {
 } from "@voyantjs/i18n"
 import type { ReactNode } from "react"
 
-import { bookingsUiEn } from "./en"
-import type { BookingsUiMessages } from "./messages"
-import { bookingsUiRo } from "./ro"
+import { bookingsUiEn } from "./en.js"
+import type { BookingsUiMessages } from "./messages.js"
+import { bookingsUiRo } from "./ro.js"
 
 const fallbackLocale = "en"
 

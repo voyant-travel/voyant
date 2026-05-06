@@ -1,4 +1,4 @@
-import type { FacilitiesUiMessages } from "./messages"
+import type { FacilitiesUiMessages } from "./messages.js"
 
 export const facilitiesUiEn = {
   common: {

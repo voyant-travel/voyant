@@ -4,8 +4,8 @@ import { usePerson } from "@voyantjs/crm-react"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { Loader2 } from "lucide-react"
 
-import { useCrmUiMessagesOrDefault } from "../i18n"
-import { PersonCard, type PersonCardProps } from "./person-card"
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { PersonCard, type PersonCardProps } from "./person-card.js"
 
 export interface PersonCardConnectedProps extends Omit<PersonCardProps, "person"> {
   personId: string

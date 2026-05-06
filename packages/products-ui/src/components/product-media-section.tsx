@@ -25,8 +25,8 @@ import {
 import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2, Upload } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { ProductMediaDialog } from "./product-media-dialog"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { ProductMediaDialog } from "./product-media-dialog.js"
 
 export interface ProductMediaUploadResult {
   url: string

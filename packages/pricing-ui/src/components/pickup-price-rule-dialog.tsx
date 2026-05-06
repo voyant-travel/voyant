@@ -25,8 +25,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
-import { OptionPriceRuleCombobox } from "./option-price-rule-combobox"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
+import { OptionPriceRuleCombobox } from "./option-price-rule-combobox.js"
 
 const ADDON_PRICING_MODES = [
   "included",

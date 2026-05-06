@@ -15,9 +15,9 @@ import {
 import { Loader2, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import { useCrmUiI18nOrDefault } from "../i18n"
-import type { CrmActivityStatus, CrmActivityType } from "../i18n/messages"
-import { CreateActivityDialog } from "./create-activity-dialog"
+import { useCrmUiI18nOrDefault } from "../i18n/index.js"
+import type { CrmActivityStatus, CrmActivityType } from "../i18n/messages.js"
+import { CreateActivityDialog } from "./create-activity-dialog.js"
 
 function formatDate(
   value: string | null | undefined,

@@ -11,8 +11,8 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { Link2, Unlink, Users } from "lucide-react"
 import * as React from "react"
 
-import { formatMessage, useBookingsUiMessagesOrDefault } from "../i18n/provider"
-import { BookingGroupLinkDialog } from "./booking-group-link-dialog"
+import { formatMessage, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { BookingGroupLinkDialog } from "./booking-group-link-dialog.js"
 
 export interface BookingGroupSectionProps {
   bookingId: string

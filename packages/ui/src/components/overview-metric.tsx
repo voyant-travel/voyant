@@ -1,5 +1,5 @@
 import type * as React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "./card"
+import { Card, CardContent, CardHeader, CardTitle } from "./card.js"
 
 type IconComponent = React.ComponentType<{ className?: string }>
 

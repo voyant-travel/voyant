@@ -23,14 +23,14 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
 import type {
   ChargeFrequency as HospitalityChargeFrequency,
   GuaranteeMode as HospitalityGuaranteeMode,
-} from "../i18n/messages"
-import { CancellationPolicyCombobox } from "./cancellation-policy-combobox"
-import { MealPlanCombobox } from "./meal-plan-combobox"
-import { PriceCatalogCombobox } from "./price-catalog-combobox"
+} from "../i18n/messages.js"
+import { CancellationPolicyCombobox } from "./cancellation-policy-combobox.js"
+import { MealPlanCombobox } from "./meal-plan-combobox.js"
+import { PriceCatalogCombobox } from "./price-catalog-combobox.js"
 
 export type RatePlanData = RatePlanRecord
 

@@ -1,4 +1,4 @@
-import type { CrmUiMessages } from "./messages"
+import type { CrmUiMessages } from "./messages.js"
 
 export const crmUiEn = {
   common: {

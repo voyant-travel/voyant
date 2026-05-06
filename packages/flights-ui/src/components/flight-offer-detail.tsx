@@ -5,7 +5,7 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { Separator } from "@voyantjs/ui/components/separator"
 import { cn } from "@voyantjs/ui/lib/utils"
 
-import { FlightItinerary } from "./flight-itinerary"
+import { FlightItinerary } from "./flight-itinerary.js"
 
 export interface FlightOfferDetailProps {
   offer: FlightOffer

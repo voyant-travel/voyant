@@ -1,6 +1,6 @@
 import { integer, jsonb, text, timestamp } from "drizzle-orm/pg-core"
 
-import { typeIdRef } from "../lib/typeid-column"
+import { typeIdRef } from "../lib/typeid-column.js"
 
 /**
  * Core product accommodation options columns shared between db-main and db-marketplace.

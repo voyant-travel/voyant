@@ -11,7 +11,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { groundVehicleCategoryEnum, groundVehicleClassEnum } from "./schema-shared"
+import { groundVehicleCategoryEnum, groundVehicleClassEnum } from "./schema-shared.js"
 
 export const groundOperators = pgTable(
   "ground_operators",

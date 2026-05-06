@@ -1,4 +1,4 @@
-import type { DistributionUiMessages } from "./messages"
+import type { DistributionUiMessages } from "./messages.js"
 
 export const distributionUiRo = {
   common: {

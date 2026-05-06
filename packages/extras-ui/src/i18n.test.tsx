@@ -2,13 +2,13 @@ import type { ProductRecord } from "@voyantjs/products-react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
-import { ProductCombobox } from "./components/product-combobox"
+import { ProductCombobox } from "./components/product-combobox.js"
 import {
   ExtrasUiMessagesProvider,
   getExtrasUiI18n,
   resolveExtrasUiMessages,
   useExtrasUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 const product = {
   id: "product-1",

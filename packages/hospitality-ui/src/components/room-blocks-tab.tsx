@@ -14,10 +14,10 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
-import type { RoomBlockStatus } from "../i18n/messages"
-import { PaginationFooter } from "./pagination-footer"
-import { RoomBlockDialog } from "./room-block-dialog"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
+import type { RoomBlockStatus } from "../i18n/messages.js"
+import { PaginationFooter } from "./pagination-footer.js"
+import { RoomBlockDialog } from "./room-block-dialog.js"
 
 export interface RoomBlocksTabProps {
   propertyId: string

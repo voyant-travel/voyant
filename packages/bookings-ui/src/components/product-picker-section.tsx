@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import * as React from "react"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 const OPTION_NONE = "__none__"
 

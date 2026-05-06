@@ -1,13 +1,13 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { PaginationFooter } from "./components/pagination-footer"
+import { PaginationFooter } from "./components/pagination-footer.js"
 import {
   getHospitalityUiI18n,
   HospitalityUiMessagesProvider,
   resolveHospitalityUiMessages,
   useHospitalityUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 describe("hospitality-ui i18n", () => {
   it("resolves localized package messages with fallback and overrides", () => {

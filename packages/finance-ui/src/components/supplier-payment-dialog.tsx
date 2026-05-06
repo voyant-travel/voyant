@@ -24,8 +24,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useFinanceUiMessagesOrDefault } from "../i18n"
-import { supplierPaymentMethods, supplierPaymentStatuses } from "../i18n/messages"
+import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import { supplierPaymentMethods, supplierPaymentStatuses } from "../i18n/messages.js"
 
 function createSupplierPaymentFormSchema(
   messages: ReturnType<typeof useFinanceUiMessagesOrDefault>,

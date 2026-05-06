@@ -25,9 +25,9 @@ import {
 } from "@voyantjs/ui/components/table"
 import { Loader2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
-import type { PricingCategoryType } from "../i18n/messages"
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
-import { PricingCategoryDialog } from "./pricing-category-dialog"
+import type { PricingCategoryType } from "../i18n/messages.js"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
+import { PricingCategoryDialog } from "./pricing-category-dialog.js"
 
 export interface PricingCategoryListProps {
   pageSize?: number

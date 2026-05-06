@@ -6,13 +6,13 @@ import type {
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { BookingRequirementsContactTab } from "./components/booking-requirements-contact-tab"
-import { BookingRequirementsQuestionsTab } from "./components/booking-requirements-questions-tab"
+import { BookingRequirementsContactTab } from "./components/booking-requirements-contact-tab.js"
+import { BookingRequirementsQuestionsTab } from "./components/booking-requirements-questions-tab.js"
 import {
   BookingRequirementsUiMessagesProvider,
   getBookingRequirementsUiI18n,
   resolveBookingRequirementsUiMessages,
-} from "./i18n"
+} from "./i18n/index.js"
 
 describe("booking-requirements-ui i18n", () => {
   it("resolves localized package messages with fallback and overrides", () => {

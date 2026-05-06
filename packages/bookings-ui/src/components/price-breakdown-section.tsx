@@ -3,7 +3,7 @@
 import { usePricingPreview } from "@voyantjs/bookings-react"
 import { Label } from "@voyantjs/ui/components"
 import * as React from "react"
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export interface PriceBreakdownLine {
   unitId: string

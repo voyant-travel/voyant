@@ -1,4 +1,4 @@
-import type { LegalUiMessages } from "./messages"
+import type { LegalUiMessages } from "./messages.js"
 
 export const legalUiEn = {
   common: {

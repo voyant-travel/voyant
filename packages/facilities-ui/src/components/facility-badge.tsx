@@ -3,7 +3,7 @@
 import { useFacility } from "@voyantjs/facilities-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 
-import { useFacilitiesUiMessagesOrDefault } from "../i18n/provider"
+import { useFacilitiesUiMessagesOrDefault } from "../i18n/provider.js"
 
 type Props = {
   facilityId: string | null | undefined

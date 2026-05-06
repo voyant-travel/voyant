@@ -1,4 +1,4 @@
-import type { ExternalRefsUiMessages } from "./messages"
+import type { ExternalRefsUiMessages } from "./messages.js"
 
 export const externalRefsUiEn: ExternalRefsUiMessages = {
   common: {

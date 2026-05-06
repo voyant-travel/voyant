@@ -13,7 +13,7 @@ import {
 } from "@voyantjs/ui/components"
 import { UserPlus } from "lucide-react"
 import * as React from "react"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 const ORG_NONE = "__none__"
 

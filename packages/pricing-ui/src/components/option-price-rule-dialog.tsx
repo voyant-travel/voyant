@@ -25,13 +25,13 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import type { OptionPriceRulePricingMode } from "../i18n/messages"
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
-import { CancellationPolicyCombobox } from "./cancellation-policy-combobox"
-import { PriceCatalogCombobox } from "./price-catalog-combobox"
-import { PriceScheduleCombobox } from "./price-schedule-combobox"
-import { ProductCombobox } from "./product-combobox"
-import { ProductOptionCombobox } from "./product-option-combobox"
+import type { OptionPriceRulePricingMode } from "../i18n/messages.js"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
+import { CancellationPolicyCombobox } from "./cancellation-policy-combobox.js"
+import { PriceCatalogCombobox } from "./price-catalog-combobox.js"
+import { PriceScheduleCombobox } from "./price-schedule-combobox.js"
+import { ProductCombobox } from "./product-combobox.js"
+import { ProductOptionCombobox } from "./product-option-combobox.js"
 
 const PRICING_MODES = ["per_person", "per_booking", "starting_from", "free", "on_request"] as const
 type PricingMode = (typeof PRICING_MODES)[number]

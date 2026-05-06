@@ -24,7 +24,7 @@ import {
   formatMessage,
   useBookingsUiI18nOrDefault,
   useBookingsUiMessagesOrDefault,
-} from "../i18n/provider"
+} from "../i18n/provider.js"
 
 function daysBetween(from: Date, to: Date): number {
   const diffMs = to.getTime() - from.getTime()

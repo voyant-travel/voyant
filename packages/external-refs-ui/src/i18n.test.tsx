@@ -6,7 +6,7 @@ import {
   getExternalRefsUiI18n,
   resolveExternalRefsUiMessages,
   useExternalRefsUiI18nOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 vi.mock("@voyantjs/external-refs-react", () => ({
   useExternalRefMutation() {

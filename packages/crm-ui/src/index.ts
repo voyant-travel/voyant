@@ -1,42 +1,42 @@
-export { ActivitiesPage } from "./components/activities-page"
-export { CreateActivityDialog } from "./components/create-activity-dialog"
-export { CreateOpportunityDialog } from "./components/create-opportunity-dialog"
+export { ActivitiesPage } from "./components/activities-page.js"
+export { CreateActivityDialog } from "./components/create-activity-dialog.js"
+export { CreateOpportunityDialog } from "./components/create-opportunity-dialog.js"
 export {
   OrganizationCard,
   type OrganizationCardProps,
-} from "./components/organization-card"
+} from "./components/organization-card.js"
 export {
   OrganizationDialog,
   type OrganizationDialogProps,
-} from "./components/organization-dialog"
+} from "./components/organization-dialog.js"
 export {
   OrganizationForm,
   type OrganizationFormProps,
-} from "./components/organization-form"
+} from "./components/organization-form.js"
 export {
   OrganizationList,
   type OrganizationListProps,
-} from "./components/organization-list"
+} from "./components/organization-list.js"
 export {
   PersonCard,
   type PersonCardProps,
-} from "./components/person-card"
+} from "./components/person-card.js"
 export {
   PersonCardConnected,
   type PersonCardConnectedProps,
-} from "./components/person-card-connected"
+} from "./components/person-card-connected.js"
 export {
   PersonDialog,
   type PersonDialogProps,
-} from "./components/person-dialog"
+} from "./components/person-dialog.js"
 export {
   PersonForm,
   type PersonFormProps,
-} from "./components/person-form"
+} from "./components/person-form.js"
 export {
   PersonList,
   type PersonListProps,
-} from "./components/person-list"
+} from "./components/person-list.js"
 export {
   type CrmUiMessageOverrides,
   type CrmUiMessages,
@@ -50,4 +50,4 @@ export {
   useCrmUiI18nOrDefault,
   useCrmUiMessages,
   useCrmUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

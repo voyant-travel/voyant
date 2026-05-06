@@ -10,7 +10,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { cancellationChargeTypeEnum, cancellationPolicyTypeEnum } from "./schema-shared"
+import { cancellationChargeTypeEnum, cancellationPolicyTypeEnum } from "./schema-shared.js"
 
 export const cancellationPolicies = pgTable(
   "cancellation_policies",

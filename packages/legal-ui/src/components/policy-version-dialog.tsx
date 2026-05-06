@@ -17,7 +17,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useLegalUiMessagesOrDefault } from "../i18n"
+import { useLegalUiMessagesOrDefault } from "../i18n/index.js"
 
 function createVersionFormSchema(messages: ReturnType<typeof useLegalUiMessagesOrDefault>) {
   return z.object({

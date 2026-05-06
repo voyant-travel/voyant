@@ -2,7 +2,7 @@ import { facilities } from "@voyantjs/facilities/schema"
 import { identityAddresses } from "@voyantjs/identity/schema"
 import { relations } from "drizzle-orm"
 
-import { groundDispatches, groundTransferPreferences } from "./schema-dispatch"
+import { groundDispatches, groundTransferPreferences } from "./schema-dispatch.js"
 import {
   groundDispatchAssignments,
   groundDispatchCheckpoints,
@@ -11,8 +11,8 @@ import {
   groundDriverShifts,
   groundExecutionEvents,
   groundServiceIncidents,
-} from "./schema-operations"
-import { groundDrivers, groundOperators, groundVehicles } from "./schema-operators"
+} from "./schema-operations.js"
+import { groundDrivers, groundOperators, groundVehicles } from "./schema-operators.js"
 
 export const groundOperatorsRelations = relations(groundOperators, ({ one, many }) => ({
   facility: one(facilities, { fields: [groundOperators.facilityId], references: [facilities.id] }),

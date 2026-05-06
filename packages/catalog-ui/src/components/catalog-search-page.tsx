@@ -13,9 +13,9 @@ import {
   type CatalogDetailAction,
   type CatalogDetailEnrichment,
   CatalogDetailSheet,
-} from "./catalog-detail-sheet"
-import { CatalogFacetedFilter } from "./catalog-faceted-filter"
-import { CatalogRangeFilter, type CatalogRangeFilterValue } from "./catalog-range-filter"
+} from "./catalog-detail-sheet.js"
+import { CatalogFacetedFilter } from "./catalog-faceted-filter.js"
+import { CatalogRangeFilter, type CatalogRangeFilterValue } from "./catalog-range-filter.js"
 
 /**
  * Declares a filter on a tab. Two kinds:

@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
-import { PricingCategoryDependencyForm } from "./pricing-category-dependency-form"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
+import { PricingCategoryDependencyForm } from "./pricing-category-dependency-form.js"
 
 export interface PricingCategoryDependencyDialogProps {
   open: boolean

@@ -1,6 +1,6 @@
 import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
-import { typeId } from "../../lib"
+import { typeId } from "../../lib/index.js"
 
 /**
  * Idempotency keys store the response of a previously-handled request keyed

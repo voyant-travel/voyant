@@ -1,5 +1,5 @@
-export { facilitiesUiEn } from "./en"
-export type { FacilitiesUiMessages } from "./messages"
+export { facilitiesUiEn } from "./en.js"
+export type { FacilitiesUiMessages } from "./messages.js"
 export {
   type FacilitiesUiMessageOverrides,
   FacilitiesUiMessagesProvider,
@@ -10,5 +10,5 @@ export {
   useFacilitiesUiI18nOrDefault,
   useFacilitiesUiMessages,
   useFacilitiesUiMessagesOrDefault,
-} from "./provider"
-export { facilitiesUiRo } from "./ro"
+} from "./provider.js"
+export { facilitiesUiRo } from "./ro.js"

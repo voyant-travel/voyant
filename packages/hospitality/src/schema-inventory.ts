@@ -16,7 +16,7 @@ import {
   hospitalityInventoryModeEnum,
   ratePlanChargeFrequencyEnum,
   roomUnitStatusEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const roomTypes = pgTable(
   "room_types",

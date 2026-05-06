@@ -10,7 +10,7 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
-} from "./sidebar-core"
+} from "./sidebar-core.js"
 
 export {
   SidebarGroup,
@@ -26,4 +26,4 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "./sidebar-menu"
+} from "./sidebar-menu.js"

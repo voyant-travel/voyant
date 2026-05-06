@@ -14,7 +14,7 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export interface ProductVersionDialogProps {
   open: boolean

@@ -1,6 +1,12 @@
-export { AddressDialog, type AddressDialogProps } from "./components/address-dialog"
-export { ContactPointDialog, type ContactPointDialogProps } from "./components/contact-point-dialog"
-export { NamedContactDialog, type NamedContactDialogProps } from "./components/named-contact-dialog"
+export { AddressDialog, type AddressDialogProps } from "./components/address-dialog.js"
+export {
+  ContactPointDialog,
+  type ContactPointDialogProps,
+} from "./components/contact-point-dialog.js"
+export {
+  NamedContactDialog,
+  type NamedContactDialogProps,
+} from "./components/named-contact-dialog.js"
 export {
   getIdentityUiI18n,
   type IdentityUiMessageOverrides,
@@ -14,4 +20,4 @@ export {
   useIdentityUiI18nOrDefault,
   useIdentityUiMessages,
   useIdentityUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

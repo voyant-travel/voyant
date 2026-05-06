@@ -2,7 +2,7 @@
 
 import { Button } from "@voyantjs/ui/components/button"
 
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
 
 type PaginationFooterProps = {
   pageIndex: number

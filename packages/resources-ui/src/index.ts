@@ -1,7 +1,7 @@
-export { ResourcesOverview } from "./components/resources-overview"
-export { ResourcesSectionHeader } from "./components/resources-section-header"
-export { AllocationsTab, PoolsTab, ResourcesTab } from "./components/resources-tabs-primary"
-export { AssignmentsTab, CloseoutsTab } from "./components/resources-tabs-secondary"
+export { ResourcesOverview } from "./components/resources-overview.js"
+export { ResourcesSectionHeader } from "./components/resources-section-header.js"
+export { AllocationsTab, PoolsTab, ResourcesTab } from "./components/resources-tabs-primary.js"
+export { AssignmentsTab, CloseoutsTab } from "./components/resources-tabs-secondary.js"
 export {
   type AllocationMode,
   type AssignmentStatus,
@@ -18,4 +18,4 @@ export {
   useResourcesUiI18nOrDefault,
   useResourcesUiMessages,
   useResourcesUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

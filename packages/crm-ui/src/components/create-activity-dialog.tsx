@@ -20,8 +20,8 @@ import {
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 
-import { useCrmUiMessagesOrDefault } from "../i18n"
-import { crmActivityStatuses, crmActivityTypes, crmEntityTypes } from "../i18n/messages"
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { crmActivityStatuses, crmActivityTypes, crmEntityTypes } from "../i18n/messages.js"
 
 type Props = {
   open: boolean

@@ -19,9 +19,9 @@ import { Switch } from "@voyantjs/ui/components/switch"
 import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
-import type { PricingDependencyType } from "../i18n/messages"
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
-import { PricingCategoryCombobox } from "./pricing-category-combobox"
+import type { PricingDependencyType } from "../i18n/messages.js"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
+import { PricingCategoryCombobox } from "./pricing-category-combobox.js"
 
 type Mode = { kind: "create" } | { kind: "edit"; dependency: PricingCategoryDependencyRecord }
 

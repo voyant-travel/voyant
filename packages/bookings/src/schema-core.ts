@@ -19,7 +19,7 @@ import {
   bookingSourceTypeEnum,
   bookingStatusEnum,
   bookingTravelerCategoryEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const bookings = pgTable(
   "bookings",

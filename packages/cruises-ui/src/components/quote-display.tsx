@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
-import { useCruisesUiI18nOrDefault } from "../i18n"
+import { useCruisesUiI18nOrDefault } from "../i18n/index.js"
 
 type QuoteComponent = Quote["components"][number]
 

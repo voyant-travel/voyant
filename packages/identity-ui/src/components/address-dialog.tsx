@@ -31,7 +31,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useIdentityUiMessagesOrDefault } from "../i18n"
+import { useIdentityUiMessagesOrDefault } from "../i18n/index.js"
 
 const ADDRESS_LABELS = [
   "primary",

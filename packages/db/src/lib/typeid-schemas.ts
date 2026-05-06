@@ -1,4 +1,4 @@
-import { typeIdSchema } from "./typeid-zod"
+import { typeIdSchema } from "./typeid-zod.js"
 
 /**
  * Pre-built Zod schemas for common entity types.

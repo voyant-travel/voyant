@@ -7,8 +7,8 @@ import {
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 
-import { Badge } from "./badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
+import { Badge } from "./badge.js"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
 
 export function NotificationReminderRunsPage() {
   const [status, setStatus] = useState<UseNotificationReminderRunsOptions["status"] | "all">("all")

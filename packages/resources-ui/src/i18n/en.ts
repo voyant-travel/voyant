@@ -1,4 +1,4 @@
-import type { ResourcesUiMessages } from "./messages"
+import type { ResourcesUiMessages } from "./messages.js"
 
 export const resourcesUiEn: ResourcesUiMessages = {
   common: {

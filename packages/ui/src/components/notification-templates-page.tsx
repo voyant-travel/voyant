@@ -8,11 +8,11 @@ import {
 import { Loader2, Pencil, Plus, Search } from "lucide-react"
 import { useState } from "react"
 
-import { Badge } from "./badge"
-import { Button } from "./button"
-import { Input } from "./input"
-import { NotificationTemplateDialog } from "./notification-template-dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
+import { Badge } from "./badge.js"
+import { Button } from "./button.js"
+import { Input } from "./input.js"
+import { NotificationTemplateDialog } from "./notification-template-dialog.js"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
 
 export function NotificationTemplatesPage() {
   const [search, setSearch] = useState("")

@@ -1,4 +1,4 @@
-export { pricingUiEn } from "./en"
+export { pricingUiEn } from "./en.js"
 export type {
   AddonPricingMode,
   AdjustmentType,
@@ -9,7 +9,7 @@ export type {
   PricingUiMessages,
   StartTimeRuleMode,
   UnitPricingMode,
-} from "./messages"
+} from "./messages.js"
 export {
   getPricingUiI18n,
   type PricingUiMessageOverrides,
@@ -20,5 +20,5 @@ export {
   usePricingUiI18nOrDefault,
   usePricingUiMessages,
   usePricingUiMessagesOrDefault,
-} from "./provider"
-export { pricingUiRo } from "./ro"
+} from "./provider.js"
+export { pricingUiRo } from "./ro.js"

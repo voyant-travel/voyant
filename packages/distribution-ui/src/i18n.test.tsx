@@ -8,12 +8,12 @@ import type {
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { DistributionOverview } from "./components/distribution-overview"
+import { DistributionOverview } from "./components/distribution-overview.js"
 import {
   DistributionUiMessagesProvider,
   getDistributionUiI18n,
   resolveDistributionUiMessages,
-} from "./i18n"
+} from "./i18n/index.js"
 
 describe("distribution-ui i18n", () => {
   it("resolves localized package messages with fallback and overrides", () => {

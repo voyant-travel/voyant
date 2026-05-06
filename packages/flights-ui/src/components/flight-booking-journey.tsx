@@ -13,14 +13,18 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
 
-import { FlightContactForm, type FlightContactValue, validateContact } from "./flight-contact-form"
-import { FlightOfferDetail } from "./flight-offer-detail"
+import {
+  FlightContactForm,
+  type FlightContactValue,
+  validateContact,
+} from "./flight-contact-form.js"
+import { FlightOfferDetail } from "./flight-offer-detail.js"
 import {
   FlightPassengerForm,
   type FlightPassengerFormProps,
   validatePassengers,
-} from "./flight-passenger-form"
-import { FlightPaymentSelector } from "./flight-payment-selector"
+} from "./flight-passenger-form.js"
+import { FlightPaymentSelector } from "./flight-payment-selector.js"
 
 type StepId = "review" | "passengers" | "contact" | "confirm"
 

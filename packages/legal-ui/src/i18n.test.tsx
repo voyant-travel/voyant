@@ -6,7 +6,7 @@ import {
   LegalUiMessagesProvider,
   resolveLegalUiMessages,
   useLegalUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 describe("legal-ui i18n", () => {
   it("resolves localized package messages with fallback and overrides", () => {

@@ -1,7 +1,7 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
-import { channels } from "./schema-core"
+import { channels } from "./schema-core.js"
 
 /**
  * Durable handoff rows for the channel-push availability and content
