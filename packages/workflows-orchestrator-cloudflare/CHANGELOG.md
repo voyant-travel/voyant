@@ -1,5 +1,13 @@
 # @voyantjs/workflows-orchestrator-cloudflare
 
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [f73e32c]
+  - @voyantjs/workflows@0.25.0
+  - @voyantjs/workflows-orchestrator@0.25.0
+
 ## 0.24.3
 
 ### Patch Changes
