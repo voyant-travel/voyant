@@ -1,5 +1,14 @@
 # @voyantjs/catalog
 
+## 0.24.2
+
+### Patch Changes
+
+- bec0471: Export the BookingJourney Hono route factory and module from the catalog package root, matching the route-module import pattern used by the vertical packages.
+  - @voyantjs/core@0.24.2
+  - @voyantjs/db@0.24.2
+  - @voyantjs/hono@0.24.2
+
 ## 0.24.1
 
 ### Patch Changes

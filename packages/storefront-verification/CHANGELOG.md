@@ -1,5 +1,15 @@
 # @voyantjs/storefront-verification
 
+## 0.24.2
+
+### Patch Changes
+
+- bec0471: Republish packages whose 0.24.1 tarballs omitted built `dist` artifacts while their runtime exports pointed at `dist`.
+  - @voyantjs/core@0.24.2
+  - @voyantjs/db@0.24.2
+  - @voyantjs/hono@0.24.2
+  - @voyantjs/notifications@0.24.2
+
 ## 0.24.1
 
 ### Patch Changes
