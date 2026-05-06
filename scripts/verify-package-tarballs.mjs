@@ -5,6 +5,12 @@
 // cannot mask a regression — but it makes a local run noticeably slower than
 // a normal `pnpm build`. Intended primarily for CI/release; bump
 // VOYANT_PACK_CONCURRENCY when running on a beefier machine.
+//
+// Pass `--reuse-dist` (or set VOYANT_PACK_REUSE_DIST=1) to skip the per-package
+// clean + build and pack against the existing dist on disk. Use this only when
+// the caller has *just* produced fresh dist (e.g. CI's `pnpm build` step,
+// which already runs through turbo with remote cache); locally the clean
+// build is the safer default.
 
 import { execFile } from "node:child_process"
 import fs from "node:fs"
@@ -14,6 +20,8 @@ import { promisify } from "node:util"
 
 const execFileAsync = promisify(execFile)
 const PACK_CONCURRENCY = Number(process.env.VOYANT_PACK_CONCURRENCY) || 8
+const REUSE_DIST =
+  process.argv.includes("--reuse-dist") || process.env.VOYANT_PACK_REUSE_DIST === "1"
 
 const rootDir = process.cwd()
 const packagesRoot = path.join(rootDir, "packages")
@@ -121,22 +129,25 @@ function getPackJson(stdout) {
   return Array.isArray(parsed) ? parsed : [parsed]
 }
 
-async function readPackedManifest(tarballPath) {
-  const result = await execFileAsync("tar", ["-xOf", tarballPath, "package/package.json"], {
-    encoding: "utf8",
-    maxBuffer: 8 * 1024 * 1024,
-  })
-
-  return JSON.parse(result.stdout)
-}
-
-async function readPackedFile(tarballPath, filePath) {
-  const result = await execFileAsync("tar", ["-xOf", tarballPath, `package/${filePath}`], {
-    encoding: "utf8",
-    maxBuffer: 16 * 1024 * 1024,
-  })
-
-  return result.stdout
+// Extract the whole tarball once into a temp dir. Reading subsequent files
+// via fs is dramatically cheaper than spawning a `tar -xOf` per file when
+// scanning every published JS file.
+async function extractTarball(tarballPath) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "voyant-pack-extract-"))
+  try {
+    await execFileAsync("tar", ["-xf", tarballPath, "-C", dir], {
+      maxBuffer: 64 * 1024 * 1024,
+    })
+  } catch (error) {
+    fs.rmSync(dir, { recursive: true, force: true })
+    throw error
+  }
+  return {
+    root: path.join(dir, "package"),
+    cleanup() {
+      fs.rmSync(dir, { recursive: true, force: true })
+    },
+  }
 }
 
 function hasExplicitRuntimeExtension(specifier) {
@@ -163,14 +174,14 @@ function collectExtensionlessRelativeSpecifiers(filePath, source) {
   return problems
 }
 
-async function collectPackedExtensionlessRelativeSpecifiers(tarballPath, packInfo) {
+function collectPackedExtensionlessRelativeSpecifiers(extractRoot, packInfo) {
   const problems = []
   const jsFiles = packInfo.files
     .map((file) => file.path)
     .filter((filePath) => filePath.startsWith("dist/") && filePath.endsWith(".js"))
 
   for (const filePath of jsFiles) {
-    const source = await readPackedFile(tarballPath, filePath)
+    const source = fs.readFileSync(path.join(extractRoot, filePath), "utf8")
     problems.push(...collectExtensionlessRelativeSpecifiers(filePath, source))
   }
 
@@ -231,37 +242,39 @@ async function verifyPackage(packageDir) {
 
   if (pkg.private) return null
 
-  if (pkg.scripts?.clean) {
-    try {
-      await execFileAsync("pnpm", ["run", "clean"], {
-        cwd: packageDir,
-        encoding: "utf8",
-        maxBuffer: 16 * 1024 * 1024,
-        env: process.env,
-      })
-    } catch (error) {
-      return {
-        name: pkg.name,
-        packageDir,
-        problems: [`pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`],
+  if (!REUSE_DIST) {
+    if (pkg.scripts?.clean) {
+      try {
+        await execFileAsync("pnpm", ["run", "clean"], {
+          cwd: packageDir,
+          encoding: "utf8",
+          maxBuffer: 16 * 1024 * 1024,
+          env: process.env,
+        })
+      } catch (error) {
+        return {
+          name: pkg.name,
+          packageDir,
+          problems: [`pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`],
+        }
       }
     }
-  }
-  removeTsBuildInfoFiles(packageDir)
+    removeTsBuildInfoFiles(packageDir)
 
-  if (pkg.scripts?.build) {
-    try {
-      await execFileAsync("pnpm", ["run", "build"], {
-        cwd: packageDir,
-        encoding: "utf8",
-        maxBuffer: 64 * 1024 * 1024,
-        env: process.env,
-      })
-    } catch (error) {
-      return {
-        name: pkg.name,
-        packageDir,
-        problems: [`pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`],
+    if (pkg.scripts?.build) {
+      try {
+        await execFileAsync("pnpm", ["run", "build"], {
+          cwd: packageDir,
+          encoding: "utf8",
+          maxBuffer: 64 * 1024 * 1024,
+          env: process.env,
+        })
+      } catch (error) {
+        return {
+          name: pkg.name,
+          packageDir,
+          problems: [`pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`],
+        }
       }
     }
   }
@@ -277,16 +290,18 @@ async function verifyPackage(packageDir) {
     // publishConfig exports and workspace: dependency replacement. The release
     // job publishes through pnpm, so verify the same lifecycle and packed
     // manifest consumers receive.
-    const result = await execFileAsync(
-      "pnpm",
-      ["pack", "--json", "--pack-destination", packDestination],
-      {
-        cwd: packageDir,
-        encoding: "utf8",
-        maxBuffer: 64 * 1024 * 1024,
-        env: process.env,
-      },
-    )
+    //
+    // When reusing dist, also skip lifecycle scripts: most packages declare a
+    // `prepack` that runs `pnpm run build`, so without --config.ignore-scripts
+    // every pack would silently re-tsc on top of the already-fresh dist.
+    const packArgs = ["pack", "--json", "--pack-destination", packDestination]
+    if (REUSE_DIST) packArgs.unshift("--config.ignore-scripts=true")
+    const result = await execFileAsync("pnpm", packArgs, {
+      cwd: packageDir,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+      env: process.env,
+    })
     stdout = result.stdout
   } catch (error) {
     fs.rmSync(packDestination, { recursive: true, force: true })
@@ -298,14 +313,19 @@ async function verifyPackage(packageDir) {
   }
 
   let extensionlessRelativeSpecifiers = []
+  let extracted
   try {
     ;[packInfo] = getPackJson(stdout)
-    packedManifest = await readPackedManifest(packInfo.filename)
-    extensionlessRelativeSpecifiers = await collectPackedExtensionlessRelativeSpecifiers(
-      packInfo.filename,
+    extracted = await extractTarball(packInfo.filename)
+    packedManifest = JSON.parse(
+      fs.readFileSync(path.join(extracted.root, "package.json"), "utf8"),
+    )
+    extensionlessRelativeSpecifiers = collectPackedExtensionlessRelativeSpecifiers(
+      extracted.root,
       packInfo,
     )
   } catch (error) {
+    extracted?.cleanup()
     fs.rmSync(packDestination, { recursive: true, force: true })
     return {
       name: pkg.name,
@@ -313,6 +333,7 @@ async function verifyPackage(packageDir) {
       problems: [`could not parse pnpm pack output: ${error.message}`],
     }
   } finally {
+    extracted?.cleanup()
     fs.rmSync(packDestination, { recursive: true, force: true })
   }
 

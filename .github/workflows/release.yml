@@ -121,6 +121,10 @@ jobs:
         run: pnpm verify:package-exports
 
       - name: Verify publish tarballs
+        # `Build packages` above already produced fresh dist via turbo; skip
+        # the per-package clean+rebuild inside the verifier.
+        env:
+          VOYANT_PACK_REUSE_DIST: "1"
         run: pnpm verify:publish-tarballs
 
       - name: Detect pending npm publication
