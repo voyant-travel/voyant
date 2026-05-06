@@ -43,11 +43,57 @@ async function collectPackageI18nEntries() {
   return entries.sort()
 }
 
+function isPlainObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function findLocaleExport(moduleExports, source) {
+  for (const value of Object.values(moduleExports)) {
+    if (isPlainObject(value)) {
+      return value
+    }
+  }
+
+  throw new Error(`No locale message object export found in ${source}`)
+}
+
+async function collectLocaleFileDefinitions(entryFile) {
+  const entryDir = path.dirname(entryFile)
+  const localeFiles = (await readdir(entryDir))
+    .filter((fileName) => /^[a-z]{2}(?:-[A-Z]{2})?\.ts$/.test(fileName))
+    .sort()
+
+  if (localeFiles.length === 0) {
+    return null
+  }
+
+  const definitions = {}
+
+  for (const localeFile of localeFiles) {
+    const locale = path.basename(localeFile, ".ts")
+    const filePath = path.join(entryDir, localeFile)
+    const moduleExports = await import(pathToFileURL(filePath).href)
+    definitions[locale] = findLocaleExport(moduleExports, path.relative(rootDir, filePath))
+  }
+
+  return {
+    definitions,
+    source: `${path.relative(rootDir, entryFile)}:localeFiles`,
+  }
+}
+
 async function main() {
   const entryFiles = await collectPackageI18nEntries()
   const definitions = []
 
   for (const entryFile of entryFiles) {
+    const localeFileDefinitions = await collectLocaleFileDefinitions(entryFile)
+
+    if (localeFileDefinitions) {
+      definitions.push(localeFileDefinitions)
+      continue
+    }
+
     const moduleExports = await import(pathToFileURL(entryFile).href)
     definitions.push(
       ...collectLocaleDefinitionExports(path.relative(rootDir, entryFile), moduleExports),

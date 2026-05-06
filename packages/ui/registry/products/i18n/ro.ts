@@ -1,4 +1,4 @@
-import { productsUiRo } from "@voyantjs/products-ui/i18n/ro"
+import { productsUiRo } from "../../../../products-ui/src/i18n/ro"
 
 import type { RegistryProductsMessages } from "./messages"
 
