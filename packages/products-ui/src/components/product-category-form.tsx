@@ -16,8 +16,8 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { ProductCategoryCombobox } from "./product-category-combobox"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { ProductCategoryCombobox } from "./product-category-combobox.js"
 
 type Mode = { kind: "create" } | { kind: "edit"; category: ProductCategoryRecord }
 

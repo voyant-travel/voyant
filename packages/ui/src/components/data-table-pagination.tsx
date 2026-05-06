@@ -3,7 +3,7 @@
 import type { Table } from "@tanstack/react-table"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
-import { Button } from "./button"
+import { Button } from "./button.js"
 
 type DataTablePaginationProps<TData> = {
   table: Table<TData>

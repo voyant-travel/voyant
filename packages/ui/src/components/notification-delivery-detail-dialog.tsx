@@ -3,9 +3,9 @@
 import { useNotificationDelivery } from "@voyantjs/notifications-react"
 import { Loader2 } from "lucide-react"
 
-import { Badge } from "./badge"
-import { Button } from "./button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./dialog"
+import { Badge } from "./badge.js"
+import { Button } from "./button.js"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./dialog.js"
 
 type NotificationDeliveryDetailDialogProps = {
   deliveryId: string | null

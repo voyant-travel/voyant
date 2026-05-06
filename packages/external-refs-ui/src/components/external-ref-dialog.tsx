@@ -30,8 +30,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import type { ExternalRefsUiMessages } from "../i18n/messages"
-import { useExternalRefsUiI18nOrDefault } from "../i18n/provider"
+import type { ExternalRefsUiMessages } from "../i18n/messages.js"
+import { useExternalRefsUiI18nOrDefault } from "../i18n/provider.js"
 
 const REF_STATUSES = ["active", "inactive", "archived"] as const
 

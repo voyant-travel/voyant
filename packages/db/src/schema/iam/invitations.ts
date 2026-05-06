@@ -1,6 +1,6 @@
 import { index, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
-import { typeId } from "../../lib/typeid-column"
+import { typeId } from "../../lib/typeid-column.js"
 
 /**
  * Admin-issued user invitations.

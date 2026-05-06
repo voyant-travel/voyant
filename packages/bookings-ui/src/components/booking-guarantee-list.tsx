@@ -9,8 +9,8 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
-import { BookingGuaranteeDialog } from "./booking-guarantee-dialog"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { BookingGuaranteeDialog } from "./booking-guarantee-dialog.js"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   pending: "outline",

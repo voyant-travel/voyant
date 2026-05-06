@@ -1,10 +1,10 @@
-export { identityUiEn } from "./en"
+export { identityUiEn } from "./en.js"
 export type {
   AddressLabel,
   ContactPointKind,
   IdentityUiMessages,
   NamedContactRole,
-} from "./messages"
+} from "./messages.js"
 export {
   getIdentityUiI18n,
   type IdentityUiMessageOverrides,
@@ -15,5 +15,5 @@ export {
   useIdentityUiI18nOrDefault,
   useIdentityUiMessages,
   useIdentityUiMessagesOrDefault,
-} from "./provider"
-export { identityUiRo } from "./ro"
+} from "./provider.js"
+export { identityUiRo } from "./ro.js"

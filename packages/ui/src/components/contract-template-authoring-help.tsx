@@ -3,12 +3,12 @@
 import { CheckIcon, CopyIcon, SearchIcon, SparklesIcon } from "lucide-react"
 import * as React from "react"
 
-import { cn } from "../lib/utils"
-import { Badge } from "./badge"
-import { Button } from "./button"
-import { Input } from "./input"
-import { ScrollArea } from "./scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs"
+import { cn } from "../lib/utils.js"
+import { Badge } from "./badge.js"
+import { Button } from "./button.js"
+import { Input } from "./input.js"
+import { ScrollArea } from "./scroll-area.js"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs.js"
 
 export type TemplateAuthoringVariable = {
   key: string

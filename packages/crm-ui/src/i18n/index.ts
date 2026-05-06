@@ -1,4 +1,4 @@
-export { crmUiEn } from "./en"
+export { crmUiEn } from "./en.js"
 export type {
   CrmActivityStatus,
   CrmActivityType,
@@ -6,7 +6,7 @@ export type {
   CrmRecordStatus,
   CrmRelationType,
   CrmUiMessages,
-} from "./messages"
+} from "./messages.js"
 export {
   type CrmUiMessageOverrides,
   CrmUiMessagesProvider,
@@ -17,5 +17,5 @@ export {
   useCrmUiI18nOrDefault,
   useCrmUiMessages,
   useCrmUiMessagesOrDefault,
-} from "./provider"
-export { crmUiRo } from "./ro"
+} from "./provider.js"
+export { crmUiRo } from "./ro.js"

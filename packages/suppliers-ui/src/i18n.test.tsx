@@ -13,14 +13,14 @@ function withProviders(children: ReactNode) {
   )
 }
 
-import { SupplierServiceRow } from "./components/supplier-service-row"
-import { SuppliersPage } from "./components/suppliers-page"
+import { SupplierServiceRow } from "./components/supplier-service-row.js"
+import { SuppliersPage } from "./components/suppliers-page.js"
 import {
   getSuppliersUiI18n,
   resolveSuppliersUiMessages,
   SuppliersUiMessagesProvider,
   useSuppliersUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 const suppliers: Supplier[] = [
   {

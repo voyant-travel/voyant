@@ -26,11 +26,11 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useSellabilityUiMessagesOrDefault } from "../i18n"
-import { ChannelCombobox } from "./channel-combobox"
-import { MarketCombobox } from "./market-combobox"
-import { ProductCombobox } from "./product-combobox"
-import { ProductOptionCombobox } from "./product-option-combobox"
+import { useSellabilityUiMessagesOrDefault } from "../i18n/index.js"
+import { ChannelCombobox } from "./channel-combobox.js"
+import { MarketCombobox } from "./market-combobox.js"
+import { ProductCombobox } from "./product-combobox.js"
+import { ProductOptionCombobox } from "./product-option-combobox.js"
 
 const POLICY_SCOPES = ["global", "product", "option", "market", "channel"] as const
 const POLICY_TYPES = [

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
-import { useChartersUiI18nOrDefault } from "../i18n"
+import { useChartersUiI18nOrDefault } from "../i18n/index.js"
 
 export interface WholeYachtQuoteCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
   quote: WholeYachtQuote

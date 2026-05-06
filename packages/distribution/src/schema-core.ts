@@ -23,7 +23,7 @@ import {
   channelWebhookStatusEnum,
   distributionCancellationOwnerEnum,
   distributionPaymentOwnerEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const channels = pgTable(
   "channels",

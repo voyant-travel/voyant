@@ -21,8 +21,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useLegalUiMessagesOrDefault } from "../i18n"
-import { type LegalSignatureMethod, legalSignatureMethods } from "../i18n/messages"
+import { useLegalUiMessagesOrDefault } from "../i18n/index.js"
+import { type LegalSignatureMethod, legalSignatureMethods } from "../i18n/messages.js"
 
 function createSignatureFormSchema(messages: ReturnType<typeof useLegalUiMessagesOrDefault>) {
   return z.object({

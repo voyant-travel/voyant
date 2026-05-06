@@ -7,7 +7,7 @@ import {
   PRODUCT_TYPES,
   PUBLICATION_ENTITY_TYPES,
   SOURCE_KINDS,
-} from "./catalog"
+} from "./catalog.js"
 
 // -----------------------------------------------------------------------------
 // Enum Schemas

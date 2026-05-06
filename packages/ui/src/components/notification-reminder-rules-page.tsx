@@ -8,11 +8,11 @@ import {
 import { Loader2, Pencil, Plus, Search } from "lucide-react"
 import { useState } from "react"
 
-import { Badge } from "./badge"
-import { Button } from "./button"
-import { Input } from "./input"
-import { NotificationReminderRuleDialog } from "./notification-reminder-rule-dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
+import { Badge } from "./badge.js"
+import { Button } from "./button.js"
+import { Input } from "./input.js"
+import { NotificationReminderRuleDialog } from "./notification-reminder-rule-dialog.js"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
 
 const reminderTargetLabels = {
   booking_confirmed: "Booking confirmed",

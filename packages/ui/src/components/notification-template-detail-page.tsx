@@ -10,14 +10,14 @@ import { ArrowLeft, Loader2, Pencil } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { Badge } from "./badge"
-import { Button } from "./button"
-import { Card, CardContent, CardHeader, CardTitle } from "./card"
-import { Label } from "./label"
-import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog"
-import { NotificationTemplateDialog } from "./notification-template-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs"
-import { Textarea } from "./textarea"
+import { Badge } from "./badge.js"
+import { Button } from "./button.js"
+import { Card, CardContent, CardHeader, CardTitle } from "./card.js"
+import { Label } from "./label.js"
+import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
+import { NotificationTemplateDialog } from "./notification-template-dialog.js"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs.js"
+import { Textarea } from "./textarea.js"
 
 function parsePath(path: string) {
   return path

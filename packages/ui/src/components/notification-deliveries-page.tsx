@@ -9,8 +9,8 @@ import {
 import { Loader2, RotateCcw, Search } from "lucide-react"
 import { useState } from "react"
 
-import { Badge } from "./badge"
-import { Button } from "./button"
+import { Badge } from "./badge.js"
+import { Button } from "./button.js"
 import {
   Dialog,
   DialogBody,
@@ -18,8 +18,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "./index"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
+} from "./index.js"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
 
 export function NotificationDeliveriesPage() {
   const [channel, setChannel] = useState<UseNotificationDeliveriesOptions["channel"] | "all">("all")

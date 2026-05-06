@@ -18,7 +18,7 @@ import {
   productOptionStatusEnum,
   productStatusEnum,
   productVisibilityEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const products = pgTable(
   "products",

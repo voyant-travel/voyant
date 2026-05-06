@@ -1,14 +1,14 @@
-export { InvoiceDialog, type InvoiceDialogProps } from "./components/invoice-dialog"
+export { InvoiceDialog, type InvoiceDialogProps } from "./components/invoice-dialog.js"
 export {
   PaymentPolicyForm,
   type PaymentPolicyFormProps,
   PaymentPolicyPreview,
   type PaymentPolicyPreviewProps,
-} from "./components/payment-policy-form"
+} from "./components/payment-policy-form.js"
 export {
   SupplierPaymentDialog,
   type SupplierPaymentDialogProps,
-} from "./components/supplier-payment-dialog"
+} from "./components/supplier-payment-dialog.js"
 export {
   type FinanceUiMessageOverrides,
   type FinanceUiMessages,
@@ -22,4 +22,4 @@ export {
   useFinanceUiI18nOrDefault,
   useFinanceUiMessages,
   useFinanceUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

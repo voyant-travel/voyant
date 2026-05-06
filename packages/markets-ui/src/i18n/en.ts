@@ -1,4 +1,4 @@
-import type { MarketsUiMessages } from "./messages"
+import type { MarketsUiMessages } from "./messages.js"
 
 export const marketsUiEn = {
   common: {

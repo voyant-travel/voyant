@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { PREFIXES, type PrefixKey, type PrefixValue } from "./typeid-prefixes"
+import { PREFIXES, type PrefixKey, type PrefixValue } from "./typeid-prefixes.js"
 
 export const TYPEID_SUFFIX_PATTERN = "[0-9a-hjkmnp-tv-z]{26}"
 

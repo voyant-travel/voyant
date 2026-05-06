@@ -10,9 +10,9 @@ import {
 } from "@voyantjs/i18n"
 import type { ReactNode } from "react"
 
-import { financeUiEn } from "./en"
-import type { FinanceUiMessages } from "./messages"
-import { financeUiRo } from "./ro"
+import { financeUiEn } from "./en.js"
+import type { FinanceUiMessages } from "./messages.js"
+import { financeUiRo } from "./ro.js"
 
 const fallbackLocale = "en"
 

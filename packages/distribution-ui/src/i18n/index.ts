@@ -1,4 +1,4 @@
-export { distributionUiEn } from "./en"
+export { distributionUiEn } from "./en.js"
 export type {
   ChannelKind,
   ChannelStatus,
@@ -8,7 +8,7 @@ export type {
   DistributionUiMessages,
   PaymentOwner,
   WebhookStatus,
-} from "./messages"
+} from "./messages.js"
 export {
   type DistributionUiI18n,
   type DistributionUiMessageOverrides,
@@ -20,5 +20,5 @@ export {
   useDistributionUiI18nOrDefault,
   useDistributionUiMessages,
   useDistributionUiMessagesOrDefault,
-} from "./provider"
-export { distributionUiRo } from "./ro"
+} from "./provider.js"
+export { distributionUiRo } from "./ro.js"

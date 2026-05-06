@@ -26,8 +26,8 @@ import {
 import { CheckCircle2, Loader2, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { ProductCategoryDialog } from "./product-category-dialog"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { ProductCategoryDialog } from "./product-category-dialog.js"
 
 export interface ProductCategoryListProps {
   pageSize?: number

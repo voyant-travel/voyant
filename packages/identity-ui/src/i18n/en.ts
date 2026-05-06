@@ -1,4 +1,4 @@
-import type { IdentityUiMessages } from "./messages"
+import type { IdentityUiMessages } from "./messages.js"
 
 export const identityUiEn = {
   common: {

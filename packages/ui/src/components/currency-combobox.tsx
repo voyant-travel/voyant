@@ -11,7 +11,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "./combobox"
+} from "./combobox.js"
 
 type CurrencyRecord = (typeof currencies)[keyof typeof currencies]
 type CurrencyCode = keyof typeof currencies

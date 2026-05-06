@@ -8,7 +8,7 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { CheckCircle2, Clock, Mail, Phone, Ticket, XCircle } from "lucide-react"
 import type { ReactNode } from "react"
 
-import { FlightOfferDetail } from "./flight-offer-detail"
+import { FlightOfferDetail } from "./flight-offer-detail.js"
 
 export interface FlightOrderConfirmationProps {
   order: FlightOrder

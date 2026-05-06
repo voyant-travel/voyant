@@ -16,32 +16,32 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import { FlightBaggageStep } from "./flight-baggage-step"
+import { FlightBaggageStep } from "./flight-baggage-step.js"
 import {
   type BillingValue,
   emptyBillingValue,
   FlightBillingStep,
   validateBilling,
-} from "./flight-billing-step"
+} from "./flight-billing-step.js"
 import {
   FlightBookingLedger,
   type FlightItinerarySelection,
   type LedgerLineItem,
-} from "./flight-booking-ledger"
-import { FlightFareUpsellStep } from "./flight-fare-upsell-step"
-import { FlightItinerary } from "./flight-itinerary"
+} from "./flight-booking-ledger.js"
+import { FlightFareUpsellStep } from "./flight-fare-upsell-step.js"
+import { FlightItinerary } from "./flight-itinerary.js"
 import {
   FlightPassengerForm,
   type FlightPassengerFormProps,
   validatePassengers,
-} from "./flight-passenger-form"
+} from "./flight-passenger-form.js"
 import {
   FlightPaymentStep,
   type PaymentStepCapabilities,
   type SavedPaymentMethod,
-} from "./flight-payment-step"
-import { type FlightSeatMapSlot, FlightSeatsStep } from "./flight-seats-step"
-import { FlightServicesStep } from "./flight-services-step"
+} from "./flight-payment-step.js"
+import { type FlightSeatMapSlot, FlightSeatsStep } from "./flight-seats-step.js"
+import { FlightServicesStep } from "./flight-services-step.js"
 
 type StepId =
   | "review"

@@ -1,11 +1,11 @@
 import { PanelLeftIcon } from "lucide-react"
 import * as React from "react"
-import { useIsMobile } from "../hooks/use-mobile"
-import { cn } from "../lib/utils"
-import { Button } from "./button"
-import { Input } from "./input"
-import { Separator } from "./separator"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./sheet"
+import { useIsMobile } from "../hooks/use-mobile.js"
+import { cn } from "../lib/utils.js"
+import { Button } from "./button.js"
+import { Input } from "./input.js"
+import { Separator } from "./separator.js"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./sheet.js"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7

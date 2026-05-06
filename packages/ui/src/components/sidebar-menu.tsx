@@ -2,10 +2,10 @@ import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
 import * as React from "react"
-import { cn } from "../lib/utils"
-import { useSidebar } from "./sidebar-core"
-import { Skeleton } from "./skeleton"
-import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip"
+import { cn } from "../lib/utils.js"
+import { useSidebar } from "./sidebar-core.js"
+import { Skeleton } from "./skeleton.js"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip.js"
 
 function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (

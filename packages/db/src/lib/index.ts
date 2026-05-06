@@ -16,7 +16,7 @@ export {
   typeIdSchema,
   typeIdSchemaOptional,
   typeIdSchemas,
-} from "./typeid"
+} from "./typeid.js"
 export {
   TYPEID_MAX_LENGTH,
   typeId,
@@ -24,4 +24,4 @@ export {
   typeIdOptimized,
   typeIdRef,
   typeIdRefOptimized,
-} from "./typeid-column"
+} from "./typeid-column.js"

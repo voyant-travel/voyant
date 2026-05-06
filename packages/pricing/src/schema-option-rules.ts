@@ -9,16 +9,16 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
-import { priceCatalogs, priceSchedules } from "./schema-catalogs"
-import { pricingCategories } from "./schema-categories"
-import { cancellationPolicies } from "./schema-policies"
+import { priceCatalogs, priceSchedules } from "./schema-catalogs.js"
+import { pricingCategories } from "./schema-categories.js"
+import { cancellationPolicies } from "./schema-policies.js"
 import {
   addonPricingModeEnum,
   optionPricingModeEnum,
   optionStartTimeRuleModeEnum,
   optionUnitPricingModeEnum,
   priceAdjustmentTypeEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const optionPriceRules = pgTable(
   "option_price_rules",

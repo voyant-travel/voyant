@@ -13,21 +13,21 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import { DollarSign, ExternalLink, Link2, Search, Webhook } from "lucide-react"
-import { useDistributionUiI18nOrDefault } from "../i18n"
+import { useDistributionUiI18nOrDefault } from "../i18n/index.js"
 import type {
   ChannelContractRow,
   ChannelProductMappingRow,
   ChannelRow,
   ChannelWebhookEventRow,
   SupplierOption,
-} from "./distribution-shared"
+} from "./distribution-shared.js"
 import {
   formatDistributionDate,
   formatDistributionDateTime,
   getContractStatusLabel,
   getWebhookStatusLabel,
   labelById,
-} from "./distribution-shared"
+} from "./distribution-shared.js"
 
 export function DistributionOverview({
   channels,

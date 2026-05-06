@@ -1,7 +1,7 @@
 "use client"
 
 import { Button, Input, Label } from "@voyantjs/ui/components"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export type PaymentScheduleMode = "unpaid" | "full" | "advance" | "split"
 

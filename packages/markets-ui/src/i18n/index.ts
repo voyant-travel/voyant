@@ -1,5 +1,5 @@
-export { marketsUiEn } from "./en"
-export type { MarketStatus, MarketsUiMessages } from "./messages"
+export { marketsUiEn } from "./en.js"
+export type { MarketStatus, MarketsUiMessages } from "./messages.js"
 export {
   getMarketsUiI18n,
   type MarketsUiMessageOverrides,
@@ -10,5 +10,5 @@ export {
   useMarketsUiI18nOrDefault,
   useMarketsUiMessages,
   useMarketsUiMessagesOrDefault,
-} from "./provider"
-export { marketsUiRo } from "./ro"
+} from "./provider.js"
+export { marketsUiRo } from "./ro.js"

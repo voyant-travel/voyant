@@ -12,14 +12,14 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { stayBookingItems } from "./schema-bookings"
-import { roomUnits } from "./schema-inventory"
+import { stayBookingItems } from "./schema-bookings.js"
+import { roomUnits } from "./schema-inventory.js"
 import {
   stayCheckpointTypeEnum,
   stayFolioStatusEnum,
   stayOperationStatusEnum,
   stayServicePostKindEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const stayOperations = pgTable(
   "stay_operations",

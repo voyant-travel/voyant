@@ -24,7 +24,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useMarketsUiMessagesOrDefault } from "../i18n"
+import { useMarketsUiMessagesOrDefault } from "../i18n/index.js"
 
 function createFormSchema(messages: ReturnType<typeof useMarketsUiMessagesOrDefault>) {
   return z.object({

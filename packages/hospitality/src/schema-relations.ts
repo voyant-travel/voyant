@@ -9,7 +9,7 @@ import {
   roomUnitStatusEvents,
   stayBookingItems,
   stayDailyRates,
-} from "./schema-bookings"
+} from "./schema-bookings.js"
 import {
   mealPlans,
   ratePlanRoomTypes,
@@ -17,20 +17,20 @@ import {
   roomTypeBedConfigs,
   roomTypes,
   roomUnits,
-} from "./schema-inventory"
+} from "./schema-inventory.js"
 import {
   stayCheckpoints,
   stayFolioLines,
   stayFolios,
   stayOperations,
   stayServicePosts,
-} from "./schema-operations"
+} from "./schema-operations.js"
 import {
   ratePlanInventoryOverrides,
   roomInventory,
   roomTypeRates,
   stayRules,
-} from "./schema-pricing"
+} from "./schema-pricing.js"
 
 export const roomTypesRelations = relations(roomTypes, ({ one, many }) => ({
   property: one(properties, { fields: [roomTypes.propertyId], references: [properties.id] }),

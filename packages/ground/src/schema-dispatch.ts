@@ -3,13 +3,13 @@ import { facilities } from "@voyantjs/facilities/schema"
 import { identityAddresses } from "@voyantjs/identity/schema"
 import { boolean, date, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
-import { groundDrivers, groundOperators, groundVehicles } from "./schema-operators"
+import { groundDrivers, groundOperators, groundVehicles } from "./schema-operators.js"
 import {
   groundDispatchStatusEnum,
   groundServiceLevelEnum,
   groundVehicleCategoryEnum,
   groundVehicleClassEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const groundTransferPreferences = pgTable(
   "ground_transfer_preferences",

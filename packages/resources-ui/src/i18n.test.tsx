@@ -1,8 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { ResourcesOverview } from "./components/resources-overview"
-import { getResourcesUiI18n, ResourcesUiMessagesProvider, resolveResourcesUiMessages } from "./i18n"
+import { ResourcesOverview } from "./components/resources-overview.js"
+import {
+  getResourcesUiI18n,
+  ResourcesUiMessagesProvider,
+  resolveResourcesUiMessages,
+} from "./i18n/index.js"
 
 describe("resources-ui i18n", () => {
   it("resolves localized package messages with fallback and overrides", () => {

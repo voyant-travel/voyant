@@ -6,7 +6,7 @@ import {
   PricingUiMessagesProvider,
   resolvePricingUiMessages,
   usePricingUiMessagesOrDefault,
-} from "./i18n/provider"
+} from "./i18n/provider.js"
 
 describe("pricing-ui pricing-category i18n", () => {
   it("resolves localized messages with fallback and overrides", () => {

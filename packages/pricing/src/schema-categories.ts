@@ -10,7 +10,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { pricingCategoryTypeEnum, pricingDependencyTypeEnum } from "./schema-shared"
+import { pricingCategoryTypeEnum, pricingDependencyTypeEnum } from "./schema-shared.js"
 
 export const pricingCategories = pgTable(
   "pricing_categories",

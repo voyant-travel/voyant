@@ -11,13 +11,13 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { organizations, people } from "./schema-accounts"
+import { organizations, people } from "./schema-accounts.js"
 import {
   entityTypeEnum,
   opportunityStatusEnum,
   participantRoleEnum,
   quoteStatusEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const pipelines = pgTable(
   "pipelines",

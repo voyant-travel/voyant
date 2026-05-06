@@ -1,4 +1,4 @@
-import type { CruisesUiMessages } from "./messages"
+import type { CruisesUiMessages } from "./messages.js"
 
 export const cruisesUiRo: CruisesUiMessages = {
   common: {

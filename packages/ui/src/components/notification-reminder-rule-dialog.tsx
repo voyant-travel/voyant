@@ -10,12 +10,19 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { zodResolver } from "../lib/zod-resolver"
-import { Button } from "./button"
-import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./index"
-import { Input } from "./input"
-import { Label } from "./label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
+import { zodResolver } from "../lib/zod-resolver.js"
+import { Button } from "./button.js"
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./index.js"
+import { Input } from "./input.js"
+import { Label } from "./label.js"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
 
 const reminderRuleFormSchema = z.object({
   name: z.string().min(1, "Name is required"),

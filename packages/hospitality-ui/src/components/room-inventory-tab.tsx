@@ -15,10 +15,10 @@ import { Label } from "@voyantjs/ui/components/label"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
-import { PaginationFooter } from "./pagination-footer"
-import { RoomInventoryDialog } from "./room-inventory-dialog"
-import { RoomTypeCombobox } from "./room-type-combobox"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
+import { PaginationFooter } from "./pagination-footer.js"
+import { RoomInventoryDialog } from "./room-inventory-dialog.js"
+import { RoomTypeCombobox } from "./room-type-combobox.js"
 
 export interface RoomInventoryTabProps {
   propertyId: string

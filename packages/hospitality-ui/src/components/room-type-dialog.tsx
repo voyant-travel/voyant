@@ -23,8 +23,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
-import type { InventoryMode } from "../i18n/messages"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
+import type { InventoryMode } from "../i18n/messages.js"
 
 const INVENTORY_MODES = ["virtual", "pooled", "serialized"] as const
 

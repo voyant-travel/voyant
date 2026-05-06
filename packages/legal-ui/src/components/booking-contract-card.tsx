@@ -10,8 +10,8 @@ import {
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Download, FileText, Loader2, RotateCw } from "lucide-react"
 
-import { useLegalUiI18nOrDefault } from "../i18n"
-import type { LegalUiMessages } from "../i18n/messages"
+import { useLegalUiI18nOrDefault } from "../i18n/index.js"
+import type { LegalUiMessages } from "../i18n/messages.js"
 
 /**
  * Status → badge style map. Keeps the card visually in sync with the

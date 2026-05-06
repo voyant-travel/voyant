@@ -17,7 +17,7 @@ import {
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { useCrmUiMessagesOrDefault } from "../i18n"
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 
 export function CreateOpportunityDialog({
   open,

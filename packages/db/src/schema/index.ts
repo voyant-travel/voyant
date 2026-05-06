@@ -1,3 +1,3 @@
-export * from "./00_ensure_schemas"
-export * from "./iam/index"
-export * from "./infra/index"
+export * from "./00_ensure_schemas.js"
+export * from "./iam/index.js"
+export * from "./infra/index.js"

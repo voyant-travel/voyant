@@ -39,6 +39,20 @@ function listPackageFiles(dir, baseDir = dir) {
   return files
 }
 
+function removeTsBuildInfoFiles(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === "node_modules" || entry.name === "dist") continue
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      removeTsBuildInfoFiles(fullPath)
+      continue
+    }
+    if (entry.name.endsWith(".tsbuildinfo")) {
+      fs.rmSync(fullPath, { force: true })
+    }
+  }
+}
+
 function stripDotSlash(value) {
   return value.replace(/^\.\//, "")
 }
@@ -108,6 +122,49 @@ async function readPackedManifest(tarballPath) {
   return JSON.parse(result.stdout)
 }
 
+async function readPackedFile(tarballPath, filePath) {
+  const result = await execFileAsync("tar", ["-xOf", tarballPath, `package/${filePath}`], {
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  })
+
+  return result.stdout
+}
+
+function hasExplicitRuntimeExtension(specifier) {
+  return /\.(?:c?js|mjs|json|css|wasm|svg|png|jpe?g|gif|webp)(?:[?#].*)?$/.test(specifier)
+}
+
+function collectExtensionlessRelativeSpecifiers(filePath, source) {
+  const problems = []
+  const pattern =
+    /\b(?:import|export)\s+(?:[^'"]*?\s+from\s*)?(['"])(\.{1,2}\/[^'"]+)\1|import\s*\(\s*(['"])(\.{1,2}\/[^'"]+)\3\s*\)/g
+
+  for (const match of source.matchAll(pattern)) {
+    const specifier = match[2] ?? match[4]
+    if (!specifier || hasExplicitRuntimeExtension(specifier)) continue
+
+    const line = source.slice(0, match.index).split("\n").length
+    problems.push(`${filePath}:${line} imports ${specifier}`)
+  }
+
+  return problems
+}
+
+async function collectPackedExtensionlessRelativeSpecifiers(tarballPath, packInfo) {
+  const problems = []
+  const jsFiles = packInfo.files
+    .map((file) => file.path)
+    .filter((filePath) => filePath.startsWith("dist/") && filePath.endsWith(".js"))
+
+  for (const filePath of jsFiles) {
+    const source = await readPackedFile(tarballPath, filePath)
+    problems.push(...collectExtensionlessRelativeSpecifiers(filePath, source))
+  }
+
+  return problems
+}
+
 function collectWorkspaceProtocolDependencies(pkg) {
   const problems = []
   const dependencyFields = [
@@ -162,6 +219,41 @@ async function verifyPackage(packageDir) {
 
   if (pkg.private) return null
 
+  if (pkg.scripts?.clean) {
+    try {
+      await execFileAsync("pnpm", ["run", "clean"], {
+        cwd: packageDir,
+        encoding: "utf8",
+        maxBuffer: 16 * 1024 * 1024,
+        env: process.env,
+      })
+    } catch (error) {
+      return {
+        name: pkg.name,
+        packageDir,
+        problems: [`pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`],
+      }
+    }
+  }
+  removeTsBuildInfoFiles(packageDir)
+
+  if (pkg.scripts?.build) {
+    try {
+      await execFileAsync("pnpm", ["run", "build"], {
+        cwd: packageDir,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        env: process.env,
+      })
+    } catch (error) {
+      return {
+        name: pkg.name,
+        packageDir,
+        problems: [`pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`],
+      }
+    }
+  }
+
   const sourceFiles = new Set(listPackageFiles(packageDir))
   const packDestination = fs.mkdtempSync(path.join(os.tmpdir(), "voyant-pack-"))
 
@@ -193,9 +285,14 @@ async function verifyPackage(packageDir) {
     }
   }
 
+  let extensionlessRelativeSpecifiers = []
   try {
     ;[packInfo] = getPackJson(stdout)
     packedManifest = await readPackedManifest(packInfo.filename)
+    extensionlessRelativeSpecifiers = await collectPackedExtensionlessRelativeSpecifiers(
+      packInfo.filename,
+      packInfo,
+    )
   } catch (error) {
     fs.rmSync(packDestination, { recursive: true, force: true })
     return {
@@ -218,11 +315,16 @@ async function verifyPackage(packageDir) {
     .map((file) => file.path)
     .filter((filePath) => filePath.startsWith("dist/src/") || filePath.startsWith("dist/tests/"))
 
-  if (missingTargets.length === 0 && suspiciousFiles.length === 0) return null
-
   const problems = []
   if (missingTargets.length > 0) {
     problems.push(`missing published targets: ${missingTargets.join(", ")}`)
+  }
+  if (extensionlessRelativeSpecifiers.length > 0) {
+    problems.push(
+      `extensionless relative ESM specifiers in dist files: ${extensionlessRelativeSpecifiers.join(
+        ", ",
+      )}`,
+    )
   }
   const workspaceProtocolDependencies = collectWorkspaceProtocolDependencies(packedManifest)
   if (workspaceProtocolDependencies.length > 0) {
@@ -235,6 +337,8 @@ async function verifyPackage(packageDir) {
   if (suspiciousFiles.length > 0) {
     problems.push(`unexpected packaged build paths: ${suspiciousFiles.join(", ")}`)
   }
+
+  if (problems.length === 0) return null
 
   return { name: pkg.name, packageDir, problems }
 }

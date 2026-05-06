@@ -5,8 +5,8 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { Pencil, Plus } from "lucide-react"
 import * as React from "react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
-import { SupplierStatusDialog } from "./supplier-status-dialog"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { SupplierStatusDialog } from "./supplier-status-dialog.js"
 
 export interface SupplierStatusListProps {
   bookingId: string

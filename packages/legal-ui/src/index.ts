@@ -1,12 +1,12 @@
-export { AttachmentDialog } from "./components/attachment-dialog"
+export { AttachmentDialog } from "./components/attachment-dialog.js"
 export {
   BookingContractCard,
   type BookingContractCardLabels,
   type BookingContractCardProps,
-} from "./components/booking-contract-card"
-export { PolicyRuleDialog, type RuleData } from "./components/policy-rule-dialog"
-export { PolicyVersionDialog } from "./components/policy-version-dialog"
-export { SignatureDialog } from "./components/signature-dialog"
+} from "./components/booking-contract-card.js"
+export { PolicyRuleDialog, type RuleData } from "./components/policy-rule-dialog.js"
+export { PolicyVersionDialog } from "./components/policy-version-dialog.js"
+export { SignatureDialog } from "./components/signature-dialog.js"
 export {
   getLegalUiI18n,
   type LegalUiMessageOverrides,
@@ -20,4 +20,4 @@ export {
   useLegalUiI18nOrDefault,
   useLegalUiMessages,
   useLegalUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

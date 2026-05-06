@@ -12,8 +12,8 @@ import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-gro
 import { ArrowLeftRight, Search } from "lucide-react"
 import { useState } from "react"
 
-import { AirportCombobox } from "./airport-combobox"
-import { PaxCabinPopover } from "./pax-cabin-popover"
+import { AirportCombobox } from "./airport-combobox.js"
+import { PaxCabinPopover } from "./pax-cabin-popover.js"
 
 export type TripType = "one_way" | "round_trip"
 

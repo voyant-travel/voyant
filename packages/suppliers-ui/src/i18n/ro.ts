@@ -1,4 +1,4 @@
-import type { SuppliersUiMessages } from "./messages"
+import type { SuppliersUiMessages } from "./messages.js"
 
 export const suppliersUiRo = {
   common: {

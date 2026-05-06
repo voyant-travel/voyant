@@ -18,8 +18,8 @@ import {
 import { Switch } from "@voyantjs/ui/components/switch"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
-import type { PricingCategoryType } from "../i18n/messages"
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
+import type { PricingCategoryType } from "../i18n/messages.js"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 
 type Mode = { kind: "create" } | { kind: "edit"; category: PricingCategoryRecord }
 

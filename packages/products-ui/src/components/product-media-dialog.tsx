@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { ProductMediaForm } from "./product-media-form"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { ProductMediaForm } from "./product-media-form.js"
 
 export interface ProductMediaDialogProps {
   open: boolean

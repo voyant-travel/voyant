@@ -3,13 +3,13 @@ import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { productOptions, products } from "@voyantjs/products/schema"
 import { boolean, date, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
-import { channelContracts, channels } from "./schema-core"
+import { channelContracts, channels } from "./schema-core.js"
 import {
   channelAllotmentReleaseModeEnum,
   channelAllotmentUnsoldActionEnum,
   channelReleaseExecutionActionEnum,
   channelReleaseExecutionStatusEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const channelInventoryAllotments = pgTable(
   "channel_inventory_allotments",

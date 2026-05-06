@@ -1,8 +1,8 @@
-export { ChannelCombobox } from "./components/channel-combobox"
-export { MarketCombobox } from "./components/market-combobox"
-export { PolicyDialog } from "./components/policy-dialog"
-export { ProductCombobox } from "./components/product-combobox"
-export { ProductOptionCombobox } from "./components/product-option-combobox"
+export { ChannelCombobox } from "./components/channel-combobox.js"
+export { MarketCombobox } from "./components/market-combobox.js"
+export { PolicyDialog } from "./components/policy-dialog.js"
+export { ProductCombobox } from "./components/product-combobox.js"
+export { ProductOptionCombobox } from "./components/product-option-combobox.js"
 export {
   getSellabilityUiI18n,
   resolveSellabilityUiMessages,
@@ -16,4 +16,4 @@ export {
   useSellabilityUiI18nOrDefault,
   useSellabilityUiMessages,
   useSellabilityUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

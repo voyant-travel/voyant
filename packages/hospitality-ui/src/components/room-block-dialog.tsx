@@ -22,10 +22,10 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
-import type { RoomBlockStatus } from "../i18n/messages"
-import { RoomTypeCombobox } from "./room-type-combobox"
-import { RoomUnitCombobox } from "./room-unit-combobox"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
+import type { RoomBlockStatus } from "../i18n/messages.js"
+import { RoomTypeCombobox } from "./room-type-combobox.js"
+import { RoomUnitCombobox } from "./room-unit-combobox.js"
 
 export type RoomBlockData = RoomBlockRecord
 

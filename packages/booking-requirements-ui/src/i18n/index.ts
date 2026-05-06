@@ -1,11 +1,11 @@
-export { bookingRequirementsUiEn } from "./en"
+export { bookingRequirementsUiEn } from "./en.js"
 export type {
   BookingRequirementsUiMessages,
   ContactFieldKey,
   ContactScope,
   QuestionFieldType,
   QuestionTarget,
-} from "./messages"
+} from "./messages.js"
 export {
   type BookingRequirementsUiMessageOverrides,
   BookingRequirementsUiMessagesProvider,
@@ -16,5 +16,5 @@ export {
   useBookingRequirementsUiI18nOrDefault,
   useBookingRequirementsUiMessages,
   useBookingRequirementsUiMessagesOrDefault,
-} from "./provider"
-export { bookingRequirementsUiRo } from "./ro"
+} from "./provider.js"
+export { bookingRequirementsUiRo } from "./ro.js"

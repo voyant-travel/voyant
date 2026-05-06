@@ -1,11 +1,11 @@
-export { suppliersUiEn } from "./en"
+export { suppliersUiEn } from "./en.js"
 export type {
   SupplierRateUnit,
   SupplierServiceType,
   SupplierStatus,
   SuppliersUiMessages,
   SupplierType,
-} from "./messages"
+} from "./messages.js"
 export {
   getSuppliersUiI18n,
   resolveSuppliersUiMessages,
@@ -16,5 +16,5 @@ export {
   useSuppliersUiI18nOrDefault,
   useSuppliersUiMessages,
   useSuppliersUiMessagesOrDefault,
-} from "./provider"
-export { suppliersUiRo } from "./ro"
+} from "./provider.js"
+export { suppliersUiRo } from "./ro.js"

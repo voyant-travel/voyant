@@ -13,7 +13,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { ratePlans, roomTypes } from "./schema-inventory"
+import { ratePlans, roomTypes } from "./schema-inventory.js"
 
 export const stayRules = pgTable(
   "stay_rules",

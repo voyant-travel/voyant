@@ -1,5 +1,5 @@
-export { externalRefsUiEn } from "./en"
-export type { ExternalRefStatus, ExternalRefsUiMessages } from "./messages"
+export { externalRefsUiEn } from "./en.js"
+export type { ExternalRefStatus, ExternalRefsUiMessages } from "./messages.js"
 export {
   type ExternalRefsUiMessageOverrides,
   ExternalRefsUiMessagesProvider,
@@ -10,5 +10,5 @@ export {
   useExternalRefsUiI18nOrDefault,
   useExternalRefsUiMessages,
   useExternalRefsUiMessagesOrDefault,
-} from "./provider"
-export { externalRefsUiRo } from "./ro"
+} from "./provider.js"
+export { externalRefsUiRo } from "./ro.js"

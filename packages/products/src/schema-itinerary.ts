@@ -11,8 +11,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { products } from "./schema-core"
-import { productMediaTypeEnum, serviceTypeEnum } from "./schema-shared"
+import { products } from "./schema-core.js"
+import { productMediaTypeEnum, serviceTypeEnum } from "./schema-shared.js"
 
 export const productItineraries = pgTable(
   "product_itineraries",

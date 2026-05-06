@@ -1,4 +1,4 @@
-import type { SellabilityUiMessages } from "./messages"
+import type { SellabilityUiMessages } from "./messages.js"
 
 export const sellabilityUiEn = {
   common: {

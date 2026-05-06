@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm/pg-core"
 
 import { availabilitySlotsRef } from "./availability-ref.js"
-import { bookings, bookingTravelers } from "./schema-core"
+import { bookings, bookingTravelers } from "./schema-core.js"
 import {
   bookingAllocationStatusEnum,
   bookingAllocationTypeEnum,
@@ -24,7 +24,7 @@ import {
   bookingItemStatusEnum,
   bookingItemTypeEnum,
   bookingRedemptionMethodEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const bookingItems = pgTable(
   "booking_items",

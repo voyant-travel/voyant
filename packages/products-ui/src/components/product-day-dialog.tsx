@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { ProductDayForm } from "./product-day-form"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { ProductDayForm } from "./product-day-form.js"
 
 export interface ProductDayDialogProps {
   open: boolean

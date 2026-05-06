@@ -3,7 +3,7 @@
 
 import { text, varchar } from "drizzle-orm/pg-core"
 
-import { newId, type PrefixKey } from "./typeid"
+import { newId, type PrefixKey } from "./typeid.js"
 
 /**
  * Maximum length of a TypeID string.

@@ -1,4 +1,4 @@
-export { hospitalityUiEn } from "./en"
+export { hospitalityUiEn } from "./en.js"
 export type {
   ChargeFrequency,
   GuaranteeMode,
@@ -8,7 +8,7 @@ export type {
   RoomBlockStatus,
   RoomUnitStatus,
   Weekday,
-} from "./messages"
+} from "./messages.js"
 export {
   getHospitalityUiI18n,
   type HospitalityUiMessageOverrides,
@@ -19,5 +19,5 @@ export {
   useHospitalityUiI18nOrDefault,
   useHospitalityUiMessages,
   useHospitalityUiMessagesOrDefault,
-} from "./provider"
-export { hospitalityUiRo } from "./ro"
+} from "./provider.js"
+export { hospitalityUiRo } from "./ro.js"

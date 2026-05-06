@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
-import { useCrmUiMessagesOrDefault } from "../i18n"
-import { PersonForm } from "./person-form"
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { PersonForm } from "./person-form.js"
 
 export interface PersonDialogProps {
   open: boolean

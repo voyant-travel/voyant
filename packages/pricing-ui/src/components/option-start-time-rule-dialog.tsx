@@ -28,9 +28,9 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import type { StartTimeRuleMode } from "../i18n/messages"
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
-import { OptionPriceRuleCombobox } from "./option-price-rule-combobox"
+import type { StartTimeRuleMode } from "../i18n/messages.js"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
+import { OptionPriceRuleCombobox } from "./option-price-rule-combobox.js"
 
 const RULE_MODES = ["included", "excluded", "override", "adjustment"] as const
 type RuleMode = (typeof RULE_MODES)[number]

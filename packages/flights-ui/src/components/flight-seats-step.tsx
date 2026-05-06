@@ -13,7 +13,7 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { CheckCircle2, X } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
-import { FlightSeatMap, type SeatPickMarker } from "./flight-seat-map"
+import { FlightSeatMap, type SeatPickMarker } from "./flight-seat-map.js"
 
 type SeatPicks = NonNullable<AncillarySelection["seats"]>
 

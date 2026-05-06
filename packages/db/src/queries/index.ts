@@ -1,7 +1,7 @@
 import { gt, type SQLWrapper } from "drizzle-orm"
 import type { AnyPgTable } from "drizzle-orm/pg-core"
 
-import type { DrizzleClient } from "../types"
+import type { DrizzleClient } from "../types.js"
 
 export type KeysetPage<T> = { rows: T[]; nextCursor?: string }
 

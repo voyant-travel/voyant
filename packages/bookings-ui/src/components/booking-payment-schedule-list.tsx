@@ -9,8 +9,8 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
-import { BookingPaymentScheduleDialog } from "./booking-payment-schedule-dialog"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { BookingPaymentScheduleDialog } from "./booking-payment-schedule-dialog.js"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   pending: "outline",

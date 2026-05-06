@@ -14,7 +14,7 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
 
 type Props = {
   value: string | null | undefined

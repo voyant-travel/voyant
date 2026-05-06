@@ -14,11 +14,11 @@ import {
 } from "@tanstack/react-table"
 import * as React from "react"
 
-import { cn } from "../lib/utils"
+import { cn } from "../lib/utils.js"
 
-import { Checkbox } from "./checkbox"
-import { DataTablePagination } from "./data-table-pagination"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table"
+import { Checkbox } from "./checkbox.js"
+import { DataTablePagination } from "./data-table-pagination.js"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table.js"
 
 type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[]

@@ -6,15 +6,15 @@ import type {
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
-import { MarketCurrencyDialog } from "./components/market-currency-dialog"
-import { MarketDialog } from "./components/market-dialog"
-import { MarketLocaleDialog } from "./components/market-locale-dialog"
+import { MarketCurrencyDialog } from "./components/market-currency-dialog.js"
+import { MarketDialog } from "./components/market-dialog.js"
+import { MarketLocaleDialog } from "./components/market-locale-dialog.js"
 import {
   getMarketsUiI18n,
   MarketsUiMessagesProvider,
   resolveMarketsUiMessages,
   useMarketsUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 const market = {
   id: "market-1",

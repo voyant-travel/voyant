@@ -1,17 +1,17 @@
 import * as React from "react"
-import { cn } from "../lib/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "./avatar"
-import { Badge } from "./badge"
-import { Button } from "./button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card"
-import { Checkbox } from "./checkbox"
+import { cn } from "../lib/utils.js"
+import { Avatar, AvatarFallback, AvatarImage } from "./avatar.js"
+import { Badge } from "./badge.js"
+import { Button } from "./button.js"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card.js"
+import { Checkbox } from "./checkbox.js"
 import {
   CollapsibleContent,
   Collapsible as LocalCollapsible,
   CollapsibleTrigger as LocalCollapsibleTrigger,
-} from "./collapsible"
-import { ConfirmActionButton } from "./confirm-action-button"
-import { ContractTemplateAuthoringHelp } from "./contract-template-authoring-help"
+} from "./collapsible.js"
+import { ConfirmActionButton } from "./confirm-action-button.js"
+import { ContractTemplateAuthoringHelp } from "./contract-template-authoring-help.js"
 import {
   DialogClose,
   DialogDescription,
@@ -23,7 +23,7 @@ import {
   DialogTrigger,
   Dialog as LocalDialog,
   DialogContent as LocalDialogContent,
-} from "./dialog"
+} from "./dialog.js"
 import {
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -32,30 +32,30 @@ import {
   DropdownMenu as LocalDropdownMenu,
   DropdownMenuItem as LocalDropdownMenuItem,
   DropdownMenuTrigger as LocalDropdownMenuTrigger,
-} from "./dropdown-menu"
-import { Input } from "./input"
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "./input-otp"
-import { Label } from "./label"
-import { NotificationDeliveriesPage } from "./notification-deliveries-page"
-import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog"
-import { NotificationReminderRulesPage } from "./notification-reminder-rules-page"
-import { NotificationReminderRunsPage } from "./notification-reminder-runs-page"
-import { NotificationTemplateAuthoringHelp } from "./notification-template-authoring-help"
-import { NotificationTemplateDetailPage } from "./notification-template-detail-page"
-import { NotificationTemplatesPage } from "./notification-templates-page"
-import { OverviewMetric } from "./overview-metric"
-import { RadioGroup, RadioGroupItem } from "./radio-group"
-import { RichTextEditor } from "./rich-text-editor"
-import { ScrollArea, ScrollBar } from "./scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
-import { SelectionActionBar } from "./selection-action-bar"
+} from "./dropdown-menu.js"
+import { Input } from "./input.js"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "./input-otp.js"
+import { Label } from "./label.js"
+import { NotificationDeliveriesPage } from "./notification-deliveries-page.js"
+import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
+import { NotificationReminderRulesPage } from "./notification-reminder-rules-page.js"
+import { NotificationReminderRunsPage } from "./notification-reminder-runs-page.js"
+import { NotificationTemplateAuthoringHelp } from "./notification-template-authoring-help.js"
+import { NotificationTemplateDetailPage } from "./notification-template-detail-page.js"
+import { NotificationTemplatesPage } from "./notification-templates-page.js"
+import { OverviewMetric } from "./overview-metric.js"
+import { RadioGroup, RadioGroupItem } from "./radio-group.js"
+import { RichTextEditor } from "./rich-text-editor.js"
+import { ScrollArea, ScrollBar } from "./scroll-area.js"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
+import { SelectionActionBar } from "./selection-action-bar.js"
 import {
   Sheet as LocalSheet,
   SheetContent as LocalSheetContent,
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "./sheet"
+} from "./sheet.js"
 import {
   SidebarMenuButton as LocalSidebarMenuButton,
   SidebarMenuSubButton as LocalSidebarMenuSubButton,
@@ -74,10 +74,10 @@ import {
   SidebarRail,
   SidebarTrigger,
   useSidebar,
-} from "./sidebar"
-import { Toaster } from "./sonner"
-import { Switch } from "./switch"
-import { Textarea } from "./textarea"
+} from "./sidebar.js"
+import { Toaster } from "./sonner.js"
+import { Switch } from "./switch.js"
+import { Textarea } from "./textarea.js"
 
 type AsChildProps = {
   asChild?: boolean

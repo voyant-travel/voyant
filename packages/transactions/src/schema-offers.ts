@@ -21,7 +21,7 @@ import {
   transactionItemTypeEnum,
   transactionParticipantTypeEnum,
   transactionTravelerCategoryEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const offers = pgTable(
   "offers",

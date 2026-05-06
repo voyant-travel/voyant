@@ -1,4 +1,4 @@
-import type { HospitalityUiMessages } from "./messages"
+import type { HospitalityUiMessages } from "./messages.js"
 
 export const hospitalityUiEn = {
   common: {

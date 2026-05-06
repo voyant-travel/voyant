@@ -18,7 +18,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
 
 function createFormSchema(messages: ReturnType<typeof useHospitalityUiMessagesOrDefault>) {
   return z.object({

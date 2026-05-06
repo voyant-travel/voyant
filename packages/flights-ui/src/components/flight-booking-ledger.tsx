@@ -5,7 +5,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, Pencil, Plane, Users } from "lucide-react"
 
-import { AirlineLogo } from "./airline-logo"
+import { AirlineLogo } from "./airline-logo.js"
 
 /**
  * Per-leg selection passed through the booking journey. Two single-itinerary

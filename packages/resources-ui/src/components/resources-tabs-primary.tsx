@@ -14,9 +14,9 @@ import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column
 import { TabsContent } from "@voyantjs/ui/components/tabs"
 import { ExternalLink } from "lucide-react"
 
-import { useResourcesUiI18nOrDefault } from "../i18n"
-import { formatSelectionLabel, formatSelectionSummary } from "../i18n/utils"
-import { ResourcesSectionHeader } from "./resources-section-header"
+import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
+import { formatSelectionLabel, formatSelectionSummary } from "../i18n/utils.js"
+import { ResourcesSectionHeader } from "./resources-section-header.js"
 
 type BulkFn = (args: {
   ids: string[]

@@ -1,7 +1,7 @@
 import { typeId } from "@voyantjs/db/lib/typeid-column"
 import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
-import { transactionPiiAccessActionEnum, transactionPiiAccessOutcomeEnum } from "./schema-shared"
+import { transactionPiiAccessActionEnum, transactionPiiAccessOutcomeEnum } from "./schema-shared.js"
 
 export const transactionPiiAccessLog = pgTable(
   "transaction_pii_access_log",

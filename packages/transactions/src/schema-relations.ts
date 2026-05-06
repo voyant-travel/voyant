@@ -1,15 +1,15 @@
 import { relations } from "drizzle-orm"
 
-import { offerContactAssignments, orderContactAssignments } from "./schema-contacts"
-import { offerItemParticipants, offerItems, offerParticipants, offers } from "./schema-offers"
+import { offerContactAssignments, orderContactAssignments } from "./schema-contacts.js"
+import { offerItemParticipants, offerItems, offerParticipants, offers } from "./schema-offers.js"
 import {
   orderItemParticipants,
   orderItems,
   orderParticipants,
   orders,
   orderTerms,
-} from "./schema-orders"
-import { offerStaffAssignments, orderStaffAssignments } from "./schema-staff"
+} from "./schema-orders.js"
+import { offerStaffAssignments, orderStaffAssignments } from "./schema-staff.js"
 
 export const offersRelations = relations(offers, ({ many }) => ({
   participants: many(offerParticipants),

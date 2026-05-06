@@ -3,8 +3,8 @@ import * as React from "react"
 import * as RPNInput from "react-phone-number-input"
 import flags from "react-phone-number-input/flags"
 
-import { cn } from "../lib/utils"
-import { Button } from "./button"
+import { cn } from "../lib/utils.js"
+import { Button } from "./button.js"
 import {
   Command,
   CommandEmpty,
@@ -12,10 +12,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "./command"
-import { Input } from "./input"
-import { Popover, PopoverContent, PopoverTrigger } from "./popover"
-import { ScrollArea } from "./scroll-area"
+} from "./command.js"
+import { Input } from "./input.js"
+import { Popover, PopoverContent, PopoverTrigger } from "./popover.js"
+import { ScrollArea } from "./scroll-area.js"
 
 type PhoneInputProps = Omit<React.ComponentProps<"input">, "onChange" | "value" | "ref"> &
   Omit<RPNInput.Props<typeof RPNInput.default>, "onChange"> & {

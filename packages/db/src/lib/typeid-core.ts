@@ -1,6 +1,6 @@
 import { TypeID, typeid } from "typeid-js"
 
-import { PREFIXES, type PrefixKey, type PrefixValue } from "./typeid-prefixes"
+import { PREFIXES, type PrefixKey, type PrefixValue } from "./typeid-prefixes.js"
 
 /**
  * Register a custom TypeID prefix for extension tables.

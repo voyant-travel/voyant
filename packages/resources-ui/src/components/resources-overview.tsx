@@ -23,8 +23,8 @@ import {
 } from "@voyantjs/ui/components"
 import { CalendarDays, ExternalLink, Search, Users, Wrench } from "lucide-react"
 
-import { useResourcesUiI18nOrDefault } from "../i18n"
-import { formatResourceSlotLabel, RESOURCE_KIND_VALUES } from "../i18n/utils"
+import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
+import { formatResourceSlotLabel, RESOURCE_KIND_VALUES } from "../i18n/utils.js"
 
 export function ResourcesOverview({
   bookings,

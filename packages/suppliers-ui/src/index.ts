@@ -1,5 +1,5 @@
-export { SupplierServiceRow } from "./components/supplier-service-row"
-export { SuppliersPage } from "./components/suppliers-page"
+export { SupplierServiceRow } from "./components/supplier-service-row.js"
+export { SuppliersPage } from "./components/suppliers-page.js"
 export {
   getSuppliersUiI18n,
   resolveSuppliersUiMessages,
@@ -13,4 +13,4 @@ export {
   useSuppliersUiI18nOrDefault,
   useSuppliersUiMessages,
   useSuppliersUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

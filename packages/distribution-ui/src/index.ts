@@ -1,6 +1,6 @@
-export { DistributionOverview } from "./components/distribution-overview"
-export { SectionHeader } from "./components/distribution-section-header"
-export type { BatchMutationResponse } from "./components/distribution-shared"
+export { DistributionOverview } from "./components/distribution-overview.js"
+export { SectionHeader } from "./components/distribution-section-header.js"
+export type { BatchMutationResponse } from "./components/distribution-shared.js"
 export {
   type DistributionUiI18n,
   type DistributionUiMessageOverrides,
@@ -15,4 +15,4 @@ export {
   useDistributionUiI18nOrDefault,
   useDistributionUiMessages,
   useDistributionUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

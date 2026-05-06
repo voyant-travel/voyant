@@ -1,5 +1,5 @@
-export { FacilityBadge } from "./components/facility-badge"
-export { FacilityCombobox } from "./components/facility-combobox"
+export { FacilityBadge } from "./components/facility-badge.js"
+export { FacilityCombobox } from "./components/facility-combobox.js"
 export {
   type FacilitiesUiMessageOverrides,
   type FacilitiesUiMessages,
@@ -13,4 +13,4 @@ export {
   useFacilitiesUiI18nOrDefault,
   useFacilitiesUiMessages,
   useFacilitiesUiMessagesOrDefault,
-} from "./i18n/index"
+} from "./i18n/index.js"

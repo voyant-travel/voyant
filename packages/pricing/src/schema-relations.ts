@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm"
-import { priceCatalogs, priceSchedules } from "./schema-catalogs"
-import { pricingCategories, pricingCategoryDependencies } from "./schema-categories"
+import { priceCatalogs, priceSchedules } from "./schema-catalogs.js"
+import { pricingCategories, pricingCategoryDependencies } from "./schema-categories.js"
 import {
   dropoffPriceRules,
   extraPriceRules,
@@ -9,8 +9,8 @@ import {
   optionUnitPriceRules,
   optionUnitTiers,
   pickupPriceRules,
-} from "./schema-option-rules"
-import { cancellationPolicies, cancellationPolicyRules } from "./schema-policies"
+} from "./schema-option-rules.js"
+import { cancellationPolicies, cancellationPolicyRules } from "./schema-policies.js"
 
 export const pricingCategoriesRelations = relations(pricingCategories, ({ many }) => ({
   childDependencies: many(pricingCategoryDependencies, { relationName: "pricingCategoryChild" }),

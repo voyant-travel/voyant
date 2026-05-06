@@ -1,14 +1,14 @@
-export { bookingItemProductDetails, bookingProductDetails } from "./booking-extension"
-export * from "./schema-core"
-export * from "./schema-itinerary"
-export * from "./schema-relations"
-export * from "./schema-settings"
-export * from "./schema-shared"
+export { bookingItemProductDetails, bookingProductDetails } from "./booking-extension.js"
+export * from "./schema-core.js"
+export * from "./schema-itinerary.js"
+export * from "./schema-relations.js"
+export * from "./schema-settings.js"
+export * from "./schema-shared.js"
 export {
   type InsertProductsSourcedContent,
   PRODUCTS_CONTENT_MARKET_ANY,
   type ProductsSourcedContentFetchStatus,
   productsSourcedContentTable,
   type SelectProductsSourcedContent,
-} from "./schema-sourced-content"
-export * from "./schema-taxonomy"
+} from "./schema-sourced-content.js"
+export * from "./schema-taxonomy.js"

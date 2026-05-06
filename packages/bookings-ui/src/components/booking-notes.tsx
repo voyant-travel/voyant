@@ -5,7 +5,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Textarea } from "@voy
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export interface BookingNotesProps {
   bookingId: string

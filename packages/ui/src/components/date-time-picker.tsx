@@ -4,14 +4,14 @@ import { format, isValid, parseISO } from "date-fns"
 import { CalendarIcon, XIcon } from "lucide-react"
 import * as React from "react"
 
-import { cn } from "../lib/utils"
+import { cn } from "../lib/utils.js"
 
-import { Button } from "./button"
-import { Calendar } from "./calendar"
-import { Input } from "./input"
-import { Label } from "./label"
-import { Popover, PopoverContent, PopoverTrigger } from "./popover"
-import { Separator } from "./separator"
+import { Button } from "./button.js"
+import { Calendar } from "./calendar.js"
+import { Input } from "./input.js"
+import { Label } from "./label.js"
+import { Popover, PopoverContent, PopoverTrigger } from "./popover.js"
+import { Separator } from "./separator.js"
 
 type CalendarProps = React.ComponentProps<typeof Calendar>
 

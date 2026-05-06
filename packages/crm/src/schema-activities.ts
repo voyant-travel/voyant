@@ -11,14 +11,14 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-import { people } from "./schema-accounts"
+import { people } from "./schema-accounts.js"
 import {
   activityLinkRoleEnum,
   activityStatusEnum,
   activityTypeEnum,
   customFieldTypeEnum,
   entityTypeEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const activities = pgTable(
   "activities",

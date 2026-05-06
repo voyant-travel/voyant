@@ -10,8 +10,8 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { ExternalLink, FileText, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider"
-import { BookingDocumentDialog } from "./booking-document-dialog"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { BookingDocumentDialog } from "./booking-document-dialog.js"
 
 const typeVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   visa: "default",

@@ -1,4 +1,4 @@
-export { sellabilityUiEn } from "./en"
+export { sellabilityUiEn } from "./en.js"
 export type {
   ChannelKind,
   ChannelStatus,
@@ -7,7 +7,7 @@ export type {
   ProductBookingMode,
   ProductStatus,
   SellabilityUiMessages,
-} from "./messages"
+} from "./messages.js"
 export {
   getSellabilityUiI18n,
   resolveSellabilityUiMessages,
@@ -18,5 +18,5 @@ export {
   useSellabilityUiI18nOrDefault,
   useSellabilityUiMessages,
   useSellabilityUiMessagesOrDefault,
-} from "./provider"
-export { sellabilityUiRo } from "./ro"
+} from "./provider.js"
+export { sellabilityUiRo } from "./ro.js"

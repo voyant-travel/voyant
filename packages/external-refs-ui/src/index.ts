@@ -1,4 +1,4 @@
-export { ExternalRefDialog, type ExternalRefDialogProps } from "./components/external-ref-dialog"
+export { ExternalRefDialog, type ExternalRefDialogProps } from "./components/external-ref-dialog.js"
 export {
   type ExternalRefStatus,
   type ExternalRefsUiMessageOverrides,
@@ -13,4 +13,4 @@ export {
   useExternalRefsUiI18nOrDefault,
   useExternalRefsUiMessages,
   useExternalRefsUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

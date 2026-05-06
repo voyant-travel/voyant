@@ -14,7 +14,7 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
-import { useSellabilityUiMessagesOrDefault } from "../i18n"
+import { useSellabilityUiMessagesOrDefault } from "../i18n/index.js"
 
 type Props = {
   productId?: string | null

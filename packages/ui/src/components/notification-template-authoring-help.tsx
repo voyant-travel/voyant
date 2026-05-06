@@ -11,7 +11,7 @@ import {
   type TemplateAuthoringSnippet,
   type TemplateAuthoringVariable,
   type TemplateAuthoringVariableGroup,
-} from "./contract-template-authoring-help"
+} from "./contract-template-authoring-help.js"
 
 type NotificationTemplateAuthoringHelpProps = {
   variableGroups: NotificationTemplateVariableCategory[]

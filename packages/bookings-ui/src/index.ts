@@ -1,61 +1,65 @@
 export {
   BookingActivityTimeline,
   type BookingActivityTimelineProps,
-} from "./components/booking-activity-timeline"
+} from "./components/booking-activity-timeline.js"
 export {
   BookingCancellationDialog,
   type BookingCancellationDialogProps,
-} from "./components/booking-cancellation-dialog"
+} from "./components/booking-cancellation-dialog.js"
 export {
   BookingCreateDialog,
   type BookingCreateDialogProps,
-} from "./components/booking-create-dialog"
-export { BookingDialog, type BookingDialogProps } from "./components/booking-dialog"
+} from "./components/booking-create-dialog.js"
+export { BookingDialog, type BookingDialogProps } from "./components/booking-dialog.js"
 export {
   BookingDocumentDialog,
   type BookingDocumentDialogProps,
-} from "./components/booking-document-dialog"
+} from "./components/booking-document-dialog.js"
 export {
   BookingDocumentList,
   type BookingDocumentListProps,
-} from "./components/booking-document-list"
+} from "./components/booking-document-list.js"
 export {
   BookingGroupLinkDialog,
   type BookingGroupLinkDialogProps,
-} from "./components/booking-group-link-dialog"
+} from "./components/booking-group-link-dialog.js"
 export {
   BookingGroupSection,
   type BookingGroupSectionProps,
-} from "./components/booking-group-section"
+} from "./components/booking-group-section.js"
 export {
   BookingGuaranteeDialog,
   type BookingGuaranteeDialogProps,
-} from "./components/booking-guarantee-dialog"
+} from "./components/booking-guarantee-dialog.js"
 export {
   BookingGuaranteeList,
   type BookingGuaranteeListProps,
-} from "./components/booking-guarantee-list"
-export { BookingItemDialog, type BookingItemDialogProps } from "./components/booking-item-dialog"
-export { BookingItemList, type BookingItemListProps } from "./components/booking-item-list"
+} from "./components/booking-guarantee-list.js"
+export { BookingItemDialog, type BookingItemDialogProps } from "./components/booking-item-dialog.js"
+export { BookingItemList, type BookingItemListProps } from "./components/booking-item-list.js"
 export {
   BookingItemTravelers,
   type BookingItemTravelersProps,
-} from "./components/booking-item-travelers"
-export { BookingList, type BookingListProps } from "./components/booking-list"
-export { BookingNotes, type BookingNotesProps } from "./components/booking-notes"
+} from "./components/booking-item-travelers.js"
+export { BookingList, type BookingListProps } from "./components/booking-list.js"
+export { BookingNotes, type BookingNotesProps } from "./components/booking-notes.js"
 export {
   BookingPaymentScheduleDialog,
   type BookingPaymentScheduleDialogProps,
-} from "./components/booking-payment-schedule-dialog"
+} from "./components/booking-payment-schedule-dialog.js"
 export {
   BookingPaymentScheduleList,
   type BookingPaymentScheduleListProps,
-} from "./components/booking-payment-schedule-list"
+} from "./components/booking-payment-schedule-list.js"
 export {
   BookingPaymentsSummary,
   type BookingPaymentsSummaryProps,
-} from "./components/booking-payments-summary"
-export { FileDropzone, type FileDropzoneProps, type UploadedFile } from "./components/file-dropzone"
+} from "./components/booking-payments-summary.js"
+export {
+  FileDropzone,
+  type FileDropzoneProps,
+  type UploadedFile,
+} from "./components/file-dropzone.js"
 export {
   type PassengerEntry,
   type PassengerListValue,
@@ -63,55 +67,61 @@ export {
   PassengersSection,
   type PassengersSectionProps,
   type RoomUnitOption,
-} from "./components/passengers-section"
+} from "./components/passengers-section.js"
 export {
   type PaymentScheduleMode,
   PaymentScheduleSection,
   type PaymentScheduleSectionProps,
   type PaymentScheduleValue,
-} from "./components/payment-schedule-section"
+} from "./components/payment-schedule-section.js"
 export {
   type NewPersonValue,
   type PersonPickerMode,
   PersonPickerSection,
   type PersonPickerSectionProps,
   type PersonPickerValue,
-} from "./components/person-picker-section"
+} from "./components/person-picker-section.js"
 export {
   type PriceBreakdownLine,
   PriceBreakdownSection,
   type PriceBreakdownSectionProps,
-} from "./components/price-breakdown-section"
+} from "./components/price-breakdown-section.js"
 export {
   ProductPickerSection,
   type ProductPickerSectionProps,
   type ProductPickerValue,
-} from "./components/product-picker-section"
+} from "./components/product-picker-section.js"
 export {
   RoomsStepperSection,
   type RoomsStepperSectionProps,
   type RoomsStepperValue,
-} from "./components/rooms-stepper-section"
+} from "./components/rooms-stepper-section.js"
 export {
   type SharedRoomMode,
   SharedRoomSection,
   type SharedRoomSectionProps,
   type SharedRoomValue,
-} from "./components/shared-room-section"
-export { StatusChangeDialog, type StatusChangeDialogProps } from "./components/status-change-dialog"
+} from "./components/shared-room-section.js"
+export {
+  StatusChangeDialog,
+  type StatusChangeDialogProps,
+} from "./components/status-change-dialog.js"
 export {
   SupplierStatusDialog,
   type SupplierStatusDialogProps,
-} from "./components/supplier-status-dialog"
-export { SupplierStatusList, type SupplierStatusListProps } from "./components/supplier-status-list"
-export { TravelerDialog, type TravelerDialogProps } from "./components/traveler-dialog"
-export { TravelerList, type TravelerListProps } from "./components/traveler-list"
+} from "./components/supplier-status-dialog.js"
+export {
+  SupplierStatusList,
+  type SupplierStatusListProps,
+} from "./components/supplier-status-list.js"
+export { TravelerDialog, type TravelerDialogProps } from "./components/traveler-dialog.js"
+export { TravelerList, type TravelerListProps } from "./components/traveler-list.js"
 export {
   type PickedVoucher,
   VoucherPickerSection,
   type VoucherPickerSectionProps,
   type VoucherPickerValue,
-} from "./components/voucher-picker-section"
+} from "./components/voucher-picker-section.js"
 export {
   type BookingsUiMessageOverrides,
   type BookingsUiMessages,
@@ -126,4 +136,4 @@ export {
   useBookingsUiI18nOrDefault,
   useBookingsUiMessages,
   useBookingsUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

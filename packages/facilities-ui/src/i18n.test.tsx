@@ -1,13 +1,13 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { FacilityBadge } from "./components/facility-badge"
+import { FacilityBadge } from "./components/facility-badge.js"
 import {
   FacilitiesUiMessagesProvider,
   getFacilitiesUiI18n,
   resolveFacilitiesUiMessages,
   useFacilitiesUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 describe("facilities-ui i18n", () => {
   it("resolves localized package messages with fallback and overrides", () => {

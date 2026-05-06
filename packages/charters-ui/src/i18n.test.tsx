@@ -2,10 +2,14 @@ import type { CharterSuiteRecord, PerSuiteQuote, WholeYachtQuote } from "@voyant
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { ExternalCharterBadge } from "./components/external-badge"
-import { VoyageSuiteGrid } from "./components/voyage-suite-grid"
-import { PerSuiteQuoteCard, WholeYachtQuoteCard } from "./components/whole-yacht-quote-card"
-import { ChartersUiMessagesProvider, getChartersUiI18n, resolveChartersUiMessages } from "./i18n"
+import { ExternalCharterBadge } from "./components/external-badge.js"
+import { VoyageSuiteGrid } from "./components/voyage-suite-grid.js"
+import { PerSuiteQuoteCard, WholeYachtQuoteCard } from "./components/whole-yacht-quote-card.js"
+import {
+  ChartersUiMessagesProvider,
+  getChartersUiI18n,
+  resolveChartersUiMessages,
+} from "./i18n/index.js"
 
 const wholeYachtQuote: WholeYachtQuote = {
   mode: "whole_yacht",

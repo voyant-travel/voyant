@@ -28,10 +28,10 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import type { UnitPricingMode } from "../i18n/messages"
-import { usePricingUiMessagesOrDefault } from "../i18n/provider"
-import { OptionPriceRuleCombobox } from "./option-price-rule-combobox"
-import { PricingCategoryCombobox } from "./pricing-category-combobox"
+import type { UnitPricingMode } from "../i18n/messages.js"
+import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
+import { OptionPriceRuleCombobox } from "./option-price-rule-combobox.js"
+import { PricingCategoryCombobox } from "./pricing-category-combobox.js"
 
 const PRICING_MODES = [
   "per_unit",

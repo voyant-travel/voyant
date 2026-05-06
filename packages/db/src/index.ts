@@ -106,10 +106,10 @@ export const db = new Proxy({} as ReturnType<typeof createDbClient>, {
 })
 
 // Re-export lib utilities
-export * from "./helpers"
-export * from "./lib"
-export * from "./lifecycle"
+export * from "./helpers.js"
+export * from "./lib/index.js"
+export * from "./lifecycle.js"
 // Re-export queries
-export * from "./queries"
-export * from "./types"
-export * from "./utils"
+export * from "./queries/index.js"
+export * from "./types.js"
+export * from "./utils.js"

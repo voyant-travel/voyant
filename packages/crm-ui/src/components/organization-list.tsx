@@ -15,9 +15,9 @@ import {
 import { Loader2, Plus, Search } from "lucide-react"
 import * as React from "react"
 
-import { useCrmUiI18nOrDefault } from "../i18n"
-import type { CrmRelationType } from "../i18n/messages"
-import { OrganizationDialog } from "./organization-dialog"
+import { useCrmUiI18nOrDefault } from "../i18n/index.js"
+import type { CrmRelationType } from "../i18n/messages.js"
+import { OrganizationDialog } from "./organization-dialog.js"
 
 export interface OrganizationListProps {
   pageSize?: number

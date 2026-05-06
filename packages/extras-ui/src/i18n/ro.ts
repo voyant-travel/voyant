@@ -1,4 +1,4 @@
-import type { ExtrasUiMessages } from "./messages"
+import type { ExtrasUiMessages } from "./messages.js"
 
 export const extrasUiRo = {
   productCombobox: {

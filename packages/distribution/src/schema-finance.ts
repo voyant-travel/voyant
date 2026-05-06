@@ -6,7 +6,7 @@ import {
   channelCommissionRules,
   channelContracts,
   channels,
-} from "./schema-core"
+} from "./schema-core.js"
 import {
   channelReconciliationIssueTypeEnum,
   channelReconciliationResolutionStatusEnum,
@@ -16,7 +16,7 @@ import {
   channelSettlementApprovalStatusEnum,
   channelSettlementItemStatusEnum,
   channelSettlementRunStatusEnum,
-} from "./schema-shared"
+} from "./schema-shared.js"
 
 export const channelSettlementRuns = pgTable(
   "channel_settlement_runs",

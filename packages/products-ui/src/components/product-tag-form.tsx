@@ -11,7 +11,7 @@ import { Label } from "@voyantjs/ui/components/label"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
 
 type Mode = { kind: "create" } | { kind: "edit"; tag: ProductTagRecord }
 

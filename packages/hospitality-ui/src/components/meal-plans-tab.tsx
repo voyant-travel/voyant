@@ -6,9 +6,9 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
-import { useHospitalityUiMessagesOrDefault } from "../i18n"
-import { MealPlanDialog } from "./meal-plan-dialog"
-import { PaginationFooter } from "./pagination-footer"
+import { useHospitalityUiMessagesOrDefault } from "../i18n/index.js"
+import { MealPlanDialog } from "./meal-plan-dialog.js"
+import { PaginationFooter } from "./pagination-footer.js"
 
 export interface MealPlansTabProps {
   propertyId: string

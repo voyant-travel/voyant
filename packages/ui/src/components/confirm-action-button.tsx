@@ -11,8 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "./alert-dialog"
-import { Button } from "./button"
+} from "./alert-dialog.js"
+import { Button } from "./button.js"
 
 function ConfirmActionButton({
   buttonLabel,

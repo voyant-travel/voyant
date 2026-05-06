@@ -1,5 +1,5 @@
-export { bookingsUiEn } from "./en"
-export type { BookingsUiMessages } from "./messages"
+export { bookingsUiEn } from "./en.js"
+export type { BookingsUiMessages } from "./messages.js"
 export {
   type BookingsUiMessageOverrides,
   BookingsUiMessagesProvider,
@@ -11,5 +11,5 @@ export {
   useBookingsUiI18nOrDefault,
   useBookingsUiMessages,
   useBookingsUiMessagesOrDefault,
-} from "./provider"
-export { bookingsUiRo } from "./ro"
+} from "./provider.js"
+export { bookingsUiRo } from "./ro.js"

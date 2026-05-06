@@ -10,7 +10,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import type * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export interface ProductItineraryDayRowRenderContext {
   productId: string

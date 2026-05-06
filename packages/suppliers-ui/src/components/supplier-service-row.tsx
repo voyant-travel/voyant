@@ -6,7 +6,7 @@ import {
 import { Badge, Button } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 
-import { useSuppliersUiI18nOrDefault } from "../i18n"
+import { useSuppliersUiI18nOrDefault } from "../i18n/index.js"
 
 export function SupplierServiceRow({
   service,

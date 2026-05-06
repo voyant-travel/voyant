@@ -8,7 +8,7 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Camera, Compass, GraduationCap, Mic, ScrollText, Sparkles } from "lucide-react"
 import type * as React from "react"
 
-import { useCruisesUiI18nOrDefault } from "../i18n"
+import { useCruisesUiI18nOrDefault } from "../i18n/index.js"
 
 const KIND_ICON: Record<
   EnrichmentProgramRecord["kind"],

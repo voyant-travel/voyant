@@ -10,9 +10,9 @@ import { Button } from "@voyantjs/ui/components/button"
 import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2, Upload } from "lucide-react"
 import * as React from "react"
 
-import { useProductsUiMessagesOrDefault } from "../i18n/provider"
-import { ProductMediaDialog } from "./product-media-dialog"
-import type { ProductMediaUploadHandler } from "./product-media-section"
+import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
+import { ProductMediaDialog } from "./product-media-dialog.js"
+import type { ProductMediaUploadHandler } from "./product-media-section.js"
 
 export interface ProductDayMediaTrayProps {
   productId: string

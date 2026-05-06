@@ -1,6 +1,6 @@
 import type * as React from "react"
 
-import { cn } from "../lib/utils"
+import { cn } from "../lib/utils.js"
 
 function TypographyH1({ className, ...props }: React.ComponentProps<"h1">) {
   return (

@@ -14,7 +14,7 @@ import {
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 
-import { useCruisesUiI18nOrDefault } from "../i18n"
+import { useCruisesUiI18nOrDefault } from "../i18n/index.js"
 
 export interface PricingGridProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Flat list of prices for a single sailing (typically from useSailing(...,{include:["pricing"]})). */

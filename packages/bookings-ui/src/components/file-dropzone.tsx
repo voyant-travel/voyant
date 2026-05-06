@@ -6,7 +6,7 @@ import {
   formatMessage,
   useBookingsUiI18nOrDefault,
   useBookingsUiMessagesOrDefault,
-} from "../i18n/provider"
+} from "../i18n/provider.js"
 
 export interface UploadedFile {
   key: string

@@ -1,5 +1,5 @@
-export { productsUiEn } from "./en"
-export type { ProductsUiMessages } from "./messages"
+export { productsUiEn } from "./en.js"
+export type { ProductsUiMessages } from "./messages.js"
 export {
   getProductsUiI18n,
   type ProductsUiMessageOverrides,
@@ -10,5 +10,5 @@ export {
   useProductsUiI18nOrDefault,
   useProductsUiMessages,
   useProductsUiMessagesOrDefault,
-} from "./provider"
-export { productsUiRo } from "./ro"
+} from "./provider.js"
+export { productsUiRo } from "./ro.js"

@@ -1,70 +1,73 @@
-export { OptionUnitDialog, type OptionUnitDialogProps } from "./components/option-unit-dialog"
-export { OptionUnitForm, type OptionUnitFormProps } from "./components/option-unit-form"
-export { ProductCategoryCombobox } from "./components/product-category-combobox"
+export { OptionUnitDialog, type OptionUnitDialogProps } from "./components/option-unit-dialog.js"
+export { OptionUnitForm, type OptionUnitFormProps } from "./components/option-unit-form.js"
+export { ProductCategoryCombobox } from "./components/product-category-combobox.js"
 export {
   ProductCategoryDialog,
   type ProductCategoryDialogProps,
-} from "./components/product-category-dialog"
+} from "./components/product-category-dialog.js"
 export {
   ProductCategoryForm,
   type ProductCategoryFormProps,
-} from "./components/product-category-form"
+} from "./components/product-category-form.js"
 export {
   ProductCategoryList,
   type ProductCategoryListProps,
-} from "./components/product-category-list"
-export { ProductDayDialog, type ProductDayDialogProps } from "./components/product-day-dialog"
-export { ProductDayForm, type ProductDayFormProps } from "./components/product-day-form"
+} from "./components/product-category-list.js"
+export { ProductDayDialog, type ProductDayDialogProps } from "./components/product-day-dialog.js"
+export { ProductDayForm, type ProductDayFormProps } from "./components/product-day-form.js"
 export {
   ProductDayMediaTray,
   type ProductDayMediaTrayProps,
-} from "./components/product-day-media-tray"
+} from "./components/product-day-media-tray.js"
 export {
   ProductDayServiceForm,
   type ProductDayServiceFormHelpers,
   type ProductDayServiceFormProps,
   type ProductDayServiceSupplierServiceFieldProps,
   type ProductDayServiceSupplierServiceOption,
-} from "./components/product-day-service-form"
+} from "./components/product-day-service-form.js"
 export {
   ProductItineraryDayRow,
   type ProductItineraryDayRowProps,
   type ProductItineraryDayRowRenderContext,
-} from "./components/product-itinerary-day-row"
+} from "./components/product-itinerary-day-row.js"
 export {
   ProductItineraryDialog,
   type ProductItineraryDialogProps,
-} from "./components/product-itinerary-dialog"
-export { ProductMediaDialog, type ProductMediaDialogProps } from "./components/product-media-dialog"
-export { ProductMediaForm, type ProductMediaFormProps } from "./components/product-media-form"
+} from "./components/product-itinerary-dialog.js"
+export {
+  ProductMediaDialog,
+  type ProductMediaDialogProps,
+} from "./components/product-media-dialog.js"
+export { ProductMediaForm, type ProductMediaFormProps } from "./components/product-media-form.js"
 export {
   ProductMediaSection,
   type ProductMediaSectionProps,
   type ProductMediaUploadHandler,
   type ProductMediaUploadResult,
-} from "./components/product-media-section"
+} from "./components/product-media-section.js"
 export {
   ProductOptionDialog,
   type ProductOptionDialogProps,
-} from "./components/product-option-dialog"
-export { ProductOptionForm, type ProductOptionFormProps } from "./components/product-option-form"
+} from "./components/product-option-dialog.js"
+export { ProductOptionForm, type ProductOptionFormProps } from "./components/product-option-form.js"
 export {
   ProductOptionsSection,
   type ProductOptionsSectionProps,
-} from "./components/product-options-section"
-export { ProductTagDialog, type ProductTagDialogProps } from "./components/product-tag-dialog"
-export { ProductTagForm, type ProductTagFormProps } from "./components/product-tag-form"
-export { ProductTagList, type ProductTagListProps } from "./components/product-tag-list"
-export { ProductTypeCombobox } from "./components/product-type-combobox"
+} from "./components/product-options-section.js"
+export { ProductTagDialog, type ProductTagDialogProps } from "./components/product-tag-dialog.js"
+export { ProductTagForm, type ProductTagFormProps } from "./components/product-tag-form.js"
+export { ProductTagList, type ProductTagListProps } from "./components/product-tag-list.js"
+export { ProductTypeCombobox } from "./components/product-type-combobox.js"
 export {
   ProductVersionDialog,
   type ProductVersionDialogProps,
-} from "./components/product-version-dialog"
+} from "./components/product-version-dialog.js"
 export {
   ProductVersionsSection,
   type ProductVersionsSectionProps,
-} from "./components/product-versions-section"
-export type { ProductsUiMessages } from "./i18n"
+} from "./components/product-versions-section.js"
+export type { ProductsUiMessages } from "./i18n/index.js"
 export {
   getProductsUiI18n,
   type ProductsUiMessageOverrides,
@@ -77,4 +80,4 @@ export {
   useProductsUiI18nOrDefault,
   useProductsUiMessages,
   useProductsUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"

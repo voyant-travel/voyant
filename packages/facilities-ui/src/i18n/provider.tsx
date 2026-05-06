@@ -10,9 +10,9 @@ import {
 } from "@voyantjs/i18n"
 import type { ReactNode } from "react"
 
-import { facilitiesUiEn } from "./en"
-import type { FacilitiesUiMessages } from "./messages"
-import { facilitiesUiRo } from "./ro"
+import { facilitiesUiEn } from "./en.js"
+import type { FacilitiesUiMessages } from "./messages.js"
+import { facilitiesUiRo } from "./ro.js"
 
 const fallbackLocale = "en"
 

@@ -1,10 +1,10 @@
-export { financeUiEn } from "./en"
+export { financeUiEn } from "./en.js"
 export type {
   FinanceUiMessages,
   InvoiceStatus,
   SupplierPaymentMethod,
   SupplierPaymentStatus,
-} from "./messages"
+} from "./messages.js"
 export {
   type FinanceUiMessageOverrides,
   FinanceUiMessagesProvider,
@@ -15,5 +15,5 @@ export {
   useFinanceUiI18nOrDefault,
   useFinanceUiMessages,
   useFinanceUiMessagesOrDefault,
-} from "./provider"
-export { financeUiRo } from "./ro"
+} from "./provider.js"
+export { financeUiRo } from "./ro.js"

@@ -1,10 +1,10 @@
-export { cruisesUiEn } from "./en"
+export { cruisesUiEn } from "./en.js"
 export type {
   CruisePriceAvailability,
   CruiseQuoteComponentKind,
   CruisesUiMessages,
   EnrichmentProgramKind,
-} from "./messages"
+} from "./messages.js"
 export {
   type CruisesUiMessageOverrides,
   CruisesUiMessagesProvider,
@@ -15,5 +15,5 @@ export {
   useCruisesUiI18nOrDefault,
   useCruisesUiMessages,
   useCruisesUiMessagesOrDefault,
-} from "./provider"
-export { cruisesUiRo } from "./ro"
+} from "./provider.js"
+export { cruisesUiRo } from "./ro.js"

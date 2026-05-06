@@ -2,7 +2,7 @@ import type { ContactRequirement } from "@voyantjs/booking-requirements-react"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 
-import { useBookingRequirementsUiMessagesOrDefault } from "../i18n"
+import { useBookingRequirementsUiMessagesOrDefault } from "../i18n/index.js"
 
 export function BookingRequirementsContactTab({
   rows,

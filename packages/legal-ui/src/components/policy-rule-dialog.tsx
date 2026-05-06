@@ -21,13 +21,13 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useLegalUiMessagesOrDefault } from "../i18n"
+import { useLegalUiMessagesOrDefault } from "../i18n/index.js"
 import {
   type LegalRefundType,
   type LegalRuleType,
   legalRefundTypes,
   legalRuleTypes,
-} from "../i18n/messages"
+} from "../i18n/messages.js"
 
 function createRuleFormSchema(messages: ReturnType<typeof useLegalUiMessagesOrDefault>) {
   return z.object({

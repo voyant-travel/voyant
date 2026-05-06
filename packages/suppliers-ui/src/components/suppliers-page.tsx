@@ -6,7 +6,7 @@ import { DataTable } from "@voyantjs/ui/components/data-table"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { Loader2, Plus, Search } from "lucide-react"
 
-import { useSuppliersUiMessagesOrDefault } from "../i18n"
+import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"
 
 function useSupplierColumns(): ColumnDef<Supplier>[] {
   const messages = useSuppliersUiMessagesOrDefault()

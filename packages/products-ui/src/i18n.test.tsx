@@ -6,7 +6,7 @@ import {
   ProductsUiMessagesProvider,
   resolveProductsUiMessages,
   useProductsUiMessagesOrDefault,
-} from "./i18n/provider"
+} from "./i18n/provider.js"
 
 describe("products-ui i18n", () => {
   it("resolves romanian messages with english fallback", () => {

@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
-import { typeId, typeIdSchema } from "../../lib"
+import { typeId, typeIdSchema } from "../../lib/index.js"
 
 /**
  * Domains

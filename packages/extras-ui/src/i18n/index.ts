@@ -1,5 +1,5 @@
-export { extrasUiEn } from "./en"
-export type { ExtrasUiMessages, ProductBookingMode, ProductStatus } from "./messages"
+export { extrasUiEn } from "./en.js"
+export type { ExtrasUiMessages, ProductBookingMode, ProductStatus } from "./messages.js"
 export {
   type ExtrasUiMessageOverrides,
   ExtrasUiMessagesProvider,
@@ -10,5 +10,5 @@ export {
   useExtrasUiI18nOrDefault,
   useExtrasUiMessages,
   useExtrasUiMessagesOrDefault,
-} from "./provider"
-export { extrasUiRo } from "./ro"
+} from "./provider.js"
+export { extrasUiRo } from "./ro.js"

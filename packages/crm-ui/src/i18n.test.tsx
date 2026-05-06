@@ -6,7 +6,7 @@ import {
   getCrmUiI18n,
   resolveCrmUiMessages,
   useCrmUiMessagesOrDefault,
-} from "./i18n"
+} from "./i18n/index.js"
 
 describe("crm-ui i18n", () => {
   it("resolves localized package messages with fallback and overrides", () => {

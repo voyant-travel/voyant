@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
 
-import { useCrmUiMessagesOrDefault } from "../i18n"
-import { OrganizationForm } from "./organization-form"
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { OrganizationForm } from "./organization-form.js"
 
 export interface OrganizationDialogProps {
   open: boolean

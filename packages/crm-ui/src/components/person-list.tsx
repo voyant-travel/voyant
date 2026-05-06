@@ -15,9 +15,9 @@ import {
 import { Loader2, Plus, Search } from "lucide-react"
 import * as React from "react"
 
-import { useCrmUiMessagesOrDefault } from "../i18n"
-import type { CrmRelationType } from "../i18n/messages"
-import { PersonDialog } from "./person-dialog"
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import type { CrmRelationType } from "../i18n/messages.js"
+import { PersonDialog } from "./person-dialog.js"
 
 export interface PersonListProps {
   pageSize?: number
