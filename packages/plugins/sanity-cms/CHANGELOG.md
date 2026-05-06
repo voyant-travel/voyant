@@ -1,5 +1,11 @@
 # @voyantjs/plugin-sanity-cms
 
+## 0.24.2
+
+### Patch Changes
+
+- @voyantjs/core@0.24.2
+
 ## 0.24.1
 
 ### Patch Changes

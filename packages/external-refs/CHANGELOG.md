@@ -1,5 +1,13 @@
 # @voyantjs/external-refs
 
+## 0.24.2
+
+### Patch Changes
+
+- @voyantjs/core@0.24.2
+- @voyantjs/db@0.24.2
+- @voyantjs/hono@0.24.2
+
 ## 0.24.1
 
 ### Patch Changes
