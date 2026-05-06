@@ -59,6 +59,11 @@ jobs:
         run: pnpm verify:package-exports
 
       - name: Publish tarball checks
+        # The preceding `Build` step already produced fresh dist via turbo
+        # (with remote cache); reuse it instead of clean-building each
+        # public package a second time inside the verifier.
+        env:
+          VOYANT_PACK_REUSE_DIST: "1"
         run: pnpm verify:publish-tarballs
 
       - name: i18n checks

@@ -5,6 +5,12 @@
 // cannot mask a regression — but it makes a local run noticeably slower than
 // a normal `pnpm build`. Intended primarily for CI/release; bump
 // VOYANT_PACK_CONCURRENCY when running on a beefier machine.
+//
+// Pass `--reuse-dist` (or set VOYANT_PACK_REUSE_DIST=1) to skip the per-package
+// clean + build and pack against the existing dist on disk. Use this only when
+// the caller has *just* produced fresh dist (e.g. CI's `pnpm build` step,
+// which already runs through turbo with remote cache); locally the clean
+// build is the safer default.
 
 import { execFile } from "node:child_process"
 import fs from "node:fs"
@@ -14,6 +20,8 @@ import { promisify } from "node:util"
 
 const execFileAsync = promisify(execFile)
 const PACK_CONCURRENCY = Number(process.env.VOYANT_PACK_CONCURRENCY) || 8
+const REUSE_DIST =
+  process.argv.includes("--reuse-dist") || process.env.VOYANT_PACK_REUSE_DIST === "1"
 
 const rootDir = process.cwd()
 const packagesRoot = path.join(rootDir, "packages")
@@ -231,37 +239,39 @@ async function verifyPackage(packageDir) {
 
   if (pkg.private) return null
 
-  if (pkg.scripts?.clean) {
-    try {
-      await execFileAsync("pnpm", ["run", "clean"], {
-        cwd: packageDir,
-        encoding: "utf8",
-        maxBuffer: 16 * 1024 * 1024,
-        env: process.env,
-      })
-    } catch (error) {
-      return {
-        name: pkg.name,
-        packageDir,
-        problems: [`pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`],
+  if (!REUSE_DIST) {
+    if (pkg.scripts?.clean) {
+      try {
+        await execFileAsync("pnpm", ["run", "clean"], {
+          cwd: packageDir,
+          encoding: "utf8",
+          maxBuffer: 16 * 1024 * 1024,
+          env: process.env,
+        })
+      } catch (error) {
+        return {
+          name: pkg.name,
+          packageDir,
+          problems: [`pnpm run clean failed: ${error.stderr?.toString().trim() || error.message}`],
+        }
       }
     }
-  }
-  removeTsBuildInfoFiles(packageDir)
+    removeTsBuildInfoFiles(packageDir)
 
-  if (pkg.scripts?.build) {
-    try {
-      await execFileAsync("pnpm", ["run", "build"], {
-        cwd: packageDir,
-        encoding: "utf8",
-        maxBuffer: 64 * 1024 * 1024,
-        env: process.env,
-      })
-    } catch (error) {
-      return {
-        name: pkg.name,
-        packageDir,
-        problems: [`pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`],
+    if (pkg.scripts?.build) {
+      try {
+        await execFileAsync("pnpm", ["run", "build"], {
+          cwd: packageDir,
+          encoding: "utf8",
+          maxBuffer: 64 * 1024 * 1024,
+          env: process.env,
+        })
+      } catch (error) {
+        return {
+          name: pkg.name,
+          packageDir,
+          problems: [`pnpm run build failed: ${error.stderr?.toString().trim() || error.message}`],
+        }
       }
     }
   }
