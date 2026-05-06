@@ -58,5 +58,8 @@ jobs:
       - name: Package export checks
         run: pnpm verify:package-exports
 
+      - name: Publish tarball checks
+        run: pnpm verify:publish-tarballs
+
       - name: i18n checks
         run: pnpm i18n:check

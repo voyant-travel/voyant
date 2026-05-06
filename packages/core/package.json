@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
     "test": "vitest run",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build"
   },
   "dependencies": {},
