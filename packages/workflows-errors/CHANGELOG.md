@@ -1,5 +1,7 @@
 # @voyantjs/workflows-errors
 
+## 0.26.0
+
 ## 0.25.0
 
 ## 0.24.3

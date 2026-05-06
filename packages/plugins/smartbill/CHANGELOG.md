@@ -1,5 +1,20 @@
 # @voyantjs/plugin-smartbill
 
+## 0.26.0
+
+### Minor Changes
+
+- 03d64ea: Add a supported local SmartBill mock for safe development and end-to-end billing tests.
+
+  The new `@voyantjs/plugin-smartbill/mock` entrypoint exposes a stateful
+  SmartBill-compatible mock with in-process `fetch`, a localhost HTTP listener,
+  deterministic document numbering, PDF URLs marked as test documents, invoice
+  status changes, and proforma conversion polling.
+
+### Patch Changes
+
+- @voyantjs/core@0.26.0
+
 ## 0.25.0
 
 ### Patch Changes
