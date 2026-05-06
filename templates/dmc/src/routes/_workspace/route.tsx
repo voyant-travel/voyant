@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
-import { useLocale } from "@voyantjs/admin"
+import { OperatorAdminBootstrapGate, useLocale } from "@voyantjs/admin"
 import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
 import { CrmUiMessagesProvider } from "@voyantjs/crm-ui/i18n"
 import { DistributionUiMessagesProvider } from "@voyantjs/distribution-ui/i18n"
@@ -68,39 +68,39 @@ function WorkspaceContent() {
     }
   }, [setLocale, setTimeZone, user])
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{messages.loading}</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null
-  }
-
   return (
-    <AdminI18nProvider overrides={getAdminMessageOverridesFromUiPrefs(user.uiPrefs)}>
-      <BookingsUiMessagesProvider locale={resolvedLocale}>
-        <CrmUiMessagesProvider locale={resolvedLocale}>
-          <ProductsUiMessagesProvider locale={resolvedLocale}>
-            <ResourcesUiMessagesProvider locale={resolvedLocale}>
-              <DistributionUiMessagesProvider locale={resolvedLocale}>
-                <FinanceUiMessagesProvider locale={resolvedLocale}>
-                  <SuppliersUiMessagesProvider locale={resolvedLocale}>
-                    <WorkspaceInner user={user} />
-                  </SuppliersUiMessagesProvider>
-                </FinanceUiMessagesProvider>
-              </DistributionUiMessagesProvider>
-            </ResourcesUiMessagesProvider>
-          </ProductsUiMessagesProvider>
-        </CrmUiMessagesProvider>
-      </BookingsUiMessagesProvider>
-    </AdminI18nProvider>
+    <OperatorAdminBootstrapGate
+      user={user}
+      isUserLoading={isLoading}
+      loadingFallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="size-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">{messages.loading}</p>
+          </div>
+        </div>
+      }
+    >
+      {({ user }) => (
+        <AdminI18nProvider overrides={getAdminMessageOverridesFromUiPrefs(user.uiPrefs)}>
+          <BookingsUiMessagesProvider locale={resolvedLocale}>
+            <CrmUiMessagesProvider locale={resolvedLocale}>
+              <ProductsUiMessagesProvider locale={resolvedLocale}>
+                <ResourcesUiMessagesProvider locale={resolvedLocale}>
+                  <DistributionUiMessagesProvider locale={resolvedLocale}>
+                    <FinanceUiMessagesProvider locale={resolvedLocale}>
+                      <SuppliersUiMessagesProvider locale={resolvedLocale}>
+                        <WorkspaceInner user={user} />
+                      </SuppliersUiMessagesProvider>
+                    </FinanceUiMessagesProvider>
+                  </DistributionUiMessagesProvider>
+                </ResourcesUiMessagesProvider>
+              </ProductsUiMessagesProvider>
+            </CrmUiMessagesProvider>
+          </BookingsUiMessagesProvider>
+        </AdminI18nProvider>
+      )}
+    </OperatorAdminBootstrapGate>
   )
 }
 

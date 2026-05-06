@@ -30,6 +30,12 @@ export {
   type AdminWidgetSlotRendererProps,
 } from "./components/admin-widget-slot.js"
 export {
+  OperatorAdminBootstrapGate,
+  type OperatorAdminBootstrapGateProps,
+  type OperatorAdminBootstrapMode,
+  type OperatorAdminBootstrapRenderState,
+} from "./components/operator-admin-bootstrap-gate.js"
+export {
   DefaultOperatorAdminBrand,
   OperatorAdminSidebar,
   type OperatorAdminSidebarProps,

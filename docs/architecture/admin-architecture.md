@@ -48,9 +48,23 @@ Rule:
 Voyant should own the shared admin runtime and extension seams, while templates
 own the final shell and composition.
 
+### 3. Bootstrap first-party admin shells from the current user only
+
+Voyant-owned templates and apps are single-tenant per deployment. The base
+authenticated admin shell must render once the current user/session is ready.
+Better Auth organization state, workspace switching, active organization
+selection, and team-management bootstrap are optional app-owned feature paths,
+not shell prerequisites.
+
+Rule:
+
+`/auth/me` or an equivalent current-user primitive is sufficient for the base
+admin shell. Do not make `/auth/workspace/*` or `/auth/organization/*` part of
+first-party shell bootstrap.
+
 ## Extension Surface
 
-### 3. Make admin extension points explicit
+### 4. Make admin extension points explicit
 
 The admin should expose stable extension points such as:
 
@@ -67,7 +81,7 @@ Rule:
 Admin customization should happen through explicit extension points before full
 route/shell override.
 
-### 4. Admin UI routes are part of the extension model
+### 5. Admin UI routes are part of the extension model
 
 Modules, extensions, or app-owned code may need dedicated admin pages.
 
@@ -79,7 +93,7 @@ Rule:
 Admin pages contributed by packages should be treated as a supported extension
 surface.
 
-### 5. Navigation contributions should stay narrow and predictable
+### 6. Navigation contributions should stay narrow and predictable
 
 The admin should allow packages to contribute navigation entries without
 turning navigation into an opaque runtime registry.
@@ -95,7 +109,7 @@ Rule:
 Navigation contribution is an admin extension seam, not a generic dynamic menu
 system.
 
-### 6. Widgets and injection zones should be selective
+### 7. Widgets and injection zones should be selective
 
 Not every admin screen should be endlessly injectable.
 
@@ -113,7 +127,7 @@ Admin widget slots should be intentional and few, not everywhere by default.
 
 ## UI Layering
 
-### 7. Keep runtime hooks and source-installed UI blocks separate
+### 8. Keep runtime hooks and source-installed UI blocks separate
 
 Voyant already has complementary frontend layers:
 
@@ -134,7 +148,7 @@ Rule:
 Do not replace source-installed UI blocks with the admin extension surface, and
 do not use blocks as a substitute for explicit admin extension points.
 
-### 8. Preserve the source-installed UI strategy
+### 9. Preserve the source-installed UI strategy
 
 Voyant should keep:
 
@@ -152,7 +166,7 @@ complementary to admin extension points.
 
 ## Localization
 
-### 9. Separate admin UI locale from business-content locale
+### 10. Separate admin UI locale from business-content locale
 
 Admin UI language is not the same thing as product or content translation.
 
@@ -168,12 +182,12 @@ Rule:
 
 Admin UI localization and business-content localization must stay separate.
 
-### 10. Use a clear admin locale resolution order
+### 11. Use a clear admin locale resolution order
 
 The admin locale should resolve through a simple preference hierarchy:
 
 1. explicit user override
-2. organization default admin locale
+2. app or deployment default admin locale
 3. browser language on first sign-in
 4. fallback to `en`
 
@@ -181,10 +195,10 @@ This keeps the model simple while supporting mixed-language teams.
 
 Rule:
 
-Admin locale resolution should prefer user choice first, then organization
+Admin locale resolution should prefer user choice first, then app/deployment
 default, then browser-derived bootstrap, then English fallback.
 
-### 11. Locale formatting should include timezone-aware presentation
+### 12. Locale formatting should include timezone-aware presentation
 
 Admin locale/runtime should drive:
 
@@ -206,14 +220,17 @@ When adding or reviewing an admin capability in Voyant:
 
 1. Decide whether it belongs in the shared admin runtime or the template-owned
    shell.
-2. Prefer explicit admin UI routes, nav contributions, or widget slots over
+2. Use current-user readiness as the base shell bootstrap dependency.
+3. Keep workspace/organization/team-management bootstrap behind explicit
+   app-owned routes.
+4. Prefer explicit admin UI routes, nav contributions, or widget slots over
    shell patching.
-3. Keep the extension point narrow and typed.
-4. Use shared runtime hooks/providers instead of duplicating admin context.
-5. Keep source-installed UI blocks as the editable presentation layer.
-6. Treat admin UI locale separately from business-content translation.
-7. Resolve admin locale through user override, org default, browser bootstrap,
-   then English fallback.
+5. Keep the extension point narrow and typed.
+6. Use shared runtime hooks/providers instead of duplicating admin context.
+7. Keep source-installed UI blocks as the editable presentation layer.
+8. Treat admin UI locale separately from business-content translation.
+9. Resolve admin locale through user override, app/deployment default, browser
+   bootstrap, then English fallback.
 
 ## Non-Goals
 
