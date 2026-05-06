@@ -1,3 +1,11 @@
+// Verifies the publish tarball for every public package under packages/.
+// For each package this clean-builds (`pnpm run clean` + `.tsbuildinfo` removal
+// + `pnpm run build`), then `pnpm pack`s and inspects the resulting tarball.
+// The clean build is required so stale `dist` output from a prior compile
+// cannot mask a regression — but it makes a local run noticeably slower than
+// a normal `pnpm build`. Intended primarily for CI/release; bump
+// VOYANT_PACK_CONCURRENCY when running on a beefier machine.
+
 import { execFile } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
@@ -137,8 +145,12 @@ function hasExplicitRuntimeExtension(specifier) {
 
 function collectExtensionlessRelativeSpecifiers(filePath, source) {
   const problems = []
+  // `\s*` (rather than `\s+`) before the quote is intentional: it covers the
+  // rare but legal `import"./x"` / `export {x} from"./y"` shapes that omit
+  // whitespace before the specifier (uncommon in TS-emitted output, but valid
+  // ECMAScript and seen after some minifiers).
   const pattern =
-    /\b(?:import|export)\s+(?:[^'"]*?\s+from\s*)?(['"])(\.{1,2}\/[^'"]+)\1|import\s*\(\s*(['"])(\.{1,2}\/[^'"]+)\3\s*\)/g
+    /\b(?:import|export)(?:\s+[^'"]*?\s+from)?\s*(['"])(\.{1,2}\/[^'"]+)\1|\bimport\s*\(\s*(['"])(\.{1,2}\/[^'"]+)\3\s*\)/g
 
   for (const match of source.matchAll(pattern)) {
     const specifier = match[2] ?? match[4]
