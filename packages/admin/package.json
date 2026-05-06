@@ -10,6 +10,7 @@
     "./components/admin-nav-group": "./src/components/admin-nav-group.tsx",
     "./components/admin-nav-link": "./src/components/admin-nav-link.tsx",
     "./components/admin-widget-slot": "./src/components/admin-widget-slot.tsx",
+    "./components/operator-admin-bootstrap-gate": "./src/components/operator-admin-bootstrap-gate.tsx",
     "./components/operator-admin-sidebar": "./src/components/operator-admin-sidebar.tsx",
     "./components/operator-admin-user-menu": "./src/components/operator-admin-user-menu.tsx",
     "./extensions": "./src/extensions.ts",
@@ -87,6 +88,11 @@
         "types": "./dist/components/admin-widget-slot.d.ts",
         "import": "./dist/components/admin-widget-slot.js",
         "default": "./dist/components/admin-widget-slot.js"
+      },
+      "./components/operator-admin-bootstrap-gate": {
+        "types": "./dist/components/operator-admin-bootstrap-gate.d.ts",
+        "import": "./dist/components/operator-admin-bootstrap-gate.js",
+        "default": "./dist/components/operator-admin-bootstrap-gate.js"
       },
       "./components/operator-admin-sidebar": {
         "types": "./dist/components/operator-admin-sidebar.d.ts",

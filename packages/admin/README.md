@@ -40,6 +40,7 @@ function App() {
 | `./components/admin-nav-group` | Sidebar navigation group renderer |
 | `./components/admin-nav-link` | Navigation link adapter types and default anchor link |
 | `./components/admin-widget-slot` | Widget slot renderer for admin extension widgets |
+| `./components/operator-admin-bootstrap-gate` | Single-tenant-first shell bootstrap gate |
 | `./components/operator-admin-sidebar` | Operator sidebar and workspace layout |
 | `./components/operator-admin-user-menu` | Operator user/account/theme/locale menu |
 | `./extensions` | Admin extension types and helpers |
@@ -161,9 +162,21 @@ function Workspace({ children, user }) {
 ```
 
 `OperatorAdminShellProvider` and `OperatorAdminWorkspaceLayout` do not fetch or
-require Better Auth organizations. Single-tenant operator apps should load the
-current authenticated user first, then render this shell with the `user` prop.
-Workspace switching and team-management routes remain app-owned opt-ins.
+require Better Auth organizations. First-party Voyant templates are
+single-tenant per deployment: load the current authenticated user first, then
+render the shell with the `user` prop.
+
+Use `OperatorAdminBootstrapGate` to make that contract explicit:
+
+```tsx
+<OperatorAdminBootstrapGate user={user} isUserLoading={isLoading}>
+  <OperatorAdminWorkspaceLayout user={user}>{children}</OperatorAdminWorkspaceLayout>
+</OperatorAdminBootstrapGate>
+```
+
+Workspace switching and team-management routes remain app-owned opt-ins. Apps
+that intentionally implement workspace switching can opt into
+`mode="organization"` and pass their own workspace readiness state.
 
 ## License
 

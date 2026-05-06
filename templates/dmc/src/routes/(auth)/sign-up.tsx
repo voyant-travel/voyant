@@ -66,10 +66,10 @@ function SignUpPage() {
   }
 
   const handleGoogleSignUp = async () => {
-    // Google OAuth = verified email, skip OTP → go straight to onboarding
+    // Google OAuth = verified email, skip OTP → go straight to dashboard.
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/onboarding",
+      callbackURL: "/",
     })
   }
 

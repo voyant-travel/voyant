@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tansta
 import {
   AdminLocalePreferenceSync,
   type AdminNavLinkProps,
+  OperatorAdminBootstrapGate,
   type OperatorAdminNavigationIcons,
   OperatorAdminWorkspaceLayout,
 } from "@voyantjs/admin"
@@ -117,26 +118,26 @@ function WorkspaceContent() {
   const { user, isLoading } = useUser()
   const messages = useAdminMessages()
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{messages.loading}</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null
-  }
-
   return (
-    <AdminI18nProvider overrides={getAdminMessageOverridesFromUiPrefs(user.uiPrefs)}>
-      <AdminLocalePreferenceSync source={user} />
-      <WorkspaceInner user={user} />
-    </AdminI18nProvider>
+    <OperatorAdminBootstrapGate
+      user={user}
+      isUserLoading={isLoading}
+      loadingFallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="size-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">{messages.loading}</p>
+          </div>
+        </div>
+      }
+    >
+      {({ user }) => (
+        <AdminI18nProvider overrides={getAdminMessageOverridesFromUiPrefs(user.uiPrefs)}>
+          <AdminLocalePreferenceSync source={user} />
+          <WorkspaceInner user={user} />
+        </AdminI18nProvider>
+      )}
+    </OperatorAdminBootstrapGate>
   )
 }
 
