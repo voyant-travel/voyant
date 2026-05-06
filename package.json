@@ -27,7 +27,7 @@
     "verify:route-authoring": "node scripts/check-route-authoring.mjs",
     "verify:architecture": "pnpm verify:tenant-scoping && pnpm verify:route-authoring",
     "verify:fast": "pnpm lint:changed && pnpm typecheck:affected && pnpm test:affected && pnpm verify:architecture",
-    "verify:full": "pnpm lint && pnpm typecheck && pnpm test && pnpm verify:architecture && pnpm verify:package-exports && pnpm i18n:check",
+    "verify:full": "pnpm lint && pnpm typecheck && pnpm test && pnpm verify:architecture && pnpm build && pnpm verify:package-exports && pnpm i18n:check",
     "prepare": "husky",
     "seed:operator": "pnpm -C apps/scripts seed:operator",
     "regen:routes": "tsx scripts/regen-route-tree.ts",
