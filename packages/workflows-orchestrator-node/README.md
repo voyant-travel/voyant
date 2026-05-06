@@ -13,10 +13,49 @@ This package is the first building block for the Docker/GCE self-host target:
 - lease-based wakeup store + poller primitives for the future multi-process / Postgres-backed adapter
 - persistent wakeup manager for file-backed self-host installs
 - entry loading + HTTP/SSE server helpers for the Node self-host target
+- failed-step resume dispatch for operator dashboards (`POST /api/runs/:id/resume`)
 - package-owned Postgres migration runner for Docker/runtime boot flows
 
 It is intentionally smaller than the future full Node adapter. The first goal is
 to move Node-specific runtime concerns out of the CLI and into a reusable package.
+
+## Self-host dispatch client
+
+Operator admin processes can use the client helper instead of hand-rolling the
+self-host HTTP contract:
+
+```ts
+import { createNodeSelfHostWorkflowClient } from "@voyantjs/workflows-orchestrator-node";
+
+const workflows = createNodeSelfHostWorkflowClient({
+  baseUrl: process.env.WORKFLOW_SERVER_URL!,
+});
+
+const rerun = await workflows.trigger({
+  workflowId: "checkout-finalize",
+  input,
+  tags: ["rerun:true"],
+});
+
+const resumed = await workflows.resume(parentRunId, {
+  workflowId: "checkout-finalize",
+  input,
+  resumeFromStep: "issue_invoice",
+  seedResults: {
+    validate_booking: { ok: true },
+  },
+  tags: ["resume:true"],
+  triggeredByUserId: userId,
+});
+```
+
+`resume(...)` starts a new run linked to the parent id. When the parent id is a
+self-host snapshot id and `seedResults` is omitted, the server derives seed
+entries from the parent run's successful journaled steps before the failed step.
+When the parent id comes from an external admin recorder such as
+`@voyantjs/workflow-runs`, pass `workflowId`, `resumeFromStep`, and
+`seedResults` from that recorder's `WorkflowResumeContext`. Seeded steps are
+replayed from the journal, so their side effects do not run again.
 
 ## Postgres migrations
 

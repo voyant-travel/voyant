@@ -16,23 +16,36 @@ The package is published with the same release-train version as the other instal
 
 ```ts
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyantjs/workflow-runs"
+import { createNodeSelfHostWorkflowClient } from "@voyantjs/workflows-orchestrator-node"
 
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
+const workflowServer = createNodeSelfHostWorkflowClient({
+  baseUrl: process.env.WORKFLOW_SERVER_URL!,
+})
 
 workflowRunnerRegistry.register({
   name: "checkout-finalize",
-  rerun: async ({ run, input }) => {
-    await workflowServer.dispatch("checkout-finalize", {
-      idempotencyKey: run.idempotencyKey ?? run.id,
+  idempotency: "unsafe",
+  description:
+    "Confirms the booking and issues the final invoice. Use Resume to retry from a failed step.",
+  rerun: async (input, ctx) => {
+    const saved = await workflowServer.trigger({
+      workflowId: "checkout-finalize",
       input,
+      tags: [...ctx.tags, "rerun:true"],
     })
+    return { runId: saved.id }
   },
-  resume: async ({ run, input, failedStep }) => {
-    await workflowServer.dispatch("checkout-finalize", {
-      resumeFromStep: failedStep?.stepName ?? null,
-      originalRunId: run.id,
+  resume: async (input, ctx) => {
+    const { saved } = await workflowServer.resume(ctx.parentRunId, {
+      workflowId: "checkout-finalize",
       input,
+      resumeFromStep: ctx.resumeFromStep,
+      seedResults: ctx.seedResults,
+      tags: [...ctx.tags, "resume:true"],
+      triggeredByUserId: ctx.triggeredByUserId,
     })
+    return { runId: saved.id }
   },
 })
 
@@ -41,4 +54,4 @@ mountWorkflowRunsAdminRoutes(hono, {
 })
 ```
 
-For self-hosted workflow services, keep runner registration close to the code that mounts the workflow service. The registry should dispatch to your external workflow server instead of importing worker-only runtime code into the admin API process.
+For self-hosted workflow services, keep runner registration close to the code that mounts the workflow service. The registry should dispatch to your external workflow server instead of importing worker-only runtime code into the admin API process. The resume path sends `ctx.resumeFromStep` plus `ctx.seedResults`; the self-host server starts a new run, pre-populates the journal with the seeded step outputs, and executes from the failed step onward.

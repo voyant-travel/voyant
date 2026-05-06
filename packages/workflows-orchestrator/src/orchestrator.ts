@@ -11,6 +11,7 @@ import { registerRunAbort, signalRunAbort, unregisterRunAbort } from "./abort-re
 import { applyWaitpointInjection, type DriveOptions, driveUntilPaused } from "./drive.js"
 import { emptyJournal } from "./journal-helpers.js"
 import type {
+  JournalSlice,
   RunRecord,
   RunRecordStore,
   RunTrigger,
@@ -29,6 +30,12 @@ export interface TriggerArgs {
   runNumber?: number
   /** Optional id to use; defaults to `run_` + crypto random. */
   runId?: string
+  /**
+   * Optional journal seed. Used by external replay/resume callers
+   * that need a new run to skip steps already completed by a parent
+   * run.
+   */
+  initialJournal?: JournalSlice
   /**
    * Compute-time budget in ms, typically from `WorkflowConfig.timeout`.
    * Parked time on waitpoints does not count against this. When the
@@ -69,7 +76,7 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     workflowVersion: args.workflowVersion,
     status: "running",
     input: args.input,
-    journal: emptyJournal(),
+    journal: args.initialJournal ? cloneJournal(args.initialJournal) : emptyJournal(),
     invocationCount: 0,
     metadataAppliedCount: 0,
     computeTimeMs: 0,
@@ -109,6 +116,10 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     }
   }
   return deps.store.save(record)
+}
+
+function cloneJournal(journal: JournalSlice): JournalSlice {
+  return structuredClone(journal) as JournalSlice
 }
 
 /**

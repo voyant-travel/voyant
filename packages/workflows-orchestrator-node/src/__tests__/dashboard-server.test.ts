@@ -3,6 +3,7 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { createNodeSelfHostDeps, handleRequest } from "../dashboard-server.js"
 import type { SnapshotRunStore } from "../snapshot-run-store.js"
+import { createFsSnapshotRunStore } from "../snapshot-run-store.js"
 
 const emptyStore: SnapshotRunStore = {
   save: async () => {
@@ -120,6 +121,130 @@ describe("createNodeSelfHostDeps validation", () => {
         }),
       ).rejects.toThrow(/registered no workflows/i)
     } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("resumes a failed self-host run from its seeded successful steps", async () => {
+    const root = await mkdtemp(join(process.cwd(), ".tmp-resume-workflow-entry-"))
+    const previousProbe = (globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA
+    let deps: Awaited<ReturnType<typeof createNodeSelfHostDeps>> | undefined
+    try {
+      ;(globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA = 0
+      const entryFile = join(root, "resume-workflows.mjs")
+      const staticDir = join(root, "static")
+      await mkdir(staticDir, { recursive: true })
+      await writeFile(
+        entryFile,
+        [
+          'import { workflow } from "@voyantjs/workflows";',
+          'workflow({ id: "resume_probe", async run(input, ctx) {',
+          '  const a = await ctx.step("a", () => {',
+          "    globalThis.__voyantResumeProbeA = (globalThis.__voyantResumeProbeA ?? 0) + 1;",
+          "    return input.value;",
+          "  });",
+          '  const b = await ctx.step("b", () => {',
+          '    if (input.fail) throw new Error("boom");',
+          "    return a + 5;",
+          "  });",
+          "  return { total: b };",
+          "}});",
+        ].join("\n"),
+        "utf8",
+      )
+
+      deps = await createNodeSelfHostDeps({
+        entryFile,
+        staticDir,
+        cacheBustEntry: true,
+        store: createFsSnapshotRunStore({ rootDir: join(root, "runs") }),
+      })
+
+      const failedResponse = await handleRequest(
+        {
+          method: "POST",
+          url: "http://local/api/runs",
+          body: JSON.stringify({
+            workflowId: "resume_probe",
+            input: { value: 10, fail: true },
+          }),
+        },
+        deps,
+      )
+      expect(failedResponse.status).toBe(200)
+      const failed = JSON.parse(String(failedResponse.body)) as {
+        saved: { id: string; status: string; result: { steps: Array<{ id: string }> } }
+      }
+      expect(failed.saved.status).toBe("failed")
+      expect(failed.saved.result.steps.map((step) => step.id)).toEqual(["a", "b"])
+      expect((globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA).toBe(1)
+
+      const resumedResponse = await handleRequest(
+        {
+          method: "POST",
+          url: `http://local/api/runs/${failed.saved.id}/resume`,
+          body: JSON.stringify({
+            input: { value: 10, fail: false },
+          }),
+        },
+        deps,
+      )
+      expect(resumedResponse.status).toBe(200)
+      const resumed = JSON.parse(String(resumedResponse.body)) as {
+        saved: {
+          id: string
+          status: string
+          replayOf?: string
+          result: { output: { total: number }; steps: Array<{ id: string }> }
+        }
+        parentRunId: string
+        resumeFromStep: string
+      }
+      expect(resumed.parentRunId).toBe(failed.saved.id)
+      expect(resumed.resumeFromStep).toBe("b")
+      expect(resumed.saved.status).toBe("completed")
+      expect(resumed.saved.replayOf).toBe(failed.saved.id)
+      expect(resumed.saved.result.output).toEqual({ total: 15 })
+      expect(resumed.saved.result.steps.map((step) => step.id)).toEqual(["a", "b"])
+      expect((globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA).toBe(1)
+
+      const externalParentResponse = await handleRequest(
+        {
+          method: "POST",
+          url: "http://local/api/runs/admin_workflow_run_1/resume",
+          body: JSON.stringify({
+            workflowId: "resume_probe",
+            input: { value: 20, fail: false },
+            resumeFromStep: "b",
+            seedResults: { a: 20 },
+          }),
+        },
+        deps,
+      )
+      expect(externalParentResponse.status).toBe(200)
+      const externalParentResume = JSON.parse(String(externalParentResponse.body)) as {
+        saved: {
+          status: string
+          replayOf?: string
+          result: { output: { total: number }; steps: Array<{ id: string }> }
+        }
+        parentRunId: string
+        resumeFromStep: string
+      }
+      expect(externalParentResume.parentRunId).toBe("admin_workflow_run_1")
+      expect(externalParentResume.resumeFromStep).toBe("b")
+      expect(externalParentResume.saved.status).toBe("completed")
+      expect(externalParentResume.saved.replayOf).toBe("admin_workflow_run_1")
+      expect(externalParentResume.saved.result.output).toEqual({ total: 25 })
+      expect(externalParentResume.saved.result.steps.map((step) => step.id)).toEqual(["a", "b"])
+      expect((globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA).toBe(1)
+    } finally {
+      await deps?.shutdown?.()
+      if (previousProbe === undefined) {
+        delete (globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA
+      } else {
+        ;(globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA = previousProbe
+      }
       await rm(root, { recursive: true, force: true })
     }
   })
