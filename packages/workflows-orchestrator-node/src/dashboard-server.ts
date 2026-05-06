@@ -19,6 +19,7 @@ import { createPersistentWakeupManager } from "./persistent-wakeup-manager.js"
 import { createPostgresConnection } from "./postgres.js"
 import { createPostgresSnapshotRunStore } from "./postgres-snapshot-run-store.js"
 import { createPostgresWakeupStore } from "./postgres-wakeup-store.js"
+import { buildResumeJournal, buildSeededResumeJournal } from "./resume-run.js"
 import { recordToSnapshot, snapshotToRecord } from "./run-record-snapshot.js"
 import { createScheduler, type SchedulerHandle, type ScheduleSource } from "./scheduler.js"
 import {
@@ -42,7 +43,23 @@ export interface ServeDeps {
   triggerRun?: (args: {
     workflowId: string
     input: unknown
+    runId?: string
+    tags?: string[]
+    triggeredByUserId?: string | null
   }) => Promise<{ ok: true; saved: StoredRun } | { ok: false; message: string; exitCode: number }>
+  resumeRun?: (args: {
+    parentRunId: string
+    workflowId?: string
+    input?: unknown
+    resumeFromStep?: string
+    seedResults?: Record<string, unknown>
+    runId?: string
+    tags?: string[]
+    triggeredByUserId?: string | null
+  }) => Promise<
+    | { ok: true; saved: StoredRun; parentRunId: string; resumeFromStep: string }
+    | { ok: false; message: string; exitCode: number }
+  >
   listWorkflows?: () => { id: string; description?: string }[]
   injectWaitpoint?: (args: {
     runId: string
@@ -100,6 +117,7 @@ export interface RequestHandlerDeps {
   readStatic?: (path: string) => Promise<Uint8Array | null>
   hasStaticDashboard?: boolean
   triggerRun?: ServeDeps["triggerRun"]
+  resumeRun?: ServeDeps["resumeRun"]
   listWorkflows?: ServeDeps["listWorkflows"]
   injectWaitpoint?: ServeDeps["injectWaitpoint"]
   listSchedules?: ServeDeps["listSchedules"]
@@ -169,6 +187,35 @@ export async function handleRequest(
       return json(200, { saved: result.saved })
     }
 
+    const resumeMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/resume$/)
+    if (resumeMatch) {
+      if (!deps.resumeRun) {
+        return json(501, {
+          error: "resume_not_supported",
+          message:
+            "This self-host server was started without a workflow entry. " +
+            "Restart with `--file <path>` to enable failed-step resume.",
+        })
+      }
+      const parsed = parseResumeRequestBody(req.body)
+      if (!parsed.ok) {
+        return json(parsed.status, { error: parsed.error, message: parsed.message })
+      }
+      const parentRunId = decodeURIComponent(resumeMatch[1]!)
+      const result = await deps.resumeRun({ parentRunId, ...parsed.body })
+      if (!result.ok) {
+        return json(result.exitCode === 2 ? 400 : 404, {
+          error: "resume_failed",
+          message: result.message,
+        })
+      }
+      return json(200, {
+        saved: result.saved,
+        parentRunId: result.parentRunId,
+        resumeFromStep: result.resumeFromStep,
+      })
+    }
+
     const eventsMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/events$/)
     const signalsMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/signals$/)
     const tokenMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/tokens\/([^/]+)$/)
@@ -228,7 +275,13 @@ export async function handleRequest(
             "Restart with `--file <path>` to enable triggering.",
         })
       }
-      let parsed: { workflowId?: unknown; input?: unknown }
+      let parsed: {
+        workflowId?: unknown
+        input?: unknown
+        runId?: unknown
+        tags?: unknown
+        triggeredByUserId?: unknown
+      }
       try {
         parsed = req.body ? JSON.parse(req.body) : {}
       } catch (err) {
@@ -243,7 +296,35 @@ export async function handleRequest(
           message: "`workflowId` (string) is required",
         })
       }
-      const result = await deps.triggerRun({ workflowId: parsed.workflowId, input: parsed.input })
+      if (parsed.runId !== undefined && typeof parsed.runId !== "string") {
+        return json(400, {
+          error: "invalid_body",
+          message: "`runId` must be a string when provided",
+        })
+      }
+      if (parsed.tags !== undefined && !isStringArray(parsed.tags)) {
+        return json(400, {
+          error: "invalid_body",
+          message: "`tags` must be an array of strings when provided",
+        })
+      }
+      if (
+        parsed.triggeredByUserId !== undefined &&
+        parsed.triggeredByUserId !== null &&
+        typeof parsed.triggeredByUserId !== "string"
+      ) {
+        return json(400, {
+          error: "invalid_body",
+          message: "`triggeredByUserId` must be a string or null when provided",
+        })
+      }
+      const result = await deps.triggerRun({
+        workflowId: parsed.workflowId,
+        input: parsed.input,
+        runId: parsed.runId,
+        tags: parsed.tags,
+        triggeredByUserId: parsed.triggeredByUserId,
+      })
       if (!result.ok) {
         return json(result.exitCode === 2 ? 400 : 404, {
           error: "trigger_failed",
@@ -375,6 +456,105 @@ export async function handleRequest(
   return json(404, { error: "route_not_found", path: url.pathname })
 }
 
+function parseResumeRequestBody(body: string | undefined):
+  | {
+      ok: true
+      body: {
+        input?: unknown
+        workflowId?: string
+        resumeFromStep?: string
+        seedResults?: Record<string, unknown>
+        runId?: string
+        tags?: string[]
+        triggeredByUserId?: string | null
+      }
+    }
+  | { ok: false; status: number; error: string; message: string } {
+  let parsed: Record<string, unknown>
+  try {
+    parsed = body ? (JSON.parse(body) as Record<string, unknown>) : {}
+  } catch (err) {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid_json",
+      message: err instanceof Error ? err.message : String(err),
+    }
+  }
+  if (!isPlainObject(parsed)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid_body",
+      message: "request body must be an object",
+    }
+  }
+  if (parsed.resumeFromStep !== undefined && typeof parsed.resumeFromStep !== "string") {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid_body",
+      message: "`resumeFromStep` must be a string when provided",
+    }
+  }
+  if (parsed.workflowId !== undefined && typeof parsed.workflowId !== "string") {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid_body",
+      message: "`workflowId` must be a string when provided",
+    }
+  }
+  if (parsed.runId !== undefined && typeof parsed.runId !== "string") {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid_body",
+      message: "`runId` must be a string when provided",
+    }
+  }
+  if (
+    parsed.triggeredByUserId !== undefined &&
+    parsed.triggeredByUserId !== null &&
+    typeof parsed.triggeredByUserId !== "string"
+  ) {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid_body",
+      message: "`triggeredByUserId` must be a string or null when provided",
+    }
+  }
+  if (parsed.tags !== undefined && !isStringArray(parsed.tags)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid_body",
+      message: "`tags` must be an array of strings when provided",
+    }
+  }
+  if (parsed.seedResults !== undefined && !isPlainObject(parsed.seedResults)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "invalid_body",
+      message: "`seedResults` must be an object when provided",
+    }
+  }
+  return {
+    ok: true,
+    body: {
+      input: parsed.input,
+      workflowId: parsed.workflowId as string | undefined,
+      resumeFromStep: parsed.resumeFromStep,
+      seedResults: parsed.seedResults as Record<string, unknown> | undefined,
+      runId: parsed.runId,
+      tags: parsed.tags as string[] | undefined,
+      triggeredByUserId: parsed.triggeredByUserId as string | null | undefined,
+    },
+  }
+}
+
 export function createStaticReader(rootDir: string): (path: string) => Promise<Uint8Array | null> {
   const root = resolvePath(rootDir)
   return async (path: string) => {
@@ -453,6 +633,7 @@ export async function startServer(
           readStatic,
           hasStaticDashboard,
           triggerRun: deps.triggerRun,
+          resumeRun: deps.resumeRun,
           listWorkflows: deps.listWorkflows,
           injectWaitpoint: deps.injectWaitpoint,
           listSchedules: deps.listSchedules,
@@ -862,7 +1043,13 @@ export async function createNodeSelfHostDeps(
     return { ok: true, saved }
   }
 
-  const triggerRun: ServeDeps["triggerRun"] = async ({ workflowId, input }) => {
+  const triggerRun: ServeDeps["triggerRun"] = async ({
+    workflowId,
+    input,
+    runId,
+    tags,
+    triggeredByUserId,
+  }) => {
     const workflow = wfMod.__listRegisteredWorkflows().find((entry) => entry.id === workflowId)
     if (!workflow) {
       return {
@@ -871,23 +1058,28 @@ export async function createNodeSelfHostDeps(
         exitCode: 2,
       }
     }
-    const runId = generateLocalRunId()
+    const nextRunId = runId ?? generateLocalRunId()
     const memStore = createInMemoryRunStore()
     let record: RunRecord
     try {
       record = await trigger(
         {
-          runId,
+          runId: nextRunId,
           workflowId,
           workflowVersion: "local",
           input,
           tenantMeta,
+          tags,
+          triggeredBy:
+            triggeredByUserId === undefined || triggeredByUserId === null
+              ? { kind: "api" }
+              : { kind: "api", actor: triggeredByUserId },
           timeoutMs: durationToMs(workflow.config.timeout),
         },
         {
           store: memStore,
           handler: stepHandler,
-          onStreamChunk: (chunk) => chunkBus.publish({ runId, chunk }),
+          onStreamChunk: (chunk) => chunkBus.publish({ runId: nextRunId, chunk }),
         },
       )
     } catch (err) {
@@ -905,6 +1097,124 @@ export async function createNodeSelfHostDeps(
     const saved = await store.update(stored)
     await wakeupManager.syncStoredRun(saved)
     return { ok: true, saved }
+  }
+
+  const resumeRun: ServeDeps["resumeRun"] = async ({
+    parentRunId,
+    workflowId: requestedWorkflowId,
+    input,
+    resumeFromStep,
+    seedResults,
+    runId,
+    tags,
+    triggeredByUserId,
+  }) => {
+    const existing = await store.get(parentRunId)
+    let parent: RunRecord | undefined
+    if (existing) {
+      try {
+        parent = snapshotToRecord(existing)
+      } catch (err) {
+        return {
+          ok: false,
+          message: err instanceof Error ? err.message : String(err),
+          exitCode: 1,
+        }
+      }
+    } else if (!requestedWorkflowId) {
+      return {
+        ok: false,
+        message:
+          `parent run "${parentRunId}" not found; pass workflowId, resumeFromStep, ` +
+          "and seedResults to resume from an external workflow-runs parent",
+        exitCode: 1,
+      }
+    }
+
+    const workflowId = parent?.workflowId ?? requestedWorkflowId!
+    const workflow = wfMod.__listRegisteredWorkflows().find((entry) => entry.id === workflowId)
+    if (!workflow) {
+      return {
+        ok: false,
+        message: `workflow "${workflowId}" is not registered in ${entryAbs}.`,
+        exitCode: 2,
+      }
+    }
+
+    let resumeSeed: ReturnType<typeof buildResumeJournal>
+    try {
+      resumeSeed = parent
+        ? buildResumeJournal({
+            parent,
+            resumeFromStep,
+            seedResults,
+          })
+        : buildSeededResumeJournal({
+            parentRunId,
+            resumeFromStep: requireExternalResumeFromStep(resumeFromStep),
+            seedResults: requireExternalSeedResults(seedResults),
+          })
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : String(err),
+        exitCode: 2,
+      }
+    }
+
+    const memStore = createInMemoryRunStore()
+    const nextRunId = runId ?? generateLocalRunId()
+    let record: RunRecord
+    try {
+      record = await trigger(
+        {
+          runId: nextRunId,
+          workflowId,
+          workflowVersion: parent?.workflowVersion ?? "local",
+          input: input === undefined ? parent?.input : input,
+          tenantMeta: parent?.tenantMeta ?? tenantMeta,
+          environment: parent?.environment,
+          triggeredBy:
+            triggeredByUserId === undefined || triggeredByUserId === null
+              ? { kind: "api" }
+              : { kind: "api", actor: triggeredByUserId },
+          tags: mergeTags(parent?.tags, [
+            "resume:true",
+            `parentRunId:${parent?.id ?? parentRunId}`,
+            ...(tags ?? []),
+          ]),
+          timeoutMs: durationToMs(workflow.config.timeout),
+          initialJournal: resumeSeed.journal,
+        },
+        {
+          store: memStore,
+          handler: stepHandler,
+          onStreamChunk: (chunk) => chunkBus.publish({ runId: nextRunId, chunk }),
+        },
+      )
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : String(err),
+        exitCode: 1,
+      }
+    }
+
+    if (!store.update) {
+      return { ok: false, message: "snapshot run store does not support update", exitCode: 1 }
+    }
+    const stored = recordToSnapshot(record, {
+      entryFile: entryAbs,
+      replayOf: parent?.id ?? parentRunId,
+    })
+    const saved = await store.update(stored)
+    await wakeupManager.syncStoredRun(saved)
+    return {
+      ok: true,
+      saved,
+      parentRunId: parent?.id ?? parentRunId,
+      resumeFromStep: resumeSeed.resumeFromStep,
+    }
   }
 
   const injectWaitpoint: ServeDeps["injectWaitpoint"] = async ({ runId, injection }) => {
@@ -993,6 +1303,7 @@ export async function createNodeSelfHostDeps(
     },
     staticDir,
     triggerRun,
+    resumeRun,
     listWorkflows,
     injectWaitpoint,
     scheduler,
@@ -1024,6 +1335,42 @@ async function assertReadableDirectory(path: string, label: string): Promise<voi
   if (!info.isDirectory()) {
     throw new Error(`voyant workflows selfhost: ${label} must be a directory (got "${path}")`)
   }
+}
+
+function mergeTags(...groups: ReadonlyArray<ReadonlyArray<string> | undefined>): string[] {
+  const tags = new Set<string>()
+  for (const group of groups) {
+    for (const tag of group ?? []) tags.add(tag)
+  }
+  return Array.from(tags)
+}
+
+function requireExternalResumeFromStep(resumeFromStep: string | undefined): string {
+  if (!resumeFromStep) {
+    throw new Error(
+      "resumeFromStep is required when the parent run is not stored by this self-host server",
+    )
+  }
+  return resumeFromStep
+}
+
+function requireExternalSeedResults(
+  seedResults: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  if (!seedResults) {
+    throw new Error(
+      "seedResults is required when the parent run is not stored by this self-host server",
+    )
+  }
+  return seedResults
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string")
 }
 
 function json(status: number, body: unknown): HandlerResponse {

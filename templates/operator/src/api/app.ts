@@ -232,7 +232,10 @@ const checkoutHonoModule = createCheckoutHonoModule({
  * runners on bootstrap (see `createCatalogCheckoutBundle`) so the
  * `/v1/admin/workflow-runs/:id/{rerun,resume}` endpoints can dispatch
  * a workflow by name. The dashboard's "Rerun" / "Resume" buttons are
- * powered by this registry.
+ * powered by this registry. Self-hosted workflow services should
+ * register runners that call `createNodeSelfHostWorkflowClient(...)`
+ * and forward resume calls with `ctx.resumeFromStep` and
+ * `ctx.seedResults`.
  */
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 

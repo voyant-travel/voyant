@@ -66,6 +66,13 @@ export {
   wakeupToRow,
 } from "./postgres-wakeup-store.js"
 export {
+  type BuildResumeJournalInput,
+  type BuildResumeJournalResult,
+  type BuildSeededResumeJournalInput,
+  buildResumeJournal,
+  buildSeededResumeJournal,
+} from "./resume-run.js"
+export {
   type RunRecordSnapshot,
   type RunRecordSnapshotBase,
   recordToSnapshot,
@@ -82,6 +89,14 @@ export {
   type ScheduleSource,
   toMs,
 } from "./scheduler.js"
+export {
+  createNodeSelfHostWorkflowClient,
+  type NodeSelfHostWorkflowClient,
+  type NodeSelfHostWorkflowClientOptions,
+  type SelfHostResumeRunInput,
+  type SelfHostResumeRunResult,
+  type SelfHostTriggerRunInput,
+} from "./selfhost-client.js"
 export {
   createSleepAlarmManager,
   findEarliestWakeAt,
