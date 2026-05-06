@@ -3,6 +3,20 @@ export { createSmartbillClient } from "./client.js"
 export type { SmartbillMappingOptions } from "./mapping.js"
 export { mapClient, mapLineItems, mapVoyantInvoiceToSmartbill } from "./mapping.js"
 export type {
+  SmartbillMockDocument,
+  SmartbillMockDocumentKind,
+  SmartbillMockDocumentStatus,
+  SmartbillMockListenOptions,
+  SmartbillMockRequest,
+  SmartbillMockResponse,
+  SmartbillMockSeries,
+  SmartbillMockServer,
+  SmartbillMockServerHandle,
+  SmartbillMockServerOptions,
+  SmartbillMockTax,
+} from "./mock.js"
+export { createSmartbillMockServer } from "./mock.js"
+export type {
   SmartbillLogger,
   SmartbillMapFn,
   SmartbillPluginOptions,

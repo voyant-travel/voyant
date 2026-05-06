@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./mock": "./src/mock.ts",
     "./plugin": "./src/plugin.ts",
     "./settlement": "./src/settlement.ts",
     "./types": "./src/types.ts"
@@ -42,6 +43,11 @@
         "types": "./dist/client.d.ts",
         "import": "./dist/client.js",
         "default": "./dist/client.js"
+      },
+      "./mock": {
+        "types": "./dist/mock.d.ts",
+        "import": "./dist/mock.js",
+        "default": "./dist/mock.js"
       },
       "./plugin": {
         "types": "./dist/plugin.d.ts",
