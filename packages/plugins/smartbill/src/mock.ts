@@ -326,6 +326,7 @@ export function createSmartbillMockServer(
     const seriesName = body.seriesName
     const number = nextNumber(kind, seriesName)
     const companyVatCode = body.companyVatCode
+    const total = totalAmount(body, taxes)
     const document: SmartbillMockDocument = {
       kind,
       companyVatCode,
@@ -337,8 +338,8 @@ export function createSmartbillMockServer(
         mentions: appendTestMention(body.mentions, "TEST DOCUMENT - SmartBill local mock"),
       },
       url: `smartbill-mock://test-document/${kind}/${encodeURIComponent(companyVatCode)}/${encodeURIComponent(seriesName)}/${number}.pdf`,
-      total: totalAmount(body),
-      paidAmount: paidAmount(body),
+      total,
+      paidAmount: paidAmount(body, total),
       createdAt: now().toISOString(),
       convertedInvoices: [],
     }
@@ -478,14 +479,25 @@ function parseInvoiceReference(body: unknown) {
   }
 }
 
-function totalAmount(body: SmartbillInvoiceBody) {
+function totalAmount(body: SmartbillInvoiceBody, taxes: SmartbillMockTax[]) {
   return roundMoney(
-    body.products.reduce((total, product) => total + product.price * product.quantity, 0),
+    body.products.reduce((total, product) => {
+      const lineNet = product.price * product.quantity
+      if (product.isTaxIncluded) return total + lineNet
+      return total + lineNet * (1 + taxPercentage(product.taxPercentage, taxes) / 100)
+    }, 0),
   )
 }
 
-function paidAmount(body: SmartbillInvoiceBody) {
-  return roundMoney(Math.min(totalAmount(body), body.payment?.value ?? 0))
+function taxPercentage(lineTaxPercentage: number | undefined, taxes: SmartbillMockTax[]) {
+  if (typeof lineTaxPercentage === "number" && Number.isFinite(lineTaxPercentage)) {
+    return lineTaxPercentage
+  }
+  return taxes.find((tax) => tax.default)?.percentage ?? defaultTaxes[0]?.percentage ?? 0
+}
+
+function paidAmount(body: SmartbillInvoiceBody, total: number) {
+  return roundMoney(Math.min(total, body.payment?.value ?? 0))
 }
 
 function paymentStatus(document: SmartbillMockDocument) {

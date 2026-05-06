@@ -84,6 +84,69 @@ describe("createSmartbillMockServer", () => {
     expect(JSON.parse(after.body)).toEqual({ invoices: [invoice] })
   })
 
+  it("includes VAT in payment status totals for tax-exclusive products", async () => {
+    const mock = createSmartbillMockServer()
+    const client = createSmartbillClient({
+      ...baseOptions,
+      apiUrl: "http://smartbill.local",
+      fetch: mock.fetch,
+    })
+
+    await client.createInvoice({
+      ...invoiceBody,
+      products: [
+        {
+          name: "Consulting",
+          measureUnit: "buc",
+          quantity: 1,
+          price: 100,
+          currency: "RON",
+          isTaxIncluded: false,
+          taxPercentage: 19,
+        },
+      ],
+      payment: { type: "Card", value: 100, isCash: false },
+    })
+
+    await expect(client.getPaymentStatus("RO123", "SB", "1")).resolves.toEqual({
+      status: "partially_paid",
+      paidAmount: 100,
+      unpaidAmount: 19,
+    })
+  })
+
+  it("uses the default mock tax for tax-exclusive products without line tax", async () => {
+    const mock = createSmartbillMockServer({
+      taxes: [{ name: "Standard", percentage: 21, default: true }],
+    })
+    const client = createSmartbillClient({
+      ...baseOptions,
+      apiUrl: "http://smartbill.local",
+      fetch: mock.fetch,
+    })
+
+    await client.createInvoice({
+      ...invoiceBody,
+      products: [
+        {
+          name: "Consulting",
+          measureUnit: "buc",
+          quantity: 1,
+          price: 100,
+          currency: "RON",
+          isTaxIncluded: false,
+        },
+      ],
+      payment: { type: "Card", value: 100, isCash: false },
+    })
+
+    await expect(client.getPaymentStatus("RO123", "SB", "1")).resolves.toEqual({
+      status: "partially_paid",
+      paidAmount: 100,
+      unpaidAmount: 21,
+    })
+  })
+
   it("handles full apiUrl-shaped request URLs", async () => {
     const mock = createSmartbillMockServer()
     const response = await mock.handleRequest({
