@@ -1,5 +1,19 @@
 # @voyantjs/flights-ui
 
+## 0.24.1
+
+### Patch Changes
+
+- ed635c7: Expose consistent Tailwind v4 style helper imports across admin and UI packages,
+  and document single-tenant auth shell bootstrap without mandatory workspace
+  organization routes.
+- Updated dependencies [ed635c7]
+  - @voyantjs/checkout-ui@0.24.1
+  - @voyantjs/finance@0.24.1
+  - @voyantjs/flights@0.24.1
+  - @voyantjs/flights-react@0.24.1
+  - @voyantjs/ui@0.24.1
+
 ## 0.24.0
 
 ### Patch Changes
