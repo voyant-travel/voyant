@@ -12,28 +12,28 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
     },
     "./testing": {
-      "types": "./dist/testing/index.d.ts",
-      "import": "./dist/testing/index.js"
+      "types": "./src/testing/index.ts",
+      "import": "./src/testing/index.ts"
     },
     "./protocol": {
-      "types": "./dist/protocol/index.d.ts",
-      "import": "./dist/protocol/index.js"
+      "types": "./src/protocol/index.ts",
+      "import": "./src/protocol/index.ts"
     },
     "./handler": {
-      "types": "./dist/handler/index.d.ts",
-      "import": "./dist/handler/index.js"
+      "types": "./src/handler/index.ts",
+      "import": "./src/handler/index.ts"
     },
     "./auth": {
-      "types": "./dist/auth/index.d.ts",
-      "import": "./dist/auth/index.js"
+      "types": "./src/auth/index.ts",
+      "import": "./src/auth/index.ts"
     },
     "./rate-limit": {
-      "types": "./dist/rate-limit/index.d.ts",
-      "import": "./dist/rate-limit/index.js"
+      "types": "./src/rate-limit/index.ts",
+      "import": "./src/rate-limit/index.ts"
     }
   },
   "main": "./dist/index.js",
@@ -73,6 +73,34 @@
     }
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./testing": {
+        "types": "./dist/testing/index.d.ts",
+        "import": "./dist/testing/index.js"
+      },
+      "./protocol": {
+        "types": "./dist/protocol/index.d.ts",
+        "import": "./dist/protocol/index.js"
+      },
+      "./handler": {
+        "types": "./dist/handler/index.d.ts",
+        "import": "./dist/handler/index.js"
+      },
+      "./auth": {
+        "types": "./dist/auth/index.d.ts",
+        "import": "./dist/auth/index.js"
+      },
+      "./rate-limit": {
+        "types": "./dist/rate-limit/index.d.ts",
+        "import": "./dist/rate-limit/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
   }
 }
