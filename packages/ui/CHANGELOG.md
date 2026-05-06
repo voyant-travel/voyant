@@ -1,5 +1,17 @@
 # @voyantjs/ui
 
+## 0.24.1
+
+### Patch Changes
+
+- ed635c7: Expose consistent Tailwind v4 style helper imports across admin and UI packages,
+  and document single-tenant auth shell bootstrap without mandatory workspace
+  organization routes.
+  - @voyantjs/i18n@0.24.1
+  - @voyantjs/notifications@0.24.1
+  - @voyantjs/notifications-react@0.24.1
+  - @voyantjs/utils@0.24.1
+
 ## 0.24.0
 
 ### Patch Changes

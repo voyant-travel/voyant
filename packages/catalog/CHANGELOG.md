@@ -1,5 +1,14 @@
 # @voyantjs/catalog
 
+## 0.24.1
+
+### Patch Changes
+
+- 2d6297d: Expose a reusable BookingJourney Hono route module for the catalog booking engine.
+  - @voyantjs/core@0.24.1
+  - @voyantjs/db@0.24.1
+  - @voyantjs/hono@0.24.1
+
 ## 0.24.0
 
 ### Patch Changes
