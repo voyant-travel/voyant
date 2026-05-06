@@ -59,6 +59,7 @@
   },
   "exports": {
     "./globals.css": "./src/styles/globals.css",
+    "./styles.css": "./src/styles.css",
     "./postcss.config": "./postcss.config.mjs",
     "./lib/*": "./src/lib/*.ts",
     "./components": "./src/components/index.tsx",
@@ -75,6 +76,7 @@
   },
   "files": [
     "dist",
+    "src/styles.css",
     "src/styles",
     "postcss.config.mjs"
   ],
@@ -82,6 +84,9 @@
     "access": "public",
     "exports": {
       "./globals.css": "./src/styles/globals.css",
+      "./styles.css": {
+        "default": "./src/styles.css"
+      },
       "./postcss.config": "./postcss.config.mjs",
       "./lib/*": {
         "types": "./dist/lib/*.d.ts",

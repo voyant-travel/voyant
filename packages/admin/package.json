@@ -6,6 +6,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css",
     "./components/admin-nav-group": "./src/components/admin-nav-group.tsx",
     "./components/admin-nav-link": "./src/components/admin-nav-link.tsx",
     "./components/admin-widget-slot": "./src/components/admin-widget-slot.tsx",
@@ -58,7 +59,8 @@
     "vitest": "^4.1.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/styles.css"
   ],
   "publishConfig": {
     "access": "public",
@@ -67,6 +69,9 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
       },
       "./components/admin-nav-group": {
         "types": "./dist/components/admin-nav-group.d.ts",

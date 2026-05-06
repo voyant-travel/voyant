@@ -3,7 +3,9 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 
-@import "@voyantjs/ui/globals.css";
+@import "@voyantjs/ui/styles.css";
+@import "@voyantjs/admin/styles.css";
+@import "@voyantjs/availability-ui/styles.css";
 @import "@voyantjs/bookings-ui/styles.css";
 @import "@voyantjs/crm-ui/styles.css";
 @import "@voyantjs/finance-ui/styles.css";
@@ -14,21 +16,6 @@
 @import "@voyantjs/catalog-ui/styles.css";
 @import "@voyantjs/extras-ui/styles.css";
 @import "@voyantjs/flights-ui/styles.css";
-
-/* Tailwind v4 needs explicit @source directives for class extraction from
-   workspace packages — auto-detection only scans this template's own src/.
-   Without these, classes like `min-w-[320px]` or `basis-72` declared inside
-   a -ui package are stripped from the bundle. */
-@source "../../../packages/bookings-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/catalog-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/crm-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/extras-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/finance-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/flights-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/legal-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/products-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/resources-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/suppliers-ui/src/**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 

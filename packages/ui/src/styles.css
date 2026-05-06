@@ -1,0 +1,8 @@
+/* Canonical Voyant UI stylesheet.
+ *
+ * This includes the shared theme globals and the Tailwind v4 source-detection
+ * directives for classes emitted by @voyantjs/ui components.
+ *
+ *   @import "@voyantjs/ui/styles.css";
+ */
+@import "./styles/globals.css";
