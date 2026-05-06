@@ -28,6 +28,27 @@ export {
   type SourceAdapter,
   type SourceAdapterContext,
 } from "./adapter/contract.js"
+// BookingJourney HTTP contract — root export matches the Hono module pattern
+// used by the vertical packages while keeping the ./booking-engine subpath.
+export {
+  type CatalogBookingAdapterContextInput,
+  type CatalogBookingBookBody,
+  type CatalogBookingBookTransformInput,
+  type CatalogBookingCommittedEvent,
+  type CatalogBookingContentScopeInput,
+  type CatalogBookingDraftBody,
+  type CatalogBookingDraftConsumedError,
+  type CatalogBookingHoldPlaceBody,
+  type CatalogBookingHoldReleaseBody,
+  type CatalogBookingHoldTtlInput,
+  type CatalogBookingProvenance,
+  type CatalogBookingProvenanceInput,
+  type CatalogBookingQuoteBody,
+  type CatalogBookingQuoteTransformInput,
+  type CatalogBookingRoutesOptions,
+  createCatalogBookingHonoModule,
+  createCatalogBookingRoutes,
+} from "./booking-engine/routes.js"
 export * from "./contract.js"
 // Drift events.
 export {

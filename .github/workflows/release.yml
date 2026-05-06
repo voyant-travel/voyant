@@ -120,6 +120,9 @@ jobs:
       - name: Verify package exports
         run: pnpm verify:package-exports
 
+      - name: Verify publish tarballs
+        run: pnpm verify:publish-tarballs
+
       - name: Detect pending npm publication
         id: pending_publish
         run: node scripts/detect-pending-publication.cjs

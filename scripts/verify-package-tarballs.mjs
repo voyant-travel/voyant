@@ -171,8 +171,8 @@ async function verifyPackage(packageDir) {
   try {
     // npm pack does not apply pnpm's publish-time manifest rewrites, including
     // publishConfig exports and workspace: dependency replacement. The release
-    // job publishes through pnpm, so verify the same packed manifest consumers
-    // receive while still skipping prepack because CI already built dist/.
+    // job publishes through pnpm, so verify the same lifecycle and packed
+    // manifest consumers receive.
     const result = await execFileAsync(
       "pnpm",
       ["pack", "--json", "--pack-destination", packDestination],
@@ -180,10 +180,7 @@ async function verifyPackage(packageDir) {
         cwd: packageDir,
         encoding: "utf8",
         maxBuffer: 64 * 1024 * 1024,
-        env: {
-          ...process.env,
-          npm_config_ignore_scripts: "true",
-        },
+        env: process.env,
       },
     )
     stdout = result.stdout

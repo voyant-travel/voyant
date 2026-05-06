@@ -113,7 +113,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "lint": "biome check src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

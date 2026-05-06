@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "check:parity": "node --import tsx ../../scripts/check-i18n-parity.ts",
     "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",

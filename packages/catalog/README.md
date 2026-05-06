@@ -66,10 +66,11 @@ See `docs/architecture/catalog-architecture.md` for the full contract and worked
 
 ## BookingJourney HTTP routes
 
-`@voyantjs/catalog/booking-engine` exports `createCatalogBookingHonoModule(...)`
-and `createCatalogBookingRoutes(...)` for the BookingJourney server contract.
-The module mounts the shared quote, draft, hold, and book endpoints on both
-catalog API surfaces:
+`@voyantjs/catalog` exports `createCatalogBookingHonoModule(...)` and
+`createCatalogBookingRoutes(...)` for the BookingJourney server contract. The
+same functions remain available from `@voyantjs/catalog/booking-engine` for
+consumers that prefer the narrower subpath. The module mounts the shared quote,
+draft, hold, and book endpoints on both catalog API surfaces:
 
 - `/v1/admin/catalog/*`
 - `/v1/public/catalog/*`
@@ -78,7 +79,7 @@ Templates provide the runtime dependencies instead of the package importing
 deployment code:
 
 ```typescript
-import { createCatalogBookingHonoModule } from "@voyantjs/catalog/booking-engine"
+import { createCatalogBookingHonoModule } from "@voyantjs/catalog"
 
 export const catalogBookingModule = createCatalogBookingHonoModule({
   resolveDb: (c) => c.get("db"),

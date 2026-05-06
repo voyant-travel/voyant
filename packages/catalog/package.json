@@ -34,7 +34,7 @@
     "lint": "biome check src/",
     "test": "vitest run",
     "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
     "db:generate": "drizzle-kit generate"
   },
