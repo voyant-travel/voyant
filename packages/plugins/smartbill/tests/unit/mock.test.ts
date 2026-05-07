@@ -39,23 +39,89 @@ describe("createSmartbillMockServer", () => {
       ...invoiceBody,
       payment: { type: "Card", value: 200, isCash: false },
     })
-    expect(created).toEqual({
+    expect(created).toMatchObject({
+      status: "Ok",
       series: "SB",
       number: "1",
       url: "smartbill-mock://test-document/invoice/RO123/SB/1.pdf",
     })
 
-    const pdf = await client.viewPdf("RO123", "SB", "1")
-    expect(pdf.url).toContain("test-document/invoice/RO123/SB/1.pdf")
+    const pdf = await client.viewInvoicePdf("RO123", "SB", "1")
+    expect(pdf.contentType).toBe("application/pdf")
+    // PDFs start with the magic %PDF- header.
+    expect(new TextDecoder().decode(pdf.bytes.slice(0, 5))).toBe("%PDF-")
 
     const status = await client.getPaymentStatus("RO123", "SB", "1")
-    expect(status).toEqual({ status: "paid", paidAmount: 200, unpaidAmount: 0 })
+    expect(status).toMatchObject({
+      status: "Ok",
+      paid: true,
+      invoiceTotalAmount: 200,
+      paidAmount: 200,
+      unpaidAmount: 0,
+    })
+    expect(status.payments).toHaveLength(1)
+    expect(status.payments?.[0]).toMatchObject({ type: "Card", value: 200 })
 
-    await client.cancelInvoice("RO123", "SB", "1")
+    const cancelled = await client.cancelInvoice("RO123", "SB", "1")
+    expect(cancelled.status).toBe("Ok")
     expect(mock.getDocument("invoice", "RO123", "SB", "1")?.status).toBe("cancelled")
   })
 
-  it("tracks proforma conversion for /estimate/invoices polling", async () => {
+  it("returns the live envelope shape for /tax", async () => {
+    const mock = createSmartbillMockServer()
+    const response = await mock.handleRequest({
+      method: "GET",
+      url: "http://smartbill.local/SBORO/api/tax",
+    })
+    expect(response.headers["content-type"]).toMatch(/application\/json/)
+    const body = JSON.parse(response.body as string)
+    expect(body.status).toBe("Ok")
+    expect(body.taxes).toEqual(
+      expect.arrayContaining([
+        { name: "Normala", percentage: 19 },
+        { name: "Redusa", percentage: 9 },
+      ]),
+    )
+  })
+
+  it("returns the live envelope shape for /series with single-letter type codes", async () => {
+    const mock = createSmartbillMockServer()
+    const response = await mock.handleRequest({
+      method: "GET",
+      url: "http://smartbill.local/SBORO/api/series",
+    })
+    const body = JSON.parse(response.body as string)
+    expect(body.status).toBe("Ok")
+    expect(body.list).toEqual(
+      expect.arrayContaining([
+        { name: "SB-TEST", nextNumber: 1, type: "f" },
+        { name: "PF-TEST", nextNumber: 1, type: "p" },
+      ]),
+    )
+  })
+
+  it("returns PDF bytes with application/pdf and a debug URL header", async () => {
+    const mock = createSmartbillMockServer()
+    await mock.handleRequest({
+      method: "POST",
+      url: "http://smartbill.local/SBORO/api/invoice",
+      body: JSON.stringify(invoiceBody),
+    })
+
+    const pdf = await mock.handleRequest({
+      method: "GET",
+      url: "http://smartbill.local/SBORO/api/invoice/pdf?cif=RO123&seriesname=SB&number=1",
+    })
+    expect(pdf.headers["content-type"]).toBe("application/pdf")
+    expect(pdf.headers["x-mock-pdf-url"]).toContain("test-document/invoice/RO123/SB/1.pdf")
+    expect(pdf.body).toBeInstanceOf(Uint8Array)
+    const bytes = pdf.body as Uint8Array
+    // %PDF- header and %%EOF trailer mark a well-formed file.
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-")
+    expect(new TextDecoder().decode(bytes.slice(-6)).trim()).toBe("%%EOF")
+  })
+
+  it("tracks proforma conversion via /estimate/invoices with areInvoicesCreated", async () => {
     const mock = createSmartbillMockServer()
     const client = createSmartbillClient({
       ...baseOptions,
@@ -64,11 +130,9 @@ describe("createSmartbillMockServer", () => {
     })
 
     const estimate = await client.createProforma({ ...invoiceBody, seriesName: "PF" })
-    const before = await mock.handleRequest({
-      method: "GET",
-      url: "http://smartbill.local/estimate/invoices?cif=RO123&seriesname=PF&number=1",
-    })
-    expect(JSON.parse(before.body)).toEqual({ invoices: [] })
+    const before = await client.listEstimateInvoices("RO123", "PF", estimate.number ?? "")
+    expect(before.areInvoicesCreated).toBe(false)
+    expect(before.invoices).toEqual([])
 
     const invoice = mock.convertEstimateToInvoice({
       companyVatCode: "RO123",
@@ -77,11 +141,14 @@ describe("createSmartbillMockServer", () => {
       invoiceSeriesName: "SB",
     })
 
-    const after = await mock.handleRequest({
-      method: "GET",
-      url: "http://smartbill.local/estimate/invoices?cif=RO123&seriesname=PF&number=1",
+    const after = await client.listEstimateInvoices("RO123", "PF", estimate.number ?? "")
+    expect(after.areInvoicesCreated).toBe(true)
+    expect(after.invoices?.[0]).toMatchObject({
+      series: invoice.series,
+      number: invoice.number,
     })
-    expect(JSON.parse(after.body)).toEqual({ invoices: [invoice] })
+    expect(after.series).toBe(invoice.series)
+    expect(after.number).toBe(invoice.number)
   })
 
   it("includes VAT in payment status totals for tax-exclusive products", async () => {
@@ -108,8 +175,10 @@ describe("createSmartbillMockServer", () => {
       payment: { type: "Card", value: 100, isCash: false },
     })
 
-    await expect(client.getPaymentStatus("RO123", "SB", "1")).resolves.toEqual({
-      status: "partially_paid",
+    const status = await client.getPaymentStatus("RO123", "SB", "1")
+    expect(status).toMatchObject({
+      paid: false,
+      invoiceTotalAmount: 119,
       paidAmount: 100,
       unpaidAmount: 19,
     })
@@ -140,10 +209,25 @@ describe("createSmartbillMockServer", () => {
       payment: { type: "Card", value: 100, isCash: false },
     })
 
-    await expect(client.getPaymentStatus("RO123", "SB", "1")).resolves.toEqual({
-      status: "partially_paid",
+    const status = await client.getPaymentStatus("RO123", "SB", "1")
+    expect(status).toMatchObject({
+      paid: false,
+      invoiceTotalAmount: 121,
       paidAmount: 100,
       unpaidAmount: 21,
+    })
+  })
+
+  it("returns an error envelope when an invoice is not found", async () => {
+    const mock = createSmartbillMockServer()
+    const response = await mock.handleRequest({
+      method: "GET",
+      url: "http://smartbill.local/SBORO/api/invoice/paymentstatus?cif=RO123&seriesname=SB&number=999",
+    })
+    expect(response.status).toBe(404)
+    expect(JSON.parse(response.body as string)).toMatchObject({
+      status: "Error",
+      errorText: expect.stringContaining("not found"),
     })
   })
 
@@ -156,7 +240,11 @@ describe("createSmartbillMockServer", () => {
     })
 
     expect(response.status).toBe(200)
-    expect(JSON.parse(response.body)).toMatchObject({ series: "SB", number: "1" })
+    expect(JSON.parse(response.body as string)).toMatchObject({
+      status: "Ok",
+      series: "SB",
+      number: "1",
+    })
     expect(mock.getDocument("invoice", "RO123", "SB", "1")?.body.mentions).toContain(
       "TEST DOCUMENT",
     )

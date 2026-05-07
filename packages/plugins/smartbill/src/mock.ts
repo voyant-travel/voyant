@@ -1,4 +1,13 @@
-import type { SmartbillFetch, SmartbillInvoiceBody, SmartbillInvoiceResponse } from "./types.js"
+import type {
+  SmartbillEstimateInvoicesResponse,
+  SmartbillFetch,
+  SmartbillInvoiceBody,
+  SmartbillInvoiceResponse,
+  SmartbillPaymentEntry,
+  SmartbillSeriesResponse,
+  SmartbillStatusResponse,
+  SmartbillTaxesResponse,
+} from "./types.js"
 
 export type SmartbillMockDocumentKind = "invoice" | "estimate"
 
@@ -31,6 +40,7 @@ export interface SmartbillMockDocument {
   url: string
   total: number
   paidAmount: number
+  payments: SmartbillPaymentEntry[]
   createdAt: string
   convertedInvoices: SmartbillInvoiceResponse[]
 }
@@ -60,7 +70,12 @@ export interface SmartbillMockRequest {
 export interface SmartbillMockResponse {
   status: number
   headers: Record<string, string>
-  body: string
+  /**
+   * Serialised body. JSON endpoints emit a UTF-8 string; PDF endpoints
+   * emit raw bytes. The HTTP listener writes both as-is; the in-process
+   * `fetch` adapter exposes them through the matching Response method.
+   */
+  body: string | Uint8Array
 }
 
 export interface SmartbillMockServer {
@@ -94,7 +109,7 @@ interface SmartbillNodeRequest extends AsyncIterable<Uint8Array | string> {
 interface SmartbillNodeResponse {
   setHeader: (key: string, value: string) => void
   statusCode: number
-  end: (body: string) => void
+  end: (body: string | Uint8Array) => void
 }
 
 interface SmartbillNodeServer {
@@ -174,7 +189,7 @@ export function createSmartbillMockServer(
         `Converted from proforma ${args.seriesName}-${args.number}`,
       ),
     })
-    const response = toDocumentResponse(invoice)
+    const response = toCreateResponse(invoice)
     estimate.convertedInvoices.push(response)
     documents.set(
       documentKey(estimate.kind, estimate.companyVatCode, estimate.seriesName, estimate.number),
@@ -189,44 +204,36 @@ export function createSmartbillMockServer(
     const path = normalizeSmartbillPath(url.pathname)
 
     try {
-      if (method === "GET" && path === "/tax") return json(200, taxes)
-      if (method === "GET" && path === "/series") return json(200, listSeries())
+      if (method === "GET" && path === "/tax") return json(200, taxesEnvelope(taxes))
+      if (method === "GET" && path === "/series") return json(200, seriesEnvelope(listSeries()))
 
       if (method === "POST" && path === "/invoice") {
-        return json(200, toDocumentResponse(createDocument("invoice", parseBody(request.body))))
+        return json(200, toCreateResponse(createDocument("invoice", parseBody(request.body))))
       }
 
       if (method === "POST" && path === "/estimate") {
-        return json(200, toDocumentResponse(createDocument("estimate", parseBody(request.body))))
+        return json(200, toCreateResponse(createDocument("estimate", parseBody(request.body))))
       }
 
       if (method === "GET" && path === "/invoice/pdf") {
-        return json(200, { url: findByQuery("invoice", url).url })
+        return pdf(findByQuery("invoice", url))
       }
 
       if (method === "GET" && path === "/estimate/pdf") {
-        return json(200, { url: findByQuery("estimate", url).url })
+        return pdf(findByQuery("estimate", url))
       }
 
       if (method === "GET" && path === "/estimate/invoices") {
-        return json(200, { invoices: findByQuery("estimate", url).convertedInvoices })
+        return json(200, estimateInvoicesEnvelope(findByQuery("estimate", url)))
       }
 
       if (method === "GET" && path === "/invoice/paymentstatus") {
-        const invoice = findByQuery("invoice", url)
-        return json(200, {
-          status:
-            invoice.status === "cancelled" || invoice.status === "deleted"
-              ? invoice.status
-              : paymentStatus(invoice),
-          paidAmount: invoice.paidAmount,
-          unpaidAmount: Math.max(0, invoice.total - invoice.paidAmount),
-        })
+        return json(200, paymentStatusEnvelope(findByQuery("invoice", url)))
       }
 
       if (method === "PUT" && path === "/invoice/cancel") {
-        updateInvoiceStatus(parseBody(request.body), "cancelled")
-        return json(200, {})
+        const invoice = updateInvoiceStatus(parseBody(request.body), "cancelled")
+        return json(200, ackEnvelope(`Invoice ${invoice.seriesName}-${invoice.number} cancelled`))
       }
 
       if (method === "PUT" && path === "/invoice/reverse") {
@@ -242,24 +249,25 @@ export function createSmartbillMockServer(
             `Reversal for ${invoice.seriesName}-${invoice.number}`,
           ),
         })
-        return json(200, toDocumentResponse(reversal))
+        return json(200, toCreateResponse(reversal))
       }
 
       if (method === "PUT" && path === "/invoice/restore") {
-        updateInvoiceStatus(parseBody(request.body), "restored")
-        return json(200, {})
+        const invoice = updateInvoiceStatus(parseBody(request.body), "restored")
+        return json(200, ackEnvelope(`Invoice ${invoice.seriesName}-${invoice.number} restored`))
       }
 
       if (method === "DELETE" && path === "/invoice") {
-        updateByQuery(url, "deleted")
-        return json(200, {})
+        const invoice = updateByQuery(url, "deleted")
+        return json(200, ackEnvelope(`Invoice ${invoice.seriesName}-${invoice.number} deleted`))
       }
 
-      return json(404, { errorText: `SmartBill mock endpoint not found: ${method} ${path}` })
+      return json(404, errorEnvelope(`SmartBill mock endpoint not found: ${method} ${path}`))
     } catch (error) {
-      return json(error instanceof SmartbillMockError ? error.status : 500, {
-        errorText: error instanceof Error ? error.message : "SmartBill mock failed",
-      })
+      return json(
+        error instanceof SmartbillMockError ? error.status : 500,
+        errorEnvelope(error instanceof Error ? error.message : "SmartBill mock failed"),
+      )
     }
   }
 
@@ -269,11 +277,29 @@ export function createSmartbillMockServer(
       url: input,
       body: init.body,
     })
+    const isBinary = response.body instanceof Uint8Array
+    const bytes = isBinary
+      ? (response.body as Uint8Array)
+      : new TextEncoder().encode(response.body as string)
+    const text = isBinary
+      ? new TextDecoder().decode(response.body as Uint8Array)
+      : (response.body as string)
     return {
       ok: response.status >= 200 && response.status < 300,
       status: response.status,
-      json: async () => JSON.parse(response.body),
-      text: async () => response.body,
+      json: async () => {
+        if (isBinary) throw new Error("SmartBill mock response is not JSON")
+        return JSON.parse(text)
+      },
+      text: async () => text,
+      arrayBuffer: async () => {
+        const copy = new ArrayBuffer(bytes.byteLength)
+        new Uint8Array(copy).set(bytes)
+        return copy
+      },
+      headers: {
+        get: (name) => response.headers[name.toLowerCase()] ?? null,
+      },
     }
   }
 
@@ -327,6 +353,17 @@ export function createSmartbillMockServer(
     const number = nextNumber(kind, seriesName)
     const companyVatCode = body.companyVatCode
     const total = totalAmount(body, taxes)
+    const paid = paidAmount(body, total)
+    const payments: SmartbillPaymentEntry[] = body.payment
+      ? [
+          {
+            type: body.payment.type,
+            value: paid,
+            paidDate: now().toISOString().slice(0, 10),
+            isCash: body.payment.isCash,
+          },
+        ]
+      : []
     const document: SmartbillMockDocument = {
       kind,
       companyVatCode,
@@ -339,7 +376,8 @@ export function createSmartbillMockServer(
       },
       url: `smartbill-mock://test-document/${kind}/${encodeURIComponent(companyVatCode)}/${encodeURIComponent(seriesName)}/${number}.pdf`,
       total,
-      paidAmount: paidAmount(body, total),
+      paidAmount: paid,
+      payments,
       createdAt: now().toISOString(),
       convertedInvoices: [],
     }
@@ -408,6 +446,21 @@ export function createSmartbillMockServer(
       documentKey("invoice", invoice.companyVatCode, invoice.seriesName, invoice.number),
       invoice,
     )
+    return invoice
+  }
+
+  function pdf(document: SmartbillMockDocument): SmartbillMockResponse {
+    const label = `${document.kind === "estimate" ? "Proforma" : "Invoice"} ${document.seriesName}-${document.number} (TEST)`
+    return {
+      status: 200,
+      headers: {
+        "access-control-allow-origin": "*",
+        "content-type": "application/pdf",
+        "content-disposition": `inline; filename="${document.seriesName}-${document.number}.pdf"`,
+        "x-mock-pdf-url": document.url,
+      },
+      body: createPlaceholderPdf(label),
+    }
   }
 
   reset()
@@ -500,17 +553,80 @@ function paidAmount(body: SmartbillInvoiceBody, total: number) {
   return roundMoney(Math.min(total, body.payment?.value ?? 0))
 }
 
-function paymentStatus(document: SmartbillMockDocument) {
-  if (document.paidAmount >= document.total && document.total > 0) return "paid"
-  if (document.paidAmount > 0) return "partially_paid"
-  return "unpaid"
-}
-
-function toDocumentResponse(document: SmartbillMockDocument): SmartbillInvoiceResponse {
+function toCreateResponse(document: SmartbillMockDocument): SmartbillInvoiceResponse {
   return {
+    status: "Ok",
+    message: "",
+    errorText: "",
     series: document.seriesName,
     number: document.number,
     url: document.url,
+  }
+}
+
+function ackEnvelope(message: string): SmartbillInvoiceResponse {
+  return { status: "Ok", message, errorText: "" }
+}
+
+function errorEnvelope(message: string): SmartbillInvoiceResponse {
+  return { status: "Error", message: "", errorText: message }
+}
+
+function taxesEnvelope(taxes: SmartbillMockTax[]): SmartbillTaxesResponse {
+  return {
+    status: "Ok",
+    message: "",
+    errorText: "",
+    taxes: taxes.map(({ name, percentage }) => ({ name, percentage })),
+  }
+}
+
+function seriesEnvelope(series: SmartbillMockSeries[]): SmartbillSeriesResponse {
+  return {
+    status: "Ok",
+    message: "",
+    errorText: "",
+    list: series.map((item) => ({
+      name: item.name,
+      nextNumber: item.nextNumber,
+      type: item.type === "invoice" ? "f" : "p",
+    })),
+  }
+}
+
+function paymentStatusEnvelope(document: SmartbillMockDocument): SmartbillStatusResponse {
+  const unpaid = Math.max(0, roundMoney(document.total - document.paidAmount))
+  return {
+    status: "Ok",
+    message: paymentStatusMessage(document),
+    errorText: "",
+    paid: document.total > 0 && document.paidAmount >= document.total,
+    invoiceTotalAmount: document.total,
+    paidAmount: document.paidAmount,
+    unpaidAmount: unpaid,
+    payments: document.payments.map((entry) => ({ ...entry })),
+  }
+}
+
+function paymentStatusMessage(document: SmartbillMockDocument): string {
+  if (document.status === "cancelled") return "Invoice cancelled"
+  if (document.status === "deleted") return "Invoice deleted"
+  if (document.status === "reversed") return "Invoice reversed"
+  return ""
+}
+
+function estimateInvoicesEnvelope(
+  estimate: SmartbillMockDocument,
+): SmartbillEstimateInvoicesResponse {
+  const last = estimate.convertedInvoices[estimate.convertedInvoices.length - 1]
+  return {
+    status: "Ok",
+    message: "",
+    errorText: "",
+    series: last?.series ?? "",
+    number: last?.number ?? "",
+    areInvoicesCreated: estimate.convertedInvoices.length > 0,
+    invoices: estimate.convertedInvoices.map((invoice) => ({ ...invoice })),
   }
 }
 
@@ -535,6 +651,7 @@ function cloneDocument(document: SmartbillMockDocument): SmartbillMockDocument {
   return {
     ...document,
     body: structuredClone(document.body),
+    payments: document.payments.map((entry) => ({ ...entry })),
     convertedInvoices: document.convertedInvoices.map((invoice) => ({ ...invoice })),
   }
 }
@@ -557,4 +674,49 @@ function concat(chunks: Uint8Array[]) {
 async function importNodeHttp(): Promise<SmartbillNodeHttp> {
   const specifier = "node:http"
   return import(specifier) as Promise<SmartbillNodeHttp>
+}
+
+/**
+ * Builds a small but well-formed single-page PDF that satisfies SDKs
+ * expecting `application/pdf` bytes. The label is rendered on the page
+ * so the file is recognisable when opened by hand.
+ */
+function createPlaceholderPdf(label: string): Uint8Array {
+  const escapedLabel = label.replace(/[()\\]/g, (m) => `\\${m}`)
+  const stream = `BT /F1 18 Tf 72 720 Td (${escapedLabel}) Tj ET`
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ]
+  const encoder = new TextEncoder()
+  const parts: Uint8Array[] = []
+  parts.push(encoder.encode("%PDF-1.4\n%"))
+  // Binary marker: any four bytes >=128 satisfy PDF readers' "this file is binary" probe.
+  parts.push(new Uint8Array([0xe2, 0xe3, 0xcf, 0xd3, 0x0a]))
+  let length = parts.reduce((sum, p) => sum + p.byteLength, 0)
+  const offsets: number[] = []
+  for (let i = 0; i < objects.length; i++) {
+    offsets.push(length)
+    const chunk = encoder.encode(`${i + 1} 0 obj\n${objects[i]}\nendobj\n`)
+    parts.push(chunk)
+    length += chunk.byteLength
+  }
+  const xrefStart = length
+  let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
+  for (const off of offsets) {
+    xref += `${String(off).padStart(10, "0")} 00000 n \n`
+  }
+  xref += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`
+  parts.push(encoder.encode(xref))
+  const total = parts.reduce((sum, p) => sum + p.byteLength, 0)
+  const out = new Uint8Array(total)
+  let offset = 0
+  for (const part of parts) {
+    out.set(part, offset)
+    offset += part.byteLength
+  }
+  return out
 }

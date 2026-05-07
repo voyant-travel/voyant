@@ -10,13 +10,31 @@ function jsonResponse(status: number, body: unknown) {
     status,
     json: async () => JSON.parse(text),
     text: async () => text,
+    arrayBuffer: async () => {
+      const bytes = new TextEncoder().encode(text)
+      const copy = new ArrayBuffer(bytes.byteLength)
+      new Uint8Array(copy).set(bytes)
+      return copy
+    },
+    headers: {
+      get: (name: string) =>
+        name.toLowerCase() === "content-type" ? "application/json; charset=utf-8" : null,
+    },
   }
 }
+
+const okEnvelope = { status: "Ok", message: "", errorText: "" }
 
 describe("createSmartbillInvoiceSettlementPoller", () => {
   it("queries SmartBill and normalizes paid amounts to cents", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () =>
-      jsonResponse(200, { status: "paid", paidAmount: 123.45, unpaidAmount: 0 }),
+      jsonResponse(200, {
+        ...okEnvelope,
+        paid: true,
+        invoiceTotalAmount: 123.45,
+        paidAmount: 123.45,
+        unpaidAmount: 0,
+      }),
     )
 
     const poller = createSmartbillInvoiceSettlementPoller({
@@ -50,13 +68,20 @@ describe("createSmartbillInvoiceSettlementPoller", () => {
         seriesName: "SB",
       },
     })
+    expect(result.settledAt).toBeTruthy()
     const [url] = fetchMock.mock.calls[0]!
     expect(url).toContain("/invoice/paymentstatus?cif=RO12345678&seriesname=SB&number=1001")
   })
 
   it("falls back to external-ref metadata and returns sync errors for missing config", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () =>
-      jsonResponse(200, { status: "open", paidAmount: 0, unpaidAmount: 10 }),
+      jsonResponse(200, {
+        ...okEnvelope,
+        paid: false,
+        invoiceTotalAmount: 10,
+        paidAmount: 0,
+        unpaidAmount: 10,
+      }),
     )
 
     const poller = createSmartbillInvoiceSettlementPoller({
@@ -82,10 +107,12 @@ describe("createSmartbillInvoiceSettlementPoller", () => {
 
     expect(success).toMatchObject({
       externalNumber: "77",
+      status: "unpaid",
       paidAmountCents: 0,
       unpaidAmountCents: 1000,
       syncError: null,
     })
+    expect(success.settledAt).toBeNull()
 
     const missingConfig = await poller({
       db: null as never,
