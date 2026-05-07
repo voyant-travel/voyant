@@ -18,6 +18,7 @@
  * lifetime.
  */
 
+import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   extendAvailabilityHold,
   placeAvailabilityHold,
@@ -41,8 +42,15 @@ import { hospitalityBookingsService } from "@voyantjs/hospitality"
 import { createHospitalityBookingHandler } from "@voyantjs/hospitality/booking-engine"
 import { getHospitalityContent } from "@voyantjs/hospitality/service-content"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
+import {
+  optionPriceRules,
+  optionUnitPriceRules,
+  priceCatalogs,
+  resolveOptionPriceRulesForDate,
+} from "@voyantjs/pricing"
 import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
-import { asc, eq } from "drizzle-orm"
+import { optionUnits } from "@voyantjs/products/schema"
+import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -198,6 +206,98 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           void args.buyerType
           const db = ctx.db as unknown as PostgresJsDatabase
           return resolveOperatorSellTaxRate(db, { productId: args.productId })
+        },
+        async loadSlotDate(ctx, slotId) {
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const [slot] = await db
+            .select({ dateLocal: availabilitySlots.dateLocal })
+            .from(availabilitySlots)
+            .where(eq(availabilitySlots.id, slotId))
+            .limit(1)
+          return slot?.dateLocal ?? null
+        },
+        async loadResolvedOptionPrice(ctx, args) {
+          const db = ctx.db as unknown as PostgresJsDatabase
+
+          // Resolve catalog id: explicit (rare) > default public.
+          let catalogId = args.catalogId
+          if (!catalogId) {
+            const [cat] = await db
+              .select({ id: priceCatalogs.id })
+              .from(priceCatalogs)
+              .where(
+                and(
+                  eq(priceCatalogs.catalogType, "public"),
+                  eq(priceCatalogs.active, true),
+                  eq(priceCatalogs.isDefault, true),
+                ),
+              )
+              .limit(1)
+            if (!cat) return null
+            catalogId = cat.id
+          }
+
+          const ruleByOption = await resolveOptionPriceRulesForDate(db, {
+            productId: args.productId,
+            optionIds: [args.optionId],
+            catalogId,
+            date: args.date,
+          })
+          const rule = ruleByOption.get(args.optionId)
+          if (!rule) return null
+
+          const [ruleRow, unitPriceRows, unitRows] = await Promise.all([
+            db
+              .select({ baseSellAmountCents: optionPriceRules.baseSellAmountCents })
+              .from(optionPriceRules)
+              .where(eq(optionPriceRules.id, rule.id))
+              .limit(1),
+            db
+              .select({
+                unitId: optionUnitPriceRules.unitId,
+                sellAmountCents: optionUnitPriceRules.sellAmountCents,
+                pricingCategoryId: optionUnitPriceRules.pricingCategoryId,
+              })
+              .from(optionUnitPriceRules)
+              .where(
+                and(
+                  eq(optionUnitPriceRules.optionPriceRuleId, rule.id),
+                  eq(optionUnitPriceRules.active, true),
+                ),
+              ),
+            db
+              .select({
+                id: optionUnits.id,
+                unitType: optionUnits.unitType,
+                minAge: optionUnits.minAge,
+                maxAge: optionUnits.maxAge,
+              })
+              .from(optionUnits)
+              .where(and(eq(optionUnits.optionId, args.optionId), eq(optionUnits.isHidden, false))),
+          ])
+          const unitsById = new Map(unitRows.map((u) => [u.id, u]))
+          const unitPrices = unitPriceRows.flatMap((up) => {
+            const unit = unitsById.get(up.unitId)
+            if (!unit) return []
+            // Per-category rows (`pricingCategoryId` set) belong to the
+            // unit×category matrix used for accommodation products. The
+            // booking engine prices per-band today, so we only consume
+            // rows where the unit alone determines the price.
+            if (up.pricingCategoryId !== null) return []
+            return [
+              {
+                unitId: up.unitId,
+                unitType: unit.unitType,
+                travelerCategory: deriveTravelerCategory(unit),
+                sellAmountCents: up.sellAmountCents,
+              },
+            ]
+          })
+
+          return {
+            baseSellAmountCents: ruleRow[0]?.baseSellAmountCents ?? null,
+            unitPrices,
+          }
         },
       }),
     )
@@ -482,6 +582,34 @@ function priceCentsFromString(s: string): number {
   const fracPadded = `${frac}00`.slice(0, 2)
   const cents = Number(whole) * 100 + Number(fracPadded)
   return negative ? -cents : cents
+}
+
+/**
+ * Map an `optionUnits` row to one of the booking-engine's pax-band
+ * codes. Operators don't tag units with explicit categories; the
+ * mapping is derived from age windows. Heuristic:
+ *
+ *   - non-person units → null (rooms / vehicles / services don't
+ *     participate in per-pax pricing)
+ *   - `maxAge ≤ 1` → `infant`
+ *   - `maxAge ≤ 17` → `child` (covers operators who tag teens as
+ *     "Child 6-12" or similar — the booking engine still treats them
+ *     as the child band)
+ *   - otherwise → `adult`
+ *
+ * `senior` requires an explicit pax band, which the default
+ * `DEFAULT_PAX_BANDS` does not include — operators that need it
+ * extend the bands per product.
+ */
+function deriveTravelerCategory(unit: {
+  unitType: string
+  minAge: number | null
+  maxAge: number | null
+}): "adult" | "child" | "infant" | "senior" | null {
+  if (unit.unitType !== "person") return null
+  if (unit.maxAge !== null && unit.maxAge <= 1) return "infant"
+  if (unit.maxAge !== null && unit.maxAge <= 17) return "child"
+  return "adult"
 }
 
 function humanizeFieldKey(key: string): string {
