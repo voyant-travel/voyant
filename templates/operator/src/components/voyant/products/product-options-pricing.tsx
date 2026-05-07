@@ -208,7 +208,12 @@ function PriceRuleCard({
       </div>
 
       <div className="mt-3">
-        <UnitPriceMatrix optionPriceRuleId={rule.id} optionId={optionId} />
+        <UnitPriceMatrix
+          optionPriceRuleId={rule.id}
+          optionId={optionId}
+          pricingMode={rule.pricingMode}
+          allPricingCategories={rule.allPricingCategories}
+        />
       </div>
     </div>
   )
@@ -217,9 +222,13 @@ function PriceRuleCard({
 function UnitPriceMatrix({
   optionPriceRuleId,
   optionId,
+  pricingMode,
+  allPricingCategories,
 }: {
   optionPriceRuleId: string
   optionId: string
+  pricingMode: OptionPriceRuleData["pricingMode"]
+  allPricingCategories: boolean
 }) {
   const messages = useAdminMessages()
   const priceRuleMessages = messages.products.operations.priceRules
@@ -243,10 +252,6 @@ function UnitPriceMatrix({
 
   const units = (unitsData?.data ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder)
   const categories = categoriesData?.data ?? []
-  const columns =
-    categories.length > 0
-      ? categories.map((category) => ({ id: category.id, name: category.name }))
-      : [{ id: null, name: priceRuleMessages.defaultBadge }]
   const cells = cellsData?.data ?? []
   const findCell = (unitId: string, categoryId: string | null) =>
     cells.find(
@@ -257,11 +262,27 @@ function UnitPriceMatrix({
     return <p className="text-xs italic text-muted-foreground">{priceRuleMessages.addUnitsHint}</p>
   }
 
+  // Per-pax tour with no category cross-cut: render a simple unit-only table
+  // (Sell / Cost) instead of the unit×category matrix. Operators on
+  // accommodation products (or rules with allPricingCategories=false) still
+  // get the full matrix.
+  const useSimpleTable = pricingMode === "per_person" && allPricingCategories
+
+  const tableTitle = useSimpleTable
+    ? priceRuleMessages.unitPricingTitle
+    : priceRuleMessages.unitCategoryTitle
+
+  const columns: Array<{ id: string | null; name: string }> = useSimpleTable
+    ? [{ id: null, name: priceRuleMessages.tableSell }]
+    : categories.length > 0
+      ? categories.map((category) => ({ id: category.id, name: category.name }))
+      : [{ id: null, name: priceRuleMessages.defaultBadge }]
+
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
         <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {priceRuleMessages.unitCategoryTitle}
+          {tableTitle}
         </p>
       </div>
       <div className="overflow-x-auto rounded border">
