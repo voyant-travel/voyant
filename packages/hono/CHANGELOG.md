@@ -1,5 +1,14 @@
 # @voyantjs/hono
 
+## 0.26.6
+
+### Patch Changes
+
+- @voyantjs/core@0.26.6
+- @voyantjs/db@0.26.6
+- @voyantjs/types@0.26.6
+- @voyantjs/utils@0.26.6
+
 ## 0.26.5
 
 ### Patch Changes
