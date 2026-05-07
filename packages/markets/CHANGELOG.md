@@ -1,5 +1,14 @@
 # @voyantjs/markets
 
+## 0.26.3
+
+### Patch Changes
+
+- Updated dependencies [372cad5]
+  - @voyantjs/core@0.26.3
+  - @voyantjs/db@0.26.3
+  - @voyantjs/hono@0.26.3
+
 ## 0.26.2
 
 ### Patch Changes

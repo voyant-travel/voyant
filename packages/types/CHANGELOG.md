@@ -1,5 +1,12 @@
 # @voyantjs/types
 
+## 0.26.3
+
+### Patch Changes
+
+- Updated dependencies [372cad5]
+  - @voyantjs/db@0.26.3
+
 ## 0.26.2
 
 ### Patch Changes
