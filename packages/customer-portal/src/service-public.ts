@@ -1128,10 +1128,10 @@ async function upsertCustomerBillingAddress(
 
 async function getAccessibleBookingIds(
   db: PostgresJsDatabase,
-  params: { userId: string; email: string },
+  params: { userId: string; email: string | null },
 ) {
   const linkedPersonId = await resolveLinkedCustomerRecordId(db, params.userId)
-  const email = params.email.trim().toLowerCase()
+  const email = params.email?.trim().toLowerCase() ?? null
 
   const [directBookingRows, participantPersonRows, participantEmailRows] = await Promise.all([
     linkedPersonId
@@ -1146,10 +1146,13 @@ async function getAccessibleBookingIds(
           .from(bookingTravelers)
           .where(eq(bookingTravelers.personId, linkedPersonId))
       : Promise.resolve([]),
-    db
-      .select({ bookingId: bookingTravelers.bookingId })
-      .from(bookingTravelers)
-      .where(sql`lower(${bookingTravelers.email}) = ${email}`),
+    // Phone-only users have no email to match on — fall back to linked-person matching only.
+    email
+      ? db
+          .select({ bookingId: bookingTravelers.bookingId })
+          .from(bookingTravelers)
+          .where(sql`lower(${bookingTravelers.email}) = ${email}`)
+      : Promise.resolve([]),
   ])
 
   return Array.from(
@@ -1165,13 +1168,22 @@ async function hasBookingAccess(params: {
   db: PostgresJsDatabase
   bookingId: string
   userId: string
-  authEmail: string
+  // Phone-only users have no email; the email-match branch is skipped
+  // and access falls through to the linked-person path.
+  authEmail: string | null
   linkedPersonId: string | null
 }) {
-  const ownershipConditions = [sql`lower(${bookingTravelers.email}) = ${params.authEmail}`]
+  const ownershipConditions = []
+  if (params.authEmail) {
+    ownershipConditions.push(sql`lower(${bookingTravelers.email}) = ${params.authEmail}`)
+  }
 
   if (params.linkedPersonId) {
     ownershipConditions.push(eq(bookingTravelers.personId, params.linkedPersonId))
+  }
+
+  if (ownershipConditions.length === 0) {
+    return false
   }
 
   const [participantMatch, bookingMatch] = await Promise.all([
@@ -1773,7 +1785,10 @@ export const publicCustomerPortalService = {
       }
     }
 
-    const normalizedEmail = normalizeEmail(authProfile.email)
+    // Phone-only signups have no email; email-keyed candidate
+    // matching simply finds zero candidates and the path falls
+    // through to creating a fresh `crm.people` row when allowed.
+    const normalizedEmail = authProfile.email ? normalizeEmail(authProfile.email) : null
     const nextFirstName =
       input.firstName ?? authProfile.firstName ?? authProfile.name.split(" ")[0] ?? "Customer"
     const nextLastName =
@@ -1858,7 +1873,9 @@ export const publicCustomerPortalService = {
       }
     }
 
-    const customerCandidates = await listCustomerRecordCandidatesByEmail(db, normalizedEmail)
+    const customerCandidates = normalizedEmail
+      ? await listCustomerRecordCandidatesByEmail(db, normalizedEmail)
+      : []
     const selectableCandidates = customerCandidates.filter(
       (candidate) => !candidate.claimedByAnotherUser,
     )
@@ -2282,7 +2299,7 @@ export const publicCustomerPortalService = {
       resolveLinkedCustomerRecordId(db, userId),
       getCustomerRecord(db, userId),
     ])
-    const authEmail = authProfile.email.trim().toLowerCase()
+    const authEmail = authProfile.email?.trim().toLowerCase() ?? null
     const canAccess = await hasBookingAccess({
       db,
       bookingId,
@@ -2323,7 +2340,7 @@ export const publicCustomerPortalService = {
       db,
       bookingId,
       userId,
-      authEmail: authProfile.email.trim().toLowerCase(),
+      authEmail: authProfile.email?.trim().toLowerCase() ?? null,
       linkedPersonId,
     })
 

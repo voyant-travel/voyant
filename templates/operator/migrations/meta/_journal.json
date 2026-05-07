@@ -169,6 +169,20 @@
       "when": 1777891500000,
       "tag": "0023_product_day_service_country",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1777891600000,
+      "tag": "0024_people_pii_documents",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1777891700000,
+      "tag": "0025_user_email_nullable_phone",
+      "breakpoints": true
     }
   ]
 }
