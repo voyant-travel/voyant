@@ -22,6 +22,7 @@ export interface UseProductDetailDialogsResult {
   edit: Toggle
   bookingCreate: Toggle
   departure: EditingToggle<DepartureSlot>
+  departureOverride: EditingToggle<DepartureSlot>
   schedule: EditingToggle<AvailabilityRule>
 }
 
@@ -62,6 +63,7 @@ export function useProductDetailDialogs(): UseProductDetailDialogsResult {
     edit: useToggle(),
     bookingCreate: useToggle(),
     departure: useEditingToggle<DepartureSlot>(),
+    departureOverride: useEditingToggle<DepartureSlot>(),
     schedule: useEditingToggle<AvailabilityRule>(),
   }
 }

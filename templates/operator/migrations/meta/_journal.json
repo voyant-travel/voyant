@@ -204,6 +204,13 @@
       "when": 1777892000000,
       "tag": "0028_person_directory_view",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1777892100000,
+      "tag": "0029_departure_price_overrides",
+      "breakpoints": true
     }
   ]
 }

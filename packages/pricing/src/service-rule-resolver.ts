@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { rrulestr } from "rrule"
 
 import { priceSchedules } from "./schema-catalogs.js"
+import { departurePriceOverrides } from "./schema-departure-overrides.js"
 import { optionPriceRules } from "./schema-option-rules.js"
 
 export interface ResolverRuleInput {
@@ -233,4 +234,57 @@ export async function resolveOptionPriceRulesForDate(
   }
 
   return result
+}
+
+/**
+ * Per-departure price override applied to a specific unit, keyed by unitId.
+ * Resolved AFTER rule selection: the rule's per-unit price gets replaced with
+ * the override's amount for any matching unit. Units without an override fall
+ * through to the rule's normal price.
+ */
+export interface UnitPriceOverride {
+  id: string
+  unitId: string
+  sellAmountCents: number
+  costAmountCents: number | null
+}
+
+/**
+ * Fetch active per-unit price overrides for a given departure + catalog.
+ *
+ * Returns a Map keyed by `optionUnitId` so callers can apply overrides while
+ * iterating per-unit prices in a snapshot. Inactive overrides are excluded at
+ * query time.
+ */
+export async function loadDeparturePriceOverrides(
+  db: PostgresJsDatabase,
+  params: { departureId: string; catalogId: string },
+): Promise<Map<string, UnitPriceOverride>> {
+  const rows = await db
+    .select({
+      id: departurePriceOverrides.id,
+      optionUnitId: departurePriceOverrides.optionUnitId,
+      sellAmountCents: departurePriceOverrides.sellAmountCents,
+      costAmountCents: departurePriceOverrides.costAmountCents,
+    })
+    .from(departurePriceOverrides)
+    .where(
+      and(
+        eq(departurePriceOverrides.departureId, params.departureId),
+        eq(departurePriceOverrides.priceCatalogId, params.catalogId),
+        eq(departurePriceOverrides.active, true),
+      ),
+    )
+
+  return new Map(
+    rows.map((r) => [
+      r.optionUnitId,
+      {
+        id: r.id,
+        unitId: r.optionUnitId,
+        sellAmountCents: r.sellAmountCents,
+        costAmountCents: r.costAmountCents,
+      },
+    ]),
+  )
 }

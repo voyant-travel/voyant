@@ -208,6 +208,7 @@ export const PREFIXES = {
   pickup_price_rules: "pkpr",
   dropoff_price_rules: "drpr",
   extra_price_rules: "expr",
+  departure_price_overrides: "dpov",
   product_extras: "pxtr",
   option_extra_configs: "oexc",
   booking_extras: "bkex",

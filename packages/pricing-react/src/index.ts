@@ -17,6 +17,8 @@ export {
   getCancellationPolicyQueryOptions,
   getCancellationPolicyRuleQueryOptions,
   getCancellationPolicyRulesQueryOptions,
+  getDeparturePriceOverrideQueryOptions,
+  getDeparturePriceOverridesQueryOptions,
   getDropoffPriceRuleQueryOptions,
   getDropoffPriceRulesQueryOptions,
   getExtraPriceRuleQueryOptions,

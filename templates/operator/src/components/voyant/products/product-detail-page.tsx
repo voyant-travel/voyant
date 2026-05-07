@@ -1,9 +1,12 @@
+import { useQueries } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { BookingDialog } from "@voyantjs/bookings-ui/components/booking-dialog"
 import { ProductOptionsSection } from "@voyantjs/products-ui/components/product-options-section"
 import { Button } from "@voyantjs/ui/components"
+import { useMemo } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { DepartureDialog } from "./product-departure-dialog"
+import { DeparturePricingOverrideDialog } from "./product-departure-pricing-override-dialog"
 import { ProductDialog } from "./product-detail-dialog"
 import { ProductDetailHeader } from "./product-detail-header"
 import { ProductDetailItinerarySection } from "./product-detail-itinerary-section"
@@ -18,6 +21,7 @@ import {
 } from "./product-detail-sections"
 import { ProductDetailSkeleton } from "./product-detail-skeleton"
 import { PricingPanel } from "./product-options-pricing"
+import { getDeparturePriceOverridesQueryOptions } from "./product-options-shared"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section"
 import { ScheduleDialog } from "./product-schedule-dialog"
 import { ProductSourcedContentSection } from "./product-sourced-content-section"
@@ -34,6 +38,23 @@ export function ProductDetailPage({ id }: { id: string }) {
 
   const { product, isPending, slots, rules, channels, mappings, media, itineraryNameById } = data
   const { mutations, refetch, invalidateProduct } = data
+
+  const overrideQueries = useQueries({
+    queries: slots.map((slot) => ({
+      ...getDeparturePriceOverridesQueryOptions(slot.id),
+      enabled: !!slot.id,
+    })),
+  })
+
+  const slotIdsWithOverrides = useMemo(() => {
+    const set = new Set<string>()
+    slots.forEach((slot, index) => {
+      const result = overrideQueries[index]
+      const items = result?.data?.data ?? []
+      if (items.some((o) => o.active)) set.add(slot.id)
+    })
+    return set
+  }, [slots, overrideQueries])
   const brochure =
     media.find((item) => item.isBrochure && item.isBrochureCurrent) ??
     media.find((item) => item.isBrochure) ??
@@ -93,8 +114,10 @@ export function ProductDetailPage({ id }: { id: string }) {
           <ProductDeparturesSection
             slots={slots}
             itineraryNameById={itineraryNameById}
+            slotIdsWithOverrides={slotIdsWithOverrides}
             onCreate={dialogs.departure.openNew}
             onEdit={dialogs.departure.openEdit}
+            onOverridePrice={dialogs.departureOverride.openEdit}
             onDelete={(slotId) => {
               if (confirm(productMessages.deleteDepartureConfirm)) {
                 mutations.deleteSlot.mutate(slotId)
@@ -184,6 +207,16 @@ export function ProductDetailPage({ id }: { id: string }) {
         onSuccess={() => {
           dialogs.schedule.close()
           refetch.rules()
+        }}
+      />
+
+      <DeparturePricingOverrideDialog
+        open={dialogs.departureOverride.open}
+        onOpenChange={dialogs.departureOverride.setOpen}
+        departureId={dialogs.departureOverride.editing?.id ?? null}
+        optionId={dialogs.departureOverride.editing?.optionId ?? null}
+        onSuccess={() => {
+          dialogs.departureOverride.close()
         }}
       />
     </div>

@@ -12,7 +12,16 @@ import {
   DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
 import { Separator } from "@voyantjs/ui/components/separator"
-import { Download, FileText, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react"
+import {
+  DollarSign,
+  Download,
+  FileText,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react"
 import type { ReactNode } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
@@ -193,14 +202,18 @@ export function ProductDetailsSection({
 export function ProductDeparturesSection({
   slots,
   itineraryNameById,
+  slotIdsWithOverrides,
   onCreate,
   onEdit,
+  onOverridePrice,
   onDelete,
 }: {
   slots: DepartureSlot[]
   itineraryNameById: Map<string, string>
+  slotIdsWithOverrides?: ReadonlySet<string>
   onCreate: () => void
   onEdit: (slot: DepartureSlot) => void
+  onOverridePrice?: (slot: DepartureSlot) => void
   onDelete: (slotId: string) => void
 }) {
   const messages = useAdminMessages()
@@ -271,9 +284,16 @@ export function ProductDeparturesSection({
                 </td>
                 <td className="px-3 py-2.5 text-xs">{formatDuration(slot)}</td>
                 <td className="px-3 py-2.5">
-                  <Badge variant={slotStatusVariant[slot.status]} className="text-xs">
-                    {getDepartureStatusLabel(slot.status, messages)}
-                  </Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant={slotStatusVariant[slot.status]} className="text-xs">
+                      {getDepartureStatusLabel(slot.status, messages)}
+                    </Badge>
+                    {slotIdsWithOverrides?.has(slot.id) ? (
+                      <Badge variant="outline" className="text-xs">
+                        {productMessages.departureOverrideBadge}
+                      </Badge>
+                    ) : null}
+                  </div>
                 </td>
                 <td className="px-3 py-2.5 font-mono text-xs">
                   {formatCapacityLabel(slot, messages)}
@@ -284,6 +304,12 @@ export function ProductDeparturesSection({
                       <Pencil className="h-4 w-4" />
                       {productMessages.edit}
                     </DropdownMenuItem>
+                    {onOverridePrice ? (
+                      <DropdownMenuItem onClick={() => onOverridePrice(slot)}>
+                        <DollarSign className="h-4 w-4" />
+                        {productMessages.departureOverridePricing}
+                      </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem variant="destructive" onClick={() => onDelete(slot.id)}>
                       <Trash2 className="h-4 w-4" />

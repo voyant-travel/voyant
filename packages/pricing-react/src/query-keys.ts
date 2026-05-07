@@ -102,6 +102,16 @@ export interface ExtraPriceRulesListFilters {
   offset?: number | undefined
 }
 
+export interface DeparturePriceOverridesListFilters {
+  departureId?: string | undefined
+  optionId?: string | undefined
+  optionUnitId?: string | undefined
+  priceCatalogId?: string | undefined
+  active?: boolean | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export interface OptionStartTimeRulesListFilters {
   optionPriceRuleId?: string | undefined
   optionId?: string | undefined
@@ -167,6 +177,12 @@ export const pricingQueryKeys = {
   extraPriceRulesList: (filters: ExtraPriceRulesListFilters) =>
     [...pricingQueryKeys.extraPriceRules(), "list", filters] as const,
   extraPriceRule: (id: string) => [...pricingQueryKeys.extraPriceRules(), "detail", id] as const,
+
+  departurePriceOverrides: () => [...pricingQueryKeys.all, "departure-price-overrides"] as const,
+  departurePriceOverridesList: (filters: DeparturePriceOverridesListFilters) =>
+    [...pricingQueryKeys.departurePriceOverrides(), "list", filters] as const,
+  departurePriceOverride: (id: string) =>
+    [...pricingQueryKeys.departurePriceOverrides(), "detail", id] as const,
 
   optionStartTimeRules: () => [...pricingQueryKeys.all, "option-start-time-rules"] as const,
   optionStartTimeRulesList: (filters: OptionStartTimeRulesListFilters) =>

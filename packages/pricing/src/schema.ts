@@ -1,5 +1,6 @@
 export * from "./schema-catalogs.js"
 export * from "./schema-categories.js"
+export * from "./schema-departure-overrides.js"
 export * from "./schema-option-rules.js"
 export * from "./schema-policies.js"
 export * from "./schema-relations.js"
