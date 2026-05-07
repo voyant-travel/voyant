@@ -262,6 +262,12 @@ function UnitPriceMatrix({
     return <p className="text-xs italic text-muted-foreground">{priceRuleMessages.addUnitsHint}</p>
   }
 
+  if (pricingMode === "per_booking") {
+    return (
+      <p className="text-xs italic text-muted-foreground">{priceRuleMessages.perBookingFlatHint}</p>
+    )
+  }
+
   // Per-pax tour with no category cross-cut: render a simple unit-only table
   // (Sell / Cost) instead of the unit×category matrix. Operators on
   // accommodation products (or rules with allPricingCategories=false) still

@@ -192,6 +192,15 @@ function UnitPriceMatrix({
     return <p className="text-xs italic text-muted-foreground">Add units to configure pricing.</p>
   }
 
+  if (pricingMode === "per_booking") {
+    return (
+      <p className="text-xs italic text-muted-foreground">
+        This rule charges a single flat amount per booking. Switch the pricing mode to Per Person or
+        Starting From to add unit-level prices.
+      </p>
+    )
+  }
+
   // Per-pax tour with no category cross-cut: render a simple unit-only table
   // (Sell column) instead of the unit×category matrix. Accommodation products
   // (or rules with allPricingCategories=false) still get the full matrix.
