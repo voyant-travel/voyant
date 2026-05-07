@@ -102,7 +102,7 @@ export function PriceCatalogDialog({
       form.reset({
         code: catalog.code,
         name: catalog.name,
-        currencyCode: catalog.currencyCode,
+        currencyCode: catalog.currencyCode ?? "",
         catalogType: catalog.catalogType,
         isDefault: catalog.isDefault,
         active: catalog.active,

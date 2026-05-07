@@ -131,7 +131,7 @@ export function PriceCatalogsPage() {
                     <span className="text-sm font-medium">{catalog.name}</span>
                     <span className="font-mono text-xs text-muted-foreground">{catalog.code}</span>
                     <Badge variant="outline" className="text-xs">
-                      {catalog.currencyCode}
+                      {catalog.currencyCode ?? "—"}
                     </Badge>
                     <Badge variant="outline" className="text-xs capitalize">
                       {catalogTypeLabels[catalog.catalogType] ?? catalog.catalogType}

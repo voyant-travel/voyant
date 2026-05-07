@@ -64,7 +64,7 @@ export const priceCatalogRecordSchema = z.object({
   id: z.string(),
   code: z.string(),
   name: z.string(),
-  currencyCode: z.string(),
+  currencyCode: z.string().nullable(),
   catalogType: z.enum(["public", "contract", "net", "gross", "promo", "internal", "other"]),
   isDefault: z.boolean(),
   active: z.boolean(),
