@@ -3,6 +3,7 @@ import { activitiesService } from "./activities.js"
 import { customFieldsService } from "./custom-fields.js"
 import { opportunitiesService } from "./opportunities.js"
 import { personDocumentsService } from "./person-documents.js"
+import { personRelationshipsService } from "./person-relationships.js"
 import { pipelinesService } from "./pipelines.js"
 import { quotesService } from "./quotes.js"
 
@@ -14,6 +15,7 @@ export const crmService = {
   ...activitiesService,
   ...customFieldsService,
   ...personDocumentsService,
+  ...personRelationshipsService,
 }
 
 export type {
@@ -28,3 +30,10 @@ export {
   personDocumentsService,
   personPiiBlobPlaintextSchema,
 } from "./person-documents.js"
+export type {
+  CreatePersonRelationshipInput,
+  PersonRelationshipKind,
+  PersonRelationshipListQuery,
+  UpdatePersonRelationshipInput,
+} from "./person-relationships.js"
+export { personRelationshipsService } from "./person-relationships.js"

@@ -65,6 +65,15 @@ export {
   usePersonMutation,
 } from "./hooks/use-person-mutation.js"
 export {
+  type CreatePersonRelationshipInput,
+  type UpdatePersonRelationshipInput,
+  usePersonRelationshipMutation,
+} from "./hooks/use-person-relationship-mutation.js"
+export {
+  type UsePersonRelationshipsOptions,
+  usePersonRelationships,
+} from "./hooks/use-person-relationships.js"
+export {
   type UsePersonTravelSnapshotOptions,
   usePersonTravelSnapshot,
 } from "./hooks/use-person-travel-snapshot.js"
@@ -116,6 +125,7 @@ export {
   type OrganizationsListFilters,
   type PeopleListFilters,
   type PersonDocumentsListFilters,
+  type PersonRelationshipsListFilters,
   type PipelinesListFilters,
   type QuotesListFilters,
   type StagesListFilters,
@@ -154,12 +164,16 @@ export {
   type PersonDocumentType,
   type PersonNoteRecord,
   type PersonRecord,
+  type PersonRelationshipKind,
+  type PersonRelationshipRecord,
   type PersonTravelSnapshotRecord,
   type PipelineRecord,
   personDocumentRecordSchema,
   personDocumentTypeSchema,
   personNoteRecordSchema,
   personRecordSchema,
+  personRelationshipKindSchema,
+  personRelationshipRecordSchema,
   personTravelSnapshotSchema,
   pipelineRecordSchema,
   type QuoteLineRecord,

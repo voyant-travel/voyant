@@ -91,6 +91,7 @@ export type {
   NewPerson,
   NewPersonDocument,
   NewPersonNote,
+  NewPersonRelationship,
   NewPipeline,
   NewQuote,
   NewQuoteLine,
@@ -105,6 +106,7 @@ export type {
   Person,
   PersonDocument,
   PersonNote,
+  PersonRelationship,
   Pipeline,
   Quote,
   QuoteLine,
@@ -128,6 +130,8 @@ export {
   personDocuments,
   personDocumentTypeEnum,
   personNotes,
+  personRelationshipKindEnum,
+  personRelationships,
   pipelines,
   quoteLines,
   quotes,
@@ -147,6 +151,13 @@ export {
   personDocumentsService,
   personPiiBlobPlaintextSchema,
 } from "./service/person-documents.js"
+export type {
+  CreatePersonRelationshipInput,
+  PersonRelationshipKind,
+  PersonRelationshipListQuery,
+  UpdatePersonRelationshipInput,
+} from "./service/person-relationships.js"
+export { personRelationshipsService } from "./service/person-relationships.js"
 export {
   activityListQuerySchema,
   communicationChannelSchema,
@@ -167,6 +178,7 @@ export {
   insertPersonDocumentFromPlaintextSchema,
   insertPersonDocumentSchema,
   insertPersonNoteSchema,
+  insertPersonRelationshipSchema,
   insertPersonSchema,
   insertPipelineSchema,
   insertQuoteLineSchema,
@@ -178,6 +190,8 @@ export {
   personDocumentListQuerySchema,
   personDocumentTypeSchema,
   personListQuerySchema,
+  personRelationshipKindSchema,
+  personRelationshipListQuerySchema,
   pipelineListQuerySchema,
   quoteListQuerySchema,
   relationTypeSchema,
@@ -190,6 +204,7 @@ export {
   updatePersonDocumentFromPlaintextSchema,
   updatePersonDocumentSchema,
   updatePersonProfilePiiSchema,
+  updatePersonRelationshipSchema,
   updatePersonSchema,
   updatePipelineSchema,
   updateQuoteLineSchema,

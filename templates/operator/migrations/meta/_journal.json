@@ -183,6 +183,13 @@
       "when": 1777891700000,
       "tag": "0025_user_email_nullable_phone",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1777891800000,
+      "tag": "0026_person_relationships",
+      "breakpoints": true
     }
   ]
 }

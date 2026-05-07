@@ -88,6 +88,7 @@ export const PREFIXES = {
   organizations: "org",
   people: "pers",
   person_documents: "pdoc",
+  person_relationships: "prel",
   pipelines: "pipe",
   stages: "stg",
   opportunities: "opp",

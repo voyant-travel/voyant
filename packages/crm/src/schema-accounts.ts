@@ -3,6 +3,7 @@ import type { KmsEnvelope } from "@voyantjs/db/schema/iam/kms"
 import { sql } from "drizzle-orm"
 import {
   boolean,
+  check,
   date,
   index,
   integer,
@@ -31,6 +32,28 @@ export const personDocumentTypeEnum = pgEnum("person_document_type", [
   "id_card",
   "driver_license",
   "visa",
+  "other",
+])
+
+/**
+ * Person-to-person relationship kinds. Directed: each row records a
+ * single edge `from → to` of a specific kind. The optional inverse
+ * edge (e.g. parent ↔ child) is kept as a separate row so list
+ * queries against either side return the same shape; the service
+ * layer auto-writes the inverse on insert when an `inverseKind` is
+ * provided.
+ */
+export const personRelationshipKindEnum = pgEnum("person_relationship_kind", [
+  "spouse",
+  "partner",
+  "parent",
+  "child",
+  "sibling",
+  "guardian",
+  "ward",
+  "emergency_contact",
+  "friend",
+  "travel_companion",
   "other",
 ])
 
@@ -201,6 +224,60 @@ export const personDocuments = pgTable(
 
 export type PersonDocument = typeof personDocuments.$inferSelect
 export type NewPersonDocument = typeof personDocuments.$inferInsert
+
+/**
+ * Directed person-to-person edges (kinship, emergency contacts,
+ * travel companions). Each row is a single edge `fromPerson → toPerson`
+ * of one `kind`; the reverse edge — when meaningful — is a separate
+ * row written by the service layer's auto-inverse helper. Self-edges
+ * are rejected via a CHECK constraint; the unique index on
+ * `(from, to, kind)` prevents the same directional edge from being
+ * recorded twice.
+ *
+ * `metadata` is a free-form jsonb bag for module-specific extensions
+ * (e.g. emergency-contact relationship to traveler). Operators that
+ * need richer structure should add their own typed columns.
+ */
+export const personRelationships = pgTable(
+  "person_relationships",
+  {
+    id: typeId("person_relationships"),
+    fromPersonId: typeIdRef("from_person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    toPersonId: typeIdRef("to_person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    kind: personRelationshipKindEnum("kind").notNull(),
+    /**
+     * The kind that should label the reverse edge (e.g. parent ↔
+     * child). When set on insert, the service layer writes the
+     * inverse edge in the same transaction unless `autoInverse` is
+     * explicitly disabled.
+     */
+    inverseKind: personRelationshipKindEnum("inverse_kind"),
+    startDate: date("start_date"),
+    endDate: date("end_date"),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    notes: text("notes"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_person_relationships_from").on(table.fromPersonId),
+    index("idx_person_relationships_to").on(table.toPersonId),
+    uniqueIndex("uidx_person_relationships_pair_kind").on(
+      table.fromPersonId,
+      table.toPersonId,
+      table.kind,
+    ),
+    check("person_relationships_no_self", sql`${table.fromPersonId} <> ${table.toPersonId}`),
+  ],
+)
+
+export type PersonRelationship = typeof personRelationships.$inferSelect
+export type NewPersonRelationship = typeof personRelationships.$inferInsert
 
 /**
  * Saved payment methods on file for a person. Stores processor-issued

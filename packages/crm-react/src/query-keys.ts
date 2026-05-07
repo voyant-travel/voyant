@@ -64,6 +64,13 @@ export interface QuotesListFilters {
   offset?: number | undefined
 }
 
+export interface PersonRelationshipsListFilters {
+  kind?: string | undefined
+  direction?: "from" | "to" | "both" | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export interface PersonDocumentsListFilters {
   type?: string | undefined
   expiringBefore?: string | undefined
@@ -82,6 +89,8 @@ export const crmQueryKeys = {
   personDocument: (id: string) => [...crmQueryKeys.all, "person-documents", "detail", id] as const,
   personTravelSnapshot: (personId: string) =>
     [...crmQueryKeys.person(personId), "travel-snapshot"] as const,
+  personRelationships: (personId: string, filters: PersonRelationshipsListFilters = {}) =>
+    [...crmQueryKeys.person(personId), "relationships", filters] as const,
 
   organizations: () => [...crmQueryKeys.all, "organizations"] as const,
   organizationsList: (filters: OrganizationsListFilters) =>
