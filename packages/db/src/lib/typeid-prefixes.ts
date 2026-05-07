@@ -87,6 +87,7 @@ export const PREFIXES = {
   custom_pickup_areas: "cpka",
   organizations: "org",
   people: "pers",
+  person_documents: "pdoc",
   pipelines: "pipe",
   stages: "stg",
   opportunities: "opp",

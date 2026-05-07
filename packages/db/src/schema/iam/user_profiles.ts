@@ -2,13 +2,6 @@ import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle
 import { z } from "zod"
 
 import { authUser } from "./auth.js"
-import {
-  type KmsEnvelope,
-  kmsEnvelopeSchema,
-  loyaltyProgramSchema,
-  personalInsurancePolicySchema,
-  travelDocumentSchema,
-} from "./kms.js"
 
 /**
  * Seating preference enum for flights
@@ -26,18 +19,17 @@ export const seatingPreferences = pgEnum("seating_preference", [
  * The user's app profile containing:
  * - Basic profile info (plain text - searchable)
  * - App preferences (plain text - low risk)
- * - Travel preferences (split: non-sensitive plain, sensitive encrypted)
- * - Documents (encrypted - toxic PII)
+ * - Non-sensitive travel preferences (seatingPreference)
  * - Admin flags (isSuperAdmin, isSupportUser)
  *
  * PK is `authUser.id` (Better Auth user ID) — NOT a TypeID.
  * 1:1 with Better Auth's `user` table.
  *
- * ENCRYPTION STRATEGY ("Toxic Waste Rule"):
- * - documentsEncrypted: MUST ENCRYPT - passport numbers, IDs
- * - accessibilityEncrypted: MUST ENCRYPT - medical/health info (GDPR Special Category)
- * - dietaryEncrypted: ENCRYPT - reveals religion/health
- * - loyaltyEncrypted: OPTIONAL ENCRYPT - fraud vector but lower risk
+ * Toxic-PII (passport numbers, dietary, accessibility, loyalty,
+ * insurance) lives on `crm.people` — that table is the canonical store
+ * for facts about a human, regardless of whether they ever log in.
+ * Auth-having storefront customers join `auth.user` → `people` via
+ * `(people.source = 'auth.user' AND people.sourceRef = userId)`.
  */
 export const userProfilesTable = pgTable(
   "user_profiles",
@@ -73,17 +65,6 @@ export const userProfilesTable = pgTable(
 
     /** Support user flag - don't count towards seat limits */
     isSupportUser: boolean("is_support_user").notNull().default(false),
-
-    // ============================================
-    // ENCRYPTED FIELDS (KMS "people" key)
-    // Format: { enc: "base64-ciphertext" }
-    // ============================================
-
-    documentsEncrypted: jsonb("documents_encrypted").$type<KmsEnvelope>(),
-    accessibilityEncrypted: jsonb("accessibility_encrypted").$type<KmsEnvelope>(),
-    dietaryEncrypted: jsonb("dietary_encrypted").$type<KmsEnvelope>(),
-    loyaltyEncrypted: jsonb("loyalty_encrypted").$type<KmsEnvelope>(),
-    insuranceEncrypted: jsonb("insurance_encrypted").$type<KmsEnvelope>(),
 
     // ============================================
     // USER STATE
@@ -126,11 +107,6 @@ const userProfileCoreSchema = z.object({
   seatingPreference: z.enum(["aisle", "window", "middle", "no_preference"]).optional().nullable(),
   isSuperAdmin: z.boolean().default(false),
   isSupportUser: z.boolean().default(false),
-  documentsEncrypted: kmsEnvelopeSchema.optional(),
-  accessibilityEncrypted: kmsEnvelopeSchema.optional(),
-  dietaryEncrypted: kmsEnvelopeSchema.optional(),
-  loyaltyEncrypted: kmsEnvelopeSchema.optional(),
-  insuranceEncrypted: kmsEnvelopeSchema.optional(),
   termsAcceptedAt: z.date().optional().nullable(),
   notificationDefaults: z.record(z.string(), z.unknown()).optional().nullable(),
   marketingConsent: z.boolean().default(false),
@@ -151,7 +127,9 @@ export type NewUserProfile = z.infer<typeof userProfileInsertSchema>
 export type UpdateUserProfile = z.infer<typeof userProfileUpdateSchema>
 
 /**
- * Decrypted user profile - used after KMS decryption
+ * Decrypted user profile shape — toxic-PII fields (documents, dietary,
+ * accessibility, loyalty, insurance) now live on `crm.people` and are
+ * decrypted by the CRM service rather than user_profiles.
  */
 export const decryptedUserProfileSchema = z.object({
   id: z.string(),
@@ -164,12 +142,6 @@ export const decryptedUserProfileSchema = z.object({
   seatingPreference: z.string().nullable(),
   isSuperAdmin: z.boolean(),
   isSupportUser: z.boolean(),
-  // Decrypted fields
-  documents: z.array(travelDocumentSchema).nullable(),
-  accessibility: z.array(z.string()).nullable(),
-  dietary: z.array(z.string()).nullable(),
-  loyalty: z.array(loyaltyProgramSchema).nullable(),
-  insurance: z.array(personalInsurancePolicySchema).nullable(),
   termsAcceptedAt: z.date().nullable(),
   notificationDefaults: z.record(z.string(), z.unknown()).nullable(),
   marketingConsent: z.boolean(),

@@ -28,6 +28,15 @@ export type BookingsUiMessages = {
       email: string
       phone: string
       specialRequests: string
+      travelDetailsHeading: string
+      passportNumber: string
+      passportExpiry: string
+      passportIssuingCountry: string
+      passportIssuingAuthority: string
+      dateOfBirth: string
+      dietaryRequirements: string
+      accessibilityNeeds: string
+      linkedPerson: string
     }
     placeholders: {
       firstName: string
@@ -35,6 +44,13 @@ export type BookingsUiMessages = {
       email: string
       phone: string
       specialRequests: string
+      passportNumber: string
+      passportExpiry: string
+      passportIssuingCountry: string
+      passportIssuingAuthority: string
+      dateOfBirth: string
+      dietaryRequirements: string
+      accessibilityNeeds: string
     }
     validation: {
       firstNameRequired: string
@@ -42,6 +58,12 @@ export type BookingsUiMessages = {
     }
     actions: {
       addTraveler: string
+      prefillFromProfile: string
+      saveToProfile: string
+    }
+    hints: {
+      prefilledFromProfile: string
+      savedToProfile: string
     }
   }
   travelerList: {

@@ -34,6 +34,15 @@ export const bookingsUiEn = {
       email: "Email",
       phone: "Phone",
       specialRequests: "Special requests",
+      travelDetailsHeading: "Travel details",
+      passportNumber: "Passport number",
+      passportExpiry: "Passport expiry",
+      passportIssuingCountry: "Issuing country",
+      passportIssuingAuthority: "Issuing authority",
+      dateOfBirth: "Date of birth",
+      dietaryRequirements: "Dietary requirements",
+      accessibilityNeeds: "Accessibility needs",
+      linkedPerson: "Linked CRM contact",
     },
     placeholders: {
       firstName: "John",
@@ -41,6 +50,13 @@ export const bookingsUiEn = {
       email: "john@example.com",
       phone: "+44 7911 123456",
       specialRequests: "Any special requests...",
+      passportNumber: "Document number",
+      passportExpiry: "YYYY-MM-DD",
+      passportIssuingCountry: "ISO-2 code",
+      passportIssuingAuthority: "Authority",
+      dateOfBirth: "YYYY-MM-DD",
+      dietaryRequirements: "Vegetarian, gluten-free, ...",
+      accessibilityNeeds: "Wheelchair, ground-floor room, ...",
     },
     validation: {
       firstNameRequired: "First name is required",
@@ -48,6 +64,12 @@ export const bookingsUiEn = {
     },
     actions: {
       addTraveler: "Add traveler",
+      prefillFromProfile: "Pre-fill from profile",
+      saveToProfile: "Save to profile",
+    },
+    hints: {
+      prefilledFromProfile: "Pre-filled from profile — values may differ per trip.",
+      savedToProfile: "Saved to profile.",
     },
   },
   travelerList: {

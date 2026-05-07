@@ -5,7 +5,12 @@ import type { z } from "zod"
 
 import { availabilitySlotsRef } from "./availability-ref.js"
 import { exchangeRatesRef } from "./markets-ref.js"
-import type { BookingPiiService, UpsertBookingTravelerTravelDetailInput } from "./pii.js"
+import {
+  applyTravelDetailSnapshot,
+  type BookingPiiService,
+  type BookingTravelerSnapshot,
+  type UpsertBookingTravelerTravelDetailInput,
+} from "./pii.js"
 import {
   bookingItemProductDetailsRef,
   bookingProductDetailsRef,
@@ -109,6 +114,9 @@ function pickTravelDetailFields(
     nationality: data.nationality,
     passportNumber: data.passportNumber,
     passportExpiry: data.passportExpiry,
+    passportIssuingCountry: data.passportIssuingCountry,
+    passportIssuingAuthority: data.passportIssuingAuthority,
+    passportPersonDocumentId: data.passportPersonDocumentId,
     dateOfBirth: data.dateOfBirth,
     dietaryRequirements: data.dietaryRequirements,
     accessibilityNeeds: data.accessibilityNeeds,
@@ -3521,6 +3529,14 @@ export const bookingsService = {
       pii: BookingPiiService
       userId?: string
       actorId?: string | null
+      /**
+       * Optional resolver invoked when `data.personId` is set. Returns
+       * a plaintext snapshot of dietary / accessibility / primary
+       * passport from the linked person record. Snapshot fields fill
+       * gaps in `data` only — explicit input always wins. Templates
+       * wire this from `crmService.loadPersonTravelSnapshot`.
+       */
+      resolveTravelSnapshot?: (personId: string) => Promise<BookingTravelerSnapshot | null>
     },
   ) {
     const traveler = await this.createTravelerRecord(
@@ -3545,10 +3561,16 @@ export const bookingsService = {
       return null
     }
 
+    let travelDetailInput = pickTravelDetailFields(data)
+    if (data.personId && opts.resolveTravelSnapshot) {
+      const snapshot = await opts.resolveTravelSnapshot(data.personId)
+      travelDetailInput = applyTravelDetailSnapshot(travelDetailInput, snapshot)
+    }
+
     const travelDetails = await opts.pii.upsertTravelerTravelDetails(
       db,
       traveler.id,
-      pickTravelDetailFields(data),
+      travelDetailInput,
       opts.actorId,
     )
 

@@ -2,6 +2,7 @@ import {
   bootstrapCustomerPortalResultSchema,
   bootstrapCustomerPortalSchema,
   createCustomerPortalCompanionSchema,
+  createCustomerPortalProfileDocumentSchema,
   customerPortalBookingBillingContactSchema,
   customerPortalBookingDetailSchema,
   customerPortalBookingDocumentSchema,
@@ -9,10 +10,12 @@ import {
   customerPortalCompanionSchema,
   customerPortalContactExistsResultSchema,
   customerPortalPhoneContactExistsResultSchema,
+  customerPortalProfileDocumentSchema,
   customerPortalProfileSchema,
   importCustomerPortalBookingTravelersResultSchema,
   importCustomerPortalBookingTravelersSchema,
   updateCustomerPortalCompanionSchema,
+  updateCustomerPortalProfileDocumentSchema,
   updateCustomerPortalProfileSchema,
 } from "@voyantjs/customer-portal"
 import { z } from "zod"
@@ -30,6 +33,7 @@ export {
   bootstrapCustomerPortalResultSchema,
   bootstrapCustomerPortalSchema,
   createCustomerPortalCompanionSchema,
+  createCustomerPortalProfileDocumentSchema,
   customerPortalBookingBillingContactSchema,
   customerPortalBookingDetailSchema,
   customerPortalBookingDocumentSchema,
@@ -37,10 +41,12 @@ export {
   customerPortalCompanionSchema,
   customerPortalContactExistsResultSchema,
   customerPortalPhoneContactExistsResultSchema,
+  customerPortalProfileDocumentSchema,
   customerPortalProfileSchema,
   importCustomerPortalBookingTravelersResultSchema,
   importCustomerPortalBookingTravelersSchema,
   updateCustomerPortalCompanionSchema,
+  updateCustomerPortalProfileDocumentSchema,
   updateCustomerPortalProfileSchema,
 }
 
@@ -62,6 +68,12 @@ export const customerPortalBookingBillingContactResponseSchema = singleEnvelope(
 )
 export const customerPortalBookingDocumentsResponseSchema = arrayEnvelope(
   customerPortalBookingDocumentSchema,
+)
+export const customerPortalProfileDocumentsResponseSchema = arrayEnvelope(
+  customerPortalProfileDocumentSchema,
+)
+export const customerPortalProfileDocumentResponseSchema = singleEnvelope(
+  customerPortalProfileDocumentSchema,
 )
 export const customerPortalContactExistsResponseSchema = singleEnvelope(
   customerPortalContactExistsResultSchema,
@@ -93,6 +105,15 @@ export type CustomerPortalBookingBillingContactRecord = z.infer<
 >
 export type CustomerPortalBookingDocumentRecord = z.infer<
   typeof customerPortalBookingDocumentSchema
+>
+export type CustomerPortalProfileDocumentRecord = z.infer<
+  typeof customerPortalProfileDocumentSchema
+>
+export type CreateCustomerPortalProfileDocumentInput = z.input<
+  typeof createCustomerPortalProfileDocumentSchema
+>
+export type UpdateCustomerPortalProfileDocumentInput = z.input<
+  typeof updateCustomerPortalProfileDocumentSchema
 >
 export type CustomerPortalContactExistsRecord = z.infer<
   typeof customerPortalContactExistsResultSchema

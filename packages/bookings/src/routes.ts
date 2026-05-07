@@ -36,6 +36,7 @@ import {
   confirmBookingSchema,
   convertProductSchema,
   createBookingSchema,
+  createTravelerWithTravelDetailsSchema,
   expireBookingSchema,
   expireStaleBookingsSchema,
   extendBookingHoldSchema,
@@ -58,6 +59,7 @@ import {
   updateBookingSchema,
   updateSupplierStatusSchema,
   updateTravelerSchema,
+  updateTravelerWithTravelDetailsSchema,
   upsertTravelerTravelDetailsSchema,
 } from "./validation.js"
 
@@ -840,6 +842,66 @@ export const bookingRoutes = new Hono<Env>()
     }
 
     return c.json({ data: row }, 201)
+  })
+
+  /**
+   * Combined "create traveler + write encrypted travel details" path.
+   * When `data.personId` is provided AND a `resolveTravelSnapshot`
+   * resolver is wired on the runtime, the route auto-snapshots
+   * dietary / accessibility / primary-passport from the linked
+   * person record. Explicit input always wins over snapshot.
+   */
+  .post("/:id/travelers/with-travel-details", async (c) => {
+    try {
+      const data = await parseJsonBody(c, createTravelerWithTravelDetailsSchema)
+      const runtime = getRouteRuntime(c)
+      const kms = await runtime.getKmsProvider()
+      const pii = await createAuditedBookingPiiService(c, c.req.param("id"))
+      const result = await bookingsService.createTravelerWithTravelDetails(
+        c.get("db"),
+        c.req.param("id"),
+        data,
+        {
+          pii,
+          userId: c.get("userId"),
+          actorId: c.get("userId"),
+          resolveTravelSnapshot: runtime.resolveTravelSnapshot
+            ? (personId) => runtime.resolveTravelSnapshot!(c.get("db"), personId, { kms })
+            : undefined,
+        },
+      )
+      if (!result) {
+        return c.json({ error: "Booking not found" }, 404)
+      }
+      return c.json({ data: result }, 201)
+    } catch (error) {
+      return handleKmsConfigError(c, error)
+    }
+  })
+
+  /**
+   * Combined "update traveler + (re-)write encrypted travel details"
+   * path. Snapshot-on-update is intentionally NOT wired here — once a
+   * booking is open, the traveler row is its own source of truth and
+   * person-record edits should not retroactively rewrite trip data.
+   */
+  .patch("/:id/travelers/:travelerId/with-travel-details", async (c) => {
+    try {
+      const data = await parseJsonBody(c, updateTravelerWithTravelDetailsSchema)
+      const pii = await createAuditedBookingPiiService(c, c.req.param("id"))
+      const result = await bookingsService.updateTravelerWithTravelDetails(
+        c.get("db"),
+        c.req.param("travelerId"),
+        data,
+        { pii, actorId: c.get("userId") },
+      )
+      if (!result) {
+        return c.json({ error: "Traveler not found" }, 404)
+      }
+      return c.json({ data: result })
+    } catch (error) {
+      return handleKmsConfigError(c, error)
+    }
   })
 
   .patch("/:id/travelers/:travelerId/travel-details", async (c) => {

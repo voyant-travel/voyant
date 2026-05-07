@@ -7,11 +7,10 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
-import { crmService } from "@voyantjs/crm"
+import { crmService, people } from "@voyantjs/crm"
 import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import { identityService } from "@voyantjs/identity/service"
-import { createKmsProviderFromEnv, encryptOptionalJsonEnvelope } from "@voyantjs/utils"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -145,35 +144,6 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
 
   it("returns the authenticated customer profile with linked CRM record", async () => {
     const person = await seedLinkedCustomer()
-    const kms = createKmsProviderFromEnv({
-      KMS_PROVIDER: "local",
-      KMS_LOCAL_KEY: process.env.KMS_LOCAL_KEY,
-    })
-    const documentsEncrypted = await encryptOptionalJsonEnvelope(kms, { keyType: "people" }, [
-      {
-        type: "passport",
-        number: "AA123456",
-        issuingAuthority: "IGI",
-        issuingCountry: "RO",
-        nationality: "RO",
-        expiryDate: "2030-01-01",
-        issueDate: "2020-01-01",
-      },
-      {
-        type: "national_id",
-        number: "CJ123456",
-        issuingAuthority: "Evidenta Populatiei",
-        issuingCountry: "RO",
-        nationality: "RO",
-        expiryDate: "2031-05-01",
-        issueDate: "2021-05-01",
-      },
-    ])
-
-    await db
-      .update(userProfilesTable)
-      .set({ documentsEncrypted })
-      .where(eq(userProfilesTable.id, "user_customer_portal"))
 
     const res = await app.request("/me")
 
@@ -191,18 +161,11 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
       addressLine1: "Strada Lalelelor 10",
       addressLine2: "Ap 5",
     })
-    expect(body.data.documents).toEqual([
-      expect.objectContaining({
-        type: "passport",
-        number: "AA123456",
-        issuingAuthority: "IGI",
-      }),
-      expect.objectContaining({
-        type: "id_card",
-        number: "CJ123456",
-        issuingAuthority: "Evidenta Populatiei",
-      }),
-    ])
+    // PII slots default to null until the customer fills them in.
+    expect(body.data.accessibility).toBeNull()
+    expect(body.data.dietary).toBeNull()
+    expect(body.data.loyalty).toBeNull()
+    expect(body.data.insurance).toBeNull()
     expect(body.data.marketingConsentSource).toBe("signup_form")
     expect(body.data.customerRecord).toMatchObject({
       id: person.id,
@@ -339,17 +302,8 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
           addressLine1: "Rue de Rivoli 22",
           addressLine2: "Etage 3",
         },
-        documents: [
-          {
-            type: "passport",
-            number: "BB987654",
-            issuingAuthority: "Prefecture",
-            issuingCountry: "FR",
-            nationality: "RO",
-            expiryDate: "2032-02-02",
-            issueDate: "2022-02-02",
-          },
-        ],
+        accessibility: "Wheelchair access",
+        dietary: "Gluten-free",
         marketingConsent: false,
         marketingConsentSource: "account_preferences",
         customerRecord: {
@@ -381,13 +335,8 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
       addressLine1: "Rue de Rivoli 22",
       addressLine2: "Etage 3",
     })
-    expect(body.data.documents).toEqual([
-      expect.objectContaining({
-        type: "passport",
-        number: "BB987654",
-        issuingAuthority: "Prefecture",
-      }),
-    ])
+    expect(body.data.accessibility).toBe("Wheelchair access")
+    expect(body.data.dietary).toBe("Gluten-free")
     expect(body.data.marketingConsent).toBe(false)
     expect(body.data.marketingConsentSource).toBeNull()
     expect(body.data.customerRecord.phone).toBe("+40999888777")
@@ -975,5 +924,126 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
 
     const forbiddenRes = await app.request(`/bookings/${otherBooking.id}`)
     expect(forbiddenRes.status).toBe(404)
+  })
+
+  describe("identity documents (/me/documents)", () => {
+    it("auto-creates a linked person on first PII write when none exists", async () => {
+      // Sanity: no person row should be linked yet for this auth user.
+      const before = await db
+        .select({ id: people.id })
+        .from(people)
+        .where(and(eq(people.source, "auth.user"), eq(people.sourceRef, "user_customer_portal")))
+      expect(before).toHaveLength(0)
+
+      const res = await app.request("/me", {
+        method: "PATCH",
+        ...json({ dietary: "Vegan" }),
+      })
+      expect(res.status).toBe(200)
+
+      const after = await db
+        .select({ id: people.id })
+        .from(people)
+        .where(and(eq(people.source, "auth.user"), eq(people.sourceRef, "user_customer_portal")))
+      expect(after).toHaveLength(1)
+
+      const meRes = await app.request("/me")
+      const me = (await meRes.json()).data
+      expect(me.dietary).toBe("Vegan")
+    })
+
+    it("creates, lists, updates, and deletes a profile document", async () => {
+      await seedLinkedCustomer()
+
+      const createRes = await app.request("/me/documents", {
+        method: "POST",
+        ...json({
+          type: "passport",
+          number: "AA111111",
+          issuingCountry: "RO",
+          expiryDate: "2030-01-01",
+          isPrimary: true,
+        }),
+      })
+      expect(createRes.status).toBe(201)
+      const created = (await createRes.json()).data
+      expect(created.type).toBe("passport")
+      expect(created.number).toBe("AA111111")
+      expect(created.isPrimary).toBe(true)
+
+      const listRes = await app.request("/me/documents")
+      const listBody = (await listRes.json()).data
+      expect(listBody).toHaveLength(1)
+      expect(listBody[0].number).toBe("AA111111")
+
+      const patchRes = await app.request(`/me/documents/${created.id}`, {
+        method: "PATCH",
+        ...json({ number: "AA222222", expiryDate: "2031-01-01" }),
+      })
+      expect(patchRes.status).toBe(200)
+      const patched = (await patchRes.json()).data
+      expect(patched.number).toBe("AA222222")
+      expect(patched.expiryDate).toBe("2031-01-01")
+
+      const deleteRes = await app.request(`/me/documents/${created.id}`, { method: "DELETE" })
+      expect(deleteRes.status).toBe(200)
+      const afterDelete = await app.request("/me/documents")
+      expect((await afterDelete.json()).data).toHaveLength(0)
+    })
+
+    it("enforces a single primary document per type (set-primary toggles)", async () => {
+      await seedLinkedCustomer()
+
+      const create = (number: string, isPrimary: boolean) =>
+        app.request("/me/documents", {
+          method: "POST",
+          ...json({ type: "passport", number, isPrimary }),
+        })
+
+      const first = (await (await create("AA111111", true)).json()).data
+      const second = (await (await create("AA222222", false)).json()).data
+
+      const listAfterCreate = (await (await app.request("/me/documents")).json()).data
+      expect(listAfterCreate.filter((doc: { isPrimary: boolean }) => doc.isPrimary)).toHaveLength(1)
+
+      const promoteRes = await app.request(`/me/documents/${second.id}/set-primary`, {
+        method: "POST",
+      })
+      expect(promoteRes.status).toBe(200)
+
+      const listAfterPromote = (await (await app.request("/me/documents")).json()).data
+      const primaryIds = listAfterPromote
+        .filter((doc: { isPrimary: boolean }) => doc.isPrimary)
+        .map((doc: { id: string }) => doc.id)
+      expect(primaryIds).toEqual([second.id])
+      const demoted = listAfterPromote.find((doc: { id: string }) => doc.id === first.id)
+      expect(demoted.isPrimary).toBe(false)
+    })
+
+    it("scopes deletes to the auth user's linked person", async () => {
+      const linked = await seedLinkedCustomer()
+      const otherPerson = await crmService.createPerson(db, {
+        firstName: "Stranger",
+        lastName: "Person",
+        tags: [],
+        status: "active",
+        website: null,
+      })
+      if (!otherPerson) throw new Error("expected other person")
+
+      const otherDoc = await crmService.createPersonDocument(db, otherPerson.id, {
+        type: "passport",
+        isPrimary: false,
+      })
+      if (!otherDoc) throw new Error("expected other document")
+
+      const res = await app.request(`/me/documents/${otherDoc.id}`, { method: "DELETE" })
+      expect(res.status).toBe(404)
+
+      // Linked person's docs are unaffected.
+      expect(linked.id).toBeTruthy()
+      const stillThere = await crmService.getPersonDocument(db, otherDoc.id)
+      expect(stillThere?.id).toBe(otherDoc.id)
+    })
   })
 })

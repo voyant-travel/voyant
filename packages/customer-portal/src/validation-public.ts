@@ -212,17 +212,16 @@ export const customerPortalProfileSchema = z.object({
       addressLine2: z.string().nullable(),
     })
     .nullable(),
-  documents: z.array(
-    z.object({
-      type: customerPortalProfileDocumentTypeSchema,
-      number: z.string(),
-      issuingAuthority: z.string().nullable(),
-      issuingCountry: z.string(),
-      nationality: z.string().nullable(),
-      expiryDate: z.string(),
-      issueDate: z.string().nullable(),
-    }),
-  ),
+  /**
+   * Free-text PII slots stored on `crm.people` and decrypted server-
+   * side. Stay nullable strings so the UI can surface them as simple
+   * textareas; richer structures (loyalty programs as rows, insurance
+   * policies as rows) graduate later if/when real consumers exist.
+   */
+  accessibility: z.string().nullable(),
+  dietary: z.string().nullable(),
+  loyalty: z.string().nullable(),
+  insurance: z.string().nullable(),
   marketingConsent: z.boolean(),
   marketingConsentAt: z.string().nullable(),
   marketingConsentSource: z.string().nullable(),
@@ -259,25 +258,53 @@ export const updateCustomerPortalProfileSchema = z
         addressLine2: z.string().nullable().optional(),
       })
       .optional(),
-    documents: z
-      .array(
-        z.object({
-          type: customerPortalProfileDocumentTypeSchema,
-          number: z.string().min(1).max(255),
-          issuingAuthority: z.string().max(255).nullable().optional(),
-          issuingCountry: z.string().min(1).max(255),
-          nationality: z.string().max(255).nullable().optional(),
-          expiryDate: z.string().date(),
-          issueDate: z.string().date().nullable().optional(),
-        }),
-      )
-      .optional(),
+    accessibility: z.string().max(4000).nullable().optional(),
+    dietary: z.string().max(4000).nullable().optional(),
+    loyalty: z.string().max(4000).nullable().optional(),
+    insurance: z.string().max(4000).nullable().optional(),
     marketingConsent: z.boolean().optional(),
     marketingConsentSource: z.string().max(255).nullable().optional(),
     notificationDefaults: z.record(z.string(), z.unknown()).nullable().optional(),
     uiPrefs: z.record(z.string(), z.unknown()).nullable().optional(),
     customerRecord: updateCustomerPortalRecordSchema.optional(),
   })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "At least one field must be provided",
+  })
+
+/**
+ * Per-document shape exposed by `/me/documents`. Plaintext on the
+ * wire — server encrypts/decrypts `number` against the people KMS key.
+ */
+export const customerPortalProfileDocumentSchema = z.object({
+  id: z.string(),
+  type: customerPortalProfileDocumentTypeSchema,
+  number: z.string().nullable(),
+  issuingAuthority: z.string().nullable(),
+  issuingCountry: z.string().nullable(),
+  issueDate: z.string().nullable(),
+  expiryDate: z.string().nullable(),
+  attachmentId: z.string().nullable(),
+  isPrimary: z.boolean(),
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export const createCustomerPortalProfileDocumentSchema = z.object({
+  type: customerPortalProfileDocumentTypeSchema,
+  number: z.string().min(1).max(255).nullable().optional(),
+  issuingAuthority: z.string().max(255).nullable().optional(),
+  issuingCountry: z.string().max(255).nullable().optional(),
+  issueDate: z.string().date().nullable().optional(),
+  expiryDate: z.string().date().nullable().optional(),
+  attachmentId: z.string().max(1024).nullable().optional(),
+  isPrimary: z.boolean().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+})
+
+export const updateCustomerPortalProfileDocumentSchema = createCustomerPortalProfileDocumentSchema
+  .partial()
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one field must be provided",
   })
@@ -592,6 +619,13 @@ export const customerPortalBookingDetailSchema = z.object({
 
 export type CustomerPortalProfile = z.infer<typeof customerPortalProfileSchema>
 export type UpdateCustomerPortalProfileInput = z.infer<typeof updateCustomerPortalProfileSchema>
+export type CustomerPortalProfileDocument = z.infer<typeof customerPortalProfileDocumentSchema>
+export type CreateCustomerPortalProfileDocumentInput = z.infer<
+  typeof createCustomerPortalProfileDocumentSchema
+>
+export type UpdateCustomerPortalProfileDocumentInput = z.infer<
+  typeof updateCustomerPortalProfileDocumentSchema
+>
 export type CustomerPortalContactExistsQuery = z.infer<
   typeof customerPortalContactExistsQuerySchema
 >

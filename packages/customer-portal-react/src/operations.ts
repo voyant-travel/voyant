@@ -4,6 +4,7 @@ import { type FetchWithValidationOptions, fetchWithValidation, withQueryParams }
 import {
   type BootstrapCustomerPortalInput,
   type CreateCustomerPortalCompanionInput,
+  type CreateCustomerPortalProfileDocumentInput,
   customerPortalBookingBillingContactResponseSchema,
   customerPortalBookingDocumentsResponseSchema,
   customerPortalBookingResponseSchema,
@@ -14,10 +15,13 @@ import {
   customerPortalCompanionsResponseSchema,
   customerPortalContactExistsResponseSchema,
   customerPortalPhoneContactExistsResponseSchema,
+  customerPortalProfileDocumentResponseSchema,
+  customerPortalProfileDocumentsResponseSchema,
   customerPortalProfileResponseSchema,
   type ImportCustomerPortalBookingTravelersInput,
   successEnvelope,
   type UpdateCustomerPortalCompanionInput,
+  type UpdateCustomerPortalProfileDocumentInput,
   type UpdateCustomerPortalProfileInput,
 } from "./schemas.js"
 
@@ -183,5 +187,68 @@ export function listCustomerPortalBookingDocuments(
     `/v1/public/customer-portal/bookings/${bookingId}/documents`,
     customerPortalBookingDocumentsResponseSchema,
     client,
+  )
+}
+
+export function listCustomerPortalProfileDocuments(client: FetchWithValidationOptions) {
+  return fetchWithValidation(
+    "/v1/public/customer-portal/me/documents",
+    customerPortalProfileDocumentsResponseSchema,
+    client,
+  )
+}
+
+export function createCustomerPortalProfileDocument(
+  client: FetchWithValidationOptions,
+  input: CreateCustomerPortalProfileDocumentInput,
+) {
+  return fetchWithValidation(
+    "/v1/public/customer-portal/me/documents",
+    customerPortalProfileDocumentResponseSchema,
+    client,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  )
+}
+
+export function updateCustomerPortalProfileDocument(
+  client: FetchWithValidationOptions,
+  documentId: string,
+  input: UpdateCustomerPortalProfileDocumentInput,
+) {
+  return fetchWithValidation(
+    `/v1/public/customer-portal/me/documents/${documentId}`,
+    customerPortalProfileDocumentResponseSchema,
+    client,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+  )
+}
+
+export function deleteCustomerPortalProfileDocument(
+  client: FetchWithValidationOptions,
+  documentId: string,
+) {
+  return fetchWithValidation(
+    `/v1/public/customer-portal/me/documents/${documentId}`,
+    successEnvelope,
+    client,
+    { method: "DELETE" },
+  )
+}
+
+export function setPrimaryCustomerPortalProfileDocument(
+  client: FetchWithValidationOptions,
+  documentId: string,
+) {
+  return fetchWithValidation(
+    `/v1/public/customer-portal/me/documents/${documentId}/set-primary`,
+    customerPortalProfileDocumentResponseSchema,
+    client,
+    { method: "POST" },
   )
 }

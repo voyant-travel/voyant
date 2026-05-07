@@ -1,8 +1,8 @@
 import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
-import { bookingsHonoModule, bookingsSupplierExtension } from "@voyantjs/bookings"
+import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
 import { createCheckoutHonoModule } from "@voyantjs/checkout"
-import { crmBookingExtension, crmHonoModule } from "@voyantjs/crm"
+import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/crm"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
@@ -79,6 +79,12 @@ const financeModule = createFinanceHonoModule({
 const legalModule = createLegalHonoModule({
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
+})
+
+const crmHonoModule = createCrmHonoModule()
+const bookingsHonoModule = createBookingsHonoModule({
+  resolveTravelSnapshot: (db, personId, { kms }) =>
+    crmService.loadPersonTravelSnapshot(db, personId, { kms }),
 })
 
 export const app = createApp<CloudflareBindings>({

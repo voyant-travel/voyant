@@ -12,6 +12,7 @@ import {
   listCustomerPortalBookingDocuments,
   listCustomerPortalBookings,
   listCustomerPortalCompanions,
+  listCustomerPortalProfileDocuments,
 } from "./operations.js"
 import {
   type CustomerPortalContactExistsFilters,
@@ -23,6 +24,13 @@ export function getCustomerPortalProfileQueryOptions(client: FetchWithValidation
   return queryOptions({
     queryKey: customerPortalQueryKeys.profile(),
     queryFn: () => getCustomerPortalProfile(client),
+  })
+}
+
+export function getCustomerPortalProfileDocumentsQueryOptions(client: FetchWithValidationOptions) {
+  return queryOptions({
+    queryKey: customerPortalQueryKeys.profileDocuments(),
+    queryFn: () => listCustomerPortalProfileDocuments(client),
   })
 }
 

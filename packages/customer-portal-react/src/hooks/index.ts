@@ -35,3 +35,11 @@ export {
   type UseCustomerPortalProfileOptions,
   useCustomerPortalProfile,
 } from "./use-customer-portal-profile.js"
+export {
+  type UpdateCustomerPortalProfileDocumentMutationInput,
+  useCustomerPortalProfileDocumentMutation,
+} from "./use-customer-portal-profile-document-mutation.js"
+export {
+  type UseCustomerPortalProfileDocumentsOptions,
+  useCustomerPortalProfileDocuments,
+} from "./use-customer-portal-profile-documents.js"
