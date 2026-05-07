@@ -1,5 +1,13 @@
 # @voyantjs/products-react
 
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [b72948d]
+  - @voyantjs/products@0.28.0
+  - @voyantjs/react@0.28.0
+
 ## 0.27.0
 
 ### Patch Changes
