@@ -1,1 +1,0 @@
-ALTER TABLE "rate_plans" ADD COLUMN "customer_payment_policy" jsonb;

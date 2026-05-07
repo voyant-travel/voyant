@@ -1,1 +1,0 @@
-ALTER TYPE "public"."booking_activity_type" ADD VALUE 'system_action';
