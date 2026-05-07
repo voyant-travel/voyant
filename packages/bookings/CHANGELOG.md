@@ -1,5 +1,14 @@
 # @voyantjs/bookings
 
+## 0.26.8
+
+### Patch Changes
+
+- @voyantjs/core@0.26.8
+- @voyantjs/db@0.26.8
+- @voyantjs/hono@0.26.8
+- @voyantjs/utils@0.26.8
+
 ## 0.26.7
 
 ### Patch Changes
