@@ -10,6 +10,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  pgView,
   text,
   timestamp,
   uniqueIndex,
@@ -144,19 +145,25 @@ export const people = pgTable(
   ],
 )
 
-export const personDirectoryProjections = pgTable(
-  "person_directory_projections",
-  {
-    personId: typeIdRef("person_id")
-      .notNull()
-      .references(() => people.id, { onDelete: "cascade" }),
-    email: text("email"),
-    phone: text("phone"),
-    website: text("website"),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [uniqueIndex("uq_person_directory_projections_person").on(table.personId)],
-)
+/**
+ * `person_directory` is a Postgres VIEW (not a table) that exposes
+ * each person's primary email / phone / website by `LATERAL` lookup
+ * against `identity_contact_points`. The view is created in the
+ * 0028 migration; this binding gives Drizzle a typed read surface.
+ *
+ * The previous `person_directory_projections` table was a denormalized
+ * cache that had to be rebuilt on every contact-point change — see
+ * #446 for the discussion of why we replaced it. Indexed lateral
+ * joins (`idx_identity_contact_points_entity_kind_primary_created`
+ * already exists) keep view reads sub-millisecond at realistic CRM
+ * volumes.
+ */
+export const personDirectoryView = pgView("person_directory", {
+  personId: typeIdRef("person_id").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  website: text("website"),
+}).existing()
 
 export const personNotes = pgTable(
   "person_notes",
@@ -414,5 +421,3 @@ export type Organization = typeof organizations.$inferSelect
 export type NewOrganization = typeof organizations.$inferInsert
 export type Person = typeof people.$inferSelect
 export type NewPerson = typeof people.$inferInsert
-export type PersonDirectoryProjection = typeof personDirectoryProjections.$inferSelect
-export type NewPersonDirectoryProjection = typeof personDirectoryProjections.$inferInsert

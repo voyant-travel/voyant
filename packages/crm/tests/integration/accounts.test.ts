@@ -143,6 +143,43 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       expect(body.data.id).toBeTruthy()
     })
 
+    it("reflects contact-point updates without an explicit rebuild (#446 view)", async () => {
+      // Replaces the old projection-cache assertion: the
+      // `person_directory` view computes email/phone/website live, so
+      // edits to `identity_contact_points` should flow through the
+      // next list read with no rebuild call in between.
+      const { identityService } = await import("@voyantjs/identity/service")
+      const createRes = await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Live", lastName: "View", email: "first@example.com" }),
+      })
+      expect(createRes.status).toBe(201)
+      const created = (await createRes.json()).data
+
+      // Mutate the underlying contact point directly — bypassing the
+      // person service's own update path on purpose.
+      const { createTestDb } = await import("@voyantjs/db/test-utils")
+      const db = createTestDb()
+      const contactPoints = await identityService.listContactPointsForEntity(
+        db,
+        "person",
+        created.id,
+      )
+      const emailCp = contactPoints.find((p) => p.kind === "email")
+      if (!emailCp) throw new Error("expected seeded email contact point")
+      await identityService.updateContactPoint(db, emailCp.id, {
+        entityType: "person",
+        entityId: created.id,
+        kind: "email",
+        value: "second@example.com",
+      })
+
+      const refreshed = await app.request(`/people/${created.id}`, { method: "GET" })
+      expect(refreshed.status).toBe(200)
+      const body = await refreshed.json()
+      expect(body.data.email).toBe("second@example.com")
+    })
+
     it("hydrates inline person identity fields on create and list reads", async () => {
       const createRes = await app.request("/people", {
         method: "POST",

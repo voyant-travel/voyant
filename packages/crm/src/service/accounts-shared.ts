@@ -1,4 +1,3 @@
-import { identityContactPoints } from "@voyantjs/identity/schema"
 import { identityService } from "@voyantjs/identity/service"
 import type {
   insertAddressSchema,
@@ -6,10 +5,10 @@ import type {
   updateAddressSchema,
   updateContactPointSchema,
 } from "@voyantjs/identity/validation"
-import { and, eq, inArray } from "drizzle-orm"
+import { inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-import { personDirectoryProjections } from "../schema.js"
+import { personDirectoryView } from "../schema.js"
 import type {
   communicationListQuerySchema,
   insertCommunicationLogSchema,
@@ -53,11 +52,6 @@ export type PersonHydratedFields = {
   website: string | null
 }
 
-type PersonDirectoryProjectionValues = Omit<
-  typeof personDirectoryProjections.$inferInsert,
-  "updatedAt"
->
-
 function emptyPersonHydratedFields(): PersonHydratedFields {
   return {
     email: null,
@@ -91,113 +85,37 @@ export function personBaseFields(data: CreatePersonInput | UpdatePersonInput) {
   }
 }
 
-async function buildPersonDirectoryProjectionRows(
-  db: PostgresJsDatabase,
-  personIds: string[],
-): Promise<PersonDirectoryProjectionValues[]> {
-  if (personIds.length === 0) {
-    return []
-  }
-
-  const ids = [...new Set(personIds)]
-  const contactPoints = await db
-    .select()
-    .from(identityContactPoints)
-    .where(
-      and(
-        eq(identityContactPoints.entityType, personEntityType),
-        inArray(identityContactPoints.entityId, ids),
-      ),
-    )
-
-  const contactPointMap = new Map<string, typeof contactPoints>()
-
-  for (const point of contactPoints) {
-    const bucket = contactPointMap.get(point.entityId) ?? []
-    bucket.push(point)
-    contactPointMap.set(point.entityId, bucket)
-  }
-
-  return ids.map((personId) => {
-    const entityContactPoints = contactPointMap.get(personId) ?? []
-
-    const findPrimaryContactPoint = (kind: "email" | "phone" | "website") =>
-      entityContactPoints.find((point) => point.kind === kind && point.isPrimary)?.value ??
-      entityContactPoints.find((point) => point.kind === kind)?.value ??
-      null
-
-    return {
-      personId,
-      email: findPrimaryContactPoint("email"),
-      phone: findPrimaryContactPoint("phone"),
-      website: findPrimaryContactPoint("website"),
-    }
-  })
-}
-
-export async function rebuildPersonDirectoryProjection(db: PostgresJsDatabase, personId: string) {
-  return rebuildPersonDirectoryProjections(db, [personId])
-}
-
-export async function rebuildPersonDirectoryProjections(
-  db: PostgresJsDatabase,
-  personIds: string[],
-) {
-  const ids = [...new Set(personIds)]
-  if (ids.length === 0) {
-    return
-  }
-
-  const rows = await buildPersonDirectoryProjectionRows(db, ids)
-  await db
-    .delete(personDirectoryProjections)
-    .where(inArray(personDirectoryProjections.personId, ids))
-  await db.insert(personDirectoryProjections).values(rows)
-}
-
-async function ensurePersonDirectoryProjectionMap(db: PostgresJsDatabase, personIds: string[]) {
+/**
+ * Reads the per-person `(email, phone, website)` triple from the
+ * `person_directory` view (replaces the old projection cache —
+ * see #446). The view is computed via indexed `LATERAL` joins on
+ * `identity_contact_points`, so callers no longer need a rebuild
+ * step after contact-point edits.
+ */
+async function loadPersonDirectoryMap(db: PostgresJsDatabase, personIds: string[]) {
   const ids = [...new Set(personIds)]
   if (ids.length === 0) {
     return new Map<string, PersonHydratedFields>()
   }
 
-  const existing = await db
+  const rows = await db
     .select()
-    .from(personDirectoryProjections)
-    .where(inArray(personDirectoryProjections.personId, ids))
+    .from(personDirectoryView)
+    .where(inArray(personDirectoryView.personId, ids))
 
   const map = new Map<string, PersonHydratedFields>()
-  for (const projection of existing) {
-    map.set(projection.personId, {
-      email: projection.email,
-      phone: projection.phone,
-      website: projection.website,
+  for (const row of rows) {
+    map.set(row.personId, {
+      email: row.email,
+      phone: row.phone,
+      website: row.website,
     })
   }
-
-  const missingIds = ids.filter((id) => !map.has(id))
-  if (missingIds.length > 0) {
-    await rebuildPersonDirectoryProjections(db, missingIds)
-    const rebuilt = await db
-      .select()
-      .from(personDirectoryProjections)
-      .where(inArray(personDirectoryProjections.personId, missingIds))
-
-    for (const projection of rebuilt) {
-      map.set(projection.personId, {
-        email: projection.email,
-        phone: projection.phone,
-        website: projection.website,
-      })
-    }
-  }
-
   for (const id of ids) {
     if (!map.has(id)) {
       map.set(id, emptyPersonHydratedFields())
     }
   }
-
   return map
 }
 
@@ -262,8 +180,6 @@ export async function syncPersonIdentity(
   if (managedAddress) {
     await identityService.deleteAddress(db, managedAddress.id)
   }
-
-  await rebuildPersonDirectoryProjection(db, personId)
 }
 
 export async function deletePersonIdentity(db: PostgresJsDatabase, personId: string) {
@@ -290,12 +206,12 @@ export async function hydratePeople<T extends { id: string }>(
   }
 
   const ids = rows.map((row) => row.id)
-  const projectionMap = await ensurePersonDirectoryProjectionMap(db, ids)
+  const directoryMap = await loadPersonDirectoryMap(db, ids)
 
   return rows.map((row) => {
     return {
       ...row,
-      ...(projectionMap.get(row.id) ?? emptyPersonHydratedFields()),
+      ...(directoryMap.get(row.id) ?? emptyPersonHydratedFields()),
     }
   })
 }
