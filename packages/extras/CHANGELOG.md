@@ -1,5 +1,15 @@
 # @voyantjs/extras
 
+## 0.26.5
+
+### Patch Changes
+
+- Updated dependencies [7a92aba]
+  - @voyantjs/catalog@0.26.5
+  - @voyantjs/core@0.26.5
+  - @voyantjs/db@0.26.5
+  - @voyantjs/hono@0.26.5
+
 ## 0.26.4
 
 ### Patch Changes
