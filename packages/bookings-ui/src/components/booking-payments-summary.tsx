@@ -81,7 +81,7 @@ export function BookingPaymentsSummary({
   const totalCompleted = payments
     .filter((p) => p.status === "completed")
     .reduce((sum, p) => sum + p.amountCents, 0)
-  const currency = payments[0]?.currency ?? "EUR"
+  const currency = payments[0]?.currency ?? null
 
   return (
     <Card data-slot="booking-payments-summary">
@@ -183,7 +183,13 @@ export function BookingPaymentsSummary({
   )
 }
 
-function formatMoney(cents: number, currency: string): string {
+function formatMoney(cents: number, currency: string | null | undefined): string {
+  if (!currency) {
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(cents / 100)
+  }
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
   } catch {

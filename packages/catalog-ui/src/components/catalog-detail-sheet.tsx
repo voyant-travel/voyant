@@ -670,9 +670,12 @@ function formatDeparture(iso: string): string {
 }
 
 function formatPriceCents(cents: number, currency?: string | null): string {
+  if (!currency) {
+    return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(cents / 100)
+  }
   return new Intl.NumberFormat(undefined, {
     style: "currency",
-    currency: currency ?? "EUR",
+    currency,
     maximumFractionDigits: 0,
   }).format(cents / 100)
 }

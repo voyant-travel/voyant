@@ -11,7 +11,13 @@ type DashboardOutstandingInvoicesWidgetProps = {
   }
 }
 
-function formatCurrency(amountInMinor: number, currency: string): string {
+function formatCurrency(amountInMinor: number, currency: string | null | undefined): string {
+  if (!currency) {
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amountInMinor / 100)
+  }
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
@@ -23,7 +29,7 @@ export function DashboardOutstandingInvoicesWidget({
 }: DashboardOutstandingInvoicesWidgetProps) {
   const outstandingInvoiceCount = metrics?.outstandingInvoiceCount ?? 0
   const outstandingAmount = metrics?.outstandingAmount ?? 0
-  const defaultCurrency = metrics?.defaultCurrency ?? "EUR"
+  const defaultCurrency = metrics?.defaultCurrency ?? null
 
   return (
     <Card>

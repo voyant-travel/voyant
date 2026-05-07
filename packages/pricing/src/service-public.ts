@@ -29,6 +29,7 @@ async function ensurePublicProduct(db: PostgresJsDatabase, productId: string) {
       id: products.id,
       bookingMode: products.bookingMode,
       capacityMode: products.capacityMode,
+      sellCurrency: products.sellCurrency,
     })
     .from(products)
     .where(
@@ -130,7 +131,7 @@ export const publicPricingService = {
         productId,
         catalog: {
           ...catalog,
-          currencyCode: catalog.currencyCode ?? null,
+          currencyCode: catalog.currencyCode ?? product.sellCurrency,
         },
         options: [],
       }
@@ -304,7 +305,7 @@ export const publicPricingService = {
       productId,
       catalog: {
         ...catalog,
-        currencyCode: catalog.currencyCode ?? null,
+        currencyCode: catalog.currencyCode ?? product.sellCurrency,
       },
       options: options.map((option) => ({
         id: option.id,

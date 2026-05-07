@@ -253,46 +253,54 @@ export function SupplierDetailPage({ id }: { id: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <PaymentPolicyForm
-            value={policyDraft}
-            onChange={setPolicyDraft}
-            inheritable={true}
-            currency={supplier.defaultCurrency ?? "EUR"}
-            disabled={supplierMutation.update.isPending}
-          />
-          <div className="flex flex-col gap-3">
-            <PaymentPolicyPreview
-              policy={policyDraft}
-              currency={supplier.defaultCurrency ?? "EUR"}
-            />
-            <div className="flex justify-end">
-              <Button
-                size="sm"
+          {supplier.defaultCurrency ? (
+            <>
+              <PaymentPolicyForm
+                value={policyDraft}
+                onChange={setPolicyDraft}
+                inheritable={true}
+                currency={supplier.defaultCurrency}
                 disabled={supplierMutation.update.isPending}
-                onClick={() => {
-                  supplierMutation.update.mutate(
-                    {
-                      id,
-                      input: {
-                        customerPaymentPolicy:
-                          (policyDraft as SupplierCustomerPaymentPolicy | null) ?? null,
-                      },
-                    },
-                    {
-                      onSuccess: () => toast.success("Customer payment policy saved"),
-                      onError: (err) =>
-                        toast.error(err instanceof Error ? err.message : "Failed to save policy"),
-                    },
-                  )
-                }}
-              >
-                {supplierMutation.update.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Save policy
-              </Button>
-            </div>
-          </div>
+              />
+              <div className="flex flex-col gap-3">
+                <PaymentPolicyPreview policy={policyDraft} currency={supplier.defaultCurrency} />
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    disabled={supplierMutation.update.isPending}
+                    onClick={() => {
+                      supplierMutation.update.mutate(
+                        {
+                          id,
+                          input: {
+                            customerPaymentPolicy:
+                              (policyDraft as SupplierCustomerPaymentPolicy | null) ?? null,
+                          },
+                        },
+                        {
+                          onSuccess: () => toast.success("Customer payment policy saved"),
+                          onError: (err) =>
+                            toast.error(
+                              err instanceof Error ? err.message : "Failed to save policy",
+                            ),
+                        },
+                      )
+                    }}
+                  >
+                    {supplierMutation.update.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Save policy
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm lg:col-span-2">
+              Set the supplier's default currency above before defining a payment policy — amounts
+              must be denominated in a known currency.
+            </p>
+          )}
         </CardContent>
       </Card>
 

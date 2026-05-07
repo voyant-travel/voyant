@@ -63,11 +63,11 @@ export function ProductPaymentPolicySection({
           value={draft}
           onChange={setDraft}
           inheritable={true}
-          currency={product.sellCurrency ?? "EUR"}
+          currency={product.sellCurrency}
           disabled={update.isPending}
         />
         <div className="flex flex-col gap-3">
-          <PaymentPolicyPreview policy={draft} currency={product.sellCurrency ?? "EUR"} />
+          <PaymentPolicyPreview policy={draft} currency={product.sellCurrency} />
           <div className="flex justify-end">
             <Button
               size="sm"
