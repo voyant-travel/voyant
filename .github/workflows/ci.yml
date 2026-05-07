@@ -17,13 +17,21 @@ concurrency:
 permissions:
   contents: read
 
+# Two jobs run in parallel. `checks` covers everything that only needs source
+# (lint/typecheck/test/architecture/i18n); `build` covers everything that
+# needs fresh dist (turbo build → package exports → publish tarballs). They
+# share the same setup; both rely on the pnpm + turbo remote caches to make
+# the duplicated install/build effectively free on warm caches.
+#
+# NOTE: branch protection rules need to require both `CI / checks` and
+# `CI / build` (the previous single `verify` job no longer exists).
+
 jobs:
-  verify:
+  checks:
+    name: checks
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      # Turbo remote cache. Configure in GitHub Settings -> Secrets and variables
-      # -> Actions; without them turbo falls back to the local runner cache.
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
@@ -52,6 +60,30 @@ jobs:
       - name: Architecture checks
         run: pnpm verify:architecture
 
+      - name: i18n checks
+        run: pnpm i18n:check
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
       - name: Build
         run: pnpm build
 
@@ -65,6 +97,3 @@ jobs:
         env:
           VOYANT_PACK_REUSE_DIST: "1"
         run: pnpm verify:publish-tarballs
-
-      - name: i18n checks
-        run: pnpm i18n:check
