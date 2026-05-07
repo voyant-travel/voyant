@@ -20,6 +20,22 @@ export {
   useActivityMutation,
 } from "./hooks/use-activity-mutation.js"
 export {
+  type UseCustomerSignalOptions,
+  useCustomerSignal,
+} from "./hooks/use-customer-signal.js"
+export {
+  type CreateCustomerSignalInput,
+  type CustomerSignalPriority,
+  type UpdateCustomerSignalInput,
+  useCustomerSignalMutation,
+} from "./hooks/use-customer-signal-mutation.js"
+export {
+  type UseCustomerSignalsForPersonOptions,
+  type UseCustomerSignalsOptions,
+  useCustomerSignals,
+  useCustomerSignalsForPerson,
+} from "./hooks/use-customer-signals.js"
+export {
   type UseOpportunitiesOptions,
   useOpportunities,
 } from "./hooks/use-opportunities.js"
@@ -120,6 +136,7 @@ export {
 } from "./provider.js"
 export {
   type ActivitiesListFilters,
+  type CustomerSignalsListFilters,
   crmQueryKeys,
   type OpportunitiesListFilters,
   type OrganizationsListFilters,
@@ -154,6 +171,14 @@ export {
   type ActivityRecord,
   activityLinkRecordSchema,
   activityRecordSchema,
+  type CustomerSignalKind,
+  type CustomerSignalRecord,
+  type CustomerSignalSource,
+  type CustomerSignalStatus,
+  customerSignalKindSchema,
+  customerSignalRecordSchema,
+  customerSignalSourceSchema,
+  customerSignalStatusSchema,
   type KmsEnvelopeRecord,
   kmsEnvelopeRecordSchema,
   type OpportunityRecord,

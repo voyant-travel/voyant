@@ -1,6 +1,7 @@
 import { accountsService } from "./accounts.js"
 import { activitiesService } from "./activities.js"
 import { customFieldsService } from "./custom-fields.js"
+import { customerSignalsService } from "./customer-signals.js"
 import { opportunitiesService } from "./opportunities.js"
 import { personDocumentsService } from "./person-documents.js"
 import { personRelationshipsService } from "./person-relationships.js"
@@ -16,8 +17,15 @@ export const crmService = {
   ...customFieldsService,
   ...personDocumentsService,
   ...personRelationshipsService,
+  ...customerSignalsService,
 }
 
+export type {
+  CreateCustomerSignalInput,
+  CustomerSignalListQuery,
+  UpdateCustomerSignalInput,
+} from "./customer-signals.js"
+export { customerSignalsService } from "./customer-signals.js"
 export type {
   CreatePersonDocumentInput,
   PersonDocumentListQuery,
