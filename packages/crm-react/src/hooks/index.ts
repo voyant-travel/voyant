@@ -1,3 +1,19 @@
+export {
+  type UseCustomerSignalOptions,
+  useCustomerSignal,
+} from "./use-customer-signal.js"
+export {
+  type CreateCustomerSignalInput,
+  type CustomerSignalPriority,
+  type UpdateCustomerSignalInput,
+  useCustomerSignalMutation,
+} from "./use-customer-signal-mutation.js"
+export {
+  type UseCustomerSignalsForPersonOptions,
+  type UseCustomerSignalsOptions,
+  useCustomerSignals,
+  useCustomerSignalsForPerson,
+} from "./use-customer-signals.js"
 export { useOrganization } from "./use-organization.js"
 export {
   type CreateOrganizationInput,

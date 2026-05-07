@@ -240,6 +240,62 @@ export type PersonDocumentRecord = z.infer<typeof personDocumentRecordSchema>
 export const personDocumentListResponse = listEnvelope(personDocumentRecordSchema)
 export const personDocumentSingleResponse = singleEnvelope(personDocumentRecordSchema)
 
+export const customerSignalKindSchema = z.enum([
+  "wishlist",
+  "notify",
+  "inquiry",
+  "request_offer",
+  "referral",
+])
+
+export const customerSignalSourceSchema = z.enum([
+  "form",
+  "phone",
+  "admin",
+  "abandoned_cart",
+  "website",
+  "booking",
+])
+
+export const customerSignalStatusSchema = z.enum([
+  "new",
+  "contacted",
+  "qualified",
+  "converted",
+  "lost",
+  "expired",
+])
+
+export type CustomerSignalKind = z.infer<typeof customerSignalKindSchema>
+export type CustomerSignalSource = z.infer<typeof customerSignalSourceSchema>
+export type CustomerSignalStatus = z.infer<typeof customerSignalStatusSchema>
+
+export const customerSignalRecordSchema = z.object({
+  id: z.string(),
+  personId: z.string(),
+  productId: z.string().nullable(),
+  optionUnitId: z.string().nullable(),
+  kind: customerSignalKindSchema,
+  source: customerSignalSourceSchema,
+  status: customerSignalStatusSchema,
+  priority: z.string(),
+  notes: z.string().nullable(),
+  tags: z.array(z.string()),
+  assignedToUserId: z.string().nullable(),
+  followUpAt: z.string().nullable(),
+  resolvedBookingId: z.string().nullable(),
+  sourceSubmissionId: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type CustomerSignalRecord = z.infer<typeof customerSignalRecordSchema>
+
+export const customerSignalListResponse = paginatedEnvelope(customerSignalRecordSchema)
+export const customerSignalListByPersonResponse = listEnvelope(customerSignalRecordSchema)
+export const customerSignalSingleResponse = singleEnvelope(customerSignalRecordSchema)
+
 export const personRelationshipKindSchema = z.enum([
   "spouse",
   "partner",

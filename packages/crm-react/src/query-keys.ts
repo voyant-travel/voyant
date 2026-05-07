@@ -64,6 +64,17 @@ export interface QuotesListFilters {
   offset?: number | undefined
 }
 
+export interface CustomerSignalsListFilters {
+  personId?: string | undefined
+  assignedToUserId?: string | undefined
+  status?: string | undefined
+  kind?: string | undefined
+  productId?: string | undefined
+  search?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export interface PersonRelationshipsListFilters {
   kind?: string | undefined
   direction?: "from" | "to" | "both" | undefined
@@ -91,6 +102,12 @@ export const crmQueryKeys = {
     [...crmQueryKeys.person(personId), "travel-snapshot"] as const,
   personRelationships: (personId: string, filters: PersonRelationshipsListFilters = {}) =>
     [...crmQueryKeys.person(personId), "relationships", filters] as const,
+  customerSignals: () => [...crmQueryKeys.all, "customer-signals"] as const,
+  customerSignalsList: (filters: CustomerSignalsListFilters) =>
+    [...crmQueryKeys.customerSignals(), "list", filters] as const,
+  customerSignal: (id: string) => [...crmQueryKeys.customerSignals(), "detail", id] as const,
+  customerSignalsByPerson: (personId: string) =>
+    [...crmQueryKeys.person(personId), "signals"] as const,
 
   organizations: () => [...crmQueryKeys.all, "organizations"] as const,
   organizationsList: (filters: OrganizationsListFilters) =>
