@@ -317,9 +317,7 @@ async function verifyPackage(packageDir) {
   try {
     ;[packInfo] = getPackJson(stdout)
     extracted = await extractTarball(packInfo.filename)
-    packedManifest = JSON.parse(
-      fs.readFileSync(path.join(extracted.root, "package.json"), "utf8"),
-    )
+    packedManifest = JSON.parse(fs.readFileSync(path.join(extracted.root, "package.json"), "utf8"))
     extensionlessRelativeSpecifiers = collectPackedExtensionlessRelativeSpecifiers(
       extracted.root,
       packInfo,
