@@ -1,5 +1,16 @@
 # @voyantjs/cruises
 
+## 0.26.3
+
+### Patch Changes
+
+- Updated dependencies [372cad5]
+  - @voyantjs/bookings@0.26.3
+  - @voyantjs/catalog@0.26.3
+  - @voyantjs/core@0.26.3
+  - @voyantjs/db@0.26.3
+  - @voyantjs/hono@0.26.3
+
 ## 0.26.2
 
 ### Patch Changes
