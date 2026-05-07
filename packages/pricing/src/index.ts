@@ -77,6 +77,14 @@ export {
   pricingDependencyTypeEnum,
 } from "./schema.js"
 export {
+  loadDeparturePriceOverrides,
+  pickRulesForDate,
+  type ResolverRuleInput,
+  type ResolverScheduleInput,
+  resolveOptionPriceRulesForDate,
+  type UnitPriceOverride,
+} from "./service-rule-resolver.js"
+export {
   addonPricingModeSchema,
   cancellationChargeTypeSchema,
   cancellationPolicyListQuerySchema,

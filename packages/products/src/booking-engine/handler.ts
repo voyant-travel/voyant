@@ -177,6 +177,27 @@ export function buildOwnedProductDraftShape(
 // Handler
 // ─────────────────────────────────────────────────────────────────
 
+/** A per-unit price within a resolved option price rule, returned by
+ *  `loadResolvedOptionPrice`. The handler matches `travelerCategory`
+ *  to the draft's pax-band codes ("adult" / "child" / "infant" /
+ *  "senior") to compute per-band totals. Units that don't map to a
+ *  band — or whose band has zero count — are dropped. */
+export interface ResolvedUnitPrice {
+  unitId: string
+  unitType: "person" | "room" | "vehicle" | "service" | "group" | "other" | string
+  travelerCategory: "adult" | "child" | "infant" | "senior" | null
+  sellAmountCents: number | null
+}
+
+/** Output of `loadResolvedOptionPrice`. The handler prefers
+ *  `unitPrices` (per-band pricing) when present and any unit matches a
+ *  pax band; otherwise falls back to `baseSellAmountCents × paxCount`
+ *  for per-booking rules; otherwise back to `product.sellAmountCents`. */
+export interface ResolvedOptionPrice {
+  baseSellAmountCents: number | null
+  unitPrices: ReadonlyArray<ResolvedUnitPrice>
+}
+
 /** A resolved tax-rate decision — resolved from `tax_classes` ×
  *  `tax_regimes` × buyer country at quote time. */
 export interface ResolvedTaxRate {
@@ -232,6 +253,38 @@ export interface OwnedProductsShapeLoaders {
       buyerType?: "B2C" | "B2B"
     },
   ) => Promise<ResolvedTaxRate | null>
+
+  /**
+   * Resolve the option price rule for a given (product, option, date)
+   * — typically backed by `@voyantjs/pricing`'s
+   * `resolveOptionPriceRulesForDate` plus a join into per-unit prices.
+   * Returns null when no rule applies or the resolver can't run; the
+   * handler then falls back to `product.sellAmountCents × pax`.
+   *
+   * Caller-supplied so `@voyantjs/products` does not import
+   * `@voyantjs/pricing` (the dependency direction is pricing →
+   * products, not the reverse).
+   */
+  loadResolvedOptionPrice?: (
+    ctx: OwnedHandlerContext,
+    args: {
+      productId: string
+      optionId: string
+      /** ISO yyyy-mm-dd in the slot's local timezone. */
+      date: string
+      catalogId?: string
+    },
+  ) => Promise<ResolvedOptionPrice | null>
+
+  /**
+   * Look up the local date of a departure slot (`availability_slots`).
+   * Caller-supplied so the products package does not import
+   * `@voyantjs/availability`. Returns null when the slot is missing.
+   *
+   * Used together with `loadResolvedOptionPrice` to convert a draft's
+   * `departureSlotId` into a date the resolver can match against.
+   */
+  loadSlotDate?: (ctx: OwnedHandlerContext, slotId: string) => Promise<string | null>
 }
 
 /**
@@ -308,9 +361,13 @@ export function createProductsBookingHandler(
       }
 
       const draft = (request.draft ?? {}) as DraftLike
-      // Concurrent enrichment — all three calls are pure reads and
-      // don't depend on each other.
-      const [travelerFields, addonCatalog, taxRate] = await Promise.all([
+      const optionId = draft.configure?.variantId
+      const slotId = draft.configure?.departureSlotId
+
+      // Concurrent enrichment + slot-date lookup. The slot date is
+      // needed before we can call loadResolvedOptionPrice, so it
+      // joins this batch.
+      const [travelerFields, addonCatalog, taxRate, slotDate] = await Promise.all([
         options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
         options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
         options.loadTaxRate?.(ctx, {
@@ -318,20 +375,39 @@ export function createProductsBookingHandler(
           buyerCountry: draft.billing?.address?.country,
           buyerType: draft.billing?.buyerType,
         }) ?? Promise.resolve(null),
+        slotId && options.loadSlotDate
+          ? options.loadSlotDate(ctx, slotId)
+          : Promise.resolve(draft.configure?.departureDate ?? null),
       ])
+
+      const resolvedPrice =
+        optionId && slotDate && options.loadResolvedOptionPrice
+          ? await options.loadResolvedOptionPrice(ctx, {
+              productId: request.entityId,
+              optionId,
+              date: slotDate,
+            })
+          : null
+
       const paxCount = sumPax(draft.configure?.pax)
       // Per-pax pricing fallback: when no pax is supplied yet, quote a
       // single-occupant baseline so the wizard can render a starter
       // total before the user picks counts.
       const effectivePax = paxCount > 0 ? paxCount : 1
-      const unitCents = product.sellAmountCents ?? 0
-      const grossCents = unitCents * effectivePax
+
+      const priced = priceQuote({
+        product,
+        resolvedPrice,
+        pax: draft.configure?.pax,
+        effectivePax,
+      })
 
       // Tax computation. The base is taxable; addons/accommodation
       // get the same rate in this MVP cut. Per-line override (the
       // `applies_to` axis on tax_classes.lines) lands in a follow-up
       // when the catalog actually carries mixed treatments.
       const taxIsInclusive = taxRate?.priceMode === "inclusive"
+      const grossCents = priced.totalCents
       const taxCents =
         taxRate && taxRate.rate > 0
           ? taxIsInclusive
@@ -341,50 +417,44 @@ export function createProductsBookingHandler(
       const netCents = taxIsInclusive ? grossCents - taxCents : grossCents
       const payableCents = taxIsInclusive ? grossCents : netCents + taxCents
 
-      const pricing =
-        unitCents > 0
-          ? {
-              base_amount: netCents,
-              taxes: taxCents,
-              fees: 0,
-              surcharges: 0,
-              currency: product.sellCurrency,
-              breakdown: {
-                lines: [
-                  {
-                    kind: "base",
-                    label: product.name,
-                    quantity: effectivePax,
-                    unitAmount: unitCents,
-                    totalAmount: grossCents,
-                    taxIncluded: taxIsInclusive,
-                  },
-                ],
-                taxes:
-                  taxRate && taxCents > 0
-                    ? [
-                        {
-                          code: taxRate.code,
-                          label: taxRate.label,
-                          rate: taxRate.rate,
-                          amount: taxCents,
-                          base: netCents,
-                          includedInPrice: taxIsInclusive,
-                          scope: taxIsInclusive ? "included" : "excluded",
-                        },
-                      ]
-                    : [],
-                subtotal: netCents,
-                taxTotal: taxCents,
-                total: payableCents,
-                paxCount: effectivePax,
-              } as Record<string, unknown>,
-            }
-          : undefined
+      const available = grossCents > 0
+      const pricing = available
+        ? {
+            base_amount: netCents,
+            taxes: taxCents,
+            fees: 0,
+            surcharges: 0,
+            currency: product.sellCurrency,
+            breakdown: {
+              lines: priced.lines.map((line) => ({
+                ...line,
+                taxIncluded: taxIsInclusive,
+              })),
+              taxes:
+                taxRate && taxCents > 0
+                  ? [
+                      {
+                        code: taxRate.code,
+                        label: taxRate.label,
+                        rate: taxRate.rate,
+                        amount: taxCents,
+                        base: netCents,
+                        includedInPrice: taxIsInclusive,
+                        scope: taxIsInclusive ? "included" : "excluded",
+                      },
+                    ]
+                  : [],
+              subtotal: netCents,
+              taxTotal: taxCents,
+              total: payableCents,
+              paxCount: effectivePax,
+            } as Record<string, unknown>,
+          }
+        : undefined
 
       return {
-        available: unitCents > 0,
-        invalidReason: unitCents > 0 ? undefined : "no_sell_amount_configured",
+        available,
+        invalidReason: available ? undefined : "no_sell_amount_configured",
         pricing,
         shape: buildOwnedProductDraftShape({
           travelerFields,
@@ -540,6 +610,99 @@ function sumPax(pax: Partial<Record<string, number>> | undefined): number {
     if (typeof v === "number" && Number.isFinite(v) && v > 0) total += v
   }
   return total
+}
+
+interface PricedLine {
+  kind: "base"
+  label: string
+  quantity: number
+  unitAmount: number
+  totalAmount: number
+}
+
+interface PricedQuote {
+  totalCents: number
+  lines: PricedLine[]
+}
+
+/**
+ * Three-way price computation:
+ *
+ * 1. **Per-band** (preferred): when `resolvedPrice.unitPrices` matches
+ *    at least one band with positive count, sum `pax[band] ×
+ *    unit.sellAmountCents` for each matching band. One breakdown line
+ *    per band.
+ *
+ * 2. **Per-booking**: when no per-band match but `baseSellAmountCents`
+ *    is set, charge a single `base × paxCount` line.
+ *
+ * 3. **Fallback**: `product.sellAmountCents × paxCount`. Same shape as
+ *    Phase A behavior, kept for bookings without an option/slot
+ *    configured yet.
+ */
+function priceQuote(input: {
+  product: typeof products.$inferSelect
+  resolvedPrice: ResolvedOptionPrice | null
+  pax: Partial<Record<string, number>> | undefined
+  effectivePax: number
+}): PricedQuote {
+  const { product, resolvedPrice, pax, effectivePax } = input
+
+  if (resolvedPrice && resolvedPrice.unitPrices.length > 0) {
+    const bandLines: PricedLine[] = []
+    let total = 0
+    for (const unit of resolvedPrice.unitPrices) {
+      if (!unit.travelerCategory) continue
+      const count = pax?.[unit.travelerCategory] ?? 0
+      if (count <= 0) continue
+      const sell = unit.sellAmountCents ?? 0
+      if (sell <= 0) continue
+      const lineTotal = sell * count
+      total += lineTotal
+      bandLines.push({
+        kind: "base",
+        label: `${product.name} — ${unit.travelerCategory}`,
+        quantity: count,
+        unitAmount: sell,
+        totalAmount: lineTotal,
+      })
+    }
+    if (bandLines.length > 0) {
+      return { totalCents: total, lines: bandLines }
+    }
+  }
+
+  if (resolvedPrice && resolvedPrice.baseSellAmountCents !== null) {
+    const unitCents = resolvedPrice.baseSellAmountCents
+    const totalCents = unitCents * effectivePax
+    return {
+      totalCents,
+      lines: [
+        {
+          kind: "base",
+          label: product.name,
+          quantity: effectivePax,
+          unitAmount: unitCents,
+          totalAmount: totalCents,
+        },
+      ],
+    }
+  }
+
+  const unitCents = product.sellAmountCents ?? 0
+  const totalCents = unitCents * effectivePax
+  return {
+    totalCents,
+    lines: [
+      {
+        kind: "base",
+        label: product.name,
+        quantity: effectivePax,
+        unitAmount: unitCents,
+        totalAmount: totalCents,
+      },
+    ],
+  }
 }
 
 function extractPersonId(party: Record<string, unknown> | undefined): string | undefined {
