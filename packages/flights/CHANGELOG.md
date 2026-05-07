@@ -1,5 +1,13 @@
 # @voyantjs/flights
 
+## 0.26.5
+
+### Patch Changes
+
+- Updated dependencies [7a92aba]
+  - @voyantjs/catalog@0.26.5
+  - @voyantjs/db@0.26.5
+
 ## 0.26.4
 
 ### Patch Changes
