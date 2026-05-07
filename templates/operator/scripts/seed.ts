@@ -320,7 +320,6 @@ async function reset() {
     "pipelines",
     "custom_field_values",
     "custom_field_definitions",
-    "person_directory_projections",
     "people",
     "organizations",
     // Identity

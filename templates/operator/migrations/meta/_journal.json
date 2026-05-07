@@ -197,6 +197,13 @@
       "when": 1777891900000,
       "tag": "0027_customer_signals",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1777892000000,
+      "tag": "0028_person_directory_view",
+      "breakpoints": true
     }
   ]
 }
