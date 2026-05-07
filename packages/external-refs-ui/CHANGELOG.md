@@ -1,5 +1,13 @@
 # @voyantjs/external-refs-ui
 
+## 0.28.2
+
+### Patch Changes
+
+- @voyantjs/external-refs-react@0.28.2
+- @voyantjs/i18n@0.28.2
+- @voyantjs/ui@0.28.2
+
 ## 0.28.1
 
 ### Patch Changes
