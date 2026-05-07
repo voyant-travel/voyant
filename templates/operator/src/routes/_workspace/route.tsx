@@ -157,7 +157,7 @@ function WorkspaceInner({ user }: { user: NonNullable<ReturnType<typeof useUser>
         name: displayName,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email,
+        email: user.email ?? undefined,
         avatar: user.profilePictureUrl,
         locale: user.locale,
         timeZone: user.timezone,
