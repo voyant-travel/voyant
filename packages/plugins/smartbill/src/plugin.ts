@@ -138,8 +138,13 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             seriesName,
             number,
           )
+          const paymentLabel = status.paid
+            ? "paid"
+            : (status.paidAmount ?? 0) > 0
+              ? "partially_paid"
+              : "unpaid"
           logger.info?.(
-            `[smartbill] payment status for ${seriesName}-${number}: ${status.status}`,
+            `[smartbill] payment status for ${seriesName}-${number}: ${paymentLabel}`,
             status,
           )
         } catch (err) {

@@ -11,26 +11,41 @@ function eventEnvelope<T>(data: T) {
   }
 }
 
-function jsonResponse(status: number, body: unknown) {
-  const text = JSON.stringify(body)
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    json: async () => JSON.parse(text),
-    text: async () => text,
-  }
-}
-
-function textResponse(status: number, text: string) {
+function makeResponse(status: number, text: string, isJson: boolean) {
   return {
     ok: status >= 200 && status < 300,
     status,
     json: async () => {
-      throw new Error("not json")
+      if (!isJson) throw new Error("not json")
+      return JSON.parse(text)
     },
     text: async () => text,
+    arrayBuffer: async () => {
+      const bytes = new TextEncoder().encode(text)
+      const copy = new ArrayBuffer(bytes.byteLength)
+      new Uint8Array(copy).set(bytes)
+      return copy
+    },
+    headers: {
+      get: (name: string) =>
+        name.toLowerCase() === "content-type"
+          ? isJson
+            ? "application/json; charset=utf-8"
+            : "text/plain"
+          : null,
+    },
   }
 }
+
+function jsonResponse(status: number, body: unknown) {
+  return makeResponse(status, JSON.stringify(body), true)
+}
+
+function textResponse(status: number, text: string) {
+  return makeResponse(status, text, false)
+}
+
+const okEnvelope = { status: "Ok", message: "", errorText: "" }
 
 const baseOptions = {
   username: "user@test.com",
@@ -106,7 +121,7 @@ describe("smartbillPlugin structure", () => {
 describe("smartbillPlugin — invoice.issued subscriber", () => {
   it("calls createInvoice with mapped body", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () =>
-      jsonResponse(200, { number: "1", series: "A" }),
+      jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }),
     )
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
@@ -163,7 +178,7 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
 
 describe("smartbillPlugin — invoice.voided subscriber", () => {
   it("calls cancelInvoice with external number", async () => {
-    const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(200, {}))
+    const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(200, okEnvelope))
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
     const handler = subscriberFor(plugin, "invoice.voided").handler
@@ -187,7 +202,7 @@ describe("smartbillPlugin — invoice.voided subscriber", () => {
   })
 
   it("falls back to invoiceNumber when externalNumber missing", async () => {
-    const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(200, {}))
+    const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(200, okEnvelope))
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
     const handler = subscriberFor(plugin, "invoice.voided").handler
@@ -228,7 +243,13 @@ describe("smartbillPlugin — invoice.voided subscriber", () => {
 describe("smartbillPlugin — invoice.external.sync.requested subscriber", () => {
   it("calls getPaymentStatus and logs result", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () =>
-      jsonResponse(200, { status: "paid", paidAmount: 100 }),
+      jsonResponse(200, {
+        ...okEnvelope,
+        paid: true,
+        invoiceTotalAmount: 100,
+        paidAmount: 100,
+        unpaidAmount: 0,
+      }),
     )
     const logger = makeLogger()
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger })
@@ -272,7 +293,7 @@ describe("smartbillPlugin — invoice.external.sync.requested subscriber", () =>
 describe("smartbillPlugin — custom mapEvent", () => {
   it("uses custom mapper when provided", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () =>
-      jsonResponse(200, { number: "1", series: "A" }),
+      jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }),
     )
     const logger = makeLogger()
     const customMapper = vi.fn().mockReturnValue({

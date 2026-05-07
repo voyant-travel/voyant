@@ -114,18 +114,19 @@ export function createSmartbillInvoiceSettlementPoller(
     }
 
     const status = await client.getPaymentStatus(companyVatCode, seriesName, number)
+    const paid = status.paid === true
 
     return {
       externalId: externalRef.externalId ?? null,
       externalNumber: number,
-      status: status.status ?? null,
+      status: paid ? "paid" : "unpaid",
       paidAmountCents: toCents(status.paidAmount),
       unpaidAmountCents: toCents(status.unpaidAmount),
       settledAt:
-        status.status === "paid" && typeof status.paidAmount === "number" && status.paidAmount > 0
+        paid && typeof status.paidAmount === "number" && status.paidAmount > 0
           ? new Date().toISOString()
           : null,
-      syncError: status.errorText ?? null,
+      syncError: status.errorText ? status.errorText : null,
       metadata: {
         ...(metadata ?? {}),
         companyVatCode,

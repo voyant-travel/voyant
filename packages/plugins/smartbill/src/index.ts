@@ -36,11 +36,16 @@ export type {
 export { createSmartbillInvoiceSettlementPoller } from "./settlement.js"
 export type {
   SmartbillClient,
+  SmartbillEnvelope,
+  SmartbillEstimateInvoicesResponse,
   SmartbillFetch,
   SmartbillInvoiceBody,
   SmartbillInvoiceResponse,
+  SmartbillPaymentEntry,
   SmartbillPdfResponse,
   SmartbillProduct,
+  SmartbillSeriesResponse,
   SmartbillStatusResponse,
+  SmartbillTaxesResponse,
   VoyantInvoiceEvent,
 } from "./types.js"

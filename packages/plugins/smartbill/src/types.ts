@@ -72,37 +72,92 @@ export interface SmartbillInvoiceBody {
 }
 
 /**
- * SmartBill API response for invoice creation.
+ * Live-API response envelope shared by most SmartBill endpoints.
+ *
+ * The live API returns `status: "Ok"` on success and `status: "Error"` (or
+ * an HTTP non-2xx) on failure. `errorText` carries the machine-readable
+ * cause; `message` is a human-readable note.
  */
-export interface SmartbillInvoiceResponse {
+export interface SmartbillEnvelope {
+  /** "Ok" on success, "Error" on failure. */
+  status?: string
+  message?: string
+  errorText?: string
+}
+
+/**
+ * SmartBill API response for invoice / estimate creation.
+ */
+export interface SmartbillInvoiceResponse extends SmartbillEnvelope {
   number?: string
   series?: string
   url?: string
-  errorText?: string
 }
 
 /**
- * SmartBill API response for PDF download.
+ * SmartBill API response for the PDF endpoints. Live SmartBill responds
+ * with raw PDF bytes and `Content-Type: application/pdf`.
  */
 export interface SmartbillPdfResponse {
-  url?: string
-  errorText?: string
+  /** Raw PDF bytes returned by SmartBill. */
+  bytes: Uint8Array
+  /** Content-Type header from the response. */
+  contentType: string
 }
 
 /**
- * SmartBill API response for invoice status.
+ * SmartBill API response for `GET /invoice/paymentstatus`.
+ *
+ * Live shape: the envelope's `status` is `"Ok"` / `"Error"`, while payment
+ * state is carried by `paid: boolean` plus the amount fields. `payments`
+ * is the per-receipt list. The mock and the live API both populate these.
  */
-export interface SmartbillStatusResponse {
-  status?: string
+export interface SmartbillStatusResponse extends SmartbillEnvelope {
+  /** True when the invoice has been fully paid. */
+  paid?: boolean
+  invoiceTotalAmount?: number
   paidAmount?: number
   unpaidAmount?: number
-  errorText?: string
+  payments?: SmartbillPaymentEntry[]
+}
+
+export interface SmartbillPaymentEntry {
+  type?: string
+  value?: number
+  paidDate?: string
+  [key: string]: unknown
 }
 
 /**
- * Minimal `fetch` shape the SmartBill client depends on. Works with the global
- * `fetch` in Node 18+ / Cloudflare Workers / browsers, and is trivially
- * stubbable in tests.
+ * Response shape for `GET /tax`.
+ */
+export interface SmartbillTaxesResponse extends SmartbillEnvelope {
+  taxes?: Array<{ name: string; percentage: number }>
+}
+
+/**
+ * Response shape for `GET /series`. `type` is `"f"` (factură / invoice) or
+ * `"p"` (proformă).
+ */
+export interface SmartbillSeriesResponse extends SmartbillEnvelope {
+  list?: Array<{ name: string; nextNumber: number; type: "f" | "p" }>
+}
+
+/**
+ * Response shape for `GET /estimate/invoices` (proforma → invoice
+ * conversion lookup).
+ */
+export interface SmartbillEstimateInvoicesResponse extends SmartbillEnvelope {
+  series?: string
+  number?: string
+  areInvoicesCreated?: boolean
+  invoices?: SmartbillInvoiceResponse[]
+}
+
+/**
+ * Minimal `fetch` shape the SmartBill client depends on. Mirrors the
+ * subset of the global `fetch` Response that the client uses, so the
+ * global `fetch` and the mock server both fit.
  */
 export type SmartbillFetch = (
   input: string,
@@ -116,4 +171,6 @@ export type SmartbillFetch = (
   status: number
   json: () => Promise<unknown>
   text: () => Promise<string>
+  arrayBuffer: () => Promise<ArrayBuffer>
+  headers?: { get(name: string): string | null }
 }>
