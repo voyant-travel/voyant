@@ -134,6 +134,7 @@ describe.skipIf(!DB_AVAILABLE)("Public pricing routes", () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.data.catalog.code).toBe("PUBLIC-EUR")
+    expect(body.data.catalog.currencyCode).toBe("EUR")
     expect(body.data.options).toHaveLength(1)
     expect(body.data.options[0]?.pricingRules[0]?.baseSellAmountCents).toBe(2500)
     expect(body.data.options[0]?.pricingRules[0]?.unitPrices[0]?.unitName).toBe("Adult")
@@ -143,6 +144,58 @@ describe.skipIf(!DB_AVAILABLE)("Public pricing routes", () => {
     expect(body.data.options[0]?.pricingRules[0]?.startTimeAdjustments[0]?.startTimeLocal).toBe(
       "09:00",
     )
+  })
+
+  it("falls back to product.sellCurrency when catalog.currencyCode is null", async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: "Bucharest City Tour",
+        status: "active",
+        activated: true,
+        visibility: "public",
+        sellCurrency: "RON",
+      })
+      .returning()
+
+    const [option] = await db
+      .insert(productOptions)
+      .values({
+        productId: product.id,
+        name: "Standard",
+        status: "active",
+        isDefault: true,
+      })
+      .returning()
+
+    const [catalog] = await db
+      .insert(priceCatalogs)
+      .values({
+        code: "PUBLIC-MULTI",
+        name: "Public Retail",
+        currencyCode: null,
+        catalogType: "public",
+        isDefault: true,
+        active: true,
+      })
+      .returning()
+
+    await db.insert(optionPriceRules).values({
+      productId: product.id,
+      optionId: option.id,
+      priceCatalogId: catalog.id,
+      name: "Default",
+      pricingMode: "per_person",
+      baseSellAmountCents: 18900,
+      isDefault: true,
+      active: true,
+    })
+
+    const res = await app.request(`/products/${product.id}/pricing`, { method: "GET" })
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.data.catalog.currencyCode).toBe("RON")
   })
 
   it("returns a public availability snapshot", async () => {

@@ -19,6 +19,7 @@ export const priceCatalogs = pgTable(
     id: typeId("price_catalogs"),
     code: text("code").notNull(),
     name: text("name").notNull(),
+    // NULL = follow product.sellCurrency at snapshot time (multi-currency catalog)
     currencyCode: text("currency_code"),
     catalogType: priceCatalogTypeEnum("catalog_type").notNull().default("public"),
     isDefault: boolean("is_default").notNull().default(false),
