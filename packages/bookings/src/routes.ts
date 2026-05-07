@@ -887,11 +887,26 @@ export const bookingRoutes = new Hono<Env>()
    */
   .patch("/:id/travelers/:travelerId/with-travel-details", async (c) => {
     try {
+      const bookingId = c.req.param("id")
+      const travelerId = c.req.param("travelerId")
+      // Enforce booking↔traveler pairing before delegating to the
+      // service, which writes by traveler id only. Without this guard
+      // a caller could pass /bookings/A/travelers/<traveler-from-B>
+      // and write to B while the audit/PII context is built from A.
+      const traveler = await bookingsService.getTravelerRecordById(
+        c.get("db"),
+        bookingId,
+        travelerId,
+      )
+      if (!traveler) {
+        return c.json({ error: "Traveler not found" }, 404)
+      }
+
       const data = await parseJsonBody(c, updateTravelerWithTravelDetailsSchema)
-      const pii = await createAuditedBookingPiiService(c, c.req.param("id"))
+      const pii = await createAuditedBookingPiiService(c, bookingId)
       const result = await bookingsService.updateTravelerWithTravelDetails(
         c.get("db"),
-        c.req.param("travelerId"),
+        travelerId,
         data,
         { pii, actorId: c.get("userId") },
       )
