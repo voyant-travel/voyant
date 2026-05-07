@@ -90,6 +90,36 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
     expect(primaryIds).toEqual([second?.id])
   })
 
+  it("changing the type of a primary doc demotes the existing primary of the new type", async () => {
+    const person = await seedPerson()
+    // Existing primary id_card.
+    const idCard = await personDocumentsService.createPersonDocument(db, person.id, {
+      type: "id_card",
+      isPrimary: true,
+    })
+    // Existing primary passport that we'll re-type to id_card without
+    // touching `isPrimary`. Without the fix this hits the partial
+    // unique index and fails with a DB error.
+    const passport = await personDocumentsService.createPersonDocument(db, person.id, {
+      type: "passport",
+      isPrimary: true,
+    })
+    if (!idCard || !passport) throw new Error("seed failure")
+
+    const updated = await personDocumentsService.updatePersonDocument(db, passport.id, {
+      type: "id_card",
+    })
+    expect(updated?.type).toBe("id_card")
+    expect(updated?.isPrimary).toBe(true)
+
+    const all = await personDocumentsService.listPersonDocuments(db, person.id)
+    const primaryIdCards = all.filter((doc) => doc.type === "id_card" && doc.isPrimary)
+    expect(primaryIdCards.map((doc) => doc.id)).toEqual([passport.id])
+
+    const refreshedOldIdCard = await personDocumentsService.getPersonDocument(db, idCard.id)
+    expect(refreshedOldIdCard?.isPrimary).toBe(false)
+  })
+
   it("setPrimaryPersonDocument promotes one and demotes prior primary", async () => {
     const person = await seedPerson()
     const first = await personDocumentsService.createPersonDocument(db, person.id, {

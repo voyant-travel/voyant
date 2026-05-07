@@ -160,7 +160,14 @@ export const personDocumentsService = {
         .limit(1)
       if (!existing) return null
 
-      if (data.isPrimary === true) {
+      // Clear prior primary of the *target* type whenever the row
+      // will end up primary after this update — including the case
+      // where `isPrimary` is unchanged but `type` is being switched
+      // and the existing row is already primary. Without this, the
+      // partial unique index `(person_id, type) WHERE is_primary`
+      // rejects type-only edits on a primary doc.
+      const effectiveIsPrimary = data.isPrimary ?? existing.isPrimary
+      if (effectiveIsPrimary) {
         const targetType = data.type ?? existing.type
         await clearPrimaryForType(
           tx as PostgresJsDatabase,
