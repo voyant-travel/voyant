@@ -58,7 +58,9 @@ export function PriceCatalogsPage() {
       {
         accessorKey: "currencyCode",
         header: pageMessages.columns.currency,
-        cell: ({ row }) => <span className="font-mono text-xs">{row.original.currencyCode}</span>,
+        cell: ({ row }) => (
+          <span className="font-mono text-xs">{row.original.currencyCode ?? "—"}</span>
+        ),
       },
       {
         accessorKey: "isDefault",

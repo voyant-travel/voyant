@@ -52,7 +52,9 @@ export function PriceCatalogsPage() {
       {
         accessorKey: "currencyCode",
         header: "Currency",
-        cell: ({ row }) => <span className="font-mono text-xs">{row.original.currencyCode}</span>,
+        cell: ({ row }) => (
+          <span className="font-mono text-xs">{row.original.currencyCode ?? "—"}</span>
+        ),
       },
       {
         accessorKey: "isDefault",
