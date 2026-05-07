@@ -40,16 +40,14 @@ import {
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import {
-  deriveMonthlyBookingCounts,
-  deriveMonthlyRevenue,
-  deriveStatusBreakdown,
-  deriveUpcomingDepartures,
+  buildMonthSeries,
   formatCurrency,
-  getDashboardBookingsQueryOptions,
-  getDashboardInvoicesQueryOptions,
-  getDashboardProductsQueryOptions,
-  getDashboardSuppliersQueryOptions,
+  getDashboardBookingsAggregatesQueryOptions,
+  getDashboardFinanceAggregatesQueryOptions,
+  getDashboardProductsAggregatesQueryOptions,
+  getDashboardSuppliersAggregatesQueryOptions,
   getStatusColor,
+  pickPrimaryCurrency,
 } from "./dashboard-shared"
 import {
   DashboardAreaChartSkeleton,
@@ -62,43 +60,68 @@ import {
 export function DashboardPage() {
   const messages = useAdminMessages()
   const { resolvedLocale } = useLocale()
-  const { data: bookingsData, isPending: bookingsPending } = useQuery(
-    getDashboardBookingsQueryOptions(),
+  const { data: bookingsAggregates, isPending: bookingsPending } = useQuery(
+    getDashboardBookingsAggregatesQueryOptions(),
   )
-  const { data: productsData, isPending: productsPending } = useQuery(
-    getDashboardProductsQueryOptions(),
+  const { data: productsAggregates, isPending: productsPending } = useQuery(
+    getDashboardProductsAggregatesQueryOptions(),
   )
-  const { data: suppliersData, isPending: suppliersPending } = useQuery(
-    getDashboardSuppliersQueryOptions(),
+  const { data: suppliersAggregates, isPending: suppliersPending } = useQuery(
+    getDashboardSuppliersAggregatesQueryOptions(),
   )
-  const { data: invoicesData, isPending: invoicesPending } = useQuery(
-    getDashboardInvoicesQueryOptions(),
+  const { data: financeAggregates, isPending: financePending } = useQuery(
+    getDashboardFinanceAggregatesQueryOptions(),
   )
 
-  const bookings = bookingsData?.data ?? []
-  const products = productsData?.data ?? []
-  const suppliers = suppliersData?.data ?? []
-  const invoices = invoicesData?.data ?? []
-  const totalRevenue = bookings.reduce((sum, booking) => sum + (booking.sellAmountCents ?? 0), 0)
-  const confirmedBookings = bookings.filter(
-    (booking) => booking.status === "confirmed" || booking.status === "in_progress",
-  ).length
-  const totalPax = bookings.reduce((sum, booking) => sum + (booking.pax ?? 0), 0)
-  const activeProducts = products.filter(
-    (product) => product.status === "active" || product.status === "published",
-  ).length
-  const outstandingInvoices = invoices.filter(
-    (invoice) =>
-      invoice.status === "issued" || invoice.status === "sent" || invoice.status === "overdue",
-  )
-  const outstandingAmount = outstandingInvoices.reduce(
-    (sum, invoice) => sum + (invoice.totalAmountCents ?? 0),
-    0,
-  )
-  const monthlyRevenue = deriveMonthlyRevenue(bookings)
-  const statusBreakdown = deriveStatusBreakdown(bookings)
-  const monthlyBookings = deriveMonthlyBookingCounts(bookings)
-  const upcoming = deriveUpcomingDepartures(bookings)
+  const bookings = bookingsAggregates?.data
+  const products = productsAggregates?.data
+  const suppliers = suppliersAggregates?.data
+  const finance = financeAggregates?.data
+
+  const monthSeries = buildMonthSeries()
+  const defaultCurrency = pickPrimaryCurrency(bookings?.monthlyRevenue ?? [])
+
+  // Build the six-month revenue series from the server aggregate by
+  // summing across currencies into the primary currency display
+  // bucket. (Multi-currency reconciliation is a follow-up.)
+  const monthlyRevenue = monthSeries.map((entry) => {
+    const revenue =
+      bookings?.monthlyRevenue
+        .filter((row) => row.yearMonth === entry.yearMonth)
+        .reduce((sum, row) => sum + row.sellAmountCents, 0) ?? 0
+    const bookingsInMonth =
+      bookings?.monthlyCounts.find((row) => row.yearMonth === entry.yearMonth)?.count ?? 0
+    return { month: entry.month, revenue: revenue / 100, bookings: bookingsInMonth }
+  })
+  const monthlyBookings = monthSeries.map((entry) => ({
+    month: entry.month,
+    count: bookings?.monthlyCounts.find((row) => row.yearMonth === entry.yearMonth)?.count ?? 0,
+  }))
+
+  const totalRevenueCents =
+    bookings?.monthlyRevenue
+      .filter((row) => row.currency === defaultCurrency)
+      .reduce((sum, row) => sum + row.sellAmountCents, 0) ?? 0
+
+  const confirmedBookings =
+    bookings?.countsByStatus.find((row) => row.status === "confirmed")?.count ??
+    0 + (bookings?.countsByStatus.find((row) => row.status === "in_progress")?.count ?? 0)
+
+  const totalPax = bookings?.totalPax ?? 0
+  const activeProducts = products?.active ?? 0
+  const totalProducts = products?.total ?? 0
+  const totalSuppliers = suppliers?.total ?? 0
+
+  const outstandingInvoiceCount = finance?.outstanding.reduce((sum, row) => sum + row.count, 0) ?? 0
+  const outstandingPrimaryCurrency = finance?.outstanding[0]?.currency ?? defaultCurrency
+  const outstandingAmount =
+    finance?.outstanding.find((row) => row.currency === outstandingPrimaryCurrency)
+      ?.balanceDueCents ?? 0
+  const outstandingTopN = finance?.outstandingTopN ?? []
+
+  // Trend is the change from the second-to-last month to the most
+  // recent. Same as the old client-side derivation, just sourced from
+  // the server aggregate now.
   const currentMonthRevenue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue ?? 0
   const prevMonthRevenue = monthlyRevenue[monthlyRevenue.length - 2]?.revenue ?? 0
   const revenueTrend =
@@ -109,68 +132,53 @@ export function DashboardPage() {
     prevMonthBookings > 0
       ? ((currentMonthBookings - prevMonthBookings) / prevMonthBookings) * 100
       : 0
-  const defaultCurrency = bookings[0]?.sellCurrency ?? "USD"
+
   const revenueChartConfig = {
-    revenue: {
-      label: messages.dashboard.chartRevenueLabel,
-      color: "hsl(221 83% 53%)",
-    },
-    bookings: {
-      label: messages.dashboard.chartBookingsLabel,
-      color: "hsl(142 71% 45%)",
-    },
+    revenue: { label: messages.dashboard.chartRevenueLabel, color: "hsl(221 83% 53%)" },
+    bookings: { label: messages.dashboard.chartBookingsLabel, color: "hsl(142 71% 45%)" },
   }
   const bookingStatusConfig = {
-    confirmed: {
-      label: messages.dashboard.statusConfirmedLabel,
-      color: "hsl(142 71% 45%)",
-    },
-    completed: {
-      label: messages.dashboard.statusCompletedLabel,
-      color: "hsl(221 83% 53%)",
-    },
-    in_progress: {
-      label: messages.dashboard.statusInProgressLabel,
-      color: "hsl(47 96% 53%)",
-    },
-    draft: {
-      label: messages.dashboard.statusDraftLabel,
-      color: "hsl(215 14% 55%)",
-    },
-    cancelled: {
-      label: messages.dashboard.statusCancelledLabel,
-      color: "hsl(0 84% 60%)",
-    },
+    confirmed: { label: messages.dashboard.statusConfirmedLabel, color: "hsl(142 71% 45%)" },
+    completed: { label: messages.dashboard.statusCompletedLabel, color: "hsl(221 83% 53%)" },
+    in_progress: { label: messages.dashboard.statusInProgressLabel, color: "hsl(47 96% 53%)" },
+    draft: { label: messages.dashboard.statusDraftLabel, color: "hsl(215 14% 55%)" },
+    cancelled: { label: messages.dashboard.statusCancelledLabel, color: "hsl(0 84% 60%)" },
   }
   const monthlyBookingsConfig = {
-    count: {
-      label: messages.dashboard.chartBookingsLabel,
-      color: "hsl(221 83% 53%)",
-    },
+    count: { label: messages.dashboard.chartBookingsLabel, color: "hsl(221 83% 53%)" },
   }
-  const localizedStatusBreakdown = statusBreakdown.map((entry) => ({
-    ...entry,
-    status:
-      entry.status === "confirmed"
-        ? messages.dashboard.statusConfirmedLabel
-        : entry.status === "completed"
-          ? messages.dashboard.statusCompletedLabel
-          : entry.status === "in_progress"
-            ? messages.dashboard.statusInProgressLabel
-            : entry.status === "draft"
-              ? messages.dashboard.statusDraftLabel
-              : entry.status === "cancelled"
-                ? messages.dashboard.statusCancelledLabel
-                : entry.status,
-    fill: getStatusColor(entry.status),
-  }))
+
+  // Status pie shows only non-zero buckets — the aggregate returns a
+  // row per known status with 0-count placeholders for the inactive
+  // ones, which would otherwise render as empty pie slices.
+  const localizedStatusBreakdown = (bookings?.countsByStatus ?? [])
+    .filter((entry) => entry.count > 0)
+    .map((entry) => ({
+      status:
+        entry.status === "confirmed"
+          ? messages.dashboard.statusConfirmedLabel
+          : entry.status === "completed"
+            ? messages.dashboard.statusCompletedLabel
+            : entry.status === "in_progress"
+              ? messages.dashboard.statusInProgressLabel
+              : entry.status === "draft"
+                ? messages.dashboard.statusDraftLabel
+                : entry.status === "cancelled"
+                  ? messages.dashboard.statusCancelledLabel
+                  : entry.status,
+      count: entry.count,
+      fill: getStatusColor(entry.status),
+    }))
+
+  const upcoming = bookings?.upcomingDepartures.items ?? []
+
   const dashboardMetrics = {
-    totalRevenue,
+    totalRevenueCents,
     confirmedBookings,
     totalPax,
     activeProducts,
     outstandingAmount,
-    outstandingInvoiceCount: outstandingInvoices.length,
+    outstandingInvoiceCount,
     defaultCurrency,
   }
 
@@ -182,12 +190,18 @@ export function DashboardPage() {
       </div>
       <AdminWidgetSlotRenderer
         slot="dashboard.header"
-        props={{ bookings, invoices, products, suppliers, metrics: dashboardMetrics }}
+        props={{
+          bookingsAggregates: bookings ?? null,
+          productsAggregates: products ?? null,
+          suppliersAggregates: suppliers ?? null,
+          financeAggregates: finance ?? null,
+          metrics: dashboardMetrics,
+        }}
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           title={messages.dashboard.totalRevenueTitle}
-          value={formatCurrency(totalRevenue, defaultCurrency)}
+          value={formatCurrency(totalRevenueCents, defaultCurrency)}
           description={messages.dashboard.totalRevenueDescription}
           icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
           trend={revenueTrend}
@@ -198,7 +212,7 @@ export function DashboardPage() {
           title={messages.dashboard.activeBookingsTitle}
           value={confirmedBookings.toString()}
           description={formatMessage(messages.dashboard.activeBookingsDescription, {
-            count: bookings.length,
+            count: bookings?.total ?? 0,
           })}
           icon={<CalendarCheck className="h-4 w-4 text-muted-foreground" />}
           trend={bookingTrend}
@@ -216,8 +230,8 @@ export function DashboardPage() {
           title={messages.dashboard.activeProductsTitle}
           value={activeProducts.toString()}
           description={formatMessage(messages.dashboard.activeProductsDescription, {
-            products: products.length,
-            suppliers: suppliers.length,
+            products: totalProducts,
+            suppliers: totalSuppliers,
           })}
           icon={<Package className="h-4 w-4 text-muted-foreground" />}
           isLoading={productsPending || suppliersPending}
@@ -225,7 +239,13 @@ export function DashboardPage() {
       </div>
       <AdminWidgetSlotRenderer
         slot="dashboard.after-kpis"
-        props={{ bookings, invoices, products, suppliers, metrics: dashboardMetrics }}
+        props={{
+          bookingsAggregates: bookings ?? null,
+          productsAggregates: products ?? null,
+          suppliersAggregates: suppliers ?? null,
+          financeAggregates: finance ?? null,
+          metrics: dashboardMetrics,
+        }}
       />
 
       <div className="grid gap-4 lg:grid-cols-7">
@@ -366,7 +386,9 @@ export function DashboardPage() {
                     className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
                   >
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium">{booking.bookingNumber}</span>
+                      <span className="text-sm font-medium">
+                        {booking.bookingNumber ?? booking.id.slice(0, 8)}
+                      </span>
                       <span className="text-xs text-muted-foreground">
                         {booking.startDate
                           ? new Date(booking.startDate).toLocaleDateString(resolvedLocale, {
@@ -385,7 +407,10 @@ export function DashboardPage() {
                     <div className="flex items-center gap-2">
                       {booking.sellAmountCents != null && (
                         <span className="text-sm font-medium tabular-nums">
-                          {formatCurrency(booking.sellAmountCents, booking.sellCurrency)}
+                          {formatCurrency(
+                            booking.sellAmountCents,
+                            booking.sellCurrency ?? defaultCurrency,
+                          )}
                         </span>
                       )}
                       <Badge variant="outline" className="capitalize">
@@ -407,7 +432,7 @@ export function DashboardPage() {
             <CardDescription>{messages.dashboard.outstandingInvoicesDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            {invoicesPending ? (
+            {financePending ? (
               <DashboardOutstandingInvoicesSkeleton />
             ) : (
               <div className="space-y-3">
@@ -418,34 +443,42 @@ export function DashboardPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatMessage(messages.dashboard.outstandingInvoicesDue, {
-                        count: outstandingInvoices.length,
+                        count: outstandingInvoiceCount,
                       })}
                     </p>
                   </div>
                   <p className="text-lg font-semibold">
-                    {formatCurrency(outstandingAmount, invoices[0]?.currency ?? "USD")}
+                    {formatCurrency(outstandingAmount, outstandingPrimaryCurrency)}
                   </p>
                 </div>
-                {outstandingInvoices.slice(0, 5).map((invoice) => (
+                {outstandingTopN.map((invoice) => (
                   <div
                     key={invoice.id}
                     className="flex items-center justify-between rounded-lg border p-3"
                   >
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium">{invoice.id.slice(0, 8)}</span>
+                      <span className="text-sm font-medium">
+                        {invoice.invoiceNumber ?? invoice.id.slice(0, 8)}
+                      </span>
                       <span className="text-xs text-muted-foreground">
-                        {invoice.issuedAt
-                          ? new Date(invoice.issuedAt).toLocaleDateString(resolvedLocale, {
+                        {invoice.dueDate
+                          ? new Date(invoice.dueDate).toLocaleDateString(resolvedLocale, {
                               month: "short",
                               day: "numeric",
                               year: "numeric",
                             })
-                          : messages.dashboard.noIssueDate}
+                          : invoice.issueDate
+                            ? new Date(invoice.issueDate).toLocaleDateString(resolvedLocale, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })
+                            : messages.dashboard.noIssueDate}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">
-                        {formatCurrency(invoice.totalAmountCents ?? 0, invoice.currency)}
+                        {formatCurrency(invoice.balanceDueCents, invoice.currency)}
                       </span>
                       <Badge variant="secondary" className="capitalize">
                         {invoice.status}
@@ -460,7 +493,13 @@ export function DashboardPage() {
       </div>
       <AdminWidgetSlotRenderer
         slot="dashboard.footer"
-        props={{ bookings, invoices, products, suppliers, metrics: dashboardMetrics }}
+        props={{
+          bookingsAggregates: bookings ?? null,
+          productsAggregates: products ?? null,
+          suppliersAggregates: suppliers ?? null,
+          financeAggregates: finance ?? null,
+          metrics: dashboardMetrics,
+        }}
       />
     </div>
   )

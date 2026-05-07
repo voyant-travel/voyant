@@ -145,4 +145,11 @@ export const voucherSourceTypeSchema = z.enum([
 export const financeAggregatesQuerySchema = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
+  /**
+   * Cap on the top-N outstanding-invoice rows returned alongside the
+   * outstanding-by-currency aggregate. The dashboard surfaces 5 rows
+   * in its "needs collection" panel; allow up to 20 so adjacent
+   * digests can reuse the endpoint.
+   */
+  outstandingTopLimit: z.coerce.number().int().min(0).max(20).default(5),
 })

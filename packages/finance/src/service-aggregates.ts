@@ -1,4 +1,4 @@
-import { and, inArray, ne, sql } from "drizzle-orm"
+import { and, asc, inArray, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { invoices } from "./schema.js"
@@ -16,6 +16,18 @@ const ALL_INVOICE_STATUSES: readonly InvoiceStatus[] = [
 
 /** Statuses where balance_due_cents > 0 is meaningful money we're owed. */
 const OUTSTANDING_STATUSES: readonly InvoiceStatus[] = ["sent", "partially_paid", "overdue"]
+
+export interface FinanceAggregateOutstandingInvoice {
+  id: string
+  invoiceNumber: string | null
+  bookingId: string | null
+  status: InvoiceStatus
+  currency: string
+  totalCents: number
+  balanceDueCents: number
+  issueDate: string | null
+  dueDate: string | null
+}
 
 export interface FinanceAggregates {
   total: number
@@ -36,12 +48,20 @@ export interface FinanceAggregates {
    * total, so partial payments reduce the number.
    */
   overdue: Array<{ currency: string; balanceDueCents: number; count: number }>
+  /**
+   * Bounded top-N slice of outstanding invoices ordered by `due_date`
+   * (oldest first; nulls last) so the dashboard can render the
+   * "needs collection" list without a separate paginated request.
+   * Default 5, max 20 — caller bounds via `outstandingTopLimit`.
+   */
+  outstandingTopN: FinanceAggregateOutstandingInvoice[]
 }
 
 export async function getFinanceAggregates(
   db: PostgresJsDatabase,
-  options: { from?: string; to?: string } = {},
+  options: { from?: string; to?: string; outstandingTopLimit?: number } = {},
 ): Promise<FinanceAggregates> {
+  const outstandingTopLimit = Math.max(0, Math.min(options.outstandingTopLimit ?? 5, 20))
   const fromDate = options.from ? new Date(options.from) : undefined
   const toDate = options.to ? new Date(options.to) : undefined
 
@@ -129,6 +149,38 @@ export async function getFinanceAggregates(
     .groupBy(invoices.currency)
     .orderBy(invoices.currency)
 
+  const outstandingTopRows =
+    outstandingTopLimit === 0
+      ? []
+      : await db
+          .select({
+            id: invoices.id,
+            invoiceNumber: invoices.invoiceNumber,
+            bookingId: invoices.bookingId,
+            status: invoices.status,
+            currency: invoices.currency,
+            totalCents: invoices.totalCents,
+            balanceDueCents: invoices.balanceDueCents,
+            issueDate: invoices.issueDate,
+            dueDate: invoices.dueDate,
+          })
+          .from(invoices)
+          .where(
+            and(
+              inArray(invoices.status, [...OUTSTANDING_STATUSES]),
+              sql`${invoices.balanceDueCents} > 0`,
+            ),
+          )
+          // Nulls-last on dueDate so undated invoices don't pretend to be
+          // the most overdue. After that, oldest issued first.
+          .orderBy(
+            sql`${invoices.dueDate} IS NULL`,
+            asc(invoices.dueDate),
+            asc(invoices.issueDate),
+            asc(invoices.id),
+          )
+          .limit(outstandingTopLimit)
+
   return {
     total: totalRow?.count ?? 0,
     countsByStatus: ALL_INVOICE_STATUSES.map((status) => ({
@@ -153,6 +205,17 @@ export async function getFinanceAggregates(
       currency: row.currency,
       balanceDueCents: Number(row.balanceDueCents),
       count: row.count,
+    })),
+    outstandingTopN: outstandingTopRows.map((row) => ({
+      id: row.id,
+      invoiceNumber: row.invoiceNumber ?? null,
+      bookingId: row.bookingId ?? null,
+      status: row.status,
+      currency: row.currency,
+      totalCents: Number(row.totalCents),
+      balanceDueCents: Number(row.balanceDueCents),
+      issueDate: row.issueDate ?? null,
+      dueDate: row.dueDate ?? null,
     })),
   }
 }

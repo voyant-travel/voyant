@@ -1690,9 +1690,26 @@ const AGGREGATE_ACTIVE_STATUSES: readonly BookingStatus[] = [
   "completed",
 ]
 
+export interface BookingAggregateUpcomingDeparture {
+  id: string
+  bookingNumber: string | null
+  status: BookingStatus
+  startDate: string | null
+  endDate: string | null
+  pax: number | null
+  sellCurrency: string | null
+  sellAmountCents: number | null
+}
+
 export interface BookingAggregates {
   /** Total bookings across all statuses in range. */
   total: number
+  /**
+   * Sum of `pax` across active-status bookings in range. Null pax
+   * rows count as zero. Used by the operator dashboard's
+   * "total travelers" KPI.
+   */
+  totalPax: number
   /** One row per booking status (including zero counts for active statuses). */
   countsByStatus: Array<{ status: BookingStatus; count: number }>
   /** Booking counts bucketed by YYYY-MM (UTC), oldest first. */
@@ -1702,8 +1719,16 @@ export interface BookingAggregates {
    * rows are dropped since a booking without a sell currency is malformed.
    */
   monthlyRevenue: Array<{ yearMonth: string; currency: string; sellAmountCents: number }>
-  /** Count of active bookings with `startDate >= today`. */
-  upcomingDepartures: number
+  /**
+   * Active bookings with `startDate >= today`: the total count plus a
+   * bounded slice of the soonest-departing rows (default 8, max 20)
+   * so the dashboard can render the upcoming list without a second
+   * round-trip.
+   */
+  upcomingDepartures: {
+    count: number
+    items: BookingAggregateUpcomingDeparture[]
+  }
 }
 
 export const bookingsService = {
@@ -1717,8 +1742,9 @@ export const bookingsService = {
    */
   async getBookingAggregates(
     db: PostgresJsDatabase,
-    options: { from?: string; to?: string } = {},
+    options: { from?: string; to?: string; upcomingLimit?: number } = {},
   ): Promise<BookingAggregates> {
+    const upcomingLimit = Math.max(0, Math.min(options.upcomingLimit ?? 8, 20))
     const fromDate = options.from ? new Date(options.from) : undefined
     const toDate = options.to ? new Date(options.to) : undefined
 
@@ -1731,6 +1757,18 @@ export const bookingsService = {
       .select({ count: sql<number>`count(*)::int` })
       .from(bookings)
       .where(rangeWhere)
+
+    const [totalPaxRow] = await db
+      .select({
+        totalPax: sql<number>`coalesce(sum(${bookings.pax}), 0)::bigint`,
+      })
+      .from(bookings)
+      .where(
+        and(
+          ...(rangeConditions.length ? rangeConditions : []),
+          inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
+        ),
+      )
 
     const statusRows = await db
       .select({
@@ -1782,18 +1820,38 @@ export const bookingsService = {
     todayUtc.setUTCHours(0, 0, 0, 0)
     const todayDateString = todayUtc.toISOString().slice(0, 10)
 
+    const upcomingFilter = and(
+      inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
+      sql`${bookings.startDate} >= ${todayDateString}`,
+    )
+
     const [upcomingRow] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(bookings)
-      .where(
-        and(
-          inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
-          sql`${bookings.startDate} >= ${todayDateString}`,
-        ),
-      )
+      .where(upcomingFilter)
+
+    const upcomingItems =
+      upcomingLimit === 0
+        ? []
+        : await db
+            .select({
+              id: bookings.id,
+              bookingNumber: bookings.bookingNumber,
+              status: bookings.status,
+              startDate: bookings.startDate,
+              endDate: bookings.endDate,
+              pax: bookings.pax,
+              sellCurrency: bookings.sellCurrency,
+              sellAmountCents: bookings.sellAmountCents,
+            })
+            .from(bookings)
+            .where(upcomingFilter)
+            .orderBy(asc(bookings.startDate), asc(bookings.id))
+            .limit(upcomingLimit)
 
     return {
       total: totalRow?.count ?? 0,
+      totalPax: Number(totalPaxRow?.totalPax ?? 0),
       countsByStatus: AGGREGATE_ACTIVE_STATUSES.concat(["expired", "cancelled"]).map((status) => ({
         status,
         count: countsByStatusMap.get(status) ?? 0,
@@ -1807,7 +1865,10 @@ export const bookingsService = {
         currency: row.currency,
         sellAmountCents: Number(row.sellAmountCents),
       })),
-      upcomingDepartures: upcomingRow?.count ?? 0,
+      upcomingDepartures: {
+        count: upcomingRow?.count ?? 0,
+        items: upcomingItems,
+      },
     }
   },
 
