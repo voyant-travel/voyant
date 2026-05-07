@@ -1,5 +1,16 @@
 # @voyantjs/hospitality-ui
 
+## 0.26.9
+
+### Patch Changes
+
+- Updated dependencies [24a121e]
+  - @voyantjs/catalog-react@0.26.9
+  - @voyantjs/hospitality-react@0.26.9
+  - @voyantjs/i18n@0.26.9
+  - @voyantjs/pricing-react@0.26.9
+  - @voyantjs/ui@0.26.9
+
 ## 0.26.8
 
 ### Patch Changes

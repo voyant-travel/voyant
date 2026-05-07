@@ -1,5 +1,12 @@
 # @voyantjs/finance-react
 
+## 0.26.9
+
+### Patch Changes
+
+- @voyantjs/finance@0.26.9
+- @voyantjs/react@0.26.9
+
 ## 0.26.8
 
 ### Patch Changes
