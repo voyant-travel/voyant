@@ -1,13 +1,13 @@
 import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
-import { bookingsHonoModule, bookingsSupplierExtension } from "@voyantjs/bookings"
+import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import {
   type CheckoutBankTransferDetails,
   type CheckoutPaymentStarter,
   createCheckoutHonoModule,
 } from "@voyantjs/checkout"
-import { crmBookingExtension, crmHonoModule } from "@voyantjs/crm"
+import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/crm"
 import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
@@ -242,6 +242,22 @@ const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 const customerPortalHonoModule = createCustomerPortalHonoModule({
   resolveDocumentDownloadUrl: (bindings, storageKey) =>
     resolveDocumentDownloadUrl(bindings as CloudflareBindings, storageKey),
+})
+
+// Wires the env-driven KMS provider into CRM admin routes so
+// operator UIs can read/write decrypted PII (passport snapshots,
+// dietary/accessibility blobs) through `/v1/admin/crm/people/...`.
+const crmHonoModule = createCrmHonoModule()
+
+// `resolveTravelSnapshot` lets the booking-traveler "with travel
+// details" route auto-snapshot dietary/accessibility/primary-passport
+// from the linked `crm.people` row when an operator picks an existing
+// person. Bookings stays free of any direct CRM dep — the resolver
+// is wired here at template assembly time and receives the same KMS
+// provider the route already resolved.
+const bookingsHonoModule = createBookingsHonoModule({
+  resolveTravelSnapshot: (db, personId, { kms }) =>
+    crmService.loadPersonTravelSnapshot(db, personId, { kms }),
 })
 
 const financeModule = createFinanceHonoModule({

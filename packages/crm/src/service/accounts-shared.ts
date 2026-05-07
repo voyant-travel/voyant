@@ -84,6 +84,10 @@ export function personBaseFields(data: CreatePersonInput | UpdatePersonInput) {
     tags: data.tags,
     birthday: data.birthday,
     notes: data.notes,
+    accessibilityEncrypted: data.accessibilityEncrypted,
+    dietaryEncrypted: data.dietaryEncrypted,
+    loyaltyEncrypted: data.loyaltyEncrypted,
+    insuranceEncrypted: data.insuranceEncrypted,
   }
 }
 

@@ -8,13 +8,16 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyantjs/bookings/schema"
-import { crmService, people } from "@voyantjs/crm"
 import {
-  authUser,
-  type TravelDocument,
-  travelDocumentSchema,
-  userProfilesTable,
-} from "@voyantjs/db/schema/iam"
+  type CreatePersonDocumentInput,
+  crmService,
+  type PersonDocument,
+  people,
+  personDocumentNumberPlaintextSchema,
+  personPiiBlobPlaintextSchema,
+  type UpdatePersonDocumentInput,
+} from "@voyantjs/crm"
+import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import { invoiceRenditions, invoices, payments } from "@voyantjs/finance/schema"
 import { identityContactPoints } from "@voyantjs/identity/schema"
 import { identityService } from "@voyantjs/identity/service"
@@ -162,16 +165,15 @@ function deriveMiddleName(
   return working.length > 0 ? working : null
 }
 
-function toStoredProfileDocumentType(
-  type: "passport" | "id_card" | "visa" | "drivers_license" | "other",
-): "passport" | "national_id" | "visa" | "drivers_license" | "other" {
-  return type === "id_card" ? "national_id" : type
+type WireDocumentType = "passport" | "id_card" | "visa" | "drivers_license" | "other"
+type CrmDocumentType = "passport" | "id_card" | "driver_license" | "visa" | "other"
+
+function toCrmDocumentType(type: WireDocumentType): CrmDocumentType {
+  return type === "drivers_license" ? "driver_license" : type
 }
 
-function toPublicProfileDocumentType(
-  type: "passport" | "national_id" | "visa" | "drivers_license" | "other",
-): "passport" | "id_card" | "visa" | "drivers_license" | "other" {
-  return type === "national_id" ? "id_card" : type
+function toWireDocumentType(type: CrmDocumentType): WireDocumentType {
+  return type === "driver_license" ? "drivers_license" : type
 }
 
 function getMetadataRecord(value: unknown) {
@@ -783,7 +785,6 @@ async function getAuthProfileRow(db: PostgresJsDatabase, userId: string) {
       locale: userProfilesTable.locale,
       timezone: userProfilesTable.timezone,
       seatingPreference: userProfilesTable.seatingPreference,
-      documentsEncrypted: userProfilesTable.documentsEncrypted,
       marketingConsent: userProfilesTable.marketingConsent,
       marketingConsentAt: userProfilesTable.marketingConsentAt,
       marketingConsentSource: userProfilesTable.marketingConsentSource,
@@ -798,31 +799,143 @@ async function getAuthProfileRow(db: PostgresJsDatabase, userId: string) {
   return row ?? null
 }
 
-async function getProfileDocuments(
-  authProfile: Awaited<ReturnType<typeof getAuthProfileRow>>,
+async function decryptProfileBlob(
+  envelope: { enc: string } | null | undefined,
+  options?: CustomerPortalServiceOptions,
+): Promise<string | null> {
+  if (!envelope || !options?.kms) {
+    return null
+  }
+  const decrypted = await decryptOptionalJsonEnvelope(
+    options.kms,
+    peopleKeyRef,
+    envelope,
+    personPiiBlobPlaintextSchema,
+  )
+  return decrypted?.text ?? null
+}
+
+async function encryptProfileBlob(value: string | null, options?: CustomerPortalServiceOptions) {
+  if (!options?.kms) {
+    return undefined
+  }
+  if (value === null) {
+    return null
+  }
+  return encryptOptionalJsonEnvelope(options.kms, peopleKeyRef, { text: value })
+}
+
+async function decryptDocumentNumber(
+  envelope: { enc: string } | null | undefined,
+  options?: CustomerPortalServiceOptions,
+): Promise<string | null> {
+  if (!envelope || !options?.kms) {
+    return null
+  }
+  const decrypted = await decryptOptionalJsonEnvelope(
+    options.kms,
+    peopleKeyRef,
+    envelope,
+    personDocumentNumberPlaintextSchema,
+  )
+  return decrypted?.number ?? null
+}
+
+async function encryptDocumentNumber(
+  value: string | null | undefined,
   options?: CustomerPortalServiceOptions,
 ) {
-  if (!authProfile?.documentsEncrypted || !options?.kms) {
+  if (!options?.kms) {
+    return undefined
+  }
+  if (value == null) {
+    return null
+  }
+  return encryptOptionalJsonEnvelope(options.kms, peopleKeyRef, { number: value })
+}
+
+async function projectPersonDocumentToWire(
+  row: PersonDocument,
+  options?: CustomerPortalServiceOptions,
+) {
+  return {
+    id: row.id,
+    type: toWireDocumentType(row.type),
+    number: await decryptDocumentNumber(row.numberEncrypted, options),
+    issuingAuthority: row.issuingAuthority ?? null,
+    issuingCountry: row.issuingCountry ?? null,
+    issueDate: row.issueDate ?? null,
+    expiryDate: row.expiryDate ?? null,
+    attachmentId: row.attachmentId ?? null,
+    isPrimary: row.isPrimary,
+    notes: row.notes ?? null,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt),
+    updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
+  }
+}
+
+async function getLinkedPersonPiiRow(db: PostgresJsDatabase, userId: string) {
+  const [row] = await db
+    .select({
+      id: people.id,
+      accessibilityEncrypted: people.accessibilityEncrypted,
+      dietaryEncrypted: people.dietaryEncrypted,
+      loyaltyEncrypted: people.loyaltyEncrypted,
+      insuranceEncrypted: people.insuranceEncrypted,
+    })
+    .from(people)
+    .where(and(eq(people.source, linkedCustomerSource), eq(people.sourceRef, userId)))
+    .limit(1)
+
+  return row ?? null
+}
+
+async function getLinkedPersonDocuments(
+  db: PostgresJsDatabase,
+  userId: string,
+  options?: CustomerPortalServiceOptions,
+) {
+  const linked = await resolveLinkedCustomerRecordId(db, userId)
+  if (!linked) {
     return []
   }
+  const rows = await crmService.listPersonDocuments(db, linked)
+  return Promise.all(rows.map((row) => projectPersonDocumentToWire(row, options)))
+}
 
-  const decrypted =
-    (await decryptOptionalJsonEnvelope(
-      options.kms,
-      peopleKeyRef,
-      authProfile.documentsEncrypted,
-      travelDocumentSchema.array(),
-    )) ?? []
+/**
+ * Resolves the `crm.people` row linked to this auth user, creating
+ * it on first PII write if missing. The seed values mirror what the
+ * bootstrap path already produces — first/last name from the auth
+ * profile, source/sourceRef pinned to `auth.user`/`userId` so future
+ * reads find the same row.
+ */
+async function ensureLinkedPerson(
+  db: PostgresJsDatabase,
+  userId: string,
+  authProfile: NonNullable<Awaited<ReturnType<typeof getAuthProfileRow>>>,
+): Promise<string> {
+  const existing = await resolveLinkedCustomerRecordId(db, userId)
+  if (existing) return existing
 
-  return decrypted.map((document: TravelDocument) => ({
-    type: toPublicProfileDocumentType(document.type),
-    number: document.number,
-    issuingAuthority: document.issuingAuthority ?? null,
-    issuingCountry: document.issuingCountry,
-    nationality: document.nationality ?? null,
-    expiryDate: document.expiryDate,
-    issueDate: document.issueDate ?? null,
-  }))
+  const fallbackFirst =
+    authProfile.firstName ?? authProfile.name.split(" ")[0]?.trim() ?? "Customer"
+  const fallbackLast =
+    authProfile.lastName ?? (authProfile.name.split(" ").slice(1).join(" ").trim() || "")
+
+  const created = await crmService.createPerson(db, {
+    firstName: fallbackFirst,
+    lastName: fallbackLast,
+    tags: [],
+    status: "active",
+    source: linkedCustomerSource,
+    sourceRef: userId,
+    website: null,
+  })
+  if (!created) {
+    throw new Error("Failed to create linked customer record")
+  }
+  return created.id
 }
 
 async function resolveLinkedCustomerRecordId(
@@ -1392,7 +1505,13 @@ export const publicCustomerPortalService = {
       return null
     }
 
-    const documents = await getProfileDocuments(authProfile, options)
+    const linkedPerson = await getLinkedPersonPiiRow(db, userId)
+    const [accessibility, dietary, loyalty, insurance] = await Promise.all([
+      decryptProfileBlob(linkedPerson?.accessibilityEncrypted, options),
+      decryptProfileBlob(linkedPerson?.dietaryEncrypted, options),
+      decryptProfileBlob(linkedPerson?.loyaltyEncrypted, options),
+      decryptProfileBlob(linkedPerson?.insuranceEncrypted, options),
+    ])
     const billingAddress = customerRecord?.billingAddress ?? null
 
     return {
@@ -1417,7 +1536,10 @@ export const publicCustomerPortalService = {
             addressLine2: billingAddress.line2,
           }
         : null,
-      documents,
+      accessibility,
+      dietary,
+      loyalty,
+      insurance,
       marketingConsent: authProfile.marketingConsent ?? false,
       marketingConsentAt: normalizeDateTime(authProfile.marketingConsentAt),
       marketingConsentSource: authProfile.marketingConsentSource ?? null,
@@ -1491,30 +1613,12 @@ export const publicCustomerPortalService = {
           }
         : undefined
 
-    const documentsEncrypted =
-      input.documents !== undefined && options?.kms
-        ? await encryptOptionalJsonEnvelope(
-            options.kms,
-            peopleKeyRef,
-            input.documents.map((document) => ({
-              type: toStoredProfileDocumentType(document.type),
-              number: document.number,
-              issuingAuthority: document.issuingAuthority ?? undefined,
-              issuingCountry: document.issuingCountry,
-              nationality: document.nationality ?? undefined,
-              expiryDate: document.expiryDate,
-              issueDate: document.issueDate ?? undefined,
-            })),
-          )
-        : undefined
-
     await db
       .insert(userProfilesTable)
       .values({
         id: userId,
         firstName: nextFirstName,
         lastName: nextLastName,
-        ...(documentsEncrypted !== undefined ? { documentsEncrypted } : {}),
         avatarUrl: input.avatarUrl ?? authProfile.avatarUrl ?? authProfile.image ?? null,
         locale: input.locale ?? authProfile.locale ?? "en",
         timezone: input.timezone !== undefined ? input.timezone : (authProfile.timezone ?? null),
@@ -1539,7 +1643,6 @@ export const publicCustomerPortalService = {
         set: {
           firstName: nextFirstName,
           lastName: nextLastName,
-          ...(documentsEncrypted !== undefined ? { documentsEncrypted } : {}),
           avatarUrl: input.avatarUrl ?? authProfile.avatarUrl ?? authProfile.image ?? null,
           locale: input.locale ?? authProfile.locale ?? "en",
           timezone: input.timezone !== undefined ? input.timezone : (authProfile.timezone ?? null),
@@ -1561,6 +1664,36 @@ export const publicCustomerPortalService = {
           updatedAt: new Date(),
         },
       })
+
+    const piiUpdates: Partial<{
+      accessibilityEncrypted: { enc: string } | null
+      dietaryEncrypted: { enc: string } | null
+      loyaltyEncrypted: { enc: string } | null
+      insuranceEncrypted: { enc: string } | null
+    }> = {}
+    if (input.accessibility !== undefined) {
+      const enc = await encryptProfileBlob(input.accessibility, options)
+      if (enc !== undefined) piiUpdates.accessibilityEncrypted = enc
+    }
+    if (input.dietary !== undefined) {
+      const enc = await encryptProfileBlob(input.dietary, options)
+      if (enc !== undefined) piiUpdates.dietaryEncrypted = enc
+    }
+    if (input.loyalty !== undefined) {
+      const enc = await encryptProfileBlob(input.loyalty, options)
+      if (enc !== undefined) piiUpdates.loyaltyEncrypted = enc
+    }
+    if (input.insurance !== undefined) {
+      const enc = await encryptProfileBlob(input.insurance, options)
+      if (enc !== undefined) piiUpdates.insuranceEncrypted = enc
+    }
+    if (Object.keys(piiUpdates).length > 0) {
+      const personId = await ensureLinkedPerson(db, userId, authProfile)
+      await db
+        .update(people)
+        .set({ ...piiUpdates, updatedAt: new Date() })
+        .where(eq(people.id, personId))
+    }
 
     await db
       .update(authUser)
@@ -2199,5 +2332,126 @@ export const publicCustomerPortalService = {
     }
 
     return getBookingBillingContact(db, bookingId, customerRecord)
+  },
+
+  // ── Identity documents ────────────────────────────────────────────────
+  // CRUD over `crm.person_documents` scoped to the auth user's linked
+  // person. Auto-creates the linked person row on first write so
+  // phone-only / metadata-light customers can save documents without
+  // a separate bootstrap step.
+
+  async listMyDocuments(
+    db: PostgresJsDatabase,
+    userId: string,
+    options?: CustomerPortalServiceOptions,
+  ) {
+    return getLinkedPersonDocuments(db, userId, options)
+  },
+
+  async createMyDocument(
+    db: PostgresJsDatabase,
+    userId: string,
+    input: {
+      type: WireDocumentType
+      number?: string | null
+      issuingAuthority?: string | null
+      issuingCountry?: string | null
+      issueDate?: string | null
+      expiryDate?: string | null
+      attachmentId?: string | null
+      isPrimary?: boolean
+      notes?: string | null
+    },
+    options?: CustomerPortalServiceOptions,
+  ) {
+    const authProfile = await getAuthProfileRow(db, userId)
+    if (!authProfile) return null
+
+    const personId = await ensureLinkedPerson(db, userId, authProfile)
+    const numberEncrypted = await encryptDocumentNumber(input.number ?? null, options)
+
+    const payload: CreatePersonDocumentInput = {
+      type: toCrmDocumentType(input.type),
+      issuingAuthority: input.issuingAuthority ?? null,
+      issuingCountry: input.issuingCountry ?? null,
+      issueDate: input.issueDate ?? null,
+      expiryDate: input.expiryDate ?? null,
+      attachmentId: input.attachmentId ?? null,
+      isPrimary: input.isPrimary ?? false,
+      notes: input.notes ?? null,
+    }
+    if (numberEncrypted !== undefined) {
+      payload.numberEncrypted = numberEncrypted
+    }
+
+    const row = await crmService.createPersonDocument(db, personId, payload)
+    return row ? projectPersonDocumentToWire(row, options) : null
+  },
+
+  async updateMyDocument(
+    db: PostgresJsDatabase,
+    userId: string,
+    documentId: string,
+    input: {
+      type?: WireDocumentType
+      number?: string | null
+      issuingAuthority?: string | null
+      issuingCountry?: string | null
+      issueDate?: string | null
+      expiryDate?: string | null
+      attachmentId?: string | null
+      isPrimary?: boolean
+      notes?: string | null
+    },
+    options?: CustomerPortalServiceOptions,
+  ) {
+    const linkedPersonId = await resolveLinkedCustomerRecordId(db, userId)
+    if (!linkedPersonId) return null
+
+    const existing = await crmService.getPersonDocument(db, documentId)
+    if (!existing || existing.personId !== linkedPersonId) return null
+
+    const numberEncrypted =
+      input.number !== undefined ? await encryptDocumentNumber(input.number, options) : undefined
+
+    const update: UpdatePersonDocumentInput = {}
+    if (input.type !== undefined) update.type = toCrmDocumentType(input.type)
+    if (input.issuingAuthority !== undefined) update.issuingAuthority = input.issuingAuthority
+    if (input.issuingCountry !== undefined) update.issuingCountry = input.issuingCountry
+    if (input.issueDate !== undefined) update.issueDate = input.issueDate
+    if (input.expiryDate !== undefined) update.expiryDate = input.expiryDate
+    if (input.attachmentId !== undefined) update.attachmentId = input.attachmentId
+    if (input.isPrimary !== undefined) update.isPrimary = input.isPrimary
+    if (input.notes !== undefined) update.notes = input.notes
+    if (numberEncrypted !== undefined) update.numberEncrypted = numberEncrypted
+
+    const row = await crmService.updatePersonDocument(db, documentId, update)
+    return row ? projectPersonDocumentToWire(row, options) : null
+  },
+
+  async deleteMyDocument(db: PostgresJsDatabase, userId: string, documentId: string) {
+    const linkedPersonId = await resolveLinkedCustomerRecordId(db, userId)
+    if (!linkedPersonId) return null
+
+    const existing = await crmService.getPersonDocument(db, documentId)
+    if (!existing || existing.personId !== linkedPersonId) return null
+
+    return crmService.deletePersonDocument(db, documentId)
+  },
+
+  async setPrimaryMyDocument(
+    db: PostgresJsDatabase,
+    userId: string,
+    documentId: string,
+    options?: CustomerPortalServiceOptions,
+  ) {
+    const linkedPersonId = await resolveLinkedCustomerRecordId(db, userId)
+    if (!linkedPersonId) return null
+
+    const existing = await crmService.getPersonDocument(db, documentId)
+    if (!existing || existing.personId !== linkedPersonId) return null
+
+    const row = await crmService.setPrimaryPersonDocument(db, documentId)
+    return row ? projectPersonDocumentToWire(row, options) : null
   },
 }

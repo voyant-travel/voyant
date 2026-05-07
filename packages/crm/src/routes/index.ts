@@ -5,6 +5,7 @@ import { accountRoutes } from "./accounts.js"
 import { activityRoutes } from "./activities.js"
 import { customFieldRoutes } from "./custom-fields.js"
 import { opportunityRoutes } from "./opportunities.js"
+import { personDocumentRoutes } from "./person-documents.js"
 import { pipelineRoutes } from "./pipelines.js"
 import { quoteRoutes } from "./quotes.js"
 
@@ -17,6 +18,7 @@ type Env = {
 
 export const crmRoutes = new Hono<Env>()
   .route("/", accountRoutes)
+  .route("/", personDocumentRoutes)
   .route("/", pipelineRoutes)
   .route("/", opportunityRoutes)
   .route("/", quoteRoutes)

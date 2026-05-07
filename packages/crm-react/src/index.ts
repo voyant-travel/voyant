@@ -48,10 +48,26 @@ export {
 export { type UsePeopleOptions, usePeople } from "./hooks/use-people.js"
 export { type UsePersonOptions, usePerson } from "./hooks/use-person.js"
 export {
+  type CreatePersonDocumentFromPlaintextInput,
+  type CreatePersonDocumentInput,
+  type UpdatePersonDocumentFromPlaintextInput,
+  type UpdatePersonDocumentInput,
+  usePersonDocumentMutation,
+} from "./hooks/use-person-document-mutation.js"
+export {
+  type UsePersonDocumentsOptions,
+  usePersonDocuments,
+} from "./hooks/use-person-documents.js"
+export {
   type CreatePersonInput,
   type UpdatePersonInput,
+  type UpdatePersonProfilePiiInput,
   usePersonMutation,
 } from "./hooks/use-person-mutation.js"
+export {
+  type UsePersonTravelSnapshotOptions,
+  usePersonTravelSnapshot,
+} from "./hooks/use-person-travel-snapshot.js"
 export {
   type CreatePipelineInput,
   type CreateStageInput,
@@ -99,6 +115,7 @@ export {
   type OpportunitiesListFilters,
   type OrganizationsListFilters,
   type PeopleListFilters,
+  type PersonDocumentsListFilters,
   type PipelinesListFilters,
   type QuotesListFilters,
   type StagesListFilters,
@@ -127,15 +144,23 @@ export {
   type ActivityRecord,
   activityLinkRecordSchema,
   activityRecordSchema,
+  type KmsEnvelopeRecord,
+  kmsEnvelopeRecordSchema,
   type OpportunityRecord,
   type OrganizationRecord,
   opportunityRecordSchema,
   organizationRecordSchema,
+  type PersonDocumentRecord,
+  type PersonDocumentType,
   type PersonNoteRecord,
   type PersonRecord,
+  type PersonTravelSnapshotRecord,
   type PipelineRecord,
+  personDocumentRecordSchema,
+  personDocumentTypeSchema,
   personNoteRecordSchema,
   personRecordSchema,
+  personTravelSnapshotSchema,
   pipelineRecordSchema,
   type QuoteLineRecord,
   type QuoteRecord,

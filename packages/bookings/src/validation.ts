@@ -289,6 +289,10 @@ export const upsertTravelerTravelDetailsSchema = z.object({
   nationality: z.string().max(100).optional().nullable(),
   passportNumber: z.string().max(255).optional().nullable(),
   passportExpiry: z.string().optional().nullable(),
+  passportIssuingCountry: z.string().max(255).optional().nullable(),
+  passportIssuingAuthority: z.string().max(255).optional().nullable(),
+  /** Provenance pointer to the seeding `crm.person_documents` row. */
+  passportPersonDocumentId: z.string().optional().nullable(),
   dateOfBirth: z.string().optional().nullable(),
   dietaryRequirements: z.string().optional().nullable(),
   accessibilityNeeds: z.string().optional().nullable(),

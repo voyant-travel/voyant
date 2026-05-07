@@ -34,6 +34,15 @@ export const bookingsUiRo = {
       email: "Email",
       phone: "Telefon",
       specialRequests: "Cerinte speciale",
+      travelDetailsHeading: "Detalii de calatorie",
+      passportNumber: "Numar pasaport",
+      passportExpiry: "Expira pasaport",
+      passportIssuingCountry: "Tara emitenta",
+      passportIssuingAuthority: "Autoritate emitenta",
+      dateOfBirth: "Data nasterii",
+      dietaryRequirements: "Cerinte alimentare",
+      accessibilityNeeds: "Cerinte de accesibilitate",
+      linkedPerson: "Contact CRM asociat",
     },
     placeholders: {
       firstName: "Ion",
@@ -41,6 +50,13 @@ export const bookingsUiRo = {
       email: "ion@example.com",
       phone: "+40 721 123 456",
       specialRequests: "Cerinte speciale...",
+      passportNumber: "Numar document",
+      passportExpiry: "AAAA-LL-ZZ",
+      passportIssuingCountry: "Cod ISO-2",
+      passportIssuingAuthority: "Autoritate",
+      dateOfBirth: "AAAA-LL-ZZ",
+      dietaryRequirements: "Vegetarian, fara gluten...",
+      accessibilityNeeds: "Scaun rulant, parter...",
     },
     validation: {
       firstNameRequired: "Prenumele este obligatoriu",
@@ -48,6 +64,12 @@ export const bookingsUiRo = {
     },
     actions: {
       addTraveler: "Adauga calator",
+      prefillFromProfile: "Preia din profil",
+      saveToProfile: "Salveaza in profil",
+    },
+    hints: {
+      prefilledFromProfile: "Preluat din profil — valorile pot diferi pe acest sejur.",
+      savedToProfile: "Salvat in profil.",
     },
   },
   travelerList: {

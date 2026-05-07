@@ -28,6 +28,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
         identity_encrypted jsonb,
         dietary_encrypted jsonb,
         accessibility_encrypted jsonb,
+        passport_person_document_id text,
         is_lead_traveler boolean DEFAULT false NOT NULL,
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL

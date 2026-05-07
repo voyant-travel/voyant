@@ -13,8 +13,10 @@ import { publicCustomerPortalService } from "./service-public.js"
 import {
   bootstrapCustomerPortalSchema,
   createCustomerPortalCompanionSchema,
+  createCustomerPortalProfileDocumentSchema,
   importCustomerPortalBookingTravelersSchema,
   updateCustomerPortalCompanionSchema,
+  updateCustomerPortalProfileDocumentSchema,
   updateCustomerPortalProfileSchema,
 } from "./validation-public.js"
 
@@ -94,6 +96,56 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       }
 
       return c.json({ data: result.profile })
+    })
+    .get("/me/documents", async (c) => {
+      const userId = requireUserId(c)
+      const data = await publicCustomerPortalService.listMyDocuments(c.get("db"), userId, {
+        kms: resolveOptionalKms(c),
+      })
+      return c.json({ data })
+    })
+    .post("/me/documents", async (c) => {
+      const userId = requireUserId(c)
+      const input = await parseJsonBody(c, createCustomerPortalProfileDocumentSchema)
+      const row = await publicCustomerPortalService.createMyDocument(c.get("db"), userId, input, {
+        kms: resolveOptionalKms(c),
+      })
+      if (!row) return notFound(c, "Customer profile not found")
+      return c.json({ data: row }, 201)
+    })
+    .patch("/me/documents/:id", async (c) => {
+      const userId = requireUserId(c)
+      const input = await parseJsonBody(c, updateCustomerPortalProfileDocumentSchema)
+      const row = await publicCustomerPortalService.updateMyDocument(
+        c.get("db"),
+        userId,
+        c.req.param("id"),
+        input,
+        { kms: resolveOptionalKms(c) },
+      )
+      if (!row) return notFound(c, "Document not found")
+      return c.json({ data: row })
+    })
+    .delete("/me/documents/:id", async (c) => {
+      const userId = requireUserId(c)
+      const result = await publicCustomerPortalService.deleteMyDocument(
+        c.get("db"),
+        userId,
+        c.req.param("id"),
+      )
+      if (!result) return notFound(c, "Document not found")
+      return c.json({ success: true })
+    })
+    .post("/me/documents/:id/set-primary", async (c) => {
+      const userId = requireUserId(c)
+      const row = await publicCustomerPortalService.setPrimaryMyDocument(
+        c.get("db"),
+        userId,
+        c.req.param("id"),
+        { kms: resolveOptionalKms(c) },
+      )
+      if (!row) return notFound(c, "Document not found")
+      return c.json({ data: row })
     })
     .post("/bootstrap", async (c) => {
       const userId = requireUserId(c)

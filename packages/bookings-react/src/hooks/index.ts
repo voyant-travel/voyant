@@ -101,4 +101,9 @@ export {
   type UpdateTravelerInput,
   useTravelerMutation,
 } from "./use-traveler-mutation.js"
+export {
+  type CreateTravelerWithTravelDetailsInput,
+  type UpdateTravelerWithTravelDetailsInput,
+  useTravelerWithTravelDetailsMutation,
+} from "./use-traveler-with-travel-details-mutation.js"
 export { type UseTravelersOptions, useTravelers } from "./use-travelers.js"

@@ -1,10 +1,13 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import type { KmsEnvelope } from "@voyantjs/db/schema/iam/kms"
+import { sql } from "drizzle-orm"
 import {
   boolean,
   date,
   index,
   integer,
   jsonb,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -17,6 +20,19 @@ import {
   recordStatusEnum,
   relationTypeEnum,
 } from "./schema-shared.js"
+
+/**
+ * Identity-document types stored on `person_documents`. Open-ended via
+ * "other" so we don't force a schema migration for every regional
+ * variant; the structured fields cover the international shape.
+ */
+export const personDocumentTypeEnum = pgEnum("person_document_type", [
+  "passport",
+  "id_card",
+  "driver_license",
+  "visa",
+  "other",
+])
 
 export const organizations = pgTable(
   "organizations",
@@ -75,6 +91,20 @@ export const people = pgTable(
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
     birthday: date("birthday"),
     notes: text("notes"),
+    /**
+     * Encrypted PII slots — canonical store for person-level travel
+     * preferences. Documents live in their own structured table
+     * (`person_documents`); these four are kept as KMS envelopes
+     * because their internal shape is small and rarely queried.
+     *
+     * Booking-traveler rows snapshot dietary/accessibility at create
+     * time; the person record remains the source of truth for
+     * pre-fill on subsequent bookings.
+     */
+    accessibilityEncrypted: jsonb("accessibility_encrypted").$type<KmsEnvelope>(),
+    dietaryEncrypted: jsonb("dietary_encrypted").$type<KmsEnvelope>(),
+    loyaltyEncrypted: jsonb("loyalty_encrypted").$type<KmsEnvelope>(),
+    insuranceEncrypted: jsonb("insurance_encrypted").$type<KmsEnvelope>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -124,6 +154,53 @@ export const personNotes = pgTable(
 
 export type PersonNote = typeof personNotes.$inferSelect
 export type NewPersonNote = typeof personNotes.$inferInsert
+
+/**
+ * Structured identity documents owned by a person. Replaces the
+ * single `documentsEncrypted` blob shape with a row per document so
+ * we can track type / expiry / issuing authority / attachment + run
+ * "expiring soon" sweeps without parsing JSON.
+ *
+ * `numberEncrypted` is the only field encrypted at rest — the rest
+ * is non-toxic identity metadata. `attachmentId` is a free-form key
+ * (typically an object-storage path) until a general media table
+ * exists; FK is intentionally deferred.
+ *
+ * Booking-traveler rows snapshot the primary passport at create time;
+ * this table remains the source of truth for next-trip pre-fill.
+ */
+export const personDocuments = pgTable(
+  "person_documents",
+  {
+    id: typeId("person_documents"),
+    personId: typeIdRef("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    type: personDocumentTypeEnum("type").notNull(),
+    numberEncrypted: jsonb("number_encrypted").$type<KmsEnvelope>(),
+    issuingAuthority: text("issuing_authority"),
+    issuingCountry: text("issuing_country"),
+    issueDate: date("issue_date"),
+    expiryDate: date("expiry_date"),
+    attachmentId: text("attachment_id"),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    notes: text("notes"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_person_documents_person").on(table.personId),
+    index("idx_person_documents_person_type").on(table.personId, table.type),
+    index("idx_person_documents_expiry").on(table.expiryDate),
+    uniqueIndex("uidx_person_documents_primary_per_type")
+      .on(table.personId, table.type)
+      .where(sql`${table.isPrimary} = true`),
+  ],
+)
+
+export type PersonDocument = typeof personDocuments.$inferSelect
+export type NewPersonDocument = typeof personDocuments.$inferInsert
 
 /**
  * Saved payment methods on file for a person. Stores processor-issued

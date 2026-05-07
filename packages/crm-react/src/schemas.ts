@@ -27,6 +27,15 @@ export const successEnvelope = z.object({ success: z.boolean() })
  * these as `z.infer` types; keep in sync with `packages/crm/src/schema.ts`.
  */
 
+/**
+ * KMS-encrypted envelope shape — `{ enc: base64 }`. Mirrors the
+ * `kmsEnvelopeSchema` in `@voyantjs/db/schema/iam/kms` (kept inline
+ * here so crm-react has no server-side schema dep).
+ */
+export const kmsEnvelopeRecordSchema = z.object({ enc: z.string().min(1) }).nullable()
+
+export type KmsEnvelopeRecord = z.infer<typeof kmsEnvelopeRecordSchema>
+
 export const personRecordSchema = z.object({
   id: z.string(),
   organizationId: z.string().nullable(),
@@ -45,6 +54,11 @@ export const personRecordSchema = z.object({
   tags: z.array(z.string()),
   birthday: z.string().nullable(),
   notes: z.string().nullable(),
+  // Encrypted PII slots (canonical store; documents live in /documents)
+  accessibilityEncrypted: kmsEnvelopeRecordSchema.optional(),
+  dietaryEncrypted: kmsEnvelopeRecordSchema.optional(),
+  loyaltyEncrypted: kmsEnvelopeRecordSchema.optional(),
+  insuranceEncrypted: kmsEnvelopeRecordSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   // Hydrated identity fields
@@ -193,6 +207,52 @@ export const personNoteRecordSchema = z.object({
 export type PersonNoteRecord = z.infer<typeof personNoteRecordSchema>
 
 export const personNoteListResponse = listEnvelope(personNoteRecordSchema)
+
+export const personDocumentTypeSchema = z.enum([
+  "passport",
+  "id_card",
+  "driver_license",
+  "visa",
+  "other",
+])
+
+export type PersonDocumentType = z.infer<typeof personDocumentTypeSchema>
+
+export const personDocumentRecordSchema = z.object({
+  id: z.string(),
+  personId: z.string(),
+  type: personDocumentTypeSchema,
+  numberEncrypted: kmsEnvelopeRecordSchema.optional(),
+  issuingAuthority: z.string().nullable(),
+  issuingCountry: z.string().nullable(),
+  issueDate: z.string().nullable(),
+  expiryDate: z.string().nullable(),
+  attachmentId: z.string().nullable(),
+  isPrimary: z.boolean(),
+  notes: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type PersonDocumentRecord = z.infer<typeof personDocumentRecordSchema>
+
+export const personDocumentListResponse = listEnvelope(personDocumentRecordSchema)
+export const personDocumentSingleResponse = singleEnvelope(personDocumentRecordSchema)
+
+export const personTravelSnapshotSchema = z.object({
+  dateOfBirth: z.string().nullable(),
+  dietaryRequirements: z.string().nullable(),
+  accessibilityNeeds: z.string().nullable(),
+  passportNumber: z.string().nullable(),
+  passportExpiry: z.string().nullable(),
+  passportIssuingCountry: z.string().nullable(),
+  passportIssuingAuthority: z.string().nullable(),
+  passportPersonDocumentId: z.string().nullable(),
+})
+
+export type PersonTravelSnapshotRecord = z.infer<typeof personTravelSnapshotSchema>
+export const personTravelSnapshotResponse = z.object({ data: personTravelSnapshotSchema })
 
 export const quoteRecordSchema = z.object({
   id: z.string(),

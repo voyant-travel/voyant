@@ -1,0 +1,310 @@
+import type { KeyRef, KmsProvider } from "@voyantjs/utils"
+import { decryptOptionalJsonEnvelope } from "@voyantjs/utils"
+import { and, asc, eq, gte, isNotNull, lte, sql } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { z } from "zod"
+
+import { people, personDocuments } from "../schema.js"
+import type {
+  insertPersonDocumentSchema,
+  personDocumentListQuerySchema,
+  updatePersonDocumentSchema,
+} from "../validation.js"
+
+/**
+ * Canonical plaintext shape for free-text PII blobs encrypted as
+ * `accessibilityEncrypted` / `dietaryEncrypted` / `loyaltyEncrypted` /
+ * `insuranceEncrypted` on `crm.people`. Wrapped so future fields can
+ * be added without breaking existing ciphertexts.
+ *
+ * Writers (customer-portal) and readers (crm + bookings snapshot)
+ * must use this shape — drift between sides means decryption fails
+ * silently and pre-fill stops working.
+ */
+export const personPiiBlobPlaintextSchema = z.object({ text: z.string() })
+
+/**
+ * Canonical plaintext shape for `numberEncrypted` on
+ * `crm.person_documents`. Same compatibility contract as
+ * `personPiiBlobPlaintextSchema`.
+ */
+export const personDocumentNumberPlaintextSchema = z.object({ number: z.string() })
+
+/** Plaintext, mergeable snapshot derived from a person record. */
+export interface PersonTravelSnapshot {
+  dateOfBirth: string | null
+  dietaryRequirements: string | null
+  accessibilityNeeds: string | null
+  passportNumber: string | null
+  passportExpiry: string | null
+  passportIssuingCountry: string | null
+  passportIssuingAuthority: string | null
+  passportPersonDocumentId: string | null
+}
+
+export type CreatePersonDocumentInput = z.infer<typeof insertPersonDocumentSchema>
+export type UpdatePersonDocumentInput = z.infer<typeof updatePersonDocumentSchema>
+export type PersonDocumentListQuery = z.infer<typeof personDocumentListQuerySchema>
+export type PersonDocumentType = CreatePersonDocumentInput["type"]
+
+async function personExists(db: PostgresJsDatabase, personId: string) {
+  const [row] = await db
+    .select({ id: people.id })
+    .from(people)
+    .where(eq(people.id, personId))
+    .limit(1)
+  return Boolean(row)
+}
+
+async function clearPrimaryForType(
+  db: PostgresJsDatabase,
+  personId: string,
+  type: PersonDocumentType,
+  exceptDocumentId?: string,
+) {
+  const conditions = [
+    eq(personDocuments.personId, personId),
+    eq(personDocuments.type, type),
+    eq(personDocuments.isPrimary, true),
+  ]
+  if (exceptDocumentId) {
+    conditions.push(sql`${personDocuments.id} <> ${exceptDocumentId}`)
+  }
+  await db
+    .update(personDocuments)
+    .set({ isPrimary: false, updatedAt: new Date() })
+    .where(and(...conditions))
+}
+
+export const personDocumentsService = {
+  listPersonDocuments(db: PostgresJsDatabase, personId: string, query?: PersonDocumentListQuery) {
+    const conditions = [eq(personDocuments.personId, personId)]
+    if (query?.type) conditions.push(eq(personDocuments.type, query.type))
+    if (query?.expiringBefore) {
+      conditions.push(isNotNull(personDocuments.expiryDate))
+      conditions.push(lte(personDocuments.expiryDate, query.expiringBefore))
+    }
+    const limit = query?.limit ?? 50
+    const offset = query?.offset ?? 0
+    return db
+      .select()
+      .from(personDocuments)
+      .where(and(...conditions))
+      .orderBy(asc(personDocuments.type), asc(personDocuments.createdAt))
+      .limit(limit)
+      .offset(offset)
+  },
+
+  async getPersonDocument(db: PostgresJsDatabase, documentId: string) {
+    const [row] = await db
+      .select()
+      .from(personDocuments)
+      .where(eq(personDocuments.id, documentId))
+      .limit(1)
+    return row ?? null
+  },
+
+  /**
+   * Returns the primary document of a given type for a person, or
+   * `null` if no primary is set. Used by booking-traveler create to
+   * snapshot the person's passport.
+   */
+  async getPrimaryPersonDocument(
+    db: PostgresJsDatabase,
+    personId: string,
+    type: PersonDocumentType,
+  ) {
+    const [row] = await db
+      .select()
+      .from(personDocuments)
+      .where(
+        and(
+          eq(personDocuments.personId, personId),
+          eq(personDocuments.type, type),
+          eq(personDocuments.isPrimary, true),
+        ),
+      )
+      .limit(1)
+    return row ?? null
+  },
+
+  async createPersonDocument(
+    db: PostgresJsDatabase,
+    personId: string,
+    data: CreatePersonDocumentInput,
+  ) {
+    if (!(await personExists(db, personId))) return null
+
+    return db.transaction(async (tx) => {
+      if (data.isPrimary) {
+        await clearPrimaryForType(tx as PostgresJsDatabase, personId, data.type)
+      }
+      const [row] = await tx
+        .insert(personDocuments)
+        .values({ ...data, personId })
+        .returning()
+      return row ?? null
+    })
+  },
+
+  async updatePersonDocument(
+    db: PostgresJsDatabase,
+    documentId: string,
+    data: UpdatePersonDocumentInput,
+  ) {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(personDocuments)
+        .where(eq(personDocuments.id, documentId))
+        .limit(1)
+      if (!existing) return null
+
+      if (data.isPrimary === true) {
+        const targetType = data.type ?? existing.type
+        await clearPrimaryForType(
+          tx as PostgresJsDatabase,
+          existing.personId,
+          targetType,
+          documentId,
+        )
+      }
+
+      const [row] = await tx
+        .update(personDocuments)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(personDocuments.id, documentId))
+        .returning()
+      return row ?? null
+    })
+  },
+
+  async deletePersonDocument(db: PostgresJsDatabase, documentId: string) {
+    const [row] = await db
+      .delete(personDocuments)
+      .where(eq(personDocuments.id, documentId))
+      .returning({ id: personDocuments.id })
+    return row ?? null
+  },
+
+  /**
+   * Atomically promotes a document to primary, demoting any prior
+   * primary of the same type for the same person.
+   */
+  async setPrimaryPersonDocument(db: PostgresJsDatabase, documentId: string) {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(personDocuments)
+        .where(eq(personDocuments.id, documentId))
+        .limit(1)
+      if (!existing) return null
+
+      await clearPrimaryForType(
+        tx as PostgresJsDatabase,
+        existing.personId,
+        existing.type,
+        documentId,
+      )
+
+      const [row] = await tx
+        .update(personDocuments)
+        .set({ isPrimary: true, updatedAt: new Date() })
+        .where(eq(personDocuments.id, documentId))
+        .returning()
+      return row ?? null
+    })
+  },
+
+  /**
+   * Plaintext snapshot of the fields a booking-traveler creation
+   * pulls from a person record: dietary, accessibility, primary
+   * passport (number + expiry + country + authority + provenance id),
+   * and date-of-birth from `people.birthday`.
+   *
+   * Caller passes a KMS provider so decryption happens in-process.
+   * Missing person → returns null. Missing document or blob → that
+   * field returns null in the snapshot.
+   */
+  async loadPersonTravelSnapshot(
+    db: PostgresJsDatabase,
+    personId: string,
+    options: { kms: KmsProvider; keyRef?: KeyRef },
+  ): Promise<PersonTravelSnapshot | null> {
+    const [personRow] = await db
+      .select({
+        birthday: people.birthday,
+        accessibilityEncrypted: people.accessibilityEncrypted,
+        dietaryEncrypted: people.dietaryEncrypted,
+      })
+      .from(people)
+      .where(eq(people.id, personId))
+      .limit(1)
+    if (!personRow) return null
+
+    const keyRef = options.keyRef ?? { keyType: "people" as const }
+
+    const [accessibilityBlob, dietaryBlob, primaryPassport] = await Promise.all([
+      decryptOptionalJsonEnvelope(
+        options.kms,
+        keyRef,
+        personRow.accessibilityEncrypted,
+        personPiiBlobPlaintextSchema,
+      ),
+      decryptOptionalJsonEnvelope(
+        options.kms,
+        keyRef,
+        personRow.dietaryEncrypted,
+        personPiiBlobPlaintextSchema,
+      ),
+      personDocumentsService.getPrimaryPersonDocument(db, personId, "passport"),
+    ])
+
+    let passportNumber: string | null = null
+    if (primaryPassport?.numberEncrypted) {
+      const decrypted = await decryptOptionalJsonEnvelope(
+        options.kms,
+        keyRef,
+        primaryPassport.numberEncrypted,
+        personDocumentNumberPlaintextSchema,
+      )
+      passportNumber = decrypted?.number ?? null
+    }
+
+    return {
+      dateOfBirth: personRow.birthday ?? null,
+      dietaryRequirements: dietaryBlob?.text ?? null,
+      accessibilityNeeds: accessibilityBlob?.text ?? null,
+      passportNumber,
+      passportExpiry: primaryPassport?.expiryDate ?? null,
+      passportIssuingCountry: primaryPassport?.issuingCountry ?? null,
+      passportIssuingAuthority: primaryPassport?.issuingAuthority ?? null,
+      passportPersonDocumentId: primaryPassport?.id ?? null,
+    }
+  },
+
+  /**
+   * Documents whose `expiryDate` falls within the next `daysAhead`
+   * days. Used by the future `crm.detect-expiring-documents` cron;
+   * shipped now since the helper is free.
+   */
+  listExpiringPersonDocuments(db: PostgresJsDatabase, daysAhead = 90) {
+    const today = new Date()
+    const horizon = new Date(today)
+    horizon.setUTCDate(horizon.getUTCDate() + daysAhead)
+    const todayIso = today.toISOString().slice(0, 10)
+    const horizonIso = horizon.toISOString().slice(0, 10)
+
+    return db
+      .select()
+      .from(personDocuments)
+      .where(
+        and(
+          isNotNull(personDocuments.expiryDate),
+          gte(personDocuments.expiryDate, todayIso),
+          lte(personDocuments.expiryDate, horizonIso),
+        ),
+      )
+      .orderBy(asc(personDocuments.expiryDate))
+  },
+}

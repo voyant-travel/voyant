@@ -9,7 +9,9 @@ export * from "./hooks/index.js"
 export {
   bootstrapCustomerPortal,
   createCustomerPortalCompanion,
+  createCustomerPortalProfileDocument,
   deleteCustomerPortalCompanion,
+  deleteCustomerPortalProfileDocument,
   getCustomerPortalBooking,
   getCustomerPortalBookingBillingContact,
   getCustomerPortalContactExists,
@@ -20,8 +22,11 @@ export {
   listCustomerPortalBookingDocuments,
   listCustomerPortalBookings,
   listCustomerPortalCompanions,
+  listCustomerPortalProfileDocuments,
+  setPrimaryCustomerPortalProfileDocument,
   updateCustomerPortalCompanion,
   updateCustomerPortalProfile,
+  updateCustomerPortalProfileDocument,
 } from "./operations.js"
 export {
   useVoyantCustomerPortalContext,
@@ -42,6 +47,7 @@ export {
   getCustomerPortalCompanionsQueryOptions,
   getCustomerPortalContactExistsQueryOptions,
   getCustomerPortalPhoneContactExistsQueryOptions,
+  getCustomerPortalProfileDocumentsQueryOptions,
   getCustomerPortalProfileQueryOptions,
 } from "./query-options.js"
 export * from "./schemas.js"

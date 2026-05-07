@@ -4,10 +4,18 @@ import { z } from "zod"
 
 import { bookingTravelers } from "../schema.js"
 
+/**
+ * Plaintext shape stored inside `identityEncrypted`. Snapshotted at
+ * booking-traveler creation from the canonical `crm.people` +
+ * `crm.person_documents` records — see `passportPersonDocumentId`
+ * for provenance back to the source document row.
+ */
 export const bookingTravelerIdentitySchema = z.object({
   nationality: z.string().optional().nullable(),
   passportNumber: z.string().optional().nullable(),
   passportExpiry: z.string().optional().nullable(),
+  passportIssuingCountry: z.string().optional().nullable(),
+  passportIssuingAuthority: z.string().optional().nullable(),
   dateOfBirth: z.string().optional().nullable(),
 })
 
@@ -24,6 +32,9 @@ const decryptedBookingTravelerTravelDetailRecordSchema = z.object({
   nationality: z.string().nullable(),
   passportNumber: z.string().nullable(),
   passportExpiry: z.string().nullable(),
+  passportIssuingCountry: z.string().nullable(),
+  passportIssuingAuthority: z.string().nullable(),
+  passportPersonDocumentId: z.string().nullable(),
   dateOfBirth: z.string().nullable(),
   dietaryRequirements: z.string().nullable(),
   accessibilityNeeds: z.string().nullable(),
@@ -44,6 +55,13 @@ export const bookingTravelerTravelDetails = pgTable(
     identityEncrypted: jsonb("identity_encrypted").$type<KmsEnvelope>(),
     dietaryEncrypted: jsonb("dietary_encrypted").$type<KmsEnvelope>(),
     accessibilityEncrypted: jsonb("accessibility_encrypted").$type<KmsEnvelope>(),
+    /**
+     * Provenance pointer to the `crm.person_documents` row that
+     * seeded the identity snapshot. Plaintext (non-toxic) and
+     * intentionally has no FK — the snapshot is owned by the booking
+     * even if the source document is later edited or deleted.
+     */
+    passportPersonDocumentId: text("passport_person_document_id"),
     isLeadTraveler: boolean("is_lead_traveler").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -56,6 +74,7 @@ const bookingTravelerTravelDetailRecordCoreSchema = z.object({
   identityEncrypted: kmsEnvelopeSchema.optional().nullable(),
   dietaryEncrypted: kmsEnvelopeSchema.optional().nullable(),
   accessibilityEncrypted: kmsEnvelopeSchema.optional().nullable(),
+  passportPersonDocumentId: z.string().nullable().optional(),
   isLeadTraveler: z.boolean().default(false),
 })
 
