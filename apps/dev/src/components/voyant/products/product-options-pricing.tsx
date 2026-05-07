@@ -138,7 +138,12 @@ function PriceRuleCard({
       </div>
 
       <div className="mt-3">
-        <UnitPriceMatrix optionPriceRuleId={rule.id} optionId={optionId} />
+        <UnitPriceMatrix
+          optionPriceRuleId={rule.id}
+          optionId={optionId}
+          pricingMode={rule.pricingMode}
+          allPricingCategories={rule.allPricingCategories}
+        />
       </div>
     </div>
   )
@@ -147,9 +152,13 @@ function PriceRuleCard({
 function UnitPriceMatrix({
   optionPriceRuleId,
   optionId,
+  pricingMode,
+  allPricingCategories,
 }: {
   optionPriceRuleId: string
   optionId: string
+  pricingMode: OptionPriceRuleData["pricingMode"]
+  allPricingCategories: boolean
 }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingCell, setEditingCell] = useState<OptionUnitPriceRuleData | undefined>()
@@ -183,7 +192,12 @@ function UnitPriceMatrix({
     return <p className="text-xs italic text-muted-foreground">Add units to configure pricing.</p>
   }
 
-  if (categories.length === 0) {
+  // Per-pax tour with no category cross-cut: render a simple unit-only table
+  // (Sell column) instead of the unit×category matrix. Accommodation products
+  // (or rules with allPricingCategories=false) still get the full matrix.
+  const useSimpleTable = pricingMode === "per_person" && allPricingCategories
+
+  if (!useSimpleTable && categories.length === 0) {
     return (
       <p className="text-xs italic text-muted-foreground">
         Create global pricing categories in Settings first.
@@ -191,11 +205,15 @@ function UnitPriceMatrix({
     )
   }
 
+  const columns: Array<{ id: string | null; name: string }> = useSimpleTable
+    ? [{ id: null, name: "Sell" }]
+    : categories.map((category) => ({ id: category.id, name: category.name }))
+
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
         <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          Unit × Category Pricing
+          {useSimpleTable ? "Unit Pricing" : "Unit × Category Pricing"}
         </p>
       </div>
       <div className="overflow-x-auto rounded border">
@@ -203,8 +221,8 @@ function UnitPriceMatrix({
           <thead>
             <tr className="border-b bg-muted/50 text-muted-foreground">
               <th className="p-2 text-left font-medium">Unit</th>
-              {categories.map((category) => (
-                <th key={category.id} className="p-2 text-left font-medium">
+              {columns.map((category) => (
+                <th key={category.id ?? "__default__"} className="p-2 text-left font-medium">
                   {category.name}
                 </th>
               ))}
@@ -217,10 +235,10 @@ function UnitPriceMatrix({
                   {unit.name}
                   <span className="ml-1 text-[10px] text-muted-foreground">({unit.unitType})</span>
                 </td>
-                {categories.map((category) => {
+                {columns.map((category) => {
                   const cell = findCell(unit.id, category.id)
                   return (
-                    <td key={category.id} className="p-2">
+                    <td key={category.id ?? "__default__"} className="p-2">
                       {cell ? (
                         <div className="flex items-center gap-1">
                           <button
