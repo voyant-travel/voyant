@@ -220,6 +220,21 @@ export const extraPriceRuleRecordSchema = z.object({
 
 export type ExtraPriceRuleRecord = z.infer<typeof extraPriceRuleRecordSchema>
 
+export const departurePriceOverrideRecordSchema = z.object({
+  id: z.string(),
+  departureId: z.string(),
+  optionId: z.string(),
+  optionUnitId: z.string(),
+  priceCatalogId: z.string(),
+  sellAmountCents: z.number().int(),
+  costAmountCents: z.number().int().nullable(),
+  notes: z.string().nullable(),
+  active: z.boolean(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+})
+
+export type DeparturePriceOverrideRecord = z.infer<typeof departurePriceOverrideRecordSchema>
+
 export const optionStartTimeRuleRecordSchema = z.object({
   id: z.string(),
   optionPriceRuleId: z.string(),
@@ -268,5 +283,11 @@ export const dropoffPriceRuleListResponse = paginatedEnvelope(dropoffPriceRuleRe
 export const dropoffPriceRuleSingleResponse = singleEnvelope(dropoffPriceRuleRecordSchema)
 export const extraPriceRuleListResponse = paginatedEnvelope(extraPriceRuleRecordSchema)
 export const extraPriceRuleSingleResponse = singleEnvelope(extraPriceRuleRecordSchema)
+export const departurePriceOverrideListResponse = paginatedEnvelope(
+  departurePriceOverrideRecordSchema,
+)
+export const departurePriceOverrideSingleResponse = singleEnvelope(
+  departurePriceOverrideRecordSchema,
+)
 export const optionStartTimeRuleListResponse = paginatedEnvelope(optionStartTimeRuleRecordSchema)
 export const optionStartTimeRuleSingleResponse = singleEnvelope(optionStartTimeRuleRecordSchema)

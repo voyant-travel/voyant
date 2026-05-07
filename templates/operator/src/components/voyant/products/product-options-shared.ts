@@ -1,6 +1,8 @@
 import {
+  getDeparturePriceOverridesQueryOptions as getSharedDeparturePriceOverridesQueryOptions,
   getOptionPriceRulesQueryOptions as getSharedOptionPriceRulesQueryOptions,
   getOptionUnitPriceRulesQueryOptions as getSharedOptionUnitPriceRulesQueryOptions,
+  getPriceCatalogsQueryOptions as getSharedPriceCatalogsQueryOptions,
   getPricingCategoriesQueryOptions as getSharedPricingCategoriesQueryOptions,
   defaultFetcher as pricingDefaultFetcher,
 } from "@voyantjs/pricing-react"
@@ -42,6 +44,17 @@ export function getPricingCategoriesQueryOptions() {
 export function getOptionUnitPriceRulesQueryOptions(optionPriceRuleId: string) {
   return getSharedOptionUnitPriceRulesQueryOptions(pricingClient, {
     optionPriceRuleId,
+    limit: 100,
+  })
+}
+
+export function getPriceCatalogsQueryOptions() {
+  return getSharedPriceCatalogsQueryOptions(pricingClient, { limit: 100 })
+}
+
+export function getDeparturePriceOverridesQueryOptions(departureId: string) {
+  return getSharedDeparturePriceOverridesQueryOptions(pricingClient, {
+    departureId,
     limit: 100,
   })
 }

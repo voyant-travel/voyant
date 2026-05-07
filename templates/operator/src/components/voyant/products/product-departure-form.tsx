@@ -79,6 +79,7 @@ type DepartureFormOutput = z.output<DepartureFormSchema>
 export type DepartureSlot = {
   id: string
   productId: string
+  optionId: string | null
   itineraryId: string | null
   dateLocal: string
   startsAt: string

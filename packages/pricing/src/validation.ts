@@ -324,5 +324,27 @@ export const extraPriceRuleListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
+export const departurePriceOverrideCoreSchema = z.object({
+  departureId: z.string(),
+  optionId: z.string(),
+  optionUnitId: z.string(),
+  priceCatalogId: z.string(),
+  sellAmountCents: z.number().int().min(0),
+  costAmountCents: z.number().int().min(0).nullable().optional(),
+  notes: z.string().nullable().optional(),
+  active: z.boolean().default(true),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+})
+
+export const insertDeparturePriceOverrideSchema = departurePriceOverrideCoreSchema
+export const updateDeparturePriceOverrideSchema = departurePriceOverrideCoreSchema.partial()
+export const departurePriceOverrideListQuerySchema = paginationSchema.extend({
+  departureId: z.string().optional(),
+  optionId: z.string().optional(),
+  optionUnitId: z.string().optional(),
+  priceCatalogId: z.string().optional(),
+  active: booleanQueryParam.optional(),
+})
+
 export * from "./validation-public.js"
 export * from "./validation-shared.js"

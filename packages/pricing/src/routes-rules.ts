@@ -3,8 +3,10 @@ import { Hono } from "hono"
 import { type Env, notFound } from "./routes-shared.js"
 import { pricingService } from "./service.js"
 import {
+  departurePriceOverrideListQuerySchema,
   dropoffPriceRuleListQuerySchema,
   extraPriceRuleListQuerySchema,
+  insertDeparturePriceOverrideSchema,
   insertDropoffPriceRuleSchema,
   insertExtraPriceRuleSchema,
   insertOptionPriceRuleSchema,
@@ -17,6 +19,7 @@ import {
   optionUnitPriceRuleListQuerySchema,
   optionUnitTierListQuerySchema,
   pickupPriceRuleListQuerySchema,
+  updateDeparturePriceOverrideSchema,
   updateDropoffPriceRuleSchema,
   updateExtraPriceRuleSchema,
   updateOptionPriceRuleSchema,
@@ -271,4 +274,39 @@ export const pricingRuleRoutes = new Hono<Env>()
   .delete("/extra-price-rules/:id", async (c) => {
     const row = await pricingService.deleteExtraPriceRule(c.get("db"), c.req.param("id"))
     return row ? c.json({ success: true }) : notFound(c, "Extra price rule not found")
+  })
+  .get("/departure-price-overrides", async (c) =>
+    c.json(
+      await pricingService.listDeparturePriceOverrides(
+        c.get("db"),
+        await parseQuery(c, departurePriceOverrideListQuerySchema),
+      ),
+    ),
+  )
+  .post("/departure-price-overrides", async (c) =>
+    c.json(
+      {
+        data: await pricingService.createDeparturePriceOverride(
+          c.get("db"),
+          await parseJsonBody(c, insertDeparturePriceOverrideSchema),
+        ),
+      },
+      201,
+    ),
+  )
+  .get("/departure-price-overrides/:id", async (c) => {
+    const row = await pricingService.getDeparturePriceOverrideById(c.get("db"), c.req.param("id"))
+    return row ? c.json({ data: row }) : notFound(c, "Departure price override not found")
+  })
+  .patch("/departure-price-overrides/:id", async (c) => {
+    const row = await pricingService.updateDeparturePriceOverride(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateDeparturePriceOverrideSchema),
+    )
+    return row ? c.json({ data: row }) : notFound(c, "Departure price override not found")
+  })
+  .delete("/departure-price-overrides/:id", async (c) => {
+    const row = await pricingService.deleteDeparturePriceOverride(c.get("db"), c.req.param("id"))
+    return row ? c.json({ success: true }) : notFound(c, "Departure price override not found")
   })

@@ -11,7 +11,12 @@ import {
   priceCatalogs,
   priceSchedules,
 } from "./schema.js"
-import { pickRulesForDate, type ResolverScheduleInput } from "./service-rule-resolver.js"
+import {
+  loadDeparturePriceOverrides,
+  pickRulesForDate,
+  type ResolverScheduleInput,
+  type UnitPriceOverride,
+} from "./service-rule-resolver.js"
 import type {
   PublicAvailabilitySnapshotQuery,
   PublicProductPricingQuery,
@@ -229,6 +234,12 @@ export const publicPricingService = {
     const optionIds = options.map((option) => option.id)
 
     const resolvedDate = await resolveQueryDate(db, query)
+    const overridesByUnit: Map<string, UnitPriceOverride> = query.departureId
+      ? await loadDeparturePriceOverrides(db, {
+          departureId: query.departureId,
+          catalogId: catalog.id,
+        })
+      : new Map()
 
     const [units, allRules] = await Promise.all([
       db
@@ -426,13 +437,17 @@ export const publicPricingService = {
                 return null
               }
 
+              const override = overridesByUnit.get(unit.unitId)
+
               return {
                 id: unitPrice.id,
                 unitId: unit.unitId,
                 unitName: unit.unitName,
                 unitType: unit.unitType,
                 pricingMode: unitPrice.pricingMode,
-                sellAmountCents: unitPrice.sellAmountCents ?? null,
+                sellAmountCents: override
+                  ? override.sellAmountCents
+                  : (unitPrice.sellAmountCents ?? null),
                 minQuantity: unitPrice.minQuantity ?? null,
                 maxQuantity: unitPrice.maxQuantity ?? null,
                 pricingCategoryId: unitPrice.pricingCategoryId ?? null,

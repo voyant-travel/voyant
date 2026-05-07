@@ -5,6 +5,7 @@ import { queryOptions } from "@tanstack/react-query"
 import { type FetchWithValidationOptions, fetchWithValidation } from "./client.js"
 import type { UseCancellationPoliciesOptions } from "./hooks/use-cancellation-policies.js"
 import type { UseCancellationPolicyRulesOptions } from "./hooks/use-cancellation-policy-rules.js"
+import type { UseDeparturePriceOverridesOptions } from "./hooks/use-departure-price-overrides.js"
 import type { UseDropoffPriceRulesOptions } from "./hooks/use-dropoff-price-rules.js"
 import type { UseExtraPriceRulesOptions } from "./hooks/use-extra-price-rules.js"
 import type { UseOptionPriceRulesOptions } from "./hooks/use-option-price-rules.js"
@@ -22,6 +23,8 @@ import {
   cancellationPolicyRuleListResponse,
   cancellationPolicyRuleSingleResponse,
   cancellationPolicySingleResponse,
+  departurePriceOverrideListResponse,
+  departurePriceOverrideSingleResponse,
   dropoffPriceRuleListResponse,
   dropoffPriceRuleSingleResponse,
   extraPriceRuleListResponse,
@@ -566,6 +569,51 @@ export function getOptionStartTimeRuleQueryOptions(client: FetchWithValidationOp
       const { data } = await fetchWithValidation(
         `/v1/pricing/option-start-time-rules/${id}`,
         optionStartTimeRuleSingleResponse,
+        client,
+      )
+      return data
+    },
+  })
+}
+
+export function getDeparturePriceOverridesQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UseDeparturePriceOverridesOptions = {},
+) {
+  const { enabled: _enabled = true, ...filters } = options
+
+  return queryOptions({
+    queryKey: pricingQueryKeys.departurePriceOverridesList(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.departureId) params.set("departureId", filters.departureId)
+      if (filters.optionId) params.set("optionId", filters.optionId)
+      if (filters.optionUnitId) params.set("optionUnitId", filters.optionUnitId)
+      if (filters.priceCatalogId) params.set("priceCatalogId", filters.priceCatalogId)
+      if (filters.active !== undefined) params.set("active", String(filters.active))
+      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/pricing/departure-price-overrides${qs ? `?${qs}` : ""}`,
+        departurePriceOverrideListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getDeparturePriceOverrideQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string,
+) {
+  return queryOptions({
+    queryKey: pricingQueryKeys.departurePriceOverride(id),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/pricing/departure-price-overrides/${id}`,
+        departurePriceOverrideSingleResponse,
         client,
       )
       return data

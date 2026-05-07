@@ -3,10 +3,12 @@ import type { z } from "zod"
 import type {
   cancellationPolicyListQuerySchema,
   cancellationPolicyRuleListQuerySchema,
+  departurePriceOverrideListQuerySchema,
   dropoffPriceRuleListQuerySchema,
   extraPriceRuleListQuerySchema,
   insertCancellationPolicyRuleSchema,
   insertCancellationPolicySchema,
+  insertDeparturePriceOverrideSchema,
   insertDropoffPriceRuleSchema,
   insertExtraPriceRuleSchema,
   insertOptionPriceRuleSchema,
@@ -29,6 +31,7 @@ import type {
   pricingCategoryListQuerySchema,
   updateCancellationPolicyRuleSchema,
   updateCancellationPolicySchema,
+  updateDeparturePriceOverrideSchema,
   updateDropoffPriceRuleSchema,
   updateExtraPriceRuleSchema,
   updateOptionPriceRuleSchema,
@@ -57,6 +60,7 @@ export type OptionUnitTierListQuery = z.infer<typeof optionUnitTierListQuerySche
 export type PickupPriceRuleListQuery = z.infer<typeof pickupPriceRuleListQuerySchema>
 export type DropoffPriceRuleListQuery = z.infer<typeof dropoffPriceRuleListQuerySchema>
 export type ExtraPriceRuleListQuery = z.infer<typeof extraPriceRuleListQuerySchema>
+export type DeparturePriceOverrideListQuery = z.infer<typeof departurePriceOverrideListQuerySchema>
 
 export type CreatePricingCategoryInput = z.infer<typeof insertPricingCategorySchema>
 export type UpdatePricingCategoryInput = z.infer<typeof updatePricingCategorySchema>
@@ -88,6 +92,8 @@ export type CreateDropoffPriceRuleInput = z.infer<typeof insertDropoffPriceRuleS
 export type UpdateDropoffPriceRuleInput = z.infer<typeof updateDropoffPriceRuleSchema>
 export type CreateExtraPriceRuleInput = z.infer<typeof insertExtraPriceRuleSchema>
 export type UpdateExtraPriceRuleInput = z.infer<typeof updateExtraPriceRuleSchema>
+export type CreateDeparturePriceOverrideInput = z.infer<typeof insertDeparturePriceOverrideSchema>
+export type UpdateDeparturePriceOverrideInput = z.infer<typeof updateDeparturePriceOverrideSchema>
 
 export async function paginate<T extends object>(
   rowsQuery: Promise<T[]>,

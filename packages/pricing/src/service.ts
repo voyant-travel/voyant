@@ -23,6 +23,13 @@ import {
   updatePricingCategoryDependency,
 } from "./service-categories.js"
 import {
+  createDeparturePriceOverride,
+  deleteDeparturePriceOverride,
+  getDeparturePriceOverrideById,
+  listDeparturePriceOverrides,
+  updateDeparturePriceOverride,
+} from "./service-departure-overrides.js"
+import {
   createOptionPriceRule,
   createOptionStartTimeRule,
   createOptionUnitPriceRule,
@@ -140,4 +147,9 @@ export const pricingService = {
   createExtraPriceRule,
   updateExtraPriceRule,
   deleteExtraPriceRule,
+  listDeparturePriceOverrides,
+  getDeparturePriceOverrideById,
+  createDeparturePriceOverride,
+  updateDeparturePriceOverride,
+  deleteDeparturePriceOverride,
 }

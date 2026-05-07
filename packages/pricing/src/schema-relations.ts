@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm"
 import { priceCatalogs, priceSchedules } from "./schema-catalogs.js"
 import { pricingCategories, pricingCategoryDependencies } from "./schema-categories.js"
+import { departurePriceOverrides } from "./schema-departure-overrides.js"
 import {
   dropoffPriceRules,
   extraPriceRules,
@@ -49,6 +50,14 @@ export const cancellationPolicyRulesRelations = relations(cancellationPolicyRule
 export const priceCatalogsRelations = relations(priceCatalogs, ({ many }) => ({
   schedules: many(priceSchedules),
   optionPriceRules: many(optionPriceRules),
+  departureOverrides: many(departurePriceOverrides),
+}))
+
+export const departurePriceOverridesRelations = relations(departurePriceOverrides, ({ one }) => ({
+  priceCatalog: one(priceCatalogs, {
+    fields: [departurePriceOverrides.priceCatalogId],
+    references: [priceCatalogs.id],
+  }),
 }))
 
 export const priceSchedulesRelations = relations(priceSchedules, ({ one, many }) => ({
