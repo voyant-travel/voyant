@@ -101,6 +101,12 @@ export const bookingListQuerySchema = z.object({
 export const bookingAggregatesQuerySchema = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
+  /**
+   * Cap on the number of upcoming-departure rows returned alongside
+   * the count. The dashboard uses 8; we allow up to 20 so adjacent
+   * dashboards / digests can share the endpoint.
+   */
+  upcomingLimit: z.coerce.number().int().min(0).max(20).default(8),
 })
 
 export const convertProductSchema = z.object({
