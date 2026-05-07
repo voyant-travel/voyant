@@ -1,1 +1,0 @@
-ALTER TABLE "suppliers" ADD COLUMN "customer_payment_policy" jsonb;

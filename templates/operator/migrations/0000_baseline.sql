@@ -5,6 +5,8 @@ CREATE TYPE "public"."domain_status" AS ENUM('pending', 'verified', 'active', 'd
 CREATE TYPE "public"."email_provider" AS ENUM('resend', 'ses');--> statement-breakpoint
 CREATE TYPE "public"."resend_region" AS ENUM('us-east-1', 'eu-west-1', 'sa-east-1', 'ap-northeast-1');--> statement-breakpoint
 CREATE TYPE "public"."tls_mode" AS ENUM('opportunistic', 'enforced');--> statement-breakpoint
+CREATE TYPE "public"."person_document_type" AS ENUM('passport', 'id_card', 'driver_license', 'visa', 'other');--> statement-breakpoint
+CREATE TYPE "public"."person_relationship_kind" AS ENUM('spouse', 'partner', 'parent', 'child', 'sibling', 'guardian', 'ward', 'emergency_contact', 'friend', 'travel_companion', 'other');--> statement-breakpoint
 CREATE TYPE "public"."activity_link_role" AS ENUM('primary', 'related');--> statement-breakpoint
 CREATE TYPE "public"."activity_status" AS ENUM('planned', 'done', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."activity_type" AS ENUM('call', 'email', 'meeting', 'task', 'follow_up', 'note');--> statement-breakpoint
@@ -17,6 +19,9 @@ CREATE TYPE "public"."participant_role" AS ENUM('traveler', 'booker', 'decision_
 CREATE TYPE "public"."quote_status" AS ENUM('draft', 'sent', 'accepted', 'expired', 'rejected', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."record_status" AS ENUM('active', 'inactive', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."relation_type" AS ENUM('client', 'partner', 'supplier', 'other');--> statement-breakpoint
+CREATE TYPE "public"."customer_signal_kind" AS ENUM('wishlist', 'notify', 'inquiry', 'request_offer', 'referral');--> statement-breakpoint
+CREATE TYPE "public"."customer_signal_source" AS ENUM('form', 'phone', 'admin', 'abandoned_cart', 'website', 'booking');--> statement-breakpoint
+CREATE TYPE "public"."customer_signal_status" AS ENUM('new', 'contacted', 'qualified', 'converted', 'lost', 'expired');--> statement-breakpoint
 CREATE TYPE "public"."availability_slot_status" AS ENUM('open', 'closed', 'sold_out', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."meeting_mode" AS ENUM('meeting_only', 'pickup_only', 'meet_or_pickup');--> statement-breakpoint
 CREATE TYPE "public"."pickup_group_kind" AS ENUM('pickup', 'dropoff', 'meeting');--> statement-breakpoint
@@ -62,7 +67,7 @@ CREATE TYPE "public"."notification_channel" AS ENUM('email', 'sms');--> statemen
 CREATE TYPE "public"."notification_delivery_status" AS ENUM('pending', 'sent', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."notification_reminder_run_status" AS ENUM('queued', 'processing', 'sent', 'skipped', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."notification_reminder_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."notification_reminder_target_type" AS ENUM('booking_payment_schedule', 'invoice');--> statement-breakpoint
+CREATE TYPE "public"."notification_reminder_target_type" AS ENUM('booking_confirmed', 'booking_payment_schedule', 'payment_complete', 'booking_cancelled_non_payment', 'invoice');--> statement-breakpoint
 CREATE TYPE "public"."notification_target_type" AS ENUM('booking', 'booking_payment_schedule', 'booking_guarantee', 'invoice', 'payment_session', 'person', 'organization', 'other');--> statement-breakpoint
 CREATE TYPE "public"."notification_template_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."offer_status" AS ENUM('draft', 'published', 'sent', 'accepted', 'expired', 'withdrawn', 'converted');--> statement-breakpoint
@@ -133,7 +138,7 @@ CREATE TYPE "public"."product_ticket_fulfillment" AS ENUM('none', 'per_booking',
 CREATE TYPE "public"."product_visibility" AS ENUM('public', 'private', 'hidden');--> statement-breakpoint
 CREATE TYPE "public"."booking_group_kind" AS ENUM('shared_room', 'cruise_party', 'other');--> statement-breakpoint
 CREATE TYPE "public"."booking_group_member_role" AS ENUM('primary', 'shared');--> statement-breakpoint
-CREATE TYPE "public"."booking_activity_type" AS ENUM('booking_created', 'booking_reserved', 'booking_converted', 'booking_confirmed', 'booking_started', 'booking_completed', 'hold_extended', 'hold_expired', 'status_change', 'status_overridden', 'item_update', 'allocation_released', 'fulfillment_issued', 'fulfillment_updated', 'redemption_recorded', 'supplier_update', 'passenger_update', 'note_added');--> statement-breakpoint
+CREATE TYPE "public"."booking_activity_type" AS ENUM('booking_created', 'booking_reserved', 'booking_converted', 'booking_confirmed', 'booking_started', 'booking_completed', 'hold_extended', 'hold_expired', 'status_change', 'status_overridden', 'item_update', 'allocation_released', 'fulfillment_issued', 'fulfillment_updated', 'redemption_recorded', 'supplier_update', 'passenger_update', 'note_added', 'system_action');--> statement-breakpoint
 CREATE TYPE "public"."booking_allocation_status" AS ENUM('held', 'confirmed', 'released', 'expired', 'cancelled', 'fulfilled');--> statement-breakpoint
 CREATE TYPE "public"."booking_allocation_type" AS ENUM('unit', 'pickup', 'resource');--> statement-breakpoint
 CREATE TYPE "public"."booking_document_type" AS ENUM('visa', 'insurance', 'health', 'passport_copy', 'other');--> statement-breakpoint
@@ -149,7 +154,7 @@ CREATE TYPE "public"."booking_pii_access_outcome" AS ENUM('allowed', 'denied');-
 CREATE TYPE "public"."booking_redemption_method" AS ENUM('manual', 'scan', 'api', 'other');--> statement-breakpoint
 CREATE TYPE "public"."booking_source_type" AS ENUM('direct', 'manual', 'affiliate', 'ota', 'reseller', 'api_partner', 'internal');--> statement-breakpoint
 CREATE TYPE "public"."booking_staff_assignment_role" AS ENUM('service_assignee', 'other');--> statement-breakpoint
-CREATE TYPE "public"."booking_status" AS ENUM('draft', 'on_hold', 'confirmed', 'in_progress', 'completed', 'expired', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."booking_status" AS ENUM('draft', 'on_hold', 'awaiting_payment', 'confirmed', 'in_progress', 'completed', 'expired', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."booking_traveler_category" AS ENUM('adult', 'child', 'infant', 'senior', 'other');--> statement-breakpoint
 CREATE TYPE "public"."supplier_confirmation_status" AS ENUM('pending', 'confirmed', 'rejected', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."capture_mode" AS ENUM('automatic', 'manual');--> statement-breakpoint
@@ -175,8 +180,10 @@ CREATE TYPE "public"."payment_method" AS ENUM('bank_transfer', 'credit_card', 'd
 CREATE TYPE "public"."payment_schedule_status" AS ENUM('pending', 'due', 'paid', 'waived', 'cancelled', 'expired');--> statement-breakpoint
 CREATE TYPE "public"."payment_schedule_type" AS ENUM('deposit', 'installment', 'balance', 'hold', 'other');--> statement-breakpoint
 CREATE TYPE "public"."payment_session_status" AS ENUM('pending', 'requires_redirect', 'processing', 'authorized', 'paid', 'failed', 'cancelled', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."payment_session_target_type" AS ENUM('booking', 'order', 'invoice', 'booking_payment_schedule', 'booking_guarantee', 'other');--> statement-breakpoint
+CREATE TYPE "public"."payment_session_target_type" AS ENUM('booking', 'order', 'invoice', 'booking_payment_schedule', 'booking_guarantee', 'flight_order', 'other');--> statement-breakpoint
 CREATE TYPE "public"."payment_status" AS ENUM('pending', 'completed', 'failed', 'refunded');--> statement-breakpoint
+CREATE TYPE "public"."tax_class_applies_to" AS ENUM('base', 'addon', 'accommodation', 'all');--> statement-breakpoint
+CREATE TYPE "public"."tax_policy_side" AS ENUM('sell', 'buy');--> statement-breakpoint
 CREATE TYPE "public"."tax_regime_code" AS ENUM('standard', 'reduced', 'exempt', 'reverse_charge', 'margin_scheme_art311', 'zero_rated', 'out_of_scope', 'other');--> statement-breakpoint
 CREATE TYPE "public"."tax_scope" AS ENUM('included', 'excluded', 'withheld');--> statement-breakpoint
 CREATE TYPE "public"."voucher_source_type" AS ENUM('refund', 'cancellation_credit', 'gift', 'manual', 'promo');--> statement-breakpoint
@@ -206,6 +213,27 @@ CREATE TYPE "public"."cruise_price_component_direction" AS ENUM('addition', 'inc
 CREATE TYPE "public"."cruise_price_component_kind" AS ENUM('gratuity', 'onboard_credit', 'port_charge', 'tax', 'ncf', 'airfare', 'transfer', 'insurance');--> statement-breakpoint
 CREATE TYPE "public"."cruise_sailing_sales_status" AS ENUM('open', 'on_request', 'wait_list', 'sold_out', 'closed');--> statement-breakpoint
 CREATE TYPE "public"."cruise_ship_type" AS ENUM('ocean', 'river', 'expedition', 'yacht', 'sailing', 'coastal');--> statement-breakpoint
+CREATE TYPE "public"."charter_booking_mode" AS ENUM('per_suite', 'whole_yacht');--> statement-breakpoint
+CREATE TYPE "public"."charter_source" AS ENUM('local', 'external');--> statement-breakpoint
+CREATE TYPE "public"."charter_status" AS ENUM('draft', 'awaiting_review', 'live', 'archived');--> statement-breakpoint
+CREATE TYPE "public"."charter_suite_availability" AS ENUM('available', 'limited', 'on_request', 'wait_list', 'sold_out');--> statement-breakpoint
+CREATE TYPE "public"."charter_suite_category" AS ENUM('standard', 'deluxe', 'suite', 'penthouse', 'owners', 'signature');--> statement-breakpoint
+CREATE TYPE "public"."charter_voyage_sales_status" AS ENUM('open', 'on_request', 'wait_list', 'sold_out', 'closed');--> statement-breakpoint
+CREATE TYPE "public"."charter_yacht_class" AS ENUM('luxury_motor', 'luxury_sailing', 'expedition', 'small_cruise');--> statement-breakpoint
+CREATE TYPE "public"."hospitality_guarantee_mode" AS ENUM('none', 'card_hold', 'deposit', 'full_prepay', 'on_request');--> statement-breakpoint
+CREATE TYPE "public"."hospitality_housekeeping_task_status" AS ENUM('open', 'in_progress', 'completed', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."hospitality_inventory_mode" AS ENUM('pooled', 'serialized', 'virtual');--> statement-breakpoint
+CREATE TYPE "public"."hospitality_maintenance_block_status" AS ENUM('open', 'in_progress', 'resolved', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."hospitality_room_block_status" AS ENUM('draft', 'held', 'confirmed', 'released', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."rate_plan_charge_frequency" AS ENUM('per_night', 'per_stay', 'per_person_per_night', 'per_person_per_stay');--> statement-breakpoint
+CREATE TYPE "public"."room_unit_status" AS ENUM('active', 'inactive', 'out_of_order', 'archived');--> statement-breakpoint
+CREATE TYPE "public"."stay_booking_item_status" AS ENUM('reserved', 'checked_in', 'checked_out', 'cancelled', 'no_show');--> statement-breakpoint
+CREATE TYPE "public"."stay_checkpoint_type" AS ENUM('arrival', 'room_assigned', 'check_in', 'room_move', 'charge_posted', 'check_out', 'no_show', 'note');--> statement-breakpoint
+CREATE TYPE "public"."stay_folio_status" AS ENUM('open', 'closed', 'transferred', 'void');--> statement-breakpoint
+CREATE TYPE "public"."stay_operation_status" AS ENUM('reserved', 'expected_arrival', 'checked_in', 'checked_out', 'no_show', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."stay_service_post_kind" AS ENUM('lodging', 'meal', 'minibar', 'fee', 'adjustment', 'other');--> statement-breakpoint
+CREATE TYPE "public"."workflow_run_status" AS ENUM('running', 'succeeded', 'failed', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."workflow_run_step_status" AS ENUM('running', 'succeeded', 'failed', 'skipped', 'compensated');--> statement-breakpoint
 CREATE TABLE "apikey" (
 	"id" text PRIMARY KEY NOT NULL,
 	"config_id" text DEFAULT 'default' NOT NULL,
@@ -292,12 +320,14 @@ CREATE TABLE "session" (
 CREATE TABLE "user" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
-	"email" text NOT NULL,
+	"email" text,
 	"email_verified" boolean NOT NULL,
+	"phone_number" text,
+	"phone_number_verified" boolean DEFAULT false NOT NULL,
 	"image" text,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL,
-	CONSTRAINT "user_email_unique" UNIQUE("email")
+	CONSTRAINT "user_email_or_phone" CHECK ("user"."email" IS NOT NULL OR "user"."phone_number" IS NOT NULL)
 );
 --> statement-breakpoint
 CREATE TABLE "verification" (
@@ -332,11 +362,6 @@ CREATE TABLE "user_profiles" (
 	"seating_preference" "seating_preference",
 	"is_super_admin" boolean DEFAULT false NOT NULL,
 	"is_support_user" boolean DEFAULT false NOT NULL,
-	"documents_encrypted" jsonb,
-	"accessibility_encrypted" jsonb,
-	"dietary_encrypted" jsonb,
-	"loyalty_encrypted" jsonb,
-	"insurance_encrypted" jsonb,
 	"terms_accepted_at" timestamp with time zone,
 	"notification_defaults" jsonb DEFAULT '{}'::jsonb,
 	"marketing_consent" boolean DEFAULT false NOT NULL,
@@ -388,6 +413,48 @@ CREATE TABLE "idempotency_keys" (
 );
 --> statement-breakpoint
 ALTER TABLE "idempotency_keys" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "rate_limit_buckets" (
+	"scope" text PRIMARY KEY NOT NULL,
+	"tokens_available" numeric NOT NULL,
+	"capacity" numeric NOT NULL,
+	"refill_rate_per_sec" numeric NOT NULL,
+	"last_refill_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "rate_limit_buckets" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "webhook_deliveries" (
+	"id" text PRIMARY KEY NOT NULL,
+	"source_module" text NOT NULL,
+	"source_event" text NOT NULL,
+	"source_entity_module" text,
+	"source_entity_id" text,
+	"subscription_id" text,
+	"target_url" text NOT NULL,
+	"target_kind" text,
+	"target_ref" text,
+	"request_method" text NOT NULL,
+	"request_headers" jsonb,
+	"request_body_hash" text,
+	"request_body_excerpt" text,
+	"response_status" integer,
+	"response_headers" jsonb,
+	"response_body_excerpt" text,
+	"attempt_number" integer DEFAULT 1 NOT NULL,
+	"parent_delivery_id" text,
+	"idempotency_key" text,
+	"status" text NOT NULL,
+	"scheduled_for" timestamp with time zone,
+	"started_at" timestamp with time zone,
+	"finished_at" timestamp with time zone,
+	"duration_ms" integer,
+	"error_class" text,
+	"error_message" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "webhook_deliveries" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "webhook_subscriptions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"url" text NOT NULL,
@@ -437,6 +504,7 @@ CREATE TABLE "organizations" (
 	"name" text NOT NULL,
 	"legal_name" text,
 	"website" text,
+	"vat_number" text,
 	"industry" text,
 	"relation" "relation_type",
 	"owner_id" text,
@@ -457,7 +525,9 @@ CREATE TABLE "people" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text,
 	"first_name" text NOT NULL,
+	"middle_name" text,
 	"last_name" text NOT NULL,
+	"gender" text,
 	"job_title" text,
 	"relation" "relation_type",
 	"preferred_language" text,
@@ -469,16 +539,29 @@ CREATE TABLE "people" (
 	"tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"birthday" date,
 	"notes" text,
+	"accessibility_encrypted" jsonb,
+	"dietary_encrypted" jsonb,
+	"loyalty_encrypted" jsonb,
+	"insurance_encrypted" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"archived_at" timestamp with time zone
 );
 --> statement-breakpoint
-CREATE TABLE "person_directory_projections" (
+CREATE TABLE "person_documents" (
+	"id" text PRIMARY KEY NOT NULL,
 	"person_id" text NOT NULL,
-	"email" text,
-	"phone" text,
-	"website" text,
+	"type" "person_document_type" NOT NULL,
+	"number_encrypted" jsonb,
+	"issuing_authority" text,
+	"issuing_country" text,
+	"issue_date" date,
+	"expiry_date" date,
+	"attachment_id" text,
+	"is_primary" boolean DEFAULT false NOT NULL,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -488,6 +571,35 @@ CREATE TABLE "person_notes" (
 	"author_id" text NOT NULL,
 	"content" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "person_payment_methods" (
+	"id" text PRIMARY KEY NOT NULL,
+	"person_id" text NOT NULL,
+	"brand" text NOT NULL,
+	"last4" text,
+	"holder_name" text,
+	"exp_month" integer,
+	"exp_year" integer,
+	"processor_token" text NOT NULL,
+	"is_default" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "person_relationships" (
+	"id" text PRIMARY KEY NOT NULL,
+	"from_person_id" text NOT NULL,
+	"to_person_id" text NOT NULL,
+	"kind" "person_relationship_kind" NOT NULL,
+	"inverse_kind" "person_relationship_kind",
+	"start_date" date,
+	"end_date" date,
+	"is_primary" boolean DEFAULT false NOT NULL,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "person_relationships_no_self" CHECK ("person_relationships"."from_person_id" <> "person_relationships"."to_person_id")
 );
 --> statement-breakpoint
 CREATE TABLE "segment_members" (
@@ -665,6 +777,26 @@ CREATE TABLE "stages" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "customer_signals" (
+	"id" text PRIMARY KEY NOT NULL,
+	"person_id" text NOT NULL,
+	"product_id" text,
+	"option_unit_id" text,
+	"kind" "customer_signal_kind" NOT NULL,
+	"source" "customer_signal_source" NOT NULL,
+	"status" "customer_signal_status" DEFAULT 'new' NOT NULL,
+	"priority" text DEFAULT 'normal' NOT NULL,
+	"notes" text,
+	"tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"assigned_to_user_id" text,
+	"follow_up_at" timestamp with time zone,
+	"resolved_booking_id" text,
+	"source_submission_id" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "availability_closeouts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"product_id" text NOT NULL,
@@ -673,6 +805,19 @@ CREATE TABLE "availability_closeouts" (
 	"reason" text,
 	"created_by" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "availability_holds" (
+	"id" text PRIMARY KEY NOT NULL,
+	"draft_id" text NOT NULL,
+	"hold_token" text NOT NULL,
+	"product_id" text NOT NULL,
+	"slot_id" text NOT NULL,
+	"pax_count" integer NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"released_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "availability_pickup_points" (
@@ -1027,6 +1172,23 @@ CREATE TABLE "booking_extras" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "extras_sourced_content" (
+	"entity_id" text NOT NULL,
+	"locale" text NOT NULL,
+	"market" text DEFAULT '*' NOT NULL,
+	"payload" jsonb NOT NULL,
+	"content_schema_version" text NOT NULL,
+	"returned_locale" text NOT NULL,
+	"machine_translated" boolean DEFAULT false NOT NULL,
+	"source_updated_at" timestamp with time zone,
+	"fetched_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"fresh_until" timestamp with time zone,
+	"etag" text,
+	"fetch_status" text DEFAULT 'ok' NOT NULL,
+	"fetch_error" text,
+	CONSTRAINT "extras_sourced_content_entity_id_locale_market_pk" PRIMARY KEY("entity_id","locale","market")
+);
+--> statement-breakpoint
 CREATE TABLE "option_extra_configs" (
 	"id" text PRIMARY KEY NOT NULL,
 	"option_id" text NOT NULL,
@@ -1049,6 +1211,7 @@ CREATE TABLE "option_extra_configs" (
 CREATE TABLE "product_extras" (
 	"id" text PRIMARY KEY NOT NULL,
 	"product_id" text NOT NULL,
+	"supplier_id" text,
 	"code" text,
 	"name" text NOT NULL,
 	"description" text,
@@ -1233,6 +1396,21 @@ CREATE TABLE "pricing_category_dependencies" (
 	"max_dependent_sum" integer,
 	"active" boolean DEFAULT true NOT NULL,
 	"notes" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "departure_price_overrides" (
+	"id" text PRIMARY KEY NOT NULL,
+	"departure_id" text NOT NULL,
+	"option_id" text NOT NULL,
+	"option_unit_id" text NOT NULL,
+	"price_catalog_id" text NOT NULL,
+	"sell_amount_cents" integer NOT NULL,
+	"cost_amount_cents" integer,
+	"notes" text,
+	"active" boolean DEFAULT true NOT NULL,
+	"metadata" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -2137,11 +2315,20 @@ CREATE TABLE "channel_booking_links" (
 	"id" text PRIMARY KEY NOT NULL,
 	"channel_id" text NOT NULL,
 	"booking_id" text NOT NULL,
+	"booking_item_id" text,
 	"external_booking_id" text,
 	"external_reference" text,
 	"external_status" text,
 	"booked_at_external" timestamp with time zone,
 	"last_synced_at" timestamp with time zone,
+	"source_kind" text,
+	"source_connection_id" text,
+	"push_status" text DEFAULT 'pending' NOT NULL,
+	"push_attempts" integer DEFAULT 0 NOT NULL,
+	"last_push_at" timestamp with time zone,
+	"last_error" text,
+	"pushed_payload_hash" text,
+	"idempotency_key" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -2184,6 +2371,10 @@ CREATE TABLE "channel_contracts" (
 	"cancellation_owner" "distribution_cancellation_owner" DEFAULT 'operator' NOT NULL,
 	"settlement_terms" text,
 	"notes" text,
+	"rate_limit_rps" integer,
+	"rate_limit_burst" integer,
+	"rate_limit_priority_gates" jsonb,
+	"policy" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -2196,6 +2387,14 @@ CREATE TABLE "channel_product_mappings" (
 	"external_rate_id" text,
 	"external_category_id" text,
 	"active" boolean DEFAULT true NOT NULL,
+	"source_kind" text,
+	"source_connection_id" text,
+	"push_bookings" boolean DEFAULT true NOT NULL,
+	"push_availability" boolean DEFAULT true NOT NULL,
+	"push_content" boolean DEFAULT true NOT NULL,
+	"policy" jsonb,
+	"last_pushed_content_hash" text,
+	"last_pushed_content_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -2220,6 +2419,9 @@ CREATE TABLE "channels" (
 	"kind" "channel_kind" NOT NULL,
 	"status" "channel_status" DEFAULT 'active' NOT NULL,
 	"metadata" jsonb,
+	"rate_limit_rps" integer,
+	"rate_limit_burst" integer,
+	"rate_limit_priority_gates" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -2379,6 +2581,33 @@ CREATE TABLE "channel_inventory_release_rules" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "channel_availability_push_intents" (
+	"id" text PRIMARY KEY NOT NULL,
+	"channel_id" text NOT NULL,
+	"source_connection_id" text NOT NULL,
+	"slot_id" text NOT NULL,
+	"product_id" text NOT NULL,
+	"option_id" text,
+	"starts_at" timestamp with time zone NOT NULL,
+	"requested_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"attempts" integer DEFAULT 0 NOT NULL,
+	"last_error" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "channel_content_push_intents" (
+	"id" text PRIMARY KEY NOT NULL,
+	"channel_id" text NOT NULL,
+	"source_connection_id" text NOT NULL,
+	"product_id" text NOT NULL,
+	"requested_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"attempts" integer DEFAULT 0 NOT NULL,
+	"last_error" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "supplier_availability" (
 	"id" text PRIMARY KEY NOT NULL,
 	"supplier_id" text NOT NULL,
@@ -2461,7 +2690,9 @@ CREATE TABLE "suppliers" (
 	"description" text,
 	"default_currency" text,
 	"payment_terms_days" integer,
+	"reservation_timeout_minutes" integer,
 	"primary_facility_id" text,
+	"customer_payment_policy" jsonb,
 	"tags" jsonb DEFAULT '[]'::jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -2483,6 +2714,23 @@ CREATE TABLE "booking_product_details" (
 	"option_id" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "products_sourced_content" (
+	"entity_id" text NOT NULL,
+	"locale" text NOT NULL,
+	"market" text DEFAULT '*' NOT NULL,
+	"payload" jsonb NOT NULL,
+	"content_schema_version" text NOT NULL,
+	"returned_locale" text NOT NULL,
+	"machine_translated" boolean DEFAULT false NOT NULL,
+	"source_updated_at" timestamp with time zone,
+	"fetched_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"fresh_until" timestamp with time zone,
+	"etag" text,
+	"fetch_status" text DEFAULT 'ok' NOT NULL,
+	"fetch_error" text,
+	CONSTRAINT "products_sourced_content_entity_id_locale_market_pk" PRIMARY KEY("entity_id","locale","market")
 );
 --> statement-breakpoint
 CREATE TABLE "option_units" (
@@ -2520,6 +2768,19 @@ CREATE TABLE "product_options" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "product_pax_pricing_tiers" (
+	"id" text PRIMARY KEY NOT NULL,
+	"product_id" text NOT NULL,
+	"option_unit_id" text,
+	"tier_pax" integer NOT NULL,
+	"price_per_pax_cents" integer NOT NULL,
+	"promo_price_per_pax_cents" integer,
+	"effective_from" date,
+	"effective_to" date,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "products" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -2536,10 +2797,13 @@ CREATE TABLE "products" (
 	"cost_amount_cents" integer,
 	"margin_percent" integer,
 	"facility_id" text,
+	"supplier_id" text,
 	"start_date" date,
 	"end_date" date,
 	"pax" integer,
 	"product_type_id" text,
+	"tax_class_id" text,
+	"customer_payment_policy" jsonb,
 	"tags" jsonb DEFAULT '[]'::jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -2552,6 +2816,7 @@ CREATE TABLE "product_day_services" (
 	"service_type" "service_type" NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
+	"country_code" text,
 	"cost_currency" text NOT NULL,
 	"cost_amount_cents" integer NOT NULL,
 	"quantity" integer DEFAULT 1 NOT NULL,
@@ -2782,6 +3047,7 @@ CREATE TABLE "product_categories" (
 	"description" text,
 	"sort_order" integer DEFAULT 0 NOT NULL,
 	"active" boolean DEFAULT true NOT NULL,
+	"customer_payment_policy" jsonb,
 	"metadata" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -2836,6 +3102,7 @@ CREATE TABLE "booking_traveler_travel_details" (
 	"identity_encrypted" jsonb,
 	"dietary_encrypted" jsonb,
 	"accessibility_encrypted" jsonb,
+	"passport_person_document_id" text,
 	"is_lead_traveler" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -2904,11 +3171,14 @@ CREATE TABLE "bookings" (
 	"end_date" date,
 	"pax" integer,
 	"internal_notes" text,
+	"customer_payment_policy" jsonb,
 	"hold_expires_at" timestamp with time zone,
 	"confirmed_at" timestamp with time zone,
 	"expired_at" timestamp with time zone,
 	"cancelled_at" timestamp with time zone,
 	"completed_at" timestamp with time zone,
+	"awaiting_payment_at" timestamp with time zone,
+	"paid_at" timestamp with time zone,
 	"redeemed_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -3289,6 +3559,7 @@ CREATE TABLE "invoices" (
 	"id" text PRIMARY KEY NOT NULL,
 	"invoice_number" text NOT NULL,
 	"invoice_type" "invoice_type" DEFAULT 'invoice' NOT NULL,
+	"converted_from_invoice_id" text,
 	"series_id" text,
 	"sequence" integer,
 	"template_id" text,
@@ -3475,6 +3746,43 @@ CREATE TABLE "supplier_payments" (
 	"reference_number" text,
 	"payment_date" date NOT NULL,
 	"notes" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tax_classes" (
+	"id" text PRIMARY KEY NOT NULL,
+	"code" text NOT NULL,
+	"label" text NOT NULL,
+	"description" text,
+	"default_regime_id" text,
+	"lines" jsonb,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tax_policy_profiles" (
+	"id" text PRIMARY KEY NOT NULL,
+	"code" text NOT NULL,
+	"name" text NOT NULL,
+	"jurisdiction" text,
+	"description" text,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tax_policy_rules" (
+	"id" text PRIMARY KEY NOT NULL,
+	"profile_id" text NOT NULL,
+	"side" "tax_policy_side" DEFAULT 'sell' NOT NULL,
+	"priority" integer DEFAULT 100 NOT NULL,
+	"name" text NOT NULL,
+	"applies_to" "tax_class_applies_to" DEFAULT 'all' NOT NULL,
+	"condition" jsonb,
+	"tax_regime_id" text NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -3725,6 +4033,8 @@ CREATE TABLE "booking_cruise_details" (
 	"quoted_components_json" jsonb DEFAULT '[]'::jsonb,
 	"connector_booking_ref" text,
 	"connector_status" text,
+	"air_arrangement" "cruise_air_arrangement",
+	"linked_flight_booking_id" text,
 	"notes" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -3746,6 +4056,23 @@ CREATE TABLE "booking_group_cruise_details" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "cruises_sourced_content" (
+	"entity_id" text NOT NULL,
+	"locale" text NOT NULL,
+	"market" text DEFAULT '*' NOT NULL,
+	"payload" jsonb NOT NULL,
+	"content_schema_version" text NOT NULL,
+	"returned_locale" text NOT NULL,
+	"machine_translated" boolean DEFAULT false NOT NULL,
+	"source_updated_at" timestamp with time zone,
+	"fetched_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"fresh_until" timestamp with time zone,
+	"etag" text,
+	"fetch_status" text DEFAULT 'ok' NOT NULL,
+	"fetch_error" text,
+	CONSTRAINT "cruises_sourced_content_entity_id_locale_market_pk" PRIMARY KEY("entity_id","locale","market")
+);
+--> statement-breakpoint
 CREATE TABLE "cruise_cabin_categories" (
 	"id" text PRIMARY KEY NOT NULL,
 	"ship_id" text NOT NULL,
@@ -3762,6 +4089,7 @@ CREATE TABLE "cruise_cabin_categories" (
 	"floorplan_images" jsonb DEFAULT '[]'::jsonb,
 	"grade_codes" jsonb DEFAULT '[]'::jsonb,
 	"external_refs" jsonb DEFAULT '{}'::jsonb,
+	"customer_payment_policy" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -3868,6 +4196,7 @@ CREATE TABLE "cruise_sailings" (
 	"is_charter" boolean DEFAULT false NOT NULL,
 	"sales_status" "cruise_sailing_sales_status" DEFAULT 'open' NOT NULL,
 	"external_refs" jsonb DEFAULT '{}'::jsonb,
+	"customer_payment_policy" jsonb,
 	"last_synced_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -3898,6 +4227,7 @@ CREATE TABLE "cruises" (
 	"earliest_departure_cached" date,
 	"latest_departure_cached" date,
 	"external_refs" jsonb DEFAULT '{}'::jsonb,
+	"customer_payment_policy" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -4001,6 +4331,575 @@ CREATE TABLE "cruise_search_index" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "booking_charter_details" (
+	"booking_id" text PRIMARY KEY NOT NULL,
+	"booking_mode" charter_booking_mode NOT NULL,
+	"source" charter_source DEFAULT 'local' NOT NULL,
+	"source_provider" text,
+	"source_ref" jsonb,
+	"voyage_id" text,
+	"suite_id" text,
+	"yacht_id" text,
+	"voyage_display_name" text,
+	"suite_display_name" text,
+	"yacht_name" text,
+	"charter_area_snapshot" text,
+	"guest_count" smallint NOT NULL,
+	"quoted_currency" char(3) NOT NULL,
+	"quoted_suite_price" numeric(12, 2),
+	"quoted_port_fee" numeric(12, 2),
+	"quoted_charter_fee" numeric(15, 2),
+	"apa_percent" numeric(5, 2),
+	"apa_amount" numeric(15, 2),
+	"quoted_total" numeric(15, 2) NOT NULL,
+	"myba_template_id_snapshot" text,
+	"myba_contract_id" text,
+	"apa_paid_amount" numeric(15, 2) DEFAULT '0.00',
+	"apa_spent_amount" numeric(15, 2) DEFAULT '0.00',
+	"apa_refund_amount" numeric(15, 2) DEFAULT '0.00',
+	"apa_settled_at" timestamp with time zone,
+	"connector_booking_ref" text,
+	"connector_status" text,
+	"notes" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "charters_sourced_content" (
+	"entity_id" text NOT NULL,
+	"locale" text NOT NULL,
+	"market" text DEFAULT '*' NOT NULL,
+	"payload" jsonb NOT NULL,
+	"content_schema_version" text NOT NULL,
+	"returned_locale" text NOT NULL,
+	"machine_translated" boolean DEFAULT false NOT NULL,
+	"source_updated_at" timestamp with time zone,
+	"fetched_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"fresh_until" timestamp with time zone,
+	"etag" text,
+	"fetch_status" text DEFAULT 'ok' NOT NULL,
+	"fetch_error" text,
+	CONSTRAINT "charters_sourced_content_entity_id_locale_market_pk" PRIMARY KEY("entity_id","locale","market")
+);
+--> statement-breakpoint
+CREATE TABLE "charter_products" (
+	"id" text PRIMARY KEY NOT NULL,
+	"slug" text NOT NULL,
+	"name" text NOT NULL,
+	"line_supplier_id" text,
+	"default_yacht_id" text,
+	"description" text,
+	"short_description" text,
+	"hero_image_url" text,
+	"map_image_url" text,
+	"regions" jsonb DEFAULT '[]'::jsonb,
+	"themes" jsonb DEFAULT '[]'::jsonb,
+	"status" charter_status DEFAULT 'draft' NOT NULL,
+	"default_booking_modes" jsonb DEFAULT '["per_suite"]'::jsonb,
+	"default_myba_template_id" text,
+	"default_apa_percent" numeric(5, 2),
+	"lowest_price_cached_amount" numeric(12, 2),
+	"lowest_price_cached_currency" text,
+	"earliest_voyage_cached" date,
+	"latest_voyage_cached" date,
+	"external_refs" jsonb DEFAULT '{}'::jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "charter_voyages" (
+	"id" text PRIMARY KEY NOT NULL,
+	"product_id" text NOT NULL,
+	"yacht_id" text NOT NULL,
+	"voyage_code" text NOT NULL,
+	"name" text,
+	"embark_port_facility_id" text,
+	"embark_port_name" text,
+	"disembark_port_facility_id" text,
+	"disembark_port_name" text,
+	"departure_date" date NOT NULL,
+	"return_date" date NOT NULL,
+	"nights" smallint NOT NULL,
+	"booking_modes" jsonb DEFAULT '["per_suite"]'::jsonb NOT NULL,
+	"appointment_only" boolean DEFAULT false NOT NULL,
+	"whole_yacht_prices_by_currency" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"apa_percent_override" numeric(5, 2),
+	"myba_template_id_override" text,
+	"charter_area_override" text,
+	"sales_status" charter_voyage_sales_status DEFAULT 'open' NOT NULL,
+	"availability_note" text,
+	"external_refs" jsonb DEFAULT '{}'::jsonb,
+	"last_synced_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "charter_schedule_days" (
+	"id" text PRIMARY KEY NOT NULL,
+	"voyage_id" text NOT NULL,
+	"day_number" smallint NOT NULL,
+	"port_facility_id" text,
+	"port_name" text,
+	"schedule_date" date,
+	"arrival_time" time,
+	"departure_time" time,
+	"is_sea_day" boolean DEFAULT false NOT NULL,
+	"description" text,
+	"activities" jsonb DEFAULT '[]'::jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "charter_suites" (
+	"id" text PRIMARY KEY NOT NULL,
+	"voyage_id" text NOT NULL,
+	"suite_code" text NOT NULL,
+	"suite_name" text NOT NULL,
+	"suite_category" charter_suite_category,
+	"description" text,
+	"square_feet" numeric(8, 2),
+	"images" jsonb DEFAULT '[]'::jsonb,
+	"floorplan_images" jsonb DEFAULT '[]'::jsonb,
+	"max_guests" smallint,
+	"prices_by_currency" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"port_fees_by_currency" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"availability" charter_suite_availability DEFAULT 'available' NOT NULL,
+	"units_available" smallint,
+	"appointment_only" boolean DEFAULT false NOT NULL,
+	"notes" text,
+	"extra" jsonb DEFAULT '{}'::jsonb,
+	"external_refs" jsonb DEFAULT '{}'::jsonb,
+	"last_synced_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "charter_yachts" (
+	"id" text PRIMARY KEY NOT NULL,
+	"line_supplier_id" text,
+	"name" text NOT NULL,
+	"slug" text NOT NULL,
+	"yacht_class" charter_yacht_class NOT NULL,
+	"capacity_guests" integer,
+	"capacity_crew" integer,
+	"length_meters" numeric(8, 2),
+	"year_built" integer,
+	"year_refurbished" integer,
+	"imo" text,
+	"description" text,
+	"gallery" jsonb DEFAULT '[]'::jsonb,
+	"amenities" jsonb DEFAULT '{}'::jsonb,
+	"crew_bios" jsonb DEFAULT '[]'::jsonb,
+	"default_charter_areas" jsonb DEFAULT '[]'::jsonb,
+	"external_refs" jsonb DEFAULT '{}'::jsonb,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "hospitality_sourced_content" (
+	"entity_id" text NOT NULL,
+	"locale" text NOT NULL,
+	"market" text DEFAULT '*' NOT NULL,
+	"payload" jsonb NOT NULL,
+	"content_schema_version" text NOT NULL,
+	"returned_locale" text NOT NULL,
+	"machine_translated" boolean DEFAULT false NOT NULL,
+	"source_updated_at" timestamp with time zone,
+	"fetched_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"fresh_until" timestamp with time zone,
+	"etag" text,
+	"fetch_status" text DEFAULT 'ok' NOT NULL,
+	"fetch_error" text,
+	CONSTRAINT "hospitality_sourced_content_entity_id_locale_market_pk" PRIMARY KEY("entity_id","locale","market")
+);
+--> statement-breakpoint
+CREATE TABLE "housekeeping_tasks" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"room_unit_id" text NOT NULL,
+	"stay_booking_item_id" text,
+	"task_type" text NOT NULL,
+	"status" "hospitality_housekeeping_task_status" DEFAULT 'open' NOT NULL,
+	"priority" integer DEFAULT 0 NOT NULL,
+	"due_at" timestamp with time zone,
+	"started_at" timestamp with time zone,
+	"completed_at" timestamp with time zone,
+	"assigned_to" text,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "maintenance_blocks" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"room_type_id" text,
+	"room_unit_id" text,
+	"starts_on" date NOT NULL,
+	"ends_on" date NOT NULL,
+	"status" "hospitality_maintenance_block_status" DEFAULT 'open' NOT NULL,
+	"reason" text,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "room_blocks" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"room_type_id" text,
+	"room_unit_id" text,
+	"starts_on" date NOT NULL,
+	"ends_on" date NOT NULL,
+	"status" "hospitality_room_block_status" DEFAULT 'draft' NOT NULL,
+	"block_reason" text,
+	"quantity" integer DEFAULT 1 NOT NULL,
+	"release_at" timestamp with time zone,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "room_unit_status_events" (
+	"id" text PRIMARY KEY NOT NULL,
+	"room_unit_id" text NOT NULL,
+	"status_code" text NOT NULL,
+	"housekeeping_status" text,
+	"effective_from" timestamp with time zone DEFAULT now() NOT NULL,
+	"effective_to" timestamp with time zone,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stay_booking_items" (
+	"id" text PRIMARY KEY NOT NULL,
+	"booking_item_id" text NOT NULL,
+	"property_id" text NOT NULL,
+	"room_type_id" text NOT NULL,
+	"room_unit_id" text,
+	"rate_plan_id" text NOT NULL,
+	"check_in_date" date NOT NULL,
+	"check_out_date" date NOT NULL,
+	"night_count" integer DEFAULT 1 NOT NULL,
+	"room_count" integer DEFAULT 1 NOT NULL,
+	"adults" integer DEFAULT 1 NOT NULL,
+	"children" integer DEFAULT 0 NOT NULL,
+	"infants" integer DEFAULT 0 NOT NULL,
+	"meal_plan_id" text,
+	"confirmation_code" text,
+	"voucher_code" text,
+	"status" "stay_booking_item_status" DEFAULT 'reserved' NOT NULL,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stay_daily_rates" (
+	"id" text PRIMARY KEY NOT NULL,
+	"stay_booking_item_id" text NOT NULL,
+	"date" date NOT NULL,
+	"sell_currency" text NOT NULL,
+	"sell_amount_cents" integer,
+	"cost_currency" text,
+	"cost_amount_cents" integer,
+	"tax_amount_cents" integer,
+	"fee_amount_cents" integer,
+	"commission_amount_cents" integer,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "meal_plans" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"code" text NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"includes_breakfast" boolean DEFAULT false NOT NULL,
+	"includes_lunch" boolean DEFAULT false NOT NULL,
+	"includes_dinner" boolean DEFAULT false NOT NULL,
+	"includes_drinks" boolean DEFAULT false NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"sort_order" integer DEFAULT 0 NOT NULL,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "rate_plan_room_types" (
+	"id" text PRIMARY KEY NOT NULL,
+	"rate_plan_id" text NOT NULL,
+	"room_type_id" text NOT NULL,
+	"product_id" text,
+	"option_id" text,
+	"unit_id" text,
+	"active" boolean DEFAULT true NOT NULL,
+	"sort_order" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "rate_plans" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"code" text NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"meal_plan_id" text,
+	"price_catalog_id" text,
+	"cancellation_policy_id" text,
+	"market_id" text,
+	"currency_code" text NOT NULL,
+	"charge_frequency" "rate_plan_charge_frequency" DEFAULT 'per_night' NOT NULL,
+	"guarantee_mode" "hospitality_guarantee_mode" DEFAULT 'none' NOT NULL,
+	"commissionable" boolean DEFAULT true NOT NULL,
+	"refundable" boolean DEFAULT true NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"sort_order" integer DEFAULT 0 NOT NULL,
+	"customer_payment_policy" jsonb,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "room_type_bed_configs" (
+	"id" text PRIMARY KEY NOT NULL,
+	"room_type_id" text NOT NULL,
+	"bed_type" text NOT NULL,
+	"quantity" integer DEFAULT 1 NOT NULL,
+	"is_primary" boolean DEFAULT false NOT NULL,
+	"notes" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "room_types" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"supplier_id" text,
+	"code" text,
+	"name" text NOT NULL,
+	"description" text,
+	"inventory_mode" "hospitality_inventory_mode" DEFAULT 'pooled' NOT NULL,
+	"room_class" text,
+	"max_adults" integer,
+	"max_children" integer,
+	"max_infants" integer,
+	"standard_occupancy" integer,
+	"max_occupancy" integer,
+	"min_occupancy" integer,
+	"bedroom_count" integer,
+	"bathroom_count" integer,
+	"area_value" integer,
+	"area_unit" text,
+	"accessibility_notes" text,
+	"smoking_allowed" boolean DEFAULT false NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"sort_order" integer DEFAULT 0 NOT NULL,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "room_units" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"room_type_id" text NOT NULL,
+	"code" text,
+	"room_number" text,
+	"floor" text,
+	"wing" text,
+	"status" "room_unit_status" DEFAULT 'active' NOT NULL,
+	"view_code" text,
+	"accessibility_code" text,
+	"gender_restriction" text,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stay_checkpoints" (
+	"id" text PRIMARY KEY NOT NULL,
+	"stay_operation_id" text NOT NULL,
+	"checkpoint_type" "stay_checkpoint_type" DEFAULT 'note' NOT NULL,
+	"occurred_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"room_unit_id" text,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stay_folio_lines" (
+	"id" text PRIMARY KEY NOT NULL,
+	"stay_folio_id" text NOT NULL,
+	"service_post_id" text,
+	"posted_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"line_type" text NOT NULL,
+	"description" text NOT NULL,
+	"quantity" integer DEFAULT 1 NOT NULL,
+	"amount_cents" integer DEFAULT 0 NOT NULL,
+	"tax_amount_cents" integer,
+	"fee_amount_cents" integer,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stay_folios" (
+	"id" text PRIMARY KEY NOT NULL,
+	"stay_operation_id" text NOT NULL,
+	"currency_code" text NOT NULL,
+	"status" "stay_folio_status" DEFAULT 'open' NOT NULL,
+	"opened_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"closed_at" timestamp with time zone,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stay_operations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"stay_booking_item_id" text NOT NULL,
+	"property_id" text NOT NULL,
+	"room_unit_id" text,
+	"operation_status" "stay_operation_status" DEFAULT 'reserved' NOT NULL,
+	"expected_arrival_at" timestamp with time zone,
+	"expected_departure_at" timestamp with time zone,
+	"checked_in_at" timestamp with time zone,
+	"checked_out_at" timestamp with time zone,
+	"no_show_recorded_at" timestamp with time zone,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stay_service_posts" (
+	"id" text PRIMARY KEY NOT NULL,
+	"stay_operation_id" text NOT NULL,
+	"booking_item_id" text,
+	"service_date" date NOT NULL,
+	"kind" "stay_service_post_kind" DEFAULT 'other' NOT NULL,
+	"description" text NOT NULL,
+	"quantity" integer DEFAULT 1 NOT NULL,
+	"currency_code" text NOT NULL,
+	"sell_amount_cents" integer DEFAULT 0 NOT NULL,
+	"cost_amount_cents" integer,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "rate_plan_inventory_overrides" (
+	"id" text PRIMARY KEY NOT NULL,
+	"rate_plan_id" text NOT NULL,
+	"room_type_id" text NOT NULL,
+	"date" date NOT NULL,
+	"stop_sell" boolean DEFAULT false NOT NULL,
+	"closed_to_arrival" boolean DEFAULT false NOT NULL,
+	"closed_to_departure" boolean DEFAULT false NOT NULL,
+	"min_nights_override" integer,
+	"max_nights_override" integer,
+	"notes" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "room_inventory" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"room_type_id" text NOT NULL,
+	"date" date NOT NULL,
+	"total_units" integer DEFAULT 0 NOT NULL,
+	"available_units" integer DEFAULT 0 NOT NULL,
+	"held_units" integer DEFAULT 0 NOT NULL,
+	"sold_units" integer DEFAULT 0 NOT NULL,
+	"out_of_order_units" integer DEFAULT 0 NOT NULL,
+	"overbook_limit" integer,
+	"stop_sell" boolean DEFAULT false NOT NULL,
+	"notes" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "room_type_rates" (
+	"id" text PRIMARY KEY NOT NULL,
+	"rate_plan_id" text NOT NULL,
+	"room_type_id" text NOT NULL,
+	"price_schedule_id" text,
+	"currency_code" char(3) NOT NULL,
+	"base_amount_cents" integer,
+	"extra_adult_amount_cents" integer,
+	"extra_child_amount_cents" integer,
+	"extra_infant_amount_cents" integer,
+	"active" boolean DEFAULT true NOT NULL,
+	"notes" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "stay_rules" (
+	"id" text PRIMARY KEY NOT NULL,
+	"property_id" text NOT NULL,
+	"rate_plan_id" text,
+	"room_type_id" text,
+	"valid_from" date,
+	"valid_to" date,
+	"min_nights" integer,
+	"max_nights" integer,
+	"min_advance_days" integer,
+	"max_advance_days" integer,
+	"closed_to_arrival" boolean DEFAULT false NOT NULL,
+	"closed_to_departure" boolean DEFAULT false NOT NULL,
+	"arrival_weekdays" jsonb,
+	"departure_weekdays" jsonb,
+	"release_days" integer,
+	"active" boolean DEFAULT true NOT NULL,
+	"priority" integer DEFAULT 0 NOT NULL,
+	"notes" text,
+	"metadata" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "reference_aircraft" (
+	"iata_code" text PRIMARY KEY NOT NULL,
+	"icao_code" text,
+	"name" text NOT NULL,
+	"manufacturer" text,
+	"typical_seats" integer
+);
+--> statement-breakpoint
+CREATE TABLE "reference_airlines" (
+	"iata_code" text PRIMARY KEY NOT NULL,
+	"icao_code" text,
+	"name" text NOT NULL,
+	"country" text,
+	"logo_url" text,
+	"alliance" text
+);
+--> statement-breakpoint
+CREATE TABLE "reference_airports" (
+	"iata_code" text PRIMARY KEY NOT NULL,
+	"icao_code" text,
+	"name" text NOT NULL,
+	"city" text NOT NULL,
+	"country" text NOT NULL,
+	"timezone" text,
+	"latitude" real,
+	"longitude" real
+);
+--> statement-breakpoint
 CREATE TABLE "booking_catalog_snapshot" (
 	"id" text PRIMARY KEY NOT NULL,
 	"booking_id" text NOT NULL,
@@ -4018,7 +4917,27 @@ CREATE TABLE "booking_catalog_snapshot" (
 	"pricing_surcharges" numeric(18, 4),
 	"pricing_currency" text,
 	"pricing_breakdown" jsonb,
+	"idempotency_key" text,
 	"captured_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "booking_drafts" (
+	"id" text PRIMARY KEY NOT NULL,
+	"entity_module" text NOT NULL,
+	"entity_id" text NOT NULL,
+	"source_kind" text NOT NULL,
+	"source_connection_id" text,
+	"source_ref" text,
+	"draft_payload" jsonb NOT NULL,
+	"current_step" text,
+	"current_quote_id" text,
+	"hold_expires_at" timestamp with time zone,
+	"consumed_booking_id" text,
+	"consumed_at" timestamp with time zone,
+	"created_by" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "catalog_overlay" (
@@ -4036,6 +4955,114 @@ CREATE TABLE "catalog_overlay" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "catalog_quotes" (
+	"id" text PRIMARY KEY NOT NULL,
+	"entity_module" text NOT NULL,
+	"entity_id" text NOT NULL,
+	"source_kind" text NOT NULL,
+	"source_provider" text,
+	"source_connection_id" text,
+	"source_ref" text,
+	"available" boolean NOT NULL,
+	"invalid_reason" text,
+	"locale" text NOT NULL,
+	"audience" text NOT NULL,
+	"market" text NOT NULL,
+	"currency" text,
+	"pricing_base_amount" numeric(18, 4),
+	"pricing_taxes" numeric(18, 4),
+	"pricing_fees" numeric(18, 4),
+	"pricing_surcharges" numeric(18, 4),
+	"pricing_currency" text,
+	"pricing_breakdown" jsonb,
+	"upstream_payload" jsonb,
+	"consumed_at" timestamp with time zone,
+	"consumed_booking_id" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "catalog_sourced_entries" (
+	"id" text PRIMARY KEY NOT NULL,
+	"entity_module" text NOT NULL,
+	"entity_id" text NOT NULL,
+	"source_kind" text NOT NULL,
+	"source_provider" text,
+	"source_connection_id" text,
+	"source_ref" text,
+	"source_freshness" text NOT NULL,
+	"last_sourced_at" timestamp with time zone,
+	"status" text DEFAULT 'active' NOT NULL,
+	"first_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"last_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"projection" jsonb NOT NULL,
+	"projection_etag" text,
+	"projection_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "workflow_run_steps" (
+	"id" text PRIMARY KEY NOT NULL,
+	"run_id" text NOT NULL,
+	"step_name" text NOT NULL,
+	"sequence" integer NOT NULL,
+	"status" "workflow_run_step_status" DEFAULT 'running' NOT NULL,
+	"output" jsonb,
+	"error" jsonb,
+	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"completed_at" timestamp with time zone,
+	"duration_ms" integer
+);
+--> statement-breakpoint
+CREATE TABLE "workflow_runs" (
+	"id" text PRIMARY KEY NOT NULL,
+	"workflow_name" text NOT NULL,
+	"trigger" text DEFAULT 'manual' NOT NULL,
+	"correlation_id" text,
+	"tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"status" "workflow_run_status" DEFAULT 'running' NOT NULL,
+	"input" jsonb,
+	"result" jsonb,
+	"error" jsonb,
+	"parent_run_id" text,
+	"triggered_by_user_id" text,
+	"resume_from_step" text,
+	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"completed_at" timestamp with time zone,
+	"duration_ms" integer,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "ck_workflow_runs_completion" CHECK ((
+        "workflow_runs"."status" = 'running' AND "workflow_runs"."completed_at" IS NULL
+      ) OR (
+        "workflow_runs"."status" <> 'running' AND "workflow_runs"."completed_at" IS NOT NULL
+      ))
+);
+--> statement-breakpoint
+CREATE TABLE "operator_settings" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text,
+	"legal_name" text,
+	"vat_id" text,
+	"registration_number" text,
+	"address" text,
+	"phone" text,
+	"email" text,
+	"website" text,
+	"iban" text,
+	"bank" text,
+	"license" text,
+	"license_authority" text,
+	"signatory_name" text,
+	"signatory_role" text,
+	"customer_payment_policy" jsonb,
+	"tax_price_mode" text DEFAULT 'inclusive' NOT NULL,
+	"tax_policy_profile_id" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitation" ADD CONSTRAINT "invitation_inviter_id_user_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -4047,8 +5074,11 @@ ALTER TABLE "communication_log" ADD CONSTRAINT "communication_log_person_id_peop
 ALTER TABLE "communication_log" ADD CONSTRAINT "communication_log_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organization_notes" ADD CONSTRAINT "organization_notes_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "people" ADD CONSTRAINT "people_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "person_directory_projections" ADD CONSTRAINT "person_directory_projections_person_id_people_id_fk" FOREIGN KEY ("person_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "person_documents" ADD CONSTRAINT "person_documents_person_id_people_id_fk" FOREIGN KEY ("person_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "person_notes" ADD CONSTRAINT "person_notes_person_id_people_id_fk" FOREIGN KEY ("person_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "person_payment_methods" ADD CONSTRAINT "person_payment_methods_person_id_people_id_fk" FOREIGN KEY ("person_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "person_relationships" ADD CONSTRAINT "person_relationships_from_person_id_people_id_fk" FOREIGN KEY ("from_person_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "person_relationships" ADD CONSTRAINT "person_relationships_to_person_id_people_id_fk" FOREIGN KEY ("to_person_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "segment_members" ADD CONSTRAINT "segment_members_segment_id_segments_id_fk" FOREIGN KEY ("segment_id") REFERENCES "public"."segments"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "segment_members" ADD CONSTRAINT "segment_members_person_id_people_id_fk" FOREIGN KEY ("person_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_links" ADD CONSTRAINT "activity_links_activity_id_activities_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activities"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -4065,7 +5095,9 @@ ALTER TABLE "opportunity_products" ADD CONSTRAINT "opportunity_products_opportun
 ALTER TABLE "quote_lines" ADD CONSTRAINT "quote_lines_quote_id_quotes_id_fk" FOREIGN KEY ("quote_id") REFERENCES "public"."quotes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quotes" ADD CONSTRAINT "quotes_opportunity_id_opportunities_id_fk" FOREIGN KEY ("opportunity_id") REFERENCES "public"."opportunities"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "stages" ADD CONSTRAINT "stages_pipeline_id_pipelines_id_fk" FOREIGN KEY ("pipeline_id") REFERENCES "public"."pipelines"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "customer_signals" ADD CONSTRAINT "customer_signals_person_id_people_id_fk" FOREIGN KEY ("person_id") REFERENCES "public"."people"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "availability_closeouts" ADD CONSTRAINT "availability_closeouts_slot_id_availability_slots_id_fk" FOREIGN KEY ("slot_id") REFERENCES "public"."availability_slots"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "availability_holds" ADD CONSTRAINT "availability_holds_slot_id_availability_slots_id_fk" FOREIGN KEY ("slot_id") REFERENCES "public"."availability_slots"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "availability_slot_pickups" ADD CONSTRAINT "availability_slot_pickups_slot_id_availability_slots_id_fk" FOREIGN KEY ("slot_id") REFERENCES "public"."availability_slots"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "availability_slot_pickups" ADD CONSTRAINT "availability_slot_pickups_pickup_point_id_availability_pickup_points_id_fk" FOREIGN KEY ("pickup_point_id") REFERENCES "public"."availability_pickup_points"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "availability_slots" ADD CONSTRAINT "availability_slots_availability_rule_id_availability_rules_id_fk" FOREIGN KEY ("availability_rule_id") REFERENCES "public"."availability_rules"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -4096,6 +5128,7 @@ ALTER TABLE "option_booking_questions" ADD CONSTRAINT "option_booking_questions_
 ALTER TABLE "price_schedules" ADD CONSTRAINT "price_schedules_price_catalog_id_price_catalogs_id_fk" FOREIGN KEY ("price_catalog_id") REFERENCES "public"."price_catalogs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pricing_category_dependencies" ADD CONSTRAINT "pricing_category_dependencies_pricing_category_id_pricing_categories_id_fk" FOREIGN KEY ("pricing_category_id") REFERENCES "public"."pricing_categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pricing_category_dependencies" ADD CONSTRAINT "pricing_category_dependencies_master_pricing_category_id_pricing_categories_id_fk" FOREIGN KEY ("master_pricing_category_id") REFERENCES "public"."pricing_categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "departure_price_overrides" ADD CONSTRAINT "departure_price_overrides_price_catalog_id_price_catalogs_id_fk" FOREIGN KEY ("price_catalog_id") REFERENCES "public"."price_catalogs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dropoff_price_rules" ADD CONSTRAINT "dropoff_price_rules_option_price_rule_id_option_price_rules_id_fk" FOREIGN KEY ("option_price_rule_id") REFERENCES "public"."option_price_rules"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "extra_price_rules" ADD CONSTRAINT "extra_price_rules_option_price_rule_id_option_price_rules_id_fk" FOREIGN KEY ("option_price_rule_id") REFERENCES "public"."option_price_rules"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "option_price_rules" ADD CONSTRAINT "option_price_rules_price_catalog_id_price_catalogs_id_fk" FOREIGN KEY ("price_catalog_id") REFERENCES "public"."price_catalogs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -4193,6 +5226,8 @@ ALTER TABLE "channel_inventory_release_executions" ADD CONSTRAINT "channel_inven
 ALTER TABLE "channel_inventory_release_executions" ADD CONSTRAINT "channel_inventory_release_executions_target_id_channel_inventory_allotment_targets_id_fk" FOREIGN KEY ("target_id") REFERENCES "public"."channel_inventory_allotment_targets"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "channel_inventory_release_executions" ADD CONSTRAINT "channel_inventory_release_executions_slot_id_availability_slots_id_fk" FOREIGN KEY ("slot_id") REFERENCES "public"."availability_slots"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "channel_inventory_release_rules" ADD CONSTRAINT "channel_inventory_release_rules_allotment_id_channel_inventory_allotments_id_fk" FOREIGN KEY ("allotment_id") REFERENCES "public"."channel_inventory_allotments"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "channel_availability_push_intents" ADD CONSTRAINT "channel_availability_push_intents_channel_id_channels_id_fk" FOREIGN KEY ("channel_id") REFERENCES "public"."channels"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "channel_content_push_intents" ADD CONSTRAINT "channel_content_push_intents_channel_id_channels_id_fk" FOREIGN KEY ("channel_id") REFERENCES "public"."channels"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "supplier_availability" ADD CONSTRAINT "supplier_availability_supplier_id_suppliers_id_fk" FOREIGN KEY ("supplier_id") REFERENCES "public"."suppliers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "supplier_contracts" ADD CONSTRAINT "supplier_contracts_supplier_id_suppliers_id_fk" FOREIGN KEY ("supplier_id") REFERENCES "public"."suppliers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "supplier_directory_projections" ADD CONSTRAINT "supplier_directory_projections_supplier_id_suppliers_id_fk" FOREIGN KEY ("supplier_id") REFERENCES "public"."suppliers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -4203,6 +5238,8 @@ ALTER TABLE "supplier_services" ADD CONSTRAINT "supplier_services_facility_id_fa
 ALTER TABLE "suppliers" ADD CONSTRAINT "suppliers_primary_facility_id_facilities_id_fk" FOREIGN KEY ("primary_facility_id") REFERENCES "public"."facilities"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "option_units" ADD CONSTRAINT "option_units_option_id_product_options_id_fk" FOREIGN KEY ("option_id") REFERENCES "public"."product_options"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "product_options" ADD CONSTRAINT "product_options_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "product_pax_pricing_tiers" ADD CONSTRAINT "product_pax_pricing_tiers_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "product_pax_pricing_tiers" ADD CONSTRAINT "product_pax_pricing_tiers_option_unit_id_option_units_id_fk" FOREIGN KEY ("option_unit_id") REFERENCES "public"."option_units"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "product_day_services" ADD CONSTRAINT "product_day_services_day_id_product_days_id_fk" FOREIGN KEY ("day_id") REFERENCES "public"."product_days"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "product_days" ADD CONSTRAINT "product_days_itinerary_id_product_itineraries_id_fk" FOREIGN KEY ("itinerary_id") REFERENCES "public"."product_itineraries"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "product_itineraries" ADD CONSTRAINT "product_itineraries_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -4309,6 +5346,57 @@ ALTER TABLE "cruise_price_components" ADD CONSTRAINT "cruise_price_components_pr
 ALTER TABLE "cruise_prices" ADD CONSTRAINT "cruise_prices_sailing_id_cruise_sailings_id_fk" FOREIGN KEY ("sailing_id") REFERENCES "public"."cruise_sailings"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "cruise_prices" ADD CONSTRAINT "cruise_prices_cabin_category_id_cruise_cabin_categories_id_fk" FOREIGN KEY ("cabin_category_id") REFERENCES "public"."cruise_cabin_categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "cruise_search_index" ADD CONSTRAINT "cruise_search_index_local_cruise_id_cruises_id_fk" FOREIGN KEY ("local_cruise_id") REFERENCES "public"."cruises"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "charter_products" ADD CONSTRAINT "charter_products_default_yacht_id_charter_yachts_id_fk" FOREIGN KEY ("default_yacht_id") REFERENCES "public"."charter_yachts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "charter_voyages" ADD CONSTRAINT "charter_voyages_product_id_charter_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."charter_products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "charter_voyages" ADD CONSTRAINT "charter_voyages_yacht_id_charter_yachts_id_fk" FOREIGN KEY ("yacht_id") REFERENCES "public"."charter_yachts"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "charter_schedule_days" ADD CONSTRAINT "charter_schedule_days_voyage_id_charter_voyages_id_fk" FOREIGN KEY ("voyage_id") REFERENCES "public"."charter_voyages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "charter_suites" ADD CONSTRAINT "charter_suites_voyage_id_charter_voyages_id_fk" FOREIGN KEY ("voyage_id") REFERENCES "public"."charter_voyages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "housekeeping_tasks" ADD CONSTRAINT "housekeeping_tasks_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "housekeeping_tasks" ADD CONSTRAINT "housekeeping_tasks_room_unit_id_room_units_id_fk" FOREIGN KEY ("room_unit_id") REFERENCES "public"."room_units"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "housekeeping_tasks" ADD CONSTRAINT "housekeeping_tasks_stay_booking_item_id_stay_booking_items_id_fk" FOREIGN KEY ("stay_booking_item_id") REFERENCES "public"."stay_booking_items"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_blocks" ADD CONSTRAINT "maintenance_blocks_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_blocks" ADD CONSTRAINT "maintenance_blocks_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_blocks" ADD CONSTRAINT "maintenance_blocks_room_unit_id_room_units_id_fk" FOREIGN KEY ("room_unit_id") REFERENCES "public"."room_units"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_blocks" ADD CONSTRAINT "room_blocks_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_blocks" ADD CONSTRAINT "room_blocks_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_blocks" ADD CONSTRAINT "room_blocks_room_unit_id_room_units_id_fk" FOREIGN KEY ("room_unit_id") REFERENCES "public"."room_units"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_unit_status_events" ADD CONSTRAINT "room_unit_status_events_room_unit_id_room_units_id_fk" FOREIGN KEY ("room_unit_id") REFERENCES "public"."room_units"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_booking_items" ADD CONSTRAINT "stay_booking_items_booking_item_id_booking_items_id_fk" FOREIGN KEY ("booking_item_id") REFERENCES "public"."booking_items"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_booking_items" ADD CONSTRAINT "stay_booking_items_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_booking_items" ADD CONSTRAINT "stay_booking_items_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_booking_items" ADD CONSTRAINT "stay_booking_items_room_unit_id_room_units_id_fk" FOREIGN KEY ("room_unit_id") REFERENCES "public"."room_units"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_booking_items" ADD CONSTRAINT "stay_booking_items_rate_plan_id_rate_plans_id_fk" FOREIGN KEY ("rate_plan_id") REFERENCES "public"."rate_plans"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_booking_items" ADD CONSTRAINT "stay_booking_items_meal_plan_id_meal_plans_id_fk" FOREIGN KEY ("meal_plan_id") REFERENCES "public"."meal_plans"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_daily_rates" ADD CONSTRAINT "stay_daily_rates_stay_booking_item_id_stay_booking_items_id_fk" FOREIGN KEY ("stay_booking_item_id") REFERENCES "public"."stay_booking_items"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "meal_plans" ADD CONSTRAINT "meal_plans_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rate_plan_room_types" ADD CONSTRAINT "rate_plan_room_types_rate_plan_id_rate_plans_id_fk" FOREIGN KEY ("rate_plan_id") REFERENCES "public"."rate_plans"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rate_plan_room_types" ADD CONSTRAINT "rate_plan_room_types_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rate_plans" ADD CONSTRAINT "rate_plans_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rate_plans" ADD CONSTRAINT "rate_plans_meal_plan_id_meal_plans_id_fk" FOREIGN KEY ("meal_plan_id") REFERENCES "public"."meal_plans"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_type_bed_configs" ADD CONSTRAINT "room_type_bed_configs_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_types" ADD CONSTRAINT "room_types_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_units" ADD CONSTRAINT "room_units_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_units" ADD CONSTRAINT "room_units_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_checkpoints" ADD CONSTRAINT "stay_checkpoints_stay_operation_id_stay_operations_id_fk" FOREIGN KEY ("stay_operation_id") REFERENCES "public"."stay_operations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_checkpoints" ADD CONSTRAINT "stay_checkpoints_room_unit_id_room_units_id_fk" FOREIGN KEY ("room_unit_id") REFERENCES "public"."room_units"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_folio_lines" ADD CONSTRAINT "stay_folio_lines_stay_folio_id_stay_folios_id_fk" FOREIGN KEY ("stay_folio_id") REFERENCES "public"."stay_folios"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_folio_lines" ADD CONSTRAINT "stay_folio_lines_service_post_id_stay_service_posts_id_fk" FOREIGN KEY ("service_post_id") REFERENCES "public"."stay_service_posts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_folios" ADD CONSTRAINT "stay_folios_stay_operation_id_stay_operations_id_fk" FOREIGN KEY ("stay_operation_id") REFERENCES "public"."stay_operations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_operations" ADD CONSTRAINT "stay_operations_stay_booking_item_id_stay_booking_items_id_fk" FOREIGN KEY ("stay_booking_item_id") REFERENCES "public"."stay_booking_items"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_operations" ADD CONSTRAINT "stay_operations_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_operations" ADD CONSTRAINT "stay_operations_room_unit_id_room_units_id_fk" FOREIGN KEY ("room_unit_id") REFERENCES "public"."room_units"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_service_posts" ADD CONSTRAINT "stay_service_posts_stay_operation_id_stay_operations_id_fk" FOREIGN KEY ("stay_operation_id") REFERENCES "public"."stay_operations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_service_posts" ADD CONSTRAINT "stay_service_posts_booking_item_id_booking_items_id_fk" FOREIGN KEY ("booking_item_id") REFERENCES "public"."booking_items"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rate_plan_inventory_overrides" ADD CONSTRAINT "rate_plan_inventory_overrides_rate_plan_id_rate_plans_id_fk" FOREIGN KEY ("rate_plan_id") REFERENCES "public"."rate_plans"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rate_plan_inventory_overrides" ADD CONSTRAINT "rate_plan_inventory_overrides_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_inventory" ADD CONSTRAINT "room_inventory_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_inventory" ADD CONSTRAINT "room_inventory_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_type_rates" ADD CONSTRAINT "room_type_rates_rate_plan_id_rate_plans_id_fk" FOREIGN KEY ("rate_plan_id") REFERENCES "public"."rate_plans"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room_type_rates" ADD CONSTRAINT "room_type_rates_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_rules" ADD CONSTRAINT "stay_rules_property_id_properties_id_fk" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_rules" ADD CONSTRAINT "stay_rules_rate_plan_id_rate_plans_id_fk" FOREIGN KEY ("rate_plan_id") REFERENCES "public"."rate_plans"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stay_rules" ADD CONSTRAINT "stay_rules_room_type_id_room_types_id_fk" FOREIGN KEY ("room_type_id") REFERENCES "public"."room_types"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "workflow_run_steps" ADD CONSTRAINT "workflow_run_steps_run_id_workflow_runs_id_fk" FOREIGN KEY ("run_id") REFERENCES "public"."workflow_runs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_apikey_reference_id" ON "apikey" USING btree ("reference_id");--> statement-breakpoint
 CREATE INDEX "idx_apikey_config_id" ON "apikey" USING btree ("config_id");--> statement-breakpoint
 CREATE INDEX "idx_invitation_email" ON "invitation" USING btree ("email");--> statement-breakpoint
@@ -4316,6 +5404,8 @@ CREATE INDEX "idx_invitation_organization_id" ON "invitation" USING btree ("orga
 CREATE INDEX "idx_member_user_id" ON "member" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_member_organization_id" ON "member" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "idx_member_user_organization" ON "member" USING btree ("user_id","organization_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "user_email_unique" ON "user" USING btree ("email") WHERE "user"."email" IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "user_phone_unique" ON "user" USING btree ("phone_number") WHERE "user"."phone_number" IS NOT NULL;--> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_user_invitations_token_hash" ON "user_invitations" USING btree ("token_hash");--> statement-breakpoint
 CREATE INDEX "idx_user_invitations_email" ON "user_invitations" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "idx_user_invitations_redeemed_at" ON "user_invitations" USING btree ("redeemed_at");--> statement-breakpoint
@@ -4326,6 +5416,12 @@ CREATE INDEX "idx_infra_domains_status" ON "domains" USING btree ("status");--> 
 CREATE INDEX "idx_infra_domains_provider" ON "domains" USING btree ("provider");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_infra_idempotency_keys_scope_key" ON "idempotency_keys" USING btree ("scope","key");--> statement-breakpoint
 CREATE INDEX "idx_infra_idempotency_keys_expires_at" ON "idempotency_keys" USING btree ("expires_at");--> statement-breakpoint
+CREATE INDEX "idx_webhook_deliveries_pending" ON "webhook_deliveries" USING btree ("status","scheduled_for");--> statement-breakpoint
+CREATE INDEX "idx_webhook_deliveries_module" ON "webhook_deliveries" USING btree ("source_module","created_at");--> statement-breakpoint
+CREATE INDEX "idx_webhook_deliveries_entity" ON "webhook_deliveries" USING btree ("source_entity_module","source_entity_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_webhook_deliveries_idempotency" ON "webhook_deliveries" USING btree ("idempotency_key","attempt_number");--> statement-breakpoint
+CREATE INDEX "idx_webhook_deliveries_subscription" ON "webhook_deliveries" USING btree ("subscription_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_webhook_deliveries_target" ON "webhook_deliveries" USING btree ("target_kind","target_ref","created_at");--> statement-breakpoint
 CREATE INDEX "idx_infra_webhook_subs_active" ON "webhook_subscriptions" USING btree ("active");--> statement-breakpoint
 CREATE INDEX "idx_infra_webhook_subs_url" ON "webhook_subscriptions" USING btree ("url");--> statement-breakpoint
 CREATE INDEX "idx_bcd_opportunity" ON "booking_crm_details" USING btree ("opportunity_id");--> statement-breakpoint
@@ -4352,9 +5448,17 @@ CREATE INDEX "idx_people_org_updated" ON "people" USING btree ("organization_id"
 CREATE INDEX "idx_people_owner_updated" ON "people" USING btree ("owner_id","updated_at");--> statement-breakpoint
 CREATE INDEX "idx_people_relation_updated" ON "people" USING btree ("relation","updated_at");--> statement-breakpoint
 CREATE INDEX "idx_people_status_updated" ON "people" USING btree ("status","updated_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "uq_person_directory_projections_person" ON "person_directory_projections" USING btree ("person_id");--> statement-breakpoint
+CREATE INDEX "idx_person_documents_person" ON "person_documents" USING btree ("person_id");--> statement-breakpoint
+CREATE INDEX "idx_person_documents_person_type" ON "person_documents" USING btree ("person_id","type");--> statement-breakpoint
+CREATE INDEX "idx_person_documents_expiry" ON "person_documents" USING btree ("expiry_date");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_person_documents_primary_per_type" ON "person_documents" USING btree ("person_id","type") WHERE "person_documents"."is_primary" = true;--> statement-breakpoint
 CREATE INDEX "idx_person_notes_person" ON "person_notes" USING btree ("person_id");--> statement-breakpoint
 CREATE INDEX "idx_person_notes_person_created" ON "person_notes" USING btree ("person_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_person_payment_methods_person" ON "person_payment_methods" USING btree ("person_id");--> statement-breakpoint
+CREATE INDEX "idx_person_payment_methods_person_default" ON "person_payment_methods" USING btree ("person_id","is_default");--> statement-breakpoint
+CREATE INDEX "idx_person_relationships_from" ON "person_relationships" USING btree ("from_person_id");--> statement-breakpoint
+CREATE INDEX "idx_person_relationships_to" ON "person_relationships" USING btree ("to_person_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_person_relationships_pair_kind" ON "person_relationships" USING btree ("from_person_id","to_person_id","kind");--> statement-breakpoint
 CREATE INDEX "idx_segment_members_segment" ON "segment_members" USING btree ("segment_id");--> statement-breakpoint
 CREATE INDEX "idx_segment_members_person" ON "segment_members" USING btree ("person_id");--> statement-breakpoint
 CREATE INDEX "idx_segments_created" ON "segments" USING btree ("created_at");--> statement-breakpoint
@@ -4414,9 +5518,17 @@ CREATE INDEX "idx_stages_pipeline" ON "stages" USING btree ("pipeline_id");--> s
 CREATE INDEX "idx_stages_sort" ON "stages" USING btree ("sort_order","created_at");--> statement-breakpoint
 CREATE INDEX "idx_stages_pipeline_sort" ON "stages" USING btree ("pipeline_id","sort_order","created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_stages_pipeline_name" ON "stages" USING btree ("pipeline_id","name");--> statement-breakpoint
+CREATE INDEX "idx_customer_signals_person_status_created" ON "customer_signals" USING btree ("person_id","status","created_at");--> statement-breakpoint
+CREATE INDEX "idx_customer_signals_assignee_status" ON "customer_signals" USING btree ("assigned_to_user_id","status");--> statement-breakpoint
+CREATE INDEX "idx_customer_signals_kind" ON "customer_signals" USING btree ("kind");--> statement-breakpoint
+CREATE INDEX "idx_customer_signals_resolved_booking" ON "customer_signals" USING btree ("resolved_booking_id");--> statement-breakpoint
 CREATE INDEX "idx_availability_closeouts_product_created" ON "availability_closeouts" USING btree ("product_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_availability_closeouts_slot_created" ON "availability_closeouts" USING btree ("slot_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_availability_closeouts_date_created" ON "availability_closeouts" USING btree ("date_local","created_at");--> statement-breakpoint
+CREATE INDEX "idx_availability_holds_slot" ON "availability_holds" USING btree ("slot_id");--> statement-breakpoint
+CREATE INDEX "idx_availability_holds_draft" ON "availability_holds" USING btree ("draft_id");--> statement-breakpoint
+CREATE INDEX "idx_availability_holds_token" ON "availability_holds" USING btree ("hold_token");--> statement-breakpoint
+CREATE INDEX "idx_availability_holds_expires" ON "availability_holds" USING btree ("expires_at");--> statement-breakpoint
 CREATE INDEX "idx_availability_pickup_points_created" ON "availability_pickup_points" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "idx_availability_pickup_points_product_created" ON "availability_pickup_points" USING btree ("product_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_availability_pickup_points_facility_created" ON "availability_pickup_points" USING btree ("facility_id","created_at");--> statement-breakpoint
@@ -4517,6 +5629,9 @@ CREATE INDEX "idx_booking_extras_booking_updated" ON "booking_extras" USING btre
 CREATE INDEX "idx_booking_extras_product_extra_updated" ON "booking_extras" USING btree ("product_extra_id","updated_at");--> statement-breakpoint
 CREATE INDEX "idx_booking_extras_option_extra_config_updated" ON "booking_extras" USING btree ("option_extra_config_id","updated_at");--> statement-breakpoint
 CREATE INDEX "idx_booking_extras_status_updated" ON "booking_extras" USING btree ("status","updated_at");--> statement-breakpoint
+CREATE INDEX "extras_sourced_content_locale_fresh_idx" ON "extras_sourced_content" USING btree ("locale","fresh_until");--> statement-breakpoint
+CREATE INDEX "extras_sourced_content_returned_locale_idx" ON "extras_sourced_content" USING btree ("entity_id","returned_locale");--> statement-breakpoint
+CREATE INDEX "extras_sourced_content_schema_version_idx" ON "extras_sourced_content" USING btree ("content_schema_version");--> statement-breakpoint
 CREATE INDEX "idx_option_extra_configs_sort_default" ON "option_extra_configs" USING btree ("sort_order","is_default");--> statement-breakpoint
 CREATE INDEX "idx_option_extra_configs_option_sort_default" ON "option_extra_configs" USING btree ("option_id","sort_order","is_default");--> statement-breakpoint
 CREATE INDEX "idx_option_extra_configs_extra_sort_default" ON "option_extra_configs" USING btree ("product_extra_id","sort_order","is_default");--> statement-breakpoint
@@ -4524,6 +5639,7 @@ CREATE INDEX "idx_option_extra_configs_active_sort_default" ON "option_extra_con
 CREATE UNIQUE INDEX "uidx_option_extra_configs_option_extra" ON "option_extra_configs" USING btree ("option_id","product_extra_id");--> statement-breakpoint
 CREATE INDEX "idx_product_extras_sort_name" ON "product_extras" USING btree ("sort_order","name");--> statement-breakpoint
 CREATE INDEX "idx_product_extras_product_sort_name" ON "product_extras" USING btree ("product_id","sort_order","name");--> statement-breakpoint
+CREATE INDEX "idx_product_extras_supplier_sort_name" ON "product_extras" USING btree ("supplier_id","sort_order","name");--> statement-breakpoint
 CREATE INDEX "idx_product_extras_active_sort_name" ON "product_extras" USING btree ("active","sort_order","name");--> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_product_extras_product_code" ON "product_extras" USING btree ("product_id","code");--> statement-breakpoint
 CREATE INDEX "idx_booking_answers_booking_updated" ON "booking_answers" USING btree ("booking_id","updated_at");--> statement-breakpoint
@@ -4588,6 +5704,10 @@ CREATE INDEX "idx_pricing_category_dependencies_master_created" ON "pricing_cate
 CREATE INDEX "idx_pricing_category_dependencies_type_created" ON "pricing_category_dependencies" USING btree ("dependency_type","created_at");--> statement-breakpoint
 CREATE INDEX "idx_pricing_category_dependencies_active_created" ON "pricing_category_dependencies" USING btree ("active","created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_pricing_category_dependencies_pair_type" ON "pricing_category_dependencies" USING btree ("pricing_category_id","master_pricing_category_id","dependency_type");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_departure_price_overrides_target" ON "departure_price_overrides" USING btree ("departure_id","option_unit_id","price_catalog_id");--> statement-breakpoint
+CREATE INDEX "idx_departure_price_overrides_departure" ON "departure_price_overrides" USING btree ("departure_id","active");--> statement-breakpoint
+CREATE INDEX "idx_departure_price_overrides_option" ON "departure_price_overrides" USING btree ("option_id","active");--> statement-breakpoint
+CREATE INDEX "idx_departure_price_overrides_catalog" ON "departure_price_overrides" USING btree ("price_catalog_id","active");--> statement-breakpoint
 CREATE INDEX "idx_dropoff_price_rules_rule_sort_created" ON "dropoff_price_rules" USING btree ("option_price_rule_id","sort_order","created_at");--> statement-breakpoint
 CREATE INDEX "idx_dropoff_price_rules_option_sort_created" ON "dropoff_price_rules" USING btree ("option_id","sort_order","created_at");--> statement-breakpoint
 CREATE INDEX "idx_dropoff_price_rules_facility_sort_created" ON "dropoff_price_rules" USING btree ("facility_id","sort_order","created_at");--> statement-breakpoint
@@ -4852,6 +5972,9 @@ CREATE INDEX "idx_channel_settlement_policies_active_updated" ON "channel_settle
 CREATE INDEX "idx_channel_booking_links_channel_created" ON "channel_booking_links" USING btree ("channel_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_booking_links_booking_created" ON "channel_booking_links" USING btree ("booking_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_booking_links_external_booking_created" ON "channel_booking_links" USING btree ("external_booking_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_channel_booking_links_push_status" ON "channel_booking_links" USING btree ("push_status","last_push_at");--> statement-breakpoint
+CREATE INDEX "idx_channel_booking_links_booking_item" ON "channel_booking_links" USING btree ("booking_item_id") WHERE "channel_booking_links"."booking_item_id" IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "uniq_channel_booking_links_per_item" ON "channel_booking_links" USING btree ("channel_id","booking_id",COALESCE("booking_item_id", ''));--> statement-breakpoint
 CREATE INDEX "idx_channel_commission_rules_contract_created" ON "channel_commission_rules" USING btree ("contract_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_commission_rules_product_created" ON "channel_commission_rules" USING btree ("product_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_commission_rules_scope_created" ON "channel_commission_rules" USING btree ("scope","created_at");--> statement-breakpoint
@@ -4861,6 +5984,7 @@ CREATE INDEX "idx_channel_contracts_status_created" ON "channel_contracts" USING
 CREATE INDEX "idx_channel_product_mappings_channel_created" ON "channel_product_mappings" USING btree ("channel_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_product_mappings_product_created" ON "channel_product_mappings" USING btree ("product_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_product_mappings_active_created" ON "channel_product_mappings" USING btree ("active","created_at");--> statement-breakpoint
+CREATE INDEX "idx_channel_product_mappings_source_connection" ON "channel_product_mappings" USING btree ("source_connection_id");--> statement-breakpoint
 CREATE INDEX "idx_channel_webhook_events_channel_received" ON "channel_webhook_events" USING btree ("channel_id","received_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_webhook_events_status_received" ON "channel_webhook_events" USING btree ("status","received_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_webhook_events_event_type_received" ON "channel_webhook_events" USING btree ("event_type","received_at");--> statement-breakpoint
@@ -4918,6 +6042,11 @@ CREATE INDEX "idx_channel_inventory_release_executions_status_updated" ON "chann
 CREATE INDEX "idx_channel_inventory_release_rules_updated" ON "channel_inventory_release_rules" USING btree ("updated_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_inventory_release_rules_allotment_updated" ON "channel_inventory_release_rules" USING btree ("allotment_id","updated_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_inventory_release_rules_mode_updated" ON "channel_inventory_release_rules" USING btree ("release_mode","updated_at");--> statement-breakpoint
+CREATE INDEX "idx_chan_avail_push_intents_requested" ON "channel_availability_push_intents" USING btree ("channel_id","requested_at");--> statement-breakpoint
+CREATE INDEX "idx_chan_avail_push_intents_product" ON "channel_availability_push_intents" USING btree ("product_id","requested_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "uniq_chan_avail_push_intents_per_slot" ON "channel_availability_push_intents" USING btree ("channel_id","slot_id");--> statement-breakpoint
+CREATE INDEX "idx_chan_content_push_intents_requested" ON "channel_content_push_intents" USING btree ("channel_id","requested_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "uniq_chan_content_push_intents_per_product" ON "channel_content_push_intents" USING btree ("channel_id","product_id");--> statement-breakpoint
 CREATE INDEX "idx_supplier_availability_supplier_date" ON "supplier_availability" USING btree ("supplier_id","date");--> statement-breakpoint
 CREATE INDEX "idx_supplier_availability_date" ON "supplier_availability" USING btree ("date");--> statement-breakpoint
 CREATE INDEX "idx_supplier_contracts_supplier_created" ON "supplier_contracts" USING btree ("supplier_id","created_at");--> statement-breakpoint
@@ -4939,6 +6068,9 @@ CREATE INDEX "idx_bipd_unit" ON "booking_item_product_details" USING btree ("uni
 CREATE INDEX "idx_bipd_supplier_service" ON "booking_item_product_details" USING btree ("supplier_service_id");--> statement-breakpoint
 CREATE INDEX "idx_bpd_product" ON "booking_product_details" USING btree ("product_id");--> statement-breakpoint
 CREATE INDEX "idx_bpd_option" ON "booking_product_details" USING btree ("option_id");--> statement-breakpoint
+CREATE INDEX "products_sourced_content_locale_fresh_idx" ON "products_sourced_content" USING btree ("locale","fresh_until");--> statement-breakpoint
+CREATE INDEX "products_sourced_content_returned_locale_idx" ON "products_sourced_content" USING btree ("entity_id","returned_locale");--> statement-breakpoint
+CREATE INDEX "products_sourced_content_schema_version_idx" ON "products_sourced_content" USING btree ("content_schema_version");--> statement-breakpoint
 CREATE INDEX "idx_option_units_option" ON "option_units" USING btree ("option_id");--> statement-breakpoint
 CREATE INDEX "idx_option_units_option_sort" ON "option_units" USING btree ("option_id","sort_order","created_at");--> statement-breakpoint
 CREATE INDEX "idx_option_units_type" ON "option_units" USING btree ("unit_type");--> statement-breakpoint
@@ -4948,8 +6080,12 @@ CREATE INDEX "idx_product_options_product_sort" ON "product_options" USING btree
 CREATE INDEX "idx_product_options_status" ON "product_options" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "idx_product_options_default" ON "product_options" USING btree ("is_default");--> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_product_options_product_code" ON "product_options" USING btree ("product_id","code");--> statement-breakpoint
+CREATE INDEX "idx_pax_tiers_product" ON "product_pax_pricing_tiers" USING btree ("product_id");--> statement-breakpoint
+CREATE INDEX "idx_pax_tiers_unit" ON "product_pax_pricing_tiers" USING btree ("option_unit_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_pax_tiers_unit_pax" ON "product_pax_pricing_tiers" USING btree ("option_unit_id","tier_pax");--> statement-breakpoint
 CREATE INDEX "idx_products_status" ON "products" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "idx_products_facility" ON "products" USING btree ("facility_id");--> statement-breakpoint
+CREATE INDEX "idx_products_supplier" ON "products" USING btree ("supplier_id");--> statement-breakpoint
 CREATE INDEX "idx_products_product_type" ON "products" USING btree ("product_type_id");--> statement-breakpoint
 CREATE INDEX "idx_products_status_created" ON "products" USING btree ("status","created_at");--> statement-breakpoint
 CREATE INDEX "idx_products_booking_mode_created" ON "products" USING btree ("booking_mode","created_at");--> statement-breakpoint
@@ -4957,6 +6093,7 @@ CREATE INDEX "idx_products_capacity_mode_created" ON "products" USING btree ("ca
 CREATE INDEX "idx_products_visibility_created" ON "products" USING btree ("visibility","created_at");--> statement-breakpoint
 CREATE INDEX "idx_products_activated_created" ON "products" USING btree ("activated","created_at");--> statement-breakpoint
 CREATE INDEX "idx_products_facility_created" ON "products" USING btree ("facility_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_products_supplier_created" ON "products" USING btree ("supplier_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_products_product_type_created" ON "products" USING btree ("product_type_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_products_public_created" ON "products" USING btree ("status","activated","visibility","created_at");--> statement-breakpoint
 CREATE INDEX "idx_product_day_services_day" ON "product_day_services" USING btree ("day_id");--> statement-breakpoint
@@ -5179,6 +6316,7 @@ CREATE INDEX "idx_invoices_status_created" ON "invoices" USING btree ("status","
 CREATE INDEX "idx_invoices_fx_rate_set" ON "invoices" USING btree ("fx_rate_set_id");--> statement-breakpoint
 CREATE INDEX "idx_invoices_number" ON "invoices" USING btree ("invoice_number");--> statement-breakpoint
 CREATE INDEX "idx_invoices_due_date" ON "invoices" USING btree ("due_date");--> statement-breakpoint
+CREATE INDEX "idx_invoices_converted_from" ON "invoices" USING btree ("converted_from_invoice_id");--> statement-breakpoint
 CREATE INDEX "idx_payment_authorizations_booking" ON "payment_authorizations" USING btree ("booking_id");--> statement-breakpoint
 CREATE INDEX "idx_payment_authorizations_booking_created" ON "payment_authorizations" USING btree ("booking_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_payment_authorizations_order" ON "payment_authorizations" USING btree ("order_id");--> statement-breakpoint
@@ -5248,6 +6386,13 @@ CREATE INDEX "idx_supplier_payments_instrument" ON "supplier_payments" USING btr
 CREATE INDEX "idx_supplier_payments_status" ON "supplier_payments" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "idx_supplier_payments_status_created" ON "supplier_payments" USING btree ("status","created_at");--> statement-breakpoint
 CREATE INDEX "idx_supplier_payments_date" ON "supplier_payments" USING btree ("payment_date");--> statement-breakpoint
+CREATE INDEX "idx_tax_classes_code" ON "tax_classes" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "idx_tax_classes_active" ON "tax_classes" USING btree ("active");--> statement-breakpoint
+CREATE INDEX "idx_tax_policy_profiles_code" ON "tax_policy_profiles" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "idx_tax_policy_profiles_active" ON "tax_policy_profiles" USING btree ("active");--> statement-breakpoint
+CREATE INDEX "idx_tax_policy_rules_profile" ON "tax_policy_rules" USING btree ("profile_id");--> statement-breakpoint
+CREATE INDEX "idx_tax_policy_rules_profile_side_priority" ON "tax_policy_rules" USING btree ("profile_id","side","priority");--> statement-breakpoint
+CREATE INDEX "idx_tax_policy_rules_active" ON "tax_policy_rules" USING btree ("active");--> statement-breakpoint
 CREATE INDEX "idx_tax_regimes_code" ON "tax_regimes" USING btree ("code");--> statement-breakpoint
 CREATE INDEX "idx_tax_regimes_code_updated" ON "tax_regimes" USING btree ("code","updated_at");--> statement-breakpoint
 CREATE INDEX "idx_tax_regimes_jurisdiction" ON "tax_regimes" USING btree ("jurisdiction");--> statement-breakpoint
@@ -5345,10 +6490,14 @@ CREATE INDEX "idx_bcd_sailing" ON "booking_cruise_details" USING btree ("sailing
 CREATE INDEX "idx_bcd_cabin_category" ON "booking_cruise_details" USING btree ("cabin_category_id");--> statement-breakpoint
 CREATE INDEX "idx_bcd_connector_ref" ON "booking_cruise_details" USING btree ("connector_booking_ref");--> statement-breakpoint
 CREATE INDEX "idx_bcd_provider" ON "booking_cruise_details" USING btree ("source_provider");--> statement-breakpoint
+CREATE INDEX "idx_bcd_air_arrangement" ON "booking_cruise_details" USING btree ("air_arrangement");--> statement-breakpoint
 CREATE INDEX "idx_bgcd_source" ON "booking_group_cruise_details" USING btree ("source");--> statement-breakpoint
 CREATE INDEX "idx_bgcd_sailing" ON "booking_group_cruise_details" USING btree ("sailing_id");--> statement-breakpoint
 CREATE INDEX "idx_bgcd_connector_ref" ON "booking_group_cruise_details" USING btree ("connector_booking_ref");--> statement-breakpoint
 CREATE INDEX "idx_bgcd_provider" ON "booking_group_cruise_details" USING btree ("source_provider");--> statement-breakpoint
+CREATE INDEX "cruises_sourced_content_locale_fresh_idx" ON "cruises_sourced_content" USING btree ("locale","fresh_until");--> statement-breakpoint
+CREATE INDEX "cruises_sourced_content_returned_locale_idx" ON "cruises_sourced_content" USING btree ("entity_id","returned_locale");--> statement-breakpoint
+CREATE INDEX "cruises_sourced_content_schema_version_idx" ON "cruises_sourced_content" USING btree ("content_schema_version");--> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_cruise_cabin_categories_ship_code" ON "cruise_cabin_categories" USING btree ("ship_id","code");--> statement-breakpoint
 CREATE INDEX "idx_cruise_cabin_categories_ship_type" ON "cruise_cabin_categories" USING btree ("ship_id","room_type");--> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_cruise_cabins_category_number" ON "cruise_cabins" USING btree ("category_id","cabin_number");--> statement-breakpoint
@@ -5393,7 +6542,145 @@ CREATE INDEX "idx_cruise_search_index_latest_departure" ON "cruise_search_index"
 CREATE INDEX "idx_cruise_search_index_regions_gin" ON "cruise_search_index" USING gin ("regions");--> statement-breakpoint
 CREATE INDEX "idx_cruise_search_index_themes_gin" ON "cruise_search_index" USING gin ("themes");--> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_cruise_search_index_external" ON "cruise_search_index" USING btree ("source_provider",("source_ref"->>'externalId')) WHERE "cruise_search_index"."source" = 'external';--> statement-breakpoint
+CREATE INDEX "idx_bchd_mode" ON "booking_charter_details" USING btree ("booking_mode");--> statement-breakpoint
+CREATE INDEX "idx_bchd_source" ON "booking_charter_details" USING btree ("source");--> statement-breakpoint
+CREATE INDEX "idx_bchd_voyage" ON "booking_charter_details" USING btree ("voyage_id");--> statement-breakpoint
+CREATE INDEX "idx_bchd_suite" ON "booking_charter_details" USING btree ("suite_id");--> statement-breakpoint
+CREATE INDEX "idx_bchd_yacht" ON "booking_charter_details" USING btree ("yacht_id");--> statement-breakpoint
+CREATE INDEX "idx_bchd_myba_contract" ON "booking_charter_details" USING btree ("myba_contract_id");--> statement-breakpoint
+CREATE INDEX "idx_bchd_connector_ref" ON "booking_charter_details" USING btree ("connector_booking_ref");--> statement-breakpoint
+CREATE INDEX "idx_bchd_provider" ON "booking_charter_details" USING btree ("source_provider");--> statement-breakpoint
+CREATE INDEX "charters_sourced_content_locale_fresh_idx" ON "charters_sourced_content" USING btree ("locale","fresh_until");--> statement-breakpoint
+CREATE INDEX "charters_sourced_content_returned_locale_idx" ON "charters_sourced_content" USING btree ("entity_id","returned_locale");--> statement-breakpoint
+CREATE INDEX "charters_sourced_content_schema_version_idx" ON "charters_sourced_content" USING btree ("content_schema_version");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_charter_products_slug" ON "charter_products" USING btree ("slug");--> statement-breakpoint
+CREATE INDEX "idx_charter_products_status_created" ON "charter_products" USING btree ("status","created_at");--> statement-breakpoint
+CREATE INDEX "idx_charter_products_supplier_status" ON "charter_products" USING btree ("line_supplier_id","status");--> statement-breakpoint
+CREATE INDEX "idx_charter_products_earliest" ON "charter_products" USING btree ("earliest_voyage_cached","status");--> statement-breakpoint
+CREATE INDEX "idx_charter_voyages_product_departure" ON "charter_voyages" USING btree ("product_id","departure_date");--> statement-breakpoint
+CREATE INDEX "idx_charter_voyages_yacht_departure" ON "charter_voyages" USING btree ("yacht_id","departure_date");--> statement-breakpoint
+CREATE INDEX "idx_charter_voyages_status_departure" ON "charter_voyages" USING btree ("sales_status","departure_date");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_charter_voyages_product_date_yacht" ON "charter_voyages" USING btree ("product_id","departure_date","yacht_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_charter_schedule_voyage_day" ON "charter_schedule_days" USING btree ("voyage_id","day_number");--> statement-breakpoint
+CREATE INDEX "idx_charter_schedule_voyage" ON "charter_schedule_days" USING btree ("voyage_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_charter_suites_voyage_code" ON "charter_suites" USING btree ("voyage_id","suite_code");--> statement-breakpoint
+CREATE INDEX "idx_charter_suites_voyage_availability" ON "charter_suites" USING btree ("voyage_id","availability");--> statement-breakpoint
+CREATE INDEX "idx_charter_suites_voyage_category" ON "charter_suites" USING btree ("voyage_id","suite_category");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_charter_yachts_slug" ON "charter_yachts" USING btree ("slug");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_charter_yachts_imo" ON "charter_yachts" USING btree ("imo");--> statement-breakpoint
+CREATE INDEX "idx_charter_yachts_supplier_active" ON "charter_yachts" USING btree ("line_supplier_id","is_active");--> statement-breakpoint
+CREATE INDEX "idx_charter_yachts_class_active" ON "charter_yachts" USING btree ("yacht_class","is_active");--> statement-breakpoint
+CREATE INDEX "hospitality_sourced_content_locale_fresh_idx" ON "hospitality_sourced_content" USING btree ("locale","fresh_until");--> statement-breakpoint
+CREATE INDEX "hospitality_sourced_content_returned_locale_idx" ON "hospitality_sourced_content" USING btree ("entity_id","returned_locale");--> statement-breakpoint
+CREATE INDEX "hospitality_sourced_content_schema_version_idx" ON "hospitality_sourced_content" USING btree ("content_schema_version");--> statement-breakpoint
+CREATE INDEX "idx_housekeeping_tasks_priority_due_at" ON "housekeeping_tasks" USING btree ("priority","due_at");--> statement-breakpoint
+CREATE INDEX "idx_housekeeping_tasks_property_priority_due_at" ON "housekeeping_tasks" USING btree ("property_id","priority","due_at");--> statement-breakpoint
+CREATE INDEX "idx_housekeeping_tasks_room_unit_priority_due_at" ON "housekeeping_tasks" USING btree ("room_unit_id","priority","due_at");--> statement-breakpoint
+CREATE INDEX "idx_housekeeping_tasks_stay_booking_item_priority_due_at" ON "housekeeping_tasks" USING btree ("stay_booking_item_id","priority","due_at");--> statement-breakpoint
+CREATE INDEX "idx_housekeeping_tasks_status_priority_due_at" ON "housekeeping_tasks" USING btree ("status","priority","due_at");--> statement-breakpoint
+CREATE INDEX "idx_housekeeping_tasks_task_type_priority_due_at" ON "housekeeping_tasks" USING btree ("task_type","priority","due_at");--> statement-breakpoint
+CREATE INDEX "idx_maintenance_blocks_property_starts_on" ON "maintenance_blocks" USING btree ("property_id","starts_on");--> statement-breakpoint
+CREATE INDEX "idx_maintenance_blocks_room_type_starts_on" ON "maintenance_blocks" USING btree ("room_type_id","starts_on");--> statement-breakpoint
+CREATE INDEX "idx_maintenance_blocks_room_unit_starts_on" ON "maintenance_blocks" USING btree ("room_unit_id","starts_on");--> statement-breakpoint
+CREATE INDEX "idx_maintenance_blocks_status_starts_on" ON "maintenance_blocks" USING btree ("status","starts_on");--> statement-breakpoint
+CREATE INDEX "idx_maintenance_blocks_dates" ON "maintenance_blocks" USING btree ("starts_on","ends_on");--> statement-breakpoint
+CREATE INDEX "idx_room_blocks_property_starts_on" ON "room_blocks" USING btree ("property_id","starts_on");--> statement-breakpoint
+CREATE INDEX "idx_room_blocks_room_type_starts_on" ON "room_blocks" USING btree ("room_type_id","starts_on");--> statement-breakpoint
+CREATE INDEX "idx_room_blocks_room_unit_starts_on" ON "room_blocks" USING btree ("room_unit_id","starts_on");--> statement-breakpoint
+CREATE INDEX "idx_room_blocks_status_starts_on" ON "room_blocks" USING btree ("status","starts_on");--> statement-breakpoint
+CREATE INDEX "idx_room_blocks_dates" ON "room_blocks" USING btree ("starts_on","ends_on");--> statement-breakpoint
+CREATE INDEX "idx_room_unit_status_events_effective_from" ON "room_unit_status_events" USING btree ("effective_from");--> statement-breakpoint
+CREATE INDEX "idx_room_unit_status_events_room_unit_effective_from" ON "room_unit_status_events" USING btree ("room_unit_id","effective_from");--> statement-breakpoint
+CREATE INDEX "idx_room_unit_status_events_status_effective_from" ON "room_unit_status_events" USING btree ("status_code","effective_from");--> statement-breakpoint
+CREATE INDEX "idx_stay_booking_items_booking_item" ON "stay_booking_items" USING btree ("booking_item_id");--> statement-breakpoint
+CREATE INDEX "idx_stay_booking_items_check_in" ON "stay_booking_items" USING btree ("check_in_date");--> statement-breakpoint
+CREATE INDEX "idx_stay_booking_items_property_check_in" ON "stay_booking_items" USING btree ("property_id","check_in_date");--> statement-breakpoint
+CREATE INDEX "idx_stay_booking_items_room_type_check_in" ON "stay_booking_items" USING btree ("room_type_id","check_in_date");--> statement-breakpoint
+CREATE INDEX "idx_stay_booking_items_room_unit_check_in" ON "stay_booking_items" USING btree ("room_unit_id","check_in_date");--> statement-breakpoint
+CREATE INDEX "idx_stay_booking_items_rate_plan_check_in" ON "stay_booking_items" USING btree ("rate_plan_id","check_in_date");--> statement-breakpoint
+CREATE INDEX "idx_stay_booking_items_status_check_in" ON "stay_booking_items" USING btree ("status","check_in_date");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_stay_booking_items_booking_item" ON "stay_booking_items" USING btree ("booking_item_id");--> statement-breakpoint
+CREATE INDEX "idx_stay_daily_rates_stay_booking_item" ON "stay_daily_rates" USING btree ("stay_booking_item_id");--> statement-breakpoint
+CREATE INDEX "idx_stay_daily_rates_date" ON "stay_daily_rates" USING btree ("date");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_stay_daily_rates_item_date" ON "stay_daily_rates" USING btree ("stay_booking_item_id","date");--> statement-breakpoint
+CREATE INDEX "idx_meal_plans_property_sort_name" ON "meal_plans" USING btree ("property_id","sort_order","name");--> statement-breakpoint
+CREATE INDEX "idx_meal_plans_active_sort_name" ON "meal_plans" USING btree ("active","sort_order","name");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_meal_plans_property_code" ON "meal_plans" USING btree ("property_id","code");--> statement-breakpoint
+CREATE INDEX "idx_rate_plan_room_types_rate_plan_sort_created" ON "rate_plan_room_types" USING btree ("rate_plan_id","sort_order","created_at");--> statement-breakpoint
+CREATE INDEX "idx_rate_plan_room_types_room_type_sort_created" ON "rate_plan_room_types" USING btree ("room_type_id","sort_order","created_at");--> statement-breakpoint
+CREATE INDEX "idx_rate_plan_room_types_product_sort_created" ON "rate_plan_room_types" USING btree ("product_id","sort_order","created_at");--> statement-breakpoint
+CREATE INDEX "idx_rate_plan_room_types_option" ON "rate_plan_room_types" USING btree ("option_id");--> statement-breakpoint
+CREATE INDEX "idx_rate_plan_room_types_unit" ON "rate_plan_room_types" USING btree ("unit_id");--> statement-breakpoint
+CREATE INDEX "idx_rate_plan_room_types_active_sort_created" ON "rate_plan_room_types" USING btree ("active","sort_order","created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_rate_plan_room_types_pair" ON "rate_plan_room_types" USING btree ("rate_plan_id","room_type_id");--> statement-breakpoint
+CREATE INDEX "idx_rate_plans_property_sort_name" ON "rate_plans" USING btree ("property_id","sort_order","name");--> statement-breakpoint
+CREATE INDEX "idx_rate_plans_meal_plan_sort_name" ON "rate_plans" USING btree ("meal_plan_id","sort_order","name");--> statement-breakpoint
+CREATE INDEX "idx_rate_plans_catalog" ON "rate_plans" USING btree ("price_catalog_id");--> statement-breakpoint
+CREATE INDEX "idx_rate_plans_policy" ON "rate_plans" USING btree ("cancellation_policy_id");--> statement-breakpoint
+CREATE INDEX "idx_rate_plans_market_sort_name" ON "rate_plans" USING btree ("market_id","sort_order","name");--> statement-breakpoint
+CREATE INDEX "idx_rate_plans_active_sort_name" ON "rate_plans" USING btree ("active","sort_order","name");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_rate_plans_property_code" ON "rate_plans" USING btree ("property_id","code");--> statement-breakpoint
+CREATE INDEX "idx_room_type_bed_configs_room_type_primary_created" ON "room_type_bed_configs" USING btree ("room_type_id","is_primary","created_at");--> statement-breakpoint
+CREATE INDEX "idx_room_type_bed_configs_bed_type_primary_created" ON "room_type_bed_configs" USING btree ("bed_type","is_primary","created_at");--> statement-breakpoint
+CREATE INDEX "idx_room_types_property_sort_name" ON "room_types" USING btree ("property_id","sort_order","name");--> statement-breakpoint
+CREATE INDEX "idx_room_types_supplier_sort_name" ON "room_types" USING btree ("supplier_id","sort_order","name");--> statement-breakpoint
+CREATE INDEX "idx_room_types_active_sort_name" ON "room_types" USING btree ("active","sort_order","name");--> statement-breakpoint
+CREATE INDEX "idx_room_types_inventory_mode_sort_name" ON "room_types" USING btree ("inventory_mode","sort_order","name");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_room_types_property_code" ON "room_types" USING btree ("property_id","code");--> statement-breakpoint
+CREATE INDEX "idx_room_units_property_room_number_code" ON "room_units" USING btree ("property_id","room_number","code");--> statement-breakpoint
+CREATE INDEX "idx_room_units_room_type_room_number_code" ON "room_units" USING btree ("room_type_id","room_number","code");--> statement-breakpoint
+CREATE INDEX "idx_room_units_status_room_number_code" ON "room_units" USING btree ("status","room_number","code");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_room_units_property_code" ON "room_units" USING btree ("property_id","code");--> statement-breakpoint
+CREATE INDEX "idx_stay_checkpoints_operation_occurred_at" ON "stay_checkpoints" USING btree ("stay_operation_id","occurred_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_checkpoints_type_occurred_at" ON "stay_checkpoints" USING btree ("checkpoint_type","occurred_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_folio_lines_folio_posted_at" ON "stay_folio_lines" USING btree ("stay_folio_id","posted_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_folio_lines_service_post_posted_at" ON "stay_folio_lines" USING btree ("service_post_id","posted_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_folios_operation_opened_at" ON "stay_folios" USING btree ("stay_operation_id","opened_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_folios_status_opened_at" ON "stay_folios" USING btree ("status","opened_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_stay_operations_stay_booking_item" ON "stay_operations" USING btree ("stay_booking_item_id");--> statement-breakpoint
+CREATE INDEX "idx_stay_operations_property_created" ON "stay_operations" USING btree ("property_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_operations_room_unit_created" ON "stay_operations" USING btree ("room_unit_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_operations_status_created" ON "stay_operations" USING btree ("operation_status","created_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_service_posts_operation_service_date" ON "stay_service_posts" USING btree ("stay_operation_id","service_date");--> statement-breakpoint
+CREATE INDEX "idx_stay_service_posts_booking_item_service_date" ON "stay_service_posts" USING btree ("booking_item_id","service_date");--> statement-breakpoint
+CREATE INDEX "idx_stay_service_posts_kind_service_date" ON "stay_service_posts" USING btree ("kind","service_date");--> statement-breakpoint
+CREATE INDEX "idx_rate_plan_inventory_overrides_rate_plan_date" ON "rate_plan_inventory_overrides" USING btree ("rate_plan_id","date");--> statement-breakpoint
+CREATE INDEX "idx_rate_plan_inventory_overrides_room_type_date" ON "rate_plan_inventory_overrides" USING btree ("room_type_id","date");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_rate_plan_inventory_overrides_unique" ON "rate_plan_inventory_overrides" USING btree ("rate_plan_id","room_type_id","date");--> statement-breakpoint
+CREATE INDEX "idx_room_inventory_property_date" ON "room_inventory" USING btree ("property_id","date");--> statement-breakpoint
+CREATE INDEX "idx_room_inventory_room_type_date" ON "room_inventory" USING btree ("room_type_id","date");--> statement-breakpoint
+CREATE INDEX "idx_room_inventory_stop_sell_date" ON "room_inventory" USING btree ("stop_sell","date");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_room_inventory_room_type_date" ON "room_inventory" USING btree ("room_type_id","date");--> statement-breakpoint
+CREATE INDEX "idx_room_type_rates_rate_plan_created" ON "room_type_rates" USING btree ("rate_plan_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_room_type_rates_room_type_created" ON "room_type_rates" USING btree ("room_type_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_room_type_rates_price_schedule_created" ON "room_type_rates" USING btree ("price_schedule_id","created_at");--> statement-breakpoint
+CREATE INDEX "idx_room_type_rates_active_created" ON "room_type_rates" USING btree ("active","created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_room_type_rates_plan_room_schedule" ON "room_type_rates" USING btree ("rate_plan_id","room_type_id","price_schedule_id");--> statement-breakpoint
+CREATE INDEX "idx_stay_rules_property_priority_created" ON "stay_rules" USING btree ("property_id","priority","created_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_rules_rate_plan_priority_created" ON "stay_rules" USING btree ("rate_plan_id","priority","created_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_rules_room_type_priority_created" ON "stay_rules" USING btree ("room_type_id","priority","created_at");--> statement-breakpoint
+CREATE INDEX "idx_stay_rules_active_priority_created" ON "stay_rules" USING btree ("active","priority","created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "booking_catalog_snapshot_booking_entity_uniq" ON "booking_catalog_snapshot" USING btree ("booking_id","entity_module","entity_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "booking_catalog_snapshot_idempotency_uniq" ON "booking_catalog_snapshot" USING btree ("idempotency_key") WHERE idempotency_key is not null;--> statement-breakpoint
+CREATE INDEX "idx_booking_drafts_entity" ON "booking_drafts" USING btree ("entity_module","entity_id");--> statement-breakpoint
+CREATE INDEX "idx_booking_drafts_expires" ON "booking_drafts" USING btree ("expires_at");--> statement-breakpoint
+CREATE INDEX "idx_booking_drafts_created_by" ON "booking_drafts" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "idx_booking_drafts_consumed" ON "booking_drafts" USING btree ("consumed_booking_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "catalog_overlay_variant_uniq" ON "catalog_overlay" USING btree ("entity_module","entity_id","field_path","locale","audience","market") WHERE "catalog_overlay"."deleted_at" IS NULL;--> statement-breakpoint
 CREATE INDEX "catalog_overlay_entity_idx" ON "catalog_overlay" USING btree ("entity_module","entity_id","deleted_at");--> statement-breakpoint
-CREATE INDEX "catalog_overlay_origin_idx" ON "catalog_overlay" USING btree ("origin");
+CREATE INDEX "catalog_overlay_origin_idx" ON "catalog_overlay" USING btree ("origin");--> statement-breakpoint
+CREATE INDEX "idx_catalog_quotes_entity" ON "catalog_quotes" USING btree ("entity_module","entity_id");--> statement-breakpoint
+CREATE INDEX "idx_catalog_quotes_expires" ON "catalog_quotes" USING btree ("expires_at");--> statement-breakpoint
+CREATE INDEX "idx_catalog_quotes_source" ON "catalog_quotes" USING btree ("source_kind","source_ref");--> statement-breakpoint
+CREATE UNIQUE INDEX "catalog_sourced_entries_entity_uniq" ON "catalog_sourced_entries" USING btree ("entity_module","entity_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "catalog_sourced_entries_source_uniq" ON "catalog_sourced_entries" USING btree ("source_kind","source_connection_id","source_ref");--> statement-breakpoint
+CREATE INDEX "catalog_sourced_entries_module_kind_idx" ON "catalog_sourced_entries" USING btree ("entity_module","source_kind");--> statement-breakpoint
+CREATE INDEX "catalog_sourced_entries_status_seen_idx" ON "catalog_sourced_entries" USING btree ("status","last_seen_at");--> statement-breakpoint
+CREATE INDEX "catalog_sourced_entries_connection_age_idx" ON "catalog_sourced_entries" USING btree ("source_kind","source_connection_id","last_sourced_at");--> statement-breakpoint
+CREATE INDEX "idx_workflow_run_steps_run" ON "workflow_run_steps" USING btree ("run_id","sequence");--> statement-breakpoint
+CREATE INDEX "idx_workflow_run_steps_status" ON "workflow_run_steps" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "idx_workflow_runs_workflow" ON "workflow_runs" USING btree ("workflow_name","started_at");--> statement-breakpoint
+CREATE INDEX "idx_workflow_runs_status_started" ON "workflow_runs" USING btree ("status","started_at");--> statement-breakpoint
+CREATE INDEX "idx_workflow_runs_correlation" ON "workflow_runs" USING btree ("correlation_id");--> statement-breakpoint
+CREATE INDEX "idx_workflow_runs_parent" ON "workflow_runs" USING btree ("parent_run_id");--> statement-breakpoint
+CREATE INDEX "idx_workflow_runs_tags_gin" ON "workflow_runs" USING gin ("tags");

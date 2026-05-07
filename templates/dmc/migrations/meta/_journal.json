@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1777566645137,
-      "tag": "0000_tired_firestar",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1777892100000,
-      "tag": "0001_person_directory_view",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1777892200000,
-      "tag": "0002_departure_price_overrides",
+      "when": 1778177703865,
+      "tag": "0000_baseline",
       "breakpoints": true
     }
   ]
