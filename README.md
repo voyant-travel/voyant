@@ -163,6 +163,10 @@ Architecture decisions live in [`docs/adr/`](./docs/adr/); domain conventions li
 
 **One Postgres database + one runtime per organization.** Tenancy is enforced at the deployment boundary, not by in-process middleware. See [ADR-0001](./docs/adr/0001-tenant-scoping.md) for the full rationale, the alternatives considered, and the conditions under which the decision should be revisited.
 
+## Credits
+
+Voyant is created and maintained by [PixelMakers](https://pixelmakers.com).
+
 ## License
 
 Apache License, Version 2.0 (`Apache-2.0`). See [LICENSE](./LICENSE).
