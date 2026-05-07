@@ -1,5 +1,14 @@
 # @voyantjs/external-refs-ui
 
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [dc46e37]
+  - @voyantjs/external-refs-react@0.27.0
+  - @voyantjs/i18n@0.27.0
+  - @voyantjs/ui@0.27.0
+
 ## 0.26.9
 
 ### Patch Changes
