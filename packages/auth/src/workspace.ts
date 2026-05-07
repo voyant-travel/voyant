@@ -6,7 +6,8 @@ type WorkspaceDb = ReturnType<typeof getDb>
 
 export type CurrentUser = {
   id: string
-  email: string
+  email: string | null
+  phoneNumber?: string | null
   firstName: string | null
   lastName: string | null
   isSuperAdmin: boolean
@@ -29,6 +30,7 @@ export async function getCurrentUser(
     .select({
       id: authUser.id,
       email: authUser.email,
+      phoneNumber: authUser.phoneNumber,
       createdAt: authUser.createdAt,
       firstName: userProfilesTable.firstName,
       lastName: userProfilesTable.lastName,
@@ -48,6 +50,7 @@ export async function getCurrentUser(
   return {
     id: row.id,
     email: row.email,
+    phoneNumber: row.phoneNumber ?? null,
     firstName: row.firstName ?? null,
     lastName: row.lastName ?? null,
     isSuperAdmin: row.isSuperAdmin ?? false,
@@ -73,16 +76,23 @@ export async function ensureCurrentUserProfile(
     }
 
     const [user] = await db
-      .select({ name: authUser.name, email: authUser.email, image: authUser.image })
+      .select({
+        name: authUser.name,
+        email: authUser.email,
+        phoneNumber: authUser.phoneNumber,
+        image: authUser.image,
+      })
       .from(authUser)
       .where(eq(authUser.id, userId))
       .limit(1)
 
-    if (!user?.email) {
+    // Phone-only signups have `email` null but `phoneNumber` set; the
+    // schema check constraint guarantees at least one of the two.
+    if (!user?.email && !user?.phoneNumber) {
       return {
         userExists: false,
         authenticated: true,
-        reason: `No email found for user ${userId}.`,
+        reason: `No email or phone number found for user ${userId}.`,
       }
     }
 

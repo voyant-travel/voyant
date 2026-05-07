@@ -2,7 +2,10 @@ import { z } from "zod"
 
 export const currentUserSchema = z.object({
   id: z.string(),
-  email: z.string(),
+  // Either email or phoneNumber is set on phone-only signups; null when
+  // the user authenticates via the other channel only.
+  email: z.string().nullable(),
+  phoneNumber: z.string().nullable().optional(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
   isSuperAdmin: z.boolean(),
@@ -40,7 +43,7 @@ export type CurrentWorkspace = z.infer<typeof currentWorkspaceSchema>
 
 const organizationMemberUserSchema = z.object({
   id: z.string(),
-  email: z.string(),
+  email: z.string().nullable(),
   name: z.string().nullable().optional(),
   image: z.string().nullable().optional(),
 })

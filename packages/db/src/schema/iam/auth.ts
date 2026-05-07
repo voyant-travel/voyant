@@ -9,20 +9,41 @@
  * camelCase JS property names — the Drizzle adapter handles the mapping.
  */
 
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
+import { boolean, check, index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 // ---------------------------------------------------------------------------
 // user
+//
+// Either `email` or `phoneNumber` must be set — phone-only signups (Better
+// Auth phone-OTP plugin) skip email entirely. Both columns are individually
+// unique among non-null rows via partial unique indexes; the check
+// constraint guards against rows with neither identifier.
 // ---------------------------------------------------------------------------
-export const authUser = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull(),
-  image: text("image"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
-})
+export const authUser = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email"),
+    emailVerified: boolean("email_verified").notNull(),
+    phoneNumber: text("phone_number"),
+    phoneNumberVerified: boolean("phone_number_verified").notNull().default(false),
+    image: text("image"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("user_email_unique").on(table.email).where(sql`${table.email} IS NOT NULL`),
+    uniqueIndex("user_phone_unique")
+      .on(table.phoneNumber)
+      .where(sql`${table.phoneNumber} IS NOT NULL`),
+    check(
+      "user_email_or_phone",
+      sql`${table.email} IS NOT NULL OR ${table.phoneNumber} IS NOT NULL`,
+    ),
+  ],
+)
 
 export type SelectAuthUser = typeof authUser.$inferSelect
 export type InsertAuthUser = typeof authUser.$inferInsert

@@ -192,7 +192,10 @@ export const customerPortalBootstrapCandidateSchema = customerPortalRecordSchema
 
 export const customerPortalProfileSchema = z.object({
   userId: z.string(),
-  email: z.string().email(),
+  // null for phone-only signups; check constraint on auth.user
+  // guarantees email or phoneNumber is set, not both required.
+  email: z.string().email().nullable(),
+  phoneNumber: z.string().nullable().optional(),
   emailVerified: z.boolean(),
   firstName: z.string().nullable(),
   middleName: z.string().nullable(),
