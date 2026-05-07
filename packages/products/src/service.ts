@@ -1,7 +1,7 @@
+import { RequestValidationError } from "@voyantjs/hono"
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-
 import {
   destinations,
   destinationTranslations,
@@ -106,6 +106,7 @@ import type {
   updateProductVisibilitySettingSchema,
   upsertProductBrochureSchema,
 } from "./validation.js"
+import { validateMergedOptionUnit } from "./validation-core.js"
 
 type ProductListQuery = z.infer<typeof productListQuerySchema>
 type CreateProductInput = z.infer<typeof insertProductSchema>
@@ -1637,6 +1638,34 @@ export const productsService = {
   },
 
   async updateUnit(db: PostgresJsDatabase, id: string, data: UpdateOptionUnitInput) {
+    const [existing] = await db
+      .select({
+        unitType: optionUnits.unitType,
+        occupancyMin: optionUnits.occupancyMin,
+        occupancyMax: optionUnits.occupancyMax,
+      })
+      .from(optionUnits)
+      .where(eq(optionUnits.id, id))
+      .limit(1)
+
+    if (!existing) {
+      return null
+    }
+
+    const merged = {
+      unitType: "unitType" in data ? data.unitType : existing.unitType,
+      occupancyMin: "occupancyMin" in data ? data.occupancyMin : existing.occupancyMin,
+      occupancyMax: "occupancyMax" in data ? data.occupancyMax : existing.occupancyMax,
+    }
+
+    const validation = validateMergedOptionUnit(merged)
+    if (!validation.ok) {
+      const first = validation.issues[0]
+      throw new RequestValidationError(first?.message ?? "Invalid option unit", {
+        issues: validation.issues,
+      })
+    }
+
     const [row] = await db
       .update(optionUnits)
       .set({ ...data, updatedAt: new Date() })
