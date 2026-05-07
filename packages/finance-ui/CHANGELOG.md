@@ -1,5 +1,14 @@
 # @voyantjs/finance-ui
 
+## 0.26.2
+
+### Patch Changes
+
+- @voyantjs/finance@0.26.2
+- @voyantjs/finance-react@0.26.2
+- @voyantjs/i18n@0.26.2
+- @voyantjs/ui@0.26.2
+
 ## 0.26.1
 
 ### Patch Changes
