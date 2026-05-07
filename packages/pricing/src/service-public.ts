@@ -9,7 +9,9 @@ import {
   optionUnitPriceRules,
   optionUnitTiers,
   priceCatalogs,
+  priceSchedules,
 } from "./schema.js"
+import { pickRulesForDate, type ResolverScheduleInput } from "./service-rule-resolver.js"
 import type {
   PublicAvailabilitySnapshotQuery,
   PublicProductPricingQuery,
@@ -85,6 +87,93 @@ async function resolvePublicCatalog(
   return catalog ?? null
 }
 
+async function resolveQueryDate(
+  db: PostgresJsDatabase,
+  query: PublicProductPricingQuery,
+): Promise<string | null> {
+  if (query.date) return query.date
+  if (!query.departureId) return null
+
+  const [slot] = await db
+    .select({ dateLocal: availabilitySlots.dateLocal })
+    .from(availabilitySlots)
+    .where(eq(availabilitySlots.id, query.departureId))
+    .limit(1)
+
+  return slot?.dateLocal ?? null
+}
+
+type PricingRuleRow = {
+  id: string
+  optionId: string
+  name: string
+  isDefault: boolean
+  priceScheduleId: string | null
+}
+
+async function narrowRulesByDate<T extends PricingRuleRow>(
+  db: PostgresJsDatabase,
+  rules: T[],
+  isoDate: string,
+): Promise<T[]> {
+  if (rules.length === 0) return rules
+
+  const scheduleIds = Array.from(
+    new Set(rules.map((r) => r.priceScheduleId).filter((id): id is string => id !== null)),
+  )
+
+  const schedules =
+    scheduleIds.length > 0
+      ? await db
+          .select({
+            id: priceSchedules.id,
+            active: priceSchedules.active,
+            priority: priceSchedules.priority,
+            recurrenceRule: priceSchedules.recurrenceRule,
+            validFrom: priceSchedules.validFrom,
+            validTo: priceSchedules.validTo,
+            weekdays: priceSchedules.weekdays,
+            timezone: priceSchedules.timezone,
+          })
+          .from(priceSchedules)
+          .where(inArray(priceSchedules.id, scheduleIds))
+      : []
+
+  const scheduleMap = new Map<string, ResolverScheduleInput>(
+    schedules.map((s) => [
+      s.id,
+      {
+        id: s.id,
+        active: s.active,
+        priority: s.priority,
+        recurrenceRule: s.recurrenceRule,
+        validFrom: s.validFrom,
+        validTo: s.validTo,
+        weekdays: s.weekdays ?? null,
+        timezone: s.timezone,
+      },
+    ]),
+  )
+
+  const rulesByOption = new Map<string, T[]>()
+  for (const r of rules) {
+    const existing = rulesByOption.get(r.optionId) ?? []
+    existing.push(r)
+    rulesByOption.set(r.optionId, existing)
+  }
+
+  const winners: T[] = []
+  for (const [, candidateRules] of rulesByOption) {
+    const picked = pickRulesForDate(candidateRules, scheduleMap, isoDate)
+    const winnerId = picked[0]?.id
+    if (!winnerId) continue
+    const winner = candidateRules.find((r) => r.id === winnerId)
+    if (winner) winners.push(winner)
+  }
+
+  return winners
+}
+
 export const publicPricingService = {
   async getProductPricingSnapshot(
     db: PostgresJsDatabase,
@@ -139,7 +228,9 @@ export const publicPricingService = {
 
     const optionIds = options.map((option) => option.id)
 
-    const [units, rules] = await Promise.all([
+    const resolvedDate = await resolveQueryDate(db, query)
+
+    const [units, allRules] = await Promise.all([
       db
         .select({
           id: optionUnits.id,
@@ -164,6 +255,7 @@ export const publicPricingService = {
           maxPerBooking: optionPriceRules.maxPerBooking,
           isDefault: optionPriceRules.isDefault,
           cancellationPolicyId: optionPriceRules.cancellationPolicyId,
+          priceScheduleId: optionPriceRules.priceScheduleId,
         })
         .from(optionPriceRules)
         .where(
@@ -176,6 +268,8 @@ export const publicPricingService = {
         )
         .orderBy(desc(optionPriceRules.isDefault), asc(optionPriceRules.name)),
     ])
+
+    const rules = resolvedDate ? await narrowRulesByDate(db, allRules, resolvedDate) : allRules
 
     const ruleIds = rules.map((rule) => rule.id)
 

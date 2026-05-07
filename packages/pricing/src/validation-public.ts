@@ -19,6 +19,8 @@ const isoDateSchema = z.string().date()
 export const publicProductPricingQuerySchema = z.object({
   catalogId: z.string().optional(),
   optionId: z.string().optional(),
+  date: isoDateSchema.optional(),
+  departureId: z.string().optional(),
 })
 
 export const publicAvailabilitySnapshotQuerySchema = z.object({
