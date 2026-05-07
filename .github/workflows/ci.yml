@@ -10,9 +10,18 @@ on:
       - main
       - develop
 
+# Cancel in-flight runs only for PR pushes (`pull_request` events). Pushes to
+# main/develop always run to completion: each merged commit is a state we may
+# need to bisect or reproduce later, and the changesets-bot's "chore: release
+# packages" auto-merge pattern lands a follow-up commit within seconds — under
+# the previous `cancel-in-progress: true` rule that follow-up reliably
+# cancelled the bot commit's CI before it could finish, leaving a red X on
+# main with no useful signal. Splitting the group by event keeps PR-side
+# cancellation (still useful — when you push to a PR, the previous run is
+# obsolete) while letting push-side runs complete.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
