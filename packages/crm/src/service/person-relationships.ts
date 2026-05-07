@@ -1,0 +1,159 @@
+import { and, asc, eq, or } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { z } from "zod"
+
+import { people, personRelationships } from "../schema.js"
+import type {
+  insertPersonRelationshipSchema,
+  personRelationshipListQuerySchema,
+  updatePersonRelationshipSchema,
+} from "../validation.js"
+
+export type CreatePersonRelationshipInput = z.infer<typeof insertPersonRelationshipSchema>
+export type UpdatePersonRelationshipInput = z.infer<typeof updatePersonRelationshipSchema>
+export type PersonRelationshipListQuery = z.infer<typeof personRelationshipListQuerySchema>
+export type PersonRelationshipKind = CreatePersonRelationshipInput["kind"]
+
+async function personExists(db: PostgresJsDatabase, personId: string) {
+  const [row] = await db
+    .select({ id: people.id })
+    .from(people)
+    .where(eq(people.id, personId))
+    .limit(1)
+  return Boolean(row)
+}
+
+export const personRelationshipsService = {
+  /**
+   * Lists relationships for a person. Default `direction: "both"`
+   * returns the union of outgoing and incoming edges — the typical
+   * "Jane's family" UI shape. Use `from` / `to` for one-sided lists.
+   */
+  listPersonRelationships(
+    db: PostgresJsDatabase,
+    personId: string,
+    query?: PersonRelationshipListQuery,
+  ) {
+    const direction = query?.direction ?? "both"
+    const directionFilter =
+      direction === "from"
+        ? eq(personRelationships.fromPersonId, personId)
+        : direction === "to"
+          ? eq(personRelationships.toPersonId, personId)
+          : or(
+              eq(personRelationships.fromPersonId, personId),
+              eq(personRelationships.toPersonId, personId),
+            )
+
+    const conditions = [directionFilter]
+    if (query?.kind) {
+      conditions.push(eq(personRelationships.kind, query.kind))
+    }
+
+    const limit = query?.limit ?? 50
+    const offset = query?.offset ?? 0
+
+    return db
+      .select()
+      .from(personRelationships)
+      .where(and(...conditions))
+      .orderBy(asc(personRelationships.createdAt))
+      .limit(limit)
+      .offset(offset)
+  },
+
+  async getPersonRelationship(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select()
+      .from(personRelationships)
+      .where(eq(personRelationships.id, id))
+      .limit(1)
+    return row ?? null
+  },
+
+  /**
+   * Inserts a directed edge `fromPerson → toPerson` of `data.kind`.
+   * When `data.inverseKind` is provided AND `data.autoInverse` is
+   * not explicitly false, also inserts the symmetric
+   * `toPerson → fromPerson` edge with `kind = inverseKind` (and
+   * `inverseKind` swapped back). The pair is written in a single
+   * transaction so a failed inverse rolls the primary back.
+   *
+   * The inverse insert is idempotent — if the symmetric edge
+   * already exists, the `(from, to, kind)` unique index would
+   * normally throw; we suppress that case so retrying a partially
+   * applied operation doesn't fail. Any other DB error still
+   * propagates.
+   */
+  async createPersonRelationship(
+    db: PostgresJsDatabase,
+    fromPersonId: string,
+    data: CreatePersonRelationshipInput,
+  ) {
+    if (fromPersonId === data.toPersonId) return null
+    if (!(await personExists(db, fromPersonId))) return null
+    if (!(await personExists(db, data.toPersonId))) return null
+
+    const { toPersonId, autoInverse: autoInverseInput, inverseKind, ...rest } = data
+    const autoInverse = autoInverseInput !== false
+
+    return db.transaction(async (tx) => {
+      const [primary] = await tx
+        .insert(personRelationships)
+        .values({
+          ...rest,
+          inverseKind: inverseKind ?? null,
+          fromPersonId,
+          toPersonId,
+        })
+        .returning()
+      if (!primary) return null
+
+      if (autoInverse && inverseKind) {
+        await tx
+          .insert(personRelationships)
+          .values({
+            fromPersonId: toPersonId,
+            toPersonId: fromPersonId,
+            kind: inverseKind,
+            inverseKind: rest.kind,
+            startDate: rest.startDate ?? null,
+            endDate: rest.endDate ?? null,
+            isPrimary: rest.isPrimary,
+            notes: rest.notes ?? null,
+            metadata: rest.metadata ?? null,
+          })
+          .onConflictDoNothing({
+            target: [
+              personRelationships.fromPersonId,
+              personRelationships.toPersonId,
+              personRelationships.kind,
+            ],
+          })
+      }
+
+      return primary
+    })
+  },
+
+  async updatePersonRelationship(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdatePersonRelationshipInput,
+  ) {
+    const [row] = await db
+      .update(personRelationships)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(personRelationships.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deletePersonRelationship(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(personRelationships)
+      .where(eq(personRelationships.id, id))
+      .returning({ id: personRelationships.id })
+    return row ?? null
+  },
+}

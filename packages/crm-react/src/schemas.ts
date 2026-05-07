@@ -240,6 +240,42 @@ export type PersonDocumentRecord = z.infer<typeof personDocumentRecordSchema>
 export const personDocumentListResponse = listEnvelope(personDocumentRecordSchema)
 export const personDocumentSingleResponse = singleEnvelope(personDocumentRecordSchema)
 
+export const personRelationshipKindSchema = z.enum([
+  "spouse",
+  "partner",
+  "parent",
+  "child",
+  "sibling",
+  "guardian",
+  "ward",
+  "emergency_contact",
+  "friend",
+  "travel_companion",
+  "other",
+])
+
+export type PersonRelationshipKind = z.infer<typeof personRelationshipKindSchema>
+
+export const personRelationshipRecordSchema = z.object({
+  id: z.string(),
+  fromPersonId: z.string(),
+  toPersonId: z.string(),
+  kind: personRelationshipKindSchema,
+  inverseKind: personRelationshipKindSchema.nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  isPrimary: z.boolean(),
+  notes: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type PersonRelationshipRecord = z.infer<typeof personRelationshipRecordSchema>
+
+export const personRelationshipListResponse = listEnvelope(personRelationshipRecordSchema)
+export const personRelationshipSingleResponse = singleEnvelope(personRelationshipRecordSchema)
+
 export const personTravelSnapshotSchema = z.object({
   dateOfBirth: z.string().nullable(),
   dietaryRequirements: z.string().nullable(),

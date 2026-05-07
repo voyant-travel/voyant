@@ -25,6 +25,15 @@ export {
   usePersonMutation,
 } from "./use-person-mutation.js"
 export {
+  type CreatePersonRelationshipInput,
+  type UpdatePersonRelationshipInput,
+  usePersonRelationshipMutation,
+} from "./use-person-relationship-mutation.js"
+export {
+  type UsePersonRelationshipsOptions,
+  usePersonRelationships,
+} from "./use-person-relationships.js"
+export {
   type UsePersonTravelSnapshotOptions,
   usePersonTravelSnapshot,
 } from "./use-person-travel-snapshot.js"
