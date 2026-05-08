@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { organizations } from "../schema.js"
@@ -28,6 +28,25 @@ export const organizationAccountsService = {
     }
 
     const where = conditions.length ? and(...conditions) : undefined
+
+    const sortColumn = (() => {
+      switch (query.sortBy) {
+        case "name":
+          return organizations.name
+        case "industry":
+          return organizations.industry
+        case "relation":
+          return organizations.relation
+        case "status":
+          return organizations.status
+        case "createdAt":
+          return organizations.createdAt
+        default:
+          return organizations.updatedAt
+      }
+    })()
+    const sortFn = query.sortDir === "asc" ? asc : desc
+
     return paginate(
       db
         .select()
@@ -35,7 +54,7 @@ export const organizationAccountsService = {
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
-        .orderBy(desc(organizations.updatedAt)),
+        .orderBy(sortFn(sortColumn), desc(organizations.updatedAt)),
       db.select({ count: sql<number>`count(*)::int` }).from(organizations).where(where),
       query.limit,
       query.offset,

@@ -1,4 +1,3 @@
-import type { QueryClient } from "@tanstack/react-query"
 import {
   getLegalPolicyAcceptancesQueryOptions as getLegalPolicyAcceptancesQueryOptionsFromPackage,
   getLegalPolicyAssignmentsQueryOptions as getLegalPolicyAssignmentsQueryOptionsFromPackage,
@@ -13,8 +12,6 @@ import { legalQueryClient } from "./legal-query-client"
 export type Policy = LegalPolicyRecord
 export type PolicyVersion = LegalPolicyVersionRecord
 export type Acceptance = LegalPolicyAcceptanceRecord
-
-export type EnsureQueryData = QueryClient["ensureQueryData"]
 
 export function getLegalPolicyQueryOptions(id: string) {
   return getLegalPolicyQueryOptionsBase(id)

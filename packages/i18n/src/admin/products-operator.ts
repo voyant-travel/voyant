@@ -195,6 +195,16 @@ export const operatorAdminProductsMessages = {
         paginationPrevious: "Previous",
         paginationNext: "Next",
         unlimitedCapacity: "Unlimited",
+        filtersButton: "Filters",
+        filtersStatusLabel: "Status",
+        filtersStatusAll: "All statuses",
+        filtersDateLabel: "Start date",
+        filtersDatePlaceholder: "Any date",
+        filtersPaxLabel: "Pax",
+        filtersSellAmountLabel: "Sell amount",
+        filtersMin: "Min",
+        filtersMax: "Max",
+        filtersClear: "Clear",
       },
       operations: {
         departures: {
@@ -391,6 +401,8 @@ export const operatorAdminProductsMessages = {
           unitCategoryTitle: "Unit x Category Pricing",
           unitPricingTitle: "Unit Pricing",
           addUnitsHint: "Add units to configure pricing.",
+          perBookingFlatHint:
+            "This rule charges a single flat amount per booking. Switch the pricing mode to Per Person or Starting From to add unit-level prices.",
           createCategoriesHint: "Create global pricing categories in Settings first.",
           tableUnit: "Unit",
           tableSell: "Sell",
@@ -660,6 +672,16 @@ export const operatorAdminProductsMessages = {
         paginationPrevious: "Anterior",
         paginationNext: "Urmator",
         unlimitedCapacity: "Nelimitat",
+        filtersButton: "Filtre",
+        filtersStatusLabel: "Status",
+        filtersStatusAll: "Toate statusurile",
+        filtersDateLabel: "Data start",
+        filtersDatePlaceholder: "Orice data",
+        filtersPaxLabel: "Pax",
+        filtersSellAmountLabel: "Pret vanzare",
+        filtersMin: "Min",
+        filtersMax: "Max",
+        filtersClear: "Sterge filtre",
       },
       operations: {
         departures: {
@@ -856,6 +878,8 @@ export const operatorAdminProductsMessages = {
           unitCategoryTitle: "Preturi pe unitate x categorie",
           unitPricingTitle: "Preturi pe unitate",
           addUnitsHint: "Adauga unitati pentru a configura preturile.",
+          perBookingFlatHint:
+            "Aceasta regula incaseaza o suma unica per rezervare. Schimba modul de pret in Per Persoana sau Starting From pentru a adauga preturi pe unitati.",
           createCategoriesHint: "Creeaza mai intai categoriile globale de pret in Setari.",
           tableUnit: "Unitate",
           tableSell: "Vanzare",

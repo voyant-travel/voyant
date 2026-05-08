@@ -38,10 +38,8 @@ const SCOPES = ["customer", "supplier", "partner", "channel", "other"] as const
 const STATUSES = ["draft", "issued", "sent", "signed", "executed", "expired", "void"] as const
 const PAGE_SIZE = 25
 
-type EnsureQueryData = QueryClient["ensureQueryData"]
-
-export function loadContractsPage(ensureQueryData: EnsureQueryData) {
-  return ensureQueryData(
+export function loadContractsPage(queryClient: QueryClient) {
+  return queryClient.ensureQueryData(
     getLegalContractsQueryOptions(legalQueryClient, {
       search: "",
       scope: "all",

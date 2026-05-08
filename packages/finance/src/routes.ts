@@ -48,6 +48,7 @@ import {
   paymentAuthorizationListQuerySchema,
   paymentCaptureListQuerySchema,
   paymentInstrumentListQuerySchema,
+  paymentListQuerySchema,
   paymentSessionListQuerySchema,
   profitabilityQuerySchema,
   redeemVoucherSchema,
@@ -592,6 +593,26 @@ export const financeRoutes = new Hono<Env>()
     }
 
     return c.json({ success: true }, 200)
+  })
+
+  // ========================================================================
+  // Unified Payments (customer + supplier)
+  // ========================================================================
+
+  // GET /payments — List customer + supplier payments
+  .get("/payments", async (c) => {
+    const query = parseQuery(c, paymentListQuerySchema)
+    return c.json(await financeService.listAllPayments(c.get("db"), query))
+  })
+
+  // GET /payments/:id — Look up a single payment (customer or supplier)
+  // Dispatches by typeid prefix: spay_* → supplier, pay_* → customer.
+  .get("/payments/:id", async (c) => {
+    const row = await financeService.getPaymentById(c.get("db"), c.req.param("id"))
+    if (!row) {
+      return c.json({ error: "Payment not found" }, 404)
+    }
+    return c.json({ data: row })
   })
 
   // ========================================================================

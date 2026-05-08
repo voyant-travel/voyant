@@ -3,7 +3,9 @@ export interface PaginationFilters {
   offset?: number | undefined
 }
 
-export interface ProductListFilters extends PaginationFilters {}
+export interface ProductListFilters extends PaginationFilters {
+  search?: string | undefined
+}
 
 export interface AvailabilityRulesListFilters extends PaginationFilters {
   productId?: string | undefined

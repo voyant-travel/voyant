@@ -43,6 +43,7 @@ export function ResourcesOverview({
   onClearFilters,
   onOpenAssignment,
   onOpenResource,
+  showFilters = true,
 }: {
   bookings: BookingOption[]
   slots: SlotOption[]
@@ -60,6 +61,12 @@ export function ResourcesOverview({
   onClearFilters: () => void
   onOpenAssignment: (assignmentId: string) => void
   onOpenResource: (resourceId: string) => void
+  /**
+   * When false, hides the inline search + kind filter row. Templates that
+   * surface those controls in the page header (mirroring availability) pass
+   * `false` so the affordance isn't duplicated.
+   */
+  showFilters?: boolean
 }) {
   const i18n = useResourcesUiI18nOrDefault()
   const m = i18n.messages
@@ -171,37 +178,39 @@ export function ResourcesOverview({
         </Card>
       </div>
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={m.overview.filters.searchPlaceholder}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="pl-9"
-            />
+      {showFilters ? (
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={m.overview.filters.searchPlaceholder}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={kindFilter} onValueChange={(value) => setKindFilter(value ?? "all")}>
+              <SelectTrigger className="w-full md:w-56">
+                <SelectValue placeholder={m.overview.filters.allKindsPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{m.common.allKinds}</SelectItem>
+                {kindOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={kindFilter} onValueChange={(value) => setKindFilter(value ?? "all")}>
-            <SelectTrigger className="w-full md:w-56">
-              <SelectValue placeholder={m.overview.filters.allKindsPlaceholder} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{m.common.allKinds}</SelectItem>
-              {kindOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {hasFilters ? (
+            <Button variant="outline" onClick={onClearFilters}>
+              {m.common.clearFilters}
+            </Button>
+          ) : null}
         </div>
-        {hasFilters ? (
-          <Button variant="outline" onClick={onClearFilters}>
-            {m.common.clearFilters}
-          </Button>
-        ) : null}
-      </div>
+      ) : null}
     </>
   )
 }

@@ -10,10 +10,8 @@ import { useState } from "react"
 import { legalQueryClient } from "./legal-query-client"
 import { type NumberSeriesData, NumberSeriesDialog } from "./number-series-dialog"
 
-type EnsureQueryData = QueryClient["ensureQueryData"]
-
-export function loadNumberSeriesPage(ensureQueryData: EnsureQueryData) {
-  return ensureQueryData(getLegalContractNumberSeriesQueryOptions(legalQueryClient))
+export function loadNumberSeriesPage(queryClient: QueryClient) {
+  return queryClient.ensureQueryData(getLegalContractNumberSeriesQueryOptions(legalQueryClient))
 }
 
 export function NumberSeriesPage() {

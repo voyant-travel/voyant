@@ -34,10 +34,9 @@ const KINDS = [
   "other",
 ] as const
 const PAGE_SIZE = 25
-type EnsureQueryData = QueryClient["ensureQueryData"]
 
-export function loadPoliciesPage(ensureQueryData: EnsureQueryData) {
-  return ensureQueryData(
+export function loadPoliciesPage(queryClient: QueryClient) {
+  return queryClient.ensureQueryData(
     getLegalPoliciesQueryOptions(legalQueryClient, {
       search: "",
       kind: "all",

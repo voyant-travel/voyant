@@ -12,20 +12,34 @@ import {
   AssignmentsTab,
   CloseoutsTab,
 } from "@voyantjs/resources-ui/components/resources-tabs-secondary"
+import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import { Label } from "@voyantjs/ui/components/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
 import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { useState } from "react"
+import { ListFilter, Search, X } from "lucide-react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
+import { Badge, Button, Input } from "@/components/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { ResourcesDialogs } from "./resources-page-dialogs"
 import { ResourcesBodySkeleton } from "./resources-page-skeleton"
 import type {
   BatchMutationResponse,
+  ProductOption,
   ResourceAllocationRow,
   ResourceCloseoutRow,
   ResourcePoolRow,
   ResourceRow,
   ResourceSlotAssignmentRow,
+  SupplierOption,
 } from "./resources-shared"
 import {
   formatLocalizedSelectionLabel,
@@ -49,6 +63,19 @@ export function ResourcesPage() {
   const messages = useAdminMessages()
   const [search, setSearch] = useState("")
   const [kindFilter, setKindFilter] = useState("all")
+  const [activeTab, setActiveTab] = useState<
+    "resources" | "pools" | "allocations" | "assignments" | "closeouts"
+  >("resources")
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
+  // Per-tab dimensions. We keep them at page level so switching tabs doesn't
+  // wipe state, and so the kind/search filters at the title row can compose
+  // with any tab-specific filters in the popover.
+  const [supplierFilter, setSupplierFilter] = useState<string | null>(null)
+  const [selectedSupplierOption, setSelectedSupplierOption] = useState<SupplierOption | null>(null)
+  const [productFilter, setProductFilter] = useState<string | null>(null)
+  const [selectedProductOption, setSelectedProductOption] = useState<ProductOption | null>(null)
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all")
+  const [assignmentStatusFilter, setAssignmentStatusFilter] = useState<string>("all")
   const [bulkActionTarget, setBulkActionTarget] = useState<string | null>(null)
   const [resourceSelection, setResourceSelection] = useState<RowSelectionState>({})
   const [poolSelection, setPoolSelection] = useState<RowSelectionState>({})
@@ -100,10 +127,16 @@ export function ResourcesPage() {
         .includes(normalizedSearch),
     )
   const matchesKind = (kind: ResourceRow["kind"]) => kindFilter === "all" || kind === kindFilter
+  const matchesActive = (active: boolean) =>
+    activeFilter === "all" ||
+    (activeFilter === "active" && active) ||
+    (activeFilter === "inactive" && !active)
 
   const filteredResources = resources.filter(
     (resource) =>
       matchesKind(resource.kind) &&
+      matchesActive(resource.active) &&
+      (!supplierFilter || resource.supplierId === supplierFilter) &&
       matchesSearch(
         resource.name,
         resource.code,
@@ -115,6 +148,8 @@ export function ResourcesPage() {
   const filteredPools = pools.filter(
     (pool) =>
       matchesKind(pool.kind) &&
+      matchesActive(pool.active) &&
+      (!productFilter || pool.productId === productFilter) &&
       matchesSearch(pool.name, pool.kind, labelById(products, pool.productId), pool.notes),
   )
   const filteredAllocations = allocations.filter((allocation) => {
@@ -136,6 +171,7 @@ export function ResourcesPage() {
     const resource = resources.find((entry) => entry.id === assignment.resourceId)
     return (
       (kindFilter === "all" || resource?.kind === kindFilter) &&
+      (assignmentStatusFilter === "all" || assignment.status === assignmentStatusFilter) &&
       matchesSearch(
         assignment.status,
         assignment.assignedBy,
@@ -170,7 +206,24 @@ export function ResourcesPage() {
   )
   const resourcesWithoutSupplier = filteredResources.filter((resource) => !resource.supplierId)
   const unassignedReservations = liveAssignments.filter((assignment) => !assignment.resourceId)
-  const hasFilters = search.length > 0 || kindFilter !== "all"
+  const activeFilterCount =
+    (kindFilter !== "all" ? 1 : 0) +
+    (activeFilter !== "all" ? 1 : 0) +
+    (supplierFilter !== null ? 1 : 0) +
+    (productFilter !== null ? 1 : 0) +
+    (assignmentStatusFilter !== "all" ? 1 : 0)
+  const hasFilters = search.length > 0 || activeFilterCount > 0
+
+  const clearAllFilters = () => {
+    setSearch("")
+    setKindFilter("all")
+    setActiveFilter("all")
+    setSupplierFilter(null)
+    setSelectedSupplierOption(null)
+    setProductFilter(null)
+    setSelectedProductOption(null)
+    setAssignmentStatusFilter("all")
+  }
 
   const isLoading =
     suppliersQuery.isPending ||
@@ -288,11 +341,96 @@ export function ResourcesPage() {
     )
   }
 
+  // Kind list is shared across the title-row select. We derive it from the
+  // i18n labels record so the enum stays in one place (the i18n package).
+  const kindOptions = useMemo(
+    () => Object.entries(messages.resources.kindLabels).map(([value, label]) => ({ value, label })),
+    [messages],
+  )
+
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{messages.resources.title}</h1>
-        <p className="text-sm text-muted-foreground">{messages.resources.description}</p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{messages.resources.title}</h1>
+          <p className="text-sm text-muted-foreground">{messages.resources.description}</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[14rem] flex-1">
+            <Label htmlFor="resources-search" className="sr-only">
+              {messages.resources.searchPlaceholder}
+            </Label>
+            <Search
+              className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              id="resources-search"
+              placeholder={messages.resources.searchPlaceholder}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          <Select value={kindFilter} onValueChange={(value) => setKindFilter(value ?? "all")}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{messages.resources.allKinds}</SelectItem>
+              {kindOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+            <PopoverTrigger
+              render={
+                <Button variant="outline">
+                  <ListFilter className="mr-2 size-4" aria-hidden="true" />
+                  {messages.resources.filtersButton}
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-2 px-1.5">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              }
+            />
+            <PopoverContent align="end" className="w-[22rem] p-4">
+              <ResourcesFilterPopover
+                activeTab={activeTab}
+                messages={messages}
+                suppliers={suppliers}
+                products={products}
+                supplierFilter={supplierFilter}
+                setSupplierFilter={setSupplierFilter}
+                selectedSupplierOption={selectedSupplierOption}
+                setSelectedSupplierOption={setSelectedSupplierOption}
+                productFilter={productFilter}
+                setProductFilter={setProductFilter}
+                selectedProductOption={selectedProductOption}
+                setSelectedProductOption={setSelectedProductOption}
+                activeFilter={activeFilter}
+                setActiveFilter={setActiveFilter}
+                assignmentStatusFilter={assignmentStatusFilter}
+                setAssignmentStatusFilter={setAssignmentStatusFilter}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {hasFilters ? (
+            <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+              <X className="mr-1 size-4" aria-hidden="true" />
+              {messages.resources.clearFilters}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {isLoading ? (
@@ -313,10 +451,7 @@ export function ResourcesPage() {
             kindFilter={kindFilter}
             setKindFilter={setKindFilter}
             hasFilters={hasFilters}
-            onClearFilters={() => {
-              setSearch("")
-              setKindFilter("all")
-            }}
+            onClearFilters={clearAllFilters}
             onOpenAssignment={(assignmentId) => {
               void navigate({
                 to: "/resources/assignments/$id",
@@ -326,10 +461,14 @@ export function ResourcesPage() {
             onOpenResource={(resourceId) => {
               void navigate({ to: "/resources/$id", params: { id: resourceId } })
             }}
+            showFilters={false}
           />
 
-          <Tabs defaultValue="resources">
-            <TabsList variant="line">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab((value ?? "resources") as typeof activeTab)}
+          >
+            <TabsList>
               <TabsTrigger value="resources">{messages.resources.tabResources}</TabsTrigger>
               <TabsTrigger value="pools">{messages.resources.tabPools}</TabsTrigger>
               <TabsTrigger value="allocations">{messages.resources.tabAllocations}</TabsTrigger>
@@ -479,5 +618,167 @@ export function ResourcesPage() {
         refreshAll={refreshAll}
       />
     </div>
+  )
+}
+
+const ASSIGNMENT_STATUSES = ["reserved", "assigned", "released", "completed", "cancelled"] as const
+
+interface ResourcesFilterPopoverProps {
+  activeTab: "resources" | "pools" | "allocations" | "assignments" | "closeouts"
+  messages: ReturnType<typeof useAdminMessages>
+  suppliers: SupplierOption[]
+  products: ProductOption[]
+  supplierFilter: string | null
+  setSupplierFilter: (value: string | null) => void
+  selectedSupplierOption: SupplierOption | null
+  setSelectedSupplierOption: (value: SupplierOption | null) => void
+  productFilter: string | null
+  setProductFilter: (value: string | null) => void
+  selectedProductOption: ProductOption | null
+  setSelectedProductOption: (value: ProductOption | null) => void
+  activeFilter: "all" | "active" | "inactive"
+  setActiveFilter: (value: "all" | "active" | "inactive") => void
+  assignmentStatusFilter: string
+  setAssignmentStatusFilter: (value: string) => void
+}
+
+/**
+ * Popover body with per-tab filter dimensions. The kind/search filters are
+ * always visible in the title row; this popover surfaces tab-specific
+ * dimensions only — no point showing a "supplier" filter when the user is
+ * looking at the Allocations table.
+ */
+function ResourcesFilterPopover({
+  activeTab,
+  messages,
+  suppliers,
+  products,
+  supplierFilter,
+  setSupplierFilter,
+  selectedSupplierOption,
+  setSelectedSupplierOption,
+  productFilter,
+  setProductFilter,
+  selectedProductOption,
+  setSelectedProductOption,
+  activeFilter,
+  setActiveFilter,
+  assignmentStatusFilter,
+  setAssignmentStatusFilter,
+}: ResourcesFilterPopoverProps) {
+  const f = messages.resources
+
+  const activeStatusSelect = (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor="resources-filter-active">{f.filtersActiveLabel}</Label>
+      <Select
+        value={activeFilter}
+        onValueChange={(value) =>
+          setActiveFilter((value ?? "all") as "all" | "active" | "inactive")
+        }
+      >
+        <SelectTrigger id="resources-filter-active" className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{f.filtersActiveAll}</SelectItem>
+          <SelectItem value="active">{f.filtersActiveOnly}</SelectItem>
+          <SelectItem value="inactive">{f.filtersInactiveOnly}</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  )
+
+  if (activeTab === "resources") {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label>{f.filtersSupplierLabel}</Label>
+          <AsyncCombobox<SupplierOption>
+            value={supplierFilter}
+            onChange={(value) => {
+              setSupplierFilter(value)
+              if (!value) setSelectedSupplierOption(null)
+              else {
+                const match = suppliers.find((s) => s.id === value)
+                if (match) setSelectedSupplierOption(match)
+              }
+            }}
+            items={suppliers}
+            selectedItem={selectedSupplierOption}
+            getKey={(s) => s.id}
+            getLabel={(s) => s.name}
+            placeholder={f.filtersSupplierAny}
+            emptyText={f.filtersSupplierEmpty}
+            triggerClassName="w-full"
+          />
+        </div>
+        {activeStatusSelect}
+      </div>
+    )
+  }
+
+  if (activeTab === "pools") {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label>{f.filtersProductLabel}</Label>
+          <AsyncCombobox<ProductOption>
+            value={productFilter}
+            onChange={(value) => {
+              setProductFilter(value)
+              if (!value) setSelectedProductOption(null)
+              else {
+                const match = products.find((p) => p.id === value)
+                if (match) setSelectedProductOption(match)
+              }
+            }}
+            items={products}
+            selectedItem={selectedProductOption}
+            getKey={(p) => p.id}
+            getLabel={(p) => p.name}
+            placeholder={f.filtersProductAny}
+            emptyText={f.filtersProductEmpty}
+            triggerClassName="w-full"
+          />
+        </div>
+        {activeStatusSelect}
+      </div>
+    )
+  }
+
+  if (activeTab === "assignments") {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="resources-filter-status">{f.filtersStatusLabel}</Label>
+          <Select
+            value={assignmentStatusFilter}
+            onValueChange={(value) => setAssignmentStatusFilter(value ?? "all")}
+          >
+            <SelectTrigger id="resources-filter-status" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{f.filtersStatusAll}</SelectItem>
+              {ASSIGNMENT_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {f.assignmentStatusLabels[status]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    )
+  }
+
+  // Allocations + closeouts have only kind/search filters today (already in
+  // the title row); show a hint so the popover never feels empty.
+  return (
+    <p className="text-sm text-muted-foreground">
+      {/* i18n-literal-ok internal message until product decides on extra dimensions */}
+      No additional filters for this tab yet.
+    </p>
   )
 }

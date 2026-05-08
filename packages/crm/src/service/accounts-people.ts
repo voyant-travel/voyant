@@ -1,5 +1,5 @@
 import { identityService } from "@voyantjs/identity/service"
-import { and, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -57,6 +57,24 @@ export const peopleAccountsService = {
     }
 
     const where = conditions.length ? and(...conditions) : undefined
+
+    const sortColumns = (() => {
+      switch (query.sortBy) {
+        case "name":
+          return [people.firstName, people.lastName] as const
+        case "relation":
+          return [people.relation] as const
+        case "status":
+          return [people.status] as const
+        case "createdAt":
+          return [people.createdAt] as const
+        default:
+          return [people.updatedAt] as const
+      }
+    })()
+    const sortFn = query.sortDir === "asc" ? asc : desc
+    const orderBy = [...sortColumns.map((col) => sortFn(col)), desc(people.updatedAt)]
+
     const result = await paginate(
       db
         .select()
@@ -64,7 +82,7 @@ export const peopleAccountsService = {
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
-        .orderBy(desc(people.updatedAt)),
+        .orderBy(...orderBy),
       db.select({ count: sql<number>`count(*)::int` }).from(people).where(where),
       query.limit,
       query.offset,

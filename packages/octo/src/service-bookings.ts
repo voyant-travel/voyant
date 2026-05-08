@@ -191,7 +191,11 @@ export async function getProjectedBookingById(db: PostgresJsDatabase, id: string
 }
 
 export async function listProjectedBookings(db: PostgresJsDatabase, query: OctoBookingListQuery) {
-  const result = await bookingsService.listBookings(db, query)
+  const result = await bookingsService.listBookings(db, {
+    ...query,
+    sortBy: "createdAt",
+    sortDir: "desc",
+  })
   const data = await Promise.all(
     result.data.map(async (booking) => getProjectedBookingById(db, booking.id)),
   )

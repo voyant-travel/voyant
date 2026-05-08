@@ -73,6 +73,7 @@ import type {
   paymentAuthorizationListQuerySchema,
   paymentCaptureListQuerySchema,
   paymentInstrumentListQuerySchema,
+  paymentListQuerySchema,
   paymentSessionListQuerySchema,
   profitabilityQuerySchema,
   renderInvoiceInputSchema,
@@ -129,6 +130,38 @@ type UpdateBookingItemCommissionInput = z.infer<typeof updateBookingItemCommissi
 type SupplierPaymentListQuery = z.infer<typeof supplierPaymentListQuerySchema>
 type CreateSupplierPaymentInput = z.infer<typeof insertSupplierPaymentSchema>
 type UpdateSupplierPaymentInput = z.infer<typeof updateSupplierPaymentSchema>
+type PaymentListQuery = z.infer<typeof paymentListQuerySchema>
+
+export interface UnifiedPaymentRow {
+  kind: "customer" | "supplier"
+  id: string
+  invoiceId: string | null
+  /** Customer-side: human-readable invoice number from `invoices.invoice_number`. */
+  invoiceNumber: string | null
+  bookingId: string | null
+  /** Supplier-side: human-readable booking number from `bookings.booking_number`. */
+  bookingNumber: string | null
+  supplierId: string | null
+  /** Supplier-side: supplier display name from `suppliers.name`. */
+  supplierName: string | null
+  /** Customer-side: person who paid, joined via invoice → people. */
+  personId: string | null
+  personName: string | null
+  /** Customer-side: organization that paid, joined via invoice → organizations. */
+  organizationId: string | null
+  organizationName: string | null
+  amountCents: number
+  currency: string
+  baseCurrency: string | null
+  baseAmountCents: number | null
+  paymentMethod: string
+  status: string
+  referenceNumber: string | null
+  paymentDate: string
+  notes: string | null
+  createdAt: Date
+  updatedAt: Date
+}
 type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>
 type CreateInvoiceInput = z.infer<typeof insertInvoiceSchema>
 export type CreateInvoiceFromBookingInput = z.infer<typeof invoiceFromBookingSchema>
@@ -338,6 +371,68 @@ async function paginate<T extends object>(
  */
 export interface FinanceServiceRuntime {
   eventBus?: EventBus
+}
+
+interface RawUnifiedPaymentRow {
+  kind: "customer" | "supplier"
+  id: string
+  invoice_id: string | null
+  invoice_number: string | null
+  booking_id: string | null
+  booking_number: string | null
+  supplier_id: string | null
+  supplier_name: string | null
+  person_id: string | null
+  person_first_name: string | null
+  person_last_name: string | null
+  organization_id: string | null
+  organization_name: string | null
+  amount_cents: number
+  currency: string
+  base_currency: string | null
+  base_amount_cents: number | null
+  payment_method: string
+  status: string
+  reference_number: string | null
+  payment_date: string
+  notes: string | null
+  created_at: Date | string
+  updated_at: Date | string
+}
+
+function mapRawPayment(row: RawUnifiedPaymentRow): UnifiedPaymentRow {
+  // Person display name: "First Last", trimmed. Falls back to null when both
+  // halves are missing so the UI can swap to organization or hide the field.
+  const personName =
+    row.person_first_name || row.person_last_name
+      ? `${row.person_first_name ?? ""} ${row.person_last_name ?? ""}`.trim() || null
+      : null
+
+  return {
+    kind: row.kind,
+    id: row.id,
+    invoiceId: row.invoice_id,
+    invoiceNumber: row.invoice_number,
+    bookingId: row.booking_id,
+    bookingNumber: row.booking_number,
+    supplierId: row.supplier_id,
+    supplierName: row.supplier_name,
+    personId: row.person_id,
+    personName,
+    organizationId: row.organization_id,
+    organizationName: row.organization_name,
+    amountCents: row.amount_cents,
+    currency: row.currency,
+    baseCurrency: row.base_currency,
+    baseAmountCents: row.base_amount_cents,
+    paymentMethod: row.payment_method,
+    status: row.status,
+    referenceNumber: row.reference_number,
+    paymentDate: row.payment_date,
+    notes: row.notes,
+    createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
+    updatedAt: row.updated_at instanceof Date ? row.updated_at : new Date(row.updated_at),
+  }
 }
 
 export const financeService = {
@@ -1670,7 +1765,37 @@ export const financeService = {
       conditions.push(eq(supplierPayments.status, query.status))
     }
 
+    if (query.paymentMethod) {
+      conditions.push(eq(supplierPayments.paymentMethod, query.paymentMethod))
+    }
+
+    if (query.currency) {
+      conditions.push(eq(supplierPayments.currency, query.currency))
+    }
+
+    if (query.paymentDateFrom) {
+      conditions.push(gte(supplierPayments.paymentDate, query.paymentDateFrom))
+    }
+
+    if (query.paymentDateTo) {
+      conditions.push(lte(supplierPayments.paymentDate, query.paymentDateTo))
+    }
+
     const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const sortColumn = (() => {
+      switch (query.sortBy) {
+        case "amountCents":
+          return supplierPayments.amountCents
+        case "status":
+          return supplierPayments.status
+        case "paymentDate":
+          return supplierPayments.paymentDate
+        default:
+          return supplierPayments.createdAt
+      }
+    })()
+    const sortFn = query.sortDir === "asc" ? asc : desc
 
     const [rows, countResult] = await Promise.all([
       db
@@ -1679,7 +1804,7 @@ export const financeService = {
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
-        .orderBy(desc(supplierPayments.createdAt)),
+        .orderBy(sortFn(sortColumn), desc(supplierPayments.createdAt)),
       db.select({ count: sql<number>`count(*)::int` }).from(supplierPayments).where(where),
     ])
 
@@ -1724,12 +1849,54 @@ export const financeService = {
       conditions.push(eq(invoices.bookingId, query.bookingId))
     }
 
+    if (query.personId) {
+      conditions.push(eq(invoices.personId, query.personId))
+    }
+
+    if (query.organizationId) {
+      conditions.push(eq(invoices.organizationId, query.organizationId))
+    }
+
+    if (query.currency) {
+      conditions.push(eq(invoices.currency, query.currency))
+    }
+
+    if (query.dueDateFrom) {
+      conditions.push(gte(invoices.dueDate, query.dueDateFrom))
+    }
+
+    if (query.dueDateTo) {
+      conditions.push(lte(invoices.dueDate, query.dueDateTo))
+    }
+
     if (query.search) {
       const term = `%${query.search}%`
       conditions.push(or(ilike(invoices.invoiceNumber, term), ilike(invoices.notes, term)))
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const sortColumn = (() => {
+      switch (query.sortBy) {
+        case "invoiceNumber":
+          return invoices.invoiceNumber
+        case "status":
+          return invoices.status
+        case "totalCents":
+          return invoices.totalCents
+        case "paidCents":
+          return invoices.paidCents
+        case "balanceDueCents":
+          return invoices.balanceDueCents
+        case "issueDate":
+          return invoices.issueDate
+        case "dueDate":
+          return invoices.dueDate
+        default:
+          return invoices.createdAt
+      }
+    })()
+    const sortFn = query.sortDir === "asc" ? asc : desc
 
     const [rows, countResult] = await Promise.all([
       db
@@ -1738,7 +1905,7 @@ export const financeService = {
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
-        .orderBy(desc(invoices.createdAt)),
+        .orderBy(sortFn(sortColumn), desc(invoices.createdAt)),
       db.select({ count: sql<number>`count(*)::int` }).from(invoices).where(where),
     ])
 
@@ -1971,6 +2138,231 @@ export const financeService = {
       .from(payments)
       .where(eq(payments.invoiceId, invoiceId))
       .orderBy(desc(payments.paymentDate))
+  },
+
+  async listAllPayments(db: PostgresJsDatabase, query: PaymentListQuery) {
+    // The unified view UNIONs `payments` (customer-side, FK to invoices) and
+    // `supplier_payments` (FK to bookings + suppliers). Filters that only make
+    // sense for one side (invoiceId / supplierId) implicitly exclude the
+    // other; the explicit `kind` filter takes precedence.
+    const includeCustomer = (!query.kind || query.kind === "customer") && !query.supplierId
+    const includeSupplier = (!query.kind || query.kind === "supplier") && !query.invoiceId
+
+    if (!includeCustomer && !includeSupplier) {
+      return { data: [] as UnifiedPaymentRow[], total: 0, limit: query.limit, offset: query.offset }
+    }
+
+    const customerConditions = [sql`true`]
+    if (query.status) customerConditions.push(sql`p.status = ${query.status}`)
+    if (query.paymentMethod) customerConditions.push(sql`p.payment_method = ${query.paymentMethod}`)
+    if (query.currency) customerConditions.push(sql`p.currency = ${query.currency}`)
+    if (query.invoiceId) customerConditions.push(sql`p.invoice_id = ${query.invoiceId}`)
+    if (query.bookingId) customerConditions.push(sql`i.booking_id = ${query.bookingId}`)
+    if (query.paymentDateFrom)
+      customerConditions.push(sql`p.payment_date >= ${query.paymentDateFrom}`)
+    if (query.paymentDateTo) customerConditions.push(sql`p.payment_date <= ${query.paymentDateTo}`)
+    if (query.search) customerConditions.push(sql`p.reference_number ILIKE ${`%${query.search}%`}`)
+    const customerWhere = sql.join(customerConditions, sql` AND `)
+
+    const supplierConditions = [sql`true`]
+    if (query.status) supplierConditions.push(sql`sp.status = ${query.status}`)
+    if (query.paymentMethod)
+      supplierConditions.push(sql`sp.payment_method = ${query.paymentMethod}`)
+    if (query.currency) supplierConditions.push(sql`sp.currency = ${query.currency}`)
+    if (query.bookingId) supplierConditions.push(sql`sp.booking_id = ${query.bookingId}`)
+    if (query.supplierId) supplierConditions.push(sql`sp.supplier_id = ${query.supplierId}`)
+    if (query.paymentDateFrom)
+      supplierConditions.push(sql`sp.payment_date >= ${query.paymentDateFrom}`)
+    if (query.paymentDateTo) supplierConditions.push(sql`sp.payment_date <= ${query.paymentDateTo}`)
+    if (query.search) supplierConditions.push(sql`sp.reference_number ILIKE ${`%${query.search}%`}`)
+    const supplierWhere = sql.join(supplierConditions, sql` AND `)
+
+    const customerSelect = sql`
+      SELECT
+        'customer'::text AS kind,
+        p.id AS id,
+        p.invoice_id AS invoice_id,
+        i.invoice_number AS invoice_number,
+        NULL::text AS booking_id,
+        NULL::text AS booking_number,
+        NULL::text AS supplier_id,
+        NULL::text AS supplier_name,
+        i.person_id AS person_id,
+        pe.first_name AS person_first_name,
+        pe.last_name AS person_last_name,
+        i.organization_id AS organization_id,
+        o.name AS organization_name,
+        p.amount_cents AS amount_cents,
+        p.currency AS currency,
+        p.base_currency AS base_currency,
+        p.base_amount_cents AS base_amount_cents,
+        p.payment_method::text AS payment_method,
+        p.status::text AS status,
+        p.reference_number AS reference_number,
+        p.payment_date AS payment_date,
+        p.notes AS notes,
+        p.created_at AS created_at,
+        p.updated_at AS updated_at
+      FROM payments p
+      LEFT JOIN invoices i ON i.id = p.invoice_id
+      LEFT JOIN people pe ON pe.id = i.person_id
+      LEFT JOIN organizations o ON o.id = i.organization_id
+      WHERE ${customerWhere}
+    `
+
+    const supplierSelect = sql`
+      SELECT
+        'supplier'::text AS kind,
+        sp.id AS id,
+        NULL::text AS invoice_id,
+        NULL::text AS invoice_number,
+        sp.booking_id AS booking_id,
+        b.booking_number AS booking_number,
+        sp.supplier_id AS supplier_id,
+        s.name AS supplier_name,
+        NULL::text AS person_id,
+        NULL::text AS person_first_name,
+        NULL::text AS person_last_name,
+        NULL::text AS organization_id,
+        NULL::text AS organization_name,
+        sp.amount_cents AS amount_cents,
+        sp.currency AS currency,
+        sp.base_currency AS base_currency,
+        sp.base_amount_cents AS base_amount_cents,
+        sp.payment_method::text AS payment_method,
+        sp.status::text AS status,
+        sp.reference_number AS reference_number,
+        sp.payment_date AS payment_date,
+        sp.notes AS notes,
+        sp.created_at AS created_at,
+        sp.updated_at AS updated_at
+      FROM supplier_payments sp
+      LEFT JOIN bookings b ON b.id = sp.booking_id
+      LEFT JOIN suppliers s ON s.id = sp.supplier_id
+      WHERE ${supplierWhere}
+    `
+
+    const unionParts: (typeof customerSelect)[] = []
+    if (includeCustomer) unionParts.push(customerSelect)
+    if (includeSupplier) unionParts.push(supplierSelect)
+    const unioned = sql.join(unionParts, sql` UNION ALL `)
+
+    const sortColumn = (() => {
+      switch (query.sortBy) {
+        case "amountCents":
+          return sql.raw("amount_cents")
+        case "status":
+          return sql.raw("status")
+        case "paymentDate":
+          return sql.raw("payment_date")
+        default:
+          return sql.raw("created_at")
+      }
+    })()
+    const sortDirSql = query.sortDir === "asc" ? sql.raw("ASC") : sql.raw("DESC")
+
+    const dataResult = await db.execute(sql`
+      SELECT * FROM (${unioned}) all_payments
+      ORDER BY ${sortColumn} ${sortDirSql}, created_at DESC
+      LIMIT ${query.limit}
+      OFFSET ${query.offset}
+    `)
+
+    const countResult = await db.execute(sql`
+      SELECT COUNT(*)::int AS count FROM (${unioned}) all_payments
+    `)
+
+    const rows = dataResult as unknown as Array<RawUnifiedPaymentRow>
+    const total = (countResult as unknown as Array<{ count: number }>)[0]?.count ?? 0
+    const data: UnifiedPaymentRow[] = rows.map(mapRawPayment)
+
+    return {
+      data,
+      total,
+      limit: query.limit,
+      offset: query.offset,
+    }
+  },
+
+  /**
+   * Resolve a unified payment by id. Dispatches by typeid prefix:
+   * `pay_*` lives in `payments` (customer side), `spay_*` in `supplier_payments`.
+   * Returns the same enriched row shape as `listAllPayments` so callers can
+   * share a single record schema.
+   */
+  async getPaymentById(db: PostgresJsDatabase, id: string): Promise<UnifiedPaymentRow | null> {
+    if (id.startsWith("spay_")) {
+      const result = await db.execute(sql`
+        SELECT
+          'supplier'::text AS kind,
+          sp.id AS id,
+          NULL::text AS invoice_id,
+          NULL::text AS invoice_number,
+          sp.booking_id AS booking_id,
+          b.booking_number AS booking_number,
+          sp.supplier_id AS supplier_id,
+          s.name AS supplier_name,
+          NULL::text AS person_id,
+          NULL::text AS person_first_name,
+          NULL::text AS person_last_name,
+          NULL::text AS organization_id,
+          NULL::text AS organization_name,
+          sp.amount_cents AS amount_cents,
+          sp.currency AS currency,
+          sp.base_currency AS base_currency,
+          sp.base_amount_cents AS base_amount_cents,
+          sp.payment_method::text AS payment_method,
+          sp.status::text AS status,
+          sp.reference_number AS reference_number,
+          sp.payment_date AS payment_date,
+          sp.notes AS notes,
+          sp.created_at AS created_at,
+          sp.updated_at AS updated_at
+        FROM supplier_payments sp
+        LEFT JOIN bookings b ON b.id = sp.booking_id
+        LEFT JOIN suppliers s ON s.id = sp.supplier_id
+        WHERE sp.id = ${id}
+        LIMIT 1
+      `)
+      const row = (result as unknown as RawUnifiedPaymentRow[])[0]
+      return row ? mapRawPayment(row) : null
+    }
+
+    const result = await db.execute(sql`
+      SELECT
+        'customer'::text AS kind,
+        p.id AS id,
+        p.invoice_id AS invoice_id,
+        i.invoice_number AS invoice_number,
+        NULL::text AS booking_id,
+        NULL::text AS booking_number,
+        NULL::text AS supplier_id,
+        NULL::text AS supplier_name,
+        i.person_id AS person_id,
+        pe.first_name AS person_first_name,
+        pe.last_name AS person_last_name,
+        i.organization_id AS organization_id,
+        o.name AS organization_name,
+        p.amount_cents AS amount_cents,
+        p.currency AS currency,
+        p.base_currency AS base_currency,
+        p.base_amount_cents AS base_amount_cents,
+        p.payment_method::text AS payment_method,
+        p.status::text AS status,
+        p.reference_number AS reference_number,
+        p.payment_date AS payment_date,
+        p.notes AS notes,
+        p.created_at AS created_at,
+        p.updated_at AS updated_at
+      FROM payments p
+      LEFT JOIN invoices i ON i.id = p.invoice_id
+      LEFT JOIN people pe ON pe.id = i.person_id
+      LEFT JOIN organizations o ON o.id = i.organization_id
+      WHERE p.id = ${id}
+      LIMIT 1
+    `)
+    const row = (result as unknown as RawUnifiedPaymentRow[])[0]
+    return row ? mapRawPayment(row) : null
   },
 
   async createPayment(db: PostgresJsDatabase, invoiceId: string, data: CreatePaymentInput) {

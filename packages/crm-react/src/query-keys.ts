@@ -3,21 +3,37 @@
  * manually invalidate or prefetch using the exact same keys the hooks use.
  */
 
+export type PeopleListSortField = "name" | "relation" | "status" | "createdAt" | "updatedAt"
+export type PeopleListSortDir = "asc" | "desc"
+
 export interface PeopleListFilters {
   search?: string | undefined
   organizationId?: string | undefined
   ownerId?: string | undefined
   relation?: string | undefined
   status?: string | undefined
+  sortBy?: PeopleListSortField | undefined
+  sortDir?: PeopleListSortDir | undefined
   limit?: number | undefined
   offset?: number | undefined
 }
+
+export type OrganizationsListSortField =
+  | "name"
+  | "industry"
+  | "relation"
+  | "status"
+  | "createdAt"
+  | "updatedAt"
+export type OrganizationsListSortDir = "asc" | "desc"
 
 export interface OrganizationsListFilters {
   search?: string | undefined
   ownerId?: string | undefined
   relation?: string | undefined
   status?: string | undefined
+  sortBy?: OrganizationsListSortField | undefined
+  sortDir?: OrganizationsListSortDir | undefined
   limit?: number | undefined
   offset?: number | undefined
 }

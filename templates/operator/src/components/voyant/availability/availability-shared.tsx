@@ -67,8 +67,16 @@ export {
   toLocalDateTimeInput,
 }
 
-export function getAvailabilityProductsQueryOptions() {
-  return getProductsQueryOptionsBase(client, { limit: 25, offset: 0 })
+export function getAvailabilityProductsQueryOptions(filters?: {
+  search?: string
+  limit?: number
+  offset?: number
+}) {
+  return getProductsQueryOptionsBase(client, {
+    limit: filters?.limit ?? 25,
+    offset: filters?.offset ?? 0,
+    search: filters?.search,
+  })
 }
 
 export function getAvailabilityRulesQueryOptions() {

@@ -52,6 +52,15 @@ export const bookingPaymentPolicySchema = z.object({
 
 export type BookingPaymentPolicy = z.infer<typeof bookingPaymentPolicySchema>
 
+export const bookingRecordItemSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  itemType: z.string(),
+  productId: z.string().nullable(),
+})
+
+export type BookingRecordItemSummary = z.infer<typeof bookingRecordItemSummarySchema>
+
 export const bookingRecordSchema = z.object({
   id: z.string(),
   bookingNumber: z.string(),
@@ -67,6 +76,7 @@ export const bookingRecordSchema = z.object({
   startsAt: z.string().nullable().optional(),
   endsAt: z.string().nullable().optional(),
   pax: z.number().int().nullable(),
+  items: z.array(bookingRecordItemSummarySchema).optional(),
   internalNotes: z.string().nullable(),
   communicationLanguage: z.string().nullable().optional(),
   contactFirstName: z.string().nullable().optional(),

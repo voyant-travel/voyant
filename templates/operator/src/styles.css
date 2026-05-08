@@ -3,6 +3,27 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 
+/* Tailwind v4 auto-detection does not scan published package code under
+   node_modules. Voyant UI components emit Tailwind utility classes from
+   those packages, so include them explicitly. The in-package styles.css
+   files imported below also declare @source globs, but those globs are
+   relative to src/ trees that don't ship in published tarballs (upstream
+   issue #416), so the dist scans below are still required. */
+@source "../node_modules/@voyantjs/admin/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/availability-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/bookings-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/catalog-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/crm-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/extras-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/finance-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/flights-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/legal-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/products-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/resources-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/suppliers-ui/dist/**/*.{js,mjs}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
 @import "@voyantjs/ui/styles.css";
 @import "@voyantjs/admin/styles.css";
 @import "@voyantjs/availability-ui/styles.css";

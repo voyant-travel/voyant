@@ -39,6 +39,7 @@ export function useInvoicePaymentMutation(invoiceId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.payments(invoiceId) })
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoice(invoiceId) })
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.allPayments() })
     },
   })
 }

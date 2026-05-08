@@ -1,3 +1,4 @@
+import { RequestValidationError } from "@voyantjs/hono"
 import { and, asc, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -7,6 +8,15 @@ import {
   optionUnitPriceRules,
   optionUnitTiers,
 } from "./schema.js"
+
+// A `per_booking` rule produces a single flat amount for the whole booking;
+// per-unit prices implicitly assume a per-unit (or per-person) multiplier.
+// The two are contradictory — see #482.
+const PER_BOOKING_REJECTS_UNIT_PRICES_MESSAGE =
+  "Rules with pricingMode = 'per_booking' cannot carry per-unit prices. " +
+  "Use pricingMode = 'per_person' or 'starting_from' for unit-priced rules, " +
+  "or remove the unit prices to keep this rule a flat per-booking amount."
+
 import type {
   CreateOptionPriceRuleInput,
   CreateOptionStartTimeRuleInput,
@@ -73,6 +83,20 @@ export async function updateOptionPriceRule(
   id: string,
   data: UpdateOptionPriceRuleInput,
 ) {
+  if (data.pricingMode === "per_booking") {
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(optionUnitPriceRules)
+      .where(eq(optionUnitPriceRules.optionPriceRuleId, id))
+    const unitPriceCount = countRow?.count ?? 0
+    if (unitPriceCount > 0) {
+      throw new RequestValidationError(PER_BOOKING_REJECTS_UNIT_PRICES_MESSAGE, {
+        ruleId: id,
+        unitPriceCount,
+      })
+    }
+  }
+
   const [row] = await db
     .update(optionPriceRules)
     .set({ ...data, updatedAt: new Date() })
@@ -132,6 +156,17 @@ export async function createOptionUnitPriceRule(
   db: PostgresJsDatabase,
   data: CreateOptionUnitPriceRuleInput,
 ) {
+  const [parent] = await db
+    .select({ pricingMode: optionPriceRules.pricingMode })
+    .from(optionPriceRules)
+    .where(eq(optionPriceRules.id, data.optionPriceRuleId))
+    .limit(1)
+  if (parent?.pricingMode === "per_booking") {
+    throw new RequestValidationError(PER_BOOKING_REJECTS_UNIT_PRICES_MESSAGE, {
+      ruleId: data.optionPriceRuleId,
+    })
+  }
+
   const [row] = await db.insert(optionUnitPriceRules).values(data).returning()
   return row ?? null
 }

@@ -12,6 +12,7 @@ export const suppliersModule: Module = {
 
 export const suppliersHonoModule: HonoModule = {
   module: suppliersModule,
+  adminRoutes: supplierRoutes,
   routes: supplierRoutes,
 }
 

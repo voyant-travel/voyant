@@ -11,7 +11,12 @@ export {
   VoyantProductsProvider,
   type VoyantProductsProviderProps,
 } from "./provider.js"
-export { productsQueryKeys } from "./query-keys.js"
+export {
+  type ProductsListFilters,
+  type ProductsListSortDir,
+  type ProductsListSortField,
+  productsQueryKeys,
+} from "./query-keys.js"
 export {
   getOptionUnitQueryOptions,
   getOptionUnitsQueryOptions,

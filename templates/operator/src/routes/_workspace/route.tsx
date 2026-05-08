@@ -24,6 +24,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react"
+import { forwardRef } from "react"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
 import { adminExtensions } from "@/lib/admin-extensions"
 import {
@@ -52,16 +53,27 @@ const operatorNavigationIcons = {
   suppliers: Building2,
 } satisfies OperatorAdminNavigationIcons
 
-function AdminRouterLink({ children, href, onClick, target }: AdminNavLinkProps) {
+// SidebarMenuButton with `asChild` wraps this in a Radix Slot, which clones
+// the element with merged className/data-*/event props. We must forward those
+// extras to the rendered element — AdminNavLinkProps doesn't declare them but
+// they arrive at runtime, so spread the rest. Without this, Slot's className
+// (e.g. `peer/menu-button flex w-full items-center gap-2 …`) is silently
+// dropped and the sidebar items render unstyled.
+const AdminRouterLink = forwardRef<HTMLAnchorElement, AdminNavLinkProps>(function AdminRouterLink(
+  { children, href, onClick, target, ...rest },
+  ref,
+) {
   const external = href.startsWith("http://") || href.startsWith("https://")
 
   if (external) {
     return (
       <a
+        ref={ref}
         href={href}
         target={target}
         rel={target === "_blank" ? "noopener noreferrer" : undefined}
         onClick={onClick}
+        {...rest}
       >
         {children}
       </a>
@@ -69,11 +81,11 @@ function AdminRouterLink({ children, href, onClick, target }: AdminNavLinkProps)
   }
 
   return (
-    <Link to={href} target={target} onClick={onClick}>
+    <Link ref={ref} to={href} target={target} onClick={onClick} {...rest}>
       {children}
     </Link>
   )
-}
+})
 
 export const Route = createFileRoute("/_workspace")({
   loader: async ({ location }) => {

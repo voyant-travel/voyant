@@ -199,6 +199,7 @@ CREATE TYPE "public"."policy_kind" AS ENUM('cancellation', 'payment', 'terms_and
 CREATE TYPE "public"."policy_refund_type" AS ENUM('cash', 'credit', 'cash_or_credit', 'none');--> statement-breakpoint
 CREATE TYPE "public"."policy_rule_type" AS ENUM('window', 'percentage', 'flat_amount', 'date_range', 'custom');--> statement-breakpoint
 CREATE TYPE "public"."policy_version_status" AS ENUM('draft', 'published', 'retired');--> statement-breakpoint
+CREATE TYPE "public"."cruise_air_arrangement" AS ENUM('cruise_line', 'independent', 'none');--> statement-breakpoint
 CREATE TYPE "public"."cruise_booking_mode" AS ENUM('inquiry', 'reserve');--> statement-breakpoint
 CREATE TYPE "public"."cruise_cabin_room_type" AS ENUM('inside', 'oceanview', 'balcony', 'suite', 'penthouse', 'single');--> statement-breakpoint
 CREATE TYPE "public"."cruise_inclusion_kind" AS ENUM('meals', 'drinks', 'gratuities', 'transfers', 'excursions', 'wifi', 'other');--> statement-breakpoint
@@ -6683,4 +6684,38 @@ CREATE INDEX "idx_workflow_runs_workflow" ON "workflow_runs" USING btree ("workf
 CREATE INDEX "idx_workflow_runs_status_started" ON "workflow_runs" USING btree ("status","started_at");--> statement-breakpoint
 CREATE INDEX "idx_workflow_runs_correlation" ON "workflow_runs" USING btree ("correlation_id");--> statement-breakpoint
 CREATE INDEX "idx_workflow_runs_parent" ON "workflow_runs" USING btree ("parent_run_id");--> statement-breakpoint
-CREATE INDEX "idx_workflow_runs_tags_gin" ON "workflow_runs" USING gin ("tags");
+CREATE INDEX "idx_workflow_runs_tags_gin" ON "workflow_runs" USING gin ("tags");--> statement-breakpoint
+CREATE VIEW "person_directory" AS
+SELECT
+  p."id" AS "person_id",
+  email_cp."value" AS "email",
+  phone_cp."value" AS "phone",
+  website_cp."value" AS "website"
+FROM "people" p
+LEFT JOIN LATERAL (
+  SELECT "value"
+  FROM "identity_contact_points"
+  WHERE "entity_type" = 'person'
+    AND "entity_id" = p."id"
+    AND "kind" = 'email'
+  ORDER BY "is_primary" DESC, "created_at"
+  LIMIT 1
+) email_cp ON TRUE
+LEFT JOIN LATERAL (
+  SELECT "value"
+  FROM "identity_contact_points"
+  WHERE "entity_type" = 'person'
+    AND "entity_id" = p."id"
+    AND "kind" = 'phone'
+  ORDER BY "is_primary" DESC, "created_at"
+  LIMIT 1
+) phone_cp ON TRUE
+LEFT JOIN LATERAL (
+  SELECT "value"
+  FROM "identity_contact_points"
+  WHERE "entity_type" = 'person'
+    AND "entity_id" = p."id"
+    AND "kind" = 'website'
+  ORDER BY "is_primary" DESC, "created_at"
+  LIMIT 1
+) website_cp ON TRUE;

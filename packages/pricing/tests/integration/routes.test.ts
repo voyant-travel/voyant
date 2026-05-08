@@ -3,6 +3,7 @@ import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { optionExtraConfigs, productExtras } from "@voyantjs/extras/schema"
 import { facilities } from "@voyantjs/facilities/schema"
+import { handleApiError } from "@voyantjs/hono"
 import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -20,6 +21,7 @@ const app = new Hono()
     await next()
   })
   .route("/", pricingRoutes)
+  .onError((err, c) => handleApiError(err, c))
 
 function req(method: string, path: string, body?: unknown) {
   const init: RequestInit = { method, headers: { "Content-Type": "application/json" } }
@@ -798,6 +800,17 @@ describe.skipIf(!DB_AVAILABLE)("Pricing Routes Integration", () => {
       const json = (await res.json()) as { data: unknown[]; total: number }
       expect(json.total).toBe(1)
     })
+
+    it("PATCH /option-price-rules/:id rejects switching to per_booking when unit prices exist", async () => {
+      const rule = await seedOptionPriceRule({ pricingMode: "per_person" })
+      await seedOptionUnitPriceRule(rule.id)
+      const res = await req("PATCH", `/option-price-rules/${rule.id}`, {
+        pricingMode: "per_booking",
+      })
+      expect(res.status).toBe(400)
+      const json = (await res.json()) as { error: string }
+      expect(json.error).toMatch(/per_booking/)
+    })
   })
 
   // ==================== Option Unit Price Rules ====================
@@ -871,6 +884,20 @@ describe.skipIf(!DB_AVAILABLE)("Pricing Routes Integration", () => {
       expect(res.status).toBe(200)
       const json = (await res.json()) as { data: unknown[]; total: number }
       expect(json.total).toBe(1)
+    })
+
+    it("POST /option-unit-price-rules rejects unit prices under a per_booking parent", async () => {
+      const rule = await seedOptionPriceRule({ pricingMode: "per_booking" })
+      const res = await req("POST", "/option-unit-price-rules", {
+        optionPriceRuleId: rule.id,
+        optionId,
+        unitId,
+        pricingMode: "per_unit",
+        sellAmountCents: 3000,
+      })
+      expect(res.status).toBe(400)
+      const json = (await res.json()) as { error: string }
+      expect(json.error).toMatch(/per_booking/)
     })
   })
 

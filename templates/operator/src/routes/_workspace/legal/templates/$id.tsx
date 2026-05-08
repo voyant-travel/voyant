@@ -5,8 +5,7 @@ import {
 } from "@/components/voyant/legal/template-detail-page"
 
 export const Route = createFileRoute("/_workspace/legal/templates/$id")({
-  loader: ({ context, params }) =>
-    loadTemplateDetailPage(params.id, (options) => context.queryClient.ensureQueryData(options)),
+  loader: ({ context, params }) => loadTemplateDetailPage(params.id, context.queryClient),
   component: RouteComponent,
 })
 

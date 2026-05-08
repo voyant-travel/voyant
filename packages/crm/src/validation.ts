@@ -84,11 +84,25 @@ export const organizationCoreSchema = z.object({
 
 export const insertOrganizationSchema = organizationCoreSchema
 export const updateOrganizationSchema = organizationCoreSchema.partial()
+
+export const organizationListSortFieldSchema = z.enum([
+  "name",
+  "industry",
+  "relation",
+  "status",
+  "createdAt",
+  "updatedAt",
+])
+
+export const organizationListSortDirSchema = z.enum(["asc", "desc"])
+
 export const organizationListQuerySchema = paginationSchema.extend({
   ownerId: z.string().optional(),
   relation: relationTypeSchema.optional(),
   status: recordStatusSchema.optional(),
   search: z.string().optional(),
+  sortBy: organizationListSortFieldSchema.default("updatedAt"),
+  sortDir: organizationListSortDirSchema.default("desc"),
 })
 
 export const personCoreSchema = z.object({
@@ -127,12 +141,25 @@ export const personCoreSchema = z.object({
 
 export const insertPersonSchema = personCoreSchema
 export const updatePersonSchema = personCoreSchema.partial()
+
+export const personListSortFieldSchema = z.enum([
+  "name",
+  "relation",
+  "status",
+  "createdAt",
+  "updatedAt",
+])
+
+export const personListSortDirSchema = z.enum(["asc", "desc"])
+
 export const personListQuerySchema = paginationSchema.extend({
   organizationId: z.string().optional(),
   ownerId: z.string().optional(),
   relation: relationTypeSchema.optional(),
   status: recordStatusSchema.optional(),
   search: z.string().optional(),
+  sortBy: personListSortFieldSchema.default("updatedAt"),
+  sortDir: personListSortDirSchema.default("desc"),
 })
 
 export const pipelineCoreSchema = z.object({

@@ -6,8 +6,7 @@ import {
 } from "@/components/voyant/availability/availability-rule-detail-page"
 
 export const Route = createFileRoute("/_workspace/availability/rules/$id")({
-  loader: ({ context, params }) =>
-    loadAvailabilityRuleDetailPage(context.queryClient.ensureQueryData, params.id),
+  loader: ({ context, params }) => loadAvailabilityRuleDetailPage(context.queryClient, params.id),
   pendingComponent: AvailabilityRuleDetailSkeleton,
   component: RouteComponent,
 })

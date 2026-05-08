@@ -20,6 +20,8 @@ export type OperatorAdminNavMessages = {
   availability: string
   resources: string
   finance: string
+  invoices: string
+  payments: string
   legal: string
   contracts: string
   contractTemplates: string
@@ -50,6 +52,8 @@ export const operatorAdminNavMessages = {
       availability: "Availability",
       resources: "Resources",
       finance: "Finance",
+      invoices: "Invoices",
+      payments: "Payments",
       legal: "Legal",
       contracts: "Contracts",
       contractTemplates: "Contract Templates",
@@ -79,6 +83,8 @@ export const operatorAdminNavMessages = {
       availability: "Disponibilitate",
       resources: "Resurse",
       finance: "Financiar",
+      invoices: "Facturi",
+      payments: "Plati",
       legal: "Juridic",
       contracts: "Contracte",
       contractTemplates: "Sabloane contract",

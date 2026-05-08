@@ -3,6 +3,7 @@
 import { queryOptions } from "@tanstack/react-query"
 
 import { type FetchWithValidationOptions, fetchWithValidation } from "./client.js"
+import type { UseAllPaymentsOptions } from "./hooks/use-all-payments.js"
 import type { UseBookingGuaranteesOptions } from "./hooks/use-booking-guarantees.js"
 import type { UseBookingPaymentSchedulesOptions } from "./hooks/use-booking-payment-schedules.js"
 import type { UseInvoiceOptions } from "./hooks/use-invoice.js"
@@ -11,6 +12,7 @@ import type { UseInvoiceLineItemsOptions } from "./hooks/use-invoice-line-items.
 import type { UseInvoiceNotesOptions } from "./hooks/use-invoice-notes.js"
 import type { UseInvoicePaymentsOptions } from "./hooks/use-invoice-payments.js"
 import type { UseInvoicesOptions } from "./hooks/use-invoices.js"
+import type { UsePaymentOptions } from "./hooks/use-payment.js"
 import type { UsePublicBookingDocumentsOptions } from "./hooks/use-public-booking-documents.js"
 import type { UsePublicBookingPaymentOptionsOptions } from "./hooks/use-public-booking-payment-options.js"
 import type { UsePublicBookingPaymentsOptions } from "./hooks/use-public-booking-payments.js"
@@ -29,6 +31,7 @@ import {
 } from "./operations.js"
 import { financeQueryKeys } from "./query-keys.js"
 import {
+  allPaymentsListResponse,
   bookingGuaranteesResponse,
   bookingPaymentSchedulesResponse,
   invoiceCreditNotesResponse,
@@ -37,6 +40,7 @@ import {
   invoiceNotesResponse,
   invoicePaymentsResponse,
   invoiceSingleResponse,
+  paymentSingleResponse,
   supplierPaymentListResponse,
   voucherDetailResponse,
   voucherListResponse,
@@ -90,7 +94,14 @@ export function getInvoicesQueryOptions(
       const params = new URLSearchParams()
       if (filters.search) params.set("search", filters.search)
       if (filters.bookingId) params.set("bookingId", filters.bookingId)
+      if (filters.personId) params.set("personId", filters.personId)
+      if (filters.organizationId) params.set("organizationId", filters.organizationId)
       if (filters.status) params.set("status", filters.status)
+      if (filters.currency) params.set("currency", filters.currency)
+      if (filters.dueDateFrom) params.set("dueDateFrom", filters.dueDateFrom)
+      if (filters.dueDateTo) params.set("dueDateTo", filters.dueDateTo)
+      if (filters.sortBy) params.set("sortBy", filters.sortBy)
+      if (filters.sortDir) params.set("sortDir", filters.sortDir)
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
@@ -100,6 +111,57 @@ export function getInvoicesQueryOptions(
         invoiceListResponse,
         client,
       )
+    },
+  })
+}
+
+export function getAllPaymentsQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UseAllPaymentsOptions = {},
+) {
+  const { enabled: _enabled = true, ...filters } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.allPaymentsList(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.kind) params.set("kind", filters.kind)
+      if (filters.status) params.set("status", filters.status)
+      if (filters.paymentMethod) params.set("paymentMethod", filters.paymentMethod)
+      if (filters.currency) params.set("currency", filters.currency)
+      if (filters.invoiceId) params.set("invoiceId", filters.invoiceId)
+      if (filters.bookingId) params.set("bookingId", filters.bookingId)
+      if (filters.supplierId) params.set("supplierId", filters.supplierId)
+      if (filters.paymentDateFrom) params.set("paymentDateFrom", filters.paymentDateFrom)
+      if (filters.paymentDateTo) params.set("paymentDateTo", filters.paymentDateTo)
+      if (filters.search) params.set("search", filters.search)
+      if (filters.sortBy) params.set("sortBy", filters.sortBy)
+      if (filters.sortDir) params.set("sortDir", filters.sortDir)
+      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/finance/payments${qs ? `?${qs}` : ""}`,
+        allPaymentsListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getPaymentQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string | null | undefined,
+  options: UsePaymentOptions = {},
+) {
+  const { enabled: _enabled = true } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.payment(id ?? ""),
+    queryFn: async () => {
+      if (!id) throw new Error("getPaymentQueryOptions requires an id")
+      return fetchWithValidation(`/v1/finance/payments/${id}`, paymentSingleResponse, client)
     },
   })
 }
@@ -114,6 +176,15 @@ export function getSupplierPaymentsQueryOptions(
     queryKey: financeQueryKeys.supplierPaymentsList(filters),
     queryFn: () => {
       const params = new URLSearchParams()
+      if (filters.bookingId) params.set("bookingId", filters.bookingId)
+      if (filters.supplierId) params.set("supplierId", filters.supplierId)
+      if (filters.status) params.set("status", filters.status)
+      if (filters.paymentMethod) params.set("paymentMethod", filters.paymentMethod)
+      if (filters.currency) params.set("currency", filters.currency)
+      if (filters.paymentDateFrom) params.set("paymentDateFrom", filters.paymentDateFrom)
+      if (filters.paymentDateTo) params.set("paymentDateTo", filters.paymentDateTo)
+      if (filters.sortBy) params.set("sortBy", filters.sortBy)
+      if (filters.sortDir) params.set("sortDir", filters.sortDir)
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()

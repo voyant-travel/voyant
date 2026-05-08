@@ -33,16 +33,13 @@ type Slot = {
 }
 type ListResponse<T> = { data: T[]; total: number; limit: number; offset: number }
 
-export async function loadAvailabilityRuleDetailPage(
-  ensureQueryData: QueryClient["ensureQueryData"],
-  id: string,
-) {
-  const ruleData = await ensureQueryData(getAvailabilityRuleQueryOptions(id))
+export async function loadAvailabilityRuleDetailPage(queryClient: QueryClient, id: string) {
+  const ruleData = await queryClient.ensureQueryData(getAvailabilityRuleQueryOptions(id))
 
   return Promise.all([
     Promise.resolve(ruleData),
-    ensureQueryData(getAvailabilityRuleSlotsQueryOptions(id)),
-    ensureQueryData(getAvailabilityRuleProductQueryOptions(ruleData.data.productId)),
+    queryClient.ensureQueryData(getAvailabilityRuleSlotsQueryOptions(id)),
+    queryClient.ensureQueryData(getAvailabilityRuleProductQueryOptions(ruleData.data.productId)),
   ])
 }
 

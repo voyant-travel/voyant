@@ -87,6 +87,18 @@ export const createBookingSchema = bookingCoreSchema
     path: ["holdExpiresAt"],
   })
 
+export const bookingListSortFieldSchema = z.enum([
+  "bookingNumber",
+  "status",
+  "sellAmount",
+  "pax",
+  "startDate",
+  "endDate",
+  "createdAt",
+])
+
+export const bookingListSortDirSchema = z.enum(["asc", "desc"])
+
 export const bookingListQuerySchema = z.object({
   status: bookingStatusSchema.optional(),
   search: z.string().optional(),
@@ -94,6 +106,12 @@ export const bookingListQuerySchema = z.object({
   optionId: z.string().optional(),
   personId: z.string().optional(),
   organizationId: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  paxMin: z.coerce.number().int().min(0).optional(),
+  paxMax: z.coerce.number().int().min(0).optional(),
+  sortBy: bookingListSortFieldSchema.default("createdAt"),
+  sortDir: bookingListSortDirSchema.default("desc"),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })

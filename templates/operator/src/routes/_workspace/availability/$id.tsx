@@ -6,8 +6,7 @@ import {
 } from "@/components/voyant/availability/availability-slot-detail-page"
 
 export const Route = createFileRoute("/_workspace/availability/$id")({
-  loader: ({ context, params }) =>
-    loadAvailabilitySlotDetailPage(context.queryClient.ensureQueryData, params.id),
+  loader: ({ context, params }) => loadAvailabilitySlotDetailPage(context.queryClient, params.id),
   pendingComponent: AvailabilitySlotDetailSkeleton,
   component: RouteComponent,
 })

@@ -715,12 +715,29 @@ export type BookingsUiMessages = {
     newBooking: string
     columns: {
       bookingNumber: string
+      whatBooked: string
       status: string
       sellAmount: string
       pax: string
       startDate: string
       endDate: string
     }
+    filters: {
+      button: string
+      statusLabel: string
+      statusAll: string
+      productLabel: string
+      product: string
+      productEmpty: string
+      dateRangeLabel: string
+      dateRange: string
+      paxLabel: string
+      paxMin: string
+      paxMax: string
+      clear: string
+    }
+    /** "+{count} more" suffix when a booking has multiple items in the list cell. */
+    itemsMore: string
     loadingError: string
     empty: string
     showingSummary: string

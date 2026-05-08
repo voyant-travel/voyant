@@ -64,6 +64,7 @@
     "./lib/*": "./src/lib/*.ts",
     "./components": "./src/components/index.tsx",
     "./components/*": "./src/components/*.tsx",
+    "./components/big-calendar": "./src/components/big-calendar/index.ts",
     "./components/notification-template-dialog": "./src/components/notification-template-dialog.tsx",
     "./components/notification-templates-page": "./src/components/notification-templates-page.tsx",
     "./components/notification-reminder-rule-dialog": "./src/components/notification-reminder-rule-dialog.tsx",
@@ -102,6 +103,11 @@
         "types": "./dist/components/*.d.ts",
         "import": "./dist/components/*.js",
         "default": "./dist/components/*.js"
+      },
+      "./components/big-calendar": {
+        "types": "./dist/components/big-calendar/index.d.ts",
+        "import": "./dist/components/big-calendar/index.js",
+        "default": "./dist/components/big-calendar/index.js"
       },
       "./hooks/*": {
         "types": "./dist/hooks/*.d.ts",

@@ -42,6 +42,7 @@ export function useSupplierPaymentMutation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.supplierPayments() })
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.allPayments() })
     },
   })
 
@@ -57,6 +58,7 @@ export function useSupplierPaymentMutation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.supplierPayments() })
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.allPayments() })
     },
   })
 

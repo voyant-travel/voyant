@@ -1,6 +1,24 @@
+export type BookingsListSortField =
+  | "bookingNumber"
+  | "status"
+  | "sellAmount"
+  | "pax"
+  | "startDate"
+  | "endDate"
+  | "createdAt"
+
+export type BookingsListSortDir = "asc" | "desc"
+
 export interface BookingsListFilters {
   status?: string | undefined
   search?: string | undefined
+  productId?: string | undefined
+  dateFrom?: string | undefined
+  dateTo?: string | undefined
+  paxMin?: number | undefined
+  paxMax?: number | undefined
+  sortBy?: BookingsListSortField | undefined
+  sortDir?: BookingsListSortDir | undefined
   limit?: number | undefined
   offset?: number | undefined
 }
