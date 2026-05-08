@@ -44,14 +44,11 @@ export function StageChannelList({ reminderRuleId, stageId }: StageChannelListPr
           >
             <div className="flex items-center gap-3">
               <Badge variant="outline">{messages.channel.channels[channel.channel]}</Badge>
-              <span className="font-mono text-xs">
-                {channel.templateSlug ?? channel.templateId ?? messages.common.none}
-              </span>
               <Badge variant="secondary">
                 {messages.channel.recipientKinds[channel.recipientKind]}
-                {channel.recipientRole ? ` · ${channel.recipientRole}` : ""}
               </Badge>
             </div>
+
             <div className="flex items-center gap-1">
               <Button size="icon" variant="ghost" onClick={() => setEditing(channel)}>
                 <Pencil className="size-4" />

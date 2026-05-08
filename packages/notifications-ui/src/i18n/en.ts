@@ -65,10 +65,8 @@ export const notificationsUiEn: NotificationsUiMessages = {
       orderIndex: "Order",
       channel: "Channel",
       provider: "Provider",
-      templateId: "Template",
-      templateSlug: "Template slug",
-      recipientKind: "Recipient kind",
-      recipientRole: "Recipient role",
+      template: "Template",
+      recipientKind: "Recipient",
     },
     channels: {
       email: "Email",
@@ -79,9 +77,17 @@ export const notificationsUiEn: NotificationsUiMessages = {
       cc: "CC",
       bcc: "BCC",
     },
+    providers: {
+      automatic: "Automatic",
+      resend: "Resend (email)",
+      twilio: "Twilio (SMS)",
+    },
     titles: {
       create: "Add channel",
       edit: "Edit channel",
+    },
+    placeholders: {
+      template: "Search templates…",
     },
   },
   settings: {

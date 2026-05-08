@@ -63,10 +63,8 @@ export type NotificationsUiMessages = {
       orderIndex: string
       channel: string
       provider: string
-      templateId: string
-      templateSlug: string
+      template: string
       recipientKind: string
-      recipientRole: string
     }
     channels: {
       email: string
@@ -77,9 +75,17 @@ export type NotificationsUiMessages = {
       cc: string
       bcc: string
     }
+    providers: {
+      automatic: string
+      resend: string
+      twilio: string
+    }
     titles: {
       create: string
       edit: string
+    }
+    placeholders: {
+      template: string
     }
   }
   settings: {

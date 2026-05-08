@@ -65,10 +65,8 @@ export const notificationsUiRo: NotificationsUiMessages = {
       orderIndex: "Ordine",
       channel: "Canal",
       provider: "Furnizor",
-      templateId: "Șablon",
-      templateSlug: "Slug șablon",
-      recipientKind: "Tip destinatar",
-      recipientRole: "Rol destinatar",
+      template: "Șablon",
+      recipientKind: "Destinatar",
     },
     channels: {
       email: "Email",
@@ -79,9 +77,17 @@ export const notificationsUiRo: NotificationsUiMessages = {
       cc: "CC",
       bcc: "BCC",
     },
+    providers: {
+      automatic: "Automat",
+      resend: "Resend (email)",
+      twilio: "Twilio (SMS)",
+    },
     titles: {
       create: "Adaugă canal",
       edit: "Editează canal",
+    },
+    placeholders: {
+      template: "Caută șabloane…",
     },
   },
   settings: {

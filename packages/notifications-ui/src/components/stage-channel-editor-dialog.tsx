@@ -24,18 +24,18 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+import { TemplatePicker } from "./template-picker.js"
 
 type Channel = "email" | "sms"
 type RecipientKind = "primary" | "cc" | "bcc"
+type ProviderOption = "automatic" | "resend" | "twilio"
 
 type FormState = {
   orderIndex: number
   channel: Channel
-  provider: string
-  templateId: string
-  templateSlug: string
+  provider: ProviderOption
+  templateId: string | null
   recipientKind: RecipientKind
-  recipientRole: string
 }
 
 function fromRecord(channel: ReminderStageChannelRecord | null, orderIndex: number): FormState {
@@ -43,21 +43,19 @@ function fromRecord(channel: ReminderStageChannelRecord | null, orderIndex: numb
     return {
       orderIndex,
       channel: "email",
-      provider: "",
-      templateId: "",
-      templateSlug: "",
+      provider: "automatic",
+      templateId: null,
       recipientKind: "primary",
-      recipientRole: "",
     }
   }
+  const provider: ProviderOption =
+    channel.provider === "resend" || channel.provider === "twilio" ? channel.provider : "automatic"
   return {
     orderIndex: channel.orderIndex,
     channel: channel.channel,
-    provider: channel.provider ?? "",
-    templateId: channel.templateId ?? "",
-    templateSlug: channel.templateSlug ?? "",
+    provider,
+    templateId: channel.templateId ?? null,
     recipientKind: channel.recipientKind,
-    recipientRole: channel.recipientRole ?? "",
   }
 }
 
@@ -95,11 +93,11 @@ export function StageChannelEditorDialog({
     const input = {
       orderIndex: form.orderIndex,
       channel: form.channel,
-      provider: form.provider || null,
-      templateId: form.templateId || null,
-      templateSlug: form.templateSlug || null,
+      provider: form.provider === "automatic" ? null : form.provider,
+      templateId: form.templateId,
+      templateSlug: null,
       recipientKind: form.recipientKind,
-      recipientRole: form.recipientRole || null,
+      recipientRole: null,
     }
     if (isEdit && channel) {
       await update.mutateAsync({ channelId: channel.id, input })
@@ -124,7 +122,16 @@ export function StageChannelEditorDialog({
                 <FieldLabel htmlFor="channel-channel">{messages.channel.fields.channel}</FieldLabel>
                 <Select
                   value={form.channel}
-                  onValueChange={(v) => setField("channel", v as Channel)}
+                  onValueChange={(v) => {
+                    if (!v) return
+                    const next = v as Channel
+                    setForm((prev) => ({
+                      ...prev,
+                      channel: next,
+                      // Picked template no longer matches the new channel — clear it.
+                      templateId: null,
+                    }))
+                  }}
                 >
                   <SelectTrigger id="channel-channel">
                     <SelectValue />
@@ -149,31 +156,17 @@ export function StageChannelEditorDialog({
             </div>
 
             <Field>
-              <FieldLabel htmlFor="channel-template-slug">
-                {messages.channel.fields.templateSlug}
-              </FieldLabel>
-              <Input
-                id="channel-template-slug"
-                value={form.templateSlug}
-                onChange={(e) => setField("templateSlug", e.target.value)}
-                placeholder="payment-reminder-first"
+              <FieldLabel>{messages.channel.fields.template}</FieldLabel>
+              <TemplatePicker
+                value={form.templateId}
+                onChange={(value) => setField("templateId", value)}
+                channel={form.channel}
+                placeholder={messages.channel.placeholders.template}
               />
               <FieldDescription>
-                Either a template slug or a template id. The slug is resolved at send time so
-                editing the template doesn't need a rule update.
+                Filtered by the channel above. Resolved at send time so editing the template doesn't
+                need a rule update.
               </FieldDescription>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="channel-template-id">
-                {messages.channel.fields.templateId}
-              </FieldLabel>
-              <Input
-                id="channel-template-id"
-                value={form.templateId}
-                onChange={(e) => setField("templateId", e.target.value)}
-                placeholder={messages.common.optionalPlaceholder}
-              />
             </Field>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -183,7 +176,10 @@ export function StageChannelEditorDialog({
                 </FieldLabel>
                 <Select
                   value={form.recipientKind}
-                  onValueChange={(v) => setField("recipientKind", v as RecipientKind)}
+                  onValueChange={(v) => {
+                    if (!v) return
+                    setField("recipientKind", v as RecipientKind)
+                  }}
                 >
                   <SelectTrigger id="channel-recipient-kind">
                     <SelectValue />
@@ -198,31 +194,32 @@ export function StageChannelEditorDialog({
                 </Select>
               </Field>
               <Field>
-                <FieldLabel htmlFor="channel-recipient-role">
-                  {messages.channel.fields.recipientRole}
+                <FieldLabel htmlFor="channel-provider">
+                  {messages.channel.fields.provider}
                 </FieldLabel>
-                <Input
-                  id="channel-recipient-role"
-                  value={form.recipientRole}
-                  onChange={(e) => setField("recipientRole", e.target.value)}
-                  placeholder={messages.common.optionalPlaceholder}
-                />
+                <Select
+                  value={form.provider}
+                  onValueChange={(v) => {
+                    if (!v) return
+                    setField("provider", v as ProviderOption)
+                  }}
+                >
+                  <SelectTrigger id="channel-provider">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="automatic">
+                      {messages.channel.providers.automatic}
+                    </SelectItem>
+                    <SelectItem value="resend">{messages.channel.providers.resend}</SelectItem>
+                    <SelectItem value="twilio">{messages.channel.providers.twilio}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  Use Automatic to fall back to the deployment default for this channel.
+                </FieldDescription>
               </Field>
             </div>
-
-            <Field>
-              <FieldLabel htmlFor="channel-provider">{messages.channel.fields.provider}</FieldLabel>
-              <Input
-                id="channel-provider"
-                value={form.provider}
-                onChange={(e) => setField("provider", e.target.value)}
-                placeholder={messages.common.optionalPlaceholder}
-              />
-              <FieldDescription>
-                Override the default provider for this channel (e.g. a transactional vs marketing
-                sender).
-              </FieldDescription>
-            </Field>
           </FieldGroup>
         </DialogBody>
         <DialogFooter>

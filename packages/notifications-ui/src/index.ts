@@ -16,6 +16,7 @@ export {
   type StageEditorDialogProps,
 } from "./components/stage-editor-dialog.js"
 export { StageList, type StageListProps } from "./components/stage-list.js"
+export { TemplatePicker, type TemplatePickerProps } from "./components/template-picker.js"
 export {
   getNotificationsUiI18n,
   type NotificationsUiMessageOverrides,
