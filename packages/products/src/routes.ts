@@ -1591,6 +1591,7 @@ export const productRoutes = new Hono<Env>()
   })
 
   .post("/:id/categories", async (c) => {
+    const productId = c.req.param("id")
     const { categoryId, sortOrder } = await parseJsonBody(
       c,
       z.object({
@@ -1600,25 +1601,28 @@ export const productRoutes = new Hono<Env>()
     )
     const row = await productsService.addProductToCategory(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       categoryId,
       sortOrder,
     )
     if (!row) {
       return c.json({ error: "Already assigned or not found" }, 409)
     }
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "category" })
     return c.json({ success: true }, 201)
   })
 
   .delete("/:id/categories/:categoryId", async (c) => {
+    const productId = c.req.param("id")
     const row = await productsService.removeProductFromCategory(
       c.get("db"),
-      c.req.param("id"),
+      productId,
       c.req.param("categoryId"),
     )
     if (!row) {
       return c.json({ error: "Association not found" }, 404)
     }
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "category" })
     return c.json({ success: true }, 200)
   })
 
@@ -1633,28 +1637,28 @@ export const productRoutes = new Hono<Env>()
   })
 
   .post("/:id/tags", async (c) => {
+    const productId = c.req.param("id")
     const { tagId } = await parseJsonBody(
       c,
       z.object({
         tagId: z.string(),
       }),
     )
-    const row = await productsService.addProductTag(c.get("db"), c.req.param("id"), tagId)
+    const row = await productsService.addProductTag(c.get("db"), productId, tagId)
     if (!row) {
       return c.json({ error: "Already assigned or not found" }, 409)
     }
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "tag" })
     return c.json({ success: true }, 201)
   })
 
   .delete("/:id/tags/:tagId", async (c) => {
-    const row = await productsService.removeProductTag(
-      c.get("db"),
-      c.req.param("id"),
-      c.req.param("tagId"),
-    )
+    const productId = c.req.param("id")
+    const row = await productsService.removeProductTag(c.get("db"), productId, c.req.param("tagId"))
     if (!row) {
       return c.json({ error: "Association not found" }, 404)
     }
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "tag" })
     return c.json({ success: true }, 200)
   })
 

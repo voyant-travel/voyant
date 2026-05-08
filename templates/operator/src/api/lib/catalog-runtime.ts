@@ -27,8 +27,10 @@ import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
+import { productTaxonomyCatalogPolicy } from "@voyantjs/products/catalog-policy-taxonomy"
 import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
 import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
+import { createProductTaxonomyProjectionExtension } from "@voyantjs/products/service-catalog-plane-taxonomy"
 
 /**
  * The slice set the operator template indexes by default — staff (admin
@@ -233,7 +235,11 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
     _registries = new Map<string, FieldPolicyRegistry>([
       [
         "products",
-        createFieldPolicyRegistry([...productCatalogPolicy, ...productDestinationsCatalogPolicy]),
+        createFieldPolicyRegistry([
+          ...productCatalogPolicy,
+          ...productDestinationsCatalogPolicy,
+          ...productTaxonomyCatalogPolicy,
+        ]),
       ],
       ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
       ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
@@ -262,7 +268,10 @@ export function createProductsDocumentBuilder(
   return createProductDocumentBuilder(db, {
     sellerOperatorId: context.sellerOperatorId,
     registry,
-    extensions: [createProductDestinationsProjectionExtension()],
+    extensions: [
+      createProductDestinationsProjectionExtension(),
+      createProductTaxonomyProjectionExtension(),
+    ],
   })
 }
 

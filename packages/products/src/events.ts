@@ -31,6 +31,8 @@ export interface ProductContentChangedEvent {
     | "faq"
     | "location"
     | "destination"
+    | "category"
+    | "tag"
     | "translation"
 }
 

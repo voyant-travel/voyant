@@ -14,8 +14,10 @@
     "./booking-extension": "./src/booking-extension.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
     "./catalog-policy-destinations": "./src/catalog-policy-destinations.ts",
+    "./catalog-policy-taxonomy": "./src/catalog-policy-taxonomy.ts",
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./service-catalog-plane-destinations": "./src/service-catalog-plane-destinations.ts",
+    "./service-catalog-plane-taxonomy": "./src/service-catalog-plane-taxonomy.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
@@ -103,6 +105,11 @@
         "import": "./dist/catalog-policy-destinations.js",
         "default": "./dist/catalog-policy-destinations.js"
       },
+      "./catalog-policy-taxonomy": {
+        "types": "./dist/catalog-policy-taxonomy.d.ts",
+        "import": "./dist/catalog-policy-taxonomy.js",
+        "default": "./dist/catalog-policy-taxonomy.js"
+      },
       "./service-catalog-plane": {
         "types": "./dist/service-catalog-plane.d.ts",
         "import": "./dist/service-catalog-plane.js",
@@ -112,6 +119,11 @@
         "types": "./dist/service-catalog-plane-destinations.d.ts",
         "import": "./dist/service-catalog-plane-destinations.js",
         "default": "./dist/service-catalog-plane-destinations.js"
+      },
+      "./service-catalog-plane-taxonomy": {
+        "types": "./dist/service-catalog-plane-taxonomy.d.ts",
+        "import": "./dist/service-catalog-plane-taxonomy.js",
+        "default": "./dist/service-catalog-plane-taxonomy.js"
       },
       "./content-shape": {
         "types": "./dist/content-shape.d.ts",
