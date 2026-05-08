@@ -235,7 +235,6 @@ export const registryLegalEn = {
     create: "New Series",
     empty: "No number series yet. Create one to configure contract numbering.",
     columns: {
-      code: "Code",
       name: "Name",
       prefix: "Prefix",
       separator: "Separator",
@@ -246,7 +245,7 @@ export const registryLegalEn = {
       status: "Status",
     },
     confirms: {
-      deleteSeries: 'Delete series "{code}"?',
+      deleteSeries: 'Delete series "{name}"?',
     },
   },
   numberSeriesDialog: {
@@ -255,7 +254,6 @@ export const registryLegalEn = {
       edit: "Edit Number Series",
     },
     fields: {
-      code: "Code",
       name: "Name",
       prefix: "Prefix",
       separator: "Separator",
@@ -265,7 +263,6 @@ export const registryLegalEn = {
       active: "Active",
     },
     placeholders: {
-      code: "INV",
       name: "Invoice Series",
       prefix: "CTR",
       separator: "-",
@@ -274,9 +271,11 @@ export const registryLegalEn = {
       create: "Create Series",
     },
     validation: {
-      codeRequired: "Code is required",
       nameRequired: "Name is required",
+      prefixRequired: "Prefix is required",
     },
+    duplicateWarning:
+      'An active series with prefix "{prefix}" and scope "{scope}" already exists ("{name}"). Save will fail unless you archive it first.',
   },
   policiesPage: {
     title: "Policies",

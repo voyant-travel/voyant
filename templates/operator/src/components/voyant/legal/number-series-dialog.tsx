@@ -1,5 +1,6 @@
 import {
   type LegalContractNumberSeriesRecord,
+  useLegalContractNumberSeries,
   useLegalContractNumberSeriesMutation,
 } from "@voyantjs/legal-react"
 import {
@@ -20,7 +21,7 @@ import {
 } from "@voyantjs/ui/components"
 import { Switch } from "@voyantjs/ui/components/switch"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
@@ -69,6 +70,7 @@ export function NumberSeriesDialog({
 }: NumberSeriesDialogProps) {
   const isEditing = !!series
   const { create, update } = useLegalContractNumberSeriesMutation()
+  const { data: existingList } = useLegalContractNumberSeries()
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(seriesFormSchema),
@@ -120,7 +122,26 @@ export function NumberSeriesDialog({
 
   const prefix = form.watch("prefix") || ""
   const separator = form.watch("separator") || ""
+  const watchedScope = form.watch("scope")
+  const watchedActive = form.watch("active")
   const padLengthValue = form.watch("padLength")
+
+  // The DB has a partial unique index on (prefix, scope) WHERE active.
+  // Surface the collision before submit so the operator gets a friendly
+  // hint instead of an opaque server error.
+  const conflictingSeries = useMemo(() => {
+    if (!watchedActive || !prefix) return null
+    const rows = existingList?.data ?? []
+    return (
+      rows.find(
+        (row) =>
+          row.active &&
+          row.prefix === prefix &&
+          row.scope === watchedScope &&
+          row.id !== series?.id,
+      ) ?? null
+    )
+  }, [existingList, watchedActive, prefix, watchedScope, series?.id])
   const padLength =
     typeof padLengthValue === "number" && Number.isFinite(padLengthValue) ? padLengthValue : 4
   const sampleSequence = series ? (series.currentSequence ?? 0) + 1 : 42
@@ -229,12 +250,23 @@ export function NumberSeriesDialog({
               />
               <Label>Active</Label>
             </div>
+
+            {conflictingSeries ? (
+              <p className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+                An active series with prefix &quot;{conflictingSeries.prefix}&quot; and scope &quot;
+                {conflictingSeries.scope}&quot; already exists (&quot;
+                {conflictingSeries.name}&quot;). Save will fail unless you archive it first.
+              </p>
+            ) : null}
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
+            <Button
+              type="submit"
+              disabled={form.formState.isSubmitting || conflictingSeries !== null}
+            >
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? "Save Changes" : "Create Series"}
             </Button>

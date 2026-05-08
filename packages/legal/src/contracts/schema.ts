@@ -1,7 +1,7 @@
 import { organizations, people } from "@voyantjs/crm/schema"
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { suppliers } from "@voyantjs/suppliers/schema"
-import { relations } from "drizzle-orm"
+import { relations, sql } from "drizzle-orm"
 import {
   boolean,
   index,
@@ -142,6 +142,9 @@ export const contractNumberSeries = pgTable(
     index("idx_contract_number_series_scope_updated").on(table.scope, table.updatedAt),
     index("idx_contract_number_series_active_updated").on(table.active, table.updatedAt),
     index("idx_contract_number_series_updated").on(table.updatedAt),
+    uniqueIndex("uidx_contract_number_series_prefix_scope_active")
+      .on(table.prefix, table.scope)
+      .where(sql`${table.active} = true`),
   ],
 )
 

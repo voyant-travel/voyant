@@ -230,7 +230,6 @@ export type RegistryLegalMessages = LegalUiMessages & {
     create: string
     empty: string
     columns: {
-      code: string
       name: string
       prefix: string
       separator: string
@@ -250,7 +249,6 @@ export type RegistryLegalMessages = LegalUiMessages & {
       edit: string
     }
     fields: {
-      code: string
       name: string
       prefix: string
       separator: string
@@ -260,7 +258,6 @@ export type RegistryLegalMessages = LegalUiMessages & {
       active: string
     }
     placeholders: {
-      code: string
       name: string
       prefix: string
       separator: string
@@ -269,9 +266,10 @@ export type RegistryLegalMessages = LegalUiMessages & {
       create: string
     }
     validation: {
-      codeRequired: string
       nameRequired: string
+      prefixRequired: string
     }
+    duplicateWarning: string
   }
   policiesPage: {
     title: string

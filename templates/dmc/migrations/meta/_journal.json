@@ -8,6 +8,13 @@
       "when": 1778177703865,
       "tag": "0000_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778244926274,
+      "tag": "0001_contract_series_unique_prefix_scope",
+      "breakpoints": true
     }
   ]
 }

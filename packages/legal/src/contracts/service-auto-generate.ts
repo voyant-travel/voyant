@@ -353,8 +353,19 @@ export interface AutoGenerateContractOptions {
   /**
    * When set, the contract tries to allocate a number from the matching
    * active series on issuance. Without it, the contract issues unnumbered.
+   * @deprecated Prefer `seriesPrefixScope` — `name` has no unique
+   * constraint, so this lookup throws if multiple active rows share the
+   * name. `(prefix, scope)` is the natural key (partial-unique-indexed).
    */
   seriesName?: string
+  /**
+   * When set, resolves the active series via the `(prefix, scope)`
+   * partial unique index. Takes precedence over `seriesName`.
+   */
+  seriesPrefixScope?: {
+    prefix: string
+    scope: "customer" | "supplier" | "partner" | "channel" | "other"
+  }
   /**
    * Language code written onto the contract row. Used by the PDF
    * renderer to pick the right locale for date/currency filters.
@@ -740,11 +751,19 @@ export async function autoGenerateContractForBooking(
       })
     : (defaults as unknown as Record<string, unknown>)
 
-  // Resolve a series id if the consumer gave a name — failure to find is
-  // non-fatal since a contract can issue without a number (some operators
-  // use templates as standalone records and number externally).
+  // Resolve a series if the consumer gave a (prefix, scope) or a name —
+  // failure to find is non-fatal since a contract can issue without a
+  // number (some operators use templates as standalone records and number
+  // externally). prefix+scope wins when both are set.
   let seriesId: string | null = null
-  if (options.seriesName) {
+  if (options.seriesPrefixScope) {
+    const series = await contractSeriesService.findActiveByPrefixScope(
+      db,
+      options.seriesPrefixScope.prefix,
+      options.seriesPrefixScope.scope,
+    )
+    seriesId = series?.id ?? null
+  } else if (options.seriesName) {
     const series = await contractSeriesService.findSeriesByName(db, options.seriesName)
     seriesId = series?.id ?? null
   }
