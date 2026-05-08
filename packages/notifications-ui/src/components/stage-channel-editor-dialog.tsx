@@ -13,13 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@voyantjs/ui/components/field"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -88,6 +88,9 @@ export function StageChannelEditorDialog({
     if (open) setForm(fromRecord(channel, defaultOrderIndex))
   }, [open, channel, defaultOrderIndex])
 
+  const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }))
+
   const handleSubmit = async () => {
     const input = {
       orderIndex: form.orderIndex,
@@ -114,86 +117,113 @@ export function StageChannelEditorDialog({
             {isEdit ? messages.channel.titles.edit : messages.channel.titles.create}
           </DialogTitle>
         </DialogHeader>
-        <DialogBody className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>{messages.channel.fields.orderIndex}</Label>
+        <DialogBody>
+          <FieldGroup>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_8rem]">
+              <Field>
+                <FieldLabel htmlFor="channel-channel">{messages.channel.fields.channel}</FieldLabel>
+                <Select
+                  value={form.channel}
+                  onValueChange={(v) => setField("channel", v as Channel)}
+                >
+                  <SelectTrigger id="channel-channel">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">{messages.channel.channels.email}</SelectItem>
+                    <SelectItem value="sms">{messages.channel.channels.sms}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="channel-order">
+                  {messages.channel.fields.orderIndex}
+                </FieldLabel>
+                <Input
+                  id="channel-order"
+                  type="number"
+                  value={form.orderIndex}
+                  onChange={(e) => setField("orderIndex", Number(e.target.value))}
+                />
+              </Field>
+            </div>
+
+            <Field>
+              <FieldLabel htmlFor="channel-template-slug">
+                {messages.channel.fields.templateSlug}
+              </FieldLabel>
               <Input
-                type="number"
-                value={form.orderIndex}
-                onChange={(e) => setForm({ ...form, orderIndex: Number(e.target.value) })}
+                id="channel-template-slug"
+                value={form.templateSlug}
+                onChange={(e) => setField("templateSlug", e.target.value)}
+                placeholder="payment-reminder-first"
               />
-            </div>
-            <div>
-              <Label>{messages.channel.fields.channel}</Label>
-              <Select
-                value={form.channel}
-                onValueChange={(v) => setForm({ ...form, channel: v as Channel })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="email">{messages.channel.channels.email}</SelectItem>
-                  <SelectItem value="sms">{messages.channel.channels.sms}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <FieldDescription>
+                Either a template slug or a template id. The slug is resolved at send time so
+                editing the template doesn't need a rule update.
+              </FieldDescription>
+            </Field>
 
-          <div>
-            <Label>{messages.channel.fields.templateSlug}</Label>
-            <Input
-              value={form.templateSlug}
-              onChange={(e) => setForm({ ...form, templateSlug: e.target.value })}
-              placeholder="payment-reminder-first"
-            />
-          </div>
-
-          <div>
-            <Label>{messages.channel.fields.templateId}</Label>
-            <Input
-              value={form.templateId}
-              onChange={(e) => setForm({ ...form, templateId: e.target.value })}
-              placeholder={messages.common.optionalPlaceholder}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>{messages.channel.fields.recipientKind}</Label>
-              <Select
-                value={form.recipientKind}
-                onValueChange={(v) => setForm({ ...form, recipientKind: v as RecipientKind })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="primary">{messages.channel.recipientKinds.primary}</SelectItem>
-                  <SelectItem value="cc">{messages.channel.recipientKinds.cc}</SelectItem>
-                  <SelectItem value="bcc">{messages.channel.recipientKinds.bcc}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{messages.channel.fields.recipientRole}</Label>
+            <Field>
+              <FieldLabel htmlFor="channel-template-id">
+                {messages.channel.fields.templateId}
+              </FieldLabel>
               <Input
-                value={form.recipientRole}
-                onChange={(e) => setForm({ ...form, recipientRole: e.target.value })}
+                id="channel-template-id"
+                value={form.templateId}
+                onChange={(e) => setField("templateId", e.target.value)}
                 placeholder={messages.common.optionalPlaceholder}
               />
-            </div>
-          </div>
+            </Field>
 
-          <div>
-            <Label>{messages.channel.fields.provider}</Label>
-            <Input
-              value={form.provider}
-              onChange={(e) => setForm({ ...form, provider: e.target.value })}
-              placeholder={messages.common.optionalPlaceholder}
-            />
-          </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="channel-recipient-kind">
+                  {messages.channel.fields.recipientKind}
+                </FieldLabel>
+                <Select
+                  value={form.recipientKind}
+                  onValueChange={(v) => setField("recipientKind", v as RecipientKind)}
+                >
+                  <SelectTrigger id="channel-recipient-kind">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="primary">
+                      {messages.channel.recipientKinds.primary}
+                    </SelectItem>
+                    <SelectItem value="cc">{messages.channel.recipientKinds.cc}</SelectItem>
+                    <SelectItem value="bcc">{messages.channel.recipientKinds.bcc}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="channel-recipient-role">
+                  {messages.channel.fields.recipientRole}
+                </FieldLabel>
+                <Input
+                  id="channel-recipient-role"
+                  value={form.recipientRole}
+                  onChange={(e) => setField("recipientRole", e.target.value)}
+                  placeholder={messages.common.optionalPlaceholder}
+                />
+              </Field>
+            </div>
+
+            <Field>
+              <FieldLabel htmlFor="channel-provider">{messages.channel.fields.provider}</FieldLabel>
+              <Input
+                id="channel-provider"
+                value={form.provider}
+                onChange={(e) => setField("provider", e.target.value)}
+                placeholder={messages.common.optionalPlaceholder}
+              />
+              <FieldDescription>
+                Override the default provider for this channel (e.g. a transactional vs marketing
+                sender).
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>

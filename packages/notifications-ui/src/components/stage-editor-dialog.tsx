@@ -6,7 +6,6 @@ import {
 } from "@voyantjs/notifications-react"
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogBody,
   DialogContent,
@@ -14,13 +13,22 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+  FieldTitle,
+} from "@voyantjs/ui/components/field"
+import { Switch } from "@voyantjs/ui/components/switch"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -169,184 +177,244 @@ export function StageEditorDialog({
             {isEdit ? messages.stage.titles.edit : messages.stage.titles.create}
           </DialogTitle>
         </DialogHeader>
-        <DialogBody className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>{messages.stage.fields.name}</Label>
-              <Input
-                value={form.name}
-                onChange={(e) => setField("name", e.target.value)}
-                placeholder={messages.stage.placeholders.name}
-              />
+        <DialogBody>
+          <FieldGroup>
+            {/* Identity */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_8rem]">
+              <Field>
+                <FieldLabel htmlFor="stage-name">{messages.stage.fields.name}</FieldLabel>
+                <Input
+                  id="stage-name"
+                  value={form.name}
+                  onChange={(e) => setField("name", e.target.value)}
+                  placeholder={messages.stage.placeholders.name}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="stage-order">{messages.stage.fields.orderIndex}</FieldLabel>
+                <Input
+                  id="stage-order"
+                  type="number"
+                  value={form.orderIndex}
+                  onChange={(e) => setField("orderIndex", Number(e.target.value))}
+                />
+              </Field>
             </div>
-            <div>
-              <Label>{messages.stage.fields.orderIndex}</Label>
-              <Input
-                type="number"
-                value={form.orderIndex}
-                onChange={(e) => setField("orderIndex", Number(e.target.value))}
-              />
-            </div>
-          </div>
 
-          <div>
-            <Label>{messages.stage.fields.anchor}</Label>
-            <Select value={form.anchor} onValueChange={(v) => setField("anchor", v as Anchor)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ANCHORS.map((a) => (
-                  <SelectItem key={a} value={a}>
-                    {messages.stage.anchors[a]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>{messages.stage.fields.windowStartDays}</Label>
-              <Input
-                type="number"
-                value={form.windowStartDays}
-                onChange={(e) => setField("windowStartDays", Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label>{messages.stage.fields.windowEndDays}</Label>
-              <Input
-                type="number"
-                value={form.windowEndDays}
-                onChange={(e) => setField("windowEndDays", Number(e.target.value))}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label>{messages.stage.fields.cadenceKind}</Label>
-            <Select
-              value={form.cadenceKind}
-              onValueChange={(v) => setField("cadenceKind", v as CadenceKind)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CADENCES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {messages.stage.cadences[c]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {form.cadenceKind === "every_n_days" && (
-            <div>
-              <Label>{messages.stage.fields.cadenceEveryDays}</Label>
-              <Input
-                type="number"
-                min={1}
-                value={form.cadenceEveryDays ?? ""}
-                onChange={(e) =>
-                  setField("cadenceEveryDays", e.target.value ? Number(e.target.value) : null)
-                }
-              />
-            </div>
-          )}
-
-          {form.cadenceKind === "escalating" && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>{messages.stage.fields.cadenceIntervals}</Label>
-                <Button type="button" size="sm" variant="outline" onClick={addInterval}>
-                  <Plus className="size-4" /> {messages.stage.intervalRow.addInterval}
-                </Button>
-              </div>
-              {form.cadenceIntervals.map((interval) => (
-                <div
-                  key={interval.rowKey}
-                  className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end"
-                >
-                  <div>
-                    <Label className="text-xs">
-                      {messages.stage.intervalRow.whenDaysUntilDueGT}
-                    </Label>
+            {/* Window */}
+            <FieldSet>
+              <FieldLegend variant="label">{messages.stage.fields.anchor}</FieldLegend>
+              <FieldDescription>
+                When the eligibility window opens, relative to the chosen anchor.
+              </FieldDescription>
+              <FieldGroup className="gap-4">
+                <Field>
+                  <Select
+                    value={form.anchor}
+                    onValueChange={(v) => setField("anchor", v as Anchor)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ANCHORS.map((a) => (
+                        <SelectItem key={a} value={a}>
+                          {messages.stage.anchors[a]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="window-start">
+                      {messages.stage.fields.windowStartDays}
+                    </FieldLabel>
                     <Input
+                      id="window-start"
                       type="number"
-                      value={interval.whenDaysUntilDueGT ?? ""}
-                      onChange={(e) =>
-                        setField(
-                          "cadenceIntervals",
-                          form.cadenceIntervals.map((row) =>
-                            row.rowKey === interval.rowKey
-                              ? {
-                                  ...row,
-                                  whenDaysUntilDueGT: e.target.value
-                                    ? Number(e.target.value)
-                                    : null,
-                                }
-                              : row,
-                          ),
-                        )
-                      }
+                      value={form.windowStartDays}
+                      onChange={(e) => setField("windowStartDays", Number(e.target.value))}
                     />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{messages.stage.intervalRow.repeatEveryDays}</Label>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="window-end">
+                      {messages.stage.fields.windowEndDays}
+                    </FieldLabel>
                     <Input
+                      id="window-end"
+                      type="number"
+                      value={form.windowEndDays}
+                      onChange={(e) => setField("windowEndDays", Number(e.target.value))}
+                    />
+                  </Field>
+                </div>
+              </FieldGroup>
+            </FieldSet>
+
+            {/* Cadence */}
+            <FieldSet>
+              <FieldLegend variant="label">{messages.stage.fields.cadenceKind}</FieldLegend>
+              <FieldDescription>
+                How often this stage may fire while inside the window.
+              </FieldDescription>
+              <FieldGroup className="gap-4">
+                <Field>
+                  <Select
+                    value={form.cadenceKind}
+                    onValueChange={(v) => setField("cadenceKind", v as CadenceKind)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CADENCES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {messages.stage.cadences[c]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                {form.cadenceKind === "every_n_days" && (
+                  <Field>
+                    <FieldLabel htmlFor="cadence-every">
+                      {messages.stage.fields.cadenceEveryDays}
+                    </FieldLabel>
+                    <Input
+                      id="cadence-every"
                       type="number"
                       min={1}
-                      value={interval.repeatEveryDays}
+                      value={form.cadenceEveryDays ?? ""}
                       onChange={(e) =>
-                        setField(
-                          "cadenceIntervals",
-                          form.cadenceIntervals.map((row) =>
-                            row.rowKey === interval.rowKey
-                              ? { ...row, repeatEveryDays: Number(e.target.value) }
-                              : row,
-                          ),
-                        )
+                        setField("cadenceEveryDays", e.target.value ? Number(e.target.value) : null)
                       }
                     />
-                  </div>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => removeInterval(interval.rowKey)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
+                  </Field>
+                )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>{messages.stage.fields.maxSendsInStage}</Label>
-              <Input
-                type="number"
-                min={1}
-                value={form.maxSendsInStage ?? ""}
-                onChange={(e) =>
-                  setField("maxSendsInStage", e.target.value ? Number(e.target.value) : null)
-                }
-                placeholder={messages.common.optionalPlaceholder}
-              />
-            </div>
-            <div className="flex items-end gap-2">
-              <Checkbox
-                id="respectQuietHours"
-                checked={form.respectQuietHours}
-                onCheckedChange={(v) => setField("respectQuietHours", Boolean(v))}
-              />
-              <Label htmlFor="respectQuietHours">{messages.stage.fields.respectQuietHours}</Label>
-            </div>
-          </div>
+                {form.cadenceKind === "escalating" && (
+                  <Field>
+                    <div className="flex items-center justify-between">
+                      <FieldLabel>{messages.stage.fields.cadenceIntervals}</FieldLabel>
+                      <Button type="button" size="sm" variant="outline" onClick={addInterval}>
+                        <Plus className="size-4" />
+                        {messages.stage.intervalRow.addInterval}
+                      </Button>
+                    </div>
+                    {form.cadenceIntervals.length === 0 ? (
+                      <FieldDescription>
+                        Add buckets keyed on days-until-due to scale cadence as the deadline
+                        approaches.
+                      </FieldDescription>
+                    ) : null}
+                    <div className="space-y-2">
+                      {form.cadenceIntervals.map((interval) => (
+                        <div
+                          key={interval.rowKey}
+                          className="grid grid-cols-[1fr_1fr_auto] items-end gap-2"
+                        >
+                          <Field>
+                            <FieldLabel className="text-xs">
+                              {messages.stage.intervalRow.whenDaysUntilDueGT}
+                            </FieldLabel>
+                            <Input
+                              type="number"
+                              value={interval.whenDaysUntilDueGT ?? ""}
+                              onChange={(e) =>
+                                setField(
+                                  "cadenceIntervals",
+                                  form.cadenceIntervals.map((row) =>
+                                    row.rowKey === interval.rowKey
+                                      ? {
+                                          ...row,
+                                          whenDaysUntilDueGT: e.target.value
+                                            ? Number(e.target.value)
+                                            : null,
+                                        }
+                                      : row,
+                                  ),
+                                )
+                              }
+                            />
+                          </Field>
+                          <Field>
+                            <FieldLabel className="text-xs">
+                              {messages.stage.intervalRow.repeatEveryDays}
+                            </FieldLabel>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={interval.repeatEveryDays}
+                              onChange={(e) =>
+                                setField(
+                                  "cadenceIntervals",
+                                  form.cadenceIntervals.map((row) =>
+                                    row.rowKey === interval.rowKey
+                                      ? { ...row, repeatEveryDays: Number(e.target.value) }
+                                      : row,
+                                  ),
+                                )
+                              }
+                            />
+                          </Field>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => removeInterval(interval.rowKey)}
+                            aria-label={messages.stage.intervalRow.removeInterval}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </Field>
+                )}
+              </FieldGroup>
+            </FieldSet>
+
+            {/* Stop conditions + behaviour */}
+            <FieldSet>
+              <FieldLegend variant="label">Stop conditions</FieldLegend>
+              <FieldGroup className="gap-4">
+                <Field>
+                  <FieldLabel htmlFor="max-sends">
+                    {messages.stage.fields.maxSendsInStage}
+                  </FieldLabel>
+                  <Input
+                    id="max-sends"
+                    type="number"
+                    min={1}
+                    value={form.maxSendsInStage ?? ""}
+                    onChange={(e) =>
+                      setField("maxSendsInStage", e.target.value ? Number(e.target.value) : null)
+                    }
+                    placeholder={messages.common.optionalPlaceholder}
+                  />
+                  <FieldDescription>
+                    Leave blank for no limit. When reached, the next stage takes over.
+                  </FieldDescription>
+                </Field>
+
+                <Field orientation="horizontal">
+                  <Switch
+                    id="respect-quiet-hours"
+                    checked={form.respectQuietHours}
+                    onCheckedChange={(v) => setField("respectQuietHours", Boolean(v))}
+                  />
+                  <FieldLabel htmlFor="respect-quiet-hours" className="!w-auto !flex-row">
+                    <FieldTitle>{messages.stage.fields.respectQuietHours}</FieldTitle>
+                    <FieldDescription>
+                      Defer fires that would land inside the tenant's quiet-hours window.
+                    </FieldDescription>
+                  </FieldLabel>
+                </Field>
+              </FieldGroup>
+            </FieldSet>
+          </FieldGroup>
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
