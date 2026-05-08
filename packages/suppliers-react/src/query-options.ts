@@ -28,6 +28,13 @@ export function getSuppliersQueryOptions(
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.search) params.set("search", filters.search)
+      if (filters.type) params.set("type", filters.type)
+      if (filters.status) params.set("status", filters.status)
+      if (filters.country) params.set("country", filters.country)
+      if (filters.defaultCurrency) params.set("defaultCurrency", filters.defaultCurrency)
+      if (filters.primaryFacilityId) params.set("primaryFacilityId", filters.primaryFacilityId)
+      if (filters.sortBy) params.set("sortBy", filters.sortBy)
+      if (filters.sortDir) params.set("sortDir", filters.sortDir)
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(`/v1/suppliers${qs ? `?${qs}` : ""}`, supplierListResponse, client)

@@ -329,7 +329,7 @@ export function ResourcesPage() {
           />
 
           <Tabs defaultValue="resources">
-            <TabsList variant="line">
+            <TabsList>
               <TabsTrigger value="resources">{messages.resources.tabResources}</TabsTrigger>
               <TabsTrigger value="pools">{messages.resources.tabPools}</TabsTrigger>
               <TabsTrigger value="allocations">{messages.resources.tabAllocations}</TabsTrigger>

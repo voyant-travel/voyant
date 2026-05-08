@@ -12,7 +12,12 @@ export {
   VoyantSuppliersProvider,
   type VoyantSuppliersProviderProps,
 } from "./provider.js"
-export { suppliersQueryKeys } from "./query-keys.js"
+export {
+  type SuppliersListFilters,
+  type SuppliersListSortDir,
+  type SuppliersListSortField,
+  suppliersQueryKeys,
+} from "./query-keys.js"
 export {
   getSupplierNotesQueryOptions,
   getSupplierQueryOptions,

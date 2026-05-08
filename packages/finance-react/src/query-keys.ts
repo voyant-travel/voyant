@@ -1,3 +1,15 @@
+export type FinanceInvoiceListSortField =
+  | "invoiceNumber"
+  | "status"
+  | "totalCents"
+  | "paidCents"
+  | "balanceDueCents"
+  | "issueDate"
+  | "dueDate"
+  | "createdAt"
+
+export type FinanceInvoiceListSortDir = "asc" | "desc"
+
 export interface FinanceInvoiceListFilters {
   search?: string | undefined
   /**
@@ -8,11 +20,35 @@ export interface FinanceInvoiceListFilters {
   bookingId?: string | undefined
   /** Filter by invoice status (draft, sent, paid, …). */
   status?: string | undefined
+  personId?: string | undefined
+  organizationId?: string | undefined
+  currency?: string | undefined
+  dueDateFrom?: string | undefined
+  dueDateTo?: string | undefined
+  sortBy?: FinanceInvoiceListSortField | undefined
+  sortDir?: FinanceInvoiceListSortDir | undefined
   limit?: number | undefined
   offset?: number | undefined
 }
 
+export type FinanceSupplierPaymentListSortField =
+  | "amountCents"
+  | "status"
+  | "paymentDate"
+  | "createdAt"
+
+export type FinanceSupplierPaymentListSortDir = "asc" | "desc"
+
 export interface FinanceSupplierPaymentListFilters {
+  bookingId?: string | undefined
+  supplierId?: string | undefined
+  status?: string | undefined
+  paymentMethod?: string | undefined
+  currency?: string | undefined
+  paymentDateFrom?: string | undefined
+  paymentDateTo?: string | undefined
+  sortBy?: FinanceSupplierPaymentListSortField | undefined
+  sortDir?: FinanceSupplierPaymentListSortDir | undefined
   limit?: number | undefined
   offset?: number | undefined
 }

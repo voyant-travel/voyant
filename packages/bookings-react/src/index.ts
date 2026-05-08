@@ -11,7 +11,12 @@ export {
   VoyantBookingsProvider,
   type VoyantBookingsProviderProps,
 } from "./provider.js"
-export { bookingsQueryKeys } from "./query-keys.js"
+export {
+  type BookingsListFilters,
+  type BookingsListSortDir,
+  type BookingsListSortField,
+  bookingsQueryKeys,
+} from "./query-keys.js"
 export {
   getBookingActivityQueryOptions,
   getBookingGroupForBookingQueryOptions,

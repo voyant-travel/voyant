@@ -1,3 +1,14 @@
+export type ProductsListSortField =
+  | "name"
+  | "status"
+  | "sellAmount"
+  | "pax"
+  | "startDate"
+  | "endDate"
+  | "createdAt"
+
+export type ProductsListSortDir = "asc" | "desc"
+
 export interface ProductsListFilters {
   status?: string | undefined
   bookingMode?: string | undefined
@@ -8,6 +19,14 @@ export interface ProductsListFilters {
   categoryId?: string | undefined
   tag?: string | undefined
   search?: string | undefined
+  dateFrom?: string | undefined
+  dateTo?: string | undefined
+  paxMin?: number | undefined
+  paxMax?: number | undefined
+  sellAmountMin?: number | undefined
+  sellAmountMax?: number | undefined
+  sortBy?: ProductsListSortField | undefined
+  sortDir?: ProductsListSortDir | undefined
   limit?: number | undefined
   offset?: number | undefined
 }

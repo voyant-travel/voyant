@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm"
+import { and, asc, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { supplierDirectoryProjections, suppliers } from "./schema.js"
@@ -22,6 +22,21 @@ export async function listSuppliers(db: PostgresJsDatabase, query: SupplierListQ
 
   if (query.primaryFacilityId) {
     conditions.push(eq(suppliers.primaryFacilityId, query.primaryFacilityId))
+  }
+
+  if (query.defaultCurrency) {
+    conditions.push(eq(suppliers.defaultCurrency, query.defaultCurrency))
+  }
+
+  if (query.country) {
+    conditions.push(
+      sql`exists (
+        select 1
+        from ${supplierDirectoryProjections}
+        where ${supplierDirectoryProjections.supplierId} = ${suppliers.id}
+          and ${supplierDirectoryProjections.country} = ${query.country}
+      )`,
+    )
   }
 
   if (query.search) {
@@ -51,6 +66,23 @@ export async function listSuppliers(db: PostgresJsDatabase, query: SupplierListQ
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined
+
+  const sortColumn = (() => {
+    switch (query.sortBy) {
+      case "name":
+        return suppliers.name
+      case "type":
+        return suppliers.type
+      case "status":
+        return suppliers.status
+      case "defaultCurrency":
+        return suppliers.defaultCurrency
+      default:
+        return suppliers.createdAt
+    }
+  })()
+  const sortFn = query.sortDir === "asc" ? asc : desc
+
   const [rows, countResult] = await Promise.all([
     db
       .select()
@@ -58,7 +90,7 @@ export async function listSuppliers(db: PostgresJsDatabase, query: SupplierListQ
       .where(where)
       .limit(query.limit)
       .offset(query.offset)
-      .orderBy(suppliers.createdAt),
+      .orderBy(sortFn(sortColumn), desc(suppliers.createdAt)),
     db.select({ count: sql<number>`count(*)::int` }).from(suppliers).where(where),
   ])
 

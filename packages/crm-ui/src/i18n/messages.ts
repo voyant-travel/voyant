@@ -101,6 +101,18 @@ export type CrmUiMessages = {
       email: string
       phone: string
       relation: string
+      status: string
+    }
+    filters: {
+      button: string
+      relationLabel: string
+      relationAll: string
+      statusLabel: string
+      statusAll: string
+      organizationLabel: string
+      organizationAny: string
+      organizationEmpty: string
+      clear: string
     }
     loadFailed: string
     empty: string
@@ -113,7 +125,16 @@ export type CrmUiMessages = {
       industry: string
       relation: string
       website: string
+      status: string
       updated: string
+    }
+    filters: {
+      button: string
+      relationLabel: string
+      relationAll: string
+      statusLabel: string
+      statusAll: string
+      clear: string
     }
     loadFailed: string
     empty: string

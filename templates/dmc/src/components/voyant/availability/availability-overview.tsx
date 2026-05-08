@@ -31,7 +31,7 @@ export function AvailabilityOverview({
   openSlotsCount: providedOpenSlotsCount,
   filteredRules,
   filteredPickupPoints,
-  productsWithoutActiveRules,
+  productsWithoutUpcomingDepartures,
   search,
   setSearch,
   productFilter,
@@ -46,7 +46,7 @@ export function AvailabilityOverview({
   openSlotsCount?: number
   filteredRules: AvailabilityRuleRow[]
   filteredPickupPoints: AvailabilityPickupPointRow[]
-  productsWithoutActiveRules: ProductOption[]
+  productsWithoutUpcomingDepartures: ProductOption[]
   search: string
   setSearch: (value: string) => void
   productFilter: string
@@ -138,12 +138,12 @@ export function AvailabilityOverview({
             <CardTitle>{messages.availability.overview.coverageGapsTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            {productsWithoutActiveRules.length === 0 ? (
+            {productsWithoutUpcomingDepartures.length === 0 ? (
               <p className="text-muted-foreground">
                 {messages.availability.overview.coverageGapsEmpty}
               </p>
             ) : (
-              productsWithoutActiveRules.slice(0, 4).map((product) => (
+              productsWithoutUpcomingDepartures.slice(0, 4).map((product) => (
                 <button
                   key={product.id}
                   type="button"

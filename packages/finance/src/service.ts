@@ -1670,7 +1670,37 @@ export const financeService = {
       conditions.push(eq(supplierPayments.status, query.status))
     }
 
+    if (query.paymentMethod) {
+      conditions.push(eq(supplierPayments.paymentMethod, query.paymentMethod))
+    }
+
+    if (query.currency) {
+      conditions.push(eq(supplierPayments.currency, query.currency))
+    }
+
+    if (query.paymentDateFrom) {
+      conditions.push(gte(supplierPayments.paymentDate, query.paymentDateFrom))
+    }
+
+    if (query.paymentDateTo) {
+      conditions.push(lte(supplierPayments.paymentDate, query.paymentDateTo))
+    }
+
     const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const sortColumn = (() => {
+      switch (query.sortBy) {
+        case "amountCents":
+          return supplierPayments.amountCents
+        case "status":
+          return supplierPayments.status
+        case "paymentDate":
+          return supplierPayments.paymentDate
+        default:
+          return supplierPayments.createdAt
+      }
+    })()
+    const sortFn = query.sortDir === "asc" ? asc : desc
 
     const [rows, countResult] = await Promise.all([
       db
@@ -1679,7 +1709,7 @@ export const financeService = {
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
-        .orderBy(desc(supplierPayments.createdAt)),
+        .orderBy(sortFn(sortColumn), desc(supplierPayments.createdAt)),
       db.select({ count: sql<number>`count(*)::int` }).from(supplierPayments).where(where),
     ])
 
@@ -1724,12 +1754,54 @@ export const financeService = {
       conditions.push(eq(invoices.bookingId, query.bookingId))
     }
 
+    if (query.personId) {
+      conditions.push(eq(invoices.personId, query.personId))
+    }
+
+    if (query.organizationId) {
+      conditions.push(eq(invoices.organizationId, query.organizationId))
+    }
+
+    if (query.currency) {
+      conditions.push(eq(invoices.currency, query.currency))
+    }
+
+    if (query.dueDateFrom) {
+      conditions.push(gte(invoices.dueDate, query.dueDateFrom))
+    }
+
+    if (query.dueDateTo) {
+      conditions.push(lte(invoices.dueDate, query.dueDateTo))
+    }
+
     if (query.search) {
       const term = `%${query.search}%`
       conditions.push(or(ilike(invoices.invoiceNumber, term), ilike(invoices.notes, term)))
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const sortColumn = (() => {
+      switch (query.sortBy) {
+        case "invoiceNumber":
+          return invoices.invoiceNumber
+        case "status":
+          return invoices.status
+        case "totalCents":
+          return invoices.totalCents
+        case "paidCents":
+          return invoices.paidCents
+        case "balanceDueCents":
+          return invoices.balanceDueCents
+        case "issueDate":
+          return invoices.issueDate
+        case "dueDate":
+          return invoices.dueDate
+        default:
+          return invoices.createdAt
+      }
+    })()
+    const sortFn = query.sortDir === "asc" ? asc : desc
 
     const [rows, countResult] = await Promise.all([
       db
@@ -1738,7 +1810,7 @@ export const financeService = {
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
-        .orderBy(desc(invoices.createdAt)),
+        .orderBy(sortFn(sortColumn), desc(invoices.createdAt)),
       db.select({ count: sql<number>`count(*)::int` }).from(invoices).where(where),
     ])
 

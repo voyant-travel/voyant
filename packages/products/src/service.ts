@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
@@ -365,7 +365,51 @@ export const productsService = {
       conditions.push(or(ilike(products.name, term), ilike(products.description, term)))
     }
 
+    if (query.dateFrom) {
+      conditions.push(gte(products.startDate, query.dateFrom))
+    }
+
+    if (query.dateTo) {
+      conditions.push(lte(products.startDate, query.dateTo))
+    }
+
+    if (query.paxMin !== undefined) {
+      conditions.push(gte(products.pax, query.paxMin))
+    }
+
+    if (query.paxMax !== undefined) {
+      conditions.push(lte(products.pax, query.paxMax))
+    }
+
+    if (query.sellAmountMin !== undefined) {
+      conditions.push(gte(products.sellAmountCents, query.sellAmountMin))
+    }
+
+    if (query.sellAmountMax !== undefined) {
+      conditions.push(lte(products.sellAmountCents, query.sellAmountMax))
+    }
+
     const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const sortColumn = (() => {
+      switch (query.sortBy) {
+        case "name":
+          return products.name
+        case "status":
+          return products.status
+        case "sellAmount":
+          return products.sellAmountCents
+        case "pax":
+          return products.pax
+        case "startDate":
+          return products.startDate
+        case "endDate":
+          return products.endDate
+        default:
+          return products.createdAt
+      }
+    })()
+    const sortFn = query.sortDir === "asc" ? asc : desc
 
     const [rows, countResult] = await Promise.all([
       db
@@ -374,7 +418,7 @@ export const productsService = {
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
-        .orderBy(products.createdAt),
+        .orderBy(sortFn(sortColumn), desc(products.createdAt)),
       db.select({ count: sql<number>`count(*)::int` }).from(products).where(where),
     ])
 

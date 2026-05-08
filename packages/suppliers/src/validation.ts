@@ -75,11 +75,25 @@ export const selectSupplierSchema = supplierCoreSchema.extend({
   updatedAt: z.coerce.date(),
 })
 
+export const supplierListSortFieldSchema = z.enum([
+  "name",
+  "type",
+  "status",
+  "defaultCurrency",
+  "createdAt",
+])
+
+export const supplierListSortDirSchema = z.enum(["asc", "desc"])
+
 export const supplierListQuerySchema = z.object({
   type: supplierTypeSchema.optional(),
   status: supplierStatusSchema.optional(),
   primaryFacilityId: z.string().optional(),
+  country: z.string().optional(),
+  defaultCurrency: z.string().optional(),
   search: z.string().optional(),
+  sortBy: supplierListSortFieldSchema.default("createdAt"),
+  sortDir: supplierListSortDirSchema.default("desc"),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })

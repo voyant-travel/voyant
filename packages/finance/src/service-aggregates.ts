@@ -66,8 +66,8 @@ export async function getFinanceAggregates(
   const toDate = options.to ? new Date(options.to) : undefined
 
   const rangeConditions = []
-  if (fromDate) rangeConditions.push(sql`${invoices.createdAt} >= ${fromDate}`)
-  if (toDate) rangeConditions.push(sql`${invoices.createdAt} < ${toDate}`)
+  if (fromDate) rangeConditions.push(sql`${invoices.createdAt} >= ${fromDate.toISOString()}`)
+  if (toDate) rangeConditions.push(sql`${invoices.createdAt} < ${toDate.toISOString()}`)
   const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
   const [totalRow] = await db

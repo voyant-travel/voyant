@@ -1,5 +1,5 @@
 import type { EventBus } from "@voyantjs/core"
-import { and, asc, desc, eq, exists, ilike, inArray, lte, ne, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, exists, gte, ilike, inArray, lte, ne, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
@@ -1749,8 +1749,8 @@ export const bookingsService = {
     const toDate = options.to ? new Date(options.to) : undefined
 
     const rangeConditions = []
-    if (fromDate) rangeConditions.push(sql`${bookings.createdAt} >= ${fromDate}`)
-    if (toDate) rangeConditions.push(sql`${bookings.createdAt} < ${toDate}`)
+    if (fromDate) rangeConditions.push(sql`${bookings.createdAt} >= ${fromDate.toISOString()}`)
+    if (toDate) rangeConditions.push(sql`${bookings.createdAt} < ${toDate.toISOString()}`)
     const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
     const [totalRow] = await db
@@ -1892,6 +1892,22 @@ export const bookingsService = {
       conditions.push(eq(bookings.organizationId, query.organizationId))
     }
 
+    if (query.dateFrom) {
+      conditions.push(gte(bookings.startDate, query.dateFrom))
+    }
+
+    if (query.dateTo) {
+      conditions.push(lte(bookings.startDate, query.dateTo))
+    }
+
+    if (query.paxMin !== undefined) {
+      conditions.push(gte(bookings.pax, query.paxMin))
+    }
+
+    if (query.paxMax !== undefined) {
+      conditions.push(lte(bookings.pax, query.paxMax))
+    }
+
     if (query.productId || query.optionId) {
       const itemConditions = [eq(bookingItems.bookingId, bookings.id)]
       if (query.productId) {
@@ -1912,6 +1928,26 @@ export const bookingsService = {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined
 
+    const sortColumn = (() => {
+      switch (query.sortBy) {
+        case "bookingNumber":
+          return bookings.bookingNumber
+        case "status":
+          return bookings.status
+        case "sellAmount":
+          return bookings.sellAmountCents
+        case "pax":
+          return bookings.pax
+        case "startDate":
+          return bookings.startDate
+        case "endDate":
+          return bookings.endDate
+        default:
+          return bookings.createdAt
+      }
+    })()
+    const sortFn = query.sortDir === "asc" ? asc : desc
+
     const [rows, countResult] = await Promise.all([
       db
         .select()
@@ -1919,24 +1955,33 @@ export const bookingsService = {
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
-        .orderBy(desc(bookings.createdAt)),
+        .orderBy(sortFn(sortColumn), desc(bookings.createdAt)),
       db.select({ count: sql<number>`count(*)::int` }).from(bookings).where(where),
     ])
     const bookingIds = rows.map((row) => row.id)
-    const itemTimes =
+    const items =
       bookingIds.length > 0
         ? await db
             .select({
+              id: bookingItems.id,
               bookingId: bookingItems.bookingId,
+              title: bookingItems.title,
+              itemType: bookingItems.itemType,
+              productId: bookingItems.productId,
               startsAt: bookingItems.startsAt,
               endsAt: bookingItems.endsAt,
             })
             .from(bookingItems)
             .where(inArray(bookingItems.bookingId, bookingIds))
+            .orderBy(asc(bookingItems.createdAt))
         : []
 
     const ranges = new Map<string, { startsAt: Date | null; endsAt: Date | null }>()
-    for (const item of itemTimes) {
+    const itemSummariesByBooking = new Map<
+      string,
+      Array<{ id: string; title: string; itemType: string; productId: string | null }>
+    >()
+    for (const item of items) {
       const current = ranges.get(item.bookingId) ?? { startsAt: null, endsAt: null }
       if (item.startsAt && (!current.startsAt || item.startsAt < current.startsAt)) {
         current.startsAt = item.startsAt
@@ -1945,6 +1990,15 @@ export const bookingsService = {
         current.endsAt = item.endsAt
       }
       ranges.set(item.bookingId, current)
+
+      const list = itemSummariesByBooking.get(item.bookingId) ?? []
+      list.push({
+        id: item.id,
+        title: item.title,
+        itemType: item.itemType,
+        productId: item.productId,
+      })
+      itemSummariesByBooking.set(item.bookingId, list)
     }
 
     return {
@@ -1954,6 +2008,7 @@ export const bookingsService = {
           ...row,
           startsAt: range?.startsAt?.toISOString() ?? null,
           endsAt: range?.endsAt?.toISOString() ?? null,
+          items: itemSummariesByBooking.get(row.id) ?? [],
         }
       }),
       total: countResult[0]?.count ?? 0,

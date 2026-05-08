@@ -61,6 +61,18 @@ export const selectProductSchema = productCoreSchema.extend({
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
+export const productListSortFieldSchema = z.enum([
+  "name",
+  "status",
+  "sellAmount",
+  "pax",
+  "startDate",
+  "endDate",
+  "createdAt",
+])
+
+export const productListSortDirSchema = z.enum(["asc", "desc"])
+
 export const productListQuerySchema = z.object({
   status: productStatusSchema.optional(),
   bookingMode: productBookingModeSchema.optional(),
@@ -73,6 +85,14 @@ export const productListQuerySchema = z.object({
   categoryId: z.string().optional(),
   tag: z.string().optional(),
   search: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  paxMin: z.coerce.number().int().min(0).optional(),
+  paxMax: z.coerce.number().int().min(0).optional(),
+  sellAmountMin: z.coerce.number().int().min(0).optional(),
+  sellAmountMax: z.coerce.number().int().min(0).optional(),
+  sortBy: productListSortFieldSchema.default("createdAt"),
+  sortDir: productListSortDirSchema.default("desc"),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })

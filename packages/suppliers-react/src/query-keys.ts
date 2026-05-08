@@ -3,8 +3,19 @@ export interface PaginationFilters {
   offset?: number | undefined
 }
 
+export type SuppliersListSortField = "name" | "type" | "status" | "defaultCurrency" | "createdAt"
+
+export type SuppliersListSortDir = "asc" | "desc"
+
 export interface SuppliersListFilters extends PaginationFilters {
+  type?: string | undefined
+  status?: string | undefined
+  country?: string | undefined
+  defaultCurrency?: string | undefined
+  primaryFacilityId?: string | undefined
   search?: string | undefined
+  sortBy?: SuppliersListSortField | undefined
+  sortDir?: SuppliersListSortDir | undefined
 }
 
 export const suppliersQueryKeys = {

@@ -9,19 +9,22 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
+  cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Sheet,
   SheetBody,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@voyantjs/ui/components"
+import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@voyantjs/ui/components/empty"
 import {
   Table,
@@ -31,12 +34,14 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { AlertTriangle, Loader2, RefreshCw, RotateCw } from "lucide-react"
-import { useState } from "react"
+import { AlertTriangle, ChevronDown, Loader2, RotateCw, X } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 import { getApiUrl } from "@/lib/env"
 
 // ── Types matching the admin API at distribution/src/channel-push/admin-routes.ts
+
+type PushStatus = "pending" | "ok" | "failed" | "compensated"
 
 interface ChannelBookingLinkRow {
   link: {
@@ -46,7 +51,7 @@ interface ChannelBookingLinkRow {
     bookingItemId: string | null
     sourceKind: string | null
     sourceConnectionId: string | null
-    pushStatus: string
+    pushStatus: PushStatus | string
     pushAttempts: number
     lastPushAt: string | null
     lastError: string | null
@@ -102,6 +107,27 @@ interface ReconcilerResult {
   triggered: number
 }
 
+interface BookingRecord {
+  id: string
+  bookingNumber: string
+  status: string
+}
+
+interface BookingsResponse {
+  data: BookingRecord[]
+}
+
+interface ChannelRecord {
+  id: string
+  name: string
+  kind: string
+  status: string
+}
+
+interface ChannelsResponse {
+  data: ChannelRecord[]
+}
+
 // ── Fetch helpers
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -137,38 +163,82 @@ const STATUS_LABELS: Record<string, string> = {
   compensated: "Compensated",
 }
 
+const STATUS_TILES: ReadonlyArray<{
+  key: PushStatus
+  label: string
+  description: string
+  tone: "default" | "secondary" | "destructive" | "outline"
+}> = [
+  { key: "pending", label: "Pending", description: "In flight", tone: "secondary" },
+  { key: "ok", label: "Delivered", description: "Channel acknowledged", tone: "default" },
+  { key: "failed", label: "Failed", description: "Needs attention", tone: "destructive" },
+  {
+    key: "compensated",
+    label: "Compensated",
+    description: "Rolled back",
+    tone: "outline",
+  },
+]
+
+const LINKS_REFETCH_MS = 15_000
+const THROTTLING_REFETCH_MS = 60_000
+
 // ── Page
 
 export function ChannelSyncPage() {
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [bookingFilter, setBookingFilter] = useState("")
-  const [channelFilter, setChannelFilter] = useState("")
+  const [statusFilter, setStatusFilter] = useState<PushStatus | "all">("all")
+
+  const [bookingId, setBookingId] = useState<string | null>(null)
+  const [bookingSearch, setBookingSearch] = useState("")
+  const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null)
+
+  const [channelId, setChannelId] = useState<string | null>(null)
+  const [selectedChannel, setSelectedChannel] = useState<ChannelRecord | null>(null)
+
   const [drilldownBookingId, setDrilldownBookingId] = useState<string | null>(null)
 
   const queryClient = useQueryClient()
 
   const linksQuery = useQuery<LinksResponse>({
-    queryKey: ["channel-push-links", statusFilter, bookingFilter, channelFilter],
+    queryKey: ["channel-push-links", statusFilter, bookingId, channelId],
     queryFn: () => {
       const params = new URLSearchParams({ limit: "100" })
       if (statusFilter !== "all") params.set("status", statusFilter)
-      if (bookingFilter.trim()) params.set("bookingId", bookingFilter.trim())
-      if (channelFilter.trim()) params.set("channelId", channelFilter.trim())
+      if (bookingId) params.set("bookingId", bookingId)
+      if (channelId) params.set("channelId", channelId)
       return fetchJson<LinksResponse>(`/v1/admin/distribution/channel-push/links?${params}`)
     },
-    refetchInterval: 30_000,
+    refetchInterval: LINKS_REFETCH_MS,
+    refetchIntervalInBackground: false,
   })
 
   const throttlingQuery = useQuery<ThrottlingResponse>({
     queryKey: ["channel-push-throttling"],
     queryFn: () => fetchJson<ThrottlingResponse>("/v1/admin/distribution/channel-push/throttling"),
-    refetchInterval: 60_000,
+    refetchInterval: THROTTLING_REFETCH_MS,
+  })
+
+  const debouncedBookingSearch = useDebouncedValue(bookingSearch, 200)
+  const bookingsQuery = useQuery<BookingsResponse>({
+    queryKey: ["channel-sync-booking-options", debouncedBookingSearch],
+    queryFn: () => {
+      const params = new URLSearchParams({ limit: "20" })
+      if (debouncedBookingSearch.trim()) params.set("search", debouncedBookingSearch.trim())
+      return fetchJson<BookingsResponse>(`/v1/admin/bookings?${params}`)
+    },
+    placeholderData: (prev) => prev,
+  })
+
+  const channelsQuery = useQuery<ChannelsResponse>({
+    queryKey: ["channel-sync-channel-options"],
+    queryFn: () => fetchJson<ChannelsResponse>(`/v1/admin/distribution/channels?limit=100`),
+    staleTime: 60_000,
   })
 
   const retryMutation = useMutation({
-    mutationFn: (bookingId: string) =>
+    mutationFn: (id: string) =>
       fetchJson<{ ok: boolean; bookingId: string }>(
-        `/v1/admin/distribution/channel-push/retry/${bookingId}`,
+        `/v1/admin/distribution/channel-push/retry/${id}`,
         { method: "POST" },
       ),
     onSuccess: () => {
@@ -190,143 +260,161 @@ export function ChannelSyncPage() {
   const rows = linksQuery.data?.data ?? []
   const throttledChannels = throttlingQuery.data?.data ?? []
   const isThrottled = throttledChannels.length > 0
+  const filtersActive = statusFilter !== "all" || bookingId !== null || channelId !== null
+
+  const clearFilters = () => {
+    setStatusFilter("all")
+    setBookingId(null)
+    setBookingSearch("")
+    setSelectedBooking(null)
+    setChannelId(null)
+    setSelectedChannel(null)
+  }
+
+  const bookingOptions = bookingsQuery.data?.data ?? []
+  const channelOptions = channelsQuery.data?.data ?? []
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-start justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Channel sync</h2>
           <p className="text-sm text-muted-foreground">
-            Monitor outbound pushes to syndication channels. Bookings flow first; availability and
-            content pushes happen in the background.
+            Outbound delivery to syndication channels. Bookings push first; availability and content
+            ride along in the background.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={reconcileMutation.isPending}
-            onClick={() => reconcileMutation.mutate("bookings")}
-          >
-            <RotateCw className="mr-1.5 h-3.5 w-3.5" />
-            Reconcile bookings
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={reconcileMutation.isPending}
-            onClick={() => reconcileMutation.mutate("availability")}
-          >
-            <RotateCw className="mr-1.5 h-3.5 w-3.5" />
-            Availability
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={reconcileMutation.isPending}
-            onClick={() => reconcileMutation.mutate("content")}
-          >
-            <RotateCw className="mr-1.5 h-3.5 w-3.5" />
-            Content
-          </Button>
+        <div className="flex items-center gap-3">
+          <AutoRefreshIndicator
+            isFetching={linksQuery.isFetching}
+            dataUpdatedAt={linksQuery.dataUpdatedAt}
+            intervalMs={LINKS_REFETCH_MS}
+          />
+          <ReconcileMenu
+            onRun={(flow) => reconcileMutation.mutate(flow)}
+            isRunning={reconcileMutation.isPending}
+            lastResult={reconcileMutation.data ?? null}
+          />
         </div>
       </div>
 
-      {/* Status tiles */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatusTile label="Pending" value={counts.pending ?? 0} tone="secondary" />
-        <StatusTile label="OK" value={counts.ok ?? 0} tone="default" />
-        <StatusTile label="Failed" value={counts.failed ?? 0} tone="destructive" />
-        <StatusTile label="Compensated" value={counts.compensated ?? 0} tone="outline" />
-      </div>
-
+      {/* Throttling banner */}
       {isThrottled ? (
-        <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
-          <AlertTriangle className="h-4 w-4" />
-          <span className="font-medium">Throttled.</span>
-          <span>
-            {throttledChannels.reduce((sum, c) => sum + c.count, 0)} rate-limited deliveries in the
-            last hour across {throttledChannels.length} channel
-            {throttledChannels.length === 1 ? "" : "s"}. Lower the per-channel RPS in settings if
-            this persists.
-          </span>
+        <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <span className="font-medium">Throttled.</span>{" "}
+            <span>
+              {throttledChannels.reduce((sum, c) => sum + c.count, 0)} rate-limited deliveries in
+              the last hour across {throttledChannels.length} channel
+              {throttledChannels.length === 1 ? "" : "s"}. Lower the per-channel RPS in settings if
+              this persists.
+            </span>
+          </div>
         </div>
       ) : null}
 
-      {/* Filters */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Filter</CardTitle>
-          <CardDescription>
-            Narrow the list to a specific status, channel, or booking.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cs-status" className="text-xs">
-                Status
-              </Label>
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value ?? "all")}
-              >
-                <SelectTrigger id="cs-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="ok">OK</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="compensated">Compensated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cs-booking" className="text-xs">
-                Booking ID
-              </Label>
-              <Input
-                id="cs-booking"
-                value={bookingFilter}
-                onChange={(e) => setBookingFilter(e.target.value)}
-                placeholder="book_…"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cs-channel" className="text-xs">
-                Channel ID
-              </Label>
-              <Input
-                id="cs-channel"
-                value={channelFilter}
-                onChange={(e) => setChannelFilter(e.target.value)}
-                placeholder="chan_…"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Status tiles — clickable as the primary status filter */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {STATUS_TILES.map((tile) => {
+          const isActive = statusFilter === tile.key
+          const value = counts[tile.key] ?? 0
+          return (
+            <button
+              key={tile.key}
+              type="button"
+              onClick={() => setStatusFilter(isActive ? "all" : tile.key)}
+              className={cn(
+                "group rounded-lg border bg-card p-4 text-left transition-all",
+                "hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                isActive && "border-primary ring-2 ring-primary/30",
+              )}
+              aria-pressed={isActive}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {tile.label}
+                </span>
+                {tile.key === "failed" && value > 0 ? (
+                  <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                ) : null}
+              </div>
+              <div className="mt-1 text-3xl font-semibold tabular-nums">{value}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{tile.description}</div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Filter row — comboboxes drive booking + channel filters */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-end">
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label htmlFor="cs-booking" className="text-xs">
+            Booking
+          </Label>
+          <AsyncCombobox<BookingRecord>
+            value={bookingId}
+            onChange={(value) => {
+              setBookingId(value)
+              if (!value) setSelectedBooking(null)
+              else {
+                const match = bookingOptions.find((b) => b.id === value)
+                if (match) setSelectedBooking(match)
+              }
+            }}
+            items={bookingOptions}
+            selectedItem={selectedBooking}
+            getKey={(b) => b.id}
+            getLabel={(b) => b.bookingNumber}
+            getSecondary={(b) => b.status}
+            onSearchChange={setBookingSearch}
+            placeholder="Search by booking number…"
+            emptyText={bookingsQuery.isFetching ? "Searching…" : "No bookings match that search."}
+            triggerClassName="w-full"
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label htmlFor="cs-channel" className="text-xs">
+            Channel
+          </Label>
+          <AsyncCombobox<ChannelRecord>
+            value={channelId}
+            onChange={(value) => {
+              setChannelId(value)
+              if (!value) setSelectedChannel(null)
+              else {
+                const match = channelOptions.find((c) => c.id === value)
+                if (match) setSelectedChannel(match)
+              }
+            }}
+            items={channelOptions}
+            selectedItem={selectedChannel}
+            getKey={(c) => c.id}
+            getLabel={(c) => c.name}
+            getSecondary={(c) => formatChannelKind(c.kind)}
+            placeholder="Pick a channel…"
+            emptyText="No channels configured yet."
+            triggerClassName="w-full"
+          />
+        </div>
+        {filtersActive ? (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <X className="mr-1.5 h-3.5 w-3.5" />
+            Clear filters
+          </Button>
+        ) : null}
+      </div>
 
       {/* Links table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <div>
-            <CardTitle className="text-sm">Booking links</CardTitle>
-            <CardDescription>Per-channel push state for recent bookings.</CardDescription>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => void linksQuery.refetch()}
-            disabled={linksQuery.isFetching}
-          >
-            <RefreshCw
-              className={`mr-1.5 h-3.5 w-3.5 ${linksQuery.isFetching ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Booking links</CardTitle>
+          <CardDescription>
+            {filtersActive
+              ? `Showing ${rows.length} of the most recent matching pushes.`
+              : "The most recent per-channel push attempts."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {linksQuery.isPending ? (
@@ -336,10 +424,11 @@ export function ChannelSyncPage() {
           ) : rows.length === 0 ? (
             <Empty className="border-0">
               <EmptyHeader>
-                <EmptyTitle>No links found</EmptyTitle>
+                <EmptyTitle>{filtersActive ? "No matches" : "No links yet"}</EmptyTitle>
                 <EmptyDescription>
-                  Channel-push booking links show up here as bookings confirm. Adjust the filters or
-                  wait for a booking to land.
+                  {filtersActive
+                    ? "Try clearing the filters or picking a different booking or channel."
+                    : "Channel-push booking links show up here as bookings confirm. Hang tight — the page refreshes automatically."}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -350,75 +439,85 @@ export function ChannelSyncPage() {
                   <TableHead>Booking</TableHead>
                   <TableHead>Channel</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Attempts</TableHead>
+                  <TableHead className="text-right">Attempts</TableHead>
                   <TableHead>Last push</TableHead>
                   <TableHead>External ref</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.link.id}>
-                    <TableCell className="font-mono text-xs">
-                      <div>{row.link.bookingId}</div>
-                      {row.link.bookingItemId ? (
-                        <div className="text-muted-foreground">item: {row.link.bookingItemId}</div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>
-                      <div>{row.channelName}</div>
-                      <div className="text-xs text-muted-foreground capitalize">
-                        {row.channelKind.replace("_", " ")}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANTS[row.link.pushStatus] ?? "outline"}>
-                        {STATUS_LABELS[row.link.pushStatus] ?? row.link.pushStatus}
-                      </Badge>
-                      {row.link.lastError ? (
-                        <div
-                          className="mt-1 max-w-xs truncate text-xs text-destructive"
-                          title={row.link.lastError}
-                        >
-                          {row.link.lastError}
+                {rows.map((row) => {
+                  const isFailed = row.link.pushStatus === "failed"
+                  return (
+                    <TableRow
+                      key={row.link.id}
+                      className={cn(isFailed && "bg-destructive/5 hover:bg-destructive/10")}
+                    >
+                      <TableCell className="font-mono text-xs">
+                        <div>{row.link.bookingId}</div>
+                        {row.link.bookingItemId ? (
+                          <div className="text-muted-foreground">
+                            item: {row.link.bookingItemId}
+                          </div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{row.channelName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatChannelKind(row.channelKind)}
                         </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="tabular-nums">{row.link.pushAttempts}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {row.link.lastPushAt ? formatRelative(row.link.lastPushAt) : "—"}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {row.link.externalBookingId ?? row.link.externalReference ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDrilldownBookingId(row.link.bookingId)}
-                        >
-                          Deliveries
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={
-                            retryMutation.isPending &&
-                            retryMutation.variables === row.link.bookingId
-                          }
-                          onClick={() => retryMutation.mutate(row.link.bookingId)}
-                        >
-                          {retryMutation.isPending &&
-                          retryMutation.variables === row.link.bookingId ? (
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                          ) : null}
-                          Retry
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={STATUS_VARIANTS[row.link.pushStatus] ?? "outline"}>
+                          {STATUS_LABELS[row.link.pushStatus] ?? row.link.pushStatus}
+                        </Badge>
+                        {row.link.lastError ? (
+                          <div
+                            className="mt-1 max-w-xs truncate text-xs text-destructive"
+                            title={row.link.lastError}
+                          >
+                            {row.link.lastError}
+                          </div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {row.link.pushAttempts}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {row.link.lastPushAt ? formatRelative(row.link.lastPushAt) : "—"}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {row.link.externalBookingId ?? row.link.externalReference ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDrilldownBookingId(row.link.bookingId)}
+                          >
+                            Deliveries
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={
+                              retryMutation.isPending &&
+                              retryMutation.variables === row.link.bookingId
+                            }
+                            onClick={() => retryMutation.mutate(row.link.bookingId)}
+                          >
+                            {retryMutation.isPending &&
+                            retryMutation.variables === row.link.bookingId ? (
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            ) : null}
+                            Retry
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}
@@ -433,28 +532,112 @@ export function ChannelSyncPage() {
   )
 }
 
-function StatusTile({
-  label,
-  value,
-  tone,
+function ReconcileMenu({
+  onRun,
+  isRunning,
+  lastResult,
 }: {
-  label: string
-  value: number
-  tone: "default" | "secondary" | "destructive" | "outline"
+  onRun: (flow: "bookings" | "availability" | "content") => void
+  isRunning: boolean
+  lastResult: ReconcilerResult | null
 }) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Badge variant={tone} className="text-xs">
-          {label}
-        </Badge>
-      </CardContent>
-    </Card>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="outline" size="sm" disabled={isRunning}>
+            {isRunning ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RotateCw className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            Reconcile
+            <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Run reconciler</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => onRun("bookings")}>
+            Bookings
+            <span className="ml-auto text-xs text-muted-foreground">priority</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRun("availability")}>Availability</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRun("content")}>Content</DropdownMenuItem>
+        </DropdownMenuGroup>
+        {lastResult ? (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              Last run: scanned {lastResult.scanned}, triggered {lastResult.triggered}.
+            </div>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
+}
+
+function AutoRefreshIndicator({
+  isFetching,
+  dataUpdatedAt,
+  intervalMs,
+}: {
+  isFetching: boolean
+  dataUpdatedAt: number
+  intervalMs: number
+}) {
+  // Tick every second so the "Updated Xs ago" stays current.
+  const [, setNow] = useState(Date.now())
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  if (!dataUpdatedAt) {
+    return (
+      <span className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Loading…
+      </span>
+    )
+  }
+
+  const seconds = Math.max(0, Math.round((Date.now() - dataUpdatedAt) / 1000))
+  const intervalSec = Math.round(intervalMs / 1000)
+
+  return (
+    <span
+      className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex"
+      title={`Auto-refreshes every ${intervalSec}s`}
+    >
+      {isFetching ? (
+        <Loader2 className="h-3 w-3 animate-spin" />
+      ) : (
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        </span>
+      )}
+      <span className="tabular-nums">
+        {isFetching ? "Refreshing…" : `Updated ${formatShortDuration(seconds)} ago`}
+      </span>
+    </span>
+  )
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => setDebounced(value), delayMs)
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [value, delayMs])
+  return debounced
 }
 
 function DeliveriesDrawer({
@@ -544,6 +727,18 @@ function DeliveriesDrawer({
       </SheetContent>
     </Sheet>
   )
+}
+
+function formatChannelKind(kind: string): string {
+  return kind.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())
+}
+
+function formatShortDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`
+  const min = Math.round(seconds / 60)
+  if (min < 60) return `${min}m`
+  const hours = Math.round(min / 60)
+  return `${hours}h`
 }
 
 function formatRelative(iso: string): string {

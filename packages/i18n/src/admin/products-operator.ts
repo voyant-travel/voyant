@@ -195,6 +195,16 @@ export const operatorAdminProductsMessages = {
         paginationPrevious: "Previous",
         paginationNext: "Next",
         unlimitedCapacity: "Unlimited",
+        filtersButton: "Filters",
+        filtersStatusLabel: "Status",
+        filtersStatusAll: "All statuses",
+        filtersDateLabel: "Start date",
+        filtersDatePlaceholder: "Any date",
+        filtersPaxLabel: "Pax",
+        filtersSellAmountLabel: "Sell amount",
+        filtersMin: "Min",
+        filtersMax: "Max",
+        filtersClear: "Clear",
       },
       operations: {
         departures: {
@@ -662,6 +672,16 @@ export const operatorAdminProductsMessages = {
         paginationPrevious: "Anterior",
         paginationNext: "Urmator",
         unlimitedCapacity: "Nelimitat",
+        filtersButton: "Filtre",
+        filtersStatusLabel: "Status",
+        filtersStatusAll: "Toate statusurile",
+        filtersDateLabel: "Data start",
+        filtersDatePlaceholder: "Orice data",
+        filtersPaxLabel: "Pax",
+        filtersSellAmountLabel: "Pret vanzare",
+        filtersMin: "Min",
+        filtersMax: "Max",
+        filtersClear: "Sterge filtre",
       },
       operations: {
         departures: {

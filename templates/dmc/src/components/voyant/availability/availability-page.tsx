@@ -148,8 +148,13 @@ export function AvailabilityPage() {
   const constrainedSlots = [...filteredSlots]
     .filter((slot) => slot.status === "sold_out" || slot.status === "closed")
     .sort((left, right) => left.startsAt.localeCompare(right.startsAt))
-  const productsWithoutActiveRules = filteredProducts.filter(
-    (product) => !filteredRules.some((rule) => rule.productId === product.id && rule.active),
+  const nowIso = new Date().toISOString()
+  const productsWithoutUpcomingDepartures = filteredProducts.filter(
+    (product) =>
+      !filteredSlots.some(
+        (slot) =>
+          slot.productId === product.id && slot.status === "open" && slot.startsAt >= nowIso,
+      ),
   )
   const hasFilters = search.length > 0 || productFilter !== "all"
 
@@ -297,7 +302,7 @@ export function AvailabilityPage() {
             openSlotsCount={filteredSlots.filter((slot) => slot.status === "open").length}
             filteredRules={filteredRules}
             filteredPickupPoints={filteredPickupPoints}
-            productsWithoutActiveRules={productsWithoutActiveRules}
+            productsWithoutUpcomingDepartures={productsWithoutUpcomingDepartures}
             search={search}
             setSearch={setSearch}
             productFilter={productFilter}

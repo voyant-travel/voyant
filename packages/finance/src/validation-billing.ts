@@ -71,10 +71,31 @@ const invoiceCoreSchema = z.object({
 
 export const insertInvoiceSchema = invoiceCoreSchema
 export const updateInvoiceSchema = invoiceCoreSchema.partial()
+
+export const invoiceListSortFieldSchema = z.enum([
+  "invoiceNumber",
+  "status",
+  "totalCents",
+  "paidCents",
+  "balanceDueCents",
+  "issueDate",
+  "dueDate",
+  "createdAt",
+])
+
+export const invoiceListSortDirSchema = z.enum(["asc", "desc"])
+
 export const invoiceListQuerySchema = z.object({
   status: invoiceStatusSchema.optional(),
   bookingId: z.string().optional(),
+  personId: z.string().optional(),
+  organizationId: z.string().optional(),
+  currency: z.string().optional(),
+  dueDateFrom: z.string().optional(),
+  dueDateTo: z.string().optional(),
   search: z.string().optional(),
+  sortBy: invoiceListSortFieldSchema.default("createdAt"),
+  sortDir: invoiceListSortDirSchema.default("desc"),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })

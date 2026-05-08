@@ -11,6 +11,7 @@ import {
   type SupplierNote,
   type SupplierRate,
   type SupplierService,
+  type SuppliersListFilters,
   statusVariant,
   suppliersQueryKeys,
 } from "@voyantjs/suppliers-react"
@@ -41,9 +42,7 @@ export function getRateUnitLabel(unit: SupplierRate["unit"], messages: AdminMess
   return messages.suppliers.rateUnitLabels[unit]
 }
 
-export function getSuppliersQueryOptions(
-  options: { search?: string; limit?: number; offset?: number } = {},
-) {
+export function getSuppliersQueryOptions(options: SuppliersListFilters = {}) {
   return getSuppliersQueryOptionsBase(client, options)
 }
 

@@ -52,6 +52,8 @@ export function handleApiError(err: unknown, c: Context): Response {
       method: c.req.method,
       headers,
       err: err instanceof Error ? err.message : String(err),
+      cause: err instanceof Error && err.cause ? String(err.cause) : undefined,
+      stack: err instanceof Error ? err.stack : undefined,
     })
   } catch {
     /* ignore logging errors */

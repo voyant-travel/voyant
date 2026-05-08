@@ -30,8 +30,8 @@ export async function getProductAggregates(
   const toDate = options.to ? new Date(options.to) : undefined
 
   const rangeConditions = []
-  if (fromDate) rangeConditions.push(sql`${products.createdAt} >= ${fromDate}`)
-  if (toDate) rangeConditions.push(sql`${products.createdAt} < ${toDate}`)
+  if (fromDate) rangeConditions.push(sql`${products.createdAt} >= ${fromDate.toISOString()}`)
+  if (toDate) rangeConditions.push(sql`${products.createdAt} < ${toDate.toISOString()}`)
   const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
   const [totalRow] = await db

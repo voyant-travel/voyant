@@ -333,10 +333,26 @@ const supplierPaymentCoreSchema = z.object({
 
 export const insertSupplierPaymentSchema = supplierPaymentCoreSchema
 export const updateSupplierPaymentSchema = supplierPaymentCoreSchema.partial()
+
+export const supplierPaymentListSortFieldSchema = z.enum([
+  "amountCents",
+  "status",
+  "paymentDate",
+  "createdAt",
+])
+
+export const supplierPaymentListSortDirSchema = z.enum(["asc", "desc"])
+
 export const supplierPaymentListQuerySchema = z.object({
   bookingId: z.string().optional(),
   supplierId: z.string().optional(),
   status: paymentStatusSchema.optional(),
+  paymentMethod: paymentMethodSchema.optional(),
+  currency: z.string().optional(),
+  paymentDateFrom: z.string().optional(),
+  paymentDateTo: z.string().optional(),
+  sortBy: supplierPaymentListSortFieldSchema.default("createdAt"),
+  sortDir: supplierPaymentListSortDirSchema.default("desc"),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
