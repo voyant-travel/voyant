@@ -393,9 +393,65 @@ export async function loadHistory(
   }))
 }
 
+/**
+ * Computes the date range a target's `due_date` (or `issue_date`) needs to
+ * fall in for any of the rule's stages to be inside their eligibility window
+ * today.
+ *
+ * From `inWindow`: today must satisfy
+ *   anchor + windowStartDays ≤ today ≤ anchor + windowEndDays
+ * Solving for anchor:
+ *   today − windowEndDays ≤ anchor ≤ today − windowStartDays
+ *
+ * Across all stages with anchor=`due_date`, we union the [start, end] ranges
+ * and use the resulting envelope as a SQL `BETWEEN` filter. Returns null when
+ * no stage is anchored on the requested column (e.g. all stages anchor on
+ * `departure_date`) — caller should skip the pushdown in that case.
+ */
+export function computeAnchorDateEnvelope(
+  stages: NotificationReminderRuleStage[],
+  today: Date,
+  anchor: NotificationReminderRuleStage["anchor"],
+): { from: string; to: string } | null {
+  const matching = stages.filter((s) => s.anchor === anchor)
+  if (matching.length === 0) return null
+  const todayStart = startOfUtcDay(today)
+  let from = Number.POSITIVE_INFINITY
+  let to = Number.NEGATIVE_INFINITY
+  for (const stage of matching) {
+    const fromDays = -stage.windowEndDays
+    const toDays = -stage.windowStartDays
+    if (fromDays < from) from = fromDays
+    if (toDays > to) to = toDays
+  }
+  return {
+    from: addUtcDays(todayStart, from).toISOString().slice(0, 10),
+    to: addUtcDays(todayStart, to).toISOString().slice(0, 10),
+  }
+}
+
+export type DateEnvelopes = {
+  /** When set, only fetch payment schedules whose `due_date` falls in this range. */
+  paymentScheduleDueDate?: { from: string; to: string }
+  /** When set, only fetch invoices whose `due_date` falls in this range. */
+  invoiceDueDate?: { from: string; to: string }
+  /** When set, only fetch invoices whose `issue_date` falls in this range. */
+  invoiceIssueDate?: { from: string; to: string }
+}
+
 export async function fetchOpenPaymentScheduleTargets(
   db: PostgresJsDatabase,
+  envelopes: DateEnvelopes = {},
 ): Promise<ReminderTargetSnapshot[]> {
+  const conditions = [
+    or(eq(bookingPaymentSchedules.status, "pending"), eq(bookingPaymentSchedules.status, "due")),
+  ]
+  if (envelopes.paymentScheduleDueDate) {
+    conditions.push(
+      gte(bookingPaymentSchedules.dueDate, envelopes.paymentScheduleDueDate.from),
+      lte(bookingPaymentSchedules.dueDate, envelopes.paymentScheduleDueDate.to),
+    )
+  }
   const rows = await db
     .select({
       id: bookingPaymentSchedules.id,
@@ -407,9 +463,7 @@ export async function fetchOpenPaymentScheduleTargets(
     })
     .from(bookingPaymentSchedules)
     .leftJoin(bookings, eq(bookings.id, bookingPaymentSchedules.bookingId))
-    .where(
-      or(eq(bookingPaymentSchedules.status, "pending"), eq(bookingPaymentSchedules.status, "due")),
-    )
+    .where(and(...conditions))
   return rows.map((row) => ({
     id: row.id,
     bookingId: row.bookingId,
@@ -424,7 +478,29 @@ export async function fetchOpenPaymentScheduleTargets(
 
 export async function fetchOpenInvoiceTargets(
   db: PostgresJsDatabase,
+  envelopes: DateEnvelopes = {},
 ): Promise<ReminderTargetSnapshot[]> {
+  const conditions = [
+    gt(invoices.balanceDueCents, 0),
+    or(eq(invoices.invoiceType, "invoice"), eq(invoices.invoiceType, "proforma")),
+    or(
+      eq(invoices.status, "sent"),
+      eq(invoices.status, "partially_paid"),
+      eq(invoices.status, "overdue"),
+    ),
+  ]
+  if (envelopes.invoiceDueDate) {
+    conditions.push(
+      gte(invoices.dueDate, envelopes.invoiceDueDate.from),
+      lte(invoices.dueDate, envelopes.invoiceDueDate.to),
+    )
+  }
+  if (envelopes.invoiceIssueDate) {
+    conditions.push(
+      gte(invoices.issueDate, envelopes.invoiceIssueDate.from),
+      lte(invoices.issueDate, envelopes.invoiceIssueDate.to),
+    )
+  }
   const rows = await db
     .select({
       id: invoices.id,
@@ -439,17 +515,7 @@ export async function fetchOpenInvoiceTargets(
     })
     .from(invoices)
     .leftJoin(bookings, eq(bookings.id, invoices.bookingId))
-    .where(
-      and(
-        gt(invoices.balanceDueCents, 0),
-        or(eq(invoices.invoiceType, "invoice"), eq(invoices.invoiceType, "proforma")),
-        or(
-          eq(invoices.status, "sent"),
-          eq(invoices.status, "partially_paid"),
-          eq(invoices.status, "overdue"),
-        ),
-      ),
-    )
+    .where(and(...conditions))
   return rows.map((row) => ({
     id: row.id,
     bookingId: row.bookingId,
@@ -462,15 +528,30 @@ export async function fetchOpenInvoiceTargets(
   }))
 }
 
+/**
+ * Per-rule target fetch that pushes a date envelope into the WHERE when all
+ * relevant stages share an anchor we can SQL-filter on (`due_date` for both
+ * target types, `invoice_issued_at` for invoices). Other anchors fall through
+ * to the unfiltered fetch — they're expected to be rare and the in-app
+ * window check still rejects misses.
+ */
 export async function fetchTargetsForRule(
   db: PostgresJsDatabase,
   rule: NotificationReminderRule,
+  stages: NotificationReminderRuleStage[] = [],
+  today: Date = new Date(),
 ): Promise<ReminderTargetSnapshot[]> {
   if (rule.targetType === "booking_payment_schedule") {
-    return fetchOpenPaymentScheduleTargets(db)
+    const dueEnv = computeAnchorDateEnvelope(stages, today, "due_date")
+    return fetchOpenPaymentScheduleTargets(db, dueEnv ? { paymentScheduleDueDate: dueEnv } : {})
   }
   if (rule.targetType === "invoice") {
-    return fetchOpenInvoiceTargets(db)
+    const dueEnv = computeAnchorDateEnvelope(stages, today, "due_date")
+    const issueEnv = computeAnchorDateEnvelope(stages, today, "invoice_issued_at")
+    return fetchOpenInvoiceTargets(db, {
+      invoiceDueDate: dueEnv ?? undefined,
+      invoiceIssueDate: issueEnv ?? undefined,
+    })
   }
   return []
 }
@@ -519,7 +600,7 @@ export async function previewReminders(
   for (const rule of rules) {
     const stages = await listStagesForRule(db, rule.id)
     if (stages.length === 0) continue
-    const targets = await fetchTargetsForRule(db, rule)
+    const targets = await fetchTargetsForRule(db, rule, stages, today)
     const filteredTargets = options.targetId
       ? targets.filter((t) => t.id === options.targetId)
       : targets

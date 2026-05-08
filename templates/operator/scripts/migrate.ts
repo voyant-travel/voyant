@@ -103,11 +103,28 @@ try {
 
   const journal = await readJournal()
   const lastMigrationMillis = await getLastMigrationMillis()
+  const applied: string[] = []
 
   for (const entry of journal.entries) {
     if (entry.when > lastMigrationMillis) {
       await applyMigration(entry)
+      applied.push(entry.tag)
+      console.log(`✓ applied ${entry.tag}`)
     }
+  }
+
+  if (applied.length === 0) {
+    console.log("No pending migrations.")
+  } else {
+    // Postgres-js (and most drivers) cache prepared-statement plans per
+    // connection. Long-lived workers / dev servers that started before this
+    // run will have stale plans referencing the old schema and will fail on
+    // the first query that touches a changed column. Tell the caller so
+    // their deploy pipeline (or the dev) can restart the right thing.
+    console.log("")
+    console.log(`Applied ${applied.length} migration(s).`)
+    console.log("⚠️  Restart any long-lived workers / dev servers now —")
+    console.log("    drizzle's prepared-statement cache is keyed to the old schema.")
   }
 } finally {
   await client.end()

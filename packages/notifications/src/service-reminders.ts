@@ -1186,7 +1186,7 @@ export async function runStageBasedDueReminders(
   for (const rule of rules) {
     const stages = await listStagesForRule(db, rule.id)
     if (stages.length === 0) continue
-    const targets = await fetchTargetsForRule(db, rule)
+    const targets = await fetchTargetsForRule(db, rule, stages, today)
     if (targets.length === 0) continue
     const tally = await processStageRuleTargets(db, {
       rule,
@@ -1221,7 +1221,7 @@ export async function queueStageBasedDueReminders(
   for (const rule of rules) {
     const stages = await listStagesForRule(db, rule.id)
     if (stages.length === 0) continue
-    const targets = await fetchTargetsForRule(db, rule)
+    const targets = await fetchTargetsForRule(db, rule, stages, today)
     if (targets.length === 0) continue
     const tally = await processStageRuleTargets(db, {
       rule,

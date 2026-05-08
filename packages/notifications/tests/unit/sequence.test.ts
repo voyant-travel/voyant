@@ -4,6 +4,7 @@ import type { NotificationReminderRule, NotificationReminderRuleStage } from "..
 import {
   applyQuietHours,
   cadenceElapsed,
+  computeAnchorDateEnvelope,
   DEFAULT_NOTIFICATION_SETTINGS,
   evaluateStage,
   inWindow,
@@ -268,5 +269,60 @@ describe("applyQuietHours", () => {
       blackoutDates: ["2026-05-10"],
     })
     expect(result.deferred).toBe(true)
+  })
+})
+
+describe("computeAnchorDateEnvelope", () => {
+  const today = new Date("2026-04-08T12:00:00Z")
+  it("returns null when no stage anchors on the requested column", () => {
+    const stage = { ...baseStage, anchor: "departure_date" as const }
+    expect(computeAnchorDateEnvelope([stage], today, "due_date")).toBeNull()
+  })
+  it("inverts windowStart/windowEndDays into a date range around today", () => {
+    // window=[-7,0] means anchor must be in [today, today+7] for the
+    // stage to be in window today.
+    const stage = {
+      ...baseStage,
+      anchor: "due_date" as const,
+      windowStartDays: -7,
+      windowEndDays: 0,
+    }
+    const envelope = computeAnchorDateEnvelope([stage], today, "due_date")
+    expect(envelope).toEqual({ from: "2026-04-08", to: "2026-04-15" })
+  })
+  it("unions the date range across stages with the same anchor", () => {
+    // Stage A: window [-14, -7] → anchor in [today+7, today+14]
+    // Stage B: window [-3, 0]   → anchor in [today,   today+3]
+    // Union:                       anchor in [today,   today+14]
+    const stages = [
+      {
+        ...baseStage,
+        id: "a",
+        anchor: "due_date" as const,
+        windowStartDays: -14,
+        windowEndDays: -7,
+      },
+      { ...baseStage, id: "b", anchor: "due_date" as const, windowStartDays: -3, windowEndDays: 0 },
+    ]
+    expect(computeAnchorDateEnvelope(stages, today, "due_date")).toEqual({
+      from: "2026-04-08",
+      to: "2026-04-22",
+    })
+  })
+  it("ignores stages with a different anchor when computing the envelope", () => {
+    const stages = [
+      { ...baseStage, anchor: "due_date" as const, windowStartDays: -7, windowEndDays: 0 },
+      {
+        ...baseStage,
+        id: "b",
+        anchor: "departure_date" as const,
+        windowStartDays: -30,
+        windowEndDays: -10,
+      },
+    ]
+    expect(computeAnchorDateEnvelope(stages, today, "due_date")).toEqual({
+      from: "2026-04-08",
+      to: "2026-04-15",
+    })
   })
 })
