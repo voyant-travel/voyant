@@ -24,12 +24,10 @@ import { useMemo, useState } from "react"
 import { legalQueryClient } from "./legal-query-client"
 import { TemplateDialog } from "./template-dialog"
 
-type EnsureQueryData = QueryClient["ensureQueryData"]
-
-export function loadTemplateDetailPage(id: string, ensureQueryData: EnsureQueryData) {
+export function loadTemplateDetailPage(id: string, queryClient: QueryClient) {
   return Promise.all([
-    ensureQueryData(getLegalContractTemplateQueryOptions(legalQueryClient, id)),
-    ensureQueryData(
+    queryClient.ensureQueryData(getLegalContractTemplateQueryOptions(legalQueryClient, id)),
+    queryClient.ensureQueryData(
       getLegalContractTemplateVersionsQueryOptions(legalQueryClient, { templateId: id }),
     ),
   ])

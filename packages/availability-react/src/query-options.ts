@@ -40,6 +40,7 @@ export function getProductsQueryOptions(
     queryKey: availabilityQueryKeys.productsList(filters),
     queryFn: () => {
       const params = new URLSearchParams()
+      if (filters.search) params.set("search", filters.search)
       appendPagination(params, filters)
       const qs = params.toString()
       return fetchWithValidation(`/v1/products${qs ? `?${qs}` : ""}`, productListResponse, client)

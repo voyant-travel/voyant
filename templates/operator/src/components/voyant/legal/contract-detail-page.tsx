@@ -29,13 +29,15 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   void: "destructive",
 }
 
-type EnsureQueryData = QueryClient["ensureQueryData"]
-
-export function loadContractDetailPage(id: string, ensureQueryData: EnsureQueryData) {
+export function loadContractDetailPage(id: string, queryClient: QueryClient) {
   return Promise.all([
-    ensureQueryData(getLegalContractQueryOptions(legalQueryClient, id)),
-    ensureQueryData(getLegalContractSignaturesQueryOptions(legalQueryClient, { contractId: id })),
-    ensureQueryData(getLegalContractAttachmentsQueryOptions(legalQueryClient, { contractId: id })),
+    queryClient.ensureQueryData(getLegalContractQueryOptions(legalQueryClient, id)),
+    queryClient.ensureQueryData(
+      getLegalContractSignaturesQueryOptions(legalQueryClient, { contractId: id }),
+    ),
+    queryClient.ensureQueryData(
+      getLegalContractAttachmentsQueryOptions(legalQueryClient, { contractId: id }),
+    ),
   ])
 }
 

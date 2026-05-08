@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import {
@@ -18,7 +19,6 @@ import { useState } from "react"
 import { type AssignmentData, PolicyAssignmentDialog } from "./policy-assignment-dialog"
 import {
   type Acceptance,
-  type EnsureQueryData,
   getLegalPolicyAcceptancesQueryOptions,
   getLegalPolicyAssignmentsQueryOptions,
   getLegalPolicyQueryOptions,
@@ -27,12 +27,12 @@ import {
 import { PolicyDialog } from "./policy-dialog"
 import { PolicyVersionRow } from "./policy-version-row"
 
-export function loadPolicyDetailPage(id: string, ensureQueryData: EnsureQueryData) {
+export function loadPolicyDetailPage(id: string, queryClient: QueryClient) {
   return Promise.all([
-    ensureQueryData(getLegalPolicyQueryOptions(id)),
-    ensureQueryData(getLegalPolicyVersionsQueryOptions(id)),
-    ensureQueryData(getLegalPolicyAssignmentsQueryOptions(id)),
-    ensureQueryData(getLegalPolicyAcceptancesQueryOptions()),
+    queryClient.ensureQueryData(getLegalPolicyQueryOptions(id)),
+    queryClient.ensureQueryData(getLegalPolicyVersionsQueryOptions(id)),
+    queryClient.ensureQueryData(getLegalPolicyAssignmentsQueryOptions(id)),
+    queryClient.ensureQueryData(getLegalPolicyAcceptancesQueryOptions()),
   ])
 }
 

@@ -135,6 +135,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@utility bg-calendar-disabled-hour {
+  background-color: color-mix(in oklab, var(--muted) 35%, transparent);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

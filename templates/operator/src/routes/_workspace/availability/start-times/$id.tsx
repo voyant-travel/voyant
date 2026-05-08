@@ -7,7 +7,7 @@ import {
 
 export const Route = createFileRoute("/_workspace/availability/start-times/$id")({
   loader: ({ context, params }) =>
-    loadAvailabilityStartTimeDetailPage(context.queryClient.ensureQueryData, params.id),
+    loadAvailabilityStartTimeDetailPage(context.queryClient, params.id),
   pendingComponent: AvailabilityStartTimeDetailSkeleton,
   component: RouteComponent,
 })

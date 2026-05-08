@@ -199,7 +199,11 @@ export {
   voucherStatusEnum,
   vouchers,
 } from "./schema.js"
-export type { CreateInvoiceFromBookingInput, InvoiceFromBookingData } from "./service.js"
+export type {
+  CreateInvoiceFromBookingInput,
+  InvoiceFromBookingData,
+  UnifiedPaymentRow,
+} from "./service.js"
 export { financeService, renderInvoiceBody } from "./service.js"
 export type {
   BookingDualCreatedEvent,
@@ -307,6 +311,10 @@ export {
   paymentAuthorizationListQuerySchema,
   paymentCaptureListQuerySchema,
   paymentInstrumentListQuerySchema,
+  paymentKindSchema,
+  paymentListQuerySchema,
+  paymentListSortDirSchema,
+  paymentListSortFieldSchema,
   paymentSessionListQuerySchema,
   polledInvoiceSettlementProviderResultSchema,
   polledInvoiceSettlementResultSchema,

@@ -23,11 +23,10 @@ import { legalQueryClient } from "./legal-query-client"
 import { TemplateDialog } from "./template-dialog"
 import { TemplateVersionDialog } from "./template-version-dialog"
 
-type EnsureQueryData = QueryClient["ensureQueryData"]
 const SCOPES = ["customer", "supplier", "partner", "channel", "other"] as const
 
-export function loadTemplatesPage(ensureQueryData: EnsureQueryData) {
-  return ensureQueryData(
+export function loadTemplatesPage(queryClient: QueryClient) {
+  return queryClient.ensureQueryData(
     getLegalContractTemplatesQueryOptions(legalQueryClient, { search: "", scope: "all" }),
   )
 }

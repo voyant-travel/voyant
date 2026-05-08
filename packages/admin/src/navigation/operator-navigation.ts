@@ -130,8 +130,12 @@ export function createOperatorAdminNavigation({
     {
       id: "finance",
       title: messages.finance,
-      url: "/finance",
+      url: "/finance/invoices",
       icon: icons.finance,
+      items: [
+        { id: "invoices", title: messages.invoices, url: "/finance/invoices" },
+        { id: "payments", title: messages.payments, url: "/finance/payments" },
+      ],
     },
     {
       id: "legal",

@@ -240,7 +240,11 @@ export async function getProjectedAvailabilityCalendar(
 }
 
 export async function listProjectedProducts(db: PostgresJsDatabase, query: OctoProductListQuery) {
-  const result = await productsService.listProducts(db, query)
+  const result = await productsService.listProducts(db, {
+    ...query,
+    sortBy: "createdAt",
+    sortDir: "desc",
+  })
   const data = await Promise.all(
     result.data.map(async (product) => getProjectedProductById(db, product.id)),
   )

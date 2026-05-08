@@ -88,6 +88,7 @@ export function AvailabilityOverview({
   onOpenSlot,
   onOpenProduct,
   onJumpToSlots,
+  showFilters = true,
 }: {
   messages: AvailabilityOverviewMessages
   products: ProductOption[]
@@ -105,6 +106,7 @@ export function AvailabilityOverview({
   onOpenSlot: (slotId: string) => void
   onOpenProduct: (productId: string) => void
   onJumpToSlots?: () => void
+  showFilters?: boolean
 }) {
   const openSlotsCount =
     providedOpenSlotsCount ?? constrainedSlots.filter((slot) => slot.status === "open").length
@@ -233,37 +235,42 @@ export function AvailabilityOverview({
       </Card>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={messages.searchPlaceholder}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="pl-9"
-            />
+      {showFilters ? (
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={messages.searchPlaceholder}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select
+              value={productFilter}
+              onValueChange={(value) => setProductFilter(value ?? "all")}
+            >
+              <SelectTrigger className="w-full md:w-56">
+                <SelectValue placeholder={messages.allProducts} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{messages.allProducts}</SelectItem>
+                {products.map((product) => (
+                  <SelectItem key={product.id} value={product.id}>
+                    {product.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={productFilter} onValueChange={(value) => setProductFilter(value ?? "all")}>
-            <SelectTrigger className="w-full md:w-56">
-              <SelectValue placeholder={messages.allProducts} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{messages.allProducts}</SelectItem>
-              {products.map((product) => (
-                <SelectItem key={product.id} value={product.id}>
-                  {product.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {hasFilters ? (
+            <Button variant="outline" onClick={onClearFilters}>
+              {messages.clearFilters}
+            </Button>
+          ) : null}
         </div>
-        {hasFilters ? (
-          <Button variant="outline" onClick={onClearFilters}>
-            {messages.clearFilters}
-          </Button>
-        ) : null}
-      </div>
+      ) : null}
     </>
   )
 }

@@ -142,6 +142,36 @@ export const supplierPaymentRecordSchema = z.object({
 
 export type SupplierPaymentRecord = z.infer<typeof supplierPaymentRecordSchema>
 
+export const paymentKindSchema = z.enum(["customer", "supplier"])
+
+export const unifiedPaymentRecordSchema = z.object({
+  kind: paymentKindSchema,
+  id: z.string(),
+  invoiceId: z.string().nullable(),
+  invoiceNumber: z.string().nullable(),
+  bookingId: z.string().nullable(),
+  bookingNumber: z.string().nullable(),
+  supplierId: z.string().nullable(),
+  supplierName: z.string().nullable(),
+  personId: z.string().nullable(),
+  personName: z.string().nullable(),
+  organizationId: z.string().nullable(),
+  organizationName: z.string().nullable(),
+  amountCents: z.number().int(),
+  currency: z.string(),
+  baseCurrency: z.string().nullable(),
+  baseAmountCents: z.number().int().nullable(),
+  paymentMethod: z.string(),
+  status: paymentStatusSchema,
+  referenceNumber: z.string().nullable(),
+  paymentDate: z.string(),
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type UnifiedPaymentRecord = z.infer<typeof unifiedPaymentRecordSchema>
+
 export const paymentScheduleTypeSchema = z.enum([
   "deposit",
   "installment",
@@ -222,6 +252,8 @@ export const bookingGuaranteesResponse = arrayEnvelope(bookingGuaranteeRecordSch
 
 export const invoiceListResponse = paginatedEnvelope(invoiceRecordSchema)
 export const supplierPaymentListResponse = paginatedEnvelope(supplierPaymentRecordSchema)
+export const allPaymentsListResponse = paginatedEnvelope(unifiedPaymentRecordSchema)
+export const paymentSingleResponse = singleEnvelope(unifiedPaymentRecordSchema)
 export const invoiceSingleResponse = singleEnvelope(invoiceRecordSchema)
 export const invoiceLineItemsResponse = arrayEnvelope(lineItemRecordSchema)
 export const invoicePaymentsResponse = arrayEnvelope(paymentRecordSchema)

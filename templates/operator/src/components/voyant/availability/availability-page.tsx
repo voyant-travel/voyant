@@ -11,7 +11,24 @@ import {
   AvailabilitySlotsTab,
   AvailabilityStartTimesTab,
 } from "@voyantjs/availability-ui"
-import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import {
+  CalendarProvider,
+  CalendarView,
+  type IEvent,
+  type TCalendarView,
+} from "@voyantjs/ui/components/big-calendar"
+import { Button } from "@voyantjs/ui/components/button"
+import { DateRangePicker, type DateRangeValue } from "@voyantjs/ui/components/date-picker"
+import { Label } from "@voyantjs/ui/components/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { useState } from "react"
 import { toast } from "sonner"
 import type {
@@ -30,7 +47,6 @@ import {
   getAvailabilityRulesQueryOptions,
   getAvailabilitySlotsQueryOptions,
   getAvailabilityStartTimesQueryOptions,
-  productNameById,
 } from "@/components/voyant/availability/availability-shared"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
@@ -45,9 +61,22 @@ import {
 export function AvailabilityPage() {
   const messages = useAdminMessages()
   const navigate = useNavigate()
-  const [search, setSearch] = useState("")
   const [productFilter, setProductFilter] = useState("all")
+  const [productSearch, setProductSearch] = useState("")
+  const [slotStatusFilter, setSlotStatusFilter] = useState<
+    "all" | "open" | "closed" | "sold_out" | "cancelled"
+  >("all")
+  const [slotDateRange, setSlotDateRange] = useState<DateRangeValue | null>(null)
+  const [ruleActiveFilter, setRuleActiveFilter] = useState<"all" | "active" | "inactive">("all")
+  const [startTimeActiveFilter, setStartTimeActiveFilter] = useState<"all" | "active" | "inactive">(
+    "all",
+  )
+  const [closeoutDateRange, setCloseoutDateRange] = useState<DateRangeValue | null>(null)
+  const [pickupPointActiveFilter, setPickupPointActiveFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all")
   const [activeTab, setActiveTab] = useState("slots")
+  const [calendarView, setCalendarView] = useState<TCalendarView>("month")
   const [bulkActionTarget, setBulkActionTarget] = useState<string | null>(null)
   const [ruleSelection, setRuleSelection] = useState<RowSelectionState>({})
   const [startTimeSelection, setStartTimeSelection] = useState<RowSelectionState>({})
@@ -67,7 +96,9 @@ export function AvailabilityPage() {
     AvailabilityPickupPointRow | undefined
   >()
 
-  const productsQuery = useQuery(getAvailabilityProductsQueryOptions())
+  const productsQuery = useQuery(
+    getAvailabilityProductsQueryOptions({ search: productSearch || undefined, limit: 25 }),
+  )
   const rulesQuery = useQuery(getAvailabilityRulesQueryOptions())
   const startTimesQuery = useQuery(getAvailabilityStartTimesQueryOptions())
   const slotsQuery = useQuery(getAvailabilitySlotsQueryOptions())
@@ -80,66 +111,34 @@ export function AvailabilityPage() {
   const slots = slotsQuery.data?.data ?? []
   const closeouts = closeoutsQuery.data?.data ?? []
   const pickupPoints = pickupPointsQuery.data?.data ?? []
-  const normalizedSearch = search.trim().toLowerCase()
-  const matchesSearch = (...values: Array<string | number | null | undefined>) =>
-    !normalizedSearch ||
-    values.some((value) =>
-      String(value ?? "")
-        .toLowerCase()
-        .includes(normalizedSearch),
-    )
   const matchesProduct = (productId: string) =>
     productFilter === "all" || productId === productFilter
+  const matchesActive = (active: boolean, filter: "all" | "active" | "inactive") =>
+    filter === "all" || (filter === "active" ? active : !active)
+  const matchesDateRange = (date: string, range: DateRangeValue | null) =>
+    (!range?.from || date >= range.from) && (!range?.to || date <= range.to)
 
   const filteredRules = rules.filter(
-    (rule) =>
-      matchesProduct(rule.productId) &&
-      matchesSearch(
-        productNameById(products, rule.productId, rule.productName),
-        rule.timezone,
-        rule.recurrenceRule,
-      ),
+    (rule) => matchesProduct(rule.productId) && matchesActive(rule.active, ruleActiveFilter),
   )
   const filteredStartTimes = startTimes.filter(
     (startTime) =>
-      matchesProduct(startTime.productId) &&
-      matchesSearch(
-        productNameById(products, startTime.productId, startTime.productName),
-        startTime.label,
-        startTime.startTimeLocal,
-      ),
+      matchesProduct(startTime.productId) && matchesActive(startTime.active, startTimeActiveFilter),
   )
   const filteredSlots = slots.filter(
     (slot) =>
       matchesProduct(slot.productId) &&
-      matchesSearch(
-        productNameById(products, slot.productId, slot.productName),
-        slot.dateLocal,
-        slot.startsAt,
-        slot.status,
-        slot.notes,
-      ),
+      (slotStatusFilter === "all" || slot.status === slotStatusFilter) &&
+      matchesDateRange(slot.dateLocal, slotDateRange),
   )
   const filteredCloseouts = closeouts.filter(
     (closeout) =>
-      matchesProduct(closeout.productId) &&
-      matchesSearch(
-        productNameById(products, closeout.productId, closeout.productName),
-        closeout.dateLocal,
-        closeout.slotId,
-        closeout.reason,
-        closeout.createdBy,
-      ),
+      matchesProduct(closeout.productId) && matchesDateRange(closeout.dateLocal, closeoutDateRange),
   )
   const filteredPickupPoints = pickupPoints.filter(
     (pickupPoint) =>
       matchesProduct(pickupPoint.productId) &&
-      matchesSearch(
-        productNameById(products, pickupPoint.productId, pickupPoint.productName),
-        pickupPoint.name,
-        pickupPoint.locationText,
-        pickupPoint.description,
-      ),
+      matchesActive(pickupPoint.active, pickupPointActiveFilter),
   )
   const filteredProducts = products.filter(
     (product) => productFilter === "all" || product.id === productFilter,
@@ -155,7 +154,187 @@ export function AvailabilityPage() {
           slot.productId === product.id && slot.status === "open" && slot.startsAt >= nowIso,
       ),
   )
-  const hasFilters = search.length > 0 || productFilter !== "all"
+  const hasFilters = productFilter !== "all"
+  const selectedProduct = products.find((product) => product.id === productFilter) ?? null
+
+  const slotStatusToColor: Record<AvailabilitySlotRow["status"], IEvent["color"]> = {
+    open: "green",
+    closed: "gray",
+    sold_out: "red",
+    cancelled: "yellow",
+  }
+  const calendarEvents: IEvent[] = filteredSlots.map((slot) => {
+    const productName = products.find((product) => product.id === slot.productId)?.name
+    return {
+      id: slot.id,
+      startDate: slot.startsAt,
+      endDate: slot.endsAt ?? slot.startsAt,
+      title: productName ?? slot.productName ?? "Slot",
+      description: slot.notes ?? "",
+      color: slotStatusToColor[slot.status],
+    }
+  })
+
+  const slotsToolbarHasFilters =
+    slotStatusFilter !== "all" || Boolean(slotDateRange?.from) || Boolean(slotDateRange?.to)
+  const slotsToolbar = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="slot-status" className="text-xs">
+          Status
+        </Label>
+        <Select
+          value={slotStatusFilter}
+          onValueChange={(value) =>
+            setSlotStatusFilter((value as typeof slotStatusFilter) ?? "all")
+          }
+        >
+          <SelectTrigger id="slot-status" className="w-full sm:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="closed">Closed</SelectItem>
+            <SelectItem value="sold_out">Sold Out</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-xs">Date range</Label>
+        <DateRangePicker
+          value={slotDateRange}
+          onChange={setSlotDateRange}
+          className="w-full sm:w-72"
+          placeholder="Any date"
+        />
+      </div>
+      {slotsToolbarHasFilters ? (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setSlotStatusFilter("all")
+            setSlotDateRange(null)
+          }}
+        >
+          Reset
+        </Button>
+      ) : null}
+    </div>
+  )
+
+  const rulesToolbar = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="rule-active" className="text-xs">
+          State
+        </Label>
+        <Select
+          value={ruleActiveFilter}
+          onValueChange={(value) =>
+            setRuleActiveFilter((value as typeof ruleActiveFilter) ?? "all")
+          }
+        >
+          <SelectTrigger id="rule-active" className="w-full sm:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {ruleActiveFilter !== "all" ? (
+        <Button variant="outline" size="sm" onClick={() => setRuleActiveFilter("all")}>
+          Reset
+        </Button>
+      ) : null}
+    </div>
+  )
+
+  const startTimesToolbar = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="start-time-active" className="text-xs">
+          State
+        </Label>
+        <Select
+          value={startTimeActiveFilter}
+          onValueChange={(value) =>
+            setStartTimeActiveFilter((value as typeof startTimeActiveFilter) ?? "all")
+          }
+        >
+          <SelectTrigger id="start-time-active" className="w-full sm:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {startTimeActiveFilter !== "all" ? (
+        <Button variant="outline" size="sm" onClick={() => setStartTimeActiveFilter("all")}>
+          Reset
+        </Button>
+      ) : null}
+    </div>
+  )
+
+  const closeoutsToolbarHasFilters =
+    Boolean(closeoutDateRange?.from) || Boolean(closeoutDateRange?.to)
+  const closeoutsToolbar = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-xs">Date range</Label>
+        <DateRangePicker
+          value={closeoutDateRange}
+          onChange={setCloseoutDateRange}
+          className="w-full sm:w-72"
+          placeholder="Any date"
+        />
+      </div>
+      {closeoutsToolbarHasFilters ? (
+        <Button variant="outline" size="sm" onClick={() => setCloseoutDateRange(null)}>
+          Reset
+        </Button>
+      ) : null}
+    </div>
+  )
+
+  const pickupPointsToolbar = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="pickup-point-active" className="text-xs">
+          State
+        </Label>
+        <Select
+          value={pickupPointActiveFilter}
+          onValueChange={(value) =>
+            setPickupPointActiveFilter((value as typeof pickupPointActiveFilter) ?? "all")
+          }
+        >
+          <SelectTrigger id="pickup-point-active" className="w-full sm:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {pickupPointActiveFilter !== "all" ? (
+        <Button variant="outline" size="sm" onClick={() => setPickupPointActiveFilter("all")}>
+          Reset
+        </Button>
+      ) : null}
+    </div>
+  )
 
   const refreshAll = async () => {
     await Promise.all([
@@ -284,9 +463,25 @@ export function AvailabilityPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{messages.availability.title}</h1>
-        <p className="text-sm text-muted-foreground">{messages.availability.description}</p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{messages.availability.title}</h1>
+          <p className="text-sm text-muted-foreground">{messages.availability.description}</p>
+        </div>
+        <div className="w-full md:w-72">
+          <AsyncCombobox
+            value={productFilter === "all" ? null : productFilter}
+            onChange={(value) => setProductFilter(value ?? "all")}
+            items={products}
+            selectedItem={selectedProduct}
+            getKey={(product) => product.id}
+            getLabel={(product) => product.name}
+            onSearchChange={setProductSearch}
+            placeholder={messages.availability.allProducts}
+            emptyText={productsQuery.isFetching ? "Searching…" : "No products match that search."}
+            triggerClassName="w-full"
+          />
+        </div>
       </div>
 
       {isLoading ? (
@@ -301,13 +496,12 @@ export function AvailabilityPage() {
             filteredRules={filteredRules}
             filteredPickupPoints={filteredPickupPoints}
             productsWithoutUpcomingDepartures={productsWithoutUpcomingDepartures}
-            search={search}
-            setSearch={setSearch}
+            search=""
+            setSearch={() => {}}
             productFilter={productFilter}
             setProductFilter={setProductFilter}
             hasFilters={hasFilters}
             onClearFilters={() => {
-              setSearch("")
               setProductFilter("all")
             }}
             onOpenSlot={(slotId) =>
@@ -317,6 +511,7 @@ export function AvailabilityPage() {
               void navigate({ to: "/products/$id", params: { id: productId } })
             }
             onJumpToSlots={() => setActiveTab("slots")}
+            showFilters={false}
           />
 
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value ?? "slots")}>
@@ -328,6 +523,7 @@ export function AvailabilityPage() {
               <TabsTrigger value="pickup-points">
                 {messages.availability.tabPickupPoints}
               </TabsTrigger>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
             </TabsList>
 
             <AvailabilitySlotsTab
@@ -350,6 +546,7 @@ export function AvailabilityPage() {
                 setEditingSlot(row)
                 setSlotDialogOpen(true)
               }}
+              toolbar={slotsToolbar}
             />
             <AvailabilityRulesTab
               messages={messages.availability}
@@ -371,6 +568,7 @@ export function AvailabilityPage() {
                 setEditingRule(row)
                 setRuleDialogOpen(true)
               }}
+              toolbar={rulesToolbar}
             />
             <AvailabilityStartTimesTab
               messages={messages.availability}
@@ -392,6 +590,7 @@ export function AvailabilityPage() {
                 setEditingStartTime(row)
                 setStartTimeDialogOpen(true)
               }}
+              toolbar={startTimesToolbar}
             />
             <AvailabilityCloseoutsTab
               messages={messages.availability}
@@ -409,6 +608,7 @@ export function AvailabilityPage() {
                 setEditingCloseout(row)
                 setCloseoutDialogOpen(true)
               }}
+              toolbar={closeoutsToolbar}
             />
             <AvailabilityPickupPointsTab
               messages={messages.availability}
@@ -427,7 +627,22 @@ export function AvailabilityPage() {
                 setEditingPickupPoint(row)
                 setPickupPointDialogOpen(true)
               }}
+              toolbar={pickupPointsToolbar}
             />
+            <TabsContent value="calendar" className="space-y-4">
+              <CalendarProvider
+                events={calendarEvents}
+                onEventClick={(event) =>
+                  void navigate({ to: "/availability/$id", params: { id: event.id } })
+                }
+              >
+                <CalendarView
+                  view={calendarView}
+                  onViewChange={setCalendarView}
+                  onDayClick={() => setCalendarView("day")}
+                />
+              </CalendarProvider>
+            </TabsContent>
           </Tabs>
         </>
       )}

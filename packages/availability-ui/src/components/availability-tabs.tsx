@@ -12,6 +12,7 @@ import type {
 import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components"
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { TabsContent } from "@voyantjs/ui/components/tabs"
+import type { ReactNode } from "react"
 import { formatLocalizedSelectionLabel } from "../utils.js"
 import {
   type AvailabilityColumnsMessages,
@@ -125,6 +126,7 @@ export function AvailabilitySlotsTab(props: {
   onCreate: () => void
   onOpenRoute: (slotId: string) => void
   onEdit: (row: AvailabilitySlotRow) => void
+  toolbar?: ReactNode
 }) {
   const selection = (count: number) =>
     formatLocalizedSelectionLabel(
@@ -141,6 +143,7 @@ export function AvailabilitySlotsTab(props: {
         actionLabel={props.messages.tabs.slots.actionLabel}
         onAction={props.onCreate}
       />
+      {props.toolbar}
       <DataTable
         columns={availabilitySlotColumns(props.products, props.onOpenRoute, props.messages)}
         data={props.filteredSlots}
@@ -234,6 +237,7 @@ export function AvailabilityRulesTab(props: {
   onCreate: () => void
   onOpenRoute: (ruleId: string) => void
   onEdit: (row: AvailabilityRuleRow) => void
+  toolbar?: ReactNode
 }) {
   const selection = (count: number) =>
     formatLocalizedSelectionLabel(
@@ -250,6 +254,7 @@ export function AvailabilityRulesTab(props: {
         actionLabel={props.messages.tabs.rules.actionLabel}
         onAction={props.onCreate}
       />
+      {props.toolbar}
       <DataTable
         columns={availabilityRuleColumns(props.products, props.onOpenRoute, props.messages)}
         data={props.filteredRules}
@@ -343,6 +348,7 @@ export function AvailabilityStartTimesTab(props: {
   onCreate: () => void
   onOpenRoute: (startTimeId: string) => void
   onEdit: (row: AvailabilityStartTimeRow) => void
+  toolbar?: ReactNode
 }) {
   const selection = (count: number) =>
     formatLocalizedSelectionLabel(
@@ -359,6 +365,7 @@ export function AvailabilityStartTimesTab(props: {
         actionLabel={props.messages.tabs.startTimes.actionLabel}
         onAction={props.onCreate}
       />
+      {props.toolbar}
       <DataTable
         columns={availabilityStartTimeColumns(props.products, props.onOpenRoute, props.messages)}
         data={props.filteredStartTimes}
@@ -450,6 +457,7 @@ export function AvailabilityCloseoutsTab(props: {
   handleBulkDelete: AvailabilityBulkDeleteFn
   onCreate: () => void
   onEdit: (row: AvailabilityCloseoutRow) => void
+  toolbar?: ReactNode
 }) {
   const selection = (count: number) =>
     formatLocalizedSelectionLabel(
@@ -466,6 +474,7 @@ export function AvailabilityCloseoutsTab(props: {
         actionLabel={props.messages.tabs.closeouts.actionLabel}
         onAction={props.onCreate}
       />
+      {props.toolbar}
       <DataTable
         columns={availabilityCloseoutColumns(props.products, props.messages)}
         data={props.filteredCloseouts}
@@ -516,6 +525,7 @@ export function AvailabilityPickupPointsTab(props: {
   handleBulkDelete: AvailabilityBulkDeleteFn
   onCreate: () => void
   onEdit: (row: AvailabilityPickupPointRow) => void
+  toolbar?: ReactNode
 }) {
   const selection = (count: number) =>
     formatLocalizedSelectionLabel(
@@ -532,6 +542,7 @@ export function AvailabilityPickupPointsTab(props: {
         actionLabel={props.messages.tabs.pickupPoints.actionLabel}
         onAction={props.onCreate}
       />
+      {props.toolbar}
       <DataTable
         columns={availabilityPickupPointColumns(props.products, props.messages)}
         data={props.filteredPickupPoints}

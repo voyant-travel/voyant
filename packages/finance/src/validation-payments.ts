@@ -356,3 +356,33 @@ export const supplierPaymentListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
+
+// ---------- unified payments listing (customer + supplier) ----------
+
+export const paymentKindSchema = z.enum(["customer", "supplier"])
+
+export const paymentListSortFieldSchema = z.enum([
+  "amountCents",
+  "status",
+  "paymentDate",
+  "createdAt",
+])
+
+export const paymentListSortDirSchema = z.enum(["asc", "desc"])
+
+export const paymentListQuerySchema = z.object({
+  kind: paymentKindSchema.optional(),
+  status: paymentStatusSchema.optional(),
+  paymentMethod: paymentMethodSchema.optional(),
+  currency: z.string().optional(),
+  invoiceId: z.string().optional(),
+  bookingId: z.string().optional(),
+  supplierId: z.string().optional(),
+  paymentDateFrom: z.string().optional(),
+  paymentDateTo: z.string().optional(),
+  search: z.string().optional(),
+  sortBy: paymentListSortFieldSchema.default("createdAt"),
+  sortDir: paymentListSortDirSchema.default("desc"),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+})

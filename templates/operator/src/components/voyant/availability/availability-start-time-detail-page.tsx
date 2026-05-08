@@ -41,16 +41,15 @@ type ListResponse<T> = {
   offset: number
 }
 
-export async function loadAvailabilityStartTimeDetailPage(
-  ensureQueryData: QueryClient["ensureQueryData"],
-  id: string,
-) {
-  const startTimeData = await ensureQueryData(getAvailabilityStartTimeQueryOptions(id))
+export async function loadAvailabilityStartTimeDetailPage(queryClient: QueryClient, id: string) {
+  const startTimeData = await queryClient.ensureQueryData(getAvailabilityStartTimeQueryOptions(id))
 
   return Promise.all([
     Promise.resolve(startTimeData),
-    ensureQueryData(getAvailabilityStartTimeSlotsQueryOptions(id)),
-    ensureQueryData(getAvailabilityStartTimeProductQueryOptions(startTimeData.data.productId)),
+    queryClient.ensureQueryData(getAvailabilityStartTimeSlotsQueryOptions(id)),
+    queryClient.ensureQueryData(
+      getAvailabilityStartTimeProductQueryOptions(startTimeData.data.productId),
+    ),
   ])
 }
 

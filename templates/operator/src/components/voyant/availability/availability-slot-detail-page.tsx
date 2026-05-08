@@ -25,21 +25,20 @@ import { getSlotStatusLabel } from "./availability-shared"
 
 const client = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
 
-export async function loadAvailabilitySlotDetailPage(
-  ensureQueryData: QueryClient["ensureQueryData"],
-  id: string,
-) {
-  const slotData = await ensureQueryData(getAvailabilitySlotQueryOptions(id))
+export async function loadAvailabilitySlotDetailPage(queryClient: QueryClient, id: string) {
+  const slotData = await queryClient.ensureQueryData(getAvailabilitySlotQueryOptions(id))
 
   return Promise.all([
     Promise.resolve(slotData),
-    ensureQueryData(getAvailabilitySlotPickupsQueryOptions(id)),
-    ensureQueryData(getAvailabilitySlotCloseoutsQueryOptions(id)),
-    ensureQueryData(getAvailabilitySlotAssignmentsQueryOptions(id)),
-    ensureQueryData(getAvailabilitySlotResourcesQueryOptions()),
-    ensureQueryData(getAvailabilitySlotBookingsQueryOptions()),
-    ensureQueryData(getAvailabilitySlotProductQueryOptions(slotData.data.productId)),
-    ensureQueryData(getAvailabilitySlotPickupPointsQueryOptions(slotData.data.productId)),
+    queryClient.ensureQueryData(getAvailabilitySlotPickupsQueryOptions(id)),
+    queryClient.ensureQueryData(getAvailabilitySlotCloseoutsQueryOptions(id)),
+    queryClient.ensureQueryData(getAvailabilitySlotAssignmentsQueryOptions(id)),
+    queryClient.ensureQueryData(getAvailabilitySlotResourcesQueryOptions()),
+    queryClient.ensureQueryData(getAvailabilitySlotBookingsQueryOptions()),
+    queryClient.ensureQueryData(getAvailabilitySlotProductQueryOptions(slotData.data.productId)),
+    queryClient.ensureQueryData(
+      getAvailabilitySlotPickupPointsQueryOptions(slotData.data.productId),
+    ),
   ])
 }
 

@@ -5,8 +5,7 @@ import {
 } from "@/components/voyant/legal/contract-detail-page"
 
 export const Route = createFileRoute("/_workspace/legal/contracts/$id")({
-  loader: ({ context, params }) =>
-    loadContractDetailPage(params.id, (options) => context.queryClient.ensureQueryData(options)),
+  loader: ({ context, params }) => loadContractDetailPage(params.id, context.queryClient),
   component: RouteComponent,
 })
 
