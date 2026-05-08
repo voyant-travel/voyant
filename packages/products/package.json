@@ -15,6 +15,7 @@
     "./catalog-policy": "./src/catalog-policy.ts",
     "./catalog-policy-destinations": "./src/catalog-policy-destinations.ts",
     "./catalog-policy-taxonomy": "./src/catalog-policy-taxonomy.ts",
+    "./catalog-policy-departures": "./src/catalog-policy-departures.ts",
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./service-catalog-plane-destinations": "./src/service-catalog-plane-destinations.ts",
     "./service-catalog-plane-taxonomy": "./src/service-catalog-plane-taxonomy.ts",
@@ -109,6 +110,11 @@
         "types": "./dist/catalog-policy-taxonomy.d.ts",
         "import": "./dist/catalog-policy-taxonomy.js",
         "default": "./dist/catalog-policy-taxonomy.js"
+      },
+      "./catalog-policy-departures": {
+        "types": "./dist/catalog-policy-departures.d.ts",
+        "import": "./dist/catalog-policy-departures.js",
+        "default": "./dist/catalog-policy-departures.js"
       },
       "./service-catalog-plane": {
         "types": "./dist/service-catalog-plane.d.ts",

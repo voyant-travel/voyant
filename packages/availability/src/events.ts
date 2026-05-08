@@ -29,6 +29,8 @@ export type AvailabilitySlotChangeSource =
   | "modify"
   | "manual"
   | "refresh"
+  | "created"
+  | "deleted"
 
 export interface AvailabilitySlotChangedEvent {
   slotId: string

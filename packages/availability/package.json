@@ -9,7 +9,8 @@
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
     "./rrule": "./src/rrule.ts",
-    "./service-holds": "./src/service-holds.ts"
+    "./service-holds": "./src/service-holds.ts",
+    "./service-catalog-plane-departures": "./src/service-catalog-plane-departures.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -67,6 +68,11 @@
         "types": "./dist/service-holds.d.ts",
         "import": "./dist/service-holds.js",
         "default": "./dist/service-holds.js"
+      },
+      "./service-catalog-plane-departures": {
+        "types": "./dist/service-catalog-plane-departures.d.ts",
+        "import": "./dist/service-catalog-plane-departures.js",
+        "default": "./dist/service-catalog-plane-departures.js"
       }
     },
     "main": "./dist/index.js",

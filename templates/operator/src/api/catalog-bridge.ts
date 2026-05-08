@@ -4,16 +4,23 @@
  * booking commits freeze a snapshot of every line item's resolved view.
  *
  * Subscriptions:
- *   - `product.created`         → reindex the product across DEFAULT_SLICES
- *   - `product.updated`         → reindex the product
- *   - `product.deleted`         → delete from every configured slice
- *   - `product.content.changed` → reindex the product (covers child-entity
- *                                 mutations like destination link
- *                                 add/remove that don't bump
- *                                 `product.updated`)
- *   - `booking.confirmed`       → capture a snapshot graph of the
- *                                 booking's product line items via
- *                                 `captureSnapshotGraph`
+ *   - `product.created`           → reindex the product across DEFAULT_SLICES
+ *   - `product.updated`           → reindex the product
+ *   - `product.deleted`           → delete from every configured slice
+ *   - `product.content.changed`   → reindex the product (covers child-entity
+ *                                   mutations like destination/category/tag
+ *                                   link add/remove that don't bump
+ *                                   `product.updated`)
+ *   - `availability.slot.changed` → reindex the slot's product so the
+ *                                   departure-date facets stay fresh.
+ *                                   Cross-package event: avoids polluting
+ *                                   `ProductContentChangedEvent.axis`
+ *                                   with availability concerns and keeps
+ *                                   the products package free of an
+ *                                   availability dep.
+ *   - `booking.confirmed`         → capture a snapshot graph of the
+ *                                   booking's product line items via
+ *                                   `captureSnapshotGraph`
  *
  * If Typesense isn't configured (no `TYPESENSE_HOST`), the indexer
  * handlers no-op silently. Snapshot capture only requires DB access, so
@@ -53,6 +60,18 @@ interface BookingConfirmedEventPayload {
   bookingId: string
   bookingNumber: string
   actorId: string | null
+}
+
+/**
+ * Mirrors `AvailabilitySlotChangedEvent` from `@voyantjs/availability`.
+ * Inlined here so the bridge doesn't need to import the availability
+ * events module just for the type — the contract is stable enough that
+ * a structural shape suffices and changes show up in review.
+ */
+interface AvailabilitySlotChangedPayload {
+  slotId: string
+  productId: string
+  optionId: string | null
 }
 
 export const catalogBridgeBundle: HonoBundle = {
@@ -114,6 +133,23 @@ export const catalogBridgeBundle: HonoBundle = {
         const ctx = buildIndexerContext()
         if (!ctx) return
         await ctx.service.reindexEntity("products", data.id, ctx.builder)
+      },
+    )
+
+    // Slot create/update/delete in the availability module reindexes the
+    // owning product so departure-date facets (`nextDepartureAt`,
+    // `departureDates[]`, `departureMonths[]`, `availableUnitsTotal`)
+    // stay fresh. The product itself doesn't change — but the projection
+    // extension reads slots, so the document does. Filter early on
+    // missing `productId` so a malformed payload can't blow up the
+    // subscriber.
+    eventBus.subscribe<AvailabilitySlotChangedPayload>(
+      "availability.slot.changed",
+      async ({ data }) => {
+        if (!data.productId) return
+        const ctx = buildIndexerContext()
+        if (!ctx) return
+        await ctx.service.reindexEntity("products", data.productId, ctx.builder)
       },
     )
 

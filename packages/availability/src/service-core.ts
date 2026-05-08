@@ -186,7 +186,36 @@ export async function getSlotById(db: PostgresJsDatabase, id: string) {
   return row ?? null
 }
 
-export async function createSlot(db: PostgresJsDatabase, data: CreateAvailabilitySlotInput) {
+export interface SlotMutationRuntime {
+  /**
+   * Optional event bus. When wired, slot create/update/delete each emit
+   * `availability.slot.changed` so subscribers (channel-push, catalog
+   * bridge) can react to any mutation that changes a product's effective
+   * departure surface — not just operator edits.
+   *
+   * Per docs/architecture/channel-push-architecture.md §5.1.
+   */
+  eventBus?: EventBus
+  /**
+   * Origin of the change. `createSlot` / `deleteSlot` default to
+   * `"created"` / `"deleted"`. `updateSlot` defaults to `"manual"`. The
+   * scheduled-refresh job overrides with `"refresh"` so dashboards can
+   * attribute drift correctly.
+   */
+  source?: AvailabilitySlotChangedEvent["source"]
+}
+
+/**
+ * Back-compat alias for the original update-only runtime type. New
+ * callers should reach for `SlotMutationRuntime`.
+ */
+export type UpdateSlotRuntime = SlotMutationRuntime
+
+export async function createSlot(
+  db: PostgresJsDatabase,
+  data: CreateAvailabilitySlotInput,
+  runtime: SlotMutationRuntime = {},
+) {
   const [row] = await db
     .insert(availabilitySlots)
     .values({
@@ -195,32 +224,37 @@ export async function createSlot(db: PostgresJsDatabase, data: CreateAvailabilit
       endsAt: toDateOrNull(data.endsAt),
     })
     .returning()
-  return row
-}
+  if (!row) return row
 
-export interface UpdateSlotRuntime {
-  /**
-   * Optional event bus. When wired, `updateSlot` emits
-   * `availability.slot.changed` after a successful update so channel-push
-   * (and other availability subscribers) can react to operator edits and
-   * scheduled refresh recomputations.
-   *
-   * Per docs/architecture/channel-push-architecture.md §5.1.
-   */
-  eventBus?: EventBus
-  /**
-   * Origin of the change. Defaults to `"manual"` (operator edit). The
-   * scheduled-refresh job passes `"refresh"` so dashboards can attribute
-   * drift correctly.
-   */
-  source?: AvailabilitySlotChangedEvent["source"]
+  // Emit on create so subscribers (catalog-plane bridge, channel-push)
+  // see new departures the same way they see edits. Without this, a
+  // freshly-created slot is invisible to the projection until the next
+  // unrelated update.
+  const eventBus = runtime.eventBus
+  if (eventBus) {
+    const payload: AvailabilitySlotChangedEvent = {
+      slotId: row.id,
+      productId: row.productId,
+      optionId: row.optionId ?? null,
+      startsAt: row.startsAt,
+      remainingPax: row.unlimited ? null : (row.remainingPax ?? null),
+      unlimited: row.unlimited,
+      source: runtime.source ?? "created",
+    }
+    await eventBus.emit(AVAILABILITY_SLOT_CHANGED_EVENT, payload, {
+      category: "domain",
+      source: "service",
+    })
+  }
+
+  return row
 }
 
 export async function updateSlot(
   db: PostgresJsDatabase,
   id: string,
   data: UpdateAvailabilitySlotInput,
-  runtime: UpdateSlotRuntime = {},
+  runtime: SlotMutationRuntime = {},
 ) {
   const patch = {
     ...data,
@@ -260,12 +294,45 @@ export async function updateSlot(
   return row
 }
 
-export async function deleteSlot(db: PostgresJsDatabase, id: string) {
+export async function deleteSlot(
+  db: PostgresJsDatabase,
+  id: string,
+  runtime: SlotMutationRuntime = {},
+) {
+  // Snapshot the row before deletion so we can build a complete event
+  // payload — once the row is gone we can't reconstruct productId etc.
+  const [snapshot] = await db
+    .select()
+    .from(availabilitySlots)
+    .where(eq(availabilitySlots.id, id))
+    .limit(1)
+
   const [row] = await db
     .delete(availabilitySlots)
     .where(eq(availabilitySlots.id, id))
     .returning({ id: availabilitySlots.id })
-  return row ?? null
+  if (!row) return null
+
+  const eventBus = runtime.eventBus
+  if (eventBus && snapshot) {
+    const payload: AvailabilitySlotChangedEvent = {
+      slotId: snapshot.id,
+      productId: snapshot.productId,
+      optionId: snapshot.optionId ?? null,
+      startsAt: snapshot.startsAt,
+      // Deleted slot contributes zero capacity. `remainingPax` reflects
+      // the post-mutation state per the contract; for a delete that's 0.
+      remainingPax: 0,
+      unlimited: false,
+      source: runtime.source ?? "deleted",
+    }
+    await eventBus.emit(AVAILABILITY_SLOT_CHANGED_EVENT, payload, {
+      category: "domain",
+      source: "service",
+    })
+  }
+
+  return row
 }
 
 export async function listCloseouts(db: PostgresJsDatabase, query: AvailabilityCloseoutListQuery) {
