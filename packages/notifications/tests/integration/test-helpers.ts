@@ -20,7 +20,10 @@ async function cleanupNotificationsTestData(
   await db.execute(sql`
     TRUNCATE
       notification_reminder_runs,
+      notification_reminder_stage_channels,
+      notification_reminder_rule_stages,
       notification_reminder_rules,
+      notification_settings,
       notification_deliveries,
       notification_templates,
       payment_sessions,
@@ -128,6 +131,40 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
       ALTER TYPE notification_reminder_run_status ADD VALUE IF NOT EXISTS 'queued';
     `)
     await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE notification_reminder_stage_anchor AS ENUM (
+          'due_date',
+          'booking_created_at',
+          'departure_date',
+          'invoice_issued_at',
+          'last_send_at'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE notification_reminder_stage_cadence_kind AS ENUM (
+          'once',
+          'every_n_days',
+          'escalating'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE notification_stage_recipient_kind AS ENUM ('primary', 'cc', 'bcc');
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS bookings (
         id text PRIMARY KEY NOT NULL,
         booking_number text NOT NULL,
@@ -136,9 +173,20 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
         status text NOT NULL DEFAULT 'confirmed',
         sell_currency text NOT NULL DEFAULT 'EUR',
         sell_amount_cents integer,
+        start_date date,
+        end_date date,
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL
       )
+    `)
+    await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS start_date date`)
+    await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS end_date date`)
+    await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS contact_first_name text`)
+    await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS contact_last_name text`)
+    await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS contact_email text`)
+    await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS contact_phone text`)
+    await db.execute(sql`
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS contact_preferred_language text
     `)
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS booking_travelers (
@@ -319,11 +367,75 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
         template_id text,
         template_slug text,
         relative_days_from_due_date integer NOT NULL DEFAULT 0,
+        priority integer NOT NULL DEFAULT 0,
+        suppression_group text,
         is_system boolean NOT NULL DEFAULT false,
         metadata jsonb,
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL
       )
+    `)
+    await db.execute(sql`
+      ALTER TABLE notification_reminder_rules
+        ADD COLUMN IF NOT EXISTS priority integer NOT NULL DEFAULT 0
+    `)
+    await db.execute(sql`
+      ALTER TABLE notification_reminder_rules
+        ADD COLUMN IF NOT EXISTS suppression_group text
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notification_reminder_rule_stages (
+        id text PRIMARY KEY NOT NULL,
+        reminder_rule_id text NOT NULL,
+        order_index integer NOT NULL,
+        name text,
+        anchor notification_reminder_stage_anchor NOT NULL,
+        window_start_days integer NOT NULL,
+        window_end_days integer NOT NULL,
+        cadence_kind notification_reminder_stage_cadence_kind NOT NULL,
+        cadence_every_days integer,
+        cadence_intervals jsonb,
+        max_sends_in_stage integer,
+        respect_quiet_hours boolean NOT NULL DEFAULT true,
+        metadata jsonb,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notification_reminder_stage_channels (
+        id text PRIMARY KEY NOT NULL,
+        stage_id text NOT NULL,
+        order_index integer NOT NULL DEFAULT 0,
+        channel notification_channel NOT NULL,
+        provider text,
+        template_id text,
+        template_slug text,
+        recipient_kind notification_stage_recipient_kind NOT NULL DEFAULT 'primary',
+        recipient_role text,
+        metadata jsonb,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notification_settings (
+        id text PRIMARY KEY NOT NULL,
+        scope text NOT NULL DEFAULT 'default',
+        quiet_hours_local jsonb,
+        blackout_dates jsonb,
+        skip_weekends boolean NOT NULL DEFAULT false,
+        holiday_calendar text,
+        recipient_rate_limit_per_day integer,
+        suppression_window_hours integer NOT NULL DEFAULT 24,
+        metadata jsonb,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS uidx_notification_settings_scope
+        ON notification_settings (scope)
     `)
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS notification_reminder_runs (

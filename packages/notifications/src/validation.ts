@@ -122,19 +122,13 @@ const notificationReminderRuleCoreSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 
-export const insertNotificationReminderRuleSchema = notificationReminderRuleCoreSchema.refine(
-  (value) => Boolean(value.templateId || value.templateSlug),
-  {
-    message: "templateId or templateSlug is required",
-    path: ["templateId"],
-  },
-)
+// templateId / templateSlug are both optional now: stage channels carry
+// their own templates and override the rule-level default. A rule with no
+// template is valid as long as it has stages (or the legacy
+// relativeDaysFromDueDate path stays unused).
+export const insertNotificationReminderRuleSchema = notificationReminderRuleCoreSchema
 
-export const updateNotificationReminderRuleSchema = notificationReminderRuleCoreSchema
-  .partial()
-  .refine((value) => value.templateId !== "" && value.templateSlug !== "", {
-    message: "templateId and templateSlug cannot be empty strings",
-  })
+export const updateNotificationReminderRuleSchema = notificationReminderRuleCoreSchema.partial()
 
 const notificationReminderRuleStageBaseSchema = z.object({
   name: z.string().max(255).optional().nullable(),

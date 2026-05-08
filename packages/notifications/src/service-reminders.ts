@@ -1699,8 +1699,23 @@ async function processStageRuleTargets(
     if (channels.length === 0) continue
 
     const booking = target.bookingId
-      ? ((await db.select().from(bookings).where(eq(bookings.id, target.bookingId)).limit(1))[0] ??
-        null)
+      ? ((
+          await db
+            .select({
+              id: bookings.id,
+              bookingNumber: bookings.bookingNumber,
+              personId: bookings.personId,
+              organizationId: bookings.organizationId,
+              contactFirstName: bookings.contactFirstName,
+              contactLastName: bookings.contactLastName,
+              contactEmail: bookings.contactEmail,
+              contactPhone: bookings.contactPhone,
+              contactPreferredLanguage: bookings.contactPreferredLanguage,
+            })
+            .from(bookings)
+            .where(eq(bookings.id, target.bookingId))
+            .limit(1)
+        )[0] ?? null)
       : null
     const participants = booking
       ? await db

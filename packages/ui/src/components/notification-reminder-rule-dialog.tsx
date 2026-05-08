@@ -34,7 +34,9 @@ const reminderRuleFormSchema = z.object({
     "booking_cancelled_non_payment",
   ]),
   channel: z.enum(["email", "sms"]),
-  templateId: z.string().min(1, "Template is required"),
+  // Optional default template — stages own per-channel templates and
+  // override this. Empty string is normalized to null in the payload.
+  templateId: z.string().optional(),
 })
 
 const reminderTargetOptions = [
@@ -123,7 +125,7 @@ export function NotificationReminderRuleDialog({
       targetType: values.targetType,
       channel: values.channel,
       provider: null,
-      templateId: values.templateId,
+      templateId: values.templateId ? values.templateId : null,
       templateSlug: null,
       // Timing comes from stages (notification_reminder_rule_stages); the
       // legacy single-offset column stays at 0 for new rules created from
