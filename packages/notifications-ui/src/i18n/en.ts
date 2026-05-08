@@ -87,21 +87,42 @@ export const notificationsUiEn: NotificationsUiMessages = {
   settings: {
     heading: "Notification settings",
     description: "Tenant-wide defaults for quiet hours, blackouts, and per-recipient rate limits.",
+    sections: {
+      quietHours: "Quiet hours",
+      quietHoursDesc: "When reminders are eligible to send, in the recipient's timezone.",
+      blackouts: "Blackout dates",
+      blackoutsDesc: "Specific dates to skip entirely (holidays, company closures).",
+      locale: "Locale",
+      localeDesc: "Optional public-holiday calendar applied on top of quiet hours.",
+      rateLimits: "Rate limits & dedup",
+      rateLimitsDesc: "Caps that apply across all rules to protect recipients from spam.",
+    },
     fields: {
-      quietHoursStart: "Quiet hours start (HH:MM)",
-      quietHoursEnd: "Quiet hours end (HH:MM)",
+      quietHoursStart: "Start",
+      quietHoursEnd: "End",
       quietHoursTz: "Timezone",
       blackoutDates: "Blackout dates",
       skipWeekends: "Skip weekends",
-      holidayCalendar: "Holiday calendar (locale)",
+      skipWeekendsDesc: "Defer reminders that would land on Saturday or Sunday.",
+      holidayCalendar: "Holiday calendar",
       recipientRateLimitPerDay: "Per-recipient daily cap",
       suppressionWindowHours: "Suppression window (hours)",
     },
+    placeholders: {
+      tz: "Search timezones…",
+      locale: "Search locales…",
+      noBlackouts: "No blackout dates yet.",
+    },
     helpers: {
-      blackoutDates: "ISO dates (YYYY-MM-DD), one per line.",
+      blackoutDates: "Add a date for each calendar day to skip.",
       recipientRateLimitPerDay:
         "Maximum sent reminders per recipient per channel per 24h. Leave blank for no limit.",
       suppressionWindowHours: "Window for suppression group dedup across rules sharing a tag.",
+      holidayCalendar: "Skip public holidays for this locale.",
+    },
+    actions: {
+      addBlackoutDate: "Add date",
+      removeBlackoutDate: "Remove",
     },
   },
   preview: {

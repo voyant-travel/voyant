@@ -85,20 +85,41 @@ export type NotificationsUiMessages = {
   settings: {
     heading: string
     description: string
+    sections: {
+      quietHours: string
+      quietHoursDesc: string
+      blackouts: string
+      blackoutsDesc: string
+      locale: string
+      localeDesc: string
+      rateLimits: string
+      rateLimitsDesc: string
+    }
     fields: {
       quietHoursStart: string
       quietHoursEnd: string
       quietHoursTz: string
       blackoutDates: string
       skipWeekends: string
+      skipWeekendsDesc: string
       holidayCalendar: string
       recipientRateLimitPerDay: string
       suppressionWindowHours: string
+    }
+    placeholders: {
+      tz: string
+      locale: string
+      noBlackouts: string
     }
     helpers: {
       blackoutDates: string
       recipientRateLimitPerDay: string
       suppressionWindowHours: string
+      holidayCalendar: string
+    }
+    actions: {
+      addBlackoutDate: string
+      removeBlackoutDate: string
     }
   }
   preview: {

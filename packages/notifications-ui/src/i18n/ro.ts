@@ -87,22 +87,43 @@ export const notificationsUiRo: NotificationsUiMessages = {
   settings: {
     heading: "Setări notificări",
     description: "Valori implicite pentru orele de liniște, blocaje și limite per destinatar.",
+    sections: {
+      quietHours: "Ore de liniște",
+      quietHoursDesc: "Când se pot trimite reamintiri, în fusul orar al destinatarului.",
+      blackouts: "Date blocate",
+      blackoutsDesc: "Date specifice care se ignoră complet (sărbători, închideri).",
+      locale: "Locale",
+      localeDesc: "Calendar opțional de sărbători publice aplicat peste orele de liniște.",
+      rateLimits: "Limite și deduplicare",
+      rateLimitsDesc: "Plafoane care se aplică tuturor regulilor pentru a proteja destinatarii.",
+    },
     fields: {
-      quietHoursStart: "Început ore liniște (HH:MM)",
-      quietHoursEnd: "Sfârșit ore liniște (HH:MM)",
+      quietHoursStart: "Început",
+      quietHoursEnd: "Sfârșit",
       quietHoursTz: "Fus orar",
       blackoutDates: "Date blocate",
       skipWeekends: "Sari peste weekend-uri",
-      holidayCalendar: "Calendar sărbători (locale)",
+      skipWeekendsDesc: "Amână reamintirile care ar cădea sâmbăta sau duminica.",
+      holidayCalendar: "Calendar sărbători",
       recipientRateLimitPerDay: "Plafon zilnic per destinatar",
       suppressionWindowHours: "Fereastră de supresie (ore)",
     },
+    placeholders: {
+      tz: "Caută fusuri orare…",
+      locale: "Caută locale…",
+      noBlackouts: "Nicio dată blocată.",
+    },
     helpers: {
-      blackoutDates: "Date ISO (YYYY-MM-DD), una pe linie.",
+      blackoutDates: "Adaugă o dată pentru fiecare zi calendaristică de ignorat.",
       recipientRateLimitPerDay:
         "Numărul maxim de reamintiri trimise per destinatar/canal în 24h. Lasă gol pentru fără limită.",
       suppressionWindowHours:
         "Fereastră pentru deduplicarea regulilor care partajează același grup de supresie.",
+      holidayCalendar: "Sari peste sărbătorile publice pentru acest locale.",
+    },
+    actions: {
+      addBlackoutDate: "Adaugă dată",
+      removeBlackoutDate: "Șterge",
     },
   },
   preview: {
