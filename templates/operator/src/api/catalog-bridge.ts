@@ -4,11 +4,16 @@
  * booking commits freeze a snapshot of every line item's resolved view.
  *
  * Subscriptions:
- *   - `product.created`  → reindex the product across DEFAULT_SLICES
- *   - `product.updated`  → reindex the product
- *   - `product.deleted`  → delete from every configured slice
- *   - `booking.confirmed` → capture a snapshot graph of the booking's
- *                            product line items via `captureSnapshotGraph`
+ *   - `product.created`         → reindex the product across DEFAULT_SLICES
+ *   - `product.updated`         → reindex the product
+ *   - `product.deleted`         → delete from every configured slice
+ *   - `product.content.changed` → reindex the product (covers child-entity
+ *                                 mutations like destination link
+ *                                 add/remove that don't bump
+ *                                 `product.updated`)
+ *   - `booking.confirmed`       → capture a snapshot graph of the
+ *                                 booking's product line items via
+ *                                 `captureSnapshotGraph`
  *
  * If Typesense isn't configured (no `TYPESENSE_HOST`), the indexer
  * handlers no-op silently. Snapshot capture only requires DB access, so
@@ -22,15 +27,13 @@ import {
   createIndexerService,
 } from "@voyantjs/catalog"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
-import {
-  buildProductSnapshotInput,
-  createProductDocumentBuilder,
-} from "@voyantjs/products/service-catalog-plane"
+import { buildProductSnapshotInput } from "@voyantjs/products/service-catalog-plane"
 import { and, eq, isNotNull } from "drizzle-orm"
 
 import {
   buildEmbeddingProvider,
   buildTypesenseIndexer,
+  createProductsDocumentBuilder,
   DEFAULT_SLICES,
   getFieldPolicyRegistries,
   withEmbedding,
@@ -39,6 +42,11 @@ import { getDbFromHyperdrive } from "./lib/db"
 
 interface ProductEventPayload {
   id: string
+}
+
+interface ProductContentChangedEventPayload {
+  id: string
+  axis?: string
 }
 
 interface BookingConfirmedEventPayload {
@@ -71,7 +79,7 @@ export const catalogBridgeBundle: HonoBundle = {
       })
       const db = getDbFromHyperdrive(env)
       const builder = withEmbedding(
-        createProductDocumentBuilder(db, { sellerOperatorId }),
+        createProductsDocumentBuilder(db, { sellerOperatorId }),
         embeddings,
       )
       return { service, builder }
@@ -95,6 +103,19 @@ export const catalogBridgeBundle: HonoBundle = {
       if (!ctx) return
       await ctx.service.deleteEntity("products", data.id)
     })
+
+    // `product.content.changed` covers child-entity mutations that don't
+    // emit `product.updated` — destination link add/remove, days, options,
+    // features, faq, location, media, translations. Every axis affects
+    // some part of the resolved doc, so reindex on all of them.
+    eventBus.subscribe<ProductContentChangedEventPayload>(
+      "product.content.changed",
+      async ({ data }) => {
+        const ctx = buildIndexerContext()
+        if (!ctx) return
+        await ctx.service.reindexEntity("products", data.id, ctx.builder)
+      },
+    )
 
     eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", async ({ data }) => {
       const db = getDbFromHyperdrive(env)
