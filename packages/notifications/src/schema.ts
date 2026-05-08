@@ -62,6 +62,25 @@ export const notificationReminderRunStatusEnum = pgEnum("notification_reminder_r
   "failed",
 ])
 
+export const notificationReminderStageAnchorEnum = pgEnum("notification_reminder_stage_anchor", [
+  "due_date",
+  "booking_created_at",
+  "departure_date",
+  "invoice_issued_at",
+  "last_send_at",
+])
+
+export const notificationReminderStageCadenceKindEnum = pgEnum(
+  "notification_reminder_stage_cadence_kind",
+  ["once", "every_n_days", "escalating"],
+)
+
+export const notificationStageRecipientKindEnum = pgEnum("notification_stage_recipient_kind", [
+  "primary",
+  "cc",
+  "bcc",
+])
+
 export const notificationTemplates = pgTable(
   "notification_templates",
   {
@@ -166,6 +185,8 @@ export const notificationReminderRules = pgTable(
     }),
     templateSlug: text("template_slug"),
     relativeDaysFromDueDate: integer("relative_days_from_due_date").notNull().default(0),
+    priority: integer("priority").notNull().default(0),
+    suppressionGroup: text("suppression_group"),
     isSystem: boolean("is_system").notNull().default(false),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -176,6 +197,8 @@ export const notificationReminderRules = pgTable(
     index("idx_notification_reminder_rules_status_updated").on(table.status, table.updatedAt),
     index("idx_notification_reminder_rules_target_updated").on(table.targetType, table.updatedAt),
     index("idx_notification_reminder_rules_channel_updated").on(table.channel, table.updatedAt),
+    index("idx_notification_reminder_rules_priority").on(table.priority),
+    index("idx_notification_reminder_rules_suppression_group").on(table.suppressionGroup),
     uniqueIndex("uidx_notification_reminder_rules_slug").on(table.slug),
   ],
 )
@@ -238,6 +261,106 @@ export const notificationReminderRuns = pgTable(
 export type NotificationReminderRun = typeof notificationReminderRuns.$inferSelect
 export type NewNotificationReminderRun = typeof notificationReminderRuns.$inferInsert
 
+export type NotificationReminderStageCadenceInterval = {
+  whenDaysUntilDueGT?: number | null
+  whenDaysUntilDueLT?: number | null
+  repeatEveryDays: number
+}
+
+export const notificationReminderRuleStages = pgTable(
+  "notification_reminder_rule_stages",
+  {
+    id: typeId("notification_reminder_rule_stages"),
+    reminderRuleId: typeIdRef("reminder_rule_id")
+      .notNull()
+      .references(() => notificationReminderRules.id, { onDelete: "cascade" }),
+    orderIndex: integer("order_index").notNull(),
+    name: text("name"),
+    anchor: notificationReminderStageAnchorEnum("anchor").notNull(),
+    windowStartDays: integer("window_start_days").notNull(),
+    windowEndDays: integer("window_end_days").notNull(),
+    cadenceKind: notificationReminderStageCadenceKindEnum("cadence_kind").notNull(),
+    cadenceEveryDays: integer("cadence_every_days"),
+    cadenceIntervals:
+      jsonb("cadence_intervals").$type<NotificationReminderStageCadenceInterval[]>(),
+    maxSendsInStage: integer("max_sends_in_stage"),
+    respectQuietHours: boolean("respect_quiet_hours").notNull().default(true),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_notification_reminder_rule_stages_rule_order").on(
+      table.reminderRuleId,
+      table.orderIndex,
+    ),
+    index("idx_notification_reminder_rule_stages_rule").on(table.reminderRuleId),
+    index("idx_notification_reminder_rule_stages_anchor").on(table.anchor),
+  ],
+)
+
+export type NotificationReminderRuleStage = typeof notificationReminderRuleStages.$inferSelect
+export type NewNotificationReminderRuleStage = typeof notificationReminderRuleStages.$inferInsert
+
+export const notificationReminderStageChannels = pgTable(
+  "notification_reminder_stage_channels",
+  {
+    id: typeId("notification_reminder_stage_channels"),
+    stageId: typeIdRef("stage_id")
+      .notNull()
+      .references(() => notificationReminderRuleStages.id, { onDelete: "cascade" }),
+    orderIndex: integer("order_index").notNull().default(0),
+    channel: notificationChannelEnum("channel").notNull(),
+    provider: text("provider"),
+    templateId: typeIdRef("template_id").references(() => notificationTemplates.id, {
+      onDelete: "set null",
+    }),
+    templateSlug: text("template_slug"),
+    recipientKind: notificationStageRecipientKindEnum("recipient_kind")
+      .notNull()
+      .default("primary"),
+    recipientRole: text("recipient_role"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_notification_reminder_stage_channels_stage").on(table.stageId),
+    index("idx_notification_reminder_stage_channels_template").on(table.templateId),
+  ],
+)
+
+export type NotificationReminderStageChannel = typeof notificationReminderStageChannels.$inferSelect
+export type NewNotificationReminderStageChannel =
+  typeof notificationReminderStageChannels.$inferInsert
+
+export type NotificationQuietHoursConfig = {
+  start: string
+  end: string
+  tz: string
+}
+
+export const notificationSettings = pgTable(
+  "notification_settings",
+  {
+    id: typeId("notification_settings"),
+    scope: text("scope").notNull().default("default"),
+    quietHoursLocal: jsonb("quiet_hours_local").$type<NotificationQuietHoursConfig | null>(),
+    blackoutDates: jsonb("blackout_dates").$type<string[]>(),
+    skipWeekends: boolean("skip_weekends").notNull().default(false),
+    holidayCalendar: text("holiday_calendar"),
+    recipientRateLimitPerDay: integer("recipient_rate_limit_per_day"),
+    suppressionWindowHours: integer("suppression_window_hours").notNull().default(24),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("uidx_notification_settings_scope").on(table.scope)],
+)
+
+export type NotificationSettings = typeof notificationSettings.$inferSelect
+export type NewNotificationSettings = typeof notificationSettings.$inferInsert
+
 export const notificationTemplatesRelations = relations(notificationTemplates, ({ many }) => ({
   deliveries: many(notificationDeliveries),
   reminderRules: many(notificationReminderRules),
@@ -258,6 +381,7 @@ export const notificationReminderRulesRelations = relations(
       references: [notificationTemplates.id],
     }),
     runs: many(notificationReminderRuns),
+    stages: many(notificationReminderRuleStages),
   }),
 )
 
@@ -271,6 +395,31 @@ export const notificationReminderRunsRelations = relations(notificationReminderR
     references: [notificationDeliveries.id],
   }),
 }))
+
+export const notificationReminderRuleStagesRelations = relations(
+  notificationReminderRuleStages,
+  ({ many, one }) => ({
+    rule: one(notificationReminderRules, {
+      fields: [notificationReminderRuleStages.reminderRuleId],
+      references: [notificationReminderRules.id],
+    }),
+    channels: many(notificationReminderStageChannels),
+  }),
+)
+
+export const notificationReminderStageChannelsRelations = relations(
+  notificationReminderStageChannels,
+  ({ one }) => ({
+    stage: one(notificationReminderRuleStages, {
+      fields: [notificationReminderStageChannels.stageId],
+      references: [notificationReminderRuleStages.id],
+    }),
+    template: one(notificationTemplates, {
+      fields: [notificationReminderStageChannels.templateId],
+      references: [notificationTemplates.id],
+    }),
+  }),
+)
 
 export const notificationTemplateLinkable: LinkableDefinition = {
   module: "notifications",
@@ -300,11 +449,35 @@ export const notificationReminderRunLinkable: LinkableDefinition = {
   idPrefix: "ntrn",
 }
 
+export const notificationReminderRuleStageLinkable: LinkableDefinition = {
+  module: "notifications",
+  entity: "notificationReminderRuleStage",
+  table: "notification_reminder_rule_stages",
+  idPrefix: "ntrs",
+}
+
+export const notificationReminderStageChannelLinkable: LinkableDefinition = {
+  module: "notifications",
+  entity: "notificationReminderStageChannel",
+  table: "notification_reminder_stage_channels",
+  idPrefix: "ntsc",
+}
+
+export const notificationSettingsLinkable: LinkableDefinition = {
+  module: "notifications",
+  entity: "notificationSettings",
+  table: "notification_settings",
+  idPrefix: "nset",
+}
+
 export const notificationsLinkable = {
   notificationTemplate: notificationTemplateLinkable,
   notificationDelivery: notificationDeliveryLinkable,
   notificationReminderRule: notificationReminderRuleLinkable,
   notificationReminderRun: notificationReminderRunLinkable,
+  notificationReminderRuleStage: notificationReminderRuleStageLinkable,
+  notificationReminderStageChannel: notificationReminderStageChannelLinkable,
+  notificationSettings: notificationSettingsLinkable,
 }
 
 export const notificationsModule: Module = {

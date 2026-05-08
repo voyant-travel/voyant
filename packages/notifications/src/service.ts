@@ -21,7 +21,22 @@ import {
   sendPaymentSessionNotification,
 } from "./service-deliveries.js"
 import { runDueReminders } from "./service-reminders.js"
+import { previewReminders } from "./service-sequence.js"
 import { previewNotificationTemplate } from "./service-shared.js"
+import {
+  createReminderRuleStage,
+  createStageChannel,
+  deleteReminderRuleStage,
+  deleteStageChannel,
+  getNotificationSettingsRecord,
+  getReminderRuleStageById,
+  listReminderRuleStages,
+  listStageChannels,
+  reorderReminderRuleStages,
+  updateReminderRuleStage,
+  updateStageChannel,
+  upsertNotificationSettings,
+} from "./service-stages.js"
 import {
   createReminderRule,
   createTemplate,
@@ -54,6 +69,19 @@ export const notificationsService = {
   updateReminderRule,
   listReminderRuns,
   runDueReminders,
+  previewReminders,
+  listReminderRuleStages,
+  getReminderRuleStageById,
+  createReminderRuleStage,
+  updateReminderRuleStage,
+  deleteReminderRuleStage,
+  reorderReminderRuleStages,
+  listStageChannels,
+  createStageChannel,
+  updateStageChannel,
+  deleteStageChannel,
+  getNotificationSettings: getNotificationSettingsRecord,
+  upsertNotificationSettings,
   sendPaymentSessionNotification,
   sendInvoiceNotification,
   listBookingDocumentBundle: bookingDocumentNotificationsService.listBookingDocumentBundle,
