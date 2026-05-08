@@ -1,0 +1,119 @@
+export type NotificationsUiMessages = {
+  common: {
+    cancel: string
+    save: string
+    create: string
+    edit: string
+    delete: string
+    add: string
+    none: string
+    loading: string
+    optionalPlaceholder: string
+  }
+  stage: {
+    listHeading: string
+    listEmpty: string
+    addStage: string
+    deleteConfirm: string
+    fields: {
+      name: string
+      orderIndex: string
+      anchor: string
+      windowStartDays: string
+      windowEndDays: string
+      cadenceKind: string
+      cadenceEveryDays: string
+      cadenceIntervals: string
+      maxSendsInStage: string
+      respectQuietHours: string
+    }
+    placeholders: {
+      name: string
+    }
+    anchors: {
+      due_date: string
+      booking_created_at: string
+      departure_date: string
+      invoice_issued_at: string
+      last_send_at: string
+    }
+    cadences: {
+      once: string
+      every_n_days: string
+      escalating: string
+    }
+    intervalRow: {
+      whenDaysUntilDueGT: string
+      whenDaysUntilDueLT: string
+      repeatEveryDays: string
+      addInterval: string
+      removeInterval: string
+    }
+    titles: {
+      create: string
+      edit: string
+    }
+  }
+  channel: {
+    listHeading: string
+    listEmpty: string
+    addChannel: string
+    deleteConfirm: string
+    fields: {
+      orderIndex: string
+      channel: string
+      provider: string
+      templateId: string
+      templateSlug: string
+      recipientKind: string
+      recipientRole: string
+    }
+    channels: {
+      email: string
+      sms: string
+    }
+    recipientKinds: {
+      primary: string
+      cc: string
+      bcc: string
+    }
+    titles: {
+      create: string
+      edit: string
+    }
+  }
+  settings: {
+    heading: string
+    description: string
+    fields: {
+      quietHoursStart: string
+      quietHoursEnd: string
+      quietHoursTz: string
+      blackoutDates: string
+      skipWeekends: string
+      holidayCalendar: string
+      recipientRateLimitPerDay: string
+      suppressionWindowHours: string
+    }
+    helpers: {
+      blackoutDates: string
+      recipientRateLimitPerDay: string
+      suppressionWindowHours: string
+    }
+  }
+  preview: {
+    heading: string
+    description: string
+    dateLabel: string
+    refresh: string
+    empty: string
+    columns: {
+      rule: string
+      stage: string
+      target: string
+      anchor: string
+      scheduledAt: string
+      reasoning: string
+    }
+  }
+}

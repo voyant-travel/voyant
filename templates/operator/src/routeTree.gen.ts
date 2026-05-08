@@ -54,8 +54,10 @@ import { Route as WorkspaceProductsCategoriesRouteImport } from './routes/_works
 import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/products/$id'
 import { Route as WorkspacePeopleIdRouteImport } from './routes/_workspace/people/$id'
 import { Route as WorkspaceOrganizationsIdRouteImport } from './routes/_workspace/organizations/$id'
+import { Route as WorkspaceNotificationsSettingsRouteImport } from './routes/_workspace/notifications/settings'
 import { Route as WorkspaceNotificationsReminderRunsRouteImport } from './routes/_workspace/notifications/reminder-runs'
 import { Route as WorkspaceNotificationsReminderRulesRouteImport } from './routes/_workspace/notifications/reminder-rules'
+import { Route as WorkspaceNotificationsPreviewRouteImport } from './routes/_workspace/notifications/preview'
 import { Route as WorkspaceNotificationsDeliveriesRouteImport } from './routes/_workspace/notifications/deliveries'
 import { Route as WorkspaceBookingsIdRouteImport } from './routes/_workspace/bookings/$id'
 import { Route as WorkspaceAvailabilityIdRouteImport } from './routes/_workspace/availability/$id'
@@ -70,6 +72,7 @@ import { Route as WorkspaceResourcesPoolsIdRouteImport } from './routes/_workspa
 import { Route as WorkspaceResourcesAssignmentsIdRouteImport } from './routes/_workspace/resources/assignments/$id'
 import { Route as WorkspaceResourcesAllocationsIdRouteImport } from './routes/_workspace/resources/allocations/$id'
 import { Route as WorkspaceNotificationsTemplatesIdRouteImport } from './routes/_workspace/notifications/templates/$id'
+import { Route as WorkspaceNotificationsReminderRulesIdRouteImport } from './routes/_workspace/notifications/reminder-rules.$id'
 import { Route as WorkspaceLegalTemplatesIdRouteImport } from './routes/_workspace/legal/templates/$id'
 import { Route as WorkspaceLegalPoliciesIdRouteImport } from './routes/_workspace/legal/policies/$id'
 import { Route as WorkspaceLegalContractsIdRouteImport } from './routes/_workspace/legal/contracts/$id'
@@ -317,6 +320,12 @@ const WorkspaceOrganizationsIdRoute =
     path: '/organizations/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceNotificationsSettingsRoute =
+  WorkspaceNotificationsSettingsRouteImport.update({
+    id: '/notifications/settings',
+    path: '/notifications/settings',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceNotificationsReminderRunsRoute =
   WorkspaceNotificationsReminderRunsRouteImport.update({
     id: '/notifications/reminder-runs',
@@ -327,6 +336,12 @@ const WorkspaceNotificationsReminderRulesRoute =
   WorkspaceNotificationsReminderRulesRouteImport.update({
     id: '/notifications/reminder-rules',
     path: '/notifications/reminder-rules',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
+const WorkspaceNotificationsPreviewRoute =
+  WorkspaceNotificationsPreviewRouteImport.update({
+    id: '/notifications/preview',
+    path: '/notifications/preview',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
 const WorkspaceNotificationsDeliveriesRoute =
@@ -410,6 +425,12 @@ const WorkspaceNotificationsTemplatesIdRoute =
     id: '/notifications/templates/$id',
     path: '/notifications/templates/$id',
     getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
+const WorkspaceNotificationsReminderRulesIdRoute =
+  WorkspaceNotificationsReminderRulesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => WorkspaceNotificationsReminderRulesRoute,
   } as any)
 const WorkspaceLegalTemplatesIdRoute =
   WorkspaceLegalTemplatesIdRouteImport.update({
@@ -511,8 +532,10 @@ export interface FileRoutesByFullPath {
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
-  '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
+  '/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
+  '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRouteWithChildren
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/notifications/settings': typeof WorkspaceNotificationsSettingsRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
@@ -547,6 +570,7 @@ export interface FileRoutesByFullPath {
   '/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
+  '/notifications/reminder-rules/$id': typeof WorkspaceNotificationsReminderRulesIdRoute
   '/notifications/templates/$id': typeof WorkspaceNotificationsTemplatesIdRoute
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
@@ -583,8 +607,10 @@ export interface FileRoutesByTo {
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
-  '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
+  '/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
+  '/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRouteWithChildren
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/notifications/settings': typeof WorkspaceNotificationsSettingsRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
@@ -619,6 +645,7 @@ export interface FileRoutesByTo {
   '/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
+  '/notifications/reminder-rules/$id': typeof WorkspaceNotificationsReminderRulesIdRoute
   '/notifications/templates/$id': typeof WorkspaceNotificationsTemplatesIdRoute
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
@@ -660,8 +687,10 @@ export interface FileRoutesById {
   '/_workspace/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/_workspace/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/_workspace/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
-  '/_workspace/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRoute
+  '/_workspace/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
+  '/_workspace/notifications/reminder-rules': typeof WorkspaceNotificationsReminderRulesRouteWithChildren
   '/_workspace/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
+  '/_workspace/notifications/settings': typeof WorkspaceNotificationsSettingsRoute
   '/_workspace/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/_workspace/people/$id': typeof WorkspacePeopleIdRoute
   '/_workspace/products/$id': typeof WorkspaceProductsIdRoute
@@ -696,6 +725,7 @@ export interface FileRoutesById {
   '/_workspace/legal/contracts/$id': typeof WorkspaceLegalContractsIdRoute
   '/_workspace/legal/policies/$id': typeof WorkspaceLegalPoliciesIdRoute
   '/_workspace/legal/templates/$id': typeof WorkspaceLegalTemplatesIdRoute
+  '/_workspace/notifications/reminder-rules/$id': typeof WorkspaceNotificationsReminderRulesIdRoute
   '/_workspace/notifications/templates/$id': typeof WorkspaceNotificationsTemplatesIdRoute
   '/_workspace/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/_workspace/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
@@ -735,8 +765,10 @@ export interface FileRouteTypes {
     | '/availability/$id'
     | '/bookings/$id'
     | '/notifications/deliveries'
+    | '/notifications/preview'
     | '/notifications/reminder-rules'
     | '/notifications/reminder-runs'
+    | '/notifications/settings'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
@@ -771,6 +803,7 @@ export interface FileRouteTypes {
     | '/legal/contracts/$id'
     | '/legal/policies/$id'
     | '/legal/templates/$id'
+    | '/notifications/reminder-rules/$id'
     | '/notifications/templates/$id'
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
@@ -807,8 +840,10 @@ export interface FileRouteTypes {
     | '/availability/$id'
     | '/bookings/$id'
     | '/notifications/deliveries'
+    | '/notifications/preview'
     | '/notifications/reminder-rules'
     | '/notifications/reminder-runs'
+    | '/notifications/settings'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
@@ -843,6 +878,7 @@ export interface FileRouteTypes {
     | '/legal/contracts/$id'
     | '/legal/policies/$id'
     | '/legal/templates/$id'
+    | '/notifications/reminder-rules/$id'
     | '/notifications/templates/$id'
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
@@ -883,8 +919,10 @@ export interface FileRouteTypes {
     | '/_workspace/availability/$id'
     | '/_workspace/bookings/$id'
     | '/_workspace/notifications/deliveries'
+    | '/_workspace/notifications/preview'
     | '/_workspace/notifications/reminder-rules'
     | '/_workspace/notifications/reminder-runs'
+    | '/_workspace/notifications/settings'
     | '/_workspace/organizations/$id'
     | '/_workspace/people/$id'
     | '/_workspace/products/$id'
@@ -919,6 +957,7 @@ export interface FileRouteTypes {
     | '/_workspace/legal/contracts/$id'
     | '/_workspace/legal/policies/$id'
     | '/_workspace/legal/templates/$id'
+    | '/_workspace/notifications/reminder-rules/$id'
     | '/_workspace/notifications/templates/$id'
     | '/_workspace/resources/allocations/$id'
     | '/_workspace/resources/assignments/$id'
@@ -1261,6 +1300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceOrganizationsIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/notifications/settings': {
+      id: '/_workspace/notifications/settings'
+      path: '/notifications/settings'
+      fullPath: '/notifications/settings'
+      preLoaderRoute: typeof WorkspaceNotificationsSettingsRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/notifications/reminder-runs': {
       id: '/_workspace/notifications/reminder-runs'
       path: '/notifications/reminder-runs'
@@ -1273,6 +1319,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications/reminder-rules'
       fullPath: '/notifications/reminder-rules'
       preLoaderRoute: typeof WorkspaceNotificationsReminderRulesRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/notifications/preview': {
+      id: '/_workspace/notifications/preview'
+      path: '/notifications/preview'
+      fullPath: '/notifications/preview'
+      preLoaderRoute: typeof WorkspaceNotificationsPreviewRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/notifications/deliveries': {
@@ -1372,6 +1425,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/notifications/templates/$id'
       preLoaderRoute: typeof WorkspaceNotificationsTemplatesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/notifications/reminder-rules/$id': {
+      id: '/_workspace/notifications/reminder-rules/$id'
+      path: '/$id'
+      fullPath: '/notifications/reminder-rules/$id'
+      preLoaderRoute: typeof WorkspaceNotificationsReminderRulesIdRouteImport
+      parentRoute: typeof WorkspaceNotificationsReminderRulesRoute
     }
     '/_workspace/legal/templates/$id': {
       id: '/_workspace/legal/templates/$id'
@@ -1545,6 +1605,21 @@ const WorkspaceSettingsRouteRouteWithChildren =
     WorkspaceSettingsRouteRouteChildren,
   )
 
+interface WorkspaceNotificationsReminderRulesRouteChildren {
+  WorkspaceNotificationsReminderRulesIdRoute: typeof WorkspaceNotificationsReminderRulesIdRoute
+}
+
+const WorkspaceNotificationsReminderRulesRouteChildren: WorkspaceNotificationsReminderRulesRouteChildren =
+  {
+    WorkspaceNotificationsReminderRulesIdRoute:
+      WorkspaceNotificationsReminderRulesIdRoute,
+  }
+
+const WorkspaceNotificationsReminderRulesRouteWithChildren =
+  WorkspaceNotificationsReminderRulesRoute._addFileChildren(
+    WorkspaceNotificationsReminderRulesRouteChildren,
+  )
+
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
@@ -1555,8 +1630,10 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceAvailabilityIdRoute: typeof WorkspaceAvailabilityIdRoute
   WorkspaceBookingsIdRoute: typeof WorkspaceBookingsIdRoute
   WorkspaceNotificationsDeliveriesRoute: typeof WorkspaceNotificationsDeliveriesRoute
-  WorkspaceNotificationsReminderRulesRoute: typeof WorkspaceNotificationsReminderRulesRoute
+  WorkspaceNotificationsPreviewRoute: typeof WorkspaceNotificationsPreviewRoute
+  WorkspaceNotificationsReminderRulesRoute: typeof WorkspaceNotificationsReminderRulesRouteWithChildren
   WorkspaceNotificationsReminderRunsRoute: typeof WorkspaceNotificationsReminderRunsRoute
+  WorkspaceNotificationsSettingsRoute: typeof WorkspaceNotificationsSettingsRoute
   WorkspaceOrganizationsIdRoute: typeof WorkspaceOrganizationsIdRoute
   WorkspacePeopleIdRoute: typeof WorkspacePeopleIdRoute
   WorkspaceProductsIdRoute: typeof WorkspaceProductsIdRoute
@@ -1606,10 +1683,12 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceAvailabilityIdRoute: WorkspaceAvailabilityIdRoute,
   WorkspaceBookingsIdRoute: WorkspaceBookingsIdRoute,
   WorkspaceNotificationsDeliveriesRoute: WorkspaceNotificationsDeliveriesRoute,
+  WorkspaceNotificationsPreviewRoute: WorkspaceNotificationsPreviewRoute,
   WorkspaceNotificationsReminderRulesRoute:
-    WorkspaceNotificationsReminderRulesRoute,
+    WorkspaceNotificationsReminderRulesRouteWithChildren,
   WorkspaceNotificationsReminderRunsRoute:
     WorkspaceNotificationsReminderRunsRoute,
+  WorkspaceNotificationsSettingsRoute: WorkspaceNotificationsSettingsRoute,
   WorkspaceOrganizationsIdRoute: WorkspaceOrganizationsIdRoute,
   WorkspacePeopleIdRoute: WorkspacePeopleIdRoute,
   WorkspaceProductsIdRoute: WorkspaceProductsIdRoute,

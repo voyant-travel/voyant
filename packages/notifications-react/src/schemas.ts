@@ -123,3 +123,106 @@ export const notificationProviderOptionSchema = z.enum(["automatic", "resend", "
 export const notificationTemplateEditorChannelSchema = notificationChannelSchema
 export const notificationReminderRuleStatusFilterSchema = notificationReminderStatusSchema
 export const notificationReminderRunStatusFilterSchema = notificationReminderRunStatusSchema
+
+export const reminderStageAnchorSchema = z.enum([
+  "due_date",
+  "booking_created_at",
+  "departure_date",
+  "invoice_issued_at",
+  "last_send_at",
+])
+export const reminderStageCadenceKindSchema = z.enum(["once", "every_n_days", "escalating"])
+export const reminderStageRecipientKindSchema = z.enum(["primary", "cc", "bcc"])
+
+export const reminderStageCadenceIntervalRecord = z.object({
+  whenDaysUntilDueGT: z.number().int().nullable().optional(),
+  whenDaysUntilDueLT: z.number().int().nullable().optional(),
+  repeatEveryDays: z.number().int(),
+})
+
+export const reminderRuleStageRecordSchema = z.object({
+  id: z.string(),
+  reminderRuleId: z.string(),
+  orderIndex: z.number().int(),
+  name: z.string().nullable(),
+  anchor: reminderStageAnchorSchema,
+  windowStartDays: z.number().int(),
+  windowEndDays: z.number().int(),
+  cadenceKind: reminderStageCadenceKindSchema,
+  cadenceEveryDays: z.number().int().nullable(),
+  cadenceIntervals: z.array(reminderStageCadenceIntervalRecord).nullable(),
+  maxSendsInStage: z.number().int().nullable(),
+  respectQuietHours: z.boolean(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type ReminderRuleStageRecord = z.infer<typeof reminderRuleStageRecordSchema>
+
+export const reminderStageChannelRecordSchema = z.object({
+  id: z.string(),
+  stageId: z.string(),
+  orderIndex: z.number().int(),
+  channel: notificationChannelSchema,
+  provider: z.string().nullable(),
+  templateId: z.string().nullable(),
+  templateSlug: z.string().nullable(),
+  recipientKind: reminderStageRecipientKindSchema,
+  recipientRole: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type ReminderStageChannelRecord = z.infer<typeof reminderStageChannelRecordSchema>
+
+export const notificationQuietHoursConfigSchema = z.object({
+  start: z.string(),
+  end: z.string(),
+  tz: z.string(),
+})
+
+export const notificationSettingsRecordSchema = z.object({
+  id: z.string(),
+  scope: z.string(),
+  quietHoursLocal: notificationQuietHoursConfigSchema.nullable(),
+  blackoutDates: z.array(z.string()).nullable(),
+  skipWeekends: z.boolean(),
+  holidayCalendar: z.string().nullable(),
+  recipientRateLimitPerDay: z.number().int().nullable(),
+  suppressionWindowHours: z.number().int(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type NotificationSettingsRecord = z.infer<typeof notificationSettingsRecordSchema>
+
+export const remindersPreviewRowSchema = z.object({
+  ruleId: z.string(),
+  ruleName: z.string(),
+  ruleSlug: z.string(),
+  targetType: z.string(),
+  targetId: z.string(),
+  bookingId: z.string().nullable(),
+  stageId: z.string(),
+  stageName: z.string().nullable(),
+  stageOrderIndex: z.number().int(),
+  anchor: z.string(),
+  anchorDate: z.string(),
+  scheduledAt: z.string(),
+  sendCountAtFire: z.number().int(),
+  reasoning: z.string(),
+})
+
+export type RemindersPreviewRow = z.infer<typeof remindersPreviewRowSchema>
+
+export const reminderRuleStagesListResponse = singleEnvelope(z.array(reminderRuleStageRecordSchema))
+export const reminderRuleStageSingleResponse = singleEnvelope(reminderRuleStageRecordSchema)
+export const reminderStageChannelsListResponse = singleEnvelope(
+  z.array(reminderStageChannelRecordSchema),
+)
+export const reminderStageChannelSingleResponse = singleEnvelope(reminderStageChannelRecordSchema)
+export const notificationSettingsResponse = singleEnvelope(notificationSettingsRecordSchema)
+export const remindersPreviewResponse = singleEnvelope(z.array(remindersPreviewRowSchema))

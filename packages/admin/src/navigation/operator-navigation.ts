@@ -95,6 +95,16 @@ export function createOperatorAdminNavigation({
           title: messages.notificationReminderRuns,
           url: "/notifications/reminder-runs",
         },
+        {
+          id: "notification-preview",
+          title: messages.notificationPreview,
+          url: "/notifications/preview",
+        },
+        {
+          id: "notification-settings",
+          title: messages.notificationSettings,
+          url: "/notifications/settings",
+        },
       ],
     },
     {
