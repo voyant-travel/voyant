@@ -26,6 +26,7 @@ import {
   createFieldPolicyRegistry,
   type DocumentBuilder,
   type DocumentEmitter,
+  type FieldPolicy,
   type FieldPolicyRegistry,
   type IndexerDocument,
   type IndexerSlice,
@@ -236,6 +237,52 @@ export async function buildProductSnapshotInput(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * A projection extension contributes additional field-keyed entries to the
+ * product search document. The builder runs all extensions in parallel after
+ * fetching the product row, then merges their entries into the base
+ * projection before emitting.
+ *
+ * Used by child-entity registries (destinations, taxonomy, departures, etc.)
+ * to denormalize fields onto the product doc. See architecture §5.4 — the
+ * search index is the canonical place for cross-entity denormalization.
+ *
+ * `buildIndexerDocument` silently drops entries whose paths aren't registered
+ * in the field-policy registry — so an extension's contributed registry must
+ * be composed into the registry passed to `createProductDocumentBuilder` for
+ * its fields to actually land in the document.
+ */
+export interface ProductProjectionExtension {
+  /** Identifier — used for diagnostics and logging only. */
+  readonly name: string
+  /**
+   * Contribute additional projection entries for one product. The slice
+   * carries locale and audience for translation lookups and audience
+   * filtering.
+   */
+  project(
+    db: AnyDrizzleDb,
+    productId: string,
+    slice: IndexerSlice,
+  ): Promise<ReadonlyMap<string, unknown>>
+}
+
+/**
+ * Compose the registry from the base product policy plus any contributing
+ * extensions' policies. Templates wire this when they enable child-entity
+ * registries.
+ */
+export function createProductsRegistry(
+  ...extensionPolicies: ReadonlyArray<ReadonlyArray<FieldPolicy>>
+): FieldPolicyRegistry {
+  if (extensionPolicies.length === 0) return getProductsRegistry()
+  const composed: FieldPolicy[] = [...productCatalogPolicy]
+  for (const policies of extensionPolicies) {
+    composed.push(...policies)
+  }
+  return createFieldPolicyRegistry(composed)
+}
+
+/**
  * Construct a sync `DocumentEmitter` for products. The emitter takes a
  * pre-fetched product row + a slice and returns the indexer document
  * (filtered by visibility, with blob-only fields skipped).
@@ -243,11 +290,15 @@ export async function buildProductSnapshotInput(
  * Bulk-reindex pipelines that already have rows in hand call this directly.
  * Live reindex paths use `createProductDocumentBuilder` below, which fetches
  * the row before emitting.
+ *
+ * Pass a custom `registry` when the deployment composes additional
+ * child-entity policies; otherwise the default products registry is used.
  */
 export function createProductDocumentEmitter(context: {
   sellerOperatorId: string
+  registry?: FieldPolicyRegistry
 }): DocumentEmitter<typeof products.$inferSelect> {
-  const registry = getProductsRegistry()
+  const registry = context.registry ?? getProductsRegistry()
   return {
     vertical: "products",
     emit(source, slice) {
@@ -266,17 +317,47 @@ export function createProductDocumentEmitter(context: {
  * Returns `null` if the product no longer exists (e.g. it was deleted
  * between the reindex enqueue and the worker picking it up). Callers can
  * treat `null` as a delete signal.
+ *
+ * `extensions` denormalize child-entity fields onto the product doc. They
+ * run in parallel after the base row is fetched. An extension that throws
+ * fails the whole build — failures here would otherwise produce silently
+ * incomplete documents.
+ *
+ * Pass a custom `registry` (composed via `createProductsRegistry`) when
+ * extensions contribute fields beyond the base products policy.
  */
 export function createProductDocumentBuilder(
   db: AnyDrizzleDb,
-  context: { sellerOperatorId: string },
+  context: {
+    sellerOperatorId: string
+    extensions?: ReadonlyArray<ProductProjectionExtension>
+    registry?: FieldPolicyRegistry
+  },
 ): DocumentBuilder {
-  const emitter = createProductDocumentEmitter(context)
+  const registry = context.registry ?? getProductsRegistry()
+  const extensions = context.extensions ?? []
   return async (entityId: string, slice: IndexerSlice): Promise<IndexerDocument | null> => {
     const rows = await db.select().from(products).where(eq(products.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
-    return emitter.emit(row, slice)
+
+    const baseProjection = productRowToProjection(row, {
+      sellerOperatorId: context.sellerOperatorId,
+    })
+    if (extensions.length === 0) {
+      return buildIndexerDocument(registry, baseProjection, slice, entityId)
+    }
+
+    const extensionProjections = await Promise.all(
+      extensions.map((ext) => ext.project(db, entityId, slice)),
+    )
+    const merged = new Map<string, unknown>(baseProjection)
+    for (const projection of extensionProjections) {
+      for (const [path, value] of projection) {
+        merged.set(path, value)
+      }
+    }
+    return buildIndexerDocument(registry, merged, slice, entityId)
   }
 }
 

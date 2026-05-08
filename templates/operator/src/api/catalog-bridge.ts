@@ -26,6 +26,7 @@ import {
   buildProductSnapshotInput,
   createProductDocumentBuilder,
 } from "@voyantjs/products/service-catalog-plane"
+import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
 import { and, eq, isNotNull } from "drizzle-orm"
 
 import {
@@ -70,8 +71,13 @@ export const catalogBridgeBundle: HonoBundle = {
         registries: getFieldPolicyRegistries(),
       })
       const db = getDbFromHyperdrive(env)
+      const registry = getFieldPolicyRegistries().get("products")
       const builder = withEmbedding(
-        createProductDocumentBuilder(db, { sellerOperatorId }),
+        createProductDocumentBuilder(db, {
+          sellerOperatorId,
+          registry,
+          extensions: [createProductDestinationsProjectionExtension()],
+        }),
         embeddings,
       )
       return { service, builder }

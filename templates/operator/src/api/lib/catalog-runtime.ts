@@ -25,6 +25,7 @@ import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
+import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
 
 /**
  * The slice set the operator template indexes by default — staff (admin
@@ -227,7 +228,10 @@ let _registries: Map<string, FieldPolicyRegistry> | undefined
 export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
   if (!_registries) {
     _registries = new Map<string, FieldPolicyRegistry>([
-      ["products", createFieldPolicyRegistry(productCatalogPolicy)],
+      [
+        "products",
+        createFieldPolicyRegistry([...productCatalogPolicy, ...productDestinationsCatalogPolicy]),
+      ],
       ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
       ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
       ["charters", createFieldPolicyRegistry(charterCatalogPolicy)],
