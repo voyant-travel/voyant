@@ -1,5 +1,21 @@
 # @voyantjs/ui
 
+## 0.28.3
+
+### Patch Changes
+
+- 60ef432: Add a `big-calendar` primitive — full-screen month / week / day calendar view with header, navigation, and event interaction primitives — exposed at the new `@voyantjs/ui/components/big-calendar` subpath export.
+
+  Also adds a `bg-calendar-disabled-hour` Tailwind utility (uses `color-mix(in oklab, var(--muted) 35%, transparent)`) for shading out-of-business hours in the week / day views, so consumers don't need to hand-roll the rgba.
+
+- Updated dependencies [60ef432]
+- Updated dependencies [60ef432]
+- Updated dependencies [60ef432]
+  - @voyantjs/i18n@0.28.3
+  - @voyantjs/notifications@0.28.3
+  - @voyantjs/notifications-react@0.28.3
+  - @voyantjs/utils@0.28.3
+
 ## 0.28.2
 
 ### Patch Changes
