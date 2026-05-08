@@ -63,6 +63,36 @@
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
+      },
+      "./catalog-policy": {
+        "types": "./dist/catalog-policy.d.ts",
+        "import": "./dist/catalog-policy.js",
+        "default": "./dist/catalog-policy.js"
+      },
+      "./service-catalog-plane": {
+        "types": "./dist/service-catalog-plane.d.ts",
+        "import": "./dist/service-catalog-plane.js",
+        "default": "./dist/service-catalog-plane.js"
+      },
+      "./content-shape": {
+        "types": "./dist/content-shape.d.ts",
+        "import": "./dist/content-shape.js",
+        "default": "./dist/content-shape.js"
+      },
+      "./service-content": {
+        "types": "./dist/service-content.d.ts",
+        "import": "./dist/service-content.js",
+        "default": "./dist/service-content.js"
+      },
+      "./service-content-synthesizer": {
+        "types": "./dist/service-content-synthesizer.d.ts",
+        "import": "./dist/service-content-synthesizer.js",
+        "default": "./dist/service-content-synthesizer.js"
+      },
+      "./draft-shape": {
+        "types": "./dist/draft-shape.d.ts",
+        "import": "./dist/draft-shape.js",
+        "default": "./dist/draft-shape.js"
       }
     },
     "main": "./dist/index.js",
