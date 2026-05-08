@@ -1,5 +1,14 @@
 # @voyantjs/admin
 
+## 0.28.1
+
+### Patch Changes
+
+- Updated dependencies [9d88eae]
+  - @voyantjs/i18n@0.28.1
+  - @voyantjs/react@0.28.1
+  - @voyantjs/ui@0.28.1
+
 ## 0.28.0
 
 ### Patch Changes
