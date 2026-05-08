@@ -26,9 +26,11 @@ import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
+import { createProductPricingProjectionExtension } from "@voyantjs/pricing/service-catalog-plane-pricing"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { productDeparturesCatalogPolicy } from "@voyantjs/products/catalog-policy-departures"
 import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
+import { productPricingCatalogPolicy } from "@voyantjs/products/catalog-policy-pricing"
 import { productTaxonomyCatalogPolicy } from "@voyantjs/products/catalog-policy-taxonomy"
 import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
 import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
@@ -242,6 +244,7 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
           ...productDestinationsCatalogPolicy,
           ...productTaxonomyCatalogPolicy,
           ...productDeparturesCatalogPolicy,
+          ...productPricingCatalogPolicy,
         ]),
       ],
       ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
@@ -275,6 +278,7 @@ export function createProductsDocumentBuilder(
       createProductDestinationsProjectionExtension(),
       createProductTaxonomyProjectionExtension(),
       createProductDeparturesProjectionExtension(),
+      createProductPricingProjectionExtension(),
     ],
   })
 }
