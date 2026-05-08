@@ -92,8 +92,6 @@ export const notificationsUiEn: NotificationsUiMessages = {
       quietHoursDesc: "When reminders are eligible to send, in the recipient's timezone.",
       blackouts: "Blackout dates",
       blackoutsDesc: "Specific dates to skip entirely (holidays, company closures).",
-      locale: "Locale",
-      localeDesc: "Optional public-holiday calendar applied on top of quiet hours.",
       rateLimits: "Rate limits & dedup",
       rateLimitsDesc: "Caps that apply across all rules to protect recipients from spam.",
     },
@@ -104,13 +102,11 @@ export const notificationsUiEn: NotificationsUiMessages = {
       blackoutDates: "Blackout dates",
       skipWeekends: "Skip weekends",
       skipWeekendsDesc: "Defer reminders that would land on Saturday or Sunday.",
-      holidayCalendar: "Holiday calendar",
       recipientRateLimitPerDay: "Per-recipient daily cap",
       suppressionWindowHours: "Suppression window (hours)",
     },
     placeholders: {
       tz: "Search timezones…",
-      locale: "Search locales…",
       noBlackouts: "No blackout dates yet.",
     },
     helpers: {
@@ -118,7 +114,6 @@ export const notificationsUiEn: NotificationsUiMessages = {
       recipientRateLimitPerDay:
         "Maximum sent reminders per recipient per channel per 24h. Leave blank for no limit.",
       suppressionWindowHours: "Window for suppression group dedup across rules sharing a tag.",
-      holidayCalendar: "Skip public holidays for this locale.",
     },
     actions: {
       addBlackoutDate: "Add date",

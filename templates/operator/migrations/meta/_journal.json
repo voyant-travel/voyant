@@ -15,6 +15,13 @@
       "when": 1778235049055,
       "tag": "0001_reminder_sequences",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778237549055,
+      "tag": "0002_reminder_dispatcher_perf",
+      "breakpoints": true
     }
   ]
 }

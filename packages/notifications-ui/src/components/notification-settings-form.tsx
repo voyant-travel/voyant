@@ -29,7 +29,6 @@ import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
-import { LocaleCombobox } from "./locale-combobox.js"
 import { TimezoneCombobox } from "./timezone-combobox.js"
 
 type BlackoutRow = { rowKey: string; date: string | null }
@@ -40,7 +39,6 @@ type FormState = {
   quietHoursTz: string
   blackoutDates: BlackoutRow[]
   skipWeekends: boolean
-  holidayCalendar: string | null
   recipientRateLimitPerDay: string
   suppressionWindowHours: number
 }
@@ -54,7 +52,6 @@ const emptyForm: FormState = {
   quietHoursTz: "UTC",
   blackoutDates: [],
   skipWeekends: false,
-  holidayCalendar: null,
   recipientRateLimitPerDay: "",
   suppressionWindowHours: 24,
 }
@@ -76,7 +73,6 @@ export function NotificationSettingsForm() {
         date,
       })),
       skipWeekends: settings.skipWeekends,
-      holidayCalendar: settings.holidayCalendar,
       recipientRateLimitPerDay: settings.recipientRateLimitPerDay?.toString() ?? "",
       suppressionWindowHours: settings.suppressionWindowHours,
     })
@@ -111,7 +107,6 @@ export function NotificationSettingsForm() {
       quietHoursLocal: quiet,
       blackoutDates: dates.length > 0 ? dates : null,
       skipWeekends: form.skipWeekends,
-      holidayCalendar: form.holidayCalendar,
       recipientRateLimitPerDay: form.recipientRateLimitPerDay
         ? Number(form.recipientRateLimitPerDay)
         : null,
@@ -217,21 +212,6 @@ export function NotificationSettingsForm() {
                 <Plus className="size-4" /> {messages.settings.actions.addBlackoutDate}
               </Button>
             </div>
-          </FieldSet>
-
-          {/* Locale */}
-          <FieldSet>
-            <FieldLegend>{messages.settings.sections.locale}</FieldLegend>
-            <FieldDescription>{messages.settings.sections.localeDesc}</FieldDescription>
-            <Field>
-              <FieldLabel>{messages.settings.fields.holidayCalendar}</FieldLabel>
-              <LocaleCombobox
-                value={form.holidayCalendar}
-                onChange={(value) => setField("holidayCalendar", value)}
-                placeholder={messages.settings.placeholders.locale}
-              />
-              <FieldDescription>{messages.settings.helpers.holidayCalendar}</FieldDescription>
-            </Field>
           </FieldSet>
 
           {/* Rate limits */}

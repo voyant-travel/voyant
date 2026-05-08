@@ -92,8 +92,6 @@ export const notificationsUiRo: NotificationsUiMessages = {
       quietHoursDesc: "Când se pot trimite reamintiri, în fusul orar al destinatarului.",
       blackouts: "Date blocate",
       blackoutsDesc: "Date specifice care se ignoră complet (sărbători, închideri).",
-      locale: "Locale",
-      localeDesc: "Calendar opțional de sărbători publice aplicat peste orele de liniște.",
       rateLimits: "Limite și deduplicare",
       rateLimitsDesc: "Plafoane care se aplică tuturor regulilor pentru a proteja destinatarii.",
     },
@@ -104,13 +102,11 @@ export const notificationsUiRo: NotificationsUiMessages = {
       blackoutDates: "Date blocate",
       skipWeekends: "Sari peste weekend-uri",
       skipWeekendsDesc: "Amână reamintirile care ar cădea sâmbăta sau duminica.",
-      holidayCalendar: "Calendar sărbători",
       recipientRateLimitPerDay: "Plafon zilnic per destinatar",
       suppressionWindowHours: "Fereastră de supresie (ore)",
     },
     placeholders: {
       tz: "Caută fusuri orare…",
-      locale: "Caută locale…",
       noBlackouts: "Nicio dată blocată.",
     },
     helpers: {
@@ -119,7 +115,6 @@ export const notificationsUiRo: NotificationsUiMessages = {
         "Numărul maxim de reamintiri trimise per destinatar/canal în 24h. Lasă gol pentru fără limită.",
       suppressionWindowHours:
         "Fereastră pentru deduplicarea regulilor care partajează același grup de supresie.",
-      holidayCalendar: "Sari peste sărbătorile publice pentru acest locale.",
     },
     actions: {
       addBlackoutDate: "Adaugă dată",

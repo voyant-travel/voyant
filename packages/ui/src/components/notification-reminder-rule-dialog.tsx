@@ -35,7 +35,6 @@ const reminderRuleFormSchema = z.object({
   ]),
   channel: z.enum(["email", "sms"]),
   templateId: z.string().min(1, "Template is required"),
-  relativeDaysFromDueDate: z.number().int().min(-365).max(365),
 })
 
 const reminderTargetOptions = [
@@ -47,8 +46,6 @@ const reminderTargetOptions = [
 
 type FormValues = z.input<typeof reminderRuleFormSchema>
 type FormOutput = z.output<typeof reminderRuleFormSchema>
-
-const dueDateTargetTypes = new Set<FormValues["targetType"]>(["booking_payment_schedule"])
 
 function slugifyReminderRule(value: string) {
   const slug = value
@@ -82,12 +79,9 @@ export function NotificationReminderRuleDialog({
       targetType: "booking_payment_schedule",
       channel: "email",
       templateId: "",
-      relativeDaysFromDueDate: 0,
     },
   })
   const channel = form.watch("channel")
-  const targetType = form.watch("targetType")
-  const usesDueDateTiming = dueDateTargetTypes.has(targetType)
   const { data: templates } = useNotificationTemplates({
     channel,
     status: "active",
@@ -110,7 +104,6 @@ export function NotificationReminderRuleDialog({
         targetType: rule.targetType === "invoice" ? "booking_payment_schedule" : rule.targetType,
         channel: rule.channel,
         templateId: resolvedTemplateId,
-        relativeDaysFromDueDate: rule.relativeDaysFromDueDate,
       })
       return
     }
@@ -132,9 +125,10 @@ export function NotificationReminderRuleDialog({
       provider: null,
       templateId: values.templateId,
       templateSlug: null,
-      relativeDaysFromDueDate: dueDateTargetTypes.has(values.targetType)
-        ? values.relativeDaysFromDueDate
-        : 0,
+      // Timing comes from stages (notification_reminder_rule_stages); the
+      // legacy single-offset column stays at 0 for new rules created from
+      // this dialog and is ignored once the rule has at least one stage.
+      relativeDaysFromDueDate: 0,
       isSystem: rule?.isSystem ?? false,
       metadata: rule?.metadata ?? null,
     }
@@ -206,7 +200,7 @@ export function NotificationReminderRuleDialog({
               </div>
             </div>
 
-            <div className={usesDueDateTiming ? "grid grid-cols-2 gap-4" : "grid gap-4"}>
+            <div className="grid gap-4">
               <div className="flex flex-col gap-2">
                 <Label>Channel</Label>
                 <Select
@@ -225,28 +219,10 @@ export function NotificationReminderRuleDialog({
                   </SelectContent>
                 </Select>
               </div>
-              {usesDueDateTiming ? (
-                <div className="flex flex-col gap-2">
-                  <Label>Send timing</Label>
-                  <Input
-                    type="number"
-                    value={form.watch("relativeDaysFromDueDate")}
-                    onChange={(event) =>
-                      form.setValue(
-                        "relativeDaysFromDueDate",
-                        Number.parseInt(event.target.value || "0", 10),
-                      )
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Days from due date: -3 sends 3 days before, 0 on the due date, 3 after.
-                  </p>
-                </div>
-              ) : null}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Template</Label>
+              <Label>Default template</Label>
               <Select
                 value={form.watch("templateId")}
                 onValueChange={(value) => {
@@ -265,7 +241,17 @@ export function NotificationReminderRuleDialog({
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Used as a fallback. Per-stage channels can override this.
+              </p>
             </div>
+
+            {!isEditing ? (
+              <p className="rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                After creating the rule, click <strong>Manage stages</strong> on the row to define
+                when it fires (anchor, window, cadence) and which channels deliver it.
+              </p>
+            ) : null}
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

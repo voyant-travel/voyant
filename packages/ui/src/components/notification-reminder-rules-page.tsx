@@ -5,11 +5,11 @@ import {
   type UseNotificationReminderRulesOptions,
   useNotificationReminderRules,
 } from "@voyantjs/notifications-react"
-import { Loader2, Pencil, Plus, Search } from "lucide-react"
+import { Layers, Loader2, Pencil, Plus, Search } from "lucide-react"
 import { useState } from "react"
 
 import { Badge } from "./badge.js"
-import { Button } from "./button.js"
+import { Button, buttonVariants } from "./button.js"
 import { Input } from "./input.js"
 import { NotificationReminderRuleDialog } from "./notification-reminder-rule-dialog.js"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
@@ -21,25 +21,23 @@ const reminderTargetLabels = {
   booking_cancelled_non_payment: "Booking cancelled (non-payment)",
 } as const
 
-const dueDateTargetTypes = new Set<UseNotificationReminderRulesOptions["targetType"]>([
-  "booking_payment_schedule",
-])
-
 function getReminderTargetLabel(targetType: NotificationReminderRuleRecord["targetType"]) {
   if (targetType === "invoice") return "Invoice"
   return reminderTargetLabels[targetType] ?? targetType
 }
 
-function formatReminderTiming(
-  targetType: NotificationReminderRuleRecord["targetType"],
-  days: number,
-) {
-  if (!dueDateTargetTypes.has(targetType)) return "Event"
-  if (days === 0) return "Due date"
-  return days < 0 ? `${Math.abs(days)} days before` : `${days} days after`
+export interface NotificationReminderRulesPageProps {
+  /**
+   * Path used for the per-rule "Manage stages" link. Receives the rule id and
+   * returns the URL the consumer's router understands. Defaults to
+   * `/notifications/reminder-rules/<id>`.
+   */
+  manageStagesHref?: (ruleId: string) => string
 }
 
-export function NotificationReminderRulesPage() {
+export function NotificationReminderRulesPage({
+  manageStagesHref = (id) => `/notifications/reminder-rules/${id}`,
+}: NotificationReminderRulesPageProps = {}) {
   const [search, setSearch] = useState("")
   const [channel, setChannel] = useState<UseNotificationReminderRulesOptions["channel"] | "all">(
     "all",
@@ -144,7 +142,6 @@ export function NotificationReminderRulesPage() {
                 <th className="px-4 py-3">Rule</th>
                 <th className="px-4 py-3">Target</th>
                 <th className="px-4 py-3">Channel</th>
-                <th className="px-4 py-3">Timing</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -160,24 +157,30 @@ export function NotificationReminderRulesPage() {
                     <Badge variant="outline">{rule.channel}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    {formatReminderTiming(rule.targetType, rule.relativeDaysFromDueDate)}
-                  </td>
-                  <td className="px-4 py-3">
                     <Badge variant={rule.status === "active" ? "default" : "secondary"}>
                       {rule.status}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditing(rule)
-                        setDialogOpen(true)
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <a
+                        href={manageStagesHref(rule.id)}
+                        className={buttonVariants({ variant: "ghost", size: "sm" })}
+                      >
+                        <Layers className="mr-2 h-4 w-4" />
+                        Manage stages
+                      </a>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditing(rule)
+                          setDialogOpen(true)
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
