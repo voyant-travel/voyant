@@ -51,7 +51,6 @@ function normalizeReminderRun(row: {
   ruleProvider: string | null
   ruleTemplateId: string | null
   ruleTemplateSlug: string | null
-  relativeDaysFromDueDate: number
   deliveryId: string | null
   deliveryStatus: "pending" | "sent" | "failed" | "cancelled" | null
   deliveryChannel: "email" | "sms" | null
@@ -95,7 +94,6 @@ function normalizeReminderRun(row: {
       provider: row.ruleProvider ?? null,
       templateId: row.ruleTemplateId ?? null,
       templateSlug: row.ruleTemplateSlug ?? null,
-      relativeDaysFromDueDate: row.relativeDaysFromDueDate,
     },
     delivery:
       row.deliveryId &&
@@ -318,7 +316,6 @@ export async function listReminderRuns(
         ruleProvider: notificationReminderRules.provider,
         ruleTemplateId: notificationReminderRules.templateId,
         ruleTemplateSlug: notificationReminderRules.templateSlug,
-        relativeDaysFromDueDate: notificationReminderRules.relativeDaysFromDueDate,
         deliveryId: notificationDeliveries.id,
         deliveryStatus: notificationDeliveries.status,
         deliveryChannel: notificationDeliveries.channel,
@@ -378,7 +375,6 @@ export async function getReminderRunById(db: PostgresJsDatabase, id: string) {
       ruleProvider: notificationReminderRules.provider,
       ruleTemplateId: notificationReminderRules.templateId,
       ruleTemplateSlug: notificationReminderRules.templateSlug,
-      relativeDaysFromDueDate: notificationReminderRules.relativeDaysFromDueDate,
       deliveryId: notificationDeliveries.id,
       deliveryStatus: notificationDeliveries.status,
       deliveryChannel: notificationDeliveries.channel,

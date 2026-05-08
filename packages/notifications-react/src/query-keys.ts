@@ -70,6 +70,12 @@ export interface NotificationReminderRunsListFilters {
   offset?: number | undefined
 }
 
+export interface RemindersPreviewFilters {
+  date?: string | undefined
+  ruleId?: string | undefined
+  targetId?: string | undefined
+}
+
 export const notificationsQueryKeys = {
   all: ["notifications"] as const,
   templates: () => [...notificationsQueryKeys.all, "templates"] as const,
@@ -84,8 +90,15 @@ export const notificationsQueryKeys = {
   reminderRulesList: (filters: NotificationReminderRulesListFilters) =>
     [...notificationsQueryKeys.reminderRules(), filters] as const,
   reminderRule: (id: string) => [...notificationsQueryKeys.reminderRules(), id] as const,
+  reminderRuleStages: (reminderRuleId: string) =>
+    [...notificationsQueryKeys.reminderRule(reminderRuleId), "stages"] as const,
+  reminderStageChannels: (stageId: string) =>
+    [...notificationsQueryKeys.all, "stage-channels", stageId] as const,
   reminderRuns: () => [...notificationsQueryKeys.all, "reminder-runs"] as const,
   reminderRunsList: (filters: NotificationReminderRunsListFilters) =>
     [...notificationsQueryKeys.reminderRuns(), filters] as const,
   reminderRun: (id: string) => [...notificationsQueryKeys.reminderRuns(), id] as const,
+  remindersPreview: (filters: RemindersPreviewFilters) =>
+    [...notificationsQueryKeys.all, "preview", filters] as const,
+  notificationSettings: () => [...notificationsQueryKeys.all, "settings"] as const,
 }

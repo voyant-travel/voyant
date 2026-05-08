@@ -3,13 +3,33 @@ import { bookingPaymentSchedules, invoices, paymentSessions } from "@voyantjs/fi
 import { and, asc, desc, eq, gt, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { notificationReminderRules, notificationReminderRuns } from "./schema.js"
+import {
+  type NotificationReminderRuleStage,
+  type NotificationReminderStageChannel,
+  type NotificationSettings,
+  notificationReminderRules,
+  notificationReminderRuns,
+  notificationReminderStageChannels,
+} from "./schema.js"
 import {
   type BookingDocumentAttachmentResolver,
   bookingDocumentNotificationsService,
   createDefaultBookingDocumentAttachment,
 } from "./service-booking-documents.js"
 import { sendInvoiceNotification, sendNotification } from "./service-deliveries.js"
+import {
+  applyQuietHours,
+  evaluateStage,
+  exceedsRecipientRateLimit,
+  fetchTargetsForRule,
+  getNotificationSettings,
+  listActiveRulesByPriority,
+  listChannelsForStage,
+  listStagesForRule,
+  loadHistory,
+  type ReminderTargetSnapshot,
+  suppressedByGroup,
+} from "./service-sequence.js"
 import type {
   BookingDocumentBundleItem,
   BookingPaymentScheduleRow,
@@ -20,7 +40,6 @@ import type {
   RunDueRemindersInput,
 } from "./service-shared.js"
 import {
-  addUtcDays,
   buildReminderDedupeKey,
   listBookingNotificationItems,
   resolveReminderRecipient,
@@ -46,7 +65,16 @@ export interface BookingEventReminderRuntimeOptions {
 async function getBookingPaymentNotificationContext(db: PostgresJsDatabase, bookingId: string) {
   const [[paymentSchedule], [invoice], [paymentSession]] = await Promise.all([
     db
-      .select()
+      .select({
+        id: bookingPaymentSchedules.id,
+        bookingId: bookingPaymentSchedules.bookingId,
+        scheduleType: bookingPaymentSchedules.scheduleType,
+        status: bookingPaymentSchedules.status,
+        dueDate: bookingPaymentSchedules.dueDate,
+        currency: bookingPaymentSchedules.currency,
+        amountCents: bookingPaymentSchedules.amountCents,
+        createdAt: bookingPaymentSchedules.createdAt,
+      })
       .from(bookingPaymentSchedules)
       .where(
         and(
@@ -60,13 +88,38 @@ async function getBookingPaymentNotificationContext(db: PostgresJsDatabase, book
       .orderBy(asc(bookingPaymentSchedules.dueDate), asc(bookingPaymentSchedules.createdAt))
       .limit(1),
     db
-      .select()
+      .select({
+        id: invoices.id,
+        invoiceNumber: invoices.invoiceNumber,
+        invoiceType: invoices.invoiceType,
+        status: invoices.status,
+        currency: invoices.currency,
+        subtotalCents: invoices.subtotalCents,
+        taxCents: invoices.taxCents,
+        totalCents: invoices.totalCents,
+        paidCents: invoices.paidCents,
+        balanceDueCents: invoices.balanceDueCents,
+        issueDate: invoices.issueDate,
+        dueDate: invoices.dueDate,
+      })
       .from(invoices)
       .where(eq(invoices.bookingId, bookingId))
       .orderBy(desc(invoices.createdAt))
       .limit(1),
     db
-      .select()
+      .select({
+        id: paymentSessions.id,
+        status: paymentSessions.status,
+        provider: paymentSessions.provider,
+        currency: paymentSessions.currency,
+        amountCents: paymentSessions.amountCents,
+        redirectUrl: paymentSessions.redirectUrl,
+        returnUrl: paymentSessions.returnUrl,
+        cancelUrl: paymentSessions.cancelUrl,
+        expiresAt: paymentSessions.expiresAt,
+        paymentMethod: paymentSessions.paymentMethod,
+        externalReference: paymentSessions.externalReference,
+      })
       .from(paymentSessions)
       .where(eq(paymentSessions.bookingId, bookingId))
       .orderBy(desc(paymentSessions.createdAt))
@@ -212,12 +265,6 @@ function buildReminderQueueSummary(): ReminderQueueResult {
   }
 }
 
-function isRetryableReminderRun(
-  run: Pick<NotificationReminderRunRow, "status"> | null | undefined,
-) {
-  return run?.status === "failed"
-}
-
 async function getReminderRuleById(db: PostgresJsDatabase, reminderRuleId: string) {
   const [rule] = await db
     .select()
@@ -233,27 +280,6 @@ async function getReminderRunById(db: PostgresJsDatabase, reminderRunId: string)
     .from(notificationReminderRuns)
     .where(eq(notificationReminderRuns.id, reminderRunId))
     .limit(1)
-  return run ?? null
-}
-
-async function markReminderRunQueued(
-  db: PostgresJsDatabase,
-  reminderRunId: string,
-  now: Date,
-  recipient?: string | null,
-) {
-  const [run] = await db
-    .update(notificationReminderRuns)
-    .set({
-      status: "queued",
-      errorMessage: null,
-      recipient: recipient ?? undefined,
-      processedAt: now,
-      updatedAt: now,
-    })
-    .where(eq(notificationReminderRuns.id, reminderRunId))
-    .returning()
-
   return run ?? null
 }
 
@@ -318,518 +344,42 @@ async function markReminderRunSent(
   return run ?? null
 }
 
-async function enqueueReminderRun(
+type ChannelOverride = {
+  channel: "email" | "sms"
+  templateId: string | null
+  templateSlug: string | null
+  provider: string | null
+}
+
+async function resolveChannelOverride(
   db: PostgresJsDatabase,
-  enqueueDelivery: ReminderDeliveryEnqueuer,
   run: NotificationReminderRunRow,
-  now: Date,
-) {
-  const queuedRun = await markReminderRunQueued(db, run.id, now, run.recipient)
-  if (!queuedRun) {
-    return null
-  }
-
-  try {
-    await enqueueDelivery({ reminderRunId: queuedRun.id })
-    return queuedRun
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to enqueue reminder delivery"
-    return markReminderRunFailed(db, queuedRun.id, new Date(), message)
-  }
-}
-
-async function queueBookingPaymentScheduleReminder(
-  db: PostgresJsDatabase,
-  enqueueDelivery: ReminderDeliveryEnqueuer,
   rule: NotificationReminderRuleRow,
-  schedule: BookingPaymentScheduleRow,
-  now: Date,
-) {
-  const runDate = toDateString(startOfUtcDay(now))
-  const dedupeKey = buildReminderDedupeKey(rule.id, schedule.id, runDate)
-
-  const [existingRun] = await db
-    .select()
-    .from(notificationReminderRuns)
-    .where(eq(notificationReminderRuns.dedupeKey, dedupeKey))
-    .limit(1)
-
-  if (existingRun && !isRetryableReminderRun(existingRun)) {
-    return null
+): Promise<ChannelOverride> {
+  const stageChannelId =
+    run.metadata && typeof run.metadata === "object"
+      ? ((run.metadata as Record<string, unknown>).stageChannelId as string | undefined)
+      : undefined
+  if (stageChannelId) {
+    const [stageChannel] = await db
+      .select()
+      .from(notificationReminderStageChannels)
+      .where(eq(notificationReminderStageChannels.id, stageChannelId))
+      .limit(1)
+    if (stageChannel) {
+      return {
+        channel: stageChannel.channel,
+        templateId: stageChannel.templateId ?? null,
+        templateSlug: stageChannel.templateSlug ?? null,
+        provider: stageChannel.provider ?? null,
+      }
+    }
   }
-
-  const [booking] = await db
-    .select()
-    .from(bookings)
-    .where(eq(bookings.id, schedule.bookingId))
-    .limit(1)
-
-  const reminderRun =
-    existingRun && isRetryableReminderRun(existingRun)
-      ? existingRun
-      : ((
-          await db
-            .insert(notificationReminderRuns)
-            .values({
-              reminderRuleId: rule.id,
-              targetType: rule.targetType,
-              targetId: schedule.id,
-              dedupeKey,
-              bookingId: schedule.bookingId,
-              personId: booking?.personId ?? null,
-              organizationId: booking?.organizationId ?? null,
-              paymentSessionId: null,
-              notificationDeliveryId: null,
-              status: "queued",
-              recipient: null,
-              scheduledFor: now,
-              processedAt: now,
-              errorMessage: null,
-              metadata: {
-                dueDate: schedule.dueDate,
-                relativeDaysFromDueDate: rule.relativeDaysFromDueDate,
-                bookingNumber: booking?.bookingNumber ?? null,
-              },
-            })
-            .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-            .returning()
-        )[0] ?? null)
-
-  if (!reminderRun) {
-    return null
-  }
-
-  if (!booking) {
-    return markReminderRunSkipped(db, reminderRun.id, now, "Booking not found for payment schedule")
-  }
-
-  const [participants] = await Promise.all([
-    db
-      .select({
-        id: bookingTravelers.id,
-        firstName: bookingTravelers.firstName,
-        lastName: bookingTravelers.lastName,
-        email: bookingTravelers.email,
-        participantType: bookingTravelers.participantType,
-        isPrimary: bookingTravelers.isPrimary,
-      })
-      .from(bookingTravelers)
-      .where(eq(bookingTravelers.bookingId, booking.id))
-      .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt),
-  ])
-
-  const recipient = resolveReminderRecipient(booking, participants)
-  if (!recipient?.email) {
-    return markReminderRunSkipped(
-      db,
-      reminderRun.id,
-      now,
-      "No traveler email available for booking payment reminder",
-    )
-  }
-
-  return enqueueReminderRun(
-    db,
-    enqueueDelivery,
-    { ...reminderRun, recipient: recipient.email },
-    now,
-  )
-}
-
-async function queueInvoiceReminder(
-  db: PostgresJsDatabase,
-  enqueueDelivery: ReminderDeliveryEnqueuer,
-  rule: NotificationReminderRuleRow,
-  invoice: typeof invoices.$inferSelect,
-  now: Date,
-) {
-  const runDate = toDateString(startOfUtcDay(now))
-  const dedupeKey = buildReminderDedupeKey(rule.id, invoice.id, runDate)
-
-  const [existingRun] = await db
-    .select()
-    .from(notificationReminderRuns)
-    .where(eq(notificationReminderRuns.dedupeKey, dedupeKey))
-    .limit(1)
-
-  if (existingRun && !isRetryableReminderRun(existingRun)) {
-    return null
-  }
-
-  const [booking] = await db
-    .select()
-    .from(bookings)
-    .where(eq(bookings.id, invoice.bookingId))
-    .limit(1)
-
-  const reminderRun =
-    existingRun && isRetryableReminderRun(existingRun)
-      ? existingRun
-      : ((
-          await db
-            .insert(notificationReminderRuns)
-            .values({
-              reminderRuleId: rule.id,
-              targetType: "invoice",
-              targetId: invoice.id,
-              dedupeKey,
-              bookingId: invoice.bookingId,
-              personId: invoice.personId ?? booking?.personId ?? null,
-              organizationId: invoice.organizationId ?? booking?.organizationId ?? null,
-              paymentSessionId: null,
-              notificationDeliveryId: null,
-              status: "queued",
-              recipient: null,
-              scheduledFor: now,
-              processedAt: now,
-              errorMessage: null,
-              metadata: {
-                dueDate: invoice.dueDate,
-                relativeDaysFromDueDate: rule.relativeDaysFromDueDate,
-                bookingNumber: booking?.bookingNumber ?? null,
-                invoiceNumber: invoice.invoiceNumber,
-                invoiceType: invoice.invoiceType,
-              },
-            })
-            .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-            .returning()
-        )[0] ?? null)
-
-  if (!reminderRun) {
-    return null
-  }
-
-  if (!booking) {
-    return markReminderRunSkipped(db, reminderRun.id, now, "Booking not found for invoice reminder")
-  }
-
-  const [participants] = await Promise.all([
-    db
-      .select({
-        id: bookingTravelers.id,
-        firstName: bookingTravelers.firstName,
-        lastName: bookingTravelers.lastName,
-        email: bookingTravelers.email,
-        participantType: bookingTravelers.participantType,
-        isPrimary: bookingTravelers.isPrimary,
-      })
-      .from(bookingTravelers)
-      .where(eq(bookingTravelers.bookingId, booking.id))
-      .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt),
-  ])
-
-  const recipient = resolveReminderRecipient(booking, participants)
-  if (!recipient?.email) {
-    return markReminderRunSkipped(
-      db,
-      reminderRun.id,
-      now,
-      "No traveler email available for invoice reminder",
-    )
-  }
-
-  return enqueueReminderRun(
-    db,
-    enqueueDelivery,
-    { ...reminderRun, recipient: recipient.email },
-    now,
-  )
-}
-
-async function sendBookingPaymentScheduleReminder(
-  db: PostgresJsDatabase,
-  dispatcher: NotificationService,
-  rule: NotificationReminderRuleRow,
-  schedule: BookingPaymentScheduleRow,
-  now: Date,
-) {
-  const runDate = toDateString(startOfUtcDay(now))
-  const dedupeKey = buildReminderDedupeKey(rule.id, schedule.id, runDate)
-
-  const [existingRun] = await db
-    .select({ id: notificationReminderRuns.id })
-    .from(notificationReminderRuns)
-    .where(eq(notificationReminderRuns.dedupeKey, dedupeKey))
-    .limit(1)
-  if (existingRun) {
-    return null
-  }
-
-  const [booking] = await db
-    .select()
-    .from(bookings)
-    .where(eq(bookings.id, schedule.bookingId))
-    .limit(1)
-  if (!booking) {
-    const [run] = await db
-      .insert(notificationReminderRuns)
-      .values({
-        reminderRuleId: rule.id,
-        targetType: rule.targetType,
-        targetId: schedule.id,
-        dedupeKey,
-        bookingId: schedule.bookingId,
-        personId: null,
-        organizationId: null,
-        paymentSessionId: null,
-        notificationDeliveryId: null,
-        status: "skipped",
-        recipient: null,
-        scheduledFor: now,
-        processedAt: now,
-        errorMessage: "Booking not found for payment schedule",
-        metadata: {
-          dueDate: schedule.dueDate,
-          relativeDaysFromDueDate: rule.relativeDaysFromDueDate,
-        },
-      })
-      .returning()
-    return run ?? null
-  }
-
-  const [participants, items, paymentContext] = await Promise.all([
-    db
-      .select({
-        id: bookingTravelers.id,
-        firstName: bookingTravelers.firstName,
-        lastName: bookingTravelers.lastName,
-        email: bookingTravelers.email,
-        participantType: bookingTravelers.participantType,
-        isPrimary: bookingTravelers.isPrimary,
-      })
-      .from(bookingTravelers)
-      .where(eq(bookingTravelers.bookingId, booking.id))
-      .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt),
-    listBookingNotificationItems(db, booking.id),
-    getBookingPaymentNotificationContext(db, booking.id),
-  ])
-
-  const recipient = resolveReminderRecipient(booking, participants)
-  const [processingRun] = await db
-    .insert(notificationReminderRuns)
-    .values({
-      reminderRuleId: rule.id,
-      targetType: rule.targetType,
-      targetId: schedule.id,
-      dedupeKey,
-      bookingId: booking.id,
-      personId: booking.personId ?? null,
-      organizationId: booking.organizationId ?? null,
-      paymentSessionId: null,
-      notificationDeliveryId: null,
-      status: "processing",
-      recipient: recipient?.email ?? null,
-      scheduledFor: now,
-      processedAt: now,
-      errorMessage: null,
-      metadata: {
-        dueDate: schedule.dueDate,
-        relativeDaysFromDueDate: rule.relativeDaysFromDueDate,
-        bookingNumber: booking.bookingNumber,
-      },
-    })
-    .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-    .returning()
-
-  if (!processingRun) {
-    return null
-  }
-
-  if (!recipient?.email) {
-    return markReminderRunSkipped(
-      db,
-      processingRun.id,
-      now,
-      "No traveler email available for booking payment reminder",
-    )
-  }
-
-  try {
-    const delivery = await sendNotification(db, dispatcher, {
-      templateId: rule.templateId ?? null,
-      templateSlug: rule.templateSlug ?? null,
-      channel: rule.channel,
-      provider: rule.provider ?? null,
-      to: recipient.email,
-      data: {
-        bookingId: booking.id,
-        bookingNumber: booking.bookingNumber,
-        dueDate: schedule.dueDate,
-        amountCents: schedule.amountCents,
-        currency: schedule.currency,
-        scheduleType: schedule.scheduleType,
-        reminderOffsetDays: rule.relativeDaysFromDueDate,
-        traveler: {
-          firstName: recipient.firstName,
-          lastName: recipient.lastName,
-          email: recipient.email,
-          participantType: recipient.participantType,
-          isPrimary: recipient.isPrimary,
-        },
-        travelers: participants,
-        booking: {
-          id: booking.id,
-          bookingNumber: booking.bookingNumber,
-          startDate: booking.startDate,
-          endDate: booking.endDate,
-          sellCurrency: booking.sellCurrency,
-          sellAmountCents: booking.sellAmountCents,
-        },
-        ...serializeBookingPaymentContext(paymentContext, schedule),
-        items,
-      },
-      targetType: "booking_payment_schedule",
-      targetId: schedule.id,
-      bookingId: booking.id,
-      personId: booking.personId ?? null,
-      organizationId: booking.organizationId ?? null,
-      metadata: {
-        reminderRuleId: rule.id,
-        reminderRunId: processingRun.id,
-      },
-      scheduledFor: now.toISOString(),
-    })
-
-    return markReminderRunSent(db, processingRun.id, new Date(), delivery?.id ?? null)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Notification reminder failed"
-    return markReminderRunFailed(db, processingRun.id, new Date(), message)
-  }
-}
-
-async function sendInvoiceReminder(
-  db: PostgresJsDatabase,
-  dispatcher: NotificationService,
-  rule: NotificationReminderRuleRow,
-  invoice: typeof invoices.$inferSelect,
-  now: Date,
-) {
-  const runDate = toDateString(startOfUtcDay(now))
-  const dedupeKey = buildReminderDedupeKey(rule.id, invoice.id, runDate)
-
-  const [existingRun] = await db
-    .select({ id: notificationReminderRuns.id })
-    .from(notificationReminderRuns)
-    .where(eq(notificationReminderRuns.dedupeKey, dedupeKey))
-    .limit(1)
-  if (existingRun) {
-    return null
-  }
-
-  const [booking] = await db
-    .select()
-    .from(bookings)
-    .where(eq(bookings.id, invoice.bookingId))
-    .limit(1)
-
-  if (!booking) {
-    const [run] = await db
-      .insert(notificationReminderRuns)
-      .values({
-        reminderRuleId: rule.id,
-        targetType: "invoice",
-        targetId: invoice.id,
-        dedupeKey,
-        bookingId: invoice.bookingId,
-        personId: invoice.personId ?? null,
-        organizationId: invoice.organizationId ?? null,
-        paymentSessionId: null,
-        notificationDeliveryId: null,
-        status: "skipped",
-        recipient: null,
-        scheduledFor: now,
-        processedAt: now,
-        errorMessage: "Booking not found for invoice reminder",
-        metadata: {
-          dueDate: invoice.dueDate,
-          relativeDaysFromDueDate: rule.relativeDaysFromDueDate,
-          invoiceNumber: invoice.invoiceNumber,
-          invoiceType: invoice.invoiceType,
-        },
-      })
-      .returning()
-    return run ?? null
-  }
-
-  const [participants] = await Promise.all([
-    db
-      .select({
-        id: bookingTravelers.id,
-        firstName: bookingTravelers.firstName,
-        lastName: bookingTravelers.lastName,
-        email: bookingTravelers.email,
-        participantType: bookingTravelers.participantType,
-        isPrimary: bookingTravelers.isPrimary,
-      })
-      .from(bookingTravelers)
-      .where(eq(bookingTravelers.bookingId, booking.id))
-      .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt),
-  ])
-
-  const recipient = resolveReminderRecipient(booking, participants)
-  const [processingRun] = await db
-    .insert(notificationReminderRuns)
-    .values({
-      reminderRuleId: rule.id,
-      targetType: "invoice",
-      targetId: invoice.id,
-      dedupeKey,
-      bookingId: booking.id,
-      personId: invoice.personId ?? booking.personId ?? null,
-      organizationId: invoice.organizationId ?? booking.organizationId ?? null,
-      paymentSessionId: null,
-      notificationDeliveryId: null,
-      status: "processing",
-      recipient: recipient?.email ?? null,
-      scheduledFor: now,
-      processedAt: now,
-      errorMessage: null,
-      metadata: {
-        dueDate: invoice.dueDate,
-        relativeDaysFromDueDate: rule.relativeDaysFromDueDate,
-        bookingNumber: booking.bookingNumber,
-        invoiceNumber: invoice.invoiceNumber,
-        invoiceType: invoice.invoiceType,
-      },
-    })
-    .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-    .returning()
-
-  if (!processingRun) {
-    return null
-  }
-
-  if (!recipient?.email) {
-    return markReminderRunSkipped(
-      db,
-      processingRun.id,
-      now,
-      "No traveler email available for invoice reminder",
-    )
-  }
-
-  try {
-    const delivery = await sendInvoiceNotification(db, dispatcher, invoice.id, {
-      templateId: rule.templateId ?? null,
-      templateSlug: rule.templateSlug ?? null,
-      channel: rule.channel,
-      provider: rule.provider ?? null,
-      to: recipient.email,
-      data: {
-        reminderOffsetDays: rule.relativeDaysFromDueDate,
-        reminderRunId: processingRun.id,
-      },
-      metadata: {
-        reminderRuleId: rule.id,
-        reminderRunId: processingRun.id,
-      },
-      scheduledFor: now.toISOString(),
-    })
-
-    return markReminderRunSent(db, processingRun.id, new Date(), delivery?.id ?? null)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Invoice reminder failed"
-    return markReminderRunFailed(db, processingRun.id, new Date(), message)
+  return {
+    channel: rule.channel,
+    templateId: rule.templateId ?? null,
+    templateSlug: rule.templateSlug ?? null,
+    provider: rule.provider ?? null,
   }
 }
 
@@ -839,6 +389,7 @@ async function sendQueuedBookingPaymentScheduleReminder(
   run: NotificationReminderRunRow,
   rule: NotificationReminderRuleRow,
   now: Date,
+  channelOverride: ChannelOverride,
 ) {
   const [schedule] = await db
     .select()
@@ -856,7 +407,22 @@ async function sendQueuedBookingPaymentScheduleReminder(
   }
 
   const [booking] = await db
-    .select()
+    .select({
+      id: bookings.id,
+      bookingNumber: bookings.bookingNumber,
+      status: bookings.status,
+      personId: bookings.personId,
+      organizationId: bookings.organizationId,
+      contactFirstName: bookings.contactFirstName,
+      contactLastName: bookings.contactLastName,
+      contactEmail: bookings.contactEmail,
+      contactPhone: bookings.contactPhone,
+      contactPreferredLanguage: bookings.contactPreferredLanguage,
+      sellCurrency: bookings.sellCurrency,
+      sellAmountCents: bookings.sellAmountCents,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+    })
     .from(bookings)
     .where(eq(bookings.id, schedule.bookingId))
     .limit(1)
@@ -898,10 +464,10 @@ async function sendQueuedBookingPaymentScheduleReminder(
 
   try {
     const delivery = await sendNotification(db, dispatcher, {
-      templateId: rule.templateId ?? null,
-      templateSlug: rule.templateSlug ?? null,
-      channel: rule.channel,
-      provider: rule.provider ?? null,
+      templateId: channelOverride.templateId,
+      templateSlug: channelOverride.templateSlug,
+      channel: channelOverride.channel,
+      provider: channelOverride.provider,
       to: recipientEmail,
       data: {
         bookingId: booking.id,
@@ -910,7 +476,6 @@ async function sendQueuedBookingPaymentScheduleReminder(
         amountCents: schedule.amountCents,
         currency: schedule.currency,
         scheduleType: schedule.scheduleType,
-        reminderOffsetDays: rule.relativeDaysFromDueDate,
         traveler: traveler
           ? {
               firstName: traveler.firstName,
@@ -957,15 +522,15 @@ async function sendQueuedInvoiceReminder(
   run: NotificationReminderRunRow,
   rule: NotificationReminderRuleRow,
   now: Date,
+  channelOverride: ChannelOverride,
 ) {
   const delivery = await sendInvoiceNotification(db, dispatcher, run.targetId, {
-    templateId: rule.templateId ?? null,
-    templateSlug: rule.templateSlug ?? null,
-    channel: rule.channel,
-    provider: rule.provider ?? null,
+    templateId: channelOverride.templateId,
+    templateSlug: channelOverride.templateSlug,
+    channel: channelOverride.channel,
+    provider: channelOverride.provider,
     to: run.recipient ?? undefined,
     data: {
-      reminderOffsetDays: rule.relativeDaysFromDueDate,
       reminderRunId: run.id,
     },
     metadata: {
@@ -1206,88 +771,7 @@ export async function queueDueReminders(
   input: RunDueRemindersInput = {},
   enqueueDelivery: ReminderDeliveryEnqueuer,
 ) {
-  const now = toTimestamp(input.now) ?? new Date()
-  const today = startOfUtcDay(now)
-  const activeRules = await db
-    .select()
-    .from(notificationReminderRules)
-    .where(eq(notificationReminderRules.status, "active"))
-    .orderBy(notificationReminderRules.createdAt)
-
-  const summary = buildReminderQueueSummary()
-
-  for (const rule of activeRules) {
-    const matchingDueDate = toDateString(addUtcDays(today, -rule.relativeDaysFromDueDate))
-
-    if (rule.targetType === "booking_payment_schedule") {
-      const schedules = await db
-        .select()
-        .from(bookingPaymentSchedules)
-        .where(
-          and(
-            eq(bookingPaymentSchedules.dueDate, matchingDueDate),
-            or(
-              eq(bookingPaymentSchedules.status, "pending"),
-              eq(bookingPaymentSchedules.status, "due"),
-            ),
-          ),
-        )
-        .orderBy(bookingPaymentSchedules.createdAt)
-
-      for (const schedule of schedules) {
-        const run = await queueBookingPaymentScheduleReminder(
-          db,
-          enqueueDelivery,
-          rule,
-          schedule,
-          now,
-        )
-
-        if (!run) {
-          continue
-        }
-
-        summary.processed += 1
-        if (run.status === "queued") summary.queued += 1
-        if (run.status === "skipped") summary.skipped += 1
-        if (run.status === "failed") summary.failed += 1
-      }
-      continue
-    }
-
-    if (rule.targetType === "invoice") {
-      const dueInvoices = await db
-        .select()
-        .from(invoices)
-        .where(
-          and(
-            eq(invoices.dueDate, matchingDueDate),
-            gt(invoices.balanceDueCents, 0),
-            or(eq(invoices.invoiceType, "invoice"), eq(invoices.invoiceType, "proforma")),
-            or(
-              eq(invoices.status, "sent"),
-              eq(invoices.status, "partially_paid"),
-              eq(invoices.status, "overdue"),
-            ),
-          ),
-        )
-        .orderBy(invoices.createdAt)
-
-      for (const invoice of dueInvoices) {
-        const run = await queueInvoiceReminder(db, enqueueDelivery, rule, invoice, now)
-        if (!run) {
-          continue
-        }
-
-        summary.processed += 1
-        if (run.status === "queued") summary.queued += 1
-        if (run.status === "skipped") summary.skipped += 1
-        if (run.status === "failed") summary.failed += 1
-      }
-    }
-  }
-
-  return summary
+  return queueStageBasedDueReminders(db, enqueueDelivery, input)
 }
 
 export async function deliverReminderRun(
@@ -1329,13 +813,22 @@ export async function deliverReminderRun(
     return markReminderRunFailed(db, run.id, new Date(), "Reminder rule not found")
   }
 
+  const channelOverride = await resolveChannelOverride(db, run, rule)
+
   try {
     if (run.targetType === "booking_payment_schedule") {
-      return await sendQueuedBookingPaymentScheduleReminder(db, dispatcher, run, rule, now)
+      return await sendQueuedBookingPaymentScheduleReminder(
+        db,
+        dispatcher,
+        run,
+        rule,
+        now,
+        channelOverride,
+      )
     }
 
     if (run.targetType === "invoice") {
-      return await sendQueuedInvoiceReminder(db, dispatcher, run, rule, now)
+      return await sendQueuedInvoiceReminder(db, dispatcher, run, rule, now, channelOverride)
     }
 
     return markReminderRunSkipped(db, run.id, now, "Unsupported reminder target type")
@@ -1350,77 +843,400 @@ export async function runDueReminders(
   dispatcher: NotificationService,
   input: RunDueRemindersInput = {},
 ) {
-  const now = toTimestamp(input.now) ?? new Date()
-  const today = startOfUtcDay(now)
-  const activeRules = await db
+  return runStageBasedDueReminders(db, dispatcher, input)
+}
+
+function buildStageDedupeKey(
+  ruleId: string,
+  targetId: string,
+  runDate: string,
+  stageId: string,
+  channel: string,
+) {
+  return `${ruleId}:${targetId}:${runDate}:${stageId}:${channel}`
+}
+
+async function fetchScheduleRow(db: PostgresJsDatabase, scheduleId: string) {
+  const [row] = await db
     .select()
-    .from(notificationReminderRules)
-    .where(eq(notificationReminderRules.status, "active"))
-    .orderBy(notificationReminderRules.createdAt)
+    .from(bookingPaymentSchedules)
+    .where(eq(bookingPaymentSchedules.id, scheduleId))
+    .limit(1)
+  return row ?? null
+}
 
-  const summary = buildReminderSweepSummary()
+async function fetchInvoiceRow(db: PostgresJsDatabase, invoiceId: string) {
+  const [row] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
+  return row ?? null
+}
 
-  for (const rule of activeRules) {
-    const matchingDueDate = toDateString(addUtcDays(today, -rule.relativeDaysFromDueDate))
-    if (rule.targetType === "booking_payment_schedule") {
-      const schedules = await db
-        .select()
-        .from(bookingPaymentSchedules)
-        .where(
-          and(
-            eq(bookingPaymentSchedules.dueDate, matchingDueDate),
-            or(
-              eq(bookingPaymentSchedules.status, "pending"),
-              eq(bookingPaymentSchedules.status, "due"),
-            ),
-          ),
-        )
-        .orderBy(bookingPaymentSchedules.createdAt)
+async function emitStageChannelRun(
+  db: PostgresJsDatabase,
+  dispatcher: NotificationService | null,
+  rule: NotificationReminderRuleRow,
+  stage: NotificationReminderRuleStage,
+  channelRow: NotificationReminderStageChannel,
+  target: ReminderTargetSnapshot,
+  recipient: { email: string | null; firstName?: string; lastName?: string } | null,
+  scheduledAt: Date,
+  sendCountAtFire: number,
+  enqueueDelivery: ReminderDeliveryEnqueuer | null,
+  now: Date,
+): Promise<{
+  status: "queued" | "sent" | "skipped" | "failed"
+  runId: string | null
+}> {
+  const runDate = toDateString(startOfUtcDay(scheduledAt))
+  const dedupeKey = buildStageDedupeKey(rule.id, target.id, runDate, stage.id, channelRow.channel)
 
-      for (const schedule of schedules) {
-        const run = await sendBookingPaymentScheduleReminder(db, dispatcher, rule, schedule, now)
-        if (!run) {
-          continue
+  const [existingRun] = await db
+    .select()
+    .from(notificationReminderRuns)
+    .where(eq(notificationReminderRuns.dedupeKey, dedupeKey))
+    .limit(1)
+  if (existingRun && existingRun.status !== "failed") {
+    return { status: "skipped", runId: existingRun.id }
+  }
+
+  const baseValues = {
+    reminderRuleId: rule.id,
+    targetType: rule.targetType,
+    targetId: target.id,
+    dedupeKey,
+    bookingId: target.bookingId,
+    personId: null as string | null,
+    organizationId: null as string | null,
+    paymentSessionId: null as string | null,
+    notificationDeliveryId: null as string | null,
+    recipient: recipient?.email ?? null,
+    scheduledFor: scheduledAt,
+    processedAt: now,
+    errorMessage: null,
+    metadata: {
+      stageId: stage.id,
+      stageOrderIndex: stage.orderIndex,
+      stageChannelId: channelRow.id,
+      channel: channelRow.channel,
+      anchor: stage.anchor,
+      sendCountAtFire,
+      ruleSlug: rule.slug,
+    } as Record<string, unknown>,
+  }
+
+  if (!recipient?.email) {
+    const [run] = existingRun
+      ? await db
+          .update(notificationReminderRuns)
+          .set({ ...baseValues, status: "skipped", errorMessage: "no_recipient" })
+          .where(eq(notificationReminderRuns.id, existingRun.id))
+          .returning()
+      : await db
+          .insert(notificationReminderRuns)
+          .values({ ...baseValues, status: "skipped", errorMessage: "no_recipient" })
+          .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+          .returning()
+    return { status: "skipped", runId: run?.id ?? null }
+  }
+
+  if (enqueueDelivery && !dispatcher) {
+    const [queuedRun] = existingRun
+      ? await db
+          .update(notificationReminderRuns)
+          .set({ ...baseValues, status: "queued" })
+          .where(eq(notificationReminderRuns.id, existingRun.id))
+          .returning()
+      : await db
+          .insert(notificationReminderRuns)
+          .values({ ...baseValues, status: "queued" })
+          .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+          .returning()
+    if (!queuedRun) return { status: "skipped", runId: null }
+    try {
+      await enqueueDelivery({ reminderRunId: queuedRun.id })
+      return { status: "queued", runId: queuedRun.id }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "enqueue_failed"
+      const failed = await markReminderRunFailed(db, queuedRun.id, new Date(), message)
+      return { status: "failed", runId: failed?.id ?? null }
+    }
+  }
+
+  if (!dispatcher) {
+    return { status: "skipped", runId: null }
+  }
+
+  const [processingRun] = existingRun
+    ? await db
+        .update(notificationReminderRuns)
+        .set({ ...baseValues, status: "processing" })
+        .where(eq(notificationReminderRuns.id, existingRun.id))
+        .returning()
+    : await db
+        .insert(notificationReminderRuns)
+        .values({ ...baseValues, status: "processing" })
+        .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+        .returning()
+
+  if (!processingRun) {
+    return { status: "skipped", runId: null }
+  }
+
+  try {
+    const data: Record<string, unknown> = {
+      reminderRuleId: rule.id,
+      reminderRunId: processingRun.id,
+      stageId: stage.id,
+      stageOrderIndex: stage.orderIndex,
+      sendCountAtFire,
+    }
+    let delivery: { id: string } | null = null
+    if (rule.targetType === "invoice") {
+      const invoice = await fetchInvoiceRow(db, target.id)
+      if (!invoice) {
+        return {
+          status: "skipped",
+          runId:
+            (await markReminderRunSkipped(db, processingRun.id, new Date(), "invoice_not_found"))
+              ?.id ?? null,
         }
-
-        summary.processed += 1
-        if (run.status === "sent") summary.sent += 1
-        if (run.status === "skipped") summary.skipped += 1
-        if (run.status === "failed") summary.failed += 1
       }
+      delivery = await sendInvoiceNotification(db, dispatcher, invoice.id, {
+        templateId: channelRow.templateId ?? null,
+        templateSlug: channelRow.templateSlug ?? null,
+        channel: channelRow.channel,
+        provider: channelRow.provider ?? null,
+        to: recipient.email,
+        data,
+        metadata: { reminderRuleId: rule.id, reminderRunId: processingRun.id, stageId: stage.id },
+        scheduledFor: scheduledAt.toISOString(),
+      })
+    } else if (rule.targetType === "booking_payment_schedule") {
+      const schedule = await fetchScheduleRow(db, target.id)
+      if (!schedule) {
+        return {
+          status: "skipped",
+          runId:
+            (await markReminderRunSkipped(db, processingRun.id, new Date(), "schedule_not_found"))
+              ?.id ?? null,
+        }
+      }
+      delivery = await sendNotification(db, dispatcher, {
+        templateId: channelRow.templateId ?? null,
+        templateSlug: channelRow.templateSlug ?? null,
+        channel: channelRow.channel,
+        provider: channelRow.provider ?? null,
+        to: recipient.email,
+        data: {
+          ...data,
+          bookingId: schedule.bookingId,
+          dueDate: schedule.dueDate,
+          amountCents: schedule.amountCents,
+          currency: schedule.currency,
+        },
+        targetType: "booking_payment_schedule",
+        targetId: schedule.id,
+        bookingId: schedule.bookingId,
+        metadata: { reminderRuleId: rule.id, reminderRunId: processingRun.id, stageId: stage.id },
+        scheduledFor: scheduledAt.toISOString(),
+      })
+    } else {
+      return {
+        status: "skipped",
+        runId:
+          (
+            await markReminderRunSkipped(
+              db,
+              processingRun.id,
+              new Date(),
+              "unsupported_target_type",
+            )
+          )?.id ?? null,
+      }
+    }
+
+    const sent = await markReminderRunSent(db, processingRun.id, new Date(), delivery?.id ?? null)
+    return { status: "sent", runId: sent?.id ?? null }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "delivery_failed"
+    const failed = await markReminderRunFailed(db, processingRun.id, new Date(), message)
+    return { status: "failed", runId: failed?.id ?? null }
+  }
+}
+
+async function processStageRuleTargets(
+  db: PostgresJsDatabase,
+  options: {
+    rule: NotificationReminderRuleRow
+    stages: NotificationReminderRuleStage[]
+    targets: ReminderTargetSnapshot[]
+    settings: NotificationSettings
+    today: Date
+    now: Date
+    dispatcher: NotificationService | null
+    enqueueDelivery: ReminderDeliveryEnqueuer | null
+  },
+): Promise<{ processed: number; sent: number; queued: number; skipped: number; failed: number }> {
+  const tally = { processed: 0, sent: 0, queued: 0, skipped: 0, failed: 0 }
+  for (const target of options.targets) {
+    const history = await loadHistory(db, options.rule.id, target.id)
+    const decision = evaluateStage(options.rule, options.stages, target, history, options.today)
+    if (!decision.fire) continue
+
+    const channels = await listChannelsForStage(db, decision.stage.id)
+    if (channels.length === 0) continue
+
+    const booking = target.bookingId
+      ? ((
+          await db
+            .select({
+              id: bookings.id,
+              bookingNumber: bookings.bookingNumber,
+              personId: bookings.personId,
+              organizationId: bookings.organizationId,
+              contactFirstName: bookings.contactFirstName,
+              contactLastName: bookings.contactLastName,
+              contactEmail: bookings.contactEmail,
+              contactPhone: bookings.contactPhone,
+              contactPreferredLanguage: bookings.contactPreferredLanguage,
+            })
+            .from(bookings)
+            .where(eq(bookings.id, target.bookingId))
+            .limit(1)
+        )[0] ?? null)
+      : null
+    const participants = booking
+      ? await db
+          .select({
+            id: bookingTravelers.id,
+            firstName: bookingTravelers.firstName,
+            lastName: bookingTravelers.lastName,
+            email: bookingTravelers.email,
+            participantType: bookingTravelers.participantType,
+            isPrimary: bookingTravelers.isPrimary,
+          })
+          .from(bookingTravelers)
+          .where(eq(bookingTravelers.bookingId, booking.id))
+          .orderBy(desc(bookingTravelers.isPrimary), bookingTravelers.createdAt)
+      : []
+    const recipient = booking ? resolveReminderRecipient(booking, participants) : null
+
+    if (
+      await suppressedByGroup(
+        db,
+        recipient?.email ?? null,
+        options.rule.suppressionGroup,
+        options.settings,
+        options.now,
+      )
+    ) {
+      tally.skipped += 1
       continue
     }
 
-    if (rule.targetType === "invoice") {
-      const dueInvoices = await db
-        .select()
-        .from(invoices)
-        .where(
-          and(
-            eq(invoices.dueDate, matchingDueDate),
-            gt(invoices.balanceDueCents, 0),
-            or(eq(invoices.invoiceType, "invoice"), eq(invoices.invoiceType, "proforma")),
-            or(
-              eq(invoices.status, "sent"),
-              eq(invoices.status, "partially_paid"),
-              eq(invoices.status, "overdue"),
-            ),
-          ),
-        )
-        .orderBy(invoices.createdAt)
+    const { scheduledAt } = applyQuietHours(options.now, decision.stage, options.settings)
 
-      for (const invoice of dueInvoices) {
-        const run = await sendInvoiceReminder(db, dispatcher, rule, invoice, now)
-        if (!run) {
-          continue
-        }
-
-        summary.processed += 1
-        if (run.status === "sent") summary.sent += 1
-        if (run.status === "skipped") summary.skipped += 1
-        if (run.status === "failed") summary.failed += 1
+    for (const channelRow of channels) {
+      if (
+        recipient?.email &&
+        (await exceedsRecipientRateLimit(
+          db,
+          recipient.email,
+          channelRow.channel,
+          options.settings,
+          options.now,
+        ))
+      ) {
+        tally.skipped += 1
+        continue
       }
+      const result = await emitStageChannelRun(
+        db,
+        options.dispatcher,
+        options.rule,
+        decision.stage,
+        channelRow,
+        target,
+        recipient ?? null,
+        scheduledAt,
+        decision.sendCountAtFire,
+        options.enqueueDelivery,
+        options.now,
+      )
+      tally.processed += 1
+      if (result.status === "sent") tally.sent += 1
+      if (result.status === "queued") tally.queued += 1
+      if (result.status === "skipped") tally.skipped += 1
+      if (result.status === "failed") tally.failed += 1
     }
+  }
+  return tally
+}
+
+export async function runStageBasedDueReminders(
+  db: PostgresJsDatabase,
+  dispatcher: NotificationService,
+  input: RunDueRemindersInput = {},
+): Promise<ReminderSweepResult> {
+  const now = toTimestamp(input.now) ?? new Date()
+  const today = startOfUtcDay(now)
+  const settings = await getNotificationSettings(db)
+  const rules = await listActiveRulesByPriority(db)
+  const summary = buildReminderSweepSummary()
+
+  for (const rule of rules) {
+    const stages = await listStagesForRule(db, rule.id)
+    if (stages.length === 0) continue
+    const targets = await fetchTargetsForRule(db, rule, stages, today)
+    if (targets.length === 0) continue
+    const tally = await processStageRuleTargets(db, {
+      rule,
+      stages,
+      targets,
+      settings,
+      today,
+      now,
+      dispatcher,
+      enqueueDelivery: null,
+    })
+    summary.processed += tally.processed
+    summary.sent += tally.sent
+    summary.skipped += tally.skipped
+    summary.failed += tally.failed
+  }
+
+  return summary
+}
+
+export async function queueStageBasedDueReminders(
+  db: PostgresJsDatabase,
+  enqueueDelivery: ReminderDeliveryEnqueuer,
+  input: RunDueRemindersInput = {},
+): Promise<ReminderQueueResult> {
+  const now = toTimestamp(input.now) ?? new Date()
+  const today = startOfUtcDay(now)
+  const settings = await getNotificationSettings(db)
+  const rules = await listActiveRulesByPriority(db)
+  const summary = buildReminderQueueSummary()
+
+  for (const rule of rules) {
+    const stages = await listStagesForRule(db, rule.id)
+    if (stages.length === 0) continue
+    const targets = await fetchTargetsForRule(db, rule, stages, today)
+    if (targets.length === 0) continue
+    const tally = await processStageRuleTargets(db, {
+      rule,
+      stages,
+      targets,
+      settings,
+      today,
+      now,
+      dispatcher: null,
+      enqueueDelivery,
+    })
+    summary.processed += tally.processed
+    summary.queued += tally.queued
+    summary.skipped += tally.skipped
+    summary.failed += tally.failed
   }
 
   return summary

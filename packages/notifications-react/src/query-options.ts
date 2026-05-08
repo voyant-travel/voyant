@@ -10,7 +10,7 @@ import type {
   UseNotificationTemplateOptions,
   UseNotificationTemplatesOptions,
 } from "./hooks/index.js"
-import { notificationsQueryKeys } from "./query-keys.js"
+import { notificationsQueryKeys, type RemindersPreviewFilters } from "./query-keys.js"
 import {
   notificationDeliveryListResponse,
   notificationDeliverySingleResponse,
@@ -18,8 +18,12 @@ import {
   notificationReminderRuleSingleResponse,
   notificationReminderRunListResponse,
   notificationReminderRunSingleResponse,
+  notificationSettingsResponse,
   notificationTemplateListResponse,
   notificationTemplateSingleResponse,
+  reminderRuleStagesListResponse,
+  reminderStageChannelsListResponse,
+  remindersPreviewResponse,
 } from "./schemas.js"
 
 function toQueryString(filters: Record<string, string | number | boolean | null | undefined>) {
@@ -158,6 +162,77 @@ export function getNotificationReminderRunQueryOptions(
       const { data } = await fetchWithValidation(
         `/v1/admin/notifications/reminder-runs/${id}`,
         notificationReminderRunSingleResponse,
+        client,
+      )
+      return data
+    },
+  })
+}
+
+export function getReminderRuleStagesQueryOptions(
+  client: FetchWithValidationOptions,
+  reminderRuleId: string,
+) {
+  return queryOptions({
+    queryKey: notificationsQueryKeys.reminderRuleStages(reminderRuleId),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/notifications/reminder-rules/${reminderRuleId}/stages`,
+        reminderRuleStagesListResponse,
+        client,
+      )
+      return data
+    },
+  })
+}
+
+export function getReminderStageChannelsQueryOptions(
+  client: FetchWithValidationOptions,
+  reminderRuleId: string,
+  stageId: string,
+) {
+  return queryOptions({
+    queryKey: notificationsQueryKeys.reminderStageChannels(stageId),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/notifications/reminder-rules/${reminderRuleId}/stages/${stageId}/channels`,
+        reminderStageChannelsListResponse,
+        client,
+      )
+      return data
+    },
+  })
+}
+
+export function getNotificationSettingsQueryOptions(client: FetchWithValidationOptions) {
+  return queryOptions({
+    queryKey: notificationsQueryKeys.notificationSettings(),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/notifications/notification-settings`,
+        notificationSettingsResponse,
+        client,
+      )
+      return data
+    },
+  })
+}
+
+export function getRemindersPreviewQueryOptions(
+  client: FetchWithValidationOptions,
+  filters: RemindersPreviewFilters = {},
+) {
+  const queryParams: Record<string, string | undefined> = {
+    date: filters.date,
+    ruleId: filters.ruleId,
+    targetId: filters.targetId,
+  }
+  return queryOptions({
+    queryKey: notificationsQueryKeys.remindersPreview(filters),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/notifications/reminders/preview${toQueryString(queryParams)}`,
+        remindersPreviewResponse,
         client,
       )
       return data

@@ -11,6 +11,8 @@ import {
   confirmAndDispatchBookingResultSchema,
   confirmAndDispatchBookingSchema,
   insertNotificationReminderRuleSchema,
+  insertNotificationReminderRuleStageSchema,
+  insertNotificationReminderStageChannelSchema,
   insertNotificationTemplateSchema,
   notificationDeliveryListQuerySchema,
   notificationReminderRuleListQuerySchema,
@@ -18,6 +20,8 @@ import {
   notificationTemplateListQuerySchema,
   previewNotificationTemplateResultSchema,
   previewNotificationTemplateSchema,
+  previewRemindersQuerySchema,
+  reorderReminderRuleStagesSchema,
   runDueRemindersSchema,
   sendBookingDocumentsNotificationResultSchema,
   sendBookingDocumentsNotificationSchema,
@@ -25,6 +29,9 @@ import {
   sendNotificationSchema,
   sendPaymentSessionNotificationSchema,
   updateNotificationReminderRuleSchema,
+  updateNotificationReminderRuleStageSchema,
+  updateNotificationReminderStageChannelSchema,
+  updateNotificationSettingsSchema,
   updateNotificationTemplateSchema,
 } from "./validation.js"
 
@@ -162,6 +169,99 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
       )
       if (!row) return c.json({ error: "Notification reminder rule not found" }, 404)
       return c.json({ data: row })
+    })
+    .get("/reminder-rules/:id/stages", async (c) => {
+      const stages = await notificationsService.listReminderRuleStages(
+        c.get("db"),
+        c.req.param("id"),
+      )
+      return c.json({ data: stages })
+    })
+    .post("/reminder-rules/:id/stages", async (c) => {
+      const stage = await notificationsService.createReminderRuleStage(
+        c.get("db"),
+        c.req.param("id"),
+        await parseJsonBody(c, insertNotificationReminderRuleStageSchema),
+      )
+      return c.json({ data: stage }, 201)
+    })
+    .post("/reminder-rules/:id/stages/reorder", async (c) => {
+      const stages = await notificationsService.reorderReminderRuleStages(
+        c.get("db"),
+        c.req.param("id"),
+        await parseJsonBody(c, reorderReminderRuleStagesSchema),
+      )
+      return c.json({ data: stages })
+    })
+    .patch("/reminder-rules/:id/stages/:stageId", async (c) => {
+      const stage = await notificationsService.updateReminderRuleStage(
+        c.get("db"),
+        c.req.param("stageId"),
+        await parseJsonBody(c, updateNotificationReminderRuleStageSchema),
+      )
+      if (!stage) return c.json({ error: "Reminder stage not found" }, 404)
+      return c.json({ data: stage })
+    })
+    .delete("/reminder-rules/:id/stages/:stageId", async (c) => {
+      const ok = await notificationsService.deleteReminderRuleStage(
+        c.get("db"),
+        c.req.param("stageId"),
+      )
+      if (!ok) return c.json({ error: "Reminder stage not found" }, 404)
+      return c.body(null, 204)
+    })
+    .get("/reminder-rules/:id/stages/:stageId/channels", async (c) => {
+      const channels = await notificationsService.listStageChannels(
+        c.get("db"),
+        c.req.param("stageId"),
+      )
+      return c.json({ data: channels })
+    })
+    .post("/reminder-rules/:id/stages/:stageId/channels", async (c) => {
+      const row = await notificationsService.createStageChannel(
+        c.get("db"),
+        c.req.param("stageId"),
+        await parseJsonBody(c, insertNotificationReminderStageChannelSchema),
+      )
+      return c.json({ data: row }, 201)
+    })
+    .patch("/reminder-rules/:id/stages/:stageId/channels/:channelId", async (c) => {
+      const row = await notificationsService.updateStageChannel(
+        c.get("db"),
+        c.req.param("channelId"),
+        await parseJsonBody(c, updateNotificationReminderStageChannelSchema),
+      )
+      if (!row) return c.json({ error: "Stage channel not found" }, 404)
+      return c.json({ data: row })
+    })
+    .delete("/reminder-rules/:id/stages/:stageId/channels/:channelId", async (c) => {
+      const ok = await notificationsService.deleteStageChannel(
+        c.get("db"),
+        c.req.param("channelId"),
+      )
+      if (!ok) return c.json({ error: "Stage channel not found" }, 404)
+      return c.body(null, 204)
+    })
+    .get("/notification-settings", async (c) => {
+      const row = await notificationsService.getNotificationSettings(c.get("db"))
+      return c.json({ data: row })
+    })
+    .patch("/notification-settings", async (c) => {
+      const row = await notificationsService.upsertNotificationSettings(
+        c.get("db"),
+        await parseJsonBody(c, updateNotificationSettingsSchema),
+      )
+      return c.json({ data: row })
+    })
+    .get("/reminders/preview", async (c) => {
+      const query = parseQuery(c, previewRemindersQuerySchema)
+      const now = query.date ? new Date(`${query.date}T00:00:00Z`) : new Date()
+      const rows = await notificationsService.previewReminders(c.get("db"), {
+        now,
+        ruleId: query.ruleId,
+        targetId: query.targetId,
+      })
+      return c.json({ data: rows })
     })
     .get("/reminder-runs", async (c) => {
       const query = parseQuery(c, notificationReminderRunListQuerySchema)

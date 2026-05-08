@@ -88,6 +88,8 @@
     "@voyantjs/legal-ui": "workspace:*",
     "@voyantjs/markets": "workspace:*",
     "@voyantjs/notifications": "workspace:*",
+    "@voyantjs/notifications-react": "workspace:*",
+    "@voyantjs/notifications-ui": "workspace:*",
     "@voyantjs/pricing": "workspace:*",
     "@voyantjs/pricing-react": "workspace:*",
     "@voyantjs/pricing-ui": "workspace:*",

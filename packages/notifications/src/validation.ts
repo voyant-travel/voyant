@@ -28,6 +28,25 @@ export const notificationReminderRunStatusSchema = z.enum([
   "skipped",
   "failed",
 ])
+export const notificationReminderStageAnchorSchema = z.enum([
+  "due_date",
+  "booking_created_at",
+  "departure_date",
+  "invoice_issued_at",
+  "last_send_at",
+])
+export const notificationReminderStageCadenceKindSchema = z.enum([
+  "once",
+  "every_n_days",
+  "escalating",
+])
+export const notificationStageRecipientKindSchema = z.enum(["primary", "cc", "bcc"])
+
+export const notificationReminderStageCadenceIntervalSchema = z.object({
+  whenDaysUntilDueGT: z.coerce.number().int().optional().nullable(),
+  whenDaysUntilDueLT: z.coerce.number().int().optional().nullable(),
+  repeatEveryDays: z.coerce.number().int().min(1).max(365),
+})
 export const notificationDocumentTypeSchema = z.enum(["contract", "invoice", "proforma"])
 export const notificationDocumentSourceSchema = z.enum(["legal", "finance"])
 export const notificationAttachmentSchema = z
@@ -96,24 +115,127 @@ const notificationReminderRuleCoreSchema = z.object({
   provider: z.string().max(255).optional().nullable(),
   templateId: z.string().optional().nullable(),
   templateSlug: z.string().max(255).optional().nullable(),
-  relativeDaysFromDueDate: z.coerce.number().int().min(-365).max(365).default(0),
+  priority: z.coerce.number().int().min(0).max(1000).default(0),
+  suppressionGroup: z.string().max(255).optional().nullable(),
   isSystem: z.boolean().default(false),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 
-export const insertNotificationReminderRuleSchema = notificationReminderRuleCoreSchema.refine(
-  (value) => Boolean(value.templateId || value.templateSlug),
-  {
-    message: "templateId or templateSlug is required",
-    path: ["templateId"],
-  },
-)
+// templateId / templateSlug are both optional now: stage channels carry
+// their own templates and override the rule-level default. A rule with no
+// template is valid as long as it has stages (or the legacy
+// relativeDaysFromDueDate path stays unused).
+export const insertNotificationReminderRuleSchema = notificationReminderRuleCoreSchema
 
-export const updateNotificationReminderRuleSchema = notificationReminderRuleCoreSchema
-  .partial()
-  .refine((value) => value.templateId !== "" && value.templateSlug !== "", {
-    message: "templateId and templateSlug cannot be empty strings",
+export const updateNotificationReminderRuleSchema = notificationReminderRuleCoreSchema.partial()
+
+const notificationReminderRuleStageBaseSchema = z.object({
+  name: z.string().max(255).optional().nullable(),
+  orderIndex: z.coerce.number().int().min(0).max(1000),
+  anchor: notificationReminderStageAnchorSchema,
+  windowStartDays: z.coerce.number().int().min(-3650).max(3650),
+  windowEndDays: z.coerce.number().int().min(-3650).max(3650),
+  cadenceKind: notificationReminderStageCadenceKindSchema,
+  cadenceEveryDays: z.coerce.number().int().min(1).max(365).optional().nullable(),
+  cadenceIntervals: z
+    .array(notificationReminderStageCadenceIntervalSchema)
+    .min(1)
+    .max(20)
+    .optional()
+    .nullable(),
+  maxSendsInStage: z.coerce.number().int().min(1).max(100).optional().nullable(),
+  respectQuietHours: z.boolean().default(true),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
+})
+
+export const insertNotificationReminderRuleStageSchema =
+  notificationReminderRuleStageBaseSchema.superRefine((value, ctx) => {
+    if (value.windowEndDays < value.windowStartDays) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["windowEndDays"],
+        message: "windowEndDays must be >= windowStartDays",
+      })
+    }
+    if (value.cadenceKind === "every_n_days" && !value.cadenceEveryDays) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["cadenceEveryDays"],
+        message: "cadenceEveryDays is required when cadenceKind=every_n_days",
+      })
+    }
+    if (
+      value.cadenceKind === "escalating" &&
+      (!value.cadenceIntervals || value.cadenceIntervals.length === 0)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["cadenceIntervals"],
+        message: "cadenceIntervals is required when cadenceKind=escalating",
+      })
+    }
   })
+
+export const updateNotificationReminderRuleStageSchema =
+  notificationReminderRuleStageBaseSchema.partial()
+
+export const reorderReminderRuleStagesSchema = z.object({
+  stageIds: z.array(z.string().min(1)).min(1).max(50),
+})
+
+const notificationReminderStageChannelBaseSchema = z.object({
+  orderIndex: z.coerce.number().int().min(0).max(50).default(0),
+  channel: notificationChannelSchema,
+  provider: z.string().max(255).optional().nullable(),
+  templateId: z.string().optional().nullable(),
+  templateSlug: z.string().max(255).optional().nullable(),
+  recipientKind: notificationStageRecipientKindSchema.default("primary"),
+  recipientRole: z.string().max(255).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
+})
+
+export const insertNotificationReminderStageChannelSchema =
+  notificationReminderStageChannelBaseSchema.refine(
+    (value) => Boolean(value.templateId || value.templateSlug),
+    {
+      message: "templateId or templateSlug is required",
+      path: ["templateId"],
+    },
+  )
+
+export const updateNotificationReminderStageChannelSchema =
+  notificationReminderStageChannelBaseSchema.partial()
+
+const notificationQuietHoursConfigSchema = z.object({
+  start: z.string().regex(/^\d{2}:\d{2}$/),
+  end: z.string().regex(/^\d{2}:\d{2}$/),
+  tz: z.string().min(1).max(255),
+})
+
+const notificationSettingsCoreSchema = z.object({
+  scope: z.string().min(1).max(64).default("default"),
+  quietHoursLocal: notificationQuietHoursConfigSchema.nullable().optional(),
+  blackoutDates: z
+    .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))
+    .max(366)
+    .nullable()
+    .optional(),
+  skipWeekends: z.boolean().default(false),
+  recipientRateLimitPerDay: z.coerce.number().int().min(1).max(10000).nullable().optional(),
+  suppressionWindowHours: z.coerce.number().int().min(0).max(720).default(24),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
+})
+
+export const updateNotificationSettingsSchema = notificationSettingsCoreSchema.partial()
+
+export const previewRemindersQuerySchema = z.object({
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  ruleId: z.string().optional(),
+  targetId: z.string().optional(),
+})
 
 export const notificationReminderRuleListQuerySchema = paginationSchema.extend({
   status: notificationReminderStatusSchema.optional(),
@@ -147,7 +269,6 @@ export const notificationReminderRunRuleSummarySchema = z.object({
   provider: z.string().nullable(),
   templateId: z.string().nullable(),
   templateSlug: z.string().nullable(),
-  relativeDaysFromDueDate: z.number().int(),
 })
 
 export const notificationReminderRunDeliverySummarySchema = z.object({
