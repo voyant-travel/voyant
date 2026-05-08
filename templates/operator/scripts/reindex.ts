@@ -20,35 +20,32 @@
  */
 
 import {
-  createFieldPolicyRegistry,
   createIndexerService,
   createTypesenseIndexer,
   type DocumentBuilder,
-  type FieldPolicyRegistry,
   type IndexerDocument,
   type IndexerSlice,
   type TypesenseClient,
 } from "@voyantjs/catalog"
 import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
-import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
 import { charterProducts } from "@voyantjs/charters/schema"
 import { createCharterDocumentBuilder } from "@voyantjs/charters/service-catalog-plane"
-import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
 import { cruises } from "@voyantjs/cruises/schema"
 import { createCruiseDocumentBuilder } from "@voyantjs/cruises/service-catalog-plane"
 import { createDbClient } from "@voyantjs/db"
-import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { productExtras } from "@voyantjs/extras/schema"
 import { createExtraDocumentBuilder } from "@voyantjs/extras/service-catalog-plane"
-import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { roomTypes } from "@voyantjs/hospitality/schema"
 import { createRoomTypeDocumentBuilder } from "@voyantjs/hospitality/service-catalog-plane"
-import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { products } from "@voyantjs/products/schema"
-import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
 import { config } from "dotenv"
 import type { PgTable } from "drizzle-orm/pg-core"
 import { Client as TypesenseSdkClient } from "typesense"
+
+import {
+  createProductsDocumentBuilder,
+  getFieldPolicyRegistries,
+} from "../src/api/lib/catalog-runtime.js"
 
 config({ path: ".env" })
 config({ path: "../../.env" })
@@ -112,13 +109,11 @@ const indexer = createTypesenseIndexer({
   vectorDimensions: embeddings?.capabilities.dimensions,
 })
 
-const registries = new Map<string, FieldPolicyRegistry>([
-  ["products", createFieldPolicyRegistry(productCatalogPolicy)],
-  ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
-  ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
-  ["charters", createFieldPolicyRegistry(charterCatalogPolicy)],
-  ["hospitality", createFieldPolicyRegistry(hospitalityCatalogPolicy)],
-])
+// Use the shared registry map so the CLI and the live catalog-bridge
+// produce documents from the same composed policy. Without sharing this,
+// the bulk path drifts from the live path on every new child-entity
+// registry that lands (destinations, taxonomy, …).
+const registries = getFieldPolicyRegistries()
 
 const activeSlices = SLICES.filter(
   (slice) => !requestedVertical || slice.vertical === requestedVertical,
@@ -145,7 +140,9 @@ const VERTICAL_CONFIGS: VerticalConfig[] = [
   {
     vertical: "products",
     table: products as unknown as VerticalConfig["table"],
-    builder: createProductDocumentBuilder(db, { sellerOperatorId }),
+    // Shared with the live catalog-bridge — keeps destination (and any
+    // future child-entity) projections wired identically across paths.
+    builder: createProductsDocumentBuilder(db, { sellerOperatorId }),
   },
   {
     vertical: "extras",

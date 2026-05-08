@@ -22,10 +22,13 @@ import {
 import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
 import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
 import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
+import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
+import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
 
 /**
  * The slice set the operator template indexes by default — staff (admin
@@ -239,6 +242,28 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
     ])
   }
   return _registries
+}
+
+/**
+ * Build the products `DocumentBuilder` with all child-entity projection
+ * extensions wired in. Single source of truth for both the live catalog
+ * bridge (event-driven reindex) and the bulk reindex CLI — without this,
+ * the two paths drift and bulk reindex produces docs missing the
+ * denormalized child-entity fields.
+ *
+ * Resolves the products registry from `getFieldPolicyRegistries()` so the
+ * builder honors the same composed policy the indexer service sees.
+ */
+export function createProductsDocumentBuilder(
+  db: AnyDrizzleDb,
+  context: { sellerOperatorId: string },
+): DocumentBuilder {
+  const registry = getFieldPolicyRegistries().get("products")
+  return createProductDocumentBuilder(db, {
+    sellerOperatorId: context.sellerOperatorId,
+    registry,
+    extensions: [createProductDestinationsProjectionExtension()],
+  })
 }
 
 /**
