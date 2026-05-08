@@ -124,10 +124,7 @@ export type NotificationsUiMessages = {
     }
   }
   preview: {
-    heading: string
-    description: string
     dateLabel: string
-    refresh: string
     empty: string
     columns: {
       rule: string

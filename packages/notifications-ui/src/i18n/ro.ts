@@ -128,11 +128,7 @@ export const notificationsUiRo: NotificationsUiMessages = {
     },
   },
   preview: {
-    heading: "Previzualizare reamintiri",
-    description:
-      "Doar pentru consultare — arată ce combinații (regulă, etapă, țintă) s-ar declanșa la data aleasă.",
     dateLabel: "Dată",
-    refresh: "Reîmprospătează",
     empty: "Nimic nu s-ar declanșa la această dată.",
     columns: {
       rule: "Regulă",

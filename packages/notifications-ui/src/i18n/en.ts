@@ -127,11 +127,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
     },
   },
   preview: {
-    heading: "Preview reminders",
-    description:
-      "Read-only — shows which (rule, stage, target) combinations would fire on the chosen date.",
     dateLabel: "Date",
-    refresh: "Refresh",
     empty: "Nothing would fire on this date.",
     columns: {
       rule: "Rule",

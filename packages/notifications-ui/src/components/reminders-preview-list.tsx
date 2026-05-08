@@ -1,16 +1,9 @@
 "use client"
 
 import { useRemindersPreview } from "@voyantjs/notifications-react"
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-} from "@voyantjs/ui/components"
+import { Card, CardContent } from "@voyantjs/ui/components"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { Field, FieldLabel } from "@voyantjs/ui/components/field"
 import {
   Table,
   TableBody,
@@ -19,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { RefreshCcw } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { useState } from "react"
 
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
@@ -35,25 +28,24 @@ export interface RemindersPreviewListProps {
 
 export function RemindersPreviewList({ ruleId, targetId }: RemindersPreviewListProps) {
   const messages = useNotificationsUiMessagesOrDefault()
-  const [date, setDate] = useState(todayIso())
-  const { data, isFetching, refetch } = useRemindersPreview({ date, ruleId, targetId })
+  const [date, setDate] = useState<string>(todayIso())
+  const { data, isFetching } = useRemindersPreview({ date, ruleId, targetId })
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{messages.preview.heading}</CardTitle>
-        <CardDescription>{messages.preview.description}</CardDescription>
-      </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-end gap-3">
-          <div className="flex-1 max-w-xs">
-            <Label>{messages.preview.dateLabel}</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
-          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCcw className={isFetching ? "size-4 animate-spin" : "size-4"} />
-            {messages.preview.refresh}
-          </Button>
+        <div className="flex items-center justify-between gap-3">
+          <Field className="max-w-xs">
+            <FieldLabel htmlFor="preview-date">{messages.preview.dateLabel}</FieldLabel>
+            <DatePicker
+              value={date}
+              onChange={(next) => setDate(next ?? todayIso())}
+              clearable={false}
+            />
+          </Field>
+          {isFetching ? (
+            <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden />
+          ) : null}
         </div>
 
         {data && data.length === 0 ? (
