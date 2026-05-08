@@ -29,6 +29,13 @@
       "when": 1778241543040,
       "tag": "0003_drop_legacy_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778244958437,
+      "tag": "0004_contract_series_unique_prefix_scope",
+      "breakpoints": true
     }
   ]
 }

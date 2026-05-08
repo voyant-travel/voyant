@@ -235,7 +235,6 @@ export const registryLegalRo = {
     create: "Serie noua",
     empty: "Nu exista inca serii. Creeaza una pentru a configura numerotarea contractelor.",
     columns: {
-      code: "Cod",
       name: "Nume",
       prefix: "Prefix",
       separator: "Separator",
@@ -246,7 +245,7 @@ export const registryLegalRo = {
       status: "Status",
     },
     confirms: {
-      deleteSeries: 'Stergi seria "{code}"?',
+      deleteSeries: 'Stergi seria "{name}"?',
     },
   },
   numberSeriesDialog: {
@@ -255,7 +254,6 @@ export const registryLegalRo = {
       edit: "Editeaza seria",
     },
     fields: {
-      code: "Cod",
       name: "Nume",
       prefix: "Prefix",
       separator: "Separator",
@@ -265,7 +263,6 @@ export const registryLegalRo = {
       active: "Activ",
     },
     placeholders: {
-      code: "INV",
       name: "Serie facturi",
       prefix: "CTR",
       separator: "-",
@@ -274,9 +271,11 @@ export const registryLegalRo = {
       create: "Creeaza seria",
     },
     validation: {
-      codeRequired: "Codul este obligatoriu",
       nameRequired: "Numele este obligatoriu",
+      prefixRequired: "Prefixul este obligatoriu",
     },
+    duplicateWarning:
+      'O serie activa cu prefix "{prefix}" si domeniu "{scope}" exista deja ("{name}"). Salvarea va esua daca nu o arhivezi mai intai.',
   },
   policiesPage: {
     title: "Politici",

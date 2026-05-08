@@ -1,9 +1,11 @@
+import { formatMessage } from "@voyantjs/i18n"
 import {
   type LegalContractNumberSeriesRecord,
+  useLegalContractNumberSeries,
   useLegalContractNumberSeriesMutation,
 } from "@voyantjs/legal-react"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
@@ -29,9 +31,8 @@ import { zodResolver } from "@/lib/zod-resolver"
 import { useRegistryLegalMessagesOrDefault } from "./i18n/provider"
 
 type FormValues = {
-  code: string
   name: string
-  prefix?: string
+  prefix: string
   separator?: string
   padLength?: number
   resetStrategy: "never" | "annual" | "monthly"
@@ -50,9 +51,8 @@ type NumberSeriesDialogProps = {
 
 function createSeriesFormSchema(messages: ReturnType<typeof useRegistryLegalMessagesOrDefault>) {
   return z.object({
-    code: z.string().min(1, messages.numberSeriesDialog.validation.codeRequired).max(50),
     name: z.string().min(1, messages.numberSeriesDialog.validation.nameRequired).max(255),
-    prefix: z.string().max(20).optional(),
+    prefix: z.string().min(1, messages.numberSeriesDialog.validation.prefixRequired).max(20),
     separator: z.string().max(5).optional(),
     padLength: z.coerce.number().int().min(0).max(12).optional(),
     resetStrategy: z.enum(["never", "annual", "monthly"]),
@@ -74,11 +74,11 @@ export function NumberSeriesDialog({
   const seriesFormSchema = createSeriesFormSchema(messages)
   const isEditing = !!series
   const { create, update } = useLegalContractNumberSeriesMutation()
+  const { data: existingList } = useLegalContractNumberSeries()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(seriesFormSchema),
     defaultValues: {
-      code: "",
       name: "",
       prefix: "",
       separator: "",
@@ -92,7 +92,6 @@ export function NumberSeriesDialog({
   useEffect(() => {
     if (open && series) {
       form.reset({
-        code: series.code,
         name: series.name,
         prefix: series.prefix,
         separator: series.separator,
@@ -106,11 +105,31 @@ export function NumberSeriesDialog({
     }
   }, [open, series, form])
 
+  const watchedPrefix = form.watch("prefix")
+  const watchedScope = form.watch("scope")
+  const watchedActive = form.watch("active")
+
+  // The DB has a partial unique index on (prefix, scope) WHERE active.
+  // Surface the collision before submit so the operator gets a friendly
+  // hint instead of an opaque server error.
+  const conflictingSeries = useMemo(() => {
+    if (!watchedActive || !watchedPrefix) return null
+    const rows = existingList?.data ?? []
+    return (
+      rows.find(
+        (row) =>
+          row.active &&
+          row.prefix === watchedPrefix &&
+          row.scope === watchedScope &&
+          row.id !== series?.id,
+      ) ?? null
+    )
+  }, [existingList, watchedActive, watchedPrefix, watchedScope, series?.id])
+
   const onSubmit = async (values: FormValues) => {
     const payload = {
-      code: values.code,
       name: values.name,
-      prefix: values.prefix || "",
+      prefix: values.prefix,
       separator: values.separator || "",
       padLength: values.padLength ?? 4,
       resetStrategy: values.resetStrategy,
@@ -138,28 +157,15 @@ export function NumberSeriesDialog({
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label>{messages.numberSeriesDialog.fields.code}</Label>
-                <Input
-                  {...form.register("code")}
-                  placeholder={messages.numberSeriesDialog.placeholders.code}
-                  maxLength={50}
-                />
-                {form.formState.errors.code ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>{messages.numberSeriesDialog.fields.name}</Label>
-                <Input
-                  {...form.register("name")}
-                  placeholder={messages.numberSeriesDialog.placeholders.name}
-                />
-                {form.formState.errors.name ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
-                ) : null}
-              </div>
+            <div className="flex flex-col gap-2">
+              <Label>{messages.numberSeriesDialog.fields.name}</Label>
+              <Input
+                {...form.register("name")}
+                placeholder={messages.numberSeriesDialog.placeholders.name}
+              />
+              {form.formState.errors.name ? (
+                <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-3 gap-4">
@@ -170,6 +176,9 @@ export function NumberSeriesDialog({
                   placeholder={messages.numberSeriesDialog.placeholders.prefix}
                   maxLength={20}
                 />
+                {form.formState.errors.prefix ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.prefix.message}</p>
+                ) : null}
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.numberSeriesDialog.fields.separator}</Label>
@@ -241,12 +250,25 @@ export function NumberSeriesDialog({
               />
               <Label>{messages.numberSeriesDialog.fields.active}</Label>
             </div>
+
+            {conflictingSeries ? (
+              <p className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+                {formatMessage(messages.numberSeriesDialog.duplicateWarning, {
+                  prefix: conflictingSeries.prefix,
+                  scope: messages.common.contractScopeLabels[conflictingSeries.scope],
+                  name: conflictingSeries.name,
+                })}
+              </p>
+            ) : null}
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
+            <Button
+              type="submit"
+              disabled={form.formState.isSubmitting || conflictingSeries !== null}
+            >
               {form.formState.isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}

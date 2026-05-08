@@ -65,7 +65,6 @@ export function NumberSeriesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th className="p-3 text-left font-medium">{m.numberSeriesPage.columns.code}</th>
                 <th className="p-3 text-left font-medium">{m.numberSeriesPage.columns.name}</th>
                 <th className="p-3 text-left font-medium">{m.numberSeriesPage.columns.prefix}</th>
                 <th className="p-3 text-left font-medium">
@@ -82,7 +81,6 @@ export function NumberSeriesPage() {
             <tbody>
               {rows.map((series) => (
                 <tr key={series.id} className="border-b last:border-b-0">
-                  <td className="p-3 font-mono text-xs">{series.code}</td>
                   <td className="p-3">{series.name}</td>
                   <td className="p-3 font-mono">{series.prefix || m.common.noResultsDash}</td>
                   <td className="p-3 font-mono">{series.separator || m.common.noResultsDash}</td>
@@ -119,7 +117,7 @@ export function NumberSeriesPage() {
                           if (
                             confirm(
                               formatMessage(m.numberSeriesPage.confirms.deleteSeries, {
-                                code: series.code,
+                                name: series.name,
                               }),
                             )
                           ) {
