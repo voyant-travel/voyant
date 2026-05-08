@@ -216,4 +216,140 @@ describe.skipIf(!DB_AVAILABLE)("Reminder sequences (stage-based dispatcher)", ()
     expect(body.data.processed).toBe(0)
     expect(body.data.sent).toBe(0)
   })
+
+  it("queues per-channel and uses the stage channel's template at delivery time", async () => {
+    // Two templates: one is the rule's default fallback that should NEVER be
+    // used, the other lives on the stage channel and is the one we expect to
+    // hit the wire.
+    const ruleDefaultTplRes = await ctx.request("/templates", {
+      method: "POST",
+      ...json({
+        slug: "rule-default-do-not-use",
+        name: "Rule default (must not be used)",
+        channel: "email",
+        provider: "local",
+        status: "active",
+        subjectTemplate: "WRONG",
+        textTemplate: "WRONG",
+      }),
+    })
+    const { data: ruleDefaultTpl } = await ruleDefaultTplRes.json()
+
+    const stageChannelTplRes = await ctx.request("/templates", {
+      method: "POST",
+      ...json({
+        slug: "stage-channel-correct",
+        name: "Stage channel template",
+        channel: "email",
+        provider: "local",
+        status: "active",
+        subjectTemplate: "Stage payment due {{ bookingNumber }}",
+        textTemplate: "Stage delivery — due {{ dueDate }}",
+      }),
+    })
+    const { data: stageChannelTpl } = await stageChannelTplRes.json()
+
+    await ctx.db.execute(sql`
+      INSERT INTO bookings (id, booking_number, person_id, sell_currency, sell_amount_cents)
+      VALUES ('book_q_1', 'BK-Q-1', 'person_q_1', 'EUR', 30000)
+    `)
+    await ctx.db.execute(sql`
+      INSERT INTO booking_travelers (id, booking_id, first_name, last_name, email, participant_type, is_primary)
+      VALUES ('bkpt_q_1', 'book_q_1', 'Cara', 'Queue', 'cara@example.com', 'traveler', true)
+    `)
+    await ctx.db.execute(sql`
+      INSERT INTO booking_payment_schedules (
+        id, booking_id, schedule_type, status, due_date, currency, amount_cents
+      )
+      VALUES ('bkps_q_1', 'book_q_1', 'balance', 'pending', DATE '2026-04-12', 'EUR', 18000)
+    `)
+
+    const ruleRes = await ctx.request("/reminder-rules", {
+      method: "POST",
+      ...json({
+        slug: "queued-balance-rule",
+        name: "Queued balance rule",
+        status: "active",
+        targetType: "booking_payment_schedule",
+        channel: "email",
+        provider: "local",
+        templateId: ruleDefaultTpl.id,
+      }),
+    })
+    const { data: rule } = await ruleRes.json()
+
+    const stageRes = await ctx.request(`/reminder-rules/${rule.id}/stages`, {
+      method: "POST",
+      ...json({
+        orderIndex: 0,
+        anchor: "due_date",
+        windowStartDays: -7,
+        windowEndDays: 0,
+        cadenceKind: "once",
+        respectQuietHours: false,
+      }),
+    })
+    const { data: stage } = await stageRes.json()
+
+    await ctx.request(`/reminder-rules/${rule.id}/stages/${stage.id}/channels`, {
+      method: "POST",
+      ...json({
+        orderIndex: 0,
+        channel: "email",
+        provider: "local",
+        templateId: stageChannelTpl.id,
+        recipientKind: "primary",
+      }),
+    })
+
+    // Drive the queue path directly. The route does the full
+    // queueDueReminders -> stage pipeline -> emit per-channel queued runs.
+    const { queueDueReminders, deliverReminderRun } = await import("../../src/service-reminders.js")
+    const { createNotificationService } = await import("../../src/service.js")
+    const { createLocalProvider } = await import("../../src/providers/local.js")
+
+    const enqueued: { reminderRunId: string }[] = []
+    const queueResult = await queueDueReminders(
+      ctx.db as never,
+      { now: "2026-04-09T09:00:00.000Z" },
+      async (job) => {
+        enqueued.push(job)
+      },
+    )
+    expect(queueResult.queued).toBe(1)
+    expect(enqueued).toHaveLength(1)
+
+    // Sanity-check that the run was annotated with the stage channel id —
+    // that's what resolveChannelOverride keys off.
+    const queuedRows = await ctx.db.execute(sql`
+      SELECT status, metadata FROM notification_reminder_runs
+      WHERE reminder_rule_id = ${rule.id}
+    `)
+    const queuedRowsAny =
+      (queuedRows as unknown as { rows?: Array<Record<string, unknown>> }).rows ??
+      (queuedRows as unknown as Array<Record<string, unknown>>)
+    expect(queuedRowsAny.length).toBe(1)
+    expect(queuedRowsAny[0]!.status).toBe("queued")
+    const queuedMeta = queuedRowsAny[0]!.metadata as Record<string, unknown>
+    expect(queuedMeta.stageChannelId).toBeTruthy()
+
+    // Now run the deliver workflow handler the way templates/operator/src/workflows.ts
+    // would: hand it the run id, expect the stage channel's template (not the rule's).
+    const recordedSends: Array<Record<string, unknown>> = []
+    const localDispatcher = createNotificationService([
+      createLocalProvider({
+        sink: (payload) => recordedSends.push(payload as Record<string, unknown>),
+        channels: ["email"],
+      }),
+    ])
+    const delivered = await deliverReminderRun(ctx.db as never, localDispatcher, {
+      reminderRunId: enqueued[0]!.reminderRunId,
+    })
+    expect(delivered?.status).toBe("sent")
+    expect(recordedSends).toHaveLength(1)
+    const sent = recordedSends[0]!
+    expect(sent.subject).toContain("Stage payment due")
+    expect(sent.text).toContain("Stage delivery")
+    expect(sent.to).toBe("cara@example.com")
+  })
 })

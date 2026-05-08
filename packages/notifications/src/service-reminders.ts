@@ -9,6 +9,7 @@ import {
   type NotificationSettings,
   notificationReminderRules,
   notificationReminderRuns,
+  notificationReminderStageChannels,
 } from "./schema.js"
 import {
   type BookingDocumentAttachmentResolver,
@@ -64,7 +65,16 @@ export interface BookingEventReminderRuntimeOptions {
 async function getBookingPaymentNotificationContext(db: PostgresJsDatabase, bookingId: string) {
   const [[paymentSchedule], [invoice], [paymentSession]] = await Promise.all([
     db
-      .select()
+      .select({
+        id: bookingPaymentSchedules.id,
+        bookingId: bookingPaymentSchedules.bookingId,
+        scheduleType: bookingPaymentSchedules.scheduleType,
+        status: bookingPaymentSchedules.status,
+        dueDate: bookingPaymentSchedules.dueDate,
+        currency: bookingPaymentSchedules.currency,
+        amountCents: bookingPaymentSchedules.amountCents,
+        createdAt: bookingPaymentSchedules.createdAt,
+      })
       .from(bookingPaymentSchedules)
       .where(
         and(
@@ -78,13 +88,38 @@ async function getBookingPaymentNotificationContext(db: PostgresJsDatabase, book
       .orderBy(asc(bookingPaymentSchedules.dueDate), asc(bookingPaymentSchedules.createdAt))
       .limit(1),
     db
-      .select()
+      .select({
+        id: invoices.id,
+        invoiceNumber: invoices.invoiceNumber,
+        invoiceType: invoices.invoiceType,
+        status: invoices.status,
+        currency: invoices.currency,
+        subtotalCents: invoices.subtotalCents,
+        taxCents: invoices.taxCents,
+        totalCents: invoices.totalCents,
+        paidCents: invoices.paidCents,
+        balanceDueCents: invoices.balanceDueCents,
+        issueDate: invoices.issueDate,
+        dueDate: invoices.dueDate,
+      })
       .from(invoices)
       .where(eq(invoices.bookingId, bookingId))
       .orderBy(desc(invoices.createdAt))
       .limit(1),
     db
-      .select()
+      .select({
+        id: paymentSessions.id,
+        status: paymentSessions.status,
+        provider: paymentSessions.provider,
+        currency: paymentSessions.currency,
+        amountCents: paymentSessions.amountCents,
+        redirectUrl: paymentSessions.redirectUrl,
+        returnUrl: paymentSessions.returnUrl,
+        cancelUrl: paymentSessions.cancelUrl,
+        expiresAt: paymentSessions.expiresAt,
+        paymentMethod: paymentSessions.paymentMethod,
+        externalReference: paymentSessions.externalReference,
+      })
       .from(paymentSessions)
       .where(eq(paymentSessions.bookingId, bookingId))
       .orderBy(desc(paymentSessions.createdAt))
@@ -309,12 +344,52 @@ async function markReminderRunSent(
   return run ?? null
 }
 
+type ChannelOverride = {
+  channel: "email" | "sms"
+  templateId: string | null
+  templateSlug: string | null
+  provider: string | null
+}
+
+async function resolveChannelOverride(
+  db: PostgresJsDatabase,
+  run: NotificationReminderRunRow,
+  rule: NotificationReminderRuleRow,
+): Promise<ChannelOverride> {
+  const stageChannelId =
+    run.metadata && typeof run.metadata === "object"
+      ? ((run.metadata as Record<string, unknown>).stageChannelId as string | undefined)
+      : undefined
+  if (stageChannelId) {
+    const [stageChannel] = await db
+      .select()
+      .from(notificationReminderStageChannels)
+      .where(eq(notificationReminderStageChannels.id, stageChannelId))
+      .limit(1)
+    if (stageChannel) {
+      return {
+        channel: stageChannel.channel,
+        templateId: stageChannel.templateId ?? null,
+        templateSlug: stageChannel.templateSlug ?? null,
+        provider: stageChannel.provider ?? null,
+      }
+    }
+  }
+  return {
+    channel: rule.channel,
+    templateId: rule.templateId ?? null,
+    templateSlug: rule.templateSlug ?? null,
+    provider: rule.provider ?? null,
+  }
+}
+
 async function sendQueuedBookingPaymentScheduleReminder(
   db: PostgresJsDatabase,
   dispatcher: NotificationService,
   run: NotificationReminderRunRow,
   rule: NotificationReminderRuleRow,
   now: Date,
+  channelOverride: ChannelOverride,
 ) {
   const [schedule] = await db
     .select()
@@ -332,7 +407,22 @@ async function sendQueuedBookingPaymentScheduleReminder(
   }
 
   const [booking] = await db
-    .select()
+    .select({
+      id: bookings.id,
+      bookingNumber: bookings.bookingNumber,
+      status: bookings.status,
+      personId: bookings.personId,
+      organizationId: bookings.organizationId,
+      contactFirstName: bookings.contactFirstName,
+      contactLastName: bookings.contactLastName,
+      contactEmail: bookings.contactEmail,
+      contactPhone: bookings.contactPhone,
+      contactPreferredLanguage: bookings.contactPreferredLanguage,
+      sellCurrency: bookings.sellCurrency,
+      sellAmountCents: bookings.sellAmountCents,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+    })
     .from(bookings)
     .where(eq(bookings.id, schedule.bookingId))
     .limit(1)
@@ -374,10 +464,10 @@ async function sendQueuedBookingPaymentScheduleReminder(
 
   try {
     const delivery = await sendNotification(db, dispatcher, {
-      templateId: rule.templateId ?? null,
-      templateSlug: rule.templateSlug ?? null,
-      channel: rule.channel,
-      provider: rule.provider ?? null,
+      templateId: channelOverride.templateId,
+      templateSlug: channelOverride.templateSlug,
+      channel: channelOverride.channel,
+      provider: channelOverride.provider,
       to: recipientEmail,
       data: {
         bookingId: booking.id,
@@ -432,12 +522,13 @@ async function sendQueuedInvoiceReminder(
   run: NotificationReminderRunRow,
   rule: NotificationReminderRuleRow,
   now: Date,
+  channelOverride: ChannelOverride,
 ) {
   const delivery = await sendInvoiceNotification(db, dispatcher, run.targetId, {
-    templateId: rule.templateId ?? null,
-    templateSlug: rule.templateSlug ?? null,
-    channel: rule.channel,
-    provider: rule.provider ?? null,
+    templateId: channelOverride.templateId,
+    templateSlug: channelOverride.templateSlug,
+    channel: channelOverride.channel,
+    provider: channelOverride.provider,
     to: run.recipient ?? undefined,
     data: {
       reminderRunId: run.id,
@@ -722,13 +813,22 @@ export async function deliverReminderRun(
     return markReminderRunFailed(db, run.id, new Date(), "Reminder rule not found")
   }
 
+  const channelOverride = await resolveChannelOverride(db, run, rule)
+
   try {
     if (run.targetType === "booking_payment_schedule") {
-      return await sendQueuedBookingPaymentScheduleReminder(db, dispatcher, run, rule, now)
+      return await sendQueuedBookingPaymentScheduleReminder(
+        db,
+        dispatcher,
+        run,
+        rule,
+        now,
+        channelOverride,
+      )
     }
 
     if (run.targetType === "invoice") {
-      return await sendQueuedInvoiceReminder(db, dispatcher, run, rule, now)
+      return await sendQueuedInvoiceReminder(db, dispatcher, run, rule, now, channelOverride)
     }
 
     return markReminderRunSkipped(db, run.id, now, "Unsupported reminder target type")

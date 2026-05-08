@@ -201,6 +201,21 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
       )
     `)
     await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS booking_items (
+        id text PRIMARY KEY NOT NULL,
+        booking_id text NOT NULL,
+        title text NOT NULL,
+        description text,
+        quantity integer,
+        item_type text,
+        service_date date,
+        sell_currency text,
+        unit_sell_amount_cents integer,
+        total_sell_amount_cents integer,
+        created_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS booking_payment_schedules (
         id text PRIMARY KEY NOT NULL,
         booking_id text NOT NULL,
