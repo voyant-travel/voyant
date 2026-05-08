@@ -125,9 +125,9 @@ export function AvailabilityPage() {
     (startTime) =>
       matchesProduct(startTime.productId) && matchesActive(startTime.active, startTimeActiveFilter),
   )
-  const filteredSlots = slots.filter(
+  const productFilteredSlots = slots.filter((slot) => matchesProduct(slot.productId))
+  const filteredSlots = productFilteredSlots.filter(
     (slot) =>
-      matchesProduct(slot.productId) &&
       (slotStatusFilter === "all" || slot.status === slotStatusFilter) &&
       matchesDateRange(slot.dateLocal, slotDateRange),
   )
@@ -149,7 +149,7 @@ export function AvailabilityPage() {
   const nowIso = new Date().toISOString()
   const productsWithoutUpcomingDepartures = filteredProducts.filter(
     (product) =>
-      !filteredSlots.some(
+      !productFilteredSlots.some(
         (slot) =>
           slot.productId === product.id && slot.status === "open" && slot.startsAt >= nowIso,
       ),

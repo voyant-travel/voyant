@@ -2157,6 +2157,7 @@ export const financeService = {
     if (query.paymentMethod) customerConditions.push(sql`p.payment_method = ${query.paymentMethod}`)
     if (query.currency) customerConditions.push(sql`p.currency = ${query.currency}`)
     if (query.invoiceId) customerConditions.push(sql`p.invoice_id = ${query.invoiceId}`)
+    if (query.bookingId) customerConditions.push(sql`i.booking_id = ${query.bookingId}`)
     if (query.paymentDateFrom)
       customerConditions.push(sql`p.payment_date >= ${query.paymentDateFrom}`)
     if (query.paymentDateTo) customerConditions.push(sql`p.payment_date <= ${query.paymentDateTo}`)
