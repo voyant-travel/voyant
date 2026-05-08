@@ -1,5 +1,65 @@
 # @voyantjs/i18n
 
+## 0.28.3
+
+### Patch Changes
+
+- 60ef432: Let templates lift the search + filter row out of the overview cards and into the page header (matching the rest of the operator shell), and accept a per-tab toolbar slot.
+
+  `@voyantjs/availability-ui`:
+
+  - `<AvailabilityOverview />` accepts `showFilters?: boolean` (default `true`). When `false`, the inline search input + product filter + clear-filters button row is hidden so the consuming page can render the same controls in its own header without duplication. KPI cards and the rest of the overview still render unchanged.
+  - `<AvailabilitySlotsTab />`, `<AvailabilityRulesTab />`, `<AvailabilityStartTimesTab />`, `<AvailabilityCloseoutsTab />`, `<AvailabilityPickupPointsTab />` each accept an optional `toolbar?: ReactNode` rendered between the selection action bar and the data table — for tab-scoped filter chips, pickers, etc.
+
+  `@voyantjs/availability-react`:
+
+  - `ProductListFilters` now accepts an optional `search` string, threaded through `getProductsQueryOptions` as a `?search=` query-string parameter so product pickers can autocomplete server-side.
+
+  `@voyantjs/resources-ui`:
+
+  - `<ResourcesOverview />` accepts `showFilters?: boolean` (default `true`) with the same semantics as the availability overview — hides the inline search + kind-filter row when the consuming page surfaces those controls in its header.
+
+  `@voyantjs/i18n`:
+
+  - Admin resources messages add `filtersButton`, `filtersKindLabel`, `filtersSupplierLabel` / `filtersSupplierAny` / `filtersSupplierEmpty`, `filtersProductLabel` / `filtersProductAny` / `filtersProductEmpty` (en + ro) for the new header-level filter popover.
+
+- 60ef432: Add a unified payments listing that joins customer and supplier payments into a single feed, and split the operator finance area into separate Invoices and Payments pages.
+
+  `@voyantjs/finance`:
+
+  - New routes `GET /v1/admin/finance/payments` and `GET /v1/admin/finance/payments/:id`. The list endpoint accepts a `kind` filter (`customer` | `supplier`) plus the usual `status` / `paymentMethod` / `currency` / `invoiceId` / `bookingId` / `supplierId` / `paymentDateFrom` / `paymentDateTo` / `search` filters and `sortBy` (`amountCents` | `status` | `paymentDate` | `createdAt`) / `sortDir`. The detail endpoint dispatches by typeid prefix — `pay_*` resolves to a customer payment, `spay_*` resolves to a supplier payment. `bookingId` is applied to both branches: directly to `supplier_payments.booking_id` on the supplier side and via `invoices.booking_id` (joined as `i`) on the customer side, so a booking-scoped query no longer returns unrelated customer rows.
+  - `financeService.listAllPayments(db, query)` and `financeService.getPaymentById(db, id)` return a `UnifiedPaymentRow` shape with normalized fields (`personName`, `organizationName`, `supplierName`, `invoiceNumber`, `bookingNumber`) joined in via SQL so the operator UI doesn't need follow-up lookups.
+  - New exports: `UnifiedPaymentRow` (service.ts) and `paymentKindSchema` / `paymentListQuerySchema` / `paymentListSortFieldSchema` / `paymentListSortDirSchema` (validation-payments.ts).
+
+  `@voyantjs/finance-react`:
+
+  - New hooks: `useAllPayments(filters)` and `usePayment(id)` plus the underlying `getAllPaymentsQueryOptions` / `getPaymentQueryOptions` query-options factories.
+  - New types: `FinancePaymentKind`, `FinanceAllPaymentsListFilters`, `FinanceAllPaymentsListSortField`, `FinanceAllPaymentsListSortDir`.
+  - New schemas: `paymentKindSchema`, `unifiedPaymentRecordSchema`, `allPaymentsListResponse`, `paymentSingleResponse`, plus matching `UnifiedPaymentRecord` type.
+  - New invoice-payment-mutation invalidation now also invalidates `financeQueryKeys.allPayments()` so the unified feed stays in sync with single-invoice payment flows.
+
+  `@voyantjs/admin`:
+
+  - Operator nav `finance` entry now points at `/finance/invoices` and exposes an `items` sub-nav with `invoices` and `payments` links, matching the new operator page split.
+
+  `@voyantjs/i18n`:
+
+  - Operator nav messages add `invoices` and `payments` (en + ro).
+  - Admin finance messages add `invoicesPageTitle`/`invoicesPageDescription`, `paymentsPageTitle`/`paymentsPageDescription`, `recordPayment`, `searchPaymentsPlaceholder`, `kindColumn`/`kindCustomer`/`kindSupplier`/`partyColumn`/`filtersKindLabel`/`filtersKindAll`, plus the `paymentDetail` and `recordPaymentDialog` message groups (en + ro).
+
+- 60ef432: Reject the contradictory combination of `option_price_rules.pricing_mode = "per_booking"` and child per-unit prices, and stop the admin UI from offering the unit-pricing matrix on a per-booking rule (#482).
+
+  Before: an `option_price_rule` with `pricingMode = "per_booking"` could carry rows in `option_unit_price_rules`. The storefront totaller in `service-departures.ts` switches on the _unit-level_ `pricingMode`, so the rule-level `per_booking` badge was effectively cosmetic — the rule said "single flat amount per booking", the math actually multiplied per-unit prices by quantity. Operators saw "Per Booking" and reasonably expected a flat charge; the system did something different.
+
+  After:
+
+  - `pricingService.createOptionUnitPriceRule` rejects (400) creating a unit-price row whose parent rule has `pricingMode = "per_booking"`.
+  - `pricingService.updateOptionPriceRule` rejects (400) flipping a rule to `pricingMode = "per_booking"` when child unit-price rows already exist.
+  - The product-options pricing form in the operator template and apps/dev hides the unit-pricing matrix when the rule is per-booking and shows a helper pointing the user at Per Person / Starting From if they want unit-level prices.
+  - New i18n key `priceRules.perBookingFlatHint` (en + ro).
+
+  Choosing one mode over the other isn't lossy — operators on rules currently configured as `per_booking` with unit prices were already getting the unit-level math; the badge will now match the math after they switch the rule's mode (typically to `per_person` or `per_unit` at the unit level).
+
 ## 0.28.2
 
 ## 0.28.1

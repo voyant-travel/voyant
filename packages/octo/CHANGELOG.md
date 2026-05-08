@@ -1,5 +1,18 @@
 # @voyantjs/octo
 
+## 0.28.3
+
+### Patch Changes
+
+- 60ef432: `listProjectedBookings` and `listProjectedProducts` now force `sortBy: "createdAt"` / `sortDir: "desc"` when calling through to the underlying bookings / products services, so OCTO list responses are stable across pages instead of inheriting whatever the caller (or default service ordering) happened to use. Pagination over the OCTO `/products` and `/bookings` endpoints no longer skips or duplicates rows when new records are inserted between requests.
+  - @voyantjs/availability@0.28.3
+  - @voyantjs/bookings@0.28.3
+  - @voyantjs/core@0.28.3
+  - @voyantjs/db@0.28.3
+  - @voyantjs/hono@0.28.3
+  - @voyantjs/products@0.28.3
+  - @voyantjs/transactions@0.28.3
+
 ## 0.28.2
 
 ### Patch Changes
