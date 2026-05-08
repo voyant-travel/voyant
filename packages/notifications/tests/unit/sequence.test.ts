@@ -53,7 +53,6 @@ const baseRule: NotificationReminderRule = {
   provider: null,
   templateId: null,
   templateSlug: "tpl",
-  relativeDaysFromDueDate: 0,
   priority: 0,
   suppressionGroup: null,
   isSystem: false,

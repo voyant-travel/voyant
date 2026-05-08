@@ -158,7 +158,6 @@ export interface CheckoutReminderRunSummary {
   scheduledFor: string
   processedAt: string
   errorMessage: string | null
-  relativeDaysFromDueDate: number | null
   createdAt: string
 }
 
@@ -818,7 +817,6 @@ export async function listBookingReminderRuns(
         createdAt: notificationReminderRuns.createdAt,
         reminderRuleSlug: notificationReminderRules.slug,
         reminderRuleName: notificationReminderRules.name,
-        relativeDaysFromDueDate: notificationReminderRules.relativeDaysFromDueDate,
         channel: notificationReminderRules.channel,
         ruleProvider: notificationReminderRules.provider,
         deliveryStatus: notificationDeliveries.status,
@@ -859,7 +857,6 @@ export async function listBookingReminderRuns(
       scheduledFor: normalizeRequiredDateTime(row.scheduledFor),
       processedAt: normalizeRequiredDateTime(row.processedAt),
       errorMessage: row.errorMessage ?? null,
-      relativeDaysFromDueDate: row.relativeDaysFromDueDate ?? null,
       createdAt: normalizeRequiredDateTime(row.createdAt),
     })),
     total: countResult[0]?.count ?? 0,

@@ -47,7 +47,6 @@ function ReminderRuleDetailPage() {
             <div>
               Template id: <span className="font-mono">{rule.templateId ?? "—"}</span>
             </div>
-            <div>Legacy offset: {rule.relativeDaysFromDueDate}</div>
           </CardContent>
         </Card>
       )}

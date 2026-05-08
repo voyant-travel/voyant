@@ -115,7 +115,6 @@ const notificationReminderRuleCoreSchema = z.object({
   provider: z.string().max(255).optional().nullable(),
   templateId: z.string().optional().nullable(),
   templateSlug: z.string().max(255).optional().nullable(),
-  relativeDaysFromDueDate: z.coerce.number().int().min(-365).max(365).default(0),
   priority: z.coerce.number().int().min(0).max(1000).default(0),
   suppressionGroup: z.string().max(255).optional().nullable(),
   isSystem: z.boolean().default(false),
@@ -222,7 +221,6 @@ const notificationSettingsCoreSchema = z.object({
     .nullable()
     .optional(),
   skipWeekends: z.boolean().default(false),
-  holidayCalendar: z.string().max(64).nullable().optional(),
   recipientRateLimitPerDay: z.coerce.number().int().min(1).max(10000).nullable().optional(),
   suppressionWindowHours: z.coerce.number().int().min(0).max(720).default(24),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
@@ -271,7 +269,6 @@ export const notificationReminderRunRuleSummarySchema = z.object({
   provider: z.string().nullable(),
   templateId: z.string().nullable(),
   templateSlug: z.string().nullable(),
-  relativeDaysFromDueDate: z.number().int(),
 })
 
 export const notificationReminderRunDeliverySummarySchema = z.object({

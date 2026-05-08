@@ -366,7 +366,6 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
         provider text,
         template_id text,
         template_slug text,
-        relative_days_from_due_date integer NOT NULL DEFAULT 0,
         priority integer NOT NULL DEFAULT 0,
         suppression_group text,
         is_system boolean NOT NULL DEFAULT false,

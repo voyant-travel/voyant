@@ -49,7 +49,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   quietHoursLocal: null,
   blackoutDates: null,
   skipWeekends: false,
-  holidayCalendar: null,
   recipientRateLimitPerDay: null,
   suppressionWindowHours: 24,
   metadata: null,

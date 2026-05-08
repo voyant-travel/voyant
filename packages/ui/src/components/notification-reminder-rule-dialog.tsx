@@ -127,10 +127,6 @@ export function NotificationReminderRuleDialog({
       provider: null,
       templateId: values.templateId ? values.templateId : null,
       templateSlug: null,
-      // Timing comes from stages (notification_reminder_rule_stages); the
-      // legacy single-offset column stays at 0 for new rules created from
-      // this dialog and is ignored once the rule has at least one stage.
-      relativeDaysFromDueDate: 0,
       isSystem: rule?.isSystem ?? false,
       metadata: rule?.metadata ?? null,
     }

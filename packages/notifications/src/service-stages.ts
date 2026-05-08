@@ -238,7 +238,6 @@ export async function upsertNotificationSettings(
   if (input.quietHoursLocal !== undefined) updates.quietHoursLocal = input.quietHoursLocal ?? null
   if (input.blackoutDates !== undefined) updates.blackoutDates = input.blackoutDates ?? null
   if (input.skipWeekends !== undefined) updates.skipWeekends = input.skipWeekends
-  if (input.holidayCalendar !== undefined) updates.holidayCalendar = input.holidayCalendar ?? null
   if (input.recipientRateLimitPerDay !== undefined)
     updates.recipientRateLimitPerDay = input.recipientRateLimitPerDay ?? null
   if (input.suppressionWindowHours !== undefined)
@@ -262,7 +261,6 @@ export async function upsertNotificationSettings(
       quietHoursLocal: input.quietHoursLocal ?? null,
       blackoutDates: input.blackoutDates ?? null,
       skipWeekends: input.skipWeekends ?? false,
-      holidayCalendar: input.holidayCalendar ?? null,
       recipientRateLimitPerDay: input.recipientRateLimitPerDay ?? null,
       suppressionWindowHours: input.suppressionWindowHours ?? 24,
       metadata: input.metadata ?? null,

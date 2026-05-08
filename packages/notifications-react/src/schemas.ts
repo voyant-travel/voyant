@@ -83,7 +83,6 @@ export const notificationReminderRuleRecordSchema = z.object({
   provider: z.string().nullable(),
   templateId: z.string().nullable(),
   templateSlug: z.string().nullable(),
-  relativeDaysFromDueDate: z.number().int(),
   isSystem: z.boolean(),
   metadata: z.record(z.string(), z.unknown()).nullable(),
   createdAt: z.string(),
