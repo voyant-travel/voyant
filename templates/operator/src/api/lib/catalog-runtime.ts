@@ -6,6 +6,7 @@
  * background catalog-bridge subscribers stay aligned.
  */
 
+import { createProductDeparturesProjectionExtension } from "@voyantjs/availability/service-catalog-plane-departures"
 import {
   createFieldPolicyRegistry,
   createTypesenseIndexer,
@@ -26,6 +27,7 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
+import { productDeparturesCatalogPolicy } from "@voyantjs/products/catalog-policy-departures"
 import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
 import { productTaxonomyCatalogPolicy } from "@voyantjs/products/catalog-policy-taxonomy"
 import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
@@ -239,6 +241,7 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
           ...productCatalogPolicy,
           ...productDestinationsCatalogPolicy,
           ...productTaxonomyCatalogPolicy,
+          ...productDeparturesCatalogPolicy,
         ]),
       ],
       ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
@@ -271,6 +274,7 @@ export function createProductsDocumentBuilder(
     extensions: [
       createProductDestinationsProjectionExtension(),
       createProductTaxonomyProjectionExtension(),
+      createProductDeparturesProjectionExtension(),
     ],
   })
 }

@@ -155,6 +155,7 @@ export const availabilityCoreRoutes = new Hono<Env>()
         data: await availabilityService.createSlot(
           c.get("db"),
           await parseJsonBody(c, insertAvailabilitySlotSchema),
+          { eventBus: c.get("eventBus") },
         ),
       },
       201,
@@ -199,7 +200,9 @@ export const availabilityCoreRoutes = new Hono<Env>()
     return row ? c.json({ data: row }) : notFound(c, "Availability slot not found")
   })
   .delete("/slots/:id", async (c) => {
-    const row = await availabilityService.deleteSlot(c.get("db"), c.req.param("id"))
+    const row = await availabilityService.deleteSlot(c.get("db"), c.req.param("id"), {
+      eventBus: c.get("eventBus"),
+    })
     return row ? c.json({ success: true }) : notFound(c, "Availability slot not found")
   })
   .get("/closeouts", async (c) => {
