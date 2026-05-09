@@ -65,7 +65,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
 
-import { getDbFromEnv } from "./lib/db"
+import { withDbFromEnv } from "./lib/db"
 import { computeBookingItemTaxLine, resolveOperatorSellTaxRate } from "./lib/operator-tax-policy"
 import { getOperatorSettings } from "./settings"
 
@@ -2019,9 +2019,11 @@ export function createCatalogCheckoutBundle(opts: {
       eventBus.subscribe<ContractDocumentGeneratedPayload>(
         "contract.document.generated",
         async ({ data }) => {
-          const db = getDbFromEnv(env) as unknown as PostgresJsDatabase
           try {
-            await persistAcceptanceSignature(db, data.contractId)
+            await withDbFromEnv(env, async (rawDb) => {
+              const db = rawDb as unknown as PostgresJsDatabase
+              await persistAcceptanceSignature(db, data.contractId)
+            })
           } catch (err) {
             console.error("[catalog-checkout] persistAcceptanceSignature failed", err)
           }
@@ -2029,25 +2031,28 @@ export function createCatalogCheckoutBundle(opts: {
       )
       eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
         if (!data.bookingId) return
-        const db = getDbFromEnv(env) as unknown as PostgresJsDatabase
+        const bookingId = data.bookingId
         try {
-          await dispatchCheckoutFinalize({
-            env,
-            db,
-            eventBus,
-            input: {
-              bookingId: data.bookingId,
-              paymentSessionId: data.paymentSessionId,
-              paymentIntent: data.paymentIntent,
-            },
-            trigger: "payment.completed",
-            correlationId: data.paymentSessionId ?? null,
-            tags: [
-              `bookingId:${data.bookingId}`,
-              ...(data.paymentSessionId ? [`paymentSessionId:${data.paymentSessionId}`] : []),
-              ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
-            ],
-            generateContractPdf: opts.generateContractPdf,
+          await withDbFromEnv(env, async (rawDb) => {
+            const db = rawDb as unknown as PostgresJsDatabase
+            await dispatchCheckoutFinalize({
+              env,
+              db,
+              eventBus,
+              input: {
+                bookingId,
+                paymentSessionId: data.paymentSessionId,
+                paymentIntent: data.paymentIntent,
+              },
+              trigger: "payment.completed",
+              correlationId: data.paymentSessionId ?? null,
+              tags: [
+                `bookingId:${bookingId}`,
+                ...(data.paymentSessionId ? [`paymentSessionId:${data.paymentSessionId}`] : []),
+                ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
+              ],
+              generateContractPdf: opts.generateContractPdf,
+            })
           })
         } catch {
           // dispatchCheckoutFinalize already logged + recorded the
@@ -2063,43 +2068,47 @@ export function createCatalogCheckoutBundle(opts: {
           description:
             "Confirms the booking and issues the final invoice. A fresh rerun re-issues the invoice (collides on existing INV- numbers); use Resume to retry from a failed step.",
           rerun: async (rawInput, ctx) => {
-            const db = getDbFromEnv(env) as unknown as PostgresJsDatabase
             const input = rawInput as CheckoutFinalizeInput | null
             if (!input?.bookingId) {
               throw new Error("checkout-finalize rerun: recorded input has no bookingId")
             }
-            return dispatchCheckoutFinalize({
-              env,
-              db,
-              eventBus,
-              input,
-              trigger: "manual.rerun",
-              correlationId: ctx.correlationId,
-              tags: [...ctx.tags, "rerun:true"],
-              parentRunId: ctx.parentRunId,
-              triggeredByUserId: ctx.triggeredByUserId,
-              generateContractPdf: opts.generateContractPdf,
+            return withDbFromEnv(env, async (rawDb) => {
+              const db = rawDb as unknown as PostgresJsDatabase
+              return dispatchCheckoutFinalize({
+                env,
+                db,
+                eventBus,
+                input,
+                trigger: "manual.rerun",
+                correlationId: ctx.correlationId,
+                tags: [...ctx.tags, "rerun:true"],
+                parentRunId: ctx.parentRunId,
+                triggeredByUserId: ctx.triggeredByUserId,
+                generateContractPdf: opts.generateContractPdf,
+              })
             })
           },
           resume: async (rawInput, ctx) => {
-            const db = getDbFromEnv(env) as unknown as PostgresJsDatabase
             const input = rawInput as CheckoutFinalizeInput | null
             if (!input?.bookingId) {
               throw new Error("checkout-finalize resume: recorded input has no bookingId")
             }
-            return dispatchCheckoutFinalize({
-              env,
-              db,
-              eventBus,
-              input,
-              trigger: "manual.resume",
-              correlationId: ctx.correlationId,
-              tags: [...ctx.tags, "resume:true"],
-              parentRunId: ctx.parentRunId,
-              triggeredByUserId: ctx.triggeredByUserId,
-              resumeFromStep: ctx.resumeFromStep,
-              seedResults: ctx.seedResults,
-              generateContractPdf: opts.generateContractPdf,
+            return withDbFromEnv(env, async (rawDb) => {
+              const db = rawDb as unknown as PostgresJsDatabase
+              return dispatchCheckoutFinalize({
+                env,
+                db,
+                eventBus,
+                input,
+                trigger: "manual.resume",
+                correlationId: ctx.correlationId,
+                tags: [...ctx.tags, "resume:true"],
+                parentRunId: ctx.parentRunId,
+                triggeredByUserId: ctx.triggeredByUserId,
+                resumeFromStep: ctx.resumeFromStep,
+                seedResults: ctx.seedResults,
+                generateContractPdf: opts.generateContractPdf,
+              })
             })
           },
         })

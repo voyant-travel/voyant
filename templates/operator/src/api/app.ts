@@ -124,9 +124,14 @@ const notificationsHonoModule = createNotificationsHonoModule({
   // the in-process event bus; errors are logged, not rethrown, so a flaky
   // mailer can't block the confirm request.
   //
-  // `getDbFromEnv` returns either drizzle flavor (postgres-js or
-  // neon-http) depending on env. `resolveDb` accepts the union via
-  // `AnyDrizzleDb`, so no double-cast is needed here.
+  // KNOWN LEAK: `resolveDb` is called per-booking-confirmation by the
+  // module's subscriber and leaks a Neon WebSocket Pool until isolate
+  // teardown (the factory contract is `(bindings) => VoyantDb`, with no
+  // dispose hook). Volume is low (1 per confirmed booking), so this
+  // doesn't move the operational needle today. Fixing it properly
+  // requires widening the module-factory contract in `@voyantjs/bookings`
+  // to accept the `DisposableDb` shape — tracked alongside the rest of
+  // the audit in #510.
   resolveDb: (bindings) => getDbFromEnv(bindings as unknown as CloudflareBindings),
   autoConfirmAndDispatch: {
     enabled: true,
@@ -536,8 +541,9 @@ async function generateContractPdfForBooking(
 }
 
 const legalModule = createLegalHonoModule({
-  // `getDbFromEnv` returns either drizzle flavor; `resolveDb` accepts
-  // the union via `AnyDrizzleDb`, so no double-cast is needed here.
+  // KNOWN LEAK: same shape as the bookings `resolveDb` above — leaks a
+  // Pool per legal-event subscriber call until the module factory's
+  // contract widens to accept `DisposableDb`. Tracked in #510.
   resolveDb: (bindings) => getDbFromEnv(bindings as unknown as CloudflareBindings),
   resolveDocumentDownloadUrl: (bindings, storageKey) =>
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
@@ -972,7 +978,7 @@ export const app = createApp<CloudflareBindings>({
     // instructions when configured, plus the brand context so the page
     // can render a header. Intentionally minimal — no PII, no secrets.
     hono.get("/v1/public/payment-link-config", async (c) => {
-      const db = getDbFromEnv(c.env) as PostgresJsDatabase
+      const db = c.get("db") as PostgresJsDatabase
       const operatorProfile = await getOperatorSettings(db)
       const bankTransfer = bankTransferDetailsFromOperatorSettings(
         operatorProfile,
@@ -994,7 +1000,7 @@ export const app = createApp<CloudflareBindings>({
     // without checking status first.
     hono.post("/v1/public/payment-link/:sessionId/retry", async (c) => {
       const sessionId = c.req.param("sessionId")
-      const db = getDbFromEnv(c.env)
+      const db = c.get("db")
       const [original] = await db
         .select()
         .from(paymentSessions)
@@ -1039,7 +1045,7 @@ export const app = createApp<CloudflareBindings>({
     hono.get("/v1/public/payment-link/resolve", async (c) => {
       const ref = c.req.query("ref")
       if (!ref) return c.json({ error: "ref query param is required" }, 400)
-      const db = getDbFromEnv(c.env)
+      const db = c.get("db")
       const [session] = await db
         .select({ id: paymentSessions.id })
         .from(paymentSessions)
@@ -1063,7 +1069,7 @@ export const app = createApp<CloudflareBindings>({
     // and returns the new redirect URL.
     hono.post("/v1/public/payment-link/:sessionId/start-card", async (c) => {
       const sessionId = c.req.param("sessionId")
-      const db = getDbFromEnv(c.env)
+      const db = c.get("db")
       // `netopia.startPaymentSession` is typed against postgres-js; cast at
       // the call site since the union with neon-http is structurally
       // compatible for the queries Netopia issues.
@@ -1127,7 +1133,9 @@ export const app = createApp<CloudflareBindings>({
     hono.get("/v1/public/bookings/:bookingId/checkout-status", async (c) => {
       const bookingId = c.req.param("bookingId")
       const ref = c.req.query("session") ?? c.req.query("orderId") ?? c.req.query("ref") ?? null
-      const db = getDbFromEnv(c.env)
+      // Narrow the union to a single drizzle flavor so subsequent `.select`
+      // result types stay specific (avoids `session: any` callback inference).
+      const db = c.get("db") as PostgresJsDatabase
 
       const [booking] = await db
         .select({

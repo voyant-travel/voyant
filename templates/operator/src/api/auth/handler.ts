@@ -10,14 +10,17 @@
 import { createBetterAuth } from "@voyantjs/auth/server"
 import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
-import type { VoyantRequestAuthContext } from "@voyantjs/hono"
+import type { VoyantDb, VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 
 import { resolveEmailReplyTo } from "../../lib/notifications"
-import { getDbFromEnv } from "../lib/db"
+import { dbFromEnvForApp } from "../lib/db"
 
-const auth = new Hono<{ Bindings: CloudflareBindings }>()
+// Type ctx so that `c.get("db")` resolves to the parent app's middleware-
+// set `VoyantDb` (the per-request Pool the `dbFromEnvForApp` factory
+// installed). Without this, the sub-app sees `unknown` for context vars.
+const auth = new Hono<{ Bindings: CloudflareBindings; Variables: { db: VoyantDb } }>()
 const DEFAULT_APP_URL = "http://localhost:3300"
 
 function normalizeUrl(url: string): string {
@@ -70,13 +73,24 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
  * one request cannot be reused by another ("Cannot perform I/O on behalf of
  * a different request"). So we must NOT cache the auth instance.
  */
-function getBetterAuth(env: CloudflareBindings) {
-  const db = getDbFromEnv(env)
+/**
+ * Builds a per-call Better Auth instance. Returns the auth object plus
+ * a `dispose()` the caller schedules (typically via
+ * `c.executionCtx.waitUntil`) after the auth-using work has settled.
+ * Without `dispose`, the Pool stays open until isolate teardown — at
+ * scale that exhausts Neon's connection budget because every
+ * authenticated request opens a fresh WebSocket.
+ */
+function getBetterAuth(env: CloudflareBindings): {
+  auth: ReturnType<typeof createBetterAuth>
+  dispose: () => Promise<void>
+} {
+  const { db, dispose } = dbFromEnvForApp(env)
   const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
   const emailReplyTo = resolveEmailReplyTo(env)
 
-  return createBetterAuth({
+  const auth = createBetterAuth({
     // `db` is a `NeonDatabase` (neon-serverless WebSocket); the
     // `CreateBetterAuthOptions.db` type still references the older
     // `getDb` return union (postgres-js + neon-http). Drizzle's
@@ -117,26 +131,34 @@ function getBetterAuth(env: CloudflareBindings) {
       })
     },
   })
+  return { auth, dispose }
 }
 
 export async function resolveAuthRequest(
   request: Request,
   env: CloudflareBindings,
 ): Promise<VoyantRequestAuthContext | null> {
-  const betterAuth = getBetterAuth(env)
-  const session = await betterAuth.api.getSession({ headers: request.headers })
+  const { auth, dispose } = getBetterAuth(env)
+  try {
+    const session = await auth.api.getSession({ headers: request.headers })
 
-  if (!session) {
-    return null
-  }
+    if (!session) {
+      return null
+    }
 
-  return {
-    userId: session.user.id,
-    sessionId: session.session.id,
-    organizationId: null,
-    callerType: "session",
-    actor: "staff",
-    email: session.user.email ?? null,
+    return {
+      userId: session.user.id,
+      sessionId: session.session.id,
+      organizationId: null,
+      callerType: "session",
+      actor: "staff",
+      email: session.user.email ?? null,
+    }
+  } finally {
+    // No `executionCtx` reachable here (called from middleware that
+    // doesn't pass one through). Await inline so the WebSocket closes
+    // before this fn returns.
+    await dispose()
   }
 }
 
@@ -160,13 +182,20 @@ export async function hasAuthPermission(
  * Validates the session cookie directly (no Bearer token needed).
  */
 auth.get("/auth/me", async (c) => {
-  const betterAuth = getBetterAuth(c.env)
-  const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+  const { auth: betterAuth, dispose } = getBetterAuth(c.env)
+  let session: Awaited<ReturnType<typeof betterAuth.api.getSession>>
+  try {
+    session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+  } finally {
+    // Schedule dispose AFTER queries settle. waitUntil keeps the
+    // worker alive while the WebSocket close handshake completes.
+    c.executionCtx.waitUntil(dispose())
+  }
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401)
   }
 
-  const db = getDbFromEnv(c.env)
+  const db = c.get("db")
 
   const [row] = await db
     .select({
@@ -213,14 +242,19 @@ auth.get("/auth/me", async (c) => {
  * but this route serves as an idempotent fallback.
  */
 auth.get("/auth/status", async (c) => {
-  const betterAuth = getBetterAuth(c.env)
-  const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+  const { auth: betterAuth, dispose } = getBetterAuth(c.env)
+  let session: Awaited<ReturnType<typeof betterAuth.api.getSession>>
+  try {
+    session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
   if (!session) {
     return c.json({ userExists: false, authenticated: false })
   }
 
   const userId = session.user.id
-  const db = getDbFromEnv(c.env)
+  const db = c.get("db")
 
   try {
     const [existingProfile] = await db
@@ -273,7 +307,7 @@ auth.get("/auth/status", async (c) => {
  * sign-up route loaders to pick the right flow.
  */
 auth.get("/auth/bootstrap-status", async (c) => {
-  const db = getDbFromEnv(c.env)
+  const db = c.get("db")
   const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
   return c.json({ hasUsers: (row?.count ?? 0) > 0 })
 })
@@ -286,9 +320,12 @@ auth.get("/auth/bootstrap-status", async (c) => {
  * user exists, the hook throws and BA returns an error to the client.
  */
 auth.all("/auth/*", async (c) => {
-  const betterAuth = getBetterAuth(c.env)
-  const response = await betterAuth.handler(c.req.raw)
-  return response
+  const { auth: betterAuth, dispose } = getBetterAuth(c.env)
+  try {
+    return await betterAuth.handler(c.req.raw)
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
 })
 
 export default auth

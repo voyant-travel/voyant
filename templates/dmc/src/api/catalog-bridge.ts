@@ -27,6 +27,7 @@ import {
   createProductDocumentBuilder,
 } from "@voyantjs/products/service-catalog-plane"
 import { and, eq, isNotNull } from "drizzle-orm"
+import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 
 import {
   buildEmbeddingProvider,
@@ -35,7 +36,7 @@ import {
   getFieldPolicyRegistries,
   withEmbedding,
 } from "./lib/catalog-runtime"
-import { getDbFromEnv } from "./lib/db"
+import { withDbFromEnv } from "./lib/db"
 
 interface ProductEventPayload {
   id: string
@@ -59,7 +60,10 @@ export const catalogBridgeBundle: HonoBundle = {
     }
     const sellerOperatorId = env.TENANT_ID ?? "default"
 
-    function buildIndexerContext() {
+    // Compose the indexer service + builder for a given db client. Db
+    // ownership lives at the call site so we can wrap with `withDbFromEnv`
+    // and tear the Pool down before the subscriber returns.
+    function buildIndexerContext(db: NeonDatabase) {
       const embeddings = buildEmbeddingProvider(env)
       const indexer = buildTypesenseIndexer(env, embeddings)
       if (!indexer) return null
@@ -69,7 +73,6 @@ export const catalogBridgeBundle: HonoBundle = {
         slices,
         registries: getFieldPolicyRegistries(),
       })
-      const db = getDbFromEnv(env)
       const builder = withEmbedding(
         createProductDocumentBuilder(db, { sellerOperatorId }),
         embeddings,
@@ -78,59 +81,66 @@ export const catalogBridgeBundle: HonoBundle = {
     }
 
     eventBus.subscribe<ProductEventPayload>("product.created", async ({ data }) => {
-      const ctx = buildIndexerContext()
-      if (!ctx) return
-      await ctx.service.ensureCollections()
-      await ctx.service.reindexEntity("products", data.id, ctx.builder)
+      await withDbFromEnv(env, async (db) => {
+        const ctx = buildIndexerContext(db)
+        if (!ctx) return
+        await ctx.service.ensureCollections()
+        await ctx.service.reindexEntity("products", data.id, ctx.builder)
+      })
     })
 
     eventBus.subscribe<ProductEventPayload>("product.updated", async ({ data }) => {
-      const ctx = buildIndexerContext()
-      if (!ctx) return
-      await ctx.service.reindexEntity("products", data.id, ctx.builder)
+      await withDbFromEnv(env, async (db) => {
+        const ctx = buildIndexerContext(db)
+        if (!ctx) return
+        await ctx.service.reindexEntity("products", data.id, ctx.builder)
+      })
     })
 
     eventBus.subscribe<ProductEventPayload>("product.deleted", async ({ data }) => {
-      const ctx = buildIndexerContext()
-      if (!ctx) return
-      await ctx.service.deleteEntity("products", data.id)
+      await withDbFromEnv(env, async (db) => {
+        const ctx = buildIndexerContext(db)
+        if (!ctx) return
+        await ctx.service.deleteEntity("products", data.id)
+      })
     })
 
     eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", async ({ data }) => {
-      const db = getDbFromEnv(env)
-      // Catalog snapshots use the staff resolver scope — they're an audit
-      // record, not a customer-facing rendering. Booking-time prices /
-      // descriptions stay readable to ops even after audience-scoped
-      // overlays change.
-      const scope = {
-        locale: "en-GB",
-        audience: "staff" as const,
-        market: "default",
-        actor: "staff" as const,
-      }
+      await withDbFromEnv(env, async (db) => {
+        // Catalog snapshots use the staff resolver scope — they're an audit
+        // record, not a customer-facing rendering. Booking-time prices /
+        // descriptions stay readable to ops even after audience-scoped
+        // overlays change.
+        const scope = {
+          locale: "en-GB",
+          audience: "staff" as const,
+          market: "default",
+          actor: "staff" as const,
+        }
 
-      const items = await db
-        .select({ productId: bookingItems.productId })
-        .from(bookingItems)
-        .where(and(eq(bookingItems.bookingId, data.bookingId), isNotNull(bookingItems.productId)))
+        const items = await db
+          .select({ productId: bookingItems.productId })
+          .from(bookingItems)
+          .where(and(eq(bookingItems.bookingId, data.bookingId), isNotNull(bookingItems.productId)))
 
-      const productIds = Array.from(
-        new Set(items.map((i) => i.productId).filter((id): id is string => Boolean(id))),
-      )
-      if (productIds.length === 0) return
+        const productIds = Array.from(
+          new Set(items.map((i) => i.productId).filter((id): id is string => Boolean(id))),
+        )
+        if (productIds.length === 0) return
 
-      const inputs: Array<Omit<CaptureSnapshotInput, "bookingId">> = []
-      for (const productId of productIds) {
-        const input = await buildProductSnapshotInput(db, productId, {
-          sellerOperatorId,
-          scope,
-        })
-        if (input) inputs.push(input)
-      }
+        const inputs: Array<Omit<CaptureSnapshotInput, "bookingId">> = []
+        for (const productId of productIds) {
+          const input = await buildProductSnapshotInput(db, productId, {
+            sellerOperatorId,
+            scope,
+          })
+          if (input) inputs.push(input)
+        }
 
-      if (inputs.length > 0) {
-        await captureSnapshotGraph(db, data.bookingId, inputs)
-      }
+        if (inputs.length > 0) {
+          await captureSnapshotGraph(db, data.bookingId, inputs)
+        }
+      })
     })
   },
 }
