@@ -340,7 +340,18 @@ export const bookingDraftV1 = z.object({
     })
     .default({ intent: "hold" }),
 
-  voucher: z.object({ code: z.string() }).optional(),
+  /**
+   * Customer-typed promotion code. Validated case-insensitively against
+   * `promotional_offers.code` at quote time when the operator template
+   * wires `evaluatePromotions` on `QuoteEntityDeps`. Surfaces as a
+   * `code_*` `invalidReason` on the quote when the code is bad.
+   *
+   * Per docs/architecture/promotions-architecture.md §7.0 — renamed
+   * from the original placeholder `voucher: { code }` to avoid
+   * collision with the finance `vouchers` domain (gift / refund credit
+   * instruments at `packages/finance/src/schema.ts:239`).
+   */
+  promotionCode: z.string().optional(),
   /**
    * Operator-only notes — never shown to the customer. Set on
    * admin-surface review steps (operator dashboard) and surfaced on

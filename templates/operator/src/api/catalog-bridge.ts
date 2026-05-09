@@ -50,6 +50,7 @@ import {
 } from "@voyantjs/catalog"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
 import { buildProductSnapshotInput } from "@voyantjs/products/service-catalog-plane"
+import { recordPromotionRedemptionsForBooking } from "@voyantjs/promotions/service-booking-confirmed"
 import { and, eq, isNotNull } from "drizzle-orm"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 
@@ -240,6 +241,29 @@ export const catalogBridgeBundle: HonoBundle = {
         if (!ctx) return
         for (const productId of productIds) {
           await ctx.service.reindexEntity("products", productId, ctx.builder)
+        }
+      })
+    })
+
+    // Promotions redemption recorder — runs on the same `booking.confirmed`
+    // event as snapshot capture. Reads `pricing_applied_offers` from
+    // catalog_quotes (NOT the snapshot, to avoid an ordering race with
+    // captureSnapshotGraph) and aggregates one redemption row per
+    // (offer, booking). Idempotent on retry via the unique constraint.
+    // Per docs/architecture/promotions-architecture.md §7.3.
+    eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", async ({ data }) => {
+      await withDbFromEnv(env, async (db) => {
+        try {
+          await recordPromotionRedemptionsForBooking(db, data.bookingId)
+        } catch (err) {
+          // Permanent failure leaves the booking committed with no
+          // redemption row. Operations can backfill from the snapshot's
+          // `pricing_applied_offers` column. Don't rethrow — sibling
+          // subscribers (snapshot capture above) shouldn't be blocked.
+          console.warn("[catalog-bridge] promotion redemption recorder failed", {
+            bookingId: data.bookingId,
+            error: err instanceof Error ? err.message : String(err),
+          })
         }
       })
     })

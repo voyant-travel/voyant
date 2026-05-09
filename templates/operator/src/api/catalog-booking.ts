@@ -50,6 +50,7 @@ import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { products } from "@voyantjs/products"
 import { getProductContent } from "@voyantjs/products/service-content"
+import { createCatalogPromotionEvaluator } from "@voyantjs/promotions/service-catalog-evaluator"
 import { suppliers } from "@voyantjs/suppliers"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -84,6 +85,12 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
         resolveOwnedHandlers: getOwnedBookingHandlerRegistryFromContext,
         resolveHoldTtlMs: ({ db, entityModule, entityId }) =>
           resolveHoldTtlMs(db, entityModule, entityId),
+        // Promotions hook — wires the per-request `db` into the
+        // evaluator. When the customer-supplied promotion code fails
+        // validation, quoteEntity surfaces a `code_*` invalidReason
+        // and tax recompute below sees no discount on `base_amount`.
+        // Per docs/architecture/promotions-architecture.md §3.6.
+        resolveEvaluatePromotions: ({ db }) => createCatalogPromotionEvaluator(db),
         transformQuoteResult: ({ db, result, request, provenance }) =>
           applyOperatorTaxToQuoteResult(
             db,

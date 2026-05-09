@@ -49,6 +49,7 @@ import {
   productsHonoModule,
 } from "@voyantjs/products"
 import { promotionsHonoModule } from "@voyantjs/promotions"
+import { createPromotionsStorefrontResolvers } from "@voyantjs/promotions/service-storefront"
 import { resourcesHonoModule } from "@voyantjs/resources"
 import { sellabilityHonoModule } from "@voyantjs/sellability"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
@@ -145,7 +146,12 @@ const storefrontVerificationHonoModule = createStorefrontVerificationHonoModule(
     subject: "Your verification code",
   },
 })
-const storefrontHonoModule = createStorefrontHonoModule()
+const storefrontHonoModule = createStorefrontHonoModule({
+  // Wire the promotions resolver into the storefront's previously-empty
+  // `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug`
+  // endpoints. Per docs/architecture/promotions-architecture.md §8.
+  offers: createPromotionsStorefrontResolvers(),
+})
 
 // Netopia is the only configured `pay-by-link` provider in this template.
 // Container bootstrap (via `netopiaHonoBundle`) caches the resolved runtime
