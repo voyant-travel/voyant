@@ -87,6 +87,11 @@ export async function handleDurableObjectRequest(
         environment: payload.environment,
         tags: payload.tags,
         runId: payload.runId,
+        idempotencyKey: payload.idempotencyKey,
+        delay:
+          typeof payload.delay === "object" && payload.delay !== null && "wakeAt" in payload.delay
+            ? new Date(payload.delay.wakeAt)
+            : payload.delay,
       },
       { store, handler, now: deps.now },
     )
