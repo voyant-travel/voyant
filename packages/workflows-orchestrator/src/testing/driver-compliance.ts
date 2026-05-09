@@ -87,9 +87,41 @@ function uniqueId(prefix: string): string {
   return `${prefix}-${++suiteCounter}`
 }
 
+// ---- Suite options ----
+
+/**
+ * Opt-in capability flags for drivers that don't share a process with
+ * step bodies. Default to `true` because in-process drivers (InMemory,
+ * Mode 2) satisfy every contract. Out-of-process drivers (Mode 1 / CF
+ * edge — orchestrator and tenant live in separate Worker isolates) opt
+ * out of in-process-only assertions like `ctx.services` threading.
+ */
+export interface DriverComplianceCapabilities {
+  /**
+   * When true, the framework's `ModuleContainer` is plumbed to step
+   * bodies via `ctx.services`. False for Mode 1, where the orchestrator
+   * and tenant are separate Workers and a per-tenant container would
+   * have to ship across a serialization boundary.
+   */
+  servicesThreading?: boolean
+  /**
+   * When true, `admin.listRuns(...)` returns runs the driver knows about.
+   * False for self-host Mode 1, which has no native cross-run query
+   * layer (per architecture doc §8.3) — `listRuns` exists but returns
+   * an empty page; voyant-cloud provides an index in its repo.
+   */
+  crossRunQueries?: boolean
+}
+
 // ---- The parameterized contract ----
 
-export function runDriverComplianceSuite(name: string, makeFactory: () => DriverFactory): void {
+export function runDriverComplianceSuite(
+  name: string,
+  makeFactory: () => DriverFactory,
+  capabilities: DriverComplianceCapabilities = {},
+): void {
+  const servicesThreading = capabilities.servicesThreading ?? true
+  const crossRunQueries = capabilities.crossRunQueries ?? true
   describe(`${name} driver compliance`, () => {
     beforeEach(() => {
       __resetRegistry()
@@ -453,21 +485,24 @@ export function runDriverComplianceSuite(name: string, makeFactory: () => Driver
         expect(missing).toBeNull()
       })
 
-      test("listRuns surfaces created runs (admin probes its own existence)", async () => {
-        const driver = makeFactory()(testFactoryDeps())
-        if (!driver.admin?.listRuns) return
+      test.skipIf(!crossRunQueries)(
+        "listRuns surfaces created runs (admin probes its own existence)",
+        async () => {
+          const driver = makeFactory()(testFactoryDeps())
+          if (!driver.admin?.listRuns) return
 
-        const wfId = uniqueId("compliance-list")
-        const wf = workflow<Record<string, never>, void>({
-          id: wfId,
-          async run() {},
-        })
-        await driver.trigger(wf, {})
-        await driver.trigger(wf, {})
+          const wfId = uniqueId("compliance-list")
+          const wf = workflow<Record<string, never>, void>({
+            id: wfId,
+            async run() {},
+          })
+          await driver.trigger(wf, {})
+          await driver.trigger(wf, {})
 
-        const result = await driver.admin.listRuns({ workflowId: wfId })
-        expect(result.runs.length).toBeGreaterThanOrEqual(2)
-      })
+          const result = await driver.admin.listRuns({ workflowId: wfId })
+          expect(result.runs.length).toBeGreaterThanOrEqual(2)
+        },
+      )
     })
 
     describe("shutdown", () => {
@@ -484,7 +519,7 @@ export function runDriverComplianceSuite(name: string, makeFactory: () => Driver
       })
     })
 
-    describe("ctx.services (container threading)", () => {
+    describe.skipIf(!servicesThreading)("ctx.services (container threading)", () => {
       test("workflow body resolves a service registered on the harness", async () => {
         interface Greeter {
           hello(name: string): string

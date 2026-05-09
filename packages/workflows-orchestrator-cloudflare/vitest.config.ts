@@ -3,11 +3,22 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   resolve: {
-    alias: {
-      "@voyantjs/workflows-orchestrator": fileURLToPath(
-        new URL("../workflows-orchestrator/src/index.ts", import.meta.url),
-      ),
-    },
+    alias: [
+      // Subpath aliases first — arrays preserve order so the more-specific
+      // ./testing entry matches before the package-root alias.
+      {
+        find: "@voyantjs/workflows-orchestrator/testing",
+        replacement: fileURLToPath(
+          new URL("../workflows-orchestrator/src/testing/driver-compliance.ts", import.meta.url),
+        ),
+      },
+      {
+        find: "@voyantjs/workflows-orchestrator",
+        replacement: fileURLToPath(
+          new URL("../workflows-orchestrator/src/index.ts", import.meta.url),
+        ),
+      },
+    ],
   },
   test: {
     include: ["src/**/*.test.ts"],

@@ -42,6 +42,10 @@
     "./events": {
       "types": "./src/events/index.ts",
       "import": "./src/events/index.ts"
+    },
+    "./http-ingest": {
+      "types": "./src/http-ingest.ts",
+      "import": "./src/http-ingest.ts"
     }
   },
   "main": "./dist/index.js",
@@ -114,6 +118,10 @@
       "./events": {
         "types": "./dist/events/index.d.ts",
         "import": "./dist/events/index.js"
+      },
+      "./http-ingest": {
+        "types": "./dist/http-ingest.d.ts",
+        "import": "./dist/http-ingest.js"
       }
     },
     "main": "./dist/index.js",
