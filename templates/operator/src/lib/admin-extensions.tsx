@@ -23,8 +23,8 @@ import { Tag } from "lucide-react"
 
 /**
  * Promotions extension — registers the sidebar nav entry pointing to
- * `/promotions`. Routes + components live template-local in
- * `src/components/voyant/promotions/` (pattern mirrors `legal`).
+ * `/promotions`. The route composes package-owned React/UI surfaces from
+ * `@voyantjs/promotions-react` and `@voyantjs/promotions-ui`.
  *
  * Per docs/architecture/promotions-architecture.md PR5.
  */

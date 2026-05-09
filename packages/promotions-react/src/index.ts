@@ -1,11 +1,4 @@
-/**
- * Template-local promotions client + React Query options.
- *
- * Mirrors the legal-react pattern (fetch + Zod + queryOptions factory)
- * but lives in-template for v1 — promotion ops are operator-internal so
- * we don't need a published react companion package yet. If a second
- * template needs this, extract to `@voyantjs/promotions-react`.
- */
+"use client"
 
 import {
   type QueryClient,
@@ -14,24 +7,37 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
+import {
+  type PromotionalOfferScope,
+  promotionalOfferScopeSchema,
+} from "@voyantjs/promotions/validation"
+import {
+  defaultFetcher,
+  useVoyantReactContext,
+  type VoyantFetcher,
+  type VoyantReactContextValue,
+  VoyantReactProvider,
+  type VoyantReactProviderProps,
+} from "@voyantjs/react"
 import { z } from "zod"
 
-import { getApiUrl } from "@/lib/env"
+// ---------- Provider ----------
 
-// ---------- Schemas (subset of @voyantjs/promotions/validation) ----------
+export {
+  defaultFetcher,
+  useVoyantReactContext as useVoyantPromotionsContext,
+  type VoyantFetcher,
+  type VoyantReactContextValue as VoyantPromotionsContextValue,
+  VoyantReactProvider as VoyantPromotionsProvider,
+  type VoyantReactProviderProps as VoyantPromotionsProviderProps,
+}
 
-const audienceSchema = z.enum(["staff", "customer", "partner", "supplier"])
+// ---------- Schemas ----------
 
-export const promotionalOfferScopeSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("global") }),
-  z.object({ kind: z.literal("products"), productIds: z.array(z.string().min(1)).min(1) }),
-  z.object({ kind: z.literal("categories"), categoryIds: z.array(z.string().min(1)).min(1) }),
-  z.object({ kind: z.literal("destinations"), destinationIds: z.array(z.string().min(1)).min(1) }),
-  z.object({ kind: z.literal("markets"), marketIds: z.array(z.string().min(1)).min(1) }),
-  z.object({ kind: z.literal("audiences"), audiences: z.array(audienceSchema).min(1) }),
-])
-
-export type PromotionalOfferScope = z.infer<typeof promotionalOfferScopeSchema>
+export {
+  type PromotionalOfferScope,
+  promotionalOfferScopeSchema,
+} from "@voyantjs/promotions/validation"
 
 const promotionalOfferRecordSchema = z.object({
   id: z.string(),
@@ -67,14 +73,19 @@ const singleResponseSchema = z.object({ data: promotionalOfferRecordSchema })
 
 // ---------- Fetch helpers ----------
 
-interface ListQuery {
+export interface PromotionsListQuery {
   active?: boolean
   code?: string
   limit?: number
   offset?: number
 }
 
-function buildSearch(query: ListQuery): string {
+export interface PromotionsClientOptions {
+  baseUrl: string
+  fetcher: VoyantFetcher
+}
+
+function buildSearch(query: PromotionsListQuery): string {
   const params = new URLSearchParams()
   if (query.active !== undefined) params.set("active", String(query.active))
   if (query.code) params.set("code", query.code)
@@ -84,29 +95,63 @@ function buildSearch(query: ListQuery): string {
   return s ? `?${s}` : ""
 }
 
-async function fetchJson<T>(path: string, init: RequestInit, schema: z.ZodType<T>): Promise<T> {
-  const res = await fetch(`${getApiUrl()}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(init.headers ?? {}) },
-    ...init,
-  })
-  const text = await res.text()
-  const body = text ? safeJson(text) : undefined
-  if (!res.ok) {
+export async function fetchPromotionsJson<T>(
+  path: string,
+  init: RequestInit,
+  schema: z.ZodType<T>,
+  client: PromotionsClientOptions,
+): Promise<T> {
+  const headers = new Headers(init.headers)
+  if (init.body !== undefined && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json")
+  }
+
+  const response = await client.fetcher(joinUrl(client.baseUrl, path), { ...init, headers })
+  const body = await safeJson(response)
+  if (!response.ok) {
     const message =
       typeof body === "object" && body && "error" in body
         ? String((body as { error: unknown }).error)
-        : `Promotions API error: ${res.status} ${res.statusText}`
-    throw new PromotionsApiError(message, res.status, body)
+        : `Promotions API error: ${response.status} ${response.statusText}`
+    throw new PromotionsApiError(message, response.status, body)
   }
   return schema.parse(body)
 }
 
-function safeJson(text: string): unknown {
+async function safeJson(response: Response): Promise<unknown> {
+  const text = await response.text()
+  if (!text) return undefined
+
   try {
     return JSON.parse(text)
   } catch {
     return text
+  }
+}
+
+function joinUrl(baseUrl: string, path: string): string {
+  const resolvedBaseUrl = resolveBaseUrl(baseUrl)
+  const trimmedBase = resolvedBaseUrl.endsWith("/") ? resolvedBaseUrl.slice(0, -1) : resolvedBaseUrl
+  const trimmedPath = path.startsWith("/") ? path : `/${path}`
+  return `${trimmedBase}${trimmedPath}`
+}
+
+function resolveBaseUrl(baseUrl: string): string {
+  if (baseUrl.trim()) return baseUrl
+
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/api`
+  }
+
+  return "http://localhost:3300/api"
+}
+
+export function createPromotionsClientOptions(
+  client?: Partial<PromotionsClientOptions>,
+): PromotionsClientOptions {
+  return {
+    baseUrl: client?.baseUrl ?? "",
+    fetcher: client?.fetcher ?? defaultFetcher,
   }
 }
 
@@ -123,32 +168,47 @@ export class PromotionsApiError extends Error {
 
 // ---------- Query keys + options ----------
 
-const promotionsKeys = {
+export const promotionsKeys = {
   all: ["promotions"] as const,
-  list: (query: ListQuery) => ["promotions", "list", query] as const,
+  list: (query: PromotionsListQuery) => ["promotions", "list", query] as const,
   detail: (id: string) => ["promotions", "detail", id] as const,
 }
 
-export function getPromotionsListQueryOptions(query: ListQuery = {}) {
+export function getPromotionsListQueryOptions(
+  query: PromotionsListQuery = {},
+  client: PromotionsClientOptions = createPromotionsClientOptions(),
+) {
   return queryOptions({
     queryKey: promotionsKeys.list(query),
     queryFn: () =>
-      fetchJson(`/v1/admin/promotions${buildSearch(query)}`, { method: "GET" }, listResponseSchema),
-  })
-}
-
-export function getPromotionByIdQueryOptions(id: string) {
-  return queryOptions({
-    queryKey: promotionsKeys.detail(id),
-    queryFn: () =>
-      fetchJson(`/v1/admin/promotions/${id}`, { method: "GET" }, singleResponseSchema).then(
-        (r) => r.data,
+      fetchPromotionsJson(
+        `/v1/admin/promotions${buildSearch(query)}`,
+        { method: "GET" },
+        listResponseSchema,
+        client,
       ),
   })
 }
 
-export function usePromotionsList(query: ListQuery = {}) {
-  return useQuery(getPromotionsListQueryOptions(query))
+export function getPromotionByIdQueryOptions(
+  id: string,
+  client: PromotionsClientOptions = createPromotionsClientOptions(),
+) {
+  return queryOptions({
+    queryKey: promotionsKeys.detail(id),
+    queryFn: () =>
+      fetchPromotionsJson(
+        `/v1/admin/promotions/${id}`,
+        { method: "GET" },
+        singleResponseSchema,
+        client,
+      ).then((r) => r.data),
+  })
+}
+
+export function usePromotionsList(query: PromotionsListQuery = {}) {
+  const client = useVoyantReactContext()
+  return useQuery(getPromotionsListQueryOptions(query, client))
 }
 
 // ---------- Mutations ----------
@@ -178,12 +238,14 @@ function invalidatePromotions(qc: QueryClient): Promise<void> {
 
 export function useCreatePromotion() {
   const qc = useQueryClient()
+  const client = useVoyantReactContext()
   return useMutation({
     mutationFn: (input: PromotionInsertInput) =>
-      fetchJson(
+      fetchPromotionsJson(
         "/v1/admin/promotions",
         { method: "POST", body: JSON.stringify(input) },
         singleResponseSchema,
+        client,
       ).then((r) => r.data),
     onSuccess: () => invalidatePromotions(qc),
   })
@@ -191,12 +253,14 @@ export function useCreatePromotion() {
 
 export function useUpdatePromotion() {
   const qc = useQueryClient()
+  const client = useVoyantReactContext()
   return useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: PromotionUpdateInput }) =>
-      fetchJson(
+      fetchPromotionsJson(
         `/v1/admin/promotions/${id}`,
         { method: "PATCH", body: JSON.stringify(patch) },
         singleResponseSchema,
+        client,
       ).then((r) => r.data),
     onSuccess: () => invalidatePromotions(qc),
   })
@@ -204,12 +268,14 @@ export function useUpdatePromotion() {
 
 export function useArchivePromotion() {
   const qc = useQueryClient()
+  const client = useVoyantReactContext()
   return useMutation({
     mutationFn: (id: string) =>
-      fetchJson(
+      fetchPromotionsJson(
         `/v1/admin/promotions/${id}/archive`,
         { method: "POST" },
         singleResponseSchema,
+        client,
       ).then((r) => r.data),
     onSuccess: () => invalidatePromotions(qc),
   })
@@ -217,12 +283,14 @@ export function useArchivePromotion() {
 
 export function useDeletePromotion() {
   const qc = useQueryClient()
+  const client = useVoyantReactContext()
   return useMutation({
     mutationFn: (id: string) =>
-      fetchJson(
+      fetchPromotionsJson(
         `/v1/admin/promotions/${id}`,
         { method: "DELETE" },
         z.object({ data: z.object({ id: z.string() }) }),
+        client,
       ).then((r) => r.data),
     onSuccess: () => invalidatePromotions(qc),
   })

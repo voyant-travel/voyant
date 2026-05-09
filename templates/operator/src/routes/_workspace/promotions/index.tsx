@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { loadPromotionsPage, PromotionsPage } from "@/components/voyant/promotions/promotions-page"
+import { VoyantPromotionsProvider } from "@voyantjs/promotions-react"
+import { loadPromotionsPage, PromotionsPage } from "@voyantjs/promotions-ui"
+import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/promotions/")({
-  loader: ({ context }) => loadPromotionsPage(context.queryClient),
-  component: PromotionsPage,
+  loader: ({ context }) => loadPromotionsPage(context.queryClient, { baseUrl: getApiUrl() }),
+  component: PromotionsRoute,
 })
+
+function PromotionsRoute() {
+  return (
+    <VoyantPromotionsProvider baseUrl={getApiUrl()}>
+      <PromotionsPage />
+    </VoyantPromotionsProvider>
+  )
+}

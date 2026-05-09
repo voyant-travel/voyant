@@ -97,6 +97,8 @@
     "@voyantjs/products-react": "workspace:*",
     "@voyantjs/products-ui": "workspace:*",
     "@voyantjs/promotions": "workspace:*",
+    "@voyantjs/promotions-react": "workspace:*",
+    "@voyantjs/promotions-ui": "workspace:*",
     "@voyantjs/react": "workspace:*",
     "@voyantjs/resources": "workspace:*",
     "@voyantjs/resources-react": "workspace:*",

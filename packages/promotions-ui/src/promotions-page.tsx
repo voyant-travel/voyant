@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * Operator-facing promotions list page.
  *
@@ -10,21 +12,27 @@
  */
 
 import type { QueryClient } from "@tanstack/react-query"
-import { Plus } from "lucide-react"
-import { useMemo, useState } from "react"
-
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
-
-import { PromotionDialog } from "./promotion-dialog"
 import {
+  createPromotionsClientOptions,
   getPromotionsListQueryOptions,
   type PromotionalOfferRecord,
   type PromotionalOfferScope,
+  type PromotionsClientOptions,
   usePromotionsList,
-} from "./promotions-client"
+} from "@voyantjs/promotions-react"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import { Plus } from "lucide-react"
+import { useMemo, useState } from "react"
 
-export function loadPromotionsPage(queryClient: QueryClient) {
-  return queryClient.ensureQueryData(getPromotionsListQueryOptions({ limit: 50, offset: 0 }))
+import { PromotionDialog } from "./promotion-dialog.js"
+
+export function loadPromotionsPage(
+  queryClient: QueryClient,
+  client?: Partial<PromotionsClientOptions>,
+) {
+  return queryClient.ensureQueryData(
+    getPromotionsListQueryOptions({ limit: 50, offset: 0 }, createPromotionsClientOptions(client)),
+  )
 }
 
 export function PromotionsPage() {
