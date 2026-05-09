@@ -14,25 +14,29 @@ afterEach(() => {
 })
 
 describe("trigger.on", () => {
-  test("registers a filter and returns a handle", () => {
+  test("registers a filter and returns the runtime entry", () => {
     const wf = workflow<{ x: number }, void>({
       id: "test-target",
       async run() {},
     })
 
-    const handle = trigger.on<{ kind: string }>("promotion.changed", {
+    const entry = trigger.on<{ kind: string }>("promotion.changed", {
       target: wf,
       where: { eq: [{ path: "data.kind" }, { lit: "all" }] },
     })
 
-    expect(handle.event).toBe("promotion.changed")
-    expect(handle.id).toMatch(/^ef_[0-9a-f]{16}$/)
+    // The returned entry is the same EventFilterRuntimeEntry that lands
+    // in the registry — directly droppable into Module.eventFilters
+    // without a registry lookup.
+    expect(entry.eventType).toBe("promotion.changed")
+    expect(entry.id).toMatch(/^ef_[0-9a-f]{16}$/)
+    expect(entry.targetWorkflowId).toBe("test-target")
+    expect(entry.manifest.eventType).toBe("promotion.changed")
+    expect(entry.manifest.id).toBe(entry.id)
 
     const entries = getEventFilterRegistry().list()
     expect(entries).toHaveLength(1)
-    expect(entries[0]?.id).toBe(handle.id)
-    expect(entries[0]?.eventType).toBe("promotion.changed")
-    expect(entries[0]?.targetWorkflowId).toBe("test-target")
+    expect(entries[0]).toBe(entry)
   })
 
   test("identical declarations produce identical ids (stable across re-imports)", () => {
@@ -80,13 +84,10 @@ describe("trigger.on", () => {
       async run() {},
     })
 
-    const handle = trigger.on("evt.x", { target: wf })
-    expect(handle.event).toBe("evt.x")
-    const entry = getEventFilterRegistry()
-      .list()
-      .find((e) => e.id === handle.id)
-    expect(entry?.manifest.where).toBeUndefined()
-    expect(entry?.manifest.input).toBeUndefined()
+    const entry = trigger.on("evt.x", { target: wf })
+    expect(entry.eventType).toBe("evt.x")
+    expect(entry.manifest.where).toBeUndefined()
+    expect(entry.manifest.input).toBeUndefined()
   })
 
   test("rejects empty event name", () => {
@@ -151,7 +152,7 @@ describe("trigger.on", () => {
       async run() {},
     })
 
-    const handle = trigger.on("evt.x", {
+    const entry = trigger.on("evt.x", {
       target: wf,
       where: { eq: [{ path: "data.k" }, { lit: "v" }] },
       input: {
@@ -162,11 +163,8 @@ describe("trigger.on", () => {
       },
     })
 
-    const entry = getEventFilterRegistry()
-      .list()
-      .find((e) => e.id === handle.id)
-    expect(entry?.manifest).toMatchObject({
-      id: handle.id,
+    expect(entry.manifest).toMatchObject({
+      id: entry.id,
       eventType: "evt.x",
       targetWorkflowId: "test-manifest-shape",
       where: { eq: [{ path: "data.k" }, { lit: "v" }] },

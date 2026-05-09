@@ -115,11 +115,7 @@ export const workflows: WorkflowsClient = new Proxy({} as WorkflowsClient, {
 import { compileAndRegister } from "./events/compile.js"
 import type { InputMapper } from "./events/input-mapper.js"
 import type { PredicateExpr } from "./events/predicate.js"
-
-export interface EventFilterHandle {
-  readonly id: string
-  readonly event: string
-}
+import type { EventFilterRuntimeEntry } from "./events/registry.js"
 
 /**
  * Declarative binding from an event name to a target workflow. Authors call
@@ -141,11 +137,19 @@ export interface EventFilterDeclaration<T> {
 }
 
 export interface TriggerApi {
-  on<T = unknown>(event: string, filter: EventFilterDeclaration<T>): EventFilterHandle
+  /**
+   * Register an event filter targeting `event`. Returns the
+   * {@link EventFilterRuntimeEntry} so authors can drop it directly into
+   * `Module.eventFilters` / `Plugin.eventFilters` — the entry structurally
+   * satisfies core's `EventFilterDescriptor` (matching `id` + `eventType`)
+   * and carries the manifest payload `createApp()` needs to register with
+   * the driver.
+   */
+  on<T = unknown>(event: string, filter: EventFilterDeclaration<T>): EventFilterRuntimeEntry
 }
 
 export const trigger: TriggerApi = {
-  on<T>(event: string, filter: EventFilterDeclaration<T>): EventFilterHandle {
+  on<T>(event: string, filter: EventFilterDeclaration<T>): EventFilterRuntimeEntry {
     return compileAndRegister(event, filter)
   },
 }
