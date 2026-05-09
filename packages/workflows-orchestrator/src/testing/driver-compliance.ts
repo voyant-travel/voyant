@@ -251,6 +251,188 @@ export function runDriverComplianceSuite(name: string, makeFactory: () => Driver
           expect(result.eventId).toMatch(/^evt_/)
         }
       })
+
+      test("matches a where predicate and triggers a run", async () => {
+        const driver = makeFactory()(testFactoryDeps())
+        const wfId = uniqueId("compliance-ingest-match")
+        const wf = workflow<unknown, void>({
+          id: wfId,
+          async run() {},
+        })
+        const filterId = `ef_${uniqueId("ef")}`
+        const manifest: WorkflowManifest = {
+          ...buildTestManifest(uniqueId("v_match")),
+          eventFilters: [
+            {
+              id: filterId,
+              eventType: "promotion.changed",
+              where: { eq: [{ path: "data.kind" }, { lit: "all" }] },
+              payloadHash: filterId,
+              targetWorkflowId: wfId,
+            },
+          ],
+        }
+        await driver.registerManifest({ environment: "production", manifest })
+
+        const result = await driver.ingestEvent({
+          environment: "production",
+          envelope: {
+            name: "promotion.changed",
+            data: { kind: "all" },
+            metadata: { eventId: `evt_${uniqueId("match")}` },
+            emittedAt: new Date(1_700_000_000_000).toISOString(),
+          },
+        })
+        expect(result.ok).toBe(true)
+        if (!result.ok) return
+        expect(result.matches).toHaveLength(1)
+        const m = result.matches[0]
+        expect(m?.status).toBe("queued")
+        if (m?.status === "queued") {
+          expect(m.filterId).toBe(filterId)
+          expect(m.targetWorkflowId).toBe(wfId)
+          const detail = await driver.admin?.getRun?.(m.runId)
+          expect(detail?.workflowId).toBe(wfId)
+        }
+        void wf
+      })
+
+      test("predicate failure on one filter doesn't block another", async () => {
+        const driver = makeFactory()(testFactoryDeps())
+        const wfId = uniqueId("compliance-ingest-mixed")
+        const wf = workflow<unknown, void>({
+          id: wfId,
+          async run() {},
+        })
+        const goodId = `ef_${uniqueId("ok")}`
+        const manifest: WorkflowManifest = {
+          ...buildTestManifest(uniqueId("v_mixed")),
+          eventFilters: [
+            {
+              id: `ef_${uniqueId("bad")}`,
+              eventType: "evt.x",
+              where: { wat: "huh" } as unknown as never,
+              payloadHash: "h",
+              targetWorkflowId: wfId,
+            },
+            {
+              id: goodId,
+              eventType: "evt.x",
+              where: { eq: [{ path: "data.k" }, { lit: "v" }] },
+              payloadHash: "h",
+              targetWorkflowId: wfId,
+            },
+          ],
+        }
+        await driver.registerManifest({ environment: "production", manifest })
+
+        const result = await driver.ingestEvent({
+          environment: "production",
+          envelope: {
+            name: "evt.x",
+            data: { k: "v" },
+            metadata: { eventId: `evt_${uniqueId("mixed")}` },
+            emittedAt: new Date(1_700_000_000_000).toISOString(),
+          },
+        })
+        expect(result.ok).toBe(true)
+        if (!result.ok) return
+        const skipped = result.matches.find((m) => m.status === "skipped")
+        const queued = result.matches.find((m) => m.status === "queued")
+        expect(skipped?.status).toBe("skipped")
+        if (skipped?.status === "skipped") {
+          expect(skipped.reason).toBe("where_eval_error")
+        }
+        expect(queued?.status).toBe("queued")
+        void wf
+      })
+
+      test("input mapper projects correctly through to the workflow", async () => {
+        const driver = makeFactory()(testFactoryDeps())
+        const wfId = uniqueId("compliance-ingest-input")
+        const wf = workflow<{ kind: string; offer: string }, { kind: string; offer: string }>({
+          id: wfId,
+          async run(input) {
+            return input
+          },
+        })
+        const filterId = `ef_${uniqueId("ef-input")}`
+        const manifest: WorkflowManifest = {
+          ...buildTestManifest(uniqueId("v_input")),
+          eventFilters: [
+            {
+              id: filterId,
+              eventType: "promotion.changed",
+              input: {
+                object: {
+                  kind: { path: "data.affected.kind" },
+                  offer: { path: "data.offerId" },
+                },
+              },
+              payloadHash: filterId,
+              targetWorkflowId: wfId,
+            },
+          ],
+        }
+        await driver.registerManifest({ environment: "production", manifest })
+
+        const result = await driver.ingestEvent({
+          environment: "production",
+          envelope: {
+            name: "promotion.changed",
+            data: { affected: { kind: "all" }, offerId: "pofr_42" },
+            metadata: { eventId: `evt_${uniqueId("input")}` },
+            emittedAt: new Date(1_700_000_000_000).toISOString(),
+          },
+        })
+        expect(result.ok).toBe(true)
+        if (!result.ok) return
+        const m = result.matches[0]
+        if (m?.status !== "queued") throw new Error("expected queued match")
+        const detail = await driver.admin?.getRun?.(m.runId)
+        expect(detail?.output).toEqual({ kind: "all", offer: "pofr_42" })
+        void wf
+      })
+
+      test("metadata.eventId dedupes across retries (same event → same run)", async () => {
+        const driver = makeFactory()(testFactoryDeps())
+        const wfId = uniqueId("compliance-ingest-dedup")
+        const wf = workflow<unknown, void>({
+          id: wfId,
+          async run() {},
+        })
+        const filterId = `ef_${uniqueId("ef-dedup")}`
+        const manifest: WorkflowManifest = {
+          ...buildTestManifest(uniqueId("v_dedup")),
+          eventFilters: [
+            {
+              id: filterId,
+              eventType: "evt.dedup",
+              payloadHash: filterId,
+              targetWorkflowId: wfId,
+            },
+          ],
+        }
+        await driver.registerManifest({ environment: "production", manifest })
+
+        const sharedEventId = `evt_${uniqueId("shared")}`
+        const envelope = {
+          name: "evt.dedup",
+          data: {},
+          metadata: { eventId: sharedEventId },
+          emittedAt: new Date(1_700_000_000_000).toISOString(),
+        }
+        const a = await driver.ingestEvent({ environment: "production", envelope })
+        const b = await driver.ingestEvent({ environment: "production", envelope })
+        if (!a.ok || !b.ok) throw new Error("expected ok=true")
+        const ma = a.matches[0]
+        const mb = b.matches[0]
+        if (ma?.status !== "queued" || mb?.status !== "queued") {
+          throw new Error("expected queued matches")
+        }
+        expect(mb.runId).toBe(ma.runId)
+        void wf
+      })
     })
 
     describe("admin (when implemented)", () => {

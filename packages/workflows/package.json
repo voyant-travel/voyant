@@ -38,6 +38,10 @@
     "./driver": {
       "types": "./src/driver.ts",
       "import": "./src/driver.ts"
+    },
+    "./events": {
+      "types": "./src/events/index.ts",
+      "import": "./src/events/index.ts"
     }
   },
   "main": "./dist/index.js",
@@ -106,6 +110,10 @@
       "./driver": {
         "types": "./dist/driver.d.ts",
         "import": "./dist/driver.js"
+      },
+      "./events": {
+        "types": "./dist/events/index.d.ts",
+        "import": "./dist/events/index.js"
       }
     },
     "main": "./dist/index.js",

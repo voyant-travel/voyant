@@ -24,6 +24,7 @@ import {
   type DriverFactoryDeps,
   type IngestEventArgs,
   type IngestEventResponse,
+  type IngestMatch,
   ManifestNotRegisteredError,
   type WorkflowAdmin,
   type WorkflowDriver,
@@ -31,6 +32,7 @@ import {
 import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 
+import { routeEvent } from "./event-router.js"
 import { createInMemoryRunStore } from "./in-memory-store.js"
 import { cancel as orchestratorCancel, trigger as orchestratorTrigger } from "./orchestrator.js"
 import type { RunRecord, StepHandler } from "./types.js"
@@ -142,14 +144,73 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
         }
       }
       const eventId = ensureEventId(args.envelope, now)
-      // Filter matching arrives in PR2 (the event-router).
-      // PR1 ships ingestEvent that validates the manifest is registered and
-      // returns the no-matches response when there are no filters or when the
-      // event router hasn't been wired yet.
-      // Matching against `stored.manifest.eventFilters[]` will replace this
-      // body once the predicate evaluator + input mapper land.
-      void stored
-      return { ok: true, eventId, matches: [] }
+      const routed = routeEvent({
+        manifest: stored.manifest,
+        envelope: args.envelope,
+        eventId,
+        idempotencyOverride: args.idempotencyKey,
+      })
+
+      const matches: IngestMatch[] = []
+      let anyTriggered = false
+      let anyFailed = false
+      for (const entry of routed) {
+        if (entry.status === "skipped") {
+          matches.push({
+            filterId: entry.filterId,
+            status: "skipped",
+            reason: entry.reason,
+            details: entry.details,
+          })
+          continue
+        }
+        try {
+          const record = await orchestratorTrigger(
+            {
+              workflowId: entry.targetWorkflowId,
+              workflowVersion: "v1",
+              input: entry.input,
+              tenantMeta,
+              environment: args.environment,
+              idempotencyKey: entry.idempotencyKey,
+              triggeredBy: {
+                kind: "event",
+                eventId,
+                eventType: args.envelope.name,
+                filterId: entry.filterId,
+              },
+            },
+            { store, handler, now },
+          )
+          matches.push({
+            filterId: entry.filterId,
+            targetWorkflowId: entry.targetWorkflowId,
+            runId: record.id,
+            idempotencyKey: entry.idempotencyKey,
+            status: "queued",
+          })
+          anyTriggered = true
+        } catch (err) {
+          matches.push({
+            filterId: entry.filterId,
+            targetWorkflowId: entry.targetWorkflowId,
+            status: "error",
+            reason: err instanceof Error ? err.message : String(err),
+          })
+          anyFailed = true
+        }
+      }
+
+      // Drivers return ok:true if at least one match queued; ok:false only if
+      // every match errored (per architecture doc §15.5).
+      if (matches.length > 0 && !anyTriggered && anyFailed) {
+        return {
+          ok: false,
+          reason: "trigger_failed_for_all_matches",
+          message: "every matched filter failed to trigger",
+        }
+      }
+      return { ok: true, eventId, matches }
     }
 
     async function shutdown(): Promise<void> {
