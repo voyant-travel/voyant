@@ -204,7 +204,8 @@ export const storefrontDepartureSchema = z.object({
 
 export const storefrontDepartureListQuerySchema = z.object({
   optionId: z.string().optional(),
-  status: availabilitySlotStatusSchema.optional(),
+  // `z.lazy(() => …)` for cross-package init-cycle protection — see #501.
+  status: z.lazy(() => availabilitySlotStatusSchema).optional(),
   dateFrom: z.string().date().optional(),
   dateTo: z.string().date().optional(),
   limit: z.coerce.number().int().min(1).max(250).default(100),
@@ -351,7 +352,8 @@ export const storefrontProductExtensionSchema = z.object({
   thumb: z.string().nullable(),
   pricePerPerson: z.number().nullable(),
   currencyCode: z.string(),
-  pricingMode: extraPricingModeSchema,
+  // `z.lazy(() => …)` for cross-package init-cycle protection — see #501.
+  pricingMode: z.lazy(() => extraPricingModeSchema),
   defaultQuantity: z.number().int().nullable(),
   minQuantity: z.number().int().nullable(),
   maxQuantity: z.number().int().nullable(),
