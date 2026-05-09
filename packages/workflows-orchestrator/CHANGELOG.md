@@ -1,5 +1,12 @@
 # @voyantjs/workflows-orchestrator
 
+## 0.30.1
+
+### Patch Changes
+
+- 49fa324: Wire `TriggerOptions.delay` through the workflow orchestrator drivers so delayed runs park on a DATETIME waitpoint and wake through the existing time wheel.
+  - @voyantjs/workflows@0.30.1
+
 ## 0.30.0
 
 ### Patch Changes
