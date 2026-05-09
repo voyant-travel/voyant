@@ -34,6 +34,7 @@ import { Container } from "@cloudflare/containers"
 import { createBearerVerifier } from "@voyantjs/workflows/auth"
 import {
   createDispatchStepHandler,
+  createKvManifestStore,
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
   handleWorkerRequest,
@@ -49,10 +50,18 @@ export interface Env {
   /** KV namespace storing `<projectId>:<workflowVersion>` → SHA-256 of the bundle. */
   BUNDLE_HASHES: KVNamespace
   /**
+   * KV namespace storing serialized `WorkflowManifest` envelopes per
+   * environment. Written by `POST /api/manifests`, read by
+   * `POST /api/events` and `GET /api/manifests/:env`. Optional — when
+   * unset, those routes return 404 `manifests_not_configured`. See
+   * docs/architecture/workflows-runtime-architecture.md §14.
+   */
+  WORKFLOW_MANIFESTS?: KVNamespace
+  /**
    * Comma-separated bearer tokens accepted on the public
-   * `/api/runs/*` surface. Unset = no auth (fine for local dev,
-   * dangerous in production). A control plane issues per-tenant
-   * short-lived tokens in the hosted deployment.
+   * `/api/runs/*` + `/api/events` + `/api/manifests*` surfaces. Unset =
+   * no auth (fine for local dev, dangerous in production). A control
+   * plane issues per-tenant short-lived tokens in the hosted deployment.
    */
   VOYANT_API_TOKENS?: string
 }
@@ -66,6 +75,9 @@ export default {
     return handleWorkerRequest(request, {
       runDO: env.WORKFLOW_RUN_DO,
       verifyRequest: tokens.length > 0 ? createBearerVerifier(tokens) : undefined,
+      manifestStore: env.WORKFLOW_MANIFESTS
+        ? createKvManifestStore({ kv: env.WORKFLOW_MANIFESTS })
+        : undefined,
     })
   },
 } satisfies ExportedHandler<Env>

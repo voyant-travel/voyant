@@ -13,6 +13,10 @@
 
 import type { WaitpointInjection } from "@voyantjs/workflows-orchestrator"
 
+import { handleIngestEvent } from "./event-handler.js"
+import { handleGetManifest, handleRegisterManifest } from "./manifest-handler.js"
+import type { CfManifestStore } from "./manifest-kv-store.js"
+
 /**
  * Minimal shape of a DO namespace. `idFromName` returns an opaque id;
  * `get(id)` returns a stub with `fetch` (matching the CF DO API).
@@ -36,6 +40,24 @@ export interface WorkerFetchDeps<Id = unknown> {
   idGenerator?: () => string
   /** Injectable clock for id generation. */
   now?: () => number
+  /**
+   * Optional KV-backed manifest store. When set, the worker also serves
+   * `/api/manifests` and `/api/events`. When unset, those routes 404 —
+   * useful for orchestrators that only expose the run surface.
+   */
+  manifestStore?: CfManifestStore
+  /**
+   * Tenant metadata stamped on event-triggered runs. Defaults to
+   * `{ tenantId: "default", projectId: "default", organizationId: "default" }`.
+   * Voyant Cloud's wrapper layer overrides this with per-org values via
+   * the request-routing layer.
+   */
+  tenantMeta?: {
+    tenantId: string
+    projectId: string
+    organizationId: string
+    tenantScript?: string
+  }
 }
 
 export async function handleWorkerRequest<Id>(
@@ -57,6 +79,48 @@ export async function handleWorkerRequest<Id>(
     return json(401, {
       error: "unauthorized",
       message: err instanceof Error ? err.message : String(err),
+    })
+  }
+
+  // POST /api/manifests — register a manifest for an environment.
+  if (req.method === "POST" && url.pathname === "/api/manifests") {
+    if (!deps.manifestStore) {
+      return json(404, { error: "manifests_not_configured" })
+    }
+    return handleRegisterManifest(req, {
+      manifestStore: deps.manifestStore,
+      logger: deps.logger,
+    })
+  }
+
+  // GET /api/manifests/:env — read the current manifest.
+  if (req.method === "GET") {
+    const manifestMatch = url.pathname.match(/^\/api\/manifests\/([^/]+)$/)
+    if (manifestMatch) {
+      if (!deps.manifestStore) {
+        return json(404, { error: "manifests_not_configured" })
+      }
+      const env = decodeURIComponent(manifestMatch[1] ?? "")
+      return handleGetManifest(env, {
+        manifestStore: deps.manifestStore,
+        logger: deps.logger,
+      })
+    }
+  }
+
+  // POST /api/events — synchronous event ingest. Loads the manifest,
+  // routes filters, forwards each match to the run-DO trigger flow.
+  if (req.method === "POST" && url.pathname === "/api/events") {
+    if (!deps.manifestStore) {
+      return json(404, { error: "events_not_configured" })
+    }
+    return handleIngestEvent(req, {
+      manifestStore: deps.manifestStore,
+      runDO: deps.runDO,
+      idGenerator: deps.idGenerator,
+      now: deps.now,
+      tenantMeta: deps.tenantMeta,
+      logger: deps.logger,
     })
   }
 

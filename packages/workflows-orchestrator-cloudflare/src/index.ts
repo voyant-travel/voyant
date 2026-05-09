@@ -33,6 +33,10 @@ export {
   createCfContainerStepRunner,
 } from "./cf-container-runner.js"
 export {
+  type CloudflareEdgeDriverOptions,
+  createCloudflareEdgeDriver,
+} from "./cloudflare-edge-driver.js"
+export {
   createDispatchStepHandler,
   type DispatchHandlerDeps,
 } from "./dispatch-handler.js"
@@ -42,6 +46,14 @@ export {
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
 } from "./durable-object.js"
+export {
+  type CfManifestEnvelope,
+  type CfManifestStore,
+  type CreateKvManifestStoreOptions,
+  createInMemoryKv,
+  createKvManifestStore,
+  type KvNamespaceLike,
+} from "./manifest-kv-store.js"
 export {
   createR2Presigner,
   type PresignArgs,
