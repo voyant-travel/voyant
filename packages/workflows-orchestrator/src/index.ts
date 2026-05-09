@@ -20,6 +20,11 @@ export {
   type InMemoryDriverOptions,
 } from "./driver-inmemory.js"
 export {
+  type RouteEventArgs,
+  type RouterMatch,
+  routeEvent,
+} from "./event-router.js"
+export {
   createHttpStepHandler,
   type HttpStepHandlerDeps,
   type HttpStepTarget,

@@ -2,7 +2,7 @@
 // Authoritative contract in docs/sdk-surface.md §6.
 
 import type { Duration, EnvironmentName, RunStatus } from "./types.js"
-import type { EnvironmentContext, WorkflowHandle } from "./workflow.js"
+import type { WorkflowHandle } from "./workflow.js"
 
 // ---- workflows.* ----
 
@@ -112,16 +112,32 @@ export const workflows: WorkflowsClient = new Proxy({} as WorkflowsClient, {
 
 // ---- trigger.on ----
 
+import { compileAndRegister } from "./events/compile.js"
+import type { InputMapper } from "./events/input-mapper.js"
+import type { PredicateExpr } from "./events/predicate.js"
+
 export interface EventFilterHandle {
   readonly id: string
   readonly event: string
 }
 
+/**
+ * Declarative binding from an event name to a target workflow. Authors call
+ * `trigger.on(eventName, declaration)` at module-load time; the framework
+ * collects the entries via the process-local registry (see
+ * `./events/registry.js`) and ships them in the manifest.
+ *
+ * `where` and `input` are structured DSLs (no callbacks) so the runtime
+ * can evaluate them anywhere — in-process for self-host, server-side for
+ * managed deployments. The previous `match` callback is no longer
+ * supported; registration throws if it's set.
+ */
 export interface EventFilterDeclaration<T> {
   target: WorkflowHandle<T, unknown>
-  match?: (payload: T, ctx: { environment: EnvironmentContext; project: { id: string } }) => boolean
-  scope?: string
-  input?: (payload: T) => unknown
+  /** Structured predicate; see `@voyantjs/workflows/events` `PredicateExpr`. */
+  where?: PredicateExpr
+  /** Structured input projection; see `@voyantjs/workflows/events` `InputMapper`. */
+  input?: InputMapper
 }
 
 export interface TriggerApi {
@@ -129,11 +145,7 @@ export interface TriggerApi {
 }
 
 export const trigger: TriggerApi = {
-  on<T>(_event: string, _filter: EventFilterDeclaration<T>): EventFilterHandle {
-    throw new Error(
-      "@voyantjs/workflows: trigger.on() must be collected by `voyant workflows build` and " +
-        "registered with the orchestrator at deploy time; it has no runtime behavior when " +
-        "called directly. See docs/sdk-surface.md §6.2.",
-    )
+  on<T>(event: string, filter: EventFilterDeclaration<T>): EventFilterHandle {
+    return compileAndRegister(event, filter)
   },
 }

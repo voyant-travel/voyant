@@ -83,11 +83,26 @@ export interface ManifestSchedule {
 }
 
 export interface EventFilterManifestEntry {
+  /** Stable id derived from `payloadHash` of the canonicalized declaration. */
   id: string
+  /** Event name the filter targets — matches `EventEnvelope.name`. */
   eventType: string
-  scope?: string
-  matchExpression?: string
+  /**
+   * Optional structured `where` predicate. When absent, every event of the
+   * matching `eventType` fires the target workflow. Concrete shape lives in
+   * `@voyantjs/workflows/events` (`PredicateExpr`); the protocol declares
+   * it as an opaque object so old orchestrators that don't understand the
+   * shape don't have to evaluate it.
+   */
+  where?: unknown
+  /**
+   * Optional input mapper. When absent, the workflow input = `envelope.data`.
+   * Concrete shape lives in `@voyantjs/workflows/events` (`InputMapper`).
+   */
+  input?: unknown
+  /** Content-derived hash of the canonicalized declaration. */
   payloadHash: string
+  /** Workflow id this filter triggers. */
   targetWorkflowId: string
 }
 
