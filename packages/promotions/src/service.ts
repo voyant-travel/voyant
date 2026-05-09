@@ -130,6 +130,14 @@ function toAffected(productIds: string[] | null): PromotionChangedAffected {
   return { kind: "products", productIds }
 }
 
+function unionAffectedProductIds(
+  previousProductIds: string[] | null,
+  nextProductIds: string[] | null,
+): string[] | null {
+  if (previousProductIds === null || nextProductIds === null) return null
+  return [...new Set([...previousProductIds, ...nextProductIds])]
+}
+
 async function emitChange(
   runtime: OfferMutationRuntime,
   payload: PromotionChangedEvent,
@@ -254,6 +262,11 @@ async function updateOffer(
   runtime: OfferMutationRuntime = {},
 ): Promise<PromotionalOffer | null> {
   const updateValues = toUpdateValues(patch)
+  const previousScope =
+    patch.scope !== undefined && shouldEmitForUpdate(patch)
+      ? (await getOfferById(db, id))?.scope
+      : null
+  if (patch.scope !== undefined && previousScope === undefined) return null
 
   const [row] = await db
     .update(promotionalOffers)
@@ -273,10 +286,14 @@ async function updateOffer(
   }
 
   if (shouldEmitForUpdate(patch)) {
+    const affectedProductIds =
+      patch.scope !== undefined && previousScope
+        ? unionAffectedProductIds(await resolveScopeProductIds(db, previousScope), productIds)
+        : productIds
     await emitChange(runtime, {
       offerId: row.id,
       source: runtime.source ?? "updated",
-      affected: toAffected(productIds),
+      affected: toAffected(affectedProductIds),
     })
   }
 

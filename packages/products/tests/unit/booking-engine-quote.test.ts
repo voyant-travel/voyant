@@ -1,4 +1,8 @@
-import type { ComputeQuoteRequest, OwnedHandlerContext } from "@voyantjs/catalog/booking-engine"
+import type {
+  CommitOwnedRequest,
+  ComputeQuoteRequest,
+  OwnedHandlerContext,
+} from "@voyantjs/catalog/booking-engine"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -222,5 +226,54 @@ describe("createProductsBookingHandler.computeQuote", () => {
     })
     const breakdown = result.pricing?.breakdown as Record<string, unknown>
     expect(breakdown?.total).toBe(40000)
+  })
+})
+
+describe("createProductsBookingHandler.commit", () => {
+  it("uses the gross inclusive-tax total for the booking sell amount override", async () => {
+    const quickCreate = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const handler = createProductsBookingHandler({ quickCreate })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      pricing: {
+        base_amount: 8333,
+        taxes: 1667,
+        fees: 0,
+        surcharges: 0,
+        currency: "RON",
+        breakdown: {
+          currency: "RON",
+          subtotal: 8333,
+          taxTotal: 1667,
+          total: 10000,
+          taxes: [
+            {
+              label: "VAT",
+              rate: 0.2,
+              amount: 1667,
+              includedInPrice: true,
+              scope: "included",
+            },
+          ],
+        },
+      },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(quickCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productId: product.id,
+        sellAmountCentsOverride: 10000,
+      }),
+    )
   })
 })

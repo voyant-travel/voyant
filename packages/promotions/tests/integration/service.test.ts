@@ -234,7 +234,7 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
       expect(recorded).toHaveLength(0)
     })
 
-    it("emits with source='updated' on a scope edit", async () => {
+    it("emits with source='updated' and the old/new product union on a scope edit", async () => {
       const offer = await promotionsService.createOffer(
         db,
         baseOffer({ scope: { kind: "products", productIds: [productAId] } }),
@@ -251,8 +251,29 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
       expect(recorded[0]?.payload.source).toBe("updated")
       expect(recorded[0]?.payload.affected).toEqual({
         kind: "products",
-        productIds: [productBId],
+        productIds: expect.arrayContaining([productAId, productBId]),
       })
+      if (recorded[0]?.payload.affected.kind === "products") {
+        expect(recorded[0].payload.affected.productIds).toHaveLength(2)
+      }
+    })
+
+    it("emits affected='all' when either side of a scope edit is unbounded", async () => {
+      const offer = await promotionsService.createOffer(
+        db,
+        baseOffer({ scope: { kind: "global" } }),
+      )
+      const { bus, recorded } = makeEventBus()
+      await promotionsService.updateOffer(
+        db,
+        offer.id,
+        { scope: { kind: "products", productIds: [productBId] } },
+        // biome-ignore lint/suspicious/noExplicitAny: test-only narrow EventBus stub
+        { eventBus: bus as any },
+      )
+
+      expect(recorded).toHaveLength(1)
+      expect(recorded[0]?.payload.affected).toEqual({ kind: "all" })
     })
 
     it("returns null for a missing offer id", async () => {

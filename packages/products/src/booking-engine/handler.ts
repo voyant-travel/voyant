@@ -566,16 +566,13 @@ export function createProductsBookingHandler(
             : ("adult" as const),
       }))
 
-      // Promotion-discounted quotes: thread the discounted base into
-      // the booking's seed sellAmountCents so checkout / payment
-      // see the customer-facing total, not the product list price.
-      // `pricing.base_amount` is in cents (per `liveValuesToPricing` in
-      // catalog/quote.ts); we round defensively against the
-      // numeric(18,4) column. When no promotion applied,
-      // `base_amount` equals the product's list price and the
-      // override is a no-op.
-      const sellAmountCentsOverride =
-        request.pricing?.base_amount != null ? Math.round(request.pricing.base_amount) : null
+      // Promotion-discounted quotes: thread the discounted customer-
+      // facing amount into the booking's seed sellAmountCents so
+      // checkout / payment see the quoted amount, not the product list
+      // price. Inclusive-tax quotes rewrite `base_amount` to net
+      // subtotal during tax recompute, so derive the override from the
+      // gross breakdown total when an included tax line is present.
+      const sellAmountCentsOverride = resolveSellAmountCentsOverride(request.pricing)
 
       const bridge = await options.quickCreate({
         productId: product.id,
@@ -777,6 +774,33 @@ function extractTaxLines(
   }
 
   return lines.length ? lines : undefined
+}
+
+function resolveSellAmountCentsOverride(pricing: CommitOwnedRequest["pricing"]): number | null {
+  if (!pricing) return null
+  const breakdown = pricing.breakdown
+  if (hasInclusiveTaxLine(breakdown)) {
+    const total = readBreakdownTotal(breakdown)
+    if (total != null) return total
+  }
+  return pricing.base_amount != null ? Math.round(pricing.base_amount) : null
+}
+
+function hasInclusiveTaxLine(breakdown: unknown): boolean {
+  if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return false
+  const taxes = (breakdown as { taxes?: unknown }).taxes
+  if (!Array.isArray(taxes)) return false
+  return taxes.some((tax) => {
+    if (!tax || typeof tax !== "object" || Array.isArray(tax)) return false
+    const row = tax as Record<string, unknown>
+    return row.includedInPrice === true || row.scope === "included"
+  })
+}
+
+function readBreakdownTotal(breakdown: unknown): number | null {
+  if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return null
+  const total = (breakdown as { total?: unknown }).total
+  return typeof total === "number" && Number.isFinite(total) ? Math.round(total) : null
 }
 
 function asFiniteInteger(value: unknown): number | null {
