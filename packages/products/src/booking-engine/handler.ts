@@ -65,6 +65,14 @@ export interface QuickCreateBridgeInput {
   personId?: string | null
   organizationId?: string | null
   internalNotes?: string | null
+  /**
+   * Override the seed sellAmountCents the booking lands at. The owned
+   * commit passes this when the catalog booking-engine's promotion hook
+   * has discounted the quote — without it, customers would be charged
+   * the product's list price even with a successful promotion. Per
+   * docs/architecture/promotions-architecture.md §7.1.
+   */
+  sellAmountCentsOverride?: number | null
   travelers?: Array<{
     firstName: string
     lastName: string
@@ -558,6 +566,14 @@ export function createProductsBookingHandler(
             : ("adult" as const),
       }))
 
+      // Promotion-discounted quotes: thread the discounted customer-
+      // facing amount into the booking's seed sellAmountCents so
+      // checkout / payment see the quoted amount, not the product list
+      // price. Inclusive-tax quotes rewrite `base_amount` to net
+      // subtotal during tax recompute, so derive the override from the
+      // gross breakdown total when an included tax line is present.
+      const sellAmountCentsOverride = resolveSellAmountCentsOverride(request.pricing)
+
       const bridge = await options.quickCreate({
         productId: product.id,
         bookingNumber: generateNumber(),
@@ -565,6 +581,7 @@ export function createProductsBookingHandler(
         organizationId: extractOrganizationId(request.party),
         internalNotes: extractInternalNotes(request.party),
         travelers: travelers.length > 0 ? travelers : undefined,
+        sellAmountCentsOverride,
         taxLines: extractTaxLines(request.pricing),
       })
 
@@ -757,6 +774,33 @@ function extractTaxLines(
   }
 
   return lines.length ? lines : undefined
+}
+
+function resolveSellAmountCentsOverride(pricing: CommitOwnedRequest["pricing"]): number | null {
+  if (!pricing) return null
+  const breakdown = pricing.breakdown
+  if (hasInclusiveTaxLine(breakdown)) {
+    const total = readBreakdownTotal(breakdown)
+    if (total != null) return total
+  }
+  return pricing.base_amount != null ? Math.round(pricing.base_amount) : null
+}
+
+function hasInclusiveTaxLine(breakdown: unknown): boolean {
+  if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return false
+  const taxes = (breakdown as { taxes?: unknown }).taxes
+  if (!Array.isArray(taxes)) return false
+  return taxes.some((tax) => {
+    if (!tax || typeof tax !== "object" || Array.isArray(tax)) return false
+    const row = tax as Record<string, unknown>
+    return row.includedInPrice === true || row.scope === "included"
+  })
+}
+
+function readBreakdownTotal(breakdown: unknown): number | null {
+  if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return null
+  const total = (breakdown as { total?: unknown }).total
+  return typeof total === "number" && Number.isFinite(total) ? Math.round(total) : null
 }
 
 function asFiniteInteger(value: unknown): number | null {

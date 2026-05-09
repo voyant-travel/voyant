@@ -205,6 +205,17 @@ export interface CatalogBookingRoutesOptions {
     | undefined
   contentEnricher?: QuoteEntityDeps["contentEnricher"]
   onContentEnricherError?: QuoteEntityDeps["onEnricherError"]
+  /**
+   * Resolve a per-request `evaluatePromotions` hook. Returning `undefined`
+   * skips promotion evaluation. Templates typically wire
+   * `createCatalogPromotionEvaluator(db)` from `@voyantjs/promotions`.
+   *
+   * Per docs/architecture/promotions-architecture.md §3.6 + §7.1.
+   */
+  resolveEvaluatePromotions?(input: {
+    c: Context
+    db: AnyDrizzleDb
+  }): QuoteEntityDeps["evaluatePromotions"]
   captureSnapshotContent?: SnapshotContentCapturer
   transformQuoteResult?(input: CatalogBookingQuoteTransformInput): Promise<QuoteEntityResult>
   transformBookResult?(input: CatalogBookingBookTransformInput): Promise<BookEntityResult>
@@ -261,6 +272,7 @@ async function handleQuote(c: Context, options: CatalogBookingRoutesOptions): Pr
         ownedHandlers: options.resolveOwnedHandlers?.(c),
         contentEnricher: options.contentEnricher,
         onEnricherError: options.onContentEnricherError,
+        evaluatePromotions: options.resolveEvaluatePromotions?.({ c, db }),
       },
       {
         entityModule: body.entityModule,
@@ -569,6 +581,14 @@ function engineParametersFromDraft(
   }
   if (paxCount > 0 && next.paxCount == null) {
     next.paxCount = paxCount
+  }
+  // Lift `draft.promotionCode` to the top-level so `quoteEntity`'s
+  // promotion hook can read it without descending into the nested
+  // draft. Same lifting pattern as `paxCount` above. Per
+  // docs/architecture/promotions-architecture.md §7.0.
+  const promotionCode = stringValue(draft?.promotionCode)
+  if (promotionCode && next.promotionCode == null) {
+    next.promotionCode = promotionCode
   }
 
   return next

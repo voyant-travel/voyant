@@ -17,6 +17,8 @@
 import { typeId } from "@voyantjs/db/lib/typeid-column"
 import { boolean, index, jsonb, numeric, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
+import type { AppliedOffer } from "./promotions-contract.js"
+
 export const catalogQuotesTable = pgTable(
   "catalog_quotes",
   {
@@ -49,6 +51,20 @@ export const catalogQuotesTable = pgTable(
     pricing_surcharges: numeric("pricing_surcharges", { precision: 18, scale: 4 }),
     pricing_currency: text("pricing_currency"),
     pricing_breakdown: jsonb("pricing_breakdown").$type<Record<string, unknown>>(),
+    /**
+     * Promotional offers applied to this quote. Populated by the
+     * `evaluatePromotions` hook on `QuoteEntityDeps` (per
+     * `docs/architecture/promotions-architecture.md` §7.1.3). The
+     * post-commit redemption recorder reads this back via
+     * `consumed_booking_id` and aggregates into
+     * `promotional_offer_redemptions`.
+     *
+     * Dedicated column (vs. nesting in `pricing_breakdown`) so the
+     * dependency from the redemption recorder to this data is explicit
+     * at the schema level — anyone touching the quote writer sees the
+     * column and knows it has a downstream consumer.
+     */
+    pricing_applied_offers: jsonb("pricing_applied_offers").$type<AppliedOffer[]>(),
 
     /** Opaque adapter payload echoed forward into `bookEntity` if supported. */
     upstream_payload: jsonb("upstream_payload"),
@@ -67,6 +83,10 @@ export const catalogQuotesTable = pgTable(
     index("idx_catalog_quotes_entity").on(table.entity_module, table.entity_id),
     index("idx_catalog_quotes_expires").on(table.expires_at),
     index("idx_catalog_quotes_source").on(table.source_kind, table.source_ref),
+    // Lookup index for the post-commit redemption recorder, which scans
+    // for "every quote consumed by this booking" to aggregate
+    // `pricing_applied_offers` per offer.
+    index("idx_catalog_quotes_consumed_booking").on(table.consumed_booking_id),
   ],
 )
 

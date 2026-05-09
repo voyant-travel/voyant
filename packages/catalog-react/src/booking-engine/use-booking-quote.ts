@@ -138,7 +138,7 @@ function signDraft(draft: BookingDraftV1): string {
     travelerBands: draft.travelers?.map((t) => t.band),
     accommodation: draft.accommodation,
     addons: draft.addons,
-    voucher: draft.voucher,
+    promotionCode: draft.promotionCode,
     buyerType: draft.billing?.buyerType,
     billingCountry: draft.billing?.address?.country,
   })

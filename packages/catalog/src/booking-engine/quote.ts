@@ -20,6 +20,11 @@ import type { PricingBasis } from "../snapshot/schema.js"
 import type { BookingDraftShape } from "./draft-shape.js"
 import type { OwnedBookingHandlerRegistry } from "./owned-handler.js"
 import { OWNED_SOURCE_KIND } from "./owned-handler.js"
+import type {
+  CodeStatus,
+  PromotionEvaluationInput,
+  PromotionEvaluationOutput,
+} from "./promotions-contract.js"
 import type { SourceAdapterRegistry } from "./registry.js"
 import { catalogQuotesTable, type SelectCatalogQuote } from "./schema.js"
 
@@ -147,6 +152,23 @@ export interface QuoteEntityDeps {
   contentEnricher?: QuoteContentEnricher
   /** Optional sink for enricher errors. */
   onEnricherError?: (event: { entityModule: string; entityId: string; reason: string }) => void
+  /**
+   * Optional promotion-evaluator hook. When wired, called after the
+   * adapter's `liveResolve` succeeds (only for `entity_module ==
+   * "products"` in v1). Discounts apply to `pricing.base_amount`
+   * pre-tax; the operator template's `applyOperatorTaxToQuoteResult`
+   * step downstream recomputes taxes against the new base.
+   *
+   * When the customer-supplied code fails validation, the engine
+   * surfaces the result as a `code_*` `invalidReason` on the quote
+   * (`code_not_found`, `code_expired`, `code_not_yet_valid`,
+   * `code_not_applicable`). Auto offers do NOT apply when a bad code
+   * is supplied — the quote is short-circuited to unavailable so the
+   * customer gets clear feedback.
+   *
+   * Per `docs/architecture/promotions-architecture.md` §3.6 + §7.1.
+   */
+  evaluatePromotions?: (input: PromotionEvaluationInput) => Promise<PromotionEvaluationOutput>
 }
 
 /**
@@ -222,6 +244,56 @@ export async function quoteEntity(
     upstreamPayload = liveValues as Record<string, unknown> | undefined
   }
 
+  // Promotion evaluation — runs only for the products vertical in v1
+  // (other verticals would need their own bridge to the evaluator).
+  // Discounts apply to `pricing.base_amount` pre-tax; operator template
+  // tax recompute downstream picks up the new base.
+  let appliedOffers: PromotionEvaluationOutput["applied"] | undefined
+  if (deps.evaluatePromotions && available && pricing && request.entityModule === "products") {
+    const params = request.parameters as Record<string, unknown> | undefined
+    const promotionCode = readString(params?.promotionCode)
+    // Read `paxCount` first — `engineParametersFromDraft` (in this file's
+    // sibling `routes.ts`) writes the summed traveler count under that key
+    // when a draft drives the quote, and the products owned-handler reads
+    // `paxCount` too. Fall back to `pax` for callers that build parameters
+    // directly without going through the draft pipeline.
+    const pax = readNumber(params?.paxCount) ?? readNumber(params?.pax)
+    const offerEval = await deps.evaluatePromotions({
+      productId: request.entityId,
+      slice: { audience: narrowAudience(request.scope.audience), market: request.scope.market },
+      pax,
+      date: quotedAt,
+      code: promotionCode,
+      basePriceCents: Math.round(pricing.base_amount),
+      baseCurrency: pricing.currency,
+    })
+
+    const codeStatus = offerEval.codeStatus
+    if (codeStatus && codeStatus.kind !== "code_valid") {
+      // Customer-supplied code failed validation. Surface as a quote-
+      // level invalidReason and short-circuit; auto offers don't apply
+      // either, so the customer gets unambiguous feedback.
+      available = false
+      failedReason = codeStatusToReason(codeStatus)
+    } else if (offerEval.applied.length > 0) {
+      // Subtract the discount from base_amount in cents. The operator
+      // template's `applyOperatorTaxToQuoteResult` step downstream
+      // sees the new base and recomputes taxes accordingly.
+      pricing.base_amount = Math.round(pricing.base_amount) - offerEval.total.discountAppliedCents
+      pricing.appliedOffers = offerEval.applied
+      appliedOffers = offerEval.applied
+      // Invalidate any taxes / breakdown that the source (sourced
+      // adapter or owned handler) computed against the un-discounted
+      // base — they're stale now. Setting `taxes = 0` and clearing
+      // `breakdown` is the explicit signal the operator-side transform
+      // (`applyOperatorTaxToQuoteResult`) reads to recompute. Without
+      // this, the API serializer would echo a breakdown total that
+      // doesn't match `appliedOffers`.
+      pricing.taxes = 0
+      pricing.breakdown = undefined
+    }
+  }
+
   const quoteId = newId("catalog_quotes")
   const inserted = (await db
     .insert(catalogQuotesTable)
@@ -245,6 +317,7 @@ export async function quoteEntity(
       pricing_surcharges: pricing?.surcharges != null ? String(pricing.surcharges) : undefined,
       pricing_currency: pricing?.currency,
       pricing_breakdown: pricing?.breakdown,
+      pricing_applied_offers: appliedOffers,
       upstream_payload: upstreamPayload ?? null,
       created_at: quotedAt,
       expires_at: expiresAt,
@@ -333,4 +406,32 @@ function readNumber(v: unknown): number | undefined {
 
 function readString(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined
+}
+
+const KNOWN_AUDIENCES = new Set(["staff", "customer", "partner", "supplier"] as const)
+type Visibility = "staff" | "customer" | "partner" | "supplier"
+
+/**
+ * Narrow the QuoteScope.audience (typed `string` for legacy reasons)
+ * to the evaluator's `Visibility` enum. Unknown audiences fall back to
+ * `"customer"` — the most permissive storefront default; exotic audience
+ * tokens (e.g., `"staff-admin"`) get no special treatment beyond visibility
+ * rules the offer's scope already encodes.
+ */
+function narrowAudience(audience: string): Visibility {
+  if (audience === "staff-admin") return "staff"
+  return KNOWN_AUDIENCES.has(audience as Visibility) ? (audience as Visibility) : "customer"
+}
+
+/**
+ * Map a non-valid `CodeStatus` to a quote `invalidReason` string. The
+ * `code_valid` case is filtered upstream so this only sees the failure
+ * variants.
+ */
+function codeStatusToReason(
+  codeStatus: NonNullable<CodeStatus> & {
+    kind: Exclude<NonNullable<CodeStatus>["kind"], "code_valid">
+  },
+): string {
+  return codeStatus.kind
 }

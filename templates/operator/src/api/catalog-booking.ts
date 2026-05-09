@@ -50,6 +50,7 @@ import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { products } from "@voyantjs/products"
 import { getProductContent } from "@voyantjs/products/service-content"
+import { createCatalogPromotionEvaluator } from "@voyantjs/promotions/service-catalog-evaluator"
 import { suppliers } from "@voyantjs/suppliers"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -84,6 +85,12 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
         resolveOwnedHandlers: getOwnedBookingHandlerRegistryFromContext,
         resolveHoldTtlMs: ({ db, entityModule, entityId }) =>
           resolveHoldTtlMs(db, entityModule, entityId),
+        // Promotions hook — wires the per-request `db` into the
+        // evaluator. When the customer-supplied promotion code fails
+        // validation, quoteEntity surfaces a `code_*` invalidReason
+        // and tax recompute below sees no discount on `base_amount`.
+        // Per docs/architecture/promotions-architecture.md §3.6.
+        resolveEvaluatePromotions: ({ db }) => createCatalogPromotionEvaluator(db),
         transformQuoteResult: ({ db, result, request, provenance }) =>
           applyOperatorTaxToQuoteResult(
             db,
@@ -357,8 +364,18 @@ async function applyOperatorTaxToQuoteResult(
   entityId: string,
   sourceKind: string,
 ): Promise<QuoteEntityResult> {
-  if (!result.available || !result.pricing || sourceKind === OWNED_SOURCE_KIND) return result
-  if (result.pricing.taxes > 0) return result
+  if (!result.available || !result.pricing) return result
+  // When promotional offers were applied at quote time, `quoteEntity`
+  // clears `taxes` + `breakdown` because the upstream values were
+  // computed against the un-discounted base (per
+  // docs/architecture/promotions-architecture.md §7.1). In that case
+  // we MUST recompute taxes here even for owned quotes — the owned
+  // handler's pre-discount breakdown is stale. Without this branch the
+  // owned discounted quote would round-trip with `taxes: 0` and a
+  // missing breakdown, mis-displaying the customer-facing total.
+  const hasAppliedOffers = (result.pricing.appliedOffers?.length ?? 0) > 0
+  if (sourceKind === OWNED_SOURCE_KIND && !hasAppliedOffers) return result
+  if (result.pricing.taxes > 0 && !hasAppliedOffers) return result
 
   const pricing = result.pricing
   const taxableCents = pricing.base_amount

@@ -23,6 +23,24 @@
  *                                   reflects the rule edit. Same
  *                                   cross-package pattern as
  *                                   `availability.slot.changed`.
+ *   - `promotion.changed`         → reindex the affected product set so
+ *                                   the `bestOffer*` annotations stay
+ *                                   in sync with offer mutations and
+ *                                   boundary-scheduler firings (per
+ *                                   promotions-architecture §9.1 + §9.2).
+ *                                   Payload's `affected.kind` decides:
+ *                                   `products` → reindex listed IDs in
+ *                                   the subscriber. `all` (global /
+ *                                   market / audience scope) → log +
+ *                                   skip; ops triggers
+ *                                   `pnpm exec tsx scripts/reindex.ts products`
+ *                                   manually. Inline enumeration of every
+ *                                   owned product is unsafe on Cloudflare
+ *                                   Workers (CPU / wall-time limits);
+ *                                   the proper fix is to enqueue a
+ *                                   `@voyantjs/workflows` job — tracked
+ *                                   in voyantjs/voyant#515 (blocked on
+ *                                   #514, `trigger.on()` runtime).
  *   - `booking.confirmed`         → capture a snapshot graph of the
  *                                   booking's product line items via
  *                                   `captureSnapshotGraph`
@@ -40,6 +58,7 @@ import {
 } from "@voyantjs/catalog"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
 import { buildProductSnapshotInput } from "@voyantjs/products/service-catalog-plane"
+import { recordPromotionRedemptionsForBooking } from "@voyantjs/promotions/service-booking-confirmed"
 import { and, eq, isNotNull } from "drizzle-orm"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 
@@ -89,6 +108,17 @@ interface PricingRuleChangedPayload {
   ruleId: string
   kind: "option-rule" | "option-unit-rule"
   source: "created" | "updated" | "deleted"
+}
+
+/**
+ * Mirrors `PromotionChangedEvent` from `@voyantjs/promotions/events`.
+ * Inlined for the same reason as the availability and pricing payloads
+ * above — the bridge needs only the discriminated `affected` shape.
+ */
+interface PromotionChangedPayload {
+  offerId: string
+  source: "created" | "updated" | "deleted" | "expired"
+  affected: { kind: "products"; productIds: string[] } | { kind: "all" }
 }
 
 export const catalogBridgeBundle: HonoBundle = {
@@ -195,6 +225,54 @@ export const catalogBridgeBundle: HonoBundle = {
         const ctx = buildIndexerContext(db)
         if (!ctx) return
         await ctx.service.reindexEntity("products", productId, ctx.builder)
+      })
+    })
+
+    // Promotion mutations + boundary-scheduler firings reindex the
+    // affected product set so `bestOffer*` annotations stay in sync.
+    //
+    // `affected.kind === "products"` → reindex each listed ID inline.
+    // Bounded by the offer's materialized link table; safe on Workers.
+    //
+    // `affected.kind === "all"` → routed into the
+    // `promotions.reindex-all-products` workflow declared by the
+    // promotions module; the workflow runtime fans the work out across
+    // per-product steps so each one stays inside Worker CPU limits.
+    // The trigger.on filter (also declared by the promotions module)
+    // forwards the event automatically — nothing to do here.
+    eventBus.subscribe<PromotionChangedPayload>("promotion.changed", async ({ data }) => {
+      if (data.affected.kind === "all") return
+      const productIds = data.affected.productIds
+      if (productIds.length === 0) return
+      await withDbFromEnv(env, async (db) => {
+        const ctx = buildIndexerContext(db)
+        if (!ctx) return
+        for (const productId of productIds) {
+          await ctx.service.reindexEntity("products", productId, ctx.builder)
+        }
+      })
+    })
+
+    // Promotions redemption recorder — runs on the same `booking.confirmed`
+    // event as snapshot capture. Reads `pricing_applied_offers` from
+    // catalog_quotes (NOT the snapshot, to avoid an ordering race with
+    // captureSnapshotGraph) and aggregates one redemption row per
+    // (offer, booking). Idempotent on retry via the unique constraint.
+    // Per docs/architecture/promotions-architecture.md §7.3.
+    eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", async ({ data }) => {
+      await withDbFromEnv(env, async (db) => {
+        try {
+          await recordPromotionRedemptionsForBooking(db, data.bookingId)
+        } catch (err) {
+          // Permanent failure leaves the booking committed with no
+          // redemption row. Operations can backfill from the snapshot's
+          // `pricing_applied_offers` column. Don't rethrow — sibling
+          // subscribers (snapshot capture above) shouldn't be blocked.
+          console.warn("[catalog-bridge] promotion redemption recorder failed", {
+            bookingId: data.bookingId,
+            error: err instanceof Error ? err.message : String(err),
+          })
+        }
       })
     })
 

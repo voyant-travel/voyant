@@ -23,6 +23,40 @@
       "bucket_name": "voyant-documents"
     }
   ],
+  // Workflow runtime — Cloudflare edge composition.
+  //
+  // WORKFLOW_RUN_DO  — one DO per workflow run; stores the journal in
+  //                    the DO's transactional storage and dispatches
+  //                    each step through `createInlineDispatcher`
+  //                    (configured in entry.ts). Class is exported as
+  //                    `WorkflowRunDO` from `src/entry.ts`.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "WORKFLOW_RUN_DO",
+        "class_name": "WorkflowRunDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["WorkflowRunDO"]
+    }
+  ],
+  // WORKFLOW_MANIFESTS — KV namespace storing serialized
+  //                      `WorkflowManifest` payloads. Written by
+  //                      `driver.registerManifest` at boot, read by
+  //                      `driver.ingestEvent` per request. Provision
+  //                      with `wrangler kv namespace create
+  //                      WORKFLOW_MANIFESTS` and replace the placeholder
+  //                      id below before deploy.
+  "kv_namespaces": [
+    {
+      "binding": "WORKFLOW_MANIFESTS",
+      "id": "replace-me-after-wrangler-kv-namespace-create"
+    }
+  ],
   "triggers": {
     "crons": [
       // Channel-push reconcilers (per channel-push-architecture.md §13.2).
@@ -35,7 +69,11 @@
       // Draft reaper (per booking-journey-architecture.md §5.7) — drops
       // expired booking_drafts hourly at :05 to avoid colliding with the
       // hourly availability reconciler at :00.
-      "5 * * * *"
+      "5 * * * *",
+      // Promotions boundary scheduler (per promotions-architecture.md
+      // §9.2) — every 5 minutes; emits/dispatches `promotion.changed`
+      // for offers crossing valid_from / valid_until since the last tick.
+      "*/5 * * * *"
     ]
   }
 }
