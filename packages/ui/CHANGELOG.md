@@ -1,5 +1,99 @@
 # @voyantjs/ui
 
+## 0.29.0
+
+### Minor Changes
+
+- 4a6523e: Reminder sequences UI cleanup (#488):
+
+  - `NotificationSettingsForm` drops the holiday-calendar combobox section. The
+    DB column stays in place (nullable) for forward-compat, but the UI no longer
+    exposes it — proper holiday handling needs a real public-holidays source and
+    is out of scope.
+  - `NotificationReminderRulesPage` gains a per-row **Manage stages** link that
+    points at `/notifications/reminder-rules/<id>` and accepts a
+    `manageStagesHref` prop so consumers can override the URL pattern. The
+    legacy "Timing" column is removed because timing is owned by stages now.
+  - `NotificationReminderRuleDialog` drops the `Send timing` field and the
+    payload always writes `relativeDaysFromDueDate: 0`. New rules are expected
+    to define their timing via stages; the dialog's purpose is now creating the
+    rule shell + picking a default template + assigning a channel. A help line
+    on the create form points the user at "Manage stages" as the next step.
+  - Adds a perf migration (`0002_reminder_dispatcher_perf`) with partial / composite
+    indexes targeting the new dispatcher's hot queries: open invoices by
+    `due_date`, open payment schedules by `due_date`, reminder runs by
+    `(rule, target, scheduled_for)`, and reminder runs by
+    `(recipient, status, processed_at)` for suppression / rate-limit lookups.
+
+### Patch Changes
+
+- 4a6523e: Reminder rule dialog: make the default template optional (#488).
+
+  Stage channels carry their own templates and override the rule-level default,
+  so the legacy rule-creation dialog no longer needs to require a template at
+  form-submit time. Without this, clicking **Create Rule** with no template
+  selected silently failed Zod validation and the dialog appeared frozen.
+
+  Backend `insertNotificationReminderRuleSchema` and
+  `updateNotificationReminderRuleSchema` drop the `templateId || templateSlug`
+  refinement to match.
+
+  Also narrows the dispatcher's per-target booking lookup from a full-row
+  `select()` to the columns actually used by recipient resolution. This avoids
+  projecting every column declared in the bookings schema and tolerates
+  deployments / test stubs that lag the latest column set.
+
+- 4a6523e: Drop legacy single-offset reminder path; polish channel editor (#488).
+
+  Stage channel editor:
+
+  - Replaces the two free-text "Template id / Template slug" fields with
+    a single async `<TemplatePicker>` (typeahead via `AsyncCombobox`)
+    filtered by the channel selected at the top of the dialog. Picking
+    a template now resolves to the template id directly — no more
+    guessing slugs. Switching channel clears the picked template since
+    the next list will be filtered.
+  - Provider becomes a `<Select>` with **Automatic** / **Resend
+    (email)** / **Twilio (SMS)** options. "Automatic" maps to `null`
+    (use the deployment default for that channel).
+  - Drops the freeform "Recipient role" field. Recipient resolution is
+    driven by the booking's primary contact / first traveler today;
+    the role tag wasn't actually consulted by the dispatcher.
+
+  Backend cleanup (we're in beta — no users, no compat needed):
+
+  - Drops the `relative_days_from_due_date` column from
+    `notification_reminder_rules` (migration
+    `0003_drop_legacy_columns.sql`).
+  - Drops the `holiday_calendar` column from `notification_settings`
+    (UI was already gone; the underlying public-holidays integration is
+    out of scope for this iteration).
+  - Removes the legacy single-offset dispatcher path entirely:
+    `queueDueReminders` and `runDueReminders` now delegate straight to
+    the stage-aware versions, and the four legacy helpers
+    (`queueBookingPaymentScheduleReminder`,
+    `queueInvoiceReminder`, `sendBookingPaymentScheduleReminder`,
+    `sendInvoiceReminder`) plus the `ruleHasStages` skip check are
+    deleted. Net ~500 lines removed from `service-reminders.ts`.
+  - `relativeDaysFromDueDate` removed from validation, the run-summary
+    schema, the notifications-react record schema, the operator
+    template detail page, the legacy rule dialog, and the checkout
+    service's reminder-runs join projection.
+  - Legacy integration tests `reminders.test.ts` and
+    `reminder-tasks.test.ts` are deleted; the stage-based
+    `reminder-sequences.test.ts` covers the path that survives.
+
+- Updated dependencies [4a6523e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [4a6523e]
+  - @voyantjs/i18n@0.29.0
+  - @voyantjs/notifications@0.29.0
+  - @voyantjs/notifications-react@0.29.0
+  - @voyantjs/utils@0.29.0
+
 ## 0.28.3
 
 ### Patch Changes

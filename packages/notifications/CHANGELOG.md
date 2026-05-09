@@ -1,5 +1,161 @@
 # @voyantjs/notifications
 
+## 0.29.0
+
+### Minor Changes
+
+- 4a6523e: Drop legacy single-offset reminder path; polish channel editor (#488).
+
+  Stage channel editor:
+
+  - Replaces the two free-text "Template id / Template slug" fields with
+    a single async `<TemplatePicker>` (typeahead via `AsyncCombobox`)
+    filtered by the channel selected at the top of the dialog. Picking
+    a template now resolves to the template id directly — no more
+    guessing slugs. Switching channel clears the picked template since
+    the next list will be filtered.
+  - Provider becomes a `<Select>` with **Automatic** / **Resend
+    (email)** / **Twilio (SMS)** options. "Automatic" maps to `null`
+    (use the deployment default for that channel).
+  - Drops the freeform "Recipient role" field. Recipient resolution is
+    driven by the booking's primary contact / first traveler today;
+    the role tag wasn't actually consulted by the dispatcher.
+
+  Backend cleanup (we're in beta — no users, no compat needed):
+
+  - Drops the `relative_days_from_due_date` column from
+    `notification_reminder_rules` (migration
+    `0003_drop_legacy_columns.sql`).
+  - Drops the `holiday_calendar` column from `notification_settings`
+    (UI was already gone; the underlying public-holidays integration is
+    out of scope for this iteration).
+  - Removes the legacy single-offset dispatcher path entirely:
+    `queueDueReminders` and `runDueReminders` now delegate straight to
+    the stage-aware versions, and the four legacy helpers
+    (`queueBookingPaymentScheduleReminder`,
+    `queueInvoiceReminder`, `sendBookingPaymentScheduleReminder`,
+    `sendInvoiceReminder`) plus the `ruleHasStages` skip check are
+    deleted. Net ~500 lines removed from `service-reminders.ts`.
+  - `relativeDaysFromDueDate` removed from validation, the run-summary
+    schema, the notifications-react record schema, the operator
+    template detail page, the legacy rule dialog, and the checkout
+    service's reminder-runs join projection.
+  - Legacy integration tests `reminders.test.ts` and
+    `reminder-tasks.test.ts` are deleted; the stage-based
+    `reminder-sequences.test.ts` covers the path that survives.
+
+- 4a6523e: Add reminder sequences: stages, channels, and notification settings (#488).
+
+  Reminder rules can now own an ordered list of **stages**, each with its own anchor (`due_date`, `booking_created_at`, `departure_date`, `invoice_issued_at`, or `last_send_at`), eligibility window (`[startDays, endDays]`), and cadence (`once`, `every_n_days`, or `escalating` with `daysUntilDueGT/LT` buckets). Each stage can fan out to multiple channels, each carrying its own template and recipient kind. This subsumes the legacy single-offset rule (one stage, `cadence: once`, anchor `due_date`) and the counter-based escalation pattern from the issue (one stage with `cadence: escalating(...)` plus sibling stages keyed on cumulative `maxSendsInStage`).
+
+  The dispatcher gains a stage-aware path that runs first; rules without stages fall through to the legacy date-offset path (back-compat). The migration creates one stage + one channel per existing rule mirroring the legacy behavior, so existing fires keep working unchanged.
+
+  New tables: `notification_reminder_rule_stages` (typeid `ntrs`), `notification_reminder_stage_channels` (typeid `ntsc`), `notification_settings` (typeid `nset`). New columns on `notification_reminder_rules`: `priority`, `suppression_group`. New API surface: stage CRUD, stage channel CRUD, `/notification-settings`, and a read-only `/reminders/preview` that returns what _would_ fire on a given date with reasoning attached.
+
+  The dispatcher now respects:
+
+  - Quiet hours / blackout dates / weekend skips (per `notification_settings`, opt-out per stage via `respectQuietHours`).
+  - Cross-rule dedup via `suppression_group` and a per-recipient daily channel rate limit.
+  - Multi-channel stages (one decision → one delivery per channel, dedupe key includes channel).
+
+  Engine PR is the first of three milestones; UI hooks (`@voyantjs/notifications-react`) and a new `@voyantjs/notifications-ui` package follow.
+
+### Patch Changes
+
+- 4a6523e: Reminder rule dialog: make the default template optional (#488).
+
+  Stage channels carry their own templates and override the rule-level default,
+  so the legacy rule-creation dialog no longer needs to require a template at
+  form-submit time. Without this, clicking **Create Rule** with no template
+  selected silently failed Zod validation and the dialog appeared frozen.
+
+  Backend `insertNotificationReminderRuleSchema` and
+  `updateNotificationReminderRuleSchema` drop the `templateId || templateSlug`
+  refinement to match.
+
+  Also narrows the dispatcher's per-target booking lookup from a full-row
+  `select()` to the columns actually used by recipient resolution. This avoids
+  projecting every column declared in the bookings schema and tolerates
+  deployments / test stubs that lag the latest column set.
+
+- 4a6523e: Push a date envelope into the dispatcher's open-target SQL (#488).
+
+  Closes the perf caveat noted on PR #494: previously
+  `fetchOpenPaymentScheduleTargets` / `fetchOpenInvoiceTargets` returned
+  every open row and the in-app stage walk filtered them by
+  anchor + window. With the partial indexes from `0002` that's already
+  fast on most deployments, but for tens of thousands of open rows × N
+  active rules the per-sweep memory footprint grows.
+
+  `computeAnchorDateEnvelope(stages, today, anchor)` inverts the
+  `inWindow` math (`anchor + start ≤ today ≤ anchor + end` →
+  `today − end ≤ anchor ≤ today − start`) and unions the ranges across
+  all stages that share the requested anchor. The fetchers now accept
+  a `DateEnvelopes` map and add a `BETWEEN` clause to the WHERE so
+  Postgres only returns targets whose anchor date could plausibly fire
+  today.
+
+  Pushdown is enabled per-anchor when at least one of the rule's stages
+  anchors on it: `due_date` for both target types, `invoice_issued_at`
+  for invoices. Stages anchored on `departure_date`, `booking_created_at`,
+  or `last_send_at` fall through to the unfiltered fetch — those are
+  expected to be rare and the in-app window check still rejects misses.
+
+  Adds 4 unit tests for `computeAnchorDateEnvelope` (null, single
+  stage, union across stages, mixed-anchor isolation). Integration
+  suite stays 3/3.
+
+  Also makes `templates/operator/scripts/migrate.ts` log applied
+  migrations and prints a clear "restart any long-lived workers" line
+  afterwards — drizzle's prepared-statement cache is keyed to the old
+  schema and any worker that started before the migration will fail on
+  the first query touching a changed column.
+
+- 4a6523e: Honor the stage channel's template at delivery time (#488).
+
+  Bug: when the operator's hourly cron sweep
+  (`notifications.send-due-reminders`) queued a stage's per-channel run
+  and the `notifications.deliver-reminder` workflow picked it up,
+  `deliverReminderRun` was passing `rule.templateId` /
+  `rule.templateSlug` / `rule.channel` / `rule.provider` to the
+  sender — i.e. the rule-level fallback. The stage channel's own
+  template (the one operators picked in the channel editor) was never
+  consulted, so reminders went out with the wrong template (or
+  silently failed if the rule had no fallback template).
+
+  Fix: introduce `resolveChannelOverride(db, run, rule)` that reads
+  `run.metadata.stageChannelId` (which the dispatcher writes when it
+  queues the run) and looks up the stage channel. The queued sender
+  helpers now use the override's `channel` / `templateId` /
+  `templateSlug` / `provider` and only fall back to rule-level values
+  when the stage channel can't be resolved.
+
+  Also narrows several `db.select().from(bookings|invoices|...)` calls
+  that were projecting every drizzle-declared column. The narrower
+  projections only ask for the fields the dispatcher actually reads,
+  so deployments / test stubs that lag the latest column set don't
+  break delivery.
+
+  Adds an end-to-end integration test
+  (`reminder-sequences.test.ts > "queues per-channel and uses the
+stage channel's template at delivery time"`) that creates two
+  templates, gives the rule the wrong default and the stage channel
+  the correct one, queues, delivers, and asserts the recipient got
+  the stage channel's subject and body.
+
+- Updated dependencies [3af39d1]
+- Updated dependencies [3420711]
+- Updated dependencies [583326e]
+- Updated dependencies [583326e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [db51715]
+  - @voyantjs/bookings@0.29.0
+  - @voyantjs/core@0.29.0
+  - @voyantjs/db@0.29.0
+  - @voyantjs/finance@0.29.0
+  - @voyantjs/hono@0.29.0
+  - @voyantjs/legal@0.29.0
+
 ## 0.28.3
 
 ### Patch Changes
