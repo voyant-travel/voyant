@@ -57,6 +57,13 @@
       "when": 1778326187983,
       "tag": "0007_oval_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778329344254,
+      "tag": "0008_white_bucky",
+      "breakpoints": true
     }
   ]
 }

@@ -354,6 +354,7 @@ function snapshotToPricing(snapshot: SelectBookingCatalogSnapshot): PricingBasis
     surcharges: numericOrZero(snapshot.pricing_surcharges),
     currency: snapshot.pricing_currency,
     breakdown: snapshot.pricing_breakdown ?? undefined,
+    appliedOffers: snapshot.pricing_applied_offers ?? undefined,
   }
 }
 
@@ -424,6 +425,7 @@ function readPricingFromQuote(quote: SelectCatalogQuote): PricingBasis | undefin
     surcharges: numericOrZero(quote.pricing_surcharges),
     currency,
     breakdown: quote.pricing_breakdown ?? undefined,
+    appliedOffers: quote.pricing_applied_offers ?? undefined,
   }
 }
 

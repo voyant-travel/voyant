@@ -86,6 +86,7 @@ export async function captureSnapshot(
         input.pricingBasis?.surcharges != null ? String(input.pricingBasis.surcharges) : undefined,
       pricing_currency: input.pricingBasis?.currency,
       pricing_breakdown: input.pricingBasis?.breakdown,
+      pricing_applied_offers: input.pricingBasis?.appliedOffers,
       idempotency_key: input.idempotencyKey,
     })
     .returning()
@@ -131,6 +132,7 @@ export async function captureSnapshotGraph(
       input.pricingBasis?.surcharges != null ? String(input.pricingBasis.surcharges) : undefined,
     pricing_currency: input.pricingBasis?.currency,
     pricing_breakdown: input.pricingBasis?.breakdown,
+    pricing_applied_offers: input.pricingBasis?.appliedOffers,
   }))
 
   const inserted = await db.insert(bookingCatalogSnapshotTable).values(rows).returning()

@@ -11,7 +11,10 @@
     "./events": "./src/events.ts",
     "./service": "./src/service.ts",
     "./service-catalog-plane-promotions": "./src/service-catalog-plane-promotions.ts",
-    "./service-boundary-scheduler": "./src/service-boundary-scheduler.ts"
+    "./service-boundary-scheduler": "./src/service-boundary-scheduler.ts",
+    "./service-catalog-evaluator": "./src/service-catalog-evaluator.ts",
+    "./service-booking-confirmed": "./src/service-booking-confirmed.ts",
+    "./service-storefront": "./src/service-storefront.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -22,10 +25,12 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/catalog": "workspace:*",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",
     "@voyantjs/products": "workspace:*",
+    "@voyantjs/storefront": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
@@ -80,6 +85,21 @@
         "types": "./dist/service-boundary-scheduler.d.ts",
         "import": "./dist/service-boundary-scheduler.js",
         "default": "./dist/service-boundary-scheduler.js"
+      },
+      "./service-catalog-evaluator": {
+        "types": "./dist/service-catalog-evaluator.d.ts",
+        "import": "./dist/service-catalog-evaluator.js",
+        "default": "./dist/service-catalog-evaluator.js"
+      },
+      "./service-booking-confirmed": {
+        "types": "./dist/service-booking-confirmed.d.ts",
+        "import": "./dist/service-booking-confirmed.js",
+        "default": "./dist/service-booking-confirmed.js"
+      },
+      "./service-storefront": {
+        "types": "./dist/service-storefront.d.ts",
+        "import": "./dist/service-storefront.js",
+        "default": "./dist/service-storefront.js"
       }
     },
     "main": "./dist/index.js",

@@ -154,6 +154,12 @@ export {
   type OwnedHandlerContext,
   type OwnedQuoteScope,
 } from "./owned-handler.js"
+export type {
+  AppliedOffer,
+  CodeStatus,
+  PromotionEvaluationInput,
+  PromotionEvaluationOutput,
+} from "./promotions-contract.js"
 export {
   DEFAULT_QUOTE_TTL_MS,
   type QuoteContentEnricher,
