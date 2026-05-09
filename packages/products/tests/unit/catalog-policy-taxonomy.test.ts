@@ -21,14 +21,30 @@ describe("productTaxonomyCatalogPolicy", () => {
     expect(paths).toContain("tagIds[]")
   })
 
-  it("does not declare any locale-keyed fields (today's schema is single-name)", () => {
-    // Localization is deferred — the schema has no category/tag translation
-    // tables yet. Asserting `localized: false` everywhere guards against an
-    // accidental flip that would silently emit the same name on every locale
-    // slice while telling the indexer it's locale-keyed.
-    for (const policy of PRODUCT_TAXONOMY_FIELD_POLICY) {
-      expect(policy.localized).toBe(false)
-    }
+  it("declares the right locale boundary — names locale-keyed, ids/slugs single-locale", () => {
+    // Per #502: name labels (`categories[]`, `primaryCategoryName`,
+    // `tagLabels[]`) are locale-keyed and reindex per-locale. Ids stay
+    // stable across locales. Slugs stay single-locale (one canonical URL
+    // per category) — operators want stable URLs that don't shift when
+    // translations are edited.
+    const byPath = new Map(PRODUCT_TAXONOMY_FIELD_POLICY.map((p) => [p.path, p]))
+
+    expect(byPath.get("categories[]")?.localized).toBe(true)
+    expect(byPath.get("primaryCategoryName")?.localized).toBe(true)
+    expect(byPath.get("tagLabels[]")?.localized).toBe(true)
+
+    expect(byPath.get("categoryIds[]")?.localized).toBe(false)
+    expect(byPath.get("categorySlugs[]")?.localized).toBe(false)
+    expect(byPath.get("primaryCategoryId")?.localized).toBe(false)
+    expect(byPath.get("primaryCategorySlug")?.localized).toBe(false)
+    expect(byPath.get("tagIds[]")?.localized).toBe(false)
+  })
+
+  it("locale-keyed fields use entry-locale reindex axis (per-locale slices reindex independently)", () => {
+    const byPath = new Map(PRODUCT_TAXONOMY_FIELD_POLICY.map((p) => [p.path, p]))
+    expect(byPath.get("categories[]")?.reindex).toBe("entry-locale")
+    expect(byPath.get("primaryCategoryName")?.reindex).toBe("entry-locale")
+    expect(byPath.get("tagLabels[]")?.reindex).toBe("entry-locale")
   })
 
   it("does not collide with the base catalog-policy `tags[]` path", () => {

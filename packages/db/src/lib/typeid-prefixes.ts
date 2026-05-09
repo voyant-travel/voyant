@@ -281,7 +281,9 @@ export const PREFIXES = {
   // --- PRODUCT TAXONOMY ---
   product_types: "ptyp",
   product_categories: "pctg",
+  product_category_translations: "pctr",
   product_tags: "ptag",
+  product_tag_translations: "pttr",
   destinations: "dest",
   destination_translations: "dtrn",
   product_destinations: "pdst",

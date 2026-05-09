@@ -36,6 +36,13 @@
       "when": 1778244958437,
       "tag": "0004_contract_series_unique_prefix_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778303063333,
+      "tag": "0005_fast_the_spike",
+      "breakpoints": true
     }
   ]
 }

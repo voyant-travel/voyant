@@ -81,6 +81,52 @@ export const productCategories = pgTable(
 export type ProductCategory = typeof productCategories.$inferSelect
 export type NewProductCategory = typeof productCategories.$inferInsert
 
+/**
+ * Locale-aware category labels. Mirrors `destinationTranslations`.
+ *
+ * The catalog plane's taxonomy projection (`catalog-policy-taxonomy.ts` +
+ * `service-catalog-plane-taxonomy.ts`) reads this table per-slice locale
+ * and falls back to `productCategories.name` when no row exists for a
+ * given `(categoryId, languageTag)`. Slug stays single-locale on
+ * `productCategories.slug` per #502 non-goals — operators want stable
+ * URLs that don't shift when translations are edited.
+ */
+export const productCategoryTranslations = pgTable(
+  "product_category_translations",
+  {
+    id: typeId("product_category_translations"),
+    categoryId: typeIdRef("category_id")
+      .notNull()
+      .references(() => productCategories.id, { onDelete: "cascade" }),
+    languageTag: text("language_tag").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    seoTitle: text("seo_title"),
+    seoDescription: text("seo_description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_product_category_translations_locale").on(
+      table.categoryId,
+      table.languageTag,
+    ),
+    index("idx_product_category_translations_language").on(table.languageTag),
+    index("idx_product_category_translations_category_language_created").on(
+      table.categoryId,
+      table.languageTag,
+      table.createdAt,
+    ),
+    index("idx_product_category_translations_language_created").on(
+      table.languageTag,
+      table.createdAt,
+    ),
+  ],
+)
+
+export type ProductCategoryTranslation = typeof productCategoryTranslations.$inferSelect
+export type NewProductCategoryTranslation = typeof productCategoryTranslations.$inferInsert
+
 export const productTags = pgTable(
   "product_tags",
   {
@@ -94,6 +140,37 @@ export const productTags = pgTable(
 
 export type ProductTag = typeof productTags.$inferSelect
 export type NewProductTag = typeof productTags.$inferInsert
+
+/**
+ * Locale-aware tag labels. Slimmer than category translations — tags are
+ * short labels with no description / SEO blurbs (per #502 non-goals).
+ */
+export const productTagTranslations = pgTable(
+  "product_tag_translations",
+  {
+    id: typeId("product_tag_translations"),
+    tagId: typeIdRef("tag_id")
+      .notNull()
+      .references(() => productTags.id, { onDelete: "cascade" }),
+    languageTag: text("language_tag").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_product_tag_translations_locale").on(table.tagId, table.languageTag),
+    index("idx_product_tag_translations_language").on(table.languageTag),
+    index("idx_product_tag_translations_tag_language_created").on(
+      table.tagId,
+      table.languageTag,
+      table.createdAt,
+    ),
+    index("idx_product_tag_translations_language_created").on(table.languageTag, table.createdAt),
+  ],
+)
+
+export type ProductTagTranslation = typeof productTagTranslations.$inferSelect
+export type NewProductTagTranslation = typeof productTagTranslations.$inferInsert
 
 export const destinations = pgTable(
   "destinations",

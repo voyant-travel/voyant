@@ -28,31 +28,37 @@
  * and wire `createProductTaxonomyProjectionExtension` into
  * `createProductDocumentBuilder` so the values land in the doc.
  *
+ * Localization (#502): `product_category_translations` and
+ * `product_tag_translations` tables back the locale-aware label fields.
+ * Slice-locale rows win; if no row exists for the slice, the projection
+ * falls back to the canonical `productCategories.name` /
+ * `productTags.name`. Slug stays single-locale on `productCategories.slug`
+ * (per #502 non-goals — operators want stable URLs that don't shift when
+ * translations are edited).
+ *
  * Out of scope here:
- *   - Locale-aware names. `product_categories.name` and `product_tags.name`
- *     are single columns today (no `category_translations` / `tag_translations`
- *     tables). Adding locale support needs a schema migration with backfill
- *     and is tracked as a follow-up. Until then, these fields ship
- *     `localized: false` and the same name lands on every locale slice.
+ *   - Per-locale slugs. One canonical slug per category.
  *   - Tag hierarchy. Tags are flat by design.
  */
 
 import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
 
 const PRODUCT_TAXONOMY_FIELD_POLICY: FieldPolicyInput[] = [
-  // ── Category labels (denormalized with ancestors) ────────────────────────
+  // ── Category labels (denormalized with ancestors, locale-aware) ──────────
   // One entry per category in the linked-category-plus-ancestors set, deduped.
   // A product linked to "Hiking" (parent: "Adventure") emits both
   // ["Hiking", "Adventure"] so any-level filter matches a single equality.
+  // Locale-keyed since #502 — falls back to canonical name when no
+  // translation exists for the slice's locale.
   {
     path: "categories[]",
     class: "structural",
     merge: "source-only",
     drift: "low",
-    reindex: "facet-affecting",
+    reindex: "entry-locale",
     snapshot: "on-book",
     query: "indexed-column",
-    localized: false,
+    localized: true,
     visibility: ["staff", "customer", "partner"],
     editRole: "none",
     overrideFriction: "none",
@@ -116,14 +122,16 @@ const PRODUCT_TAXONOMY_FIELD_POLICY: FieldPolicyInput[] = [
     sourceFreshness: "sync",
   },
   {
+    // Locale-aware since #502 — the primary's name follows the same
+    // translation lookup as `categories[]`.
     path: "primaryCategoryName",
     class: "structural",
     merge: "source-only",
     drift: "low",
-    reindex: "facet-affecting",
+    reindex: "entry-locale",
     snapshot: "on-book",
     query: "indexed-column",
-    localized: false,
+    localized: true,
     visibility: ["staff", "customer", "partner"],
     editRole: "none",
     overrideFriction: "none",
@@ -151,14 +159,16 @@ const PRODUCT_TAXONOMY_FIELD_POLICY: FieldPolicyInput[] = [
   // `tagLabels[]` to avoid colliding with the legacy column. One entry per
   // linked tag.
   {
+    // Locale-aware since #502 — falls back to canonical `productTags.name`
+    // when no `product_tag_translations` row exists for the slice's locale.
     path: "tagLabels[]",
     class: "structural",
     merge: "source-only",
     drift: "low",
-    reindex: "facet-affecting",
+    reindex: "entry-locale",
     snapshot: "on-book",
     query: "indexed-column",
-    localized: false,
+    localized: true,
     visibility: ["staff", "customer", "partner"],
     editRole: "none",
     overrideFriction: "none",
