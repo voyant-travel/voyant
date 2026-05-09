@@ -1,4 +1,9 @@
-import { type AdminExtension, createAdminExtensionRegistry } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  createAdminExtensionRegistry,
+  defineAdminExtension,
+} from "@voyantjs/admin"
+import { Tag } from "lucide-react"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.
@@ -15,4 +20,32 @@ import { type AdminExtension, createAdminExtensionRegistry } from "@voyantjs/adm
  * - `invoice.details.header`
  * - `invoice.details.after-summary`
  */
-export const adminExtensions: ReadonlyArray<AdminExtension> = createAdminExtensionRegistry()
+
+/**
+ * Promotions extension — registers the sidebar nav entry pointing to
+ * `/promotions`. Routes + components live template-local in
+ * `src/components/voyant/promotions/` (pattern mirrors `legal`).
+ *
+ * Per docs/architecture/promotions-architecture.md PR5.
+ */
+const promotionsExtension = defineAdminExtension({
+  id: "promotions",
+  navigation: [
+    {
+      // Order > 0 nudges this past the default admin items so it lands
+      // alongside the operator's commercial tools.
+      order: 50,
+      items: [
+        {
+          id: "promotions",
+          title: "Promotions",
+          url: "/promotions",
+          icon: Tag,
+        },
+      ],
+    },
+  ],
+})
+
+export const adminExtensions: ReadonlyArray<AdminExtension> =
+  createAdminExtensionRegistry(promotionsExtension)
