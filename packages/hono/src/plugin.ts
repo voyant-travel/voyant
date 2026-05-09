@@ -1,4 +1,10 @@
-import type { BootstrapHandler, LinkDefinition, Subscriber } from "@voyantjs/core"
+import type {
+  BootstrapHandler,
+  EventFilterDescriptor,
+  LinkDefinition,
+  Subscriber,
+  WorkflowDescriptor,
+} from "@voyantjs/core"
 
 import type { HonoExtension, HonoModule } from "./module.js"
 
@@ -29,6 +35,17 @@ export interface HonoBundle {
   subscribers?: Subscriber[]
   /** Link definitions contributed by the plugin. */
   links?: LinkDefinition[]
+  /**
+   * Workflows contributed by the plugin. Mirrors the `Plugin.workflows`
+   * field in `@voyantjs/core` — collected at `createApp()` boot and
+   * registered with the configured workflow driver.
+   */
+  workflows?: readonly WorkflowDescriptor[]
+  /**
+   * Event filters contributed by the plugin. Mirrors
+   * `Plugin.eventFilters` in `@voyantjs/core`.
+   */
+  eventFilters?: readonly EventFilterDescriptor[]
 }
 
 /** @deprecated Prefer {@link HonoBundle}. */
