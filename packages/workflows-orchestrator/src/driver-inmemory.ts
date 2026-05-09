@@ -35,7 +35,11 @@ import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 
 import { routeEvent } from "./event-router.js"
 import { createInMemoryRunStore } from "./in-memory-store.js"
-import { cancel as orchestratorCancel, trigger as orchestratorTrigger } from "./orchestrator.js"
+import {
+  cancel as orchestratorCancel,
+  trigger as orchestratorTrigger,
+  resumeDueAlarms,
+} from "./orchestrator.js"
 import type { RunRecord, StepHandler } from "./types.js"
 
 // ---- Public factory options ----
@@ -128,9 +132,11 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
           environment: env,
           tags: triggerOpts?.tags,
           idempotencyKey: triggerOpts?.idempotencyKey,
+          delay: triggerOpts?.delay,
         },
         { store, handler, now },
       )
+      scheduleDelayedRun(record)
       return runRecordToRun<TOut>(record)
     }
 
@@ -183,6 +189,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
             },
             { store, handler, now },
           )
+          scheduleDelayedRun(record)
           matches.push({
             filterId: entry.filterId,
             targetWorkflowId: entry.targetWorkflowId,
@@ -216,6 +223,19 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
 
     async function shutdown(): Promise<void> {
       shuttingDown = true
+    }
+
+    function scheduleDelayedRun(record: RunRecord): void {
+      if (record.status !== "waiting") return
+      const wakeAt = earliestWakeAt(record)
+      if (wakeAt === undefined) return
+      const delayMs = Math.max(0, wakeAt - now())
+      const timer = setTimeout(() => {
+        void resumeDueAlarms({ runId: record.id }, { store, handler, now }).then((resumed) => {
+          if (resumed) scheduleDelayedRun(resumed)
+        })
+      }, delayMs)
+      timer.unref?.()
     }
 
     // ---- WorkflowAdmin (partial; sufficient for compliance tests) ----
@@ -275,6 +295,17 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
       admin,
     }
   }
+}
+
+function earliestWakeAt(record: RunRecord): number | undefined {
+  let earliest: number | undefined
+  for (const waitpoint of record.pendingWaitpoints) {
+    if (waitpoint.kind !== "DATETIME") continue
+    const wakeAt = typeof waitpoint.meta.wakeAt === "number" ? waitpoint.meta.wakeAt : undefined
+    if (wakeAt === undefined) continue
+    earliest = earliest === undefined ? wakeAt : Math.min(earliest, wakeAt)
+  }
+  return earliest
 }
 
 // ---- Helpers ----

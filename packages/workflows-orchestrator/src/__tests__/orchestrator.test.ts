@@ -59,6 +59,52 @@ describe("trigger()", () => {
     expect(await store.get(record.id)).toEqual(record)
   })
 
+  it("parks a delayed trigger on a synthetic DATETIME waitpoint until wakeAt", async () => {
+    let invocations = 0
+    workflow<void, string>({
+      id: "delayed",
+      async run() {
+        invocations++
+        return "done"
+      },
+    })
+    const store = createInMemoryRunStore()
+    const t0 = 1_700_000_000_000
+    let clock = t0
+    const deps = { store, handler, now: () => clock }
+
+    const rec = await trigger(
+      {
+        workflowId: "delayed",
+        workflowVersion: "v1",
+        input: undefined,
+        tenantMeta,
+        delay: "1s",
+      },
+      deps,
+    )
+    expect(rec.status).toBe("waiting")
+    expect(rec.startedAt).toBe(t0 + 1_000)
+    expect(rec.invocationCount).toBe(0)
+    expect(invocations).toBe(0)
+    expect(rec.pendingWaitpoints).toMatchObject([
+      {
+        kind: "DATETIME",
+        meta: { wakeAt: t0 + 1_000, source: "trigger.delay" },
+      },
+    ])
+
+    clock = t0 + 500
+    expect(await resumeDueAlarms({ runId: rec.id }, deps)).toBeNull()
+    expect(invocations).toBe(0)
+
+    clock = t0 + 1_000
+    const saved = await resumeDueAlarms({ runId: rec.id }, deps)
+    expect(saved?.status).toBe("completed")
+    expect(saved?.output).toBe("done")
+    expect(invocations).toBe(1)
+  })
+
   it("persists step results in the run's journal", async () => {
     workflow<number, number>({
       id: "chain",

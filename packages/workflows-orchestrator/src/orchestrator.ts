@@ -7,6 +7,8 @@
 // `cancel()` closes out a run without running compensations (they
 // must come from the tenant handler, not the orchestrator).
 
+import type { Duration } from "@voyantjs/workflows"
+
 import { registerRunAbort, signalRunAbort, unregisterRunAbort } from "./abort-registry.js"
 import { applyWaitpointInjection, type DriveOptions, driveUntilPaused } from "./drive.js"
 import { emptyJournal } from "./journal-helpers.js"
@@ -43,6 +45,12 @@ export interface TriggerArgs {
    */
   idempotencyKey?: string
   /**
+   * Optional trigger-time delay. When set to a future instant, the
+   * orchestrator persists the run in `waiting` on a synthetic DATETIME
+   * waitpoint and leaves execution to the normal wakeup/time-wheel path.
+   */
+  delay?: Duration | Date
+  /**
    * Optional journal seed. Used by external replay/resume callers
    * that need a new run to skip steps already completed by a parent
    * run.
@@ -72,6 +80,7 @@ export interface OrchestratorDeps extends DriveOptions {
 
 export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promise<RunRecord> {
   const now = deps.now ?? (() => Date.now())
+  const createdAt = now()
   // Idempotency: caller-supplied `runId` wins (explicit). Otherwise, when
   // `idempotencyKey` is supplied, derive a deterministic runId from
   // `(workflowId, idempotencyKey)`. We then route through `store.tryInsert`
@@ -84,11 +93,12 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     idempotencyKey !== undefined ? `idem-${args.workflowId}-${idempotencyKey}` : undefined
   const id = explicitRunId ?? derivedRunId ?? deps.idGenerator?.() ?? defaultRunId(now)
   const isIdempotent = explicitRunId !== undefined || derivedRunId !== undefined
+  const delayWakeAt = resolveDelayWakeAt(args.delay, createdAt)
   const record: RunRecord = {
     id,
     workflowId: args.workflowId,
     workflowVersion: args.workflowVersion,
-    status: "running",
+    status: delayWakeAt !== undefined ? "waiting" : "running",
     input: args.input,
     journal: args.initialJournal ? cloneJournal(args.initialJournal) : emptyJournal(),
     invocationCount: 0,
@@ -96,9 +106,22 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     computeTimeMs: 0,
     timeoutMs: args.timeoutMs,
     parent: args.parent,
-    pendingWaitpoints: [],
+    pendingWaitpoints:
+      delayWakeAt !== undefined
+        ? [
+            {
+              clientWaitpointId: triggerDelayWaitpointId(id),
+              kind: "DATETIME",
+              meta: {
+                wakeAt: delayWakeAt,
+                durationMs: Math.max(0, delayWakeAt - createdAt),
+                source: "trigger.delay",
+              },
+            },
+          ]
+        : [],
     streams: {},
-    startedAt: now(),
+    startedAt: delayWakeAt ?? createdAt,
     triggeredBy: args.triggeredBy ?? { kind: "api" },
     tags: args.tags ?? [],
     environment: args.environment ?? "development",
@@ -119,6 +142,9 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     // Persist up-front so concurrent `cancel(runId)` calls can find the
     // run before any invocation has completed.
     await deps.store.save(record)
+  }
+  if (delayWakeAt !== undefined) {
+    return record
   }
   const abortCtrl = registerRunAbort(id)
   try {
@@ -142,6 +168,39 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     }
   }
   return deps.store.save(record)
+}
+
+function resolveDelayWakeAt(delay: Duration | Date | undefined, now: number): number | undefined {
+  if (delay === undefined) return undefined
+  const wakeAt = delay instanceof Date ? delay.getTime() : now + durationToMs(delay)
+  return wakeAt > now ? wakeAt : undefined
+}
+
+function durationToMs(duration: Duration): number {
+  if (typeof duration === "number") return duration
+  const m = /^(\d+)(ms|s|m|h|d|w)$/.exec(duration)
+  if (!m) throw new Error(`invalid duration: ${String(duration)}`)
+  const n = Number(m[1])
+  switch (m[2]) {
+    case "ms":
+      return n
+    case "s":
+      return n * 1_000
+    case "m":
+      return n * 60_000
+    case "h":
+      return n * 3_600_000
+    case "d":
+      return n * 86_400_000
+    case "w":
+      return n * 604_800_000
+    default:
+      throw new Error(`invalid duration unit: ${m[2]}`)
+  }
+}
+
+function triggerDelayWaitpointId(runId: string): string {
+  return `trigger-delay:${runId}`
 }
 
 function cloneJournal(journal: JournalSlice): JournalSlice {

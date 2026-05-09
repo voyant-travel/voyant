@@ -21,7 +21,7 @@
 import { __resetRegistry, workflow } from "@voyantjs/workflows"
 import type { DriverFactory, DriverFactoryDeps, ServiceResolver } from "@voyantjs/workflows/driver"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
-import { beforeEach, describe, expect, test } from "vitest"
+import { beforeEach, describe, expect, test, vi } from "vitest"
 
 /**
  * Tiny in-memory ServiceResolver builder for compliance tests. Lets a test
@@ -202,6 +202,38 @@ export function runDriverComplianceSuite(
 
         const run = await driver.trigger(wf, {}, { environment: "preview" })
         expect(run.status).toBe("completed")
+      })
+
+      test("delay parks the run instead of invoking the workflow immediately", async () => {
+        const driver = makeFactory()(testFactoryDeps())
+        let invocationCount = 0
+        const wf = workflow<Record<string, never>, void>({
+          id: uniqueId("compliance-delay"),
+          async run() {
+            invocationCount++
+          },
+        })
+
+        const run = await driver.trigger(wf, {}, { delay: "1s" })
+        expect(run.status).toBe("waiting")
+        expect(invocationCount).toBe(0)
+      })
+
+      test("delay continues scheduling later DATETIME waits after the trigger delay fires", async () => {
+        const driver = makeFactory()(testFactoryDeps())
+        const completed = vi.fn()
+        const wf = workflow<Record<string, never>, void>({
+          id: uniqueId("compliance-delay-then-sleep"),
+          async run(_, ctx) {
+            await ctx.sleep("1ms")
+            completed()
+          },
+        })
+
+        const run = await driver.trigger(wf, {}, { delay: "1ms" })
+        expect(run.status).toBe("waiting")
+
+        await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1), { timeout: 250 })
       })
 
       test("idempotencyKey produces a stable run across retries (same key → same run)", async () => {

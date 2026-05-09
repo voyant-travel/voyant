@@ -2,6 +2,7 @@
 // a hard dependency on `@cloudflare/workers-types` — matching the
 // shape is enough, and tests can pass plain objects.
 
+import type { Duration } from "@voyantjs/workflows"
 import type { WaitpointInjection } from "@voyantjs/workflows-orchestrator"
 
 /**
@@ -57,6 +58,8 @@ export interface TriggerPayload {
   environment?: "production" | "preview" | "development"
   tags?: string[]
   runId?: string
+  idempotencyKey?: string
+  delay?: Duration | { wakeAt: number }
 }
 
 /** Cancel payload. */
