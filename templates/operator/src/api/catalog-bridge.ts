@@ -23,6 +23,16 @@
  *                                   reflects the rule edit. Same
  *                                   cross-package pattern as
  *                                   `availability.slot.changed`.
+ *   - `promotion.changed`         → reindex the affected product set so
+ *                                   the `bestOffer*` annotations stay
+ *                                   in sync with offer mutations and
+ *                                   boundary-scheduler firings (per
+ *                                   promotions-architecture §9.1 + §9.2).
+ *                                   Payload's `affected.kind` decides
+ *                                   between targeted reindex (products
+ *                                   list) and best-effort full sweep
+ *                                   ("all" — currently no-op pending a
+ *                                   bulk-reindex API on IndexerService).
  *   - `booking.confirmed`         → capture a snapshot graph of the
  *                                   booking's product line items via
  *                                   `captureSnapshotGraph`
@@ -89,6 +99,17 @@ interface PricingRuleChangedPayload {
   ruleId: string
   kind: "option-rule" | "option-unit-rule"
   source: "created" | "updated" | "deleted"
+}
+
+/**
+ * Mirrors `PromotionChangedEvent` from `@voyantjs/promotions/events`.
+ * Inlined for the same reason as the availability and pricing payloads
+ * above — the bridge needs only the discriminated `affected` shape.
+ */
+interface PromotionChangedPayload {
+  offerId: string
+  source: "created" | "updated" | "deleted" | "expired"
+  affected: { kind: "products"; productIds: string[] } | { kind: "all" }
 }
 
 export const catalogBridgeBundle: HonoBundle = {
@@ -195,6 +216,31 @@ export const catalogBridgeBundle: HonoBundle = {
         const ctx = buildIndexerContext(db)
         if (!ctx) return
         await ctx.service.reindexEntity("products", productId, ctx.builder)
+      })
+    })
+
+    // Promotion mutations + boundary-scheduler firings reindex the
+    // affected product set so `bestOffer*` annotations stay in sync.
+    // `affected.kind: "products"` → reindex each ID directly; `"all"`
+    // → log + no-op for now (a bulk-reindex API on IndexerService is
+    // tracked as a follow-up; in practice "all" only fires for global
+    // / market / audience scope changes which are operator-rare).
+    eventBus.subscribe<PromotionChangedPayload>("promotion.changed", async ({ data }) => {
+      if (data.affected.kind === "all") {
+        console.info("[catalog-bridge] promotion.changed affected=all — skipping bulk reindex", {
+          offerId: data.offerId,
+          source: data.source,
+        })
+        return
+      }
+      const productIds = data.affected.productIds
+      if (productIds.length === 0) return
+      await withDbFromEnv(env, async (db) => {
+        const ctx = buildIndexerContext(db)
+        if (!ctx) return
+        for (const productId of productIds) {
+          await ctx.service.reindexEntity("products", productId, ctx.builder)
+        }
       })
     })
 

@@ -17,8 +17,8 @@
  * plane adapter, PR4 via the checkout adapter.
  */
 
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { and, eq, inArray, isNull, lte, or, sql } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { type PromotionalOffer, promotionalOfferProducts, promotionalOffers } from "./schema.js"
 import type { PromotionalOfferConditions, PromotionalOfferScope } from "./validation.js"
@@ -115,7 +115,7 @@ export interface OfferDataSource {
 
 // ---------- DB-backed source factory (used by PR3 + PR4) ----------
 
-export function createDrizzleOfferDataSource(db: PostgresJsDatabase): OfferDataSource {
+export function createDrizzleOfferDataSource(db: AnyDrizzleDb): OfferDataSource {
   return {
     async fetchActiveAutoCandidates(date) {
       return db

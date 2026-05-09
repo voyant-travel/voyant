@@ -31,10 +31,12 @@ import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { productDeparturesCatalogPolicy } from "@voyantjs/products/catalog-policy-departures"
 import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
 import { productPricingCatalogPolicy } from "@voyantjs/products/catalog-policy-pricing"
+import { productPromotionsCatalogPolicy } from "@voyantjs/products/catalog-policy-promotions"
 import { productTaxonomyCatalogPolicy } from "@voyantjs/products/catalog-policy-taxonomy"
 import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
 import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
 import { createProductTaxonomyProjectionExtension } from "@voyantjs/products/service-catalog-plane-taxonomy"
+import { createProductPromotionsProjectionExtension } from "@voyantjs/promotions/service-catalog-plane-promotions"
 
 /**
  * The slice set the operator template indexes by default — staff (admin
@@ -245,6 +247,7 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
           ...productTaxonomyCatalogPolicy,
           ...productDeparturesCatalogPolicy,
           ...productPricingCatalogPolicy,
+          ...productPromotionsCatalogPolicy,
         ]),
       ],
       ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
@@ -279,6 +282,7 @@ export function createProductsDocumentBuilder(
       createProductTaxonomyProjectionExtension(),
       createProductDeparturesProjectionExtension(),
       createProductPricingProjectionExtension(),
+      createProductPromotionsProjectionExtension(),
     ],
   })
 }

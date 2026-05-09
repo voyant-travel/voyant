@@ -2,6 +2,10 @@ import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/
 import { app as apiApp } from "./api/app"
 import { runScheduledChannelPushReconciler } from "./api/channel-push-scheduled"
 import { DRAFT_REAPER_CRON, runScheduledDraftReaper } from "./api/draft-reaper-scheduled"
+import {
+  PROMOTION_BOUNDARY_SCHEDULER_CRON,
+  runScheduledPromotionBoundary,
+} from "./api/promotion-scheduled"
 
 const startHandler = createStartHandler(defaultStreamHandler)
 
@@ -34,6 +38,14 @@ export default {
       ctx.waitUntil(
         runScheduledDraftReaper(event, env).then((result) => {
           console.info("[draft-reaper] result", result)
+        }),
+      )
+      return
+    }
+    if (event.cron === PROMOTION_BOUNDARY_SCHEDULER_CRON) {
+      ctx.waitUntil(
+        runScheduledPromotionBoundary(event, env).then((result) => {
+          console.info("[promotion-scheduler] result", result)
         }),
       )
       return
