@@ -10,6 +10,12 @@ import {
   type VoyantDb,
   type VoyantVariables,
 } from "../types.js"
+
+/** See db middleware: structural shape avoids a hard `@cloudflare/workers-types` dep. */
+interface ExecutionContextLike {
+  waitUntil(promise: Promise<unknown>): void
+}
+
 import { ForbiddenApiError, UnauthorizedApiError } from "../validation.js"
 
 function hasScope(scopes: string[] | null | undefined, permission: VoyantPermission): boolean {
@@ -90,7 +96,7 @@ export function requirePermission<TBindings extends VoyantBindings>(
       return next()
     } finally {
       if (dispose) {
-        const ctx = c.executionCtx as ExecutionContext | undefined
+        const ctx = c.executionCtx as ExecutionContextLike | undefined
         if (ctx && typeof ctx.waitUntil === "function") {
           ctx.waitUntil(dispose())
         } else {

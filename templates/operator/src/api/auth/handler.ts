@@ -67,30 +67,23 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
 }
 
 /**
- * Create a fresh Better Auth instance per request.
+ * Build a Better Auth instance backed by a caller-provided drizzle
+ * client. The caller owns the Pool lifecycle (open before, dispose
+ * after) so the same Pool can serve both the auth lookup and any
+ * subsequent queries the route does — without spinning up a second
+ * connection per request.
  *
- * Cloudflare Workers isolate I/O per request — a DB connection created in
- * one request cannot be reused by another ("Cannot perform I/O on behalf of
- * a different request"). So we must NOT cache the auth instance.
+ * Cloudflare Workers isolate I/O per request — a DB connection created
+ * in one request cannot be reused by another ("Cannot perform I/O on
+ * behalf of a different request"). The auth instance is therefore not
+ * cached either.
  */
-/**
- * Builds a per-call Better Auth instance. Returns the auth object plus
- * a `dispose()` the caller schedules (typically via
- * `c.executionCtx.waitUntil`) after the auth-using work has settled.
- * Without `dispose`, the Pool stays open until isolate teardown — at
- * scale that exhausts Neon's connection budget because every
- * authenticated request opens a fresh WebSocket.
- */
-function getBetterAuth(env: CloudflareBindings): {
-  auth: ReturnType<typeof createBetterAuth>
-  dispose: () => Promise<void>
-} {
-  const { db, dispose } = dbFromEnvForApp(env)
+function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEnvForApp>["db"]) {
   const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
   const emailReplyTo = resolveEmailReplyTo(env)
 
-  const auth = createBetterAuth({
+  return createBetterAuth({
     // `db` is a `NeonDatabase` (neon-serverless WebSocket); the
     // `CreateBetterAuthOptions.db` type still references the older
     // `getDb` return union (postgres-js + neon-http). Drizzle's
@@ -131,15 +124,15 @@ function getBetterAuth(env: CloudflareBindings): {
       })
     },
   })
-  return { auth, dispose }
 }
 
 export async function resolveAuthRequest(
   request: Request,
   env: CloudflareBindings,
 ): Promise<VoyantRequestAuthContext | null> {
-  const { auth, dispose } = getBetterAuth(env)
+  const { db, dispose } = dbFromEnvForApp(env)
   try {
+    const auth = buildBetterAuth(env, db)
     const session = await auth.api.getSession({ headers: request.headers })
 
     if (!session) {
@@ -182,57 +175,60 @@ export async function hasAuthPermission(
  * Validates the session cookie directly (no Bearer token needed).
  */
 auth.get("/auth/me", async (c) => {
-  const { auth: betterAuth, dispose } = getBetterAuth(c.env)
-  let session: Awaited<ReturnType<typeof betterAuth.api.getSession>>
+  // The auth sub-app is mounted before the request-scoped `db`
+  // middleware in `createApp` (auth routes are public — no requireAuth
+  // gate), so `c.var.db` is undefined here. Build the per-request Pool
+  // ourselves and use it for both better-auth's session lookup and
+  // the profile query that follows.
+  const { db, dispose } = dbFromEnvForApp(c.env)
   try {
-    session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+    const betterAuth = buildBetterAuth(c.env, db)
+    const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+    if (!session) {
+      return c.json({ error: "Unauthorized" }, 401)
+    }
+
+    const [row] = await db
+      .select({
+        id: authUser.id,
+        email: authUser.email,
+        createdAt: authUser.createdAt,
+        firstName: userProfilesTable.firstName,
+        lastName: userProfilesTable.lastName,
+        locale: userProfilesTable.locale,
+        timezone: userProfilesTable.timezone,
+        uiPrefs: userProfilesTable.uiPrefs,
+        avatarUrl: userProfilesTable.avatarUrl,
+        isSuperAdmin: userProfilesTable.isSuperAdmin,
+        isSupportUser: userProfilesTable.isSupportUser,
+      })
+      .from(authUser)
+      .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id))
+      .where(eq(authUser.id, session.user.id))
+      .limit(1)
+
+    if (!row) {
+      return c.json({ error: "User not found" }, 404)
+    }
+
+    return c.json({
+      id: row.id,
+      email: row.email,
+      firstName: row.firstName ?? null,
+      lastName: row.lastName ?? null,
+      locale: row.locale ?? "en",
+      timezone: row.timezone ?? null,
+      uiPrefs: (row.uiPrefs as Record<string, unknown> | null) ?? null,
+      isSuperAdmin: row.isSuperAdmin ?? false,
+      isSupportUser: row.isSupportUser ?? false,
+      createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+      profilePictureUrl: row.avatarUrl ?? null,
+    })
   } finally {
     // Schedule dispose AFTER queries settle. waitUntil keeps the
     // worker alive while the WebSocket close handshake completes.
     c.executionCtx.waitUntil(dispose())
   }
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401)
-  }
-
-  const db = c.get("db")
-
-  const [row] = await db
-    .select({
-      id: authUser.id,
-      email: authUser.email,
-      createdAt: authUser.createdAt,
-      firstName: userProfilesTable.firstName,
-      lastName: userProfilesTable.lastName,
-      locale: userProfilesTable.locale,
-      timezone: userProfilesTable.timezone,
-      uiPrefs: userProfilesTable.uiPrefs,
-      avatarUrl: userProfilesTable.avatarUrl,
-      isSuperAdmin: userProfilesTable.isSuperAdmin,
-      isSupportUser: userProfilesTable.isSupportUser,
-    })
-    .from(authUser)
-    .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id))
-    .where(eq(authUser.id, session.user.id))
-    .limit(1)
-
-  if (!row) {
-    return c.json({ error: "User not found" }, 404)
-  }
-
-  return c.json({
-    id: row.id,
-    email: row.email,
-    firstName: row.firstName ?? null,
-    lastName: row.lastName ?? null,
-    locale: row.locale ?? "en",
-    timezone: row.timezone ?? null,
-    uiPrefs: (row.uiPrefs as Record<string, unknown> | null) ?? null,
-    isSuperAdmin: row.isSuperAdmin ?? false,
-    isSupportUser: row.isSupportUser ?? false,
-    createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
-    profilePictureUrl: row.avatarUrl ?? null,
-  })
 })
 
 /**
@@ -242,62 +238,63 @@ auth.get("/auth/me", async (c) => {
  * but this route serves as an idempotent fallback.
  */
 auth.get("/auth/status", async (c) => {
-  const { auth: betterAuth, dispose } = getBetterAuth(c.env)
-  let session: Awaited<ReturnType<typeof betterAuth.api.getSession>>
+  // See `/auth/me` above — auth sub-app runs before the request `db`
+  // middleware, so own the Pool here.
+  const { db, dispose } = dbFromEnvForApp(c.env)
   try {
-    session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
-  } finally {
-    c.executionCtx.waitUntil(dispose())
-  }
-  if (!session) {
-    return c.json({ userExists: false, authenticated: false })
-  }
-
-  const userId = session.user.id
-  const db = c.get("db")
-
-  try {
-    const [existingProfile] = await db
-      .select({ id: userProfilesTable.id })
-      .from(userProfilesTable)
-      .where(eq(userProfilesTable.id, userId))
-      .limit(1)
-
-    if (existingProfile) {
-      return c.json({ userExists: true, authenticated: true })
+    const betterAuth = buildBetterAuth(c.env, db)
+    const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+    if (!session) {
+      return c.json({ userExists: false, authenticated: false })
     }
 
-    // Profile doesn't exist yet — create from BA user data
-    const [baUser] = await db
-      .select({ name: authUser.name, email: authUser.email, image: authUser.image })
-      .from(authUser)
-      .where(eq(authUser.id, userId))
-      .limit(1)
+    const userId = session.user.id
 
-    if (!baUser?.email) {
+    try {
+      const [existingProfile] = await db
+        .select({ id: userProfilesTable.id })
+        .from(userProfilesTable)
+        .where(eq(userProfilesTable.id, userId))
+        .limit(1)
+
+      if (existingProfile) {
+        return c.json({ userExists: true, authenticated: true })
+      }
+
+      // Profile doesn't exist yet — create from BA user data
+      const [baUser] = await db
+        .select({ name: authUser.name, email: authUser.email, image: authUser.image })
+        .from(authUser)
+        .where(eq(authUser.id, userId))
+        .limit(1)
+
+      if (!baUser?.email) {
+        return c.json(
+          { userExists: false, authenticated: true, reason: `No email found for user ${userId}.` },
+          400,
+        )
+      }
+
+      const nameParts = baUser.name?.split(" ") ?? []
+      const firstName = nameParts[0] ?? null
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null
+
+      await db
+        .insert(userProfilesTable)
+        .values({ id: userId, firstName, lastName, avatarUrl: baUser.image ?? null })
+        .onConflictDoNothing()
+
+      return c.json({ userExists: true, authenticated: true })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error("[auth/status] Error:", message)
       return c.json(
-        { userExists: false, authenticated: true, reason: `No email found for user ${userId}.` },
-        400,
+        { userExists: false, authenticated: true, reason: `Provisioning error: ${message}` },
+        500,
       )
     }
-
-    const nameParts = baUser.name?.split(" ") ?? []
-    const firstName = nameParts[0] ?? null
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null
-
-    await db
-      .insert(userProfilesTable)
-      .values({ id: userId, firstName, lastName, avatarUrl: baUser.image ?? null })
-      .onConflictDoNothing()
-
-    return c.json({ userExists: true, authenticated: true })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error("[auth/status] Error:", message)
-    return c.json(
-      { userExists: false, authenticated: true, reason: `Provisioning error: ${message}` },
-      500,
-    )
+  } finally {
+    c.executionCtx.waitUntil(dispose())
   }
 })
 
@@ -307,9 +304,15 @@ auth.get("/auth/status", async (c) => {
  * sign-up route loaders to pick the right flow.
  */
 auth.get("/auth/bootstrap-status", async (c) => {
-  const db = c.get("db")
-  const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-  return c.json({ hasUsers: (row?.count ?? 0) > 0 })
+  // See `/auth/me` above — auth sub-app runs before the request `db`
+  // middleware, so own the Pool here.
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
+    return c.json({ hasUsers: (row?.count ?? 0) > 0 })
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
 })
 
 /**
@@ -320,8 +323,9 @@ auth.get("/auth/bootstrap-status", async (c) => {
  * user exists, the hook throws and BA returns an error to the client.
  */
 auth.all("/auth/*", async (c) => {
-  const { auth: betterAuth, dispose } = getBetterAuth(c.env)
+  const { db, dispose } = dbFromEnvForApp(c.env)
   try {
+    const betterAuth = buildBetterAuth(c.env, db)
     return await betterAuth.handler(c.req.raw)
   } finally {
     c.executionCtx.waitUntil(dispose())
