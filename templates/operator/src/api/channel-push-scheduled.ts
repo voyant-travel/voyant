@@ -21,7 +21,7 @@ import {
 } from "@voyantjs/distribution/channel-push"
 
 import { type BookingEngineEnv, getBookingEngineRegistry } from "./lib/booking-engine-runtime"
-import { getDbFromHyperdrive } from "./lib/db"
+import { getDbFromEnv } from "./lib/db"
 
 const BOOKING_LINK_CRON = "*/15 * * * *"
 const AVAILABILITY_CRON = "0 * * * *"
@@ -32,7 +32,7 @@ export async function runScheduledChannelPushReconciler(
   env: CloudflareBindings & BookingEngineEnv,
 ): Promise<void> {
   const deps = {
-    db: getDbFromHyperdrive(env),
+    db: getDbFromEnv(env),
     registry: getBookingEngineRegistry(env),
   }
 

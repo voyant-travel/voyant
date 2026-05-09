@@ -35,12 +35,6 @@
           "remote": true
         }
       ],
-      "hyperdrive": [
-        {
-          "binding": "HYPERDRIVE",
-          "id": "ecbf6acacf544a949d9f805cc5c030a6"
-        }
-      ]
     },
     "prod": {
       "routes": [
@@ -69,12 +63,6 @@
         {
           "binding": "CACHE",
           "id": "b1b365feebb849428515adc1d112d6be"
-        }
-      ],
-      "hyperdrive": [
-        {
-          "binding": "HYPERDRIVE",
-          "id": "99fc2fc264eb4c2b8ba8a17f67f1dc6f"
         }
       ],
       "observability": {

@@ -26,7 +26,7 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm"
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { getDbFromHyperdrive } from "./lib/db"
+import { getDbFromEnv } from "./lib/db"
 
 type InvitationsBindings = CloudflareBindings
 type InvitationsVariables = {
@@ -75,7 +75,7 @@ function getAppUrl(env: InvitationsBindings): string {
 }
 
 async function assertSuperAdmin(env: InvitationsBindings, userId: string): Promise<boolean> {
-  const db = getDbFromHyperdrive(env)
+  const db = getDbFromEnv(env)
   const [row] = await db
     .select({ isSuperAdmin: userProfilesTable.isSuperAdmin })
     .from(userProfilesTable)
@@ -94,7 +94,7 @@ export function createInvitationsRoutes() {
       return c.json({ error: "Forbidden" }, 403)
     }
 
-    const db = getDbFromHyperdrive(c.env)
+    const db = getDbFromEnv(c.env, c.executionCtx)
     const rows = await db
       .select({
         id: userInvitationsTable.id,
@@ -124,7 +124,7 @@ export function createInvitationsRoutes() {
       return c.json({ error: "Invalid payload", details: parsed.error.issues }, 400)
     }
 
-    const db = getDbFromHyperdrive(c.env)
+    const db = getDbFromEnv(c.env, c.executionCtx)
     const normalizedEmail = parsed.data.email.trim().toLowerCase()
 
     // If this email already has a BA user, block the invite.
@@ -193,7 +193,7 @@ export function createInvitationsRoutes() {
     }
 
     const id = c.req.param("id")
-    const db = getDbFromHyperdrive(c.env)
+    const db = getDbFromEnv(c.env, c.executionCtx)
     await db.delete(userInvitationsTable).where(eq(userInvitationsTable.id, id))
     return c.json({ data: { id } })
   })
@@ -202,7 +202,7 @@ export function createInvitationsRoutes() {
   routes.get("/v1/public/invitations/:token", async (c) => {
     const token = c.req.param("token")
     const tokenHash = await sha256Hex(token)
-    const db = getDbFromHyperdrive(c.env)
+    const db = getDbFromEnv(c.env, c.executionCtx)
 
     const [row] = await db
       .select({
@@ -236,7 +236,7 @@ export function createInvitationsRoutes() {
     }
 
     const tokenHash = await sha256Hex(token)
-    const db = getDbFromHyperdrive(c.env)
+    const db = getDbFromEnv(c.env, c.executionCtx)
     const now = new Date()
 
     const [invite] = await db

@@ -33,7 +33,7 @@ import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handl
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { createInvitationsRoutes } from "./invitations"
-import { getDbFromHyperdrive } from "./lib/db"
+import { getDbFromEnv } from "./lib/db"
 import { createMediaStorage, guessMimeType, resolveDocumentDownloadUrl } from "./lib/storage"
 import { mountCatalogMcpRoutes, mountCatalogSearchRoutes } from "./mcp"
 
@@ -88,7 +88,7 @@ const bookingsHonoModule = createBookingsHonoModule({
 })
 
 export const app = createApp<CloudflareBindings>({
-  db: (env) => getDbFromHyperdrive(env),
+  db: (env) => getDbFromEnv(env),
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
     "/v1/public/storefront-verification",

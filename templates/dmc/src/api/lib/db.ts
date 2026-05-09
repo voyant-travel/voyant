@@ -1,4 +1,6 @@
+import { Pool } from "@neondatabase/serverless"
 import { createDbClient, type DbAdapter } from "@voyantjs/db"
+import { drizzle as drizzleNeonWs, type NeonDatabase } from "drizzle-orm/neon-serverless"
 
 /**
  * Database client helpers with NO schema passing.
@@ -12,31 +14,57 @@ export function getDb(adapter?: DbAdapter) {
   return createDbClient(url, { adapter: effectiveAdapter })
 }
 
-export function getDbFromEnv(env: CloudflareBindings, adapter?: DbAdapter) {
-  const url = env.DATABASE_URL
-  const effectiveAdapter = adapter || "edge"
-  return createDbClient(url, { adapter: effectiveAdapter })
+/**
+ * `@neondatabase/serverless`'s `Pool` extends `pg.Pool`. Some pnpm
+ * resolution paths don't merge the inherited `pg.Pool` methods into
+ * the visible TS surface, so the constructor + `end()` call go via
+ * a structural cast. Runtime behavior is unchanged.
+ */
+type PgPoolApi = {
+  end(): Promise<void>
+}
+function newPool(connectionString: string): Pool & PgPoolApi {
+  const Ctor = Pool as unknown as new (cfg: { connectionString: string }) => Pool & PgPoolApi
+  return new Ctor({ connectionString })
 }
 
 /**
- * Get database client using Hyperdrive connection pooling.
- * Falls back to regular connection if Hyperdrive is not configured.
+ * Per-request Neon Postgres client over WebSocket. Supports real
+ * Postgres transactions (drizzle's `db.transaction(...)`).
  *
- * Hyperdrive provides:
- * - Connection pooling at the edge (no cold connection overhead)
- * - Automatic connection reuse across requests
- * - Lower latency than direct Neon HTTP driver
- *
- * @see https://developers.cloudflare.com/hyperdrive/
+ * Pool lifecycle: pass `executionCtx` whenever it's available so
+ * `pool.end()` is scheduled via `waitUntil` and the WebSocket closes
+ * cleanly before the isolate sleeps. Without an `executionCtx`, the
+ * Pool is left for the Workers runtime to reclaim on isolate teardown
+ * — fine for low-traffic paths, but at scale prefer `withDbFromEnv`
+ * below, which owns the Pool lifecycle explicitly.
  */
-export function getDbFromHyperdrive(env: CloudflareBindings) {
-  // Prefer Hyperdrive if available
-  if (env.HYPERDRIVE) {
-    // Hyperdrive provides a pooled connection string for use with postgres.js
-    return createDbClient(env.HYPERDRIVE.connectionString, { adapter: "node" })
+export function getDbFromEnv(
+  env: CloudflareBindings,
+  executionCtx?: ExecutionContext,
+): NeonDatabase {
+  const pool = newPool(env.DATABASE_URL)
+  if (executionCtx) {
+    executionCtx.waitUntil(pool.end().catch(() => {}))
   }
+  return drizzleNeonWs(pool)
+}
 
-  // Fallback to regular edge adapter if Hyperdrive is not configured
-  console.warn("[db] Hyperdrive not configured, falling back to edge adapter")
-  return getDbFromEnv(env)
+/**
+ * Higher-order helper for code paths without an `ExecutionContext`
+ * (event-bus subscribers, scheduled handlers, retry workers). Owns the
+ * Pool lifecycle: opens, hands the drizzle client to `fn`, closes on
+ * settle. Use this anywhere `c.executionCtx` isn't available — never
+ * leak a `new Pool(...)` outside a single request handler in a Worker.
+ */
+export async function withDbFromEnv<T>(
+  env: CloudflareBindings,
+  fn: (db: NeonDatabase) => Promise<T>,
+): Promise<T> {
+  const pool = newPool(env.DATABASE_URL)
+  try {
+    return await fn(drizzleNeonWs(pool))
+  } finally {
+    await pool.end().catch(() => {})
+  }
 }

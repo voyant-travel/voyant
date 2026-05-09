@@ -54,7 +54,7 @@ import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
-import { getDbFromHyperdrive } from "./db"
+import { getDbFromEnv } from "./db"
 import { resolveOperatorSellTaxRate } from "./operator-tax-policy"
 
 let _registry: SourceAdapterRegistry | undefined
@@ -93,9 +93,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
       createProductsBookingHandler({
         holds: {
           async place(input) {
-            const db = getDbFromHyperdrive(
-              env as Parameters<typeof getDbFromHyperdrive>[0],
-            ) as PostgresJsDatabase
+            const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
             const result = await placeAvailabilityHold(db, input)
             if (result.status === "ok") {
               return {
@@ -121,17 +119,13 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
             }
           },
           async extend(input) {
-            const db = getDbFromHyperdrive(
-              env as Parameters<typeof getDbFromHyperdrive>[0],
-            ) as PostgresJsDatabase
+            const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
             const result = await extendAvailabilityHold(db, input)
             if (result.status === "ok") return { status: "ok", expiresAt: result.expiresAt }
             return { status: "not_found" }
           },
           async release(holdToken) {
-            const db = getDbFromHyperdrive(
-              env as Parameters<typeof getDbFromHyperdrive>[0],
-            ) as PostgresJsDatabase
+            const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
             await releaseAvailabilityHold(db, holdToken)
           },
         },
@@ -140,14 +134,17 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         // env is captured by the closure so the bridge can resolve
         // the per-request DB lazily.
         async quickCreate(input, opts) {
-          // The hyperdrive helper returns a union (postgres-js | neon-http).
-          // The operator deploys against postgres-js in every environment
-          // we run today; quickCreateBooking's typed signature accepts
-          // postgres-js, so we narrow at the call site rather than
-          // widening the helper return type.
-          const db = getDbFromHyperdrive(
-            env as Parameters<typeof getDbFromHyperdrive>[0],
-          ) as PostgresJsDatabase
+          // `getDbFromEnv` returns the union AnyDrizzleDb (postgres-js |
+          // neon-http). `quickCreateBooking`'s signature still asks for
+          // postgres-js, so we force-narrow here. After #500 the runtime
+          // is neon-http on Workers; the cast is a TS-suppress, not a
+          // runtime guarantee. If `quickCreateBooking` reaches for
+          // postgres-js-only APIs (real PG transactions, advisory
+          // locks) under the neon-http instance it will surface at
+          // runtime — at which point the right fix is to widen the
+          // service signature to AnyDrizzleDb, not reintroduce
+          // Hyperdrive.
+          const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
           const outcome = await quickCreateBooking(db, input, opts)
           if (outcome.status === "ok") {
             await persistQuickCreateTaxLines(db, outcome.result.booking.id, input.taxLines)
@@ -326,9 +323,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         async commitBridge(input, opts) {
           // The handler validates `ratePlanId` upstream — defensive
           // double-check here would be redundant.
-          const db = getDbFromHyperdrive(
-            env as Parameters<typeof getDbFromHyperdrive>[0],
-          ) as PostgresJsDatabase
+          const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
           try {
             const outcome = await hospitalityBookingsService.createStayBooking(
               db,
@@ -416,9 +411,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           }
         },
         async commitBridge(input, opts) {
-          const db = getDbFromHyperdrive(
-            env as Parameters<typeof getDbFromHyperdrive>[0],
-          ) as PostgresJsDatabase
+          const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
           try {
             const result = await cruisesBookingService.createCruiseBooking(
               db,

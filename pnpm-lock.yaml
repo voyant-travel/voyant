@@ -5000,6 +5000,9 @@ importers:
       '@fontsource-variable/inter':
         specifier: ^5.2.8
         version: 5.2.8
+      '@neondatabase/serverless':
+        specifier: ^1.0.2
+        version: 1.0.2
       '@tailwindcss/vite':
         specifier: ^4.2.2
         version: 4.2.2(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
@@ -5280,6 +5283,9 @@ importers:
       '@types/node':
         specifier: ^25.5.2
         version: 25.5.2
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -5331,6 +5337,9 @@ importers:
       '@fontsource-variable/inter':
         specifier: ^5.2.8
         version: 5.2.8
+      '@neondatabase/serverless':
+        specifier: ^1.0.2
+        version: 1.0.2
       '@tailwindcss/vite':
         specifier: ^4.2.2
         version: 4.2.2(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))

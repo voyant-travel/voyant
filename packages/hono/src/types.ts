@@ -11,6 +11,7 @@ import type {
 } from "@voyantjs/core"
 import type { KVStore } from "@voyantjs/utils/cache"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
+import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 
@@ -35,7 +36,7 @@ export interface VoyantBindings {
   CACHE?: KVStore
 }
 
-export type VoyantDb = PostgresJsDatabase | NeonHttpDatabase
+export type VoyantDb = PostgresJsDatabase | NeonHttpDatabase | NeonWsDatabase
 export type VoyantQueryRuntime = QueryRunner
 
 export type VoyantVariables = CoreVoyantVariables & {

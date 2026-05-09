@@ -8,9 +8,6 @@ interface CloudflareBindings {
   // R2 (private document storage, optional)
   DOCUMENTS_BUCKET?: R2Bucket
 
-  // Hyperdrive (connection pooling)
-  HYPERDRIVE: Hyperdrive
-
   // Secrets
   INTERNAL_API_KEY: string
   SESSION_CLAIMS_SECRET: string

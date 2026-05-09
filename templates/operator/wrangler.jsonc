@@ -23,13 +23,6 @@
       "bucket_name": "voyant-documents"
     }
   ],
-  "hyperdrive": [
-    {
-      "binding": "HYPERDRIVE",
-      "id": "dev-placeholder",
-      "localConnectionString": "postgresql://voyant:voyant@localhost:5434/voyant_operator"
-    }
-  ],
   "triggers": {
     "crons": [
       // Channel-push reconcilers (per channel-push-architecture.md §13.2).

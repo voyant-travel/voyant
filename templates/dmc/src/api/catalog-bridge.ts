@@ -35,7 +35,7 @@ import {
   getFieldPolicyRegistries,
   withEmbedding,
 } from "./lib/catalog-runtime"
-import { getDbFromHyperdrive } from "./lib/db"
+import { getDbFromEnv } from "./lib/db"
 
 interface ProductEventPayload {
   id: string
@@ -69,7 +69,7 @@ export const catalogBridgeBundle: HonoBundle = {
         slices,
         registries: getFieldPolicyRegistries(),
       })
-      const db = getDbFromHyperdrive(env)
+      const db = getDbFromEnv(env)
       const builder = withEmbedding(
         createProductDocumentBuilder(db, { sellerOperatorId }),
         embeddings,
@@ -97,7 +97,7 @@ export const catalogBridgeBundle: HonoBundle = {
     })
 
     eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", async ({ data }) => {
-      const db = getDbFromHyperdrive(env)
+      const db = getDbFromEnv(env)
       // Catalog snapshots use the staff resolver scope — they're an audit
       // record, not a customer-facing rendering. Booking-time prices /
       // descriptions stay readable to ops even after audience-scoped

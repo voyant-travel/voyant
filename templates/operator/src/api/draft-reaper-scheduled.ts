@@ -30,7 +30,7 @@ import {
   getBookingEngineRegistry,
   getOwnedBookingHandlerRegistry,
 } from "./lib/booking-engine-runtime"
-import { getDbFromHyperdrive } from "./lib/db"
+import { getDbFromEnv } from "./lib/db"
 
 export const DRAFT_REAPER_CRON = "5 * * * *"
 
@@ -48,7 +48,7 @@ export async function runScheduledDraftReaper(
   _event: ScheduledController,
   env: CloudflareBindings & BookingEngineEnv,
 ): Promise<ReaperResult> {
-  const db = getDbFromHyperdrive(env)
+  const db = getDbFromEnv(env)
   const registry = getBookingEngineRegistry(env)
   const ownedHandlers = getOwnedBookingHandlerRegistry(env)
 
