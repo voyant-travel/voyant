@@ -19,6 +19,7 @@ import {
   insertProductActivationSettingSchema,
   insertProductCapabilitySchema,
   insertProductCategorySchema,
+  insertProductCategoryTranslationSchema,
   insertProductDeliveryFormatSchema,
   insertProductDestinationSchema,
   insertProductFaqSchema,
@@ -30,6 +31,7 @@ import {
   insertProductOptionTranslationSchema,
   insertProductSchema,
   insertProductTagSchema,
+  insertProductTagTranslationSchema,
   insertProductTicketSettingSchema,
   insertProductTranslationSchema,
   insertProductTypeSchema,
@@ -41,6 +43,7 @@ import {
   productAggregatesQuerySchema,
   productCapabilityListQuerySchema,
   productCategoryListQuerySchema,
+  productCategoryTranslationListQuerySchema,
   productDeliveryFormatListQuerySchema,
   productDestinationListQuerySchema,
   productFaqListQuerySchema,
@@ -51,6 +54,7 @@ import {
   productOptionListQuerySchema,
   productOptionTranslationListQuerySchema,
   productTagListQuerySchema,
+  productTagTranslationListQuerySchema,
   productTicketSettingListQuerySchema,
   productTranslationListQuerySchema,
   productTypeListQuerySchema,
@@ -66,6 +70,7 @@ import {
   updateProductActivationSettingSchema,
   updateProductCapabilitySchema,
   updateProductCategorySchema,
+  updateProductCategoryTranslationSchema,
   updateProductDeliveryFormatSchema,
   updateProductFaqSchema,
   updateProductFeatureSchema,
@@ -75,6 +80,7 @@ import {
   updateProductOptionTranslationSchema,
   updateProductSchema,
   updateProductTagSchema,
+  updateProductTagTranslationSchema,
   updateProductTicketSettingSchema,
   updateProductTranslationSchema,
   updateProductTypeSchema,
@@ -647,6 +653,107 @@ export const productRoutes = new Hono<Env>()
 
     if (!row) {
       return c.json({ error: "Destination translation not found" }, 404)
+    }
+
+    return c.json({ success: true }, 200)
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Product category translations (locale-aware names + descriptions).
+  // Mirrors the destinations translation surface above. The catalog plane's
+  // taxonomy projection reads these per-slice locale and falls back to
+  // `productCategories.name` when no row exists for a given locale.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  .get("/product-category-translations", async (c) => {
+    const query = parseQuery(c, productCategoryTranslationListQuerySchema)
+    return c.json(await productsService.listProductCategoryTranslations(c.get("db"), query))
+  })
+
+  .post("/product-categories/:id/translations", async (c) => {
+    const row = await productsService.upsertProductCategoryTranslation(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, insertProductCategoryTranslationSchema),
+    )
+
+    if (!row) {
+      return c.json({ error: "Product category not found" }, 404)
+    }
+
+    return c.json({ data: row }, 201)
+  })
+
+  .patch("/product-category-translations/:id", async (c) => {
+    const row = await productsService.updateProductCategoryTranslation(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateProductCategoryTranslationSchema),
+    )
+
+    if (!row) {
+      return c.json({ error: "Product category translation not found" }, 404)
+    }
+
+    return c.json({ data: row })
+  })
+
+  .delete("/product-category-translations/:id", async (c) => {
+    const row = await productsService.deleteProductCategoryTranslation(
+      c.get("db"),
+      c.req.param("id"),
+    )
+
+    if (!row) {
+      return c.json({ error: "Product category translation not found" }, 404)
+    }
+
+    return c.json({ success: true }, 200)
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Product tag translations. Slimmer shape — tags are short labels with no
+  // description / SEO blurbs (per #502 non-goals).
+  // ──────────────────────────────────────────────────────────────────────────
+
+  .get("/product-tag-translations", async (c) => {
+    const query = parseQuery(c, productTagTranslationListQuerySchema)
+    return c.json(await productsService.listProductTagTranslations(c.get("db"), query))
+  })
+
+  .post("/product-tags/:id/translations", async (c) => {
+    const row = await productsService.upsertProductTagTranslation(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, insertProductTagTranslationSchema),
+    )
+
+    if (!row) {
+      return c.json({ error: "Product tag not found" }, 404)
+    }
+
+    return c.json({ data: row }, 201)
+  })
+
+  .patch("/product-tag-translations/:id", async (c) => {
+    const row = await productsService.updateProductTagTranslation(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, updateProductTagTranslationSchema),
+    )
+
+    if (!row) {
+      return c.json({ error: "Product tag translation not found" }, 404)
+    }
+
+    return c.json({ data: row })
+  })
+
+  .delete("/product-tag-translations/:id", async (c) => {
+    const row = await productsService.deleteProductTagTranslation(c.get("db"), c.req.param("id"))
+
+    if (!row) {
+      return c.json({ error: "Product tag translation not found" }, 404)
     }
 
     return c.json({ success: true }, 200)

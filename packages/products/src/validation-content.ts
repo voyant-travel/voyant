@@ -94,6 +94,37 @@ export const destinationTranslationListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
+
+const productCategoryTranslationCoreSchema = z.object({
+  languageTag: languageTagSchema,
+  name: z.string().min(1).max(255),
+  description: z.string().optional().nullable(),
+  seoTitle: z.string().max(255).optional().nullable(),
+  seoDescription: z.string().optional().nullable(),
+})
+export const insertProductCategoryTranslationSchema = productCategoryTranslationCoreSchema
+export const updateProductCategoryTranslationSchema = productCategoryTranslationCoreSchema.partial()
+export const productCategoryTranslationListQuerySchema = z.object({
+  categoryId: z.string().optional(),
+  languageTag: languageTagSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+
+// Tag translations are minimal: just `name`. Tags are short labels;
+// description / SEO blurbs aren't needed (per #502 non-goals).
+const productTagTranslationCoreSchema = z.object({
+  languageTag: languageTagSchema,
+  name: z.string().min(1).max(255),
+})
+export const insertProductTagTranslationSchema = productTagTranslationCoreSchema
+export const updateProductTagTranslationSchema = productTagTranslationCoreSchema.partial()
+export const productTagTranslationListQuerySchema = z.object({
+  tagId: z.string().optional(),
+  languageTag: languageTagSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+})
 export const insertProductDestinationSchema = productDestinationCoreSchema
 export const updateProductDestinationSchema = productDestinationCoreSchema.partial()
 export const productDestinationListQuerySchema = z.object({
@@ -115,6 +146,14 @@ export type InsertDestinationTranslation = z.infer<typeof insertDestinationTrans
 export type UpdateDestinationTranslation = z.infer<typeof updateDestinationTranslationSchema>
 export type InsertProductDestination = z.infer<typeof insertProductDestinationSchema>
 export type UpdateProductDestination = z.infer<typeof updateProductDestinationSchema>
+export type InsertProductCategoryTranslation = z.infer<
+  typeof insertProductCategoryTranslationSchema
+>
+export type UpdateProductCategoryTranslation = z.infer<
+  typeof updateProductCategoryTranslationSchema
+>
+export type InsertProductTagTranslation = z.infer<typeof insertProductTagTranslationSchema>
+export type UpdateProductTagTranslation = z.infer<typeof updateProductTagTranslationSchema>
 
 const productTranslationCoreSchema = z.object({
   languageTag: languageTagSchema,

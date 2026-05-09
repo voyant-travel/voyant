@@ -11,6 +11,7 @@ import {
   productCapabilities,
   productCategories,
   productCategoryProducts,
+  productCategoryTranslations,
   productDayServices,
   productDays,
   productDeliveryFormats,
@@ -26,6 +27,7 @@ import {
   products,
   productTagProducts,
   productTags,
+  productTagTranslations,
   productTicketSettings,
   productTranslations,
   productTypes,
@@ -46,6 +48,7 @@ import type {
   insertProductActivationSettingSchema,
   insertProductCapabilitySchema,
   insertProductCategorySchema,
+  insertProductCategoryTranslationSchema,
   insertProductDeliveryFormatSchema,
   insertProductFaqSchema,
   insertProductFeatureSchema,
@@ -56,6 +59,7 @@ import type {
   insertProductOptionTranslationSchema,
   insertProductSchema,
   insertProductTagSchema,
+  insertProductTagTranslationSchema,
   insertProductTicketSettingSchema,
   insertProductTranslationSchema,
   insertProductTypeSchema,
@@ -66,6 +70,7 @@ import type {
   productActivationSettingListQuerySchema,
   productCapabilityListQuerySchema,
   productCategoryListQuerySchema,
+  productCategoryTranslationListQuerySchema,
   productDeliveryFormatListQuerySchema,
   productDestinationListQuerySchema,
   productFaqListQuerySchema,
@@ -76,6 +81,7 @@ import type {
   productOptionListQuerySchema,
   productOptionTranslationListQuerySchema,
   productTagListQuerySchema,
+  productTagTranslationListQuerySchema,
   productTicketSettingListQuerySchema,
   productTranslationListQuerySchema,
   productTypeListQuerySchema,
@@ -91,6 +97,7 @@ import type {
   updateProductActivationSettingSchema,
   updateProductCapabilitySchema,
   updateProductCategorySchema,
+  updateProductCategoryTranslationSchema,
   updateProductDeliveryFormatSchema,
   updateProductFaqSchema,
   updateProductFeatureSchema,
@@ -100,6 +107,7 @@ import type {
   updateProductOptionTranslationSchema,
   updateProductSchema,
   updateProductTagSchema,
+  updateProductTagTranslationSchema,
   updateProductTicketSettingSchema,
   updateProductTranslationSchema,
   updateProductTypeSchema,
@@ -156,6 +164,12 @@ type UpdateDestinationInput = z.infer<typeof updateDestinationSchema>
 type DestinationTranslationListQuery = z.infer<typeof destinationTranslationListQuerySchema>
 type CreateDestinationTranslationInput = z.infer<typeof insertDestinationTranslationSchema>
 type UpdateDestinationTranslationInput = z.infer<typeof updateDestinationTranslationSchema>
+type ProductCategoryTranslationListQuery = z.infer<typeof productCategoryTranslationListQuerySchema>
+type CreateProductCategoryTranslationInput = z.infer<typeof insertProductCategoryTranslationSchema>
+type UpdateProductCategoryTranslationInput = z.infer<typeof updateProductCategoryTranslationSchema>
+type ProductTagTranslationListQuery = z.infer<typeof productTagTranslationListQuerySchema>
+type CreateProductTagTranslationInput = z.infer<typeof insertProductTagTranslationSchema>
+type UpdateProductTagTranslationInput = z.infer<typeof updateProductTagTranslationSchema>
 type ProductDestinationListQuery = z.infer<typeof productDestinationListQuerySchema>
 type CreateItineraryInput = z.infer<typeof insertItinerarySchema>
 type UpdateItineraryInput = z.infer<typeof updateItinerarySchema>
@@ -1407,6 +1421,209 @@ export const productsService = {
       .delete(destinationTranslations)
       .where(eq(destinationTranslations.id, id))
       .returning({ id: destinationTranslations.id })
+
+    return row ?? null
+  },
+
+  async listProductCategoryTranslations(
+    db: PostgresJsDatabase,
+    query: ProductCategoryTranslationListQuery,
+  ) {
+    const conditions = []
+
+    if (query.categoryId) {
+      conditions.push(eq(productCategoryTranslations.categoryId, query.categoryId))
+    }
+
+    if (query.languageTag) {
+      conditions.push(eq(productCategoryTranslations.languageTag, query.languageTag))
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const [rows, countResult] = await Promise.all([
+      db
+        .select()
+        .from(productCategoryTranslations)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(
+          asc(productCategoryTranslations.languageTag),
+          asc(productCategoryTranslations.createdAt),
+        ),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(productCategoryTranslations)
+        .where(where),
+    ])
+
+    return {
+      data: rows,
+      total: countResult[0]?.count ?? 0,
+      limit: query.limit,
+      offset: query.offset,
+    }
+  },
+
+  async upsertProductCategoryTranslation(
+    db: PostgresJsDatabase,
+    categoryId: string,
+    data: CreateProductCategoryTranslationInput,
+  ) {
+    const [category] = await db
+      .select({ id: productCategories.id })
+      .from(productCategories)
+      .where(eq(productCategories.id, categoryId))
+      .limit(1)
+
+    if (!category) {
+      return null
+    }
+
+    const [existing] = await db
+      .select()
+      .from(productCategoryTranslations)
+      .where(
+        and(
+          eq(productCategoryTranslations.categoryId, categoryId),
+          eq(productCategoryTranslations.languageTag, data.languageTag),
+        ),
+      )
+      .limit(1)
+
+    if (existing) {
+      const [row] = await db
+        .update(productCategoryTranslations)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(productCategoryTranslations.id, existing.id))
+        .returning()
+      return row ?? null
+    }
+
+    const [row] = await db
+      .insert(productCategoryTranslations)
+      .values({ categoryId, ...data })
+      .returning()
+    return row ?? null
+  },
+
+  async updateProductCategoryTranslation(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateProductCategoryTranslationInput,
+  ) {
+    const [row] = await db
+      .update(productCategoryTranslations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(productCategoryTranslations.id, id))
+      .returning()
+
+    return row ?? null
+  },
+
+  async deleteProductCategoryTranslation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(productCategoryTranslations)
+      .where(eq(productCategoryTranslations.id, id))
+      .returning({ id: productCategoryTranslations.id })
+
+    return row ?? null
+  },
+
+  async listProductTagTranslations(db: PostgresJsDatabase, query: ProductTagTranslationListQuery) {
+    const conditions = []
+
+    if (query.tagId) {
+      conditions.push(eq(productTagTranslations.tagId, query.tagId))
+    }
+
+    if (query.languageTag) {
+      conditions.push(eq(productTagTranslations.languageTag, query.languageTag))
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const [rows, countResult] = await Promise.all([
+      db
+        .select()
+        .from(productTagTranslations)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(asc(productTagTranslations.languageTag), asc(productTagTranslations.createdAt)),
+      db.select({ count: sql<number>`count(*)::int` }).from(productTagTranslations).where(where),
+    ])
+
+    return {
+      data: rows,
+      total: countResult[0]?.count ?? 0,
+      limit: query.limit,
+      offset: query.offset,
+    }
+  },
+
+  async upsertProductTagTranslation(
+    db: PostgresJsDatabase,
+    tagId: string,
+    data: CreateProductTagTranslationInput,
+  ) {
+    const [tag] = await db
+      .select({ id: productTags.id })
+      .from(productTags)
+      .where(eq(productTags.id, tagId))
+      .limit(1)
+
+    if (!tag) {
+      return null
+    }
+
+    const [existing] = await db
+      .select()
+      .from(productTagTranslations)
+      .where(
+        and(
+          eq(productTagTranslations.tagId, tagId),
+          eq(productTagTranslations.languageTag, data.languageTag),
+        ),
+      )
+      .limit(1)
+
+    if (existing) {
+      const [row] = await db
+        .update(productTagTranslations)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(productTagTranslations.id, existing.id))
+        .returning()
+      return row ?? null
+    }
+
+    const [row] = await db
+      .insert(productTagTranslations)
+      .values({ tagId, ...data })
+      .returning()
+    return row ?? null
+  },
+
+  async updateProductTagTranslation(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateProductTagTranslationInput,
+  ) {
+    const [row] = await db
+      .update(productTagTranslations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(productTagTranslations.id, id))
+      .returning()
+
+    return row ?? null
+  },
+
+  async deleteProductTagTranslation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(productTagTranslations)
+      .where(eq(productTagTranslations.id, id))
+      .returning({ id: productTagTranslations.id })
 
     return row ?? null
   },

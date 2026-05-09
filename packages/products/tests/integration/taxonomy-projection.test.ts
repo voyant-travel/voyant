@@ -6,8 +6,10 @@ import { productTaxonomyCatalogPolicy } from "../../src/catalog-policy-taxonomy.
 import {
   productCategories,
   productCategoryProducts,
+  productCategoryTranslations,
   productTagProducts,
   productTags,
+  productTagTranslations,
 } from "../../src/schema-taxonomy.js"
 import {
   createProductDocumentBuilder,
@@ -23,6 +25,8 @@ const enSlice: IndexerSlice = {
   audience: "customer",
   market: "default",
 }
+
+const itSlice: IndexerSlice = { ...enSlice, locale: "it-IT" }
 
 describe.skipIf(!DB_AVAILABLE)("createProductTaxonomyProjectionExtension", () => {
   // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
@@ -96,6 +100,29 @@ describe.skipIf(!DB_AVAILABLE)("createProductTaxonomyProjectionExtension", () =>
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         PRIMARY KEY (product_id, tag_id)
       )`,
+      sql`CREATE TABLE IF NOT EXISTS product_category_translations (
+        id text PRIMARY KEY NOT NULL,
+        category_id text NOT NULL,
+        language_tag text NOT NULL,
+        name text NOT NULL,
+        description text,
+        seo_title text,
+        seo_description text,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL
+      )`,
+      sql`CREATE UNIQUE INDEX IF NOT EXISTS uidx_product_category_translations_locale
+        ON product_category_translations (category_id, language_tag)`,
+      sql`CREATE TABLE IF NOT EXISTS product_tag_translations (
+        id text PRIMARY KEY NOT NULL,
+        tag_id text NOT NULL,
+        language_tag text NOT NULL,
+        name text NOT NULL,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL
+      )`,
+      sql`CREATE UNIQUE INDEX IF NOT EXISTS uidx_product_tag_translations_locale
+        ON product_tag_translations (tag_id, language_tag)`,
     ]
     for (const statement of statements) {
       await client.execute(statement)
@@ -111,7 +138,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductTaxonomyProjectionExtension", () =>
 
   beforeEach(async () => {
     await db.execute(
-      sql`TRUNCATE products, product_categories, product_tags, product_category_products, product_tag_products CASCADE`,
+      sql`TRUNCATE products, product_categories, product_tags, product_category_products, product_tag_products, product_category_translations, product_tag_translations CASCADE`,
     )
 
     productId = "prod_taxo_test"
@@ -237,5 +264,100 @@ describe.skipIf(!DB_AVAILABLE)("createProductTaxonomyProjectionExtension", () =>
     expect(doc?.fields).toHaveProperty("categories", ["Mountain Hiking", "Hiking", "Adventure"])
     expect(doc?.fields).toHaveProperty("primaryCategoryName", "Mountain Hiking")
     expect(doc?.fields).toHaveProperty("tagLabels", ["Family-friendly"])
+  })
+
+  describe("locale-aware translations (#502)", () => {
+    beforeEach(async () => {
+      // Translate the full chain into Italian so the it-IT slice has
+      // overrides for every category. Tag has an it-IT translation too.
+      await db.insert(productCategoryTranslations).values([
+        {
+          id: "pctr_adv_it",
+          categoryId: "cat_adv",
+          languageTag: "it-IT",
+          name: "Avventura",
+        },
+        {
+          id: "pctr_hik_it",
+          categoryId: "cat_hik",
+          languageTag: "it-IT",
+          name: "Escursionismo",
+        },
+        {
+          id: "pctr_mtn_it",
+          categoryId: "cat_mtn",
+          languageTag: "it-IT",
+          name: "Escursionismo in Montagna",
+        },
+      ])
+      await db.insert(productTagTranslations).values({
+        id: "pttr_fam_it",
+        tagId: "tag_fam",
+        languageTag: "it-IT",
+        name: "Adatto alle famiglie",
+      })
+    })
+
+    it("emits translated category names on the matching locale slice", async () => {
+      await db
+        .insert(productCategoryProducts)
+        .values([{ productId, categoryId: "cat_mtn", sortOrder: 0 }])
+      const ext = createProductTaxonomyProjectionExtension()
+      const projection = await ext.project(db, productId, itSlice)
+      expect(projection.get("categories[]")).toEqual([
+        "Escursionismo in Montagna",
+        "Escursionismo",
+        "Avventura",
+      ])
+      expect(projection.get("primaryCategoryName")).toBe("Escursionismo in Montagna")
+      // Slugs and ids stay canonical regardless of slice locale.
+      expect(projection.get("categorySlugs[]")).toEqual(["mountain-hiking", "hiking", "adventure"])
+      expect(projection.get("categoryIds[]")).toEqual(["cat_mtn", "cat_hik", "cat_adv"])
+    })
+
+    it("falls back to canonical name when no translation exists for the slice locale", async () => {
+      // Same product on the en-GB slice — no en-GB translations seeded.
+      // Projection falls back to the canonical English `name` columns.
+      await db
+        .insert(productCategoryProducts)
+        .values([{ productId, categoryId: "cat_mtn", sortOrder: 0 }])
+      const ext = createProductTaxonomyProjectionExtension()
+      const projection = await ext.project(db, productId, enSlice)
+      expect(projection.get("categories[]")).toEqual(["Mountain Hiking", "Hiking", "Adventure"])
+      expect(projection.get("primaryCategoryName")).toBe("Mountain Hiking")
+    })
+
+    it("partial translations: leaf has en-GB row, ancestor doesn't — leaf renders translated, ancestor falls back", async () => {
+      // Add en-GB row only for the leaf "Mountain Hiking". The two
+      // ancestors stay canonical for the en-GB slice.
+      await db.insert(productCategoryTranslations).values({
+        id: "pctr_mtn_en",
+        categoryId: "cat_mtn",
+        languageTag: "en-GB",
+        name: "Mountain Hike",
+      })
+      await db
+        .insert(productCategoryProducts)
+        .values([{ productId, categoryId: "cat_mtn", sortOrder: 0 }])
+
+      const ext = createProductTaxonomyProjectionExtension()
+      const projection = await ext.project(db, productId, enSlice)
+      expect(projection.get("categories[]")).toEqual([
+        "Mountain Hike", // overridden
+        "Hiking", // canonical fallback
+        "Adventure", // canonical fallback
+      ])
+    })
+
+    it("emits translated tag labels on the matching locale slice", async () => {
+      await db.insert(productTagProducts).values([
+        { productId, tagId: "tag_fam" },
+        { productId, tagId: "tag_eco" }, // no it-IT translation — fallback
+      ])
+      const ext = createProductTaxonomyProjectionExtension()
+      const projection = await ext.project(db, productId, itSlice)
+      const tagLabels = projection.get("tagLabels[]") as string[]
+      expect(tagLabels.sort()).toEqual(["Adatto alle famiglie", "Eco"])
+    })
   })
 })

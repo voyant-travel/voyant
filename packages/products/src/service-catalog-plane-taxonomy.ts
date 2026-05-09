@@ -14,9 +14,17 @@
  * iteratively, filtering inactive ancestors (so an operator-paused parent
  * stops surfacing its still-active children under the parent filter).
  *
- * Today's schema has no translation tables for categories/tags (single
- * `name` columns). The same name lands on every locale slice. Locale support
- * is a follow-up that needs a schema migration with backfill.
+ * Localization (#502): when a `product_category_translations` /
+ * `product_tag_translations` row exists for the slice's locale, its `name`
+ * wins. Otherwise the projection falls back to the canonical
+ * `productCategories.name` / `productTags.name` (the legacy single-locale
+ * column). This makes the upgrade non-breaking — operators that haven't
+ * created translations keep seeing the English label on every locale slice
+ * exactly as before.
+ *
+ * Slugs stay single-locale on `productCategories.slug` (per #502 non-goals
+ * — operators want stable URLs that don't shift when translations are
+ * edited).
  */
 
 import type { AnyDrizzleDb } from "@voyantjs/db"
@@ -25,8 +33,10 @@ import { and, eq, inArray } from "drizzle-orm"
 import {
   productCategories,
   productCategoryProducts,
+  productCategoryTranslations,
   productTagProducts,
   productTags,
+  productTagTranslations,
 } from "./schema-taxonomy.js"
 import type { ProductProjectionExtension } from "./service-catalog-plane.js"
 
@@ -120,6 +130,58 @@ async function fetchProductTags(db: AnyDrizzleDb, productId: string): Promise<Ta
     .where(eq(productTagProducts.productId, productId))
 }
 
+/**
+ * Look up locale-specific category names for the given category ids. Returns
+ * a Map keyed by category id; entries only exist when a translation row was
+ * found for the slice locale. Callers fall back to the canonical
+ * `productCategories.name` for any missing entry.
+ */
+async function fetchCategoryTranslations(
+  db: AnyDrizzleDb,
+  categoryIds: ReadonlyArray<string>,
+  languageTag: string,
+): Promise<Map<string, string>> {
+  if (categoryIds.length === 0) return new Map()
+  const rows = await db
+    .select({
+      categoryId: productCategoryTranslations.categoryId,
+      name: productCategoryTranslations.name,
+    })
+    .from(productCategoryTranslations)
+    .where(
+      and(
+        inArray(productCategoryTranslations.categoryId, categoryIds),
+        eq(productCategoryTranslations.languageTag, languageTag),
+      ),
+    )
+  const out = new Map<string, string>()
+  for (const row of rows) out.set(row.categoryId, row.name)
+  return out
+}
+
+async function fetchTagTranslations(
+  db: AnyDrizzleDb,
+  tagIds: ReadonlyArray<string>,
+  languageTag: string,
+): Promise<Map<string, string>> {
+  if (tagIds.length === 0) return new Map()
+  const rows = await db
+    .select({
+      tagId: productTagTranslations.tagId,
+      name: productTagTranslations.name,
+    })
+    .from(productTagTranslations)
+    .where(
+      and(
+        inArray(productTagTranslations.tagId, tagIds),
+        eq(productTagTranslations.languageTag, languageTag),
+      ),
+    )
+  const out = new Map<string, string>()
+  for (const row of rows) out.set(row.tagId, row.name)
+  return out
+}
+
 interface TaxonomyProjection {
   categoryIds: string[]
   categoryNames: string[]
@@ -131,15 +193,23 @@ interface TaxonomyProjection {
   tagLabels: string[]
 }
 
+/**
+ * Pure aggregation kernel. `categoryNameByLocale` and `tagNameByLocale`
+ * carry slice-locale translations; entries override the canonical name on
+ * the row. Missing entries fall back to the canonical name. Slug stays
+ * canonical regardless — there's no per-locale slug.
+ */
 function buildTaxonomyProjection(
   directLinks: ReadonlyArray<DirectCategoryLink>,
   resolvedCategories: ReadonlyMap<string, CategoryRow>,
   tags: ReadonlyArray<TagRow>,
+  categoryNameByLocale: ReadonlyMap<string, string> = new Map(),
+  tagNameByLocale: ReadonlyMap<string, string> = new Map(),
 ): TaxonomyProjection {
   // Primary = first direct link (by sortOrder asc, then category name asc)
-  // that resolved as active. If every direct link is inactive, primary is
-  // null even when ancestors are active — the badge represents what the
-  // operator pinned.
+  // that resolved as active. Tie-break uses the canonical row name so the
+  // ordering is stable across slice locales — a translation that sorts
+  // differently shouldn't shuffle which category is "primary".
   const sortedDirect = [...directLinks].sort((a, b) => {
     if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
     const nameA = resolvedCategories.get(a.categoryId)?.name ?? ""
@@ -168,7 +238,8 @@ function buildTaxonomyProjection(
     if (seenIds.has(row.id)) return
     seenIds.add(row.id)
     categoryIds.push(row.id)
-    categoryNames.push(row.name)
+    // Locale override wins; otherwise use the canonical row.name.
+    categoryNames.push(categoryNameByLocale.get(row.id) ?? row.name)
     categorySlugs.push(row.slug)
   }
 
@@ -196,10 +267,10 @@ function buildTaxonomyProjection(
     categoryNames,
     categorySlugs,
     primaryCategoryId: primary?.id ?? null,
-    primaryCategoryName: primary?.name ?? null,
+    primaryCategoryName: primary ? (categoryNameByLocale.get(primary.id) ?? primary.name) : null,
     primaryCategorySlug: primary?.slug ?? null,
     tagIds: tags.map((t) => t.id),
-    tagLabels: tags.map((t) => t.name),
+    tagLabels: tags.map((t) => tagNameByLocale.get(t.id) ?? t.name),
   }
 }
 
@@ -212,7 +283,7 @@ function buildTaxonomyProjection(
 export function createProductTaxonomyProjectionExtension(): ProductProjectionExtension {
   return {
     name: "products:taxonomy",
-    async project(db, productId, _slice) {
+    async project(db, productId, slice) {
       const [directLinks, tags] = await Promise.all([
         fetchDirectCategoryLinks(db, productId),
         fetchProductTags(db, productId),
@@ -224,7 +295,23 @@ export function createProductTaxonomyProjectionExtension(): ProductProjectionExt
           ? await walkActiveCategoryChain(db, seedIds)
           : new Map<string, CategoryRow>()
 
-      const projection = buildTaxonomyProjection(directLinks, resolvedCategories, tags)
+      // Translations cover the FULL chain (direct + ancestors), so look up
+      // by every resolved-category id, not just the seed set.
+      const allCategoryIds = Array.from(resolvedCategories.keys())
+      const tagIds = tags.map((t) => t.id)
+
+      const [categoryNameByLocale, tagNameByLocale] = await Promise.all([
+        fetchCategoryTranslations(db, allCategoryIds, slice.locale),
+        fetchTagTranslations(db, tagIds, slice.locale),
+      ])
+
+      const projection = buildTaxonomyProjection(
+        directLinks,
+        resolvedCategories,
+        tags,
+        categoryNameByLocale,
+        tagNameByLocale,
+      )
 
       return new Map<string, unknown>([
         ["categories[]", projection.categoryNames],

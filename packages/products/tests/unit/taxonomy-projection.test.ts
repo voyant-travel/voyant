@@ -150,4 +150,102 @@ describe("buildTaxonomyProjection", () => {
     // Both walked once, then guard stops the cycle.
     expect(out.categoryIds.sort()).toEqual(["cat_a", "cat_b"])
   })
+
+  describe("locale overrides (#502)", () => {
+    it("uses translated names when the override map has an entry", () => {
+      const resolved = new Map([
+        ["cat_adv", cat("cat_adv", "Adventure")],
+        ["cat_hik", cat("cat_hik", "Hiking", "cat_adv")],
+      ])
+      const overrides = new Map([
+        ["cat_adv", "Aventure"],
+        ["cat_hik", "Randonnée"],
+      ])
+      const out = buildTaxonomyProjection(
+        [{ categoryId: "cat_hik", sortOrder: 0 }],
+        resolved,
+        [],
+        overrides,
+      )
+      expect(out.categoryNames).toEqual(["Randonnée", "Aventure"])
+      // Slugs and ids stay canonical regardless of locale.
+      expect(out.categorySlugs).toEqual(["hiking", "adventure"])
+      expect(out.categoryIds).toEqual(["cat_hik", "cat_adv"])
+    })
+
+    it("falls back to canonical name when an override entry is missing", () => {
+      // it-IT translation exists for Hiking but not for Adventure → only
+      // Hiking is translated; Adventure stays canonical.
+      const resolved = new Map([
+        ["cat_adv", cat("cat_adv", "Adventure")],
+        ["cat_hik", cat("cat_hik", "Hiking", "cat_adv")],
+      ])
+      const overrides = new Map([["cat_hik", "Escursionismo"]])
+      const out = buildTaxonomyProjection(
+        [{ categoryId: "cat_hik", sortOrder: 0 }],
+        resolved,
+        [],
+        overrides,
+      )
+      expect(out.categoryNames).toEqual(["Escursionismo", "Adventure"])
+    })
+
+    it("primaryCategoryName follows the locale override too", () => {
+      const resolved = new Map([["cat_a", cat("cat_a", "Adventure")]])
+      const overrides = new Map([["cat_a", "Aventure"]])
+      const out = buildTaxonomyProjection(
+        [{ categoryId: "cat_a", sortOrder: 0 }],
+        resolved,
+        [],
+        overrides,
+      )
+      expect(out.primaryCategoryName).toBe("Aventure")
+    })
+
+    it("tag labels use the locale override map", () => {
+      const tagOverrides = new Map([["tag_fam", "Adapté aux familles"]])
+      const out = buildTaxonomyProjection(
+        [],
+        new Map(),
+        [
+          { id: "tag_fam", name: "Family-friendly" },
+          { id: "tag_eco", name: "Eco" },
+        ],
+        new Map(),
+        tagOverrides,
+      )
+      expect(out.tagLabels).toEqual(["Adapté aux familles", "Eco"])
+      // Ids stay canonical.
+      expect(out.tagIds).toEqual(["tag_fam", "tag_eco"])
+    })
+
+    it("tie-break for primary uses the canonical name (stable across locales)", () => {
+      // If the tie-break used translated names, an it-IT slice could pick
+      // a different primary than en-GB — operators expect the badge to be
+      // the same category in every locale, just rendered with a different
+      // string. So tie-break stays on canonical row.name.
+      const resolved = new Map([
+        ["cat_z", cat("cat_z", "Zebra")],
+        ["cat_a", cat("cat_a", "Apple")],
+      ])
+      const overrides = new Map([
+        // Translation flips the lex order — Zebra → "Aardvark", Apple → "Zebra"
+        ["cat_z", "Aardvark"],
+        ["cat_a", "Zebra"],
+      ])
+      const out = buildTaxonomyProjection(
+        [
+          { categoryId: "cat_z", sortOrder: 0 },
+          { categoryId: "cat_a", sortOrder: 0 },
+        ],
+        resolved,
+        [],
+        overrides,
+      )
+      // Tie-break still picks cat_a (canonical "Apple" < "Zebra"), then the
+      // primary's translated label is emitted.
+      expect(out.primaryCategoryId).toBe("cat_a")
+      expect(out.primaryCategoryName).toBe("Zebra")
+    })
+  })
 })
