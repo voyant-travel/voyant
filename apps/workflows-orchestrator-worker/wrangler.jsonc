@@ -68,12 +68,26 @@
     }
   ],
 
-  // KV namespace holding the deploy-time SHA-256 of each bundle,
-  // keyed `<projectId>:<workflowVersion>`. The container verifies
-  // fetched bundle bytes against the value here before importing.
+  // KV namespaces.
+  //
+  //   BUNDLE_HASHES        — deploy-time SHA-256 of each tenant bundle,
+  //                          keyed `<projectId>:<workflowVersion>`. The
+  //                          container verifies fetched bundle bytes
+  //                          against the value here before importing.
+  //   WORKFLOW_MANIFESTS   — serialized `WorkflowManifest` per
+  //                          environment. Written by
+  //                          `driver.registerManifest` (POST /api/manifests),
+  //                          read by `driver.ingestEvent` (POST /api/events).
+  //                          Last 3 versions retained per environment via
+  //                          `pruneToVersions`. KV's eventual consistency
+  //                          is acceptable for the manifest read path.
   "kv_namespaces": [
     {
       "binding": "BUNDLE_HASHES",
+      "id": "replace-me-after-wrangler-kv-namespace-create"
+    },
+    {
+      "binding": "WORKFLOW_MANIFESTS",
       "id": "replace-me-after-wrangler-kv-namespace-create"
     }
   ],
