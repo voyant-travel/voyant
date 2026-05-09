@@ -8,6 +8,7 @@
 import { workflow } from "@voyantjs/workflows"
 import { handleStepRequest } from "@voyantjs/workflows/handler"
 import {
+  createInlineDispatcher,
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
   handleWorkerRequest,
@@ -63,10 +64,10 @@ export class TestWorkflowRunDO implements DurableObject {
     return {
       storage: this.state.storage,
       // In-process step handler — no dispatch namespace needed.
-      resolveStepHandler:
-        () =>
+      dispatcher: createInlineDispatcher(
         async (req: Parameters<typeof handleStepRequest>[0], opts?: { signal?: AbortSignal }) =>
           handleStepRequest(req, {}, opts),
+      ),
     }
   }
 }

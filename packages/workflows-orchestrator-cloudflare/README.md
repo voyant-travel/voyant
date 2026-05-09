@@ -1,21 +1,36 @@
 # @voyantjs/workflows-orchestrator-cloudflare
 
 Cloudflare Worker + Durable Object adapter for
-[`@voyantjs/workflows-orchestrator`](../workflows-orchestrator). Composes the
-protocol-agnostic state machine with DO-backed storage and a
-Workers-for-Platforms dispatch namespace that fans step requests out
-to tenant Workers.
+[`@voyantjs/workflows-orchestrator`](../workflows-orchestrator). Composes
+the protocol-agnostic state machine with DO-backed storage and a
+pluggable **step dispatcher** that delivers step requests to wherever
+workflow code lives.
 
 This package is the building block; the deployable artifact lives in
-[`apps/workflows-orchestrator-worker`](../../apps/workflows-orchestrator-worker), which
-wires it into a `wrangler.jsonc` + default-exports.
+[`apps/workflows-orchestrator-worker`](../../apps/workflows-orchestrator-worker),
+which wires it into a `wrangler.jsonc` + default-exports.
+
+## Picking a dispatcher
+
+The orchestrator forwards step requests through a `StepDispatcher`. Pick
+the factory that matches your deployment:
+
+| Factory | Use case | Bindings needed |
+|---|---|---|
+| `createInlineDispatcher` | Single-Worker (workflows + API in same isolate) | None |
+| `createServiceBindingDispatcher` | Two-Worker (orchestrator + sibling workflows Worker) | Service binding |
+| `createHttpDispatcher` | Cross-host (e.g. CF orchestrator → Node-side workflows) | HTTP endpoint |
+
+Hosted multi-tenant providers implement custom `StepDispatcher`s in
+their own deployment code — multi-tenancy is a deployment concern, not
+a runtime one, so it doesn't ship here.
 
 ```ts
 import {
   handleWorkerRequest,
   handleDurableObjectRequest,
   handleDurableObjectAlarm,
-  createDispatchStepHandler,
+  createServiceBindingDispatcher,
 } from "@voyantjs/workflows-orchestrator-cloudflare";
 
 export default {
@@ -38,10 +53,7 @@ export class WorkflowRunDO implements DurableObject {
   private deps() {
     return {
       storage: this.state.storage,
-      resolveStepHandler: (tenantScript: string) =>
-        createDispatchStepHandler(tenantScript, {
-          dispatcher: this.env.DISPATCHER,
-        }),
+      dispatcher: createServiceBindingDispatcher({ binding: this.env.WORKFLOWS }),
     };
   }
 }

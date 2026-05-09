@@ -35,12 +35,12 @@ describe("worker entry", () => {
       },
     }
     const state = { storage } as unknown as DurableObjectState
-    // DISPATCHER is never called for a 404 path; a stub is fine.
+    // WORKFLOWS service binding is never called for a 404 path; a stub is fine.
     const env = {
       WORKFLOW_RUN_DO: null as unknown as DurableObjectNamespace,
-      DISPATCHER: {
-        get: () => ({ fetch: async () => new Response() }),
-      } as unknown as DispatchNamespace,
+      WORKFLOWS: {
+        fetch: async () => new Response(),
+      } as unknown as Fetcher,
       NODE_STEP_POOL: null as unknown as DurableObjectNamespace,
       BUNDLE_R2: null as unknown as R2Bucket,
       BUNDLE_HASHES: null as unknown as KVNamespace,
@@ -71,9 +71,9 @@ describe("worker entry", () => {
 
     const env = {
       WORKFLOW_RUN_DO: fakeNS,
-      DISPATCHER: {
-        get: () => ({ fetch: async () => new Response() }),
-      } as unknown as DispatchNamespace,
+      WORKFLOWS: {
+        fetch: async () => new Response(),
+      } as unknown as Fetcher,
       NODE_STEP_POOL: null as unknown as DurableObjectNamespace,
       BUNDLE_R2: null as unknown as R2Bucket,
       BUNDLE_HASHES: null as unknown as KVNamespace,
@@ -91,7 +91,6 @@ describe("worker entry", () => {
             tenantId: "tnt",
             projectId: "prj",
             organizationId: "org",
-            tenantScript: "tenant-a",
           },
           runId: "run_worker_test",
         }),

@@ -27,6 +27,8 @@ import {
   type RunRecord,
   type StepHandler,
 } from "@voyantjs/workflows-orchestrator"
+
+import type { StepDispatcher } from "./dispatchers.js"
 import { createDurableObjectRunStore } from "./do-store.js"
 import type {
   CancelPayload,
@@ -38,13 +40,29 @@ import type {
 export interface DurableObjectDeps {
   storage: DurableObjectStorageLike
   /**
-   * Resolve the StepHandler to use for a given tenant script. Called
-   * with the tenantScript (from the trigger payload) so the DO can
-   * route to the correct tenant Worker. In production this closes
-   * over the dispatch namespace; in tests it returns a mock.
+   * Pluggable dispatcher producing a StepHandler for a given run's
+   * context. The DO calls `dispatcher({ tenantScript, workflowId })`
+   * once per drive; the returned handler delivers step requests to
+   * whatever Worker (or isolate) hosts the workflow code.
+   *
+   * Pick a factory from `./dispatchers.ts`:
+   *  - `createWfpDispatcher`           — multi-tenant via dispatch namespace
+   *  - `createServiceBindingDispatcher` — sibling Worker via service binding
+   *  - `createInlineDispatcher`         — same Worker / direct call
+   *  - `createHttpDispatcher`           — arbitrary HTTP endpoint
    */
-  resolveStepHandler: (tenantScript: string) => StepHandler
+  dispatcher: StepDispatcher
   now?: () => number
+}
+
+function resolve(
+  deps: DurableObjectDeps,
+  record: { tenantMeta: { tenantScript?: string }; workflowId: string },
+): StepHandler {
+  return deps.dispatcher({
+    tenantScript: record.tenantMeta.tenantScript,
+    workflowId: record.workflowId,
+  })
 }
 
 export async function handleDurableObjectRequest(
@@ -56,7 +74,10 @@ export async function handleDurableObjectRequest(
 
   if (req.method === "POST" && url.pathname === "/trigger") {
     const payload = (await req.json()) as TriggerPayload
-    const handler = deps.resolveStepHandler(payload.tenantMeta.tenantScript)
+    const handler = resolve(deps, {
+      tenantMeta: payload.tenantMeta,
+      workflowId: payload.workflowId,
+    })
     const record = await orchestratorTrigger(
       {
         workflowId: payload.workflowId,
@@ -77,7 +98,7 @@ export async function handleDurableObjectRequest(
     const payload = (await req.json()) as ResumePayload
     const existing = await store.get((await getStoredRunId(store)) ?? "")
     if (!existing) return json(404, { error: "not_found", message: "no run stored in this DO" })
-    const handler = deps.resolveStepHandler(existing.tenantMeta.tenantScript ?? "")
+    const handler = resolve(deps, existing)
     const out = await orchestratorResume(
       { runId: existing.id, injection: payload.injection },
       { store, handler, now: deps.now },
@@ -94,7 +115,7 @@ export async function handleDurableObjectRequest(
     const payload = (await req.json()) as CancelPayload
     const existing = await store.get((await getStoredRunId(store)) ?? "")
     if (!existing) return json(404, { error: "not_found", message: "no run stored in this DO" })
-    const handler = deps.resolveStepHandler(existing.tenantMeta.tenantScript ?? "")
+    const handler = resolve(deps, existing)
     const out = await orchestratorCancel(
       { runId: existing.id, reason: payload.reason },
       { store, handler, now: deps.now },
@@ -158,7 +179,7 @@ export async function handleDurableObjectAlarm(deps: DurableObjectDeps): Promise
   }
 
   record.status = "running"
-  const handler = deps.resolveStepHandler(record.tenantMeta.tenantScript ?? "")
+  const handler = resolve(deps, record)
   await driveUntilPaused(record, { handler, now: deps.now })
   await store.save(record)
   await reconcileAlarm(record, store, deps)

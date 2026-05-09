@@ -92,17 +92,19 @@
     }
   ],
 
-  // Workers-for-Platforms dispatch namespace that hosts the tenant
-  // bundles produced by `voyant workflows build`. Step requests are
-  // routed through this binding to the tenant Worker named by each
-  // run's `tenantScript` field.
+  // Service binding to the sibling workflows Worker that hosts the
+  // step bodies. Replace `voyant-workflows` with the script name of
+  // the Worker you deploy from your workflows code (the one that
+  // mounts `@voyantjs/workflows/handler` at `/__voyant/workflow-step`).
   //
-  // `namespace` is the WfP namespace id/name; provision it in your
-  // Cloudflare account under Workers for Platforms before deploying.
-  "dispatch_namespaces": [
+  // Multi-tenant deployments that need to route each run to a different
+  // tenant Worker should swap `createServiceBindingDispatcher` in
+  // `src/worker.ts` for a custom `StepDispatcher` and replace this
+  // service binding with whatever transport that dispatcher uses.
+  "services": [
     {
-      "binding": "DISPATCHER",
-      "namespace": "voyant-tenants"
+      "binding": "WORKFLOWS",
+      "service": "voyant-workflows"
     }
   ],
 

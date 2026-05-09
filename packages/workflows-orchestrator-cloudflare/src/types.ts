@@ -27,20 +27,6 @@ export interface DurableObjectStorageLike {
   deleteAlarm?(): Promise<void>
 }
 
-/**
- * Subset of a Workers-for-Platforms dispatch namespace. `get(name)`
- * returns a binding whose `fetch` delivers to the tenant Worker
- * registered under that name.
- */
-export interface DispatchNamespaceLike {
-  get(
-    name: string,
-    args?: Record<string, unknown>,
-  ): {
-    fetch(request: Request): Promise<Response>
-  }
-}
-
 /** Args the Worker passes when routing to a run DO. */
 export interface RunOperation {
   op: "trigger" | "resume" | "cancel" | "get"
@@ -61,8 +47,12 @@ export interface TriggerPayload {
     tenantId: string
     projectId: string
     organizationId: string
-    /** Dispatch-namespace name to forward step requests to. */
-    tenantScript: string
+    /**
+     * Adapter-specific tenant identifier. Opaque to the OSS runtime —
+     * surfaces on `StepDispatcherContext` so custom dispatchers can
+     * use it as a routing key.
+     */
+    tenantScript?: string
   }
   environment?: "production" | "preview" | "development"
   tags?: string[]
@@ -78,9 +68,7 @@ export interface CancelPayload {
  * The Worker runtime env the adapter expects. Callers provide their
  * own wrangler config; this interface documents what we read.
  */
-export interface AdapterEnv<DONamespace = unknown, DispatchNS = DispatchNamespaceLike> {
+export interface AdapterEnv<DONamespace = unknown> {
   /** Durable Object namespace holding one DO per run. Typed loosely to avoid a CF types dep. */
   WORKFLOW_RUN_DO: DONamespace
-  /** Dispatch namespace containing tenant Workers. */
-  DISPATCHER: DispatchNS
 }

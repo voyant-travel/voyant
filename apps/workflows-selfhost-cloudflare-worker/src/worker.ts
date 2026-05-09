@@ -18,10 +18,12 @@ import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
 import type { StepHandler } from "@voyantjs/workflows-orchestrator"
 import {
   createCfContainerStepRunner,
+  createInlineDispatcher,
   createR2Presigner,
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
   handleWorkerRequest,
+  type StepDispatcher,
 } from "@voyantjs/workflows-orchestrator-cloudflare"
 
 export interface Env {
@@ -37,6 +39,7 @@ export interface Env {
 }
 
 let stepHandler: StepHandler | undefined
+let dispatcher: StepDispatcher | undefined
 
 function buildStepHandler(env: Env): StepHandler {
   const rateLimiter = createInMemoryRateLimiter()
@@ -116,11 +119,16 @@ export class WorkflowRunDO implements DurableObject {
   private deps() {
     return {
       storage: this.state.storage,
-      resolveStepHandler: () => {
-        if (!stepHandler) stepHandler = buildStepHandler(this.env)
-        return stepHandler
-      },
+      dispatcher: this.resolveDispatcher(),
     }
+  }
+
+  private resolveDispatcher(): StepDispatcher {
+    if (!dispatcher) {
+      if (!stepHandler) stepHandler = buildStepHandler(this.env)
+      dispatcher = createInlineDispatcher(stepHandler)
+    }
+    return dispatcher
   }
 }
 
