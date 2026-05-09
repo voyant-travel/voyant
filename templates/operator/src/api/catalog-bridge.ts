@@ -18,6 +18,11 @@
  *                                   with availability concerns and keeps
  *                                   the products package free of an
  *                                   availability dep.
+ *   - `pricing.rule.changed`      → reindex the affected product so the
+ *                                   `priceFromAmountCents` aggregation
+ *                                   reflects the rule edit. Same
+ *                                   cross-package pattern as
+ *                                   `availability.slot.changed`.
  *   - `booking.confirmed`         → capture a snapshot graph of the
  *                                   booking's product line items via
  *                                   `captureSnapshotGraph`
@@ -72,6 +77,17 @@ interface AvailabilitySlotChangedPayload {
   slotId: string
   productId: string
   optionId: string | null
+}
+
+/**
+ * Mirrors `PricingRuleChangedEvent` from `@voyantjs/pricing`. Inlined
+ * for the same reason as `AvailabilitySlotChangedPayload` above.
+ */
+interface PricingRuleChangedPayload {
+  productId: string
+  ruleId: string
+  kind: "option-rule" | "option-unit-rule"
+  source: "created" | "updated" | "deleted"
 }
 
 export const catalogBridgeBundle: HonoBundle = {
@@ -152,6 +168,18 @@ export const catalogBridgeBundle: HonoBundle = {
         await ctx.service.reindexEntity("products", data.productId, ctx.builder)
       },
     )
+
+    // Pricing-rule create/update/delete reindexes the affected product so
+    // `priceFromAmountCents` (the MIN-across-options aggregate from PR4)
+    // reflects rule edits without waiting for an unrelated
+    // `product.updated`. Both `option-rule` and `option-unit-rule` kinds
+    // are wired — they're the two tables the projection reads.
+    eventBus.subscribe<PricingRuleChangedPayload>("pricing.rule.changed", async ({ data }) => {
+      if (!data.productId) return
+      const ctx = buildIndexerContext()
+      if (!ctx) return
+      await ctx.service.reindexEntity("products", data.productId, ctx.builder)
+    })
 
     eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", async ({ data }) => {
       const db = getDbFromHyperdrive(env)

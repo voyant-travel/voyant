@@ -44,6 +44,7 @@ export const pricingRuleRoutes = new Hono<Env>()
         data: await pricingService.createOptionPriceRule(
           c.get("db"),
           await parseJsonBody(c, insertOptionPriceRuleSchema),
+          { eventBus: c.get("eventBus") },
         ),
       },
       201,
@@ -58,11 +59,14 @@ export const pricingRuleRoutes = new Hono<Env>()
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updateOptionPriceRuleSchema),
+      { eventBus: c.get("eventBus") },
     )
     return row ? c.json({ data: row }) : notFound(c, "Option price rule not found")
   })
   .delete("/option-price-rules/:id", async (c) => {
-    const row = await pricingService.deleteOptionPriceRule(c.get("db"), c.req.param("id"))
+    const row = await pricingService.deleteOptionPriceRule(c.get("db"), c.req.param("id"), {
+      eventBus: c.get("eventBus"),
+    })
     return row ? c.json({ success: true }) : notFound(c, "Option price rule not found")
   })
   .get("/option-unit-price-rules", async (c) =>
@@ -79,6 +83,7 @@ export const pricingRuleRoutes = new Hono<Env>()
         data: await pricingService.createOptionUnitPriceRule(
           c.get("db"),
           await parseJsonBody(c, insertOptionUnitPriceRuleSchema),
+          { eventBus: c.get("eventBus") },
         ),
       },
       201,
@@ -93,11 +98,14 @@ export const pricingRuleRoutes = new Hono<Env>()
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updateOptionUnitPriceRuleSchema),
+      { eventBus: c.get("eventBus") },
     )
     return row ? c.json({ data: row }) : notFound(c, "Option unit price rule not found")
   })
   .delete("/option-unit-price-rules/:id", async (c) => {
-    const row = await pricingService.deleteOptionUnitPriceRule(c.get("db"), c.req.param("id"))
+    const row = await pricingService.deleteOptionUnitPriceRule(c.get("db"), c.req.param("id"), {
+      eventBus: c.get("eventBus"),
+    })
     return row ? c.json({ success: true }) : notFound(c, "Option unit price rule not found")
   })
   .get("/option-start-time-rules", async (c) =>
