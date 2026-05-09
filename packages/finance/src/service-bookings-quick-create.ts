@@ -83,6 +83,13 @@ export const quickCreateBookingSchema = z.object({
   personId: z.string().optional().nullable(),
   organizationId: z.string().optional().nullable(),
   internalNotes: z.string().optional().nullable(),
+  /**
+   * Override the seed `sellAmountCents` on the new booking + line item.
+   * Threads through to `convertProductToBooking` so promotion-discounted
+   * quotes land at the discounted amount instead of the product's list
+   * price. Per docs/architecture/promotions-architecture.md §7.1.
+   */
+  sellAmountCentsOverride: z.number().int().min(0).optional().nullable(),
 
   // Orchestration fields
   travelers: z.array(travelerInputSchema).optional(),
@@ -225,6 +232,7 @@ export async function quickCreateBooking(
         personId: input.personId ?? null,
         organizationId: input.organizationId ?? null,
         internalNotes: input.internalNotes ?? null,
+        sellAmountCentsOverride: input.sellAmountCentsOverride ?? null,
       })
       if (!booking) {
         // Caller gave us a product that doesn't resolve. Throw so drizzle

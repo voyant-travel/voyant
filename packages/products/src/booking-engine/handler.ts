@@ -65,6 +65,14 @@ export interface QuickCreateBridgeInput {
   personId?: string | null
   organizationId?: string | null
   internalNotes?: string | null
+  /**
+   * Override the seed sellAmountCents the booking lands at. The owned
+   * commit passes this when the catalog booking-engine's promotion hook
+   * has discounted the quote — without it, customers would be charged
+   * the product's list price even with a successful promotion. Per
+   * docs/architecture/promotions-architecture.md §7.1.
+   */
+  sellAmountCentsOverride?: number | null
   travelers?: Array<{
     firstName: string
     lastName: string
@@ -558,6 +566,17 @@ export function createProductsBookingHandler(
             : ("adult" as const),
       }))
 
+      // Promotion-discounted quotes: thread the discounted base into
+      // the booking's seed sellAmountCents so checkout / payment
+      // see the customer-facing total, not the product list price.
+      // `pricing.base_amount` is in cents (per `liveValuesToPricing` in
+      // catalog/quote.ts); we round defensively against the
+      // numeric(18,4) column. When no promotion applied,
+      // `base_amount` equals the product's list price and the
+      // override is a no-op.
+      const sellAmountCentsOverride =
+        request.pricing?.base_amount != null ? Math.round(request.pricing.base_amount) : null
+
       const bridge = await options.quickCreate({
         productId: product.id,
         bookingNumber: generateNumber(),
@@ -565,6 +584,7 @@ export function createProductsBookingHandler(
         organizationId: extractOrganizationId(request.party),
         internalNotes: extractInternalNotes(request.party),
         travelers: travelers.length > 0 ? travelers : undefined,
+        sellAmountCentsOverride,
         taxLines: extractTaxLines(request.pricing),
       })
 

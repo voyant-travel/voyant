@@ -135,6 +135,15 @@ export const convertProductSchema = z.object({
   personId: z.string().optional().nullable(),
   organizationId: z.string().optional().nullable(),
   internalNotes: z.string().optional().nullable(),
+  /**
+   * Override the seed `sellAmountCents` on the new booking + line item.
+   * When unset, the converter uses `product.sellAmountCents` as before.
+   * Used by the catalog booking-engine when promotional offers are
+   * applied to the quote — the discounted base flows through here so
+   * the booking row's payable amount reflects the customer-shown total
+   * (per docs/architecture/promotions-architecture.md §7.1).
+   */
+  sellAmountCentsOverride: z.number().int().min(0).optional().nullable(),
 })
 
 /**

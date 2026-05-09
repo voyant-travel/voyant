@@ -2035,6 +2035,13 @@ export const bookingsService = {
         : slot.dateLocal
       : product.endDate
 
+    // Caller-supplied `sellAmountCentsOverride` lets the catalog booking-
+    // engine pass the promotion-discounted base through to the booking
+    // row so the customer is charged the post-discount amount, not the
+    // product's list price. Per docs/architecture/promotions-architecture.md §7.1.
+    const effectiveSellAmountCents =
+      data.sellAmountCentsOverride != null ? data.sellAmountCentsOverride : product.sellAmountCents
+
     const [booking] = await db
       .insert(bookings)
       .values({
@@ -2043,7 +2050,7 @@ export const bookingsService = {
         personId: data.personId ?? null,
         organizationId: data.organizationId ?? null,
         sellCurrency: product.sellCurrency,
-        sellAmountCents: product.sellAmountCents,
+        sellAmountCents: effectiveSellAmountCents,
         costAmountCents: product.costAmountCents,
         marginPercent: product.marginPercent,
         startDate,
@@ -2088,6 +2095,9 @@ export const bookingsService = {
         }
       : { metadata: null as Record<string, unknown> | null }
 
+    // Seeded line-item totals must match the booking's `sellAmountCents`
+    // so checkout / payment / invoicing don't see a list-price item beneath
+    // a discounted booking header.
     const itemRows =
       unitsToSeed.length > 0
         ? unitsToSeed.map((unit, index) => {
@@ -2108,11 +2118,11 @@ export const bookingsService = {
               sellCurrency: product.sellCurrency,
               unitSellAmountCents:
                 singleSeedItem &&
-                product.sellAmountCents !== null &&
-                product.sellAmountCents !== undefined
-                  ? Math.floor(product.sellAmountCents / quantity)
+                effectiveSellAmountCents !== null &&
+                effectiveSellAmountCents !== undefined
+                  ? Math.floor(effectiveSellAmountCents / quantity)
                   : null,
-              totalSellAmountCents: singleSeedItem ? (product.sellAmountCents ?? null) : null,
+              totalSellAmountCents: singleSeedItem ? (effectiveSellAmountCents ?? null) : null,
               costCurrency: singleSeedItem ? product.sellCurrency : null,
               unitCostAmountCents:
                 singleSeedItem &&
@@ -2136,8 +2146,8 @@ export const bookingsService = {
               status: "draft" as const,
               quantity: 1,
               sellCurrency: product.sellCurrency,
-              unitSellAmountCents: product.sellAmountCents ?? null,
-              totalSellAmountCents: product.sellAmountCents ?? null,
+              unitSellAmountCents: effectiveSellAmountCents ?? null,
+              totalSellAmountCents: effectiveSellAmountCents ?? null,
               costCurrency: product.sellCurrency,
               unitCostAmountCents: product.costAmountCents ?? null,
               totalCostAmountCents: product.costAmountCents ?? null,
