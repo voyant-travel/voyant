@@ -71,9 +71,24 @@ export const bookingTravelerTravelDetails = pgTable(
 
 const bookingTravelerTravelDetailRecordCoreSchema = z.object({
   travelerId: z.string().min(1),
-  identityEncrypted: kmsEnvelopeSchema.optional().nullable(),
-  dietaryEncrypted: kmsEnvelopeSchema.optional().nullable(),
-  accessibilityEncrypted: kmsEnvelopeSchema.optional().nullable(),
+  // `z.lazy(() => …)` defers schema dereferencing until first use so the
+  // cross-package binding (`kmsEnvelopeSchema` from `@voyantjs/db`) is
+  // resolved at parse time, not at this module's top-level evaluation.
+  // Without `z.lazy`, bundlers that split this file into a separate chunk
+  // from its `@voyantjs/db` producer can hit the producer's TDZ here.
+  // See #501.
+  identityEncrypted: z
+    .lazy(() => kmsEnvelopeSchema)
+    .optional()
+    .nullable(),
+  dietaryEncrypted: z
+    .lazy(() => kmsEnvelopeSchema)
+    .optional()
+    .nullable(),
+  accessibilityEncrypted: z
+    .lazy(() => kmsEnvelopeSchema)
+    .optional()
+    .nullable(),
   passportPersonDocumentId: z.string().nullable().optional(),
   isLeadTraveler: z.boolean().default(false),
 })

@@ -122,11 +122,13 @@ export const personCoreSchema = z.object({
   tags: z.array(z.string()).default([]),
   birthday: z.string().date().nullable().optional(),
   notes: z.string().nullable().optional(),
-  // Encrypted PII slots (canonical store; documents live in person_documents)
-  accessibilityEncrypted: kmsEnvelopeSchema.optional(),
-  dietaryEncrypted: kmsEnvelopeSchema.optional(),
-  loyaltyEncrypted: kmsEnvelopeSchema.optional(),
-  insuranceEncrypted: kmsEnvelopeSchema.optional(),
+  // Encrypted PII slots (canonical store; documents live in person_documents).
+  // `z.lazy(() => …)` defers cross-package schema dereferencing until
+  // first parse — see #501 for the bundler chunk-init hazard otherwise.
+  accessibilityEncrypted: z.lazy(() => kmsEnvelopeSchema).optional(),
+  dietaryEncrypted: z.lazy(() => kmsEnvelopeSchema).optional(),
+  loyaltyEncrypted: z.lazy(() => kmsEnvelopeSchema).optional(),
+  insuranceEncrypted: z.lazy(() => kmsEnvelopeSchema).optional(),
   // Inline identity fields — synced to identity module on create/update
   email: z.string().email().nullable().optional(),
   phone: z.string().nullable().optional(),
@@ -353,7 +355,8 @@ export const personDocumentTypeSchema = z.enum([
 
 export const personDocumentCoreSchema = z.object({
   type: personDocumentTypeSchema,
-  numberEncrypted: kmsEnvelopeSchema.optional(),
+  // `z.lazy` for cross-package init-cycle protection — see #501.
+  numberEncrypted: z.lazy(() => kmsEnvelopeSchema).optional(),
   issuingAuthority: z.string().nullable().optional(),
   issuingCountry: z.string().nullable().optional(),
   issueDate: z.string().date().nullable().optional(),

@@ -16,7 +16,13 @@ export const decryptedTransactionTravelerIdentitySchema = z.object({
 })
 
 export const transactionTravelerIdentityEnvelopeSchema = z.object({
-  identityEncrypted: kmsEnvelopeSchema.optional().nullable(),
+  // `z.lazy(() => …)` defers cross-package schema dereferencing until
+  // first parse — see #501 for why bundlers that split this file from
+  // its `@voyantjs/db` producer crash without it.
+  identityEncrypted: z
+    .lazy(() => kmsEnvelopeSchema)
+    .optional()
+    .nullable(),
 })
 
 export const transactionParticipantIdentitySchema = transactionTravelerIdentitySchema
