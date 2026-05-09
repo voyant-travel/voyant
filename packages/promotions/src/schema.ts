@@ -148,3 +148,32 @@ export type PromotionalOfferProduct = typeof promotionalOfferProducts.$inferSele
 export type NewPromotionalOfferProduct = typeof promotionalOfferProducts.$inferInsert
 export type PromotionalOfferRedemption = typeof promotionalOfferRedemptions.$inferSelect
 export type NewPromotionalOfferRedemption = typeof promotionalOfferRedemptions.$inferInsert
+
+/**
+ * Boundary-scheduler watermark — a single row tracking the last_tick the
+ * boundary scheduler observed. Per §9.2 of the architecture doc, the
+ * scheduler queries offers whose `valid_from` / `valid_until` falls
+ * BETWEEN `last_tick` and `now()` to detect lifecycle transitions.
+ *
+ * Single-row convention: rows are upserted with id = `BOUNDARY_SCHEDULER_STATE_ID`
+ * (typeid `pofs_default`). The unique constraint on `singleton_key` enforces
+ * "at most one row" defensively even if a future caller forgot the convention.
+ */
+export const promotionalOfferSchedulerState = pgTable(
+  "promotional_offer_scheduler_state",
+  {
+    id: typeId("promotional_offer_scheduler_state"),
+    /**
+     * Sentinel column for single-row enforcement — always set to
+     * `'singleton'`. The unique index on this column means a second
+     * insert with a different id would still fail.
+     */
+    singletonKey: text("singleton_key").notNull().default("singleton"),
+    lastTick: timestamp("last_tick", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("uidx_pofs_singleton").on(table.singletonKey)],
+)
+
+export type PromotionalOfferSchedulerState = typeof promotionalOfferSchedulerState.$inferSelect
+export type NewPromotionalOfferSchedulerState = typeof promotionalOfferSchedulerState.$inferInsert

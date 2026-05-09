@@ -35,7 +35,11 @@
       // Draft reaper (per booking-journey-architecture.md §5.7) — drops
       // expired booking_drafts hourly at :05 to avoid colliding with the
       // hourly availability reconciler at :00.
-      "5 * * * *"
+      "5 * * * *",
+      // Promotions boundary scheduler (per promotions-architecture.md
+      // §9.2) — every 5 minutes; emits/dispatches `promotion.changed`
+      // for offers crossing valid_from / valid_until since the last tick.
+      "*/5 * * * *"
     ]
   }
 }

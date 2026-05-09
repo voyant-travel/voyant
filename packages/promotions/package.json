@@ -9,7 +9,9 @@
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
     "./events": "./src/events.ts",
-    "./service": "./src/service.ts"
+    "./service": "./src/service.ts",
+    "./service-catalog-plane-promotions": "./src/service-catalog-plane-promotions.ts",
+    "./service-boundary-scheduler": "./src/service-boundary-scheduler.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -68,6 +70,16 @@
         "types": "./dist/service.d.ts",
         "import": "./dist/service.js",
         "default": "./dist/service.js"
+      },
+      "./service-catalog-plane-promotions": {
+        "types": "./dist/service-catalog-plane-promotions.d.ts",
+        "import": "./dist/service-catalog-plane-promotions.js",
+        "default": "./dist/service-catalog-plane-promotions.js"
+      },
+      "./service-boundary-scheduler": {
+        "types": "./dist/service-boundary-scheduler.d.ts",
+        "import": "./dist/service-boundary-scheduler.js",
+        "default": "./dist/service-boundary-scheduler.js"
       }
     },
     "main": "./dist/index.js",

@@ -368,6 +368,9 @@ export const PREFIXES = {
   // promotional_offer_products is a join table (no `id` column).
   promotional_offers: "pofr",
   promotional_offer_redemptions: "pofx",
+  // Boundary-scheduler watermark — single-row table, but typed for
+  // registry completeness. Per §9.2 of the promotions architecture doc.
+  promotional_offer_scheduler_state: "pofs",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES
