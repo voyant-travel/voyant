@@ -327,4 +327,59 @@ describe("createApp workflows wiring", () => {
       ?.runs
     expect(runs?.length).toBeGreaterThanOrEqual(1)
   })
+
+  test("rejects event-filter descriptors that omit the runtime manifest field", async () => {
+    // A plugin that only satisfies the public EventFilterDescriptor
+    // (`{ id, eventType }`) — the structural minimum from
+    // @voyantjs/core — must not be silently passed through to the
+    // manifest builder, which reads `entry.manifest.id` deep inside its
+    // sort and would otherwise crash with a confusing TypeError.
+    const moduleSpec: Module = {
+      name: "bad-plugin",
+      eventFilters: [{ id: "filt_bad", eventType: "x.y" } as EventFilterDescriptor],
+    }
+
+    const app = createApp({
+      db: () => null as never,
+      modules: [{ module: moduleSpec }],
+      workflows: {
+        driver: () => createInMemoryDriver(),
+        environment: "development",
+      },
+    })
+
+    await expect(app.ready()).rejects.toThrow(
+      /event filter "filt_bad".*missing the runtime `manifest` field/,
+    )
+  })
+
+  test("ready(bindings) forwards real bindings to the driver factory", async () => {
+    // Mode 1 (CF-edge) callers that want eager boot must pass the real
+    // env to ready() — otherwise the memoized bootstrap promise locks in
+    // a driver built from `{}`, and every later request reuses that
+    // broken instance with missing DO/KV bindings.
+    interface MockEnv extends VoyantBindings {
+      WORKFLOW_RUN_DO?: string
+      WORKFLOW_MANIFESTS?: string
+    }
+    let observedBindings: MockEnv | undefined
+    const app = createApp<MockEnv>({
+      db: () => null as never,
+      workflows: {
+        driver: (env) => {
+          observedBindings = env
+          return (deps) => createInMemoryDriver()(deps)
+        },
+        environment: "production",
+      },
+    })
+
+    const realEnv: MockEnv = {
+      DATABASE_URL: "postgres://test",
+      WORKFLOW_RUN_DO: "do-id",
+      WORKFLOW_MANIFESTS: "kv-id",
+    }
+    await app.ready(realEnv)
+    expect(observedBindings).toEqual(realEnv)
+  })
 })

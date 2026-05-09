@@ -49,19 +49,27 @@ function resolveSurfaceMountPath(
  * directly so the existing call sites (which destructure / pass `app`
  * around) keep working without a wrapper.
  */
-export interface VoyantAppExtensions {
+export interface VoyantAppExtensions<TBindings = unknown> {
   /**
    * Resolves once the lazy bootstrap completes. Idempotent — multiple
    * calls share the same promise. Use from tests + Mode 2 sibling
    * processes where no request will arrive to trigger boot. See
    * architecture doc §18 + §18.1.
+   *
+   * Accepts the runtime bindings that the bootstrap should run with. For
+   * binding-dependent configs (e.g. Mode 1 / Cloudflare, where the driver
+   * factory reads DO + KV bindings off `env`) callers MUST pass the real
+   * bindings; otherwise the memoized bootstrap promise locks in a driver
+   * built from `{}` and every later request reuses that broken instance.
+   * Mode 2 / InMemory drivers ignore bindings, so the no-arg form is safe
+   * there (defaults to `{}` for back-compat with tests).
    */
-  ready(): Promise<void>
+  ready(bindings?: TBindings): Promise<void>
 }
 
 export function createApp<TBindings extends VoyantBindings>(
   config: VoyantAppConfig<TBindings>,
-): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> & VoyantAppExtensions {
+): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> & VoyantAppExtensions<TBindings> {
   const app = new Hono<{ Bindings: TBindings; Variables: VoyantVariables }>()
   app.onError(handleApiError)
 
@@ -295,14 +303,18 @@ export function createApp<TBindings extends VoyantBindings>(
   }
 
   // Attach `ready()` directly to the Hono instance. Fires the lazy
-  // bootstrap eagerly with an empty bindings object — production code
-  // never calls `ready()` (the first request triggers the same boot via
-  // `ensureRuntimeBootstrapped(c.env)`); tests + Mode 2 sibling
-  // processes use this so the time wheel + manifest registration happen
-  // without traffic.
+  // bootstrap with the supplied bindings (or `{}` for back-compat with
+  // Mode 2 / InMemory drivers that ignore them). Production code never
+  // calls `ready()` — the first request triggers the same boot via
+  // `ensureRuntimeBootstrapped(c.env)`. Tests + Mode 2 sibling processes
+  // use this so the time wheel + manifest registration happen without
+  // traffic; CF-edge users that want eager boot must pass the real `env`
+  // (otherwise the memoized bootstrap promise locks in a driver built
+  // from `{}` and every later request reuses that broken instance).
   const augmented = app as Hono<{ Bindings: TBindings; Variables: VoyantVariables }> &
-    VoyantAppExtensions
-  augmented.ready = () => ensureRuntimeBootstrapped({} as TBindings)
+    VoyantAppExtensions<TBindings>
+  augmented.ready = (bindings?: TBindings) =>
+    ensureRuntimeBootstrapped(bindings ?? ({} as TBindings))
   return augmented
 }
 
@@ -335,11 +347,23 @@ interface WireWorkflowRuntimeArgs {
  */
 async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promise<void> {
   // The descriptors collected from modules + plugins use core's structural
-  // types; the manifest builder needs the concrete `EventFilterRuntimeEntry`
-  // shape. They share identity (`{ id, eventType, ... }`); the cast is
-  // safe because both ends control the contract — see architecture doc
-  // §10.1 / §21.19.
-  const filterEntries = args.collectedFilters as ReadonlyArray<EventFilterRuntimeEntry>
+  // types (`{ id, eventType }` only — see `EventFilterDescriptor` in core);
+  // the manifest builder needs the runtime shape with `.manifest` populated.
+  // Validate before casting so a contract-violating plugin fails loudly here
+  // instead of crashing on `entry.manifest.id` deep inside the sort.
+  const filterEntries: EventFilterRuntimeEntry[] = []
+  for (const entry of args.collectedFilters) {
+    const candidate = entry as Partial<EventFilterRuntimeEntry>
+    if (!candidate.manifest || typeof candidate.manifest.id !== "string") {
+      throw new Error(
+        `[voyant] event filter "${entry.id}" (event "${entry.eventType}") is missing the runtime ` +
+          `\`manifest\` field. Filters must be produced via \`trigger.on(eventName, { ... })\` from ` +
+          `@voyantjs/workflows — the public EventFilterDescriptor is the structural minimum, but ` +
+          `createApp() needs the manifest payload to register with the driver.`,
+      )
+    }
+    filterEntries.push(candidate as EventFilterRuntimeEntry)
+  }
 
   const manifest = await buildManifest({
     projectId: args.projectId,
