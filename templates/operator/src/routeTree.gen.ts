@@ -32,6 +32,7 @@ import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/
 import { Route as WorkspaceSuppliersIndexRouteImport } from './routes/_workspace/suppliers/index'
 import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
 import { Route as WorkspaceResourcesIndexRouteImport } from './routes/_workspace/resources/index'
+import { Route as WorkspacePromotionsIndexRouteImport } from './routes/_workspace/promotions/index'
 import { Route as WorkspaceProductsIndexRouteImport } from './routes/_workspace/products/index'
 import { Route as WorkspacePeopleIndexRouteImport } from './routes/_workspace/people/index'
 import { Route as WorkspaceOrganizationsIndexRouteImport } from './routes/_workspace/organizations/index'
@@ -199,6 +200,12 @@ const WorkspaceResourcesIndexRoute = WorkspaceResourcesIndexRouteImport.update({
   path: '/resources/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
+const WorkspacePromotionsIndexRoute =
+  WorkspacePromotionsIndexRouteImport.update({
+    id: '/promotions/',
+    path: '/promotions/',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceProductsIndexRoute = WorkspaceProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -557,6 +564,7 @@ export interface FileRoutesByFullPath {
   '/organizations/': typeof WorkspaceOrganizationsIndexRoute
   '/people/': typeof WorkspacePeopleIndexRoute
   '/products/': typeof WorkspaceProductsIndexRoute
+  '/promotions/': typeof WorkspacePromotionsIndexRoute
   '/resources/': typeof WorkspaceResourcesIndexRoute
   '/settings/': typeof WorkspaceSettingsIndexRoute
   '/suppliers/': typeof WorkspaceSuppliersIndexRoute
@@ -632,6 +640,7 @@ export interface FileRoutesByTo {
   '/organizations': typeof WorkspaceOrganizationsIndexRoute
   '/people': typeof WorkspacePeopleIndexRoute
   '/products': typeof WorkspaceProductsIndexRoute
+  '/promotions': typeof WorkspacePromotionsIndexRoute
   '/resources': typeof WorkspaceResourcesIndexRoute
   '/settings': typeof WorkspaceSettingsIndexRoute
   '/suppliers': typeof WorkspaceSuppliersIndexRoute
@@ -712,6 +721,7 @@ export interface FileRoutesById {
   '/_workspace/organizations/': typeof WorkspaceOrganizationsIndexRoute
   '/_workspace/people/': typeof WorkspacePeopleIndexRoute
   '/_workspace/products/': typeof WorkspaceProductsIndexRoute
+  '/_workspace/promotions/': typeof WorkspacePromotionsIndexRoute
   '/_workspace/resources/': typeof WorkspaceResourcesIndexRoute
   '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/_workspace/suppliers/': typeof WorkspaceSuppliersIndexRoute
@@ -790,6 +800,7 @@ export interface FileRouteTypes {
     | '/organizations/'
     | '/people/'
     | '/products/'
+    | '/promotions/'
     | '/resources/'
     | '/settings/'
     | '/suppliers/'
@@ -865,6 +876,7 @@ export interface FileRouteTypes {
     | '/organizations'
     | '/people'
     | '/products'
+    | '/promotions'
     | '/resources'
     | '/settings'
     | '/suppliers'
@@ -944,6 +956,7 @@ export interface FileRouteTypes {
     | '/_workspace/organizations/'
     | '/_workspace/people/'
     | '/_workspace/products/'
+    | '/_workspace/promotions/'
     | '/_workspace/resources/'
     | '/_workspace/settings/'
     | '/_workspace/suppliers/'
@@ -1144,6 +1157,13 @@ declare module '@tanstack/react-router' {
       path: '/resources'
       fullPath: '/resources/'
       preLoaderRoute: typeof WorkspaceResourcesIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/promotions/': {
+      id: '/_workspace/promotions/'
+      path: '/promotions'
+      fullPath: '/promotions/'
+      preLoaderRoute: typeof WorkspacePromotionsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/products/': {
@@ -1632,6 +1652,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceOrganizationsIndexRoute: typeof WorkspaceOrganizationsIndexRoute
   WorkspacePeopleIndexRoute: typeof WorkspacePeopleIndexRoute
   WorkspaceProductsIndexRoute: typeof WorkspaceProductsIndexRoute
+  WorkspacePromotionsIndexRoute: typeof WorkspacePromotionsIndexRoute
   WorkspaceResourcesIndexRoute: typeof WorkspaceResourcesIndexRoute
   WorkspaceSuppliersIndexRoute: typeof WorkspaceSuppliersIndexRoute
   WorkspaceAvailabilityRulesIdRoute: typeof WorkspaceAvailabilityRulesIdRoute
@@ -1687,6 +1708,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceOrganizationsIndexRoute: WorkspaceOrganizationsIndexRoute,
   WorkspacePeopleIndexRoute: WorkspacePeopleIndexRoute,
   WorkspaceProductsIndexRoute: WorkspaceProductsIndexRoute,
+  WorkspacePromotionsIndexRoute: WorkspacePromotionsIndexRoute,
   WorkspaceResourcesIndexRoute: WorkspaceResourcesIndexRoute,
   WorkspaceSuppliersIndexRoute: WorkspaceSuppliersIndexRoute,
   WorkspaceAvailabilityRulesIdRoute: WorkspaceAvailabilityRulesIdRoute,
