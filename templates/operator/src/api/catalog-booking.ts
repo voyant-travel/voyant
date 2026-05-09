@@ -364,8 +364,18 @@ async function applyOperatorTaxToQuoteResult(
   entityId: string,
   sourceKind: string,
 ): Promise<QuoteEntityResult> {
-  if (!result.available || !result.pricing || sourceKind === OWNED_SOURCE_KIND) return result
-  if (result.pricing.taxes > 0) return result
+  if (!result.available || !result.pricing) return result
+  // When promotional offers were applied at quote time, `quoteEntity`
+  // clears `taxes` + `breakdown` because the upstream values were
+  // computed against the un-discounted base (per
+  // docs/architecture/promotions-architecture.md §7.1). In that case
+  // we MUST recompute taxes here even for owned quotes — the owned
+  // handler's pre-discount breakdown is stale. Without this branch the
+  // owned discounted quote would round-trip with `taxes: 0` and a
+  // missing breakdown, mis-displaying the customer-facing total.
+  const hasAppliedOffers = (result.pricing.appliedOffers?.length ?? 0) > 0
+  if (sourceKind === OWNED_SOURCE_KIND && !hasAppliedOffers) return result
+  if (result.pricing.taxes > 0 && !hasAppliedOffers) return result
 
   const pricing = result.pricing
   const taxableCents = pricing.base_amount

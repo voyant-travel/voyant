@@ -28,11 +28,19 @@
  *                                   in sync with offer mutations and
  *                                   boundary-scheduler firings (per
  *                                   promotions-architecture §9.1 + §9.2).
- *                                   Payload's `affected.kind` decides
- *                                   between targeted reindex (products
- *                                   list) and best-effort full sweep
- *                                   ("all" — currently no-op pending a
- *                                   bulk-reindex API on IndexerService).
+ *                                   Payload's `affected.kind` decides:
+ *                                   `products` → reindex listed IDs in
+ *                                   the subscriber. `all` (global /
+ *                                   market / audience scope) → log +
+ *                                   skip; ops triggers
+ *                                   `pnpm exec tsx scripts/reindex.ts products`
+ *                                   manually. Inline enumeration of every
+ *                                   owned product is unsafe on Cloudflare
+ *                                   Workers (CPU / wall-time limits);
+ *                                   the proper fix is to enqueue a
+ *                                   `@voyantjs/workflows` job — tracked
+ *                                   in voyantjs/voyant#515 (blocked on
+ *                                   #514, `trigger.on()` runtime).
  *   - `booking.confirmed`         → capture a snapshot graph of the
  *                                   booking's product line items via
  *                                   `captureSnapshotGraph`
@@ -222,16 +230,26 @@ export const catalogBridgeBundle: HonoBundle = {
 
     // Promotion mutations + boundary-scheduler firings reindex the
     // affected product set so `bestOffer*` annotations stay in sync.
-    // `affected.kind: "products"` → reindex each ID directly; `"all"`
-    // → log + no-op for now (a bulk-reindex API on IndexerService is
-    // tracked as a follow-up; in practice "all" only fires for global
-    // / market / audience scope changes which are operator-rare).
+    //
+    // `affected.kind === "products"` → reindex each listed ID inline.
+    // Bounded by the offer's materialized link table; safe on Workers.
+    //
+    // `affected.kind === "all"` → log + skip. Inline enumeration of
+    // every owned product is unsafe on Cloudflare Workers (CPU /
+    // wall-time limits, especially for large catalogs). Operators run
+    // `pnpm exec tsx scripts/reindex.ts products` to refresh after
+    // creating / expiring a global / market / audience-scoped offer.
+    //
+    // Tracked: voyantjs/voyant#515 — moves this branch onto a
+    // `@voyantjs/workflows` workflow with `defaultRuntime: "node"`
+    // (no Workers limits) triggered via `trigger.on("promotion.changed",
+    // ...)`. Blocked on voyantjs/voyant#514 (`trigger.on()` runtime).
     eventBus.subscribe<PromotionChangedPayload>("promotion.changed", async ({ data }) => {
       if (data.affected.kind === "all") {
-        console.info("[catalog-bridge] promotion.changed affected=all — skipping bulk reindex", {
-          offerId: data.offerId,
-          source: data.source,
-        })
+        console.warn(
+          "[catalog-bridge] promotion.changed affected=all — bulk reindex skipped (unsafe inline on Workers); run `pnpm exec tsx scripts/reindex.ts products` to refresh. See voyantjs/voyant#515.",
+          { offerId: data.offerId, source: data.source },
+        )
         return
       }
       const productIds = data.affected.productIds

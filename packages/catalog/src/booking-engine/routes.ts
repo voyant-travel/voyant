@@ -582,6 +582,14 @@ function engineParametersFromDraft(
   if (paxCount > 0 && next.paxCount == null) {
     next.paxCount = paxCount
   }
+  // Lift `draft.promotionCode` to the top-level so `quoteEntity`'s
+  // promotion hook can read it without descending into the nested
+  // draft. Same lifting pattern as `paxCount` above. Per
+  // docs/architecture/promotions-architecture.md §7.0.
+  const promotionCode = stringValue(draft?.promotionCode)
+  if (promotionCode && next.promotionCode == null) {
+    next.promotionCode = promotionCode
+  }
 
   return next
 }

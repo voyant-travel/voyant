@@ -67,21 +67,27 @@ export async function runScheduledPromotionBoundary(
       )
 
       // Aggregate distinct product IDs across all crossings so multiple
-      // offers crossing on the same product reindex once.
+      // offers crossing on the same product reindex once. When a
+      // crossing is `affected.kind === "all"` (global / market /
+      // audience scope change), log + skip — inline enumeration of
+      // every owned product is unsafe in a Workers cron handler (CPU /
+      // wall-time limits, especially for large catalogs). Operators
+      // run `pnpm exec tsx scripts/reindex.ts products` to refresh
+      // after such crossings.
+      //
+      // Tracked: voyantjs/voyant#515 — moves this branch onto a
+      // `@voyantjs/workflows` workflow with `defaultRuntime: "node"`,
+      // triggered via `trigger.on("promotion.changed", ...)`. Blocked
+      // on voyantjs/voyant#514 (`trigger.on()` runtime).
       const productIds = new Set<string>()
       for (const crossing of result.crossings) {
         if (crossing.affected.kind === "products") {
           for (const id of crossing.affected.productIds) productIds.add(id)
         } else {
-          // `affected.kind === "all"` — global / market / audience scope
-          // changes. Skipped here for the same reason as the live
-          // catalog-bridge subscriber: there's no bulk-reindex API on
-          // IndexerService and these crossings are rare. Logged so ops
-          // can spot if the gap matters in practice.
-          console.info("[promotion-scheduled] skipping affected=all crossing", {
-            offerId: crossing.offerId,
-            source: crossing.source,
-          })
+          console.warn(
+            "[promotion-scheduled] crossing affected=all — bulk reindex skipped (unsafe inline on Workers); run `pnpm exec tsx scripts/reindex.ts products` to refresh. See voyantjs/voyant#515.",
+            { offerId: crossing.offerId, source: crossing.source },
+          )
         }
       }
 

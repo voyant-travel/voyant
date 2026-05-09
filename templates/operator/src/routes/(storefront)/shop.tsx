@@ -142,8 +142,34 @@ function SearchResults({
         const fields = hit.document.fields
         const name = readString(fields.name) ?? readString(fields.title) ?? hit.id
         const description = readString(fields.description) ?? readString(fields.summary)
-        const price = readNumber(fields.price_cents) ?? readNumber(fields.sell_amount_cents)
+        const listPrice = readNumber(fields.price_cents) ?? readNumber(fields.sell_amount_cents)
         const currency = readString(fields.currency) ?? readString(fields.sell_currency) ?? ""
+        // Promotion annotations from `productPromotionsCatalogPolicy` (PR3
+        // of #497). The catalog projection emits `bestOffer*` +
+        // `originalPriceFromAmountCents` only for products with an
+        // active auto-applied offer for the slice. Storefront consumers
+        // compute the effective price client-side (per
+        // promotions-architecture.md §3.7).
+        const offerName = readString(fields.bestOfferName)
+        const offerDiscountKind = readString(fields.bestOfferDiscountKind)
+        const offerDiscountPercent = readNumber(fields.bestOfferDiscountPercent)
+        const offerDiscountAmountCents = readNumber(fields.bestOfferDiscountAmountCents)
+        const originalPriceCents = readNumber(fields.originalPriceFromAmountCents)
+        const effectivePrice = computeEffectivePrice(listPrice, {
+          kind: offerDiscountKind,
+          percent: offerDiscountPercent,
+          amountCents: offerDiscountAmountCents,
+        })
+        const showStrikethrough =
+          originalPriceCents != null &&
+          effectivePrice != null &&
+          originalPriceCents > effectivePrice
+        const offerBadgeText = describeOffer(
+          offerDiscountKind,
+          offerDiscountPercent,
+          offerDiscountAmountCents,
+          currency,
+        )
         return (
           <Card key={hit.id}>
             <CardHeader>
@@ -153,13 +179,30 @@ function SearchResults({
               {description ? (
                 <p className="text-muted-foreground line-clamp-3">{description}</p>
               ) : null}
-              {price != null ? (
-                <p className="font-medium">
-                  {(price / 100).toLocaleString(undefined, {
-                    style: currency ? "currency" : "decimal",
-                    currency: currency || undefined,
-                  })}
-                </p>
+              {effectivePrice != null ? (
+                <div className="space-y-0.5">
+                  <p className="font-medium">
+                    {(effectivePrice / 100).toLocaleString(undefined, {
+                      style: currency ? "currency" : "decimal",
+                      currency: currency || undefined,
+                    })}
+                    {showStrikethrough && originalPriceCents != null ? (
+                      <span className="ml-2 text-muted-foreground text-xs line-through">
+                        {(originalPriceCents / 100).toLocaleString(undefined, {
+                          style: currency ? "currency" : "decimal",
+                          currency: currency || undefined,
+                        })}
+                      </span>
+                    ) : null}
+                  </p>
+                  {offerName && offerBadgeText ? (
+                    <p className="text-xs">
+                      <span className="rounded-sm bg-emerald-500/10 px-1.5 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
+                        {offerBadgeText} — {offerName}
+                      </span>
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
               <Link
                 to="/shop/products/$entityModule/$entityId"
@@ -198,6 +241,45 @@ function readNumber(v: unknown): number | undefined {
   if (typeof v === "string") {
     const n = Number.parseFloat(v)
     return Number.isFinite(n) ? n : undefined
+  }
+  return undefined
+}
+
+/**
+ * Apply the projected `bestOffer*` discount to the indexed list price.
+ * Storefront consumers compute this client-side because the catalog
+ * projection emits annotations only, never overwriting `priceFromAmountCents`
+ * (per promotions-architecture.md §3.7).
+ */
+function computeEffectivePrice(
+  listPriceCents: number | undefined,
+  offer: { kind?: string; percent?: number; amountCents?: number },
+): number | undefined {
+  if (listPriceCents == null) return undefined
+  if (!offer.kind) return listPriceCents
+  if (offer.kind === "percentage" && offer.percent != null) {
+    return Math.max(0, Math.round(listPriceCents * (1 - offer.percent / 100)))
+  }
+  if (offer.kind === "fixed_amount" && offer.amountCents != null) {
+    return Math.max(0, listPriceCents - offer.amountCents)
+  }
+  return listPriceCents
+}
+
+function describeOffer(
+  kind: string | undefined,
+  percent: number | undefined,
+  amountCents: number | undefined,
+  currency: string,
+): string | undefined {
+  if (kind === "percentage" && percent != null) {
+    return `${percent}% off`
+  }
+  if (kind === "fixed_amount" && amountCents != null) {
+    return `${(amountCents / 100).toLocaleString(undefined, {
+      style: currency ? "currency" : "decimal",
+      currency: currency || undefined,
+    })} off`
   }
   return undefined
 }

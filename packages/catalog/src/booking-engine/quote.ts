@@ -282,6 +282,15 @@ export async function quoteEntity(
       pricing.base_amount = Math.round(pricing.base_amount) - offerEval.total.discountAppliedCents
       pricing.appliedOffers = offerEval.applied
       appliedOffers = offerEval.applied
+      // Invalidate any taxes / breakdown that the source (sourced
+      // adapter or owned handler) computed against the un-discounted
+      // base — they're stale now. Setting `taxes = 0` and clearing
+      // `breakdown` is the explicit signal the operator-side transform
+      // (`applyOperatorTaxToQuoteResult`) reads to recompute. Without
+      // this, the API serializer would echo a breakdown total that
+      // doesn't match `appliedOffers`.
+      pricing.taxes = 0
+      pricing.breakdown = undefined
     }
   }
 
