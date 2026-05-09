@@ -2,20 +2,32 @@
 
 Cloudflare Worker + Durable Object adapter for
 [`@voyantjs/workflows-orchestrator`](../workflows-orchestrator). Composes the
-protocol-agnostic state machine with DO-backed storage and a
-Workers-for-Platforms dispatch namespace that fans step requests out
-to tenant Workers.
+protocol-agnostic state machine with DO-backed storage and a pluggable
+**step dispatcher** that delivers step requests to wherever the
+workflow code lives.
 
 This package is the building block; the deployable artifact lives in
 [`apps/workflows-orchestrator-worker`](../../apps/workflows-orchestrator-worker), which
 wires it into a `wrangler.jsonc` + default-exports.
+
+## Picking a dispatcher
+
+The orchestrator forwards step requests through a `StepDispatcher`. Pick
+the factory that matches your deployment:
+
+| Factory | Use case | Bindings needed |
+|---|---|---|
+| `createWfpDispatcher` | Multi-tenant via Workers-for-Platforms (Voyant Cloud) | WfP dispatch namespace |
+| `createServiceBindingDispatcher` | Self-host: orchestrator + workflows are separate Workers | A service binding |
+| `createInlineDispatcher` | Self-host single-Worker (workflows + API in same isolate) | None |
+| `createHttpDispatcher` | Cross-host (e.g. CF orchestrator → Node-side workflows) | An HTTP endpoint |
 
 ```ts
 import {
   handleWorkerRequest,
   handleDurableObjectRequest,
   handleDurableObjectAlarm,
-  createDispatchStepHandler,
+  createWfpDispatcher,
 } from "@voyantjs/workflows-orchestrator-cloudflare";
 
 export default {
@@ -38,10 +50,10 @@ export class WorkflowRunDO implements DurableObject {
   private deps() {
     return {
       storage: this.state.storage,
-      resolveStepHandler: (tenantScript: string) =>
-        createDispatchStepHandler(tenantScript, {
-          dispatcher: this.env.DISPATCHER,
-        }),
+      // Multi-tenant via WfP — swap for createInlineDispatcher,
+      // createServiceBindingDispatcher, or createHttpDispatcher
+      // depending on where workflow code lives.
+      dispatcher: createWfpDispatcher({ namespace: this.env.DISPATCHER }),
     };
   }
 }

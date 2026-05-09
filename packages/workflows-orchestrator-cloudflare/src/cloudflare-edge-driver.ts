@@ -56,9 +56,13 @@ export interface CloudflareEdgeDriverOptions {
   /**
    * Dispatch-namespace script name the run DOs use to forward step
    * requests to the tenant Worker. Becomes `RunRecord.tenantMeta.tenantScript`.
-   * Required because Workers can't introspect their own dispatch namespace.
+   *
+   * Only meaningful when the orchestrator's run DO is configured with a
+   * Workers-for-Platforms dispatcher (`createWfpDispatcher`). Self-host
+   * single-tenant deployments using inline / service-binding / HTTP
+   * dispatchers can leave it unset — those dispatchers ignore tenantScript.
    */
-  tenantScript: string
+  tenantScript?: string
   /** Default environment for `trigger()` calls without an explicit one. */
   defaultEnvironment?: EnvironmentName
   /** Tenant metadata stamped onto every triggered run. Defaults to "default" tripled. */
@@ -106,7 +110,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
     const tenantMeta = {
       ...DEFAULT_TENANT_META,
       ...(opts.tenantMeta ?? {}),
-      tenantScript: opts.tenantScript,
+      ...(opts.tenantScript ? { tenantScript: opts.tenantScript } : {}),
     }
     const defaultEnv = opts.defaultEnvironment ?? "development"
     const logger = opts.logger ?? deps.logger

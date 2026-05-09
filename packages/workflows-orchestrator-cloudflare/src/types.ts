@@ -61,8 +61,13 @@ export interface TriggerPayload {
     tenantId: string
     projectId: string
     organizationId: string
-    /** Dispatch-namespace name to forward step requests to. */
-    tenantScript: string
+    /**
+     * Dispatch-namespace name to forward step requests to. Required only
+     * for the Workers-for-Platforms dispatcher; self-host single-tenant
+     * deployments using `createInlineDispatcher` /
+     * `createServiceBindingDispatcher` / `createHttpDispatcher` can omit.
+     */
+    tenantScript?: string
   }
   environment?: "production" | "preview" | "development"
   tags?: string[]

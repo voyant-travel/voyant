@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it } from "vitest"
 import {
   createDispatchStepHandler,
   createDurableObjectRunStore,
+  createInlineDispatcher,
+  createWfpDispatcher,
   type DispatchNamespaceLike,
   type DurableObjectNamespaceLike,
   type DurableObjectStorageLike,
@@ -106,8 +108,7 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> & {
         async fetch(req: Request): Promise<Response> {
           return handleDurableObjectRequest(req, {
             storage: storage!,
-            resolveStepHandler: (tenantScript) =>
-              createDispatchStepHandler(tenantScript, { dispatcher }),
+            dispatcher: createWfpDispatcher({ namespace: dispatcher }),
           })
         },
       }
@@ -582,7 +583,7 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
       }),
       {
         storage,
-        resolveStepHandler: () => async (req) => handleStepRequest(req),
+        dispatcher: createInlineDispatcher(async (req) => handleStepRequest(req)),
         now: () => t0,
       },
     )
@@ -616,7 +617,7 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
       }),
       {
         storage,
-        resolveStepHandler: () => async (req) => handleStepRequest(req),
+        dispatcher: createInlineDispatcher(async (req) => handleStepRequest(req)),
         now: () => t0,
       },
     )
@@ -624,7 +625,7 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
     // Now fire the alarm at t0 + 10_000 + a bit.
     await handleDurableObjectAlarm({
       storage,
-      resolveStepHandler: () => async (req) => handleStepRequest(req),
+      dispatcher: createInlineDispatcher(async (req) => handleStepRequest(req)),
       now: () => t0 + 10_500,
     })
 
@@ -632,7 +633,7 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
       new Request("https://do-internal/get", { method: "GET" }),
       {
         storage,
-        resolveStepHandler: () => async (req) => handleStepRequest(req),
+        dispatcher: createInlineDispatcher(async (req) => handleStepRequest(req)),
         now: () => t0 + 10_500,
       },
     )
@@ -657,9 +658,10 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
     let clock = 1_000_000
     const deps = {
       storage,
-      resolveStepHandler:
-        () => async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
+      dispatcher: createInlineDispatcher(
+        async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
           handleStepRequest(req),
+      ),
       now: () => clock,
     }
     await handleDurableObjectRequest(
@@ -708,9 +710,10 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
     let clock = 1_000_000
     const deps = {
       storage,
-      resolveStepHandler:
-        () => async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
+      dispatcher: createInlineDispatcher(
+        async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
           handleStepRequest(req),
+      ),
       now: () => clock,
     }
     await handleDurableObjectRequest(
@@ -746,9 +749,10 @@ describe("DO alarms + handleDurableObjectAlarm", () => {
     const storage = makeStorage()
     const deps = {
       storage,
-      resolveStepHandler:
-        () => async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
+      dispatcher: createInlineDispatcher(
+        async (req: import("@voyantjs/workflows-orchestrator").WorkflowStepRequest) =>
           handleStepRequest(req),
+      ),
     }
     await handleDurableObjectRequest(
       new Request("https://do-internal/trigger", {

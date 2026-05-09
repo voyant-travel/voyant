@@ -40,6 +40,18 @@ export {
   createDispatchStepHandler,
   type DispatchHandlerDeps,
 } from "./dispatch-handler.js"
+export {
+  createHttpDispatcher,
+  createInlineDispatcher,
+  createServiceBindingDispatcher,
+  createWfpDispatcher,
+  type HttpDispatcherOptions,
+  type ServiceBindingDispatcherOptions,
+  type ServiceBindingLike,
+  type StepDispatcher,
+  type StepDispatcherContext,
+  type WfpDispatcherOptions,
+} from "./dispatchers.js"
 export { createDurableObjectRunStore } from "./do-store.js"
 export {
   type DurableObjectDeps,

@@ -33,8 +33,8 @@
 import { Container } from "@cloudflare/containers"
 import { createBearerVerifier } from "@voyantjs/workflows/auth"
 import {
-  createDispatchStepHandler,
   createKvManifestStore,
+  createWfpDispatcher,
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
   handleWorkerRequest,
@@ -113,10 +113,7 @@ export class WorkflowRunDO implements DurableObject {
   private deps() {
     return {
       storage: this.state.storage,
-      resolveStepHandler: (tenantScript: string) =>
-        createDispatchStepHandler(tenantScript, {
-          dispatcher: this.env.DISPATCHER,
-        }),
+      dispatcher: createWfpDispatcher({ namespace: this.env.DISPATCHER }),
     }
   }
 }
