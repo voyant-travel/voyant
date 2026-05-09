@@ -94,6 +94,11 @@ export function createPostgresWakeupStore(opts: PostgresWakeupStoreOptions): Wak
         lease_expires_at: number | string | null
         updated_at: number | string
       }>
+      rows.sort((a, b) => {
+        const priorityDelta = toNumber(b.priority) - toNumber(a.priority)
+        if (priorityDelta !== 0) return priorityDelta
+        return toNumber(a.wake_at) - toNumber(b.wake_at)
+      })
       return rows.map((row) => ({
         runId: row.run_id,
         wakeAt: toNumber(row.wake_at),
