@@ -2,6 +2,7 @@
 // Authoritative contract in docs/sdk-surface.md §2–§3.
 
 import type { Condition } from "./conditions.js"
+import type { ServiceResolver } from "./driver.js"
 import type {
   Duration,
   EnvironmentName,
@@ -157,6 +158,16 @@ export interface WorkflowContext<_TInput = unknown> {
   readonly organization: { id: string; slug: string }
   readonly invocationCount: number
   readonly signal: AbortSignal
+
+  /**
+   * Read-only view of the framework's service container. Step bodies resolve
+   * shared services (db, indexer, etc.) via `ctx.services.resolve("name")`.
+   * The framework wires this from `createApp()`'s `ModuleContainer` through
+   * `StepHandlerDeps.services`. When no container is plumbed (driver not
+   * configured with `services`, or in raw orchestrator tests), `resolve(...)`
+   * throws with a clear message and `has(...)` returns `false`.
+   */
+  readonly services: ServiceResolver
 
   step: StepApi
   sleep: (duration: Duration) => Promise<void>

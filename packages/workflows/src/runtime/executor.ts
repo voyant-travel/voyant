@@ -132,6 +132,13 @@ export interface ExecuteWorkflowStepRequest {
    * array so the at-end delivery keeps working.
    */
   onStreamChunk?: (chunk: StreamChunk) => void
+  /**
+   * Optional read-only service resolver, surfaced to the workflow body as
+   * `ctx.services`. Wired by the framework through
+   * `StepHandlerDeps.services` → here. When unset, `ctx.services.resolve(...)`
+   * throws with a clear message — see `runtime/ctx.ts`.
+   */
+  services?: import("../driver.js").ServiceResolver
 }
 
 export type ExecuteWorkflowStepResponse =
@@ -285,6 +292,7 @@ export async function executeWorkflowStep(
     clock,
     random,
     retryOverride,
+    services: req.services,
   })
 
   try {

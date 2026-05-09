@@ -69,6 +69,14 @@ export interface StepHandlerDeps {
    * the target runtime; the executor only cares that a runner exists.
    */
   nodeStepRunner?: StepRunner
+  /**
+   * Read-only service resolver, surfaced to step bodies as `ctx.services`.
+   * The framework's `createApp()` wires this from its `ModuleContainer`;
+   * raw orchestrator harnesses (tests, ad-hoc scripts) typically leave
+   * it unset, in which case `ctx.services.resolve(...)` throws with a
+   * clear message. See architecture doc §11.
+   */
+  services?: import("../driver.js").ServiceResolver
 }
 
 /** The HTTP request body the orchestrator sends. */
@@ -235,6 +243,7 @@ async function runStepInner(
       stepRunner,
       nodeStepRunner: deps.nodeStepRunner,
       rateLimiter: deps.rateLimiter,
+      services: deps.services,
       now,
       abortSignal: opts.signal,
       onStreamChunk: opts.onStreamChunk,

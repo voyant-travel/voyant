@@ -25,7 +25,6 @@ import {
   type IngestEventArgs,
   type IngestEventResponse,
   ManifestNotRegisteredError,
-  type ServiceResolver,
   type WorkflowAdmin,
   type WorkflowDriver,
 } from "@voyantjs/workflows/driver"
@@ -73,9 +72,13 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
     const now = opts.now ?? deps.now ?? (() => Date.now())
     const tenantMeta = opts.tenantMeta ?? DEFAULT_TENANT_META
     const defaultEnv: EnvironmentName = opts.defaultEnvironment ?? "development"
+    // Wire the framework-supplied service container through to step bodies.
+    // The handler closes over `deps.services` so every step invocation
+    // surfaces it as `ctx.services` inside the workflow body.
     const handler: StepHandler =
       opts.handler ??
-      (async (req: WorkflowStepRequest, stepOpts) => handleStepRequest(req, {}, stepOpts))
+      (async (req: WorkflowStepRequest, stepOpts) =>
+        handleStepRequest(req, { services: deps.services }, stepOpts))
 
     let shuttingDown = false
 
@@ -278,8 +281,3 @@ function toEpoch(v: number | Date | undefined): number | undefined {
   if (v === undefined) return undefined
   return typeof v === "number" ? v : v.getTime()
 }
-
-// Make the unused `ServiceResolver` import explicit so TypeScript doesn't
-// flag it; it documents that drivers receive one even when InMemory doesn't
-// consume it for execution today.
-type _Unused = ServiceResolver

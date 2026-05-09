@@ -14,27 +14,43 @@
 // Architecture: docs/architecture/workflows-runtime-architecture.md §6.4.
 
 import { __resetRegistry, workflow } from "@voyantjs/workflows"
-import type { DriverFactory, DriverFactoryDeps } from "@voyantjs/workflows/driver"
+import type { DriverFactory, DriverFactoryDeps, ServiceResolver } from "@voyantjs/workflows/driver"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 import { beforeEach, describe, expect, test } from "vitest"
 
 import { createInMemoryDriver } from "../driver-inmemory.js"
 
 /**
- * Build a `DriverFactoryDeps` value suitable for compliance tests. Captures
- * log lines so individual tests can assert on them when needed.
+ * Tiny in-memory ServiceResolver builder for compliance tests. Lets a test
+ * register named services then assert workflow bodies can resolve them via
+ * `ctx.services.resolve(...)`.
  */
-function testFactoryDeps(): DriverFactoryDeps & { logs: Array<[string, string, object?]> } {
+function makeServiceResolver(entries: Record<string, unknown> = {}): ServiceResolver {
+  const map = new Map(Object.entries(entries))
+  return {
+    resolve<T>(name: string): T {
+      if (!map.has(name)) {
+        throw new Error(`compliance harness: no service registered under "${name}"`)
+      }
+      return map.get(name) as T
+    },
+    has(name: string): boolean {
+      return map.has(name)
+    },
+  }
+}
+
+/**
+ * Build a `DriverFactoryDeps` value suitable for compliance tests. Captures
+ * log lines so individual tests can assert on them when needed. Pass
+ * `services` to register specific entries; defaults to an empty resolver.
+ */
+function testFactoryDeps(
+  services: ServiceResolver = makeServiceResolver(),
+): DriverFactoryDeps & { logs: Array<[string, string, object?]> } {
   const logs: Array<[string, string, object?]> = []
   return {
-    services: {
-      resolve<T>(name: string): T {
-        throw new Error(`compliance harness: no service registered under "${name}"`)
-      },
-      has() {
-        return false
-      },
-    },
+    services,
     logger: (level, msg, data) => logs.push([level, msg, data]),
     logs,
   }
@@ -269,6 +285,66 @@ export function runDriverComplianceSuite(name: string, makeFactory: () => Driver
           async run() {},
         })
         await expect(driver.trigger(wf, {})).rejects.toThrow()
+      })
+    })
+
+    describe("ctx.services (container threading)", () => {
+      test("workflow body resolves a service registered on the harness", async () => {
+        interface Greeter {
+          hello(name: string): string
+        }
+        const greeter: Greeter = {
+          hello: (name) => `hi ${name}`,
+        }
+        const services = makeServiceResolver({ greeter })
+        const driver = makeFactory()(testFactoryDeps(services))
+
+        const wf = workflow<{ name: string }, { greeting: string }>({
+          id: "compliance-services-resolve",
+          async run(input, ctx) {
+            const g = ctx.services.resolve<Greeter>("greeter")
+            return { greeting: g.hello(input.name) }
+          },
+        })
+
+        const run = await driver.trigger(wf, { name: "world" })
+        const detail = await driver.admin?.getRun?.(run.id)
+        expect(detail?.output).toEqual({ greeting: "hi world" })
+      })
+
+      test("ctx.services.has returns true for registered, false for missing", async () => {
+        const services = makeServiceResolver({ db: {} })
+        const driver = makeFactory()(testFactoryDeps(services))
+
+        const wf = workflow<{}, { hasDb: boolean; hasMissing: boolean }>({
+          id: "compliance-services-has",
+          async run(_input, ctx) {
+            return {
+              hasDb: ctx.services.has("db"),
+              hasMissing: ctx.services.has("missing"),
+            }
+          },
+        })
+
+        const run = await driver.trigger(wf, {})
+        const detail = await driver.admin?.getRun?.(run.id)
+        expect(detail?.output).toEqual({ hasDb: true, hasMissing: false })
+      })
+
+      test("ctx.services.resolve on an unregistered key surfaces a step error", async () => {
+        const driver = makeFactory()(testFactoryDeps())
+
+        const wf = workflow<{}, void>({
+          id: "compliance-services-missing",
+          async run(_input, ctx) {
+            ctx.services.resolve("nope")
+          },
+        })
+
+        const run = await driver.trigger(wf, {})
+        const detail = await driver.admin?.getRun?.(run.id)
+        // The body throwing is recorded as a failed run.
+        expect(detail?.status).toBe("failed")
       })
     })
   })
