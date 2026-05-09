@@ -108,6 +108,46 @@ describe.skipIf(!DB_AVAILABLE)("pricing rule events", () => {
       expect(events[0]?.productId).toBe(productId)
     })
 
+    it("updateOptionPriceRule reassigning productId emits for BOTH old and new product", async () => {
+      // Operator moves a rule between products (rare, but the update
+      // schema allows it). Both products' projections must reindex —
+      // old product loses the rule from its MIN, new product gains it.
+      const otherProductId = newId("products")
+      const otherOptionId = newId("product_options")
+      await db.insert(products).values({
+        id: otherProductId,
+        name: "Receiving Product",
+        sellCurrency: "USD",
+        bookingMode: "date",
+      })
+      await db
+        .insert(productOptions)
+        .values({ id: otherOptionId, productId: otherProductId, name: "Std", code: "std" })
+
+      const ruleId = newId("option_price_rules")
+      await db.insert(optionPriceRules).values({
+        id: ruleId,
+        productId,
+        optionId,
+        priceCatalogId: catalogId,
+        name: "moving-rule",
+        baseSellAmountCents: 9900,
+        isDefault: true,
+        active: true,
+      })
+
+      const { bus, events } = recordingBus()
+      await updateOptionPriceRule(
+        db,
+        ruleId,
+        { productId: otherProductId, optionId: otherOptionId },
+        { eventBus: bus },
+      )
+      expect(events).toHaveLength(2)
+      const productIds = events.map((e) => e.productId).sort()
+      expect(productIds).toEqual([otherProductId, productId].sort())
+    })
+
     it("deleteOptionPriceRule emits with source='deleted' (snapshots productId before delete)", async () => {
       const ruleId = newId("option_price_rules")
       await db.insert(optionPriceRules).values({
@@ -195,6 +235,63 @@ describe.skipIf(!DB_AVAILABLE)("pricing rule events", () => {
       expect(events[0]?.kind).toBe("option-unit-rule")
       expect(events[0]?.source).toBe("updated")
       expect(events[0]?.productId).toBe(productId)
+    })
+
+    it("updateOptionUnitPriceRule reassigning to a parent on a different product emits for BOTH products", async () => {
+      // Move a unit-rule from parentRuleId (under productId) to a new
+      // parent under a different product. Both products' MINs change.
+      const otherProductId = newId("products")
+      const otherOptionId = newId("product_options")
+      const otherUnitId = newId("option_units")
+      const otherParentRuleId = newId("option_price_rules")
+      await db.insert(products).values({
+        id: otherProductId,
+        name: "Receiving Product",
+        sellCurrency: "USD",
+        bookingMode: "date",
+      })
+      await db
+        .insert(productOptions)
+        .values({ id: otherOptionId, productId: otherProductId, name: "Std", code: "std" })
+      await db
+        .insert(optionUnits)
+        .values({ id: otherUnitId, optionId: otherOptionId, name: "Adult", code: "adult" })
+      await db.insert(optionPriceRules).values({
+        id: otherParentRuleId,
+        productId: otherProductId,
+        optionId: otherOptionId,
+        priceCatalogId: catalogId,
+        name: "other-parent",
+        baseSellAmountCents: null,
+        pricingMode: "per_person",
+        isDefault: true,
+        active: true,
+      })
+
+      const unitRuleId = newId("option_unit_price_rules")
+      await db.insert(optionUnitPriceRules).values({
+        id: unitRuleId,
+        optionPriceRuleId: parentRuleId,
+        optionId,
+        unitId,
+        sellAmountCents: 8500,
+        active: true,
+      })
+
+      const { bus, events } = recordingBus()
+      await updateOptionUnitPriceRule(
+        db,
+        unitRuleId,
+        {
+          optionPriceRuleId: otherParentRuleId,
+          optionId: otherOptionId,
+          unitId: otherUnitId,
+        },
+        { eventBus: bus },
+      )
+      expect(events).toHaveLength(2)
+      const productIds = events.map((e) => e.productId).sort()
+      expect(productIds).toEqual([otherProductId, productId].sort())
     })
 
     it("deleteOptionUnitPriceRule snapshots productId before deletion", async () => {

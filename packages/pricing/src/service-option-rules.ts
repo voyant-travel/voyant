@@ -136,18 +136,37 @@ export async function updateOptionPriceRule(
     }
   }
 
+  // Snapshot the pre-update productId so reassignment (rule moves
+  // between products) reindexes the *previous* product too. Without
+  // this, the projection on the old product keeps a stale MIN that
+  // includes a rule it no longer owns.
+  const [pre] = await db
+    .select({ productId: optionPriceRules.productId })
+    .from(optionPriceRules)
+    .where(eq(optionPriceRules.id, id))
+    .limit(1)
+
   const [row] = await db
     .update(optionPriceRules)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(optionPriceRules.id, id))
     .returning()
   if (!row) return null
+
   await emitRuleChanged(runtime.eventBus, {
     productId: row.productId,
     ruleId: row.id,
     kind: "option-rule",
     source: runtime.source ?? "updated",
   })
+  if (pre && pre.productId !== row.productId) {
+    await emitRuleChanged(runtime.eventBus, {
+      productId: pre.productId,
+      ruleId: row.id,
+      kind: "option-rule",
+      source: runtime.source ?? "updated",
+    })
+  }
   return row
 }
 
@@ -275,6 +294,13 @@ export async function updateOptionUnitPriceRule(
   data: UpdateOptionUnitPriceRuleInput,
   runtime: RuleMutationRuntime = {},
 ) {
+  // Snapshot the pre-update parent's productId. If the update reassigns
+  // `optionPriceRuleId` to a parent rule under a different product, the
+  // *previous* product also loses this unit-rule from its MIN
+  // candidate set and needs reindexing. Without this snapshot the old
+  // product's `priceFromAmountCents` stays stale.
+  const prevProductId = await getProductIdForUnitRule(db, id)
+
   const [row] = await db
     .update(optionUnitPriceRules)
     .set({ ...data, updatedAt: new Date() })
@@ -282,10 +308,18 @@ export async function updateOptionUnitPriceRule(
     .returning()
   if (!row) return null
 
-  const productId = await getProductIdForUnitRule(db, row.id)
-  if (productId) {
+  const nextProductId = await getProductIdForUnitRule(db, row.id)
+  if (nextProductId) {
     await emitRuleChanged(runtime.eventBus, {
-      productId,
+      productId: nextProductId,
+      ruleId: row.id,
+      kind: "option-unit-rule",
+      source: runtime.source ?? "updated",
+    })
+  }
+  if (prevProductId && prevProductId !== nextProductId) {
+    await emitRuleChanged(runtime.eventBus, {
+      productId: prevProductId,
       ruleId: row.id,
       kind: "option-unit-rule",
       source: runtime.source ?? "updated",
