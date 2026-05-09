@@ -43,6 +43,13 @@
       "when": 1778303063333,
       "tag": "0005_fast_the_spike",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778321934868,
+      "tag": "0006_military_richard_fisk",
+      "breakpoints": true
     }
   ]
 }

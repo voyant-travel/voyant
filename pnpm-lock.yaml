@@ -130,7 +130,7 @@ importers:
         version: 1.5.6(528a90069b32ded3cd69e6bc8dd18c96)
       '@cloudflare/vite-plugin':
         specifier: ^1.31.0
-        version: 1.31.0(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260426.1)(wrangler@4.86.0(@cloudflare/workers-types@4.20260426.1))
+        version: 1.31.0(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260507.1)(wrangler@4.86.0(@cloudflare/workers-types@4.20260426.1))
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -4012,6 +4012,40 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/promotions:
+    dependencies:
+      '@voyantjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@voyantjs/db':
+        specifier: workspace:*
+        version: link:../db
+      '@voyantjs/hono':
+        specifier: workspace:*
+        version: link:../hono
+      '@voyantjs/products':
+        specifier: workspace:*
+        version: link:../products
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: ^4.12.10
+        version: 4.12.10
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   packages/react:
     devDependencies:
       '@types/react':
@@ -5553,6 +5587,9 @@ importers:
       '@voyantjs/products-ui':
         specifier: workspace:*
         version: link:../../packages/products-ui
+      '@voyantjs/promotions':
+        specifier: workspace:*
+        version: link:../../packages/promotions
       '@voyantjs/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -12965,11 +13002,11 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260401.1
 
-  '@cloudflare/unenv-preset@2.16.0(unenv@2.0.0-rc.24)(workerd@1.20260426.1)':
+  '@cloudflare/unenv-preset@2.16.0(unenv@2.0.0-rc.24)(workerd@1.20260507.1)':
     dependencies:
       unenv: 2.0.0-rc.24
     optionalDependencies:
-      workerd: 1.20260426.1
+      workerd: 1.20260507.1
 
   '@cloudflare/unenv-preset@2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260426.1)':
     dependencies:
@@ -12996,9 +13033,9 @@ snapshots:
       - utf-8-validate
       - workerd
 
-  '@cloudflare/vite-plugin@1.31.0(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260426.1)(wrangler@4.86.0(@cloudflare/workers-types@4.20260426.1))':
+  '@cloudflare/vite-plugin@1.31.0(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))(workerd@1.20260507.1)(wrangler@4.86.0(@cloudflare/workers-types@4.20260426.1))':
     dependencies:
-      '@cloudflare/unenv-preset': 2.16.0(unenv@2.0.0-rc.24)(workerd@1.20260426.1)
+      '@cloudflare/unenv-preset': 2.16.0(unenv@2.0.0-rc.24)(workerd@1.20260507.1)
       miniflare: 4.20260401.0
       unenv: 2.0.0-rc.24
       vite: 8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)

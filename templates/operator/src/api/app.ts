@@ -48,6 +48,7 @@ import {
   productsBookingExtension,
   productsHonoModule,
 } from "@voyantjs/products"
+import { promotionsHonoModule } from "@voyantjs/promotions"
 import { resourcesHonoModule } from "@voyantjs/resources"
 import { sellabilityHonoModule } from "@voyantjs/sellability"
 import { createStorefrontHonoModule } from "@voyantjs/storefront"
@@ -757,6 +758,7 @@ export const app = createApp<CloudflareBindings>({
     distributionHonoModule,
     suppliersHonoModule,
     productsHonoModule,
+    promotionsHonoModule,
     bookingsHonoModule,
     financeModule,
     legalModule,
