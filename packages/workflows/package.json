@@ -34,6 +34,10 @@
     "./rate-limit": {
       "types": "./src/rate-limit/index.ts",
       "import": "./src/rate-limit/index.ts"
+    },
+    "./driver": {
+      "types": "./src/driver.ts",
+      "import": "./src/driver.ts"
     }
   },
   "main": "./dist/index.js",
@@ -98,6 +102,10 @@
       "./rate-limit": {
         "types": "./dist/rate-limit/index.d.ts",
         "import": "./dist/rate-limit/index.js"
+      },
+      "./driver": {
+        "types": "./dist/driver.d.ts",
+        "import": "./dist/driver.js"
       }
     },
     "main": "./dist/index.js",
