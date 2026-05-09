@@ -19,8 +19,6 @@ import { createCloudflareEdgeDriver } from "../cloudflare-edge-driver.js"
 import {
   createDurableObjectRunStore,
   createInlineDispatcher,
-  createWfpDispatcher,
-  type DispatchNamespaceLike,
   type DurableObjectNamespaceLike,
   type DurableObjectStorageLike,
   handleDurableObjectRequest,
@@ -67,23 +65,6 @@ function makeStorage(): DurableObjectStorageLike {
   }
 }
 
-function inProcessDispatcher(): DispatchNamespaceLike {
-  return {
-    get() {
-      return {
-        async fetch(req: Request): Promise<Response> {
-          const body = await req.json()
-          const out = await handleStepRequest(body)
-          return new Response(JSON.stringify(out.body), {
-            status: out.status,
-            headers: { "content-type": "application/json" },
-          })
-        },
-      }
-    },
-  }
-}
-
 function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
   const storages = new Map<string, DurableObjectStorageLike>()
   // Per-id request queue — mirrors the production CF guarantee that a
@@ -92,7 +73,7 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
   // though they wouldn't in production. Critical for the
   // `tryInsert` idempotency-race compliance test.
   const queues = new Map<string, Promise<unknown>>()
-  const dispatcher = inProcessDispatcher()
+  const dispatcher = createInlineDispatcher(async (req) => handleStepRequest(req))
   return {
     idFromName(name) {
       return name
@@ -116,7 +97,7 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
           try {
             return await handleDurableObjectRequest(req, {
               storage: stableStorage,
-              dispatcher: createWfpDispatcher({ namespace: dispatcher }),
+              dispatcher,
             })
           } finally {
             release()
@@ -141,59 +122,23 @@ runDriverComplianceSuite(
     createCloudflareEdgeDriver({
       orchestratorNamespace: inProcessRunDONamespace(),
       manifestKv: createInMemoryKv(),
-      tenantScript: "tenant-bundle-test",
     }),
-  // servicesThreading: orchestrator + tenant are separate Worker isolates.
+  // servicesThreading: orchestrator and step handlers can run in
+  //                    separate Worker isolates depending on dispatcher.
   // crossRunQueries:   self-host Mode 1 has no native query layer per §8.3.
   { servicesThreading: false, crossRunQueries: false },
 )
 
-// ---- Self-host inline-dispatcher path ----
+// ---- Smoke: end-to-end driver path with no tenantScript ----
 //
-// Proves the run DO machinery works end-to-end with `createInlineDispatcher`
-// — no WfP, no service binding, no `tenantScript` on the driver. The DO
-// calls the supplied StepHandler directly; this is the shape self-host
-// single-Worker deployments use (workflows + API in the same isolate).
-
-function inProcessInlineRunDONamespace(): DurableObjectNamespaceLike<string> {
-  const storages = new Map<string, DurableObjectStorageLike>()
-  const queues = new Map<string, Promise<void>>()
-  return {
-    idFromName(name) {
-      return name
-    },
-    get(id: string) {
-      let storage = storages.get(id)
-      if (!storage) {
-        storage = makeStorage()
-        storages.set(id, storage)
-      }
-      const stableStorage = storage
-      return {
-        async fetch(req: Request): Promise<Response> {
-          const prev = queues.get(id) ?? Promise.resolve()
-          let release!: () => void
-          const next = new Promise<void>((resolve) => {
-            release = resolve
-          })
-          queues.set(id, next)
-          await prev
-          try {
-            return await handleDurableObjectRequest(req, {
-              storage: stableStorage,
-              dispatcher: createInlineDispatcher(async (request) => handleStepRequest(request)),
-            })
-          } finally {
-            release()
-          }
-        },
-      }
-    },
-  }
-}
+// The compliance suite above already uses createInlineDispatcher for
+// step delivery (see inProcessRunDONamespace). This dedicated case
+// proves a run can be triggered + completed via the public
+// `createCloudflareEdgeDriver` API without setting `tenantScript`
+// anywhere — the shape self-host single-Worker deployments use.
 
 describe("self-host inline-dispatcher path", () => {
-  it("triggers + completes a run with no WfP / no tenantScript", async () => {
+  it("triggers + completes a run with no tenantScript", async () => {
     const wf = workflow<{ n: number }, { doubled: number }>({
       id: "inline-double",
       async run(input) {
@@ -201,9 +146,9 @@ describe("self-host inline-dispatcher path", () => {
       },
     })
     const factory = createCloudflareEdgeDriver({
-      orchestratorNamespace: inProcessInlineRunDONamespace(),
+      orchestratorNamespace: inProcessRunDONamespace(),
       manifestKv: createInMemoryKv(),
-      // Note: no tenantScript — inline dispatcher doesn't use it.
+      // Note: no tenantScript — built-in dispatchers don't use it.
     })
     const driver = factory(testFactoryDeps())
     const run = await driver.trigger(wf, { n: 21 })

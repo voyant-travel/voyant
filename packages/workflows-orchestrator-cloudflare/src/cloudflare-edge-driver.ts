@@ -4,13 +4,12 @@
 // is the entry point for any deployment that runs the orchestrator on
 // Cloudflare Workers + Durable Objects. Composes:
 //
-//   * `voyant_run_DO` (Durable Object namespace)  — primary state.
-//   * `WORKFLOW_MANIFESTS` KV namespace            — manifest store.
-//   * `dispatch_namespace` (DISPATCHER)            — tenant Worker step
-//                                                    dispatch (existing).
-//   * `node-step-pool` DO namespace                — node-runtime steps
-//                                                    via CF Containers
-//                                                    (existing).
+//   * `voyant_run_DO` (Durable Object namespace)  — primary state
+//   * `WORKFLOW_MANIFESTS` KV namespace            — manifest store
+//
+// Step delivery is configured separately on the run DO via a
+// `StepDispatcher` — see `./dispatchers.ts` for built-in factories
+// (inline / service binding / HTTP).
 //
 // The factory is invoked by `createApp()` after the framework's
 // `ModuleContainer` is built — see architecture doc §6.3 for the
@@ -54,13 +53,11 @@ export interface CloudflareEdgeDriverOptions {
   /** KV namespace storing serialized manifests. */
   manifestKv: KvNamespaceLike
   /**
-   * Dispatch-namespace script name the run DOs use to forward step
-   * requests to the tenant Worker. Becomes `RunRecord.tenantMeta.tenantScript`.
-   *
-   * Only meaningful when the orchestrator's run DO is configured with a
-   * Workers-for-Platforms dispatcher (`createWfpDispatcher`). Self-host
-   * single-tenant deployments using inline / service-binding / HTTP
-   * dispatchers can leave it unset — those dispatchers ignore tenantScript.
+   * Adapter-specific tenant identifier stamped onto every triggered
+   * run as `tenantMeta.tenantScript`. Opaque to the OSS runtime —
+   * surfaces on `StepDispatcherContext` for custom dispatchers that
+   * need a routing key. Built-in dispatchers (inline, service-binding,
+   * HTTP) ignore it.
    */
   tenantScript?: string
   /** Default environment for `trigger()` calls without an explicit one. */
@@ -98,7 +95,6 @@ const DEFAULT_TENANT_META = {
  *         driver: createCloudflareEdgeDriver({
  *           orchestratorNamespace: env.WORKFLOW_RUN_DO,
  *           manifestKv:            env.WORKFLOW_MANIFESTS,
- *           tenantScript:          "tenant-bundle",
  *         }),
  *       },
  *     })

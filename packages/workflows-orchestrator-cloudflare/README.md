@@ -1,14 +1,14 @@
 # @voyantjs/workflows-orchestrator-cloudflare
 
 Cloudflare Worker + Durable Object adapter for
-[`@voyantjs/workflows-orchestrator`](../workflows-orchestrator). Composes the
-protocol-agnostic state machine with DO-backed storage and a pluggable
-**step dispatcher** that delivers step requests to wherever the
+[`@voyantjs/workflows-orchestrator`](../workflows-orchestrator). Composes
+the protocol-agnostic state machine with DO-backed storage and a
+pluggable **step dispatcher** that delivers step requests to wherever
 workflow code lives.
 
 This package is the building block; the deployable artifact lives in
-[`apps/workflows-orchestrator-worker`](../../apps/workflows-orchestrator-worker), which
-wires it into a `wrangler.jsonc` + default-exports.
+[`apps/workflows-orchestrator-worker`](../../apps/workflows-orchestrator-worker),
+which wires it into a `wrangler.jsonc` + default-exports.
 
 ## Picking a dispatcher
 
@@ -17,17 +17,20 @@ the factory that matches your deployment:
 
 | Factory | Use case | Bindings needed |
 |---|---|---|
-| `createWfpDispatcher` | Multi-tenant via Workers-for-Platforms (Voyant Cloud) | WfP dispatch namespace |
-| `createServiceBindingDispatcher` | Self-host: orchestrator + workflows are separate Workers | A service binding |
-| `createInlineDispatcher` | Self-host single-Worker (workflows + API in same isolate) | None |
-| `createHttpDispatcher` | Cross-host (e.g. CF orchestrator → Node-side workflows) | An HTTP endpoint |
+| `createInlineDispatcher` | Single-Worker (workflows + API in same isolate) | None |
+| `createServiceBindingDispatcher` | Two-Worker (orchestrator + sibling workflows Worker) | Service binding |
+| `createHttpDispatcher` | Cross-host (e.g. CF orchestrator → Node-side workflows) | HTTP endpoint |
+
+Hosted multi-tenant providers implement custom `StepDispatcher`s in
+their own deployment code — multi-tenancy is a deployment concern, not
+a runtime one, so it doesn't ship here.
 
 ```ts
 import {
   handleWorkerRequest,
   handleDurableObjectRequest,
   handleDurableObjectAlarm,
-  createWfpDispatcher,
+  createServiceBindingDispatcher,
 } from "@voyantjs/workflows-orchestrator-cloudflare";
 
 export default {
@@ -50,10 +53,7 @@ export class WorkflowRunDO implements DurableObject {
   private deps() {
     return {
       storage: this.state.storage,
-      // Multi-tenant via WfP — swap for createInlineDispatcher,
-      // createServiceBindingDispatcher, or createHttpDispatcher
-      // depending on where workflow code lives.
-      dispatcher: createWfpDispatcher({ namespace: this.env.DISPATCHER }),
+      dispatcher: createServiceBindingDispatcher({ binding: this.env.WORKFLOWS }),
     };
   }
 }

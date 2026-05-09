@@ -1,9 +1,8 @@
-// Unit tests for the four StepDispatcher factories. Each factory is a
-// thin wrapper around `createHttpStepHandler` (or, for inline, a
+// Unit tests for the three OSS StepDispatcher factories. Each factory
+// is a thin wrapper around `createHttpStepHandler` (or, for inline, a
 // passthrough); the value of these tests is asserting that the
-// abstraction over WfP / service binding / inline / HTTP behaves the
-// way the run DO expects — same StepHandler shape, correct fetch
-// target, no leakage of WfP-specific concepts into other modes.
+// abstraction over service binding / inline / HTTP behaves the way the
+// run DO expects — same StepHandler shape, correct fetch target.
 
 import { __resetRegistry, workflow } from "@voyantjs/workflows"
 import { handleStepRequest } from "@voyantjs/workflows/handler"
@@ -14,8 +13,6 @@ import {
   createHttpDispatcher,
   createInlineDispatcher,
   createServiceBindingDispatcher,
-  createWfpDispatcher,
-  type DispatchNamespaceLike,
   type ServiceBindingLike,
 } from "../index.js"
 
@@ -150,46 +147,19 @@ describe("createHttpDispatcher", () => {
   })
 })
 
-describe("createWfpDispatcher", () => {
-  it("uses ctx.tenantScript to pick the dispatch-namespace binding", async () => {
-    registerDouble()
-    const seen: string[] = []
-    const namespace: DispatchNamespaceLike = {
-      get(name) {
-        seen.push(name)
-        return {
-          async fetch(req) {
-            const body = (await req.json()) as WorkflowStepRequest
-            const out = await handleStepRequest(body)
-            return new Response(JSON.stringify(out.body), { status: out.status })
-          },
-        }
-      },
+describe("StepDispatcher contract — custom transports", () => {
+  it("ctx.tenantScript surfaces opaquely so custom dispatchers can route on it", async () => {
+    // The OSS factories don't read tenantScript, but a hosted multi-
+    // tenant deployment can implement a StepDispatcher that does.
+    // This test asserts the contract: the run DO passes whatever
+    // tenantScript was on the run's tenantMeta to the dispatcher.
+    const seen: Array<string | undefined> = []
+    const dispatcher = (ctx: { tenantScript?: string }): StepHandler => {
+      seen.push(ctx.tenantScript)
+      return async () => ({ status: 200, body: { status: "completed", output: null } })
     }
-    const dispatcher = createWfpDispatcher({ namespace })
-    const handler = dispatcher({ tenantScript: "tenant-aaa", workflowId: "wf" })
-    await handler({ ...baseRequest, input: { n: 3 } })
-    expect(seen).toEqual(["tenant-aaa"])
-  })
-
-  it("defaults to empty tenantScript when ctx omits it", async () => {
-    registerDouble()
-    const seen: string[] = []
-    const namespace: DispatchNamespaceLike = {
-      get(name) {
-        seen.push(name)
-        return {
-          async fetch(req) {
-            const body = (await req.json()) as WorkflowStepRequest
-            const out = await handleStepRequest(body)
-            return new Response(JSON.stringify(out.body), { status: out.status })
-          },
-        }
-      },
-    }
-    const dispatcher = createWfpDispatcher({ namespace })
-    const handler = dispatcher({})
-    await handler({ ...baseRequest, input: { n: 1 } })
-    expect(seen).toEqual([""])
+    dispatcher({ tenantScript: "tenant-x" })
+    dispatcher({})
+    expect(seen).toEqual(["tenant-x", undefined])
   })
 })

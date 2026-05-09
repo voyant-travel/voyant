@@ -1,40 +1,42 @@
 // Voyant Workflows reference orchestrator Worker.
 //
-// Wraps `@voyantjs/workflows-orchestrator-cloudflare` into a deployable Cloudflare
-// Worker + Durable Object pair. The Worker exposes the public
-// `/api/runs/*` surface; each run lives in a dedicated
-// `WorkflowRunDO` instance whose storage is the journal + status
-// cache. Step requests flow out via a Workers-for-Platforms dispatch
-// namespace to the tenant Worker bundled by `voyant workflows build`.
+// Wraps `@voyantjs/workflows-orchestrator-cloudflare` into a deployable
+// Cloudflare Worker + Durable Object pair. The Worker exposes the
+// public `/api/runs/*` surface; each run lives in a dedicated
+// `WorkflowRunDO` instance whose storage holds the journal + status
+// cache. Step requests flow out via a service binding to a sibling
+// "workflows" Worker that hosts the actual step bodies.
 //
 // Pre-requisites on your Cloudflare account (see README.md):
-//   - Workers-for-Platforms enabled
-//   - A dispatch namespace named `voyant-tenants` (or rename the
-//     `DISPATCHER` binding in wrangler.jsonc)
-//   - Tenant Workers uploaded into that namespace under the same
-//     script name(s) you pass in `tenantMeta.tenantScript`
-//   - Cloudflare Containers enabled on the account; a container
-//     image built from `apps/workflows-node-step-container/Dockerfile`
-//   - An R2 bucket `voyant-bundles` holding per-tenant
-//     `container.mjs` artifacts and a KV namespace `BUNDLE_HASHES`
-//     holding their deploy-time SHA-256
+//   - A workflows Worker deployed under the script name referenced
+//     by the `WORKFLOWS` service binding in wrangler.jsonc
+//   - Cloudflare Containers enabled (only if any step opts into
+//     `runtime: "node"`); a container image built from
+//     `apps/workflows-node-step-container/Dockerfile`
+//   - An R2 bucket `voyant-bundles` (only used by node-runtime steps
+//     that load bundle code from R2) and a KV namespace `BUNDLE_HASHES`
+//     storing their deploy-time SHA-256
 //
 // The `NodeStepContainer` class is exported here so the CF runtime
 // can materialize the container referenced by `wrangler.jsonc`
 // `containers[]`. It is NOT invoked directly by this Worker — the
-// tenant Worker (whose bundle is uploaded to the dispatch namespace)
-// imports `createCfContainerStepRunner` and dispatches to the pool
-// when a step declares `runtime: "node"`.
+// workflows Worker imports `createCfContainerStepRunner` and dispatches
+// to the pool when a step declares `runtime: "node"`.
+//
+// Multi-tenant deployments (e.g. hosted services that need to route
+// each run to a different tenant Worker) implement a custom
+// `StepDispatcher` in their own deployment code rather than using the
+// service-binding form here.
 //
 // What this Worker does NOT do (yet):
 //   - Cross-run list/filter queries. Each DO holds one run; global
-//     queries need the Postgres index that lives in voyant-cloud.
+//     queries need an external index (e.g. a Postgres mirror).
 
 import { Container } from "@cloudflare/containers"
 import { createBearerVerifier } from "@voyantjs/workflows/auth"
 import {
   createKvManifestStore,
-  createWfpDispatcher,
+  createServiceBindingDispatcher,
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
   handleWorkerRequest,
@@ -44,7 +46,12 @@ export interface Env {
   WORKFLOW_RUN_DO: DurableObjectNamespace
   /** DO namespace for the `NodeStepContainer` class — the node-step pool. */
   NODE_STEP_POOL: DurableObjectNamespace
-  DISPATCHER: DispatchNamespace
+  /**
+   * Service binding to the sibling workflows Worker — the one that
+   * actually hosts the step bodies. Declared in wrangler.jsonc as
+   * `services: [{ binding: "WORKFLOWS", service: "<workflows-worker-name>" }]`.
+   */
+  WORKFLOWS: Fetcher
   /** R2 bucket storing per-tenant container bundles. */
   BUNDLE_R2: R2Bucket
   /** KV namespace storing `<projectId>:<workflowVersion>` → SHA-256 of the bundle. */
@@ -113,19 +120,20 @@ export class WorkflowRunDO implements DurableObject {
   private deps() {
     return {
       storage: this.state.storage,
-      dispatcher: createWfpDispatcher({ namespace: this.env.DISPATCHER }),
+      dispatcher: createServiceBindingDispatcher({ binding: this.env.WORKFLOWS }),
     }
   }
 }
 
 /**
  * Cloudflare Container class for `runtime: "node"` steps. One instance
- * per addressable DO id; the tenant Worker's `createCfContainerStepRunner`
- * routes step dispatches here via the `NODE_STEP_POOL` binding.
+ * per addressable DO id; the workflows Worker's
+ * `createCfContainerStepRunner` routes step dispatches here via the
+ * `NODE_STEP_POOL` binding.
  *
  * The container image (built from
- * `apps/workflows-node-step-container/Dockerfile`) boots a small HTTP server
- * that accepts `POST /step`, fetches the tenant bundle from R2 if
+ * `apps/workflows-node-step-container/Dockerfile`) boots a small HTTP
+ * server that accepts `POST /step`, fetches the bundle from R2 if
  * needed, imports it, executes the requested step, and returns the
  * journal entry.
  */

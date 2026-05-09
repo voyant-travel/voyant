@@ -1,33 +1,34 @@
 // Step dispatchers — abstract "given a run's context, produce a
 // StepHandler that delivers step requests to whatever Worker (or
-// isolate) hosts the workflow code." Replaces the WfP-only path with a
-// pluggable surface so Voyant Cloud (multi-tenant WfP), self-host
-// single-Worker (inline), self-host two-Worker (service binding), and
-// cross-host (HTTP) deployments can all reuse the same orchestrator
-// + run DO without leaking deployment plumbing into authoring code.
+// isolate) hosts the workflow code."
+//
+// The OSS runtime ships three universal factories:
+//   * createInlineDispatcher          — same isolate as the orchestrator
+//   * createServiceBindingDispatcher  — sibling Worker via service binding
+//   * createHttpDispatcher            — arbitrary HTTP endpoint
+//
+// Hosted multi-tenant providers (Voyant Cloud, etc.) implement their
+// own dispatchers in their private deployment code — Workers-for-
+// Platforms is one such option, but it doesn't belong in the OSS
+// runtime because it bakes in a CF-specific multi-tenancy story that
+// most self-host users don't need or want.
 //
 // See issue #528 + docs/architecture/workflows-runtime-architecture.md §8.
 
-import {
-  createHttpStepHandler,
-  type StepHandler,
-  type WorkflowStepRequest,
-} from "@voyantjs/workflows-orchestrator"
-
-import type { DispatchNamespaceLike } from "./types.js"
+import { createHttpStepHandler, type StepHandler } from "@voyantjs/workflows-orchestrator"
 
 /**
  * Context the run DO supplies when asking a dispatcher for a
- * StepHandler. Different dispatchers care about different fields:
- *  - WfP routes by `tenantScript` to the right tenant Worker
- *  - Service-binding / inline / HTTP dispatchers usually ignore it
- *  - All dispatchers can use `workflowId` for logging
+ * StepHandler. Most dispatchers ignore it; it carries the run's
+ * adapter-specific tenant identifier (when set) and the workflow id
+ * for logging / per-tenant routing in custom dispatchers.
  */
 export interface StepDispatcherContext {
   /**
-   * Dispatch-namespace script name from the run's `tenantMeta`. Empty
-   * for self-host single-tenant deployments — only WfP dispatchers
-   * use it.
+   * Adapter-specific tenant identifier from the run's `tenantMeta`.
+   * Opaque to the OSS runtime — interpretation is up to whichever
+   * dispatcher consumes it (e.g. a custom multi-tenant dispatcher
+   * may use it as a routing key).
    */
   tenantScript?: string
   /** Workflow id, useful for label / logging. */
@@ -35,56 +36,14 @@ export interface StepDispatcherContext {
 }
 
 /**
- * Pluggable step-dispatch primitive. Replaces the previous
- * `resolveStepHandler: (tenantScript) => StepHandler` closure with a
- * shape that doesn't bake WfP's tenant-script identifier into the
- * core contract.
+ * Pluggable step-dispatch primitive. The run DO calls the dispatcher
+ * once per drive and forwards step requests through the handler it
+ * returns.
  *
  * Pick a factory below based on where workflow code lives in your
- * deployment; the run DO calls the dispatcher once per drive and
- * forwards step requests through the handler it returns.
+ * deployment, or implement the type directly for custom transports.
  */
 export type StepDispatcher = (ctx: StepDispatcherContext) => StepHandler
-
-// ---- Factory: Workers-for-Platforms ----
-
-export interface WfpDispatcherOptions {
-  /** Dispatch namespace binding (e.g. `env.DISPATCHER`). */
-  namespace: DispatchNamespaceLike
-  /** Optional HMAC signer for the X-Voyant-Dispatch-Auth header. */
-  sign?: (body: string) => Promise<string> | string
-  /** Optional structured logger. */
-  logger?: (level: "info" | "warn" | "error", msg: string, data?: object) => void
-  /** URL presented to the tenant Worker. Defaults to `https://tenant.voyant.internal`. */
-  baseUrl?: string
-}
-
-/**
- * Workers-for-Platforms dispatcher. Routes step requests through a
- * dispatch namespace to the tenant Worker named by `ctx.tenantScript`.
- * The mode Voyant Cloud uses internally for multi-tenant deployments —
- * many tenant bundles uploaded over time, dynamic dispatch by name.
- */
-export function createWfpDispatcher(opts: WfpDispatcherOptions): StepDispatcher {
-  const baseUrl = opts.baseUrl ?? "https://tenant.voyant.internal"
-  return (ctx) => {
-    const tenantScript = ctx.tenantScript ?? ""
-    return createHttpStepHandler({
-      sign: opts.sign ? (body) => opts.sign!(body) : undefined,
-      logger: opts.logger,
-      resolveTarget(_req: WorkflowStepRequest) {
-        const binding = opts.namespace.get(tenantScript)
-        return {
-          url: `${baseUrl}/__voyant/workflow-step`,
-          label: tenantScript,
-          fetch(request: Request) {
-            return binding.fetch(request)
-          },
-        }
-      },
-    })
-  }
-}
 
 // ---- Factory: Service binding ----
 

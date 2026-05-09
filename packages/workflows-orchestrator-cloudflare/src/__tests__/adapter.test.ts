@@ -3,15 +3,14 @@ import { handleStepRequest } from "@voyantjs/workflows/handler"
 import type { RunRecord } from "@voyantjs/workflows-orchestrator"
 import { beforeEach, describe, expect, it } from "vitest"
 import {
-  createDispatchStepHandler,
   createDurableObjectRunStore,
   createInlineDispatcher,
-  createWfpDispatcher,
-  type DispatchNamespaceLike,
+  createServiceBindingDispatcher,
   type DurableObjectNamespaceLike,
   type DurableObjectStorageLike,
   handleDurableObjectRequest,
   handleWorkerRequest,
+  type ServiceBindingLike,
 } from "../index.js"
 
 // ---- Fakes ----
@@ -62,23 +61,19 @@ function makeStorage(): AlarmTrackingStorage {
 }
 
 /**
- * A DispatchNamespaceLike whose `fetch` calls the in-process tenant
- * step handler directly — this exercises the full
- * handler→executor round trip without any HTTP transport.
+ * A ServiceBindingLike whose `fetch` calls the in-process step handler
+ * directly — exercises the full handler→executor round trip without
+ * any real HTTP transport.
  */
-function inProcessDispatcher(): DispatchNamespaceLike {
+function inProcessBinding(): ServiceBindingLike {
   return {
-    get() {
-      return {
-        async fetch(req: Request): Promise<Response> {
-          const body = await req.json()
-          const out = await handleStepRequest(body)
-          return new Response(JSON.stringify(out.body), {
-            status: out.status,
-            headers: { "content-type": "application/json" },
-          })
-        },
-      }
+    async fetch(req: Request): Promise<Response> {
+      const body = await req.json()
+      const out = await handleStepRequest(body)
+      return new Response(JSON.stringify(out.body), {
+        status: out.status,
+        headers: { "content-type": "application/json" },
+      })
     },
   }
 }
@@ -92,7 +87,7 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> & {
   _storages: Map<string, DurableObjectStorageLike>
 } {
   const storages = new Map<string, DurableObjectStorageLike>()
-  const dispatcher = inProcessDispatcher()
+  const binding = inProcessBinding()
   return {
     _storages: storages,
     idFromName(name) {
@@ -108,7 +103,7 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> & {
         async fetch(req: Request): Promise<Response> {
           return handleDurableObjectRequest(req, {
             storage: storage!,
-            dispatcher: createWfpDispatcher({ namespace: dispatcher }),
+            dispatcher: createServiceBindingDispatcher({ binding }),
           })
         },
       }
@@ -170,9 +165,9 @@ describe("createDurableObjectRunStore", () => {
   })
 })
 
-// ---- createDispatchStepHandler ----
+// ---- createServiceBindingDispatcher ----
 
-describe("createDispatchStepHandler", () => {
+describe("createServiceBindingDispatcher", () => {
   it("posts the WorkflowStepRequest as JSON and parses the response", async () => {
     workflow({
       id: "wf",
@@ -180,8 +175,8 @@ describe("createDispatchStepHandler", () => {
         return 1
       },
     })
-    const dispatcher = inProcessDispatcher()
-    const handler = createDispatchStepHandler("tenant-x", { dispatcher })
+    const binding = inProcessBinding()
+    const handler = createServiceBindingDispatcher({ binding })({})
     const out = await handler({
       protocolVersion: 1,
       runId: "run_x",
@@ -207,10 +202,10 @@ describe("createDispatchStepHandler", () => {
     }
   })
 
-  it("maps non-200 tenant responses to error envelopes", async () => {
-    // No workflow registered → tenant handler returns 404.
-    const dispatcher = inProcessDispatcher()
-    const handler = createDispatchStepHandler("tenant-x", { dispatcher })
+  it("maps non-200 step responses to error envelopes", async () => {
+    // No workflow registered → step handler returns 404.
+    const binding = inProcessBinding()
+    const handler = createServiceBindingDispatcher({ binding })({})
     const out = await handler({
       protocolVersion: 1,
       runId: "run_x",
@@ -236,23 +231,19 @@ describe("createDispatchStepHandler", () => {
 
   it("attaches a dispatch-auth header when a signer is provided", async () => {
     let capturedAuthHeader: string | null = null
-    const dispatcher: DispatchNamespaceLike = {
-      get() {
-        return {
-          async fetch(req) {
-            capturedAuthHeader = req.headers.get("x-voyant-dispatch-auth")
-            return new Response(JSON.stringify({ status: "completed", output: 1 }), {
-              status: 200,
-              headers: { "content-type": "application/json" },
-            })
-          },
-        }
+    const binding: ServiceBindingLike = {
+      async fetch(req) {
+        capturedAuthHeader = req.headers.get("x-voyant-dispatch-auth")
+        return new Response(JSON.stringify({ status: "completed", output: 1 }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
       },
     }
-    const handler = createDispatchStepHandler("tenant-x", {
-      dispatcher,
+    const handler = createServiceBindingDispatcher({
+      binding,
       sign: (body) => `sig:${body.length}`,
-    })
+    })({})
     await handler({
       protocolVersion: 1,
       runId: "run_x",
@@ -794,16 +785,10 @@ describe("HMAC auth end-to-end", () => {
    * handler wired with `createHmacVerifier`. This lets us exercise the
    * full signer/verifier pair over a Request round-trip.
    */
-  function signingDispatcher(
-    tenantHandler: (req: Request) => Promise<Response>,
-  ): DispatchNamespaceLike {
+  function signingBinding(tenantHandler: (req: Request) => Promise<Response>): ServiceBindingLike {
     return {
-      get() {
-        return {
-          async fetch(req: Request): Promise<Response> {
-            return tenantHandler(req)
-          },
-        }
+      async fetch(req: Request): Promise<Response> {
+        return tenantHandler(req)
       },
     }
   }
@@ -819,10 +804,10 @@ describe("HMAC auth end-to-end", () => {
     const verify = await createHmacVerifier(SECRET)
     const tenantFetch = createStepHandler({ verifyRequest: verify })
 
-    const handler = createDispatchStepHandler("tenant-x", {
-      dispatcher: signingDispatcher(tenantFetch),
+    const handler = createServiceBindingDispatcher({
+      binding: signingBinding(tenantFetch),
       sign,
-    })
+    })({})
 
     const out = await handler({
       protocolVersion: 1,
@@ -860,10 +845,10 @@ describe("HMAC auth end-to-end", () => {
     const verify = await createHmacVerifier("secret-B")
     const tenantFetch = createStepHandler({ verifyRequest: verify })
 
-    const handler = createDispatchStepHandler("tenant-x", {
-      dispatcher: signingDispatcher(tenantFetch),
+    const handler = createServiceBindingDispatcher({
+      binding: signingBinding(tenantFetch),
       sign,
-    })
+    })({})
 
     const out = await handler({
       protocolVersion: 1,
@@ -899,9 +884,9 @@ describe("HMAC auth end-to-end", () => {
     const tenantFetch = createStepHandler({ verifyRequest: verify })
 
     // No signer on the orchestrator side.
-    const handler = createDispatchStepHandler("tenant-x", {
-      dispatcher: signingDispatcher(tenantFetch),
-    })
+    const handler = createServiceBindingDispatcher({
+      binding: signingBinding(tenantFetch),
+    })({})
 
     const out = await handler({
       protocolVersion: 1,
