@@ -164,7 +164,7 @@ describe.skipIf(!DB_AVAILABLE)("recordPromotionRedemptionsForBooking", () => {
     expect(rows[0]?.codeUsed).toBe("FOUND")
   })
 
-  it("is idempotent on retry — re-running the recorder updates the existing row", async () => {
+  it("is idempotent on retry — re-running the recorder with the same data leaves a single row", async () => {
     const bookingId = makeBookingId()
     const offer = await insertOffer()
     await insertQuote(bookingId, [makeAppliedOffer(offer, { discountAppliedCents: 100 })])
@@ -179,5 +179,57 @@ describe.skipIf(!DB_AVAILABLE)("recordPromotionRedemptionsForBooking", () => {
       .where(eq(promotionalOfferRedemptions.bookingId, bookingId))
     expect(rows).toHaveLength(1) // unique constraint enforces this
     expect(rows[0]?.discountAppliedCents).toBe(100)
+  })
+
+  it("upsert refreshes discount_applied_cents AND code_used when re-aggregation produces new values", async () => {
+    // Regression test for the codex P2 — the prior `set: { col: table.col }`
+    // form was a no-op. This test inserts one quote, runs the recorder
+    // (creates the redemption row), then mutates the quote's applied-offer
+    // payload to simulate a stale prior write being corrected, then runs
+    // the recorder again. The row must reflect the freshly-computed values.
+    const bookingId = makeBookingId()
+    const offer = await insertOffer()
+
+    // First pass: discount = 100, no code.
+    await insertQuote(bookingId, [
+      makeAppliedOffer(offer, { discountAppliedCents: 100, appliedCode: null }),
+    ])
+    await recordPromotionRedemptionsForBooking(db, bookingId)
+
+    // Wipe + re-seed the quote with different values. Mirrors a stale
+    // prior subscriber attempt being corrected on replay.
+    await cleanupTestDb(db)
+    // cleanupTestDb wiped offers + redemptions too; re-create both.
+    await db.insert(promotionalOffers).values({
+      id: offer,
+      name: `Test ${offer}`,
+      slug: `slug-${offer.slice(-8)}`,
+      discountType: "percentage",
+      discountPercent: "10",
+      scope: { kind: "global" },
+      conditions: {},
+      active: true,
+    })
+    await insertQuote(bookingId, [
+      makeAppliedOffer(offer, { discountAppliedCents: 250, appliedCode: "REFRESHED" }),
+    ])
+    // Pre-create the prior (stale) redemption row so we test the UPDATE branch.
+    await db.insert(promotionalOfferRedemptions).values({
+      offerId: offer,
+      bookingId,
+      discountAppliedCents: 100,
+      currency: "USD",
+      codeUsed: null,
+    })
+
+    await recordPromotionRedemptionsForBooking(db, bookingId)
+
+    const rows = await db
+      .select()
+      .from(promotionalOfferRedemptions)
+      .where(eq(promotionalOfferRedemptions.bookingId, bookingId))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.discountAppliedCents).toBe(250)
+    expect(rows[0]?.codeUsed).toBe("REFRESHED")
   })
 })

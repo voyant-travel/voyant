@@ -250,10 +250,14 @@ export async function quoteEntity(
   // tax recompute downstream picks up the new base.
   let appliedOffers: PromotionEvaluationOutput["applied"] | undefined
   if (deps.evaluatePromotions && available && pricing && request.entityModule === "products") {
-    const promotionCode = readString(
-      (request.parameters as Record<string, unknown> | undefined)?.promotionCode,
-    )
-    const pax = readNumber((request.parameters as Record<string, unknown> | undefined)?.pax)
+    const params = request.parameters as Record<string, unknown> | undefined
+    const promotionCode = readString(params?.promotionCode)
+    // Read `paxCount` first — `engineParametersFromDraft` (in this file's
+    // sibling `routes.ts`) writes the summed traveler count under that key
+    // when a draft drives the quote, and the products owned-handler reads
+    // `paxCount` too. Fall back to `pax` for callers that build parameters
+    // directly without going through the draft pipeline.
+    const pax = readNumber(params?.paxCount) ?? readNumber(params?.pax)
     const offerEval = await deps.evaluatePromotions({
       productId: request.entityId,
       slice: { audience: narrowAudience(request.scope.audience), market: request.scope.market },

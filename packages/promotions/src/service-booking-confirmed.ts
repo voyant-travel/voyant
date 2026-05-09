@@ -24,7 +24,7 @@
 
 import { type AppliedOffer, catalogQuotesTable } from "@voyantjs/catalog/booking-engine"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { promotionalOfferRedemptions } from "./schema.js"
@@ -112,9 +112,14 @@ export async function recordPromotionRedemptionsForBooking(
     .values(insertValues)
     .onConflictDoUpdate({
       target: [promotionalOfferRedemptions.offerId, promotionalOfferRedemptions.bookingId],
+      // EXCLUDED refers to the would-be-inserted row — we want the freshly-
+      // computed aggregate (from `insertValues`) to overwrite any stale prior
+      // row, not a no-op self-assignment. Without `excluded.*` here, a partial
+      // earlier write would never get corrected on retry / replay despite
+      // this code path claiming idempotent refresh semantics.
       set: {
-        discountAppliedCents: promotionalOfferRedemptions.discountAppliedCents,
-        codeUsed: promotionalOfferRedemptions.codeUsed,
+        discountAppliedCents: sql`excluded.discount_applied_cents`,
+        codeUsed: sql`excluded.code_used`,
       },
     })
 
