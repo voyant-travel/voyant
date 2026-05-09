@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * Create / edit dialog for a promotional offer.
  *
@@ -8,7 +10,14 @@
  * search components per scope kind.
  */
 
-import { useEffect, useState } from "react"
+import {
+  type PromotionalOfferRecord,
+  type PromotionalOfferScope,
+  type PromotionInsertInput,
+  promotionalOfferScopeSchema,
+  useCreatePromotion,
+  useUpdatePromotion,
+} from "@voyantjs/promotions-react"
 import {
   Button,
   Dialog,
@@ -26,18 +35,10 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from "@/components/ui"
+} from "@voyantjs/ui/components"
+import { useEffect, useState } from "react"
 
-import {
-  type PromotionalOfferRecord,
-  type PromotionalOfferScope,
-  type PromotionInsertInput,
-  promotionalOfferScopeSchema,
-  useCreatePromotion,
-  useUpdatePromotion,
-} from "./promotions-client"
-
-interface PromotionDialogProps {
+export interface PromotionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** When provided, the dialog opens in edit mode. */
