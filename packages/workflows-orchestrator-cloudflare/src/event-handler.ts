@@ -12,6 +12,7 @@
 //
 // Architecture: docs/architecture/workflows-runtime-architecture.md §15.
 
+import { deriveStableEventId } from "@voyantjs/workflows/events"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 import { routeEvent } from "@voyantjs/workflows-orchestrator"
 
@@ -91,8 +92,7 @@ export async function handleIngestEvent<Id>(
   // Event id derivation — use the caller-stamped one when present, fall
   // back to a content-derived id so external callers without a forwarder
   // still get sensible idempotency.
-  const now = deps.now ?? (() => Date.now())
-  const eventId = body.envelope.metadata?.eventId ?? deriveEventIdFallback(body.envelope, now)
+  const eventId = body.envelope.metadata?.eventId ?? (await deriveStableEventId(body.envelope))
 
   // Route through the manifest's filters.
   const routed = routeEvent({
@@ -276,12 +276,10 @@ function validateBody(
 
 // ---- Internal helpers ----
 
-function deriveEventIdFallback(envelope: IngestEnvelope, now: () => number): string {
-  // Best-effort fallback when caller didn't supply metadata.eventId.
-  // Same shape as the in-process driver's ensureEventId. The forwarder in
-  // PR4 always stamps a ULID upstream so this path is mostly external.
-  return `evt_${now().toString(36)}_${Math.floor(Math.random() * 1_000_000).toString(36)}`
-}
+// Fallback id derivation lives in `@voyantjs/workflows/events`'s
+// `deriveStableEventId` and is used inline above — content-derived so
+// external callers (HTTP retries, third-party webhooks) dedupe naturally
+// across re-deliveries (architecture doc §15.2).
 
 async function safeReadText(resp: Response): Promise<string> {
   try {

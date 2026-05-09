@@ -26,6 +26,19 @@ export function createDurableObjectRunStore(storage: DurableObjectStorageLike): 
       return record
     },
 
+    async tryInsert(record) {
+      // DO storage is single-threaded per DO instance: concurrent fetches
+      // to `idFromName(runId)` are serialized inside the DO's request
+      // queue, so get-then-put is naturally atomic. This is just the
+      // contract-shape implementation.
+      const existing = await storage.get<RunRecord>(RECORD_KEY)
+      if (existing && existing.id === record.id) {
+        return { record: existing, created: false }
+      }
+      await storage.put<RunRecord>(RECORD_KEY, record)
+      return { record, created: true }
+    },
+
     async list(filter = {}) {
       const r = await storage.get<RunRecord>(RECORD_KEY)
       if (!r) return []

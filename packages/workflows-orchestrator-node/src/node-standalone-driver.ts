@@ -33,6 +33,7 @@ import type {
   WorkflowAdmin,
   WorkflowDriver,
 } from "@voyantjs/workflows/driver"
+import { deriveStableEventId } from "@voyantjs/workflows/events"
 import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 import {
@@ -44,8 +45,14 @@ import {
 } from "@voyantjs/workflows-orchestrator"
 import type { drizzle } from "drizzle-orm/node-postgres"
 
+import {
+  createPersistentWakeupManager,
+  type PersistentWakeupManager,
+} from "./persistent-wakeup-manager.js"
 import { createPostgresManifestStore } from "./postgres-manifest-store.js"
 import { createPostgresRunRecordStore } from "./postgres-run-record-store.js"
+import { createPostgresWakeupStore } from "./postgres-wakeup-store.js"
+import { syncWakeupFromRecord, type WakeupStore } from "./wakeup-store.js"
 
 type Db = ReturnType<typeof drizzle>
 
@@ -72,6 +79,32 @@ export interface NodeStandaloneDriverOptions {
    * a high number to disable pruning effectively.
    */
   manifestVersionsToKeep?: number
+  /**
+   * Time-wheel poll interval, ms. The wakeup manager (architecture doc
+   * §7.2) polls `voyant_wakeups` for due alarms and resumes parked runs
+   * via the orchestrator. Defaults to 1_000 ms. Lower values reduce
+   * sleep-resume latency at the cost of DB load.
+   */
+  wakeupPollIntervalMs?: number
+  /**
+   * Wakeup lease TTL, ms. A poll instance leases a due wakeup for this
+   * long; if the process dies mid-process, another instance picks the
+   * wakeup back up after the lease expires. Defaults to 4× the poll
+   * interval (or 5_000 ms, whichever is greater).
+   */
+  wakeupLeaseMs?: number
+  /**
+   * Lease owner identifier. Used to disambiguate poller instances
+   * across processes. Defaults to a random per-driver token.
+   */
+  wakeupLeaseOwner?: string
+  /**
+   * When `true`, the wakeup poller does NOT auto-start on construction.
+   * Callers must invoke the returned driver's lifecycle hooks
+   * themselves — useful for tests that want to control the poll
+   * cadence. Defaults to `false` (poller starts immediately).
+   */
+  disableTimeWheel?: boolean
 }
 
 const DEFAULT_TENANT_META: RunRecord["tenantMeta"] = {
@@ -103,10 +136,12 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
   return (deps: DriverFactoryDeps): WorkflowDriver => {
     const runStore = createPostgresRunRecordStore({ db: opts.db })
     const manifestStore = createPostgresManifestStore({ db: opts.db })
+    const wakeupStore: WakeupStore = createPostgresWakeupStore({ db: opts.db })
     const now = opts.now ?? deps.now ?? (() => Date.now())
     const tenantMeta = opts.tenantMeta ?? DEFAULT_TENANT_META
     const defaultEnv = opts.defaultEnvironment ?? "development"
     const keep = opts.manifestVersionsToKeep ?? DEFAULT_MANIFEST_KEEP
+    const leaseOwner = opts.wakeupLeaseOwner ?? `node-standalone-${randomToken()}`
 
     // Wire the framework-supplied service container through to step bodies.
     // The handler closes over `deps.services` so every step invocation
@@ -115,6 +150,44 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       opts.handler ??
       (async (req: WorkflowStepRequest, stepOpts) =>
         handleStepRequest(req, { services: deps.services }, stepOpts))
+
+    // Persistent wakeup manager — polls `voyant_wakeups` for runs
+    // parked on DATETIME waitpoints and resumes them via the orchestrator's
+    // `resumeDueAlarms`. This is what makes `ctx.sleep(...)` actually
+    // wake up in Mode 2 (architecture doc §7.2).
+    const wakeupManager: PersistentWakeupManager<RunRecord> = createPersistentWakeupManager({
+      wakeupStore,
+      handler,
+      leaseOwner,
+      leaseMs: opts.wakeupLeaseMs,
+      intervalMs: opts.wakeupPollIntervalMs,
+      now,
+      logger: (level, message, data) => deps.logger(level, message, data),
+      // For Mode 2 the "stored" representation IS the RunRecord — the
+      // postgres-run-record-store carries the full state on `run_record`
+      // JSONB. So toRecord/fromRecord are identity.
+      async getRun(runId) {
+        return runStore.get(runId)
+      },
+      async saveRun(record) {
+        await runStore.save(record)
+        return record
+      },
+      toRecord: (record) => record,
+      fromRecord: (record) => record,
+      async listRuns() {
+        // Bootstrap-time list of currently-parked runs to seed the wakeup
+        // store. Mode 2 uses status="waiting" filter on the run-record store.
+        return runStore.list({ status: "waiting" })
+      },
+    })
+
+    if (!opts.disableTimeWheel) {
+      // Auto-start the poller. Callers can opt out via `disableTimeWheel`
+      // for tests that want to control the cadence manually (poll explicitly
+      // via `manager.poll()`).
+      wakeupManager.start()
+    }
 
     let shuttingDown = false
 
@@ -173,6 +246,9 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
         },
         { store: runStore, handler, now },
       )
+      // Sync wakeup row so the time-wheel can resume DATETIME-parked runs.
+      // No-op if the run completed inline (status !== "waiting").
+      await syncWakeupFromRecord(wakeupStore, record)
       return runRecordToRun<TOut>(record)
     }
 
@@ -186,7 +262,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
           message: `No manifest is registered for environment "${args.environment}".`,
         }
       }
-      const eventId = ensureEventId(args.envelope, now)
+      const eventId = await ensureEventId(args.envelope)
       const manifest = stored.manifest as unknown as WorkflowManifest
       const routed = routeEvent({
         manifest,
@@ -226,6 +302,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
             },
             { store: runStore, handler, now },
           )
+          await syncWakeupFromRecord(wakeupStore, record)
           matches.push({
             filterId: entry.filterId,
             targetWorkflowId: entry.targetWorkflowId,
@@ -257,6 +334,10 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
 
     async function shutdown(): Promise<void> {
       shuttingDown = true
+      // Stop the time-wheel poller so the process can exit cleanly.
+      // Idempotent — calling stop() on an already-stopped manager is a
+      // no-op.
+      wakeupManager.stop()
     }
 
     // ---- WorkflowAdmin (full; Mode 2 has Postgres-native query support) ----
@@ -346,9 +427,22 @@ function assertNotShutdown(shuttingDown: boolean): void {
   }
 }
 
-function ensureEventId(envelope: { metadata?: { eventId?: string } }, now: () => number): string {
+function randomToken(): string {
+  return Math.floor(Math.random() * 1_000_000_000)
+    .toString(36)
+    .padStart(6, "0")
+}
+
+async function ensureEventId(envelope: {
+  name: string
+  data: unknown
+  metadata?: { eventId?: string }
+  emittedAt: string
+}): Promise<string> {
   if (envelope.metadata?.eventId) return envelope.metadata.eventId
-  return `evt_${now().toString(36)}_${Math.floor(Math.random() * 1_000_000).toString(36)}`
+  // Content-derived fallback per architecture doc §15.2 — closes the
+  // dedup hole reviewer P2.2 flagged.
+  return deriveStableEventId(envelope)
 }
 
 function runRecordToRun<TOut>(rec: RunRecord): Run<TOut> {

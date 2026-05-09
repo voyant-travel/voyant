@@ -218,6 +218,36 @@ export function runDriverComplianceSuite(
         const b = await driver.trigger(wf, { n: 999 }, { idempotencyKey: key })
         expect(b.id).toBe(a.id)
       })
+
+      test("concurrent triggers with the same idempotencyKey only run once", async () => {
+        // Closes the get-then-save race window. A counter inside the
+        // workflow body lets us assert exactly-once side effects across
+        // 8 parallel triggers — without `tryInsert`'s atomicity, the
+        // counter would tick more than once.
+        const driver = makeFactory()(testFactoryDeps())
+        let invocationCount = 0
+        const wf = workflow<{ tag: string }, { invoked: number }>({
+          id: uniqueId("compliance-race"),
+          async run() {
+            invocationCount++
+            return { invoked: invocationCount }
+          },
+        })
+
+        const key = `race-${suiteCounter}`
+        const triggers = Array.from({ length: 8 }, (_, i) =>
+          driver.trigger(wf, { tag: `caller-${i}` }, { idempotencyKey: key }),
+        )
+        const results = await Promise.all(triggers)
+
+        // All 8 callers receive the same runId.
+        const ids = new Set(results.map((r) => r.id))
+        expect(ids.size).toBe(1)
+
+        // The body runs at most once. (The first writer wins; later
+        // callers return the existing record without re-driving.)
+        expect(invocationCount).toBeLessThanOrEqual(1)
+      })
     })
 
     describe("ingestEvent", () => {
@@ -282,6 +312,49 @@ export function runDriverComplianceSuite(
         if (result.ok) {
           expect(result.eventId).toMatch(/^evt_/)
         }
+      })
+
+      test("eventId fallback is stable across calls (content-derived)", async () => {
+        // Same envelope content → same derived eventId. External HTTP
+        // retries that don't stamp metadata.eventId still dedupe via the
+        // driver's `${filterId}:${eventId}` idempotency key.
+        const driver = makeFactory()(testFactoryDeps())
+        const wfId = uniqueId("compliance-stable-id")
+        const wf = workflow<unknown, void>({
+          id: wfId,
+          async run() {},
+        })
+        const filterId = `ef_${uniqueId("ef-stable")}`
+        const manifest = {
+          ...buildTestManifest(uniqueId("v_stable")),
+          eventFilters: [
+            {
+              id: filterId,
+              eventType: "evt.stable",
+              payloadHash: filterId,
+              targetWorkflowId: wfId,
+            },
+          ],
+        }
+        await driver.registerManifest({ environment: "production", manifest })
+
+        const envelope = {
+          name: "evt.stable",
+          data: { k: "v" },
+          emittedAt: new Date(1_700_000_000_000).toISOString(),
+        }
+        const a = await driver.ingestEvent({ environment: "production", envelope })
+        const b = await driver.ingestEvent({ environment: "production", envelope })
+        if (!a.ok || !b.ok) throw new Error("expected ok=true on both")
+        expect(a.eventId).toBe(b.eventId)
+        const ma = a.matches[0]
+        const mb = b.matches[0]
+        if (ma?.status !== "queued" || mb?.status !== "queued") {
+          throw new Error("expected queued matches")
+        }
+        // Same eventId → same derived idempotencyKey → same run.
+        expect(mb.runId).toBe(ma.runId)
+        void wf
       })
 
       test("matches a where predicate and triggers a run", async () => {

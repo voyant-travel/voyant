@@ -138,6 +138,24 @@ export interface RunRecord {
 export interface RunRecordStore {
   get(id: string): Promise<RunRecord | undefined>
   save(record: RunRecord): Promise<RunRecord>
+  /**
+   * Atomically insert a new run record, OR return the existing one if
+   * a record with the same `id` already exists. Used by `trigger()` to
+   * close the get-then-save race window when an idempotency-derived
+   * runId could collide across concurrent callers.
+   *
+   * Stores must implement this with a single atomic operation:
+   *   - Postgres: `INSERT … ON CONFLICT (id) DO NOTHING RETURNING …`,
+   *               with a fallback SELECT when no row is returned.
+   *   - InMemory / FS: check-then-set in a single microtask.
+   *   - DO storage: get-then-save is naturally atomic per DO instance.
+   *
+   * The returned `created: true` means this caller's record was the
+   * winner — drive it. `created: false` means another caller raced in
+   * first; return the existing record without re-driving (per
+   * architecture doc §15.2).
+   */
+  tryInsert(record: RunRecord): Promise<{ record: RunRecord; created: boolean }>
   list(filter?: {
     workflowId?: string
     status?: OrchestratorRunStatus

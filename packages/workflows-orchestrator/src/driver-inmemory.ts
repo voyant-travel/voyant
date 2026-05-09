@@ -29,6 +29,7 @@ import {
   type WorkflowAdmin,
   type WorkflowDriver,
 } from "@voyantjs/workflows/driver"
+import { deriveStableEventId } from "@voyantjs/workflows/events"
 import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 
@@ -143,7 +144,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
           message: new ManifestNotRegisteredError(args.environment).message,
         }
       }
-      const eventId = ensureEventId(args.envelope, now)
+      const eventId = await ensureEventId(args.envelope)
       const routed = routeEvent({
         manifest: stored.manifest,
         envelope: args.envelope,
@@ -284,12 +285,17 @@ function assertNotShutdown(shuttingDown: boolean): void {
   }
 }
 
-function ensureEventId(envelope: { metadata?: { eventId?: string } }, now: () => number): string {
+async function ensureEventId(envelope: {
+  name: string
+  data: unknown
+  metadata?: { eventId?: string }
+  emittedAt: string
+}): Promise<string> {
   if (envelope.metadata?.eventId) return envelope.metadata.eventId
-  // Best-effort fallback when the caller hasn't stamped an id. The framework's
-  // EventBus forwarder (PR4) stamps a ULID before calling ingestEvent, so this
-  // path is mostly hit by tests + external callers.
-  return `evt_${now().toString(36)}_${Math.floor(Math.random() * 1_000_000).toString(36)}`
+  // Content-derived fallback per architecture doc §15.2. Two ingests
+  // with byte-equal envelopes produce the same id, so retries dedupe
+  // through the driver's `${filterId}:${eventId}` idempotency key.
+  return deriveStableEventId(envelope)
 }
 
 function runRecordToRun<TOut>(rec: RunRecord): Run<TOut> {

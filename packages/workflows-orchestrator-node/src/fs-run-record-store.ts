@@ -25,6 +25,27 @@ export function createFsRunRecordStore(opts: FsRunRecordStoreOptions = {}): RunR
       return record
     },
 
+    async tryInsert(record) {
+      // Single-process FS store: atomicity comes from `mkdir` without
+      // `recursive: true` — succeeds exactly once per path, EEXIST
+      // otherwise. The orchestrator only enters this branch for
+      // idempotency-derived runIds, so the directory's prior existence
+      // means another caller already created the run.
+      try {
+        await mkdir(rootDir, { recursive: true })
+        await mkdir(join(rootDir, record.id))
+      } catch (err) {
+        const code = (err as NodeJS.ErrnoException).code
+        if (code !== "EEXIST") throw err
+        const existing = await readRunFile(join(rootDir, record.id, "run-record.json"))
+        if (existing) return { record: existing, created: false }
+        // Dir exists but no record file — partial-write race window;
+        // fall through and write our record.
+      }
+      await writeFile(join(rootDir, record.id, "run-record.json"), JSON.stringify(record, null, 2))
+      return { record, created: true }
+    },
+
     async list(filter = {}) {
       const entries = await safeReaddir(rootDir)
       const runs: RunRecord[] = []
