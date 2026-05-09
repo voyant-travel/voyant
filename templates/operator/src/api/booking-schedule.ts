@@ -49,7 +49,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
 
-import { getDbFromHyperdrive } from "./lib/db"
+import { withDbFromEnv } from "./lib/db"
 import { getOperatorSettings } from "./settings"
 
 interface BookingConfirmedPayload {
@@ -63,9 +63,13 @@ export const bookingScheduleBundle: HonoBundle = {
   bootstrap: ({ bindings, eventBus }) => {
     const env = bindings as CloudflareBindings
     eventBus.subscribe<BookingConfirmedPayload>("booking.confirmed", async ({ data }) => {
-      const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
       try {
-        await generatePaymentScheduleForBooking(db, data.bookingId)
+        await withDbFromEnv(env, async (db) => {
+          await generatePaymentScheduleForBooking(
+            db as unknown as PostgresJsDatabase,
+            data.bookingId,
+          )
+        })
       } catch (err) {
         console.error("[booking-schedule] failed to generate schedule", {
           bookingId: data.bookingId,

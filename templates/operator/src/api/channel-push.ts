@@ -35,7 +35,7 @@ import type { HonoBundle } from "@voyantjs/hono/plugin"
 import type { Hono } from "hono"
 
 import { type BookingEngineEnv, getBookingEngineRegistry } from "./lib/booking-engine-runtime"
-import { getDbFromHyperdrive } from "./lib/db"
+import { getDbFromEnv } from "./lib/db"
 
 interface BookingConfirmedPayload {
   bookingId: string
@@ -66,7 +66,7 @@ export const channelPushBundle: HonoBundle = {
 
     function buildDeps() {
       return {
-        db: getDbFromHyperdrive(env),
+        db: getDbFromEnv(env),
         registry,
       }
     }
@@ -172,7 +172,7 @@ export function mountChannelPushAdminRoutes(hono: Hono): void {
   hono.use("/v1/admin/distribution/channel-push/*", async (c, next) => {
     const env = c.env as CloudflareBindings & BookingEngineEnv
     setChannelPushDeps({
-      db: getDbFromHyperdrive(env),
+      db: getDbFromEnv(env),
       registry: getBookingEngineRegistry(env),
     })
     await next()

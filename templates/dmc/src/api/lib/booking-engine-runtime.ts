@@ -27,7 +27,7 @@ import type { Context } from "hono"
 
 let _registry: SourceAdapterRegistry | undefined
 
-export type BookingEngineEnv = {}
+export type BookingEngineEnv = Record<string, never>
 
 export function getBookingEngineRegistry(_env: BookingEngineEnv): SourceAdapterRegistry {
   if (!_registry) {

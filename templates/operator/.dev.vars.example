@@ -4,7 +4,8 @@
 # Public vars (APP_URL, DASH_BASE_URL, GCP_* non-key fields, EMAIL_FROM) already
 # live in wrangler.jsonc under env.dev.vars — only secrets belong here.
 
-# Database (Neon Postgres — used by Hyperdrive in prod, direct connection in dev)
+# Database (Neon Postgres — accessed via the Neon serverless HTTP driver in
+# both dev and prod; no Hyperdrive binding required)
 DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
 
 # Auth

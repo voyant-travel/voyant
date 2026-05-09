@@ -14,7 +14,7 @@ import type { VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 
-import { getDbFromHyperdrive } from "../lib/db"
+import { getDbFromEnv } from "../lib/db"
 
 const auth = new Hono<{ Bindings: CloudflareBindings }>()
 const DEFAULT_APP_URL = "http://localhost:3100"
@@ -66,12 +66,18 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
  * a different request"). So we must NOT cache the auth instance.
  */
 function getBetterAuth(env: CloudflareBindings) {
-  const db = getDbFromHyperdrive(env)
+  const db = getDbFromEnv(env)
   const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
 
   return createBetterAuth({
-    db,
+    // `db` is a `NeonDatabase` (neon-serverless WebSocket); the
+    // `CreateBetterAuthOptions.db` type still references the older
+    // `getDb` return union (postgres-js + neon-http). Drizzle's
+    // PgDatabase surface is identical across flavors at runtime, so
+    // the cast is structurally safe — better-auth's drizzleAdapter
+    // works on any PgDatabase. See #500 for context.
+    db: db as unknown as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"],
     secret: env.SESSION_CLAIMS_SECRET,
     baseURL: getAuthBaseUrl(env),
     basePath: "/auth",
@@ -149,7 +155,7 @@ auth.get("/auth/me", async (c) => {
     return c.json({ error: "Unauthorized" }, 401)
   }
 
-  const db = getDbFromHyperdrive(c.env)
+  const db = getDbFromEnv(c.env)
 
   const [row] = await db
     .select({
@@ -203,7 +209,7 @@ auth.get("/auth/status", async (c) => {
   }
 
   const userId = session.user.id
-  const db = getDbFromHyperdrive(c.env)
+  const db = getDbFromEnv(c.env)
 
   try {
     const [existingProfile] = await db
@@ -255,7 +261,7 @@ auth.get("/auth/status", async (c) => {
  * Public endpoint — reveals whether any user exists.
  */
 auth.get("/auth/bootstrap-status", async (c) => {
-  const db = getDbFromHyperdrive(c.env)
+  const db = getDbFromEnv(c.env)
   const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
   return c.json({ hasUsers: (row?.count ?? 0) > 0 })
 })

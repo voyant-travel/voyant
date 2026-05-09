@@ -65,7 +65,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
 
-import { getDbFromHyperdrive } from "./lib/db"
+import { getDbFromEnv } from "./lib/db"
 import { computeBookingItemTaxLine, resolveOperatorSellTaxRate } from "./lib/operator-tax-policy"
 import { getOperatorSettings } from "./settings"
 
@@ -2019,7 +2019,7 @@ export function createCatalogCheckoutBundle(opts: {
       eventBus.subscribe<ContractDocumentGeneratedPayload>(
         "contract.document.generated",
         async ({ data }) => {
-          const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+          const db = getDbFromEnv(env) as unknown as PostgresJsDatabase
           try {
             await persistAcceptanceSignature(db, data.contractId)
           } catch (err) {
@@ -2029,7 +2029,7 @@ export function createCatalogCheckoutBundle(opts: {
       )
       eventBus.subscribe<PaymentCompletedPayload>("payment.completed", async ({ data }) => {
         if (!data.bookingId) return
-        const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+        const db = getDbFromEnv(env) as unknown as PostgresJsDatabase
         try {
           await dispatchCheckoutFinalize({
             env,
@@ -2063,7 +2063,7 @@ export function createCatalogCheckoutBundle(opts: {
           description:
             "Confirms the booking and issues the final invoice. A fresh rerun re-issues the invoice (collides on existing INV- numbers); use Resume to retry from a failed step.",
           rerun: async (rawInput, ctx) => {
-            const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+            const db = getDbFromEnv(env) as unknown as PostgresJsDatabase
             const input = rawInput as CheckoutFinalizeInput | null
             if (!input?.bookingId) {
               throw new Error("checkout-finalize rerun: recorded input has no bookingId")
@@ -2082,7 +2082,7 @@ export function createCatalogCheckoutBundle(opts: {
             })
           },
           resume: async (rawInput, ctx) => {
-            const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+            const db = getDbFromEnv(env) as unknown as PostgresJsDatabase
             const input = rawInput as CheckoutFinalizeInput | null
             if (!input?.bookingId) {
               throw new Error("checkout-finalize resume: recorded input has no bookingId")

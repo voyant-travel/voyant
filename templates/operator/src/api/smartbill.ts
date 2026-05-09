@@ -19,7 +19,7 @@ import {
 import { and, asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { getDbFromHyperdrive } from "./lib/db"
+import { withDbFromEnv } from "./lib/db"
 import { getOperatorSettings } from "./settings"
 
 type SmartbillEnv = CloudflareBindings & {
@@ -140,11 +140,22 @@ async function syncIssuedInvoice(
   payload: InvoiceIssuedPayload,
   documentType: "invoice" | "proforma",
 ) {
-  if (!payload.invoiceId) return
-  const db = getDbFromHyperdrive(env) as unknown as PostgresJsDatabase
+  const invoiceId = payload.invoiceId
+  if (!invoiceId) return
+  await withDbFromEnv(env, async (rawDb) => {
+    const db = rawDb as unknown as PostgresJsDatabase
+    await syncIssuedInvoiceWithDb(db, runtime, invoiceId, documentType)
+  })
+}
 
+async function syncIssuedInvoiceWithDb(
+  db: PostgresJsDatabase,
+  runtime: SmartbillRuntime,
+  invoiceId: string,
+  documentType: "invoice" | "proforma",
+) {
   try {
-    const externalRefs = await financeService.listInvoiceExternalRefs(db, payload.invoiceId)
+    const externalRefs = await financeService.listInvoiceExternalRefs(db, invoiceId)
     const existingSmartbillRef = externalRefs.find((ref) => ref.provider === "smartbill")
     if (
       existingSmartbillRef &&
@@ -154,7 +165,7 @@ async function syncIssuedInvoice(
       return
     }
 
-    const body = await buildSmartbillInvoiceBody(db, runtime, payload.invoiceId, documentType)
+    const body = await buildSmartbillInvoiceBody(db, runtime, invoiceId, documentType)
     if (!body) return
 
     const result =
@@ -162,7 +173,7 @@ async function syncIssuedInvoice(
         ? await runtime.client.createProforma(body)
         : await runtime.client.createInvoice(body)
 
-    await financeService.registerInvoiceExternalRef(db, payload.invoiceId, {
+    await financeService.registerInvoiceExternalRef(db, invoiceId, {
       provider: "smartbill",
       externalId: result.number ?? null,
       externalNumber: result.number ?? null,
@@ -180,11 +191,11 @@ async function syncIssuedInvoice(
     })
 
     console.info(
-      `[smartbill] ${documentType} created: ${result.series ?? body.seriesName}-${result.number ?? "unknown"} for ${payload.invoiceId}`,
+      `[smartbill] ${documentType} created: ${result.series ?? body.seriesName}-${result.number ?? "unknown"} for ${invoiceId}`,
     )
   } catch (error) {
-    console.error(`[smartbill] failed to create ${documentType} for ${payload.invoiceId}`, error)
-    await financeService.registerInvoiceExternalRef(db, payload.invoiceId, {
+    console.error(`[smartbill] failed to create ${documentType} for ${invoiceId}`, error)
+    await financeService.registerInvoiceExternalRef(db, invoiceId, {
       provider: "smartbill",
       status: "error",
       syncedAt: new Date().toISOString(),

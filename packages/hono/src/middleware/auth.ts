@@ -5,7 +5,13 @@ import type { MiddlewareHandler } from "hono"
 
 import { sha256Base64Url } from "../auth/crypto.js"
 import { extractBearerToken, verifySession } from "../auth/session-jwt.js"
-import type { DbFactory, VoyantAuthIntegration, VoyantBindings, VoyantVariables } from "../types.js"
+import {
+  type DbFactory,
+  resolveDbFactoryResult,
+  type VoyantAuthIntegration,
+  type VoyantBindings,
+  type VoyantVariables,
+} from "../types.js"
 
 function permissionsToScopes(permissions: string | null): string[] {
   if (!permissions) return []
@@ -89,8 +95,8 @@ export function requireAuth<TBindings extends VoyantBindings>(
 
     // Strategy 2: Core-owned API key support (voy_ prefixed)
     if (token?.startsWith(API_KEY_PREFIX)) {
+      const { db, dispose } = resolveDbFactoryResult(dbFactory(c.env))
       try {
-        const db = dbFactory(c.env)
         const keyHash = await sha256Base64Url(token)
 
         const [row] = await db
@@ -154,21 +160,30 @@ export function requireAuth<TBindings extends VoyantBindings>(
         return next()
       } catch {
         // fall through to next strategy
+      } finally {
+        // Schedule pool teardown AFTER the queries above settle. waitUntil
+        // keeps the worker alive for the close handshake.
+        if (dispose) c.executionCtx.waitUntil?.(dispose())
       }
     }
 
     // Strategy 3: App-provided auth resolution (cookies, provider tokens, etc.)
     if (opts?.auth?.resolve) {
-      const resolved = await opts.auth.resolve({
-        request: c.req.raw,
-        env: c.env,
-        db: dbFactory(c.env),
-        ctx: c.executionCtx,
-      })
+      const { db: resolveDb, dispose: resolveDispose } = resolveDbFactoryResult(dbFactory(c.env))
+      try {
+        const resolved = await opts.auth.resolve({
+          request: c.req.raw,
+          env: c.env,
+          db: resolveDb,
+          ctx: c.executionCtx,
+        })
 
-      if (resolved?.userId) {
-        applyAuthContext(c, resolved)
-        return next()
+        if (resolved?.userId) {
+          applyAuthContext(c, resolved)
+          return next()
+        }
+      } finally {
+        if (resolveDispose) c.executionCtx.waitUntil?.(resolveDispose())
       }
     }
 

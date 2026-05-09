@@ -11,6 +11,7 @@ import type {
 } from "@voyantjs/core"
 import type { KVStore } from "@voyantjs/utils/cache"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
+import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 
@@ -35,7 +36,7 @@ export interface VoyantBindings {
   CACHE?: KVStore
 }
 
-export type VoyantDb = PostgresJsDatabase | NeonHttpDatabase
+export type VoyantDb = PostgresJsDatabase | NeonHttpDatabase | NeonWsDatabase
 export type VoyantQueryRuntime = QueryRunner
 
 export type VoyantVariables = CoreVoyantVariables & {
@@ -49,9 +50,42 @@ export type VoyantVariables = CoreVoyantVariables & {
   query?: VoyantQueryRuntime
 }
 
+/**
+ * Per-request handle returned by a {@link DbFactory} that owns its own
+ * Pool / connection: a drizzle client plus a `dispose()` the db
+ * middleware schedules via `c.executionCtx.waitUntil` after the
+ * response is sent. Used by templates that build a Neon WebSocket
+ * Pool per request (see e.g. `dbFromEnvForApp` in template
+ * `src/api/lib/db.ts`) — without `dispose()`, the Pool stays open
+ * until the Workers isolate is reclaimed.
+ */
+export interface DisposableDb {
+  db: VoyantDb
+  dispose: () => Promise<void>
+}
+
 export type DbFactory<TBindings extends VoyantBindings = VoyantBindings> = (
   env: TBindings,
-) => VoyantDb
+) => VoyantDb | DisposableDb
+
+export function isDisposableDb(value: VoyantDb | DisposableDb): value is DisposableDb {
+  return (
+    typeof (value as DisposableDb).dispose === "function" &&
+    (value as DisposableDb).db !== undefined
+  )
+}
+
+/**
+ * Normalize a {@link DbFactory} return value to `{ db, dispose? }` so
+ * call sites don't repeat the `isDisposableDb` shape check. `dispose`
+ * is `undefined` for plain `VoyantDb` factories.
+ */
+export function resolveDbFactoryResult(value: VoyantDb | DisposableDb): {
+  db: VoyantDb
+  dispose?: () => Promise<void>
+} {
+  return isDisposableDb(value) ? value : { db: value }
+}
 
 /**
  * The shape returned by a custom `auth.resolve` integration. Both `userId`
