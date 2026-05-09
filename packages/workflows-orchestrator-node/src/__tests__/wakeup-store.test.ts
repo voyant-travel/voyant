@@ -90,6 +90,20 @@ describe("createFsWakeupStore", () => {
     })
     expect(expired.map((w) => w.runId).sort()).toEqual(["due", "future", "leased"])
   })
+
+  it("leases higher-priority due wakeups before earlier lower-priority wakeups", async () => {
+    const store = createFsWakeupStore({ rootDir: tmp, now: () => clock })
+    await store.upsert({ runId: "low", wakeAt: clock - 10_000, priority: 1 })
+    await store.upsert({ runId: "high", wakeAt: clock - 1, priority: 10 })
+
+    const leased = await store.leaseDue({
+      owner: "worker_a",
+      now: clock,
+      leaseMs: 2_000,
+      limit: 2,
+    })
+    expect(leased.map((w) => w.runId)).toEqual(["high", "low"])
+  })
 })
 
 describe("syncWakeupFromRecord", () => {
@@ -97,6 +111,9 @@ describe("syncWakeupFromRecord", () => {
     const store = createFsWakeupStore({ rootDir: tmp, now: () => clock })
     await syncWakeupFromRecord(store, makeRecord())
     expect((await store.list()).map((w) => w.runId)).toEqual(["run_1"])
+
+    await syncWakeupFromRecord(store, makeRecord({ priority: 5 }))
+    expect(await store.get("run_1")).toMatchObject({ priority: 5 })
 
     await syncWakeupFromRecord(store, makeRecord({ status: "completed", pendingWaitpoints: [] }))
     expect(await store.list()).toEqual([])

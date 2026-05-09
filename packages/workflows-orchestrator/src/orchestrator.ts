@@ -50,6 +50,8 @@ export interface TriggerArgs {
    * waitpoint and leaves execution to the normal wakeup/time-wheel path.
    */
   delay?: Duration | Date
+  /** Higher values are claimed first by scheduler/time-wheel stores. */
+  priority?: number
   /**
    * Optional journal seed. Used by external replay/resume callers
    * that need a new run to skip steps already completed by a parent
@@ -105,6 +107,7 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     metadataAppliedCount: 0,
     computeTimeMs: 0,
     timeoutMs: args.timeoutMs,
+    priority: args.priority,
     parent: args.parent,
     pendingWaitpoints:
       delayWakeAt !== undefined

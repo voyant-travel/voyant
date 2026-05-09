@@ -187,6 +187,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
           triggerOpts?.delay instanceof Date
             ? { wakeAt: triggerOpts.delay.getTime() }
             : triggerOpts?.delay,
+        priority: triggerOpts?.priority,
         triggeredBy: { kind: "api" as const },
       }
       const resp = await forwardToRunDO(

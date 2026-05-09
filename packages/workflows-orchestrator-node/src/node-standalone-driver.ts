@@ -244,6 +244,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
           tags: triggerOpts?.tags,
           idempotencyKey: triggerOpts?.idempotencyKey,
           delay: triggerOpts?.delay,
+          priority: triggerOpts?.priority,
         },
         { store: runStore, handler, now },
       )

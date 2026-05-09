@@ -6,6 +6,7 @@ import { findEarliestWakeAt } from "./sleep-alarm-manager.js"
 export interface WakeupRecord {
   runId: string
   wakeAt: number
+  priority?: number
   leaseOwner?: string
   leaseExpiresAt?: number
   updatedAt: number
@@ -74,7 +75,7 @@ export function createFsWakeupStore(opts: FsWakeupStoreOptions = {}): WakeupStor
     },
 
     async leaseDue({ owner, now: at = now(), leaseMs, limit = 25 }) {
-      const wakeups = await this.list()
+      const wakeups = (await this.list()).sort(compareWakeupClaimOrder)
       const leased: WakeupRecord[] = []
       for (const wakeup of wakeups) {
         if (leased.length >= limit) break
@@ -119,9 +120,16 @@ export async function syncWakeupFromRecord(store: WakeupStore, record: RunRecord
   await store.upsert({
     runId: record.id,
     wakeAt,
+    priority: record.priority,
     leaseOwner: undefined,
     leaseExpiresAt: undefined,
   })
+}
+
+function compareWakeupClaimOrder(a: WakeupRecord, b: WakeupRecord): number {
+  const priorityDelta = (b.priority ?? 0) - (a.priority ?? 0)
+  if (priorityDelta !== 0) return priorityDelta
+  return a.wakeAt - b.wakeAt
 }
 
 async function safeReaddir(dir: string): Promise<string[]> {

@@ -92,6 +92,7 @@ export async function handleDurableObjectRequest(
           typeof payload.delay === "object" && payload.delay !== null && "wakeAt" in payload.delay
             ? new Date(payload.delay.wakeAt)
             : payload.delay,
+        priority: payload.priority,
       },
       { store, handler, now: deps.now },
     )

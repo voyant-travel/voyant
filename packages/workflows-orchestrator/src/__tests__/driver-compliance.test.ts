@@ -6,4 +6,4 @@
 import { createInMemoryDriver } from "../driver-inmemory.js"
 import { runDriverComplianceSuite } from "../testing/driver-compliance.js"
 
-runDriverComplianceSuite("InMemory", () => createInMemoryDriver())
+runDriverComplianceSuite("InMemory", () => createInMemoryDriver(), { autoDatetimeWakeups: true })

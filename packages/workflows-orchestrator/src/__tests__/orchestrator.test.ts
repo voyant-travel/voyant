@@ -105,6 +105,26 @@ describe("trigger()", () => {
     expect(invocations).toBe(1)
   })
 
+  it("records trigger priority on the run record", async () => {
+    workflow<void, void>({
+      id: "priority",
+      async run() {},
+    })
+    const store = createInMemoryRunStore()
+    const rec = await trigger(
+      {
+        workflowId: "priority",
+        workflowVersion: "v1",
+        input: undefined,
+        tenantMeta,
+        priority: 10,
+      },
+      { store, handler },
+    )
+    expect(rec.priority).toBe(10)
+    expect((await store.get(rec.id))?.priority).toBe(10)
+  })
+
   it("persists step results in the run's journal", async () => {
     workflow<number, number>({
       id: "chain",
