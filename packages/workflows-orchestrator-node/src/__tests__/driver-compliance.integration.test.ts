@@ -46,7 +46,12 @@ describeIfDb("Mode 2 (Postgres) driver compliance", () => {
   // The suite assumes a single driver factory it can instantiate per test.
   // Each call to the factory returns a fresh driver wired against the same
   // shared Postgres connection — exactly the production shape.
+  //
+  // `disableTimeWheel: true` so per-test driver instantiations don't leave
+  // rogue pollers running against the shared DB across tests. Sleep-resume
+  // (the only suite that needs the wheel) is its own test file with its
+  // own truncate + driver lifecycle.
   runDriverComplianceSuite("Mode 2 (Postgres)", () =>
-    createNodeStandaloneDriver({ db: connection.db }),
+    createNodeStandaloneDriver({ db: connection.db, disableTimeWheel: true }),
   )
 })

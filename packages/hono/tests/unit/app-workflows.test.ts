@@ -77,7 +77,9 @@ describe("createApp workflows wiring", () => {
         // Wrap the factory so we can capture the constructed driver for
         // post-emit inspection. createApp normally uses the result
         // internally only.
-        driver: (deps) => {
+        // function-of-bindings (Mode 2/InMemory wrap with `() =>`); inner
+        // factory is called by createApp() with framework deps.
+        driver: () => (deps) => {
           driverHandle = factory(deps)
           return driverHandle
         },
@@ -123,7 +125,9 @@ describe("createApp workflows wiring", () => {
       modules: [module],
       eventBus,
       workflows: {
-        driver: (deps) => {
+        // function-of-bindings (Mode 2/InMemory wrap with `() =>`); inner
+        // factory is called by createApp() with framework deps.
+        driver: () => (deps) => {
           driverHandle = factory(deps)
           return driverHandle
         },
@@ -152,7 +156,9 @@ describe("createApp workflows wiring", () => {
       modules: [module],
       eventBus,
       workflows: {
-        driver: (deps) => {
+        // function-of-bindings (Mode 2/InMemory wrap with `() =>`); inner
+        // factory is called by createApp() with framework deps.
+        driver: () => (deps) => {
           driverHandle = factory(deps)
           return driverHandle
         },
@@ -185,7 +191,7 @@ describe("createApp workflows wiring", () => {
           { module: { name: "module-b", workflows: [{ id: "shared-id" } as WorkflowDescriptor] } },
         ],
         workflows: {
-          driver: (deps) => createInMemoryDriver()(deps),
+          driver: () => createInMemoryDriver(),
           environment: "development",
         },
       })
@@ -198,7 +204,7 @@ describe("createApp workflows wiring", () => {
       db: () => null as never,
       eventBus,
       workflows: {
-        driver: (deps) => createInMemoryDriver()(deps),
+        driver: () => createInMemoryDriver(),
         environment: "development",
       },
     })
@@ -229,5 +235,96 @@ describe("createApp workflows wiring", () => {
     await eventBus.emit("test.event", { kind: "x" })
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(receivedEvent).toBe(true)
+  })
+
+  test("function-of-bindings shape sees env at boot (defers construction)", async () => {
+    // Mirrors the CF-edge use case: driver options come from env bindings
+    // that don't exist at createApp() call time. The bindings-aware
+    // factory shape lets users write
+    // `driver: (env) => createCloudflareEdgeDriver({ env.* })`.
+    interface MockEnv extends VoyantBindings {
+      WORKFLOW_RUN_DO?: { id: string }
+    }
+    let observedBindings: MockEnv | undefined
+    const eventBus = createEventBus()
+    const app = createApp<MockEnv>({
+      db: () => null as never,
+      eventBus,
+      workflows: {
+        driver: (env) => {
+          observedBindings = env
+          return (deps) => createInMemoryDriver()(deps)
+        },
+        environment: "production",
+      },
+    })
+
+    // Bindings show up at first request (or app.ready with explicit env).
+    // app.ready() uses an empty bindings object since no real bindings
+    // exist outside a request context — that's enough to verify the
+    // outer factory is invoked.
+    await app.ready()
+    expect(observedBindings).toBeDefined()
+  })
+
+  test("bootstrap-time eventBus.emit from a module is routed (forwarder installed first)", async () => {
+    // Reviewer feedback P2.3: if module.bootstrap emits an event, the
+    // workflow forwarder must already be subscribed. Confirms the order
+    // wireWorkflowRuntime → module bootstraps in the lazy bootstrap.
+    const factory = createInMemoryDriver()
+    let driverHandle: ReturnType<typeof factory> | undefined
+    const eventBus = createEventBus()
+
+    // Build a module with a filter on "bootstrap.emit" + a bootstrap that
+    // emits that event. If the forwarder is installed AFTER bootstraps,
+    // this event is lost; AFTER the fix, it routes correctly.
+    const wf = workflow<{ tag: string }, { tag: string }>({
+      id: "test-bootstrap-emit",
+      async run(input) {
+        return input
+      },
+    })
+    trigger.on("bootstrap.emit", {
+      target: wf,
+      input: { object: { tag: { path: "data.tag" } } },
+    })
+    const filters = getEventFilterRegistry().list() as readonly (EventFilterRuntimeEntry &
+      EventFilterDescriptor)[]
+    const moduleSpec: Module = {
+      name: "bootstrap-emitter",
+      workflows: [wf satisfies WorkflowDescriptor],
+      eventFilters: filters,
+      async bootstrap(ctx) {
+        // Emit during bootstrap. With the pre-fix order this fires into
+        // a bus with no workflow subscriber.
+        await ctx.eventBus.emit(
+          "bootstrap.emit",
+          { tag: "from-bootstrap" },
+          { eventId: "evt_boot" },
+        )
+      },
+    }
+
+    const app = createApp({
+      db: () => null as never,
+      modules: [{ module: moduleSpec }],
+      eventBus,
+      workflows: {
+        driver: () => (deps) => {
+          driverHandle = factory(deps)
+          return driverHandle
+        },
+        environment: "production",
+      },
+    })
+
+    await app.ready()
+    await new Promise((r) => setTimeout(r, 0))
+
+    // The bootstrap-time emit should have routed through the workflow
+    // forwarder and triggered the workflow.
+    const runs = (await driverHandle?.admin?.listRuns?.({ workflowId: "test-bootstrap-emit" }))
+      ?.runs
+    expect(runs?.length).toBeGreaterThanOrEqual(1)
   })
 })

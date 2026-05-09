@@ -74,20 +74,16 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
   const now = deps.now ?? (() => Date.now())
   // Idempotency: caller-supplied `runId` wins (explicit). Otherwise, when
   // `idempotencyKey` is supplied, derive a deterministic runId from
-  // `(workflowId, idempotencyKey)` so the existing args.runId-already-exists
-  // path below dedups across retries — same observable behavior, no new
-  // store interface. The persistent runId pattern lets stores like
-  // `voyant_snapshot_runs` carry idempotency_key as a separate column for
-  // queryability without parsing the runId string.
+  // `(workflowId, idempotencyKey)`. We then route through `store.tryInsert`
+  // — atomic check-or-insert — so concurrent triggers with the same
+  // derived runId never both proceed to drive (architecture doc §15.2,
+  // closes the race the get-then-save pattern leaves open).
   const explicitRunId = args.runId
   const idempotencyKey = args.idempotencyKey
   const derivedRunId =
     idempotencyKey !== undefined ? `idem-${args.workflowId}-${idempotencyKey}` : undefined
   const id = explicitRunId ?? derivedRunId ?? deps.idGenerator?.() ?? defaultRunId(now)
-  if (explicitRunId !== undefined || derivedRunId !== undefined) {
-    const existing = await deps.store.get(id)
-    if (existing) return existing
-  }
+  const isIdempotent = explicitRunId !== undefined || derivedRunId !== undefined
   const record: RunRecord = {
     id,
     workflowId: args.workflowId,
@@ -110,9 +106,20 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     runMeta: { number: args.runNumber ?? 1, attempt: 1 },
     idempotencyKey,
   }
-  // Persist up-front so concurrent `cancel(runId)` calls can find the
-  // run before any invocation has completed.
-  await deps.store.save(record)
+  // Idempotent path uses tryInsert; non-idempotent (auto-generated) ids
+  // can't collide so the existing save() is sufficient.
+  if (isIdempotent) {
+    const result = await deps.store.tryInsert(record)
+    if (!result.created) {
+      // Another caller raced in first. Return their record without
+      // re-driving — drive() is what actually fires side effects.
+      return result.record
+    }
+  } else {
+    // Persist up-front so concurrent `cancel(runId)` calls can find the
+    // run before any invocation has completed.
+    await deps.store.save(record)
+  }
   const abortCtrl = registerRunAbort(id)
   try {
     await driveUntilPaused(record, {

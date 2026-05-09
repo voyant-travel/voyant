@@ -22,6 +22,7 @@ export {
 export {
   canonicalize,
   canonicalJson,
+  deriveStableEventId,
   sha256,
   shortHash,
 } from "./payload-hash.js"

@@ -123,25 +123,52 @@ export function createApp<TBindings extends VoyantBindings>(
     }
   }
 
-  // Build the workflow driver up-front (synchronous): the factory runs now
-  // with the framework-supplied container + logger so the handle is
-  // available throughout the rest of construction (HTTP routes that want
-  // to call `driver.trigger(...)` from a handler resolve the driver via
-  // the container — see `c.var.workflowDriver` below).
-  let workflowDriver: ReturnType<NonNullable<typeof config.workflows>["driver"]> | undefined
-  if (config.workflows) {
-    const driverDeps = {
-      services: containerToServiceResolver(container),
-      logger: makeFrameworkLogger(config.logger),
-    }
-    workflowDriver = config.workflows.driver(driverDeps)
-  }
+  // Workflow driver construction is **deferred** to the lazy bootstrap
+  // path so CF-edge users (whose driver options come from `env.*`
+  // bindings only available at request time) can pass a function-of-
+  // bindings shape — `(env) => createCloudflareEdgeDriver({...})` —
+  // rather than constructing at module-load time. Mode 2 / InMemory
+  // users pass a direct factory; the framework adapts both shapes.
+  // See reviewer feedback P2.1 + architecture doc §6.3.
+  // biome-ignore lint/suspicious/noExplicitAny: WorkflowDriver shape varies across driver implementations
+  let workflowDriver: any | undefined
 
   let bootstrapPromise: Promise<void> | null = null
   function ensureRuntimeBootstrapped(bindings: TBindings) {
     if (!bootstrapPromise) {
       bootstrapPromise = (async () => {
         const ctx = { bindings, container, eventBus }
+
+        // ---- Workflow runtime FIRST — fail-closed manifest registration
+        //      and EventBus forwarder must be in place before any module
+        //      bootstrap can emit. Otherwise a `module.bootstrap` that
+        //      emits an event during its own bootstrap would route through
+        //      a bus with no workflow forwarder yet, silently losing the
+        //      event. Per architecture doc §21.22 + reviewer feedback P2.3.
+        if (config.workflows) {
+          // `driver` is always a function-of-bindings (per
+          // VoyantWorkflowsConfig — see types.ts + reviewer feedback P2.1).
+          // Mode 2 / InMemory users wrap with `() => createXxxDriver({...})`.
+          // CF-edge users use `(env) => createCloudflareEdgeDriver({ env.* })`.
+          // We invoke with bindings, then the resulting DriverFactory
+          // with framework deps.
+          const factoryDeps = {
+            services: containerToServiceResolver(container),
+            logger: makeFrameworkLogger(config.logger),
+          }
+          const factory = config.workflows.driver(bindings)
+          workflowDriver = factory(factoryDeps)
+
+          await wireWorkflowRuntime({
+            modules: allModules.map((m) => m.module),
+            collectedWorkflows,
+            collectedFilters,
+            driver: workflowDriver,
+            environment: config.workflows.environment ?? "development",
+            projectId: config.workflows.projectId ?? "default",
+            eventBus,
+          })
+        }
 
         // Run each bootstrap in isolation — a single failing plugin/module/extension
         // must not poison the cached promise and kill the whole app's request pipeline.
@@ -167,21 +194,6 @@ export function createApp<TBindings extends VoyantBindings>(
             ext.extension.bootstrap,
           )
         }
-
-        // Workflow manifest registration + EventBus forwarder. **Fail-closed**
-        // per architecture doc §21.22 — registerManifest failure rejects the
-        // bootstrap promise and surfaces as a 503 on the next request.
-        if (config.workflows && workflowDriver) {
-          await wireWorkflowRuntime({
-            modules: allModules.map((m) => m.module),
-            collectedWorkflows,
-            collectedFilters,
-            driver: workflowDriver,
-            environment: config.workflows.environment ?? "development",
-            projectId: config.workflows.projectId ?? "default",
-            eventBus,
-          })
-        }
       })()
     }
 
@@ -197,17 +209,20 @@ export function createApp<TBindings extends VoyantBindings>(
     if (query) {
       c.set("query", query)
     }
+    // Bootstrap (fires once, idempotent) — resolves the workflow driver
+    // with c.env-supplied bindings on the first request, so deferred
+    // driver construction sees real runtime bindings (reviewer P2.1).
+    await ensureRuntimeBootstrapped(c.env)
     if (workflowDriver) {
       // Surfaced on `c.var.workflowDriver` so HTTP route handlers can
       // call `driver.trigger(...)` directly without re-resolving from
-      // the container. Also useful for the optional HTTP ingest adapter
+      // the container. Also used by the optional HTTP ingest adapter
       // (`mountHttpIngestAdapter` from `@voyantjs/workflows/http-ingest`).
       ;(c as unknown as { set: (k: string, v: unknown) => void }).set(
         "workflowDriver",
         workflowDriver,
       )
     }
-    await ensureRuntimeBootstrapped(c.env)
     return next()
   })
 
