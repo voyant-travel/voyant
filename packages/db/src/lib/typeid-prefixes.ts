@@ -363,6 +363,11 @@ export const PREFIXES = {
   workflow_run_steps: "wfrs",
   // --- Operator-template-local settings ---
   operator_settings: "opset",
+
+  // --- PROMOTIONS (per docs/architecture/promotions-architecture.md §4.4) ---
+  // promotional_offer_products is a join table (no `id` column).
+  promotional_offers: "pofr",
+  promotional_offer_redemptions: "pofx",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES

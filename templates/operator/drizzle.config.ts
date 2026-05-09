@@ -36,6 +36,7 @@ export default defineConfig({
     "../../packages/bookings/src/schema.ts",
     "../../packages/finance/src/schema.ts",
     "../../packages/legal/src/schema.ts",
+    "../../packages/promotions/src/schema.ts",
     "../../packages/cruises/src/schema.ts",
     "../../packages/charters/src/schema.ts",
     "../../packages/hospitality/src/schema.ts",
