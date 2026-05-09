@@ -49,39 +49,54 @@ export function createPostgresRunRecordStore(opts: PostgresRunRecordStoreOptions
     },
 
     async save(record) {
-      const values = {
-        id: record.id,
-        workflowId: record.workflowId,
-        status: record.status,
-        startedAt: record.startedAt,
-        completedAt: record.completedAt ?? null,
-        durationMs: record.completedAt !== undefined ? record.completedAt - record.startedAt : null,
-        tags: [...record.tags],
-        // `result` mirrors the snapshot-store convention: the run's
-        // public outcome view. We snapshot output + error here so the
-        // dashboard's reads remain consistent across both stores.
-        result: normalizeRequiredJson({
-          status: record.status,
-          output: record.output,
-          error: record.error,
-          startedAt: record.startedAt,
-          completedAt: record.completedAt,
-        }),
-        input: normalizeJson(record.input),
-        runRecord: normalizeRequiredJson(record as unknown as Record<string, unknown>),
-        entryFile: null,
-        replayOf: null,
-        idempotencyKey: record.idempotencyKey ?? null,
-      }
-      // Upsert by id — last-write-wins. The orchestrator's deterministic
-      // runId derivation from `idempotencyKey` ensures retries map to the
-      // same row; the unique partial index on `(workflow_id, idempotency_key)`
-      // is a defensive backstop against accidental id collisions.
+      const values = recordToValues(record)
+      // Upsert by id — last-write-wins. Used for state mutations after
+      // the run is created (resume / cancel / drive). Idempotency on
+      // *creation* is enforced separately via `tryInsert` below; this
+      // path is the steady-state save.
       await opts.db.insert(snapshotRunsTable).values(values).onConflictDoUpdate({
         target: snapshotRunsTable.id,
         set: values,
       })
       return record
+    },
+
+    async tryInsert(record) {
+      const values = recordToValues(record)
+      // Atomic at the DB level: INSERT … ON CONFLICT DO NOTHING returns
+      // the row only if it was created, empty otherwise. When empty, we
+      // re-SELECT to load the existing record. This closes the race
+      // window between `get(id)` and `save(record)` that the previous
+      // get-then-upsert pattern left open — concurrent triggers with
+      // the same idempotency-derived runId now see deterministic
+      // "first writer wins" semantics.
+      const inserted = await opts.db
+        .insert(snapshotRunsTable)
+        .values(values)
+        .onConflictDoNothing({ target: snapshotRunsTable.id })
+        .returning({ id: snapshotRunsTable.id })
+
+      if (inserted.length > 0) {
+        return { record, created: true }
+      }
+      // Conflict — load whoever won the race.
+      const existingRows = await opts.db
+        .select()
+        .from(snapshotRunsTable)
+        .where(eq(snapshotRunsTable.id, record.id))
+        .limit(1)
+      const existingRow = existingRows[0]
+      if (!existingRow) {
+        // Pathological case: the conflict happened but we can't read it
+        // back. Surface as a write that became a no-op so the caller
+        // doesn't proceed to drive a non-existent run.
+        return { record, created: false }
+      }
+      const existing = asRunRecord(existingRow.runRecord)
+      return {
+        record: existing ?? record,
+        created: false,
+      }
     },
 
     async list(filter = {}) {
@@ -117,6 +132,33 @@ export function createPostgresRunRecordStore(opts: PostgresRunRecordStoreOptions
 
 // ---- Helpers (parallel to the snapshot store's; kept private here to
 //      avoid coupling between the two stores' representations) ----
+
+function recordToValues(record: RunRecord) {
+  return {
+    id: record.id,
+    workflowId: record.workflowId,
+    status: record.status,
+    startedAt: record.startedAt,
+    completedAt: record.completedAt ?? null,
+    durationMs: record.completedAt !== undefined ? record.completedAt - record.startedAt : null,
+    tags: [...record.tags],
+    // `result` mirrors the snapshot-store convention: the run's public
+    // outcome view. We snapshot output + error here so the dashboard's
+    // reads remain consistent across both stores.
+    result: normalizeRequiredJson({
+      status: record.status,
+      output: record.output,
+      error: record.error,
+      startedAt: record.startedAt,
+      completedAt: record.completedAt,
+    }),
+    input: normalizeJson(record.input),
+    runRecord: normalizeRequiredJson(record as unknown as Record<string, unknown>),
+    entryFile: null,
+    replayOf: null,
+    idempotencyKey: record.idempotencyKey ?? null,
+  }
+}
 
 function asRunRecord(value: unknown): RunRecord | undefined {
   if (typeof value !== "object" || value === null) return undefined

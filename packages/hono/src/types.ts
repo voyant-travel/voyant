@@ -156,6 +156,74 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   auth?: VoyantAuthIntegration<TBindings>
   publicPaths?: string[]
   logger?: LoggerProvider
+  /**
+   * Workflow runtime configuration. When set, `createApp()` collects
+   * `module.workflows` + `module.eventFilters` (plus the same fields
+   * from plugins), invokes `workflows.driver` with framework deps, and
+   * — inside the lazy bootstrap path — registers the manifest with the
+   * driver and installs an EventBus forwarder that routes emitted
+   * events to `driver.ingestEvent(...)`.
+   *
+   * See `docs/architecture/workflows-runtime-architecture.md` §6, §18.
+   */
+  workflows?: VoyantWorkflowsConfig
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
   additionalRoutes?: (app: Hono<any>) => void
 }
+
+/**
+ * Workflow runtime configuration block. The driver is resolved at boot
+ * time (inside the lazy bootstrap path), after framework deps and —
+ * crucially — after runtime bindings are available.
+ *
+ * `driver` is **always** a function-of-bindings: `(env) => DriverFactory`.
+ * This unambiguous shape works for all deployment modes:
+ *
+ * **Mode 2 / InMemory** — wrap your direct factory:
+ *
+ *     workflows: {
+ *       driver: () => createNodeStandaloneDriver({ db }),
+ *     }
+ *
+ * **Mode 1 (CF edge)** — pull options off `env`:
+ *
+ *     workflows: {
+ *       driver: (env) => createCloudflareEdgeDriver({
+ *         orchestratorNamespace: env.WORKFLOW_RUN_DO,
+ *         manifestKv: env.WORKFLOW_MANIFESTS,
+ *         tenantScript: "tenant-bundle",
+ *       }),
+ *     }
+ *
+ * The single shape avoids ambiguous "is this a factory or a
+ * factory-of-factories?" heuristics. See architecture doc §6.3 +
+ * reviewer feedback P2.1.
+ */
+export interface VoyantWorkflowsConfig<TBindings = unknown> {
+  /**
+   * Function-of-bindings that returns a `DriverFactory`. Resolved
+   * lazily with `c.env` once bindings are available, then invoked
+   * with `{ services, logger }` to produce the driver.
+   */
+  driver: (bindings: TBindings) => WorkflowDriverFactoryShape
+  /**
+   * Environment the manifest registers under. Defaults to `"development"`.
+   * Workflow filters are environment-scoped (production manifests don't
+   * see preview events and vice versa) per architecture doc §21.10.
+   */
+  environment?: "production" | "preview" | "development"
+  /**
+   * Project / tenant identifier baked into the manifest. Single-tenant
+   * runtimes leave this unset (defaults to `"default"`). Multi-tenant
+   * deployments override per-app via voyant-cloud's wrapper layer.
+   */
+  projectId?: string
+}
+
+/**
+ * Structural shape of a `DriverFactory` from `@voyantjs/workflows/driver`.
+ * The SDK package's concrete `DriverFactory` satisfies this via TS
+ * structural compat (architecture doc §21.19).
+ */
+// biome-ignore lint/suspicious/noExplicitAny: factory generics vary across driver implementations
+type WorkflowDriverFactoryShape = (deps: { services: any; logger: any; now?: () => number }) => any

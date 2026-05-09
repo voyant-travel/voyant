@@ -35,6 +35,7 @@ import type {
   WorkflowAdmin,
   WorkflowDriver,
 } from "@voyantjs/workflows/driver"
+import { deriveStableEventId } from "@voyantjs/workflows/events"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 import { routeEvent } from "@voyantjs/workflows-orchestrator"
 
@@ -223,7 +224,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
         }
       }
       const manifest = stored.manifest as unknown as WorkflowManifest
-      const eventId = args.envelope.metadata?.eventId ?? deriveEventIdFallback(now)
+      const eventId = args.envelope.metadata?.eventId ?? (await deriveStableEventId(args.envelope))
       const routed = routeEvent({
         manifest,
         envelope: {
@@ -420,9 +421,10 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
 
 // ---- Internal helpers ----
 
-function deriveEventIdFallback(now: () => number): string {
-  return `evt_${now().toString(36)}_${Math.floor(Math.random() * 1_000_000).toString(36)}`
-}
+// Fallback id derivation lives in `@voyantjs/workflows/events`'s
+// `deriveStableEventId` and is used inline at the call site above —
+// content-derived so external callers without a forwarder still get
+// dedup across retries (architecture doc §15.2).
 
 async function safeText(resp: Response): Promise<string> {
   try {

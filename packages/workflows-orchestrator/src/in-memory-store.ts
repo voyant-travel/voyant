@@ -15,6 +15,16 @@ export function createInMemoryRunStore(): RunRecordStore {
       records.set(record.id, clone(record))
       return clone(record)
     },
+    async tryInsert(record) {
+      // Atomic-by-construction: Map.has + Map.set inside a single
+      // microtask. Concurrent `tryInsert(idA)` calls all schedule on the
+      // same JS event loop and only the first one observes the slot
+      // empty — subsequent callers see the inserted record.
+      const existing = records.get(record.id)
+      if (existing) return { record: clone(existing), created: false }
+      records.set(record.id, clone(record))
+      return { record: clone(record), created: true }
+    },
     async list(filter = {}) {
       let out = [...records.values()].map(clone)
       if (filter.workflowId) out = out.filter((r) => r.workflowId === filter.workflowId)

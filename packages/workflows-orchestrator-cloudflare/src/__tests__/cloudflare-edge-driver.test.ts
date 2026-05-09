@@ -83,6 +83,12 @@ function inProcessDispatcher(): DispatchNamespaceLike {
 
 function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
   const storages = new Map<string, DurableObjectStorageLike>()
+  // Per-id request queue — mirrors the production CF guarantee that a
+  // Durable Object instance processes requests one at a time. Without
+  // this, concurrent fetches to the same id race inside the fake even
+  // though they wouldn't in production. Critical for the
+  // `tryInsert` idempotency-race compliance test.
+  const queues = new Map<string, Promise<unknown>>()
   const dispatcher = inProcessDispatcher()
   return {
     idFromName(name) {
@@ -94,13 +100,25 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
         storage = makeStorage()
         storages.set(id, storage)
       }
+      const stableStorage = storage
       return {
         async fetch(req: Request): Promise<Response> {
-          return handleDurableObjectRequest(req, {
-            storage: storage!,
-            resolveStepHandler: (tenantScript) =>
-              createDispatchStepHandler(tenantScript, { dispatcher }),
+          const prev = queues.get(id) ?? Promise.resolve()
+          let release!: () => void
+          const next = new Promise<void>((resolve) => {
+            release = resolve
           })
+          queues.set(id, next)
+          await prev
+          try {
+            return await handleDurableObjectRequest(req, {
+              storage: stableStorage,
+              resolveStepHandler: (tenantScript) =>
+                createDispatchStepHandler(tenantScript, { dispatcher }),
+            })
+          } finally {
+            release()
+          }
         },
       }
     },

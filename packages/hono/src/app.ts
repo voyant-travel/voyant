@@ -1,4 +1,14 @@
-import { createContainer, createEventBus, createQueryRunner } from "@voyantjs/core"
+import {
+  createContainer,
+  createEventBus,
+  createQueryRunner,
+  type EventEnvelope,
+  type EventFilterDescriptor,
+  type Module,
+  type ModuleContainer,
+  type WorkflowDescriptor,
+} from "@voyantjs/core"
+import { buildManifest, type EventFilterRuntimeEntry } from "@voyantjs/workflows/events"
 import { Hono } from "hono"
 
 import { requireAuth } from "./middleware/auth.js"
@@ -28,9 +38,38 @@ function resolveSurfaceMountPath(
   return `${prefix}/${normalized.replace(/^\/+|\/+$/g, "")}`
 }
 
+/**
+ * App handle returned alongside the Hono instance. Carries `ready()` for
+ * headless / sibling-process deployments that need to fire the lazy
+ * bootstrap before the first HTTP request — workflow runtimes (Mode 2's
+ * sibling-process pattern, tests) call this so the time wheel and
+ * manifest registration kick off without traffic.
+ *
+ * Returned via the augmented Hono instance: `app.ready` is attached
+ * directly so the existing call sites (which destructure / pass `app`
+ * around) keep working without a wrapper.
+ */
+export interface VoyantAppExtensions<TBindings = unknown> {
+  /**
+   * Resolves once the lazy bootstrap completes. Idempotent — multiple
+   * calls share the same promise. Use from tests + Mode 2 sibling
+   * processes where no request will arrive to trigger boot. See
+   * architecture doc §18 + §18.1.
+   *
+   * Accepts the runtime bindings that the bootstrap should run with. For
+   * binding-dependent configs (e.g. Mode 1 / Cloudflare, where the driver
+   * factory reads DO + KV bindings off `env`) callers MUST pass the real
+   * bindings; otherwise the memoized bootstrap promise locks in a driver
+   * built from `{}` and every later request reuses that broken instance.
+   * Mode 2 / InMemory drivers ignore bindings, so the no-arg form is safe
+   * there (defaults to `{}` for back-compat with tests).
+   */
+  ready(bindings?: TBindings): Promise<void>
+}
+
 export function createApp<TBindings extends VoyantBindings>(
   config: VoyantAppConfig<TBindings>,
-): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> {
+): Hono<{ Bindings: TBindings; Variables: VoyantVariables }> & VoyantAppExtensions<TBindings> {
   const app = new Hono<{ Bindings: TBindings; Variables: VoyantVariables }>()
   app.onError(handleApiError)
 
@@ -57,11 +96,87 @@ export function createApp<TBindings extends VoyantBindings>(
     eventBus.subscribe(sub.event, sub.handler)
   }
 
+  // ---- Workflow runtime wiring (synchronous setup; manifest registration
+  //      + EventBus forwarder run inside the lazy bootstrap below) ----
+  //
+  // We collect `workflows` + `eventFilters` from every module and plugin
+  // here so the failure mode for "duplicate workflow id across modules"
+  // surfaces at construction time (per architecture doc §18, the workflow
+  // runtime is fail-closed).
+  const collectedWorkflows: WorkflowDescriptor[] = []
+  const collectedFilters: EventFilterDescriptor[] = []
+  for (const mod of allModules) {
+    if (mod.module.workflows) collectedWorkflows.push(...mod.module.workflows)
+    if (mod.module.eventFilters) collectedFilters.push(...mod.module.eventFilters)
+  }
+  for (const plugin of config.plugins ?? []) {
+    if (plugin.workflows) collectedWorkflows.push(...plugin.workflows)
+    if (plugin.eventFilters) collectedFilters.push(...plugin.eventFilters)
+  }
+  // Validate duplicate workflow ids across modules + plugins. Same id from
+  // re-imports (HMR / shared bundles) is fine because identity is by id —
+  // we only flag genuinely-different definitions sharing an id.
+  if (config.workflows && collectedWorkflows.length > 0) {
+    const seen = new Map<string, WorkflowDescriptor>()
+    for (const wf of collectedWorkflows) {
+      const existing = seen.get(wf.id)
+      if (existing && existing !== wf) {
+        throw new Error(
+          `[voyant] duplicate workflow id "${wf.id}" registered by multiple modules/plugins. ` +
+            `Workflow ids must be unique across the app — use a module-scoped prefix ` +
+            `(e.g. "${wf.id.includes(".") ? wf.id : `<module>.${wf.id}`}").`,
+        )
+      }
+      seen.set(wf.id, wf)
+    }
+  }
+
+  // Workflow driver construction is **deferred** to the lazy bootstrap
+  // path so CF-edge users (whose driver options come from `env.*`
+  // bindings only available at request time) can pass a function-of-
+  // bindings shape — `(env) => createCloudflareEdgeDriver({...})` —
+  // rather than constructing at module-load time. Mode 2 / InMemory
+  // users pass a direct factory; the framework adapts both shapes.
+  // See reviewer feedback P2.1 + architecture doc §6.3.
+  // biome-ignore lint/suspicious/noExplicitAny: WorkflowDriver shape varies across driver implementations
+  let workflowDriver: any | undefined
+
   let bootstrapPromise: Promise<void> | null = null
   function ensureRuntimeBootstrapped(bindings: TBindings) {
     if (!bootstrapPromise) {
       bootstrapPromise = (async () => {
         const ctx = { bindings, container, eventBus }
+
+        // ---- Workflow runtime FIRST — fail-closed manifest registration
+        //      and EventBus forwarder must be in place before any module
+        //      bootstrap can emit. Otherwise a `module.bootstrap` that
+        //      emits an event during its own bootstrap would route through
+        //      a bus with no workflow forwarder yet, silently losing the
+        //      event. Per architecture doc §21.22 + reviewer feedback P2.3.
+        if (config.workflows) {
+          // `driver` is always a function-of-bindings (per
+          // VoyantWorkflowsConfig — see types.ts + reviewer feedback P2.1).
+          // Mode 2 / InMemory users wrap with `() => createXxxDriver({...})`.
+          // CF-edge users use `(env) => createCloudflareEdgeDriver({ env.* })`.
+          // We invoke with bindings, then the resulting DriverFactory
+          // with framework deps.
+          const factoryDeps = {
+            services: containerToServiceResolver(container),
+            logger: makeFrameworkLogger(config.logger),
+          }
+          const factory = config.workflows.driver(bindings)
+          workflowDriver = factory(factoryDeps)
+
+          await wireWorkflowRuntime({
+            modules: allModules.map((m) => m.module),
+            collectedWorkflows,
+            collectedFilters,
+            driver: workflowDriver,
+            environment: config.workflows.environment ?? "development",
+            projectId: config.workflows.projectId ?? "default",
+            eventBus,
+          })
+        }
 
         // Run each bootstrap in isolation — a single failing plugin/module/extension
         // must not poison the cached promise and kill the whole app's request pipeline.
@@ -102,7 +217,20 @@ export function createApp<TBindings extends VoyantBindings>(
     if (query) {
       c.set("query", query)
     }
+    // Bootstrap (fires once, idempotent) — resolves the workflow driver
+    // with c.env-supplied bindings on the first request, so deferred
+    // driver construction sees real runtime bindings (reviewer P2.1).
     await ensureRuntimeBootstrapped(c.env)
+    if (workflowDriver) {
+      // Surfaced on `c.var.workflowDriver` so HTTP route handlers can
+      // call `driver.trigger(...)` directly without re-resolving from
+      // the container. Also used by the optional HTTP ingest adapter
+      // (`mountHttpIngestAdapter` from `@voyantjs/workflows/http-ingest`).
+      ;(c as unknown as { set: (k: string, v: unknown) => void }).set(
+        "workflowDriver",
+        workflowDriver,
+      )
+    }
     return next()
   })
 
@@ -174,5 +302,167 @@ export function createApp<TBindings extends VoyantBindings>(
     config.additionalRoutes(app)
   }
 
-  return app
+  // Attach `ready()` directly to the Hono instance. Fires the lazy
+  // bootstrap with the supplied bindings (or `{}` for back-compat with
+  // Mode 2 / InMemory drivers that ignore them). Production code never
+  // calls `ready()` — the first request triggers the same boot via
+  // `ensureRuntimeBootstrapped(c.env)`. Tests + Mode 2 sibling processes
+  // use this so the time wheel + manifest registration happen without
+  // traffic; CF-edge users that want eager boot must pass the real `env`
+  // (otherwise the memoized bootstrap promise locks in a driver built
+  // from `{}` and every later request reuses that broken instance).
+  const augmented = app as Hono<{ Bindings: TBindings; Variables: VoyantVariables }> &
+    VoyantAppExtensions<TBindings>
+  augmented.ready = (bindings?: TBindings) =>
+    ensureRuntimeBootstrapped(bindings ?? ({} as TBindings))
+  return augmented
+}
+
+// ---- Internals ----
+
+interface WireWorkflowRuntimeArgs {
+  modules: ReadonlyArray<Module>
+  collectedWorkflows: ReadonlyArray<WorkflowDescriptor>
+  collectedFilters: ReadonlyArray<EventFilterDescriptor>
+  // biome-ignore lint/suspicious/noExplicitAny: WorkflowDriver shape varies across drivers
+  driver: any
+  environment: "production" | "preview" | "development"
+  projectId: string
+  // biome-ignore lint/suspicious/noExplicitAny: EventBus.subscribe handler signature varies
+  eventBus: { subscribe(event: string, handler: (e: any) => Promise<void> | void): unknown }
+}
+
+/**
+ * Build the manifest, register it with the driver, and install a single
+ * EventBus subscriber per unique eventType seen across the manifest's
+ * filters — that subscriber forwards into `driver.ingestEvent(...)`.
+ *
+ * The forwarder stamps `metadata.eventId` with a fresh content-derived
+ * id when missing, so the framework's idempotency derivation
+ * (`${filterId}:${eventId}`) gives stable run-dedup across retries.
+ *
+ * Failure modes are fail-closed: a manifest registration that throws
+ * rejects the bootstrap promise, and the next request sees a 503 with
+ * the registration error in the body.
+ */
+async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promise<void> {
+  // The descriptors collected from modules + plugins use core's structural
+  // types (`{ id, eventType }` only — see `EventFilterDescriptor` in core);
+  // the manifest builder needs the runtime shape with `.manifest` populated.
+  // Validate before casting so a contract-violating plugin fails loudly here
+  // instead of crashing on `entry.manifest.id` deep inside the sort.
+  const filterEntries: EventFilterRuntimeEntry[] = []
+  for (const entry of args.collectedFilters) {
+    const candidate = entry as Partial<EventFilterRuntimeEntry>
+    if (!candidate.manifest || typeof candidate.manifest.id !== "string") {
+      throw new Error(
+        `[voyant] event filter "${entry.id}" (event "${entry.eventType}") is missing the runtime ` +
+          `\`manifest\` field. Filters must be produced via \`trigger.on(eventName, { ... })\` from ` +
+          `@voyantjs/workflows — the public EventFilterDescriptor is the structural minimum, but ` +
+          `createApp() needs the manifest payload to register with the driver.`,
+      )
+    }
+    filterEntries.push(candidate as EventFilterRuntimeEntry)
+  }
+
+  const manifest = await buildManifest({
+    projectId: args.projectId,
+    environment: args.environment,
+    workflows: args.collectedWorkflows.map((w) => ({ id: w.id })),
+    eventFilters: filterEntries,
+  })
+
+  await args.driver.registerManifest({
+    environment: args.environment,
+    manifest,
+  })
+
+  // Install one EventBus subscriber per unique eventType. Each subscriber
+  // forwards the envelope through `driver.ingestEvent(...)`, which
+  // routes through the same predicate/mapper machinery the HTTP
+  // ingest path uses (see architecture doc §15).
+  const eventTypes = new Set(filterEntries.map((f) => f.eventType))
+  for (const eventType of eventTypes) {
+    args.eventBus.subscribe(eventType, async (envelope: EventEnvelope) => {
+      const stamped = ensureMetadataEventId(envelope)
+      try {
+        await args.driver.ingestEvent({
+          environment: args.environment,
+          envelope: stamped,
+        })
+      } catch (err) {
+        // Subscribers are observers per the EventBus contract — a misbehaving
+        // driver / network glitch must not break the emitter. The driver's
+        // own error reporting (logger calls + counter increments) surfaces
+        // the failure for ops; we swallow here to preserve the bus contract.
+        const message = err instanceof Error ? err.message : String(err)
+        console.error(`[voyant] workflow forwarder for "${eventType}" failed: ${message}`)
+      }
+    })
+  }
+}
+
+/**
+ * Adapt the framework's `ModuleContainer` (which has `register`) to a
+ * read-only `ServiceResolver` view (`resolve` + `has` only). This is
+ * what driver factories receive in their `services` dep.
+ */
+function containerToServiceResolver(container: ModuleContainer): {
+  resolve<T>(name: string): T
+  has(name: string): boolean
+} {
+  return {
+    resolve<T>(name: string): T {
+      return container.resolve<T>(name)
+    },
+    has(name: string): boolean {
+      return container.has(name)
+    },
+  }
+}
+
+/**
+ * Adapt the framework's optional `LoggerProvider` to the structural
+ * `DriverLogger` shape `(level, msg, data?) => void`. When no logger
+ * is configured, the adapter routes through `console`.
+ */
+function makeFrameworkLogger(
+  loggerProvider: VoyantAppConfig["logger"] | undefined,
+): (level: "debug" | "info" | "warn" | "error", msg: string, data?: object) => void {
+  void loggerProvider
+  return (level, msg, data) => {
+    const fn =
+      level === "error"
+        ? console.error
+        : level === "warn"
+          ? console.warn
+          : level === "debug"
+            ? console.debug
+            : console.log
+    if (data !== undefined) fn(`[voyant] ${msg}`, data)
+    else fn(`[voyant] ${msg}`)
+  }
+}
+
+function ensureMetadataEventId(envelope: EventEnvelope): EventEnvelope {
+  const metadata = envelope.metadata
+  if (
+    metadata !== undefined &&
+    metadata !== null &&
+    typeof metadata === "object" &&
+    typeof (metadata as { eventId?: unknown }).eventId === "string" &&
+    ((metadata as { eventId: string }).eventId.length ?? 0) > 0
+  ) {
+    return envelope
+  }
+  const eventId = `evt_${Date.now().toString(36)}_${Math.floor(Math.random() * 1_000_000)
+    .toString(36)
+    .padStart(4, "0")}`
+  return {
+    ...envelope,
+    metadata: {
+      ...(metadata ?? {}),
+      eventId,
+    },
+  } as EventEnvelope
 }

@@ -62,6 +62,30 @@ export async function shortHash(value: unknown): Promise<string> {
   return full.slice(0, 16)
 }
 
+/**
+ * Derive a stable event id from an envelope when `metadata.eventId` is
+ * absent. Mirrors the formula from architecture doc §15.2:
+ *
+ *     `${name}:${emittedAt}:${sha256(canonical(data)).slice(0, 12)}`
+ *
+ * Same envelope content always produces the same id — concurrent retries
+ * of the same external HTTP delivery dedupe at the driver's
+ * `${filterId}:${eventId}` idempotency key derivation.
+ *
+ * Returns a fallback id of the form `evt_<name>_<emittedAt>_<hash12>`
+ * (URL-safe; no colons in case the id flows through path segments).
+ */
+export async function deriveStableEventId(envelope: {
+  name: string
+  data: unknown
+  emittedAt: string
+}): Promise<string> {
+  const dataHash = (await sha256(envelope.data)).slice(0, 12)
+  const safeName = envelope.name.replace(/[^a-zA-Z0-9._-]/g, "_")
+  const safeAt = envelope.emittedAt.replace(/[^a-zA-Z0-9.]/g, "_")
+  return `evt_${safeName}_${safeAt}_${dataHash}`
+}
+
 // ---- Internal ----
 
 function getCrypto(): Crypto {
