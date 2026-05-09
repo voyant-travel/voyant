@@ -3,28 +3,33 @@
  *
  * Wakes every 5 minutes and asks `runPromotionBoundaryScheduler` to scan
  * for offers whose `valid_from` / `valid_until` crossed the watermark
- * since the last tick. For each crossing we directly reindex the
- * affected products through the same code path the catalog-bridge uses
- * for live `promotion.changed` events.
+ * since the last tick. Two dispatch paths:
  *
- * Why we dispatch inline instead of emitting events: Cloudflare Workers
- * scheduled handlers run in their own isolate-call and don't share an
- * in-process `EventBus` with the running app — the catalog-bridge's
- * `promotion.changed` subscriber lives on a different bus instance and
- * would never see events emitted from here. Calling the indexer
- * directly is the simplest path that actually works.
+ *   - `affected.kind === "products"` → reindex each listed id inline
+ *     against the catalog plane. Bounded set, fast.
+ *   - `affected.kind === "all"`      → forward a `promotion.changed`
+ *     envelope into the workflow driver (`driver.ingestEvent`). The
+ *     `trigger.on()` filter declared by the promotions module routes
+ *     it into the bulk-reindex workflow, which fans out per-product
+ *     steps so each one stays inside Worker CPU limits.
  *
- * Without this, an indexed product document would continue to show an
- * expired discount until something else triggered a reindex.
+ * Why dispatch directly instead of emitting through the in-process
+ * EventBus: Cloudflare Workers scheduled handlers run in their own
+ * isolate-call and don't share an in-process `EventBus` with the
+ * running app. The workflow driver, by contrast, persists state in
+ * the durable `WORKFLOW_RUN_DO` + `WORKFLOW_MANIFESTS` bindings, so
+ * a fresh per-tick instance still routes correctly.
  *
  * Per docs/architecture/promotions-architecture.md §9.2.
  */
 
 import { createIndexerService } from "@voyantjs/catalog"
+import { PROMOTION_CHANGED_EVENT } from "@voyantjs/promotions"
 import {
   type BoundarySchedulerResult,
   runPromotionBoundaryScheduler,
 } from "@voyantjs/promotions/service-boundary-scheduler"
+import { createCloudflareEdgeDriver } from "@voyantjs/workflows-orchestrator-cloudflare"
 
 import {
   buildEmbeddingProvider,
@@ -66,34 +71,54 @@ export async function runScheduledPromotionBoundary(
         embeddings,
       )
 
-      // Aggregate distinct product IDs across all crossings so multiple
-      // offers crossing on the same product reindex once. When a
-      // crossing is `affected.kind === "all"` (global / market /
-      // audience scope change), log + skip — inline enumeration of
-      // every owned product is unsafe in a Workers cron handler (CPU /
-      // wall-time limits, especially for large catalogs). Operators
-      // run `pnpm exec tsx scripts/reindex.ts products` to refresh
-      // after such crossings.
-      //
-      // Tracked: voyantjs/voyant#515 — moves this branch onto a
-      // `@voyantjs/workflows` workflow with `defaultRuntime: "node"`,
-      // triggered via `trigger.on("promotion.changed", ...)`. Blocked
-      // on voyantjs/voyant#514 (`trigger.on()` runtime).
+      // Aggregate distinct product IDs across `affected.kind === "products"`
+      // crossings so multiple offers landing on the same product reindex
+      // once. `affected.kind === "all"` crossings dispatch through the
+      // workflow runtime below — see the per-tick driver block.
       const productIds = new Set<string>()
+      const allCrossings: typeof result.crossings = []
       for (const crossing of result.crossings) {
         if (crossing.affected.kind === "products") {
           for (const id of crossing.affected.productIds) productIds.add(id)
         } else {
-          console.warn(
-            "[promotion-scheduled] crossing affected=all — bulk reindex skipped (unsafe inline on Workers); run `pnpm exec tsx scripts/reindex.ts products` to refresh. See voyantjs/voyant#515.",
-            { offerId: crossing.offerId, source: crossing.source },
-          )
+          allCrossings.push(crossing)
         }
       }
 
       for (const productId of productIds) {
         await service.reindexEntity("products", productId, builder)
         reindexedProductIds++
+      }
+
+      // Forward `affected.kind === "all"` crossings into the workflow
+      // runtime so the bulk-reindex workflow fires the same way it does
+      // when CRUD routes emit `promotion.changed`. Build a per-tick
+      // driver from the same bindings `createApp` uses; the manifest
+      // lives in KV so a fresh isolate finds the same routing config.
+      if (allCrossings.length > 0) {
+        const driverFactory = createCloudflareEdgeDriver({
+          orchestratorNamespace: env.WORKFLOW_RUN_DO,
+          manifestKv: env.WORKFLOW_MANIFESTS,
+        })
+        const driver = driverFactory({
+          services: { has: () => false, resolve: () => undefined as never },
+          logger: (level, msg, data) =>
+            console[level === "debug" ? "info" : level](`[workflows] ${msg}`, data ?? {}),
+        })
+        for (const crossing of allCrossings) {
+          await driver.ingestEvent({
+            environment: "development",
+            envelope: {
+              name: PROMOTION_CHANGED_EVENT,
+              data: {
+                offerId: crossing.offerId,
+                source: crossing.source,
+                affected: crossing.affected,
+              },
+              emittedAt: new Date().toISOString(),
+            },
+          })
+        }
       }
     }
 

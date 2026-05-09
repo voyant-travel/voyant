@@ -114,6 +114,8 @@
     "@voyantjs/utils": "workspace:*",
     "@voyantjs/workflow-runs": "workspace:*",
     "@voyantjs/workflows": "workspace:*",
+    "@voyantjs/workflows-orchestrator": "workspace:*",
+    "@voyantjs/workflows-orchestrator-cloudflare": "workspace:*",
     "@neondatabase/serverless": "^1.0.2",
     "better-auth": "^1.5.6",
     "class-variance-authority": "^0.7.1",

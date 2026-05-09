@@ -57,6 +57,7 @@ import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-ver
 import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyantjs/workflow-runs"
+import { createCloudflareEdgeDriver } from "@voyantjs/workflows-orchestrator-cloudflare"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createProductBrochurePrinter } from "../lib/brochure-printer"
@@ -700,6 +701,26 @@ export const app = createApp<CloudflareBindings>({
   // response is sent, so each request gets its own Pool and closes it
   // before the isolate sleeps.
   db: (env) => dbFromEnvForApp(env),
+  // Workflow runtime — Cloudflare edge composition. Per-run state lives
+  // in the `WorkflowRunDO` Durable Object exported from `entry.ts`;
+  // serialized manifests live in the `WORKFLOW_MANIFESTS` KV namespace.
+  // Step bodies dispatch through `createInlineDispatcher` (set up inside
+  // the DO), so workflow code lives in this same Worker.
+  //
+  // The `driver` field is a function-of-bindings: createApp invokes it
+  // at lazy bootstrap time once env bindings are resolved. Uncomment
+  // the durable_objects + kv_namespaces blocks in wrangler.jsonc and
+  // run `wrangler kv namespace create WORKFLOW_MANIFESTS` to provision
+  // the bindings; without them, bootstrap fails with a clear error.
+  workflows: {
+    driver: (bindings: unknown) => {
+      const env = bindings as CloudflareBindings
+      return createCloudflareEdgeDriver({
+        orchestratorNamespace: env.WORKFLOW_RUN_DO,
+        manifestKv: env.WORKFLOW_MANIFESTS,
+      })
+    },
+  },
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
     "/v1/public/storefront-verification",

@@ -234,24 +234,14 @@ export const catalogBridgeBundle: HonoBundle = {
     // `affected.kind === "products"` → reindex each listed ID inline.
     // Bounded by the offer's materialized link table; safe on Workers.
     //
-    // `affected.kind === "all"` → log + skip. Inline enumeration of
-    // every owned product is unsafe on Cloudflare Workers (CPU /
-    // wall-time limits, especially for large catalogs). Operators run
-    // `pnpm exec tsx scripts/reindex.ts products` to refresh after
-    // creating / expiring a global / market / audience-scoped offer.
-    //
-    // Tracked: voyantjs/voyant#515 — moves this branch onto a
-    // `@voyantjs/workflows` workflow with `defaultRuntime: "node"`
-    // (no Workers limits) triggered via `trigger.on("promotion.changed",
-    // ...)`. Blocked on voyantjs/voyant#514 (`trigger.on()` runtime).
+    // `affected.kind === "all"` → routed into the
+    // `promotions.reindex-all-products` workflow declared by the
+    // promotions module; the workflow runtime fans the work out across
+    // per-product steps so each one stays inside Worker CPU limits.
+    // The trigger.on filter (also declared by the promotions module)
+    // forwards the event automatically — nothing to do here.
     eventBus.subscribe<PromotionChangedPayload>("promotion.changed", async ({ data }) => {
-      if (data.affected.kind === "all") {
-        console.warn(
-          "[catalog-bridge] promotion.changed affected=all — bulk reindex skipped (unsafe inline on Workers); run `pnpm exec tsx scripts/reindex.ts products` to refresh. See voyantjs/voyant#515.",
-          { offerId: data.offerId, source: data.source },
-        )
-        return
-      }
+      if (data.affected.kind === "all") return
       const productIds = data.affected.productIds
       if (productIds.length === 0) return
       await withDbFromEnv(env, async (db) => {
