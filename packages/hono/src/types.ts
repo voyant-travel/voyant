@@ -156,6 +156,45 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   auth?: VoyantAuthIntegration<TBindings>
   publicPaths?: string[]
   logger?: LoggerProvider
+  /**
+   * Workflow runtime configuration. When set, `createApp()` collects
+   * `module.workflows` + `module.eventFilters` (plus the same fields
+   * from plugins), invokes `workflows.driver` with framework deps, and
+   * — inside the lazy bootstrap path — registers the manifest with the
+   * driver and installs an EventBus forwarder that routes emitted
+   * events to `driver.ingestEvent(...)`.
+   *
+   * See `docs/architecture/workflows-runtime-architecture.md` §6, §18.
+   */
+  workflows?: VoyantWorkflowsConfig
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
   additionalRoutes?: (app: Hono<any>) => void
+}
+
+/**
+ * Workflow runtime configuration block. The driver factory is invoked
+ * once per `createApp()` instance, after the framework's
+ * `ModuleContainer` is built — see architecture doc §6.3 (`DriverFactory`).
+ */
+export interface VoyantWorkflowsConfig {
+  /**
+   * `DriverFactory` returned from one of `@voyantjs/workflows-orchestrator`'s
+   * factories (`createInMemoryDriver`), `@voyantjs/workflows-orchestrator-node`
+   * (`createNodeStandaloneDriver`), or
+   * `@voyantjs/workflows-orchestrator-cloudflare` (`createCloudflareEdgeDriver`).
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: DriverFactory's TIn/TOut generics vary across drivers
+  driver: (deps: { services: any; logger: any; now?: () => number }) => any
+  /**
+   * Environment the manifest registers under. Defaults to `"development"`.
+   * Workflow filters are environment-scoped (production manifests don't
+   * see preview events and vice versa) per architecture doc §21.10.
+   */
+  environment?: "production" | "preview" | "development"
+  /**
+   * Project / tenant identifier baked into the manifest. Single-tenant
+   * runtimes leave this unset (defaults to `"default"`). Multi-tenant
+   * deployments override per-app via voyant-cloud's wrapper layer.
+   */
+  projectId?: string
 }
