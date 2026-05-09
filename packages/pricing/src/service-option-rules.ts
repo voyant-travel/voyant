@@ -1,13 +1,43 @@
+import type { EventBus } from "@voyantjs/core"
 import { RequestValidationError } from "@voyantjs/hono"
 import { and, asc, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import {
+  PRICING_RULE_CHANGED_EVENT,
+  type PricingRuleChangedEvent,
+  type PricingRuleChangeSource,
+} from "./events.js"
 import {
   optionPriceRules,
   optionStartTimeRules,
   optionUnitPriceRules,
   optionUnitTiers,
 } from "./schema.js"
+
+/**
+ * Optional runtime context for pricing-rule mutations. When `eventBus`
+ * is wired the service emits `pricing.rule.changed` after a successful
+ * mutation so the catalog bridge can reindex the affected product.
+ *
+ * Keeping it optional preserves back-compat with existing callers that
+ * don't care about the catalog plane (e.g. data-import scripts).
+ */
+export interface RuleMutationRuntime {
+  eventBus?: EventBus
+  source?: PricingRuleChangeSource
+}
+
+async function emitRuleChanged(
+  eventBus: EventBus | undefined,
+  payload: PricingRuleChangedEvent,
+): Promise<void> {
+  if (!eventBus) return
+  await eventBus.emit(PRICING_RULE_CHANGED_EVENT, payload, {
+    category: "domain",
+    source: "service",
+  })
+}
 
 // A `per_booking` rule produces a single flat amount for the whole booking;
 // per-unit prices implicitly assume a per-unit (or per-person) multiplier.
@@ -73,15 +103,24 @@ export async function getOptionPriceRuleById(db: PostgresJsDatabase, id: string)
 export async function createOptionPriceRule(
   db: PostgresJsDatabase,
   data: CreateOptionPriceRuleInput,
+  runtime: RuleMutationRuntime = {},
 ) {
   const [row] = await db.insert(optionPriceRules).values(data).returning()
-  return row ?? null
+  if (!row) return null
+  await emitRuleChanged(runtime.eventBus, {
+    productId: row.productId,
+    ruleId: row.id,
+    kind: "option-rule",
+    source: runtime.source ?? "created",
+  })
+  return row
 }
 
 export async function updateOptionPriceRule(
   db: PostgresJsDatabase,
   id: string,
   data: UpdateOptionPriceRuleInput,
+  runtime: RuleMutationRuntime = {},
 ) {
   if (data.pricingMode === "per_booking") {
     const [countRow] = await db
@@ -97,20 +136,68 @@ export async function updateOptionPriceRule(
     }
   }
 
+  // Snapshot the pre-update productId so reassignment (rule moves
+  // between products) reindexes the *previous* product too. Without
+  // this, the projection on the old product keeps a stale MIN that
+  // includes a rule it no longer owns.
+  const [pre] = await db
+    .select({ productId: optionPriceRules.productId })
+    .from(optionPriceRules)
+    .where(eq(optionPriceRules.id, id))
+    .limit(1)
+
   const [row] = await db
     .update(optionPriceRules)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(optionPriceRules.id, id))
     .returning()
-  return row ?? null
+  if (!row) return null
+
+  await emitRuleChanged(runtime.eventBus, {
+    productId: row.productId,
+    ruleId: row.id,
+    kind: "option-rule",
+    source: runtime.source ?? "updated",
+  })
+  if (pre && pre.productId !== row.productId) {
+    await emitRuleChanged(runtime.eventBus, {
+      productId: pre.productId,
+      ruleId: row.id,
+      kind: "option-rule",
+      source: runtime.source ?? "updated",
+    })
+  }
+  return row
 }
 
-export async function deleteOptionPriceRule(db: PostgresJsDatabase, id: string) {
+export async function deleteOptionPriceRule(
+  db: PostgresJsDatabase,
+  id: string,
+  runtime: RuleMutationRuntime = {},
+) {
+  // Snapshot before deletion so the event payload carries productId —
+  // can't read it back from the deleted row.
+  const [snapshot] = await db
+    .select({ productId: optionPriceRules.productId })
+    .from(optionPriceRules)
+    .where(eq(optionPriceRules.id, id))
+    .limit(1)
+
   const [row] = await db
     .delete(optionPriceRules)
     .where(eq(optionPriceRules.id, id))
     .returning({ id: optionPriceRules.id })
-  return row ?? null
+  if (!row) return null
+
+  if (snapshot) {
+    await emitRuleChanged(runtime.eventBus, {
+      productId: snapshot.productId,
+      ruleId: row.id,
+      kind: "option-rule",
+      source: runtime.source ?? "deleted",
+    })
+  }
+  return row
 }
 
 export async function listOptionUnitPriceRules(
@@ -152,12 +239,33 @@ export async function getOptionUnitPriceRuleById(db: PostgresJsDatabase, id: str
   return row ?? null
 }
 
+/**
+ * Look up the productId on an option-unit-rule's parent rule. Used by
+ * the mutation paths to populate the `pricing.rule.changed` payload —
+ * unit rules don't carry productId directly, so we walk through their
+ * parent every time. One small extra query per mutation; pricing
+ * mutations aren't on a hot path so the cost is negligible.
+ */
+async function getProductIdForUnitRule(
+  db: PostgresJsDatabase,
+  unitRuleId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ productId: optionPriceRules.productId })
+    .from(optionUnitPriceRules)
+    .innerJoin(optionPriceRules, eq(optionPriceRules.id, optionUnitPriceRules.optionPriceRuleId))
+    .where(eq(optionUnitPriceRules.id, unitRuleId))
+    .limit(1)
+  return row?.productId ?? null
+}
+
 export async function createOptionUnitPriceRule(
   db: PostgresJsDatabase,
   data: CreateOptionUnitPriceRuleInput,
+  runtime: RuleMutationRuntime = {},
 ) {
   const [parent] = await db
-    .select({ pricingMode: optionPriceRules.pricingMode })
+    .select({ pricingMode: optionPriceRules.pricingMode, productId: optionPriceRules.productId })
     .from(optionPriceRules)
     .where(eq(optionPriceRules.id, data.optionPriceRuleId))
     .limit(1)
@@ -168,28 +276,81 @@ export async function createOptionUnitPriceRule(
   }
 
   const [row] = await db.insert(optionUnitPriceRules).values(data).returning()
-  return row ?? null
+  if (!row) return null
+  if (parent) {
+    await emitRuleChanged(runtime.eventBus, {
+      productId: parent.productId,
+      ruleId: row.id,
+      kind: "option-unit-rule",
+      source: runtime.source ?? "created",
+    })
+  }
+  return row
 }
 
 export async function updateOptionUnitPriceRule(
   db: PostgresJsDatabase,
   id: string,
   data: UpdateOptionUnitPriceRuleInput,
+  runtime: RuleMutationRuntime = {},
 ) {
+  // Snapshot the pre-update parent's productId. If the update reassigns
+  // `optionPriceRuleId` to a parent rule under a different product, the
+  // *previous* product also loses this unit-rule from its MIN
+  // candidate set and needs reindexing. Without this snapshot the old
+  // product's `priceFromAmountCents` stays stale.
+  const prevProductId = await getProductIdForUnitRule(db, id)
+
   const [row] = await db
     .update(optionUnitPriceRules)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(optionUnitPriceRules.id, id))
     .returning()
-  return row ?? null
+  if (!row) return null
+
+  const nextProductId = await getProductIdForUnitRule(db, row.id)
+  if (nextProductId) {
+    await emitRuleChanged(runtime.eventBus, {
+      productId: nextProductId,
+      ruleId: row.id,
+      kind: "option-unit-rule",
+      source: runtime.source ?? "updated",
+    })
+  }
+  if (prevProductId && prevProductId !== nextProductId) {
+    await emitRuleChanged(runtime.eventBus, {
+      productId: prevProductId,
+      ruleId: row.id,
+      kind: "option-unit-rule",
+      source: runtime.source ?? "updated",
+    })
+  }
+  return row
 }
 
-export async function deleteOptionUnitPriceRule(db: PostgresJsDatabase, id: string) {
+export async function deleteOptionUnitPriceRule(
+  db: PostgresJsDatabase,
+  id: string,
+  runtime: RuleMutationRuntime = {},
+) {
+  // Snapshot productId before deletion — the row is gone after.
+  const productId = await getProductIdForUnitRule(db, id)
+
   const [row] = await db
     .delete(optionUnitPriceRules)
     .where(eq(optionUnitPriceRules.id, id))
     .returning({ id: optionUnitPriceRules.id })
-  return row ?? null
+  if (!row) return null
+
+  if (productId) {
+    await emitRuleChanged(runtime.eventBus, {
+      productId,
+      ruleId: row.id,
+      kind: "option-unit-rule",
+      source: runtime.source ?? "deleted",
+    })
+  }
+  return row
 }
 
 export async function listOptionStartTimeRules(
