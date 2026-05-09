@@ -1,5 +1,33 @@
 # @voyantjs/charters
 
+## 0.29.0
+
+### Patch Changes
+
+- 2baf762: Fix #492: expose all workspace sub-paths in `publishConfig.exports` for vertical packages.
+
+  `publishConfig.exports` (used at publish time) had drifted from the workspace `exports` map: catalog plane and content plane sub-paths shipped in `dist/` but were unreachable from the published package. Consumers installing from npm hit `ERR_PACKAGE_PATH_NOT_EXPORTED` / `TS2307` when importing them.
+
+  Newly exposed sub-paths:
+
+  - `@voyantjs/products`: `./catalog-policy`, `./service-catalog-plane`, `./content-shape`, `./service-content`, `./service-content-synthesizer`, `./routes-content`, `./draft-shape`
+  - `@voyantjs/extras`: `./catalog-policy`, `./service-catalog-plane`, `./content-shape`, `./service-content`, `./service-content-synthesizer`, `./draft-shape`
+  - `@voyantjs/cruises`: `./catalog-policy`, `./service-catalog-plane`, `./content-shape`, `./service-content-synthesizer`, `./routes-content`, `./draft-shape`
+  - `@voyantjs/charters`: `./catalog-policy`, `./service-catalog-plane`, `./content-shape`, `./service-content`, `./service-content-synthesizer`, `./draft-shape`
+  - `@voyantjs/hospitality`: `./catalog-policy`, `./service-catalog-plane`, `./content-shape`, `./service-content-synthesizer`, `./draft-shape`
+
+- Updated dependencies [3420711]
+- Updated dependencies [583326e]
+- Updated dependencies [583326e]
+- Updated dependencies [583326e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [db51715]
+  - @voyantjs/bookings@0.29.0
+  - @voyantjs/catalog@0.29.0
+  - @voyantjs/core@0.29.0
+  - @voyantjs/db@0.29.0
+  - @voyantjs/hono@0.29.0
+
 ## 0.28.3
 
 ### Patch Changes

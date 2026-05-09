@@ -1,5 +1,13 @@
 # @voyantjs/extras-react
 
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [2baf762]
+  - @voyantjs/extras@0.29.0
+  - @voyantjs/react@0.29.0
+
 ## 0.28.3
 
 ### Patch Changes

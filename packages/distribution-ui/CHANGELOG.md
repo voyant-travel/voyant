@@ -1,5 +1,17 @@
 # @voyantjs/distribution-ui
 
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [4a6523e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [4a6523e]
+  - @voyantjs/distribution-react@0.29.0
+  - @voyantjs/i18n@0.29.0
+  - @voyantjs/ui@0.29.0
+
 ## 0.28.3
 
 ### Patch Changes

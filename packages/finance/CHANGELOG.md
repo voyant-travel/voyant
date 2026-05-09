@@ -1,5 +1,21 @@
 # @voyantjs/finance
 
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [3420711]
+- Updated dependencies [583326e]
+- Updated dependencies [583326e]
+- Updated dependencies [4a6523e]
+- Updated dependencies [db51715]
+  - @voyantjs/bookings@0.29.0
+  - @voyantjs/core@0.29.0
+  - @voyantjs/db@0.29.0
+  - @voyantjs/hono@0.29.0
+  - @voyantjs/storage@0.29.0
+  - @voyantjs/utils@0.29.0
+
 ## 0.28.3
 
 ### Patch Changes

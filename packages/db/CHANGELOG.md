@@ -1,5 +1,94 @@
 # @voyantjs/db
 
+## 0.29.0
+
+### Minor Changes
+
+- db51715: Closes #500: switch both templates' Workers DB layer from Hyperdrive to the Neon serverless WebSocket driver. Drops the \`HYPERDRIVE\` binding from \`wrangler.jsonc\` + \`env.d.ts\` in both \`templates/dmc\` and \`templates/operator\`; templates now connect directly via \`@neondatabase/serverless\` Pool + \`drizzle-orm/neon-serverless\` using the same \`DATABASE_URL\` secret.
+
+  Two helpers ship in each template's \`src/api/lib/db.ts\`:
+
+  - \`getDbFromEnv(env, executionCtx?)\` — returns a per-request \`NeonDatabase\`. When \`executionCtx\` is passed, schedules \`pool.end()\` via \`waitUntil\` so the WebSocket closes promptly. When omitted, the Pool is left for the Workers runtime to reclaim on isolate teardown.
+  - \`withDbFromEnv(env, fn)\` — higher-order helper for non-Hono code paths (event subscribers, scheduled handlers, retry workers). Owns the Pool lifecycle inline (open → \`fn\` → \`finally pool.end()\`).
+
+  Touched packages get a minor bump because the shared types broaden:
+
+  - \`@voyantjs/db\` — \`AnyDrizzleDb\` union now includes \`NeonDatabase\` from \`drizzle-orm/neon-serverless\` alongside the existing \`PostgresJsDatabase\` and \`NeonHttpDatabase\` flavors.
+  - \`@voyantjs/hono\` — \`VoyantDb\` (the type Hono ctx variables expose under \`c.var.db\`) widens the same way.
+
+  Why WebSocket and not HTTP: the bookings package and other internal services use \`db.transaction(...)\` for read-then-write logic that needs real Postgres transaction semantics. Neon's HTTP transport only batches statements (atomic but no isolation); WebSocket gives full transaction support on Workers.
+
+  Subscribers in \`catalog-bridge\`, \`booking-schedule\`, \`smartbill\`, \`catalog-checkout\` were converted to \`withDbFromEnv\` so the Pool is owned by each subscriber call. \`getBetterAuth\` and other helpers that were hard to thread \`executionCtx\` through still call \`getDbFromEnv(env)\` without it — the Pool lingers until isolate teardown there. Tracked as a follow-up audit in #510.
+
+  No schema migration. No behavior change for existing API contracts. Operators upgrading need to: drop the \`HYPERDRIVE\` binding from their \`wrangler.jsonc\` (if they had one), and ensure their \`DATABASE_URL\` points at a Neon Postgres reachable over WebSocket (the standard Neon connection string).
+
+### Patch Changes
+
+- 583326e: PR3 of #497: catalog-plane wiring + boundary scheduler.
+
+  Storefront cards now render badges + strikethrough prices automatically when an active offer applies to a product. Offers fire at `valid_from` / expire at `valid_until` within ~5 minutes of the boundary (every-5-min cron in the operator template).
+
+  This PR adds:
+
+  **`@voyantjs/products`** — new `productPromotionsCatalogPolicy` (in `./catalog-policy-promotions`) declaring 14 annotation fields the products search document picks up: `hasOffer`, `bestOfferId`, `bestOfferName`, `bestOfferDiscountKind`, `bestOfferDiscountPercent`, `bestOfferDiscountAmountCents`, `originalPriceFromAmountCents`, plus the matching `conditionalOffer*` set for "From N pax: extra X% off" hints. Visibility `[staff, customer, partner]`.
+
+  **`@voyantjs/promotions`** —
+
+  - `./service-catalog-plane-promotions` — `createProductPromotionsProjectionExtension()`. Annotation-only contract per §3.7: does NOT touch `priceFromAmountCents`. Storefront consumers compute the effective price client-side. `loadOriginalPrice` callback lets templates wire a richer MIN-across-options resolver for option-driven products; default reads `products.sell_amount_cents`.
+  - `./service-boundary-scheduler` — `runPromotionBoundaryScheduler({ db, eventBus? })`. Scans `promotional_offers` for `valid_from` / `valid_until` crossings since the persisted watermark, returns the `BoundaryCrossing[]` so cron handlers without an in-process bus can dispatch the reindex inline (Cloudflare scheduled handlers don't share an `EventBus` with the running app's catalog-bridge). New `promotional_offer_scheduler_state` watermark table (single row, sentinel-keyed for defense). New typeid `pofs`.
+  - `createDrizzleOfferDataSource` (PR2) widened from `PostgresJsDatabase` to `AnyDrizzleDb` so the projection extension can use it from the products document builder's call site.
+
+  **`@voyantjs/db`** — new `pofs` typeid prefix for `promotional_offer_scheduler_state`.
+
+  **Operator template** —
+
+  - Schema added to `drizzle.config.ts`; migration `0007_oval_hex.sql` generated.
+  - `catalog-runtime.ts` composes `productPromotionsCatalogPolicy` + `createProductPromotionsProjectionExtension()` into the products registry / builder.
+  - `catalog-bridge.ts` subscribes to `promotion.changed` — reindexes the affected products on offer mutations + scheduler firings. `affected.kind: "all"` is logged + skipped (bulk-reindex API on `IndexerService` is a future enhancement; in practice global / market / audience scope changes are operator-rare).
+  - New `src/api/promotion-scheduled.ts` cron handler (`*/5 * * * *`) — runs the scheduler, then reindexes the unique product set across all crossings via the same indexer code path the live bridge uses.
+  - `wrangler.jsonc` adds the cron; `entry.ts` dispatches it.
+
+  10 new unit tests + 9 new integration tests. 76 unit tests pass, 26 integration tests skipped without `TEST_DATABASE_URL`.
+
+  **Known v1 limitations** (per §15 / §14 of the architecture doc):
+
+  - Catalog filter / sort uses `priceFromAmountCents` (list price) rather than effective price — `bestOffer*` annotations don't change which products match a `< $200` filter when a product is on sale. Real fix is the §15.1 ordered-extensions contract change, deferred.
+  - `affected.kind: "all"` reindex pathway is a no-op until `IndexerService` grows a bulk-reindex helper.
+
+- 583326e: Initial release of `@voyantjs/promotions` — PR1 of #497.
+
+  Ships the schema + admin CRUD foundation for promotional offers (auto-applied catalog discounts, code-redeemed discounts at checkout, and audience- / market-scoped blanket discounts). Catalog-plane wiring lands in PR3 with the boundary scheduler; booking-engine integration in PR4. Full design in `docs/architecture/promotions-architecture.md`.
+
+  This PR adds:
+
+  - Three tables — `promotional_offers`, `promotional_offer_products` (denormalized scope materialization for `products` / `categories` / `destinations` scopes), `promotional_offer_redemptions` (per-`(offer, booking)` audit row with idempotent unique constraint).
+  - TypeID prefixes `pofr` (`promotional_offers`) and `pofx` (`promotional_offer_redemptions`) in `@voyantjs/db`.
+  - Discriminated-union scope schema with six variants: `global`, `products`, `categories`, `destinations`, `markets`, `audiences`. No `channels` variant in v1 — see §3.2 of the architecture doc.
+  - CRUD service (`listOffers`, `getOfferById`, `createOffer`, `updateOffer`, `archiveOffer`, `deleteOffer`) with optional `OfferMutationRuntime.eventBus` to emit `promotion.changed`. Service-layer pre-check on delete returns a clearer error than the raw FK RESTRICT when redemptions exist.
+  - Scope materialization (`recomputeOfferLinks`): write-time expansion of `categories` and `destinations` scopes to product IDs via `@voyantjs/products` link tables; slice-shaped scopes (`global`, `markets`, `audiences`) leave the link table empty.
+  - Admin routes mounted at `/v1/admin/promotions/*` (auto-mounted by `createApp` based on `module.name`).
+  - 30 unit tests + 17 integration tests.
+
+  Operator template now ships the migration and the route mount.
+
+- 4a6523e: Add reminder sequences: stages, channels, and notification settings (#488).
+
+  Reminder rules can now own an ordered list of **stages**, each with its own anchor (`due_date`, `booking_created_at`, `departure_date`, `invoice_issued_at`, or `last_send_at`), eligibility window (`[startDays, endDays]`), and cadence (`once`, `every_n_days`, or `escalating` with `daysUntilDueGT/LT` buckets). Each stage can fan out to multiple channels, each carrying its own template and recipient kind. This subsumes the legacy single-offset rule (one stage, `cadence: once`, anchor `due_date`) and the counter-based escalation pattern from the issue (one stage with `cadence: escalating(...)` plus sibling stages keyed on cumulative `maxSendsInStage`).
+
+  The dispatcher gains a stage-aware path that runs first; rules without stages fall through to the legacy date-offset path (back-compat). The migration creates one stage + one channel per existing rule mirroring the legacy behavior, so existing fires keep working unchanged.
+
+  New tables: `notification_reminder_rule_stages` (typeid `ntrs`), `notification_reminder_stage_channels` (typeid `ntsc`), `notification_settings` (typeid `nset`). New columns on `notification_reminder_rules`: `priority`, `suppression_group`. New API surface: stage CRUD, stage channel CRUD, `/notification-settings`, and a read-only `/reminders/preview` that returns what _would_ fire on a given date with reasoning attached.
+
+  The dispatcher now respects:
+
+  - Quiet hours / blackout dates / weekend skips (per `notification_settings`, opt-out per stage via `respectQuietHours`).
+  - Cross-rule dedup via `suppression_group` and a per-recipient daily channel rate limit.
+  - Multi-channel stages (one decision → one delivery per channel, dedupe key includes channel).
+
+  Engine PR is the first of three milestones; UI hooks (`@voyantjs/notifications-react`) and a new `@voyantjs/notifications-ui` package follow.
+
+  - @voyantjs/core@0.29.0
+
 ## 0.28.3
 
 ### Patch Changes
