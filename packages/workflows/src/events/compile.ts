@@ -123,28 +123,26 @@ export async function compileEventFilter<T>(
 
 /**
  * Compile + register in one step. The synchronous wrapper for `trigger.on()`
- * that user code calls — kicks off compile asynchronously, registers when
- * the entry is ready, and returns a handle the user can ignore. Validation
- * errors become unhandled-rejection warnings in dev (caught by vitest etc.)
- * and surface at boot via `manifestBuilder.buildManifest()` which awaits
- * registry settlement.
+ * that user code calls — validates the declaration, computes the
+ * content-derived id, registers the entry, and returns it.
  *
- * For the synchronous-handle return we use a placeholder id; the real id
- * lands when the compile resolves. Since `trigger.on()` is the user-facing
- * API and most users don't inspect the returned handle (they just want the
- * filter registered), this is fine. If a future caller needs the real id
- * synchronously, see {@link compileEventFilterSync} below.
+ * Returning the full {@link EventFilterRuntimeEntry} is what makes the
+ * authoring shape from the architecture doc work directly — modules can
+ * write `eventFilters: [trigger.on(...)]` without a registry round-trip:
+ * the entry already structurally satisfies `EventFilterDescriptor`
+ * (matching `id` + `eventType` fields) and carries the `manifest` payload
+ * `createApp()`'s wireWorkflowRuntime needs to register with the driver.
  */
 export function compileAndRegister<T>(
   eventType: string,
   declaration: EventFilterDeclaration<T>,
-): { id: string; readonly event: string } {
+): EventFilterRuntimeEntry {
   // Run validation + compile synchronously where possible. The async
   // boundary is the SHA-256 digest from Web Crypto; we bridge via a
   // synchronous canonical-JSON hash so trigger.on() can stay sync.
   const entry = compileEventFilterSync(eventType, declaration)
   getEventFilterRegistry().add(entry)
-  return { id: entry.id, event: entry.eventType }
+  return entry
 }
 
 /**

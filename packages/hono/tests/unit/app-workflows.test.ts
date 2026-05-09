@@ -13,11 +13,7 @@ import {
   type WorkflowDescriptor,
 } from "@voyantjs/core"
 import { __resetRegistry, trigger, workflow } from "@voyantjs/workflows"
-import {
-  __resetEventFilterRegistry,
-  type EventFilterRuntimeEntry,
-  getEventFilterRegistry,
-} from "@voyantjs/workflows/events"
+import { __resetEventFilterRegistry } from "@voyantjs/workflows/events"
 import { createInMemoryDriver } from "@voyantjs/workflows-orchestrator"
 import { afterEach, describe, expect, test } from "vitest"
 
@@ -41,23 +37,19 @@ function buildPromotionsLikeModule(): HonoModule {
     },
   })
 
-  // Filter: matches when payload.kind === "all".
-  trigger.on("test.event", {
+  // Filter: matches when payload.kind === "all". `trigger.on()` returns
+  // the EventFilterRuntimeEntry directly so it drops straight into
+  // Module.eventFilters — no registry lookup needed.
+  const onPromoChanged = trigger.on("test.event", {
     target: bulkReindex,
     where: { eq: [{ path: "data.kind" }, { lit: "all" }] },
     input: { object: { kind: { path: "data.kind" } } },
   })
 
-  // Pull the single registered runtime entry; in real modules the entry
-  // is the value `trigger.on()` returns. The ./events registry is the
-  // canonical source so a module's eventFilters[] can carry it.
-  const filters = getEventFilterRegistry().list() as readonly (EventFilterRuntimeEntry &
-    EventFilterDescriptor)[]
-
   const moduleSpec: Module = {
     name: "promotions-test",
     workflows: [bulkReindex satisfies WorkflowDescriptor],
-    eventFilters: filters,
+    eventFilters: [onPromoChanged],
   }
   return { module: moduleSpec }
 }
@@ -284,16 +276,14 @@ describe("createApp workflows wiring", () => {
         return input
       },
     })
-    trigger.on("bootstrap.emit", {
+    const onBootstrapEmit = trigger.on("bootstrap.emit", {
       target: wf,
       input: { object: { tag: { path: "data.tag" } } },
     })
-    const filters = getEventFilterRegistry().list() as readonly (EventFilterRuntimeEntry &
-      EventFilterDescriptor)[]
     const moduleSpec: Module = {
       name: "bootstrap-emitter",
       workflows: [wf satisfies WorkflowDescriptor],
-      eventFilters: filters,
+      eventFilters: [onBootstrapEmit],
       async bootstrap(ctx) {
         // Emit during bootstrap. With the pre-fix order this fires into
         // a bus with no workflow subscriber.
