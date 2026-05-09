@@ -54,7 +54,7 @@ import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
-import { getDbFromEnv } from "./db"
+import { withDbFromEnv } from "./db"
 import { resolveOperatorSellTaxRate } from "./operator-tax-policy"
 
 let _registry: SourceAdapterRegistry | undefined
@@ -93,40 +93,46 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
       createProductsBookingHandler({
         holds: {
           async place(input) {
-            const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
-            const result = await placeAvailabilityHold(db, input)
-            if (result.status === "ok") {
-              return {
-                status: "ok",
-                holdToken: result.hold.holdToken,
-                expiresAt: result.hold.expiresAt,
+            return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+              const db = rawDb as unknown as PostgresJsDatabase
+              const result = await placeAvailabilityHold(db, input)
+              if (result.status === "ok") {
+                return {
+                  status: "ok",
+                  holdToken: result.hold.holdToken,
+                  expiresAt: result.hold.expiresAt,
+                }
               }
-            }
-            if (result.status === "slot_unlimited") {
-              return {
-                status: "ok",
-                holdToken: result.holdToken,
-                expiresAt: result.expiresAt,
+              if (result.status === "slot_unlimited") {
+                return {
+                  status: "ok",
+                  holdToken: result.holdToken,
+                  expiresAt: result.expiresAt,
+                }
               }
-            }
-            if (result.status === "slot_not_found") {
-              return { status: "slot_not_found" }
-            }
-            return {
-              status: "insufficient_capacity",
-              remaining: result.remaining,
-              needed: result.needed,
-            }
+              if (result.status === "slot_not_found") {
+                return { status: "slot_not_found" }
+              }
+              return {
+                status: "insufficient_capacity",
+                remaining: result.remaining,
+                needed: result.needed,
+              }
+            })
           },
           async extend(input) {
-            const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
-            const result = await extendAvailabilityHold(db, input)
-            if (result.status === "ok") return { status: "ok", expiresAt: result.expiresAt }
-            return { status: "not_found" }
+            return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+              const db = rawDb as unknown as PostgresJsDatabase
+              const result = await extendAvailabilityHold(db, input)
+              if (result.status === "ok") return { status: "ok", expiresAt: result.expiresAt }
+              return { status: "not_found" }
+            })
           },
           async release(holdToken) {
-            const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
-            await releaseAvailabilityHold(db, holdToken)
+            await withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+              const db = rawDb as unknown as PostgresJsDatabase
+              await releaseAvailabilityHold(db, holdToken)
+            })
           },
         },
         // Bridge into bookingsQuickCreate. The handler builds the
@@ -134,27 +140,25 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         // env is captured by the closure so the bridge can resolve
         // the per-request DB lazily.
         async quickCreate(input, opts) {
-          // `getDbFromEnv` returns the union AnyDrizzleDb (postgres-js |
-          // neon-http). `quickCreateBooking`'s signature still asks for
-          // postgres-js, so we force-narrow here. After #500 the runtime
-          // is neon-http on Workers; the cast is a TS-suppress, not a
-          // runtime guarantee. If `quickCreateBooking` reaches for
-          // postgres-js-only APIs (real PG transactions, advisory
-          // locks) under the neon-http instance it will surface at
-          // runtime — at which point the right fix is to widen the
-          // service signature to AnyDrizzleDb, not reintroduce
-          // Hyperdrive.
-          const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
-          const outcome = await quickCreateBooking(db, input, opts)
-          if (outcome.status === "ok") {
-            await persistQuickCreateTaxLines(db, outcome.result.booking.id, input.taxLines)
-            return {
-              status: "ok",
-              bookingId: outcome.result.booking.id,
-              bookingNumber: outcome.result.booking.bookingNumber,
+          // `withDbFromEnv` owns the per-call Pool — opens, runs the
+          // commit, closes in `finally`. `quickCreateBooking`'s
+          // signature still asks for postgres-js; force-cast here since
+          // the runtime is neon-serverless on Workers and the drizzle
+          // PgDatabase surface is identical across flavors for the
+          // ops we use.
+          return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+            const db = rawDb as unknown as PostgresJsDatabase
+            const outcome = await quickCreateBooking(db, input, opts)
+            if (outcome.status === "ok") {
+              await persistQuickCreateTaxLines(db, outcome.result.booking.id, input.taxLines)
+              return {
+                status: "ok",
+                bookingId: outcome.result.booking.id,
+                bookingNumber: outcome.result.booking.bookingNumber,
+              }
             }
-          }
-          return { status: outcome.status }
+            return { status: outcome.status }
+          })
         },
         async loadTravelerFields(ctx, productId) {
           // Project booking-requirements rows into the engine's
@@ -322,51 +326,54 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         },
         async commitBridge(input, opts) {
           // The handler validates `ratePlanId` upstream — defensive
-          // double-check here would be redundant.
-          const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
-          try {
-            const outcome = await hospitalityBookingsService.createStayBooking(
-              db,
-              {
-                propertyId: input.propertyId,
-                roomTypeId: input.roomTypeId,
-                ratePlanId: input.ratePlanId,
-                mealPlanId: input.mealPlanId,
-                checkInDate: input.checkInDate,
-                checkOutDate: input.checkOutDate,
-                roomCount: input.roomCount,
-                adults: input.adults,
-                children: input.children,
-                infants: input.infants,
-                dailyRates: input.dailyRates,
-                personId: input.personId,
-                organizationId: input.organizationId,
-                contact: {
-                  firstName: input.contact.firstName,
-                  lastName: input.contact.lastName,
-                  email: input.contact.email,
-                  phone: input.contact.phone,
-                  country: input.contact.country,
+          // double-check here would be redundant. `withDbFromEnv` owns
+          // the per-call Pool.
+          return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+            const db = rawDb as unknown as PostgresJsDatabase
+            try {
+              const outcome = await hospitalityBookingsService.createStayBooking(
+                db,
+                {
+                  propertyId: input.propertyId,
+                  roomTypeId: input.roomTypeId,
+                  ratePlanId: input.ratePlanId,
+                  mealPlanId: input.mealPlanId,
+                  checkInDate: input.checkInDate,
+                  checkOutDate: input.checkOutDate,
+                  roomCount: input.roomCount,
+                  adults: input.adults,
+                  children: input.children,
+                  infants: input.infants,
+                  dailyRates: input.dailyRates,
+                  personId: input.personId,
+                  organizationId: input.organizationId,
+                  contact: {
+                    firstName: input.contact.firstName,
+                    lastName: input.contact.lastName,
+                    email: input.contact.email,
+                    phone: input.contact.phone,
+                    country: input.contact.country,
+                  },
+                  passengers: input.passengers,
+                  notes: input.notes,
                 },
-                passengers: input.passengers,
-                notes: input.notes,
-              },
-              opts?.userId,
-            )
-            if (outcome.status === "ok") {
+                opts?.userId,
+              )
+              if (outcome.status === "ok") {
+                return {
+                  status: "ok",
+                  bookingId: outcome.result.bookingId,
+                  bookingNumber: outcome.result.bookingNumber,
+                }
+              }
+              return { status: "failed", reason: `hospitality_${outcome.status}` }
+            } catch (err) {
               return {
-                status: "ok",
-                bookingId: outcome.result.bookingId,
-                bookingNumber: outcome.result.bookingNumber,
+                status: "failed",
+                reason: err instanceof Error ? err.message : String(err),
               }
             }
-            return { status: "failed", reason: `hospitality_${outcome.status}` }
-          } catch (err) {
-            return {
-              status: "failed",
-              reason: err instanceof Error ? err.message : String(err),
-            }
-          }
+          })
         },
       }),
     )
@@ -411,79 +418,81 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           }
         },
         async commitBridge(input, opts) {
-          const db = getDbFromEnv(env as Parameters<typeof getDbFromEnv>[0]) as PostgresJsDatabase
-          try {
-            const result = await cruisesBookingService.createCruiseBooking(
-              db,
-              {
-                sailingId: input.sailingId,
-                cabinCategoryId: input.cabinCategoryId,
-                cabinId: input.cabinId,
-                occupancy: input.occupancy,
-                fareCode: input.fareCode,
-                personId: input.personId,
-                organizationId: input.organizationId,
-                contact: input.contact,
-                passengers: input.passengers,
-                airArrangement: input.airArrangement,
-                notes: input.notes,
-              },
-              opts?.userId,
-            )
-
-            // Cruise installments (per booking-journey-architecture
-            // §7): deposit at book + balance due 90 days before
-            // sail. The handler echoes the pricing total via the
-            // bridge input's pricing context — for now we read it
-            // off the quote stored in cruise_details (the cruise
-            // service already snapshotted it). When the journey
-            // surfaces explicit installment overrides, they flow
-            // through `input.installments` (TBD).
-            const totalCents = priceCentsFromString(result.cruiseDetails.quotedTotalForCabin)
-            if (totalCents > 0) {
-              const depositCents = Math.round(totalCents * 0.25)
-              const balanceCents = totalCents - depositCents
-              const today = new Date()
-              const sailDate = result.cruiseDetails.sailingId
-                ? // TODO: resolve sail date from sailings table when wired
-                  // — until then balance defaults to today + 60d.
-                  null
-                : null
-              const balanceDue = sailDate ?? new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000)
-              const depositDue = today
-              await db.insert(bookingPaymentSchedules).values([
+          return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
+            const db = rawDb as unknown as PostgresJsDatabase
+            try {
+              const result = await cruisesBookingService.createCruiseBooking(
+                db,
                 {
-                  bookingId: result.bookingId,
-                  scheduleType: "deposit",
-                  status: "due",
-                  dueDate: depositDue.toISOString().slice(0, 10),
-                  currency: result.cruiseDetails.quotedCurrency,
-                  amountCents: depositCents,
-                  notes: "Deposit at booking (per cruise journey §7)",
+                  sailingId: input.sailingId,
+                  cabinCategoryId: input.cabinCategoryId,
+                  cabinId: input.cabinId,
+                  occupancy: input.occupancy,
+                  fareCode: input.fareCode,
+                  personId: input.personId,
+                  organizationId: input.organizationId,
+                  contact: input.contact,
+                  passengers: input.passengers,
+                  airArrangement: input.airArrangement,
+                  notes: input.notes,
                 },
-                {
-                  bookingId: result.bookingId,
-                  scheduleType: "balance",
-                  status: "pending",
-                  dueDate: balanceDue.toISOString().slice(0, 10),
-                  currency: result.cruiseDetails.quotedCurrency,
-                  amountCents: balanceCents,
-                  notes: "Balance due before sail",
-                },
-              ])
-            }
+                opts?.userId,
+              )
 
-            return {
-              status: "ok",
-              bookingId: result.bookingId,
-              bookingNumber: result.bookingNumber,
+              // Cruise installments (per booking-journey-architecture
+              // §7): deposit at book + balance due 90 days before
+              // sail. The handler echoes the pricing total via the
+              // bridge input's pricing context — for now we read it
+              // off the quote stored in cruise_details (the cruise
+              // service already snapshotted it). When the journey
+              // surfaces explicit installment overrides, they flow
+              // through `input.installments` (TBD).
+              const totalCents = priceCentsFromString(result.cruiseDetails.quotedTotalForCabin)
+              if (totalCents > 0) {
+                const depositCents = Math.round(totalCents * 0.25)
+                const balanceCents = totalCents - depositCents
+                const today = new Date()
+                const sailDate = result.cruiseDetails.sailingId
+                  ? // TODO: resolve sail date from sailings table when wired
+                    // — until then balance defaults to today + 60d.
+                    null
+                  : null
+                const balanceDue = sailDate ?? new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000)
+                const depositDue = today
+                await db.insert(bookingPaymentSchedules).values([
+                  {
+                    bookingId: result.bookingId,
+                    scheduleType: "deposit",
+                    status: "due",
+                    dueDate: depositDue.toISOString().slice(0, 10),
+                    currency: result.cruiseDetails.quotedCurrency,
+                    amountCents: depositCents,
+                    notes: "Deposit at booking (per cruise journey §7)",
+                  },
+                  {
+                    bookingId: result.bookingId,
+                    scheduleType: "balance",
+                    status: "pending",
+                    dueDate: balanceDue.toISOString().slice(0, 10),
+                    currency: result.cruiseDetails.quotedCurrency,
+                    amountCents: balanceCents,
+                    notes: "Balance due before sail",
+                  },
+                ])
+              }
+
+              return {
+                status: "ok",
+                bookingId: result.bookingId,
+                bookingNumber: result.bookingNumber,
+              }
+            } catch (err) {
+              return {
+                status: "failed",
+                reason: err instanceof Error ? err.message : String(err),
+              }
             }
-          } catch (err) {
-            return {
-              status: "failed",
-              reason: err instanceof Error ? err.message : String(err),
-            }
-          }
+          })
         },
       }),
     )

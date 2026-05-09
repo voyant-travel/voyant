@@ -30,7 +30,7 @@ import {
   getBookingEngineRegistry,
   getOwnedBookingHandlerRegistry,
 } from "./lib/booking-engine-runtime"
-import { getDbFromEnv } from "./lib/db"
+import { withDbFromEnv } from "./lib/db"
 
 export const DRAFT_REAPER_CRON = "5 * * * *"
 
@@ -48,61 +48,65 @@ export async function runScheduledDraftReaper(
   _event: ScheduledController,
   env: CloudflareBindings & BookingEngineEnv,
 ): Promise<ReaperResult> {
-  const db = getDbFromEnv(env)
   const registry = getBookingEngineRegistry(env)
   const ownedHandlers = getOwnedBookingHandlerRegistry(env)
 
-  const expired = await findExpiredDrafts(db)
-  let released = 0
-  let releaseErrors = 0
-  let deleted = 0
-  let inGrace = 0
+  // `withDbFromEnv` owns the per-tick Pool — the WebSocket closes when
+  // this scheduled run finishes, instead of leaking until isolate
+  // teardown.
+  return withDbFromEnv(env, async (db) => {
+    const expired = await findExpiredDrafts(db)
+    let released = 0
+    let releaseErrors = 0
+    let deleted = 0
+    let inGrace = 0
 
-  const now = Date.now()
-  for (const draft of expired) {
-    // Per-vertical grace period — defer release for graceMs past
-    // the draft's expiry. Per booking-journey-architecture §12.9.
-    const grace = resolveGraceMs(draft, ownedHandlers, registry)
-    if (grace > 0) {
-      const effectiveExpiry = new Date(draft.expires_at).getTime() + grace
-      if (now < effectiveExpiry) {
-        // Still inside the grace window — leave the draft alone.
-        // The next reaper tick will revisit it.
-        inGrace++
-        continue
+    const now = Date.now()
+    for (const draft of expired) {
+      // Per-vertical grace period — defer release for graceMs past
+      // the draft's expiry. Per booking-journey-architecture §12.9.
+      const grace = resolveGraceMs(draft, ownedHandlers, registry)
+      if (grace > 0) {
+        const effectiveExpiry = new Date(draft.expires_at).getTime() + grace
+        if (now < effectiveExpiry) {
+          // Still inside the grace window — leave the draft alone.
+          // The next reaper tick will revisit it.
+          inGrace++
+          continue
+        }
       }
-    }
 
-    if (draft.hold_expires_at) {
+      if (draft.hold_expires_at) {
+        try {
+          await releaseHold({
+            db,
+            draft,
+            ownedHandlers,
+            registry,
+          })
+          released++
+        } catch (err) {
+          releaseErrors++
+          console.warn("[draft-reaper] failed to release hold", {
+            draftId: draft.id,
+            reason: err instanceof Error ? err.message : String(err),
+          })
+        }
+      }
+
       try {
-        await releaseHold({
-          db,
-          draft,
-          ownedHandlers,
-          registry,
-        })
-        released++
+        await deleteBookingDraft(db, draft.id)
+        deleted++
       } catch (err) {
-        releaseErrors++
-        console.warn("[draft-reaper] failed to release hold", {
+        console.warn("[draft-reaper] failed to delete draft", {
           draftId: draft.id,
           reason: err instanceof Error ? err.message : String(err),
         })
       }
     }
 
-    try {
-      await deleteBookingDraft(db, draft.id)
-      deleted++
-    } catch (err) {
-      console.warn("[draft-reaper] failed to delete draft", {
-        draftId: draft.id,
-        reason: err instanceof Error ? err.message : String(err),
-      })
-    }
-  }
-
-  return { scanned: expired.length, released, releaseErrors, deleted, inGrace }
+    return { scanned: expired.length, released, releaseErrors, deleted, inGrace }
+  })
 }
 
 /**

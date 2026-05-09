@@ -3,6 +3,16 @@ import type { MiddlewareHandler } from "hono"
 import { type DbFactory, isDisposableDb, type VoyantBindings, type VoyantDb } from "../types.js"
 
 /**
+ * Structural shape of the Cloudflare Workers `ExecutionContext`. Defined
+ * inline so the `@voyantjs/hono` package doesn't need a hard dependency on
+ * `@cloudflare/workers-types` — consumers running on Node, Vercel, or any
+ * other runtime can call this middleware without pulling those globals.
+ */
+interface ExecutionContextLike {
+  waitUntil(promise: Promise<unknown>): void
+}
+
+/**
  * Resolves the per-request db client and stores it on Hono context.
  *
  * If the factory returns a {@link DisposableDb} (e.g. a
@@ -32,7 +42,7 @@ export function db<TBindings extends VoyantBindings>(
         // `executionCtx` is undefined in unit-test contexts where Hono
         // is invoked directly without a Workers runtime — fall back to
         // an inline await so cleanup still runs.
-        const ctx = c.executionCtx as ExecutionContext | undefined
+        const ctx = c.executionCtx as ExecutionContextLike | undefined
         if (ctx && typeof ctx.waitUntil === "function") {
           ctx.waitUntil(result.dispose())
         } else {

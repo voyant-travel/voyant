@@ -31,11 +31,13 @@ import {
   upsertContentIntent,
   upsertPendingBookingLinks,
 } from "@voyantjs/distribution/channel-push"
+import type { VoyantDb } from "@voyantjs/hono"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
+import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import type { Hono } from "hono"
 
 import { type BookingEngineEnv, getBookingEngineRegistry } from "./lib/booking-engine-runtime"
-import { getDbFromEnv } from "./lib/db"
+import { withDbFromEnv } from "./lib/db"
 
 interface BookingConfirmedPayload {
   bookingId: string
@@ -64,20 +66,22 @@ export const channelPushBundle: HonoBundle = {
     const env = bindings as CloudflareBindings & BookingEngineEnv
     const registry = getBookingEngineRegistry(env)
 
-    function buildDeps() {
-      return {
-        db: getDbFromEnv(env),
-        registry,
-      }
+    // Build deps from a per-call db client. Each subscriber wraps with
+    // `withDbFromEnv` and feeds the db in here so the Pool is owned for
+    // the duration of the subscriber call.
+    function buildDeps(db: NeonDatabase) {
+      return { db, registry }
     }
 
     eventBus.subscribe<BookingConfirmedPayload>("booking.confirmed", async ({ data }) => {
       try {
-        const deps = buildDeps()
-        const targets = await resolveBookingPushTargets(deps.db, data.bookingId)
-        if (targets.length === 0) return
-        await upsertPendingBookingLinks(deps.db, data.bookingId, targets)
-        await processBookingPush({ bookingId: data.bookingId }, deps)
+        await withDbFromEnv(env, async (db) => {
+          const deps = buildDeps(db)
+          const targets = await resolveBookingPushTargets(deps.db, data.bookingId)
+          if (targets.length === 0) return
+          await upsertPendingBookingLinks(deps.db, data.bookingId, targets)
+          await processBookingPush({ bookingId: data.bookingId }, deps)
+        })
       } catch (err) {
         console.error("[channel-push] booking.confirmed failed", {
           bookingId: data.bookingId,
@@ -90,33 +94,35 @@ export const channelPushBundle: HonoBundle = {
       "availability.slot.changed",
       async ({ data }) => {
         try {
-          const deps = buildDeps()
-          const targets = await resolveAllotmentTargetsForSlot(deps.db, {
-            slotId: data.slotId,
-            productId: data.productId,
-            optionId: data.optionId,
-          })
-          if (targets.length === 0) return
-
-          const startsAt = data.startsAt instanceof Date ? data.startsAt : new Date(data.startsAt)
-          for (const target of targets) {
-            await upsertAvailabilityIntent(deps.db, {
-              channelId: target.channelId,
-              sourceConnectionId: target.sourceConnectionId,
+          await withDbFromEnv(env, async (db) => {
+            const deps = buildDeps(db)
+            const targets = await resolveAllotmentTargetsForSlot(deps.db, {
               slotId: data.slotId,
               productId: data.productId,
               optionId: data.optionId,
-              startsAt,
             })
-          }
+            if (targets.length === 0) return
 
-          // Drain per-channel inline — the inline path keeps latency
-          // bounded for dev / single-isolate deployments. Production
-          // deployments with the workflow runtime wired skip this and
-          // let the scheduled `channel.availability.push` workflow drain.
-          for (const target of targets) {
-            await processAvailabilityPushIntents({ channelId: target.channelId, limit: 50 }, deps)
-          }
+            const startsAt = data.startsAt instanceof Date ? data.startsAt : new Date(data.startsAt)
+            for (const target of targets) {
+              await upsertAvailabilityIntent(deps.db, {
+                channelId: target.channelId,
+                sourceConnectionId: target.sourceConnectionId,
+                slotId: data.slotId,
+                productId: data.productId,
+                optionId: data.optionId,
+                startsAt,
+              })
+            }
+
+            // Drain per-channel inline — the inline path keeps latency
+            // bounded for dev / single-isolate deployments. Production
+            // deployments with the workflow runtime wired skip this and
+            // let the scheduled `channel.availability.push` workflow drain.
+            for (const target of targets) {
+              await processAvailabilityPushIntents({ channelId: target.channelId, limit: 50 }, deps)
+            }
+          })
         } catch (err) {
           console.error("[channel-push] availability.slot.changed failed", {
             slotId: data.slotId,
@@ -130,21 +136,23 @@ export const channelPushBundle: HonoBundle = {
       "product.content.changed",
       async ({ data }) => {
         try {
-          const deps = buildDeps()
-          const targets = await resolveContentPushTargets(deps.db, data.id)
-          if (targets.length === 0) return
+          await withDbFromEnv(env, async (db) => {
+            const deps = buildDeps(db)
+            const targets = await resolveContentPushTargets(deps.db, data.id)
+            if (targets.length === 0) return
 
-          for (const target of targets) {
-            await upsertContentIntent(deps.db, {
-              channelId: target.channelId,
-              sourceConnectionId: target.sourceConnectionId,
-              productId: data.id,
-            })
-          }
+            for (const target of targets) {
+              await upsertContentIntent(deps.db, {
+                channelId: target.channelId,
+                sourceConnectionId: target.sourceConnectionId,
+                productId: data.id,
+              })
+            }
 
-          for (const target of targets) {
-            await processContentPushIntents({ channelId: target.channelId, limit: 50 }, deps)
-          }
+            for (const target of targets) {
+              await processContentPushIntents({ channelId: target.channelId, limit: 50 }, deps)
+            }
+          })
         } catch (err) {
           console.error("[channel-push] product.content.changed failed", {
             productId: data.id,
@@ -168,11 +176,15 @@ export const channelPushBundle: HonoBundle = {
  *
  * Per docs/architecture/channel-push-architecture.md §9 + §14.5.
  */
-export function mountChannelPushAdminRoutes(hono: Hono): void {
+export function mountChannelPushAdminRoutes(hono: Hono<{ Variables: { db: VoyantDb } }>): void {
   hono.use("/v1/admin/distribution/channel-push/*", async (c, next) => {
     const env = c.env as CloudflareBindings & BookingEngineEnv
+    // Use the request-scoped Pool the `dbFromEnvForApp` middleware
+    // installs on `c.var.db`. The disposable middleware closes it
+    // after the response is sent, so we don't have to manage Pool
+    // lifecycle here.
     setChannelPushDeps({
-      db: getDbFromEnv(env),
+      db: c.get("db") as NeonDatabase,
       registry: getBookingEngineRegistry(env),
     })
     await next()

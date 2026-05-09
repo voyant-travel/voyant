@@ -21,18 +21,19 @@ import {
   userInvitationsTable,
   userProfilesTable,
 } from "@voyantjs/db/schema/iam"
+import type { VoyantDb } from "@voyantjs/hono"
 import { hashPassword } from "better-auth/crypto"
 import { and, desc, eq, gt, isNull } from "drizzle-orm"
 import { Hono } from "hono"
 import { z } from "zod"
 
 import { resolveEmailReplyTo } from "../lib/notifications"
-import { getDbFromEnv } from "./lib/db"
+import { withDbFromEnv } from "./lib/db"
 
 type InvitationsBindings = CloudflareBindings
 type InvitationsVariables = {
   userId?: string
-  db?: unknown
+  db: VoyantDb
 }
 
 const DEFAULT_EXPIRY_HOURS = 72
@@ -76,13 +77,17 @@ function getAppUrl(env: InvitationsBindings): string {
 }
 
 async function assertSuperAdmin(env: InvitationsBindings, userId: string): Promise<boolean> {
-  const db = getDbFromEnv(env)
-  const [row] = await db
-    .select({ isSuperAdmin: userProfilesTable.isSuperAdmin })
-    .from(userProfilesTable)
-    .where(eq(userProfilesTable.id, userId))
-    .limit(1)
-  return !!row?.isSuperAdmin
+  // `withDbFromEnv` owns the per-call Pool — opens, runs the query,
+  // closes in `finally`. Avoids the leak that would happen with a bare
+  // `getDbFromEnv(env)` here (no Hono ctx ⇒ no `c.var.db` to ride on).
+  return withDbFromEnv(env, async (db) => {
+    const [row] = await db
+      .select({ isSuperAdmin: userProfilesTable.isSuperAdmin })
+      .from(userProfilesTable)
+      .where(eq(userProfilesTable.id, userId))
+      .limit(1)
+    return !!row?.isSuperAdmin
+  })
 }
 
 export function createInvitationsRoutes() {
@@ -95,7 +100,7 @@ export function createInvitationsRoutes() {
       return c.json({ error: "Forbidden" }, 403)
     }
 
-    const db = getDbFromEnv(c.env)
+    const db = c.get("db")
     const rows = await db
       .select({
         id: userInvitationsTable.id,
@@ -125,7 +130,7 @@ export function createInvitationsRoutes() {
       return c.json({ error: "Invalid payload", details: parsed.error.issues }, 400)
     }
 
-    const db = getDbFromEnv(c.env)
+    const db = c.get("db")
     const normalizedEmail = parsed.data.email.trim().toLowerCase()
 
     // If this email already has a BA user, block the invite.
@@ -196,7 +201,7 @@ export function createInvitationsRoutes() {
     }
 
     const id = c.req.param("id")
-    const db = getDbFromEnv(c.env)
+    const db = c.get("db")
     await db.delete(userInvitationsTable).where(eq(userInvitationsTable.id, id))
     return c.json({ data: { id } })
   })
@@ -205,7 +210,7 @@ export function createInvitationsRoutes() {
   routes.get("/v1/public/invitations/:token", async (c) => {
     const token = c.req.param("token")
     const tokenHash = await sha256Hex(token)
-    const db = getDbFromEnv(c.env)
+    const db = c.get("db")
 
     const [row] = await db
       .select({
@@ -239,7 +244,7 @@ export function createInvitationsRoutes() {
     }
 
     const tokenHash = await sha256Hex(token)
-    const db = getDbFromEnv(c.env)
+    const db = c.get("db")
     const now = new Date()
 
     const [invite] = await db
