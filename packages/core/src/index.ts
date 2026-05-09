@@ -49,7 +49,14 @@ export type {
   ExecutionLockManager,
 } from "./locking.js"
 export { createInMemoryExecutionLockManager } from "./locking.js"
-export type { BootstrapContext, BootstrapHandler, Extension, Module } from "./module.js"
+export type {
+  BootstrapContext,
+  BootstrapHandler,
+  EventFilterDescriptor,
+  Extension,
+  Module,
+  WorkflowDescriptor,
+} from "./module.js"
 export type { JobOptions, JobRunner } from "./orchestration.js"
 export type {
   Plugin,
