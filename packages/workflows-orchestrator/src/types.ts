@@ -88,6 +88,11 @@ export interface RunRecord {
   /** ms budget from WorkflowConfig.timeout. Zero / undefined = no limit. */
   timeoutMs?: number
   /**
+   * Trigger-time scheduling priority. Higher numbers are claimed first
+   * by store-backed time wheels when multiple runs are due.
+   */
+  priority?: number
+  /**
    * Cross-run lineage. Present on child runs created by
    * `ctx.invoke`; set by the orchestrator when the child parks so
    * its eventual terminal transition can cascade-resume the parent.

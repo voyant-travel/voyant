@@ -60,6 +60,7 @@ export interface TriggerPayload {
   runId?: string
   idempotencyKey?: string
   delay?: Duration | { wakeAt: number }
+  priority?: number
 }
 
 /** Cancel payload. */

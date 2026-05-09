@@ -112,6 +112,7 @@ describeIfDb("postgres integration", () => {
     await wakeups.upsert({
       runId: "run_due",
       wakeAt: 1_000,
+      priority: 1,
     })
     await wakeups.upsert({
       runId: "run_later",
@@ -157,6 +158,28 @@ describeIfDb("postgres integration", () => {
 
     const all = await wakeups.list()
     expect(all.map((record) => record.runId)).toEqual(["run_due", "run_later"])
+  })
+
+  it("leases higher-priority due wakeups before earlier lower-priority wakeups", async () => {
+    await wakeups.upsert({
+      runId: "low",
+      wakeAt: 1_000,
+      priority: 1,
+    })
+    await wakeups.upsert({
+      runId: "high",
+      wakeAt: 1_500,
+      priority: 10,
+    })
+
+    const leased = await wakeups.leaseDue({
+      owner: "worker-a",
+      now: 2_000,
+      leaseMs: 5_000,
+      limit: 2,
+    })
+
+    expect(leased.map((record) => record.runId)).toEqual(["high", "low"])
   })
 
   it("lets only one poller instance process a due wakeup lease", async () => {

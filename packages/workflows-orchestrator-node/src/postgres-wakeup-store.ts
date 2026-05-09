@@ -62,6 +62,7 @@ export function createPostgresWakeupStore(opts: PostgresWakeupStoreOptions): Wak
         wake_at: number
         lease_owner: string | null
         lease_expires_at: number | null
+        priority: number
         updated_at: number
       }>(sql`
         WITH due AS (
@@ -73,7 +74,7 @@ export function createPostgresWakeupStore(opts: PostgresWakeupStoreOptions): Wak
               OR lease_expires_at <= ${at}
               OR lease_owner = ${owner}
             )
-          ORDER BY wake_at ASC
+          ORDER BY priority DESC, wake_at ASC
           LIMIT ${limit}
           FOR UPDATE SKIP LOCKED
         )
@@ -83,18 +84,25 @@ export function createPostgresWakeupStore(opts: PostgresWakeupStoreOptions): Wak
             updated_at = ${at}
         FROM due
         WHERE wakeups.run_id = due.run_id
-        RETURNING wakeups.run_id, wakeups.wake_at, wakeups.lease_owner, wakeups.lease_expires_at, wakeups.updated_at
+        RETURNING wakeups.run_id, wakeups.wake_at, wakeups.priority, wakeups.lease_owner, wakeups.lease_expires_at, wakeups.updated_at
       `)
       const rows = result.rows as Array<{
         run_id: string
         wake_at: number | string
+        priority: number | string
         lease_owner: string | null
         lease_expires_at: number | string | null
         updated_at: number | string
       }>
+      rows.sort((a, b) => {
+        const priorityDelta = toNumber(b.priority) - toNumber(a.priority)
+        if (priorityDelta !== 0) return priorityDelta
+        return toNumber(a.wake_at) - toNumber(b.wake_at)
+      })
       return rows.map((row) => ({
         runId: row.run_id,
         wakeAt: toNumber(row.wake_at),
+        priority: toNumber(row.priority),
         leaseOwner: row.lease_owner ?? undefined,
         leaseExpiresAt: row.lease_expires_at === null ? undefined : toNumber(row.lease_expires_at),
         updatedAt: toNumber(row.updated_at),
@@ -125,6 +133,7 @@ export function wakeupToRow(
   return {
     runId: record.runId,
     wakeAt: record.wakeAt,
+    priority: record.priority ?? 0,
     leaseOwner: record.leaseOwner ?? null,
     leaseExpiresAt: record.leaseExpiresAt ?? null,
     updatedAt,
@@ -135,6 +144,7 @@ export function rowToWakeupRecord(row: typeof wakeupsTable.$inferSelect): Wakeup
   return {
     runId: row.runId,
     wakeAt: row.wakeAt,
+    priority: row.priority,
     leaseOwner: row.leaseOwner ?? undefined,
     leaseExpiresAt: row.leaseExpiresAt ?? undefined,
     updatedAt: row.updatedAt,

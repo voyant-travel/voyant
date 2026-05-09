@@ -36,6 +36,13 @@
       "when": 1779000001000,
       "tag": "0004_workflow_manifests",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779000002000,
+      "tag": "0005_wakeup_priority",
+      "breakpoints": true
     }
   ]
 }

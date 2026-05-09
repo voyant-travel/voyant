@@ -78,6 +78,7 @@ describe("postgres wakeup mappers", () => {
       {
         runId: "run_1",
         wakeAt: 1000,
+        priority: 3,
         leaseOwner: undefined,
         leaseExpiresAt: undefined,
         updatedAt: 2000,
@@ -88,6 +89,7 @@ describe("postgres wakeup mappers", () => {
     expect(rowToWakeupRecord(row)).toEqual({
       runId: "run_1",
       wakeAt: 1000,
+      priority: 3,
       updatedAt: 2000,
     })
   })

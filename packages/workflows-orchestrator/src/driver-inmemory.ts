@@ -133,6 +133,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
           tags: triggerOpts?.tags,
           idempotencyKey: triggerOpts?.idempotencyKey,
           delay: triggerOpts?.delay,
+          priority: triggerOpts?.priority,
         },
         { store, handler, now },
       )

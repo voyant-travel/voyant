@@ -61,12 +61,13 @@ export const wakeupsTable = pgTable(
   {
     runId: text("run_id").primaryKey(),
     wakeAt: bigint("wake_at", { mode: "number" }).notNull(),
+    priority: integer("priority").notNull().default(0),
     leaseOwner: text("lease_owner"),
     leaseExpiresAt: bigint("lease_expires_at", { mode: "number" }),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
   },
   (table) => ({
-    dueIdx: index("voyant_wakeups_due_idx").on(table.wakeAt),
+    dueIdx: index("voyant_wakeups_due_idx").on(table.priority.desc(), table.wakeAt.asc()),
     leaseIdx: index("voyant_wakeups_lease_idx").on(table.leaseExpiresAt),
   }),
 )

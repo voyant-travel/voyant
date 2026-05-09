@@ -111,6 +111,12 @@ export interface DriverComplianceCapabilities {
    * an empty page; voyant-cloud provides an index in its repo.
    */
   crossRunQueries?: boolean
+  /**
+   * When true, the driver under test runs an in-process DATETIME wakeup
+   * loop/timer during compliance tests. False for drivers whose compliance
+   * harness intentionally disables or fakes the time wheel.
+   */
+  autoDatetimeWakeups?: boolean
 }
 
 // ---- The parameterized contract ----
@@ -122,6 +128,7 @@ export function runDriverComplianceSuite(
 ): void {
   const servicesThreading = capabilities.servicesThreading ?? true
   const crossRunQueries = capabilities.crossRunQueries ?? true
+  const autoDatetimeWakeups = capabilities.autoDatetimeWakeups ?? false
   describe(`${name} driver compliance`, () => {
     beforeEach(() => {
       __resetRegistry()
@@ -219,22 +226,25 @@ export function runDriverComplianceSuite(
         expect(invocationCount).toBe(0)
       })
 
-      test("delay continues scheduling later DATETIME waits after the trigger delay fires", async () => {
-        const driver = makeFactory()(testFactoryDeps())
-        const completed = vi.fn()
-        const wf = workflow<Record<string, never>, void>({
-          id: uniqueId("compliance-delay-then-sleep"),
-          async run(_, ctx) {
-            await ctx.sleep("1ms")
-            completed()
-          },
-        })
+      test.runIf(autoDatetimeWakeups)(
+        "delay continues scheduling later DATETIME waits after the trigger delay fires",
+        async () => {
+          const driver = makeFactory()(testFactoryDeps())
+          const completed = vi.fn()
+          const wf = workflow<Record<string, never>, void>({
+            id: uniqueId("compliance-delay-then-sleep"),
+            async run(_, ctx) {
+              await ctx.sleep("1ms")
+              completed()
+            },
+          })
 
-        const run = await driver.trigger(wf, {}, { delay: "1ms" })
-        expect(run.status).toBe("waiting")
+          const run = await driver.trigger(wf, {}, { delay: "1ms" })
+          expect(run.status).toBe("waiting")
 
-        await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1), { timeout: 250 })
-      })
+          await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1), { timeout: 250 })
+        },
+      )
 
       test("idempotencyKey produces a stable run across retries (same key → same run)", async () => {
         const driver = makeFactory()(testFactoryDeps())
