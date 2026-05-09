@@ -32,30 +32,41 @@ export function getDb(adapter?: DbAdapter) {
  * Per-request Neon Postgres client over WebSocket. Supports real
  * Postgres transactions (drizzle's `db.transaction(...)`).
  *
- * Pool lifecycle: pass `executionCtx` whenever it's available so
- * `pool.end()` is scheduled via `waitUntil` and the WebSocket closes
- * cleanly before the isolate sleeps. Without an `executionCtx`, the
- * Pool is left for the Workers runtime to reclaim on isolate teardown
- * — fine for low-traffic paths, but at scale prefer `withDbFromEnv`
- * below, which owns the Pool lifecycle explicitly.
+ * Cleanup is the caller's responsibility — either route through
+ * `createApp({ db: dbFromEnvForApp })` below (which threads a
+ * `dispose()` through the Hono db middleware so the Pool closes after
+ * the response), or use `withDbFromEnv` for code paths outside Hono.
+ * Without explicit cleanup, the Pool sits open until the Workers
+ * runtime reclaims the isolate.
  */
-export function getDbFromEnv(
-  env: CloudflareBindings,
-  executionCtx?: ExecutionContext,
-): NeonDatabase {
+export function getDbFromEnv(env: CloudflareBindings): NeonDatabase {
   const pool = newPool(env.DATABASE_URL)
-  if (executionCtx) {
-    executionCtx.waitUntil(pool.end().catch(() => {}))
-  }
   return drizzleNeonWs(pool)
 }
 
 /**
- * Higher-order helper for code paths without an `ExecutionContext`
- * (event-bus subscribers, scheduled handlers, retry workers). Owns the
- * Pool lifecycle: opens, hands the drizzle client to `fn`, closes on
- * settle. Use this anywhere `c.executionCtx` isn't available — never
- * leak a `new Pool(...)` outside a single request handler in a Worker.
+ * Lifecycle-aware factory for `createApp({ db })`. Returns the drizzle
+ * client plus a `dispose()` the Hono db middleware schedules via
+ * `executionCtx.waitUntil` after the response is sent — so each
+ * request gets its own Pool and closes it before the isolate sleeps,
+ * instead of leaking WebSocket connections to Neon at request rate.
+ */
+export function dbFromEnvForApp(env: CloudflareBindings): {
+  db: NeonDatabase
+  dispose: () => Promise<void>
+} {
+  const pool = newPool(env.DATABASE_URL)
+  return {
+    db: drizzleNeonWs(pool),
+    dispose: () => pool.end().catch(() => {}),
+  }
+}
+
+/**
+ * Higher-order helper for code paths without a Hono request context
+ * (event-bus subscribers, scheduled handlers, retry workers). Owns
+ * the Pool lifecycle: opens, hands the drizzle client to `fn`, closes
+ * on settle.
  */
 export async function withDbFromEnv<T>(
   env: CloudflareBindings,

@@ -33,7 +33,7 @@ import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handl
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { createInvitationsRoutes } from "./invitations"
-import { getDbFromEnv } from "./lib/db"
+import { dbFromEnvForApp } from "./lib/db"
 import { createMediaStorage, guessMimeType, resolveDocumentDownloadUrl } from "./lib/storage"
 import { mountCatalogMcpRoutes, mountCatalogSearchRoutes } from "./mcp"
 
@@ -88,7 +88,11 @@ const bookingsHonoModule = createBookingsHonoModule({
 })
 
 export const app = createApp<CloudflareBindings>({
-  db: (env) => getDbFromEnv(env),
+  // `dbFromEnvForApp` returns `{ db, dispose }`; the Hono db middleware
+  // schedules `dispose()` via `executionCtx.waitUntil` after the
+  // response is sent, so each request gets its own Pool and closes it
+  // before the isolate sleeps.
+  db: (env) => dbFromEnvForApp(env),
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
     "/v1/public/storefront-verification",

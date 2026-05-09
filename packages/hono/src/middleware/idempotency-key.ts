@@ -2,7 +2,13 @@ import { infraIdempotencyKeysTable } from "@voyantjs/db/schema/infra"
 import { and, eq, lt } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 
-import type { DbFactory, VoyantBindings, VoyantVariables } from "../types.js"
+import {
+  type DbFactory,
+  isDisposableDb,
+  type VoyantBindings,
+  type VoyantDb,
+  type VoyantVariables,
+} from "../types.js"
 
 /**
  * Twenty-four hours, in milliseconds. Default TTL for stored idempotency
@@ -107,7 +113,9 @@ export function idempotencyKey<TBindings extends VoyantBindings = VoyantBindings
     const scope = options.scope ?? `${c.req.method} ${new URL(c.req.url).pathname}`
     const rawBody = await c.req.text()
     const bodyHash = await sha256Hex(rawBody)
-    const db = c.get("db") as ReturnType<DbFactory<TBindings>> | undefined
+    // The `db` middleware always unwraps a `DisposableDb` to a plain
+    // `VoyantDb` before storing on context, so this cast is safe.
+    const db = c.get("db") as VoyantDb | undefined
     if (!db) {
       throw new Error(
         "idempotencyKey middleware requires `db` on the request context. Mount `db()` (or `createApp`) before this middleware.",
@@ -235,15 +243,25 @@ function pickStringField(body: unknown, keys: string[]): string | null {
 
 /**
  * Sweep expired idempotency rows. Call from a daily cron.
+ *
+ * If `dbFactory` returns a `DisposableDb` (e.g. a per-call Neon
+ * WebSocket Pool), the sweep awaits `dispose()` before returning so
+ * the connection closes cleanly inside the cron handler.
  */
 export async function purgeExpiredIdempotencyKeys<TBindings extends VoyantBindings>(
   dbFactory: DbFactory<TBindings>,
   env: TBindings,
 ): Promise<{ removed: number }> {
-  const db = dbFactory(env)
-  const result = await db
-    .delete(infraIdempotencyKeysTable)
-    .where(lt(infraIdempotencyKeysTable.expiresAt, new Date()))
-    .returning()
-  return { removed: result.length }
+  const result = dbFactory(env)
+  const db: VoyantDb = isDisposableDb(result) ? result.db : result
+  const dispose = isDisposableDb(result) ? result.dispose : undefined
+  try {
+    const rows = await db
+      .delete(infraIdempotencyKeysTable)
+      .where(lt(infraIdempotencyKeysTable.expiresAt, new Date()))
+      .returning()
+    return { removed: rows.length }
+  } finally {
+    if (dispose) await dispose()
+  }
 }

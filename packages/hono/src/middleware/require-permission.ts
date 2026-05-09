@@ -2,7 +2,14 @@ import type { Actor, VoyantPermission } from "@voyantjs/core"
 import type { MiddlewareHandler } from "hono"
 
 import { requireUserId } from "../auth/require-user.js"
-import type { DbFactory, VoyantAuthIntegration, VoyantBindings, VoyantVariables } from "../types.js"
+import {
+  type DbFactory,
+  isDisposableDb,
+  type VoyantAuthIntegration,
+  type VoyantBindings,
+  type VoyantDb,
+  type VoyantVariables,
+} from "../types.js"
 import { ForbiddenApiError, UnauthorizedApiError } from "../validation.js"
 
 function hasScope(scopes: string[] | null | undefined, permission: VoyantPermission): boolean {
@@ -53,28 +60,43 @@ export function requirePermission<TBindings extends VoyantBindings>(
       return c.json({ error: "No auth permission checker configured" }, 500)
     }
 
-    const allowed = await opts.auth.hasPermission({
-      request: c.req.raw,
-      env: c.env,
-      db: dbFactory(c.env),
-      ctx: c.executionCtx,
-      auth: {
-        userId,
-        actor,
-        sessionId: c.get("sessionId"),
-        organizationId: c.get("organizationId"),
-        callerType: c.get("callerType"),
-        scopes,
-        isInternalRequest: c.get("isInternalRequest"),
-        apiKeyId: c.get("apiKeyId"),
-      },
-      permission,
-    })
+    const factoryResult = dbFactory(c.env)
+    const db: VoyantDb = isDisposableDb(factoryResult) ? factoryResult.db : factoryResult
+    const dispose = isDisposableDb(factoryResult) ? factoryResult.dispose : undefined
 
-    if (!allowed) {
-      throw new ForbiddenApiError()
+    try {
+      const allowed = await opts.auth.hasPermission({
+        request: c.req.raw,
+        env: c.env,
+        db,
+        ctx: c.executionCtx,
+        auth: {
+          userId,
+          actor,
+          sessionId: c.get("sessionId"),
+          organizationId: c.get("organizationId"),
+          callerType: c.get("callerType"),
+          scopes,
+          isInternalRequest: c.get("isInternalRequest"),
+          apiKeyId: c.get("apiKeyId"),
+        },
+        permission,
+      })
+
+      if (!allowed) {
+        throw new ForbiddenApiError()
+      }
+
+      return next()
+    } finally {
+      if (dispose) {
+        const ctx = c.executionCtx as ExecutionContext | undefined
+        if (ctx && typeof ctx.waitUntil === "function") {
+          ctx.waitUntil(dispose())
+        } else {
+          await dispose()
+        }
+      }
     }
-
-    return next()
   }
 }

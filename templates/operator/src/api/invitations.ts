@@ -95,7 +95,7 @@ export function createInvitationsRoutes() {
       return c.json({ error: "Forbidden" }, 403)
     }
 
-    const db = getDbFromEnv(c.env, c.executionCtx)
+    const db = getDbFromEnv(c.env)
     const rows = await db
       .select({
         id: userInvitationsTable.id,
@@ -125,7 +125,7 @@ export function createInvitationsRoutes() {
       return c.json({ error: "Invalid payload", details: parsed.error.issues }, 400)
     }
 
-    const db = getDbFromEnv(c.env, c.executionCtx)
+    const db = getDbFromEnv(c.env)
     const normalizedEmail = parsed.data.email.trim().toLowerCase()
 
     // If this email already has a BA user, block the invite.
@@ -196,7 +196,7 @@ export function createInvitationsRoutes() {
     }
 
     const id = c.req.param("id")
-    const db = getDbFromEnv(c.env, c.executionCtx)
+    const db = getDbFromEnv(c.env)
     await db.delete(userInvitationsTable).where(eq(userInvitationsTable.id, id))
     return c.json({ data: { id } })
   })
@@ -205,7 +205,7 @@ export function createInvitationsRoutes() {
   routes.get("/v1/public/invitations/:token", async (c) => {
     const token = c.req.param("token")
     const tokenHash = await sha256Hex(token)
-    const db = getDbFromEnv(c.env, c.executionCtx)
+    const db = getDbFromEnv(c.env)
 
     const [row] = await db
       .select({
@@ -239,7 +239,7 @@ export function createInvitationsRoutes() {
     }
 
     const tokenHash = await sha256Hex(token)
-    const db = getDbFromEnv(c.env, c.executionCtx)
+    const db = getDbFromEnv(c.env)
     const now = new Date()
 
     const [invite] = await db

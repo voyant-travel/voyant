@@ -76,7 +76,7 @@ import { mountCatalogSearchRoutes } from "./catalog-search"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
-import { getDbFromEnv } from "./lib/db"
+import { dbFromEnvForApp, getDbFromEnv } from "./lib/db"
 import {
   createDocumentStorage,
   createMediaStorage,
@@ -682,7 +682,11 @@ async function deriveRoomsSummary(db: PostgresJsDatabase, bookingId: string): Pr
 }
 
 export const app = createApp<CloudflareBindings>({
-  db: (env) => getDbFromEnv(env),
+  // `dbFromEnvForApp` returns `{ db, dispose }`; the Hono db middleware
+  // schedules `dispose()` via `executionCtx.waitUntil` after the
+  // response is sent, so each request gets its own Pool and closes it
+  // before the isolate sleeps.
+  db: (env) => dbFromEnvForApp(env),
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
     "/v1/public/storefront-verification",
@@ -968,7 +972,7 @@ export const app = createApp<CloudflareBindings>({
     // instructions when configured, plus the brand context so the page
     // can render a header. Intentionally minimal — no PII, no secrets.
     hono.get("/v1/public/payment-link-config", async (c) => {
-      const db = getDbFromEnv(c.env, c.executionCtx) as PostgresJsDatabase
+      const db = getDbFromEnv(c.env) as PostgresJsDatabase
       const operatorProfile = await getOperatorSettings(db)
       const bankTransfer = bankTransferDetailsFromOperatorSettings(
         operatorProfile,
@@ -990,7 +994,7 @@ export const app = createApp<CloudflareBindings>({
     // without checking status first.
     hono.post("/v1/public/payment-link/:sessionId/retry", async (c) => {
       const sessionId = c.req.param("sessionId")
-      const db = getDbFromEnv(c.env, c.executionCtx)
+      const db = getDbFromEnv(c.env)
       const [original] = await db
         .select()
         .from(paymentSessions)
@@ -1035,7 +1039,7 @@ export const app = createApp<CloudflareBindings>({
     hono.get("/v1/public/payment-link/resolve", async (c) => {
       const ref = c.req.query("ref")
       if (!ref) return c.json({ error: "ref query param is required" }, 400)
-      const db = getDbFromEnv(c.env, c.executionCtx)
+      const db = getDbFromEnv(c.env)
       const [session] = await db
         .select({ id: paymentSessions.id })
         .from(paymentSessions)
@@ -1059,7 +1063,7 @@ export const app = createApp<CloudflareBindings>({
     // and returns the new redirect URL.
     hono.post("/v1/public/payment-link/:sessionId/start-card", async (c) => {
       const sessionId = c.req.param("sessionId")
-      const db = getDbFromEnv(c.env, c.executionCtx)
+      const db = getDbFromEnv(c.env)
       // `netopia.startPaymentSession` is typed against postgres-js; cast at
       // the call site since the union with neon-http is structurally
       // compatible for the queries Netopia issues.
@@ -1123,7 +1127,7 @@ export const app = createApp<CloudflareBindings>({
     hono.get("/v1/public/bookings/:bookingId/checkout-status", async (c) => {
       const bookingId = c.req.param("bookingId")
       const ref = c.req.query("session") ?? c.req.query("orderId") ?? c.req.query("ref") ?? null
-      const db = getDbFromEnv(c.env, c.executionCtx)
+      const db = getDbFromEnv(c.env)
 
       const [booking] = await db
         .select({
