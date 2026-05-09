@@ -2,6 +2,40 @@ import type { ModuleContainer } from "./container.js"
 import type { EventBus } from "./events.js"
 import type { LinkableDefinition } from "./links.js"
 
+/**
+ * Minimum structural shape of a workflow registration as exposed by a module
+ * or plugin. Defined here in core so `Module` doesn't have to import the
+ * concrete `WorkflowDefinition` from `@voyantjs/workflows` — that would
+ * couple core to the workflows package and risk an import cycle (workflows
+ * already depends on core for `ModuleContainer` and similar primitives).
+ *
+ * `@voyantjs/workflows`'s concrete `WorkflowDefinition` satisfies this
+ * descriptor via TypeScript structural compat. Core treats workflows as
+ * opaque beyond `id`; the workflows runtime owns the rest.
+ *
+ * Same pattern Voyant uses for {@link LinkableDefinition} — the structural
+ * contract lives in core, concrete types live in their owning packages.
+ */
+export interface WorkflowDescriptor {
+  /** Stable workflow identifier (e.g. `"promotions.bulk-reindex-products"`). */
+  readonly id: string
+}
+
+/**
+ * Minimum structural shape of an event-filter runtime entry as exposed by a
+ * module or plugin. Defined here in core for the same reason as
+ * {@link WorkflowDescriptor}.
+ *
+ * `@voyantjs/workflows`'s concrete `EventFilterRuntimeEntry` (added in PR2)
+ * satisfies this descriptor via structural compat.
+ */
+export interface EventFilterDescriptor {
+  /** Filter id, derived from the canonicalized declaration's payloadHash. */
+  readonly id: string
+  /** Event name the filter targets (matches `EventEnvelope.name`). */
+  readonly eventType: string
+}
+
 export interface BootstrapContext<TBindings = unknown> {
   /** Runtime bindings/environment available to the current app/isolate. */
   bindings: TBindings
@@ -55,6 +89,28 @@ export interface Module {
    * Keyed by entity name (e.g. `{ person: ..., organization: ... }`).
    */
   linkable?: Record<string, LinkableDefinition>
+
+  /**
+   * Workflows owned by this module. Collected at `createApp()` boot and
+   * registered with the configured workflow driver.
+   *
+   * Concrete entries are produced by `workflow({ id, run })` in
+   * `@voyantjs/workflows`; the field type here is the structural
+   * {@link WorkflowDescriptor} so core stays workflow-agnostic.
+   */
+  workflows?: readonly WorkflowDescriptor[]
+
+  /**
+   * Event filters owned by this module — declarative bindings of the form
+   * `event.name → workflow`, evaluated by the driver's event router at
+   * `driver.ingestEvent(...)` time.
+   *
+   * Concrete entries are produced by `trigger.on(eventName, { ... })` in
+   * `@voyantjs/workflows`; the field type here is the structural
+   * {@link EventFilterDescriptor} for the same cycle-avoidance reason as
+   * {@link workflows} above.
+   */
+  eventFilters?: readonly EventFilterDescriptor[]
 }
 
 /**

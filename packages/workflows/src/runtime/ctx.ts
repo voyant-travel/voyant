@@ -3,6 +3,7 @@
 // The executor owns the waitpoint-pending queue and the callbacks
 // into the orchestrator; ctx is a thin shell that delegates.
 
+import type { ServiceResolver } from "../driver.js"
 import type { SerializedError } from "../protocol/index.js"
 import type { Duration, RetryPolicy, WaitpointKind } from "../types.js"
 import type {
@@ -132,10 +133,37 @@ export interface CtxBuildArgs {
   random: () => number
   /** Mutated as ctx.setRetry is called; each step option inherits. */
   retryOverride: { current: RetryPolicy | undefined }
+  /**
+   * Read-only service resolver exposed as `ctx.services`. When unset,
+   * `ctx.services.resolve(...)` throws with a clear message — workflows
+   * that don't need shared services keep working without configuration.
+   * Wired by the framework through `StepHandlerDeps.services` →
+   * `ExecuteWorkflowStepRequest.services` → here.
+   */
+  services?: ServiceResolver
+}
+
+/**
+ * Default resolver used when no container is plumbed through. Throws on
+ * `resolve(...)` so failures are visible at the call site instead of
+ * returning undefined; `has(...)` returns `false` so optional-dep
+ * patterns work cleanly.
+ */
+const NO_OP_SERVICE_RESOLVER: ServiceResolver = {
+  resolve<T>(name: string): T {
+    throw new Error(
+      `ctx.services.resolve("${name}"): no service container is wired into this workflow runtime. ` +
+        `Pass { services } to the driver factory (e.g. via createApp({ workflows: { driver } }))`,
+    )
+  },
+  has() {
+    return false
+  },
 }
 
 export function buildCtx(args: CtxBuildArgs): WorkflowContext<unknown> {
   const { env, journal, callbacks, clock, random, retryOverride } = args
+  const services = args.services ?? NO_OP_SERVICE_RESOLVER
 
   // Per-ctx client-id counter. Reset on each ctx (= each invocation),
   // which means ids are stable relative to body execution order.
@@ -694,6 +722,7 @@ export function buildCtx(args: CtxBuildArgs): WorkflowContext<unknown> {
     organization: env.organization,
     invocationCount: callbacks.invocationCount,
     signal: callbacks.abortSignal,
+    services,
     step,
     sleep,
     waitForEvent,

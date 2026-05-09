@@ -16,6 +16,10 @@ export {
 } from "./abort-registry.js"
 export { applyWaitpointInjection, type DriveOptions, driveUntilPaused } from "./drive.js"
 export {
+  createInMemoryDriver,
+  type InMemoryDriverOptions,
+} from "./driver-inmemory.js"
+export {
   createHttpStepHandler,
   type HttpStepHandlerDeps,
   type HttpStepTarget,

@@ -1,4 +1,16 @@
-import { bigint, index, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
+import {
+  bigint,
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core"
 
 export const snapshotRunsTable = pgTable(
   "voyant_snapshot_runs",
@@ -15,6 +27,13 @@ export const snapshotRunsTable = pgTable(
     runRecord: jsonb("run_record").$type<Record<string, unknown>>(),
     entryFile: text("entry_file"),
     replayOf: text("replay_of"),
+    /**
+     * Caller-supplied idempotency token, mirrored from
+     * `RunRecord.idempotencyKey` / `TriggerArgs.idempotencyKey`.
+     * The unique partial index below enforces dedup on
+     * `(workflow_id, idempotency_key)`; null values don't participate.
+     */
+    idempotencyKey: text("idempotency_key"),
   },
   (table) => ({
     workflowStartedIdx: index("voyant_snapshot_runs_workflow_started_idx").on(
@@ -25,6 +44,15 @@ export const snapshotRunsTable = pgTable(
       table.status,
       table.startedAt,
     ),
+    /**
+     * Unique partial index — enforces idempotency dedup on
+     * `(workflow_id, idempotency_key)` while letting null keys coexist.
+     * Read in `createPostgresSnapshotRunStore` via `INSERT … ON CONFLICT
+     * DO NOTHING RETURNING id`.
+     */
+    idempotencyIdx: uniqueIndex("voyant_snapshot_runs_idempotency_idx")
+      .on(table.workflowId, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} IS NOT NULL`),
   }),
 )
 
@@ -40,5 +68,32 @@ export const wakeupsTable = pgTable(
   (table) => ({
     dueIdx: index("voyant_wakeups_due_idx").on(table.wakeAt),
     leaseIdx: index("voyant_wakeups_lease_idx").on(table.leaseExpiresAt),
+  }),
+)
+
+/**
+ * Manifest store. Holds workflow + event-filter manifests pushed at
+ * `createApp()` boot via `driver.registerManifest(...)`. Last N versions
+ * retained per environment; `is_current` points to the active version.
+ *
+ * One row is "current" per environment, enforced by the partial unique
+ * index `voyant_workflow_manifests_current_idx`.
+ *
+ * See architecture doc §14 for the manifest lifecycle.
+ */
+export const workflowManifestsTable = pgTable(
+  "voyant_workflow_manifests",
+  {
+    environment: text("environment").notNull(),
+    versionId: text("version_id").notNull(),
+    manifest: jsonb("manifest").$type<Record<string, unknown>>().notNull(),
+    registeredAt: timestamp("registered_at", { withTimezone: true }).notNull().defaultNow(),
+    isCurrent: boolean("is_current").notNull().default(false),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.environment, table.versionId] }),
+    currentIdx: uniqueIndex("voyant_workflow_manifests_current_idx")
+      .on(table.environment)
+      .where(sql`${table.isCurrent}`),
   }),
 )

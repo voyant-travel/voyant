@@ -127,6 +127,12 @@ export interface RunRecord {
     number: number
     attempt: number
   }
+  /**
+   * Caller-supplied idempotency token, mirrored from `TriggerArgs.idempotencyKey`.
+   * Persistent stores use this column to enforce dedup natively (e.g. unique
+   * partial index in `voyant_snapshot_runs`); in-process stores ignore it.
+   */
+  idempotencyKey?: string
 }
 
 export interface RunRecordStore {
