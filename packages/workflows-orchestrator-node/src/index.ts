@@ -40,6 +40,10 @@ export {
   runPostgresMigrations,
 } from "./migrate.js"
 export {
+  createNodeStandaloneDriver,
+  type NodeStandaloneDriverOptions,
+} from "./node-standalone-driver.js"
+export {
   createPersistentWakeupManager,
   type PersistentWakeupManager,
   type PersistentWakeupManagerDeps,
@@ -50,8 +54,19 @@ export {
   type PostgresConnection,
 } from "./postgres.js"
 export {
+  createPostgresManifestStore,
+  type ManifestEnvelope,
+  type ManifestStore,
+  type PostgresManifestStoreOptions,
+} from "./postgres-manifest-store.js"
+export {
+  createPostgresRunRecordStore,
+  type PostgresRunRecordStoreOptions,
+} from "./postgres-run-record-store.js"
+export {
   snapshotRunsTable,
   wakeupsTable,
+  workflowManifestsTable,
 } from "./postgres-schema.js"
 export {
   createPostgresSnapshotRunStore,

@@ -109,19 +109,13 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
     ): Promise<Run<TOut>> {
       assertNotShutdown(shuttingDown)
       const workflowId = typeof workflow === "string" ? workflow : workflow.id
-
-      // Idempotency: when an idempotencyKey is provided, derive a deterministic
-      // runId. The orchestrator's existing args.runId-already-exists path
-      // returns the existing record without re-driving. Step 4 of PR1 (audit
-      // findings, doc §3) replaces this driver-side derivation with explicit
-      // TriggerArgs.idempotencyKey support and surfaces it in the compliance
-      // suite — until then this is correct enough for InMemory.
-      const runId =
-        triggerOpts?.idempotencyKey !== undefined
-          ? `idem-${workflowId}-${triggerOpts.idempotencyKey}`
-          : undefined
-
       const env = triggerOpts?.environment ?? defaultEnv
+
+      // The orchestrator core handles idempotencyKey natively (deterministic
+      // runId derivation from `(workflowId, idempotencyKey)`); the driver just
+      // forwards the field. Persistent stores like `voyant_snapshot_runs`
+      // additionally read `RunRecord.idempotencyKey` to populate their own
+      // dedup column.
       const record = await orchestratorTrigger(
         {
           workflowId,
@@ -130,7 +124,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
           tenantMeta,
           environment: env,
           tags: triggerOpts?.tags,
-          runId,
+          idempotencyKey: triggerOpts?.idempotencyKey,
         },
         { store, handler, now },
       )

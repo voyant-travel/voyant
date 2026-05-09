@@ -31,6 +31,18 @@ export interface TriggerArgs {
   /** Optional id to use; defaults to `run_` + crypto random. */
   runId?: string
   /**
+   * Caller-supplied idempotency token. When set and the caller did not
+   * explicitly pass `runId`, the orchestrator derives a deterministic
+   * runId from `(workflowId, idempotencyKey)` so retries of the same
+   * trigger return the same run record without re-driving. The key is
+   * also persisted onto `RunRecord.idempotencyKey` so persistent stores
+   * can populate dedup columns / unique indexes natively.
+   *
+   * See architecture doc §15.2 for the full ingest-side derivation
+   * (eventId → idempotencyKey via `${filterId}:${eventId}`).
+   */
+  idempotencyKey?: string
+  /**
    * Optional journal seed. Used by external replay/resume callers
    * that need a new run to skip steps already completed by a parent
    * run.
@@ -60,14 +72,20 @@ export interface OrchestratorDeps extends DriveOptions {
 
 export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promise<RunRecord> {
   const now = deps.now ?? (() => Date.now())
-  const id = args.runId ?? deps.idGenerator?.() ?? defaultRunId(now)
-  // Idempotency: when the caller supplied an explicit runId and a
-  // record with that id already exists, return it untouched. Retries
-  // of `POST /api/runs { runId: "X" }` after a flaky network no longer
-  // re-execute the workflow or overwrite state. Auto-generated ids
-  // skip this check (they can't collide).
-  if (args.runId !== undefined) {
-    const existing = await deps.store.get(args.runId)
+  // Idempotency: caller-supplied `runId` wins (explicit). Otherwise, when
+  // `idempotencyKey` is supplied, derive a deterministic runId from
+  // `(workflowId, idempotencyKey)` so the existing args.runId-already-exists
+  // path below dedups across retries — same observable behavior, no new
+  // store interface. The persistent runId pattern lets stores like
+  // `voyant_snapshot_runs` carry idempotency_key as a separate column for
+  // queryability without parsing the runId string.
+  const explicitRunId = args.runId
+  const idempotencyKey = args.idempotencyKey
+  const derivedRunId =
+    idempotencyKey !== undefined ? `idem-${args.workflowId}-${idempotencyKey}` : undefined
+  const id = explicitRunId ?? derivedRunId ?? deps.idGenerator?.() ?? defaultRunId(now)
+  if (explicitRunId !== undefined || derivedRunId !== undefined) {
+    const existing = await deps.store.get(id)
     if (existing) return existing
   }
   const record: RunRecord = {
@@ -90,6 +108,7 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     environment: args.environment ?? "development",
     tenantMeta: args.tenantMeta,
     runMeta: { number: args.runNumber ?? 1, attempt: 1 },
+    idempotencyKey,
   }
   // Persist up-front so concurrent `cancel(runId)` calls can find the
   // run before any invocation has completed.

@@ -14,6 +14,10 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts"
+    },
+    "./testing": {
+      "types": "./src/testing/driver-compliance.ts",
+      "import": "./src/testing/driver-compliance.ts"
     }
   },
   "main": "./dist/index.js",
@@ -47,6 +51,10 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./testing": {
+        "types": "./dist/testing/driver-compliance.d.ts",
+        "import": "./dist/testing/driver-compliance.js"
       }
     },
     "main": "./dist/index.js",
