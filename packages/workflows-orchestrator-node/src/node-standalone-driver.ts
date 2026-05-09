@@ -29,6 +29,7 @@ import type {
   DriverFactoryDeps,
   IngestEventArgs,
   IngestEventResponse,
+  IngestMatch,
   WorkflowAdmin,
   WorkflowDriver,
 } from "@voyantjs/workflows/driver"
@@ -38,6 +39,7 @@ import {
   cancel as orchestratorCancel,
   trigger as orchestratorTrigger,
   type RunRecord,
+  routeEvent,
   type StepHandler,
 } from "@voyantjs/workflows-orchestrator"
 import type { drizzle } from "drizzle-orm/node-postgres"
@@ -185,11 +187,72 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
         }
       }
       const eventId = ensureEventId(args.envelope, now)
-      // Filter matching arrives in PR2 (the event-router). Mode 2 returns
-      // the no-matches response when there are no filters or until the
-      // predicate evaluator + input mapper land.
-      void stored
-      return { ok: true, eventId, matches: [] }
+      const manifest = stored.manifest as unknown as WorkflowManifest
+      const routed = routeEvent({
+        manifest,
+        envelope: args.envelope,
+        eventId,
+        idempotencyOverride: args.idempotencyKey,
+      })
+
+      const matches: IngestMatch[] = []
+      let anyTriggered = false
+      let anyFailed = false
+      for (const entry of routed) {
+        if (entry.status === "skipped") {
+          matches.push({
+            filterId: entry.filterId,
+            status: "skipped",
+            reason: entry.reason,
+            details: entry.details,
+          })
+          continue
+        }
+        try {
+          const record = await orchestratorTrigger(
+            {
+              workflowId: entry.targetWorkflowId,
+              workflowVersion: "v1",
+              input: entry.input,
+              tenantMeta,
+              environment: args.environment,
+              idempotencyKey: entry.idempotencyKey,
+              triggeredBy: {
+                kind: "event",
+                eventId,
+                eventType: args.envelope.name,
+                filterId: entry.filterId,
+              },
+            },
+            { store: runStore, handler, now },
+          )
+          matches.push({
+            filterId: entry.filterId,
+            targetWorkflowId: entry.targetWorkflowId,
+            runId: record.id,
+            idempotencyKey: entry.idempotencyKey,
+            status: "queued",
+          })
+          anyTriggered = true
+        } catch (err) {
+          matches.push({
+            filterId: entry.filterId,
+            targetWorkflowId: entry.targetWorkflowId,
+            status: "error",
+            reason: err instanceof Error ? err.message : String(err),
+          })
+          anyFailed = true
+        }
+      }
+
+      if (matches.length > 0 && !anyTriggered && anyFailed) {
+        return {
+          ok: false,
+          reason: "trigger_failed_for_all_matches",
+          message: "every matched filter failed to trigger",
+        }
+      }
+      return { ok: true, eventId, matches }
     }
 
     async function shutdown(): Promise<void> {
