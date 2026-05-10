@@ -250,6 +250,21 @@ export type BookingGuaranteeRecord = z.infer<typeof bookingGuaranteeRecordSchema
 
 export const bookingGuaranteesResponse = arrayEnvelope(bookingGuaranteeRecordSchema)
 
+export const invoiceAttachmentRecordSchema = z.object({
+  id: z.string(),
+  invoiceId: z.string(),
+  kind: z.string(),
+  name: z.string(),
+  mimeType: z.string().nullable(),
+  fileSize: z.number().int().nullable(),
+  storageKey: z.string().nullable(),
+  checksum: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+})
+
+export type InvoiceAttachmentRecord = z.infer<typeof invoiceAttachmentRecordSchema>
+
 export const invoiceListResponse = paginatedEnvelope(invoiceRecordSchema)
 export const supplierPaymentListResponse = paginatedEnvelope(supplierPaymentRecordSchema)
 export const allPaymentsListResponse = paginatedEnvelope(unifiedPaymentRecordSchema)
@@ -259,6 +274,7 @@ export const invoiceLineItemsResponse = arrayEnvelope(lineItemRecordSchema)
 export const invoicePaymentsResponse = arrayEnvelope(paymentRecordSchema)
 export const invoiceCreditNotesResponse = arrayEnvelope(creditNoteRecordSchema)
 export const invoiceNotesResponse = arrayEnvelope(financeNoteRecordSchema)
+export const invoiceAttachmentsResponse = arrayEnvelope(invoiceAttachmentRecordSchema)
 
 export {
   publicBookingFinanceDocumentsSchema,

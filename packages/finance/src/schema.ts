@@ -1105,6 +1105,33 @@ export const invoiceRenditions = pgTable(
 export type InvoiceRendition = typeof invoiceRenditions.$inferSelect
 export type NewInvoiceRendition = typeof invoiceRenditions.$inferInsert
 
+// ---------- invoice_attachments ----------
+
+export const invoiceAttachments = pgTable(
+  "invoice_attachments",
+  {
+    id: typeId("invoice_attachments"),
+    invoiceId: typeIdRef("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().default("supporting_document"),
+    name: text("name").notNull(),
+    mimeType: text("mime_type"),
+    fileSize: integer("file_size"),
+    storageKey: text("storage_key"),
+    checksum: text("checksum"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_invoice_attachments_invoice").on(table.invoiceId),
+    index("idx_invoice_attachments_invoice_created").on(table.invoiceId, table.createdAt),
+  ],
+)
+
+export type InvoiceAttachment = typeof invoiceAttachments.$inferSelect
+export type NewInvoiceAttachment = typeof invoiceAttachments.$inferInsert
+
 // ---------- tax_regimes ----------
 
 export const taxRegimes = pgTable(
@@ -1287,6 +1314,8 @@ export const invoicesRelations = relations(invoices, ({ many }) => ({
   notes: many(financeNotes),
   authorizations: many(paymentAuthorizations),
   captures: many(paymentCaptures),
+  renditions: many(invoiceRenditions),
+  attachments: many(invoiceAttachments),
 }))
 
 export const paymentInstrumentsRelations = relations(paymentInstruments, ({ many }) => ({
@@ -1398,6 +1427,13 @@ export const invoiceRenditionsRelations = relations(invoiceRenditions, ({ one })
   template: one(invoiceTemplates, {
     fields: [invoiceRenditions.templateId],
     references: [invoiceTemplates.id],
+  }),
+}))
+
+export const invoiceAttachmentsRelations = relations(invoiceAttachments, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceAttachments.invoiceId],
+    references: [invoices.id],
   }),
 }))
 

@@ -228,6 +228,19 @@ const invoiceRenditionCoreSchema = z.object({
 export const insertInvoiceRenditionSchema = invoiceRenditionCoreSchema
 export const updateInvoiceRenditionSchema = invoiceRenditionCoreSchema.partial()
 
+const invoiceAttachmentCoreSchema = z.object({
+  kind: z.string().min(1).max(50).default("supporting_document"),
+  name: z.string().min(1).max(255),
+  mimeType: z.string().max(255).optional().nullable(),
+  fileSize: z.number().int().min(0).optional().nullable(),
+  storageKey: z.string().max(1000).optional().nullable(),
+  checksum: z.string().max(255).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
+})
+
+export const insertInvoiceAttachmentSchema = invoiceAttachmentCoreSchema
+export const updateInvoiceAttachmentSchema = invoiceAttachmentCoreSchema.partial()
+
 const taxRegimeCodeSchema = z.enum([
   "standard",
   "reduced",

@@ -41,6 +41,7 @@ export {
   getAllPaymentsQueryOptions,
   getBookingGuaranteesQueryOptions,
   getBookingPaymentSchedulesQueryOptions,
+  getInvoiceAttachmentsQueryOptions,
   getInvoiceCreditNotesQueryOptions,
   getInvoiceLineItemsQueryOptions,
   getInvoiceNotesQueryOptions,

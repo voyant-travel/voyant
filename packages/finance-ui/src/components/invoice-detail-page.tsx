@@ -3,12 +3,15 @@
 import type {
   CreditNoteRecord,
   FinanceNoteRecord,
+  InvoiceAttachmentRecord,
   InvoiceRecord,
   LineItemRecord,
   PaymentRecord,
 } from "@voyantjs/finance-react"
 import {
   useInvoice,
+  useInvoiceAttachmentMutation,
+  useInvoiceAttachments,
   useInvoiceCreditNotes,
   useInvoiceLineItemMutation,
   useInvoiceLineItems,
@@ -25,11 +28,22 @@ import {
   CardHeader,
   CardTitle,
   ConfirmActionButton,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
   Textarea,
 } from "@voyantjs/ui/components"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { ArrowLeft, ExternalLink, Loader2, Pencil, Plus } from "lucide-react"
-import { type ReactNode, useState } from "react"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+import { ArrowLeft, ExternalLink, FileText, Loader2, Pencil, Plus } from "lucide-react"
+import { type ReactNode, useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 
 import { useFinanceUiI18nOrDefault, useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import { InvoiceDialog } from "./invoice-dialog.js"
@@ -40,6 +54,7 @@ export interface InvoiceDetailPageSlots {
   afterLineItems?: ReactNode
   afterPayments?: ReactNode
   afterCreditNotes?: ReactNode
+  afterAttachments?: ReactNode
   afterNotes?: ReactNode
   dialogs?: ReactNode
 }
@@ -56,6 +71,7 @@ export interface InvoiceDetailPageProps {
   onLineItemEdit?: (lineItem: LineItemRecord, invoice: InvoiceRecord) => void
   onPaymentCreate?: (invoice: InvoiceRecord) => void
   onCreditNoteCreate?: (invoice: InvoiceRecord) => void
+  getAttachmentDownloadHref?: (attachment: InvoiceAttachmentRecord) => string | undefined
   slots?: InvoiceDetailPageSlots
 }
 
@@ -71,10 +87,13 @@ export function InvoiceDetailPage({
   onLineItemEdit,
   onPaymentCreate,
   onCreditNoteCreate,
+  getAttachmentDownloadHref,
   slots,
 }: InvoiceDetailPageProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const [editOpen, setEditOpen] = useState(false)
+  const [attachmentOpen, setAttachmentOpen] = useState(false)
+  const [editingAttachment, setEditingAttachment] = useState<InvoiceAttachmentRecord | undefined>()
   const [noteContent, setNoteContent] = useState("")
 
   const invoiceQuery = useInvoice(id)
@@ -82,9 +101,11 @@ export function InvoiceDetailPage({
   const lineItemsQuery = useInvoiceLineItems(id, { enabled: Boolean(invoice) })
   const paymentsQuery = useInvoicePayments(id, { enabled: Boolean(invoice) })
   const creditNotesQuery = useInvoiceCreditNotes(id, { enabled: Boolean(invoice) })
+  const attachmentsQuery = useInvoiceAttachments(id, { enabled: Boolean(invoice) })
   const notesQuery = useInvoiceNotes(id, { enabled: Boolean(invoice) })
   const { remove: removeInvoice } = useInvoiceMutation()
   const { remove: removeLineItem } = useInvoiceLineItemMutation(id)
+  const { remove: removeAttachment } = useInvoiceAttachmentMutation(id)
   const addNote = useInvoiceNoteMutation(id)
 
   if (invoiceQuery.isPending) {
@@ -110,6 +131,7 @@ export function InvoiceDetailPage({
   const lineItems = lineItemsQuery.data?.data ?? []
   const payments = paymentsQuery.data?.data ?? []
   const creditNotes = creditNotesQuery.data?.data ?? []
+  const attachments = attachmentsQuery.data?.data ?? []
   const notes = notesQuery.data?.data ?? []
 
   return (
@@ -167,6 +189,29 @@ export function InvoiceDetailPage({
       />
       {slots?.afterCreditNotes}
 
+      <InvoiceAttachmentsCard
+        invoice={invoice}
+        attachments={attachments}
+        pending={attachmentsQuery.isPending}
+        deletePending={removeAttachment.isPending}
+        getDownloadHref={
+          getAttachmentDownloadHref ??
+          ((attachment) => `/v1/finance/invoice-attachments/${attachment.id}/download`)
+        }
+        onCreate={() => {
+          setEditingAttachment(undefined)
+          setAttachmentOpen(true)
+        }}
+        onEdit={(attachment) => {
+          setEditingAttachment(attachment)
+          setAttachmentOpen(true)
+        }}
+        onDelete={async (attachmentId) => {
+          await removeAttachment.mutateAsync(attachmentId)
+        }}
+      />
+      {slots?.afterAttachments}
+
       <InvoiceNotesCard
         notes={notes}
         noteContent={noteContent}
@@ -183,6 +228,17 @@ export function InvoiceDetailPage({
       {slots?.afterNotes}
 
       <InvoiceDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />
+      <InvoiceAttachmentDialog
+        open={attachmentOpen}
+        onOpenChange={setAttachmentOpen}
+        invoiceId={id}
+        attachment={editingAttachment}
+        onSuccess={() => {
+          setAttachmentOpen(false)
+          setEditingAttachment(undefined)
+          void attachmentsQuery.refetch()
+        }}
+      />
       {slots?.dialogs}
     </div>
   )
@@ -587,6 +643,122 @@ export function InvoiceCreditNotesCard({
   )
 }
 
+export interface InvoiceAttachmentsCardProps extends InvoiceDetailCardProps {
+  attachments: InvoiceAttachmentRecord[]
+  pending?: boolean
+  deletePending?: boolean
+  getDownloadHref?: (attachment: InvoiceAttachmentRecord) => string | undefined
+  onCreate: () => void
+  onEdit: (attachment: InvoiceAttachmentRecord) => void
+  onDelete: (attachmentId: string) => Promise<void> // i18n-literal-ok function type
+}
+
+export function InvoiceAttachmentsCard({
+  attachments,
+  pending,
+  deletePending,
+  getDownloadHref,
+  onCreate,
+  onEdit,
+  onDelete,
+  className,
+}: InvoiceAttachmentsCardProps) {
+  const messages = useFinanceUiMessagesOrDefault()
+  const detail = messages.invoiceDetailPage
+
+  return (
+    <Card data-slot="invoice-attachments-card" className={className}>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>{detail.titles.attachments}</CardTitle>
+        <Button size="sm" onClick={onCreate}>
+          <Plus className="size-4" aria-hidden="true" />
+          {detail.actions.addAttachment}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {pending ? (
+          <LoadingRow />
+        ) : attachments.length === 0 ? (
+          <EmptyRow>{detail.states.noAttachments}</EmptyRow>
+        ) : (
+          <div className="overflow-hidden rounded border bg-background">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-muted-foreground">
+                  <th className="p-2 text-left font-medium">{detail.columns.name}</th>
+                  <th className="p-2 text-left font-medium">{detail.columns.kind}</th>
+                  <th className="p-2 text-left font-medium">{detail.columns.mimeType}</th>
+                  <th className="p-2 text-right font-medium">{detail.columns.size}</th>
+                  <th className="w-20 p-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {attachments.map((attachment) => {
+                  const downloadHref = getDownloadHref?.(attachment)
+                  return (
+                    <tr key={attachment.id} className="border-b last:border-b-0">
+                      <td className="min-w-0 p-2">
+                        {downloadHref ? (
+                          <a
+                            href={downloadHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex max-w-full items-center gap-1.5 hover:underline"
+                          >
+                            <FileText className="size-3.5 shrink-0 opacity-60" aria-hidden="true" />
+                            <span className="truncate">{attachment.name}</span>
+                            <ExternalLink
+                              className="size-3 shrink-0 opacity-60"
+                              aria-hidden="true"
+                            />
+                          </a>
+                        ) : (
+                          <span className="truncate">{attachment.name}</span>
+                        )}
+                      </td>
+                      <td className="p-2">{attachment.kind}</td>
+                      <td className="p-2">{attachment.mimeType ?? detail.states.noValue}</td>
+                      <td className="p-2 text-right">
+                        {attachment.fileSize == null
+                          ? detail.states.noValue
+                          : formatBytes(attachment.fileSize)}
+                      </td>
+                      <td className="p-2">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => onEdit(attachment)}
+                          >
+                            <Pencil className="size-4" aria-hidden="true" />
+                            <span className="sr-only">{detail.actions.editAttachment}</span>
+                          </Button>
+                          <ConfirmActionButton
+                            buttonLabel={detail.actions.deleteAttachmentShort}
+                            confirmLabel={detail.actions.delete}
+                            cancelLabel={messages.common.cancel}
+                            title={detail.actions.deleteAttachmentTitle}
+                            description={detail.actions.deleteAttachmentDescription}
+                            disabled={deletePending}
+                            variant="ghost"
+                            confirmVariant="destructive"
+                            onConfirm={() => onDelete(attachment.id)}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export interface InvoiceNotesCardProps {
   notes: FinanceNoteRecord[]
   noteContent: string
@@ -649,6 +821,173 @@ export function InvoiceNotesCard({
       </CardContent>
     </Card>
   )
+}
+
+function createInvoiceAttachmentFormSchema(
+  messages: ReturnType<typeof useFinanceUiMessagesOrDefault>,
+) {
+  return z.object({
+    name: z.string().min(1, messages.invoiceDetailPage.attachmentDialog.nameRequired),
+    kind: z.string().min(1).optional(),
+    mimeType: z.string().optional(),
+    fileSize: z.coerce.number().int().min(0).optional(),
+    storageKey: z.string().optional(),
+    checksum: z.string().optional(),
+  })
+}
+
+type InvoiceAttachmentFormSchema = ReturnType<typeof createInvoiceAttachmentFormSchema>
+type InvoiceAttachmentFormValues = z.input<InvoiceAttachmentFormSchema>
+type InvoiceAttachmentFormOutput = z.output<InvoiceAttachmentFormSchema>
+
+interface InvoiceAttachmentDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  invoiceId: string
+  attachment?: InvoiceAttachmentRecord
+  onSuccess: () => void
+}
+
+function InvoiceAttachmentDialog({
+  open,
+  onOpenChange,
+  invoiceId,
+  attachment,
+  onSuccess,
+}: InvoiceAttachmentDialogProps) {
+  const isEditing = Boolean(attachment)
+  const messages = useFinanceUiMessagesOrDefault()
+  const detail = messages.invoiceDetailPage
+  const attachmentFormSchema = createInvoiceAttachmentFormSchema(messages)
+  const { create, update } = useInvoiceAttachmentMutation(invoiceId)
+
+  const form = useForm<InvoiceAttachmentFormValues, unknown, InvoiceAttachmentFormOutput>({
+    resolver: zodResolver(attachmentFormSchema),
+    defaultValues: {
+      name: "",
+      kind: "supporting_document",
+      mimeType: "",
+      fileSize: undefined,
+      storageKey: "",
+      checksum: "",
+    },
+  })
+
+  useEffect(() => {
+    if (open && attachment) {
+      form.reset({
+        name: attachment.name,
+        kind: attachment.kind,
+        mimeType: attachment.mimeType ?? "",
+        fileSize: attachment.fileSize ?? undefined,
+        storageKey: attachment.storageKey ?? "",
+        checksum: attachment.checksum ?? "",
+      })
+    } else if (open) {
+      form.reset()
+    }
+  }, [open, attachment, form])
+
+  const onSubmit = async (values: InvoiceAttachmentFormOutput) => {
+    const payload = {
+      name: values.name,
+      kind: values.kind || "supporting_document",
+      mimeType: values.mimeType || undefined,
+      fileSize: values.fileSize || undefined,
+      storageKey: values.storageKey || undefined,
+      checksum: values.checksum || undefined,
+    }
+
+    if (isEditing && attachment) {
+      await update.mutateAsync({ id: attachment.id, input: payload })
+    } else {
+      await create.mutateAsync(payload)
+    }
+    onSuccess()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {isEditing ? detail.attachmentDialog.editTitle : detail.attachmentDialog.createTitle}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <DialogBody className="grid gap-4">
+            <div className="flex flex-col gap-2">
+              <Label>{detail.fields.name}</Label>
+              <Input {...form.register("name")} placeholder={detail.placeholders.attachmentName} />
+              {form.formState.errors.name ? (
+                <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label>{detail.fields.kind}</Label>
+                <Input
+                  {...form.register("kind")}
+                  placeholder={detail.placeholders.attachmentKind}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>{detail.fields.mimeType}</Label>
+                <Input
+                  {...form.register("mimeType")}
+                  placeholder={detail.placeholders.attachmentMimeType}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label>{detail.fields.fileSize}</Label>
+                <Input
+                  {...form.register("fileSize")}
+                  type="number"
+                  placeholder={detail.placeholders.attachmentFileSize}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>{detail.fields.checksum}</Label>
+                <Input
+                  {...form.register("checksum")}
+                  placeholder={detail.placeholders.attachmentChecksum}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>{detail.fields.storageKey}</Label>
+              <Input
+                {...form.register("storageKey")}
+                placeholder={detail.placeholders.attachmentStorageKey}
+              />
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              {messages.common.cancel}
+            </Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : null}
+              {isEditing ? messages.common.saveChanges : detail.attachmentDialog.createAction}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export interface MoneyProps {

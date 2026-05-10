@@ -15,6 +15,13 @@
       "when": 1778244926274,
       "tag": "0001_contract_series_unique_prefix_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778446136397,
+      "tag": "0002_invoice_attachments",
+      "breakpoints": true
     }
   ]
 }

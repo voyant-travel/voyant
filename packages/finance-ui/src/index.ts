@@ -7,6 +7,8 @@ export {
   EmptyRow as InvoiceDetailEmptyRow,
   type EmptyRowProps as InvoiceDetailEmptyRowProps,
   formatPaymentMethod as formatInvoicePaymentMethod,
+  InvoiceAttachmentsCard,
+  type InvoiceAttachmentsCardProps,
   InvoiceCreditNotesCard,
   type InvoiceCreditNotesCardProps,
   type InvoiceDetailCardProps,

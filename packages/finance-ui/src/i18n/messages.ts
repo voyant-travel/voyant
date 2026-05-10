@@ -330,6 +330,11 @@ export type FinanceUiMessages = {
       recordPayment: string
       addCreditNote: string
       addNote: string
+      addAttachment: string
+      editAttachment: string
+      deleteAttachmentShort: string
+      deleteAttachmentTitle: string
+      deleteAttachmentDescription: string
     }
     titles: {
       summary: string
@@ -338,6 +343,7 @@ export type FinanceUiMessages = {
       payments: string
       creditNotes: string
       notes: string
+      attachments: string
     }
     fields: {
       currency: string
@@ -355,6 +361,12 @@ export type FinanceUiMessages = {
       notes: string
       createdAt: string
       updatedAt: string
+      name: string
+      kind: string
+      mimeType: string
+      fileSize: string
+      storageKey: string
+      checksum: string
     }
     columns: {
       description: string
@@ -362,6 +374,10 @@ export type FinanceUiMessages = {
       unitPrice: string
       total: string
       taxRate: string
+      name: string
+      kind: string
+      mimeType: string
+      size: string
     }
     states: {
       loading: string
@@ -372,9 +388,22 @@ export type FinanceUiMessages = {
       noPayments: string
       noCreditNotes: string
       noNotes: string
+      noAttachments: string
     }
     placeholders: {
       note: string
+      attachmentName: string
+      attachmentKind: string
+      attachmentMimeType: string
+      attachmentFileSize: string
+      attachmentStorageKey: string
+      attachmentChecksum: string
+    }
+    attachmentDialog: {
+      createTitle: string
+      editTitle: string
+      createAction: string
+      nameRequired: string
     }
     creditNoteStatusLabels: Record<CreditNoteStatus, string>
   }

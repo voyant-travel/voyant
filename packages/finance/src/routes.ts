@@ -24,6 +24,7 @@ import {
   insertCreditNoteLineItemSchema,
   insertCreditNoteSchema,
   insertFinanceNoteSchema,
+  insertInvoiceAttachmentSchema,
   insertInvoiceExternalRefSchema,
   insertInvoiceLineItemSchema,
   insertInvoiceNumberSeriesSchema,
@@ -64,6 +65,7 @@ import {
   updateBookingItemTaxLineSchema,
   updateBookingPaymentScheduleSchema,
   updateCreditNoteSchema,
+  updateInvoiceAttachmentSchema,
   updateInvoiceLineItemSchema,
   updateInvoiceNumberSeriesSchema,
   updateInvoiceSchema,
@@ -84,6 +86,35 @@ import {
 // ==========================================================================
 // Finance Routes — method-chained for Hono RPC type inference
 // ==========================================================================
+
+function getMetadataRecord(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null
+  }
+
+  return metadata as Record<string, unknown>
+}
+
+function maybeUrl(value: unknown) {
+  return typeof value === "string" && /^https?:\/\//i.test(value) ? value : null
+}
+
+function getFallbackDownloadUrl(metadata: unknown) {
+  const record = getMetadataRecord(metadata)
+  if (!record) {
+    return null
+  }
+
+  return maybeUrl(record.url)
+}
+
+function getFinanceRouteRuntime(c: { var: { container?: { resolve: <T>(key: string) => T } } }) {
+  try {
+    return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+  } catch {
+    return undefined
+  }
+}
 
 export const financeRoutes = new Hono<Env>()
 
@@ -1226,6 +1257,63 @@ export const financeRoutes = new Hono<Env>()
   .get("/invoices/:id/renditions", async (c) => {
     const rows = await financeService.listInvoiceRenditions(c.get("db"), c.req.param("id"))
     return c.json({ data: rows })
+  })
+
+  .get("/invoices/:id/attachments", async (c) => {
+    const rows = await financeService.listInvoiceAttachments(c.get("db"), c.req.param("id"))
+    return c.json({ data: rows })
+  })
+
+  .post("/invoices/:id/attachments", async (c) => {
+    const row = await financeService.createInvoiceAttachment(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, insertInvoiceAttachmentSchema),
+    )
+    if (!row) return c.json({ error: "Invoice not found" }, 404)
+    return c.json({ data: row }, 201)
+  })
+
+  .patch("/invoices/:id/attachments/:attachmentId", async (c) => {
+    const row = await financeService.updateInvoiceAttachment(
+      c.get("db"),
+      c.req.param("id"),
+      c.req.param("attachmentId"),
+      await parseJsonBody(c, updateInvoiceAttachmentSchema),
+    )
+    if (!row) return c.json({ error: "Attachment not found" }, 404)
+    return c.json({ data: row })
+  })
+
+  .get("/invoice-attachments/:id/download", async (c) => {
+    const attachment = await financeService.getInvoiceAttachmentById(c.get("db"), c.req.param("id"))
+    if (!attachment) return c.json({ error: "Attachment not found" }, 404)
+
+    let location: string | null = null
+    if (attachment.storageKey) {
+      const runtime = getFinanceRouteRuntime(c)
+      if (!runtime?.resolveDocumentDownloadUrl) {
+        return c.json({ error: "Document download resolver is not configured" }, 501)
+      }
+      location = await runtime.resolveDocumentDownloadUrl(c.env, attachment.storageKey)
+    }
+
+    location ??= getFallbackDownloadUrl(attachment.metadata)
+    if (!location) {
+      return c.json({ error: "Attachment file is not available" }, 404)
+    }
+
+    return c.redirect(location, 302)
+  })
+
+  .delete("/invoices/:id/attachments/:attachmentId", async (c) => {
+    const row = await financeService.deleteInvoiceAttachment(
+      c.get("db"),
+      c.req.param("id"),
+      c.req.param("attachmentId"),
+    )
+    if (!row) return c.json({ error: "Attachment not found" }, 404)
+    return c.json({ success: true })
   })
 
   .post("/invoices/:id/render", async (c) => {

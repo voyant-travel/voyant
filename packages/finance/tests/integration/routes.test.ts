@@ -68,6 +68,7 @@ async function cleanupFinanceTestData(
     "booking_item_tax_lines",
     "finance_notes",
     "invoice_external_refs",
+    "invoice_attachments",
     "invoice_renditions",
     "invoice_templates",
     "invoice_number_series",
@@ -219,12 +220,37 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     await db.execute(
       sql`CREATE UNIQUE INDEX IF NOT EXISTS uidx_payment_sessions_idempotency ON payment_sessions (idempotency_key)`,
     )
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS invoice_attachments (
+        id text PRIMARY KEY NOT NULL,
+        invoice_id text NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+        kind text DEFAULT 'supporting_document' NOT NULL,
+        name text NOT NULL,
+        mime_type text,
+        file_size integer,
+        storage_key text,
+        checksum text,
+        metadata jsonb,
+        created_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS idx_invoice_attachments_invoice ON invoice_attachments (invoice_id)`,
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS idx_invoice_attachments_invoice_created ON invoice_attachments (invoice_id, created_at)`,
+    )
 
     const eventBus = createEventBus()
     eventBus.subscribe("invoice.settled", (event) => {
       settlementEvents.push(event as Record<string, unknown>)
     })
-    const financeRouteRuntime = { eventBus, invoiceSettlementPollers: {} }
+    const financeRouteRuntime = {
+      eventBus,
+      invoiceSettlementPollers: {},
+      resolveDocumentDownloadUrl: (_bindings: unknown, storageKey: string) =>
+        `https://files.example/${storageKey}`,
+    }
     const containerStub = {
       resolve: <T>(key: string): T => {
         if (key === FINANCE_ROUTE_RUNTIME_CONTAINER_KEY) {
@@ -1002,6 +1028,109 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       const body = await res.json()
       expect(body.total).toBe(1)
       expect(body.data[0].id).toBe(inv.id)
+    })
+  })
+
+  // ── Invoice Attachments ───────────────────────────────────────
+
+  describe("Invoice attachments", () => {
+    it("creates and lists invoice attachments", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id)
+
+      const createRes = await app.request(`/invoices/${inv.id}/attachments`, {
+        method: "POST",
+        ...json({
+          name: "Receipt.pdf",
+          kind: "receipt",
+          mimeType: "application/pdf",
+          fileSize: 1234,
+          storageKey: `invoices/${inv.id}/receipt.pdf`,
+          checksum: "sha256:test",
+        }),
+      })
+      expect(createRes.status).toBe(201)
+      const created = (await createRes.json()).data
+      expect(created.id).toMatch(/^inat_/)
+      expect(created.invoiceId).toBe(inv.id)
+      expect(created.name).toBe("Receipt.pdf")
+
+      const listRes = await app.request(`/invoices/${inv.id}/attachments`, { method: "GET" })
+      expect(listRes.status).toBe(200)
+      const list = await listRes.json()
+      expect(list.data).toHaveLength(1)
+      expect(list.data[0].id).toBe(created.id)
+    })
+
+    it("returns 404 when creating an attachment for a missing invoice", async () => {
+      const res = await app.request("/invoices/inv_00000000000000000000000000/attachments", {
+        method: "POST",
+        ...json({ name: "Missing.pdf" }),
+      })
+      expect(res.status).toBe(404)
+    })
+
+    it("updates and deletes invoice attachments", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id)
+      const createRes = await app.request(`/invoices/${inv.id}/attachments`, {
+        method: "POST",
+        ...json({ name: "Draft.pdf", kind: "draft" }),
+      })
+      const attachment = (await createRes.json()).data
+
+      const updateRes = await app.request(`/invoices/${inv.id}/attachments/${attachment.id}`, {
+        method: "PATCH",
+        ...json({ name: "Final.pdf", kind: "supporting_document" }),
+      })
+      expect(updateRes.status).toBe(200)
+      const updated = (await updateRes.json()).data
+      expect(updated.name).toBe("Final.pdf")
+      expect(updated.kind).toBe("supporting_document")
+
+      const deleteRes = await app.request(`/invoices/${inv.id}/attachments/${attachment.id}`, {
+        method: "DELETE",
+      })
+      expect(deleteRes.status).toBe(200)
+
+      const listRes = await app.request(`/invoices/${inv.id}/attachments`, { method: "GET" })
+      expect((await listRes.json()).data).toHaveLength(0)
+    })
+
+    it("redirects invoice attachment downloads through configured storage resolver", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id)
+      const createRes = await app.request(`/invoices/${inv.id}/attachments`, {
+        method: "POST",
+        ...json({
+          name: "Receipt.pdf",
+          storageKey: `invoices/${inv.id}/receipt.pdf`,
+        }),
+      })
+      const attachment = (await createRes.json()).data
+
+      const res = await app.request(`/invoice-attachments/${attachment.id}/download`)
+      expect(res.status).toBe(302)
+      expect(res.headers.get("location")).toBe(
+        `https://files.example/invoices/${inv.id}/receipt.pdf`,
+      )
+    })
+
+    it("uses metadata URLs as a fallback download target", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id)
+      const createRes = await app.request(`/invoices/${inv.id}/attachments`, {
+        method: "POST",
+        ...json({
+          name: "External receipt",
+          metadata: { url: "https://cdn.example/receipt.pdf" },
+        }),
+      })
+      const attachment = (await createRes.json()).data
+
+      const res = await app.request(`/invoice-attachments/${attachment.id}/download`)
+      expect(res.status).toBe(302)
+      expect(res.headers.get("location")).toBe("https://cdn.example/receipt.pdf")
     })
   })
 

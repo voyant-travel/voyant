@@ -5,6 +5,7 @@ import type { FinanceSettlementRouteOptions, InvoiceSettlementPoller } from "./r
 
 export type FinanceRouteRuntime = {
   invoiceDocumentGenerator?: InvoiceDocumentGenerator
+  resolveDocumentDownloadUrl?: FinanceDocumentRouteOptions["resolveDocumentDownloadUrl"]
   invoiceSettlementPollers: Record<string, InvoiceSettlementPoller>
   eventBus?: EventBus
 }
@@ -22,6 +23,7 @@ export function buildFinanceRouteRuntime(
   return {
     invoiceDocumentGenerator:
       options.resolveInvoiceDocumentGenerator?.(bindings) ?? options.invoiceDocumentGenerator,
+    resolveDocumentDownloadUrl: options.resolveDocumentDownloadUrl,
     invoiceSettlementPollers:
       options.resolveInvoiceSettlementPollers?.(bindings) ?? options.invoiceSettlementPollers ?? {},
     eventBus: options.resolveEventBus?.(bindings) ?? options.eventBus,

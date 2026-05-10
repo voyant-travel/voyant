@@ -269,6 +269,7 @@ export const PREFIXES = {
   invoice_number_series: "invs",
   invoice_templates: "invt",
   invoice_renditions: "invr",
+  invoice_attachments: "inat",
   tax_regimes: "txrg",
   invoice_external_refs: "iner",
 
