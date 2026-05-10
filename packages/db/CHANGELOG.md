@@ -1,5 +1,12 @@
 # @voyantjs/db
 
+## 0.30.6
+
+### Patch Changes
+
+- 5a4c592: Expose concrete schema file subpaths in the published `@voyantjs/db` export map so Vite/Rollup can resolve deep imports such as `@voyantjs/db/schema/iam/kms`.
+  - @voyantjs/core@0.30.6
+
 ## 0.30.5
 
 ### Patch Changes
