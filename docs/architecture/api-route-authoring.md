@@ -167,6 +167,23 @@ Rule:
 
 Pick the smallest auth primitive that matches the route’s actual needs.
 
+### 9a. API tokens use Better Auth permissions
+
+API tokens are Better Auth API keys for automation and cross-runtime calls, not
+operator sessions. Their permissions use Better Auth's `Record<string,
+string[]>` shape, for example `{ products: ["read"], workflows: ["trigger"] }`.
+
+For Hono routes, API-key callers are admitted by `requireActor(...)` only when
+the key has a method-derived permission for the route resource. See
+`docs/architecture/service-api-keys.md` for the current derivation rules and
+permission catalog.
+
+Rule:
+
+When adding a route that should be callable by third-party systems or external
+automation, document the expected API token permission and keep the route's
+resource segment aligned with that permission.
+
 ## Error Handling
 
 ### 10. Throw or normalize shared API errors

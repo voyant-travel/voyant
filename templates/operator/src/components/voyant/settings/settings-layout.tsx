@@ -1,7 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type { LucideIcon } from "lucide-react"
-import { Building, Hash, Layers, Package, Percent, Tag, Tags, Users } from "lucide-react"
+import { Building, Hash, KeyRound, Layers, Package, Percent, Tag, Tags, Users } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 type NavItem = { label: string; href: string; icon: LucideIcon }
@@ -16,6 +16,7 @@ export function SettingsLayout() {
       items: [
         { label: messages.settings.operator, href: "/settings/operator", icon: Building },
         { label: messages.settings.team, href: "/settings/team", icon: Users },
+        { label: messages.settings.apiTokens, href: "/settings/api-tokens", icon: KeyRound },
         { label: messages.settings.channels, href: "/settings/channels", icon: Hash },
         { label: messages.settings.taxes, href: "/settings/taxes", icon: Percent },
         {

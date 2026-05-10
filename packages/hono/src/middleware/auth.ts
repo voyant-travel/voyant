@@ -1,5 +1,6 @@
 import type { VoyantAuthContext } from "@voyantjs/core"
 import { apikeyTable } from "@voyantjs/db/schema/iam"
+import { permissionsToStrings } from "@voyantjs/types/api-keys"
 import { and, eq } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 
@@ -12,24 +13,6 @@ import {
   type VoyantBindings,
   type VoyantVariables,
 } from "../types.js"
-
-function permissionsToScopes(permissions: string | null): string[] {
-  if (!permissions) return []
-  try {
-    const parsed = JSON.parse(permissions) as Record<string, string[]>
-    const scopes: string[] = []
-    for (const [resource, actions] of Object.entries(parsed)) {
-      if (Array.isArray(actions)) {
-        for (const action of actions) {
-          scopes.push(`${resource}:${action}`)
-        }
-      }
-    }
-    return scopes
-  } catch {
-    return []
-  }
-}
 
 const API_KEY_PREFIX = "voy_"
 
@@ -144,7 +127,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
           )
         }
 
-        const scopes = permissionsToScopes(row.permissions)
+        const scopes = permissionsToStrings(row.permissions)
 
         applyAuthContext(c, {
           organizationId: row.referenceId,

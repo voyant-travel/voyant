@@ -66,6 +66,72 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
   }
 }
 
+type BetterAuthApiKeyApi = {
+  listApiKeys: (args: { query?: Record<string, unknown>; headers: Headers }) => Promise<unknown>
+  createApiKey: (args: { body: Record<string, unknown>; headers?: Headers }) => Promise<unknown>
+  updateApiKey: (args: { body: Record<string, unknown>; headers?: Headers }) => Promise<unknown>
+  deleteApiKey: (args: { body: Record<string, unknown>; headers: Headers }) => Promise<unknown>
+}
+
+type ApiTokenErrorStatus = 400 | 401 | 403 | 404 | 429 | 500
+
+function normalizeApiTokenErrorStatus(status: number | undefined): ApiTokenErrorStatus {
+  if (status === 401 || status === 403 || status === 404 || status === 429 || status === 500) {
+    return status
+  }
+  return 400
+}
+
+function toAuthApiErrorResponse(error: unknown) {
+  const candidate = error as { status?: number; statusCode?: number; message?: string }
+  return {
+    status: normalizeApiTokenErrorStatus(candidate.status ?? candidate.statusCode),
+    body: { error: candidate.message ?? "API token request failed" },
+  }
+}
+
+function readApiKeyQuery(request: Request): Record<string, unknown> {
+  const query: Record<string, unknown> = {}
+  const params = new URL(request.url).searchParams
+  for (const key of ["configId", "organizationId", "limit", "offset", "sortBy", "sortDirection"]) {
+    const value = params.get(key)
+    if (value === null) continue
+    query[key] = key === "limit" || key === "offset" ? Number(value) : value
+  }
+  return query
+}
+
+async function readOptionalJson(request: Request): Promise<Record<string, unknown>> {
+  const text = await request.text()
+  if (!text) return {}
+  const parsed = JSON.parse(text) as unknown
+  return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+    ? (parsed as Record<string, unknown>)
+    : {}
+}
+
+function pickFields(
+  body: Record<string, unknown>,
+  fields: readonly string[],
+): Record<string, unknown> {
+  const next: Record<string, unknown> = {}
+  for (const field of fields) {
+    if (body[field] !== undefined) next[field] = body[field]
+  }
+  return next
+}
+
+async function requireApiTokenSession(
+  betterAuth: ReturnType<typeof buildBetterAuth>,
+  headers: Headers,
+) {
+  const session = await betterAuth.api.getSession({ headers })
+  if (!session) {
+    throw Object.assign(new Error("Unauthorized"), { status: 401 })
+  }
+  return session
+}
+
 /**
  * Build a Better Auth instance backed by a caller-provided drizzle
  * client. The caller owns the Pool lifecycle (open before, dispose
@@ -310,6 +376,104 @@ auth.get("/auth/bootstrap-status", async (c) => {
   try {
     const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
     return c.json({ hasUsers: (row?.count ?? 0) > 0 })
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+})
+
+auth.get("/auth/api-tokens", async (c) => {
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db)
+    const api = betterAuth.api as unknown as BetterAuthApiKeyApi
+    const result = await api.listApiKeys({
+      query: readApiKeyQuery(c.req.raw),
+      headers: c.req.raw.headers,
+    })
+    return c.json(result)
+  } catch (error) {
+    const response = toAuthApiErrorResponse(error)
+    return c.json(response.body, response.status)
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+})
+
+auth.post("/auth/api-tokens", async (c) => {
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db)
+    const api = betterAuth.api as unknown as BetterAuthApiKeyApi
+    const body = await readOptionalJson(c.req.raw)
+    const session = await requireApiTokenSession(betterAuth, c.req.raw.headers)
+    const result = await api.createApiKey({
+      body: {
+        ...pickFields(body, [
+          "configId",
+          "name",
+          "expiresIn",
+          "remaining",
+          "prefix",
+          "organizationId",
+          "metadata",
+          "permissions",
+        ]),
+        userId: session.user.id,
+      },
+    })
+    return c.json(result, 201)
+  } catch (error) {
+    const response = toAuthApiErrorResponse(error)
+    return c.json(response.body, response.status)
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+})
+
+auth.post("/auth/api-tokens/:keyId", async (c) => {
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db)
+    const api = betterAuth.api as unknown as BetterAuthApiKeyApi
+    const body = await readOptionalJson(c.req.raw)
+    const session = await requireApiTokenSession(betterAuth, c.req.raw.headers)
+    const result = await api.updateApiKey({
+      body: {
+        ...pickFields(body, [
+          "configId",
+          "name",
+          "enabled",
+          "expiresIn",
+          "metadata",
+          "permissions",
+        ]),
+        keyId: c.req.param("keyId"),
+        userId: session.user.id,
+      },
+    })
+    return c.json(result)
+  } catch (error) {
+    const response = toAuthApiErrorResponse(error)
+    return c.json(response.body, response.status)
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+})
+
+auth.delete("/auth/api-tokens/:keyId", async (c) => {
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db)
+    const api = betterAuth.api as unknown as BetterAuthApiKeyApi
+    const body = await readOptionalJson(c.req.raw)
+    const result = await api.deleteApiKey({
+      body: { ...pickFields(body, ["configId"]), keyId: c.req.param("keyId") },
+      headers: c.req.raw.headers,
+    })
+    return c.json(result)
+  } catch (error) {
+    const response = toAuthApiErrorResponse(error)
+    return c.json(response.body, response.status)
   } finally {
     c.executionCtx.waitUntil(dispose())
   }

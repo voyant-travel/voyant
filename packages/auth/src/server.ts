@@ -163,6 +163,10 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
       apiKey({
         defaultPrefix: "voy_",
         apiKeyHeaders: ["authorization"],
+        requireName: true,
+        keyExpiration: {
+          defaultExpiresIn: null,
+        },
       }),
       emailOTP({
         // eslint-disable-next-line @typescript-eslint/require-await

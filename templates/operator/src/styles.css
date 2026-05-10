@@ -10,6 +10,7 @@
    relative to src/ trees that don't ship in published tarballs (upstream
    issue #416), so the dist scans below are still required. */
 @source "../node_modules/@voyantjs/admin/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/auth-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/availability-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/bookings-ui/dist/**/*.{js,mjs}";
@@ -26,6 +27,7 @@
 
 @import "@voyantjs/ui/styles.css";
 @import "@voyantjs/admin/styles.css";
+@import "@voyantjs/auth-ui/styles.css";
 @import "@voyantjs/availability-ui/styles.css";
 @import "@voyantjs/bookings-ui/styles.css";
 @import "@voyantjs/crm-ui/styles.css";

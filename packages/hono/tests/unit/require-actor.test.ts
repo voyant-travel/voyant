@@ -107,6 +107,47 @@ describe("requireActor", () => {
     expect(res.status).toBe(200)
   })
 
+  it("allows API keys on any surface when the method-derived resource permission is present", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["products:read"])
+    })
+    app.use("*", requireActor("customer", "partner", "supplier"))
+    app.get("/v1/public/products", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/v1/public/products")
+    expect(res.status).toBe(200)
+  })
+
+  it("rejects API keys on actor surfaces when the resource permission is missing", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["bookings:read"])
+    })
+    app.use("*", requireActor("staff"))
+    app.get("/v1/admin/products", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/v1/admin/products")
+    expect(res.status).toBe(403)
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toMatch(/required permission/)
+  })
+
+  it("allows workflow trigger and webhook relay API key permissions on POST routes", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["workflows:trigger", "webhooks:relay"])
+    })
+    app.use("*", requireActor("staff"))
+    app.post("/v1/admin/workflows/events", (c) => c.json({ ok: true }))
+    app.post("/v1/admin/webhooks/relay", (c) => c.json({ ok: true }))
+
+    const workflow = await app.request("/v1/admin/workflows/events", { method: "POST" })
+    const webhook = await app.request("/v1/admin/webhooks/relay", { method: "POST" })
+    expect(workflow.status).toBe(200)
+    expect(webhook.status).toBe(200)
+  })
+
   it("passes through OPTIONS preflight requests", async () => {
     const app = makeApp((c) => c.set("actor", "customer"))
     app.use("*", requireActor("staff"))
