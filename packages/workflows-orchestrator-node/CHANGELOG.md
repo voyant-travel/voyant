@@ -1,5 +1,14 @@
 # @voyantjs/workflows-orchestrator-node
 
+## 0.30.2
+
+### Patch Changes
+
+- 16e2134: Wire `TriggerOptions.priority` through the workflow orchestrator drivers and claim due wakeups by priority before wake time.
+- Updated dependencies [16e2134]
+  - @voyantjs/workflows@0.30.2
+  - @voyantjs/workflows-orchestrator@0.30.2
+
 ## 0.30.1
 
 ### Patch Changes
