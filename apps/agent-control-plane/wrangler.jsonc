@@ -1,0 +1,13 @@
+{
+  // Reference Cloudflare Worker for the agent queue control plane.
+  // The first deployment exposes dry-run planning only; mutation and
+  // provider execution remain owned by the local runner scripts until the
+  // control-plane contract stabilizes.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "voyant-agent-control-plane",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-01-01",
+  "observability": {
+    "enabled": true
+  }
+}
