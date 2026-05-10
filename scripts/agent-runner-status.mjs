@@ -1,6 +1,5 @@
 import {
   currentRepositoryFromOrigin,
-  evaluateHeartbeat,
   fail,
   filterItemsByRepository,
   loadAllEvaluatedProject,
@@ -8,6 +7,7 @@ import {
   projectConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import { evaluateHeartbeat } from "./lib/agent-runner-output.mjs"
 
 const activeStates = new Set([
   "Planning",
