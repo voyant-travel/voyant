@@ -48,6 +48,13 @@ npm-debug.log*
 # Local agent / editor state (per-machine)
 .claude/
 .agents/
+!.agents/
+!.agents/WORKFLOW.md
+!.agents/SECURITY.md
+!.agents/PLANS.md
+!.agents/skills/
+!.agents/skills/agent-brief/
+!.agents/skills/agent-brief/SKILL.md
 .cursor/
 
 # Scratch test artifacts

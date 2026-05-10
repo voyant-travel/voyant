@@ -40,6 +40,12 @@ The fast lane runs changed-file linting plus Turbo affected typecheck/test and
 architecture checks. The full lane is intended for CI, release prep, and broad
 cross-package changes.
 
+## Agent Orchestration
+
+For agent-control-plane, remote-sandbox, browser-debugging, execution-plan, or
+AI-workflow changes, read
+`docs/architecture/agentic-engineering-orchestration.md` first.
+
 ## Common Commands
 
 - Install dependencies: `pnpm install`
