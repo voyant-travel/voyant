@@ -33,6 +33,7 @@
     "agent:queue:doctor": "node scripts/agent-runner-doctor.mjs",
     "agent:queue:dry-run": "node scripts/agent-runner-dry-run.mjs",
     "agent:queue:status": "node scripts/agent-runner-status.mjs",
+    "agent:queue:tick": "node scripts/agent-runner-tick.mjs",
     "agent:queue:prepare": "node scripts/agent-runner-prepare.mjs",
     "agent:queue:start": "node scripts/agent-runner-start.mjs",
     "agent:queue:run-command": "node scripts/agent-runner-run-command.mjs",
