@@ -1468,6 +1468,10 @@ importers:
         version: 4.3.6
 
   packages/catalog-ui:
+    dependencies:
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
