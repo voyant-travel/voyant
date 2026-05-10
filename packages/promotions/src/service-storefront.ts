@@ -33,7 +33,7 @@ import type {
   StorefrontPromotionalOffer,
   StorefrontRequestContext,
 } from "@voyantjs/storefront"
-import { and, eq, inArray, isNull, lte, or, sql } from "drizzle-orm"
+import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm"
 
 import { type PromotionalOffer, promotionalOfferProducts, promotionalOffers } from "./schema.js"
 import type { PromotionalOfferScope } from "./validation.js"
@@ -54,10 +54,7 @@ export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers 
             eq(promotionalOffers.active, true),
             isNull(promotionalOffers.code),
             or(isNull(promotionalOffers.validFrom), lte(promotionalOffers.validFrom, now)),
-            or(
-              isNull(promotionalOffers.validUntil),
-              sql`${promotionalOffers.validUntil} >= ${now}`,
-            ),
+            or(isNull(promotionalOffers.validUntil), gte(promotionalOffers.validUntil, now)),
           ),
         )
 

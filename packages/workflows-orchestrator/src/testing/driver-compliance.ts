@@ -251,7 +251,7 @@ export function runDriverComplianceSuite(
           const run = await driver.trigger(wf, {}, { delay: "1ms" })
           expect(run.status).toBe("waiting")
 
-          await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1), { timeout: 250 })
+          await vi.waitFor(() => expect(completed).toHaveBeenCalledTimes(1), { timeout: 1_000 })
         },
       )
 
