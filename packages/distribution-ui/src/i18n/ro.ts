@@ -422,6 +422,25 @@ export const distributionUiRo = {
         valid: "Valabil",
       },
     },
+    bookingLink: {
+      notFound: "Legatura rezervarii nu a fost gasita",
+      title: "Legatura rezervare",
+      deleteConfirm: "Stergi aceasta legatura de rezervare?",
+      deleteDescription:
+        "Aceasta actiune sterge definitiv referinta externa a rezervarii si legatura de sincronizare.",
+      deleteButton: "Sterge",
+      openChannel: "Deschide canalul",
+      openBooking: "Deschide rezervarea",
+      sections: {
+        details: "Detalii legatura rezervare",
+      },
+      labels: {
+        externalBooking: "Rezervare externa",
+        reference: "Referinta",
+        bookedAtExternal: "Rezervata extern",
+        lastSynced: "Ultima sincronizare",
+      },
+    },
     mapping: {
       notFound: "Maparea produsului nu a fost gasita",
       title: "Mapare produs",

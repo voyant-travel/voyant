@@ -260,6 +260,24 @@ export type DistributionUiMessages = {
         valid: string
       }
     }
+    bookingLink: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openChannel: string
+      openBooking: string
+      sections: {
+        details: string
+      }
+      labels: {
+        externalBooking: string
+        reference: string
+        bookedAtExternal: string
+        lastSynced: string
+      }
+    }
     mapping: {
       notFound: string
       title: string

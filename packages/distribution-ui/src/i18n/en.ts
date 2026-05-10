@@ -416,6 +416,24 @@ export const distributionUiEn = {
         valid: "Valid",
       },
     },
+    bookingLink: {
+      notFound: "Booking link not found",
+      title: "Booking Link",
+      deleteConfirm: "Delete this booking link?",
+      deleteDescription: "This permanently removes the external booking reference and sync link.",
+      deleteButton: "Delete",
+      openChannel: "Open Channel",
+      openBooking: "Open Booking",
+      sections: {
+        details: "Booking Link Details",
+      },
+      labels: {
+        externalBooking: "External Booking",
+        reference: "Reference",
+        bookedAtExternal: "Booked Externally",
+        lastSynced: "Last Synced",
+      },
+    },
     mapping: {
       notFound: "Product mapping not found",
       title: "Product Mapping",

@@ -1,3 +1,7 @@
+export {
+  BookingLinkDetailPage,
+  type BookingLinkDetailPageProps,
+} from "./components/booking-link-detail-page.js"
 export { ChannelDetailPage, type ChannelDetailPageProps } from "./components/channel-detail-page.js"
 export {
   CommissionRuleDetailPage,
