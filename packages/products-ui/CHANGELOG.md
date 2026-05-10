@@ -1,5 +1,24 @@
 # @voyantjs/products-ui
 
+## 0.31.1
+
+### Patch Changes
+
+- 00f7c4f: Render product itinerary day descriptions with the shared rich text editor so imported HTML content can be edited without exposing raw markup.
+
+  Add link support to the shared rich text editor, including safe URL handling and toolbar actions for adding or removing links.
+
+- Updated dependencies [00f7c4f]
+  - @voyantjs/availability-react@0.31.1
+  - @voyantjs/catalog-react@0.31.1
+  - @voyantjs/finance@0.31.1
+  - @voyantjs/finance-ui@0.31.1
+  - @voyantjs/i18n@0.31.1
+  - @voyantjs/pricing-react@0.31.1
+  - @voyantjs/products-react@0.31.1
+  - @voyantjs/suppliers-react@0.31.1
+  - @voyantjs/ui@0.31.1
+
 ## 0.31.0
 
 ### Minor Changes
