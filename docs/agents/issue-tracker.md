@@ -99,6 +99,19 @@ Claim mode checks the same execution gate, then updates GitHub Project fields:
 - `Workspace = <planned workspace>`
 - `Last Heartbeat = <today>`
 
+While work is claimed, refresh the item heartbeat or state:
+
+```bash
+pnpm agent:queue:heartbeat -- --issue <number> --state Running --yes
+```
+
+Heartbeat mode updates `Last Heartbeat` and can move `Agent State` among
+`Planning`, `Running`, `Blocked`, `Human Review`, `Changes Requested`, and
+`CI Repair`. Blocked heartbeats require `--blocked-by` or `--reason`. Passing
+`--evidence <url-or-path>` updates the `Evidence` field. `Human Review`
+heartbeats require `--evidence`. When the state is not `Blocked`, heartbeat
+clears `Blocked By`.
+
 If a claimed item should return to the executable queue without shipping work,
 release it:
 
