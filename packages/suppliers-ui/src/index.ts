@@ -1,5 +1,12 @@
+export { RateDialog, type RateDialogProps } from "./components/rate-dialog.js"
+export { ServiceDialog, type ServiceDialogProps } from "./components/service-dialog.js"
+export {
+  SupplierDetailPage,
+  type SupplierDetailPageProps,
+} from "./components/supplier-detail-page.js"
+export { SupplierDialog, type SupplierDialogProps } from "./components/supplier-dialog.js"
 export { SupplierServiceRow } from "./components/supplier-service-row.js"
-export { SuppliersPage } from "./components/suppliers-page.js"
+export { SuppliersPage, type SuppliersPageProps } from "./components/suppliers-page.js"
 export {
   getSuppliersUiI18n,
   resolveSuppliersUiMessages,

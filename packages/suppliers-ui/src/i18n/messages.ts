@@ -10,7 +10,12 @@ export type SuppliersUiMessages = {
     edit: string
     delete: string
     add: string
+    save: string
+    create: string
+    cancel: string
+    back: string
     open: string
+    active: string
     inactive: string
     none: string
     unknown: string
@@ -26,6 +31,17 @@ export type SuppliersUiMessages = {
     create: string
     searchPlaceholder: string
     summary: string
+    previous: string
+    next: string
+    page: string
+    filters: string
+    clearFilters: string
+    allTypes: string
+    allStatuses: string
+    countryPlaceholder: string
+    currencyPlaceholder: string
+    empty: string
+    loadFailed: string
     columns: {
       name: string
       type: string
@@ -34,6 +50,46 @@ export type SuppliersUiMessages = {
       country: string
       currency: string
     }
+  }
+  supplierDetailPage: {
+    backToSuppliers: string
+    notFound: string
+    loadFailed: string
+    details: string
+    contact: string
+    noContact: string
+    services: string
+    addService: string
+    noServices: string
+    notes: string
+    notePlaceholder: string
+    addNote: string
+    noNotes: string
+    deleteSupplierConfirm: string
+    deleteServiceConfirm: string
+    deleteRateConfirm: string
+    labels: {
+      type: string
+      status: string
+      city: string
+      country: string
+      currency: string
+      reservationTimeout: string
+      email: string
+      phone: string
+      website: string
+      address: string
+      contactName: string
+      contactEmail: string
+      contactPhone: string
+      created: string
+      updated: string
+    }
+  }
+  dialogs: {
+    supplier: SupplierFormMessages
+    service: ServiceFormMessages
+    rate: RateFormMessages
   }
   supplierServiceRow: {
     rates: string
@@ -48,4 +104,79 @@ export type SuppliersUiMessages = {
     }
     validFallback: string
   }
+}
+
+export type SupplierFormMessages = {
+  newTitle: string
+  editTitle: string
+  nameLabel: string
+  namePlaceholder: string
+  typeLabel: string
+  statusLabel: string
+  descriptionLabel: string
+  descriptionPlaceholder: string
+  emailLabel: string
+  emailPlaceholder: string
+  phoneLabel: string
+  phonePlaceholder: string
+  websiteLabel: string
+  websitePlaceholder: string
+  addressLabel: string
+  addressPlaceholder: string
+  cityLabel: string
+  cityPlaceholder: string
+  countryLabel: string
+  countryPlaceholder: string
+  defaultCurrencyLabel: string
+  defaultCurrencyPlaceholder: string
+  reservationTimeoutLabel: string
+  reservationTimeoutPlaceholder: string
+  contactNameLabel: string
+  contactNamePlaceholder: string
+  contactEmailLabel: string
+  contactEmailPlaceholder: string
+  contactPhoneLabel: string
+  contactPhonePlaceholder: string
+  validationNameRequired: string
+  validationIsoCurrency: string
+  validationReservationTimeout: string
+}
+
+export type ServiceFormMessages = {
+  newTitle: string
+  editTitle: string
+  serviceTypeLabel: string
+  nameLabel: string
+  namePlaceholder: string
+  descriptionLabel: string
+  descriptionPlaceholder: string
+  durationLabel: string
+  durationPlaceholder: string
+  capacityLabel: string
+  capacityPlaceholder: string
+  activeLabel: string
+  validationNameRequired: string
+}
+
+export type RateFormMessages = {
+  newTitle: string
+  editTitle: string
+  seasonNameLabel: string
+  seasonNamePlaceholder: string
+  currencyLabel: string
+  currencyPlaceholder: string
+  amountLabel: string
+  amountPlaceholder: string
+  unitLabel: string
+  validFromLabel: string
+  validToLabel: string
+  minPaxLabel: string
+  minPaxPlaceholder: string
+  maxPaxLabel: string
+  maxPaxPlaceholder: string
+  notesLabel: string
+  notesPlaceholder: string
+  validationNameRequired: string
+  validationIsoCurrency: string
+  validationNonNegative: string
 }
