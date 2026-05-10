@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
+import { extractAgentBrief, hasAgentBrief } from "../lib/agent-brief-parser.mjs"
 import {
   evaluateItem,
   filterItemsByRepository,
@@ -78,6 +79,10 @@ describe("agent project queue helpers", () => {
 
     assert.equal(evaluated.ready, true)
     assert.equal(evaluated.issue.number, 579)
+    assert.equal(
+      evaluated.issue.agentBrief,
+      "Current behavior, desired behavior, acceptance criteria, and verification lane.",
+    )
     assert.equal(evaluated.dryRunPlan.branch, "bug/579-fix-agent-intake-workflow")
     assert.equal(
       evaluated.dryRunPlan.planPath,
@@ -106,6 +111,28 @@ describe("agent project queue helpers", () => {
       'Agent State is "Running"',
       'Maintainer Approved is "No"',
     ])
+  })
+
+  it("requires a durable Agent Brief before an item is executable", () => {
+    const evaluated = evaluateItem(
+      projectItem({
+        body: "### Agent Brief\n_No response_\n\n### Additional notes\nLater.",
+      }),
+    )
+
+    assert.equal(evaluated.ready, false)
+    assert.deepEqual(evaluated.reasons, ["missing Agent Brief section"])
+  })
+
+  it("detects non-empty Agent Brief sections", () => {
+    const body = "## Agent Brief\nCurrent behavior, desired behavior, acceptance criteria."
+    assert.equal(hasAgentBrief(body), true)
+    assert.equal(
+      extractAgentBrief(`${body}\n\n## Notes\nLater`),
+      "Current behavior, desired behavior, acceptance criteria.",
+    )
+    assert.equal(hasAgentBrief("### Agent Brief\nTBD\n\n### Notes\nLater"), false)
+    assert.equal(hasAgentBrief("## Notes\nNo brief yet"), false)
   })
 
   it("filters evaluated items by repository case-insensitively", () => {
@@ -184,6 +211,7 @@ function projectPage({ items = [], pageInfo = { endCursor: null, hasNextPage: fa
 function projectItem({
   id = "item-1",
   number = 1,
+  body = "## Agent Brief\nCurrent behavior, desired behavior, acceptance criteria, and verification lane.",
   title = "[Task] Implement queue runner",
   state = "OPEN",
   repository = "VoyantJS/Voyant",
@@ -197,6 +225,7 @@ function projectItem({
     id,
     content: {
       number,
+      body,
       title,
       url: `https://github.com/${repository}/issues/${number}`,
       state,

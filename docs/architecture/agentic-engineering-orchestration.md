@@ -984,6 +984,10 @@ Use the existing package strategy: reusable runner primitives belong in
 
 ## Implementation Plan
 
+Status: Phases 0-2 have a working local pilot. The remaining orchestration
+work should focus on Phase 3 browser and UI evidence, then Phase 4 PR shepherd
+and CI repair.
+
 ### Phase 0: Record And Enforce The Operating Contract
 
 Deliverables:
@@ -1015,6 +1019,11 @@ Deliverables:
 - Document the exception process for oversized files, TypeScript suppressions,
   generated files, and adapter/test seams.
 
+Current status: complete for the local pilot. The operating docs, security
+rules, execution-plan template, brief skill, issue-tracker docs, quality lane,
+and pre-commit feedback path exist. The quality checker remains reporting-only
+until the baseline exception list is mature enough to make it blocking.
+
 Verification:
 
 - `pnpm lint:changed`
@@ -1034,6 +1043,11 @@ Deliverables:
 - Document the exact Project fields and labels in `docs/agents/` so skills and
   runner code share the same vocabulary.
 
+Current status: complete for the local pilot. The `Voyant Engineering` Project,
+fields, intake workflow, issue form, and docs are in place. Execution remains
+maintainer-gated by label, Project fields, and the issue-body `Agent Brief`
+section.
+
 Verification:
 
 - Create one test issue.
@@ -1047,12 +1061,19 @@ Deliverables:
 - Build a script or small app that polls ready Project items.
 - Require an agent brief before dispatch.
 - Create a worktree and branch per item.
-- Start a Codex or Claude task in that worktree.
+- Run a supervised provider-neutral implementation command in that worktree.
 - Record logs and heartbeats.
 - Run a declared verification command.
 - Post a Project comment with the evidence packet.
 - Include agent code-quality checks in the evidence packet, even if they are
   still reporting-only.
+
+Current status: complete for the local pilot. The runner can inspect the queue,
+claim work, prepare a worktree and branch, write the approved brief into the
+execution plan, run an explicit command with `VOYANT_AGENT_*` context, record
+local logs and evidence, publish evidence, open draft PRs, sync PR state, clean
+up worktrees, and recover from restarts from Project fields plus local event
+logs.
 
 Verification:
 

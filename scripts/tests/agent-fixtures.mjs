@@ -12,6 +12,8 @@ export function workItem({
       state: "OPEN",
       repository: "voyantjs/voyant",
       labels: ["agent:ready"],
+      hasAgentBrief: true,
+      agentBrief: "Current behavior, desired behavior, acceptance criteria, and verification lane.",
     },
     fields,
     ready: fields["Agent State"] ? fields["Agent State"] === "Ready" : true,

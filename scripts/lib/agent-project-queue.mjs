@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process"
 import path from "node:path"
 
+import { extractAgentBrief, hasAgentBrief } from "./agent-brief-parser.mjs"
+
 const knownTypes = new Set(["task", "bug", "refactor", "investigation", "cleanup"])
 const booleanArgs = new Set(["allow-dirty", "force", "help", "json", "ready", "yes"])
 
@@ -144,6 +146,7 @@ export function readProjectItems({ after, owner, projectNumber, limit, onError =
                 ... on Issue {
                   number
                   title
+                  body
                   url
                   state
                   repository {
@@ -158,6 +161,7 @@ export function readProjectItems({ after, owner, projectNumber, limit, onError =
                 ... on PullRequest {
                   number
                   title
+                  body
                   url
                   state
                   repository {
@@ -284,6 +288,7 @@ export function evaluateItem(item) {
   if (!content) reasons.push("project item has no issue or pull request content")
   if (content?.state !== "OPEN") reasons.push(`issue state is ${content?.state ?? "unknown"}`)
   if (!labels.includes("agent:ready")) reasons.push("missing label agent:ready")
+  if (!hasAgentBrief(content?.body)) reasons.push("missing Agent Brief section")
   if (fields["Agent State"] !== "Ready") {
     reasons.push(`Agent State is ${quoteField(fields["Agent State"])}`)
   }
@@ -303,6 +308,8 @@ export function evaluateItem(item) {
           state: content.state,
           repository: content.repository?.nameWithOwner,
           labels,
+          agentBrief: extractAgentBrief(content.body),
+          hasAgentBrief: hasAgentBrief(content.body),
         }
       : null,
     fields,

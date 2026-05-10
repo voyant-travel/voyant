@@ -16,6 +16,7 @@ Voyant Engineering
   - label `agent:ready` is present
   - Project field `Agent State = Ready`
   - Project field `Maintainer Approved = Yes`
+  - the issue body contains a non-empty `Agent Brief` section
 - Triage agents may draft recommendations and briefs, but must not set the
   final execution gate.
 
@@ -38,8 +39,8 @@ GitHub's default `GITHUB_TOKEN` is repository-scoped and is not enough for
 organization Projects v2 automation.
 
 The intake workflow only adds eligible issues to the Project. Maintainers still
-set `Agent State = Ready` and `Maintainer Approved = Yes` in the Project before
-the runner may execute work.
+set `Agent State = Ready` and `Maintainer Approved = Yes` in the Project, and
+ensure the issue body has an `Agent Brief`, before the runner may execute work.
 
 ## GitHub CLI
 
@@ -79,6 +80,10 @@ does not mutate GitHub, create worktrees, or spend agent execution budget. Pass
 
 Queue readers scan all Project pages by default. `--limit` controls the
 GraphQL page size, not the total number of items scanned.
+
+The runner treats a missing or empty `Agent Brief` issue-body section as a hard
+execution gate failure. Draft briefs may start in comments, but the approved
+brief must be copied into the issue body before `Agent State = Ready`.
 
 Pure queue helper coverage lives in `pnpm agent:queue:test`. Keep tests there
 for argument parsing, gate evaluation, repository scoping, and pagination before

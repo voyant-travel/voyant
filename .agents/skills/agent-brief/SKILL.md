@@ -20,7 +20,8 @@ the execution agent works from; the issue discussion is supporting context.
    interfaces and behavior over stale file paths.
 3. Draft the brief using the template below.
 4. Flag missing information instead of inventing certainty.
-5. Leave the item for maintainer approval. Do not mark it `Ready`.
+5. Put the final brief under the issue body's `Agent Brief` section.
+6. Leave the item for maintainer approval. Do not mark it `Ready`.
 
 ## Template
 
