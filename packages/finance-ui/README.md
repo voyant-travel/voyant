@@ -14,7 +14,12 @@ All components accept a `className` prop and merge it with `cn()`. Wrap or compo
 
 ## Components
 
-- `InvoicesPage` and `PaymentsPage` publish list-management compositions.
+- `InvoicesPage`, `InvoiceDetailPage`, and `PaymentsPage` publish
+  list/detail-management compositions.
+- `InvoiceDetailHeader`, `InvoiceSummaryCard`, `InvoiceLinksCard`,
+  `InvoiceLineItemsCard`, `InvoicePaymentsCard`, `InvoiceCreditNotesCard`, and
+  `InvoiceNotesCard` remain exported for consumers that need to compose the
+  invoice detail page manually.
 - `PaymentDetailPage` publishes the customer/supplier payment detail
   workspace with summary, related record, and metadata cards.
 - `PaymentDetailHeader`, `PaymentSummaryCard`, `PaymentLinksCard`, and

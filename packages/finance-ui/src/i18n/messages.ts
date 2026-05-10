@@ -1,4 +1,8 @@
-import type { InvoiceRecord, SupplierPaymentRecord } from "@voyantjs/finance-react"
+import type {
+  CreditNoteRecord,
+  InvoiceRecord,
+  SupplierPaymentRecord,
+} from "@voyantjs/finance-react"
 
 export const invoiceStatuses = [
   "draft",
@@ -35,6 +39,7 @@ export type InvoiceStatus = InvoiceRecord["status"]
 export type PaymentMethod = (typeof paymentMethods)[number]
 export type SupplierPaymentMethod = (typeof supplierPaymentMethods)[number]
 export type SupplierPaymentStatus = SupplierPaymentRecord["status"]
+export type CreditNoteStatus = CreditNoteRecord["status"]
 
 export type FinanceUiMessages = {
   common: {
@@ -198,6 +203,73 @@ export type FinanceUiMessages = {
       notFound: string
       noValue: string
     }
+  }
+  invoiceDetailPage: {
+    actions: {
+      back: string
+      edit: string
+      delete: string
+      deleteTitle: string
+      deleteDescription: string
+      deleteOnlyDraft: string
+      viewBooking: string
+      viewPerson: string
+      viewOrganization: string
+      addLineItem: string
+      editLineItem: string
+      deleteLineItemShort: string
+      deleteLineItemTitle: string
+      deleteLineItemDescription: string
+      recordPayment: string
+      addCreditNote: string
+      addNote: string
+    }
+    titles: {
+      summary: string
+      links: string
+      lineItems: string
+      payments: string
+      creditNotes: string
+      notes: string
+    }
+    fields: {
+      currency: string
+      subtotal: string
+      tax: string
+      total: string
+      paid: string
+      balanceDue: string
+      status: string
+      issueDate: string
+      dueDate: string
+      booking: string
+      person: string
+      organization: string
+      notes: string
+      createdAt: string
+      updatedAt: string
+    }
+    columns: {
+      description: string
+      quantity: string
+      unitPrice: string
+      total: string
+      taxRate: string
+    }
+    states: {
+      loading: string
+      loadFailed: string
+      notFound: string
+      noValue: string
+      noLineItems: string
+      noPayments: string
+      noCreditNotes: string
+      noNotes: string
+    }
+    placeholders: {
+      note: string
+    }
+    creditNoteStatusLabels: Record<CreditNoteStatus, string>
   }
   supplierPaymentDialog: {
     title: string

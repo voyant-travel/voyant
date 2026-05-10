@@ -1,5 +1,6 @@
 export { financeUiEn } from "./en.js"
 export type {
+  CreditNoteStatus,
   FinanceUiMessages,
   InvoiceStatus,
   PaymentMethod,
