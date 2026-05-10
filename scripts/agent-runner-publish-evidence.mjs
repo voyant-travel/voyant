@@ -12,8 +12,28 @@ import {
   projectConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import {
+  maybePrintHelp,
+  mutationOptions,
+  projectOptions,
+  repositoryOptions,
+} from "./lib/agent-runner-help.mjs"
 
 const args = parseArgs(process.argv.slice(2))
+maybePrintHelp(args, {
+  command: "agent:queue:publish-evidence",
+  summary: "Post a local evidence packet to GitHub and update the Project evidence field.",
+  usage: "pnpm agent:queue:publish-evidence -- --issue <number> --yes",
+  options: [
+    ["--issue <number>", "Issue number whose evidence packet should be published."],
+    ["--evidence-path <path>", "Evidence path relative to the task workspace."],
+    ["--workspace <path>", "Workspace path override."],
+    ...repositoryOptions,
+    ...mutationOptions,
+    ...projectOptions,
+  ],
+})
+
 if (!args.issue) {
   fail("publish-evidence mode requires --issue <number>")
 }

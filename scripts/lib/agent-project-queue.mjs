@@ -2,13 +2,17 @@ import { spawnSync } from "node:child_process"
 import path from "node:path"
 
 const knownTypes = new Set(["task", "bug", "refactor", "investigation", "cleanup"])
-const booleanArgs = new Set(["force", "json", "yes"])
+const booleanArgs = new Set(["force", "help", "json", "yes"])
 
 export function parseArgs(argv) {
   const parsed = {}
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]
     if (arg === "--") continue
+    if (arg === "-h") {
+      parsed.help = true
+      continue
+    }
 
     const booleanKey = arg.startsWith("--") ? arg.slice(2) : undefined
     if (booleanArgs.has(booleanKey)) {

@@ -10,8 +10,27 @@ import {
   projectConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import {
+  maybePrintHelp,
+  mutationOptions,
+  projectOptions,
+  repositoryOptions,
+} from "./lib/agent-runner-help.mjs"
 
 const args = parseArgs(process.argv.slice(2))
+maybePrintHelp(args, {
+  command: "agent:queue:prepare",
+  summary: "Create a local worktree and execution plan for one approved Project item.",
+  usage: "pnpm agent:queue:prepare -- --issue <number> --yes",
+  options: [
+    ["--issue <number>", "Issue number to prepare. Required when multiple items are ready."],
+    ["--base <ref>", "Base ref for the new worktree branch. Defaults to origin/main."],
+    ...repositoryOptions,
+    ...mutationOptions,
+    ...projectOptions,
+  ],
+})
+
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const project = loadEvaluatedProject(projectConfigFromArgs(args))

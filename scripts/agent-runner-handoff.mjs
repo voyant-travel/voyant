@@ -11,10 +11,34 @@ import {
   projectConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import {
+  maybePrintHelp,
+  mutationOptions,
+  projectOptions,
+  repositoryOptions,
+} from "./lib/agent-runner-help.mjs"
 
 const handoffStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
 
 const args = parseArgs(process.argv.slice(2))
+maybePrintHelp(args, {
+  command: "agent:queue:handoff",
+  summary: "Write an evidence packet and move claimed work to human review.",
+  usage: 'pnpm agent:queue:handoff -- --issue <number> --summary "..." --verification "..." --yes',
+  options: [
+    ["--issue <number>", "Issue number to hand off."],
+    ["--summary <text>", "Human-readable summary for the evidence packet."],
+    ["--verification <text>", "Verification command and outcome for the evidence packet."],
+    ["--evidence-path <path>", "Evidence path relative to the task workspace."],
+    ["--branch <name>", "Branch reference to record in the evidence packet."],
+    ["--workspace <path>", "Workspace path override."],
+    ["--force", "Allow handoff outside the normal handoff states."],
+    ...repositoryOptions,
+    ...mutationOptions,
+    ...projectOptions,
+  ],
+})
+
 if (!args.issue) {
   fail("handoff mode requires --issue <number>")
 }
