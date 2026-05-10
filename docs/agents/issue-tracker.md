@@ -162,6 +162,19 @@ action recommendations such as `start`, `run-command`, `publish-evidence`,
 create worktrees, run commands, publish evidence, or open PRs. Pass `--json`
 when a process manager or future control plane needs machine-readable actions.
 
+Use dispatch to execute one allow-listed tick recommendation:
+
+```bash
+pnpm agent:queue:dispatch -- --yes
+```
+
+Dispatch mode re-reads the Project, selects the highest-priority dispatchable
+recommendation, and runs one lifecycle command. It is dry-run by default. Pass
+`--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
+`start`, `publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it refuses
+`run-command`, `inspect-stale`, blocked work, and wait states so implementation
+execution remains explicit.
+
 After a workspace is prepared, claim the item before implementation work starts:
 
 ```bash
