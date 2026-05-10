@@ -13,12 +13,16 @@ import {
 
 describe("agent project queue helpers", () => {
   it("parses boolean, equals, and separated runner arguments", () => {
-    assert.deepEqual(parseArgs(["--issue", "123", "--json", "--max-age-days=2", "-h"]), {
-      issue: "123",
-      json: true,
-      maxAgeDays: "2",
-      help: true,
-    })
+    assert.deepEqual(
+      parseArgs(["--issue", "123", "--json", "--allow-dirty", "--max-age-days=2", "-h"]),
+      {
+        issue: "123",
+        json: true,
+        allowDirty: true,
+        maxAgeDays: "2",
+        help: true,
+      },
+    )
   })
 
   it("parses project numbers from GitHub Project URLs", () => {

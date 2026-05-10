@@ -183,6 +183,18 @@ GitHub issue comment, updates `Evidence` with the comment URL, and refreshes
 `Last Heartbeat`. It refuses remote Evidence URLs so it does not duplicate an
 already-published packet.
 
+After evidence exists and the branch is committed cleanly, publish the branch
+for maintainer review:
+
+```bash
+pnpm agent:queue:open-pr -- --issue <number> --yes
+```
+
+Open-PR mode requires evidence, checks that the workspace is on the expected
+branch, refuses dirty workspaces by default, pushes the branch, opens or reuses
+a draft PR, updates the Project `PR` field, and refreshes `Last Heartbeat`.
+It does not merge the PR or mark work merge-ready.
+
 Use the watchdog to find claimed work that has stopped reporting heartbeats:
 
 ```bash

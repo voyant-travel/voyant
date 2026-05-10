@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process"
 import path from "node:path"
 
 const knownTypes = new Set(["task", "bug", "refactor", "investigation", "cleanup"])
-const booleanArgs = new Set(["force", "help", "json", "yes"])
+const booleanArgs = new Set(["allow-dirty", "force", "help", "json", "ready", "yes"])
 
 export function parseArgs(argv) {
   const parsed = {}
@@ -16,7 +16,7 @@ export function parseArgs(argv) {
 
     const booleanKey = arg.startsWith("--") ? arg.slice(2) : undefined
     if (booleanArgs.has(booleanKey)) {
-      parsed[booleanKey] = true
+      parsed[camelCaseArg(booleanKey)] = true
       continue
     }
 
@@ -25,7 +25,7 @@ export function parseArgs(argv) {
     }
 
     const [rawKey, rawValue] = arg.slice(2).split("=", 2)
-    const key = rawKey.replace(/-([a-z])/g, (_, char) => char.toUpperCase())
+    const key = camelCaseArg(rawKey)
     const value = rawValue ?? argv[index + 1]
     if (!value || value.startsWith("--")) {
       fail(`missing value for --${rawKey}`)
@@ -34,6 +34,10 @@ export function parseArgs(argv) {
     if (rawValue === undefined) index += 1
   }
   return parsed
+}
+
+function camelCaseArg(rawKey) {
+  return rawKey.replace(/-([a-z])/g, (_, char) => char.toUpperCase())
 }
 
 export function projectConfigFromArgs(args) {
@@ -355,18 +359,24 @@ export function findProjectIssueItem(items, { issueNumber, repository } = {}) {
 }
 
 export function runGit(gitArgs, options = {}) {
-  const result = spawnSync("git", gitArgs, {
+  return runCommand("git", gitArgs, options)
+}
+
+export function runCommand(command, commandArgs, options = {}) {
+  const { allowFailure = false, ...spawnOptions } = options
+  const result = spawnSync(command, commandArgs, {
     encoding: "utf8",
-    ...options,
+    ...spawnOptions,
   })
 
   if (result.error) {
-    fail(`failed to run git ${gitArgs.join(" ")}: ${result.error.message}`)
+    fail(`failed to run ${command} ${commandArgs.join(" ")}: ${result.error.message}`)
   }
 
   if (result.status !== 0) {
+    if (allowFailure) return undefined
     const stderr = result.stderr?.trim()
-    fail(stderr || `git ${gitArgs.join(" ")} exited with ${result.status}`)
+    fail(stderr || `${command} ${commandArgs.join(" ")} exited with ${result.status}`)
   }
 
   return result.stdout.trim()
