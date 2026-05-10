@@ -1,5 +1,14 @@
 # @voyantjs/storefront-verification
 
+## 0.31.1
+
+### Patch Changes
+
+- @voyantjs/core@0.31.1
+- @voyantjs/db@0.31.1
+- @voyantjs/hono@0.31.1
+- @voyantjs/notifications@0.31.1
+
 ## 0.31.0
 
 ### Patch Changes

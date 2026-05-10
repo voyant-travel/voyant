@@ -1,5 +1,14 @@
 # @voyantjs/storefront-react
 
+## 0.31.1
+
+### Patch Changes
+
+- e96991c: Expose the selected `itineraryId` on storefront departure itinerary responses.
+- Updated dependencies [e96991c]
+  - @voyantjs/react@0.31.1
+  - @voyantjs/storefront@0.31.1
+
 ## 0.31.0
 
 ### Patch Changes
