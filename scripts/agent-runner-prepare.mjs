@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
 import {
+  currentRepositoryFromOrigin,
   fail,
   findSelectedReadyItem,
   loadEvaluatedProject,
@@ -12,7 +13,7 @@ import {
 
 const args = parseArgs(process.argv.slice(2))
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
-const repository = args.repo ?? currentRepository(repoRoot)
+const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const project = loadEvaluatedProject(projectConfigFromArgs(args))
 const item = findSelectedReadyItem(project.items, {
   issueNumber: args.issue,
@@ -53,20 +54,6 @@ console.log(`workspace: ${workspace}`)
 console.log(`plan: ${planPath}`)
 console.log("")
 console.log("No agent was run. No GitHub state was changed.")
-
-function currentRepository(repoRoot) {
-  const remoteUrl = runGit(["remote", "get-url", "origin"], { cwd: repoRoot })
-  const repository = repositoryFromGitHubRemote(remoteUrl)
-  if (!repository) {
-    fail("could not determine repository from origin remote; pass --repo <owner/name>")
-  }
-  return repository
-}
-
-function repositoryFromGitHubRemote(remoteUrl) {
-  const normalized = remoteUrl.trim().replace(/\.git$/, "")
-  return normalized.match(/github\.com[:/]([^/]+\/[^/]+)$/)?.[1]
-}
 
 function branchExists(branch, repoRoot) {
   const result = runGit(["branch", "--list", branch], { cwd: repoRoot })
