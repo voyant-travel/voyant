@@ -4,7 +4,7 @@ import { type ProductDayRecord, useProductDayMutation } from "@voyantjs/products
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
-import { Textarea } from "@voyantjs/ui/components/textarea"
+import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
 
@@ -144,11 +144,11 @@ export function ProductDayForm({ mode, onSuccess, onCancel }: ProductDayFormProp
         <Label htmlFor="product-day-description">
           {messages.productDayForm.fields.description}
         </Label>
-        <Textarea
-          id="product-day-description"
+        <RichTextEditor
           value={state.description}
-          onChange={(event) => field("description")(event.target.value)}
+          onChange={field("description")}
           placeholder={messages.productDayForm.placeholders.description}
+          editorClassName="max-h-[320px] overflow-y-auto"
         />
       </div>
 
