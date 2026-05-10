@@ -7,6 +7,7 @@ import type { UseAllPaymentsOptions } from "./hooks/use-all-payments.js"
 import type { UseBookingGuaranteesOptions } from "./hooks/use-booking-guarantees.js"
 import type { UseBookingPaymentSchedulesOptions } from "./hooks/use-booking-payment-schedules.js"
 import type { UseInvoiceOptions } from "./hooks/use-invoice.js"
+import type { UseInvoiceAttachmentsOptions } from "./hooks/use-invoice-attachments.js"
 import type { UseInvoiceCreditNotesOptions } from "./hooks/use-invoice-credit-notes.js"
 import type { UseInvoiceLineItemsOptions } from "./hooks/use-invoice-line-items.js"
 import type { UseInvoiceNotesOptions } from "./hooks/use-invoice-notes.js"
@@ -34,6 +35,7 @@ import {
   allPaymentsListResponse,
   bookingGuaranteesResponse,
   bookingPaymentSchedulesResponse,
+  invoiceAttachmentsResponse,
   invoiceCreditNotesResponse,
   invoiceLineItemsResponse,
   invoiceListResponse,
@@ -288,6 +290,26 @@ export function getInvoiceNotesQueryOptions(
       return fetchWithValidation(
         `/v1/finance/invoices/${invoiceId}/notes`,
         invoiceNotesResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getInvoiceAttachmentsQueryOptions(
+  client: FetchWithValidationOptions,
+  invoiceId: string | null | undefined,
+  options: UseInvoiceAttachmentsOptions = {},
+) {
+  const { enabled: _enabled = true } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.attachments(invoiceId ?? ""),
+    queryFn: async () => {
+      if (!invoiceId) throw new Error("getInvoiceAttachmentsQueryOptions requires an invoiceId")
+      return fetchWithValidation(
+        `/v1/finance/invoices/${invoiceId}/attachments`,
+        invoiceAttachmentsResponse,
         client,
       )
     },

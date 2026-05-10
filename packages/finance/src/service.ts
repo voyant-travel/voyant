@@ -12,6 +12,7 @@ import {
   creditNoteLineItems,
   creditNotes,
   financeNotes,
+  invoiceAttachments,
   invoiceExternalRefs,
   invoiceLineItems,
   invoiceNumberSeries,
@@ -49,6 +50,7 @@ import type {
   insertCreditNoteLineItemSchema,
   insertCreditNoteSchema,
   insertFinanceNoteSchema,
+  insertInvoiceAttachmentSchema,
   insertInvoiceExternalRefSchema,
   insertInvoiceLineItemSchema,
   insertInvoiceNumberSeriesSchema,
@@ -88,6 +90,7 @@ import type {
   updateBookingItemTaxLineSchema,
   updateBookingPaymentScheduleSchema,
   updateCreditNoteSchema,
+  updateInvoiceAttachmentSchema,
   updateInvoiceLineItemSchema,
   updateInvoiceNumberSeriesSchema,
   updateInvoiceRenditionSchema,
@@ -181,6 +184,8 @@ type CreateInvoiceTemplateInput = z.infer<typeof insertInvoiceTemplateSchema>
 type UpdateInvoiceTemplateInput = z.infer<typeof updateInvoiceTemplateSchema>
 type CreateInvoiceRenditionInput = z.infer<typeof insertInvoiceRenditionSchema>
 type UpdateInvoiceRenditionInput = z.infer<typeof updateInvoiceRenditionSchema>
+type CreateInvoiceAttachmentInput = z.infer<typeof insertInvoiceAttachmentSchema>
+type UpdateInvoiceAttachmentInput = z.infer<typeof updateInvoiceAttachmentSchema>
 type TaxRegimeListQuery = z.infer<typeof taxRegimeListQuerySchema>
 type CreateTaxRegimeInput = z.infer<typeof insertTaxRegimeSchema>
 type UpdateTaxRegimeInput = z.infer<typeof updateTaxRegimeSchema>
@@ -2800,6 +2805,77 @@ export const financeService = {
       .delete(invoiceRenditions)
       .where(eq(invoiceRenditions.id, id))
       .returning({ id: invoiceRenditions.id })
+    return row ?? null
+  },
+
+  // ============================================================================
+  // Invoice attachments
+  // ============================================================================
+
+  async listInvoiceAttachments(db: PostgresJsDatabase, invoiceId: string) {
+    return db
+      .select()
+      .from(invoiceAttachments)
+      .where(eq(invoiceAttachments.invoiceId, invoiceId))
+      .orderBy(desc(invoiceAttachments.createdAt))
+  },
+
+  async getInvoiceAttachmentById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select()
+      .from(invoiceAttachments)
+      .where(eq(invoiceAttachments.id, id))
+      .limit(1)
+    return row ?? null
+  },
+
+  async createInvoiceAttachment(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: CreateInvoiceAttachmentInput,
+  ) {
+    const [invoice] = await db
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1)
+    if (!invoice) return null
+
+    const [row] = await db
+      .insert(invoiceAttachments)
+      .values({
+        invoiceId,
+        kind: data.kind,
+        name: data.name,
+        mimeType: data.mimeType ?? null,
+        fileSize: data.fileSize ?? null,
+        storageKey: data.storageKey ?? null,
+        checksum: data.checksum ?? null,
+        metadata: data.metadata ?? null,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async updateInvoiceAttachment(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    id: string,
+    data: UpdateInvoiceAttachmentInput,
+  ) {
+    const [row] = await db
+      .update(invoiceAttachments)
+      .set(data)
+      .where(and(eq(invoiceAttachments.id, id), eq(invoiceAttachments.invoiceId, invoiceId)))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteInvoiceAttachment(db: PostgresJsDatabase, invoiceId: string, id: string) {
+    const [row] = await db
+      .delete(invoiceAttachments)
+      .where(and(eq(invoiceAttachments.id, id), eq(invoiceAttachments.invoiceId, invoiceId)))
+      .returning({ id: invoiceAttachments.id })
     return row ?? null
   },
 

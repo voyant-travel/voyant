@@ -110,6 +110,8 @@ export const financeQueryKeys = {
   creditNotes: (invoiceId: string) =>
     [...financeQueryKeys.invoice(invoiceId), "credit-notes"] as const,
   notes: (invoiceId: string) => [...financeQueryKeys.invoice(invoiceId), "notes"] as const,
+  attachments: (invoiceId: string) =>
+    [...financeQueryKeys.invoice(invoiceId), "attachments"] as const,
 
   bookingPaymentSchedules: (bookingId: string) =>
     [...financeQueryKeys.all, "booking-payment-schedules", bookingId] as const,
