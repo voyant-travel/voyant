@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest"
-import { computeNextFire, nextCronFire, parseCron, toMs } from "../schedule.js"
+import { describe, expect, it, vi } from "vitest"
+import { computeNextFire, createScheduler, nextCronFire, parseCron, toMs } from "../schedule.js"
 
 describe("toMs", () => {
   it("passes numbers through", () => {
@@ -68,5 +68,44 @@ describe("computeNextFire", () => {
     const from = Date.UTC(2026, 3, 17)
     const past = new Date(Date.UTC(2020, 0, 1)).toISOString()
     expect(computeNextFire({ at: past }, from)).toBe(Number.POSITIVE_INFINITY)
+  })
+})
+
+describe("createScheduler", () => {
+  it("serializes fires for queued overlap schedules", async () => {
+    let now = 0
+    const started: number[] = []
+    const completed: number[] = []
+    let releaseFirst!: () => void
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve
+    })
+    let callCount = 0
+    const scheduler = createScheduler({
+      sources: [{ workflowId: "wf", decl: { every: "1s", overlap: "queue" } }],
+      now: () => now,
+      onFire: async ({ fireAt }) => {
+        started.push(fireAt)
+        callCount++
+        if (callCount === 1) await firstGate
+        completed.push(fireAt)
+      },
+    })
+
+    now = 1_100
+    const firstTick = scheduler.tick()
+    await vi.waitFor(() => expect(started).toEqual([1_000]))
+
+    now = 2_100
+    await scheduler.tick()
+    expect(started).toEqual([1_000])
+
+    releaseFirst()
+    await firstTick
+
+    await vi.waitFor(() => {
+      expect(started).toEqual([1_000, 2_100])
+      expect(completed).toEqual([1_000, 2_100])
+    })
   })
 })

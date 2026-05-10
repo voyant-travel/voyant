@@ -1,9 +1,193 @@
-import type { Duration, ScheduleDeclaration } from "@voyantjs/workflows"
+import type { Duration, EnvironmentName, ScheduleDeclaration } from "@voyantjs/workflows"
+import type { ManifestSchedule, WorkflowManifest } from "@voyantjs/workflows/protocol"
 
-export function computeNextFire(decl: ScheduleDeclaration, fromMs: number): number {
-  if ("cron" in decl) return nextCronFire(parseCron(decl.cron), fromMs)
-  if ("every" in decl) return fromMs + toMs(decl.every)
-  if ("at" in decl) {
+export type SchedulableDeclaration = ScheduleDeclaration | ManifestSchedule
+
+export interface ScheduleSource {
+  id?: string
+  workflowId: string
+  decl: SchedulableDeclaration
+}
+
+export interface SchedulerDeps {
+  sources: readonly ScheduleSource[]
+  onFire: (args: {
+    workflowId: string
+    input: unknown
+    scheduleId: string
+    scheduleName?: string
+    fireAt: number
+  }) => Promise<void>
+  now?: () => number
+  environment?: EnvironmentName
+  tickMs?: number
+  setInterval?: typeof setInterval
+  clearInterval?: typeof clearInterval
+  logger?: (level: "info" | "warn" | "error", msg: string, data?: object) => void
+}
+
+export interface SchedulerHandle {
+  start: () => void
+  stop: () => void
+  tick: () => Promise<void>
+  nextFirings: () => {
+    workflowId: string
+    scheduleId: string
+    name?: string
+    nextAt: number
+    done: boolean
+  }[]
+  sourceCount: () => number
+}
+
+interface SourceState {
+  source: ScheduleSource
+  scheduleId: string
+  nextAt: number
+  done: boolean
+  inFlight: boolean
+  queued: QueuedFire[]
+}
+
+interface QueuedFire {
+  fireAt: number
+}
+
+export function manifestScheduleSources(manifest: WorkflowManifest): ScheduleSource[] {
+  const sources: ScheduleSource[] = []
+  for (const workflow of manifest.workflows) {
+    workflow.schedules.forEach((decl, index) => {
+      sources.push({
+        id: `${manifest.versionId}:${workflow.id}:${decl.name ?? index}`,
+        workflowId: workflow.id,
+        decl,
+      })
+    })
+  }
+  return sources
+}
+
+export function createScheduler(deps: SchedulerDeps): SchedulerHandle {
+  const now = deps.now ?? (() => Date.now())
+  const tickMs = deps.tickMs ?? 1_000
+  const setInt = deps.setInterval ?? setInterval
+  const clearInt = deps.clearInterval ?? clearInterval
+  const env = deps.environment ?? "development"
+  const log = deps.logger ?? (() => {})
+
+  const states: SourceState[] = []
+  for (const [index, source] of deps.sources.entries()) {
+    if (source.decl.enabled === false) continue
+    if (source.decl.environments && !source.decl.environments.includes(env)) continue
+    let firstAt: number
+    try {
+      firstAt = computeNextFire(source.decl, now())
+    } catch (err) {
+      log("warn", `scheduler: skipping source for workflow "${source.workflowId}": ${String(err)}`)
+      continue
+    }
+    states.push({
+      source,
+      scheduleId: source.id ?? `${source.workflowId}:${source.decl.name ?? index}`,
+      nextAt: firstAt,
+      done: false,
+      inFlight: false,
+      queued: [],
+    })
+  }
+
+  let timer: ReturnType<typeof setInterval> | undefined
+
+  const advanceAfterFire = (state: SourceState, firedAt: number): void => {
+    if ("at" in state.source.decl) {
+      state.done = true
+      return
+    }
+    try {
+      state.nextAt = computeNextFire(state.source.decl, firedAt)
+    } catch (err) {
+      log(
+        "error",
+        `scheduler: cannot compute next fire for "${state.source.workflowId}": ${String(err)}`,
+      )
+      state.done = true
+    }
+  }
+
+  const fire = async (state: SourceState, fireAt: number): Promise<void> => {
+    try {
+      const input = await resolveInput(state.source.decl.input)
+      await deps.onFire({
+        workflowId: state.source.workflowId,
+        input,
+        scheduleId: state.scheduleId,
+        scheduleName: state.source.decl.name,
+        fireAt,
+      })
+    } catch (err) {
+      log("error", `scheduler: onFire threw for "${state.source.workflowId}": ${String(err)}`)
+    } finally {
+      const next = state.queued.shift()
+      if (next) {
+        void fire(state, next.fireAt)
+      } else {
+        state.inFlight = false
+      }
+    }
+  }
+
+  const doTick = async (): Promise<void> => {
+    const t = now()
+    const ready = states.filter((state) => !state.done && state.nextAt <= t)
+    for (const state of ready) {
+      const overlap = state.source.decl.overlap ?? "skip"
+      if (state.inFlight && overlap === "skip") continue
+      const fireAt = state.nextAt
+      if (state.inFlight && overlap === "queue") {
+        state.queued.push({ fireAt })
+        advanceAfterFire(state, t)
+        continue
+      }
+      state.inFlight = true
+      const firePromise = fire(state, fireAt)
+      advanceAfterFire(state, t)
+      if (overlap !== "allow") await firePromise
+    }
+  }
+
+  return {
+    start() {
+      if (timer) return
+      timer = setInt(() => {
+        doTick().catch(() => {})
+      }, tickMs)
+      ;(timer as unknown as { unref?: () => void }).unref?.()
+    },
+    stop() {
+      if (!timer) return
+      clearInt(timer)
+      timer = undefined
+    },
+    tick: doTick,
+    nextFirings() {
+      return states.map((state) => ({
+        workflowId: state.source.workflowId,
+        scheduleId: state.scheduleId,
+        name: state.source.decl.name,
+        nextAt: state.nextAt,
+        done: state.done,
+      }))
+    },
+    sourceCount() {
+      return states.length
+    },
+  }
+}
+
+export function computeNextFire(decl: SchedulableDeclaration, fromMs: number): number {
+  if ("cron" in decl && decl.cron !== undefined) return nextCronFire(parseCron(decl.cron), fromMs)
+  if ("every" in decl && decl.every !== undefined) return fromMs + toMs(decl.every)
+  if ("at" in decl && decl.at !== undefined) {
     const at = typeof decl.at === "string" ? Date.parse(decl.at) : decl.at.getTime()
     if (!Number.isFinite(at)) throw new Error(`invalid "at" value: ${String(decl.at)}`)
     return at < fromMs ? Number.POSITIVE_INFINITY : at
@@ -82,7 +266,7 @@ export function nextCronFire(spec: CronSpec, fromMs: number): number {
   throw new Error("cron search exceeded 5 years without finding a match")
 }
 
-export function toMs(duration: Duration): number {
+export function toMs(duration: Duration | string | number): number {
   if (typeof duration === "number") return duration
   const m = /^(\d+)(ms|s|m|h|d|w)$/.exec(duration)
   if (!m) throw new Error(`invalid duration "${duration}"`)
@@ -103,4 +287,13 @@ export function toMs(duration: Duration): number {
     default:
       throw new Error(`invalid duration "${duration}"`)
   }
+}
+
+async function resolveInput(
+  input: unknown | (() => unknown | Promise<unknown>) | undefined,
+): Promise<unknown> {
+  if (typeof input === "function") {
+    return await (input as () => unknown | Promise<unknown>)()
+  }
+  return input
 }
