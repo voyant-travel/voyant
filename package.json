@@ -35,6 +35,7 @@
     "agent:queue:claim": "node scripts/agent-runner-claim.mjs",
     "agent:queue:heartbeat": "node scripts/agent-runner-heartbeat.mjs",
     "agent:queue:handoff": "node scripts/agent-runner-handoff.mjs",
+    "agent:queue:publish-evidence": "node scripts/agent-runner-publish-evidence.mjs",
     "agent:queue:release": "node scripts/agent-runner-release.mjs",
     "prepare": "husky",
     "seed:operator": "pnpm -C apps/scripts seed:operator",
