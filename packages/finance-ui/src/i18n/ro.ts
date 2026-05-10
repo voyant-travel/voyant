@@ -61,6 +61,40 @@ export const financeUiRo = {
       dueDateRequired: "Data scadentei este obligatorie",
     },
   },
+  invoicesPage: {
+    title: "Facturi",
+    description: "Facturile, proformele si notele de credit catre clienti.",
+    searchPlaceholder: "Cauta facturi...",
+    actions: {
+      newInvoice: "Factura noua",
+    },
+    filters: {
+      button: "Filtre",
+      statusLabel: "Status",
+      statusAll: "Toate statusurile",
+      currencyLabel: "Moneda",
+      currencyAny: "Orice moneda",
+      dueDateLabel: "Data scadenta",
+      dateAny: "Orice data",
+      clear: "Sterge filtre",
+    },
+    columns: {
+      invoiceNumber: "Factura #",
+      status: "Status",
+      total: "Total",
+      paid: "Platit",
+      balanceDue: "Rest de plata",
+      dueDate: "Data scadenta",
+    },
+    empty: "Nu au fost gasite inregistrari.",
+    loadFailed: "Incarcarea inregistrarilor a esuat.",
+    pagination: {
+      showing: "Afisare {count} din {total}",
+      page: "Pagina {page} / {pageCount}",
+      previous: "Anterior",
+      next: "Urmator",
+    },
+  },
   supplierPaymentDialog: {
     title: "Inregistreaza Plata Furnizorului",
     fields: {

@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { defaultFetcher, getInvoicesQueryOptions } from "@voyantjs/finance-react"
+import { InvoicesPage, InvoicesPageSkeleton } from "@voyantjs/finance-ui"
 
-import { InvoicesPage } from "@/components/voyant/finance/invoices-page"
-import { InvoicesPageSkeleton } from "@/components/voyant/finance/invoices-page-skeleton"
 import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/finance/invoices/")({
@@ -11,5 +10,20 @@ export const Route = createFileRoute("/_workspace/finance/invoices/")({
       getInvoicesQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }),
     ),
   pendingComponent: InvoicesPageSkeleton,
-  component: InvoicesPage,
+  component: RouteComponent,
 })
+
+function RouteComponent() {
+  const navigate = Route.useNavigate()
+
+  return (
+    <InvoicesPage
+      onOpenInvoice={(id) =>
+        void navigate({
+          to: "/finance/invoices/$id",
+          params: { id },
+        })
+      }
+    />
+  )
+}

@@ -66,6 +66,40 @@ export type FinanceUiMessages = {
       dueDateRequired: string
     }
   }
+  invoicesPage: {
+    title: string
+    description: string
+    searchPlaceholder: string
+    actions: {
+      newInvoice: string
+    }
+    filters: {
+      button: string
+      statusLabel: string
+      statusAll: string
+      currencyLabel: string
+      currencyAny: string
+      dueDateLabel: string
+      dateAny: string
+      clear: string
+    }
+    columns: {
+      invoiceNumber: string
+      status: string
+      total: string
+      paid: string
+      balanceDue: string
+      dueDate: string
+    }
+    empty: string
+    loadFailed: string
+    pagination: {
+      showing: string
+      page: string
+      previous: string
+      next: string
+    }
+  }
   supplierPaymentDialog: {
     title: string
     fields: {

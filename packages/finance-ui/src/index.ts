@@ -1,4 +1,9 @@
 export { InvoiceDialog, type InvoiceDialogProps } from "./components/invoice-dialog.js"
+export { InvoicesPage, type InvoicesPageProps } from "./components/invoices-page.js"
+export {
+  InvoicesPageSkeleton,
+  InvoicesTableSkeleton,
+} from "./components/invoices-page-skeleton.js"
 export {
   PaymentPolicyForm,
   type PaymentPolicyFormProps,

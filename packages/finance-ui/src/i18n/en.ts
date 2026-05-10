@@ -61,6 +61,40 @@ export const financeUiEn = {
       dueDateRequired: "Due date is required",
     },
   },
+  invoicesPage: {
+    title: "Invoices",
+    description: "Customer-facing invoices, proformas, and credit notes.",
+    searchPlaceholder: "Search invoices...",
+    actions: {
+      newInvoice: "New Invoice",
+    },
+    filters: {
+      button: "Filters",
+      statusLabel: "Status",
+      statusAll: "All statuses",
+      currencyLabel: "Currency",
+      currencyAny: "Any currency",
+      dueDateLabel: "Due date",
+      dateAny: "Any date",
+      clear: "Clear",
+    },
+    columns: {
+      invoiceNumber: "Invoice #",
+      status: "Status",
+      total: "Total",
+      paid: "Paid",
+      balanceDue: "Balance Due",
+      dueDate: "Due Date",
+    },
+    empty: "No records found.",
+    loadFailed: "Failed to load records.",
+    pagination: {
+      showing: "Showing {count} of {total}",
+      page: "Page {page} / {pageCount}",
+      previous: "Previous",
+      next: "Next",
+    },
+  },
   supplierPaymentDialog: {
     title: "Record Supplier Payment",
     fields: {
