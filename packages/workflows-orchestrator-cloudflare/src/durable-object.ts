@@ -88,6 +88,7 @@ export async function handleDurableObjectRequest(
         tags: payload.tags,
         runId: payload.runId,
         idempotencyKey: payload.idempotencyKey,
+        triggeredBy: payload.triggeredBy,
         delay:
           typeof payload.delay === "object" && payload.delay !== null && "wakeAt" in payload.delay
             ? new Date(payload.delay.wakeAt)

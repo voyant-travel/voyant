@@ -17,6 +17,8 @@ import { describe, expect, it } from "vitest"
 
 import { createCloudflareEdgeDriver } from "../cloudflare-edge-driver.js"
 import {
+  type ConcurrencyCoordinator,
+  createConcurrencyCoordinator,
   createDurableObjectRunStore,
   createInlineDispatcher,
   type DurableObjectNamespaceLike,
@@ -87,6 +89,14 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
       const stableStorage = storage
       return {
         async fetch(req: Request): Promise<Response> {
+          const path = new URL(req.url).pathname
+          if (path !== "/trigger") {
+            return handleDurableObjectRequest(req, {
+              storage: stableStorage,
+              dispatcher,
+            })
+          }
+
           const prev = queues.get(id) ?? Promise.resolve()
           let release!: () => void
           const next = new Promise<void>((resolve) => {
@@ -108,6 +118,35 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
   }
 }
 
+function inProcessConcurrencyDONamespace(
+  runDO: DurableObjectNamespaceLike<string>,
+): DurableObjectNamespaceLike<string> {
+  const storages = new Map<string, DurableObjectStorageLike>()
+  const coordinators = new Map<string, ConcurrencyCoordinator>()
+  return {
+    idFromName(name) {
+      return name
+    },
+    get(id: string) {
+      let storage = storages.get(id)
+      if (!storage) {
+        storage = makeStorage()
+        storages.set(id, storage)
+      }
+      let coordinator = coordinators.get(id)
+      if (!coordinator) {
+        coordinator = createConcurrencyCoordinator({ storage, runDO })
+        coordinators.set(id, coordinator)
+      }
+      return {
+        fetch(req: Request): Promise<Response> {
+          return coordinator.fetch(req)
+        },
+      }
+    },
+  }
+}
+
 // Run the parameterized compliance suite. Each call to the factory builds
 // a fresh driver wired against fresh fakes — same pattern Mode 2 uses.
 //
@@ -118,15 +157,18 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
 // its own `createApp()` boundary. See architecture doc §8.
 runDriverComplianceSuite(
   "CloudflareEdge",
-  () =>
-    createCloudflareEdgeDriver({
-      orchestratorNamespace: inProcessRunDONamespace(),
+  () => {
+    const runDO = inProcessRunDONamespace()
+    return createCloudflareEdgeDriver({
+      orchestratorNamespace: runDO,
+      concurrencyNamespace: inProcessConcurrencyDONamespace(runDO),
       manifestKv: createInMemoryKv(),
-    }),
+    })
+  },
   // servicesThreading: orchestrator and step handlers can run in
   //                    separate Worker isolates depending on dispatcher.
   // crossRunQueries:   self-host Mode 1 has no native query layer per §8.3.
-  { servicesThreading: false, crossRunQueries: false, workflowConcurrency: false },
+  { servicesThreading: false, crossRunQueries: false },
 )
 
 // ---- Smoke: end-to-end driver path with no tenantScript ----

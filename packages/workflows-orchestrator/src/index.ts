@@ -19,6 +19,7 @@ export {
   createInProcessConcurrencyCoordinator,
   type InProcessConcurrencyCoordinator,
   type RuntimeConcurrencyPolicy,
+  resolveConcurrencyKey,
   WorkflowConcurrencyRejectedError,
 } from "./concurrency.js"
 export { applyWaitpointInjection, type DriveOptions, driveUntilPaused } from "./drive.js"
