@@ -133,6 +133,10 @@ export const crmUiRo = {
     loadFailed: "Incarcarea persoanelor a esuat.",
     empty: "Nu au fost gasite persoane.",
   },
+  peoplePage: {
+    title: "Persoane",
+    description: "Contacte, calatori, agenti si parteneri din CRM-ul tau.",
+  },
   organizationList: {
     searchPlaceholder: "Cauta organizatii...",
     create: "Organizatie noua",
@@ -154,6 +158,10 @@ export const crmUiRo = {
     },
     loadFailed: "Incarcarea organizatiilor a esuat.",
     empty: "Nu au fost gasite organizatii.",
+  },
+  organizationsPage: {
+    title: "Organizatii",
+    description: "Companii, agentii, furnizori si relatii de cont.",
   },
   createActivityDialog: {
     title: "Activitate noua",

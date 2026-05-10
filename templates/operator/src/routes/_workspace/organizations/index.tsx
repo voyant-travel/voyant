@@ -1,11 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { OrganizationsPage } from "@voyantjs/crm-ui"
 import { getOrganizationsQueryOptions } from "@/components/voyant/crm/crm-query-options"
 import { OrganizationsListSkeleton } from "@/components/voyant/crm/organizations-list-skeleton"
-import { OrganizationsPage } from "@/components/voyant/crm/organizations-page"
 
 export const Route = createFileRoute("/_workspace/organizations/")({
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(getOrganizationsQueryOptions({ limit: 25, offset: 0 })),
   pendingComponent: OrganizationsListSkeleton,
-  component: OrganizationsPage,
+  component: OrganizationsRoute,
 })
+
+function OrganizationsRoute() {
+  const navigate = useNavigate()
+
+  return (
+    <div className="p-6">
+      <OrganizationsPage
+        onOrganizationOpen={(organization) =>
+          void navigate({ to: "/organizations/$id", params: { id: organization.id } })
+        }
+      />
+    </div>
+  )
+}

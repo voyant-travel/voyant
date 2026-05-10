@@ -18,6 +18,11 @@ export {
   type OrganizationListProps,
 } from "./components/organization-list.js"
 export {
+  OrganizationsPage,
+  type OrganizationsPageProps,
+} from "./components/organizations-page.js"
+export { PeoplePage, type PeoplePageProps } from "./components/people-page.js"
+export {
   PersonCard,
   type PersonCardProps,
 } from "./components/person-card.js"

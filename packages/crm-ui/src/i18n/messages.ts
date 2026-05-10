@@ -117,6 +117,10 @@ export type CrmUiMessages = {
     loadFailed: string
     empty: string
   }
+  peoplePage: {
+    title: string
+    description: string
+  }
   organizationList: {
     searchPlaceholder: string
     create: string
@@ -138,6 +142,10 @@ export type CrmUiMessages = {
     }
     loadFailed: string
     empty: string
+  }
+  organizationsPage: {
+    title: string
+    description: string
   }
   createActivityDialog: {
     title: string

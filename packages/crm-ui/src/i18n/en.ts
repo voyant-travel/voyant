@@ -133,6 +133,10 @@ export const crmUiEn = {
     loadFailed: "Failed to load people.",
     empty: "No people found.",
   },
+  peoplePage: {
+    title: "People",
+    description: "Contacts, travelers, agents, and partners across your CRM.",
+  },
   organizationList: {
     searchPlaceholder: "Search organizations...",
     create: "New organization",
@@ -154,6 +158,10 @@ export const crmUiEn = {
     },
     loadFailed: "Failed to load organizations.",
     empty: "No organizations found.",
+  },
+  organizationsPage: {
+    title: "Organizations",
+    description: "Companies, agencies, suppliers, and account relationships.",
   },
   createActivityDialog: {
     title: "New activity",
