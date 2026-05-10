@@ -1,6 +1,8 @@
 import {
   currentRepositoryFromOrigin,
+  evaluateHeartbeat,
   fail,
+  filterItemsByRepository,
   loadAllEvaluatedProject,
   parseArgs,
   projectConfigFromArgs,
@@ -28,11 +30,14 @@ if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
 const project = loadAllEvaluatedProject(
   projectConfigFromArgs({ ...args, limit: args.limit ?? 100 }),
 )
-const activeItems = project.items
-  .filter((item) => item.issue?.repository === repository)
-  .filter((item) => watchedStates.has(item.fields["Agent State"]))
+const activeItems = filterItemsByRepository(project.items, repository).filter((item) =>
+  watchedStates.has(item.fields["Agent State"]),
+)
 const staleItems = activeItems
-  .map((item) => ({ ...item, heartbeat: evaluateHeartbeat(item.fields["Last Heartbeat"]) }))
+  .map((item) => ({
+    ...item,
+    heartbeat: evaluateHeartbeat(item.fields["Last Heartbeat"], { maxAgeDays }),
+  }))
   .filter((item) => item.heartbeat.stale)
 
 if (args.json) {
@@ -94,33 +99,4 @@ function summaryItem(item) {
     workspace: item.fields.Workspace ?? null,
     evidence: item.fields.Evidence ?? null,
   }
-}
-
-function evaluateHeartbeat(value) {
-  if (!value) {
-    return { reason: "Last Heartbeat is unset", stale: true }
-  }
-
-  const parsed = Date.parse(`${value}T00:00:00Z`)
-  if (Number.isNaN(parsed)) {
-    return { reason: `Last Heartbeat is invalid: ${value}`, stale: true }
-  }
-
-  const ageDays = Math.floor((startOfTodayUtc() - parsed) / 86_400_000)
-  if (ageDays > maxAgeDays) {
-    return {
-      reason: `Last Heartbeat is ${ageDays} days old`,
-      stale: true,
-    }
-  }
-
-  return {
-    reason: `Last Heartbeat is ${ageDays} days old`,
-    stale: false,
-  }
-}
-
-function startOfTodayUtc() {
-  const now = new Date()
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
 }

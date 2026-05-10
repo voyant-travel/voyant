@@ -361,6 +361,27 @@ export function projectSummaryJson(project) {
   }
 }
 
+export function evaluateHeartbeat(value, { maxAgeDays }) {
+  if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
+    fail(`invalid max age days: ${String(maxAgeDays)}`)
+  }
+
+  if (!value) {
+    return { reason: "Last Heartbeat is unset", stale: true }
+  }
+
+  const parsed = Date.parse(`${value}T00:00:00Z`)
+  if (Number.isNaN(parsed)) {
+    return { reason: `Last Heartbeat is invalid: ${value}`, stale: true }
+  }
+
+  const ageDays = Math.floor((startOfTodayUtc() - parsed) / 86_400_000)
+  return {
+    reason: `Last Heartbeat is ${ageDays} days old`,
+    stale: ageDays > maxAgeDays,
+  }
+}
+
 export function printHumanSummary(project) {
   console.log(
     `agent-runner dry run: ${project.projectTitle} (${project.owner}/projects/${project.projectNumber})`,
@@ -479,11 +500,16 @@ function quoteField(value) {
   return value ? `"${value}"` : "unset"
 }
 
+function startOfTodayUtc() {
+  const now = new Date()
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+}
+
 function repositoriesMatch(left, right) {
   return normalizeRepository(left) === normalizeRepository(right)
 }
 
-function filterItemsByRepository(items, repository) {
+export function filterItemsByRepository(items, repository) {
   return repository
     ? items.filter((item) => repositoriesMatch(item.issue?.repository, repository))
     : items
