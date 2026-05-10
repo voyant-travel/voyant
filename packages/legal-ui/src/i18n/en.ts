@@ -12,6 +12,18 @@ export const legalUiEn = {
     selectPlaceholder: "Select...",
     optionalPlaceholder: "Optional",
     kilobytes: "KB",
+    active: "Active",
+    inactive: "Inactive",
+    open: "Open",
+    addVersion: "Add Version",
+    noResultsDash: "-",
+    contractScopeLabels: {
+      customer: "Customer",
+      supplier: "Supplier",
+      partner: "Partner",
+      channel: "Channel",
+      other: "Other",
+    },
     policyKindLabels: {
       cancellation: "Cancellation",
       payment: "Payment",
@@ -85,6 +97,27 @@ export const legalUiEn = {
       previous: "Previous",
       next: "Next",
     },
+  },
+  templatesPage: {
+    title: "Contract Templates",
+    description: "Reusable contract templates with Liquid variables and version history.",
+    create: "New Template",
+    searchPlaceholder: "Search templates...",
+    empty: "No templates yet. Create one to start building contract templates.",
+    loadFailed: "Contract templates could not be loaded.",
+    versions: "Versions",
+    noVersions: "No versions yet.",
+    filters: {
+      scope: "Scope",
+      allScopes: "All scopes",
+    },
+    columns: {
+      version: "Version",
+      changelog: "Changelog",
+      createdBy: "Created By",
+      createdAt: "Created At",
+    },
+    deleteConfirm: 'Delete template "{name}"?',
   },
   attachmentDialog: {
     titles: {

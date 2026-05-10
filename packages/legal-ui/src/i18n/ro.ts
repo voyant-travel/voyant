@@ -12,6 +12,18 @@ export const legalUiRo = {
     selectPlaceholder: "Selecteaza...",
     optionalPlaceholder: "Optional",
     kilobytes: "KB",
+    active: "Activ",
+    inactive: "Inactiv",
+    open: "Deschide",
+    addVersion: "Adauga versiune",
+    noResultsDash: "-",
+    contractScopeLabels: {
+      customer: "Client",
+      supplier: "Furnizor",
+      partner: "Partener",
+      channel: "Canal",
+      other: "Altul",
+    },
     policyKindLabels: {
       cancellation: "Anulare",
       payment: "Plata",
@@ -85,6 +97,27 @@ export const legalUiRo = {
       previous: "Anterior",
       next: "Urmator",
     },
+  },
+  templatesPage: {
+    title: "Sabloane contract",
+    description: "Sabloane reutilizabile cu variabile Liquid si istoric de versiuni.",
+    create: "Sablon nou",
+    searchPlaceholder: "Cauta sabloane...",
+    empty: "Nu exista inca sabloane. Creeaza unul pentru a incepe.",
+    loadFailed: "Sabloanele de contract nu au putut fi incarcate.",
+    versions: "Versiuni",
+    noVersions: "Nu exista inca versiuni.",
+    filters: {
+      scope: "Domeniu",
+      allScopes: "Toate domeniile",
+    },
+    columns: {
+      version: "Versiune",
+      changelog: "Jurnal modificari",
+      createdBy: "Creat de",
+      createdAt: "Creat la",
+    },
+    deleteConfirm: 'Stergi sablonul "{name}"?',
   },
   attachmentDialog: {
     titles: {

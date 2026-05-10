@@ -28,4 +28,4 @@ English-only apps should import only `./i18n/en`. Bilingual apps can import
 
 ## Not included (registry-only)
 
-Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `contract-detail-page`, `contracts-page`, `policy-detail-page`, `template-detail-page`, `templates-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.
+Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `contract-detail-page`, `contracts-page`, `policy-detail-page`, `template-detail-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.

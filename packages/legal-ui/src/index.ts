@@ -18,6 +18,12 @@ export { PolicyRuleDialog, type RuleData } from "./components/policy-rule-dialog
 export { PolicyVersionDialog } from "./components/policy-version-dialog.js"
 export { SignatureDialog } from "./components/signature-dialog.js"
 export {
+  type TemplateDialogRenderProps,
+  TemplatesPage,
+  type TemplatesPageProps,
+  type TemplateVersionDialogRenderProps,
+} from "./components/templates-page.js"
+export {
   getLegalUiI18n,
   type LegalUiMessageOverrides,
   type LegalUiMessages,

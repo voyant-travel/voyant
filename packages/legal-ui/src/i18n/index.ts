@@ -1,5 +1,6 @@
 export { legalUiEn } from "./en.js"
 export type {
+  LegalContractScope,
   LegalContractStatus,
   LegalPolicyKind,
   LegalRefundType,
@@ -7,7 +8,7 @@ export type {
   LegalSignatureMethod,
   LegalUiMessages,
 } from "./messages.js"
-export { legalPolicyKinds } from "./messages.js"
+export { legalContractScopes, legalPolicyKinds } from "./messages.js"
 export {
   getLegalUiI18n,
   type LegalUiMessageOverrides,
