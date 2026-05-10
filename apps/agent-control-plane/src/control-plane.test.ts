@@ -126,6 +126,9 @@ describe("agent control plane", () => {
 
   it("requires configured bearer auth for API routes", async () => {
     const missingConfig = createApp()
+    const root = await missingConfig.request("/")
+    expect(root.status).toBe(404)
+
     const notConfigured = await missingConfig.request("/api/capabilities")
     expect(notConfigured.status).toBe(503)
     await expect(notConfigured.json()).resolves.toEqual({

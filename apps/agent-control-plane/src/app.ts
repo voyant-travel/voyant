@@ -19,7 +19,6 @@ export function createApp({ authTokens = [] }: AppOptions = {}): Hono {
     return c.json({ error: "internal_error" }, 500)
   })
 
-  app.get("/", (c) => c.json(buildCapabilities()))
   app.get("/health", (c) => c.json({ ok: true, service: "agent-control-plane" }))
 
   app.use("/api/*", async (c, next) => {
