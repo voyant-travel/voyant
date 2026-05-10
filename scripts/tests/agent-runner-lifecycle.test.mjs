@@ -4,11 +4,15 @@ import { describe, it } from "node:test"
 
 import { claimFieldValues } from "../lib/agent-runner-claim.mjs"
 import {
+  evaluatePullRequestGate,
   isRemoteReference,
   pullRequestBody,
   pullRequestCreateArgs,
   pullRequestFieldValues,
+  pullRequestNumberFromUrl,
+  pullRequestSyncFieldValues,
   pullRequestTitle,
+  summarizeChecks,
 } from "../lib/agent-runner-pr.mjs"
 import { buildExecutionPlan, workspacePlan } from "../lib/agent-runner-workspace.mjs"
 
@@ -125,6 +129,137 @@ describe("agent runner lifecycle helpers", () => {
       "--draft",
     ])
     assert.equal(args.includes("voyantjs:task/579-test-agent-project-intake-workflow"), false)
+  })
+
+  it("parses PR numbers from GitHub pull request URLs", () => {
+    assert.equal(pullRequestNumberFromUrl("https://github.com/voyantjs/voyant/pull/603"), 603)
+    assert.equal(
+      pullRequestNumberFromUrl("https://github.com/voyantjs/voyant/issues/603"),
+      undefined,
+    )
+  })
+
+  it("summarizes PR checks into successful, pending, and failed buckets", () => {
+    assert.deepEqual(
+      summarizeChecks([
+        { name: "build", status: "COMPLETED", conclusion: "SUCCESS" },
+        { name: "checks", status: "IN_PROGRESS", conclusion: "" },
+        { name: "test", status: "COMPLETED", conclusion: "FAILURE" },
+      ]),
+      {
+        failed: ["test"],
+        pending: ["checks"],
+        successful: ["build"],
+      },
+    )
+  })
+
+  it("moves failing PR checks to CI repair", () => {
+    assert.deepEqual(
+      evaluatePullRequestGate({
+        state: "OPEN",
+        isDraft: false,
+        reviewDecision: "",
+        statusCheckRollup: [{ name: "checks", status: "COMPLETED", conclusion: "FAILURE" }],
+      }),
+      {
+        agentState: "CI Repair",
+        blockedBy: "Failing checks: checks",
+        mergeReady: false,
+        reason: "checks failing",
+      },
+    )
+  })
+
+  it("moves requested changes to changes requested before check state", () => {
+    assert.deepEqual(
+      evaluatePullRequestGate({
+        state: "OPEN",
+        isDraft: false,
+        reviewDecision: "CHANGES_REQUESTED",
+        statusCheckRollup: [{ name: "checks", status: "COMPLETED", conclusion: "SUCCESS" }],
+      }),
+      {
+        agentState: "Changes Requested",
+        blockedBy: "PR changes requested",
+        mergeReady: false,
+        reason: "review changes requested",
+      },
+    )
+  })
+
+  it("keeps draft or pending-check PRs in human review", () => {
+    assert.equal(
+      evaluatePullRequestGate({
+        state: "OPEN",
+        isDraft: true,
+        reviewDecision: "",
+        statusCheckRollup: [{ name: "checks", status: "COMPLETED", conclusion: "SUCCESS" }],
+      }).agentState,
+      "Human Review",
+    )
+
+    assert.deepEqual(
+      evaluatePullRequestGate({
+        state: "OPEN",
+        isDraft: false,
+        reviewDecision: "",
+        statusCheckRollup: [{ name: "checks", status: "QUEUED", conclusion: "" }],
+      }),
+      {
+        agentState: "Human Review",
+        blockedBy: "Pending checks: checks",
+        mergeReady: false,
+        reason: "checks pending",
+      },
+    )
+  })
+
+  it("keeps review-required PRs in human review even with passing checks", () => {
+    assert.deepEqual(
+      evaluatePullRequestGate({
+        state: "OPEN",
+        isDraft: false,
+        reviewDecision: "REVIEW_REQUIRED",
+        statusCheckRollup: [{ name: "checks", status: "COMPLETED", conclusion: "SUCCESS" }],
+      }),
+      {
+        agentState: "Human Review",
+        blockedBy: "PR review decision: REVIEW_REQUIRED",
+        mergeReady: false,
+        reason: "review required",
+      },
+    )
+  })
+
+  it("moves passing non-draft PRs to merge ready", () => {
+    const pr = {
+      url: "https://github.com/voyantjs/voyant/pull/603",
+      state: "OPEN",
+      isDraft: false,
+      reviewDecision: "",
+      statusCheckRollup: [{ name: "checks", status: "COMPLETED", conclusion: "SUCCESS" }],
+    }
+    const result = evaluatePullRequestGate(pr)
+
+    assert.deepEqual(result, {
+      agentState: "Merge Ready",
+      blockedBy: null,
+      mergeReady: true,
+      reason: "PR is ready for maintainer merge",
+    })
+    assert.deepEqual(
+      pullRequestSyncFieldValues({
+        date: new Date("2026-05-10T12:34:56.000Z"),
+        pr,
+        result,
+      }),
+      {
+        "Agent State": "Merge Ready",
+        PR: "https://github.com/voyantjs/voyant/pull/603",
+        "Last Heartbeat": "2026-05-10",
+      },
+    )
   })
 })
 

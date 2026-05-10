@@ -4,6 +4,14 @@ import path from "node:path"
 import { fail, runCommand, runGit } from "./agent-project-queue.mjs"
 
 export const openPullRequestStates = new Set(["Human Review", "CI Repair", "Changes Requested"])
+const successfulCheckConclusions = new Set(["SUCCESS", "SKIPPED", "NEUTRAL"])
+const failedCheckConclusions = new Set([
+  "ACTION_REQUIRED",
+  "CANCELLED",
+  "FAILURE",
+  "STARTUP_FAILURE",
+  "TIMED_OUT",
+])
 
 export function pullRequestFieldValues({ date = new Date(), prUrl }) {
   return {
@@ -100,6 +108,139 @@ export function pullRequestCreateArgs({ base, body, branch, draft = true, title 
 
 export function isRemoteReference(reference) {
   return /^https?:\/\//.test(reference)
+}
+
+export function pullRequestNumberFromUrl(prUrl) {
+  const match = prUrl?.match(/\/pull\/(\d+)(?:$|[/?#])/)
+  return match ? Number(match[1]) : undefined
+}
+
+export function readPullRequestStatus({ prReference, repository, workspace }) {
+  const payload = runCommand(
+    "gh",
+    [
+      "pr",
+      "view",
+      prReference,
+      "--repo",
+      repository,
+      "--json",
+      "isDraft,mergeStateStatus,number,reviewDecision,state,statusCheckRollup,title,url",
+    ],
+    { cwd: workspace },
+  )
+  return JSON.parse(payload)
+}
+
+export function evaluatePullRequestGate(pr) {
+  const checks = summarizeChecks(pr.statusCheckRollup ?? [])
+
+  if (pr.state !== "OPEN") {
+    return {
+      agentState: "Human Review",
+      blockedBy: `PR is ${pr.state}`,
+      mergeReady: false,
+      reason: `PR is ${pr.state}`,
+    }
+  }
+
+  if (pr.reviewDecision === "CHANGES_REQUESTED") {
+    return {
+      agentState: "Changes Requested",
+      blockedBy: "PR changes requested",
+      mergeReady: false,
+      reason: "review changes requested",
+    }
+  }
+
+  if (checks.failed.length > 0) {
+    return {
+      agentState: "CI Repair",
+      blockedBy: `Failing checks: ${checks.failed.join(", ")}`,
+      mergeReady: false,
+      reason: "checks failing",
+    }
+  }
+
+  if (checks.pending.length > 0) {
+    return {
+      agentState: "Human Review",
+      blockedBy: `Pending checks: ${checks.pending.join(", ")}`,
+      mergeReady: false,
+      reason: "checks pending",
+    }
+  }
+
+  if (pr.reviewDecision && pr.reviewDecision !== "APPROVED") {
+    return {
+      agentState: "Human Review",
+      blockedBy: `PR review decision: ${pr.reviewDecision}`,
+      mergeReady: false,
+      reason: "review required",
+    }
+  }
+
+  if (pr.isDraft) {
+    return {
+      agentState: "Human Review",
+      blockedBy: "PR is draft",
+      mergeReady: false,
+      reason: "draft PR",
+    }
+  }
+
+  return {
+    agentState: "Merge Ready",
+    blockedBy: null,
+    mergeReady: true,
+    reason: "PR is ready for maintainer merge",
+  }
+}
+
+export function pullRequestSyncFieldValues({ date = new Date(), pr, result }) {
+  return {
+    "Agent State": result.agentState,
+    PR: pr.url,
+    "Last Heartbeat": date.toISOString().slice(0, 10),
+  }
+}
+
+export function summarizeChecks(checks) {
+  const summary = {
+    failed: [],
+    pending: [],
+    successful: [],
+  }
+
+  for (const check of checks) {
+    const name = check.name ?? check.workflowName ?? "unnamed check"
+    const status = check.status ?? ""
+    const conclusion = check.conclusion ?? ""
+
+    if (status && status !== "COMPLETED") {
+      summary.pending.push(name)
+      continue
+    }
+
+    if (!conclusion) {
+      summary.pending.push(name)
+      continue
+    }
+
+    if (failedCheckConclusions.has(conclusion)) {
+      summary.failed.push(name)
+      continue
+    }
+
+    if (successfulCheckConclusions.has(conclusion)) {
+      summary.successful.push(name)
+      continue
+    }
+
+    summary.failed.push(name)
+  }
+
+  return summary
 }
 
 function formatEvidence(evidenceReference, evidenceBody) {
