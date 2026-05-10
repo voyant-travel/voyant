@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib"
 
 import { productDayServices, productDays, productItineraries, products } from "../schema.js"
+import { plainTextForPdf } from "./pdf-text.js"
 
 export type GenerateProductPdfResult = {
   pdfBytes: Uint8Array
@@ -94,7 +95,7 @@ export async function generateProductPdf(
 
   if (product.description) {
     y -= 8
-    drawText(product.description, { size: 10 })
+    drawText(plainTextForPdf(product.description), { size: 10 })
   }
 
   y -= 16
@@ -111,7 +112,7 @@ export async function generateProductPdf(
       drawText(`Location: ${day.location}`, { size: 9 })
     }
     if (day.description) {
-      drawText(day.description, { size: 9 })
+      drawText(plainTextForPdf(day.description), { size: 9 })
     }
 
     // Services
