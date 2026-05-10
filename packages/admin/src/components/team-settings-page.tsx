@@ -116,13 +116,19 @@ function useTeamSettingsPageApi() {
 }
 
 export function TeamSettingsPage({ api: apiProp }: TeamSettingsPageProps = {}) {
+  if (apiProp) return <TeamSettingsPageContent api={apiProp} />
+  return <TeamSettingsPageWithDefaultApi />
+}
+
+function TeamSettingsPageWithDefaultApi() {
+  const { baseUrl, fetcher } = useVoyantReactContext()
+  const api = useMemo(() => createTeamSettingsPageApi(baseUrl, fetcher), [baseUrl, fetcher])
+  return <TeamSettingsPageContent api={api} />
+}
+
+function TeamSettingsPageContent({ api }: { api: TeamSettingsPageApi }) {
   const messages = useOperatorAdminMessages()
   const { resolvedLocale } = useLocale()
-  const { baseUrl, fetcher } = useVoyantReactContext()
-  const api = useMemo(
-    () => apiProp ?? createTeamSettingsPageApi(baseUrl, fetcher),
-    [apiProp, baseUrl, fetcher],
-  )
   const queryClient = useQueryClient()
 
   const invitesQuery = useQuery({

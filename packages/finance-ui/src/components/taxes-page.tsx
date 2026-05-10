@@ -485,13 +485,19 @@ function buildPolicyCondition(
 }
 
 export function TaxesPage({ api: apiProp }: TaxesPageProps = {}) {
+  if (apiProp) return <TaxesPageContent api={apiProp} />
+  return <TaxesPageWithDefaultApi />
+}
+
+function TaxesPageWithDefaultApi() {
+  const { baseUrl, fetcher } = useVoyantFinanceContext()
+  const api = useMemo(() => createTaxesPageApi(baseUrl, fetcher), [baseUrl, fetcher])
+  return <TaxesPageContent api={api} />
+}
+
+function TaxesPageContent({ api }: { api: TaxesPageApi }) {
   const messages = useFinanceUiMessagesOrDefault()
   const taxMessages = messages.taxesPage
-  const { baseUrl, fetcher } = useVoyantFinanceContext()
-  const api = useMemo(
-    () => apiProp ?? createTaxesPageApi(baseUrl, fetcher),
-    [apiProp, baseUrl, fetcher],
-  )
   const queryClient = useQueryClient()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<TaxRow | undefined>()
