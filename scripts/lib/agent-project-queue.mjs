@@ -63,24 +63,24 @@ export function projectNumberFromUrl(projectUrl) {
   return match?.[1]
 }
 
-export function loadEvaluatedProject({ owner, projectNumber, limit }) {
-  const project = readProjectItems({ owner, projectNumber, limit })
+export function loadEvaluatedProject({ owner, projectNumber, limit, onError = fail }) {
+  const project = readProjectItems({ owner, projectNumber, limit, onError })
   const items = project.items.map(evaluateItem)
 
   return evaluatedProject({ items, owner, project, projectNumber })
 }
 
-export function loadAllEvaluatedProject({ owner, projectNumber, limit }) {
+export function loadAllEvaluatedProject({ owner, projectNumber, limit, onError = fail }) {
   const pageSize = limit ?? 100
   const pages = []
   let after
 
   do {
-    const page = readProjectItems({ after, limit: pageSize, owner, projectNumber })
+    const page = readProjectItems({ after, limit: pageSize, onError, owner, projectNumber })
     pages.push(page)
     after = page.pageInfo.endCursor
     if (page.pageInfo.hasNextPage && !after) {
-      fail("Project item pagination returned no cursor")
+      onError("Project item pagination returned no cursor")
     }
   } while (pages.at(-1).pageInfo.hasNextPage)
 
@@ -102,7 +102,7 @@ function evaluatedProject({ items, owner, project, projectNumber }) {
   }
 }
 
-export function readProjectItems({ after, owner, projectNumber, limit }) {
+export function readProjectItems({ after, owner, projectNumber, limit, onError = fail }) {
   const query = `
     query($owner: String!, $number: Int!, $limit: Int!, $after: String) {
       organization(login: $owner) {
@@ -221,28 +221,28 @@ export function readProjectItems({ after, owner, projectNumber, limit }) {
   })
 
   if (result.error) {
-    fail(`failed to run gh: ${result.error.message}`)
+    onError(`failed to run gh: ${result.error.message}`)
   }
 
   if (result.status !== 0) {
     const stderr = result.stderr.trim()
-    fail(stderr || `gh api graphql exited with ${result.status}`)
+    onError(stderr || `gh api graphql exited with ${result.status}`)
   }
 
   let payload
   try {
     payload = JSON.parse(result.stdout)
   } catch (error) {
-    fail(`failed to parse gh JSON output: ${error.message}`)
+    onError(`failed to parse gh JSON output: ${error.message}`)
   }
 
   if (payload.errors?.length) {
-    fail(payload.errors.map((error) => error.message).join("; "))
+    onError(payload.errors.map((error) => error.message).join("; "))
   }
 
   const project = payload.data?.organization?.projectV2
   if (!project) {
-    fail(`project ${owner}/${projectNumber} was not found or is not visible to gh`)
+    onError(`project ${owner}/${projectNumber} was not found or is not visible to gh`)
   }
 
   return {
