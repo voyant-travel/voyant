@@ -5,6 +5,18 @@ export {
   InvoicesTableSkeleton,
 } from "./components/invoices-page-skeleton.js"
 export {
+  type PaymentDetailCardProps,
+  PaymentDetailHeader,
+  type PaymentDetailHeaderProps,
+  PaymentDetailPage,
+  type PaymentDetailPageProps,
+  type PaymentDetailPageSlots,
+  PaymentLinksCard,
+  type PaymentLinksCardProps,
+  PaymentMetadataCard,
+  PaymentSummaryCard,
+} from "./components/payment-detail-page.js"
+export {
   PaymentPolicyForm,
   type PaymentPolicyFormProps,
   PaymentPolicyPreview,

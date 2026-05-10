@@ -161,6 +161,44 @@ export type FinanceUiMessages = {
       next: string
     }
   }
+  paymentDetailPage: {
+    actions: {
+      back: string
+      viewInvoice: string
+      viewBooking: string
+      viewPerson: string
+      viewOrganization: string
+      viewSupplier: string
+    }
+    titles: {
+      summary: string
+      links: string
+      metadata: string
+    }
+    fields: {
+      amount: string
+      baseAmount: string
+      status: string
+      method: string
+      date: string
+      reference: string
+      notes: string
+      kind: string
+      paidBy: string
+      paidTo: string
+      organization: string
+      invoice: string
+      booking: string
+      createdAt: string
+      updatedAt: string
+    }
+    states: {
+      loading: string
+      loadFailed: string
+      notFound: string
+      noValue: string
+    }
+  }
   supplierPaymentDialog: {
     title: string
     fields: {
