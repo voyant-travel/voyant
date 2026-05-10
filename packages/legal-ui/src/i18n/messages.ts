@@ -197,6 +197,56 @@ export type LegalUiMessages = {
       next: string
     }
   }
+  policyDetailPage: {
+    notFound: string
+    backToPolicies: string
+    deleteConfirm: string
+    deleteAssignmentConfirm: string
+    deleteRuleConfirm: string
+    always: string
+    actions: {
+      newVersion: string
+      publish: string
+      retire: string
+      addRule: string
+      addAssignment: string
+    }
+    sections: {
+      versions: string
+      assignments: string
+      acceptances: string
+      body: string
+      rules: string
+    }
+    fields: {
+      scope: string
+      targetId: string
+      priority: string
+      valid: string
+      versionId: string
+      personId: string
+      bookingId: string
+      method: string
+      acceptedAt: string
+      sort: string
+      type: string
+      label: string
+      days: string
+      refund: string
+      refundType: string
+    }
+    empty: {
+      noVersions: string
+      noAssignments: string
+      noAcceptances: string
+      noRules: string
+    }
+    versionStatusLabels: Record<"draft" | "published" | "retired", string>
+    assignmentScopeLabels: Record<
+      "product" | "channel" | "supplier" | "market" | "organization" | "global",
+      string
+    >
+  }
   templatesPage: {
     title: string
     description: string
