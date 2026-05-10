@@ -241,7 +241,11 @@ export function CatalogBookingPage() {
         onRefresh={() => void refreshQuote()}
       />
 
-      <ContactSection value={contact} onChange={setContact} />
+      <ContactSection
+        value={contact}
+        onChange={setContact}
+        onAddContact={() => window.open("/people", "_blank")}
+      />
 
       <TravelersSection value={travelers} onChange={setTravelers} />
 
@@ -383,9 +387,10 @@ function SummaryStat({
 interface ContactSectionProps {
   value: ContactValue
   onChange: (v: ContactValue) => void
+  onAddContact: () => void
 }
 
-function ContactSection({ value, onChange }: ContactSectionProps) {
+function ContactSection({ value, onChange, onAddContact }: ContactSectionProps) {
   return (
     <section className="rounded-xl border bg-card p-5">
       <div className="flex items-center justify-between">
@@ -404,6 +409,7 @@ function ContactSection({ value, onChange }: ContactSectionProps) {
               phone: prefill.phone ?? value.phone,
             })
           }
+          onAddContact={onAddContact}
         />
       </div>
 
