@@ -1,5 +1,17 @@
 # @voyantjs/finance
 
+## 0.30.3
+
+### Patch Changes
+
+- Updated dependencies [05a1b19]
+  - @voyantjs/bookings@0.30.3
+  - @voyantjs/core@0.30.3
+  - @voyantjs/db@0.30.3
+  - @voyantjs/hono@0.30.3
+  - @voyantjs/storage@0.30.3
+  - @voyantjs/utils@0.30.3
+
 ## 0.30.2
 
 ### Patch Changes
