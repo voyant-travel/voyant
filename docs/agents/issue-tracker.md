@@ -141,8 +141,10 @@ ignored transcript under `.agent-runs/`, writes an evidence packet inside the
 workspace, then moves the item to `Human Review` on exit code `0` or `Blocked`
 on nonzero exit. The command receives `VOYANT_AGENT_*` environment variables
 for the issue, branch, workspace, plan path, evidence path, log path, repository,
-and verification lane. It does not push branches, open PRs, or publish evidence
-comments.
+verification lane, and browser artifact location. Successful UI-labeled runs
+must pass `--ui-evidence <text>` or they are blocked instead of moved to
+`Human Review`; nonzero exits are still blocked by the command failure. It does
+not push branches, open PRs, or publish evidence comments.
 
 Use the read-only status view to inspect the current queue and active work:
 
@@ -233,6 +235,18 @@ Handoff mode writes a markdown evidence packet under the task workspace,
 updates `Evidence` with that path, sets `Agent State = Human Review`, updates
 `Last Heartbeat`, and clears `Blocked By`. It requires `--summary` and
 `--verification` so maintainer review always has a concrete packet.
+For issues labeled `ui`, `ui-change`, `frontend`, `browser:evidence`, or
+`needs-browser-evidence`, handoff also requires `--ui-evidence` unless
+`--force` is used with an accepted exception.
+
+Supervised commands receive browser artifact environment variables so UI work
+can keep screenshots, videos, console logs, and failed-request logs in a stable
+per-workspace location:
+
+- `VOYANT_AGENT_DEV_SERVER_PORT`
+- `VOYANT_AGENT_DEV_SERVER_URL`
+- `VOYANT_AGENT_BROWSER_ARTIFACT_DIR`
+- `VOYANT_AGENT_BROWSER_ARTIFACT_REFERENCE`
 
 Publish the evidence packet when it should survive beyond the local workspace:
 

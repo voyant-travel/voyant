@@ -16,6 +16,7 @@ import {
   buildCommandEvidencePacket,
   canRunCommandState,
   commandRunArtifactPlan,
+  commandRunBrowserEvidenceBlockReason,
   commandRunEnvironment,
   commandRunFieldUpdate,
   commandRunStates,
@@ -38,6 +39,10 @@ maybePrintHelp(args, {
     ["--workspace <path>", "Workspace path override."],
     ["--branch <name>", "Branch reference for evidence. Defaults from the Project field."],
     ["--evidence-path <path>", "Evidence path relative to the task workspace."],
+    [
+      "--ui-evidence <text>",
+      "Required browser artifacts or approved exception for successful UI-labeled work.",
+    ],
     ["--force", "Allow command execution outside the normal run states."],
     ...repositoryOptions,
     ...mutationOptions,
@@ -121,7 +126,14 @@ const exitCode = await runLoggedCommand({
   repository,
 })
 const stoppedAt = new Date()
+const blockedBy = commandRunBrowserEvidenceBlockReason({
+  exitCode,
+  force: Boolean(args.force),
+  item,
+  uiEvidence: args.uiEvidence,
+})
 const finalUpdate = commandRunFieldUpdate({
+  blockedBy,
   evidencePointer: artifactPlan.evidencePointer,
   exitCode,
 })
@@ -138,6 +150,8 @@ writeFileSync(
     repository,
     startedAt,
     stoppedAt,
+    blockedBy,
+    uiEvidence: args.uiEvidence,
   }),
   "utf8",
 )
@@ -156,8 +170,9 @@ console.log(`workspace: ${artifactPlan.workspace}`)
 console.log(`log: ${artifactPlan.logFile}`)
 console.log(`evidence: ${artifactPlan.evidenceFile}`)
 console.log(`exit code: ${exitCode}`)
+console.log(`agent state: ${finalUpdate.values["Agent State"]}`)
 
-process.exitCode = exitCode
+process.exitCode = blockedBy ? 1 : exitCode
 
 function printRunPlan({ artifactPlan, branch, item, repository, runningUpdate }) {
   console.log("agent-runner run-command would execute:")

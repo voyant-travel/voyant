@@ -1,5 +1,12 @@
 import path from "node:path"
 
+import {
+  browserArtifactPlan,
+  browserEvidenceEnvironment,
+  browserEvidenceMissingReason,
+  requiresBrowserEvidence,
+} from "./agent-runner-browser-evidence.mjs"
+
 export const commandRunStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
 
 export function canRunCommandState(agentState, { force = false } = {}) {
@@ -30,6 +37,7 @@ export function commandRunArtifactPlan({
     evidenceFile,
     evidencePointer,
     logFile,
+    repoRoot,
     safeEvidencePath: isPathInside(evidenceFile, workspace),
     workspace,
     workspaceReference,
@@ -37,7 +45,14 @@ export function commandRunArtifactPlan({
 }
 
 export function commandRunEnvironment({ artifactPlan, branch, item, repository }) {
+  const browserPlan = browserArtifactPlan({
+    item,
+    repoRoot: artifactPlan.repoRoot,
+    workspaceReference: artifactPlan.workspaceReference,
+  })
+
   return {
+    ...browserEvidenceEnvironment({ artifactPlan: browserPlan }),
     VOYANT_AGENT_BRANCH: branch,
     VOYANT_AGENT_EVIDENCE_PATH: artifactPlan.evidenceFile,
     VOYANT_AGENT_EVIDENCE_REFERENCE: artifactPlan.evidencePointer,
@@ -52,19 +67,34 @@ export function commandRunEnvironment({ artifactPlan, branch, item, repository }
   }
 }
 
-export function commandRunFieldUpdate({ date = new Date(), evidencePointer, exitCode }) {
+export function commandRunBrowserEvidenceBlockReason({
+  exitCode,
+  force = false,
+  item,
+  uiEvidence,
+}) {
+  if (exitCode !== 0 || force) return null
+
+  const missingReason = browserEvidenceMissingReason(item, uiEvidence)
+  if (!missingReason) return null
+
+  return `${missingReason}; pass --ui-evidence or --force with an accepted exception`
+}
+
+export function commandRunFieldUpdate({ blockedBy, date = new Date(), evidencePointer, exitCode }) {
+  const blocked = exitCode !== 0 || Boolean(blockedBy)
   const values = {
-    "Agent State": exitCode === 0 ? "Human Review" : "Blocked",
+    "Agent State": blocked ? "Blocked" : "Human Review",
     "Last Heartbeat": date.toISOString().slice(0, 10),
     Evidence: evidencePointer,
   }
 
-  if (exitCode !== 0) {
-    values["Blocked By"] = `run-command exited with ${exitCode}`
+  if (blocked) {
+    values["Blocked By"] = blockedBy ?? `run-command exited with ${exitCode}`
   }
 
   return {
-    clear: exitCode === 0 ? ["Blocked By"] : [],
+    clear: blocked ? [] : ["Blocked By"],
     values,
   }
 }
@@ -78,8 +108,10 @@ export function buildCommandEvidencePacket({
   repository,
   startedAt,
   stoppedAt,
+  blockedBy,
+  uiEvidence,
 }) {
-  const state = exitCode === 0 ? "Human Review" : "Blocked"
+  const state = exitCode === 0 && !blockedBy ? "Human Review" : "Blocked"
 
   return `# Evidence Packet: ${item.issue.title}
 
@@ -94,6 +126,7 @@ Generated: ${stoppedAt.toISOString()}
 ## Summary
 
 Supervised command completed with exit code ${exitCode}.
+${blockedBy ? `\nRun-command handoff blocked: ${blockedBy}.\n` : ""}
 
 ## Command
 
@@ -110,10 +143,26 @@ ${command}
 
 Runner command transcript: ${artifactPlan.logFile}
 
+## Browser Evidence
+
+${formatBrowserEvidenceRequirement(item, uiEvidence)}
+
 ## Residual Risks
 
 Review the command transcript and resulting diff before opening or merging a PR.
 `
+}
+
+function formatBrowserEvidenceRequirement(item, uiEvidence) {
+  if (!requiresBrowserEvidence(item)) {
+    return "Not required by issue labels."
+  }
+
+  if (uiEvidence?.trim()) {
+    return uiEvidence.trim()
+  }
+
+  return "Required for UI-labeled work. Attach screenshots, console log, failed-request log, and video or note the maintainer-approved exception."
 }
 
 function isPathInside(candidatePath, parentPath) {

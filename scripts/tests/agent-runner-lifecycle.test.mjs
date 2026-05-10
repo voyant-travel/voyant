@@ -111,7 +111,6 @@ describe("agent runner lifecycle helpers", () => {
       repoRoot: "/repo",
       workspaceReference: item.dryRunPlan.workspace,
     })
-
     assert.deepEqual(plan, {
       evidenceFile: path.resolve(
         "/repo/.agent-worktrees/579-test-agent-project-intake-workflow/docs/agent-evidence/active/579-test-agent-project-intake-workflow.md",
@@ -120,6 +119,7 @@ describe("agent runner lifecycle helpers", () => {
       logFile: path.resolve(
         "/repo/.agent-runs/579-test-agent-project-intake-workflow/2026-05-10T12-34-56-000Z.log",
       ),
+      repoRoot: "/repo",
       safeEvidencePath: true,
       workspace: path.resolve("/repo/.agent-worktrees/579-test-agent-project-intake-workflow"),
       workspaceReference: ".agent-worktrees/579-test-agent-project-intake-workflow",

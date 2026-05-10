@@ -11,6 +11,7 @@ import {
   projectScanConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import { browserEvidenceMissingReason } from "./lib/agent-runner-browser-evidence.mjs"
 import {
   maybePrintHelp,
   mutationOptions,
@@ -29,6 +30,10 @@ maybePrintHelp(args, {
     ["--issue <number>", "Issue number to hand off."],
     ["--summary <text>", "Human-readable summary for the evidence packet."],
     ["--verification <text>", "Verification command and outcome for the evidence packet."],
+    [
+      "--ui-evidence <text>",
+      "Required browser artifacts or approved exception for UI-labeled work.",
+    ],
     ["--evidence-path <path>", "Evidence path relative to the task workspace."],
     ["--branch <name>", "Branch reference to record in the evidence packet."],
     ["--workspace <path>", "Workspace path override."],
@@ -70,6 +75,11 @@ if (!args.summary) {
 
 if (!args.verification) {
   fail("handoff mode requires --verification <command-and-outcome>")
+}
+
+const missingBrowserEvidence = browserEvidenceMissingReason(item, args.uiEvidence)
+if (missingBrowserEvidence && !args.force) {
+  fail(`${missingBrowserEvidence}; pass --ui-evidence or --force with an accepted exception`)
 }
 
 const workspaceReference = args.workspace ?? item.fields.Workspace ?? item.dryRunPlan.workspace

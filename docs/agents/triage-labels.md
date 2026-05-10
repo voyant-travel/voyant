@@ -15,3 +15,9 @@ ask a maintainer before changing state.
 
 `agent:ready` is special: triage agents must not apply it unless a maintainer
 explicitly instructs them to do so in the current task.
+
+## Evidence Labels
+
+| Role | Label | Meaning |
+| --- | --- | --- |
+| `browser-evidence-required` | `browser:evidence` | UI work must include screenshot, console, request, and video evidence. |

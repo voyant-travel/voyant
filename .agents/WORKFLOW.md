@@ -59,6 +59,13 @@ Every task ends with an evidence packet:
 - links to PR, CI run, and artifacts
 - explicit handoff state
 
+Issues labeled `ui`, `ui-change`, `frontend`, `browser:evidence`, or
+`needs-browser-evidence` require browser evidence before they can move to
+human review. For `handoff`, pass `--ui-evidence`. For `run-command`, pass
+`--ui-evidence` before a successful run can transition the item to
+`Human Review`. Attach the screenshot paths, console log, failed-request log,
+and video path, or document the maintainer-approved exception.
+
 The runner should reject handoff when evidence is missing or verification failed
 without an accepted reason.
 
