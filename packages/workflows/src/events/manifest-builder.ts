@@ -9,11 +9,12 @@
 
 import type {
   EventFilterManifestEntry,
+  ManifestConcurrencyPolicy,
   ManifestSchedule,
   WorkflowManifest,
   WorkflowManifestEntry,
 } from "../protocol/index.js"
-import type { ScheduleDeclaration } from "../workflow.js"
+import type { ConcurrencyPolicy, ScheduleDeclaration } from "../workflow.js"
 import { canonicalJson, shortHash } from "./payload-hash.js"
 import type { EventFilterRuntimeEntry } from "./registry.js"
 
@@ -27,6 +28,7 @@ export interface BuildManifestArgs {
     id: string
     config?: {
       defaultRuntime?: "edge" | "node"
+      concurrency?: ConcurrencyPolicy<unknown>
       retry?: unknown
       timeout?: unknown
       schedule?: ScheduleDeclaration | ScheduleDeclaration[]
@@ -57,6 +59,7 @@ export async function buildManifest(args: BuildManifestArgs): Promise<WorkflowMa
       id: wf.id,
       version: "v1",
       steps: [],
+      concurrency: serializeConcurrency(wf.config?.concurrency),
       schedules: serializeSchedules(wf.config?.schedule),
       defaultRuntime: wf.config?.defaultRuntime ?? "edge",
       hasCompensation: false,
@@ -101,6 +104,17 @@ export async function buildManifest(args: BuildManifestArgs): Promise<WorkflowMa
     ...(draft as Omit<WorkflowManifest, "versionId">),
     versionId,
   }
+}
+
+function serializeConcurrency(
+  concurrency: ConcurrencyPolicy<unknown> | undefined,
+): ManifestConcurrencyPolicy | undefined {
+  if (!concurrency) return undefined
+  const out: ManifestConcurrencyPolicy = {}
+  if (typeof concurrency.key === "string") out.key = concurrency.key
+  if (concurrency.limit !== undefined) out.limit = concurrency.limit
+  if (concurrency.strategy !== undefined) out.strategy = concurrency.strategy
+  return out
 }
 
 function serializeSchedules(

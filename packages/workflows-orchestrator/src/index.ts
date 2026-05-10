@@ -14,6 +14,13 @@ export {
   signalRunAbort,
   unregisterRunAbort,
 } from "./abort-registry.js"
+export {
+  type ConcurrencyRunHooks,
+  createInProcessConcurrencyCoordinator,
+  type InProcessConcurrencyCoordinator,
+  type RuntimeConcurrencyPolicy,
+  WorkflowConcurrencyRejectedError,
+} from "./concurrency.js"
 export { applyWaitpointInjection, type DriveOptions, driveUntilPaused } from "./drive.js"
 export {
   createInMemoryDriver,

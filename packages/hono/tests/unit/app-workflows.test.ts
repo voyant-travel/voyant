@@ -160,6 +160,52 @@ describe("createApp workflows wiring", () => {
     ])
   })
 
+  test("registers workflow concurrency config in the runtime manifest", async () => {
+    const queued = workflow<{ tenantId: string }, { ok: true }>({
+      id: "test-queued-workflow",
+      concurrency: {
+        key: "tenant",
+        limit: 1,
+        strategy: "queue",
+      },
+      async run() {
+        return { ok: true }
+      },
+    })
+    const moduleSpec: Module = {
+      name: "concurrency-workflows",
+      workflows: [queued satisfies WorkflowDescriptor],
+    }
+    const factory = createInMemoryDriver()
+    let driverHandle: ReturnType<typeof factory> | undefined
+
+    const app = createApp({
+      db: () => null as never,
+      modules: [{ module: moduleSpec }],
+      workflows: {
+        driver: () => (deps) => {
+          driverHandle = factory(deps)
+          return driverHandle
+        },
+        environment: "production",
+      },
+    })
+
+    await app.ready()
+
+    const manifest = await driverHandle?.getManifest({ environment: "production" })
+    expect(manifest?.workflows).toEqual([
+      expect.objectContaining({
+        id: "test-queued-workflow",
+        concurrency: {
+          key: "tenant",
+          limit: 1,
+          strategy: "queue",
+        },
+      }),
+    ])
+  })
+
   test("non-matching events do not trigger runs", async () => {
     const module = buildPromotionsLikeModule()
     const eventBus = createEventBus()

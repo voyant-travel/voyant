@@ -126,7 +126,7 @@ runDriverComplianceSuite(
   // servicesThreading: orchestrator and step handlers can run in
   //                    separate Worker isolates depending on dispatcher.
   // crossRunQueries:   self-host Mode 1 has no native query layer per §8.3.
-  { servicesThreading: false, crossRunQueries: false },
+  { servicesThreading: false, crossRunQueries: false, workflowConcurrency: false },
 )
 
 // ---- Smoke: end-to-end driver path with no tenantScript ----
