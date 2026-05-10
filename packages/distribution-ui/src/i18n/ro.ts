@@ -402,6 +402,26 @@ export const distributionUiRo = {
         commissionRules: "Nu exista reguli de comision pentru acest contract.",
       },
     },
+    commissionRule: {
+      notFound: "Regula de comision nu a fost gasita",
+      title: "Regula de comision",
+      deleteConfirm: "Stergi aceasta regula de comision?",
+      deleteDescription:
+        "Aceasta actiune sterge definitiv regula de comision din preturile canalului.",
+      deleteButton: "Sterge",
+      openContract: "Deschide contractul",
+      openProduct: "Deschide produsul",
+      sections: {
+        details: "Detalii regula",
+      },
+      labels: {
+        amount: "Valoare",
+        basisPoints: "Puncte baza",
+        externalRate: "Tarif extern",
+        externalCategory: "Categorie externa",
+        valid: "Valabil",
+      },
+    },
     mapping: {
       notFound: "Maparea produsului nu a fost gasita",
       title: "Mapare produs",

@@ -241,6 +241,25 @@ export type DistributionUiMessages = {
         commissionRules: string
       }
     }
+    commissionRule: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openContract: string
+      openProduct: string
+      sections: {
+        details: string
+      }
+      labels: {
+        amount: string
+        basisPoints: string
+        externalRate: string
+        externalCategory: string
+        valid: string
+      }
+    }
     mapping: {
       notFound: string
       title: string

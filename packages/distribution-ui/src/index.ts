@@ -1,5 +1,9 @@
 export { ChannelDetailPage, type ChannelDetailPageProps } from "./components/channel-detail-page.js"
 export {
+  CommissionRuleDetailPage,
+  type CommissionRuleDetailPageProps,
+} from "./components/commission-rule-detail-page.js"
+export {
   ContractDetailPage,
   type ContractDetailPageProps,
 } from "./components/contract-detail-page.js"

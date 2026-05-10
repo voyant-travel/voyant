@@ -397,6 +397,25 @@ export const distributionUiEn = {
         commissionRules: "No commission rules on this contract.",
       },
     },
+    commissionRule: {
+      notFound: "Commission rule not found",
+      title: "Commission Rule",
+      deleteConfirm: "Delete this commission rule?",
+      deleteDescription: "This permanently removes the commission rule from channel pricing.",
+      deleteButton: "Delete",
+      openContract: "Open Contract",
+      openProduct: "Open Product",
+      sections: {
+        details: "Rule Details",
+      },
+      labels: {
+        amount: "Amount",
+        basisPoints: "Basis Points",
+        externalRate: "External Rate",
+        externalCategory: "External Category",
+        valid: "Valid",
+      },
+    },
     mapping: {
       notFound: "Product mapping not found",
       title: "Product Mapping",

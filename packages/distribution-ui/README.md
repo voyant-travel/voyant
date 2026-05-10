@@ -29,10 +29,10 @@ English-only apps should import only `./i18n/en`. Bilingual apps can import
 ## Components
 
 - `DistributionPage`, `DistributionOverview`
-- `ChannelDetailPage`, `ContractDetailPage`, `MappingDetailPage`
+- `ChannelDetailPage`, `ContractDetailPage`, `CommissionRuleDetailPage`, `MappingDetailPage`
 - `DistributionChannelsTab`, `DistributionContractsTab`, `DistributionCommissionsTab`
 - `DistributionMappingsTab`, `DistributionBookingLinksTab`, `DistributionWebhooksTab`
 
 ## Not included (registry-only)
 
-Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `booking-link-detail-page`, `commission-rule-detail-page`, `distribution-dialogs-commercial`, `distribution-dialogs-commission`, `distribution-dialogs-sync`, `distribution-dialogs-webhook`, `webhook-event-detail-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.
+Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `booking-link-detail-page`, `distribution-dialogs-commercial`, `distribution-dialogs-commission`, `distribution-dialogs-sync`, `distribution-dialogs-webhook`, `webhook-event-detail-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.
