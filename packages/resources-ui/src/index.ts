@@ -1,3 +1,41 @@
+export {
+  ResourceAllocationDetailPage,
+  type ResourceAllocationDetailPageProps,
+  ResourceAllocationDetailSkeleton,
+} from "./components/resource-allocation-detail-page.js"
+export {
+  ResourceAssignmentDetailPage,
+  type ResourceAssignmentDetailPageProps,
+  ResourceAssignmentDetailSkeleton,
+} from "./components/resource-assignment-detail-page.js"
+export {
+  ensureResourceAllocationDetailPageData,
+  ensureResourceAssignmentDetailPageData,
+  ensureResourceDetailPageData,
+  ensureResourcePoolDetailPageData,
+  getResourcePoolMembersQueryOptions,
+  type ResourcePoolMemberRow,
+  useResourcePoolMembers,
+} from "./components/resource-detail-data.js"
+export {
+  ResourceDetailPage,
+  type ResourceDetailPageProps,
+  ResourceDetailSkeleton,
+} from "./components/resource-detail-page.js"
+export {
+  type ConfirmAction,
+  defaultConfirmAction,
+  ResourceDetailCard,
+  ResourceDetailField,
+  ResourceDetailHeader,
+  ResourceDetailState,
+} from "./components/resource-detail-shared.js"
+export {
+  PoolAllocationSummary,
+  ResourcePoolDetailPage,
+  type ResourcePoolDetailPageProps,
+  ResourcePoolDetailSkeleton,
+} from "./components/resource-pool-detail-page.js"
 export { ResourcesOverview } from "./components/resources-overview.js"
 export {
   ResourcesPage,
