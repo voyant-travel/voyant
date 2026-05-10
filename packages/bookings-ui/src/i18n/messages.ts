@@ -21,6 +21,39 @@ export type BookingsUiMessages = {
     title: string
     description: string
   }
+  bookingDetailPage: {
+    notFound: string
+    backToBookings: string
+    breadcrumbBookings: string
+    editAction: string
+    changeStatusAction: string
+    cancelBookingAction: string
+    deleteAction: string
+    deleteConfirm: string
+    collectPaymentAction: string
+    noValue: string
+    tbd: string
+    summarySell: string
+    summaryCostMargin: string
+    summaryDates: string
+    summaryTravelers: string
+    summaryPerson: string
+    summaryOrganization: string
+    summaryCreated: string
+    summaryUpdated: string
+    tabOverview: string
+    tabTravelers: string
+    tabFinance: string
+    tabSuppliers: string
+    tabDocuments: string
+    tabActivity: string
+    internalNotesLabel: string
+    billingPayer: string
+    billingEmail: string
+    billingPhone: string
+    billingAddress: string
+    documentsSlotEmpty: string
+  }
   travelerDialog: {
     titles: {
       create: string

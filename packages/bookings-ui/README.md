@@ -12,6 +12,14 @@ pnpm add @voyantjs/bookings-ui @voyantjs/bookings-react @voyantjs/ui @tanstack/r
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 
+## Components
+
+- `BookingsPage`, `BookingDetailPage`
+- `BookingList`, `BookingDialog`, `BookingCreateDialog`, `BookingCancellationDialog`, `StatusChangeDialog`
+- `TravelerList`, `TravelerDialog`, `BookingItemList`, `BookingGroupSection`
+- `BookingPaymentsSummary`, `BookingPaymentScheduleList`, `BookingGuaranteeList`
+- `SupplierStatusList`, `BookingActivityTimeline`, `BookingNotes`
+
 ## I18n
 
 Components render English by default. To localize them, wrap your UI in
