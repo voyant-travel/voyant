@@ -29,6 +29,7 @@ English-only apps should import only `./i18n/en`. Bilingual apps can import
 ## Components
 
 - `DistributionPage`, `DistributionOverview`
+- `ChannelsPage`, `ChannelSyncPage`
 - `ChannelDetailPage`, `ContractDetailPage`, `CommissionRuleDetailPage`, `MappingDetailPage`, `BookingLinkDetailPage`, `WebhookEventDetailPage`
 - `DistributionChannelsTab`, `DistributionContractsTab`, `DistributionCommissionsTab`
 - `DistributionMappingsTab`, `DistributionBookingLinksTab`, `DistributionWebhooksTab`

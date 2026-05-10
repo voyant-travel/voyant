@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { ChannelSyncPage } from "@voyantjs/distribution-ui"
 
-import { ChannelSyncPage } from "@/components/voyant/channel-sync/channel-sync-page"
+import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/channel-sync")({
-  component: ChannelSyncPage,
+  component: ChannelSyncRoute,
 })
+
+function ChannelSyncRoute() {
+  return <ChannelSyncPage baseUrl={getApiUrl()} />
+}

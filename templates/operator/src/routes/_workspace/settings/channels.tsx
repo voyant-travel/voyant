@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { defaultFetcher, getChannelsQueryOptions } from "@voyantjs/distribution-react"
+import { ChannelsPage } from "@voyantjs/distribution-ui"
 
-import { ChannelsPage } from "@/components/voyant/settings/channels-page"
 import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/settings/channels")({

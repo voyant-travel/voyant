@@ -3,6 +3,8 @@ export {
   type BookingLinkDetailPageProps,
 } from "./components/booking-link-detail-page.js"
 export { ChannelDetailPage, type ChannelDetailPageProps } from "./components/channel-detail-page.js"
+export { ChannelSyncPage, type ChannelSyncPageProps } from "./components/channel-sync-page.js"
+export { ChannelsPage, type ChannelsPageProps } from "./components/channels-page.js"
 export {
   CommissionRuleDetailPage,
   type CommissionRuleDetailPageProps,
