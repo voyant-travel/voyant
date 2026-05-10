@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process"
 import path from "node:path"
 
 const knownTypes = new Set(["task", "bug", "refactor", "investigation", "cleanup"])
+const booleanArgs = new Set(["force", "json", "yes"])
 
 export function parseArgs(argv) {
   const parsed = {}
@@ -9,8 +10,9 @@ export function parseArgs(argv) {
     const arg = argv[index]
     if (arg === "--") continue
 
-    if (arg === "--json" || arg === "--yes") {
-      parsed[arg.slice(2)] = true
+    const booleanKey = arg.startsWith("--") ? arg.slice(2) : undefined
+    if (booleanArgs.has(booleanKey)) {
+      parsed[booleanKey] = true
       continue
     }
 
@@ -64,8 +66,10 @@ export function loadEvaluatedProject({ owner, projectNumber, limit }) {
   return {
     owner,
     projectNumber,
+    projectId: project.id,
     projectTitle: project.title,
     projectUrl: `https://github.com/orgs/${owner}/projects/${projectNumber}`,
+    fieldDefinitions: project.fields,
     items,
     readyItems: items.filter((item) => item.ready),
   }
@@ -76,7 +80,26 @@ export function readProjectItems({ owner, projectNumber, limit }) {
     query($owner: String!, $number: Int!, $limit: Int!) {
       organization(login: $owner) {
         projectV2(number: $number) {
+          id
           title
+          fields(first: 50) {
+            nodes {
+              ... on ProjectV2FieldCommon {
+                id
+                name
+                dataType
+              }
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                dataType
+                options {
+                  id
+                  name
+                }
+              }
+            }
+          }
           items(first: $limit) {
             nodes {
               id
@@ -191,7 +214,9 @@ export function readProjectItems({ owner, projectNumber, limit }) {
   }
 
   return {
+    id: project.id,
     title: project.title,
+    fields: normalizeProjectFields(project.fields?.nodes ?? []),
     items: project.items?.nodes ?? [],
   }
 }
@@ -251,30 +276,15 @@ export function evaluateItem(item) {
 }
 
 export function findSelectedReadyItem(items, { issueNumber, repository } = {}) {
-  const scopedItems = repository
-    ? items.filter((item) => repositoriesMatch(item.issue?.repository, repository))
-    : items
-
   if (issueNumber) {
-    const normalizedIssueNumber = Number(issueNumber)
-    if (!Number.isInteger(normalizedIssueNumber) || normalizedIssueNumber < 1) {
-      fail(`invalid issue number: ${String(issueNumber)}`)
-    }
-
-    const selected = scopedItems.find((item) => item.issue?.number === normalizedIssueNumber)
-    if (!selected) {
-      fail(
-        repository
-          ? `issue #${issueNumber} was not found for repository ${repository}`
-          : `issue #${issueNumber} was not found in the project item list`,
-      )
-    }
+    const selected = findProjectIssueItem(items, { issueNumber, repository })
     if (!selected.ready) {
       fail(`issue #${issueNumber} is not executable: ${selected.reasons.join("; ")}`)
     }
     return selected
   }
 
+  const scopedItems = filterItemsByRepository(items, repository)
   const readyItems = scopedItems.filter((item) => item.ready)
   if (readyItems.length === 0) {
     fail(
@@ -287,6 +297,25 @@ export function findSelectedReadyItem(items, { issueNumber, repository } = {}) {
     fail(`multiple executable items found; pass --issue <number>`)
   }
   return readyItems[0]
+}
+
+export function findProjectIssueItem(items, { issueNumber, repository } = {}) {
+  const normalizedIssueNumber = Number(issueNumber)
+  if (!Number.isInteger(normalizedIssueNumber) || normalizedIssueNumber < 1) {
+    fail(`invalid issue number: ${String(issueNumber)}`)
+  }
+
+  const selected = filterItemsByRepository(items, repository).find(
+    (item) => item.issue?.number === normalizedIssueNumber,
+  )
+  if (!selected) {
+    fail(
+      repository
+        ? `issue #${issueNumber} was not found for repository ${repository}`
+        : `issue #${issueNumber} was not found in the project item list`,
+    )
+  }
+  return selected
 }
 
 export function projectSummaryJson(project) {
@@ -356,9 +385,29 @@ export function runGit(gitArgs, options = {}) {
   return result.stdout.trim()
 }
 
+export function currentRepositoryFromOrigin(repoRoot) {
+  const remoteUrl = runGit(["remote", "get-url", "origin"], { cwd: repoRoot })
+  const repository = repositoryFromGitHubRemote(remoteUrl)
+  if (!repository) {
+    fail("could not determine repository from origin remote; pass --repo <owner/name>")
+  }
+  return repository
+}
+
 export function fail(message) {
   console.error(`agent-runner: ${message}`)
   process.exit(1)
+}
+
+function normalizeProjectFields(fields) {
+  return fields
+    .filter((field) => field.id && field.name)
+    .map((field) => ({
+      id: field.id,
+      name: field.name,
+      dataType: field.dataType,
+      options: field.options ?? [],
+    }))
 }
 
 function fieldMap(fieldValues) {
@@ -405,6 +454,17 @@ function repositoriesMatch(left, right) {
   return normalizeRepository(left) === normalizeRepository(right)
 }
 
+function filterItemsByRepository(items, repository) {
+  return repository
+    ? items.filter((item) => repositoriesMatch(item.issue?.repository, repository))
+    : items
+}
+
 function normalizeRepository(repository) {
   return repository?.trim().toLowerCase()
+}
+
+function repositoryFromGitHubRemote(remoteUrl) {
+  const normalized = remoteUrl.trim().replace(/\.git$/, "")
+  return normalized.match(/github\.com[:/]([^/]+\/[^/]+)$/)?.[1]
 }

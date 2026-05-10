@@ -84,3 +84,29 @@ By default, prepare mode only selects Project items for the current checkout's
 `origin` repository. Organization Projects can contain issues from multiple
 repositories with the same issue number. Pass `--repo <owner/name>` only when
 preparing work for a different repository intentionally.
+
+After a workspace is prepared, claim the item before implementation work starts:
+
+```bash
+pnpm agent:queue:claim -- --issue <number> --yes
+```
+
+Claim mode checks the same execution gate, then updates GitHub Project fields:
+
+- `Status = In Progress`
+- `Agent State = Planning`
+- `Branch = <planned branch>`
+- `Workspace = <planned workspace>`
+- `Last Heartbeat = <today>`
+
+If a claimed item should return to the executable queue without shipping work,
+release it:
+
+```bash
+pnpm agent:queue:release -- --issue <number> --reason "Released without implementation" --yes
+```
+
+Release mode updates `Agent State = Ready`, resets `Status = Todo`, updates
+`Last Heartbeat` and `Evidence`, and clears `Branch`, `Workspace`, and
+`Blocked By`. It refuses to release closed issues or items outside the expected
+claimed states unless `--force` is passed.
