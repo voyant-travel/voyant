@@ -17,6 +17,7 @@ export {
   DistributionMappingsTab,
   DistributionWebhooksTab,
 } from "./components/distribution-tabs-secondary.js"
+export { MappingDetailPage, type MappingDetailPageProps } from "./components/mapping-detail-page.js"
 export {
   type CancellationOwner,
   type DistributionEntity,

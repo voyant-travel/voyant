@@ -402,5 +402,23 @@ export const distributionUiRo = {
         commissionRules: "Nu exista reguli de comision pentru acest contract.",
       },
     },
+    mapping: {
+      notFound: "Maparea produsului nu a fost gasita",
+      title: "Mapare produs",
+      deleteConfirm: "Stergi aceasta mapare de produs?",
+      deleteDescription:
+        "Aceasta actiune sterge definitiv maparea produsului extern din distributia canalului.",
+      deleteButton: "Sterge",
+      openChannel: "Deschide canalul",
+      openProduct: "Deschide produsul",
+      sections: {
+        details: "Detalii mapare",
+      },
+      labels: {
+        externalProduct: "Produs extern",
+        externalRate: "Tarif extern",
+        externalCategory: "Categorie externa",
+      },
+    },
   },
 } satisfies DistributionUiMessages

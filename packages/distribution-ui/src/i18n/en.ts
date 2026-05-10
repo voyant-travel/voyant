@@ -397,5 +397,23 @@ export const distributionUiEn = {
         commissionRules: "No commission rules on this contract.",
       },
     },
+    mapping: {
+      notFound: "Product mapping not found",
+      title: "Product Mapping",
+      deleteConfirm: "Delete this product mapping?",
+      deleteDescription:
+        "This permanently removes the external product mapping from channel distribution.",
+      deleteButton: "Delete",
+      openChannel: "Open Channel",
+      openProduct: "Open Product",
+      sections: {
+        details: "Mapping Details",
+      },
+      labels: {
+        externalProduct: "External Product",
+        externalRate: "External Rate",
+        externalCategory: "External Category",
+      },
+    },
   },
 } satisfies DistributionUiMessages
