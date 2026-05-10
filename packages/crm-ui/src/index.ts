@@ -6,6 +6,14 @@ export {
   type CreateQuoteDialogProps,
 } from "./components/create-quote-dialog.js"
 export {
+  OpportunitiesBoard,
+  type OpportunitiesBoardProps,
+} from "./components/opportunities-board.js"
+export {
+  OpportunitySummaryCard,
+  type OpportunitySummaryCardProps,
+} from "./components/opportunity-summary-card.js"
+export {
   OrganizationCard,
   type OrganizationCardProps,
 } from "./components/organization-card.js"

@@ -213,6 +213,13 @@ export const crmUiEn = {
       createFailed: "Failed to create opportunity",
     },
   },
+  opportunitiesBoard: {
+    fallbackName: "Unnamed stage",
+  },
+  opportunitySummaryCard: {
+    unknown: "Unknown",
+    expectedClose: "Expected close",
+  },
   createQuoteDialog: {
     title: "New quote",
     fields: {

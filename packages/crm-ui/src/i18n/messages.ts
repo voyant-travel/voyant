@@ -196,6 +196,13 @@ export type CrmUiMessages = {
       createFailed: string
     }
   }
+  opportunitiesBoard: {
+    fallbackName: string
+  }
+  opportunitySummaryCard: {
+    unknown: string
+    expectedClose: string
+  }
   createQuoteDialog: {
     title: string
     fields: {

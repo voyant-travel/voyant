@@ -213,6 +213,13 @@ export const crmUiRo = {
       createFailed: "Crearea oportunitatii a esuat",
     },
   },
+  opportunitiesBoard: {
+    fallbackName: "Etapa fara nume",
+  },
+  opportunitySummaryCard: {
+    unknown: "Necunoscut",
+    expectedClose: "Inchidere estimata",
+  },
   createQuoteDialog: {
     title: "Oferta noua",
     fields: {
