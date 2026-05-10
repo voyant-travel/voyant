@@ -25,10 +25,25 @@
     "./queries": "./src/queries/index.ts",
     "./runtime": "./src/runtime/index.ts",
     "./schema": "./src/schema/index.ts",
+    "./schema/00_ensure_schemas": "./src/schema/00_ensure_schemas.ts",
     "./schema/iam": "./src/schema/iam/index.ts",
+    "./schema/iam/apikey": "./src/schema/iam/apikey.ts",
+    "./schema/iam/auth": "./src/schema/iam/auth.ts",
+    "./schema/iam/invitations": "./src/schema/iam/invitations.ts",
+    "./schema/iam/kms": "./src/schema/iam/kms.ts",
+    "./schema/iam/roles": "./src/schema/iam/roles.ts",
+    "./schema/iam/user_profiles": "./src/schema/iam/user_profiles.ts",
     "./schema/iam/*": "./src/schema/iam/*.ts",
     "./schema/infra": "./src/schema/infra/index.ts",
+    "./schema/infra/domains": "./src/schema/infra/domains.ts",
+    "./schema/infra/email_domain_records": "./src/schema/infra/email_domain_records.ts",
+    "./schema/infra/idempotency_keys": "./src/schema/infra/idempotency_keys.ts",
+    "./schema/infra/rate_limit_buckets": "./src/schema/infra/rate_limit_buckets.ts",
+    "./schema/infra/webhook_deliveries": "./src/schema/infra/webhook_deliveries.ts",
+    "./schema/infra/webhook_subscriptions": "./src/schema/infra/webhook_subscriptions.ts",
     "./schema/infra/*": "./src/schema/infra/*.ts",
+    "./schema/voyant/bookings": "./src/schema/voyant/bookings.ts",
+    "./schema/voyant/finance": "./src/schema/voyant/finance.ts",
     "./schema/voyant/*": "./src/schema/voyant/*.ts",
     "./schema/*": "./src/schema/*.ts",
     "./schema/*/*": "./src/schema/*/*.ts",
@@ -124,10 +139,45 @@
         "import": "./dist/schema/index.js",
         "default": "./dist/schema/index.js"
       },
+      "./schema/00_ensure_schemas": {
+        "types": "./dist/schema/00_ensure_schemas.d.ts",
+        "import": "./dist/schema/00_ensure_schemas.js",
+        "default": "./dist/schema/00_ensure_schemas.js"
+      },
       "./schema/iam": {
         "types": "./dist/schema/iam/index.d.ts",
         "import": "./dist/schema/iam/index.js",
         "default": "./dist/schema/iam/index.js"
+      },
+      "./schema/iam/apikey": {
+        "types": "./dist/schema/iam/apikey.d.ts",
+        "import": "./dist/schema/iam/apikey.js",
+        "default": "./dist/schema/iam/apikey.js"
+      },
+      "./schema/iam/auth": {
+        "types": "./dist/schema/iam/auth.d.ts",
+        "import": "./dist/schema/iam/auth.js",
+        "default": "./dist/schema/iam/auth.js"
+      },
+      "./schema/iam/invitations": {
+        "types": "./dist/schema/iam/invitations.d.ts",
+        "import": "./dist/schema/iam/invitations.js",
+        "default": "./dist/schema/iam/invitations.js"
+      },
+      "./schema/iam/kms": {
+        "types": "./dist/schema/iam/kms.d.ts",
+        "import": "./dist/schema/iam/kms.js",
+        "default": "./dist/schema/iam/kms.js"
+      },
+      "./schema/iam/roles": {
+        "types": "./dist/schema/iam/roles.d.ts",
+        "import": "./dist/schema/iam/roles.js",
+        "default": "./dist/schema/iam/roles.js"
+      },
+      "./schema/iam/user_profiles": {
+        "types": "./dist/schema/iam/user_profiles.d.ts",
+        "import": "./dist/schema/iam/user_profiles.js",
+        "default": "./dist/schema/iam/user_profiles.js"
       },
       "./schema/iam/*": {
         "types": "./dist/schema/iam/*.d.ts",
@@ -139,10 +189,50 @@
         "import": "./dist/schema/infra/index.js",
         "default": "./dist/schema/infra/index.js"
       },
+      "./schema/infra/domains": {
+        "types": "./dist/schema/infra/domains.d.ts",
+        "import": "./dist/schema/infra/domains.js",
+        "default": "./dist/schema/infra/domains.js"
+      },
+      "./schema/infra/email_domain_records": {
+        "types": "./dist/schema/infra/email_domain_records.d.ts",
+        "import": "./dist/schema/infra/email_domain_records.js",
+        "default": "./dist/schema/infra/email_domain_records.js"
+      },
+      "./schema/infra/idempotency_keys": {
+        "types": "./dist/schema/infra/idempotency_keys.d.ts",
+        "import": "./dist/schema/infra/idempotency_keys.js",
+        "default": "./dist/schema/infra/idempotency_keys.js"
+      },
+      "./schema/infra/rate_limit_buckets": {
+        "types": "./dist/schema/infra/rate_limit_buckets.d.ts",
+        "import": "./dist/schema/infra/rate_limit_buckets.js",
+        "default": "./dist/schema/infra/rate_limit_buckets.js"
+      },
+      "./schema/infra/webhook_deliveries": {
+        "types": "./dist/schema/infra/webhook_deliveries.d.ts",
+        "import": "./dist/schema/infra/webhook_deliveries.js",
+        "default": "./dist/schema/infra/webhook_deliveries.js"
+      },
+      "./schema/infra/webhook_subscriptions": {
+        "types": "./dist/schema/infra/webhook_subscriptions.d.ts",
+        "import": "./dist/schema/infra/webhook_subscriptions.js",
+        "default": "./dist/schema/infra/webhook_subscriptions.js"
+      },
       "./schema/infra/*": {
         "types": "./dist/schema/infra/*.d.ts",
         "import": "./dist/schema/infra/*.js",
         "default": "./dist/schema/infra/*.js"
+      },
+      "./schema/voyant/bookings": {
+        "types": "./dist/schema/voyant/bookings.d.ts",
+        "import": "./dist/schema/voyant/bookings.js",
+        "default": "./dist/schema/voyant/bookings.js"
+      },
+      "./schema/voyant/finance": {
+        "types": "./dist/schema/voyant/finance.d.ts",
+        "import": "./dist/schema/voyant/finance.js",
+        "default": "./dist/schema/voyant/finance.js"
       },
       "./schema/voyant/*": {
         "types": "./dist/schema/voyant/*.d.ts",
