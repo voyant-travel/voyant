@@ -40,6 +40,7 @@ import {
   trigger as orchestratorTrigger,
   resumeDueAlarms,
 } from "./orchestrator.js"
+import { createScheduler, manifestScheduleSources, type SchedulerHandle } from "./schedule.js"
 import type { RunRecord, StepHandler } from "./types.js"
 
 // ---- Public factory options ----
@@ -53,6 +54,10 @@ export interface InMemoryDriverOptions {
   now?: () => number
   /** Step handler override — defaults to in-process `handleStepRequest`. */
   handler?: StepHandler
+  /** Schedule runner tick interval. Defaults to 1_000 ms. */
+  schedulePollIntervalMs?: number
+  /** Disable automatic firing for schedules registered through manifests. */
+  disableScheduleRunner?: boolean
 }
 
 const DEFAULT_TENANT_META: RunRecord["tenantMeta"] = {
@@ -76,6 +81,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
   return (deps: DriverFactoryDeps): WorkflowDriver => {
     const store = createInMemoryRunStore()
     const manifests = new Map<EnvironmentName, { manifest: WorkflowManifest; versionId: string }>()
+    const scheduleRunners = new Map<EnvironmentName, SchedulerHandle>()
     const now = opts.now ?? deps.now ?? (() => Date.now())
     const tenantMeta = opts.tenantMeta ?? DEFAULT_TENANT_META
     const defaultEnv: EnvironmentName = opts.defaultEnvironment ?? "development"
@@ -100,6 +106,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
         manifest: args.manifest,
         versionId: args.manifest.versionId,
       })
+      startScheduleRunner(args.environment, args.manifest)
       return { versionId: args.manifest.versionId }
     }
 
@@ -224,6 +231,47 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
 
     async function shutdown(): Promise<void> {
       shuttingDown = true
+      for (const runner of scheduleRunners.values()) {
+        runner.stop()
+      }
+      scheduleRunners.clear()
+    }
+
+    function startScheduleRunner(environment: EnvironmentName, manifest: WorkflowManifest): void {
+      const existing = scheduleRunners.get(environment)
+      existing?.stop()
+      scheduleRunners.delete(environment)
+      if (opts.disableScheduleRunner) return
+
+      const sources = manifestScheduleSources(manifest)
+      if (sources.length === 0) return
+
+      const runner = createScheduler({
+        sources,
+        environment,
+        now,
+        tickMs: opts.schedulePollIntervalMs,
+        onFire: async ({ workflowId, input, scheduleId, fireAt }) => {
+          assertNotShutdown(shuttingDown)
+          const record = await orchestratorTrigger(
+            {
+              workflowId,
+              workflowVersion: "v1",
+              input,
+              tenantMeta,
+              environment,
+              idempotencyKey: `${scheduleId}:${fireAt}`,
+              triggeredBy: { kind: "schedule", scheduleId },
+            },
+            { store, handler, now },
+          )
+          scheduleDelayedRun(record)
+        },
+        logger: (level, msg, data) => deps.logger(level, msg, data),
+      })
+      if (runner.sourceCount() === 0) return
+      runner.start()
+      scheduleRunners.set(environment, runner)
     }
 
     function scheduleDelayedRun(record: RunRecord): void {

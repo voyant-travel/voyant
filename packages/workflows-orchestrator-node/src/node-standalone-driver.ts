@@ -37,10 +37,13 @@ import { deriveStableEventId } from "@voyantjs/workflows/events"
 import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 import {
+  createScheduler,
+  manifestScheduleSources,
   cancel as orchestratorCancel,
   trigger as orchestratorTrigger,
   type RunRecord,
   routeEvent,
+  type SchedulerHandle,
   type StepHandler,
 } from "@voyantjs/workflows-orchestrator"
 import type { drizzle } from "drizzle-orm/node-postgres"
@@ -105,6 +108,10 @@ export interface NodeStandaloneDriverOptions {
    * cadence. Defaults to `false` (poller starts immediately).
    */
   disableTimeWheel?: boolean
+  /** Schedule runner tick interval. Defaults to 1_000 ms. */
+  schedulePollIntervalMs?: number
+  /** Disable automatic firing for schedules registered through manifests. */
+  disableScheduleRunner?: boolean
 }
 
 const DEFAULT_TENANT_META: RunRecord["tenantMeta"] = {
@@ -189,6 +196,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       wakeupManager.start()
     }
 
+    const scheduleRunners = new Map<string, SchedulerHandle>()
     let shuttingDown = false
 
     // ---- WorkflowDriver implementation ----
@@ -216,6 +224,10 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
           error: err instanceof Error ? err.message : String(err),
         })
       }
+      startScheduleRunner(
+        args.environment as "production" | "preview" | "development",
+        args.manifest,
+      )
       return result
     }
 
@@ -340,6 +352,50 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       // Idempotent — calling stop() on an already-stopped manager is a
       // no-op.
       wakeupManager.stop()
+      for (const runner of scheduleRunners.values()) {
+        runner.stop()
+      }
+      scheduleRunners.clear()
+    }
+
+    function startScheduleRunner(
+      environment: "production" | "preview" | "development",
+      manifest: WorkflowManifest,
+    ): void {
+      const existing = scheduleRunners.get(environment)
+      existing?.stop()
+      scheduleRunners.delete(environment)
+      if (opts.disableScheduleRunner) return
+
+      const sources = manifestScheduleSources(manifest)
+      if (sources.length === 0) return
+
+      const runner = createScheduler({
+        sources,
+        environment,
+        now,
+        tickMs: opts.schedulePollIntervalMs,
+        onFire: async ({ workflowId, input, scheduleId, fireAt }) => {
+          assertNotShutdown(shuttingDown)
+          const record = await orchestratorTrigger(
+            {
+              workflowId,
+              workflowVersion: "v1",
+              input,
+              tenantMeta,
+              environment,
+              idempotencyKey: `${scheduleId}:${fireAt}`,
+              triggeredBy: { kind: "schedule", scheduleId },
+            },
+            { store: runStore, handler, now },
+          )
+          await syncWakeupFromRecord(wakeupStore, record)
+        },
+        logger: (level, msg, data) => deps.logger(level, msg, data),
+      })
+      if (runner.sourceCount() === 0) return
+      runner.start()
+      scheduleRunners.set(environment, runner)
     }
 
     // ---- WorkflowAdmin (full; Mode 2 has Postgres-native query support) ----
