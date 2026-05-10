@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useFlightBook } from "@voyantjs/flights-react"
+import { FlightBookingPage, type PaymentStepCapabilities } from "@voyantjs/flights-ui"
 import { z } from "zod"
-import { FlightBookingPage } from "@/components/voyant/flights/flight-booking-page"
 
 /**
  * Booking journey route. Pax counts + cabin live in the URL so the page
@@ -22,6 +23,40 @@ const flightBookSearchSchema = z.object({
 export type FlightBookSearchParams = z.infer<typeof flightBookSearchSchema>
 
 export const Route = createFileRoute("/_workspace/flights_/book/$offerId")({
-  component: FlightBookingPage,
+  component: FlightBookingRoute,
   validateSearch: flightBookSearchSchema,
 })
+
+const paymentCapabilities: PaymentStepCapabilities = { chargeSavedCard: false, newCard: false }
+
+function FlightBookingRoute() {
+  const navigate = useNavigate()
+  const { offerId } = Route.useParams()
+  const search = Route.useSearch()
+  const bookMutation = useFlightBook()
+
+  return (
+    <FlightBookingPage
+      outboundOfferId={offerId}
+      returnOfferId={search.return}
+      passengers={{
+        adults: search.pax_a ?? 1,
+        children: search.pax_c ?? 0,
+        infants: search.pax_i ?? 0,
+      }}
+      paymentCapabilities={paymentCapabilities}
+      onBackToSearch={() => navigate({ to: "/flights" })}
+      onAddPassengerContact={() => window.open("/people", "_blank")}
+      onBook={async (request) => {
+        const result = await bookMutation.mutateAsync(request)
+        return result.order
+      }}
+      onBooked={(order) => {
+        navigate({
+          to: "/bookings/$id",
+          params: { id: order.orderId },
+        })
+      }}
+    />
+  )
+}

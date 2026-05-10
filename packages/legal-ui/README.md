@@ -25,7 +25,3 @@ import { legalUiRo } from "@voyantjs/legal-ui/i18n/ro"
 
 English-only apps should import only `./i18n/en`. Bilingual apps can import
 `./i18n/en` and `./i18n/ro`.
-
-## Not included (registry-only)
-
-Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `contract-detail-page`, `contracts-page`, `policies-page`, `policy-detail-page`, `template-detail-page`, `templates-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.

@@ -44,9 +44,9 @@ English-only apps should import only `./i18n/en`. Bilingual apps can import
 ## Components
 
 - `PersonCard`, `PersonCardConnected`, `PersonDialog`, `PersonForm`, `PersonList`
+- `PersonDetailPage`, `PersonTopBar`, `PersonSidebar`, `PersonMain`
 - `OrganizationCard`, `OrganizationDialog`, `OrganizationForm`, `OrganizationList`
+- `OrganizationDetailPage`, `OrganizationTopBar`, `OrganizationSidebar`, `OrganizationMain`
 - `ActivitiesPage`, `CreateActivityDialog`, `CreateOpportunityDialog`
-
-## Not included (registry-only)
-
-A subset of CRM components couples to TanStack Router or to template-local helpers and remains available only via the shadcn registry: `quotes-page`, `create-quote-dialog`, `quote-detail-sections`, `opportunities-board`, `opportunity-summary-card`, `organization-detail-page`, `organization-detail-sections`. These can be imported via `npx shadcn add @voyant/<component>` and customized per-project.
+- `OpportunitiesBoard`, `OpportunitySummaryCard`
+- `QuotesPage`, `CreateQuoteDialog`, `QuoteLinesCard`

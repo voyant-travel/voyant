@@ -6,6 +6,46 @@ export type ExternalRefsUiMessages = {
   common: {
     refStatusLabels: Record<ExternalRefStatus, string>
   }
+  externalRefsPage: {
+    title: string
+    description: string
+    fields: {
+      entityType: string
+      entityId: string
+    }
+    placeholders: {
+      entityType: string
+      entityId: string
+    }
+    emptyScope: string
+  }
+  externalRefsTab: {
+    description: string
+    add: string
+    empty: {
+      none: string
+      loading: string
+    }
+    columns: {
+      sourceSystem: string
+      objectType: string
+      externalId: string
+      namespace: string
+      status: string
+      primary: string
+    }
+    actions: {
+      edit: string
+      delete: string
+      deleteConfirm: string
+    }
+    pagination: {
+      previous: string
+      next: string
+      page: string
+      of: string
+    }
+  }
   externalRefDialog: {
     titles: {
       edit: string

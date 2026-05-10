@@ -1,3 +1,8 @@
+import type { ProductRecord } from "@voyantjs/products-react"
+
+export type ProductStatus = ProductRecord["status"]
+export type ProductBookingMode = ProductRecord["bookingMode"]
+
 export type ProductsUiMessages = {
   common: {
     cancel: string
@@ -29,6 +34,8 @@ export type ProductsUiMessages = {
       active: string
       archived: string
     }
+    productStatusLabels: Record<ProductStatus, string>
+    productBookingModeLabels: Record<ProductBookingMode, string>
   }
   comboboxes: {
     productCategory: {
@@ -39,6 +46,161 @@ export type ProductsUiMessages = {
       placeholder: string
       empty: string
     }
+  }
+  productCategoriesPage: {
+    title: string
+    description: string
+  }
+  productsPage: {
+    title: string
+    description: string
+  }
+  productDetailPage: {
+    actions: {
+      back: string
+      edit: string
+      delete: string
+      createBooking: string
+      addItinerary: string
+      editItinerary: string
+      deleteItinerary: string
+      addDay: string
+    }
+    tabs: {
+      overview: string
+      media: string
+      itinerary: string
+      options: string
+      versions: string
+    }
+    sections: {
+      overview: {
+        title: string
+        description: string
+      }
+      details: {
+        title: string
+        description: string
+      }
+      commercial: {
+        title: string
+        description: string
+      }
+      itinerary: {
+        title: string
+        description: string
+      }
+      sidebar: {
+        title: string
+        description: string
+      }
+    }
+    fields: {
+      status: string
+      bookingMode: string
+      visibility: string
+      capacityMode: string
+      timezone: string
+      productType: string
+      facility: string
+      taxClass: string
+      sellAmount: string
+      costAmount: string
+      margin: string
+      pax: string
+      startDate: string
+      endDate: string
+      reservationTimeout: string
+      tags: string
+      createdAt: string
+      updatedAt: string
+    }
+    states: {
+      loading: string
+      loadFailed: string
+      notFoundTitle: string
+      notFoundDescription: string
+      noDescription: string
+      noItineraries: string
+      noDays: string
+      deleteConfirm: string
+      deleteItineraryConfirm: string
+      deleteDayConfirm: string
+      deleteFailed: string
+      minutes: string
+    }
+  }
+  productDialog: {
+    titles: {
+      create: string
+      edit: string
+    }
+    descriptions: {
+      create: string
+      edit: string
+    }
+  }
+  productForm: {
+    fields: {
+      name: string
+      description: string
+      tags: string
+      status: string
+      bookingMode: string
+      productType: string
+      sellCurrency: string
+      sellAmount: string
+      costAmount: string
+    }
+    placeholders: {
+      name: string
+      description: string
+      tagInput: string
+      productTypeSearch: string
+      currencySearch: string
+      amount: string
+    }
+    validation: {
+      nameRequired: string
+      sellCurrencyInvalid: string
+      saveFailed: string
+    }
+    actions: {
+      cancel: string
+      saving: string
+      create: string
+      saveChanges: string
+    }
+  }
+  productList: {
+    searchPlaceholder: string
+    newProduct: string
+    filters: {
+      button: string
+      statusLabel: string
+      statusAll: string
+      dateLabel: string
+      datePlaceholder: string
+      paxLabel: string
+      sellAmountLabel: string
+      min: string
+      max: string
+      clear: string
+    }
+    columns: {
+      name: string
+      status: string
+      sellAmount: string
+      pax: string
+      startDate: string
+    }
+    loadFailed: string
+    empty: string
+    noValue: string
+    paginationShowing: string
+    paginationPage: string
+    paginationPrevious: string
+    paginationNext: string
   }
   productCategoryDialog: {
     titles: {
@@ -129,6 +291,37 @@ export type ProductsUiMessages = {
     delete: string
     deleteConfirm: string
     showingSummary: string
+  }
+  productTagsPage: {
+    title: string
+    description: string
+  }
+  productTypesPage: {
+    title: string
+    description: string
+    addType: string
+    empty: string
+    edit: string
+    delete: string
+    deleteConfirm: string
+    showingSummary: string
+    editSheetTitle: string
+    newSheetTitle: string
+    nameLabel: string
+    namePlaceholder: string
+    codeLabel: string
+    codePlaceholder: string
+    descriptionLabel: string
+    descriptionPlaceholder: string
+    sortOrderLabel: string
+    activeLabel: string
+    cancel: string
+    saveChanges: string
+    createType: string
+    validation: {
+      nameRequired: string
+      codeRequired: string
+    }
   }
   productMediaDialog: {
     titles: {

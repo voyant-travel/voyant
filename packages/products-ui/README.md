@@ -9,8 +9,19 @@ pnpm add @voyantjs/products-ui @voyantjs/products-react @voyantjs/ui @tanstack/r
 ```
 
 `@voyantjs/ui` provides the design-system primitives. `@voyantjs/products-react` provides the data-layer hooks. Both are required peers.
+`ProductTypesPage` also uses `react-hook-form` and `zod` for sheet validation.
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
+
+## Components
+
+- `ProductsPage` publishes the product list composition.
+- `ProductDetailPage` publishes the complete product detail workspace with
+  overview, media, itinerary, option, and version tabs.
+- `ProductDetailHeader`, `ProductOverviewCard`, `ProductCommercialCard`,
+  `ProductDetailSidebar`, and `ProductItinerarySection` remain exported for
+  consumers that need to compose the detail page manually.
+- Product category, type, and tag pages publish reusable list-management compositions.
 
 ## I18n
 

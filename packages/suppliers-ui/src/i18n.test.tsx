@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import type { Supplier, SupplierRate, SupplierService } from "@voyantjs/suppliers-react"
+import type { SupplierRate, SupplierService } from "@voyantjs/suppliers-react"
 import { VoyantSuppliersProvider } from "@voyantjs/suppliers-react"
 import type { ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
@@ -21,29 +21,6 @@ import {
   SuppliersUiMessagesProvider,
   useSuppliersUiMessagesOrDefault,
 } from "./i18n/index.js"
-
-const suppliers: Supplier[] = [
-  {
-    id: "supplier-1",
-    name: "Hotel Europa",
-    type: "hotel",
-    status: "active",
-    description: null,
-    email: null,
-    phone: null,
-    website: null,
-    address: null,
-    city: "Bucharest",
-    country: "RO",
-    defaultCurrency: "RON",
-    contactName: null,
-    contactEmail: null,
-    contactPhone: null,
-    tags: [],
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-  },
-]
 
 const service: SupplierService = {
   id: "service-1",
@@ -106,14 +83,7 @@ describe("suppliers-ui i18n", () => {
     const html = renderToStaticMarkup(
       withProviders(
         <div>
-          <SuppliersPage
-            search=""
-            onSearchChange={() => {}}
-            onCreate={() => {}}
-            onRowClick={() => {}}
-            rows={suppliers}
-            total={1}
-          />
+          <SuppliersPage />
           <SupplierServiceRow
             service={service}
             rates={rates}
@@ -142,14 +112,7 @@ describe("suppliers-ui i18n", () => {
       withProviders(
         <SuppliersUiMessagesProvider locale="ro-RO">
           <div>
-            <SuppliersPage
-              search=""
-              onSearchChange={() => {}}
-              onCreate={() => {}}
-              onRowClick={() => {}}
-              rows={suppliers}
-              total={1}
-            />
+            <SuppliersPage />
             <SupplierServiceRow
               service={service}
               rates={rates}

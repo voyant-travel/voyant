@@ -9,23 +9,61 @@ export type ChannelKind = ChannelRow["kind"]
 export type ChannelStatus = ChannelRow["status"]
 export type ContractStatus = ChannelContractRow["status"]
 export type PaymentOwner = ChannelContractRow["paymentOwner"]
+export type CancellationOwner = ChannelContractRow["cancellationOwner"]
 export type CommissionScope = ChannelCommissionRuleRow["scope"]
 export type CommissionType = ChannelCommissionRuleRow["commissionType"]
 export type WebhookStatus = ChannelWebhookEventRow["status"]
+export type DistributionEntity =
+  | "channel"
+  | "contract"
+  | "commissionRule"
+  | "mapping"
+  | "bookingLink"
+  | "webhookEvent"
 
 export type DistributionUiMessages = {
   common: {
     open: string
     view: string
+    cancel: string
+    create: string
+    save: string
+    delete: string
     clearFilters: string
+    clearSelection: string
+    backToDistribution: string
+    loading: string
+    none: string
+    openEnded: string
+    noReference: string
+    unmappedStatus: string
+    yes: string
     searchPlaceholder: string
     allChannels: string
     received: string
     supplier: string
+    channelLabel: string
+    contractLabel: string
+    productLabel: string
+    bookingLabel: string
+    supplierLabel: string
+    createdLabel: string
+    updatedLabel: string
     emptyValue: string
     dateTimeFallback: string
     active: string
     inactive: string
+    selectionSummary: string
+    resultSummary: string
+    deleteSummary: string
+    entities: Record<
+      DistributionEntity,
+      {
+        one: string
+        other: string
+      }
+    >
+    cancellationOwnerLabels: Record<CancellationOwner, string>
     channelKindLabels: Record<ChannelKind, string>
     channelStatusLabels: Record<ChannelStatus, string>
     contractStatusLabels: Record<ContractStatus, string>
@@ -33,6 +71,27 @@ export type DistributionUiMessages = {
     commissionScopeLabels: Record<CommissionScope, string>
     commissionTypeLabels: Record<CommissionType, string>
     webhookStatusLabels: Record<WebhookStatus, string>
+  }
+  page: {
+    title: string
+    description: string
+    tabs: {
+      channels: string
+      contracts: string
+      commissions: string
+      mappings: string
+      bookingLinks: string
+      webhooks: string
+    }
+    bulkVerbs: {
+      activated: string
+      archived: string
+      deleted: string
+      expired: string
+      deactivated: string
+      processed: string
+      ignored: string
+    }
   }
   overview: {
     metrics: {
@@ -107,4 +166,201 @@ export type DistributionUiMessages = {
       processed: string
     }
   }
+  tabs: {
+    channels: DistributionBulkTabMessages<"activate" | "archive" | "delete">
+    contracts: DistributionBulkTabMessages<"activate" | "expire" | "delete">
+    commissions: DistributionBulkTabMessages<"delete">
+    mappings: DistributionBulkTabMessages<"activate" | "deactivate" | "delete">
+    bookingLinks: DistributionBulkTabMessages<"delete">
+    webhooks: DistributionBulkTabMessages<"markProcessed" | "ignore" | "delete">
+  }
+  settings: {
+    channelsPage: {
+      title: string
+      description: string
+      addChannel: string
+      empty: string
+      edit: string
+      delete: string
+      deleteConfirm: string
+      deleteDescription: string
+      editSheetTitle: string
+      newSheetTitle: string
+      nameLabel: string
+      namePlaceholder: string
+      kindLabel: string
+      statusLabel: string
+      websiteLabel: string
+      websitePlaceholder: string
+      primaryContactLabel: string
+      primaryContactPlaceholder: string
+      contactEmailLabel: string
+      contactEmailPlaceholder: string
+      saveChanges: string
+      createChannel: string
+      validationNameRequired: string
+      validationInvalidUrl: string
+      validationInvalidEmail: string
+      paginationShowing: string
+      paginationPage: string
+      paginationPrevious: string
+      paginationNext: string
+    }
+  }
+  details: {
+    channel: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      sections: {
+        details: string
+        metadata: string
+        contracts: string
+        mappings: string
+        bookingLinks: string
+        webhooks: string
+      }
+      labels: {
+        website: string
+        contactName: string
+        contactEmail: string
+        supplier: string
+        payment: string
+        cancellation: string
+        externalProduct: string
+        externalBooking: string
+        reference: string
+        lastSynced: string
+        rate: string
+        category: string
+        booking: string
+      }
+      empty: {
+        metadata: string
+        contracts: string
+        mappings: string
+        bookingLinks: string
+        webhooks: string
+      }
+    }
+    contract: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openChannel: string
+      sections: {
+        details: string
+        notes: string
+        commissionRules: string
+      }
+      labels: {
+        supplier: string
+        endsAt: string
+        paymentOwner: string
+        cancellationOwner: string
+        settlementTerms: string
+        notes: string
+        amount: string
+        basisPoints: string
+        rate: string
+        category: string
+        valid: string
+      }
+      empty: {
+        commissionRules: string
+      }
+    }
+    commissionRule: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openContract: string
+      openProduct: string
+      sections: {
+        details: string
+      }
+      labels: {
+        amount: string
+        basisPoints: string
+        externalRate: string
+        externalCategory: string
+        valid: string
+      }
+    }
+    bookingLink: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openChannel: string
+      openBooking: string
+      sections: {
+        details: string
+      }
+      labels: {
+        externalBooking: string
+        reference: string
+        bookedAtExternal: string
+        lastSynced: string
+      }
+    }
+    webhookEvent: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openChannel: string
+      sections: {
+        details: string
+        payload: string
+      }
+      labels: {
+        externalEvent: string
+        received: string
+        processed: string
+        error: string
+      }
+    }
+    mapping: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openChannel: string
+      openProduct: string
+      sections: {
+        details: string
+      }
+      labels: {
+        externalProduct: string
+        externalRate: string
+        externalCategory: string
+      }
+    }
+  }
+}
+
+type DistributionBulkTabMessages<TAction extends string> = {
+  title: string
+  description: string
+  actionLabel: string
+  empty: string
+  actions: Record<
+    TAction,
+    {
+      button: string
+      confirm: string
+      title: string
+      description: string
+    }
+  >
 }

@@ -43,6 +43,7 @@ function App() {
 | `./components/operator-admin-bootstrap-gate` | Single-tenant-first shell bootstrap gate |
 | `./components/operator-admin-sidebar` | Operator sidebar and workspace layout |
 | `./components/operator-admin-user-menu` | Operator user/account/theme/locale menu |
+| `./components/team-settings-page` | Operator team invitation settings composition |
 | `./extensions` | Admin extension types and helpers |
 | `./navigation/operator-navigation` | Base operator admin navigation factory |
 | `./providers/admin-provider` | `AdminProvider` composing QueryClient + Theme |
@@ -177,6 +178,11 @@ Use `OperatorAdminBootstrapGate` to make that contract explicit:
 Workspace switching and team-management routes remain app-owned opt-ins. Apps
 that intentionally implement workspace switching can opt into
 `mode="organization"` and pass their own workspace readiness state.
+
+`TeamSettingsPage` provides the reusable team invitation page for operator
+templates. It uses `OperatorAdminShellProvider`'s `VoyantReactProvider` for API
+base URL/fetcher resolution and the operator admin message provider for labels;
+pass the `api` prop only when an app needs a custom invitation transport.
 
 ## License
 

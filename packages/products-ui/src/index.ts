@@ -1,5 +1,9 @@
 export { OptionUnitDialog, type OptionUnitDialogProps } from "./components/option-unit-dialog.js"
 export { OptionUnitForm, type OptionUnitFormProps } from "./components/option-unit-form.js"
+export {
+  ProductCategoriesPage,
+  type ProductCategoriesPageProps,
+} from "./components/product-categories-page.js"
 export { ProductCategoryCombobox } from "./components/product-category-combobox.js"
 export {
   ProductCategoryDialog,
@@ -27,6 +31,27 @@ export {
   type ProductDayServiceSupplierServiceOption,
 } from "./components/product-day-service-form.js"
 export {
+  ProductCommercialCard,
+  ProductDetailHeader,
+  type ProductDetailHeaderProps,
+  ProductDetailPage,
+  type ProductDetailPageProps,
+  type ProductDetailPageSlots,
+  type ProductDetailPageTab,
+  ProductDetailSidebar,
+  type ProductDetailSidebarProps,
+  ProductItinerarySection,
+  type ProductItinerarySectionProps,
+  ProductOverviewCard,
+  type ProductOverviewCardProps,
+} from "./components/product-detail-page.js"
+export { ProductDialog, type ProductDialogProps } from "./components/product-dialog.js"
+export {
+  ProductForm,
+  type ProductFormMode,
+  type ProductFormProps,
+} from "./components/product-form.js"
+export {
   ProductItineraryDayRow,
   type ProductItineraryDayRowProps,
   type ProductItineraryDayRowRenderContext,
@@ -35,6 +60,7 @@ export {
   ProductItineraryDialog,
   type ProductItineraryDialogProps,
 } from "./components/product-itinerary-dialog.js"
+export { ProductList, type ProductListProps } from "./components/product-list.js"
 export {
   ProductMediaDialog,
   type ProductMediaDialogProps,
@@ -58,7 +84,9 @@ export {
 export { ProductTagDialog, type ProductTagDialogProps } from "./components/product-tag-dialog.js"
 export { ProductTagForm, type ProductTagFormProps } from "./components/product-tag-form.js"
 export { ProductTagList, type ProductTagListProps } from "./components/product-tag-list.js"
+export { ProductTagsPage, type ProductTagsPageProps } from "./components/product-tags-page.js"
 export { ProductTypeCombobox } from "./components/product-type-combobox.js"
+export { ProductTypesPage, type ProductTypesPageProps } from "./components/product-types-page.js"
 export {
   ProductVersionDialog,
   type ProductVersionDialogProps,
@@ -67,6 +95,7 @@ export {
   ProductVersionsSection,
   type ProductVersionsSectionProps,
 } from "./components/product-versions-section.js"
+export { ProductsPage, type ProductsPageProps } from "./components/products-page.js"
 export type { ProductsUiMessages } from "./i18n/index.js"
 export {
   getProductsUiI18n,

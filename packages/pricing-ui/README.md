@@ -9,6 +9,12 @@ pnpm add @voyantjs/pricing-ui @voyantjs/pricing-react @voyantjs/ui @tanstack/rea
 ```
 
 `@voyantjs/ui` provides the design-system primitives. `@voyantjs/pricing-react` provides the data-layer hooks. Both are required peers.
+`PriceCatalogsPage` also uses `@voyantjs/utils`, `react-hook-form`, and `zod` for currency selection and sheet validation.
+
+## Components
+
+- `PricingCategoriesPage` publishes the reusable pricing category management composition.
+- `PriceCatalogsPage` publishes the reusable price catalog management composition.
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 

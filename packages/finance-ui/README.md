@@ -12,6 +12,24 @@ pnpm add @voyantjs/finance-ui @voyantjs/finance-react @voyantjs/ui @tanstack/rea
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 
+## Components
+
+- `InvoicesPage`, `InvoiceDetailPage`, and `PaymentsPage` publish
+  list/detail-management compositions.
+- `TaxesPage` publishes the finance-owned tax class, tax regime, and tax policy
+  profile settings composition. It reads `baseUrl` and `fetcher` from
+  `VoyantFinanceProvider`; pass the `api` prop only when an app needs a custom
+  transport adapter.
+- `InvoiceDetailHeader`, `InvoiceSummaryCard`, `InvoiceLinksCard`,
+  `InvoiceLineItemsCard`, `InvoicePaymentsCard`, `InvoiceCreditNotesCard`, and
+  `InvoiceNotesCard` remain exported for consumers that need to compose the
+  invoice detail page manually.
+- `PaymentDetailPage` publishes the customer/supplier payment detail
+  workspace with summary, related record, and metadata cards.
+- `PaymentDetailHeader`, `PaymentSummaryCard`, `PaymentLinksCard`, and
+  `PaymentMetadataCard` remain exported for consumers that need to compose the
+  detail page manually.
+
 ## I18n
 
 Components render English by default. To localize them, wrap your UI in

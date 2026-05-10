@@ -1,5 +1,28 @@
 import type { LegalContractRecord } from "@voyantjs/legal-react"
 
+export const legalContractScopes = ["customer", "supplier", "partner", "channel", "other"] as const
+
+export const legalContractStatuses = [
+  "draft",
+  "issued",
+  "sent",
+  "signed",
+  "executed",
+  "expired",
+  "void",
+] as const
+
+export const legalPolicyKinds = [
+  "cancellation",
+  "payment",
+  "terms_and_conditions",
+  "privacy",
+  "refund",
+  "commission",
+  "guarantee",
+  "other",
+] as const
+
 export const legalRuleTypes = [
   "window",
   "percentage",
@@ -13,6 +36,9 @@ export const legalRefundTypes = ["cash", "credit", "cash_or_credit", "none"] as 
 export const legalSignatureMethods = ["manual", "electronic", "docusign", "other"] as const
 
 export type LegalContractStatus = LegalContractRecord["status"]
+export type LegalContractScope = (typeof legalContractScopes)[number]
+export type LegalContractStatusValue = (typeof legalContractStatuses)[number]
+export type LegalPolicyKind = (typeof legalPolicyKinds)[number]
 export type LegalRuleType = (typeof legalRuleTypes)[number]
 export type LegalRefundType = (typeof legalRefundTypes)[number]
 export type LegalSignatureMethod = (typeof legalSignatureMethods)[number]
@@ -24,11 +50,20 @@ export type LegalUiMessages = {
     create: string
     edit: string
     add: string
+    delete: string
     loading: string
     none: string
     selectPlaceholder: string
     optionalPlaceholder: string
     kilobytes: string
+    active: string
+    inactive: string
+    open: string
+    addVersion: string
+    noResultsDash: string
+    contractScopeLabels: Record<LegalContractScope, string>
+    contractStatusLabels: Record<LegalContractStatusValue, string>
+    policyKindLabels: Record<LegalPolicyKind, string>
   }
   bookingContractCard: {
     heading: string
@@ -41,6 +76,228 @@ export type LegalUiMessages = {
     contractNumber: string
     unsaved: string
     contractStatusLabels: Record<LegalContractStatus, string>
+  }
+  numberSeriesPage: {
+    title: string
+    description: string
+    actions: {
+      create: string
+    }
+    columns: {
+      name: string
+      prefix: string
+      separator: string
+      pad: string
+      current: string
+      reset: string
+      scope: string
+      status: string
+    }
+    active: string
+    inactive: string
+    empty: string
+    deleteConfirm: string
+  }
+  contractsPage: {
+    title: string
+    description: string
+    create: string
+    searchPlaceholder: string
+    empty: string
+    loadFailed: string
+    filters: {
+      scope: string
+      status: string
+      allScopes: string
+      allStatuses: string
+    }
+    columns: {
+      number: string
+      title: string
+      scope: string
+      status: string
+      person: string
+      created: string
+    }
+    pagination: {
+      showing: string
+      page: string
+      previous: string
+      next: string
+    }
+  }
+  contractDetailPage: {
+    notFound: string
+    backToContracts: string
+    voidConfirm: string
+    deleteConfirm: string
+    deleteAttachmentConfirm: string
+    actions: {
+      issue: string
+      void: string
+      addSignature: string
+      addAttachment: string
+    }
+    sections: {
+      details: string
+      parties: string
+      signatures: string
+      attachments: string
+    }
+    fields: {
+      language: string
+      templateVersion: string
+      series: string
+      expires: string
+      created: string
+      updated: string
+      person: string
+      organization: string
+      supplier: string
+      channel: string
+      name: string
+      email: string
+      role: string
+      method: string
+      signedAt: string
+      kind: string
+      mimeType: string
+      size: string
+    }
+    empty: {
+      noParties: string
+      noSignatures: string
+      noAttachments: string
+    }
+    units: {
+      bytes: string
+      kilobytes: string
+      megabytes: string
+    }
+  }
+  policiesPage: {
+    title: string
+    description: string
+    create: string
+    searchPlaceholder: string
+    allKinds: string
+    empty: string
+    loadFailed: string
+    columns: {
+      name: string
+      slug: string
+      kind: string
+      language: string
+      created: string
+    }
+    pagination: {
+      showing: string
+      page: string
+      previous: string
+      next: string
+    }
+  }
+  policyDetailPage: {
+    notFound: string
+    backToPolicies: string
+    deleteConfirm: string
+    deleteAssignmentConfirm: string
+    deleteRuleConfirm: string
+    always: string
+    actions: {
+      newVersion: string
+      publish: string
+      retire: string
+      addRule: string
+      addAssignment: string
+    }
+    sections: {
+      versions: string
+      assignments: string
+      acceptances: string
+      body: string
+      rules: string
+    }
+    fields: {
+      scope: string
+      targetId: string
+      priority: string
+      valid: string
+      versionId: string
+      personId: string
+      bookingId: string
+      method: string
+      acceptedAt: string
+      sort: string
+      type: string
+      label: string
+      days: string
+      refund: string
+      refundType: string
+    }
+    empty: {
+      noVersions: string
+      noAssignments: string
+      noAcceptances: string
+      noRules: string
+    }
+    versionStatusLabels: Record<"draft" | "published" | "retired", string>
+    assignmentScopeLabels: Record<
+      "product" | "channel" | "supplier" | "market" | "organization" | "global",
+      string
+    >
+  }
+  templatesPage: {
+    title: string
+    description: string
+    create: string
+    searchPlaceholder: string
+    empty: string
+    loadFailed: string
+    versions: string
+    noVersions: string
+    filters: {
+      scope: string
+      allScopes: string
+    }
+    columns: {
+      version: string
+      changelog: string
+      createdBy: string
+      createdAt: string
+    }
+    deleteConfirm: string
+  }
+  templateDetailPage: {
+    notFound: string
+    backToTemplates: string
+    currentBadge: string
+    variablesDescription: string
+    deleteConfirm: string
+    actions: {
+      addVersion: string
+    }
+    sections: {
+      details: string
+      description: string
+      currentBody: string
+      variables: string
+      versions: string
+    }
+    fields: {
+      language: string
+      currentVersionId: string
+      created: string
+      updated: string
+      version: string
+      changelog: string
+      createdBy: string
+      createdAt: string
+    }
+    empty: {
+      noDescription: string
+      noVersions: string
+    }
   }
   attachmentDialog: {
     titles: {

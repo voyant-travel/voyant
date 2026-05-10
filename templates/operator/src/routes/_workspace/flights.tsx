@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { FlightsPage } from "@voyantjs/flights-ui"
 import { z } from "zod"
-import { FlightsPage } from "@/components/voyant/flights/flights-page"
 
 /**
  * Search params for `/flights`. Everything the page renders is derived
@@ -52,6 +52,37 @@ const flightsSearchSchema = z
 export type FlightsSearchParams = z.infer<typeof flightsSearchSchema>
 
 export const Route = createFileRoute("/_workspace/flights")({
-  component: FlightsPage,
+  component: FlightsRoute,
   validateSearch: flightsSearchSchema,
 })
+
+function FlightsRoute() {
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+  const routerNavigate = useNavigate()
+
+  return (
+    <FlightsPage
+      search={search}
+      onSearchChange={(next, options) => {
+        navigate({
+          search: (): FlightsSearchParams => next as FlightsSearchParams,
+          replace: options?.replace ?? false,
+        })
+      }}
+      onBookOffer={({ outboundOfferId, returnOfferId, passengers, cabin }) => {
+        routerNavigate({
+          to: "/flights/book/$offerId",
+          params: { offerId: outboundOfferId },
+          search: {
+            ...(returnOfferId ? { return: returnOfferId } : {}),
+            pax_a: passengers.adults,
+            pax_c: passengers.children ?? 0,
+            pax_i: passengers.infants ?? 0,
+            cabin,
+          },
+        })
+      }}
+    />
+  )
+}

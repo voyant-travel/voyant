@@ -41,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
+      NODE_OPTIONS: --max-old-space-size=8192
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:

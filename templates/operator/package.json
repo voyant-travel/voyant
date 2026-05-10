@@ -65,6 +65,7 @@
     "@voyantjs/db": "workspace:*",
     "@voyantjs/distribution": "workspace:*",
     "@voyantjs/distribution-react": "workspace:*",
+    "@voyantjs/distribution-ui": "workspace:*",
     "@voyantjs/external-refs": "workspace:*",
     "@voyantjs/extras": "workspace:*",
     "@voyantjs/extras-ui": "workspace:*",

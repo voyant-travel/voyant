@@ -10,6 +10,12 @@ export {
   BookingCreateDialog,
   type BookingCreateDialogProps,
 } from "./components/booking-create-dialog.js"
+export {
+  BookingBillingContextCard,
+  BookingDetailPage,
+  type BookingDetailPageProps,
+  type BookingDetailPageSlots,
+} from "./components/booking-detail-page.js"
 export { BookingDialog, type BookingDialogProps } from "./components/booking-dialog.js"
 export {
   BookingDocumentDialog,
@@ -55,6 +61,7 @@ export {
   BookingPaymentsSummary,
   type BookingPaymentsSummaryProps,
 } from "./components/booking-payments-summary.js"
+export { BookingsPage, type BookingsPageProps } from "./components/bookings-page.js"
 export {
   FileDropzone,
   type FileDropzoneProps,

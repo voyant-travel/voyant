@@ -4,9 +4,45 @@ export {
   type BookingContractCardLabels,
   type BookingContractCardProps,
 } from "./components/booking-contract-card.js"
+export {
+  type ContractDetailDialogRenderProps,
+  ContractDetailPage,
+  type ContractDetailPageProps,
+} from "./components/contract-detail-page.js"
+export {
+  type ContractDialogRenderProps,
+  ContractsPage,
+  type ContractsPageProps,
+} from "./components/contracts-page.js"
+export {
+  type NumberSeriesDialogRenderProps,
+  NumberSeriesPage,
+  type NumberSeriesPageProps,
+} from "./components/number-series-page.js"
+export {
+  PoliciesPage,
+  type PoliciesPageProps,
+  type PolicyDialogRenderProps,
+} from "./components/policies-page.js"
+export {
+  type PolicyAssignmentDialogRenderProps,
+  type PolicyDetailDialogRenderProps,
+  PolicyDetailPage,
+  type PolicyDetailPageProps,
+} from "./components/policy-detail-page.js"
 export { PolicyRuleDialog, type RuleData } from "./components/policy-rule-dialog.js"
 export { PolicyVersionDialog } from "./components/policy-version-dialog.js"
 export { SignatureDialog } from "./components/signature-dialog.js"
+export {
+  TemplateDetailPage,
+  type TemplateDetailPageProps,
+} from "./components/template-detail-page.js"
+export {
+  type TemplateDialogRenderProps,
+  TemplatesPage,
+  type TemplatesPageProps,
+  type TemplateVersionDialogRenderProps,
+} from "./components/templates-page.js"
 export {
   getLegalUiI18n,
   type LegalUiMessageOverrides,

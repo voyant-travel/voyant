@@ -46,6 +46,37 @@ export type ResourcesUiMessages = {
       closeout: SelectionNoun
     }
   }
+  resourcesPage: {
+    title: string
+    description: string
+    loading: string
+    loadFailed: string
+    filters: {
+      searchPlaceholder: string
+      button: string
+      clear: string
+      activeLabel: string
+      activeAll: string
+      activeOnly: string
+      inactiveOnly: string
+      supplierLabel: string
+      supplierAny: string
+      supplierEmpty: string
+      productLabel: string
+      productAny: string
+      productEmpty: string
+      assignmentStatusLabel: string
+      assignmentStatusAll: string
+      noAdditionalFilters: string
+    }
+    tabs: {
+      resources: string
+      pools: string
+      allocations: string
+      assignments: string
+      closeouts: string
+    }
+  }
   overview: {
     metrics: {
       activeResources: {
@@ -185,6 +216,89 @@ export type ResourcesUiMessages = {
           delete: BulkActionMessages
         }
       }
+    }
+  }
+  detailPages: {
+    common: {
+      backToResources: string
+      booking: string
+      capacity: string
+      code: string
+      created: string
+      delete: string
+      noBooking: string
+      noPool: string
+      noResource: string
+      noRule: string
+      noStartTime: string
+      noValue: string
+      notes: string
+      openPool: string
+      openProduct: string
+      openResource: string
+      openSlot: string
+      openSupplier: string
+      pool: string
+      product: string
+      quantity: string
+      resource: string
+      slot: string
+      supplier: string
+      to: string
+      updated: string
+    }
+    resource: {
+      assignmentsEmpty: string
+      assignmentsTitle: string
+      assignedBy: string
+      closeoutsEmpty: string
+      closeoutsTitle: string
+      createdBy: string
+      deleteConfirm: string
+      deleteFailed: string
+      detailsTitle: string
+      loadFailed: string
+      noSupplierAssigned: string
+      notFound: string
+      poolMembershipsEmpty: string
+      poolMembershipsTitle: string
+      released: string
+    }
+    pool: {
+      allocationsEmpty: string
+      allocationsTitle: string
+      deleteConfirm: string
+      deleteFailed: string
+      detailsTitle: string
+      liveAssignmentsEmpty: string
+      liveAssignmentsTitle: string
+      loadFailed: string
+      membersEmpty: string
+      membersTitle: string
+      noResource: string
+      notFound: string
+      sharedCapacity: string
+    }
+    allocation: {
+      deleteConfirm: string
+      deleteFailed: string
+      detailsTitle: string
+      loadFailed: string
+      notFound: string
+      pageTitle: string
+      priority: string
+      rule: string
+      startTime: string
+    }
+    assignment: {
+      assignedBy: string
+      deleteConfirm: string
+      deleteFailed: string
+      detailsTitle: string
+      loadFailed: string
+      notFound: string
+      pageTitle: string
+      released: string
     }
   }
 }

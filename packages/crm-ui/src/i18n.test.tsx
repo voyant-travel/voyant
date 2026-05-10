@@ -38,6 +38,7 @@ describe("crm-ui i18n", () => {
     const html = renderToStaticMarkup(<CrmMessageProbe />)
 
     expect(html).toContain("New organization")
+    expect(html).toContain("People")
     expect(html).toContain("Follow-up")
     expect(html).toContain("Client")
   })
@@ -50,6 +51,7 @@ describe("crm-ui i18n", () => {
     )
 
     expect(html).toContain("Organizatie noua")
+    expect(html).toContain("Persoane")
     expect(html).toContain("Urmarire")
     expect(html).toContain("Client")
   })
@@ -61,6 +63,7 @@ function CrmMessageProbe() {
   return (
     <div>
       <span>{messages.organizationDialog.titles.create}</span>
+      <span>{messages.peoplePage.title}</span>
       <span>{messages.common.activityTypeLabels.follow_up}</span>
       <span>{messages.common.relationTypeLabels.client}</span>
     </div>

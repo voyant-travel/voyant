@@ -33,7 +33,7 @@
     "prepare": "husky",
     "seed:operator": "pnpm -C apps/scripts seed:operator",
     "regen:routes": "tsx scripts/regen-route-tree.ts",
-    "typecheck": "turbo run typecheck --continue",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 turbo run typecheck --continue",
     "typecheck:affected": "turbo run typecheck --affected --continue --output-logs=new-only",
     "test": "node scripts/run-tests.cjs",
     "test:affected": "turbo run test --affected --continue --output-logs=new-only",
