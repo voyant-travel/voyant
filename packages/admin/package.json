@@ -13,8 +13,12 @@
     "./components/operator-admin-bootstrap-gate": "./src/components/operator-admin-bootstrap-gate.tsx",
     "./components/operator-admin-sidebar": "./src/components/operator-admin-sidebar.tsx",
     "./components/operator-admin-user-menu": "./src/components/operator-admin-user-menu.tsx",
+    "./dashboard": "./src/dashboard/dashboard-page.tsx",
+    "./dashboard/query-options": "./src/dashboard/dashboard-query-options.ts",
+    "./dashboard/skeleton": "./src/dashboard/dashboard-skeleton.tsx",
     "./extensions": "./src/extensions.ts",
     "./navigation/operator-navigation": "./src/navigation/operator-navigation.ts",
+    "./providers/admin-extensions": "./src/providers/admin-extensions.tsx",
     "./providers/locale-preferences": "./src/providers/locale-preferences.tsx",
     "./providers/operator-admin-shell": "./src/providers/operator-admin-shell.tsx",
     "./providers/operator-admin-messages": "./src/providers/operator-admin-messages.tsx",
@@ -36,10 +40,12 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-router": "^1.0.0",
     "@voyantjs/ui": "workspace:*",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "recharts": "^3.0.0"
   },
   "dependencies": {
     "@voyantjs/i18n": "workspace:*",
@@ -48,6 +54,7 @@
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "@tanstack/react-query": "^5.96.2",
+    "@tanstack/react-router": "^1.168.10",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -56,6 +63,7 @@
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "recharts": "3.8.1",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -104,6 +112,21 @@
         "import": "./dist/components/operator-admin-user-menu.js",
         "default": "./dist/components/operator-admin-user-menu.js"
       },
+      "./dashboard": {
+        "types": "./dist/dashboard/dashboard-page.d.ts",
+        "import": "./dist/dashboard/dashboard-page.js",
+        "default": "./dist/dashboard/dashboard-page.js"
+      },
+      "./dashboard/query-options": {
+        "types": "./dist/dashboard/dashboard-query-options.d.ts",
+        "import": "./dist/dashboard/dashboard-query-options.js",
+        "default": "./dist/dashboard/dashboard-query-options.js"
+      },
+      "./dashboard/skeleton": {
+        "types": "./dist/dashboard/dashboard-skeleton.d.ts",
+        "import": "./dist/dashboard/dashboard-skeleton.js",
+        "default": "./dist/dashboard/dashboard-skeleton.js"
+      },
       "./extensions": {
         "types": "./dist/extensions.d.ts",
         "import": "./dist/extensions.js",
@@ -113,6 +136,11 @@
         "types": "./dist/navigation/operator-navigation.d.ts",
         "import": "./dist/navigation/operator-navigation.js",
         "default": "./dist/navigation/operator-navigation.js"
+      },
+      "./providers/admin-extensions": {
+        "types": "./dist/providers/admin-extensions.d.ts",
+        "import": "./dist/providers/admin-extensions.js",
+        "default": "./dist/providers/admin-extensions.js"
       },
       "./providers/locale-preferences": {
         "types": "./dist/providers/locale-preferences.d.ts",
