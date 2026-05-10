@@ -367,5 +367,35 @@ export const distributionUiEn = {
         webhooks: "No webhook events for this channel.",
       },
     },
+    contract: {
+      notFound: "Contract not found",
+      title: "Channel Contract",
+      deleteConfirm: "Delete this contract?",
+      deleteDescription:
+        "This permanently removes the contract and its commercial distribution setup.",
+      deleteButton: "Delete",
+      openChannel: "Open Channel",
+      sections: {
+        details: "Contract Details",
+        notes: "Commercial Notes",
+        commissionRules: "Commission Rules",
+      },
+      labels: {
+        supplier: "Supplier",
+        endsAt: "Ends At",
+        paymentOwner: "Payment Owner",
+        cancellationOwner: "Cancellation Owner",
+        settlementTerms: "Settlement Terms",
+        notes: "Notes",
+        amount: "Amount",
+        basisPoints: "Basis Points",
+        rate: "Rate",
+        category: "Category",
+        valid: "Valid",
+      },
+      empty: {
+        commissionRules: "No commission rules on this contract.",
+      },
+    },
   },
 } satisfies DistributionUiMessages

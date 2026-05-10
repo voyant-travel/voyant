@@ -372,5 +372,35 @@ export const distributionUiRo = {
         webhooks: "Nu exista evenimente webhook pentru acest canal.",
       },
     },
+    contract: {
+      notFound: "Contractul nu a fost gasit",
+      title: "Contract canal",
+      deleteConfirm: "Stergi acest contract?",
+      deleteDescription:
+        "Aceasta actiune sterge definitiv contractul si configurarea sa comerciala de distributie.",
+      deleteButton: "Sterge",
+      openChannel: "Deschide canalul",
+      sections: {
+        details: "Detalii contract",
+        notes: "Note comerciale",
+        commissionRules: "Reguli de comision",
+      },
+      labels: {
+        supplier: "Furnizor",
+        endsAt: "Se termina la",
+        paymentOwner: "Responsabil plata",
+        cancellationOwner: "Responsabil anulare",
+        settlementTerms: "Termeni de decontare",
+        notes: "Note",
+        amount: "Valoare",
+        basisPoints: "Puncte baza",
+        rate: "Tarif",
+        category: "Categorie",
+        valid: "Valabil",
+      },
+      empty: {
+        commissionRules: "Nu exista reguli de comision pentru acest contract.",
+      },
+    },
   },
 } satisfies DistributionUiMessages

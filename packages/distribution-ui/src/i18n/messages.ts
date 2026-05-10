@@ -212,6 +212,35 @@ export type DistributionUiMessages = {
         webhooks: string
       }
     }
+    contract: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openChannel: string
+      sections: {
+        details: string
+        notes: string
+        commissionRules: string
+      }
+      labels: {
+        supplier: string
+        endsAt: string
+        paymentOwner: string
+        cancellationOwner: string
+        settlementTerms: string
+        notes: string
+        amount: string
+        basisPoints: string
+        rate: string
+        category: string
+        valid: string
+      }
+      empty: {
+        commissionRules: string
+      }
+    }
   }
 }
 
