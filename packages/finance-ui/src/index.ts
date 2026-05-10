@@ -11,6 +11,16 @@ export {
   type PaymentPolicyPreviewProps,
 } from "./components/payment-policy-form.js"
 export {
+  type PaymentSupplierOption,
+  PaymentsPage,
+  type PaymentsPageProps,
+  type RecordPaymentDialogRenderProps,
+} from "./components/payments-page.js"
+export {
+  PaymentsPageSkeleton,
+  PaymentsTableSkeleton,
+} from "./components/payments-page-skeleton.js"
+export {
   SupplierPaymentDialog,
   type SupplierPaymentDialogProps,
 } from "./components/supplier-payment-dialog.js"

@@ -17,9 +17,22 @@ export const supplierPaymentMethods = [
   "other",
 ] as const
 
+export const paymentMethods = [
+  "bank_transfer",
+  "credit_card",
+  "debit_card",
+  "cash",
+  "cheque",
+  "wallet",
+  "direct_bill",
+  "voucher",
+  "other",
+] as const
+
 export const supplierPaymentStatuses = ["pending", "completed", "failed", "refunded"] as const
 
 export type InvoiceStatus = InvoiceRecord["status"]
+export type PaymentMethod = (typeof paymentMethods)[number]
 export type SupplierPaymentMethod = (typeof supplierPaymentMethods)[number]
 export type SupplierPaymentStatus = SupplierPaymentRecord["status"]
 
@@ -28,6 +41,7 @@ export type FinanceUiMessages = {
     cancel: string
     saveChanges: string
     invoiceStatusLabels: Record<InvoiceStatus, string>
+    paymentMethodLabels: Record<PaymentMethod, string>
     supplierPaymentMethodLabels: Record<SupplierPaymentMethod, string>
     supplierPaymentStatusLabels: Record<SupplierPaymentStatus, string>
   }
@@ -91,6 +105,53 @@ export type FinanceUiMessages = {
       balanceDue: string
       dueDate: string
     }
+    empty: string
+    loadFailed: string
+    pagination: {
+      showing: string
+      page: string
+      previous: string
+      next: string
+    }
+  }
+  paymentsPage: {
+    title: string
+    description: string
+    searchPlaceholder: string
+    actions: {
+      recordPayment: string
+    }
+    kindLabels: {
+      customer: string
+      supplier: string
+    }
+    filters: {
+      button: string
+      kindLabel: string
+      kindAll: string
+      statusLabel: string
+      statusAll: string
+      methodLabel: string
+      methodAll: string
+      supplierLabel: string
+      supplierAny: string
+      supplierEmpty: string
+      currencyLabel: string
+      currencyAny: string
+      paymentDateLabel: string
+      dateAny: string
+      clear: string
+    }
+    columns: {
+      kind: string
+      reference: string
+      party: string
+      amount: string
+      status: string
+      date: string
+      method: string
+    }
+    noValue: string
     empty: string
     loadFailed: string
     pagination: {
