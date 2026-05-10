@@ -8,8 +8,26 @@ import {
   projectConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import {
+  maybePrintHelp,
+  mutationOptions,
+  projectOptions,
+  repositoryOptions,
+} from "./lib/agent-runner-help.mjs"
 
 const args = parseArgs(process.argv.slice(2))
+maybePrintHelp(args, {
+  command: "agent:queue:claim",
+  summary: "Mark one approved Project item as claimed before implementation starts.",
+  usage: "pnpm agent:queue:claim -- --issue <number> --yes",
+  options: [
+    ["--issue <number>", "Issue number to claim. Required when multiple items are ready."],
+    ...repositoryOptions,
+    ...mutationOptions,
+    ...projectOptions,
+  ],
+})
+
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const project = loadEvaluatedProject(projectConfigFromArgs(args))

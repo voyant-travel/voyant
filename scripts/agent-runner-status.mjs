@@ -7,6 +7,7 @@ import {
   projectConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import { maybePrintHelp, projectOptions, repositoryOptions } from "./lib/agent-runner-help.mjs"
 import { evaluateHeartbeat } from "./lib/agent-runner-output.mjs"
 
 const activeStates = new Set([
@@ -19,6 +20,18 @@ const activeStates = new Set([
 ])
 
 const args = parseArgs(process.argv.slice(2))
+maybePrintHelp(args, {
+  command: "agent:queue:status",
+  summary: "Print a read-only overview of ready, active, stale, blocked, and review work.",
+  usage: "pnpm agent:queue:status -- [--json] [--repo <owner/name>]",
+  options: [
+    ["--json", "Print machine-readable JSON."],
+    ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    ...repositoryOptions,
+    ...projectOptions,
+  ],
+})
+
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const maxAgeDays = Number(args.maxAgeDays ?? 1)

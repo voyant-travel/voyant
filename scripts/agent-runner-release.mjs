@@ -8,6 +8,12 @@ import {
   projectConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import {
+  maybePrintHelp,
+  mutationOptions,
+  projectOptions,
+  repositoryOptions,
+} from "./lib/agent-runner-help.mjs"
 
 const releasableStates = new Set([
   "Planning",
@@ -19,6 +25,21 @@ const releasableStates = new Set([
 ])
 
 const args = parseArgs(process.argv.slice(2))
+maybePrintHelp(args, {
+  command: "agent:queue:release",
+  summary: "Return claimed work to the ready queue without shipping implementation work.",
+  usage: 'pnpm agent:queue:release -- --issue <number> --reason "..." --yes',
+  options: [
+    ["--issue <number>", "Issue number to release."],
+    ["--reason <text>", "Reason recorded in the Evidence field."],
+    ["--evidence <text>", "Explicit Evidence field value. Defaults from --reason."],
+    ["--force", "Allow release outside the normal claimed states."],
+    ...repositoryOptions,
+    ...mutationOptions,
+    ...projectOptions,
+  ],
+})
+
 if (!args.issue) {
   fail("release mode requires --issue <number>")
 }

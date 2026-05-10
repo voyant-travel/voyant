@@ -8,6 +8,12 @@ import {
   projectConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import {
+  maybePrintHelp,
+  mutationOptions,
+  projectOptions,
+  repositoryOptions,
+} from "./lib/agent-runner-help.mjs"
 
 const heartbeatStates = new Set([
   "Planning",
@@ -19,6 +25,23 @@ const heartbeatStates = new Set([
 ])
 
 const args = parseArgs(process.argv.slice(2))
+maybePrintHelp(args, {
+  command: "agent:queue:heartbeat",
+  summary: "Refresh heartbeat metadata and optionally move an active agent item state.",
+  usage: "pnpm agent:queue:heartbeat -- --issue <number> --state Running --yes",
+  options: [
+    ["--issue <number>", "Issue number to update."],
+    ["--state <state>", "Next Agent State. Defaults to the current Project state."],
+    ["--blocked-by <text>", "Required with Blocked unless --reason is provided."],
+    ["--reason <text>", "Reason for a blocked heartbeat or evidence note."],
+    ["--evidence <url-or-path>", "Evidence pointer to write to the Project item."],
+    ["--force", "Allow updates outside the normal heartbeat states."],
+    ...repositoryOptions,
+    ...mutationOptions,
+    ...projectOptions,
+  ],
+})
+
 if (!args.issue) {
   fail("heartbeat mode requires --issue <number>")
 }

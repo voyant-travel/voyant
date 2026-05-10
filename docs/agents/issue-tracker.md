@@ -59,6 +59,13 @@ or GraphQL when thread-level state or ProjectV2 fields are needed.
 
 ## Runner Dry Run
 
+All runner commands support `--help` and `-h`. When invoked through `pnpm`, pass
+runner flags after `--`:
+
+```bash
+pnpm agent:queue:status -- --help
+```
+
 Before any agent execution is enabled, use the read-only queue runner:
 
 ```bash
