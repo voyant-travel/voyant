@@ -33,7 +33,10 @@ import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-pol
 import { productPricingCatalogPolicy } from "@voyantjs/products/catalog-policy-pricing"
 import { productPromotionsCatalogPolicy } from "@voyantjs/products/catalog-policy-promotions"
 import { productTaxonomyCatalogPolicy } from "@voyantjs/products/catalog-policy-taxonomy"
-import { createProductDocumentBuilder } from "@voyantjs/products/service-catalog-plane"
+import {
+  createProductDocumentBuilder,
+  createProductStorefrontCardProjectionExtension,
+} from "@voyantjs/products/service-catalog-plane"
 import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
 import { createProductTaxonomyProjectionExtension } from "@voyantjs/products/service-catalog-plane-taxonomy"
 import { createProductPromotionsProjectionExtension } from "@voyantjs/promotions/service-catalog-plane-promotions"
@@ -278,6 +281,7 @@ export function createProductsDocumentBuilder(
     sellerOperatorId: context.sellerOperatorId,
     registry,
     extensions: [
+      createProductStorefrontCardProjectionExtension(),
       createProductDestinationsProjectionExtension(),
       createProductTaxonomyProjectionExtension(),
       createProductDeparturesProjectionExtension(),
