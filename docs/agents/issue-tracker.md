@@ -77,6 +77,13 @@ Project visibility, required Project fields/options, and queue visibility. It
 does not mutate GitHub, create worktrees, or spend agent execution budget. Pass
 `--json` for automation.
 
+Queue readers scan all Project pages by default. `--limit` controls the
+GraphQL page size, not the total number of items scanned.
+
+Pure queue helper coverage lives in `pnpm agent:queue:test`. Keep tests there
+for argument parsing, gate evaluation, repository scoping, and pagination before
+adding live GitHub-dependent cases.
+
 Before any agent execution is enabled, use the read-only queue runner:
 
 ```bash

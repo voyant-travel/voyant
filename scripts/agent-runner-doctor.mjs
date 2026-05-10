@@ -4,7 +4,7 @@ import {
   filterItemsByRepository,
   loadAllEvaluatedProject,
   parseArgs,
-  projectConfigFromArgs,
+  projectScanConfigFromArgs,
 } from "./lib/agent-project-queue.mjs"
 import { maybePrintHelp, projectOptions, repositoryOptions } from "./lib/agent-runner-help.mjs"
 
@@ -131,7 +131,7 @@ process.exitCode = results.every((result) => result.ok) ? 0 : 1
 function loadProject() {
   try {
     return loadAllEvaluatedProject({
-      ...projectConfigFromArgs({ ...args, limit: args.limit ?? 100 }),
+      ...projectScanConfigFromArgs(args),
       onError(message) {
         throw new Error(message)
       },

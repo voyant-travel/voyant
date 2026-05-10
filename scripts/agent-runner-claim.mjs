@@ -3,9 +3,9 @@ import {
   currentRepositoryFromOrigin,
   fail,
   findSelectedReadyItem,
-  loadEvaluatedProject,
+  loadAllEvaluatedProject,
   parseArgs,
-  projectConfigFromArgs,
+  projectScanConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
@@ -30,7 +30,7 @@ maybePrintHelp(args, {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
-const project = loadEvaluatedProject(projectConfigFromArgs(args))
+const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findSelectedReadyItem(project.items, {
   issueNumber: args.issue,
   repository,
