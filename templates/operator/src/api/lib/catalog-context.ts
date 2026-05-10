@@ -1,7 +1,7 @@
 /**
  * Per-request catalog context builder shared by both the AI/MCP surface
- * (`mountCatalogMcpRoutes`) and the plain-JSON admin search surface
- * (`mountCatalogSearchRoutes`). The shape is `McpToolContext` because that
+ * (`mountCatalogMcpRoutes`) and the packaged plain-JSON search module.
+ * The shape is `McpToolContext` because that
  * type already covers everything either caller needs (actor, defaultScope,
  * catalog.indexer/embeddings/resolveEntity) — it's reused, not adopted from
  * MCP semantically.

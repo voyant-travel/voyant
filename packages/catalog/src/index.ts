@@ -149,6 +149,18 @@ export {
   type RerankParameters,
   rerank,
 } from "./search/rerank.js"
+export {
+  type CatalogSearchBody,
+  type CatalogSearchExecuteInput,
+  type CatalogSearchFallbackInput,
+  type CatalogSearchRoutesOptions,
+  type CatalogSearchRoutesWithSurfaceOptions,
+  type CatalogSearchRuntime,
+  type CatalogSearchSurface,
+  createCatalogSearchHonoModule,
+  createCatalogSearchRoutes,
+  mountCatalogSearchRoutes,
+} from "./search/routes.js"
 // Content-service primitives (sourced-content §3.4 / §3.5).
 export {
   applyJsonPointerOverlay,
