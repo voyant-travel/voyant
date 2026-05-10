@@ -1,5 +1,13 @@
 # @voyantjs/legal-ui
 
+## 0.31.3
+
+### Patch Changes
+
+- @voyantjs/i18n@0.31.3
+- @voyantjs/legal-react@0.31.3
+- @voyantjs/ui@0.31.3
+
 ## 0.31.2
 
 ### Patch Changes

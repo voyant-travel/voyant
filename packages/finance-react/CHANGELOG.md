@@ -1,5 +1,14 @@
 # @voyantjs/finance-react
 
+## 0.31.3
+
+### Patch Changes
+
+- 5f974dd: Add first-class invoice attachment persistence, admin routes, React hooks, and invoice detail UI.
+- Updated dependencies [5f974dd]
+  - @voyantjs/finance@0.31.3
+  - @voyantjs/react@0.31.3
+
 ## 0.31.2
 
 ### Patch Changes

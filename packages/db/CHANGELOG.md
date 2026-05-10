@@ -1,5 +1,12 @@
 # @voyantjs/db
 
+## 0.31.3
+
+### Patch Changes
+
+- 5f974dd: Add first-class invoice attachment persistence, admin routes, React hooks, and invoice detail UI.
+  - @voyantjs/core@0.31.3
+
 ## 0.31.2
 
 ### Patch Changes
