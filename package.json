@@ -40,6 +40,7 @@
     "agent:queue:handoff": "node scripts/agent-runner-handoff.mjs",
     "agent:queue:publish-evidence": "node scripts/agent-runner-publish-evidence.mjs",
     "agent:queue:open-pr": "node scripts/agent-runner-open-pr.mjs",
+    "agent:queue:sync-pr": "node scripts/agent-runner-sync-pr.mjs",
     "agent:queue:watchdog": "node scripts/agent-runner-watchdog.mjs",
     "agent:queue:release": "node scripts/agent-runner-release.mjs",
     "agent:queue:test": "node --test scripts/tests/*.test.mjs",

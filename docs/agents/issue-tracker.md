@@ -195,6 +195,18 @@ branch, refuses dirty workspaces by default, pushes the branch, opens or reuses
 a draft PR, updates the Project `PR` field, and refreshes `Last Heartbeat`.
 It does not merge the PR or mark work merge-ready.
 
+After a PR exists, sync its review/check status back into the Project:
+
+```bash
+pnpm agent:queue:sync-pr -- --issue <number> --yes
+```
+
+Sync-PR mode reads the linked PR and its check rollup. Failing checks move the
+item to `Agent State = CI Repair`, requested changes move it to
+`Changes Requested`, pending checks or draft PRs keep it in `Human Review`, and
+passing non-draft PRs move it to `Merge Ready`. It updates `PR`,
+`Last Heartbeat`, and `Blocked By`; it does not merge the PR.
+
 Use the watchdog to find claimed work that has stopped reporting heartbeats:
 
 ```bash
