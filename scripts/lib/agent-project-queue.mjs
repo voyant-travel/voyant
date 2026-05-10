@@ -24,7 +24,10 @@ export function parseArgs(argv) {
       fail(`unexpected positional argument: ${arg}`)
     }
 
-    const [rawKey, rawValue] = arg.slice(2).split("=", 2)
+    const rawArg = arg.slice(2)
+    const equalsIndex = rawArg.indexOf("=")
+    const rawKey = equalsIndex === -1 ? rawArg : rawArg.slice(0, equalsIndex)
+    const rawValue = equalsIndex === -1 ? undefined : rawArg.slice(equalsIndex + 1)
     const key = camelCaseArg(rawKey)
     const value = rawValue ?? argv[index + 1]
     if (!value || value.startsWith("--")) {
