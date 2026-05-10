@@ -174,6 +174,39 @@ export type DistributionUiMessages = {
     bookingLinks: DistributionBulkTabMessages<"delete">
     webhooks: DistributionBulkTabMessages<"markProcessed" | "ignore" | "delete">
   }
+  settings: {
+    channelsPage: {
+      title: string
+      description: string
+      addChannel: string
+      empty: string
+      edit: string
+      delete: string
+      deleteConfirm: string
+      deleteDescription: string
+      editSheetTitle: string
+      newSheetTitle: string
+      nameLabel: string
+      namePlaceholder: string
+      kindLabel: string
+      statusLabel: string
+      websiteLabel: string
+      websitePlaceholder: string
+      primaryContactLabel: string
+      primaryContactPlaceholder: string
+      contactEmailLabel: string
+      contactEmailPlaceholder: string
+      saveChanges: string
+      createChannel: string
+      validationNameRequired: string
+      validationInvalidUrl: string
+      validationInvalidEmail: string
+      paginationShowing: string
+      paginationPage: string
+      paginationPrevious: string
+      paginationNext: string
+    }
+  }
   details: {
     channel: {
       notFound: string

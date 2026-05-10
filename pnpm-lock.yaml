@@ -5598,6 +5598,9 @@ importers:
       '@voyantjs/distribution-react':
         specifier: workspace:*
         version: link:../../packages/distribution-react
+      '@voyantjs/distribution-ui':
+        specifier: workspace:*
+        version: link:../../packages/distribution-ui
       '@voyantjs/external-refs':
         specifier: workspace:*
         version: link:../../packages/external-refs
