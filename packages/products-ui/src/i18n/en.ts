@@ -31,6 +31,20 @@ export const productsUiEn = {
       active: "Active",
       archived: "Archived",
     },
+    productStatusLabels: {
+      draft: "Draft",
+      active: "Active",
+      archived: "Archived",
+    },
+    productBookingModeLabels: {
+      date: "Date",
+      date_time: "Date & Time",
+      open: "Open",
+      stay: "Stay",
+      transfer: "Transfer",
+      itinerary: "Itinerary",
+      other: "Other",
+    },
   },
   comboboxes: {
     productCategory: {
@@ -45,6 +59,82 @@ export const productsUiEn = {
   productCategoriesPage: {
     title: "Categories",
     description: "Hierarchical product categories for organizing your catalog.",
+  },
+  productsPage: {
+    title: "Products",
+    description: "Manage your quotes, packages, and proposals.",
+  },
+  productDialog: {
+    titles: {
+      create: "New product",
+      edit: "Edit product",
+    },
+    descriptions: {
+      create: "Create a new product in your catalog.",
+      edit: "Update product details, pricing, and classification.",
+    },
+  },
+  productForm: {
+    fields: {
+      name: "Name",
+      description: "Description",
+      tags: "Tags",
+      status: "Status",
+      bookingMode: "Booking Mode",
+      productType: "Product Type",
+      sellCurrency: "Sell Currency",
+      sellAmount: "Sell Amount",
+      costAmount: "Cost Amount",
+    },
+    placeholders: {
+      name: "Croatia Explorer 2026",
+      description: "Brief overview of the product...",
+      tagInput: "Type a tag and press Enter",
+      productTypeSearch: "Search product types...",
+      currencySearch: "Search currency...",
+      amount: "0.00",
+    },
+    validation: {
+      nameRequired: "Product name is required.",
+      sellCurrencyInvalid: "Sell currency must be a 3-letter ISO code.",
+      saveFailed: "Failed to save product.",
+    },
+    actions: {
+      cancel: "Cancel",
+      saving: "Saving...",
+      create: "Create product",
+      saveChanges: "Save changes",
+    },
+  },
+  productList: {
+    searchPlaceholder: "Search products...",
+    newProduct: "New product",
+    filters: {
+      button: "Filters",
+      statusLabel: "Status",
+      statusAll: "All statuses",
+      dateLabel: "Start date",
+      datePlaceholder: "Any date",
+      paxLabel: "Pax",
+      sellAmountLabel: "Sell amount",
+      min: "Min",
+      max: "Max",
+      clear: "Clear",
+    },
+    columns: {
+      name: "Name",
+      status: "Status",
+      sellAmount: "Sell Amount",
+      pax: "Pax",
+      startDate: "Start Date",
+    },
+    loadFailed: "Failed to load products.",
+    empty: "No products found.",
+    noValue: "—",
+    paginationShowing: "Showing {count} of {total}",
+    paginationPage: "Page {page} / {pageCount}",
+    paginationPrevious: "Previous",
+    paginationNext: "Next",
   },
   productCategoryDialog: {
     titles: {

@@ -1,3 +1,8 @@
+import type { ProductRecord } from "@voyantjs/products-react"
+
+export type ProductStatus = ProductRecord["status"]
+export type ProductBookingMode = ProductRecord["bookingMode"]
+
 export type ProductsUiMessages = {
   common: {
     cancel: string
@@ -29,6 +34,8 @@ export type ProductsUiMessages = {
       active: string
       archived: string
     }
+    productStatusLabels: Record<ProductStatus, string>
+    productBookingModeLabels: Record<ProductBookingMode, string>
   }
   comboboxes: {
     productCategory: {
@@ -43,6 +50,82 @@ export type ProductsUiMessages = {
   productCategoriesPage: {
     title: string
     description: string
+  }
+  productsPage: {
+    title: string
+    description: string
+  }
+  productDialog: {
+    titles: {
+      create: string
+      edit: string
+    }
+    descriptions: {
+      create: string
+      edit: string
+    }
+  }
+  productForm: {
+    fields: {
+      name: string
+      description: string
+      tags: string
+      status: string
+      bookingMode: string
+      productType: string
+      sellCurrency: string
+      sellAmount: string
+      costAmount: string
+    }
+    placeholders: {
+      name: string
+      description: string
+      tagInput: string
+      productTypeSearch: string
+      currencySearch: string
+      amount: string
+    }
+    validation: {
+      nameRequired: string
+      sellCurrencyInvalid: string
+      saveFailed: string
+    }
+    actions: {
+      cancel: string
+      saving: string
+      create: string
+      saveChanges: string
+    }
+  }
+  productList: {
+    searchPlaceholder: string
+    newProduct: string
+    filters: {
+      button: string
+      statusLabel: string
+      statusAll: string
+      dateLabel: string
+      datePlaceholder: string
+      paxLabel: string
+      sellAmountLabel: string
+      min: string
+      max: string
+      clear: string
+    }
+    columns: {
+      name: string
+      status: string
+      sellAmount: string
+      pax: string
+      startDate: string
+    }
+    loadFailed: string
+    empty: string
+    noValue: string
+    paginationShowing: string
+    paginationPage: string
+    paginationPrevious: string
+    paginationNext: string
   }
   productCategoryDialog: {
     titles: {

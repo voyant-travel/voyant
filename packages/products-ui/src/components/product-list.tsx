@@ -1,6 +1,6 @@
 "use client"
 
-import { formatMessage } from "@voyantjs/admin"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   type ProductRecord,
   type ProductsListSortDir,
@@ -31,9 +31,8 @@ import {
 } from "@voyantjs/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown, ListFilter, Plus, Search, X } from "lucide-react"
 import * as React from "react"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getProductStatusLabel } from "./product-detail-shared"
-import { ProductDialog } from "./product-dialog"
+import { useProductsUiMessagesOrDefault } from "../i18n/index.js"
+import { ProductDialog } from "./product-dialog.js"
 
 export interface ProductListProps {
   pageSize?: number
@@ -69,8 +68,8 @@ function formatAmount(cents: number | null, currency: string, fallback: string):
 }
 
 export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps = {}) {
-  const messages = useAdminMessages()
-  const productMessages = messages.products.core
+  const messages = useProductsUiMessagesOrDefault()
+  const productMessages = messages.productList
   const [search, setSearch] = React.useState("")
   const [status, setStatus] = React.useState<string>(STATUS_ALL)
   const [dateRange, setDateRange] = React.useState<{
@@ -193,7 +192,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
             render={
               <Button variant="outline" size="default">
                 <ListFilter className="mr-2 size-4" aria-hidden="true" />
-                {productMessages.filtersButton}
+                {productMessages.filters.button}
                 {activeFilterCount > 0 && (
                   <Badge variant="secondary" className="ml-2 px-1.5">
                     {activeFilterCount}
@@ -205,7 +204,9 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
           <PopoverContent align="start" className="w-[22rem] p-4">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="products-filter-status">{productMessages.filtersStatusLabel}</Label>
+                <Label htmlFor="products-filter-status">
+                  {productMessages.filters.statusLabel}
+                </Label>
                 <Select
                   value={status}
                   onValueChange={(value) => {
@@ -217,10 +218,10 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={STATUS_ALL}>{productMessages.filtersStatusAll}</SelectItem>
+                    <SelectItem value={STATUS_ALL}>{productMessages.filters.statusAll}</SelectItem>
                     {PRODUCT_STATUSES.map((value) => (
                       <SelectItem key={value} value={value}>
-                        {getProductStatusLabel(value, messages)}
+                        {messages.common.productStatusLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -228,79 +229,79 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>{productMessages.filtersDateLabel}</Label>
+                <Label>{productMessages.filters.dateLabel}</Label>
                 <DateRangePicker
                   value={dateRange}
                   onChange={(value) => {
                     setDateRange(value)
                     resetOffset()
                   }}
-                  placeholder={productMessages.filtersDatePlaceholder}
+                  placeholder={productMessages.filters.datePlaceholder}
                   clearable
                   className="w-full"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>{productMessages.filtersPaxLabel}</Label>
+                <Label>{productMessages.filters.paxLabel}</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
                     min={0}
-                    placeholder={productMessages.filtersMin}
+                    placeholder={productMessages.filters.min}
                     value={paxMin}
                     onChange={(event) => {
                       setPaxMin(event.target.value)
                       resetOffset()
                     }}
                     className="w-full"
-                    aria-label={`${productMessages.filtersPaxLabel} ${productMessages.filtersMin}`}
+                    aria-label={`${productMessages.filters.paxLabel} ${productMessages.filters.min}`}
                   />
                   <span className="text-muted-foreground">–</span>
                   <Input
                     type="number"
                     min={0}
-                    placeholder={productMessages.filtersMax}
+                    placeholder={productMessages.filters.max}
                     value={paxMax}
                     onChange={(event) => {
                       setPaxMax(event.target.value)
                       resetOffset()
                     }}
                     className="w-full"
-                    aria-label={`${productMessages.filtersPaxLabel} ${productMessages.filtersMax}`}
+                    aria-label={`${productMessages.filters.paxLabel} ${productMessages.filters.max}`}
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>{productMessages.filtersSellAmountLabel}</Label>
+                <Label>{productMessages.filters.sellAmountLabel}</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
                     min={0}
                     step="0.01"
-                    placeholder={productMessages.filtersMin}
+                    placeholder={productMessages.filters.min}
                     value={sellAmountMin}
                     onChange={(event) => {
                       setSellAmountMin(event.target.value)
                       resetOffset()
                     }}
                     className="w-full"
-                    aria-label={`${productMessages.filtersSellAmountLabel} ${productMessages.filtersMin}`}
+                    aria-label={`${productMessages.filters.sellAmountLabel} ${productMessages.filters.min}`}
                   />
                   <span className="text-muted-foreground">–</span>
                   <Input
                     type="number"
                     min={0}
                     step="0.01"
-                    placeholder={productMessages.filtersMax}
+                    placeholder={productMessages.filters.max}
                     value={sellAmountMax}
                     onChange={(event) => {
                       setSellAmountMax(event.target.value)
                       resetOffset()
                     }}
                     className="w-full"
-                    aria-label={`${productMessages.filtersSellAmountLabel} ${productMessages.filtersMax}`}
+                    aria-label={`${productMessages.filters.sellAmountLabel} ${productMessages.filters.max}`}
                   />
                 </div>
               </div>
@@ -311,7 +312,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             <X className="mr-1 size-4" aria-hidden="true" />
-            {productMessages.filtersClear}
+            {productMessages.filters.clear}
           </Button>
         )}
 
@@ -329,7 +330,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
             <TableRow>
               <TableHead>
                 <SortHeader
-                  label={productMessages.tableName}
+                  label={productMessages.columns.name}
                   field={SORTABLE_COLUMNS.name}
                   sortBy={sortBy}
                   sortDir={sortDir}
@@ -338,7 +339,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
               </TableHead>
               <TableHead>
                 <SortHeader
-                  label={productMessages.tableStatus}
+                  label={productMessages.columns.status}
                   field={SORTABLE_COLUMNS.status}
                   sortBy={sortBy}
                   sortDir={sortDir}
@@ -347,7 +348,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
               </TableHead>
               <TableHead>
                 <SortHeader
-                  label={productMessages.tableSellAmount}
+                  label={productMessages.columns.sellAmount}
                   field={SORTABLE_COLUMNS.sellAmount}
                   sortBy={sortBy}
                   sortDir={sortDir}
@@ -356,7 +357,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
               </TableHead>
               <TableHead>
                 <SortHeader
-                  label={productMessages.tablePax}
+                  label={productMessages.columns.pax}
                   field={SORTABLE_COLUMNS.pax}
                   sortBy={sortBy}
                   sortDir={sortDir}
@@ -365,7 +366,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
               </TableHead>
               <TableHead>
                 <SortHeader
-                  label={productMessages.tableStartDate}
+                  label={productMessages.columns.startDate}
                   field={SORTABLE_COLUMNS.startDate}
                   sortBy={sortBy}
                   sortDir={sortDir}
@@ -405,7 +406,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
                     <Badge variant={statusVariant[product.status] ?? "secondary"}>
-                      {getProductStatusLabel(product.status, messages)}
+                      {messages.common.productStatusLabels[product.status]}
                     </Badge>
                   </TableCell>
                   <TableCell>

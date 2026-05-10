@@ -30,6 +30,12 @@ export {
   type ProductDayServiceSupplierServiceFieldProps,
   type ProductDayServiceSupplierServiceOption,
 } from "./components/product-day-service-form.js"
+export { ProductDialog, type ProductDialogProps } from "./components/product-dialog.js"
+export {
+  ProductForm,
+  type ProductFormMode,
+  type ProductFormProps,
+} from "./components/product-form.js"
 export {
   ProductItineraryDayRow,
   type ProductItineraryDayRowProps,
@@ -39,6 +45,7 @@ export {
   ProductItineraryDialog,
   type ProductItineraryDialogProps,
 } from "./components/product-itinerary-dialog.js"
+export { ProductList, type ProductListProps } from "./components/product-list.js"
 export {
   ProductMediaDialog,
   type ProductMediaDialogProps,
@@ -72,6 +79,7 @@ export {
   ProductVersionsSection,
   type ProductVersionsSectionProps,
 } from "./components/product-versions-section.js"
+export { ProductsPage, type ProductsPageProps } from "./components/products-page.js"
 export type { ProductsUiMessages } from "./i18n/index.js"
 export {
   getProductsUiI18n,

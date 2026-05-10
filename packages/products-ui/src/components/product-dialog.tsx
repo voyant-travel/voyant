@@ -9,9 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
-import { useAdminMessages } from "@/lib/admin-i18n"
 
-import { ProductForm } from "./product-form"
+import { useProductsUiMessagesOrDefault } from "../i18n/index.js"
+import { ProductForm } from "./product-form.js"
 
 export interface ProductDialogProps {
   open: boolean
@@ -21,8 +21,7 @@ export interface ProductDialogProps {
 }
 
 export function ProductDialog({ open, onOpenChange, product, onSuccess }: ProductDialogProps) {
-  const messages = useAdminMessages()
-  const productMessages = messages.products.core
+  const productMessages = useProductsUiMessagesOrDefault().productDialog
   const isEdit = Boolean(product)
 
   return (
@@ -30,10 +29,10 @@ export function ProductDialog({ open, onOpenChange, product, onSuccess }: Produc
       <DialogContent data-slot="product-dialog" className="sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? productMessages.dialogEditTitle : productMessages.dialogNewTitle}
+            {isEdit ? productMessages.titles.edit : productMessages.titles.create}
           </DialogTitle>
           <DialogDescription>
-            {isEdit ? productMessages.dialogEditDescription : productMessages.dialogNewDescription}
+            {isEdit ? productMessages.descriptions.edit : productMessages.descriptions.create}
           </DialogDescription>
         </DialogHeader>
         <ProductForm

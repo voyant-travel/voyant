@@ -31,6 +31,20 @@ export const productsUiRo = {
       active: "Activ",
       archived: "Arhivat",
     },
+    productStatusLabels: {
+      draft: "Ciorna",
+      active: "Activ",
+      archived: "Arhivat",
+    },
+    productBookingModeLabels: {
+      date: "Data",
+      date_time: "Data si ora",
+      open: "Deschis",
+      stay: "Sejur",
+      transfer: "Transfer",
+      itinerary: "Itinerariu",
+      other: "Altul",
+    },
   },
   comboboxes: {
     productCategory: {
@@ -45,6 +59,82 @@ export const productsUiRo = {
   productCategoriesPage: {
     title: "Categorii",
     description: "Categorii ierarhice de produse pentru organizarea catalogului.",
+  },
+  productsPage: {
+    title: "Produse",
+    description: "Administreaza ofertele, pachetele si propunerile tale.",
+  },
+  productDialog: {
+    titles: {
+      create: "Produs nou",
+      edit: "Editeaza produsul",
+    },
+    descriptions: {
+      create: "Creeaza un produs nou in catalogul tau.",
+      edit: "Actualizeaza detaliile produsului, preturile si clasificarea.",
+    },
+  },
+  productForm: {
+    fields: {
+      name: "Nume",
+      description: "Descriere",
+      tags: "Etichete",
+      status: "Status",
+      bookingMode: "Mod rezervare",
+      productType: "Tip produs",
+      sellCurrency: "Moneda vanzare",
+      sellAmount: "Pret vanzare",
+      costAmount: "Cost",
+    },
+    placeholders: {
+      name: "Croatia Explorer 2026",
+      description: "Prezentare scurta a produsului...",
+      tagInput: "Scrie o eticheta si apasa Enter",
+      productTypeSearch: "Cauta tipuri de produs...",
+      currencySearch: "Cauta moneda...",
+      amount: "0.00",
+    },
+    validation: {
+      nameRequired: "Numele produsului este obligatoriu.",
+      sellCurrencyInvalid: "Moneda de vanzare trebuie sa fie un cod ISO din 3 litere.",
+      saveFailed: "Produsul nu a putut fi salvat.",
+    },
+    actions: {
+      cancel: "Anuleaza",
+      saving: "Se salveaza...",
+      create: "Creeaza produsul",
+      saveChanges: "Salveaza modificarile",
+    },
+  },
+  productList: {
+    searchPlaceholder: "Cauta produse...",
+    newProduct: "Produs nou",
+    filters: {
+      button: "Filtre",
+      statusLabel: "Status",
+      statusAll: "Toate statusurile",
+      dateLabel: "Data inceput",
+      datePlaceholder: "Orice data",
+      paxLabel: "Pax",
+      sellAmountLabel: "Pret vanzare",
+      min: "Min",
+      max: "Max",
+      clear: "Sterge",
+    },
+    columns: {
+      name: "Nume",
+      status: "Status",
+      sellAmount: "Pret vanzare",
+      pax: "Pax",
+      startDate: "Data inceput",
+    },
+    loadFailed: "Produsele nu au putut fi incarcate.",
+    empty: "Nu au fost gasite produse.",
+    noValue: "—",
+    paginationShowing: "Afisezi {count} din {total}",
+    paginationPage: "Pagina {page} / {pageCount}",
+    paginationPrevious: "Anterior",
+    paginationNext: "Urmator",
   },
   productCategoryDialog: {
     titles: {

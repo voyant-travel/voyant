@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { defaultFetcher, getProductsQueryOptions } from "@voyantjs/products-react"
+import { ProductsPage } from "@voyantjs/products-ui"
 import { ProductsListSkeleton } from "@/components/voyant/products/products-list-skeleton"
-import { ProductsPage } from "@/components/voyant/products/products-page"
 import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/products/")({
@@ -13,5 +13,19 @@ export const Route = createFileRoute("/_workspace/products/")({
       ),
     ),
   pendingComponent: ProductsListSkeleton,
-  component: ProductsPage,
+  component: ProductsRoute,
 })
+
+function ProductsRoute() {
+  const navigate = useNavigate()
+
+  return (
+    <div className="p-6">
+      <ProductsPage
+        onProductOpen={(product) =>
+          void navigate({ to: "/products/$id", params: { id: product.id } })
+        }
+      />
+    </div>
+  )
+}
