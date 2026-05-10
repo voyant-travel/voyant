@@ -16,7 +16,14 @@ import {
   pullRequestTitle,
   summarizeChecks,
 } from "../lib/agent-runner-pr.mjs"
-import { buildExecutionPlan, workspacePlan } from "../lib/agent-runner-workspace.mjs"
+import {
+  buildExecutionPlan,
+  canCleanupAgentState,
+  cleanupFieldValues,
+  cleanupWorkspacePlan,
+  removeWorkspace,
+  workspacePlan,
+} from "../lib/agent-runner-workspace.mjs"
 
 describe("agent runner lifecycle helpers", () => {
   it("builds claim field values from the selected work item", () => {
@@ -44,6 +51,48 @@ describe("agent runner lifecycle helpers", () => {
         "/repo/.agent-worktrees/579-test-agent-project-intake-workflow/docs/agent-plans/active/579-test-agent-project-intake-workflow.md",
       ),
     })
+  })
+
+  it("resolves cleanup workspaces under the agent worktree root", () => {
+    const plan = cleanupWorkspacePlan({
+      item: workItem(),
+      repoRoot: "/repo",
+    })
+
+    assert.deepEqual(plan, {
+      workspaceReference: ".agent-worktrees/579-test-agent-project-intake-workflow",
+      workspace: path.resolve("/repo/.agent-worktrees/579-test-agent-project-intake-workflow"),
+      agentWorktreeRoot: path.resolve("/repo/.agent-worktrees"),
+      safeWorkspace: true,
+    })
+  })
+
+  it("rejects cleanup workspaces outside the agent worktree root", () => {
+    assert.equal(
+      cleanupWorkspacePlan({
+        item: workItem(),
+        repoRoot: "/repo",
+        workspaceReference: "../outside",
+      }).safeWorkspace,
+      false,
+    )
+  })
+
+  it("only allows cleanup for terminal agent states unless forced", () => {
+    assert.equal(canCleanupAgentState("Done"), true)
+    assert.equal(canCleanupAgentState("Abandoned"), true)
+    assert.equal(canCleanupAgentState("Human Review"), false)
+    assert.equal(canCleanupAgentState("Human Review", { force: true }), true)
+    assert.deepEqual(cleanupFieldValues(new Date("2026-05-10T12:34:56.000Z")), {
+      "Last Heartbeat": "2026-05-10",
+    })
+  })
+
+  it("treats a missing cleanup workspace as already removed when allowed", () => {
+    assert.equal(
+      removeWorkspace({ allowMissing: true, workspace: "/repo/.agent-worktrees/missing" }),
+      false,
+    )
   })
 
   it("writes the durable execution-plan contract", () => {
