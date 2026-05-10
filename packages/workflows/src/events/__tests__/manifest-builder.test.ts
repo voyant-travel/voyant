@@ -99,6 +99,73 @@ describe("buildManifest", () => {
     expect(onlyA.versionId).not.toBe(aAndB.versionId)
   })
 
+  test("schedule declarations flow into workflow manifest entries", async () => {
+    const wf = workflow({
+      id: "scheduled-wf",
+      schedule: [
+        {
+          cron: "0 * * * *",
+          timezone: "UTC",
+          environments: ["production"],
+          input: { kind: "hourly" },
+          overlap: "skip",
+          name: "hourly",
+        },
+        {
+          at: new Date(Date.UTC(2026, 0, 1, 12, 0, 0)),
+          enabled: false,
+          name: "new-year",
+        },
+      ],
+      async run() {},
+    })
+
+    const manifest = await buildManifest({
+      environment: "production",
+      workflows: [wf],
+      eventFilters: [],
+    })
+
+    expect(manifest.workflows[0]?.schedules).toEqual([
+      {
+        cron: "0 * * * *",
+        timezone: "UTC",
+        environments: ["production"],
+        input: { kind: "hourly" },
+        overlap: "skip",
+        name: "hourly",
+      },
+      {
+        at: "2026-01-01T12:00:00.000Z",
+        enabled: false,
+        name: "new-year",
+      },
+    ])
+  })
+
+  test("schedule changes participate in manifest identity", async () => {
+    const withoutSchedule = workflow({ id: "identity-wf", async run() {} })
+    const a = await buildManifest({
+      environment: "production",
+      workflows: [withoutSchedule],
+      eventFilters: [],
+    })
+
+    __resetRegistry()
+    const withSchedule = workflow({
+      id: "identity-wf",
+      schedule: { every: "5m" },
+      async run() {},
+    })
+    const b = await buildManifest({
+      environment: "production",
+      workflows: [withSchedule],
+      eventFilters: [],
+    })
+
+    expect(a.versionId).not.toBe(b.versionId)
+  })
+
   test("filter manifest entries flow through verbatim", async () => {
     const wf = workflow({ id: "passthrough-wf", async run() {} })
     trigger.on<{ kind: string }>("promotion.changed", {

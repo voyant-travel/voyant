@@ -75,9 +75,12 @@ export interface ManifestStep {
 
 export interface ManifestSchedule {
   cron?: string
-  every?: string
+  every?: string | number
   at?: string
   timezone?: string
+  input?: unknown
+  enabled?: boolean
+  overlap?: "skip" | "queue" | "allow"
   environments?: ("production" | "preview" | "development")[]
   name?: string
 }

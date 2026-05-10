@@ -106,6 +106,60 @@ describe("createApp workflows wiring", () => {
     void TEST_ENV
   })
 
+  test("registers scheduled workflow config in the runtime manifest", async () => {
+    const scheduled = workflow<{ source: string }, { ok: true }>({
+      id: "test-scheduled-report",
+      schedule: {
+        every: "5m",
+        timezone: "UTC",
+        input: { source: "schedule" },
+        overlap: "skip",
+        environments: ["production"],
+        name: "every-five-minutes",
+      },
+      async run() {
+        return { ok: true }
+      },
+    })
+    const moduleSpec: Module = {
+      name: "scheduled-workflows",
+      workflows: [scheduled satisfies WorkflowDescriptor],
+    }
+    const factory = createInMemoryDriver()
+    let driverHandle: ReturnType<typeof factory> | undefined
+
+    const app = createApp({
+      db: () => null as never,
+      modules: [{ module: moduleSpec }],
+      workflows: {
+        driver: () => (deps) => {
+          driverHandle = factory(deps)
+          return driverHandle
+        },
+        environment: "production",
+      },
+    })
+
+    await app.ready()
+
+    const manifest = await driverHandle?.getManifest({ environment: "production" })
+    expect(manifest?.workflows).toEqual([
+      expect.objectContaining({
+        id: "test-scheduled-report",
+        schedules: [
+          {
+            every: "5m",
+            timezone: "UTC",
+            input: { source: "schedule" },
+            overlap: "skip",
+            environments: ["production"],
+            name: "every-five-minutes",
+          },
+        ],
+      }),
+    ])
+  })
+
   test("non-matching events do not trigger runs", async () => {
     const module = buildPromotionsLikeModule()
     const eventBus = createEventBus()
