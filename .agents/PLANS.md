@@ -36,6 +36,10 @@ Why this work exists.
 What exists now, with durable references to modules, interfaces, docs, and
 observed behavior.
 
+## Agent Brief
+
+The approved brief copied from the issue body.
+
 ## Desired Behavior
 
 The outcome in user-facing or maintainer-facing terms.

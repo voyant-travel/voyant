@@ -230,8 +230,32 @@ describe("agent runner lifecycle helpers", () => {
     assert.match(plan, /- Project item: item-579/)
     assert.match(plan, /- Repository: voyantjs\/voyant/)
     assert.match(plan, /- Verification lane: verify:fast/)
+    assert.match(
+      plan,
+      /## Agent Brief\n\nCurrent behavior, desired behavior, acceptance criteria, and verification lane\./,
+    )
     assert.match(plan, /## Milestones/)
     assert.match(plan, /## Risks And Rollback/)
+  })
+
+  it("refuses execution plans without an approved Agent Brief", () => {
+    const item = workItem()
+    const original = { error: console.error, exit: process.exit }
+    delete item.issue.agentBrief
+
+    try {
+      console.error = () => {}
+      process.exit = (code) => {
+        throw new Error(`process exit ${code}`)
+      }
+      assert.throws(
+        () => buildExecutionPlan(item, { baseRef: "origin/main", workspace: "/repo/worktree" }),
+        /process exit 1/,
+      )
+    } finally {
+      console.error = original.error
+      process.exit = original.exit
+    }
   })
 
   it("builds PR metadata from issue and evidence context", () => {

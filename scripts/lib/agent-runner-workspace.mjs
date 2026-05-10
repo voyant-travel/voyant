@@ -106,6 +106,10 @@ export function buildExecutionPlan(item, { baseRef, workspace }) {
   const issue = item.issue
   const plan = item.dryRunPlan
 
+  if (!issue.agentBrief) {
+    fail("execution plan requires an approved Agent Brief")
+  }
+
   return `# ${issue.title}
 
 Issue: ${issue.url}
@@ -125,6 +129,10 @@ Prepare an implementation workspace for the maintainer-approved issue.
 - Risk: ${plan.risk}
 - Security risk: ${plan.securityRisk}
 - Verification lane: ${plan.verificationLane}
+
+## Agent Brief
+
+${issue.agentBrief}
 
 ## Desired Behavior
 

@@ -12,9 +12,14 @@ Required gate:
 - label: `agent:ready`
 - Project field: `Agent State = Ready`
 - Project field: `Maintainer Approved = Yes`
+- issue body contains a non-empty `Agent Brief` section
 
 Triage agents may classify issues, draft briefs, and recommend next state. They
 must not set the final execution gate.
+
+The `Agent Brief` is the durable task contract. Maintainers may write it
+manually or with the `agent-brief` skill, but it must be present before the
+runner dispatches work.
 
 ## Branches And PRs
 
@@ -78,6 +83,20 @@ without an accepted reason.
   blanket lint disables unless the exception is local, justified, and owned.
 - Prefer deep modules with small interfaces and meaningful behavior behind them.
 - Name files by domain behavior, not implementation trivia.
+
+## Exceptions
+
+When a quality rule cannot be followed, keep the exception close to the work and
+make it reviewable:
+
+- Name the rule being bypassed.
+- Explain why the normal path is blocked.
+- Link the issue, PR, or follow-up that owns removal.
+- Keep the exception as narrow as possible.
+
+Undocumented exceptions should be treated as review findings. Security,
+migration, i18n, and public-package exceptions need maintainer approval before
+handoff.
 
 ## Verification
 

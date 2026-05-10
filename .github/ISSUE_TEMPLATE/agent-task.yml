@@ -58,6 +58,24 @@ body:
     validations:
       required: false
   - type: textarea
+    id: agent-brief
+    attributes:
+      label: Agent Brief
+      description: Maintainers or triage agents can fill this before marking the issue agent-ready.
+      placeholder: |
+        Category:
+        Summary:
+        Current behavior:
+        Desired behavior:
+        Key interfaces:
+        Acceptance criteria:
+        Verification lane:
+        Security:
+        Artifacts required:
+        Out of scope:
+    validations:
+      required: false
+  - type: textarea
     id: scope
     attributes:
       label: Scope boundaries

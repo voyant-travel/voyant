@@ -8,6 +8,11 @@ create workspaces, run provider commands, or spend agent budget. Local runner
 scripts remain the execution boundary until authentication, persistence, and
 worker-to-runner transport are designed.
 
+`/health` is public. `/api/*` requires a bearer token from
+`AGENT_CONTROL_PLANE_TOKENS`, a comma-separated secret value configured in the
+deployment environment. If no token is configured, API routes fail closed with
+`control_plane_auth_not_configured`.
+
 ## Local Commands
 
 ```bash
