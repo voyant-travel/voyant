@@ -100,6 +100,10 @@ export type PricingUiMessages = {
       missingParent: string
     }
   }
+  pricingCategoriesPage: {
+    title: string
+    description: string
+  }
   pricingCategoryDialog: {
     titles: {
       create: string

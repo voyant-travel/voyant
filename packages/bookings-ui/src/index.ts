@@ -55,6 +55,7 @@ export {
   BookingPaymentsSummary,
   type BookingPaymentsSummaryProps,
 } from "./components/booking-payments-summary.js"
+export { BookingsPage, type BookingsPageProps } from "./components/bookings-page.js"
 export {
   FileDropzone,
   type FileDropzoneProps,

@@ -99,6 +99,10 @@ export const pricingUiEn = {
       missingParent: "Select a product first.",
     },
   },
+  pricingCategoriesPage: {
+    title: "Pricing Categories",
+    description: "Reusable categories for age, room, vehicle, and other pricing dimensions.",
+  },
   pricingCategoryDialog: {
     titles: {
       create: "New pricing category",

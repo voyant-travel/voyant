@@ -23,6 +23,10 @@ export const bookingsUiEn = {
       cancelled: "Cancelled",
     },
   },
+  bookingsPage: {
+    title: "Bookings",
+    description: "Manage bookings, confirmations, and travelers.",
+  },
   travelerDialog: {
     titles: {
       create: "Add traveler",

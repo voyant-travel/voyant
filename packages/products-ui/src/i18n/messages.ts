@@ -40,6 +40,10 @@ export type ProductsUiMessages = {
       empty: string
     }
   }
+  productCategoriesPage: {
+    title: string
+    description: string
+  }
   productCategoryDialog: {
     titles: {
       create: string
@@ -129,6 +133,10 @@ export type ProductsUiMessages = {
     delete: string
     deleteConfirm: string
     showingSummary: string
+  }
+  productTagsPage: {
+    title: string
+    description: string
   }
   productMediaDialog: {
     titles: {

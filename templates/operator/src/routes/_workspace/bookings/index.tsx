@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { defaultFetcher, getBookingsQueryOptions } from "@voyantjs/bookings-react"
+import { BookingsPage } from "@voyantjs/bookings-ui"
 
 import { BookingsListSkeleton } from "@/components/voyant/bookings/bookings-list-skeleton"
-import { BookingsPage } from "@/components/voyant/bookings/bookings-page"
 import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/bookings/")({
@@ -11,5 +11,19 @@ export const Route = createFileRoute("/_workspace/bookings/")({
       getBookingsQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }),
     ),
   pendingComponent: BookingsListSkeleton,
-  component: BookingsPage,
+  component: BookingsRoute,
 })
+
+function BookingsRoute() {
+  const navigate = useNavigate()
+
+  return (
+    <div className="p-6">
+      <BookingsPage
+        onBookingOpen={(booking) =>
+          void navigate({ to: "/bookings/$id", params: { id: booking.id } })
+        }
+      />
+    </div>
+  )
+}

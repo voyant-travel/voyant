@@ -99,6 +99,11 @@ export const pricingUiRo = {
       missingParent: "Selecteaza mai intai un produs.",
     },
   },
+  pricingCategoriesPage: {
+    title: "Categorii de tarifare",
+    description:
+      "Categorii reutilizabile pentru varsta, camera, vehicul si alte dimensiuni de tarifare.",
+  },
   pricingCategoryDialog: {
     titles: {
       create: "Categorie noua de pret",

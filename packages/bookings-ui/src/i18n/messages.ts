@@ -17,6 +17,10 @@ export type BookingsUiMessages = {
     >
     supplierStatusLabels: Record<"pending" | "confirmed" | "rejected" | "cancelled", string>
   }
+  bookingsPage: {
+    title: string
+    description: string
+  }
   travelerDialog: {
     titles: {
       create: string

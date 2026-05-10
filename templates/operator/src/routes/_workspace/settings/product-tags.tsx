@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { defaultFetcher, getProductTagsQueryOptions } from "@voyantjs/products-react"
+import { ProductTagsPage } from "@voyantjs/products-ui"
 
-import { ProductTagsPage } from "@/components/voyant/settings/product-tags-page"
 import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/settings/product-tags")({
@@ -12,5 +12,13 @@ export const Route = createFileRoute("/_workspace/settings/product-tags")({
         { limit: 25, offset: 0 },
       ),
     ),
-  component: ProductTagsPage,
+  component: ProductTagsRoute,
 })
+
+function ProductTagsRoute() {
+  return (
+    <div className="p-6">
+      <ProductTagsPage />
+    </div>
+  )
+}

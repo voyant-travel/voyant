@@ -42,6 +42,10 @@ export const productsUiEn = {
       empty: "No product types found.",
     },
   },
+  productCategoriesPage: {
+    title: "Categories",
+    description: "Hierarchical product categories for organizing your catalog.",
+  },
   productCategoryDialog: {
     titles: {
       create: "New product category",
@@ -131,6 +135,10 @@ export const productsUiEn = {
     delete: "Delete",
     deleteConfirm: "Delete this product tag?",
     showingSummary: "Showing {count} of {total}",
+  },
+  productTagsPage: {
+    title: "Product Tags",
+    description: "Free-form labels to tag and filter products.",
   },
   productMediaDialog: {
     titles: {

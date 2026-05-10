@@ -23,6 +23,10 @@ export const bookingsUiRo = {
       cancelled: "Anulat",
     },
   },
+  bookingsPage: {
+    title: "Rezervari",
+    description: "Administreaza rezervarile, confirmarile si calatorii.",
+  },
   travelerDialog: {
     titles: {
       create: "Adauga calator",

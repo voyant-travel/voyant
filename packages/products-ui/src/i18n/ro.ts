@@ -42,6 +42,10 @@ export const productsUiRo = {
       empty: "Nu au fost gasite tipuri de produs.",
     },
   },
+  productCategoriesPage: {
+    title: "Categorii",
+    description: "Categorii ierarhice de produse pentru organizarea catalogului.",
+  },
   productCategoryDialog: {
     titles: {
       create: "Categorie noua de produs",
@@ -131,6 +135,10 @@ export const productsUiRo = {
     delete: "Sterge",
     deleteConfirm: "Stergi acest tag de produs?",
     showingSummary: "Afisezi {count} din {total}",
+  },
+  productTagsPage: {
+    title: "Etichete produse",
+    description: "Etichete libere pentru clasificarea si filtrarea produselor.",
   },
   productMediaDialog: {
     titles: {

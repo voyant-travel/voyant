@@ -1,5 +1,9 @@
 export { OptionUnitDialog, type OptionUnitDialogProps } from "./components/option-unit-dialog.js"
 export { OptionUnitForm, type OptionUnitFormProps } from "./components/option-unit-form.js"
+export {
+  ProductCategoriesPage,
+  type ProductCategoriesPageProps,
+} from "./components/product-categories-page.js"
 export { ProductCategoryCombobox } from "./components/product-category-combobox.js"
 export {
   ProductCategoryDialog,
@@ -58,6 +62,7 @@ export {
 export { ProductTagDialog, type ProductTagDialogProps } from "./components/product-tag-dialog.js"
 export { ProductTagForm, type ProductTagFormProps } from "./components/product-tag-form.js"
 export { ProductTagList, type ProductTagListProps } from "./components/product-tag-list.js"
+export { ProductTagsPage, type ProductTagsPageProps } from "./components/product-tags-page.js"
 export { ProductTypeCombobox } from "./components/product-type-combobox.js"
 export {
   ProductVersionDialog,

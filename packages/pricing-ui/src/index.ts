@@ -20,6 +20,10 @@ export {
   PriceScheduleDialog,
   type PriceScheduleDialogProps,
 } from "./components/price-schedule-dialog.js"
+export {
+  PricingCategoriesPage,
+  type PricingCategoriesPageProps,
+} from "./components/pricing-categories-page.js"
 export { PricingCategoryCombobox } from "./components/pricing-category-combobox.js"
 export {
   PricingCategoryDependencyDialog,
