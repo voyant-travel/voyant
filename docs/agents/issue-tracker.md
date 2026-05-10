@@ -85,6 +85,17 @@ By default, prepare mode only selects Project items for the current checkout's
 repositories with the same issue number. Pass `--repo <owner/name>` only when
 preparing work for a different repository intentionally.
 
+Use the read-only status view to inspect the current queue and active work:
+
+```bash
+pnpm agent:queue:status
+```
+
+Status mode scans all Project pages for the current repository and reports
+ready, active, stale, blocked, human-review, and merge-ready items. Pass
+`--json` for automation or `--max-age-days <number>` to adjust the heartbeat
+staleness threshold.
+
 After a workspace is prepared, claim the item before implementation work starts:
 
 ```bash

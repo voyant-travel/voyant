@@ -31,6 +31,7 @@
     "verify:fast": "pnpm lint:changed && pnpm verify:agent-quality:changed && pnpm typecheck:affected && pnpm test:affected && pnpm verify:architecture",
     "verify:full": "pnpm lint && pnpm verify:agent-quality && pnpm typecheck && pnpm test && pnpm verify:architecture && pnpm build && pnpm verify:package-exports && pnpm verify:publish-tarballs && pnpm i18n:check",
     "agent:queue:dry-run": "node scripts/agent-runner-dry-run.mjs",
+    "agent:queue:status": "node scripts/agent-runner-status.mjs",
     "agent:queue:prepare": "node scripts/agent-runner-prepare.mjs",
     "agent:queue:claim": "node scripts/agent-runner-claim.mjs",
     "agent:queue:heartbeat": "node scripts/agent-runner-heartbeat.mjs",
