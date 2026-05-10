@@ -8,7 +8,11 @@ import {
   type ModuleContainer,
   type WorkflowDescriptor,
 } from "@voyantjs/core"
-import { buildManifest, type EventFilterRuntimeEntry } from "@voyantjs/workflows/events"
+import {
+  type BuildManifestArgs,
+  buildManifest,
+  type EventFilterRuntimeEntry,
+} from "@voyantjs/workflows/events"
 import { Hono } from "hono"
 
 import { requireAuth } from "./middleware/auth.js"
@@ -36,6 +40,13 @@ function resolveSurfaceMountPath(
   }
 
   return `${prefix}/${normalized.replace(/^\/+|\/+$/g, "")}`
+}
+
+type ManifestWorkflowDescriptor = BuildManifestArgs["workflows"][number]
+
+function toManifestWorkflowDescriptor(wf: WorkflowDescriptor): ManifestWorkflowDescriptor {
+  const candidate = wf as WorkflowDescriptor & Partial<Pick<ManifestWorkflowDescriptor, "config">>
+  return candidate.config ? { id: wf.id, config: candidate.config } : { id: wf.id }
 }
 
 /**
@@ -368,7 +379,7 @@ async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promise<void>
   const manifest = await buildManifest({
     projectId: args.projectId,
     environment: args.environment,
-    workflows: args.collectedWorkflows.map((w) => ({ id: w.id })),
+    workflows: args.collectedWorkflows.map(toManifestWorkflowDescriptor),
     eventFilters: filterEntries,
   })
 
