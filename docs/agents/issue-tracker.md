@@ -56,3 +56,15 @@ gh issue edit <number> --add-label agent:ready
 
 Prefer the GitHub app/connector for project metadata when available. Use `gh`
 or GraphQL when thread-level state or ProjectV2 fields are needed.
+
+## Runner Dry Run
+
+Before any agent execution is enabled, use the read-only queue runner:
+
+```bash
+pnpm agent:queue:dry-run
+```
+
+The dry run reads `Voyant Engineering`, checks the execution gate, and prints
+the branch, workspace, and execution-plan path it would use. It must not create
+branches, worktrees, comments, PRs, or Project updates.
