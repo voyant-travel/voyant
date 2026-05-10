@@ -173,7 +173,22 @@ recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
 `start`, `publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it refuses
 `run-command`, `inspect-stale`, blocked work, and wait states so implementation
-execution remains explicit.
+execution remains explicit. Successful dispatch attempts append local JSONL
+audit events to `.agent-runs/events.jsonl` by default; pass `--event-log <path>`
+when a supervisor needs a different local ledger path.
+
+Use loop for a bounded supervisor pass:
+
+```bash
+pnpm agent:queue:loop -- --iterations 3 --yes
+```
+
+Loop mode repeatedly re-reads the Project, dispatches one allow-listed
+recommendation, then sleeps before the next iteration. It is dry-run by default
+and capped at 100 iterations. It uses the same dispatch allow-list, so it cannot
+run implementation commands or override blocked/wait states. Each iteration is
+recorded in the local event log, alongside the nested dispatch command's own
+events, so unattended queue passes have a minimal timeline.
 
 After a workspace is prepared, claim the item before implementation work starts:
 

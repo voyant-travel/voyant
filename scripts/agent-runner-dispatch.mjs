@@ -14,6 +14,11 @@ import {
   selectDispatchRecommendation,
 } from "./lib/agent-runner-dispatch.mjs"
 import {
+  appendAgentRunnerEvent,
+  recommendationEventDetails,
+  resolveEventLogPath,
+} from "./lib/agent-runner-events.mjs"
+import {
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -33,6 +38,7 @@ maybePrintHelp(args, {
       `Only dispatch this action. Allowed: ${Array.from(dispatchableActions).join(", ")}.`,
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    ["--event-log <path>", "JSONL audit log path. Defaults to .agent-runs/events.jsonl."],
     ...repositoryOptions,
     ...mutationOptions,
     ...projectOptions,
@@ -71,20 +77,40 @@ if (!recommendation) {
 }
 
 const commandArgs = dispatchCommandArgs(recommendation, { repository })
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 
 if (!args.yes) {
-  printDispatchPlan({ commandArgs, recommendation, repository })
+  printDispatchPlan({ commandArgs, eventLogPath, recommendation, repository })
   fail("dispatch mode runs one queue mutation; rerun with --yes")
 }
 
+appendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "dispatch.started",
+    command: ["pnpm", ...commandArgs],
+    repository,
+    recommendation: recommendationEventDetails(recommendation),
+  },
+})
 const status = runDispatchCommand(commandArgs)
+appendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "dispatch.completed",
+    repository,
+    status: status ?? 1,
+    recommendation: recommendationEventDetails(recommendation),
+  },
+})
 process.exitCode = status ?? 1
 
-function printDispatchPlan({ commandArgs, recommendation, repository }) {
+function printDispatchPlan({ commandArgs, eventLogPath, recommendation, repository }) {
   console.log("agent-runner dispatch would run:")
   console.log(`issue: #${recommendation.issue.number} ${recommendation.issue.title}`)
   console.log(`repository: ${repository}`)
   console.log(`action: ${recommendation.action}`)
   console.log(`reason: ${recommendation.reason}`)
   console.log(`command: pnpm ${commandArgs.join(" ")}`)
+  console.log(`event log: ${eventLogPath}`)
 }
