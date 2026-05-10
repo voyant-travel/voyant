@@ -15,6 +15,7 @@ export { OptionUnitPriceRuleDialog } from "./components/option-unit-price-rule-d
 export { OptionUnitTierDialog } from "./components/option-unit-tier-dialog.js"
 export { PickupPriceRuleDialog } from "./components/pickup-price-rule-dialog.js"
 export { PriceCatalogCombobox } from "./components/price-catalog-combobox.js"
+export { PriceCatalogsPage, type PriceCatalogsPageProps } from "./components/price-catalogs-page.js"
 export { PriceScheduleCombobox } from "./components/price-schedule-combobox.js"
 export {
   PriceScheduleDialog,

@@ -296,6 +296,33 @@ export type ProductsUiMessages = {
     title: string
     description: string
   }
+  productTypesPage: {
+    title: string
+    description: string
+    addType: string
+    empty: string
+    edit: string
+    delete: string
+    deleteConfirm: string
+    showingSummary: string
+    editSheetTitle: string
+    newSheetTitle: string
+    nameLabel: string
+    namePlaceholder: string
+    codeLabel: string
+    codePlaceholder: string
+    descriptionLabel: string
+    descriptionPlaceholder: string
+    sortOrderLabel: string
+    activeLabel: string
+    cancel: string
+    saveChanges: string
+    createType: string
+    validation: {
+      nameRequired: string
+      codeRequired: string
+    }
+  }
   productMediaDialog: {
     titles: {
       create: string

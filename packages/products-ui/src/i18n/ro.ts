@@ -305,6 +305,35 @@ export const productsUiRo = {
     title: "Etichete produse",
     description: "Etichete libere pentru clasificarea si filtrarea produselor.",
   },
+  productTypesPage: {
+    title: "Tipuri de produs",
+    description:
+      "Tipuri de clasificare pentru produsele tale: City Break, Circuit, Croaziera si altele similare.",
+    addType: "Adauga tip",
+    empty:
+      "Nu exista tipuri de produs momentan. Creeaza tipuri precum City Break, Circuit sau Croaziera.",
+    edit: "Editeaza",
+    delete: "Sterge",
+    deleteConfirm: "Stergi acest tip de produs?",
+    showingSummary: "Afisare {count} din {total}",
+    editSheetTitle: "Editeaza tipul de produs",
+    newSheetTitle: "Tip de produs nou",
+    nameLabel: "Nume",
+    namePlaceholder: "City Break",
+    codeLabel: "Cod",
+    codePlaceholder: "city-break",
+    descriptionLabel: "Descriere",
+    descriptionPlaceholder: "Descriere optionala...",
+    sortOrderLabel: "Ordine de sortare",
+    activeLabel: "Activ",
+    cancel: "Anuleaza",
+    saveChanges: "Salveaza modificarile",
+    createType: "Creeaza tipul",
+    validation: {
+      nameRequired: "Numele este obligatoriu",
+      codeRequired: "Codul este obligatoriu",
+    },
+  },
   productMediaDialog: {
     titles: {
       create: "Adauga media",

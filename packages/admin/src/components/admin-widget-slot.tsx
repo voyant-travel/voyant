@@ -4,6 +4,7 @@ import type { ComponentType } from "react"
 import { Fragment } from "react"
 
 import { type AdminExtension, type AdminWidgetSlot, resolveAdminWidgets } from "../extensions.js"
+import { useAdminExtensions } from "../providers/admin-extensions.js"
 
 export interface AdminWidgetSlotRendererProps {
   extensions?: ReadonlyArray<AdminExtension>
@@ -16,9 +17,10 @@ export function AdminWidgetSlotRenderer({
   props = {},
   slot,
 }: AdminWidgetSlotRendererProps) {
+  const contextExtensions = useAdminExtensions()
   const widgets = resolveAdminWidgets({
     slot,
-    extensions,
+    extensions: extensions ?? contextExtensions,
   })
 
   if (widgets.length === 0) {

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { defaultFetcher, getPriceCatalogsQueryOptions } from "@voyantjs/pricing-react"
+import { PriceCatalogsPage } from "@voyantjs/pricing-ui"
 
-import { PriceCatalogsPage } from "@/components/voyant/settings/price-catalogs-page"
 import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/settings/price-catalogs")({
@@ -12,5 +12,13 @@ export const Route = createFileRoute("/_workspace/settings/price-catalogs")({
         { limit: 25, offset: 0 },
       ),
     ),
-  component: PriceCatalogsPage,
+  component: PriceCatalogsRoute,
 })
+
+function PriceCatalogsRoute() {
+  return (
+    <div className="p-6">
+      <PriceCatalogsPage />
+    </div>
+  )
+}

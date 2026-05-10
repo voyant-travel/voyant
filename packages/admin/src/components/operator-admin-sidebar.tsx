@@ -16,6 +16,7 @@ import {
   createOperatorAdminNavigation,
   type OperatorAdminNavigationIcons,
 } from "../navigation/operator-navigation.js"
+import { AdminExtensionsProvider } from "../providers/admin-extensions.js"
 import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
 import type { AdminUser, NavItem } from "../types.js"
 import { AdminNavGroup } from "./admin-nav-group.js"
@@ -117,20 +118,22 @@ export function OperatorAdminWorkspaceLayout({
   user,
 }: OperatorAdminWorkspaceLayoutProps) {
   return (
-    <SidebarProvider>
-      <OperatorAdminSidebar
-        accountHref={accountHref}
-        brand={brand}
-        currentPath={currentPath}
-        extensions={extensions}
-        icons={icons}
-        linkComponent={linkComponent}
-        navItems={navItems}
-        onSignOut={onSignOut}
-        user={user}
-        {...sidebarProps}
-      />
-      <main className={mainClassName}>{children}</main>
-    </SidebarProvider>
+    <AdminExtensionsProvider extensions={extensions}>
+      <SidebarProvider>
+        <OperatorAdminSidebar
+          accountHref={accountHref}
+          brand={brand}
+          currentPath={currentPath}
+          extensions={extensions}
+          icons={icons}
+          linkComponent={linkComponent}
+          navItems={navItems}
+          onSignOut={onSignOut}
+          user={user}
+          {...sidebarProps}
+        />
+        <main className={mainClassName}>{children}</main>
+      </SidebarProvider>
+    </AdminExtensionsProvider>
   )
 }

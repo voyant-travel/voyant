@@ -1,10 +1,12 @@
 import type {
+  PriceCatalogRecord,
   PricingCategoryDependencyRecord,
   PricingCategoryRecord,
 } from "@voyantjs/pricing-react"
 
 export type PricingCategoryType = PricingCategoryRecord["categoryType"]
 export type PricingDependencyType = PricingCategoryDependencyRecord["dependencyType"]
+export type PriceCatalogType = PriceCatalogRecord["catalogType"]
 export type ChargeType = "none" | "amount" | "percentage"
 export type AddonPricingMode =
   | "included"
@@ -103,6 +105,40 @@ export type PricingUiMessages = {
   pricingCategoriesPage: {
     title: string
     description: string
+  }
+  priceCatalogsPage: {
+    title: string
+    description: string
+    addCatalog: string
+    empty: string
+    default: string
+    edit: string
+    delete: string
+    deleteConfirm: string
+    showingSummary: string
+    selectCurrencyPlaceholder: string
+    noCurrenciesFound: string
+    editSheetTitle: string
+    newSheetTitle: string
+    nameLabel: string
+    namePlaceholder: string
+    codeLabel: string
+    codePlaceholder: string
+    currencyLabel: string
+    typeLabel: string
+    defaultCatalogLabel: string
+    activeLabel: string
+    notesLabel: string
+    notesPlaceholder: string
+    cancel: string
+    saveChanges: string
+    createCatalog: string
+    catalogTypeLabels: Record<PriceCatalogType, string>
+    validation: {
+      nameRequired: string
+      codeRequired: string
+      currencyLength: string
+    }
   }
   pricingCategoryDialog: {
     titles: {
