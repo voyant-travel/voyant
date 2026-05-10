@@ -16,6 +16,10 @@ All components accept a `className` prop and merge it with `cn()`. Wrap or compo
 
 - `InvoicesPage`, `InvoiceDetailPage`, and `PaymentsPage` publish
   list/detail-management compositions.
+- `TaxesPage` publishes the finance-owned tax class, tax regime, and tax policy
+  profile settings composition. It reads `baseUrl` and `fetcher` from
+  `VoyantFinanceProvider`; pass the `api` prop only when an app needs a custom
+  transport adapter.
 - `InvoiceDetailHeader`, `InvoiceSummaryCard`, `InvoiceLinksCard`,
   `InvoiceLineItemsCard`, `InvoicePaymentsCard`, `InvoiceCreditNotesCard`, and
   `InvoiceNotesCard` remain exported for consumers that need to compose the

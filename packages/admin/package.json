@@ -12,6 +12,7 @@
     "./components/admin-widget-slot": "./src/components/admin-widget-slot.tsx",
     "./components/operator-admin-bootstrap-gate": "./src/components/operator-admin-bootstrap-gate.tsx",
     "./components/operator-admin-sidebar": "./src/components/operator-admin-sidebar.tsx",
+    "./components/team-settings-page": "./src/components/team-settings-page.tsx",
     "./components/operator-admin-user-menu": "./src/components/operator-admin-user-menu.tsx",
     "./extensions": "./src/extensions.ts",
     "./navigation/operator-navigation": "./src/navigation/operator-navigation.ts",
@@ -103,6 +104,11 @@
         "types": "./dist/components/operator-admin-user-menu.d.ts",
         "import": "./dist/components/operator-admin-user-menu.js",
         "default": "./dist/components/operator-admin-user-menu.js"
+      },
+      "./components/team-settings-page": {
+        "types": "./dist/components/team-settings-page.d.ts",
+        "import": "./dist/components/team-settings-page.js",
+        "default": "./dist/components/team-settings-page.js"
       },
       "./extensions": {
         "types": "./dist/extensions.d.ts",
