@@ -273,6 +273,94 @@ export type CrmUiMessages = {
     }
     hint: string
   }
+  personDetailPage: {
+    notFound: string
+    backToPeople: string
+  }
+  personDetail: {
+    topBar: {
+      people: string
+      edit: string
+      delete: string
+      deleteTitle: string
+      deleteDescription: string
+    }
+    sidebar: {
+      about: string
+      tags: string
+      openWebsite: string
+      fields: {
+        firstName: string
+        lastName: string
+        jobTitle: string
+        email: string
+        phone: string
+        website: string
+        relation: string
+        status: string
+        preferredCurrency: string
+        preferredLanguage: string
+        birthday: string
+        source: string
+      }
+    }
+    metrics: {
+      openOpportunities: string
+      pipelineValue: string
+      documents: string
+      activities: string
+    }
+    tabs: {
+      overview: string
+      opportunities: string
+      activities: string
+      relationships: string
+      documents: string
+    }
+    sections: {
+      created: string
+      updated: string
+      organization: string
+      birthday: string
+      notes: string
+      travelProfile: string
+      dateOfBirth: string
+      dietaryRequirements: string
+      accessibilityNeeds: string
+      passportExpiry: string
+      passportIssuingCountry: string
+      passportIssuingAuthority: string
+      primary: string
+    }
+    relationshipKindLabels: {
+      spouse: string
+      partner: string
+      parent: string
+      child: string
+      sibling: string
+      guardian: string
+      ward: string
+      emergency_contact: string
+      friend: string
+      travel_companion: string
+      other: string
+    }
+    documentTypeLabels: {
+      passport: string
+      id_card: string
+      driver_license: string
+      visa: string
+      other: string
+    }
+    empty: {
+      noOpportunities: string
+      noActivities: string
+      noRelationships: string
+      noDocuments: string
+      noTravelProfile: string
+    }
+    hint: string
+  }
   createQuoteDialog: {
     title: string
     fields: {

@@ -44,6 +44,7 @@ English-only apps should import only `./i18n/en`. Bilingual apps can import
 ## Components
 
 - `PersonCard`, `PersonCardConnected`, `PersonDialog`, `PersonForm`, `PersonList`
+- `PersonDetailPage`, `PersonTopBar`, `PersonSidebar`, `PersonMain`
 - `OrganizationCard`, `OrganizationDialog`, `OrganizationForm`, `OrganizationList`
 - `OrganizationDetailPage`, `OrganizationTopBar`, `OrganizationSidebar`, `OrganizationMain`
 - `ActivitiesPage`, `CreateActivityDialog`, `CreateOpportunityDialog`
