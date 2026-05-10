@@ -118,9 +118,10 @@ export function createConcurrencyCoordinator<Id>(
     let next: Waiter | undefined
     await withStateLock(async () => {
       const state = await loadState()
+      const wasActive = state.active.includes(runId)
       state.active = state.active.filter((holder) => holder !== runId)
-      next = waiters.shift()
-      if (next) {
+      next = wasActive ? waiters.shift() : undefined
+      if (wasActive && next) {
         state.active.push(next.runId)
       }
       await saveState(state)
@@ -149,12 +150,14 @@ export function createConcurrencyCoordinator<Id>(
 
         let resp: Response | undefined
         try {
-          resp = await forwardToRunDO(
-            deps.runDO,
-            payload.trigger.runId,
-            "/trigger",
-            payload.trigger,
-          )
+          resp = await forwardToRunDO(deps.runDO, payload.trigger.runId, "/trigger", {
+            ...payload.trigger,
+            concurrencyLease: {
+              environment: payload.trigger.environment ?? "development",
+              key: payload.concurrency.key,
+              runId: payload.trigger.runId,
+            },
+          })
           if (resp.ok) {
             const record = (await resp.clone().json()) as RunRecord
             if (isTerminal(record.status)) {

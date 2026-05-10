@@ -424,6 +424,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
           workflowId: args.workflowId,
           input: args.input,
           policy,
+          holderId: concurrencyHolderId(args),
         },
         (hooks) =>
           orchestratorTrigger(
@@ -547,6 +548,12 @@ function isTerminal(status: RunRecord["status"]): boolean {
     status === "compensated" ||
     status === "compensation_failed"
   )
+}
+
+function concurrencyHolderId(args: TriggerArgs): string | undefined {
+  if (args.runId !== undefined) return args.runId
+  if (args.idempotencyKey !== undefined) return `idem-${args.workflowId}-${args.idempotencyKey}`
+  return undefined
 }
 
 function randomToken(): string {

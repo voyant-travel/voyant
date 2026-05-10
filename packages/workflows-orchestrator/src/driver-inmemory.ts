@@ -319,6 +319,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
           workflowId: args.workflowId,
           input: args.input,
           policy,
+          holderId: concurrencyHolderId(args),
         },
         (hooks) =>
           orchestratorTrigger(
@@ -394,6 +395,12 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
       admin,
     }
   }
+}
+
+function concurrencyHolderId(args: TriggerArgs): string | undefined {
+  if (args.runId !== undefined) return args.runId
+  if (args.idempotencyKey !== undefined) return `idem-${args.workflowId}-${args.idempotencyKey}`
+  return undefined
 }
 
 function earliestWakeAt(record: RunRecord): number | undefined {

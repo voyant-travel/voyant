@@ -104,6 +104,38 @@ describe("InMemory driver workflow concurrency", () => {
     expect(run.status).toBe("completed")
   })
 
+  test("idempotent retries bypass concurrency rejection while the original run is active", async () => {
+    const driver = createInMemoryDriver()(testFactoryDeps())
+    const gate = deferred<void>()
+    let invocationCount = 0
+
+    const wf = workflow<{ n: number }, number>({
+      id: "concurrency.idempotent-retry",
+      concurrency: {
+        key: "shared",
+        limit: 1,
+        strategy: "cancel-newest",
+      },
+      async run(input) {
+        invocationCount++
+        await gate.promise
+        return input.n
+      },
+    })
+
+    const first = driver.trigger(wf, { n: 1 }, { idempotencyKey: "retry-key" })
+    await vi.waitFor(() => expect(invocationCount).toBe(1))
+    const retry = await driver.trigger(wf, { n: 999 }, { idempotencyKey: "retry-key" })
+
+    expect(retry.id).toBe("idem-concurrency.idempotent-retry-retry-key")
+    expect(invocationCount).toBe(1)
+
+    gate.resolve()
+    const firstRun = await first
+    expect(retry.id).toBe(firstRun.id)
+    expect(invocationCount).toBe(1)
+  })
+
   test("cancels the in-progress run before starting a replacement", async () => {
     const driver = createInMemoryDriver()(testFactoryDeps())
     const started: number[] = []

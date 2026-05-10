@@ -29,6 +29,7 @@ export interface InProcessConcurrencyCoordinator {
       workflowId: string
       input: unknown
       policy?: RuntimeConcurrencyPolicy
+      holderId?: string
     },
     operation: (hooks: ConcurrencyRunHooks) => Promise<RunRecord>,
   ): Promise<RunRecord>
@@ -81,10 +82,15 @@ export function createInProcessConcurrencyCoordinator(
     key: string,
     limit: number,
     strategy: NonNullable<RuntimeConcurrencyPolicy["strategy"]>,
+    preferredHolderId?: string,
   ): Promise<Slot> {
     const group = getGroup(key)
+    if (preferredHolderId && group.active.has(preferredHolderId)) {
+      return { key, holderId: preferredHolderId }
+    }
+
+    const holderId = preferredHolderId ?? createToken()
     if (group.active.size < limit) {
-      const holderId = createToken()
       group.active.add(holderId)
       return { key, holderId }
     }
@@ -102,12 +108,10 @@ export function createInProcessConcurrencyCoordinator(
           await opts.cancelRun?.(holder, "cancelled by workflow concurrency policy")
         }
       }
-      const holderId = createToken()
       group.active.add(holderId)
       return { key, holderId }
     }
 
-    const holderId = createToken()
     return new Promise((resolve) => {
       group.waiters.push({
         holderId,
@@ -158,7 +162,7 @@ export function createInProcessConcurrencyCoordinator(
       const key = resolveConcurrencyKey(args.workflowId, args.input, policy)
       const limit = normalizeLimit(policy.limit)
       const strategy = policy.strategy ?? "queue"
-      let slot = await acquire(key, limit, strategy)
+      let slot = await acquire(key, limit, strategy, args.holderId)
       let record: RunRecord | undefined
 
       try {
