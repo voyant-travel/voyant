@@ -480,6 +480,25 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       active: true,
     })
 
+    const [defaultItinerary] = await db
+      .insert(productItineraries)
+      .values({
+        productId: product.id,
+        name: "Main itinerary",
+        isDefault: true,
+      })
+      .returning()
+
+    const [variantItinerary] = await db
+      .insert(productItineraries)
+      .values({
+        productId: product.id,
+        name: "Island variant",
+        isDefault: false,
+        sortOrder: 1,
+      })
+      .returning()
+
     const [dayOne] = await db
       .insert(productDays)
       .values({
@@ -487,6 +506,16 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
         dayNumber: 1,
         title: "Arrival",
         description: "Transfer and welcome dinner.",
+      })
+      .returning()
+
+    const [variantDay] = await db
+      .insert(productDays)
+      .values({
+        itineraryId: variantItinerary.id,
+        dayNumber: 1,
+        title: "Island loop",
+        description: "Variant day content.",
       })
       .returning()
 
@@ -512,6 +541,20 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       url: "https://cdn.example.com/day-1.jpg",
       isCover: true,
     })
+
+    const [variantSlot] = await db
+      .insert(availabilitySlots)
+      .values({
+        productId: product.id,
+        itineraryId: variantItinerary.id,
+        optionId: option.id,
+        dateLocal: "2026-09-01",
+        startsAt: new Date("2026-09-01T08:00:00.000Z"),
+        timezone: "Europe/Bucharest",
+        status: "open",
+        remainingPax: 8,
+      })
+      .returning()
 
     const extensionsRes = await app.request(
       `/products/${product.id}/extensions?optionId=${option.id}`,
@@ -577,6 +620,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
     expect(await itineraryRes.json()).toEqual({
       data: {
         id: "dep_compat_123",
+        itineraryId: defaultItinerary.id,
         days: [
           {
             id: dayOne.id,
@@ -592,6 +636,26 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
                 description: "Harbor sail at golden hour.",
               },
             ],
+          },
+        ],
+      },
+    })
+
+    const variantItineraryRes = await app.request(
+      `/products/${product.id}/departures/${variantSlot.id}/itinerary`,
+    )
+    expect(variantItineraryRes.status).toBe(200)
+    expect(await variantItineraryRes.json()).toEqual({
+      data: {
+        id: variantSlot.id,
+        itineraryId: variantItinerary.id,
+        days: [
+          {
+            id: variantDay.id,
+            title: "Island loop",
+            description: "Variant day content.",
+            thumbnail: null,
+            segments: [],
           },
         ],
       },

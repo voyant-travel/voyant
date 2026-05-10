@@ -1362,6 +1362,7 @@ export async function getStorefrontDepartureItinerary(
 
   return {
     id: input.departureId,
+    itineraryId,
     days: days.map((day) => ({
       id: day.id,
       title: day.title ?? `Day ${day.dayNumber}`,
