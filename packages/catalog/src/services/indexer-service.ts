@@ -136,14 +136,20 @@ export function createIndexerService(options: IndexerServiceOptions): IndexerSer
       const verticalSlices = slicesForVertical(entityModule)
       for (const slice of verticalSlices) {
         const document = await builder(entityId, slice)
-        if (!document) continue
+        if (!document) {
+          await adapter.delete(slice, [entityId])
+          continue
+        }
         await adapter.upsert(slice, [document])
       }
     },
 
     async reindexEntityForSlice(slice, entityId, builder) {
       const document = await builder(entityId, slice)
-      if (!document) return
+      if (!document) {
+        await adapter.delete(slice, [entityId])
+        return
+      }
       await adapter.upsert(slice, [document])
     },
 

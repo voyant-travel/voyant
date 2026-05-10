@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import { productDestinationsCatalogPolicy } from "../../src/catalog-policy-destinations.js"
 import {
   createProductDocumentBuilder,
+  createProductStorefrontCardProjectionExtension,
   createProductsRegistry,
   type ProductProjectionExtension,
 } from "../../src/service-catalog-plane.js"
@@ -49,6 +50,25 @@ function stubDb<T>(rows: T[]) {
   }
 }
 
+function stubQueuedDb(rowSets: unknown[][]) {
+  const queue = [...rowSets]
+  const nextRows = async () => queue.shift() ?? []
+  const result = () => {
+    const chain = {
+      limit: vi.fn(nextRows),
+      orderBy: vi.fn(nextRows),
+    }
+    return chain
+  }
+  return {
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(result),
+      })),
+    })),
+  }
+}
+
 const customerSlice: IndexerSlice = {
   vertical: "products",
   locale: "en-GB",
@@ -74,6 +94,26 @@ describe("createProductDocumentBuilder — projection extensions", () => {
     const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
     const doc = await build("prod_missing", customerSlice)
     expect(doc).toBeNull()
+  })
+
+  it("returns null for customer slices when the product is not publicly visible", async () => {
+    const db = stubDb([{ ...sampleRow, visibility: "private" }])
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+    const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
+    const doc = await build("prod_private", customerSlice)
+    expect(doc).toBeNull()
+  })
+
+  it("keeps non-public products in staff-admin slices", async () => {
+    const db = stubDb([{ ...sampleRow, visibility: "private" }])
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+    const build = createProductDocumentBuilder(db as any, { sellerOperatorId: "op_xyz" })
+    const doc = await build("prod_private", {
+      ...customerSlice,
+      audience: "staff-admin",
+    })
+    expect(doc).not.toBeNull()
+    expect(doc?.fields).toHaveProperty("visibility", "private")
   })
 
   it("merges extension projection entries into the document when registry includes them", async () => {
@@ -159,5 +199,76 @@ describe("createProductDocumentBuilder — projection extensions", () => {
       { sellerOperatorId: "op_xyz", registry, extensions: [failing] },
     )
     await expect(build("prod_abc", customerSlice)).rejects.toThrow("destination lookup failed")
+  })
+
+  it("projects storefront-card fields onto customer documents", async () => {
+    const db = stubQueuedDb([
+      [sampleRow],
+      [
+        {
+          languageTag: "en-GB",
+          name: "Localized retreat",
+          slug: "localized-retreat",
+          shortDescription: "Short card copy",
+        },
+      ],
+      [
+        {
+          url: "https://cdn.example/cover.jpg",
+          isCover: true,
+          isBrochure: false,
+          sortOrder: 0,
+          createdAt: new Date("2026-01-01"),
+        },
+      ],
+      [
+        {
+          latitude: 45.76,
+          longitude: 21.23,
+          sortOrder: 0,
+          createdAt: new Date("2026-01-01"),
+        },
+      ],
+      [{ id: "itin_1", isDefault: true }],
+      [{ dayNumber: 1 }, { dayNumber: 4 }],
+    ])
+    const build = createProductDocumentBuilder(
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+      db as any,
+      {
+        sellerOperatorId: "op_xyz",
+        extensions: [createProductStorefrontCardProjectionExtension()],
+      },
+    )
+
+    const doc = await build("prod_abc", customerSlice)
+    expect(doc?.fields).toMatchObject({
+      name: "Localized retreat",
+      slug: "localized-retreat",
+      shortDescription: "Short card copy",
+      primaryMediaUrl: "https://cdn.example/cover.jpg",
+      coverMediaUrl: "https://cdn.example/cover.jpg",
+      durationDays: 4,
+      latitude: 45.76,
+      longitude: 21.23,
+      startDateEpochDays: 20574,
+      endDateEpochDays: 20818,
+    })
+  })
+
+  it("preserves the base product name when storefront-card translations are missing", async () => {
+    const db = stubQueuedDb([[sampleRow], [], [], [], []])
+    const build = createProductDocumentBuilder(
+      // biome-ignore lint/suspicious/noExplicitAny: drizzle stub
+      db as any,
+      {
+        sellerOperatorId: "op_xyz",
+        extensions: [createProductStorefrontCardProjectionExtension()],
+      },
+    )
+
+    const doc = await build("prod_abc", customerSlice)
+    expect(doc?.fields.name).toBe("Bali Wellness Retreat")
+    expect(doc?.fields.slug).toBeNull()
   })
 })

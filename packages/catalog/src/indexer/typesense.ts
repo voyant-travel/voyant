@@ -168,18 +168,29 @@ function typesenseFieldFromPolicy(policy: FieldPolicy): TypesenseFieldSchema {
   // Path-to-field-name: keep the dotted path; Typesense's nested fields handle it.
   const name = policy.path
 
-  // Type inference: lists are *array variants; everything else is string by
-  // default. Verticals can override per-document by emitting structured
-  // payloads; this is the schema-level default.
   const isList = name.endsWith("[]")
   const baseName = isList ? name.slice(0, -2) : name
+  const type = typesenseTypeForField(baseName, isList)
 
   return {
     name: baseName,
-    type: isList ? "string[]" : "string",
+    type,
     facet: isFacet,
     optional: true,
   }
+}
+
+function typesenseTypeForField(name: string, isList: boolean): TypesenseFieldSchema["type"] {
+  if (isList) return "string[]"
+  if (BOOLEAN_FIELD_NAMES.has(name) || /^(has|is)[A-Z]/.test(name)) return "bool"
+  if (FLOAT_FIELD_NAMES.has(name) || /(Latitude|Longitude)$/.test(name)) return "float"
+  if (
+    INTEGER_FIELD_NAMES.has(name) ||
+    INTEGER_FIELD_SUFFIXES.some((suffix) => name.endsWith(suffix))
+  ) {
+    return "int64"
+  }
+  return "string"
 }
 
 /**
@@ -191,13 +202,15 @@ export function buildSearchQuery(
   request: SearchRequest,
   registry: FieldPolicyRegistry,
 ): TypesenseSearchQuery {
-  // Build query_by from indexed-column merchandisable + structural fields.
+  // Build query_by from indexed text fields only. Typesense rejects numeric
+  // and boolean fields in query_by even when those fields are filterable.
   const queryFields = registry.policies
     .filter(
       (p) =>
         p.query === "indexed-column" && (p.class === "merchandisable" || p.class === "structural"),
     )
     .map((p) => (p.path.endsWith("[]") ? p.path.slice(0, -2) : p.path))
+    .filter((field) => isTextSearchableField(field))
     .join(",")
 
   const perPage = request.pagination?.limit ?? 20
@@ -490,7 +503,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
 function flattenDocument(document: IndexerDocument): Record<string, unknown> {
   const flat: Record<string, unknown> = { id: document.id }
   for (const [path, value] of Object.entries(document.fields)) {
-    flat[path] = coerceForTypesense(value)
+    flat[path] = coerceForTypesense(path, value)
   }
   if (document.embeddings) {
     for (const [name, vector] of Object.entries(document.embeddings)) {
@@ -504,18 +517,21 @@ function flattenDocument(document: IndexerDocument): Record<string, unknown> {
 }
 
 /**
- * Coerce a field value to match the typesense schema. `typesenseFieldFromPolicy`
- * declares every non-vector field as `string` or `string[]`, so any non-string
- * primitive must be stringified at import time. `null`/`undefined` drop out
- * (typesense optional fields tolerate absence). Arrays recurse element-wise.
+ * Coerce a field value to match the Typesense schema inferred from the
+ * policy path. `null`/`undefined` drop out because optional fields tolerate
+ * absence. Arrays recurse element-wise.
  */
-function coerceForTypesense(value: unknown): unknown {
+function coerceForTypesense(path: string, value: unknown): unknown {
   if (value == null) return undefined
-  if (typeof value === "string") return value
   if (Array.isArray(value)) {
-    const coerced = value.map((v) => coerceForTypesense(v)).filter((v) => v !== undefined)
+    const coerced = value.map((v) => coerceForTypesense(path, v)).filter((v) => v !== undefined)
     return coerced
   }
+  const type = typesenseTypeForField(path, false)
+  if (type === "bool") return coerceBool(value)
+  if (type === "float") return coerceNumber(value)
+  if (type === "int32" || type === "int64") return coerceInteger(value)
+  if (typeof value === "string") return value
   if (typeof value === "object") {
     // Nested objects round-trip via JSON. Typesense's nested-fields support
     // accepts these only when the schema declares them as `object`/`object[]`,
@@ -525,6 +541,52 @@ function coerceForTypesense(value: unknown): unknown {
   }
   return String(value)
 }
+
+function isTextSearchableField(name: string): boolean {
+  const type = typesenseTypeForField(name, false)
+  return type === "string" || type === "string[]"
+}
+
+function coerceNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return undefined
+}
+
+function coerceInteger(value: unknown): number | undefined {
+  const parsed = coerceNumber(value)
+  if (parsed === undefined) return undefined
+  return Math.trunc(parsed)
+}
+
+function coerceBool(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") return value
+  if (typeof value === "string") {
+    if (value === "true") return true
+    if (value === "false") return false
+  }
+  return undefined
+}
+
+const BOOLEAN_FIELD_NAMES = new Set(["activated"])
+
+const FLOAT_FIELD_NAMES = new Set(["latitude", "longitude"])
+
+const INTEGER_FIELD_NAMES = new Set(["pax"])
+
+const INTEGER_FIELD_SUFFIXES = [
+  "AmountCents",
+  "Percent",
+  "Count",
+  "Days",
+  "EpochDays",
+  "EpochMs",
+  "Minutes",
+  "Total",
+]
 
 function mapTypesenseResponse(response: TypesenseSearchResponse): SearchResults {
   const hits = response.hits.map((hit) => ({

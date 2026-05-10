@@ -153,7 +153,7 @@ describe("IndexerService", () => {
     expect(deleteCalls.every((c) => c.ids?.includes("prod_xyz"))).toBe(true)
   })
 
-  it("skips slices when the document builder returns null", async () => {
+  it("deletes stale slice documents when the document builder returns null", async () => {
     const adapter = createStubAdapter()
     const service = createIndexerService({
       adapter,
@@ -168,6 +168,28 @@ describe("IndexerService", () => {
     const upsertCalls = adapter.calls.filter((c) => c.op === "upsert")
     expect(upsertCalls).toHaveLength(1)
     expect(upsertCalls[0]?.slice.audience).toBe("staff-admin")
+    const deleteCalls = adapter.calls.filter((c) => c.op === "delete")
+    expect(deleteCalls).toHaveLength(1)
+    expect(deleteCalls[0]?.slice.audience).toBe("customer")
+    expect(deleteCalls[0]?.ids).toEqual(["prod_xyz"])
+  })
+
+  it("deletes stale single-slice documents when the slice builder returns null", async () => {
+    const adapter = createStubAdapter()
+    const service = createIndexerService({
+      adapter,
+      slices: productSlices,
+      registries: new Map([["products", productsRegistry]]),
+    })
+
+    const customerSlice = productSlices[1]!
+    await service.reindexEntityForSlice(customerSlice, "prod_xyz", async () => null)
+
+    expect(adapter.calls.filter((c) => c.op === "upsert")).toHaveLength(0)
+    const deleteCalls = adapter.calls.filter((c) => c.op === "delete")
+    expect(deleteCalls).toHaveLength(1)
+    expect(deleteCalls[0]?.slice).toEqual(customerSlice)
+    expect(deleteCalls[0]?.ids).toEqual(["prod_xyz"])
   })
 
   it("throws when reindexing for a vertical without a registered registry", async () => {

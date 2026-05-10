@@ -38,10 +38,12 @@ import {
   type Visibility,
 } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { eq } from "drizzle-orm"
+import { asc, eq } from "drizzle-orm"
 
 import { productCatalogPolicy } from "./catalog-policy.js"
 import { products } from "./schema-core.js"
+import { productDays, productItineraries, productMedia } from "./schema-itinerary.js"
+import { productLocations, productTranslations } from "./schema-settings.js"
 
 /**
  * Lazy-initialized registry. Built once per process; the field-policy file
@@ -97,6 +99,8 @@ export function productRowToProjection(
     ["pax", row.pax],
     ["startDate", row.startDate],
     ["endDate", row.endDate],
+    ["startDateEpochDays", dateToEpochDays(row.startDate)],
+    ["endDateEpochDays", dateToEpochDays(row.endDate)],
     ["timezone", row.timezone],
     ["reservationTimeoutMinutes", row.reservationTimeoutMinutes],
 
@@ -310,6 +314,21 @@ export function createProductDocumentEmitter(context: {
   }
 }
 
+function isPublicStorefrontProduct(row: typeof products.$inferSelect): boolean {
+  return row.status === "active" && row.activated === true && row.visibility === "public"
+}
+
+function shouldEmitForSlice(row: typeof products.$inferSelect, slice: IndexerSlice): boolean {
+  if (
+    slice.audience === "customer" ||
+    slice.audience === "partner" ||
+    slice.audience === "supplier"
+  ) {
+    return isPublicStorefrontProduct(row)
+  }
+  return true
+}
+
 /**
  * Async `DocumentBuilder` for products — fetches the row by id, then emits.
  * Plug this into `IndexerService.reindexEntity` for live reindex events.
@@ -340,6 +359,7 @@ export function createProductDocumentBuilder(
     const rows = await db.select().from(products).where(eq(products.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
+    if (!shouldEmitForSlice(row, slice)) return null
 
     const baseProjection = productRowToProjection(row, {
       sellerOperatorId: context.sellerOperatorId,
@@ -359,6 +379,117 @@ export function createProductDocumentBuilder(
     }
     return buildIndexerDocument(registry, merged, slice, entityId)
   }
+}
+
+/**
+ * Product-owned storefront-card projection. This extension keeps the
+ * customer catalog slice directly renderable by denormalizing localized
+ * routing, card media, duration, and map coordinates into the search doc.
+ */
+export function createProductStorefrontCardProjectionExtension(): ProductProjectionExtension {
+  return {
+    name: "products:storefront-card",
+    async project(db, productId, slice) {
+      const [translations, mediaRows, locationRows, itineraryRows] = await Promise.all([
+        db
+          .select({
+            languageTag: productTranslations.languageTag,
+            name: productTranslations.name,
+            slug: productTranslations.slug,
+            shortDescription: productTranslations.shortDescription,
+          })
+          .from(productTranslations)
+          .where(eq(productTranslations.productId, productId))
+          .orderBy(asc(productTranslations.updatedAt)),
+        db
+          .select({
+            url: productMedia.url,
+            isCover: productMedia.isCover,
+            isBrochure: productMedia.isBrochure,
+            sortOrder: productMedia.sortOrder,
+            createdAt: productMedia.createdAt,
+          })
+          .from(productMedia)
+          .where(eq(productMedia.productId, productId))
+          .orderBy(asc(productMedia.sortOrder), asc(productMedia.createdAt)),
+        db
+          .select({
+            latitude: productLocations.latitude,
+            longitude: productLocations.longitude,
+            sortOrder: productLocations.sortOrder,
+            createdAt: productLocations.createdAt,
+          })
+          .from(productLocations)
+          .where(eq(productLocations.productId, productId))
+          .orderBy(asc(productLocations.sortOrder), asc(productLocations.createdAt)),
+        db
+          .select({ id: productItineraries.id, isDefault: productItineraries.isDefault })
+          .from(productItineraries)
+          .where(eq(productItineraries.productId, productId))
+          .orderBy(asc(productItineraries.sortOrder)),
+      ])
+
+      const translation = pickTranslation(translations, slice.locale)
+      const cover = mediaRows.filter((m) => !m.isBrochure).find((m) => m.isCover)
+      const primaryMedia = cover ?? mediaRows.find((m) => !m.isBrochure) ?? null
+      const coordinateLocation =
+        locationRows.find((l) => l.latitude != null && l.longitude != null) ?? null
+      const defaultItinerary = itineraryRows.find((it) => it.isDefault) ?? itineraryRows[0]
+      const durationDays = defaultItinerary
+        ? await estimateItineraryDurationDays(db, defaultItinerary.id)
+        : null
+
+      const out = new Map<string, unknown>([
+        ["slug", translation?.slug ?? null],
+        ["shortDescription", translation?.shortDescription ?? null],
+        ["primaryMediaUrl", primaryMedia?.url ?? null],
+        ["coverMediaUrl", primaryMedia?.url ?? null],
+        ["durationDays", durationDays],
+        ["latitude", coordinateLocation?.latitude ?? null],
+        ["longitude", coordinateLocation?.longitude ?? null],
+      ])
+      if (translation?.name) {
+        out.set("name", translation.name)
+      }
+      return out
+    },
+  }
+}
+
+function pickTranslation<T extends { languageTag: string }>(
+  rows: ReadonlyArray<T>,
+  locale: string,
+): T | null {
+  return (
+    rows.find((row) => row.languageTag === locale) ??
+    rows.find((row) => row.languageTag.toLowerCase() === locale.toLowerCase()) ??
+    rows.find((row) => row.languageTag.split("-")[0] === locale.split("-")[0]) ??
+    rows[0] ??
+    null
+  )
+}
+
+async function estimateItineraryDurationDays(
+  db: AnyDrizzleDb,
+  itineraryId: string,
+): Promise<number | null> {
+  const rows = await db
+    .select({ dayNumber: productDays.dayNumber })
+    .from(productDays)
+    .where(eq(productDays.itineraryId, itineraryId))
+    .orderBy(asc(productDays.dayNumber))
+
+  if (rows.length === 0) return null
+  const max = Math.max(...rows.map((row) => row.dayNumber))
+  return Number.isFinite(max) && max > 0 ? max : null
+}
+
+function dateToEpochDays(value: string | Date | null): number | null {
+  if (!value) return null
+  const date = typeof value === "string" ? new Date(value) : value
+  const time = date.getTime()
+  if (Number.isNaN(time)) return null
+  return Math.floor(time / (24 * 60 * 60 * 1000))
 }
 
 /**
