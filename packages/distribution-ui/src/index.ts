@@ -1,4 +1,5 @@
 export { DistributionOverview } from "./components/distribution-overview.js"
+export { DistributionPage, type DistributionPageProps } from "./components/distribution-page.js"
 export { SectionHeader } from "./components/distribution-section-header.js"
 export type { BatchMutationResponse } from "./components/distribution-shared.js"
 export {

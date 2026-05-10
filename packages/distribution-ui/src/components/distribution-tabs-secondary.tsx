@@ -4,6 +4,7 @@ import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { TabsContent } from "@voyantjs/ui/components/tabs"
 import { useDistributionUiI18nOrDefault } from "../i18n/index.js"
+import type { DistributionEntity } from "../i18n/messages.js"
 import { formatDistributionCount, formatDistributionSummary } from "../i18n/utils.js"
 import { SectionHeader } from "./distribution-section-header.js"
 import type {
@@ -20,7 +21,7 @@ type BulkFn = (args: {
   ids: string[]
   endpoint: string
   target: string
-  noun: string
+  noun: DistributionEntity
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
@@ -30,7 +31,7 @@ type DeleteFn = (args: {
   ids: string[]
   endpoint: string
   target: string
-  noun: string
+  noun: DistributionEntity
   clearSelection: () => void
 }) => Promise<void> // i18n-literal-ok type annotation
 
@@ -96,7 +97,7 @@ export function DistributionMappingsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/product-mappings",
                     target: "mappings-activate",
-                    noun: messages.common.entities.mapping.one,
+                    noun: "mapping",
                     payload: { active: true },
                     successVerb: messages.page.bulkVerbs.activated,
                     clearSelection,
@@ -115,7 +116,7 @@ export function DistributionMappingsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/product-mappings",
                     target: "mappings-deactivate",
-                    noun: messages.common.entities.mapping.one,
+                    noun: "mapping",
                     payload: { active: false },
                     successVerb: messages.page.bulkVerbs.deactivated,
                     clearSelection,
@@ -136,7 +137,7 @@ export function DistributionMappingsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/product-mappings",
                     target: "mappings-delete",
-                    noun: messages.common.entities.mapping.one,
+                    noun: "mapping",
                     clearSelection,
                   })
                 }
@@ -209,7 +210,7 @@ export function DistributionBookingLinksTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/booking-links",
                     target: "booking-links-delete",
-                    noun: messages.common.entities.bookingLink.one,
+                    noun: "bookingLink",
                     clearSelection,
                   })
                 }
@@ -280,7 +281,7 @@ export function DistributionWebhooksTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/webhook-events",
                     target: "webhook-events-processed",
-                    noun: messages.common.entities.webhookEvent.one,
+                    noun: "webhookEvent",
                     payload: { status: "processed" },
                     successVerb: messages.page.bulkVerbs.processed,
                     clearSelection,
@@ -299,7 +300,7 @@ export function DistributionWebhooksTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/webhook-events",
                     target: "webhook-events-ignored",
-                    noun: messages.common.entities.webhookEvent.one,
+                    noun: "webhookEvent",
                     payload: { status: "ignored" },
                     successVerb: messages.page.bulkVerbs.ignored,
                     clearSelection,
@@ -320,7 +321,7 @@ export function DistributionWebhooksTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/webhook-events",
                     target: "webhook-events-delete",
-                    noun: messages.common.entities.webhookEvent.one,
+                    noun: "webhookEvent",
                     clearSelection,
                   })
                 }

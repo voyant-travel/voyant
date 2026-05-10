@@ -4,6 +4,7 @@ import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { TabsContent } from "@voyantjs/ui/components/tabs"
 import { useDistributionUiI18nOrDefault } from "../i18n/index.js"
+import type { DistributionEntity } from "../i18n/messages.js"
 import { formatDistributionCount, formatDistributionSummary } from "../i18n/utils.js"
 import { SectionHeader } from "./distribution-section-header.js"
 import type {
@@ -19,7 +20,7 @@ type BulkFn = (args: {
   ids: string[]
   endpoint: string
   target: string
-  noun: string
+  noun: DistributionEntity
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
@@ -29,7 +30,7 @@ type DeleteFn = (args: {
   ids: string[]
   endpoint: string
   target: string
-  noun: string
+  noun: DistributionEntity
   clearSelection: () => void
 }) => Promise<void> // i18n-literal-ok type annotation
 
@@ -93,7 +94,7 @@ export function DistributionChannelsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/channels",
                     target: "channels-activate",
-                    noun: messages.common.entities.channel.one,
+                    noun: "channel",
                     payload: { status: "active" },
                     successVerb: messages.page.bulkVerbs.activated,
                     clearSelection,
@@ -112,7 +113,7 @@ export function DistributionChannelsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/channels",
                     target: "channels-archive",
-                    noun: messages.common.entities.channel.one,
+                    noun: "channel",
                     payload: { status: "archived" },
                     successVerb: messages.page.bulkVerbs.archived,
                     clearSelection,
@@ -133,7 +134,7 @@ export function DistributionChannelsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/channels",
                     target: "channels-delete",
-                    noun: messages.common.entities.channel.one,
+                    noun: "channel",
                     clearSelection,
                   })
                 }
@@ -205,7 +206,7 @@ export function DistributionContractsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/contracts",
                     target: "contracts-activate",
-                    noun: messages.common.entities.contract.one,
+                    noun: "contract",
                     payload: { status: "active" },
                     successVerb: messages.page.bulkVerbs.activated,
                     clearSelection,
@@ -224,7 +225,7 @@ export function DistributionContractsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/contracts",
                     target: "contracts-expire",
-                    noun: messages.common.entities.contract.one,
+                    noun: "contract",
                     payload: { status: "expired" },
                     successVerb: messages.page.bulkVerbs.expired,
                     clearSelection,
@@ -245,7 +246,7 @@ export function DistributionContractsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/contracts",
                     target: "contracts-delete",
-                    noun: messages.common.entities.contract.one,
+                    noun: "contract",
                     clearSelection,
                   })
                 }
@@ -322,7 +323,7 @@ export function DistributionCommissionsTab(props: {
                     ids: selectedRows.map((row) => row.original.id),
                     endpoint: "/v1/distribution/commission-rules",
                     target: "commission-rules-delete",
-                    noun: messages.common.entities.commissionRule.one,
+                    noun: "commissionRule",
                     clearSelection,
                   })
                 }
