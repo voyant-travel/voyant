@@ -203,6 +203,76 @@ export type CrmUiMessages = {
     unknown: string
     expectedClose: string
   }
+  inlineEditor: {
+    failedToSave: string
+    notSet: string
+    selectPlaceholder: string
+    noneOption: string
+    invalidNumber: string
+    minNumber: string
+    maxNumber: string
+    searchCurrencyPlaceholder: string
+    noCurrenciesFound: string
+    searchLanguagePlaceholder: string
+    noLanguagesFound: string
+    addTemplate: string
+    addTagPlaceholder: string
+    tagAlreadyAdded: string
+    addTagFailed: string
+    removeTagFailed: string
+  }
+  organizationDetailPage: {
+    notFound: string
+    backToOrganizations: string
+  }
+  organizationDetail: {
+    topBar: {
+      organizations: string
+      delete: string
+      deleteTitle: string
+      deleteDescription: string
+    }
+    sidebar: {
+      about: string
+      tags: string
+      fields: {
+        name: string
+        legalName: string
+        website: string
+        industry: string
+        relation: string
+        status: string
+        defaultCurrency: string
+        preferredLanguage: string
+        paymentTerms: string
+        source: string
+      }
+    }
+    metrics: {
+      people: string
+      openOpportunities: string
+      pipelineValue: string
+      won: string
+    }
+    tabs: {
+      overview: string
+      people: string
+      opportunities: string
+      activities: string
+    }
+    sections: {
+      created: string
+      updated: string
+      notes: string
+    }
+    empty: {
+      noPeople: string
+      unnamed: string
+      noOpportunities: string
+      noActivities: string
+    }
+    hint: string
+  }
   createQuoteDialog: {
     title: string
     fields: {

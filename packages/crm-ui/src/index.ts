@@ -18,6 +18,24 @@ export {
   type OrganizationCardProps,
 } from "./components/organization-card.js"
 export {
+  OrganizationDetailPage,
+  type OrganizationDetailPageProps,
+} from "./components/organization-detail-page.js"
+export {
+  initialsFrom,
+  type OrganizationActivity,
+  type OrganizationData,
+  type OrganizationDetailTab,
+  OrganizationMain,
+  type OrganizationMainProps,
+  type OrganizationOpportunity,
+  type OrganizationPerson,
+  OrganizationSidebar,
+  type OrganizationSidebarProps,
+  OrganizationTopBar,
+  type OrganizationTopBarProps,
+} from "./components/organization-detail-sections.js"
+export {
   OrganizationDialog,
   type OrganizationDialogProps,
 } from "./components/organization-dialog.js"
