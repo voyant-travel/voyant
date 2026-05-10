@@ -2,6 +2,18 @@ export { DistributionOverview } from "./components/distribution-overview.js"
 export { SectionHeader } from "./components/distribution-section-header.js"
 export type { BatchMutationResponse } from "./components/distribution-shared.js"
 export {
+  DistributionChannelsTab,
+  DistributionCommissionsTab,
+  DistributionContractsTab,
+} from "./components/distribution-tabs-primary.js"
+export {
+  DistributionBookingLinksTab,
+  DistributionMappingsTab,
+  DistributionWebhooksTab,
+} from "./components/distribution-tabs-secondary.js"
+export {
+  type CancellationOwner,
+  type DistributionEntity,
   type DistributionUiI18n,
   type DistributionUiMessageOverrides,
   type DistributionUiMessages,

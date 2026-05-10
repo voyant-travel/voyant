@@ -1,10 +1,12 @@
 export { distributionUiEn } from "./en.js"
 export type {
+  CancellationOwner,
   ChannelKind,
   ChannelStatus,
   CommissionScope,
   CommissionType,
   ContractStatus,
+  DistributionEntity,
   DistributionUiMessages,
   PaymentOwner,
   WebhookStatus,
