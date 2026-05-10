@@ -175,6 +175,17 @@ recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `run-command`, `inspect-stale`, blocked work, and wait states so implementation
 execution remains explicit.
 
+Use loop for a bounded supervisor pass:
+
+```bash
+pnpm agent:queue:loop -- --iterations 3 --yes
+```
+
+Loop mode repeatedly re-reads the Project, dispatches one allow-listed
+recommendation, then sleeps before the next iteration. It is dry-run by default
+and capped at 100 iterations. It uses the same dispatch allow-list, so it cannot
+run implementation commands or override blocked/wait states.
+
 After a workspace is prepared, claim the item before implementation work starts:
 
 ```bash
