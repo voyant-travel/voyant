@@ -45,6 +45,20 @@ export const crmUiRo = {
       opportunity: "Oportunitate",
       quote: "Oferta",
     },
+    opportunityStatusLabels: {
+      open: "Deschisa",
+      won: "Castigata",
+      lost: "Pierduta",
+      archived: "Arhivata",
+    },
+    quoteStatusLabels: {
+      draft: "Draft",
+      sent: "Trimisa",
+      accepted: "Acceptata",
+      expired: "Expirata",
+      rejected: "Respinsa",
+      archived: "Arhivata",
+    },
     relativeTime: {
       daysAgo: "acum {count}z",
       weeksAgo: "acum {count}s",
@@ -199,6 +213,31 @@ export const crmUiRo = {
       createFailed: "Crearea oportunitatii a esuat",
     },
   },
+  createQuoteDialog: {
+    title: "Oferta noua",
+    fields: {
+      opportunity: "Oportunitate",
+      currency: "Moneda",
+      validUntil: "Valabila pana la",
+    },
+    placeholders: {
+      searchOpportunities: "Cauta oportunitati...",
+      selectCurrency: "Selecteaza moneda...",
+      pickDate: "Alege o data",
+    },
+    empty: {
+      loading: "Se incarca...",
+      noOpportunities: "Nu au fost gasite oportunitati.",
+    },
+    validation: {
+      selectOpportunity: "Selecteaza o oportunitate",
+      selectCurrency: "Selecteaza o moneda",
+      createFailed: "Crearea ofertei a esuat",
+    },
+    actions: {
+      create: "Creeaza",
+    },
+  },
   activitiesPage: {
     title: "Activitati",
     description: "Apeluri, emailuri, intalniri, sarcini si urmariri din CRM-ul tau.",
@@ -210,5 +249,23 @@ export const crmUiRo = {
       allStatuses: "Toate statusurile",
     },
     empty: "Nicio activitate nu corespunde filtrelor.",
+  },
+  quotesPage: {
+    title: "Oferte",
+    description: "Oferte emise pentru oportunitatile din pipeline.",
+    create: "Oferta noua",
+    filters: {
+      status: "Status",
+      allStatuses: "Toate statusurile",
+    },
+    columns: {
+      quote: "Oferta",
+      status: "Status",
+      total: "Total",
+      validUntil: "Valabila pana la",
+      updated: "Actualizat",
+    },
+    loadFailed: "Incarcarea ofertelor a esuat.",
+    empty: "Nu au fost gasite oferte.",
   },
 } satisfies CrmUiMessages

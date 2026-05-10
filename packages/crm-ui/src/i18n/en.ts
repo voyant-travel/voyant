@@ -45,6 +45,20 @@ export const crmUiEn = {
       opportunity: "Opportunity",
       quote: "Quote",
     },
+    opportunityStatusLabels: {
+      open: "Open",
+      won: "Won",
+      lost: "Lost",
+      archived: "Archived",
+    },
+    quoteStatusLabels: {
+      draft: "Draft",
+      sent: "Sent",
+      accepted: "Accepted",
+      expired: "Expired",
+      rejected: "Rejected",
+      archived: "Archived",
+    },
     relativeTime: {
       daysAgo: "{count}d ago",
       weeksAgo: "{count}w ago",
@@ -199,6 +213,31 @@ export const crmUiEn = {
       createFailed: "Failed to create opportunity",
     },
   },
+  createQuoteDialog: {
+    title: "New quote",
+    fields: {
+      opportunity: "Opportunity",
+      currency: "Currency",
+      validUntil: "Valid until",
+    },
+    placeholders: {
+      searchOpportunities: "Search opportunities...",
+      selectCurrency: "Select currency...",
+      pickDate: "Pick a date",
+    },
+    empty: {
+      loading: "Loading...",
+      noOpportunities: "No opportunities found.",
+    },
+    validation: {
+      selectOpportunity: "Please select an opportunity",
+      selectCurrency: "Please select a currency",
+      createFailed: "Failed to create quote",
+    },
+    actions: {
+      create: "Create",
+    },
+  },
   activitiesPage: {
     title: "Activities",
     description: "Calls, emails, meetings, tasks, and follow-ups across your CRM.",
@@ -210,5 +249,23 @@ export const crmUiEn = {
       allStatuses: "All statuses",
     },
     empty: "No activities match your filters.",
+  },
+  quotesPage: {
+    title: "Quotes",
+    description: "Quotes issued for opportunities in your pipeline.",
+    create: "New quote",
+    filters: {
+      status: "Status",
+      allStatuses: "All statuses",
+    },
+    columns: {
+      quote: "Quote",
+      status: "Status",
+      total: "Total",
+      validUntil: "Valid until",
+      updated: "Updated",
+    },
+    loadFailed: "Failed to load quotes.",
+    empty: "No quotes found.",
   },
 } satisfies CrmUiMessages

@@ -2,6 +2,10 @@ export { ActivitiesPage } from "./components/activities-page.js"
 export { CreateActivityDialog } from "./components/create-activity-dialog.js"
 export { CreateOpportunityDialog } from "./components/create-opportunity-dialog.js"
 export {
+  CreateQuoteDialog,
+  type CreateQuoteDialogProps,
+} from "./components/create-quote-dialog.js"
+export {
   OrganizationCard,
   type OrganizationCardProps,
 } from "./components/organization-card.js"
@@ -42,6 +46,7 @@ export {
   PersonList,
   type PersonListProps,
 } from "./components/person-list.js"
+export { QuotesPage, type QuotesPageProps } from "./components/quotes-page.js"
 export {
   type CrmUiMessageOverrides,
   type CrmUiMessages,

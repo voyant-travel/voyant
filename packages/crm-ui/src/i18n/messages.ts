@@ -3,12 +3,23 @@ export const crmRecordStatuses = ["active", "inactive", "archived"] as const
 export const crmActivityTypes = ["note", "call", "email", "meeting", "task", "follow_up"] as const
 export const crmActivityStatuses = ["planned", "done", "cancelled"] as const
 export const crmEntityTypes = ["none", "person", "organization", "opportunity", "quote"] as const
+export const crmOpportunityStatuses = ["open", "won", "lost", "archived"] as const
+export const crmQuoteStatuses = [
+  "draft",
+  "sent",
+  "accepted",
+  "expired",
+  "rejected",
+  "archived",
+] as const
 
 export type CrmRelationType = (typeof crmRelationTypes)[number]
 export type CrmRecordStatus = (typeof crmRecordStatuses)[number]
 export type CrmActivityType = (typeof crmActivityTypes)[number]
 export type CrmActivityStatus = (typeof crmActivityStatuses)[number]
 export type CrmEntityType = (typeof crmEntityTypes)[number]
+export type CrmOpportunityStatus = (typeof crmOpportunityStatuses)[number]
+export type CrmQuoteStatus = (typeof crmQuoteStatuses)[number]
 
 export type CrmUiMessages = {
   common: {
@@ -29,6 +40,8 @@ export type CrmUiMessages = {
     relationTypeLabels: Record<CrmRelationType, string>
     recordStatusLabels: Record<CrmRecordStatus, string>
     entityTypeLabels: Record<CrmEntityType, string>
+    opportunityStatusLabels: Record<CrmOpportunityStatus, string>
+    quoteStatusLabels: Record<CrmQuoteStatus, string>
     relativeTime: {
       daysAgo: string
       weeksAgo: string
@@ -183,6 +196,31 @@ export type CrmUiMessages = {
       createFailed: string
     }
   }
+  createQuoteDialog: {
+    title: string
+    fields: {
+      opportunity: string
+      currency: string
+      validUntil: string
+    }
+    placeholders: {
+      searchOpportunities: string
+      selectCurrency: string
+      pickDate: string
+    }
+    empty: {
+      loading: string
+      noOpportunities: string
+    }
+    validation: {
+      selectOpportunity: string
+      selectCurrency: string
+      createFailed: string
+    }
+    actions: {
+      create: string
+    }
+  }
   activitiesPage: {
     title: string
     description: string
@@ -193,6 +231,24 @@ export type CrmUiMessages = {
       allTypes: string
       allStatuses: string
     }
+    empty: string
+  }
+  quotesPage: {
+    title: string
+    description: string
+    create: string
+    filters: {
+      status: string
+      allStatuses: string
+    }
+    columns: {
+      quote: string
+      status: string
+      total: string
+      validUntil: string
+      updated: string
+    }
+    loadFailed: string
     empty: string
   }
 }
