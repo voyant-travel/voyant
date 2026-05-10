@@ -39,6 +39,7 @@
     "@tiptap/starter-kit": "^3.7.2",
     "@voyantjs/admin": "workspace:*",
     "@voyantjs/auth": "workspace:*",
+    "@voyantjs/auth-ui": "workspace:*",
     "@voyantjs/availability": "workspace:*",
     "@voyantjs/availability-react": "workspace:*",
     "@voyantjs/availability-ui": "workspace:*",

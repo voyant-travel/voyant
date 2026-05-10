@@ -1,7 +1,40 @@
 import type { Actor } from "@voyantjs/core"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyantjs/types/api-keys"
 import type { MiddlewareHandler } from "hono"
 
 import type { VoyantBindings, VoyantVariables } from "../types.js"
+
+function apiKeyResourceFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/v1\/(?:admin|public)\/([^/]+)/)
+  return match?.[1] ?? null
+}
+
+function apiKeyPermissionActionsForMethod(method: string): string[] {
+  switch (method.toUpperCase()) {
+    case "GET":
+    case "HEAD":
+      return ["read", "search"]
+    case "POST":
+      return ["write", "trigger", "relay"]
+    case "PUT":
+    case "PATCH":
+      return ["write"]
+    case "DELETE":
+      return ["delete"]
+    default:
+      return []
+  }
+}
+
+function hasAnyApiKeyPermission(
+  scopes: string[] | null | undefined,
+  resource: string,
+  actions: string[],
+) {
+  if (!scopes || scopes.length === 0) return false
+  const permissions = permissionStringsToPermissions(scopes)
+  return actions.some((action) => hasApiKeyPermission(permissions, resource, action))
+}
 
 /**
  * Guards a route surface by actor type.
@@ -40,6 +73,17 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
 
     if (c.get("isInternalRequest")) {
       return next()
+    }
+
+    if (c.get("callerType") === "api_key") {
+      const resource = apiKeyResourceFromPath(new URL(c.req.url).pathname)
+      const actions = apiKeyPermissionActionsForMethod(c.req.method)
+
+      if (resource && hasAnyApiKeyPermission(c.get("scopes"), resource, actions)) {
+        return next()
+      }
+
+      return c.json({ error: "Forbidden: API key missing required permission" }, 403)
     }
 
     const actor = c.get("actor") as Actor | undefined

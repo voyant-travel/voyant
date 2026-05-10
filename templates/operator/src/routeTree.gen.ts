@@ -50,6 +50,7 @@ import { Route as WorkspaceSettingsPricingCategoriesRouteImport } from './routes
 import { Route as WorkspaceSettingsPriceCatalogsRouteImport } from './routes/_workspace/settings/price-catalogs'
 import { Route as WorkspaceSettingsOperatorRouteImport } from './routes/_workspace/settings/operator'
 import { Route as WorkspaceSettingsChannelsRouteImport } from './routes/_workspace/settings/channels'
+import { Route as WorkspaceSettingsApiTokensRouteImport } from './routes/_workspace/settings/api-tokens'
 import { Route as WorkspaceResourcesIdRouteImport } from './routes/_workspace/resources/$id'
 import { Route as WorkspaceProductsCategoriesRouteImport } from './routes/_workspace/products/categories'
 import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/products/$id'
@@ -300,6 +301,12 @@ const WorkspaceSettingsChannelsRoute =
     path: '/channels',
     getParentRoute: () => WorkspaceSettingsRouteRoute,
   } as any)
+const WorkspaceSettingsApiTokensRoute =
+  WorkspaceSettingsApiTokensRouteImport.update({
+    id: '/api-tokens',
+    path: '/api-tokens',
+    getParentRoute: () => WorkspaceSettingsRouteRoute,
+  } as any)
 const WorkspaceResourcesIdRoute = WorkspaceResourcesIdRouteImport.update({
   id: '/resources/$id',
   path: '/resources/$id',
@@ -547,6 +554,7 @@ export interface FileRoutesByFullPath {
   '/products/$id': typeof WorkspaceProductsIdRoute
   '/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/resources/$id': typeof WorkspaceResourcesIdRoute
+  '/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
   '/settings/channels': typeof WorkspaceSettingsChannelsRoute
   '/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
@@ -623,6 +631,7 @@ export interface FileRoutesByTo {
   '/products/$id': typeof WorkspaceProductsIdRoute
   '/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/resources/$id': typeof WorkspaceResourcesIdRoute
+  '/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
   '/settings/channels': typeof WorkspaceSettingsChannelsRoute
   '/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
@@ -704,6 +713,7 @@ export interface FileRoutesById {
   '/_workspace/products/$id': typeof WorkspaceProductsIdRoute
   '/_workspace/products/categories': typeof WorkspaceProductsCategoriesRoute
   '/_workspace/resources/$id': typeof WorkspaceResourcesIdRoute
+  '/_workspace/settings/api-tokens': typeof WorkspaceSettingsApiTokensRoute
   '/_workspace/settings/channels': typeof WorkspaceSettingsChannelsRoute
   '/_workspace/settings/operator': typeof WorkspaceSettingsOperatorRoute
   '/_workspace/settings/price-catalogs': typeof WorkspaceSettingsPriceCatalogsRoute
@@ -783,6 +793,7 @@ export interface FileRouteTypes {
     | '/products/$id'
     | '/products/categories'
     | '/resources/$id'
+    | '/settings/api-tokens'
     | '/settings/channels'
     | '/settings/operator'
     | '/settings/price-catalogs'
@@ -859,6 +870,7 @@ export interface FileRouteTypes {
     | '/products/$id'
     | '/products/categories'
     | '/resources/$id'
+    | '/settings/api-tokens'
     | '/settings/channels'
     | '/settings/operator'
     | '/settings/price-catalogs'
@@ -939,6 +951,7 @@ export interface FileRouteTypes {
     | '/_workspace/products/$id'
     | '/_workspace/products/categories'
     | '/_workspace/resources/$id'
+    | '/_workspace/settings/api-tokens'
     | '/_workspace/settings/channels'
     | '/_workspace/settings/operator'
     | '/_workspace/settings/price-catalogs'
@@ -1285,6 +1298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSettingsChannelsRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
     }
+    '/_workspace/settings/api-tokens': {
+      id: '/_workspace/settings/api-tokens'
+      path: '/api-tokens'
+      fullPath: '/settings/api-tokens'
+      preLoaderRoute: typeof WorkspaceSettingsApiTokensRouteImport
+      parentRoute: typeof WorkspaceSettingsRouteRoute
+    }
     '/_workspace/resources/$id': {
       id: '/_workspace/resources/$id'
       path: '/resources/$id'
@@ -1595,6 +1615,7 @@ const storefrontRouteRouteWithChildren = storefrontRouteRoute._addFileChildren(
 )
 
 interface WorkspaceSettingsRouteRouteChildren {
+  WorkspaceSettingsApiTokensRoute: typeof WorkspaceSettingsApiTokensRoute
   WorkspaceSettingsChannelsRoute: typeof WorkspaceSettingsChannelsRoute
   WorkspaceSettingsOperatorRoute: typeof WorkspaceSettingsOperatorRoute
   WorkspaceSettingsPriceCatalogsRoute: typeof WorkspaceSettingsPriceCatalogsRoute
@@ -1608,6 +1629,7 @@ interface WorkspaceSettingsRouteRouteChildren {
 
 const WorkspaceSettingsRouteRouteChildren: WorkspaceSettingsRouteRouteChildren =
   {
+    WorkspaceSettingsApiTokensRoute: WorkspaceSettingsApiTokensRoute,
     WorkspaceSettingsChannelsRoute: WorkspaceSettingsChannelsRoute,
     WorkspaceSettingsOperatorRoute: WorkspaceSettingsOperatorRoute,
     WorkspaceSettingsPriceCatalogsRoute: WorkspaceSettingsPriceCatalogsRoute,

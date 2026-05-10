@@ -7,6 +7,7 @@ import {
   authQueryKeys,
   type OrganizationInvitationsListFilters,
   type OrganizationMembersListFilters,
+  type ServiceApiKeysListFilters,
 } from "./query-keys.js"
 import {
   authStatusSchema,
@@ -14,6 +15,7 @@ import {
   currentWorkspaceSchema,
   organizationInvitationsResponseSchema,
   organizationMembersResponseSchema,
+  serviceApiKeysResponseSchema,
 } from "./schemas.js"
 
 export function getCurrentUserQueryOptions(client: FetchWithValidationOptions) {
@@ -62,6 +64,21 @@ export function getOrganizationInvitationsQueryOptions(
       fetchWithValidation(
         withQueryParams("/auth/organization/list-invitations", filters),
         organizationInvitationsResponseSchema,
+        client,
+      ),
+  })
+}
+
+export function getServiceApiKeysQueryOptions(
+  filters: ServiceApiKeysListFilters,
+  client: FetchWithValidationOptions,
+) {
+  return queryOptions({
+    queryKey: authQueryKeys.serviceApiKeys(filters),
+    queryFn: () =>
+      fetchWithValidation(
+        withQueryParams("/auth/api-tokens", filters),
+        serviceApiKeysResponseSchema,
         client,
       ),
   })

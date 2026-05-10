@@ -1,4 +1,5 @@
 import type { Actor, VoyantPermission } from "@voyantjs/core"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyantjs/types/api-keys"
 import type { MiddlewareHandler } from "hono"
 
 import { requireUserId } from "../auth/require-user.js"
@@ -17,18 +18,6 @@ interface ExecutionContextLike {
 }
 
 import { ForbiddenApiError, UnauthorizedApiError } from "../validation.js"
-
-function hasScope(scopes: string[] | null | undefined, permission: VoyantPermission): boolean {
-  if (!scopes || scopes.length === 0) return false
-
-  const { resource, action } = permission
-  return (
-    scopes.includes("*") ||
-    scopes.includes(`${resource}:${action}`) ||
-    scopes.includes(`${resource}:*`) ||
-    scopes.includes(`*:${action}`)
-  )
-}
 
 export function requirePermission<TBindings extends VoyantBindings>(
   dbFactory: DbFactory<TBindings>,
@@ -49,7 +38,14 @@ export function requirePermission<TBindings extends VoyantBindings>(
     }
 
     const scopes = c.get("scopes")
-    if (hasScope(scopes, permission)) {
+    if (
+      scopes &&
+      hasApiKeyPermission(
+        permissionStringsToPermissions(scopes),
+        permission.resource,
+        permission.action,
+      )
+    ) {
       return next()
     }
 
