@@ -4,6 +4,15 @@ export {
   type ContactPointDialogProps,
 } from "./components/contact-point-dialog.js"
 export {
+  AddressesTab,
+  ContactPointsTab,
+  type IdentityEntityTabProps,
+  IdentityPage,
+  type IdentityPageProps,
+  type IdentityTab,
+  NamedContactsTab,
+} from "./components/identity-page.js"
+export {
   NamedContactDialog,
   type NamedContactDialogProps,
 } from "./components/named-contact-dialog.js"
