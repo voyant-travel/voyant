@@ -2,6 +2,8 @@ import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
+import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
+import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
 import {
   type CheckoutBankTransferDetails,
   type CheckoutPaymentStarter,
@@ -75,10 +77,10 @@ import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { createCatalogCheckoutBundle, mountCatalogCheckoutRoutes } from "./catalog-checkout"
 import { mountCatalogContentRoutes } from "./catalog-content"
-import { mountCatalogSearchRoutes } from "./catalog-search"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
+import { buildCatalogContext } from "./lib/catalog-context"
 import { dbFromEnvForApp, getDbFromEnv } from "./lib/db"
 import {
   createDocumentStorage,
@@ -140,6 +142,24 @@ const notificationsHonoModule = createNotificationsHonoModule({
     enabled: true,
     templateSlug: "booking-confirmation",
   },
+})
+
+const catalogSearchHonoModule = createCatalogSearchHonoModule({
+  resolveRuntime: (c) => {
+    const ctx = buildCatalogContext(c)
+    return {
+      indexer: ctx.catalog.indexer,
+      embeddings: ctx.catalog.embeddings,
+      defaultScope: ctx.defaultScope,
+    }
+  },
+  executeSearch: ({ adapter, embeddings, slice, request }) =>
+    executeSemanticSearch({
+      adapter,
+      embeddings: embeddings as EmbeddingProvider | undefined,
+      slice,
+      request,
+    }),
 })
 const storefrontVerificationHonoModule = createStorefrontVerificationHonoModule({
   resolveProviders: resolveNotificationProviders,
@@ -786,6 +806,7 @@ export const app = createApp<CloudflareBindings>({
     suppliersHonoModule,
     productsHonoModule,
     promotionsHonoModule,
+    catalogSearchHonoModule,
     bookingsHonoModule,
     financeModule,
     legalModule,
@@ -1269,7 +1290,6 @@ export const app = createApp<CloudflareBindings>({
     })
 
     mountCatalogMcpRoutes(hono)
-    mountCatalogSearchRoutes(hono)
     mountCatalogBookingRoutes(hono)
     mountCatalogCheckoutRoutes(hono)
     mountCatalogContentRoutes(hono)

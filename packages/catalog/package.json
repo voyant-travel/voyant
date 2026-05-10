@@ -14,6 +14,7 @@
     "./snapshot/schema": "./src/snapshot/schema.ts",
     "./indexer/contract": "./src/indexer/contract.ts",
     "./indexer/typesense": "./src/indexer/typesense.ts",
+    "./search/routes": "./src/search/routes.ts",
     "./search/rerank": "./src/search/rerank.ts",
     "./drift/events": "./src/drift/events.ts",
     "./events/taxonomy": "./src/events/taxonomy.ts",
@@ -93,6 +94,11 @@
         "types": "./dist/indexer/typesense.d.ts",
         "import": "./dist/indexer/typesense.js",
         "default": "./dist/indexer/typesense.js"
+      },
+      "./search/routes": {
+        "types": "./dist/search/routes.d.ts",
+        "import": "./dist/search/routes.js",
+        "default": "./dist/search/routes.js"
       },
       "./search/rerank": {
         "types": "./dist/search/rerank.d.ts",

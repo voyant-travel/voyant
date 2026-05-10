@@ -4,7 +4,7 @@
  * clients to invoke catalog tools (search, resolve entity, suggest
  * alternatives, check availability, get quote).
  *
- * Plain-JSON catalog search for admin UIs lives in `./catalog-search.ts`.
+ * Plain-JSON catalog search for admin UIs is provided by `@voyantjs/catalog`.
  */
 
 import {

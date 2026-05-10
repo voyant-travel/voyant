@@ -92,3 +92,37 @@ Apps that protect public routes by default must allow
 `/v1/public/catalog`. Template-specific routes such as slots, admin order
 management, checkout start, and booking snapshot enrichment stay in the
 template.
+
+## Catalog search HTTP routes
+
+`@voyantjs/catalog` also exports `createCatalogSearchHonoModule(...)`,
+`createCatalogSearchRoutes(...)`, and `mountCatalogSearchRoutes(...)` for the
+plain JSON catalog search endpoint used by admin and storefront UIs:
+
+- `POST /v1/admin/catalog/search`
+- `POST /v1/public/catalog/search`
+
+The module owns audience defaults: admin search uses the runtime
+`defaultScope.audience`, while public search defaults to the `customer`
+projection. Deployments provide the indexer and optional semantic executor per
+request:
+
+```typescript
+import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
+import { executeSemanticSearch, type EmbeddingProvider } from "@voyantjs/catalog-rag"
+
+export const catalogSearchModule = createCatalogSearchHonoModule({
+  resolveRuntime: (c) => buildCatalogSearchRuntime(c),
+  executeSearch: ({ adapter, embeddings, slice, request }) =>
+    executeSemanticSearch({
+      adapter,
+      embeddings: embeddings as EmbeddingProvider | undefined,
+      slice,
+      request,
+    }),
+})
+```
+
+Search defaults to hybrid mode, downgrades to keyword when no embeddings are
+available, and retries semantic/hybrid execution as keyword when the semantic
+path fails. Pass `fallbackToKeywordOnSearchError: false` to fail closed instead.
