@@ -1,5 +1,17 @@
 # @voyantjs/external-refs-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish the external references page composition and tab as package exports.
+
+### Patch Changes
+
+- @voyantjs/external-refs-react@0.31.0
+- @voyantjs/i18n@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

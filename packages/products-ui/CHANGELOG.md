@@ -1,5 +1,31 @@
 # @voyantjs/products-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish reusable list page compositions for bookings, product categories, product tags, and pricing categories.
+- ee75afb: Publish `ProductTypesPage` from products UI and `PriceCatalogsPage` from pricing UI for reusable settings page compositions.
+- ee75afb: Publish the reusable products list page, product list, dialog, and form compositions.
+
+### Patch Changes
+
+- ee75afb: Publish the product detail page composition with overview, media, itinerary, options, and versions sections.
+- Updated dependencies [ee75afb]
+- Updated dependencies [ee75afb]
+- Updated dependencies [ee75afb]
+- Updated dependencies [ee75afb]
+- Updated dependencies [ee75afb]
+  - @voyantjs/availability-react@0.31.0
+  - @voyantjs/catalog-react@0.31.0
+  - @voyantjs/finance@0.31.0
+  - @voyantjs/finance-ui@0.31.0
+  - @voyantjs/i18n@0.31.0
+  - @voyantjs/pricing-react@0.31.0
+  - @voyantjs/products-react@0.31.0
+  - @voyantjs/suppliers-react@0.31.0
+  - @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

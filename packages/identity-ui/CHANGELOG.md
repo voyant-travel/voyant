@@ -1,5 +1,17 @@
 # @voyantjs/identity-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish the smart identity page composition with contact points, addresses, and named contacts tabs from `@voyantjs/identity-ui`.
+
+### Patch Changes
+
+- @voyantjs/i18n@0.31.0
+- @voyantjs/identity-react@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

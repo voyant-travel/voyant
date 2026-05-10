@@ -1,5 +1,23 @@
 # @voyantjs/legal-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish the legal contract detail page composition from `@voyantjs/legal-ui` and keep the operator route focused on navigation, edit-dialog, and attachment-download wiring.
+- ee75afb: Publish the legal contracts page composition from `@voyantjs/legal-ui` and keep the operator route focused on navigation, CRM person names, and dialog wiring.
+- ee75afb: Publish the contract number series page composition from legal UI.
+- ee75afb: Publish the legal policies page composition from `@voyantjs/legal-ui` and keep the operator route focused on navigation and dialog wiring.
+- ee75afb: Publish the legal policy detail page composition from `@voyantjs/legal-ui` and keep the operator route focused on navigation, policy editing, and assignment-dialog wiring.
+- ee75afb: Publish the legal template detail page composition from `@voyantjs/legal-ui` and keep the operator route focused on navigation and dialog wiring.
+- ee75afb: Publish the legal contract templates page composition from `@voyantjs/legal-ui` and keep the operator route focused on navigation and dialog wiring.
+
+### Patch Changes
+
+- @voyantjs/i18n@0.31.0
+- @voyantjs/legal-react@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

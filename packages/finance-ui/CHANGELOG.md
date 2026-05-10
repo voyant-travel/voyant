@@ -1,5 +1,22 @@
 # @voyantjs/finance-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish the invoices page composition and loading skeleton from finance UI.
+- ee75afb: Publish the payments page composition and loading skeleton from finance UI.
+- ee75afb: Publish reusable TaxesPage and TeamSettingsPage settings compositions from their owning UI packages.
+
+### Patch Changes
+
+- ee75afb: Publish the finance invoice detail page composition with summary, links, line items, payments, credit notes, notes, and editable header actions.
+- ee75afb: Publish the payment detail page composition with summary, related-record, and metadata cards.
+  - @voyantjs/finance@0.31.0
+  - @voyantjs/finance-react@0.31.0
+  - @voyantjs/i18n@0.31.0
+  - @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

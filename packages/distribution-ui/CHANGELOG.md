@@ -1,5 +1,25 @@
 # @voyantjs/distribution-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish the channel detail page composition with channel metadata, contracts, mappings, booking links, webhook events, and app-provided navigation callbacks.
+- ee75afb: Publish the distribution page composition with overview, tabs, filtering, bulk actions, and app-provided route/dialog callbacks.
+- ee75afb: Publish the channels settings and channel sync page compositions with package data hooks and app-provided API client extension points.
+- ee75afb: Publish distribution tab compositions for channels, contracts, commission rules, mappings, booking links, and webhook events.
+
+### Patch Changes
+
+- ee75afb: Publish the distribution booking link detail page composition.
+- ee75afb: Publish the distribution commission rule detail page composition.
+- ee75afb: Publish the distribution contract detail page composition.
+- ee75afb: Publish the distribution product mapping detail page composition.
+- ee75afb: Publish the distribution webhook event detail page composition.
+  - @voyantjs/distribution-react@0.31.0
+  - @voyantjs/i18n@0.31.0
+  - @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

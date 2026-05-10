@@ -1,5 +1,18 @@
 # @voyantjs/admin
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish the operator dashboard page composition, dashboard skeletons, and aggregate query helpers from `@voyantjs/admin`.
+- ee75afb: Publish reusable TaxesPage and TeamSettingsPage settings compositions from their owning UI packages.
+
+### Patch Changes
+
+- @voyantjs/i18n@0.31.0
+- @voyantjs/react@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes
