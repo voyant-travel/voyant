@@ -6,6 +6,15 @@ export interface OrganizationInvitationsListFilters {
   organizationId?: string
 }
 
+export interface ServiceApiKeysListFilters {
+  configId?: string
+  organizationId?: string
+  limit?: number
+  offset?: number
+  sortBy?: string
+  sortDirection?: "asc" | "desc"
+}
+
 export const authQueryKeys = {
   all: ["auth"] as const,
   currentUser: () => [...authQueryKeys.all, "current-user"] as const,
@@ -15,4 +24,6 @@ export const authQueryKeys = {
     [...authQueryKeys.all, "organization-members", filters] as const,
   organizationInvitations: (filters: OrganizationInvitationsListFilters = {}) =>
     [...authQueryKeys.all, "organization-invitations", filters] as const,
+  serviceApiKeys: (filters: ServiceApiKeysListFilters = {}) =>
+    [...authQueryKeys.all, "service-api-keys", filters] as const,
 }

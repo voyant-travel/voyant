@@ -17,6 +17,7 @@ export {
   authQueryKeys,
   type OrganizationInvitationsListFilters,
   type OrganizationMembersListFilters,
+  type ServiceApiKeysListFilters,
 } from "./query-keys.js"
 export {
   getAuthStatusQueryOptions,
@@ -24,5 +25,6 @@ export {
   getCurrentWorkspaceQueryOptions,
   getOrganizationInvitationsQueryOptions,
   getOrganizationMembersQueryOptions,
+  getServiceApiKeysQueryOptions,
 } from "./query-options.js"
 export * from "./schemas.js"

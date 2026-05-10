@@ -26,6 +26,7 @@
   },
   "peerDependencies": {
     "@voyantjs/auth": "workspace:*",
+    "@voyantjs/types": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -37,6 +38,7 @@
     "@types/react-dom": "^19.2.3",
     "@voyantjs/auth": "workspace:*",
     "@voyantjs/react": "workspace:*",
+    "@voyantjs/types": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
