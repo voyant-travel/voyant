@@ -207,6 +207,17 @@ item to `Agent State = CI Repair`, requested changes move it to
 passing non-draft PRs move it to `Merge Ready`. It updates `PR`,
 `Last Heartbeat`, and `Blocked By`; it does not merge the PR.
 
+After a maintainer merges the PR, mark the Project item complete:
+
+```bash
+pnpm agent:queue:complete-pr -- --issue <number> --yes
+```
+
+Complete-PR mode requires the linked PR to be in GitHub's merged state, then
+sets `Status = Done`, `Agent State = Done`, refreshes `PR` and
+`Last Heartbeat`, and clears `Blocked By`. It does not merge PRs, delete
+branches, or remove local worktrees.
+
 Use the watchdog to find claimed work that has stopped reporting heartbeats:
 
 ```bash

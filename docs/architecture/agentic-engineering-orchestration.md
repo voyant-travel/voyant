@@ -569,6 +569,7 @@ Recommended fields:
 
 | Field | Type | Purpose |
 | --- | --- | --- |
+| `Status` | Single select | GitHub Project workflow state used by the runner. |
 | `Agent State` | Single select | Main state machine. |
 | `Maintainer Approved` | Single select | Required execution gate: `No`, `Yes`. |
 | `Risk` | Single select | `Low`, `Medium`, `High`, `Unknown`. |
@@ -596,6 +597,12 @@ Recommended `Agent State` values:
 - `Merge Ready`
 - `Done`
 - `Abandoned`
+
+Recommended `Status` values:
+
+- `Todo`
+- `In Progress`
+- `Done`
 
 State rules:
 
