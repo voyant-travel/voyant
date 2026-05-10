@@ -1,0 +1,199 @@
+import { evaluateHeartbeat } from "./agent-runner-output.mjs"
+
+const runnableStates = new Set(["Planning", "Changes Requested", "CI Repair"])
+const stalePreemptionStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
+const watchedStates = new Set([
+  "Planning",
+  "Running",
+  "Blocked",
+  "Human Review",
+  "Changes Requested",
+  "CI Repair",
+])
+
+export function recommendQueueActions(items, { maxAgeDays, repository }) {
+  return items
+    .map((item) => recommendQueueAction(item, { maxAgeDays, repository }))
+    .filter((recommendation) => recommendation.action !== "ignore")
+    .sort(
+      (left, right) =>
+        left.priority - right.priority || (left.issue?.number ?? 0) - (right.issue?.number ?? 0),
+    )
+}
+
+export function recommendQueueAction(item, { maxAgeDays, repository }) {
+  if (!item.issue) {
+    return recommendation(item, {
+      action: "ignore",
+      command: null,
+      priority: 999,
+      reason: "project item has no issue content",
+    })
+  }
+
+  const state = item.fields["Agent State"]
+  const heartbeat = watchedStates.has(state)
+    ? evaluateHeartbeat(item.fields["Last Heartbeat"], { maxAgeDays })
+    : null
+
+  if (stalePreemptionStates.has(state) && heartbeat?.stale) {
+    return recommendation(item, {
+      action: "inspect-stale",
+      command: commandWithIssue({
+        command: "watchdog",
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: 10,
+      reason: heartbeat.reason,
+    })
+  }
+
+  if (item.ready) {
+    return recommendation(item, {
+      action: "start",
+      command: commandWithIssue({ command: "start", issueNumber: item.issue.number, repository }),
+      priority: 20,
+      reason: "maintainer-approved item is ready to claim",
+    })
+  }
+
+  if (runnableStates.has(state)) {
+    return recommendation(item, {
+      action: "run-command",
+      command: commandWithIssue({
+        command: "run-command",
+        extraArgs: ['--command "<implementation-command>"'],
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: 30,
+      reason: `item is in ${state}`,
+    })
+  }
+
+  if (state === "Running") {
+    return recommendation(item, {
+      action: "wait-running",
+      command: null,
+      heartbeat,
+      priority: 40,
+      reason: "command execution is already marked running",
+    })
+  }
+
+  if (state === "Human Review") {
+    return humanReviewRecommendation(item, { heartbeat, repository })
+  }
+
+  if (state === "Merge Ready") {
+    return recommendation(item, {
+      action: "wait-maintainer-merge",
+      command: null,
+      priority: 80,
+      reason: "PR is ready for maintainer merge",
+    })
+  }
+
+  if ((state === "Done" || state === "Abandoned") && item.fields.Workspace) {
+    return recommendation(item, {
+      action: "cleanup",
+      command: commandWithIssue({ command: "cleanup", issueNumber: item.issue.number, repository }),
+      priority: 90,
+      reason: `terminal item still has Workspace set`,
+    })
+  }
+
+  if (state === "Blocked") {
+    return recommendation(item, {
+      action: "inspect-blocked",
+      command: null,
+      heartbeat,
+      priority: 95,
+      reason: item.fields["Blocked By"] ?? "item is blocked",
+    })
+  }
+
+  return recommendation(item, {
+    action: "ignore",
+    command: null,
+    priority: 999,
+    reason: item.reasons.join("; ") || `Agent State is ${state ?? "unset"}`,
+  })
+}
+
+function humanReviewRecommendation(item, { heartbeat, repository }) {
+  const evidence = item.fields.Evidence
+  const pr = item.fields.PR
+
+  if (pr) {
+    return recommendation(item, {
+      action: "sync-pr",
+      command: commandWithIssue({ command: "sync-pr", issueNumber: item.issue.number, repository }),
+      heartbeat,
+      priority: 50,
+      reason: "linked PR should be synced back to the Project",
+    })
+  }
+
+  if (!evidence) {
+    return recommendation(item, {
+      action: "needs-evidence",
+      command: null,
+      heartbeat,
+      priority: 55,
+      reason: "human review item is missing Evidence",
+    })
+  }
+
+  if (isRemoteEvidence(evidence)) {
+    return recommendation(item, {
+      action: "open-pr",
+      command: commandWithIssue({ command: "open-pr", issueNumber: item.issue.number, repository }),
+      heartbeat,
+      priority: 60,
+      reason: "published evidence exists and no PR is linked",
+    })
+  }
+
+  return recommendation(item, {
+    action: "publish-evidence",
+    command: commandWithIssue({
+      command: "publish-evidence",
+      issueNumber: item.issue.number,
+      repository,
+    }),
+    heartbeat,
+    priority: 60,
+    reason: "local evidence should be published before opening a PR",
+  })
+}
+
+function recommendation(item, { action, command, heartbeat = null, priority, reason }) {
+  return {
+    action,
+    command,
+    heartbeat,
+    issue: item.issue,
+    priority,
+    reason,
+    state: item.fields["Agent State"] ?? null,
+  }
+}
+
+function isRemoteEvidence(evidence) {
+  return /^https?:\/\//.test(evidence)
+}
+
+function commandWithIssue({ command, extraArgs = [], issueNumber, repository }) {
+  return [
+    `pnpm agent:queue:${command} -- --issue ${issueNumber}`,
+    repository ? `--repo ${repository}` : null,
+    ...extraArgs,
+    "--yes",
+  ]
+    .filter(Boolean)
+    .join(" ")
+}

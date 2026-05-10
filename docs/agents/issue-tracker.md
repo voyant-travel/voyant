@@ -150,6 +150,18 @@ ready, active, stale, blocked, human-review, and merge-ready items. Pass
 `--json` for automation or `--max-age-days <number>` to adjust the heartbeat
 staleness threshold.
 
+Use the read-only tick view when wiring an always-on supervisor:
+
+```bash
+pnpm agent:queue:tick
+```
+
+Tick mode scans the same repository-scoped Project queue and prints ordered
+action recommendations such as `start`, `run-command`, `publish-evidence`,
+`open-pr`, `sync-pr`, `cleanup`, or `inspect-stale`. It does not mutate GitHub,
+create worktrees, run commands, publish evidence, or open PRs. Pass `--json`
+when a process manager or future control plane needs machine-readable actions.
+
 After a workspace is prepared, claim the item before implementation work starts:
 
 ```bash

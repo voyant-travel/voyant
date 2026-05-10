@@ -31,6 +31,7 @@ import {
   removeWorkspace,
   workspacePlan,
 } from "../lib/agent-runner-workspace.mjs"
+import { workItem } from "./agent-fixtures.mjs"
 
 describe("agent runner lifecycle helpers", () => {
   it("builds claim field values from the selected work item", () => {
@@ -472,27 +473,3 @@ describe("agent runner lifecycle helpers", () => {
     )
   })
 })
-
-function workItem() {
-  return {
-    itemId: "item-579",
-    issue: {
-      number: 579,
-      title: "Test agent project intake workflow",
-      url: "https://github.com/voyantjs/voyant/issues/579",
-      state: "OPEN",
-      repository: "voyantjs/voyant",
-      labels: ["agent:ready"],
-    },
-    fields: {},
-    dryRunPlan: {
-      branch: "task/579-test-agent-project-intake-workflow",
-      workspace: ".agent-worktrees/579-test-agent-project-intake-workflow",
-      planPath: "docs/agent-plans/active/579-test-agent-project-intake-workflow.md",
-      verificationLane: "verify:fast",
-      risk: "Low",
-      securityRisk: "None",
-      agentProvider: "manual",
-    },
-  }
-}
