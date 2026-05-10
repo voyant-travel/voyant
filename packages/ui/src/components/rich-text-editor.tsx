@@ -7,12 +7,14 @@ import {
   Heading2,
   Heading3,
   Italic,
+  Link,
   List,
   ListOrdered,
   Quote,
   Redo,
   Strikethrough,
   Undo,
+  Unlink,
 } from "lucide-react"
 import { useEffect } from "react"
 import { cn } from "../lib/utils.js"
@@ -42,6 +44,66 @@ const EMPTY_CONTENT = "<p></p>"
 
 function normalizeEditorContent(value: string) {
   return value.trim() ? value : EMPTY_CONTENT
+}
+
+function isAllowedLinkUri(uri: string) {
+  const value = uri.trim()
+
+  if (!value) {
+    return false
+  }
+
+  if (
+    value.startsWith("/") ||
+    value.startsWith("#") ||
+    value.startsWith("./") ||
+    value.startsWith("../")
+  ) {
+    return true
+  }
+
+  try {
+    const parsed = new URL(value)
+    return ["http:", "https:", "mailto:", "tel:"].includes(parsed.protocol)
+  } catch {
+    return false
+  }
+}
+
+function isRelativeLinkUri(uri: string) {
+  const value = uri.trim()
+
+  return (
+    value.startsWith("/") ||
+    value.startsWith("#") ||
+    value.startsWith("./") ||
+    value.startsWith("../")
+  )
+}
+
+function hasLinkProtocol(uri: string) {
+  return /^[a-z][a-z0-9+.-]*:/i.test(uri.trim())
+}
+
+function normalizeLinkHref(href: string) {
+  const value = href.trim()
+
+  if (!value) {
+    return null
+  }
+
+  if (
+    value.startsWith("/") ||
+    value.startsWith("#") ||
+    value.startsWith("./") ||
+    value.startsWith("../") ||
+    hasLinkProtocol(value)
+  ) {
+    return isAllowedLinkUri(value) ? value : null
+  }
+
+  const withProtocol = `https://${value}`
+  return isAllowedLinkUri(withProtocol) ? withProtocol : null
 }
 
 function ToolbarButton({
@@ -81,6 +143,28 @@ export function RichTextEditor({
     StarterKit.configure({
       heading: {
         levels: [2, 3],
+      },
+      link: {
+        autolink: true,
+        defaultProtocol: "https",
+        linkOnPaste: true,
+        openOnClick: false,
+        protocols: ["mailto", "tel"],
+        HTMLAttributes: {
+          rel: "noopener noreferrer",
+          target: "_blank",
+        },
+        isAllowedUri: (url, { defaultValidate }) => {
+          if (isRelativeLinkUri(url)) {
+            return true
+          }
+
+          if (hasLinkProtocol(url)) {
+            return isAllowedLinkUri(url) && defaultValidate(url)
+          }
+
+          return defaultValidate(url) && isAllowedLinkUri(`https://${url.trim()}`)
+        },
       },
     }),
     Placeholder.configure({
@@ -139,6 +223,32 @@ export function RichTextEditor({
       onEditorReady(null)
     }
   }, [editor, onEditorReady])
+
+  const setLink = () => {
+    if (!editor) {
+      return
+    }
+
+    const previousHref = editor.getAttributes("link").href
+    const href = window.prompt("Link URL", typeof previousHref === "string" ? previousHref : "")
+
+    if (href === null) {
+      return
+    }
+
+    if (href.trim() === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run()
+      return
+    }
+
+    const normalizedHref = normalizeLinkHref(href)
+
+    if (!normalizedHref) {
+      return
+    }
+
+    editor.chain().focus().extendMarkRange("link").setLink({ href: normalizedHref }).run()
+  }
 
   return (
     <div className={cn("rounded-md border border-input bg-transparent", className)}>
@@ -206,6 +316,21 @@ export function RichTextEditor({
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
         >
           <Quote className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Link"
+          active={editor?.isActive("link")}
+          disabled={!editor || disabled}
+          onClick={setLink}
+        >
+          <Link className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Remove link"
+          disabled={!editor?.isActive("link")}
+          onClick={() => editor?.chain().focus().extendMarkRange("link").unsetLink().run()}
+        >
+          <Unlink className="h-4 w-4" />
         </ToolbarButton>
         <div className="ml-auto flex items-center gap-2">
           <ToolbarButton
