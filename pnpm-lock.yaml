@@ -3872,6 +3872,9 @@ importers:
       '@voyantjs/ui':
         specifier: workspace:*
         version: link:../ui
+      '@voyantjs/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -4025,12 +4028,18 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: ^7.60.0
+        version: 7.72.1(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
       vitest:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/promotions:
     dependencies:

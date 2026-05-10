@@ -9,6 +9,7 @@ import { CrmUiMessagesProvider } from "@voyantjs/crm-ui/i18n"
 import { FinanceUiMessagesProvider } from "@voyantjs/finance-ui/i18n"
 import { LegalUiMessagesProvider } from "@voyantjs/legal-ui/i18n"
 import { NotificationsUiMessagesProvider } from "@voyantjs/notifications-ui/i18n"
+import { PricingUiMessagesProvider } from "@voyantjs/pricing-ui/i18n"
 import { ProductsUiMessagesProvider } from "@voyantjs/products-ui/i18n"
 import { ResourcesUiMessagesProvider } from "@voyantjs/resources-ui/i18n"
 import { SuppliersUiMessagesProvider } from "@voyantjs/suppliers-ui/i18n"
@@ -21,6 +22,7 @@ const appProviders = [TooltipProvider] satisfies readonly AdminChildProvider[]
 const domainMessageProviders = [
   BookingsUiMessagesProvider,
   ProductsUiMessagesProvider,
+  PricingUiMessagesProvider,
   LegalUiMessagesProvider,
   CrmUiMessagesProvider,
   ResourcesUiMessagesProvider,
