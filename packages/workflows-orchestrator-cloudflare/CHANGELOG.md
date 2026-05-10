@@ -1,5 +1,14 @@
 # @voyantjs/workflows-orchestrator-cloudflare
 
+## 0.30.5
+
+### Patch Changes
+
+- 3f323e9: Serialize workflow concurrency declarations into runtime manifests and enforce workflow concurrency policies for the in-memory, Node, and Cloudflare orchestrator drivers.
+- Updated dependencies [3f323e9]
+  - @voyantjs/workflows@0.30.5
+  - @voyantjs/workflows-orchestrator@0.30.5
+
 ## 0.30.4
 
 ### Patch Changes
