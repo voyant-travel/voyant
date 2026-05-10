@@ -12,7 +12,8 @@
     "dev": "wrangler dev",
     "lint": "biome check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "hono": "^4.12.10",
