@@ -33,6 +33,27 @@ export const legalUiEn = {
       void: "Void",
     },
   },
+  numberSeriesPage: {
+    title: "Contract Number Series",
+    description: "Configure numbering sequences for contracts.",
+    actions: {
+      create: "New Series",
+    },
+    columns: {
+      name: "Name",
+      prefix: "Prefix",
+      separator: "Separator",
+      pad: "Pad",
+      current: "Current",
+      reset: "Reset",
+      scope: "Scope",
+      status: "Status",
+    },
+    active: "Active",
+    inactive: "Inactive",
+    empty: "No number series yet. Create one to configure contract numbering.",
+    deleteConfirm: 'Delete series "{name}"?',
+  },
   attachmentDialog: {
     titles: {
       create: "Add Attachment",

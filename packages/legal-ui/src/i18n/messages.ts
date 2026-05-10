@@ -42,6 +42,27 @@ export type LegalUiMessages = {
     unsaved: string
     contractStatusLabels: Record<LegalContractStatus, string>
   }
+  numberSeriesPage: {
+    title: string
+    description: string
+    actions: {
+      create: string
+    }
+    columns: {
+      name: string
+      prefix: string
+      separator: string
+      pad: string
+      current: string
+      reset: string
+      scope: string
+      status: string
+    }
+    active: string
+    inactive: string
+    empty: string
+    deleteConfirm: string
+  }
   attachmentDialog: {
     titles: {
       create: string

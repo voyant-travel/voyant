@@ -33,6 +33,27 @@ export const legalUiRo = {
       void: "Anulat",
     },
   },
+  numberSeriesPage: {
+    title: "Serii numere contracte",
+    description: "Configureaza secventele de numerotare pentru contracte.",
+    actions: {
+      create: "Serie noua",
+    },
+    columns: {
+      name: "Nume",
+      prefix: "Prefix",
+      separator: "Separator",
+      pad: "Completare",
+      current: "Curent",
+      reset: "Resetare",
+      scope: "Domeniu",
+      status: "Status",
+    },
+    active: "Activ",
+    inactive: "Inactiv",
+    empty: "Nu exista serii de numere. Creeaza una pentru numerotarea contractelor.",
+    deleteConfirm: 'Stergi seria "{name}"?',
+  },
   attachmentDialog: {
     titles: {
       create: "Adauga atasament",
