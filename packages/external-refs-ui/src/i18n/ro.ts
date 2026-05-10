@@ -8,6 +8,47 @@ export const externalRefsUiRo: ExternalRefsUiMessages = {
       archived: "Arhivat",
     },
   },
+  externalRefsPage: {
+    title: "Referinte externe",
+    description:
+      "ID-uri din sisteme terte legate de entitati Voyant. Introdu tipul entitatii si ID-ul de mai jos pentru a gestiona referintele externe.",
+    fields: {
+      entityType: "Tip entitate",
+      entityId: "ID entitate",
+    },
+    placeholders: {
+      entityType: "person, booking, product...",
+      entityId: "pers_... / book_... / prod_...",
+    },
+    emptyScope: "Introdu mai sus tipul entitatii si ID-ul pentru a vedea referintele externe.",
+  },
+  externalRefsTab: {
+    description: "Legaturi intre aceasta entitate si ID-uri din sisteme externe.",
+    add: "Adauga referinta externa",
+    empty: {
+      none: "Nu exista inca referinte externe.",
+      loading: "Se incarca referintele externe...",
+    },
+    columns: {
+      sourceSystem: "Sistem sursa",
+      objectType: "Tip obiect",
+      externalId: "ID extern",
+      namespace: "Namespace",
+      status: "Status",
+      primary: "Primara",
+    },
+    actions: {
+      edit: "Editeaza referinta externa",
+      delete: "Sterge referinta externa",
+      deleteConfirm: "Stergi referinta externa?",
+    },
+    pagination: {
+      previous: "Pagina anterioara",
+      next: "Pagina urmatoare",
+      page: "Pagina",
+      of: "din",
+    },
+  },
   externalRefDialog: {
     titles: {
       edit: "Editeaza referinta externa",

@@ -1,5 +1,11 @@
 export { ExternalRefDialog, type ExternalRefDialogProps } from "./components/external-ref-dialog.js"
 export {
+  ExternalRefsPage,
+  type ExternalRefsPageProps,
+  ExternalRefsTab,
+  type ExternalRefsTabProps,
+} from "./components/external-refs-page.js"
+export {
   type ExternalRefStatus,
   type ExternalRefsUiMessageOverrides,
   type ExternalRefsUiMessages,
