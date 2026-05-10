@@ -12,10 +12,12 @@
  *   - edge cases (fixed_amount cap at base, percentage rounding, empty candidates)
  */
 
+import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, it } from "vitest"
 
 import type { PromotionalOffer } from "../../src/schema.js"
 import {
+  __test__,
   evaluateOffersForProduct,
   type OfferDataSource,
   type OfferEvaluationContext,
@@ -89,6 +91,18 @@ const baseCtx = (overrides: Partial<OfferEvaluationContext> = {}): OfferEvaluati
 })
 
 // ---------- Tests ----------
+
+describe("active auto-offer DB predicate", () => {
+  it("encodes both validity-window timestamp comparisons through Drizzle column encoders", () => {
+    const date = new Date("2026-05-10T00:00:00.000Z")
+    const query = new PgDialect().sqlToQuery(__test__.activeAutoOfferPredicate(date))
+
+    expect(query.sql).toContain('"promotional_offers"."valid_from" <= $2')
+    expect(query.sql).toContain('"promotional_offers"."valid_until" >= $3')
+    expect(query.params).toEqual([true, "2026-05-10T00:00:00.000Z", "2026-05-10T00:00:00.000Z"])
+    expect(query.typings).toEqual(["none", "timestamp", "timestamp"])
+  })
+})
 
 describe("evaluateOffersForProduct — empty / no-op", () => {
   it("returns nothing when no candidates exist", async () => {

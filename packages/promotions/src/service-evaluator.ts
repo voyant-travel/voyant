@@ -18,7 +18,7 @@
  */
 
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { and, eq, inArray, isNull, lte, or, sql } from "drizzle-orm"
+import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm"
 
 import { type PromotionalOffer, promotionalOfferProducts, promotionalOffers } from "./schema.js"
 import type { PromotionalOfferConditions, PromotionalOfferScope } from "./validation.js"
@@ -118,20 +118,7 @@ export interface OfferDataSource {
 export function createDrizzleOfferDataSource(db: AnyDrizzleDb): OfferDataSource {
   return {
     async fetchActiveAutoCandidates(date) {
-      return db
-        .select()
-        .from(promotionalOffers)
-        .where(
-          and(
-            eq(promotionalOffers.active, true),
-            isNull(promotionalOffers.code),
-            or(isNull(promotionalOffers.validFrom), lte(promotionalOffers.validFrom, date)),
-            or(
-              isNull(promotionalOffers.validUntil),
-              sql`${promotionalOffers.validUntil} >= ${date}`,
-            ),
-          ),
-        )
+      return db.select().from(promotionalOffers).where(activeAutoOfferPredicate(date))
     },
 
     async findActiveOfferByCode(code) {
@@ -162,6 +149,15 @@ export function createDrizzleOfferDataSource(db: AnyDrizzleDb): OfferDataSource 
       return new Set(rows.map((r) => r.offerId))
     },
   }
+}
+
+function activeAutoOfferPredicate(date: Date) {
+  return and(
+    eq(promotionalOffers.active, true),
+    isNull(promotionalOffers.code),
+    or(isNull(promotionalOffers.validFrom), lte(promotionalOffers.validFrom, date)),
+    or(isNull(promotionalOffers.validUntil), gte(promotionalOffers.validUntil, date)),
+  )
 }
 
 // ---------- Internal helpers ----------
@@ -425,3 +421,6 @@ export async function evaluateOffersForProduct(
     codeStatus,
   }
 }
+
+// Internal exports for unit tests — kept off the public surface.
+export const __test__ = { activeAutoOfferPredicate }
