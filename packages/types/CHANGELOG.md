@@ -1,5 +1,11 @@
 # @voyantjs/types
 
+## 0.30.5
+
+### Patch Changes
+
+- @voyantjs/db@0.30.5
+
 ## 0.30.4
 
 ### Patch Changes
