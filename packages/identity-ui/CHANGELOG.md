@@ -1,5 +1,13 @@
 # @voyantjs/identity-ui
 
+## 0.30.3
+
+### Patch Changes
+
+- @voyantjs/i18n@0.30.3
+- @voyantjs/identity-react@0.30.3
+- @voyantjs/ui@0.30.3
+
 ## 0.30.2
 
 ### Patch Changes

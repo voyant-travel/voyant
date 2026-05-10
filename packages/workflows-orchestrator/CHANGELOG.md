@@ -1,5 +1,13 @@
 # @voyantjs/workflows-orchestrator
 
+## 0.30.3
+
+### Patch Changes
+
+- 05a1b19: Serialize workflow schedule declarations into manifests, preserve schedule config when Hono registers runtime manifests, and expose shared schedule fire-time helpers from the orchestrator package.
+- Updated dependencies [05a1b19]
+  - @voyantjs/workflows@0.30.3
+
 ## 0.30.2
 
 ### Patch Changes
