@@ -218,6 +218,20 @@ sets `Status = Done`, `Agent State = Done`, refreshes `PR` and
 `Last Heartbeat`, and clears `Blocked By`. It does not merge PRs, delete
 branches, or remove local worktrees.
 
+After a completed or abandoned item no longer needs its local workspace, clean
+up the worktree:
+
+```bash
+pnpm agent:queue:cleanup -- --issue <number> --yes
+```
+
+Cleanup mode removes the local worktree under `.agent-worktrees/`, clears the
+Project `Workspace` field, and refreshes `Last Heartbeat`. It only runs for
+`Agent State = Done` or `Abandoned` unless `--force` is passed. It does not
+delete local branches, remote branches, PRs, evidence, or plans. Cleanup is
+rerunnable: if the Project item still points at a workspace that is already
+gone, it clears the stale Project field and treats local removal as complete.
+
 Use the watchdog to find claimed work that has stopped reporting heartbeats:
 
 ```bash

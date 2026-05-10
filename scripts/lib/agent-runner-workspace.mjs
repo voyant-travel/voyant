@@ -15,6 +15,42 @@ export function workspacePlan({ baseRef = "origin/main", item, repoRoot }) {
   }
 }
 
+export function cleanupWorkspacePlan({ item, repoRoot, workspaceReference }) {
+  const reference = workspaceReference ?? item.fields.Workspace ?? item.dryRunPlan.workspace
+  const workspace = path.resolve(repoRoot, reference)
+  const agentWorktreeRoot = path.resolve(repoRoot, ".agent-worktrees")
+
+  return {
+    workspaceReference: reference,
+    workspace,
+    agentWorktreeRoot,
+    safeWorkspace: isPathInside(workspace, agentWorktreeRoot),
+  }
+}
+
+export function cleanupFieldValues(date = new Date()) {
+  return {
+    "Last Heartbeat": date.toISOString().slice(0, 10),
+  }
+}
+
+export function canCleanupAgentState(agentState, { force = false } = {}) {
+  return force || agentState === "Done" || agentState === "Abandoned"
+}
+
+export function removeWorkspace({ allowMissing = false, workspace }) {
+  if (!existsSync(workspace)) {
+    if (allowMissing) {
+      return false
+    }
+
+    fail(`workspace does not exist: ${workspace}`)
+  }
+
+  runGit(["worktree", "remove", workspace])
+  return true
+}
+
 export function prepareWorkspace({ baseRef = "origin/main", item, repoRoot }) {
   const plan = workspacePlan({ baseRef, item, repoRoot })
   assertWorkspaceAvailable({ branch: plan.branch, repoRoot, workspace: plan.workspace })
@@ -28,6 +64,11 @@ export function prepareWorkspace({ baseRef = "origin/main", item, repoRoot }) {
   writeFileSync(plan.planPath, buildExecutionPlan(item, plan), "utf8")
 
   return plan
+}
+
+function isPathInside(candidatePath, parentPath) {
+  const relative = path.relative(parentPath, candidatePath)
+  return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative)
 }
 
 export function assertWorkspaceAvailable({ branch, repoRoot, workspace }) {
