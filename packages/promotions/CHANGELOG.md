@@ -1,5 +1,18 @@
 # @voyantjs/promotions
 
+## 0.30.7
+
+### Patch Changes
+
+- d1a8835: Normalize active-offer timestamp predicates so `valid_from` and `valid_until` comparisons both use Drizzle timestamp encoders, fixing postgres-js catalog projection reindexing for `createProductPromotionsProjectionExtension()`.
+  - @voyantjs/catalog@0.30.7
+  - @voyantjs/core@0.30.7
+  - @voyantjs/db@0.30.7
+  - @voyantjs/hono@0.30.7
+  - @voyantjs/products@0.30.7
+  - @voyantjs/storefront@0.30.7
+  - @voyantjs/workflows@0.30.7
+
 ## 0.30.6
 
 ### Patch Changes
