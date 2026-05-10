@@ -71,6 +71,11 @@ export {
   type SupplierPaymentDialogProps,
 } from "./components/supplier-payment-dialog.js"
 export {
+  TaxesPage,
+  type TaxesPageApi,
+  type TaxesPageProps,
+} from "./components/taxes-page.js"
+export {
   type FinanceUiMessageOverrides,
   type FinanceUiMessages,
   FinanceUiMessagesProvider,
