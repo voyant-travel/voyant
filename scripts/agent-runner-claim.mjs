@@ -1,4 +1,3 @@
-import { updateProjectItemFields } from "./lib/agent-project-fields.mjs"
 import {
   currentRepositoryFromOrigin,
   fail,
@@ -8,6 +7,7 @@ import {
   projectScanConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import { claimFieldValues, claimProjectItem, printClaimUpdate } from "./lib/agent-runner-claim.mjs"
 import {
   maybePrintHelp,
   mutationOptions,
@@ -35,20 +35,14 @@ const item = findSelectedReadyItem(project.items, {
   issueNumber: args.issue,
   repository,
 })
-const values = {
-  Status: "In Progress",
-  "Agent State": "Planning",
-  Branch: item.dryRunPlan.branch,
-  Workspace: item.dryRunPlan.workspace,
-  "Last Heartbeat": today(),
-}
+const values = claimFieldValues(item)
 
 if (!args.yes) {
-  printUpdate("claim", item, values)
+  printClaimUpdate({ item, repository, values })
   fail("claim mode updates GitHub Project fields; rerun with --yes to continue")
 }
 
-updateProjectItemFields({ project, item, values })
+claimProjectItem({ item, project })
 
 console.log("agent-runner claim: updated GitHub Project fields")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)
@@ -58,16 +52,3 @@ console.log(`workspace: ${item.dryRunPlan.workspace}`)
 console.log("agent state: Planning")
 console.log("")
 console.log("No agent was run. No branch was pushed.")
-
-function printUpdate(action, selectedItem, fieldValues) {
-  console.log(`agent-runner ${action} would update:`)
-  console.log(`issue: #${selectedItem.issue.number} ${selectedItem.issue.title}`)
-  console.log(`repository: ${repository}`)
-  for (const [fieldName, value] of Object.entries(fieldValues)) {
-    console.log(`${fieldName}: ${value}`)
-  }
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
-}

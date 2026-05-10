@@ -110,6 +110,18 @@ By default, prepare mode only selects Project items for the current checkout's
 repositories with the same issue number. Pass `--repo <owner/name>` only when
 preparing work for a different repository intentionally.
 
+For unattended runner flows, use `start` to combine workspace preparation and
+Project claiming in one guarded command:
+
+```bash
+pnpm agent:queue:start -- --issue <number> --yes
+```
+
+Start mode checks the same execution gate, creates the local worktree and
+execution plan, then updates the Project item to `Agent State = Planning`.
+It still does not run an implementation agent, push a branch, open a PR, or
+publish evidence.
+
 Use the read-only status view to inspect the current queue and active work:
 
 ```bash
