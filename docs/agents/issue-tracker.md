@@ -112,6 +112,18 @@ Heartbeat mode updates `Last Heartbeat` and can move `Agent State` among
 heartbeats require `--evidence`. When the state is not `Blocked`, heartbeat
 clears `Blocked By`.
 
+When work is ready for maintainer review, write the evidence packet and hand
+off the Project item:
+
+```bash
+pnpm agent:queue:handoff -- --issue <number> --summary "..." --verification "pnpm lint:changed: passed" --yes
+```
+
+Handoff mode writes a markdown evidence packet under the task workspace,
+updates `Evidence` with that path, sets `Agent State = Human Review`, updates
+`Last Heartbeat`, and clears `Blocked By`. It requires `--summary` and
+`--verification` so maintainer review always has a concrete packet.
+
 If a claimed item should return to the executable queue without shipping work,
 release it:
 
