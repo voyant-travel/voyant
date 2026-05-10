@@ -66,6 +66,17 @@ runner flags after `--`:
 pnpm agent:queue:status -- --help
 ```
 
+Before operating the queue, run the read-only doctor:
+
+```bash
+pnpm agent:queue:doctor
+```
+
+Doctor mode checks GitHub CLI authentication, current repository detection,
+Project visibility, required Project fields/options, and queue visibility. It
+does not mutate GitHub, create worktrees, or spend agent execution budget. Pass
+`--json` for automation.
+
 Before any agent execution is enabled, use the read-only queue runner:
 
 ```bash

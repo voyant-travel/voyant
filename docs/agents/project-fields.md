@@ -4,6 +4,7 @@ Recommended GitHub Project fields for `Voyant Engineering`.
 
 | Field | Type | Purpose |
 | --- | --- | --- |
+| `Status` | Single select | GitHub Project workflow state used by the runner. |
 | `Agent State` | Single select | Main state machine. |
 | `Maintainer Approved` | Single select | Required execution gate: `No`, `Yes`. |
 | `Risk` | Single select | `Low`, `Medium`, `High`, `Unknown`. |
@@ -34,6 +35,13 @@ Recommended GitHub Project fields for `Voyant Engineering`.
 
 Only maintainers move an item to `Ready`. Merge remains a maintainer decision
 unless a separate maintainer-approved merge automation is introduced.
+
+## Status Values
+
+Runner commands require these status values:
+
+- `Todo`
+- `In Progress`
 
 ## Maintainer Approved Values
 
