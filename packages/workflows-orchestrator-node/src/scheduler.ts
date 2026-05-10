@@ -1,7 +1,13 @@
 import type { EnvironmentName, ScheduleDeclaration } from "@voyantjs/workflows"
 import { computeNextFire } from "@voyantjs/workflows-orchestrator"
 
-export { computeNextFire, nextCronFire, parseCron, toMs } from "@voyantjs/workflows-orchestrator"
+export {
+  type CronSpec,
+  computeNextFire,
+  nextCronFire,
+  parseCron,
+  toMs,
+} from "@voyantjs/workflows-orchestrator"
 
 export interface ScheduleSource {
   workflowId: string
