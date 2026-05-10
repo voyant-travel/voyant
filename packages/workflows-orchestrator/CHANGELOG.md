@@ -1,5 +1,12 @@
 # @voyantjs/workflows-orchestrator
 
+## 0.30.4
+
+### Patch Changes
+
+- fcffe2d: Fire manifest-registered workflow schedules from the in-memory and Node standalone drivers.
+  - @voyantjs/workflows@0.30.4
+
 ## 0.30.3
 
 ### Patch Changes

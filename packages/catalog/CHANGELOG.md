@@ -1,5 +1,13 @@
 # @voyantjs/catalog
 
+## 0.30.4
+
+### Patch Changes
+
+- @voyantjs/core@0.30.4
+- @voyantjs/db@0.30.4
+- @voyantjs/hono@0.30.4
+
 ## 0.30.3
 
 ### Patch Changes
