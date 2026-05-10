@@ -386,6 +386,7 @@ export const storefrontDepartureItineraryDaySchema = z.object({
 
 export const storefrontDepartureItinerarySchema = z.object({
   id: z.string(),
+  itineraryId: z.string(),
   days: z.array(storefrontDepartureItineraryDaySchema),
 })
 
