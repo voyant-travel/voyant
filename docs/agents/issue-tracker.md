@@ -124,6 +124,17 @@ updates `Evidence` with that path, sets `Agent State = Human Review`, updates
 `Last Heartbeat`, and clears `Blocked By`. It requires `--summary` and
 `--verification` so maintainer review always has a concrete packet.
 
+Publish the evidence packet when it should survive beyond the local workspace:
+
+```bash
+pnpm agent:queue:publish-evidence -- --issue <number> --yes
+```
+
+Publish mode reads the evidence packet from the task workspace, posts it as a
+GitHub issue comment, updates `Evidence` with the comment URL, and refreshes
+`Last Heartbeat`. It refuses remote Evidence URLs so it does not duplicate an
+already-published packet.
+
 If a claimed item should return to the executable queue without shipping work,
 release it:
 
