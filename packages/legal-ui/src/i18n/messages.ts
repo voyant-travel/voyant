@@ -2,6 +2,16 @@ import type { LegalContractRecord } from "@voyantjs/legal-react"
 
 export const legalContractScopes = ["customer", "supplier", "partner", "channel", "other"] as const
 
+export const legalContractStatuses = [
+  "draft",
+  "issued",
+  "sent",
+  "signed",
+  "executed",
+  "expired",
+  "void",
+] as const
+
 export const legalPolicyKinds = [
   "cancellation",
   "payment",
@@ -27,6 +37,7 @@ export const legalSignatureMethods = ["manual", "electronic", "docusign", "other
 
 export type LegalContractStatus = LegalContractRecord["status"]
 export type LegalContractScope = (typeof legalContractScopes)[number]
+export type LegalContractStatusValue = (typeof legalContractStatuses)[number]
 export type LegalPolicyKind = (typeof legalPolicyKinds)[number]
 export type LegalRuleType = (typeof legalRuleTypes)[number]
 export type LegalRefundType = (typeof legalRefundTypes)[number]
@@ -50,6 +61,7 @@ export type LegalUiMessages = {
     addVersion: string
     noResultsDash: string
     contractScopeLabels: Record<LegalContractScope, string>
+    contractStatusLabels: Record<LegalContractStatusValue, string>
     policyKindLabels: Record<LegalPolicyKind, string>
   }
   bookingContractCard: {
@@ -84,6 +96,34 @@ export type LegalUiMessages = {
     inactive: string
     empty: string
     deleteConfirm: string
+  }
+  contractsPage: {
+    title: string
+    description: string
+    create: string
+    searchPlaceholder: string
+    empty: string
+    loadFailed: string
+    filters: {
+      scope: string
+      status: string
+      allScopes: string
+      allStatuses: string
+    }
+    columns: {
+      number: string
+      title: string
+      scope: string
+      status: string
+      person: string
+      created: string
+    }
+    pagination: {
+      showing: string
+      page: string
+      previous: string
+      next: string
+    }
   }
   policiesPage: {
     title: string
