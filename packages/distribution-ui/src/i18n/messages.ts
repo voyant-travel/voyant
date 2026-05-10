@@ -174,6 +174,45 @@ export type DistributionUiMessages = {
     bookingLinks: DistributionBulkTabMessages<"delete">
     webhooks: DistributionBulkTabMessages<"markProcessed" | "ignore" | "delete">
   }
+  details: {
+    channel: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      sections: {
+        details: string
+        metadata: string
+        contracts: string
+        mappings: string
+        bookingLinks: string
+        webhooks: string
+      }
+      labels: {
+        website: string
+        contactName: string
+        contactEmail: string
+        supplier: string
+        payment: string
+        cancellation: string
+        externalProduct: string
+        externalBooking: string
+        reference: string
+        lastSynced: string
+        rate: string
+        category: string
+        booking: string
+      }
+      empty: {
+        metadata: string
+        contracts: string
+        mappings: string
+        bookingLinks: string
+        webhooks: string
+      }
+    }
+  }
 }
 
 type DistributionBulkTabMessages<TAction extends string> = {

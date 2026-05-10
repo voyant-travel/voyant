@@ -26,6 +26,13 @@ import { distributionUiRo } from "@voyantjs/distribution-ui/i18n/ro"
 English-only apps should import only `./i18n/en`. Bilingual apps can import
 `./i18n/en` and `./i18n/ro`.
 
+## Components
+
+- `DistributionPage`, `DistributionOverview`
+- `ChannelDetailPage`
+- `DistributionChannelsTab`, `DistributionContractsTab`, `DistributionCommissionsTab`
+- `DistributionMappingsTab`, `DistributionBookingLinksTab`, `DistributionWebhooksTab`
+
 ## Not included (registry-only)
 
-Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `booking-link-detail-page`, `channel-detail-page`, `commission-rule-detail-page`, `contract-detail-page`, `distribution-dialogs-commercial`, `distribution-dialogs-commission`, `distribution-dialogs-sync`, `distribution-dialogs-webhook`, `mapping-detail-page`, `webhook-event-detail-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.
+Some components couple to TanStack Router or template-local helpers and remain available only via the shadcn registry: `booking-link-detail-page`, `commission-rule-detail-page`, `contract-detail-page`, `distribution-dialogs-commercial`, `distribution-dialogs-commission`, `distribution-dialogs-sync`, `distribution-dialogs-webhook`, `mapping-detail-page`, `webhook-event-detail-page`. Import via `npx shadcn add @voyant/<component>` and customize per-project.
