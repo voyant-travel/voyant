@@ -132,6 +132,20 @@ export function readPullRequestStatus({ prReference, repository, workspace }) {
   return JSON.parse(payload)
 }
 
+export function evaluatePullRequestCompletion(pr) {
+  if (pr.state !== "MERGED") {
+    return {
+      complete: false,
+      reason: `PR is ${pr.state}`,
+    }
+  }
+
+  return {
+    complete: true,
+    reason: "PR is merged",
+  }
+}
+
 export function evaluatePullRequestGate(pr) {
   const checks = summarizeChecks(pr.statusCheckRollup ?? [])
 
@@ -194,6 +208,15 @@ export function evaluatePullRequestGate(pr) {
     blockedBy: null,
     mergeReady: true,
     reason: "PR is ready for maintainer merge",
+  }
+}
+
+export function pullRequestCompletionFieldValues({ date = new Date(), pr }) {
+  return {
+    Status: "Done",
+    "Agent State": "Done",
+    PR: pr.url,
+    "Last Heartbeat": date.toISOString().slice(0, 10),
   }
 }
 

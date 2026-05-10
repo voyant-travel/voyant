@@ -12,7 +12,7 @@ const requiredFields = [
   {
     name: "Status",
     type: "SINGLE_SELECT",
-    options: ["Todo", "In Progress"],
+    options: ["Todo", "In Progress", "Done"],
   },
   {
     name: "Agent State",

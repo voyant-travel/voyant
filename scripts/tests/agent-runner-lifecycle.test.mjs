@@ -4,9 +4,11 @@ import { describe, it } from "node:test"
 
 import { claimFieldValues } from "../lib/agent-runner-claim.mjs"
 import {
+  evaluatePullRequestCompletion,
   evaluatePullRequestGate,
   isRemoteReference,
   pullRequestBody,
+  pullRequestCompletionFieldValues,
   pullRequestCreateArgs,
   pullRequestFieldValues,
   pullRequestNumberFromUrl,
@@ -258,6 +260,44 @@ describe("agent runner lifecycle helpers", () => {
         "Agent State": "Merge Ready",
         PR: "https://github.com/voyantjs/voyant/pull/603",
         "Last Heartbeat": "2026-05-10",
+      },
+    )
+  })
+
+  it("marks merged PRs complete", () => {
+    const pr = {
+      url: "https://github.com/voyantjs/voyant/pull/605",
+      state: "MERGED",
+    }
+    const result = evaluatePullRequestCompletion(pr)
+
+    assert.deepEqual(result, {
+      complete: true,
+      reason: "PR is merged",
+    })
+    assert.deepEqual(
+      pullRequestCompletionFieldValues({
+        date: new Date("2026-05-10T12:34:56.000Z"),
+        pr,
+      }),
+      {
+        Status: "Done",
+        "Agent State": "Done",
+        PR: "https://github.com/voyantjs/voyant/pull/605",
+        "Last Heartbeat": "2026-05-10",
+      },
+    )
+  })
+
+  it("refuses to complete unmerged PRs", () => {
+    assert.deepEqual(
+      evaluatePullRequestCompletion({
+        url: "https://github.com/voyantjs/voyant/pull/605",
+        state: "OPEN",
+      }),
+      {
+        complete: false,
+        reason: "PR is OPEN",
       },
     )
   })

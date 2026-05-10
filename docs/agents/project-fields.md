@@ -42,6 +42,7 @@ Runner commands require these status values:
 
 - `Todo`
 - `In Progress`
+- `Done`
 
 ## Maintainer Approved Values
 
