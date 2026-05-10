@@ -96,7 +96,7 @@ describe("agent control plane", () => {
   })
 
   it("serves health and dispatch planning through Hono", async () => {
-    const app = createApp()
+    const app = createApp({ authTokens: ["secret"] })
 
     const health = await app.request("/health")
     expect(health.status).toBe(200)
@@ -107,7 +107,7 @@ describe("agent control plane", () => {
 
     const plan = await app.request("/api/dispatch-plans", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
       body: JSON.stringify({
         recommendations,
         repository: "voyantjs/voyant",
@@ -124,11 +124,33 @@ describe("agent control plane", () => {
     })
   })
 
+  it("requires configured bearer auth for API routes", async () => {
+    const missingConfig = createApp()
+    const notConfigured = await missingConfig.request("/api/capabilities")
+    expect(notConfigured.status).toBe(503)
+    await expect(notConfigured.json()).resolves.toEqual({
+      error: "control_plane_auth_not_configured",
+    })
+
+    const app = createApp({ authTokens: ["secret"] })
+    const unauthorized = await app.request("/api/capabilities")
+    expect(unauthorized.status).toBe(401)
+    await expect(unauthorized.json()).resolves.toEqual({ error: "unauthorized" })
+
+    const authorized = await app.request("/api/capabilities", {
+      headers: { authorization: "Bearer secret" },
+    })
+    expect(authorized.status).toBe(200)
+    await expect(authorized.json()).resolves.toMatchObject({
+      service: "agent-control-plane",
+    })
+  })
+
   it("returns validation errors for malformed planning requests", async () => {
-    const app = createApp()
+    const app = createApp({ authTokens: ["secret"] })
     const response = await app.request("/api/dispatch-plans", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
       body: JSON.stringify({ recommendations: [] }),
     })
 

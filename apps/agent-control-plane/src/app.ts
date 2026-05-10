@@ -6,7 +6,11 @@ import {
   selectDispatchPlan,
 } from "./control-plane.js"
 
-export function createApp(): Hono {
+interface AppOptions {
+  authTokens?: string[]
+}
+
+export function createApp({ authTokens = [] }: AppOptions = {}): Hono {
   const app = new Hono()
 
   app.onError((error, c) => {
@@ -17,6 +21,20 @@ export function createApp(): Hono {
 
   app.get("/", (c) => c.json(buildCapabilities()))
   app.get("/health", (c) => c.json({ ok: true, service: "agent-control-plane" }))
+
+  app.use("/api/*", async (c, next) => {
+    if (authTokens.length === 0) {
+      return c.json({ error: "control_plane_auth_not_configured" }, 503)
+    }
+
+    const token = bearerToken(c.req.header("authorization"))
+    if (!token || !authTokens.includes(token)) {
+      return c.json({ error: "unauthorized" }, 401)
+    }
+
+    await next()
+  })
+
   app.get("/api/capabilities", (c) => c.json(buildCapabilities()))
 
   app.post("/api/dispatch-plans", async (c) => {
@@ -38,4 +56,9 @@ export function createApp(): Hono {
   })
 
   return app
+}
+
+function bearerToken(header: string | undefined) {
+  const match = header?.match(/^Bearer\s+(.+)$/i)
+  return match?.[1]?.trim()
 }

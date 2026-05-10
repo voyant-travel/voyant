@@ -7,6 +7,8 @@
   "name": "voyant-agent-control-plane",
   "main": "src/worker.ts",
   "compatibility_date": "2025-01-01",
+  // Configure AGENT_CONTROL_PLANE_TOKENS as a secret before exposing /api/*:
+  // pnpm -C apps/agent-control-plane wrangler secret put AGENT_CONTROL_PLANE_TOKENS
   "observability": {
     "enabled": true
   }
