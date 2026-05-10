@@ -1,5 +1,23 @@
 # @voyantjs/crm-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish smart CRM people and organizations page compositions from the package.
+- ee75afb: Publish CRM opportunity summary and board compositions as package exports.
+- ee75afb: Publish the quote line-items card used by CRM quote detail compositions.
+- ee75afb: Publish the CRM quotes page composition and create quote dialog as package exports.
+
+### Patch Changes
+
+- ee75afb: Publish the CRM organization detail page composition and its inner sections.
+- ee75afb: Publish the CRM person detail page composition with editable sidebar, opportunities, activities, relationships, and documents sections.
+  - @voyantjs/crm-react@0.31.0
+  - @voyantjs/i18n@0.31.0
+  - @voyantjs/ui@0.31.0
+  - @voyantjs/utils@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

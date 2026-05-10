@@ -1,5 +1,17 @@
 # @voyantjs/availability-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish availability page and rule, slot, and start-time detail page compositions with package-level i18n helpers.
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.31.0
+- @voyantjs/i18n@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

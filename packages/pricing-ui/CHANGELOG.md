@@ -1,5 +1,20 @@
 # @voyantjs/pricing-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish reusable list page compositions for bookings, product categories, product tags, and pricing categories.
+- ee75afb: Publish `ProductTypesPage` from products UI and `PriceCatalogsPage` from pricing UI for reusable settings page compositions.
+
+### Patch Changes
+
+- @voyantjs/i18n@0.31.0
+- @voyantjs/pricing-react@0.31.0
+- @voyantjs/products-react@0.31.0
+- @voyantjs/ui@0.31.0
+- @voyantjs/utils@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

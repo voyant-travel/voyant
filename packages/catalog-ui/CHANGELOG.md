@@ -1,5 +1,18 @@
 # @voyantjs/catalog-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish catalog search and booking page compositions with explicit routing,
+  fetcher, contact picker, and booking integration extension points.
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.31.0
+- @voyantjs/i18n@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

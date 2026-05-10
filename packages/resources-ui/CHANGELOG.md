@@ -1,5 +1,18 @@
 # @voyantjs/resources-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish package-owned resource, pool, allocation, and assignment detail page compositions with loader helpers, page-level i18n, skeletons, and explicit app callbacks for routing and delete mutations.
+- ee75afb: Publish a resources page composition that wires resource data hooks, filters, overview metrics, and tab sections behind app-provided mutation and navigation handlers.
+
+### Patch Changes
+
+- @voyantjs/i18n@0.31.0
+- @voyantjs/resources-react@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

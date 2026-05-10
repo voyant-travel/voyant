@@ -1,5 +1,25 @@
 # @voyantjs/bookings-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Publish reusable list page compositions for bookings, product categories, product tags, and pricing categories.
+
+### Patch Changes
+
+- ee75afb: Publish the booking detail page composition with router callbacks and detail slots.
+  - @voyantjs/availability-react@0.31.0
+  - @voyantjs/bookings-react@0.31.0
+  - @voyantjs/catalog@0.31.0
+  - @voyantjs/catalog-react@0.31.0
+  - @voyantjs/crm-react@0.31.0
+  - @voyantjs/finance-react@0.31.0
+  - @voyantjs/i18n@0.31.0
+  - @voyantjs/legal-react@0.31.0
+  - @voyantjs/products-react@0.31.0
+  - @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

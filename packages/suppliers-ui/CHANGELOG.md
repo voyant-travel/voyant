@@ -1,5 +1,17 @@
 # @voyantjs/suppliers-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Promote supplier page-level compositions into the package, including the smart suppliers list, supplier detail page, and supplier/service/rate dialogs.
+
+### Patch Changes
+
+- @voyantjs/i18n@0.31.0
+- @voyantjs/suppliers-react@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes

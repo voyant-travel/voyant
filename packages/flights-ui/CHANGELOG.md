@@ -1,5 +1,21 @@
 # @voyantjs/flights-ui
 
+## 0.31.0
+
+### Minor Changes
+
+- ee75afb: Promote flights search and booking page compositions into the package with route-owned navigation, booking callbacks, CRM picker exports, i18n, and docs.
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.31.0
+- @voyantjs/crm-react@0.31.0
+- @voyantjs/finance@0.31.0
+- @voyantjs/flights@0.31.0
+- @voyantjs/flights-react@0.31.0
+- @voyantjs/i18n@0.31.0
+- @voyantjs/ui@0.31.0
+
 ## 0.30.7
 
 ### Patch Changes
