@@ -14,6 +14,7 @@ describe("InMemory driver schedule runner", () => {
   })
 
   test("fires workflow schedules registered through manifests", async () => {
+    let now = 0
     const observed: Array<{ input: unknown; scheduleId: string }> = []
     const wf = workflow<{ source: string }, void>({
       id: "scheduled-from-manifest",
@@ -32,7 +33,7 @@ describe("InMemory driver schedule runner", () => {
       steps: [],
       schedules: [
         {
-          at: new Date(Date.now() + 20).toISOString(),
+          at: new Date(1_000).toISOString(),
           input: { source: "manifest" },
           name: "once",
         },
@@ -44,10 +45,12 @@ describe("InMemory driver schedule runner", () => {
 
     const driver = createInMemoryDriver({
       defaultEnvironment: "production",
+      now: () => now,
       schedulePollIntervalMs: 5,
     })(testFactoryDeps())
     await driver.registerManifest({ environment: "production", manifest })
 
+    now = 1_000
     await vi.waitFor(() => expect(observed).toHaveLength(1))
 
     expect(observed).toEqual([
