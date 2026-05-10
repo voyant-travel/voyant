@@ -63,6 +63,29 @@ export function loadEvaluatedProject({ owner, projectNumber, limit }) {
   const project = readProjectItems({ owner, projectNumber, limit })
   const items = project.items.map(evaluateItem)
 
+  return evaluatedProject({ items, owner, project, projectNumber })
+}
+
+export function loadAllEvaluatedProject({ owner, projectNumber, limit }) {
+  const pageSize = limit ?? 100
+  const pages = []
+  let after
+
+  do {
+    const page = readProjectItems({ after, limit: pageSize, owner, projectNumber })
+    pages.push(page)
+    after = page.pageInfo.endCursor
+    if (page.pageInfo.hasNextPage && !after) {
+      fail("Project item pagination returned no cursor")
+    }
+  } while (pages.at(-1).pageInfo.hasNextPage)
+
+  const project = pages[0]
+  const items = pages.flatMap((page) => page.items).map(evaluateItem)
+  return evaluatedProject({ items, owner, project, projectNumber })
+}
+
+function evaluatedProject({ items, owner, project, projectNumber }) {
   return {
     owner,
     projectNumber,
@@ -75,9 +98,9 @@ export function loadEvaluatedProject({ owner, projectNumber, limit }) {
   }
 }
 
-export function readProjectItems({ owner, projectNumber, limit }) {
+export function readProjectItems({ after, owner, projectNumber, limit }) {
   const query = `
-    query($owner: String!, $number: Int!, $limit: Int!) {
+    query($owner: String!, $number: Int!, $limit: Int!, $after: String) {
       organization(login: $owner) {
         projectV2(number: $number) {
           id
@@ -100,7 +123,7 @@ export function readProjectItems({ owner, projectNumber, limit }) {
               }
             }
           }
-          items(first: $limit) {
+          items(first: $limit, after: $after) {
             nodes {
               id
               content {
@@ -162,31 +185,36 @@ export function readProjectItems({ owner, projectNumber, limit }) {
                 }
               }
             }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
           }
         }
       }
     }
   `
 
-  const result = spawnSync(
-    "gh",
-    [
-      "api",
-      "graphql",
-      "-f",
-      `owner=${owner}`,
-      "-F",
-      `number=${projectNumber}`,
-      "-F",
-      `limit=${limit}`,
-      "-f",
-      `query=${query}`,
-    ],
-    {
-      encoding: "utf8",
-      maxBuffer: 1024 * 1024 * 10,
-    },
-  )
+  const ghArgs = [
+    "api",
+    "graphql",
+    "-f",
+    `owner=${owner}`,
+    "-F",
+    `number=${projectNumber}`,
+    "-F",
+    `limit=${limit}`,
+    "-f",
+    `query=${query}`,
+  ]
+  if (after) {
+    ghArgs.push("-f", `after=${after}`)
+  }
+
+  const result = spawnSync("gh", ghArgs, {
+    encoding: "utf8",
+    maxBuffer: 1024 * 1024 * 10,
+  })
 
   if (result.error) {
     fail(`failed to run gh: ${result.error.message}`)
@@ -218,6 +246,7 @@ export function readProjectItems({ owner, projectNumber, limit }) {
     title: project.title,
     fields: normalizeProjectFields(project.fields?.nodes ?? []),
     items: project.items?.nodes ?? [],
+    pageInfo: project.items?.pageInfo ?? { endCursor: null, hasNextPage: false },
   }
 }
 
