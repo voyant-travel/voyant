@@ -135,6 +135,16 @@ GitHub issue comment, updates `Evidence` with the comment URL, and refreshes
 `Last Heartbeat`. It refuses remote Evidence URLs so it does not duplicate an
 already-published packet.
 
+Use the watchdog to find claimed work that has stopped reporting heartbeats:
+
+```bash
+pnpm agent:queue:watchdog
+```
+
+Watchdog mode is read-only. It reports items in active agent states with a
+missing or stale `Last Heartbeat`. The default stale threshold is one day; pass
+`--max-age-days <number>` to adjust it.
+
 If a claimed item should return to the executable queue without shipping work,
 release it:
 
