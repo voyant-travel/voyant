@@ -31,6 +31,13 @@ describe("agent runner tick helpers", () => {
       }).map((item) => item.action),
       ["inspect-stale", "start", "publish-evidence"],
     )
+    assert.equal(
+      recommendQueueActions([staleRunning], {
+        maxAgeDays: 1,
+        repository: "voyantjs/other",
+      })[0].command,
+      "pnpm agent:queue:watchdog -- --repo voyantjs/other",
+    )
   })
 
   it("maps queue tick states to the next safe runner command", () => {

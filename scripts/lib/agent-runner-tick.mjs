@@ -39,11 +39,7 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
   if (stalePreemptionStates.has(state) && heartbeat?.stale) {
     return recommendation(item, {
       action: "inspect-stale",
-      command: commandWithIssue({
-        command: "watchdog",
-        issueNumber: item.issue.number,
-        repository,
-      }),
+      command: commandWithRepo({ command: "watchdog", repository }),
       heartbeat,
       priority: 10,
       reason: heartbeat.reason,
@@ -194,6 +190,12 @@ function commandWithIssue({ command, extraArgs = [], issueNumber, repository }) 
     ...extraArgs,
     "--yes",
   ]
+    .filter(Boolean)
+    .join(" ")
+}
+
+function commandWithRepo({ command, repository }) {
+  return [`pnpm agent:queue:${command}`, repository ? `-- --repo ${repository}` : null]
     .filter(Boolean)
     .join(" ")
 }
