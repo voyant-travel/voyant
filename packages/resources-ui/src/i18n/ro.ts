@@ -41,6 +41,38 @@ export const resourcesUiRo: ResourcesUiMessages = {
       closeout: { singular: "blocare", plural: "blocari" },
     },
   },
+  resourcesPage: {
+    title: "Resurse",
+    description:
+      "Gestioneaza active alocabile, pool-uri, reguli de alocare, acoperire pentru rezervari si blocari.",
+    loading: "Se incarca resursele...",
+    loadFailed: "Resursele nu au putut fi incarcate.",
+    filters: {
+      searchPlaceholder: "Cauta resurse...",
+      button: "Filtre",
+      clear: "Sterge filtrele",
+      activeLabel: "Status activ",
+      activeAll: "Orice status",
+      activeOnly: "Doar active",
+      inactiveOnly: "Doar inactive",
+      supplierLabel: "Furnizor",
+      supplierAny: "Orice furnizor",
+      supplierEmpty: "Niciun furnizor gasit.",
+      productLabel: "Produs",
+      productAny: "Orice produs",
+      productEmpty: "Niciun produs gasit.",
+      assignmentStatusLabel: "Status asignare",
+      assignmentStatusAll: "Orice status",
+      noAdditionalFilters: "Nu exista filtre suplimentare pentru acest tab.",
+    },
+    tabs: {
+      resources: "Resurse",
+      pools: "Pool-uri",
+      allocations: "Alocari",
+      assignments: "Asignari",
+      closeouts: "Blocari",
+    },
+  },
   overview: {
     metrics: {
       activeResources: {

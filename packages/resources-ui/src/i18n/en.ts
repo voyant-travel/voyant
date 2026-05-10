@@ -41,6 +41,38 @@ export const resourcesUiEn: ResourcesUiMessages = {
       closeout: { singular: "closeout", plural: "closeouts" },
     },
   },
+  resourcesPage: {
+    title: "Resources",
+    description:
+      "Manage assignable assets, pools, allocation rules, bookings coverage, and closeouts.",
+    loading: "Loading resources...",
+    loadFailed: "Resources could not be loaded.",
+    filters: {
+      searchPlaceholder: "Search resources...",
+      button: "Filters",
+      clear: "Clear filters",
+      activeLabel: "Active status",
+      activeAll: "Any status",
+      activeOnly: "Active only",
+      inactiveOnly: "Inactive only",
+      supplierLabel: "Supplier",
+      supplierAny: "Any supplier",
+      supplierEmpty: "No suppliers found.",
+      productLabel: "Product",
+      productAny: "Any product",
+      productEmpty: "No products found.",
+      assignmentStatusLabel: "Assignment status",
+      assignmentStatusAll: "Any status",
+      noAdditionalFilters: "No additional filters for this tab.",
+    },
+    tabs: {
+      resources: "Resources",
+      pools: "Pools",
+      allocations: "Allocations",
+      assignments: "Assignments",
+      closeouts: "Closeouts",
+    },
+  },
   overview: {
     metrics: {
       activeResources: {

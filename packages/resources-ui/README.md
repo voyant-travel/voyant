@@ -12,6 +12,11 @@ pnpm add @voyantjs/resources-ui @voyantjs/resources-react @voyantjs/ui @tanstack
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 
+## Components
+
+- `ResourcesPage` composes the resources overview and all primary/secondary tabs with package data hooks, shared filters, row selection state, and app-provided bulk mutation/navigation handlers.
+- `ResourcesOverview`, `ResourcesTab`, `PoolsTab`, `AllocationsTab`, `AssignmentsTab`, and `CloseoutsTab` remain exported for apps that need a custom page shell.
+
 ## I18n
 
 Components render English by default. To localize them, wrap your UI in

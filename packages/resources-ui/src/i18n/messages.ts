@@ -46,6 +46,37 @@ export type ResourcesUiMessages = {
       closeout: SelectionNoun
     }
   }
+  resourcesPage: {
+    title: string
+    description: string
+    loading: string
+    loadFailed: string
+    filters: {
+      searchPlaceholder: string
+      button: string
+      clear: string
+      activeLabel: string
+      activeAll: string
+      activeOnly: string
+      inactiveOnly: string
+      supplierLabel: string
+      supplierAny: string
+      supplierEmpty: string
+      productLabel: string
+      productAny: string
+      productEmpty: string
+      assignmentStatusLabel: string
+      assignmentStatusAll: string
+      noAdditionalFilters: string
+    }
+    tabs: {
+      resources: string
+      pools: string
+      allocations: string
+      assignments: string
+      closeouts: string
+    }
+  }
   overview: {
     metrics: {
       activeResources: {

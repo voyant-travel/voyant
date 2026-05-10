@@ -1,0 +1,653 @@
+"use client"
+
+import type { RowSelectionState } from "@tanstack/react-table"
+import {
+  labelById,
+  type ProductOption,
+  type ResourceAllocationRow,
+  type ResourceCloseoutRow,
+  type ResourcePoolRow,
+  type ResourceRow,
+  type ResourceSlotAssignmentRow,
+  type SupplierOption,
+  useAllocations,
+  useAssignments,
+  useBookings,
+  useCloseouts,
+  usePools,
+  useProducts,
+  useResources,
+  useRules,
+  useSlots,
+  useStartTimes,
+  useSuppliers,
+} from "@voyantjs/resources-react"
+import { Badge, Button, cn, Input, Label } from "@voyantjs/ui/components"
+import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
+import { Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { ListFilter, Search, X } from "lucide-react"
+import type { ReactNode } from "react"
+import { useMemo, useState } from "react"
+
+import { useResourcesUiI18nOrDefault } from "../i18n/index.js"
+import { formatResourceSlotLabel, RESOURCE_KIND_VALUES } from "../i18n/utils.js"
+import { ResourcesOverview } from "./resources-overview.js"
+import { AllocationsTab, PoolsTab, ResourcesTab } from "./resources-tabs-primary.js"
+import { AssignmentsTab, CloseoutsTab } from "./resources-tabs-secondary.js"
+
+const ASSIGNMENT_STATUSES = ["reserved", "assigned", "released", "completed", "cancelled"] as const
+
+export type ResourcesPageTab = "resources" | "pools" | "allocations" | "assignments" | "closeouts"
+
+export type ResourcesPageActiveFilter = "all" | "active" | "inactive"
+
+export type ResourcesPageBulkUpdateArgs = {
+  ids: string[]
+  endpoint: string
+  target: string
+  nounSingular: string
+  nounPlural: string
+  payload: Record<string, unknown>
+  successVerb: string
+  clearSelection: () => void
+}
+
+export type ResourcesPageBulkDeleteArgs = {
+  ids: string[]
+  endpoint: string
+  target: string
+  nounSingular: string
+  nounPlural: string
+  clearSelection: () => void
+}
+
+export type ResourcesPageBulkUpdateHandler = (args: ResourcesPageBulkUpdateArgs) => Promise<void>
+
+export type ResourcesPageBulkDeleteHandler = (args: ResourcesPageBulkDeleteArgs) => Promise<void>
+
+export interface ResourcesPageSlots {
+  headerEnd?: ReactNode
+  beforeTabs?: ReactNode
+  afterOverview?: ReactNode
+  afterTabs?: ReactNode
+  dialogs?: ReactNode
+}
+
+export interface ResourcesPageProps {
+  className?: string
+  defaultTab?: ResourcesPageTab
+  bulkActionTarget?: string | null
+  onBulkUpdate: ResourcesPageBulkUpdateHandler
+  onBulkDelete: ResourcesPageBulkDeleteHandler
+  onResourceCreate?: () => void
+  onResourceOpen?: (resourceId: string) => void
+  onResourceEdit?: (resource: ResourceRow) => void
+  onPoolCreate?: () => void
+  onPoolOpen?: (poolId: string) => void
+  onPoolEdit?: (pool: ResourcePoolRow) => void
+  onAllocationCreate?: () => void
+  onAllocationOpen?: (allocationId: string) => void
+  onAllocationEdit?: (allocation: ResourceAllocationRow) => void
+  onAssignmentCreate?: () => void
+  onAssignmentOpen?: (assignmentId: string) => void
+  onAssignmentEdit?: (assignment: ResourceSlotAssignmentRow) => void
+  onCloseoutCreate?: () => void
+  onCloseoutEdit?: (closeout: ResourceCloseoutRow) => void
+  slots?: ResourcesPageSlots
+}
+
+const noop = () => undefined
+const noopId = (_id: string) => undefined
+const noopRow = (_row: unknown) => undefined
+
+export function ResourcesPage({
+  className,
+  defaultTab = "resources",
+  bulkActionTarget = null,
+  onBulkUpdate,
+  onBulkDelete,
+  onResourceCreate = noop,
+  onResourceOpen = noopId,
+  onResourceEdit = noopRow,
+  onPoolCreate = noop,
+  onPoolOpen = noopId,
+  onPoolEdit = noopRow,
+  onAllocationCreate = noop,
+  onAllocationOpen = noopId,
+  onAllocationEdit = noopRow,
+  onAssignmentCreate = noop,
+  onAssignmentOpen = noopId,
+  onAssignmentEdit = noopRow,
+  onCloseoutCreate = noop,
+  onCloseoutEdit = noopRow,
+  slots,
+}: ResourcesPageProps) {
+  const i18n = useResourcesUiI18nOrDefault()
+  const m = i18n.messages
+  const page = m.resourcesPage
+  const [search, setSearch] = useState("")
+  const [kindFilter, setKindFilter] = useState("all")
+  const [activeTab, setActiveTab] = useState<ResourcesPageTab>(defaultTab)
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
+  const [supplierFilter, setSupplierFilter] = useState<string | null>(null)
+  const [selectedSupplierOption, setSelectedSupplierOption] = useState<SupplierOption | null>(null)
+  const [productFilter, setProductFilter] = useState<string | null>(null)
+  const [selectedProductOption, setSelectedProductOption] = useState<ProductOption | null>(null)
+  const [activeFilter, setActiveFilter] = useState<ResourcesPageActiveFilter>("all")
+  const [assignmentStatusFilter, setAssignmentStatusFilter] = useState<string>("all")
+  const [resourceSelection, setResourceSelectionState] = useState<RowSelectionState>({})
+  const [poolSelection, setPoolSelectionState] = useState<RowSelectionState>({})
+  const [allocationSelection, setAllocationSelectionState] = useState<RowSelectionState>({})
+  const [assignmentSelection, setAssignmentSelectionState] = useState<RowSelectionState>({})
+  const [closeoutSelection, setCloseoutSelectionState] = useState<RowSelectionState>({})
+
+  const suppliersQuery = useSuppliers()
+  const productsQuery = useProducts()
+  const bookingsQuery = useBookings()
+  const slotsQuery = useSlots()
+  const rulesQuery = useRules()
+  const startTimesQuery = useStartTimes()
+  const resourcesQuery = useResources()
+  const poolsQuery = usePools()
+  const allocationsQuery = useAllocations()
+  const assignmentsQuery = useAssignments()
+  const closeoutsQuery = useCloseouts()
+
+  const suppliers = suppliersQuery.data?.data ?? []
+  const products = productsQuery.data?.data ?? []
+  const bookings = bookingsQuery.data?.data ?? []
+  const slotsData = slotsQuery.data?.data ?? []
+  const rules = rulesQuery.data?.data ?? []
+  const startTimes = startTimesQuery.data?.data ?? []
+  const resources = resourcesQuery.data?.data ?? []
+  const pools = poolsQuery.data?.data ?? []
+  const allocations = allocationsQuery.data?.data ?? []
+  const assignments = assignmentsQuery.data?.data ?? []
+  const closeouts = closeoutsQuery.data?.data ?? []
+
+  const kindOptions = useMemo(
+    () =>
+      RESOURCE_KIND_VALUES.map((value) => ({
+        value,
+        label: m.common.resourceKindLabels[value],
+      })),
+    [m.common.resourceKindLabels],
+  )
+
+  const normalizedSearch = search.trim().toLowerCase()
+  const matchesSearch = (...values: Array<string | number | null | undefined>) =>
+    !normalizedSearch ||
+    values.some((value) =>
+      String(value ?? "")
+        .toLowerCase()
+        .includes(normalizedSearch),
+    )
+  const matchesKind = (kind: ResourceRow["kind"]) => kindFilter === "all" || kind === kindFilter
+  const matchesActive = (active: boolean) =>
+    activeFilter === "all" ||
+    (activeFilter === "active" && active) ||
+    (activeFilter === "inactive" && !active)
+
+  const filteredResources = resources.filter(
+    (resource) =>
+      matchesKind(resource.kind) &&
+      matchesActive(resource.active) &&
+      (!supplierFilter || resource.supplierId === supplierFilter) &&
+      matchesSearch(
+        resource.name,
+        resource.code,
+        resource.kind,
+        labelById(suppliers, resource.supplierId),
+        resource.notes,
+      ),
+  )
+  const filteredPools = pools.filter(
+    (pool) =>
+      matchesKind(pool.kind) &&
+      matchesActive(pool.active) &&
+      (!productFilter || pool.productId === productFilter) &&
+      matchesSearch(pool.name, pool.kind, labelById(products, pool.productId), pool.notes),
+  )
+  const filteredAllocations = allocations.filter((allocation) => {
+    const pool = pools.find((entry) => entry.id === allocation.poolId)
+    return (
+      (kindFilter === "all" || pool?.kind === kindFilter) &&
+      matchesSearch(
+        labelById(pools, allocation.poolId),
+        labelById(products, allocation.productId),
+        allocation.allocationMode,
+        allocation.priority,
+        allocation.quantityRequired,
+        rules.find((rule) => rule.id === allocation.availabilityRuleId)?.recurrenceRule,
+        startTimes.find((startTime) => startTime.id === allocation.startTimeId)?.label,
+      )
+    )
+  })
+  const filteredAssignments = assignments.filter((assignment) => {
+    const resource = resources.find((entry) => entry.id === assignment.resourceId)
+    return (
+      (kindFilter === "all" || resource?.kind === kindFilter) &&
+      (assignmentStatusFilter === "all" || assignment.status === assignmentStatusFilter) &&
+      matchesSearch(
+        assignment.status,
+        assignment.assignedBy,
+        assignment.notes,
+        labelById(resources, assignment.resourceId),
+        labelById(bookings, assignment.bookingId),
+        formatResourceSlotLabel(
+          slotsData.find((slot) => slot.id === assignment.slotId) ?? {
+            id: assignment.slotId,
+            productId: "",
+            dateLocal: assignment.slotId,
+            startsAt: assignment.slotId,
+          },
+          {
+            template: m.common.slotLabel,
+            formatDate: i18n.formatDate,
+          },
+        ),
+      )
+    )
+  })
+  const filteredCloseouts = closeouts.filter((closeout) => {
+    const resource = resources.find((entry) => entry.id === closeout.resourceId)
+    return (
+      (kindFilter === "all" || resource?.kind === kindFilter) &&
+      matchesSearch(
+        labelById(resources, closeout.resourceId),
+        closeout.dateLocal,
+        closeout.reason,
+        closeout.createdBy,
+      )
+    )
+  })
+
+  const liveAssignments = filteredAssignments.filter(
+    (assignment) => assignment.status === "reserved" || assignment.status === "assigned",
+  )
+  const resourcesWithoutSupplier = filteredResources.filter((resource) => !resource.supplierId)
+  const unassignedReservations = liveAssignments.filter((assignment) => !assignment.resourceId)
+  const activeFilterCount =
+    (kindFilter !== "all" ? 1 : 0) +
+    (activeFilter !== "all" ? 1 : 0) +
+    (supplierFilter !== null ? 1 : 0) +
+    (productFilter !== null ? 1 : 0) +
+    (assignmentStatusFilter !== "all" ? 1 : 0)
+  const hasFilters = search.length > 0 || activeFilterCount > 0
+
+  const clearAllFilters = () => {
+    setSearch("")
+    setKindFilter("all")
+    setActiveFilter("all")
+    setSupplierFilter(null)
+    setSelectedSupplierOption(null)
+    setProductFilter(null)
+    setSelectedProductOption(null)
+    setAssignmentStatusFilter("all")
+  }
+
+  const queries = [
+    suppliersQuery,
+    productsQuery,
+    bookingsQuery,
+    slotsQuery,
+    rulesQuery,
+    startTimesQuery,
+    resourcesQuery,
+    poolsQuery,
+    allocationsQuery,
+    assignmentsQuery,
+    closeoutsQuery,
+  ]
+  const isLoading = queries.some((query) => query.isPending)
+  const isError = queries.some((query) => query.isError)
+
+  return (
+    <div className={cn("flex flex-col gap-6 p-6", className)}>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{page.title}</h1>
+          <p className="text-sm text-muted-foreground">{page.description}</p>
+        </div>
+        {slots?.headerEnd}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[14rem] flex-1">
+          <Label htmlFor="resources-search" className="sr-only">
+            {page.filters.searchPlaceholder}
+          </Label>
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            id="resources-search"
+            placeholder={page.filters.searchPlaceholder}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        <Select value={kindFilter} onValueChange={(value) => setKindFilter(value ?? "all")}>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">{m.common.allKinds}</SelectItem>
+              {kindOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+          <PopoverTrigger
+            render={
+              <Button variant="outline">
+                <ListFilter data-icon="inline-start" aria-hidden="true" />
+                {page.filters.button}
+                {activeFilterCount > 0 ? (
+                  <Badge variant="secondary" className="ml-1 px-1.5">
+                    {activeFilterCount}
+                  </Badge>
+                ) : null}
+              </Button>
+            }
+          />
+          <PopoverContent align="end" className="w-[22rem] p-4">
+            <ResourcesFilterPopover
+              activeTab={activeTab}
+              suppliers={suppliers}
+              products={products}
+              supplierFilter={supplierFilter}
+              setSupplierFilter={setSupplierFilter}
+              selectedSupplierOption={selectedSupplierOption}
+              setSelectedSupplierOption={setSelectedSupplierOption}
+              productFilter={productFilter}
+              setProductFilter={setProductFilter}
+              selectedProductOption={selectedProductOption}
+              setSelectedProductOption={setSelectedProductOption}
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+              assignmentStatusFilter={assignmentStatusFilter}
+              setAssignmentStatusFilter={setAssignmentStatusFilter}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {hasFilters ? (
+          <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+            <X data-icon="inline-start" aria-hidden="true" />
+            {page.filters.clear}
+          </Button>
+        ) : null}
+      </div>
+
+      {isLoading ? (
+        <div className="rounded-md border p-6 text-sm text-muted-foreground">{page.loading}</div>
+      ) : isError ? (
+        <div className="rounded-md border p-6 text-sm text-muted-foreground">{page.loadFailed}</div>
+      ) : (
+        <>
+          <ResourcesOverview
+            bookings={bookings}
+            slots={slotsData}
+            closeouts={closeouts}
+            filteredResources={filteredResources}
+            filteredPools={filteredPools}
+            liveAssignments={liveAssignments}
+            resourcesWithoutSupplier={resourcesWithoutSupplier}
+            unassignedReservations={unassignedReservations}
+            search={search}
+            setSearch={setSearch}
+            kindFilter={kindFilter}
+            setKindFilter={setKindFilter}
+            hasFilters={hasFilters}
+            onClearFilters={clearAllFilters}
+            onOpenAssignment={onAssignmentOpen}
+            onOpenResource={onResourceOpen}
+            showFilters={false}
+          />
+          {slots?.afterOverview}
+          {slots?.beforeTabs}
+
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab((value ?? "resources") as ResourcesPageTab)}
+          >
+            <TabsList className="flex w-full justify-start overflow-x-auto">
+              <TabsTrigger value="resources">{page.tabs.resources}</TabsTrigger>
+              <TabsTrigger value="pools">{page.tabs.pools}</TabsTrigger>
+              <TabsTrigger value="allocations">{page.tabs.allocations}</TabsTrigger>
+              <TabsTrigger value="assignments">{page.tabs.assignments}</TabsTrigger>
+              <TabsTrigger value="closeouts">{page.tabs.closeouts}</TabsTrigger>
+            </TabsList>
+            <ResourcesTab
+              suppliers={suppliers}
+              filteredResources={filteredResources}
+              resourceSelection={resourceSelection}
+              setResourceSelection={setResourceSelectionState}
+              bulkActionTarget={bulkActionTarget}
+              handleBulkUpdate={onBulkUpdate}
+              handleBulkDelete={onBulkDelete}
+              onCreate={onResourceCreate}
+              onOpenRoute={onResourceOpen}
+              onEdit={(row) => onResourceEdit(row)}
+            />
+            <PoolsTab
+              products={products}
+              filteredPools={filteredPools}
+              poolSelection={poolSelection}
+              setPoolSelection={setPoolSelectionState}
+              bulkActionTarget={bulkActionTarget}
+              handleBulkUpdate={onBulkUpdate}
+              handleBulkDelete={onBulkDelete}
+              onCreate={onPoolCreate}
+              onOpenRoute={onPoolOpen}
+              onEdit={(row) => onPoolEdit(row)}
+            />
+            <AllocationsTab
+              pools={pools}
+              products={products}
+              filteredAllocations={filteredAllocations}
+              allocationSelection={allocationSelection}
+              setAllocationSelection={setAllocationSelectionState}
+              bulkActionTarget={bulkActionTarget}
+              handleBulkDelete={onBulkDelete}
+              onCreate={onAllocationCreate}
+              onOpenRoute={onAllocationOpen}
+              onEdit={(row) => onAllocationEdit(row)}
+            />
+            <AssignmentsTab
+              slots={slotsData}
+              resources={resources}
+              bookings={bookings}
+              filteredAssignments={filteredAssignments}
+              assignmentSelection={assignmentSelection}
+              setAssignmentSelection={setAssignmentSelectionState}
+              bulkActionTarget={bulkActionTarget}
+              handleBulkUpdate={onBulkUpdate}
+              handleBulkDelete={onBulkDelete}
+              onCreate={onAssignmentCreate}
+              onOpenRoute={onAssignmentOpen}
+              onEdit={(row) => onAssignmentEdit(row)}
+            />
+            <CloseoutsTab
+              resources={resources}
+              filteredCloseouts={filteredCloseouts}
+              closeoutSelection={closeoutSelection}
+              setCloseoutSelection={setCloseoutSelectionState}
+              bulkActionTarget={bulkActionTarget}
+              handleBulkDelete={onBulkDelete}
+              onCreate={onCloseoutCreate}
+              onEdit={(row) => onCloseoutEdit(row)}
+            />
+          </Tabs>
+          {slots?.afterTabs}
+        </>
+      )}
+      {slots?.dialogs}
+    </div>
+  )
+}
+
+interface ResourcesFilterPopoverProps {
+  activeTab: ResourcesPageTab
+  suppliers: SupplierOption[]
+  products: ProductOption[]
+  supplierFilter: string | null
+  setSupplierFilter: (value: string | null) => void
+  selectedSupplierOption: SupplierOption | null
+  setSelectedSupplierOption: (value: SupplierOption | null) => void
+  productFilter: string | null
+  setProductFilter: (value: string | null) => void
+  selectedProductOption: ProductOption | null
+  setSelectedProductOption: (value: ProductOption | null) => void
+  activeFilter: ResourcesPageActiveFilter
+  setActiveFilter: (value: ResourcesPageActiveFilter) => void
+  assignmentStatusFilter: string
+  setAssignmentStatusFilter: (value: string) => void
+}
+
+function ResourcesFilterPopover({
+  activeTab,
+  suppliers,
+  products,
+  supplierFilter,
+  setSupplierFilter,
+  selectedSupplierOption,
+  setSelectedSupplierOption,
+  productFilter,
+  setProductFilter,
+  selectedProductOption,
+  setSelectedProductOption,
+  activeFilter,
+  setActiveFilter,
+  assignmentStatusFilter,
+  setAssignmentStatusFilter,
+}: ResourcesFilterPopoverProps) {
+  const { messages } = useResourcesUiI18nOrDefault()
+  const page = messages.resourcesPage
+
+  const activeStatusSelect = (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor="resources-filter-active">{page.filters.activeLabel}</Label>
+      <Select
+        value={activeFilter}
+        onValueChange={(value) => setActiveFilter((value ?? "all") as ResourcesPageActiveFilter)}
+      >
+        <SelectTrigger id="resources-filter-active" className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem value="all">{page.filters.activeAll}</SelectItem>
+            <SelectItem value="active">{page.filters.activeOnly}</SelectItem>
+            <SelectItem value="inactive">{page.filters.inactiveOnly}</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
+  )
+
+  if (activeTab === "resources") {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label>{page.filters.supplierLabel}</Label>
+          <AsyncCombobox<SupplierOption>
+            value={supplierFilter}
+            onChange={(value) => {
+              setSupplierFilter(value)
+              if (!value) setSelectedSupplierOption(null)
+              else {
+                const match = suppliers.find((supplier) => supplier.id === value)
+                if (match) setSelectedSupplierOption(match)
+              }
+            }}
+            items={suppliers}
+            selectedItem={selectedSupplierOption}
+            getKey={(supplier) => supplier.id}
+            getLabel={(supplier) => supplier.name}
+            placeholder={page.filters.supplierAny}
+            emptyText={page.filters.supplierEmpty}
+            triggerClassName="w-full"
+          />
+        </div>
+        {activeStatusSelect}
+      </div>
+    )
+  }
+
+  if (activeTab === "pools") {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label>{page.filters.productLabel}</Label>
+          <AsyncCombobox<ProductOption>
+            value={productFilter}
+            onChange={(value) => {
+              setProductFilter(value)
+              if (!value) setSelectedProductOption(null)
+              else {
+                const match = products.find((product) => product.id === value)
+                if (match) setSelectedProductOption(match)
+              }
+            }}
+            items={products}
+            selectedItem={selectedProductOption}
+            getKey={(product) => product.id}
+            getLabel={(product) => product.name}
+            placeholder={page.filters.productAny}
+            emptyText={page.filters.productEmpty}
+            triggerClassName="w-full"
+          />
+        </div>
+        {activeStatusSelect}
+      </div>
+    )
+  }
+
+  if (activeTab === "assignments") {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="resources-filter-status">{page.filters.assignmentStatusLabel}</Label>
+        <Select
+          value={assignmentStatusFilter}
+          onValueChange={(value) => setAssignmentStatusFilter(value ?? "all")}
+        >
+          <SelectTrigger id="resources-filter-status" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">{page.filters.assignmentStatusAll}</SelectItem>
+              {ASSIGNMENT_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {messages.common.assignmentStatusLabels[status]}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+    )
+  }
+
+  return <p className="text-sm text-muted-foreground">{page.filters.noAdditionalFilters}</p>
+}
