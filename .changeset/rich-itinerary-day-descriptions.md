@@ -1,5 +1,6 @@
 ---
 "@voyantjs/products-ui": patch
+"@voyantjs/products": patch
 "@voyantjs/ui": patch
 ---
 
