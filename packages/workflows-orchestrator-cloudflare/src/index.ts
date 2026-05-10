@@ -43,6 +43,12 @@ export {
   createCloudflareEdgeDriver,
 } from "./cloudflare-edge-driver.js"
 export {
+  type ConcurrencyCoordinator,
+  type ConcurrencyCoordinatorDeps,
+  createConcurrencyCoordinator,
+  handleConcurrencyCoordinatorRequest,
+} from "./concurrency-coordinator.js"
+export {
   createHttpDispatcher,
   createInlineDispatcher,
   createServiceBindingDispatcher,

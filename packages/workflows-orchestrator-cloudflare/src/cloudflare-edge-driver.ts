@@ -24,6 +24,7 @@ import type {
   RunDetail,
   RunSummary,
   TriggerOptions,
+  WorkflowDefinition,
 } from "@voyantjs/workflows"
 import type {
   DriverFactory,
@@ -36,13 +37,19 @@ import type {
 } from "@voyantjs/workflows/driver"
 import { deriveStableEventId } from "@voyantjs/workflows/events"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
-import { routeEvent } from "@voyantjs/workflows-orchestrator"
+import {
+  type RuntimeConcurrencyPolicy,
+  resolveConcurrencyKey,
+  routeEvent,
+  WorkflowConcurrencyRejectedError,
+} from "@voyantjs/workflows-orchestrator"
 
 import {
   type CfManifestStore,
   createKvManifestStore,
   type KvNamespaceLike,
 } from "./manifest-kv-store.js"
+import type { TriggerPayload } from "./types.js"
 import type { DurableObjectNamespaceLike } from "./worker.js"
 
 // ---- Public factory options ----
@@ -50,6 +57,8 @@ import type { DurableObjectNamespaceLike } from "./worker.js"
 export interface CloudflareEdgeDriverOptions {
   /** Durable Object namespace holding one DO per run. */
   orchestratorNamespace: DurableObjectNamespaceLike
+  /** Optional Durable Object namespace coordinating workflow concurrency across runs. */
+  concurrencyNamespace?: DurableObjectNamespaceLike
   /** KV namespace storing serialized manifests. */
   manifestKv: KvNamespaceLike
   /**
@@ -129,6 +138,99 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
       return stub.fetch(request)
     }
 
+    async function forwardToConcurrencyDO(
+      environment: EnvironmentName,
+      concurrencyKey: string,
+      request: Request,
+    ): Promise<Response> {
+      if (!opts.concurrencyNamespace) {
+        throw new Error("CloudflareEdgeDriver: concurrency namespace is not configured")
+      }
+      const id = opts.concurrencyNamespace.idFromName(
+        `workflow-concurrency:${environment}:${concurrencyKey}`,
+      )
+      const stub = opts.concurrencyNamespace.get(id)
+      return stub.fetch(request)
+    }
+
+    function findManifestPolicy(
+      manifest: WorkflowManifest | null,
+      workflowId: string,
+    ): RuntimeConcurrencyPolicy | undefined {
+      return manifest?.workflows.find((entry) => entry.id === workflowId)?.concurrency
+    }
+
+    async function resolveConcurrencyPolicy(
+      workflow: { config?: { concurrency?: unknown } } | string,
+      workflowId: string,
+      environment: EnvironmentName,
+      manifest?: WorkflowManifest | null,
+    ): Promise<RuntimeConcurrencyPolicy | undefined> {
+      if (typeof workflow !== "string" && workflow.config?.concurrency) {
+        return workflow.config.concurrency as RuntimeConcurrencyPolicy
+      }
+      return findManifestPolicy(manifest ?? (await getManifest({ environment })), workflowId)
+    }
+
+    async function forwardTrigger(
+      payload: TriggerPayload & { runId: string; environment: EnvironmentName },
+      policy?: RuntimeConcurrencyPolicy,
+    ): Promise<Response> {
+      if (!policy || !opts.concurrencyNamespace) {
+        return forwardToRunDO(
+          payload.runId,
+          new Request("https://do-internal/trigger", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+          }),
+        )
+      }
+
+      const concurrencyKey = resolveConcurrencyKey(payload.workflowId, payload.input, policy)
+      const resp = await forwardToConcurrencyDO(
+        payload.environment,
+        concurrencyKey,
+        new Request("https://do-internal/trigger", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            concurrency: {
+              key: concurrencyKey,
+              limit: policy.limit,
+              strategy: policy.strategy,
+            },
+            trigger: payload,
+          }),
+        }),
+      )
+      if (resp.status === 409) {
+        const body = await safeJson<{ concurrencyKey?: string }>(resp)
+        throw new WorkflowConcurrencyRejectedError(body?.concurrencyKey ?? concurrencyKey)
+      }
+      return resp
+    }
+
+    async function releaseConcurrencySlot(detail: RunDetail | null): Promise<void> {
+      if (!detail || !opts.concurrencyNamespace) return
+      const policy = await resolveConcurrencyPolicy(
+        detail.workflowId,
+        detail.workflowId,
+        detail.environment,
+      )
+      if (!policy) return
+      const concurrencyKey = resolveConcurrencyKey(detail.workflowId, detail.input, policy)
+      await forwardToConcurrencyDO(
+        detail.environment,
+        concurrencyKey,
+        new Request("https://do-internal/release", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ runId: detail.id }),
+        }),
+      ).catch(() => undefined)
+    }
+
     function genRunId(seed?: string): string {
       if (seed !== undefined) return seed
       if (opts.idGenerator) return opts.idGenerator()
@@ -162,7 +264,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
     }
 
     async function trigger<TIn, TOut>(
-      workflow: { id: string } | string,
+      workflow: WorkflowDefinition<TIn, TOut> | string,
       input: TIn,
       triggerOpts?: TriggerOptions,
     ): Promise<Run<TOut>> {
@@ -190,13 +292,10 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
         priority: triggerOpts?.priority,
         triggeredBy: { kind: "api" as const },
       }
-      const resp = await forwardToRunDO(
-        runId,
-        new Request("https://do-internal/trigger", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(payload),
-        }),
+      const policy = await resolveConcurrencyPolicy(workflow, workflowId, env)
+      const resp = await forwardTrigger(
+        payload as TriggerPayload & { runId: string; environment: EnvironmentName },
+        policy,
       )
       if (!resp.ok) {
         const body = await safeText(resp)
@@ -273,13 +372,15 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
           },
         }
         try {
-          const resp = await forwardToRunDO(
-            runId,
-            new Request("https://do-internal/trigger", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify(payload),
-            }),
+          const policy = await resolveConcurrencyPolicy(
+            entry.targetWorkflowId,
+            entry.targetWorkflowId,
+            args.environment,
+            manifest,
+          )
+          const resp = await forwardTrigger(
+            payload as TriggerPayload & { runId: string; environment: EnvironmentName },
+            policy,
           )
           if (resp.ok) {
             matches.push({
@@ -334,55 +435,60 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
     //      streamRun are explicitly unsupported per architecture
     //      doc §8.3) ----
 
+    async function getRunDetail(runId: string): Promise<RunDetail | null> {
+      try {
+        const resp = await forwardToRunDO(
+          runId,
+          new Request("https://do-internal/get", { method: "GET" }),
+        )
+        if (resp.status === 404) return null
+        if (!resp.ok) return null
+        const rec = (await resp.json()) as {
+          id: string
+          workflowId: string
+          workflowVersion: string
+          status: RunSummary["status"]
+          startedAt: number
+          completedAt?: number
+          tags: string[]
+          environment: EnvironmentName
+          input: unknown
+          output?: unknown
+          error?: unknown
+        }
+        return {
+          id: rec.id,
+          workflowId: rec.workflowId,
+          status: rec.status,
+          startedAt: rec.startedAt,
+          completedAt: rec.completedAt,
+          tags: [...rec.tags],
+          environment: rec.environment,
+          version: rec.workflowVersion,
+          input: rec.input,
+          output: rec.output,
+          error: rec.error,
+          durationMs:
+            rec.completedAt !== undefined
+              ? Math.max(0, rec.completedAt - rec.startedAt)
+              : undefined,
+        }
+      } catch {
+        return null
+      }
+    }
+
     const admin: Partial<WorkflowAdmin> = {
       async getRun(runId: string): Promise<RunDetail | null> {
-        try {
-          const resp = await forwardToRunDO(
-            runId,
-            new Request("https://do-internal/get", { method: "GET" }),
-          )
-          if (resp.status === 404) return null
-          if (!resp.ok) return null
-          const rec = (await resp.json()) as {
-            id: string
-            workflowId: string
-            workflowVersion: string
-            status: RunSummary["status"]
-            startedAt: number
-            completedAt?: number
-            tags: string[]
-            environment: EnvironmentName
-            input: unknown
-            output?: unknown
-            error?: unknown
-          }
-          return {
-            id: rec.id,
-            workflowId: rec.workflowId,
-            status: rec.status,
-            startedAt: rec.startedAt,
-            completedAt: rec.completedAt,
-            tags: [...rec.tags],
-            environment: rec.environment,
-            version: rec.workflowVersion,
-            input: rec.input,
-            output: rec.output,
-            error: rec.error,
-            durationMs:
-              rec.completedAt !== undefined
-                ? Math.max(0, rec.completedAt - rec.startedAt)
-                : undefined,
-          }
-        } catch {
-          return null
-        }
+        return getRunDetail(runId)
       },
 
       async cancelRun(runId: string, cancelOpts?: { reason?: string; compensate?: boolean }) {
         // Per architecture doc §21.21, cancel does NOT run compensations
         // by default; the `compensate` flag is accepted but no-op in v1.
         void cancelOpts?.compensate
-        await forwardToRunDO(
+        const detail = opts.concurrencyNamespace ? await getRunDetail(runId) : null
+        const resp = await forwardToRunDO(
           runId,
           new Request("https://do-internal/cancel", {
             method: "POST",
@@ -390,6 +496,7 @@ export function createCloudflareEdgeDriver(opts: CloudflareEdgeDriverOptions): D
             body: JSON.stringify({ reason: cancelOpts?.reason }),
           }),
         )
+        if (resp.ok) await releaseConcurrencySlot(detail)
       },
 
       async listRuns(_listOpts?: ListRunsOptions) {
@@ -436,5 +543,13 @@ async function safeText(resp: Response): Promise<string> {
     return await resp.text()
   } catch {
     return ""
+  }
+}
+
+async function safeJson<T>(resp: Response): Promise<T | undefined> {
+  try {
+    return (await resp.json()) as T
+  } catch {
+    return undefined
   }
 }

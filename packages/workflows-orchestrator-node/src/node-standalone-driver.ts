@@ -37,14 +37,17 @@ import { deriveStableEventId } from "@voyantjs/workflows/events"
 import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 import {
+  createInProcessConcurrencyCoordinator,
   createScheduler,
   manifestScheduleSources,
   cancel as orchestratorCancel,
   trigger as orchestratorTrigger,
   type RunRecord,
+  type RuntimeConcurrencyPolicy,
   routeEvent,
   type SchedulerHandle,
   type StepHandler,
+  type TriggerArgs,
 } from "@voyantjs/workflows-orchestrator"
 import type { drizzle } from "drizzle-orm/node-postgres"
 
@@ -198,6 +201,14 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
 
     const scheduleRunners = new Map<string, SchedulerHandle>()
     let shuttingDown = false
+    const concurrency = createInProcessConcurrencyCoordinator({
+      async cancelRun(runId, reason) {
+        const out = await orchestratorCancel({ runId, reason }, { store: runStore, handler, now })
+        if (out.ok && isTerminal(out.record.status)) {
+          concurrency.releaseRun(out.record)
+        }
+      },
+    })
 
     // ---- WorkflowDriver implementation ----
 
@@ -245,8 +256,9 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       assertNotShutdown(shuttingDown)
       const workflowId = typeof workflow === "string" ? workflow : workflow.id
       const env = triggerOpts?.environment ?? defaultEnv
+      const policy = await resolveConcurrencyPolicy(workflow, workflowId, env, getManifest)
 
-      const record = await orchestratorTrigger(
+      const record = await triggerRecord(
         {
           workflowId,
           workflowVersion: triggerOpts?.lockToVersion ?? "v1",
@@ -258,7 +270,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
           delay: triggerOpts?.delay,
           priority: triggerOpts?.priority,
         },
-        { store: runStore, handler, now },
+        policy,
       )
       // Sync wakeup row so the time-wheel can resume DATETIME-parked runs.
       // No-op if the run completed inline (status !== "waiting").
@@ -299,7 +311,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
           continue
         }
         try {
-          const record = await orchestratorTrigger(
+          const record = await triggerRecord(
             {
               workflowId: entry.targetWorkflowId,
               workflowVersion: "v1",
@@ -314,7 +326,12 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
                 filterId: entry.filterId,
               },
             },
-            { store: runStore, handler, now },
+            await resolveConcurrencyPolicy(
+              entry.targetWorkflowId,
+              entry.targetWorkflowId,
+              args.environment,
+              getManifest,
+            ),
           )
           await syncWakeupFromRecord(wakeupStore, record)
           matches.push({
@@ -377,7 +394,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
         tickMs: opts.schedulePollIntervalMs,
         onFire: async ({ workflowId, input, scheduleId, fireAt }) => {
           assertNotShutdown(shuttingDown)
-          const record = await orchestratorTrigger(
+          const record = await triggerRecord(
             {
               workflowId,
               workflowVersion: "v1",
@@ -387,7 +404,7 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
               idempotencyKey: `${scheduleId}:${fireAt}`,
               triggeredBy: { kind: "schedule", scheduleId },
             },
-            { store: runStore, handler, now },
+            await resolveConcurrencyPolicy(workflowId, workflowId, environment, getManifest),
           )
           await syncWakeupFromRecord(wakeupStore, record)
         },
@@ -396,6 +413,28 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
       if (runner.sourceCount() === 0) return
       runner.start()
       scheduleRunners.set(environment, runner)
+    }
+
+    async function triggerRecord(
+      args: TriggerArgs,
+      policy: RuntimeConcurrencyPolicy | undefined,
+    ): Promise<RunRecord> {
+      return concurrency.run(
+        {
+          workflowId: args.workflowId,
+          input: args.input,
+          policy,
+          holderId: concurrencyHolderId(args),
+        },
+        (hooks) =>
+          orchestratorTrigger(
+            {
+              ...args,
+              onRunRecordCreated: hooks.onRunRecordCreated,
+            },
+            { store: runStore, handler, now },
+          ),
+      )
     }
 
     // ---- WorkflowAdmin (full; Mode 2 has Postgres-native query support) ----
@@ -443,10 +482,13 @@ export function createNodeStandaloneDriver(opts: NodeStandaloneDriverOptions): D
         // default (architecture doc §21.21). The `compensate` flag is
         // accepted but no-ops in v1.
         void cancelOpts?.compensate
-        await orchestratorCancel(
+        const out = await orchestratorCancel(
           { runId, reason: cancelOpts?.reason },
           { store: runStore, handler, now },
         )
+        if (out.ok && isTerminal(out.record.status)) {
+          concurrency.releaseRun(out.record)
+        }
       },
 
       streamRun(runId: string): AsyncIterable<never> {
@@ -483,6 +525,35 @@ function assertNotShutdown(shuttingDown: boolean): void {
   if (shuttingDown) {
     throw new Error("NodeStandaloneDriver: shutdown() has been called; new operations are refused.")
   }
+}
+
+async function resolveConcurrencyPolicy(
+  workflow: { id: string; config?: { concurrency?: RuntimeConcurrencyPolicy } } | string,
+  workflowId: string,
+  environment: "production" | "preview" | "development",
+  getManifest: (args: { environment: string }) => Promise<WorkflowManifest | null>,
+): Promise<RuntimeConcurrencyPolicy | undefined> {
+  if (typeof workflow !== "string" && workflow.config?.concurrency) {
+    return workflow.config.concurrency
+  }
+  const manifest = await getManifest({ environment })
+  return manifest?.workflows.find((entry) => entry.id === workflowId)?.concurrency
+}
+
+function isTerminal(status: RunRecord["status"]): boolean {
+  return (
+    status === "completed" ||
+    status === "failed" ||
+    status === "cancelled" ||
+    status === "compensated" ||
+    status === "compensation_failed"
+  )
+}
+
+function concurrencyHolderId(args: TriggerArgs): string | undefined {
+  if (args.runId !== undefined) return args.runId
+  if (args.idempotencyKey !== undefined) return `idem-${args.workflowId}-${args.idempotencyKey}`
+  return undefined
 }
 
 function randomToken(): string {

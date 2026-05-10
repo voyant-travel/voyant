@@ -59,11 +59,18 @@ export interface WorkflowManifestEntry {
   version: string
   inputSchema?: unknown
   outputSchema?: unknown
+  concurrency?: ManifestConcurrencyPolicy
   steps: ManifestStep[]
   schedules: ManifestSchedule[]
   defaultRuntime: "edge" | "node"
   hasCompensation: boolean
   sourceLocation: { file: string; line: number }
+}
+
+export interface ManifestConcurrencyPolicy {
+  key?: string
+  limit?: number
+  strategy?: "queue" | "cancel-in-progress" | "cancel-newest" | "round-robin"
 }
 
 export interface ManifestStep {

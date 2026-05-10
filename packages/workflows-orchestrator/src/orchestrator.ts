@@ -71,6 +71,11 @@ export interface TriggerArgs {
    * the child's terminal status cascade-resumes the parent.
    */
   parent?: { runId: string; waitpointId: string }
+  /**
+   * Internal lifecycle hook used by driver-level coordinators that need
+   * the persisted run id before the first invocation starts.
+   */
+  onRunRecordCreated?: (record: RunRecord) => void
 }
 
 export interface OrchestratorDeps extends DriveOptions {
@@ -141,10 +146,12 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
       // re-driving — drive() is what actually fires side effects.
       return result.record
     }
+    args.onRunRecordCreated?.(record)
   } else {
     // Persist up-front so concurrent `cancel(runId)` calls can find the
     // run before any invocation has completed.
     await deps.store.save(record)
+    args.onRunRecordCreated?.(record)
   }
   if (delayWakeAt !== undefined) {
     return record

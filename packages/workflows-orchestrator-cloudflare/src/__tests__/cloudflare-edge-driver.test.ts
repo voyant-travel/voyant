@@ -17,10 +17,13 @@ import { describe, expect, it } from "vitest"
 
 import { createCloudflareEdgeDriver } from "../cloudflare-edge-driver.js"
 import {
+  type ConcurrencyCoordinator,
+  createConcurrencyCoordinator,
   createDurableObjectRunStore,
   createInlineDispatcher,
   type DurableObjectNamespaceLike,
   type DurableObjectStorageLike,
+  handleDurableObjectAlarm,
   handleDurableObjectRequest,
 } from "../index.js"
 import { createInMemoryKv } from "../manifest-kv-store.js"
@@ -65,7 +68,9 @@ function makeStorage(): DurableObjectStorageLike {
   }
 }
 
-function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
+function inProcessRunDONamespace(
+  getConcurrencyDO?: () => DurableObjectNamespaceLike<string> | undefined,
+): DurableObjectNamespaceLike<string> {
   const storages = new Map<string, DurableObjectStorageLike>()
   // Per-id request queue — mirrors the production CF guarantee that a
   // Durable Object instance processes requests one at a time. Without
@@ -87,6 +92,15 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
       const stableStorage = storage
       return {
         async fetch(req: Request): Promise<Response> {
+          const path = new URL(req.url).pathname
+          if (path !== "/trigger") {
+            return handleDurableObjectRequest(req, {
+              storage: stableStorage,
+              dispatcher,
+              concurrencyDO: getConcurrencyDO?.(),
+            })
+          }
+
           const prev = queues.get(id) ?? Promise.resolve()
           let release!: () => void
           const next = new Promise<void>((resolve) => {
@@ -98,10 +112,86 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
             return await handleDurableObjectRequest(req, {
               storage: stableStorage,
               dispatcher,
+              concurrencyDO: getConcurrencyDO?.(),
             })
           } finally {
             release()
           }
+        },
+      }
+    },
+  }
+}
+
+function alarmableRunDONamespace(
+  getConcurrencyDO?: () => DurableObjectNamespaceLike<string> | undefined,
+): {
+  namespace: DurableObjectNamespaceLike<string>
+  alarm(runId: string): Promise<void>
+} {
+  const storages = new Map<string, DurableObjectStorageLike>()
+  const dispatcher = createInlineDispatcher(async (req) => handleStepRequest(req))
+
+  function storageFor(id: string): DurableObjectStorageLike {
+    let storage = storages.get(id)
+    if (!storage) {
+      storage = makeStorage()
+      storages.set(id, storage)
+    }
+    return storage
+  }
+
+  return {
+    namespace: {
+      idFromName(name) {
+        return name
+      },
+      get(id: string) {
+        const storage = storageFor(id)
+        return {
+          fetch(req: Request): Promise<Response> {
+            return handleDurableObjectRequest(req, {
+              storage,
+              dispatcher,
+              concurrencyDO: getConcurrencyDO?.(),
+            })
+          },
+        }
+      },
+    },
+    alarm(runId: string) {
+      return handleDurableObjectAlarm({
+        storage: storageFor(runId),
+        dispatcher,
+        concurrencyDO: getConcurrencyDO?.(),
+      })
+    },
+  }
+}
+
+function inProcessConcurrencyDONamespace(
+  runDO: DurableObjectNamespaceLike<string>,
+): DurableObjectNamespaceLike<string> {
+  const storages = new Map<string, DurableObjectStorageLike>()
+  const coordinators = new Map<string, ConcurrencyCoordinator>()
+  return {
+    idFromName(name) {
+      return name
+    },
+    get(id: string) {
+      let storage = storages.get(id)
+      if (!storage) {
+        storage = makeStorage()
+        storages.set(id, storage)
+      }
+      let coordinator = coordinators.get(id)
+      if (!coordinator) {
+        coordinator = createConcurrencyCoordinator({ storage, runDO })
+        coordinators.set(id, coordinator)
+      }
+      return {
+        fetch(req: Request): Promise<Response> {
+          return coordinator.fetch(req)
         },
       }
     },
@@ -118,11 +208,16 @@ function inProcessRunDONamespace(): DurableObjectNamespaceLike<string> {
 // its own `createApp()` boundary. See architecture doc §8.
 runDriverComplianceSuite(
   "CloudflareEdge",
-  () =>
-    createCloudflareEdgeDriver({
-      orchestratorNamespace: inProcessRunDONamespace(),
+  () => {
+    let concurrencyDO: DurableObjectNamespaceLike<string> | undefined
+    const runDO = inProcessRunDONamespace(() => concurrencyDO)
+    concurrencyDO = inProcessConcurrencyDONamespace(runDO)
+    return createCloudflareEdgeDriver({
+      orchestratorNamespace: runDO,
+      concurrencyNamespace: concurrencyDO,
       manifestKv: createInMemoryKv(),
-    }),
+    })
+  },
   // servicesThreading: orchestrator and step handlers can run in
   //                    separate Worker isolates depending on dispatcher.
   // crossRunQueries:   self-host Mode 1 has no native query layer per §8.3.
@@ -155,5 +250,40 @@ describe("self-host inline-dispatcher path", () => {
     expect(run.status).toBe("completed")
     const detail = await driver.admin?.getRun?.(run.id)
     expect(detail?.output).toEqual({ doubled: 42 })
+  })
+
+  it("releases a concurrency slot when an alarm completes a delayed run", async () => {
+    let concurrencyDO: DurableObjectNamespaceLike<string> | undefined
+    const runDO = alarmableRunDONamespace(() => concurrencyDO)
+    concurrencyDO = inProcessConcurrencyDONamespace(runDO.namespace)
+    const driver = createCloudflareEdgeDriver({
+      orchestratorNamespace: runDO.namespace,
+      concurrencyNamespace: concurrencyDO,
+      manifestKv: createInMemoryKv(),
+    })(testFactoryDeps())
+
+    const wf = workflow<{ value: number }, number>({
+      id: "cloudflare-concurrency-alarm-release",
+      concurrency: {
+        key: "shared",
+        limit: 1,
+        strategy: "cancel-newest",
+      },
+      async run(input) {
+        return input.value
+      },
+    })
+
+    const delayed = await driver.trigger(wf, { value: 1 }, { delay: "1ms" })
+    expect(delayed.status).toBe("waiting")
+
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    await runDO.alarm(delayed.id)
+
+    const afterAlarm = await driver.admin?.getRun?.(delayed.id)
+    expect(afterAlarm?.status).toBe("completed")
+
+    const next = await driver.trigger(wf, { value: 2 })
+    expect(next.status).toBe("completed")
   })
 })

@@ -32,10 +32,12 @@ import type { StepDispatcher } from "./dispatchers.js"
 import { createDurableObjectRunStore } from "./do-store.js"
 import type {
   CancelPayload,
+  ConcurrencyLease,
   DurableObjectStorageLike,
   ResumePayload,
   TriggerPayload,
 } from "./types.js"
+import type { DurableObjectNamespaceLike } from "./worker.js"
 
 export interface DurableObjectDeps {
   storage: DurableObjectStorageLike
@@ -52,8 +54,11 @@ export interface DurableObjectDeps {
    *  - `createHttpDispatcher`           — arbitrary HTTP endpoint
    */
   dispatcher: StepDispatcher
+  concurrencyDO?: DurableObjectNamespaceLike
   now?: () => number
 }
+
+const CONCURRENCY_LEASE_KEY = "concurrencyLease"
 
 function resolve(
   deps: DurableObjectDeps,
@@ -74,6 +79,9 @@ export async function handleDurableObjectRequest(
 
   if (req.method === "POST" && url.pathname === "/trigger") {
     const payload = (await req.json()) as TriggerPayload
+    if (payload.concurrencyLease) {
+      await deps.storage.put(CONCURRENCY_LEASE_KEY, payload.concurrencyLease)
+    }
     const handler = resolve(deps, {
       tenantMeta: payload.tenantMeta,
       workflowId: payload.workflowId,
@@ -88,6 +96,7 @@ export async function handleDurableObjectRequest(
         tags: payload.tags,
         runId: payload.runId,
         idempotencyKey: payload.idempotencyKey,
+        triggeredBy: payload.triggeredBy,
         delay:
           typeof payload.delay === "object" && payload.delay !== null && "wakeAt" in payload.delay
             ? new Date(payload.delay.wakeAt)
@@ -114,6 +123,7 @@ export async function handleDurableObjectRequest(
       return json(status, { error: out.status, message: out.message })
     }
     await reconcileAlarm(out.record, store, deps)
+    await releaseConcurrencyLeaseIfTerminal(out.record, deps)
     return json(200, out.record)
   }
 
@@ -131,6 +141,7 @@ export async function handleDurableObjectRequest(
       return json(status, { error: out.status, message: out.message })
     }
     await reconcileAlarm(out.record, store, deps)
+    await releaseConcurrencyLeaseIfTerminal(out.record, deps)
     return json(200, out.record)
   }
 
@@ -189,6 +200,7 @@ export async function handleDurableObjectAlarm(deps: DurableObjectDeps): Promise
   await driveUntilPaused(record, { handler, now: deps.now })
   await store.save(record)
   await reconcileAlarm(record, store, deps)
+  await releaseConcurrencyLeaseIfTerminal(record, deps)
 }
 
 /**
@@ -237,6 +249,38 @@ async function getStoredRunId(
 ): Promise<string | undefined> {
   const all = await store.list()
   return all[0]?.id
+}
+
+async function releaseConcurrencyLeaseIfTerminal(
+  record: RunRecord,
+  deps: DurableObjectDeps,
+): Promise<void> {
+  if (!deps.concurrencyDO || !isTerminal(record.status)) return
+  const lease = await deps.storage.get<ConcurrencyLease>(CONCURRENCY_LEASE_KEY)
+  if (!lease) return
+
+  const id = deps.concurrencyDO.idFromName(`workflow-concurrency:${lease.environment}:${lease.key}`)
+  const stub = deps.concurrencyDO.get(id)
+  await stub
+    .fetch(
+      new Request("https://do-internal/release", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ runId: lease.runId }),
+      }),
+    )
+    .catch(() => undefined)
+  await deps.storage.delete(CONCURRENCY_LEASE_KEY)
+}
+
+function isTerminal(status: RunRecord["status"]): boolean {
+  return (
+    status === "completed" ||
+    status === "failed" ||
+    status === "cancelled" ||
+    status === "compensated" ||
+    status === "compensation_failed"
+  )
 }
 
 function json(status: number, body: unknown): Response {

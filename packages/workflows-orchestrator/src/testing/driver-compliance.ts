@@ -23,6 +23,8 @@ import type { DriverFactory, DriverFactoryDeps, ServiceResolver } from "@voyantj
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
+import { WorkflowConcurrencyRejectedError } from "../concurrency.js"
+
 /**
  * Tiny in-memory ServiceResolver builder for compliance tests. Lets a test
  * register named services then assert workflow bodies can resolve them via
@@ -117,6 +119,12 @@ export interface DriverComplianceCapabilities {
    * harness intentionally disables or fakes the time wheel.
    */
   autoDatetimeWakeups?: boolean
+  /**
+   * When true, workflow-level `WorkflowConfig.concurrency` is enforced
+   * for in-process workflow definitions. False for Mode 1 / Cloudflare
+   * until it grows a cross-run coordination DO.
+   */
+  workflowConcurrency?: boolean
 }
 
 // ---- The parameterized contract ----
@@ -129,6 +137,7 @@ export function runDriverComplianceSuite(
   const servicesThreading = capabilities.servicesThreading ?? true
   const crossRunQueries = capabilities.crossRunQueries ?? true
   const autoDatetimeWakeups = capabilities.autoDatetimeWakeups ?? false
+  const workflowConcurrency = capabilities.workflowConcurrency ?? true
   describe(`${name} driver compliance`, () => {
     beforeEach(() => {
       __resetRegistry()
@@ -290,6 +299,66 @@ export function runDriverComplianceSuite(
         // callers return the existing record without re-driving.)
         expect(invocationCount).toBeLessThanOrEqual(1)
       })
+
+      test.skipIf(!workflowConcurrency)(
+        "concurrency queue strategy serializes triggers with the same key",
+        async () => {
+          const driver = makeFactory()(testFactoryDeps())
+          const gate = deferred<void>()
+          const started: string[] = []
+          const wf = workflow<{ key: string }, string>({
+            id: uniqueId("compliance-concurrency-queue"),
+            concurrency: {
+              key: (input) => input.key,
+              limit: 1,
+              strategy: "queue",
+            },
+            async run(input) {
+              started.push(input.key)
+              if (started.length === 1) await gate.promise
+              return input.key
+            },
+          })
+
+          const first = driver.trigger(wf, { key: "same" })
+          await vi.waitFor(() => expect(started).toEqual(["same"]))
+          const second = driver.trigger(wf, { key: "same" })
+          await Promise.resolve()
+          expect(started).toEqual(["same"])
+
+          gate.resolve()
+          await Promise.all([first, second])
+          expect(started).toEqual(["same", "same"])
+        },
+      )
+
+      test.skipIf(!workflowConcurrency)(
+        "concurrency cancel-newest strategy rejects overflow triggers",
+        async () => {
+          const driver = makeFactory()(testFactoryDeps())
+          const gate = deferred<void>()
+          const wf = workflow<{ n: number }, number>({
+            id: uniqueId("compliance-concurrency-cancel-newest"),
+            concurrency: {
+              key: "shared",
+              limit: 1,
+              strategy: "cancel-newest",
+            },
+            async run(input) {
+              await gate.promise
+              return input.n
+            },
+          })
+
+          const first = driver.trigger(wf, { n: 1 })
+          await expect(driver.trigger(wf, { n: 2 })).rejects.toBeInstanceOf(
+            WorkflowConcurrencyRejectedError,
+          )
+
+          gate.resolve()
+          await expect(first).resolves.toMatchObject({ status: "completed" })
+        },
+      )
     })
 
     describe("ingestEvent", () => {
@@ -691,4 +760,18 @@ export function runDriverComplianceSuite(
       })
     })
   })
+}
+
+function deferred<T>(): {
+  promise: Promise<T>
+  resolve(value: T): void
+  reject(error: unknown): void
+} {
+  let resolve!: (value: T) => void
+  let reject!: (error: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
 }

@@ -33,12 +33,17 @@ import { deriveStableEventId } from "@voyantjs/workflows/events"
 import { handleStepRequest, type WorkflowStepRequest } from "@voyantjs/workflows/handler"
 import type { WorkflowManifest } from "@voyantjs/workflows/protocol"
 
+import {
+  createInProcessConcurrencyCoordinator,
+  type RuntimeConcurrencyPolicy,
+} from "./concurrency.js"
 import { routeEvent } from "./event-router.js"
 import { createInMemoryRunStore } from "./in-memory-store.js"
 import {
   cancel as orchestratorCancel,
   trigger as orchestratorTrigger,
   resumeDueAlarms,
+  type TriggerArgs,
 } from "./orchestrator.js"
 import { createScheduler, manifestScheduleSources, type SchedulerHandle } from "./schedule.js"
 import type { RunRecord, StepHandler } from "./types.js"
@@ -94,6 +99,14 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
         handleStepRequest(req, { services: deps.services }, stepOpts))
 
     let shuttingDown = false
+    const concurrency = createInProcessConcurrencyCoordinator({
+      async cancelRun(runId, reason) {
+        const out = await orchestratorCancel({ runId, reason }, { store, handler, now })
+        if (out.ok && isTerminal(out.record.status)) {
+          concurrency.releaseRun(out.record)
+        }
+      },
+    })
 
     // ---- WorkflowDriver implementation ----
 
@@ -124,13 +137,14 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
       assertNotShutdown(shuttingDown)
       const workflowId = typeof workflow === "string" ? workflow : workflow.id
       const env = triggerOpts?.environment ?? defaultEnv
+      const policy = resolveConcurrencyPolicy(workflow, workflowId, env, manifests)
 
       // The orchestrator core handles idempotencyKey natively (deterministic
       // runId derivation from `(workflowId, idempotencyKey)`); the driver just
       // forwards the field. Persistent stores like `voyant_snapshot_runs`
       // additionally read `RunRecord.idempotencyKey` to populate their own
       // dedup column.
-      const record = await orchestratorTrigger(
+      const record = await triggerRecord(
         {
           workflowId,
           workflowVersion: triggerOpts?.lockToVersion ?? "v1",
@@ -142,7 +156,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
           delay: triggerOpts?.delay,
           priority: triggerOpts?.priority,
         },
-        { store, handler, now },
+        policy,
       )
       scheduleDelayedRun(record)
       return runRecordToRun<TOut>(record)
@@ -180,7 +194,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
           continue
         }
         try {
-          const record = await orchestratorTrigger(
+          const record = await triggerRecord(
             {
               workflowId: entry.targetWorkflowId,
               workflowVersion: "v1",
@@ -195,7 +209,12 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
                 filterId: entry.filterId,
               },
             },
-            { store, handler, now },
+            resolveConcurrencyPolicy(
+              entry.targetWorkflowId,
+              entry.targetWorkflowId,
+              args.environment,
+              manifests,
+            ),
           )
           scheduleDelayedRun(record)
           matches.push({
@@ -253,7 +272,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
         tickMs: opts.schedulePollIntervalMs,
         onFire: async ({ workflowId, input, scheduleId, fireAt }) => {
           assertNotShutdown(shuttingDown)
-          const record = await orchestratorTrigger(
+          const record = await triggerRecord(
             {
               workflowId,
               workflowVersion: "v1",
@@ -263,7 +282,7 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
               idempotencyKey: `${scheduleId}:${fireAt}`,
               triggeredBy: { kind: "schedule", scheduleId },
             },
-            { store, handler, now },
+            resolveConcurrencyPolicy(workflowId, workflowId, environment, manifests),
           )
           scheduleDelayedRun(record)
         },
@@ -281,10 +300,36 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
       const delayMs = Math.max(0, wakeAt - now())
       const timer = setTimeout(() => {
         void resumeDueAlarms({ runId: record.id }, { store, handler, now }).then((resumed) => {
-          if (resumed) scheduleDelayedRun(resumed)
+          if (!resumed) return
+          if (isTerminal(resumed.status)) {
+            concurrency.releaseRun(resumed)
+          }
+          scheduleDelayedRun(resumed)
         })
       }, delayMs)
       timer.unref?.()
+    }
+
+    async function triggerRecord(
+      args: TriggerArgs,
+      policy: RuntimeConcurrencyPolicy | undefined,
+    ): Promise<RunRecord> {
+      return concurrency.run(
+        {
+          workflowId: args.workflowId,
+          input: args.input,
+          policy,
+          holderId: concurrencyHolderId(args),
+        },
+        (hooks) =>
+          orchestratorTrigger(
+            {
+              ...args,
+              onRunRecordCreated: hooks.onRunRecordCreated,
+            },
+            { store, handler, now },
+          ),
+      )
     }
 
     // ---- WorkflowAdmin (partial; sufficient for compliance tests) ----
@@ -326,7 +371,13 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
         // is accepted but no-ops in v1; honoring it would require an engine
         // behavior change tracked separately.
         void cancelOpts?.compensate
-        await orchestratorCancel({ runId, reason: cancelOpts?.reason }, { store, handler, now })
+        const out = await orchestratorCancel(
+          { runId, reason: cancelOpts?.reason },
+          { store, handler, now },
+        )
+        if (out.ok && isTerminal(out.record.status)) {
+          concurrency.releaseRun(out.record)
+        }
       },
 
       // streamRun is not implemented for InMemory in PR1. Dashboards that
@@ -346,6 +397,12 @@ export function createInMemoryDriver(opts: InMemoryDriverOptions = {}): DriverFa
   }
 }
 
+function concurrencyHolderId(args: TriggerArgs): string | undefined {
+  if (args.runId !== undefined) return args.runId
+  if (args.idempotencyKey !== undefined) return `idem-${args.workflowId}-${args.idempotencyKey}`
+  return undefined
+}
+
 function earliestWakeAt(record: RunRecord): number | undefined {
   let earliest: number | undefined
   for (const waitpoint of record.pendingWaitpoints) {
@@ -363,6 +420,29 @@ function assertNotShutdown(shuttingDown: boolean): void {
   if (shuttingDown) {
     throw new Error("InMemoryDriver: shutdown() has been called; new operations are refused.")
   }
+}
+
+function resolveConcurrencyPolicy(
+  workflow: { id: string; config?: { concurrency?: RuntimeConcurrencyPolicy } } | string,
+  workflowId: string,
+  environment: EnvironmentName,
+  manifests: Map<EnvironmentName, { manifest: WorkflowManifest; versionId: string }>,
+): RuntimeConcurrencyPolicy | undefined {
+  if (typeof workflow !== "string" && workflow.config?.concurrency) {
+    return workflow.config.concurrency
+  }
+  const manifest = manifests.get(environment)?.manifest
+  return manifest?.workflows.find((entry) => entry.id === workflowId)?.concurrency
+}
+
+function isTerminal(status: RunRecord["status"]): boolean {
+  return (
+    status === "completed" ||
+    status === "failed" ||
+    status === "cancelled" ||
+    status === "compensated" ||
+    status === "compensation_failed"
+  )
 }
 
 async function ensureEventId(envelope: {
