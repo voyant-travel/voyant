@@ -238,6 +238,20 @@ export const crmUiEn = {
       create: "Create",
     },
   },
+  quoteLinesCard: {
+    title: "Line items",
+    empty: "No line items yet.",
+    fields: {
+      description: "Description",
+      quantity: "Qty",
+      priceCents: "Price (cents)",
+    },
+    validation: {
+      descriptionRequired: "Description is required",
+      addFailed: "Failed to add line",
+    },
+    subtotal: "Subtotal",
+  },
   activitiesPage: {
     title: "Activities",
     description: "Calls, emails, meetings, tasks, and follow-ups across your CRM.",

@@ -238,6 +238,20 @@ export const crmUiRo = {
       create: "Creeaza",
     },
   },
+  quoteLinesCard: {
+    title: "Linii oferta",
+    empty: "Nu exista inca linii.",
+    fields: {
+      description: "Descriere",
+      quantity: "Cant.",
+      priceCents: "Pret (bani)",
+    },
+    validation: {
+      descriptionRequired: "Descrierea este obligatorie",
+      addFailed: "Adaugarea liniei a esuat",
+    },
+    subtotal: "Subtotal",
+  },
   activitiesPage: {
     title: "Activitati",
     description: "Apeluri, emailuri, intalniri, sarcini si urmariri din CRM-ul tau.",

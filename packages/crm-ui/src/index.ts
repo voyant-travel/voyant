@@ -46,6 +46,10 @@ export {
   PersonList,
   type PersonListProps,
 } from "./components/person-list.js"
+export {
+  QuoteLinesCard,
+  type QuoteLinesCardProps,
+} from "./components/quote-detail-sections.js"
 export { QuotesPage, type QuotesPageProps } from "./components/quotes-page.js"
 export {
   type CrmUiMessageOverrides,

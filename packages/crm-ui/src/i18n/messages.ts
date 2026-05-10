@@ -221,6 +221,20 @@ export type CrmUiMessages = {
       create: string
     }
   }
+  quoteLinesCard: {
+    title: string
+    empty: string
+    fields: {
+      description: string
+      quantity: string
+      priceCents: string
+    }
+    validation: {
+      descriptionRequired: string
+      addFailed: string
+    }
+    subtotal: string
+  }
   activitiesPage: {
     title: string
     description: string
