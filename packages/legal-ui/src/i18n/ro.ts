@@ -12,6 +12,16 @@ export const legalUiRo = {
     selectPlaceholder: "Selecteaza...",
     optionalPlaceholder: "Optional",
     kilobytes: "KB",
+    policyKindLabels: {
+      cancellation: "Anulare",
+      payment: "Plata",
+      terms_and_conditions: "Termeni si conditii",
+      privacy: "Confidentialitate",
+      refund: "Rambursare",
+      commission: "Comision",
+      guarantee: "Garantie",
+      other: "Altul",
+    },
   },
   bookingContractCard: {
     heading: "Contract",
@@ -53,6 +63,28 @@ export const legalUiRo = {
     inactive: "Inactiv",
     empty: "Nu exista serii de numere. Creeaza una pentru numerotarea contractelor.",
     deleteConfirm: 'Stergi seria "{name}"?',
+  },
+  policiesPage: {
+    title: "Politici",
+    description: "Gestioneaza politicile de anulare, plata si alte politici juridice.",
+    create: "Politica noua",
+    searchPlaceholder: "Cauta politici...",
+    allKinds: "Toate tipurile",
+    empty: "Nu exista politici.",
+    loadFailed: "Politicile nu au putut fi incarcate.",
+    columns: {
+      name: "Nume",
+      slug: "Slug",
+      kind: "Tip",
+      language: "Limba",
+      created: "Creat",
+    },
+    pagination: {
+      showing: "Afisare {count} din {total} politici",
+      page: "Pagina {page} din {pageCount}",
+      previous: "Anterior",
+      next: "Urmator",
+    },
   },
   attachmentDialog: {
     titles: {

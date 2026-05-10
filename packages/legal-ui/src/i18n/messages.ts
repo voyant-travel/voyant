@@ -1,5 +1,16 @@
 import type { LegalContractRecord } from "@voyantjs/legal-react"
 
+export const legalPolicyKinds = [
+  "cancellation",
+  "payment",
+  "terms_and_conditions",
+  "privacy",
+  "refund",
+  "commission",
+  "guarantee",
+  "other",
+] as const
+
 export const legalRuleTypes = [
   "window",
   "percentage",
@@ -13,6 +24,7 @@ export const legalRefundTypes = ["cash", "credit", "cash_or_credit", "none"] as 
 export const legalSignatureMethods = ["manual", "electronic", "docusign", "other"] as const
 
 export type LegalContractStatus = LegalContractRecord["status"]
+export type LegalPolicyKind = (typeof legalPolicyKinds)[number]
 export type LegalRuleType = (typeof legalRuleTypes)[number]
 export type LegalRefundType = (typeof legalRefundTypes)[number]
 export type LegalSignatureMethod = (typeof legalSignatureMethods)[number]
@@ -29,6 +41,7 @@ export type LegalUiMessages = {
     selectPlaceholder: string
     optionalPlaceholder: string
     kilobytes: string
+    policyKindLabels: Record<LegalPolicyKind, string>
   }
   bookingContractCard: {
     heading: string
@@ -62,6 +75,28 @@ export type LegalUiMessages = {
     inactive: string
     empty: string
     deleteConfirm: string
+  }
+  policiesPage: {
+    title: string
+    description: string
+    create: string
+    searchPlaceholder: string
+    allKinds: string
+    empty: string
+    loadFailed: string
+    columns: {
+      name: string
+      slug: string
+      kind: string
+      language: string
+      created: string
+    }
+    pagination: {
+      showing: string
+      page: string
+      previous: string
+      next: string
+    }
   }
   attachmentDialog: {
     titles: {

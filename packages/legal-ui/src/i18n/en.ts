@@ -12,6 +12,16 @@ export const legalUiEn = {
     selectPlaceholder: "Select...",
     optionalPlaceholder: "Optional",
     kilobytes: "KB",
+    policyKindLabels: {
+      cancellation: "Cancellation",
+      payment: "Payment",
+      terms_and_conditions: "Terms & Conditions",
+      privacy: "Privacy",
+      refund: "Refund",
+      commission: "Commission",
+      guarantee: "Guarantee",
+      other: "Other",
+    },
   },
   bookingContractCard: {
     heading: "Contract",
@@ -53,6 +63,28 @@ export const legalUiEn = {
     inactive: "Inactive",
     empty: "No number series yet. Create one to configure contract numbering.",
     deleteConfirm: 'Delete series "{name}"?',
+  },
+  policiesPage: {
+    title: "Policies",
+    description: "Manage cancellation, payment, and other legal policies.",
+    create: "New Policy",
+    searchPlaceholder: "Search policies...",
+    allKinds: "All kinds",
+    empty: "No policies found.",
+    loadFailed: "Policies could not be loaded.",
+    columns: {
+      name: "Name",
+      slug: "Slug",
+      kind: "Kind",
+      language: "Language",
+      created: "Created",
+    },
+    pagination: {
+      showing: "Showing {count} of {total} policies",
+      page: "Page {page} of {pageCount}",
+      previous: "Previous",
+      next: "Next",
+    },
   },
   attachmentDialog: {
     titles: {

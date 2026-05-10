@@ -9,6 +9,11 @@ export {
   NumberSeriesPage,
   type NumberSeriesPageProps,
 } from "./components/number-series-page.js"
+export {
+  PoliciesPage,
+  type PoliciesPageProps,
+  type PolicyDialogRenderProps,
+} from "./components/policies-page.js"
 export { PolicyRuleDialog, type RuleData } from "./components/policy-rule-dialog.js"
 export { PolicyVersionDialog } from "./components/policy-version-dialog.js"
 export { SignatureDialog } from "./components/signature-dialog.js"
