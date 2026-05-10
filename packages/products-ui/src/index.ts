@@ -30,6 +30,21 @@ export {
   type ProductDayServiceSupplierServiceFieldProps,
   type ProductDayServiceSupplierServiceOption,
 } from "./components/product-day-service-form.js"
+export {
+  ProductCommercialCard,
+  ProductDetailHeader,
+  type ProductDetailHeaderProps,
+  ProductDetailPage,
+  type ProductDetailPageProps,
+  type ProductDetailPageSlots,
+  type ProductDetailPageTab,
+  ProductDetailSidebar,
+  type ProductDetailSidebarProps,
+  ProductItinerarySection,
+  type ProductItinerarySectionProps,
+  ProductOverviewCard,
+  type ProductOverviewCardProps,
+} from "./components/product-detail-page.js"
 export { ProductDialog, type ProductDialogProps } from "./components/product-dialog.js"
 export {
   ProductForm,

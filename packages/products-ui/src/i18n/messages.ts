@@ -55,6 +55,81 @@ export type ProductsUiMessages = {
     title: string
     description: string
   }
+  productDetailPage: {
+    actions: {
+      back: string
+      edit: string
+      delete: string
+      createBooking: string
+      addItinerary: string
+      editItinerary: string
+      deleteItinerary: string
+      addDay: string
+    }
+    tabs: {
+      overview: string
+      media: string
+      itinerary: string
+      options: string
+      versions: string
+    }
+    sections: {
+      overview: {
+        title: string
+        description: string
+      }
+      details: {
+        title: string
+        description: string
+      }
+      commercial: {
+        title: string
+        description: string
+      }
+      itinerary: {
+        title: string
+        description: string
+      }
+      sidebar: {
+        title: string
+        description: string
+      }
+    }
+    fields: {
+      status: string
+      bookingMode: string
+      visibility: string
+      capacityMode: string
+      timezone: string
+      productType: string
+      facility: string
+      taxClass: string
+      sellAmount: string
+      costAmount: string
+      margin: string
+      pax: string
+      startDate: string
+      endDate: string
+      reservationTimeout: string
+      tags: string
+      createdAt: string
+      updatedAt: string
+    }
+    states: {
+      loading: string
+      loadFailed: string
+      notFoundTitle: string
+      notFoundDescription: string
+      noDescription: string
+      noItineraries: string
+      noDays: string
+      deleteConfirm: string
+      deleteItineraryConfirm: string
+      deleteDayConfirm: string
+      deleteFailed: string
+      minutes: string
+    }
+  }
   productDialog: {
     titles: {
       create: string
