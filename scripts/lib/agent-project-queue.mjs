@@ -57,26 +57,29 @@ export function projectConfigFromArgs(args) {
   return { owner, projectNumber, limit }
 }
 
+export function projectScanConfigFromArgs(args) {
+  return projectConfigFromArgs({ ...args, limit: args.limit ?? 100 })
+}
+
 export function projectNumberFromUrl(projectUrl) {
   if (!projectUrl) return undefined
   const match = projectUrl.match(/\/projects\/(\d+)(?:$|[/?#])/)
   return match?.[1]
 }
 
-export function loadEvaluatedProject({ owner, projectNumber, limit, onError = fail }) {
-  const project = readProjectItems({ owner, projectNumber, limit, onError })
-  const items = project.items.map(evaluateItem)
-
-  return evaluatedProject({ items, owner, project, projectNumber })
-}
-
-export function loadAllEvaluatedProject({ owner, projectNumber, limit, onError = fail }) {
+export function loadAllEvaluatedProject({
+  owner,
+  projectNumber,
+  limit,
+  onError = fail,
+  readItems = readProjectItems,
+}) {
   const pageSize = limit ?? 100
   const pages = []
   let after
 
   do {
-    const page = readProjectItems({ after, limit: pageSize, onError, owner, projectNumber })
+    const page = readItems({ after, limit: pageSize, onError, owner, projectNumber })
     pages.push(page)
     after = page.pageInfo.endCursor
     if (page.pageInfo.hasNextPage && !after) {

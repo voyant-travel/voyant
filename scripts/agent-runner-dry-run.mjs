@@ -1,7 +1,7 @@
 import {
-  loadEvaluatedProject,
+  loadAllEvaluatedProject,
   parseArgs,
-  projectConfigFromArgs,
+  projectScanConfigFromArgs,
 } from "./lib/agent-project-queue.mjs"
 import { maybePrintHelp, projectOptions } from "./lib/agent-runner-help.mjs"
 import { printHumanSummary, projectSummaryJson } from "./lib/agent-runner-output.mjs"
@@ -14,7 +14,7 @@ maybePrintHelp(args, {
   options: [["--json", "Print machine-readable JSON."], ...projectOptions],
 })
 
-const project = loadEvaluatedProject(projectConfigFromArgs(args))
+const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 
 if (args.json) {
   console.log(JSON.stringify(projectSummaryJson(project), null, 2))

@@ -4,7 +4,7 @@ import {
   filterItemsByRepository,
   loadAllEvaluatedProject,
   parseArgs,
-  projectConfigFromArgs,
+  projectScanConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import { maybePrintHelp, projectOptions, repositoryOptions } from "./lib/agent-runner-help.mjs"
@@ -40,9 +40,7 @@ if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
   fail(`invalid max age days: ${String(args.maxAgeDays)}`)
 }
 
-const project = loadAllEvaluatedProject(
-  projectConfigFromArgs({ ...args, limit: args.limit ?? 100 }),
-)
+const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const activeItems = filterItemsByRepository(project.items, repository).filter((item) =>
   watchedStates.has(item.fields["Agent State"]),
 )

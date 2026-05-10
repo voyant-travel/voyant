@@ -40,6 +40,7 @@
     "agent:queue:publish-evidence": "node scripts/agent-runner-publish-evidence.mjs",
     "agent:queue:watchdog": "node scripts/agent-runner-watchdog.mjs",
     "agent:queue:release": "node scripts/agent-runner-release.mjs",
+    "agent:queue:test": "node --test scripts/tests/agent-project-queue.test.mjs",
     "prepare": "husky",
     "seed:operator": "pnpm -C apps/scripts seed:operator",
     "regen:routes": "tsx scripts/regen-route-tree.ts",
