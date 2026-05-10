@@ -5,6 +5,11 @@ export {
   type BookingContractCardProps,
 } from "./components/booking-contract-card.js"
 export {
+  type ContractDetailDialogRenderProps,
+  ContractDetailPage,
+  type ContractDetailPageProps,
+} from "./components/contract-detail-page.js"
+export {
   type ContractDialogRenderProps,
   ContractsPage,
   type ContractsPageProps,

@@ -126,6 +126,55 @@ export type LegalUiMessages = {
       next: string
     }
   }
+  contractDetailPage: {
+    notFound: string
+    backToContracts: string
+    voidConfirm: string
+    deleteConfirm: string
+    deleteAttachmentConfirm: string
+    actions: {
+      issue: string
+      void: string
+      addSignature: string
+      addAttachment: string
+    }
+    sections: {
+      details: string
+      parties: string
+      signatures: string
+      attachments: string
+    }
+    fields: {
+      language: string
+      templateVersion: string
+      series: string
+      expires: string
+      created: string
+      updated: string
+      person: string
+      organization: string
+      supplier: string
+      channel: string
+      name: string
+      email: string
+      role: string
+      method: string
+      signedAt: string
+      kind: string
+      mimeType: string
+      size: string
+    }
+    empty: {
+      noParties: string
+      noSignatures: string
+      noAttachments: string
+    }
+    units: {
+      bytes: string
+      kilobytes: string
+      megabytes: string
+    }
+  }
   policiesPage: {
     title: string
     description: string
