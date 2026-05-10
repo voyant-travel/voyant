@@ -441,6 +441,25 @@ export const distributionUiRo = {
         lastSynced: "Ultima sincronizare",
       },
     },
+    webhookEvent: {
+      notFound: "Evenimentul webhook nu a fost gasit",
+      title: "Eveniment webhook",
+      deleteConfirm: "Stergi acest eveniment webhook?",
+      deleteDescription:
+        "Aceasta actiune sterge definitiv evenimentul webhook din jurnalul de evenimente.",
+      deleteButton: "Sterge",
+      openChannel: "Deschide canalul",
+      sections: {
+        details: "Detalii eveniment",
+        payload: "Payload",
+      },
+      labels: {
+        externalEvent: "Eveniment extern",
+        received: "Primit",
+        processed: "Procesat",
+        error: "Eroare",
+      },
+    },
     mapping: {
       notFound: "Maparea produsului nu a fost gasita",
       title: "Mapare produs",

@@ -278,6 +278,24 @@ export type DistributionUiMessages = {
         lastSynced: string
       }
     }
+    webhookEvent: {
+      notFound: string
+      title: string
+      deleteConfirm: string
+      deleteDescription: string
+      deleteButton: string
+      openChannel: string
+      sections: {
+        details: string
+        payload: string
+      }
+      labels: {
+        externalEvent: string
+        received: string
+        processed: string
+        error: string
+      }
+    }
     mapping: {
       notFound: string
       title: string

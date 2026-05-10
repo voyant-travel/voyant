@@ -27,6 +27,10 @@ export {
 } from "./components/distribution-tabs-secondary.js"
 export { MappingDetailPage, type MappingDetailPageProps } from "./components/mapping-detail-page.js"
 export {
+  WebhookEventDetailPage,
+  type WebhookEventDetailPageProps,
+} from "./components/webhook-event-detail-page.js"
+export {
   type CancellationOwner,
   type DistributionEntity,
   type DistributionUiI18n,

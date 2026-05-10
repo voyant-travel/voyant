@@ -434,6 +434,24 @@ export const distributionUiEn = {
         lastSynced: "Last Synced",
       },
     },
+    webhookEvent: {
+      notFound: "Webhook event not found",
+      title: "Webhook Event",
+      deleteConfirm: "Delete this webhook event?",
+      deleteDescription: "This permanently removes the webhook event from the event log.",
+      deleteButton: "Delete",
+      openChannel: "Open Channel",
+      sections: {
+        details: "Event Details",
+        payload: "Payload",
+      },
+      labels: {
+        externalEvent: "External Event",
+        received: "Received",
+        processed: "Processed",
+        error: "Error",
+      },
+    },
     mapping: {
       notFound: "Product mapping not found",
       title: "Product Mapping",
