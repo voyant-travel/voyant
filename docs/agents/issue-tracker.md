@@ -122,6 +122,23 @@ execution plan, then updates the Project item to `Agent State = Planning`.
 It still does not run an implementation agent, push a branch, open a PR, or
 publish evidence.
 
+After start, run a supervised provider-neutral command in the claimed
+workspace:
+
+```bash
+pnpm agent:queue:run-command -- --issue <number> --command "pnpm verify:fast" --yes
+```
+
+Run-command mode requires an existing claimed workspace in `Planning`,
+`Running`, `Changes Requested`, or `CI Repair` unless `--force` is passed. It
+moves the item to `Running`, streams stdout/stderr to the terminal and a local
+ignored transcript under `.agent-runs/`, writes an evidence packet inside the
+workspace, then moves the item to `Human Review` on exit code `0` or `Blocked`
+on nonzero exit. The command receives `VOYANT_AGENT_*` environment variables
+for the issue, branch, workspace, plan path, evidence path, log path, repository,
+and verification lane. It does not push branches, open PRs, or publish evidence
+comments.
+
 Use the read-only status view to inspect the current queue and active work:
 
 ```bash
