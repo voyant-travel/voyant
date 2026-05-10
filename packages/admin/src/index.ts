@@ -10,6 +10,7 @@
  * - Query client factory: `makeQueryClient()` with Voyant's admin defaults.
  * - `AdminProvider` composing QueryClient + ThemeProvider + LocaleProvider.
  * - Operator admin shell helpers for API, i18n, and domain provider wiring.
+ * - Dashboard page composition, skeletons, aggregate query helpers, and extension context.
  * - Operator admin sidebar, navigation, and workspace layout helpers.
  * - Admin extension helpers for navigation contributions and widget slots.
  * - User utilities: `getInitials`, `getDisplayName`.
@@ -46,6 +47,36 @@ export {
   OperatorAdminUserMenu,
   type OperatorAdminUserMenuProps,
 } from "./components/operator-admin-user-menu.js"
+export { DashboardPage } from "./dashboard/dashboard-page.js"
+export {
+  type BookingsAggregates,
+  bookingStatusConfig,
+  buildMonthSeries,
+  DashboardApiError,
+  type DashboardQueryClient,
+  type FinanceAggregates,
+  formatCurrency,
+  getDashboardBookingsAggregatesQueryOptions,
+  getDashboardFinanceAggregatesQueryOptions,
+  getDashboardProductsAggregatesQueryOptions,
+  getDashboardSuppliersAggregatesQueryOptions,
+  getStatusColor,
+  monthlyBookingsConfig,
+  type ProductsAggregates,
+  pickPrimaryCurrency,
+  revenueChartConfig,
+  type SuppliersAggregates,
+} from "./dashboard/dashboard-query-options.js"
+export {
+  DashboardAreaChartSkeleton,
+  DashboardBarChartSkeleton,
+  DashboardKpiRowSkeleton,
+  DashboardKpiSkeleton,
+  DashboardOutstandingInvoicesSkeleton,
+  DashboardPieChartSkeleton,
+  DashboardSkeleton,
+  DashboardUpcomingListSkeleton,
+} from "./dashboard/dashboard-skeleton.js"
 export {
   type AdminExtension,
   type AdminNavigationContribution,
@@ -76,6 +107,11 @@ export {
   type OperatorAdminNavigationIconName,
   type OperatorAdminNavigationIcons,
 } from "./navigation/operator-navigation.js"
+export {
+  AdminExtensionsProvider,
+  type AdminExtensionsProviderProps,
+  useAdminExtensions,
+} from "./providers/admin-extensions.js"
 export { AdminProvider, type AdminProviderProps } from "./providers/admin-provider.js"
 export {
   DEFAULT_ADMIN_LOCALE,
