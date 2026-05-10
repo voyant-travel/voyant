@@ -35,12 +35,12 @@ export function selectDispatchRecommendation(recommendations, { action, issueNum
   }
 }
 
-export function dispatchCommandArgs(recommendation, { repository }) {
+export function dispatchCommandArgs(recommendation, { eventLog, repository }) {
   if (!dispatchableActions.has(recommendation.action)) {
     throw new Error(`action ${recommendation.action} is not dispatchable`)
   }
 
-  return [
+  const commandArgs = [
     `agent:queue:${recommendation.action}`,
     "--",
     "--issue",
@@ -49,6 +49,12 @@ export function dispatchCommandArgs(recommendation, { repository }) {
     repository,
     "--yes",
   ]
+
+  if (eventLog) {
+    commandArgs.push("--event-log", eventLog)
+  }
+
+  return commandArgs
 }
 
 export function runDispatchCommand(commandArgs) {

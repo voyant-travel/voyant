@@ -57,6 +57,31 @@ describe("agent runner dispatch helpers", () => {
     ])
   })
 
+  it("passes custom event logs to nested dispatch commands", () => {
+    const recommendation = recommendQueueAction(workItem(), {
+      maxAgeDays: 1,
+      repository: "voyantjs/other",
+    })
+
+    assert.deepEqual(
+      dispatchCommandArgs(recommendation, {
+        eventLog: ".agent-runs/supervisor.jsonl",
+        repository: "voyantjs/other",
+      }),
+      [
+        "agent:queue:start",
+        "--",
+        "--issue",
+        "579",
+        "--repo",
+        "voyantjs/other",
+        "--yes",
+        "--event-log",
+        ".agent-runs/supervisor.jsonl",
+      ],
+    )
+  })
+
   it("does not dispatch implementation or wait actions", () => {
     const running = recommendQueueAction(
       workItem({

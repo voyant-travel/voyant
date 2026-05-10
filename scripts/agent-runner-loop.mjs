@@ -14,6 +14,11 @@ import {
   selectDispatchRecommendation,
 } from "./lib/agent-runner-dispatch.mjs"
 import {
+  appendAgentRunnerEvent,
+  recommendationEventDetails,
+  resolveEventLogPath,
+} from "./lib/agent-runner-events.mjs"
+import {
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -36,6 +41,7 @@ maybePrintHelp(args, {
       `Only dispatch this action. Allowed: ${Array.from(dispatchableActions).join(", ")}.`,
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    ["--event-log <path>", "JSONL audit log path. Defaults to .agent-runs/events.jsonl."],
     ...repositoryOptions,
     ...mutationOptions,
     ...projectOptions,
@@ -45,6 +51,7 @@ maybePrintHelp(args, {
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const maxAgeDays = Number(args.maxAgeDays ?? 1)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 
 if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
   fail(`invalid max age days: ${String(args.maxAgeDays)}`)
@@ -68,7 +75,7 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
   const recommendation = selectLoopRecommendation()
   if (!recommendation) break
 
-  const commandArgs = dispatchCommandArgs(recommendation, { repository })
+  const commandArgs = dispatchCommandArgs(recommendation, { eventLog: args.eventLog, repository })
 
   if (!args.yes) {
     printLoopPlan({ commandArgs, iteration, recommendation })
@@ -77,7 +84,29 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
 
   console.log(`agent-runner loop: dispatch ${iteration}/${loopOptions.iterations}`)
   console.log(`command: pnpm ${commandArgs.join(" ")}`)
+  appendAgentRunnerEvent({
+    eventLogPath,
+    event: {
+      type: "loop.iteration.started",
+      command: ["pnpm", ...commandArgs],
+      iteration,
+      iterations: loopOptions.iterations,
+      repository,
+      recommendation: recommendationEventDetails(recommendation),
+    },
+  })
   const status = runDispatchCommand(commandArgs) ?? 1
+  appendAgentRunnerEvent({
+    eventLogPath,
+    event: {
+      type: "loop.iteration.completed",
+      iteration,
+      iterations: loopOptions.iterations,
+      repository,
+      status,
+      recommendation: recommendationEventDetails(recommendation),
+    },
+  })
   if (!shouldContinueLoop({ iteration, iterations: loopOptions.iterations, status })) {
     process.exitCode = status
     break
@@ -119,6 +148,7 @@ function printLoopPlan({ commandArgs, iteration, recommendation }) {
   console.log(`action: ${recommendation.action}`)
   console.log(`reason: ${recommendation.reason}`)
   console.log(`command: pnpm ${commandArgs.join(" ")}`)
+  console.log(`event log: ${eventLogPath}`)
 }
 
 function sleep(ms) {
