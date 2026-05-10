@@ -47,6 +47,7 @@ npm-debug.log*
 
 # Local agent / editor state (per-machine)
 .claude/
+.agent-worktrees/
 .agents/
 !.agents/
 !.agents/WORKFLOW.md

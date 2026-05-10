@@ -68,3 +68,19 @@ pnpm agent:queue:dry-run
 The dry run reads `Voyant Engineering`, checks the execution gate, and prints
 the branch, workspace, and execution-plan path it would use. It must not create
 branches, worktrees, comments, PRs, or Project updates.
+
+When the dry run shows an approved item, prepare the local workspace with:
+
+```bash
+pnpm agent:queue:prepare -- --issue <number> --yes
+```
+
+Prepare mode checks the same execution gate, creates a local worktree under
+`.agent-worktrees/`, creates the execution plan in that worktree, and stops.
+It must not run an implementation agent, push a branch, open a PR, comment on
+GitHub, or update Project fields.
+
+By default, prepare mode only selects Project items for the current checkout's
+`origin` repository. Organization Projects can contain issues from multiple
+repositories with the same issue number. Pass `--repo <owner/name>` only when
+preparing work for a different repository intentionally.
