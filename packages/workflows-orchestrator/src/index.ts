@@ -42,4 +42,11 @@ export {
   type TriggerArgs,
   trigger,
 } from "./orchestrator.js"
+export {
+  type CronSpec,
+  computeNextFire,
+  nextCronFire,
+  parseCron,
+  toMs,
+} from "./schedule.js"
 export * from "./types.js"

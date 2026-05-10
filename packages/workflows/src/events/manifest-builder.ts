@@ -9,9 +9,11 @@
 
 import type {
   EventFilterManifestEntry,
+  ManifestSchedule,
   WorkflowManifest,
   WorkflowManifestEntry,
 } from "../protocol/index.js"
+import type { ScheduleDeclaration } from "../workflow.js"
 import { canonicalJson, shortHash } from "./payload-hash.js"
 import type { EventFilterRuntimeEntry } from "./registry.js"
 
@@ -23,7 +25,12 @@ export interface BuildManifestArgs {
   /** Workflow definitions collected from modules + plugins. */
   workflows: ReadonlyArray<{
     id: string
-    config?: { defaultRuntime?: "edge" | "node"; retry?: unknown; timeout?: unknown }
+    config?: {
+      defaultRuntime?: "edge" | "node"
+      retry?: unknown
+      timeout?: unknown
+      schedule?: ScheduleDeclaration | ScheduleDeclaration[]
+    }
   }>
   /** Event-filter entries from `getEventFilterRegistry()`. */
   eventFilters: ReadonlyArray<EventFilterRuntimeEntry>
@@ -50,7 +57,7 @@ export async function buildManifest(args: BuildManifestArgs): Promise<WorkflowMa
       id: wf.id,
       version: "v1",
       steps: [],
-      schedules: [],
+      schedules: serializeSchedules(wf.config?.schedule),
       defaultRuntime: wf.config?.defaultRuntime ?? "edge",
       hasCompensation: false,
       sourceLocation: { file: "<runtime>", line: 0 },
@@ -94,4 +101,29 @@ export async function buildManifest(args: BuildManifestArgs): Promise<WorkflowMa
     ...(draft as Omit<WorkflowManifest, "versionId">),
     versionId,
   }
+}
+
+function serializeSchedules(
+  schedule: ScheduleDeclaration | ScheduleDeclaration[] | undefined,
+): ManifestSchedule[] {
+  if (!schedule) return []
+  const schedules = Array.isArray(schedule) ? schedule : [schedule]
+  return schedules.map(serializeSchedule)
+}
+
+function serializeSchedule(schedule: ScheduleDeclaration): ManifestSchedule {
+  const out: ManifestSchedule = {}
+  if ("cron" in schedule) out.cron = schedule.cron
+  if ("every" in schedule) out.every = schedule.every
+  if ("at" in schedule) {
+    out.at = schedule.at instanceof Date ? schedule.at.toISOString() : schedule.at
+  }
+  if (schedule.timezone !== undefined) out.timezone = schedule.timezone
+  if (schedule.input !== undefined && typeof schedule.input !== "function")
+    out.input = schedule.input
+  if (schedule.enabled !== undefined) out.enabled = schedule.enabled
+  if (schedule.overlap !== undefined) out.overlap = schedule.overlap
+  if (schedule.environments !== undefined) out.environments = schedule.environments
+  if (schedule.name !== undefined) out.name = schedule.name
+  return out
 }
