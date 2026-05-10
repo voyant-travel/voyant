@@ -1,5 +1,13 @@
 # @voyantjs/promotions-react
 
+## 0.30.7
+
+### Patch Changes
+
+- Updated dependencies [d1a8835]
+  - @voyantjs/promotions@0.30.7
+  - @voyantjs/react@0.30.7
+
 ## 0.30.6
 
 ### Patch Changes
