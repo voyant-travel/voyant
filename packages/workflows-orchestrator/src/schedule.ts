@@ -46,6 +46,11 @@ interface SourceState {
   nextAt: number
   done: boolean
   inFlight: boolean
+  queued: QueuedFire[]
+}
+
+interface QueuedFire {
+  fireAt: number
 }
 
 export function manifestScheduleSources(manifest: WorkflowManifest): ScheduleSource[] {
@@ -87,6 +92,7 @@ export function createScheduler(deps: SchedulerDeps): SchedulerHandle {
       nextAt: firstAt,
       done: false,
       inFlight: false,
+      queued: [],
     })
   }
 
@@ -108,42 +114,44 @@ export function createScheduler(deps: SchedulerDeps): SchedulerHandle {
     }
   }
 
+  const fire = async (state: SourceState, fireAt: number): Promise<void> => {
+    try {
+      const input = await resolveInput(state.source.decl.input)
+      await deps.onFire({
+        workflowId: state.source.workflowId,
+        input,
+        scheduleId: state.scheduleId,
+        scheduleName: state.source.decl.name,
+        fireAt,
+      })
+    } catch (err) {
+      log("error", `scheduler: onFire threw for "${state.source.workflowId}": ${String(err)}`)
+    } finally {
+      const next = state.queued.shift()
+      if (next) {
+        void fire(state, next.fireAt)
+      } else {
+        state.inFlight = false
+      }
+    }
+  }
+
   const doTick = async (): Promise<void> => {
     const t = now()
     const ready = states.filter((state) => !state.done && state.nextAt <= t)
     for (const state of ready) {
       const overlap = state.source.decl.overlap ?? "skip"
       if (state.inFlight && overlap === "skip") continue
-      let input: unknown
-      try {
-        input = await resolveInput(state.source.decl.input)
-      } catch (err) {
-        log(
-          "error",
-          `scheduler: failed to resolve input for "${state.source.workflowId}": ${String(err)}`,
-        )
+      const fireAt = state.nextAt
+      if (state.inFlight && overlap === "queue") {
+        state.queued.push({ fireAt })
         advanceAfterFire(state, t)
         continue
       }
       state.inFlight = true
-      const fireAt = state.nextAt
-      const firePromise = (async () => {
-        try {
-          await deps.onFire({
-            workflowId: state.source.workflowId,
-            input,
-            scheduleId: state.scheduleId,
-            scheduleName: state.source.decl.name,
-            fireAt,
-          })
-        } catch (err) {
-          log("error", `scheduler: onFire threw for "${state.source.workflowId}": ${String(err)}`)
-        } finally {
-          state.inFlight = false
-        }
-      })()
+      const firePromise = fire(state, fireAt)
       advanceAfterFire(state, t)
-      if (overlap === "skip") await firePromise
+      if (overlap !== "allow") await firePromise
     }
   }
 
