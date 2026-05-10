@@ -50,6 +50,7 @@ export type LegalUiMessages = {
     create: string
     edit: string
     add: string
+    delete: string
     loading: string
     none: string
     selectPlaceholder: string
@@ -167,6 +168,37 @@ export type LegalUiMessages = {
       createdAt: string
     }
     deleteConfirm: string
+  }
+  templateDetailPage: {
+    notFound: string
+    backToTemplates: string
+    currentBadge: string
+    variablesDescription: string
+    deleteConfirm: string
+    actions: {
+      addVersion: string
+    }
+    sections: {
+      details: string
+      description: string
+      currentBody: string
+      variables: string
+      versions: string
+    }
+    fields: {
+      language: string
+      currentVersionId: string
+      created: string
+      updated: string
+      version: string
+      changelog: string
+      createdBy: string
+      createdAt: string
+    }
+    empty: {
+      noDescription: string
+      noVersions: string
+    }
   }
   attachmentDialog: {
     titles: {

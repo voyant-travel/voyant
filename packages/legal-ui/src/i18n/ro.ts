@@ -7,6 +7,7 @@ export const legalUiRo = {
     create: "Creeaza",
     edit: "Editeaza",
     add: "Adauga",
+    delete: "Sterge",
     loading: "Se incarca...",
     none: "-",
     selectPlaceholder: "Selecteaza...",
@@ -155,6 +156,38 @@ export const legalUiRo = {
       createdAt: "Creat la",
     },
     deleteConfirm: 'Stergi sablonul "{name}"?',
+  },
+  templateDetailPage: {
+    notFound: "Sablonul nu a fost gasit",
+    backToTemplates: "Inapoi la sabloane",
+    currentBadge: "Curent",
+    variablesDescription:
+      "Sabloanele se randeaza cu Liquid. Foloseste referinta de mai jos pentru variabile, filtre, bucle si conditii.",
+    deleteConfirm: 'Stergi sablonul "{name}"?',
+    actions: {
+      addVersion: "Adauga versiune",
+    },
+    sections: {
+      details: "Detalii sablon",
+      description: "Descriere",
+      currentBody: "Continut curent",
+      variables: "Variabile sablon si Liquid",
+      versions: "Versiuni",
+    },
+    fields: {
+      language: "Limba",
+      currentVersionId: "ID versiune curenta",
+      created: "Creat",
+      updated: "Actualizat",
+      version: "Versiune",
+      changelog: "Jurnal modificari",
+      createdBy: "Creat de",
+      createdAt: "Creat la",
+    },
+    empty: {
+      noDescription: "Nu exista descriere.",
+      noVersions: "Nu exista inca versiuni.",
+    },
   },
   attachmentDialog: {
     titles: {

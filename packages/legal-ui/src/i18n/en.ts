@@ -7,6 +7,7 @@ export const legalUiEn = {
     create: "Create",
     edit: "Edit",
     add: "Add",
+    delete: "Delete",
     loading: "Loading...",
     none: "-",
     selectPlaceholder: "Select...",
@@ -155,6 +156,38 @@ export const legalUiEn = {
       createdAt: "Created At",
     },
     deleteConfirm: 'Delete template "{name}"?',
+  },
+  templateDetailPage: {
+    notFound: "Template not found",
+    backToTemplates: "Back to Templates",
+    currentBadge: "Current",
+    variablesDescription:
+      "Templates render with Liquid. Use the reference below to see available variables, filters, loops, and conditionals.",
+    deleteConfirm: 'Delete template "{name}"?',
+    actions: {
+      addVersion: "Add Version",
+    },
+    sections: {
+      details: "Template Details",
+      description: "Description",
+      currentBody: "Current Body",
+      variables: "Template Variables & Liquid",
+      versions: "Versions",
+    },
+    fields: {
+      language: "Language",
+      currentVersionId: "Current Version ID",
+      created: "Created",
+      updated: "Updated",
+      version: "Version",
+      changelog: "Changelog",
+      createdBy: "Created By",
+      createdAt: "Created At",
+    },
+    empty: {
+      noDescription: "No description provided.",
+      noVersions: "No versions yet.",
+    },
   },
   attachmentDialog: {
     titles: {

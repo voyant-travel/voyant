@@ -23,6 +23,10 @@ export { PolicyRuleDialog, type RuleData } from "./components/policy-rule-dialog
 export { PolicyVersionDialog } from "./components/policy-version-dialog.js"
 export { SignatureDialog } from "./components/signature-dialog.js"
 export {
+  TemplateDetailPage,
+  type TemplateDetailPageProps,
+} from "./components/template-detail-page.js"
+export {
   type TemplateDialogRenderProps,
   TemplatesPage,
   type TemplatesPageProps,
