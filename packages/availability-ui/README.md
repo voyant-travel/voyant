@@ -1,24 +1,25 @@
 # @voyantjs/availability-ui
 
-Reusable availability UI primitives for Voyant operator/admin apps.
-
-The initial package surface is intentionally leaf-level so downstream apps can
-replace copied availability UI incrementally while page-level composition stays
-app-owned.
+Reusable availability UI primitives and page compositions for Voyant
+operator/admin apps.
 
 ## Exports
 
 | Entry | Description |
 | --- | --- |
 | `.` | Barrel re-exports |
+| `./i18n` | Availability UI message provider, defaults, and helpers |
 | `./components/*` | Availability UI components |
 | `./utils` | Small formatting helpers |
 
 ## Surface
 
-The package exports reusable pieces that keep app-owned data fetching,
-routing, and mutations injected through props:
+The package exports reusable pieces that keep app-owned routing and the
+availability batch mutations injected through props:
 
+- `AvailabilityPage`
+- `AvailabilityRuleDetailPage`, `AvailabilitySlotDetailPage`,
+  `AvailabilityStartTimeDetailPage`
 - `AvailabilityOverview`
 - `AvailabilitySlotsTab`, `AvailabilityRulesTab`, `AvailabilityStartTimesTab`
 - `AvailabilityCloseoutsTab`, `AvailabilityPickupPointsTab`
@@ -27,9 +28,78 @@ routing, and mutations injected through props:
 - `AvailabilityPageSkeleton`, `AvailabilityBodySkeleton`, detail skeletons
 - `availability*Columns` table column builders
 - `AvailabilitySectionHeader`
+- `AvailabilityUiMessagesProvider` and i18n helpers from `./i18n`
 - `formatLocalizedSelectionLabel`
 
 ## Usage
+
+`AvailabilityPage` owns the common operator availability shell, data hooks,
+filters, overview metrics, table tabs, calendar tab, and rule/slot/start-time
+dialogs. Route navigation and batch mutations stay app-specific:
+
+```tsx
+import { AvailabilityPage } from "@voyantjs/availability-ui"
+
+<AvailabilityPage
+  onSlotOpen={(id) => navigate({ to: "/availability/$id", params: { id } })}
+  onRuleOpen={(id) => navigate({ to: "/availability/rules/$id", params: { id } })}
+  onStartTimeOpen={(id) =>
+    navigate({ to: "/availability/start-times/$id", params: { id } })
+  }
+  onProductOpen={(id) => navigate({ to: "/products/$id", params: { id } })}
+  onBulkUpdate={handleAvailabilityBulkUpdate}
+  onBulkDelete={handleAvailabilityBulkDelete}
+/>
+```
+
+Closeout and pickup-point mutations are not owned by `availability-react` yet.
+Pass `onCloseoutSubmit` and `onPickupPointSubmit` to use the package dialogs, or
+use the `slots.dialogs` escape hatch to render app-owned dialogs.
+
+Detail pages expose query/loader helpers that accept the app's API client:
+
+```tsx
+import {
+  AvailabilitySlotDetailPage,
+  loadAvailabilitySlotDetailPage,
+} from "@voyantjs/availability-ui"
+import { defaultFetcher } from "@voyantjs/availability-react"
+
+const client = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
+
+export const Route = createFileRoute("/_workspace/availability/$id")({
+  loader: ({ context, params }) =>
+    loadAvailabilitySlotDetailPage(context.queryClient, client, params.id),
+  component: () => {
+    const { id } = Route.useParams()
+    return (
+      <AvailabilitySlotDetailPage
+        id={id}
+        onBack={() => navigate({ to: "/availability" })}
+        onOpenProduct={(productId) =>
+          navigate({ to: "/products/$id", params: { id: productId } })
+        }
+        onOpenStartTime={(startTimeId) =>
+          navigate({ to: "/availability/start-times/$id", params: { id: startTimeId } })
+        }
+      />
+    )
+  },
+})
+```
+
+Wrap consumers in `AvailabilityUiMessagesProvider` for package-level copy and
+locale-aware formatting. Without a provider the package falls back to English.
+
+```tsx
+import { AvailabilityUiMessagesProvider } from "@voyantjs/availability-ui/i18n"
+
+<AvailabilityUiMessagesProvider locale={resolvedLocale}>
+  <AvailabilityPage onBulkUpdate={handleBulkUpdate} onBulkDelete={handleBulkDelete} />
+</AvailabilityUiMessagesProvider>
+```
+
+Leaf components remain available for custom page shells:
 
 ```tsx
 import { AvailabilitySectionHeader } from "@voyantjs/availability-ui"
