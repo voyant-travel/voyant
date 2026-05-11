@@ -236,7 +236,7 @@ describe("agent runner tick helpers", () => {
       ),
       {
         action: "wait-remote-adapter",
-        command: null,
+        command: "pnpm agent:queue:remote-inspect -- --issue 579 --repo voyantjs/other",
         heartbeat: {
           reason: "Last Heartbeat is 0 days old",
           stale: false,
@@ -289,7 +289,7 @@ describe("agent runner tick helpers", () => {
       ),
       {
         action: "wait-remote-cleanup",
-        command: null,
+        command: "pnpm agent:queue:remote-inspect -- --issue 579 --repo voyantjs/other",
         heartbeat: null,
         issue: workItem().issue,
         priority: 90,

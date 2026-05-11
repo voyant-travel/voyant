@@ -55,7 +55,7 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
     })
   }
 
-  const workspaceRecommendation = remoteWorkspaceRecommendation(item, { heartbeat })
+  const workspaceRecommendation = remoteWorkspaceRecommendation(item, { heartbeat, repository })
   if (workspaceRecommendation) {
     return workspaceRecommendation
   }
@@ -183,7 +183,7 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
   })
 }
 
-function remoteWorkspaceRecommendation(item, { heartbeat }) {
+function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
   const workspace = item.fields.Workspace
   if (!workspace) return null
 
@@ -208,7 +208,12 @@ function remoteWorkspaceRecommendation(item, { heartbeat }) {
   if (state === "Done" || state === "Abandoned") {
     return recommendation(item, {
       action: "wait-remote-cleanup",
-      command: null,
+      command: commandWithIssue({
+        command: "remote-inspect",
+        issueNumber: item.issue.number,
+        mutate: false,
+        repository,
+      }),
       heartbeat,
       priority: 90,
       reason: `remote workspace ${descriptor.reference} needs remote adapter cleanup`,
@@ -223,7 +228,12 @@ function remoteWorkspaceRecommendation(item, { heartbeat }) {
   ) {
     return recommendation(item, {
       action: "wait-remote-adapter",
-      command: null,
+      command: commandWithIssue({
+        command: "remote-inspect",
+        issueNumber: item.issue.number,
+        mutate: false,
+        repository,
+      }),
       heartbeat,
       priority: 29,
       reason: `remote workspace ${descriptor.reference} requires a remote adapter`,
@@ -333,12 +343,12 @@ function isRemoteEvidence(evidence) {
   return /^https?:\/\//.test(evidence)
 }
 
-function commandWithIssue({ command, extraArgs = [], issueNumber, repository }) {
+function commandWithIssue({ command, extraArgs = [], issueNumber, mutate = true, repository }) {
   return [
     `pnpm agent:queue:${command} -- --issue ${issueNumber}`,
     repository ? `--repo ${repository}` : null,
     ...extraArgs,
-    "--yes",
+    mutate ? "--yes" : null,
   ]
     .filter(Boolean)
     .join(" ")

@@ -134,6 +134,8 @@ paths. Cleanup only removes local worktrees under `.agent-worktrees/`.
 Until the remote adapter is implemented, local-only commands such as
 `run-command`, `capture-browser`, `handoff`, `publish-evidence`, and `open-pr`
 reject `sandbox:` workspace references instead of resolving them as paths.
+Use `pnpm agent:queue:remote-inspect -- --issue <number>` to inspect a remote
+workspace reference and confirm whether its provider adapter is configured.
 
 After start, run a supervised provider-neutral command in the claimed
 workspace:
@@ -212,7 +214,8 @@ machine-readable actions. `Merge Ready` items with linked PRs keep recommending
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
 CI repair packet exists. Items with `sandbox:<provider>:<id>` workspaces
 recommend wait states instead of local workspace commands until a remote adapter
-owns execution and cleanup. Malformed reserved `sandbox:` values recommend
+owns execution and cleanup; their recommendation includes a read-only
+`remote-inspect` command. Malformed reserved `sandbox:` values recommend
 `inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
