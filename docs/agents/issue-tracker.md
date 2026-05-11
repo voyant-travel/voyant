@@ -127,6 +127,11 @@ execution plan, then updates the Project item to `Agent State = Planning`.
 It still does not run an implementation agent, push a branch, open a PR, or
 publish evidence.
 
+The `Workspace` Project field is typed by convention. Local runner commands use
+`.agent-worktrees/<issue-number>-<slug>`. Future remote adapters use
+`sandbox:<provider>:<id>` and must not be interpreted as local filesystem
+paths. Cleanup only removes local worktrees under `.agent-worktrees/`.
+
 After start, run a supervised provider-neutral command in the claimed
 workspace:
 
@@ -141,10 +146,11 @@ ignored transcript under `.agent-runs/`, writes an evidence packet inside the
 workspace, then moves the item to `Human Review` on exit code `0` or `Blocked`
 on nonzero exit. The command receives `VOYANT_AGENT_*` environment variables
 for the issue, branch, workspace, plan path, evidence path, log path, repository,
-verification lane, and browser artifact location. Successful UI-labeled runs
-must pass `--ui-evidence <text>` or they are blocked instead of moved to
-`Human Review`; nonzero exits are still blocked by the command failure. It does
-not push branches, open PRs, or publish evidence comments.
+verification lane, workspace descriptor, and browser artifact location.
+Successful UI-labeled runs must pass `--ui-evidence <text>` or they are blocked
+instead of moved to `Human Review`; nonzero exits are still blocked by the
+command failure. It does not push branches, open PRs, or publish evidence
+comments.
 
 For UI work, capture browser evidence before handoff or before a successful
 `run-command` transition:

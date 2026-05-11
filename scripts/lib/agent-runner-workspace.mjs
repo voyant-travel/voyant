@@ -2,6 +2,10 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
 import { fail, runGit } from "./agent-project-queue.mjs"
+import {
+  isLocalWorkspaceDescriptor,
+  parseWorkspaceReference,
+} from "./agent-runner-workspace-contract.mjs"
 
 export function workspacePlan({ baseRef = "origin/main", item, repoRoot }) {
   const workspace = path.resolve(repoRoot, item.dryRunPlan.workspace)
@@ -17,14 +21,14 @@ export function workspacePlan({ baseRef = "origin/main", item, repoRoot }) {
 
 export function cleanupWorkspacePlan({ item, repoRoot, workspaceReference }) {
   const reference = workspaceReference ?? item.fields.Workspace ?? item.dryRunPlan.workspace
-  const workspace = path.resolve(repoRoot, reference)
-  const agentWorktreeRoot = path.resolve(repoRoot, ".agent-worktrees")
+  const descriptor = parseWorkspaceReference(reference, { repoRoot })
 
   return {
     workspaceReference: reference,
-    workspace,
-    agentWorktreeRoot,
-    safeWorkspace: isPathInside(workspace, agentWorktreeRoot),
+    workspace: descriptor.workspace ?? null,
+    agentWorktreeRoot: descriptor.agentWorktreeRoot ?? path.resolve(repoRoot, ".agent-worktrees"),
+    safeWorkspace: isLocalWorkspaceDescriptor(descriptor) && descriptor.safeLocalWorkspace,
+    workspaceDescriptor: descriptor,
   }
 }
 
@@ -64,11 +68,6 @@ export function prepareWorkspace({ baseRef = "origin/main", item, repoRoot }) {
   writeFileSync(plan.planPath, buildExecutionPlan(item, plan), "utf8")
 
   return plan
-}
-
-function isPathInside(candidatePath, parentPath) {
-  const relative = path.relative(parentPath, candidatePath)
-  return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative)
 }
 
 export function assertWorkspaceAvailable({ branch, repoRoot, workspace }) {

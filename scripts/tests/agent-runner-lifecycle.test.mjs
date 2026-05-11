@@ -18,6 +18,10 @@ import {
   removeWorkspace,
   workspacePlan,
 } from "../lib/agent-runner-workspace.mjs"
+import {
+  parseWorkspaceReference,
+  workspaceDescriptorEnvironment,
+} from "../lib/agent-runner-workspace-contract.mjs"
 import { workItem } from "./agent-fixtures.mjs"
 
 describe("agent runner lifecycle helpers", () => {
@@ -59,6 +63,15 @@ describe("agent runner lifecycle helpers", () => {
       workspace: path.resolve("/repo/.agent-worktrees/579-test-agent-project-intake-workflow"),
       agentWorktreeRoot: path.resolve("/repo/.agent-worktrees"),
       safeWorkspace: true,
+      workspaceDescriptor: {
+        agentWorktreeRoot: path.resolve("/repo/.agent-worktrees"),
+        id: "579-test-agent-project-intake-workflow",
+        kind: "local-worktree",
+        provider: null,
+        reference: ".agent-worktrees/579-test-agent-project-intake-workflow",
+        safeLocalWorkspace: true,
+        workspace: path.resolve("/repo/.agent-worktrees/579-test-agent-project-intake-workflow"),
+      },
     })
   })
 
@@ -70,6 +83,68 @@ describe("agent runner lifecycle helpers", () => {
         workspaceReference: "../outside",
       }).safeWorkspace,
       false,
+    )
+  })
+
+  it("does not treat remote sandbox references as local cleanup paths", () => {
+    const plan = cleanupWorkspacePlan({
+      item: workItem(),
+      repoRoot: "/repo",
+      workspaceReference: "sandbox:sprite:task-579",
+    })
+
+    assert.equal(plan.workspace, null)
+    assert.equal(plan.safeWorkspace, false)
+    assert.deepEqual(plan.workspaceDescriptor, {
+      id: "task-579",
+      kind: "remote-sandbox",
+      provider: "sprite",
+      reference: "sandbox:sprite:task-579",
+    })
+  })
+
+  it("parses local and remote workspace references", () => {
+    assert.deepEqual(
+      parseWorkspaceReference(".agent-worktrees/579-test-agent-project-intake-workflow", {
+        repoRoot: "/repo",
+      }),
+      {
+        agentWorktreeRoot: path.resolve("/repo/.agent-worktrees"),
+        id: "579-test-agent-project-intake-workflow",
+        kind: "local-worktree",
+        provider: null,
+        reference: ".agent-worktrees/579-test-agent-project-intake-workflow",
+        safeLocalWorkspace: true,
+        workspace: path.resolve("/repo/.agent-worktrees/579-test-agent-project-intake-workflow"),
+      },
+    )
+
+    assert.deepEqual(parseWorkspaceReference("sandbox:sprite:task-579", { repoRoot: "/repo" }), {
+      id: "task-579",
+      kind: "remote-sandbox",
+      provider: "sprite",
+      reference: "sandbox:sprite:task-579",
+    })
+
+    assert.deepEqual(
+      workspaceDescriptorEnvironment(
+        parseWorkspaceReference("sandbox:sprite:task-579", { repoRoot: "/repo" }),
+      ),
+      {
+        VOYANT_AGENT_WORKSPACE_ID: "task-579",
+        VOYANT_AGENT_WORKSPACE_KIND: "remote-sandbox",
+        VOYANT_AGENT_WORKSPACE_PROVIDER: "sprite",
+        VOYANT_AGENT_WORKSPACE_REFERENCE: "sandbox:sprite:task-579",
+      },
+    )
+
+    assert.equal(
+      workspaceDescriptorEnvironment(
+        parseWorkspaceReference(".agent-worktrees/579-test-agent-project-intake-workflow", {
+          repoRoot: "/repo",
+        }),
+      ).VOYANT_AGENT_WORKSPACE_PROVIDER,
+      "",
     )
   })
 
@@ -178,6 +253,13 @@ describe("agent runner lifecycle helpers", () => {
     assert.equal(env.VOYANT_AGENT_BRANCH, "task/579-test-agent-project-intake-workflow")
     assert.equal(env.VOYANT_AGENT_REPOSITORY, "voyantjs/voyant")
     assert.equal(env.VOYANT_AGENT_VERIFICATION_LANE, "verify:fast")
+    assert.equal(env.VOYANT_AGENT_WORKSPACE_ID, "579-test-agent-project-intake-workflow")
+    assert.equal(env.VOYANT_AGENT_WORKSPACE_KIND, "local-worktree")
+    assert.equal(env.VOYANT_AGENT_WORKSPACE_PROVIDER, "")
+    assert.equal(
+      env.VOYANT_AGENT_WORKSPACE_REFERENCE,
+      ".agent-worktrees/579-test-agent-project-intake-workflow",
+    )
     assert.equal(env.VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH, undefined)
   })
 

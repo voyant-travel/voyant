@@ -577,7 +577,7 @@ Recommended fields:
 | `Verification Lane` | Single select | `package`, `verify:fast`, `verify:full`, `custom`. |
 | `Triage Provider` | Single select | Cheap intake model or `manual`. |
 | `Agent Provider` | Single select | `codex`, `claude`, `manual`, `none`. |
-| `Workspace` | Text | Local path or sandbox id. |
+| `Workspace` | Text | Local worktree path or remote sandbox reference. |
 | `Branch` | Text | Current work branch. |
 | `PR` | Text | Pull request URL. |
 | `Last Heartbeat` | Date | Staleness detection. |
@@ -802,12 +802,18 @@ behavior. They may solve local RAM pressure and allow work to keep running
 without a developer laptop.
 
 The runner should treat Sprites as one adapter behind the same workspace
-interface:
+interface. The GitHub Project `Workspace` field should use one of two typed
+references: `.agent-worktrees/<issue-number>-<slug>` for local worktrees, or
+`sandbox:<provider>:<id>` for remote sandboxes. Runner code must parse the
+reference before acting on it; a remote sandbox reference must not be resolved
+as a local path.
 
 ```ts
 interface AgentWorkspace {
   id: string
-  kind: "local-worktree" | "sprite"
+  kind: "local-worktree" | "remote-sandbox"
+  provider?: string
+  reference: string
   cwd: string
   branch: string
   exec(command: WorkspaceCommand): Promise<WorkspaceCommandResult>
@@ -1129,6 +1135,8 @@ Verification:
 
 Deliverables:
 
+- Define and enforce the workspace reference contract shared by local worktrees
+  and remote sandboxes.
 - Add the first remote sandbox adapter behind the same workspace interface,
   likely `SpriteWorkspace` unless another provider proves better during the
   pilot.
