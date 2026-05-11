@@ -79,6 +79,21 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
     })
   }
 
+  if (state === "CI Repair" && hasCiRepairEvidence(item.fields.Evidence)) {
+    return recommendation(item, {
+      action: "run-command",
+      command: commandWithIssue({
+        command: "run-command",
+        extraArgs: ['--command "<ci-repair-command>"'],
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: 30,
+      reason: "CI repair packet is ready for a narrow repair command",
+    })
+  }
+
   if (runnableStates.has(state)) {
     return recommendation(item, {
       action: "run-command",

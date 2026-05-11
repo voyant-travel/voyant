@@ -16,7 +16,31 @@ export function failingCheckDetails(pr) {
 }
 
 export function hasCiRepairEvidence(evidence) {
-  return typeof evidence === "string" && /^\.agent-runs\/.+\/ci-repair-[^/]+\.md$/.test(evidence)
+  return (
+    typeof evidence === "string" &&
+    !evidence.split("/").includes("..") &&
+    /^\.agent-runs\/.+\/ci-repair-[^/]+\.md$/.test(evidence)
+  )
+}
+
+export function ciRepairEvidenceEnvironment({ evidenceReference, repoRoot }) {
+  const evidencePath = resolveCiRepairEvidencePath({ evidenceReference, repoRoot })
+  if (!evidencePath) return {}
+
+  return {
+    VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH: evidencePath,
+    VOYANT_AGENT_CI_REPAIR_EVIDENCE_REFERENCE: evidenceReference,
+  }
+}
+
+export function resolveCiRepairEvidencePath({ evidenceReference, repoRoot }) {
+  if (!hasCiRepairEvidence(evidenceReference)) return null
+
+  const evidenceRoot = path.resolve(repoRoot, ".agent-runs")
+  const evidencePath = path.resolve(repoRoot, evidenceReference)
+  if (!isPathInside(evidencePath, evidenceRoot)) return null
+
+  return evidencePath
 }
 
 export function ciRepairArtifactPlan({ date = new Date(), item, repoRoot }) {
@@ -158,6 +182,11 @@ function runFailedLogCommand(args, options) {
 function truncateLog(value, maxLogBytes) {
   if (value.length <= maxLogBytes) return value
   return `${value.slice(0, maxLogBytes)}\n\n[truncated after ${maxLogBytes} bytes]`
+}
+
+function isPathInside(candidatePath, parentPath) {
+  const relative = path.relative(parentPath, candidatePath)
+  return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative)
 }
 
 function slugFromTitle(title) {

@@ -31,7 +31,14 @@ describe("agent control plane", () => {
     expect(buildCapabilities()).toMatchObject({
       service: "agent-control-plane",
       dryRunOnly: true,
-      dispatchableActions: ["cleanup", "open-pr", "publish-evidence", "start", "sync-pr"],
+      dispatchableActions: [
+        "collect-ci",
+        "cleanup",
+        "open-pr",
+        "publish-evidence",
+        "start",
+        "sync-pr",
+      ],
     })
   })
 
@@ -92,6 +99,38 @@ describe("agent control plane", () => {
     ).toEqual({
       plan: null,
       reason: "action run-command is not dispatchable",
+    })
+  })
+
+  it("selects CI evidence collection but not implementation execution", () => {
+    const ciRecommendation = {
+      action: "collect-ci",
+      reason: "failing PR checks need a local CI repair packet",
+      issue: {
+        number: 626,
+        title: "Repair failing checks",
+        url: "https://github.com/voyantjs/voyant/issues/626",
+        repository: "voyantjs/voyant",
+      },
+    }
+
+    expect(
+      selectDispatchPlan({
+        recommendations: [ciRecommendation, recommendations[0]!],
+        repository: "voyantjs/voyant",
+      }).plan,
+    ).toMatchObject({
+      action: "collect-ci",
+      command: [
+        "pnpm",
+        "agent:queue:collect-ci",
+        "--",
+        "--issue",
+        "626",
+        "--repo",
+        "voyantjs/voyant",
+        "--yes",
+      ],
     })
   })
 

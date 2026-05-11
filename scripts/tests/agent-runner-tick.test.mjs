@@ -126,7 +126,7 @@ describe("agent runner tick helpers", () => {
       "pnpm agent:queue:cleanup -- --issue 579 --repo voyantjs/other --yes",
     )
 
-    assert.equal(
+    assert.deepEqual(
       recommendQueueAction(
         workItem({
           fields: {
@@ -138,8 +138,20 @@ describe("agent runner tick helpers", () => {
           },
         }),
         { maxAgeDays: 1, repository: "voyantjs/other" },
-      ).action,
-      "run-command",
+      ),
+      {
+        action: "run-command",
+        command:
+          'pnpm agent:queue:run-command -- --issue 579 --repo voyantjs/other --command "<ci-repair-command>" --yes',
+        heartbeat: {
+          reason: "Last Heartbeat is 0 days old",
+          stale: false,
+        },
+        issue: workItem().issue,
+        priority: 30,
+        reason: "CI repair packet is ready for a narrow repair command",
+        state: "CI Repair",
+      },
     )
   })
 
