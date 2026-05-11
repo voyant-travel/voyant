@@ -29,6 +29,10 @@ const smartbillSync = smartbillPlugin({
   companyVatCode: "RO12345678",
   seriesName: "A",
   // optional: language, art311SpecialRegime, events, mapEvent, logger
+  artifacts: {
+    db: appDb,
+    documentStorage,
+  },
 })
 
 const app = createApp({
@@ -38,10 +42,21 @@ const app = createApp({
 
 `smartbillPlugin(...)` is the packaged distribution helper. At runtime, the
 package behaves primarily as a subscriber-driven SmartBill sync adapter. By
-default it wires up 3 subscribers (`invoice.issued`, `invoice.voided`,
+default it wires up 4 subscribers (`invoice.issued`,
+`invoice.proforma.issued`, `invoice.voided`,
 `invoice.external.sync.requested`) that create, cancel, and check payment
 status on SmartBill. All error handling is fire-and-forget per the EventBus
 contract.
+
+When `artifacts.db` is configured, successful invoice/proforma creation also
+registers the SmartBill external reference through `@voyantjs/finance`. When
+`artifacts.documentStorage` is configured, the plugin downloads the generated
+SmartBill PDF, uploads it to document storage, and records both a ready
+`invoice_renditions` row and a `smartbill_pdf` `invoice_attachments` row. The
+upload path defaults to `invoices/<invoiceId>/smartbill/...`; pass
+`artifacts.documentStorageKeyPrefix` to customize it. Existing
+`smartbill_pdf` attachments are reused so repeat event delivery does not upload
+the same PDF again.
 
 ## Exports
 

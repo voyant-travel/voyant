@@ -1,5 +1,11 @@
 import { z } from "zod"
 import type {
+  SmartbillArtifactPersistenceOptions,
+  SmartbillDbResolver,
+  SmartbillDocumentStorageResolver,
+  SmartbillStorageKeyPrefixResolver,
+} from "./artifacts.js"
+import type {
   SmartbillLogger,
   SmartbillMapFn,
   SmartbillPluginOptions,
@@ -31,11 +37,55 @@ const optionalMapEvent = z.custom<SmartbillMapFn | undefined>(
   "Expected a mapEvent function",
 )
 
+const optionalDb = z.custom<SmartbillDbResolver | undefined>(
+  (value) =>
+    value === undefined ||
+    typeof value === "function" ||
+    (typeof value === "object" && value !== null),
+  "Expected a database handle or resolver function",
+)
+
+function isStorageProvider(value: unknown) {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { upload?: unknown }).upload === "function" &&
+    typeof (value as { delete?: unknown }).delete === "function" &&
+    typeof (value as { signedUrl?: unknown }).signedUrl === "function" &&
+    typeof (value as { get?: unknown }).get === "function"
+  )
+}
+
+const optionalDocumentStorage = z.custom<SmartbillDocumentStorageResolver | undefined>(
+  (value) =>
+    value === undefined ||
+    value === null ||
+    typeof value === "function" ||
+    isStorageProvider(value),
+  "Expected a storage provider or resolver function",
+)
+
+const optionalDocumentStorageKeyPrefix = z.custom<SmartbillStorageKeyPrefixResolver | undefined>(
+  (value) => value === undefined || typeof value === "string" || typeof value === "function",
+  "Expected a storage key prefix string or resolver function",
+)
+
+const optionalArtifacts = z.custom<SmartbillArtifactPersistenceOptions | undefined>((value) => {
+  if (value === undefined) return true
+  if (typeof value !== "object" || value === null) return false
+  const artifacts = value as SmartbillArtifactPersistenceOptions
+  return (
+    optionalDb.safeParse(artifacts.db).success &&
+    optionalDocumentStorage.safeParse(artifacts.documentStorage).success &&
+    optionalDocumentStorageKeyPrefix.safeParse(artifacts.documentStorageKeyPrefix).success
+  )
+}, "Expected valid SmartBill artifact persistence options")
+
 const optionalEvents = z.custom<SmartbillSyncEventNames | undefined>((value) => {
   if (value === undefined) return true
   if (typeof value !== "object" || value === null) return false
   const events = value as SmartbillSyncEventNames
-  return [events.issued, events.voided, events.syncRequested].every(
+  return [events.issued, events.proformaIssued, events.voided, events.syncRequested].every(
     (entry) => entry === undefined || (typeof entry === "string" && entry.trim().length > 0),
   )
 }, "Expected event names to be non-empty strings")
@@ -53,4 +103,8 @@ export const smartbillPluginOptionsSchema = z.object({
   events: optionalEvents.optional(),
   mapEvent: optionalMapEvent.optional(),
   logger: optionalLogger.optional(),
+  artifacts: optionalArtifacts.optional(),
+  db: optionalDb.optional(),
+  documentStorage: optionalDocumentStorage.optional(),
+  documentStorageKeyPrefix: optionalDocumentStorageKeyPrefix.optional(),
 }) satisfies z.ZodType<SmartbillPluginOptions>
