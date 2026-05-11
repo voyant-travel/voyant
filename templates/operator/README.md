@@ -46,6 +46,12 @@ pnpm -F operator deploy
 - `/api/auth/*` — Better Auth handler
 - `/*` — TanStack Start SSR dashboard
 
+## Operator Shell
+
+The workspace shell uses the shared `OperatorAdminWorkspaceLayout`. Operators
+can collapse or expand the sidebar from the header trigger, or with `Cmd+B` on
+macOS and `Ctrl+B` on Windows and Linux.
+
 ## License
 
 Apache-2.0
