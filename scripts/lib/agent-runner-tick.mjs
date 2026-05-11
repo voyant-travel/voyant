@@ -4,6 +4,10 @@ import {
 } from "./agent-runner-browser-evidence.mjs"
 import { hasCiRepairEvidence } from "./agent-runner-ci.mjs"
 import { evaluateHeartbeat } from "./agent-runner-output.mjs"
+import {
+  isRemoteWorkspaceDescriptor,
+  parseWorkspaceReference,
+} from "./agent-runner-workspace-contract.mjs"
 
 const runnableStates = new Set(["Planning", "Changes Requested", "CI Repair"])
 const stalePreemptionStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
@@ -49,6 +53,11 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
       priority: 10,
       reason: heartbeat.reason,
     })
+  }
+
+  const workspaceRecommendation = remoteWorkspaceRecommendation(item, { heartbeat })
+  if (workspaceRecommendation) {
+    return workspaceRecommendation
   }
 
   if (item.ready) {
@@ -172,6 +181,56 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
     priority: 999,
     reason: item.reasons.join("; ") || `Agent State is ${state ?? "unset"}`,
   })
+}
+
+function remoteWorkspaceRecommendation(item, { heartbeat }) {
+  const workspace = item.fields.Workspace
+  if (!workspace) return null
+
+  const descriptor = parseWorkspaceReference(workspace, { repoRoot: "/" })
+  const state = item.fields["Agent State"]
+
+  if (descriptor.kind === "invalid") {
+    return recommendation(item, {
+      action: "inspect-workspace",
+      command: null,
+      heartbeat,
+      priority: 25,
+      reason: `invalid Workspace: ${descriptor.reason}`,
+    })
+  }
+
+  if (!isRemoteWorkspaceDescriptor(descriptor)) return null
+
+  if (state === "Human Review" && item.fields.PR) return null
+  if (state === "Merge Ready" && item.fields.PR) return null
+
+  if (state === "Done" || state === "Abandoned") {
+    return recommendation(item, {
+      action: "wait-remote-cleanup",
+      command: null,
+      heartbeat,
+      priority: 90,
+      reason: `remote workspace ${descriptor.reference} needs remote adapter cleanup`,
+    })
+  }
+
+  if (
+    ["Ready", "Planning", "Running", "Changes Requested", "CI Repair", "Human Review"].includes(
+      state,
+    ) ||
+    item.ready
+  ) {
+    return recommendation(item, {
+      action: "wait-remote-adapter",
+      command: null,
+      heartbeat,
+      priority: 29,
+      reason: `remote workspace ${descriptor.reference} requires a remote adapter`,
+    })
+  }
+
+  return null
 }
 
 function humanReviewRecommendation(item, { heartbeat, repository }) {

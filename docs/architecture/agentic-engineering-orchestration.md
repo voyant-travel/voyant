@@ -808,7 +808,9 @@ references: `.agent-worktrees/<issue-number>-<slug>` for local worktrees, or
 reference before acting on it; a remote sandbox reference must not be resolved
 as a local path. Until a remote adapter owns execution, browser capture,
 handoff, evidence publishing, and PR publishing, those local-only commands must
-reject `sandbox:` workspace references explicitly.
+reject `sandbox:` workspace references explicitly. Queue recommendation code
+must also pause remote-workspace items with adapter wait states instead of
+dispatching local lifecycle commands.
 
 ```ts
 interface AgentWorkspace {
