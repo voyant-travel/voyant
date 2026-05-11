@@ -25,7 +25,7 @@ export function remoteBootstrapPlan({
     throw new Error("remote bootstrap requires --repo <owner/name> or --repo-url <url>")
   }
 
-  const selectedRemoteDir = remoteDir ?? `/home/sprite/voyant-workspaces/${descriptor.id}/repo`
+  const selectedRemoteDir = remoteDir ?? defaultRemoteWorkspaceRepoDir(descriptor)
   assertShellValue("remote directory", selectedRemoteDir)
   assertShellValue("repository URL", selectedRepoUrl)
   assertShellValue("branch", selectedBranch)
@@ -54,6 +54,10 @@ export function remoteBootstrapFieldValues({ branch, workspaceReference }, date 
     Workspace: workspaceReference,
     "Last Heartbeat": date.toISOString().slice(0, 10),
   }
+}
+
+export function defaultRemoteWorkspaceRepoDir(descriptor) {
+  return `/home/sprite/voyant-workspaces/${descriptor.id}/repo`
 }
 
 export function remoteBootstrapShell({ baseRef, branch, remoteDir, repoUrl }) {

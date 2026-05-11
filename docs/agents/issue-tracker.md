@@ -169,7 +169,23 @@ After a successful issue-scoped bootstrap, it updates the Project item to
 branch, and refreshes `Last Heartbeat`. Direct `--workspace` validation without
 an issue remains non-Project-mutating.
 
-After start, run a supervised provider-neutral command in the claimed
+After remote bootstrap, run a supervised provider-neutral command in the remote
+repository directory:
+
+```bash
+pnpm agent:queue:remote-run-command -- --issue <number> --command "pnpm verify:fast" --yes
+```
+
+Remote-run-command mode requires a `sandbox:<provider>:<id>` workspace in
+`Planning`, `Running`, `Changes Requested`, or `CI Repair` unless `--force` is
+passed. It moves the item to `Running`, streams stdout/stderr through the
+adapter, writes a remote transcript under `.agent-runs/`, writes an evidence
+packet under `docs/agent-evidence/active/`, then moves the item to
+`Human Review` on exit code `0` or `Blocked` on nonzero exit. It does not push
+branches, expose HTTP, capture browser artifacts, publish evidence, open PRs,
+or clean up the remote workspace.
+
+After local start, run a supervised provider-neutral command in the claimed
 workspace:
 
 ```bash
@@ -246,10 +262,12 @@ machine-readable actions. `Merge Ready` items with linked PRs keep recommending
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
 CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
 recommend `remote-bootstrap` so dispatch can clone/fetch the repository and
-move the item to `Planning`. Later remote workspace states still recommend wait
-states instead of local workspace commands until a remote adapter owns execution
-and cleanup; their recommendation includes a read-only `remote-inspect` command.
-Malformed reserved `sandbox:` values recommend `inspect-workspace`.
+move the item to `Planning`. Remote workspace items in `Planning`,
+`Changes Requested`, or `CI Repair` recommend `remote-run-command`, but dispatch
+does not execute implementation commands automatically. Later remote workspace
+states still recommend wait states until a remote adapter owns browser evidence,
+PR creation, and cleanup. Malformed reserved `sandbox:` values recommend
+`inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -261,9 +279,9 @@ Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
 `start`, `remote-bootstrap`, `collect-ci`, `publish-evidence`, `open-pr`,
-`sync-pr`, and `cleanup`; it refuses `run-command`, `capture-browser`,
-`inspect-stale`, blocked work, and wait states so implementation and browser
-execution remain explicit.
+`sync-pr`, and `cleanup`; it refuses `run-command`, `remote-run-command`,
+`capture-browser`, `inspect-stale`, blocked work, and wait states so
+implementation and browser execution remain explicit.
 Successful dispatch attempts append local JSONL audit events to
 `.agent-runs/events.jsonl` by default; pass `--event-log <path>` when a
 supervisor needs a different local ledger path.
