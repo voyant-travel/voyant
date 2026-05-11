@@ -140,7 +140,18 @@ Remote adapter config is intentionally explicit: pass
 `--adapter-config <path>`, set `VOYANT_AGENT_REMOTE_ADAPTER_CONFIG`, or commit a
 trusted `.agents/remote-workspaces.mjs` config on the runner branch. The module
 should export `remoteWorkspaceAdapters` or a default adapter map keyed by
-provider name.
+provider name. Use `.agents/remote-workspaces.example.mjs` as the local template
+for enabling the CLI-backed Sprite adapter.
+
+When a remote adapter declares command execution, maintainers can run a guarded
+one-shot command without updating Project state:
+
+```bash
+pnpm agent:queue:remote-exec -- --workspace sandbox:sprite:<id> --command "pwd" --yes
+```
+
+This is an adapter validation tool, not the full implementation runner. It does
+not write evidence, open PRs, collect browser artifacts, or perform cleanup.
 
 After start, run a supervised provider-neutral command in the claimed
 workspace:
