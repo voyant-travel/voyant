@@ -43,6 +43,10 @@ maybePrintHelp(args, {
       "--ui-evidence <text>",
       "Required browser artifacts or approved exception for successful UI-labeled work.",
     ],
+    [
+      "--allow-browser-issues",
+      "Allow UI evidence with browser quality issues after maintainer review.",
+    ],
     ["--force", "Allow command execution outside the normal run states."],
     ...repositoryOptions,
     ...mutationOptions,
@@ -127,10 +131,12 @@ const exitCode = await runLoggedCommand({
 })
 const stoppedAt = new Date()
 const blockedBy = commandRunBrowserEvidenceBlockReason({
+  allowBrowserIssues: Boolean(args.allowBrowserIssues),
   exitCode,
   force: Boolean(args.force),
   item,
   uiEvidence: args.uiEvidence,
+  workspace: artifactPlan.workspace,
 })
 const finalUpdate = commandRunFieldUpdate({
   blockedBy,

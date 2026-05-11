@@ -174,6 +174,10 @@ fails after writing artifacts when the summary contains console errors, failed
 requests, or malformed log lines; pass `--allow-browser-issues` only when a
 maintainer accepts a documented exception. The command prints a multi-line
 value that can be passed as `--ui-evidence` to `handoff` or `run-command`.
+When `handoff` or successful `run-command` receives a local browser artifact
+reference, it reads the artifact `summary.json` and blocks handoff if that
+summary still contains blocking browser issues unless `--allow-browser-issues`
+is used with a maintainer-approved exception.
 
 Use the read-only status view to inspect the current queue and active work:
 

@@ -1112,9 +1112,11 @@ classify console errors, console warnings, failed HTTP responses, and failed
 requests so reviewers can see quality signals without opening raw logs. For
 UI-labeled work, capture fails after writing artifacts when those summaries
 contain blocking issues unless the runner passes an explicit accepted exception.
-Queue status and tick output also surface browser-evidence obligations for
-active UI work; capture recommendations remain explicit and are not dispatched
-automatically.
+Handoff and successful run-command transitions also validate local browser
+artifact summaries before moving UI-labeled work to review, so stale or manually
+pasted bad artifacts do not bypass the capture gate. Queue status and tick
+output also surface browser-evidence obligations for active UI work; capture
+recommendations remain explicit and are not dispatched automatically.
 
 Verification:
 
