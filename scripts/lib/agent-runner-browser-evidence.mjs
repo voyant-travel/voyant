@@ -1,6 +1,11 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
+import {
+  browserIssueMarkdown,
+  formatBrowserIssueSummary,
+  summarizeBrowserEvidenceArtifact,
+} from "./agent-runner-browser-issues.mjs"
 import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 
 const uiEvidenceLabels = new Set([
@@ -184,6 +189,7 @@ export async function captureBrowserEvidence({ browserLauncher, capturePlan, tim
   })
   const result = {
     ...capture,
+    browserIssues: summarizeBrowserEvidenceArtifact(artifactPlan),
     consoleLog: artifactPlan.consoleLog,
     failedRequestLog: artifactPlan.networkLog,
   }
@@ -229,6 +235,7 @@ export async function captureBrowserEvidenceSet({
 
   const result = {
     artifactPointer: artifactPlan.artifactPointer,
+    browserIssues: summarizeBrowserEvidenceArtifact(artifactPlan),
     captures,
     consoleLog: artifactPlan.consoleLog,
     failedRequestLog: artifactPlan.networkLog,
@@ -299,6 +306,9 @@ export function browserEvidenceText(result) {
       if (capture.video) lines.push(`video: ${capture.video}`)
     }
 
+    if (result.browserIssues) {
+      lines.push(`browser issue summary: ${formatBrowserIssueSummary(result.browserIssues)}`)
+    }
     lines.push(`console log: ${result.consoleLog}`)
     lines.push(`failed-request log: ${result.failedRequestLog}`)
 
@@ -309,9 +319,12 @@ export function browserEvidenceText(result) {
     `browser artifacts: ${result.artifactPointer}`,
     `url: ${result.url}`,
     `screenshot: ${result.screenshot}`,
+    result.browserIssues
+      ? `browser issue summary: ${formatBrowserIssueSummary(result.browserIssues)}`
+      : null,
     `console log: ${result.consoleLog}`,
     `failed-request log: ${result.failedRequestLog}`,
-  ]
+  ].filter(Boolean)
 
   if (result.video) lines.push(`video: ${result.video}`)
 
@@ -344,6 +357,8 @@ ${captureLines}
 
 ## Logs
 
+${browserIssueMarkdown(result.browserIssues)}
+
 - Console log: ${result.consoleLog}
 - Failed-request log: ${result.failedRequestLog}
 `
@@ -356,6 +371,8 @@ Artifacts: ${result.artifactPointer}
 Viewport: ${result.viewport.width}x${result.viewport.height}
 
 ## Files
+
+${browserIssueMarkdown(result.browserIssues)}
 
 - Screenshot: ${result.screenshot}
 - Console log: ${result.consoleLog}

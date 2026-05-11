@@ -18,6 +18,7 @@ import {
   requiresBrowserEvidence,
   safeScreenshotName,
 } from "../lib/agent-runner-browser-evidence.mjs"
+import { summarizeBrowserEvidenceIssues } from "../lib/agent-runner-browser-issues.mjs"
 import {
   buildCommandEvidencePacket,
   commandRunArtifactPlan,
@@ -218,6 +219,32 @@ describe("agent runner browser evidence helpers", () => {
     )
   })
 
+  it("summarizes browser console and request issues", () => {
+    assert.deepEqual(
+      summarizeBrowserEvidenceIssues({
+        consoleLogText: [
+          JSON.stringify({ text: "loaded", type: "log" }),
+          JSON.stringify({ text: "React hydration failed", type: "error" }),
+          JSON.stringify({ text: "deprecated style", type: "warning" }),
+          "not json",
+        ].join("\n"),
+        networkLogText: [
+          JSON.stringify({ status: 404, type: "http-error" }),
+          JSON.stringify({ failure: "net::ERR_FAILED", type: "requestfailed" }),
+        ].join("\n"),
+      }),
+      {
+        consoleErrors: 1,
+        consoleWarnings: 1,
+        failedRequests: 2,
+        hasBlockingIssues: true,
+        httpErrors: 1,
+        malformedLogLines: 1,
+        requestFailures: 1,
+      },
+    )
+  })
+
   it("plans named browser screenshots for multiple viewports", () => {
     const artifactPlan = browserArtifactPlan({
       item: workItem(),
@@ -266,13 +293,24 @@ describe("agent runner browser evidence helpers", () => {
       assert.equal(result.url, "http://127.0.0.1:4879/dashboard")
       assert.equal(result.consoleLog, artifactPlan.consoleLog)
       assert.equal(result.failedRequestLog, artifactPlan.networkLog)
+      assert.deepEqual(result.browserIssues, {
+        consoleErrors: 0,
+        consoleWarnings: 0,
+        failedRequests: 1,
+        hasBlockingIssues: true,
+        httpErrors: 1,
+        malformedLogLines: 0,
+        requestFailures: 0,
+      })
       assert.equal(existsSync(result.screenshot), true)
       assert.match(readFileSync(artifactPlan.consoleLog, "utf8"), /loaded dashboard/)
       assert.match(readFileSync(artifactPlan.networkLog, "utf8"), /http-error/)
       assert.match(readFileSync(artifactPlan.summaryJson, "utf8"), /390/)
       assert.doesNotMatch(readFileSync(artifactPlan.summaryJson, "utf8"), /"captures"/)
       assert.match(readFileSync(artifactPlan.readme, "utf8"), /Browser Evidence/)
+      assert.match(readFileSync(artifactPlan.readme, "utf8"), /Browser Issue Summary/)
       assert.match(browserEvidenceText(result), /failed-request log:/)
+      assert.match(browserEvidenceText(result), /browser issue summary:/)
     } finally {
       rmSync(tempDir, { force: true, recursive: true })
     }
@@ -302,6 +340,8 @@ describe("agent runner browser evidence helpers", () => {
       })
 
       assert.equal(result.captures.length, 2)
+      assert.equal(result.browserIssues.failedRequests, 2)
+      assert.equal(result.browserIssues.hasBlockingIssues, true)
       assert.equal(path.basename(result.captures[0].screenshot), "page-1440x900.png")
       assert.equal(path.basename(result.captures[1].screenshot), "page-390x844.png")
       assert.equal(existsSync(result.captures[0].screenshot), true)
