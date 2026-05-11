@@ -18,6 +18,7 @@ import {
   projectOptions,
   repositoryOptions,
 } from "./lib/agent-runner-help.mjs"
+import { localWorkspaceReferencePlan } from "./lib/agent-runner-workspace.mjs"
 
 const handoffStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
 
@@ -84,7 +85,11 @@ if (missingBrowserEvidence && !args.force) {
 
 const workspaceReference = args.workspace ?? item.fields.Workspace ?? item.dryRunPlan.workspace
 const branchReference = item.fields.Branch ?? item.dryRunPlan.branch
-const workspace = path.resolve(repoRoot, workspaceReference)
+const { workspace } = localWorkspaceReferencePlan({
+  commandName: "handoff mode",
+  repoRoot,
+  workspaceReference,
+})
 if (!existsSync(workspace)) {
   fail(`workspace does not exist: ${workspace}`)
 }

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 
 import { fail, runCommand, runGit } from "./agent-project-queue.mjs"
+import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 
 export const openPullRequestStates = new Set(["Human Review", "CI Repair", "Changes Requested"])
 const successfulCheckConclusions = new Set(["SUCCESS", "SKIPPED", "NEUTRAL"])
@@ -51,7 +52,12 @@ export function evidenceForPullRequest({ evidenceReference, repoRoot, workspaceR
     }
   }
 
-  const evidencePath = path.resolve(repoRoot, workspaceReference, evidenceReference)
+  const { workspace } = localWorkspaceReferencePlan({
+    commandName: "open-pr mode",
+    repoRoot,
+    workspaceReference,
+  })
+  const evidencePath = path.resolve(workspace, evidenceReference)
   if (!existsSync(evidencePath)) {
     fail(`evidence packet does not exist: ${evidencePath}`)
   }

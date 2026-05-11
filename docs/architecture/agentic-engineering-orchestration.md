@@ -806,7 +806,9 @@ interface. The GitHub Project `Workspace` field should use one of two typed
 references: `.agent-worktrees/<issue-number>-<slug>` for local worktrees, or
 `sandbox:<provider>:<id>` for remote sandboxes. Runner code must parse the
 reference before acting on it; a remote sandbox reference must not be resolved
-as a local path.
+as a local path. Until a remote adapter owns execution, browser capture,
+handoff, evidence publishing, and PR publishing, those local-only commands must
+reject `sandbox:` workspace references explicitly.
 
 ```ts
 interface AgentWorkspace {

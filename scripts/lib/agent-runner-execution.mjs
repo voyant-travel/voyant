@@ -7,6 +7,7 @@ import {
   requiresBrowserEvidence,
 } from "./agent-runner-browser-evidence.mjs"
 import { ciRepairEvidenceEnvironment, resolveCiRepairEvidencePath } from "./agent-runner-ci.mjs"
+import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 import {
   parseWorkspaceReference,
   workspaceDescriptorEnvironment,
@@ -27,7 +28,12 @@ export function commandRunArtifactPlan({
 }) {
   const slug = slugFromTitle(item.issue.title)
   const timestamp = date.toISOString().replace(/[:.]/g, "-")
-  const workspace = path.resolve(repoRoot, workspaceReference)
+  const localWorkspace = localWorkspaceReferencePlan({
+    commandName: "run-command mode",
+    repoRoot,
+    workspaceReference,
+  })
+  const workspace = localWorkspace.workspace
   const evidencePointer =
     evidencePath ?? path.posix.join("docs/agent-evidence/active", `${item.issue.number}-${slug}.md`)
   const evidenceFile = path.resolve(workspace, evidencePointer)
@@ -45,7 +51,7 @@ export function commandRunArtifactPlan({
     repoRoot,
     safeEvidencePath: isPathInside(evidenceFile, workspace),
     workspace,
-    workspaceReference,
+    workspaceReference: localWorkspace.workspaceReference,
   }
 }
 

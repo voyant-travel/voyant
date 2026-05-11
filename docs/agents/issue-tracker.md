@@ -131,6 +131,9 @@ The `Workspace` Project field is typed by convention. Local runner commands use
 `.agent-worktrees/<issue-number>-<slug>`. Future remote adapters use
 `sandbox:<provider>:<id>` and must not be interpreted as local filesystem
 paths. Cleanup only removes local worktrees under `.agent-worktrees/`.
+Until the remote adapter is implemented, local-only commands such as
+`run-command`, `capture-browser`, `handoff`, `publish-evidence`, and `open-pr`
+reject `sandbox:` workspace references instead of resolving them as paths.
 
 After start, run a supervised provider-neutral command in the claimed
 workspace:

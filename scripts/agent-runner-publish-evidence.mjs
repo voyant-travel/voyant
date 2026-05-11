@@ -18,6 +18,7 @@ import {
   projectOptions,
   repositoryOptions,
 } from "./lib/agent-runner-help.mjs"
+import { localWorkspaceReferencePlan } from "./lib/agent-runner-workspace.mjs"
 
 const args = parseArgs(process.argv.slice(2))
 maybePrintHelp(args, {
@@ -52,6 +53,11 @@ if (item.issue.state !== "OPEN") {
 
 const workspaceReference = args.workspace ?? item.fields.Workspace ?? item.dryRunPlan.workspace
 const evidenceReference = args.evidencePath ?? item.fields.Evidence
+const { workspace } = localWorkspaceReferencePlan({
+  commandName: "publish-evidence mode",
+  repoRoot,
+  workspaceReference,
+})
 
 if (!evidenceReference) {
   fail("publish-evidence mode requires --evidence-path or an existing Evidence field")
@@ -61,7 +67,7 @@ if (isRemoteEvidence(evidenceReference)) {
   fail(`Evidence already points at a remote artifact: ${evidenceReference}`)
 }
 
-const evidencePath = path.resolve(repoRoot, workspaceReference, evidenceReference)
+const evidencePath = path.resolve(workspace, evidenceReference)
 if (!existsSync(evidencePath)) {
   fail(`evidence packet does not exist: ${evidencePath}`)
 }
