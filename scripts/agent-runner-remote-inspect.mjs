@@ -8,7 +8,10 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import { maybePrintHelp, projectOptions, repositoryOptions } from "./lib/agent-runner-help.mjs"
-import { resolveRemoteWorkspaceAdapter } from "./lib/agent-runner-remote-workspace.mjs"
+import {
+  loadRemoteWorkspaceAdapters,
+  resolveRemoteWorkspaceAdapter,
+} from "./lib/agent-runner-remote-workspace.mjs"
 import { parseWorkspaceReference } from "./lib/agent-runner-workspace-contract.mjs"
 
 const args = parseArgs(process.argv.slice(2))
@@ -21,6 +24,10 @@ maybePrintHelp(args, {
     [
       "--workspace <reference>",
       "Workspace reference override, for example sandbox:sprite:task-579.",
+    ],
+    [
+      "--adapter-config <path>",
+      "Optional remote adapter config module. Defaults to .agents/remote-workspaces.mjs when present.",
     ],
     ["--json", "Print machine-readable JSON."],
     ...repositoryOptions,
@@ -38,7 +45,8 @@ const item = args.issue ? loadIssueItem({ repository }) : null
 const workspaceReference =
   args.workspace ?? item.fields.Workspace ?? item.dryRunPlan.workspace ?? undefined
 const descriptor = parseWorkspaceReference(workspaceReference, { repoRoot })
-const adapter = resolveAdapter(descriptor)
+const adapters = await loadAdapters({ descriptor, workspaceReference })
+const adapter = resolveAdapter(descriptor, { adapters })
 const inspection = adapter ? await adapter.inspect() : null
 const result = {
   issue: item?.issue ?? null,
@@ -70,30 +78,46 @@ function resolveRepository() {
   return currentRepositoryFromOrigin(repoRoot)
 }
 
-function resolveAdapter(descriptor) {
+async function loadAdapters({ descriptor, workspaceReference }) {
   try {
-    return resolveRemoteWorkspaceAdapter(descriptor)
+    return await loadRemoteWorkspaceAdapters({
+      configPath: args.adapterConfig,
+      repoRoot,
+    })
   } catch (error) {
-    if (args.json) {
-      console.log(
-        JSON.stringify(
-          {
-            error: error instanceof Error ? error.message : String(error),
-            repository,
-            workspace: {
-              descriptor,
-              reference: workspaceReference,
-            },
-          },
-          null,
-          2,
-        ),
-      )
-      process.exit(1)
-    }
-
-    fail(error instanceof Error ? error.message : String(error))
+    failInspection(error, { descriptor, workspaceReference })
   }
+}
+
+function resolveAdapter(descriptor, { adapters }) {
+  try {
+    return resolveRemoteWorkspaceAdapter(descriptor, { adapters })
+  } catch (error) {
+    failInspection(error, { descriptor, workspaceReference })
+  }
+}
+
+function failInspection(error, { descriptor, workspaceReference }) {
+  const message = error instanceof Error ? error.message : String(error)
+  if (args.json) {
+    console.log(
+      JSON.stringify(
+        {
+          error: message,
+          repository,
+          workspace: {
+            descriptor,
+            reference: workspaceReference,
+          },
+        },
+        null,
+        2,
+      ),
+    )
+    process.exit(1)
+  }
+
+  fail(message)
 }
 
 function printHumanSummary({ issue, remote, repository, workspace }) {
