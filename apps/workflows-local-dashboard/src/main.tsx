@@ -28,6 +28,7 @@ function App(): React.ReactElement {
   const { runs, error, live, updateRun } = useRunsStream()
   const workflows = useWorkflows()
   const schedules = useSchedules()
+  const isNarrowViewport = useIsNarrowViewport()
   const [route, setRoute] = useState<Route>("runs")
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined)
   const [workflowFilter, setWorkflowFilter] = useState<string | undefined>(undefined)
@@ -96,7 +97,7 @@ function App(): React.ReactElement {
         onNewRun={() => setTriggerOpen(true)}
       />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
         <AppSidebar route={route} onChange={setRoute} />
 
         <main className="flex min-h-0 flex-1 flex-col">
@@ -110,8 +111,15 @@ function App(): React.ReactElement {
           )}
 
           {route === "runs" && (
-            <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
-              <ResizablePanel defaultSize={34} minSize={22} className="flex flex-col">
+            <ResizablePanelGroup
+              direction={isNarrowViewport ? "vertical" : "horizontal"}
+              className="flex-1 min-h-0"
+            >
+              <ResizablePanel
+                defaultSize={isNarrowViewport ? 44 : 34}
+                minSize={isNarrowViewport ? 28 : 22}
+                className="flex flex-col"
+              >
                 <RunsTable
                   runs={visibleList}
                   selectedRunId={selected?.id}
@@ -127,7 +135,10 @@ function App(): React.ReactElement {
 
               <ResizableHandle withHandle />
 
-              <ResizablePanel defaultSize={66} minSize={40}>
+              <ResizablePanel
+                defaultSize={isNarrowViewport ? 56 : 66}
+                minSize={isNarrowViewport ? 36 : 40}
+              >
                 {selected ? (
                   <RunDetailPanel run={selected} onRunUpdated={updateRun} />
                 ) : (
@@ -151,6 +162,21 @@ function App(): React.ReactElement {
       />
     </div>
   )
+}
+
+function useIsNarrowViewport(): boolean {
+  const [isNarrow, setIsNarrow] = useState(false)
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 767px)")
+    const sync = (): void => setIsNarrow(query.matches)
+
+    sync()
+    query.addEventListener("change", sync)
+    return () => query.removeEventListener("change", sync)
+  }, [])
+
+  return isNarrow
 }
 
 const root = document.getElementById("root")

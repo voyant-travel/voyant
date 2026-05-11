@@ -1,0 +1,6 @@
+{"location":{"url":"http://127.0.0.1:4948/@vite/client","lineNumber":788,"columnNumber":8},"text":"[vite] connecting...","timestamp":"2026-05-11T09:06:09.418Z","type":"debug"}
+{"location":{"url":"http://127.0.0.1:4948/@vite/client","lineNumber":911,"columnNumber":14},"text":"[vite] connected.","timestamp":"2026-05-11T09:06:09.474Z","type":"debug"}
+{"location":{"url":"http://127.0.0.1:4948/node_modules/.vite/deps/react-dom_client.js?v=495b671f","lineNumber":20102,"columnNumber":53},"text":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold","timestamp":"2026-05-11T09:06:09.536Z","type":"info"}
+{"location":{"url":"http://127.0.0.1:4948/@vite/client","lineNumber":788,"columnNumber":8},"text":"[vite] connecting...","timestamp":"2026-05-11T09:06:10.668Z","type":"debug"}
+{"location":{"url":"http://127.0.0.1:4948/@vite/client","lineNumber":911,"columnNumber":14},"text":"[vite] connected.","timestamp":"2026-05-11T09:06:10.688Z","type":"debug"}
+{"location":{"url":"http://127.0.0.1:4948/node_modules/.vite/deps/react-dom_client.js?v=495b671f","lineNumber":20102,"columnNumber":53},"text":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold","timestamp":"2026-05-11T09:06:10.753Z","type":"info"}

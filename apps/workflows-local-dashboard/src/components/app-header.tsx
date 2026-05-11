@@ -16,10 +16,10 @@ export function AppHeader({
   onNewRun: () => void
 }): React.ReactElement {
   return (
-    <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 flex h-14 shrink-0 items-center gap-3 border-b px-4 backdrop-blur">
-      <div className="flex items-center gap-2">
-        <Zap className="size-5 text-primary" />
-        <span className="text-sm font-semibold tracking-tight">Voyant Workflows</span>
+    <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 flex min-h-14 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 backdrop-blur sm:h-14 sm:flex-nowrap sm:gap-3 sm:px-4 sm:py-0">
+      <div className="flex min-w-0 items-center gap-2">
+        <Zap className="size-5 shrink-0 text-primary" />
+        <span className="truncate text-sm font-semibold tracking-tight">Voyant Workflows</span>
         <Badge variant="secondary" className="font-mono text-[10px] uppercase">
           local
         </Badge>
@@ -28,7 +28,7 @@ export function AppHeader({
       <LiveIndicator connected={live} />
 
       <div className="ml-auto flex items-center gap-3">
-        <span className="text-muted-foreground font-mono text-xs tabular-nums">
+        <span className="text-muted-foreground hidden font-mono text-xs tabular-nums sm:inline">
           {runCount} run{runCount === 1 ? "" : "s"}
         </span>
         <Button
