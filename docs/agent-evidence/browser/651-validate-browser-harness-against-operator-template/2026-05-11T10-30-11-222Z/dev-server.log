@@ -1,0 +1,23 @@
+# 2026-05-11T10:30:11.453Z pnpm -C templates/operator exec vite dev --host 127.0.0.1 --port $VOYANT_AGENT_DEV_SERVER_PORT
+
+Default inspector port 9229 not available, using 9230 instead
+
+1:30:33 PM [vite] (ssr) warning: 
+/Users/mihai/builds/internal/voyant-all/voyant/.agent-worktrees/651-validate-browser-harness-against-operator-template/packages/plugins/smartbill/src/mock.ts
+444 |  async function importNodeHttp() {
+445 |  	const specifier = "node:http";
+446 |  	return import(specifier);
+    |                 ^^^^^^^^^
+447 |  }
+448 |  /**
+The above dynamic import cannot be analyzed by Vite.
+See https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations for supported dynamic import formats. If this is intended to be left as-is, you can use the /* @vite-ignore */ comment inside the import() call to suppress this warning.
+
+  Plugin: vite:import-analysis
+  File: /Users/mihai/builds/internal/voyant-all/voyant/.agent-worktrees/651-validate-browser-harness-against-operator-template/packages/plugins/smartbill/src/mock.ts
+
+  VITE v8.0.10  ready in 22005 ms
+
+  ➜  Local:   http://127.0.0.1:4951/
+  ➜  Debug:   http://127.0.0.1:4951/__debug
+1:30:35 PM [vite] (client) [optimizer] bundling dependencies...

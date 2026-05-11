@@ -66,6 +66,16 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
   }
 }
 
+function isLocalRequest(request: Request): boolean {
+  const hostname = new URL(request.url).hostname
+  return hostname === "127.0.0.1" || hostname === "localhost"
+}
+
+function useBrowserEvidenceAuthFallback(env: CloudflareBindings, request: Request): boolean {
+  const bindings = env as unknown as Record<string, string | undefined>
+  return bindings.VOYANT_OPERATOR_BROWSER_EVIDENCE === "1" && isLocalRequest(request)
+}
+
 type BetterAuthApiKeyApi = {
   listApiKeys: (args: { query?: Record<string, unknown>; headers: Headers }) => Promise<unknown>
   createApiKey: (args: { body: Record<string, unknown>; headers?: Headers }) => Promise<unknown>
@@ -241,6 +251,10 @@ export async function hasAuthPermission(
  * Validates the session cookie directly (no Bearer token needed).
  */
 auth.get("/auth/me", async (c) => {
+  if (useBrowserEvidenceAuthFallback(c.env, c.req.raw)) {
+    return c.json({ error: "Unauthorized" }, 401)
+  }
+
   // The auth sub-app is mounted before the request-scoped `db`
   // middleware in `createApp` (auth routes are public — no requireAuth
   // gate), so `c.var.db` is undefined here. Build the per-request Pool
@@ -370,6 +384,10 @@ auth.get("/auth/status", async (c) => {
  * sign-up route loaders to pick the right flow.
  */
 auth.get("/auth/bootstrap-status", async (c) => {
+  if (useBrowserEvidenceAuthFallback(c.env, c.req.raw)) {
+    return c.json({ hasUsers: true })
+  }
+
   // See `/auth/me` above — auth sub-app runs before the request `db`
   // middleware, so own the Pool here.
   const { db, dispose } = dbFromEnvForApp(c.env)

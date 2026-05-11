@@ -47,6 +47,10 @@ maybePrintHelp(args, {
     ],
     ["--timeout-ms <number>", "Navigation and dev-server wait timeout. Defaults to 30000."],
     ["--screenshot-name <name>", "Screenshot file name. Defaults to page.png."],
+    [
+      "--wait-until <event>",
+      "Playwright navigation wait event: commit, domcontentloaded, load, or networkidle. Defaults to networkidle.",
+    ],
     ["--browser-base-port <number>", "Base port for deterministic issue ports. Defaults to 4300."],
     ...repositoryOptions,
     ...mutationOptions,
@@ -90,6 +94,7 @@ const capturePlan = browserCapturePlan({
   screenshotName: args.screenshotName,
   url: args.url ?? artifactPlan.devServerUrl,
   viewport: args.viewport,
+  waitUntil: args.waitUntil,
 })
 const capturePlans = args.viewports
   ? browserCapturePlans({
@@ -97,6 +102,7 @@ const capturePlans = args.viewports
       screenshotName: args.screenshotName,
       url: args.url ?? artifactPlan.devServerUrl,
       viewports: args.viewports,
+      waitUntil: args.waitUntil,
     })
   : [capturePlan]
 
@@ -185,6 +191,7 @@ function printCapturePlan({ artifactPlan, item, repository }) {
   console.log(`workspace: ${artifactPlan.workspace}`)
   console.log(`url: ${capturePlans[0].url}`)
   console.log(`viewports: ${capturePlans.map((plan) => viewportLabel(plan.viewport)).join(", ")}`)
+  console.log(`wait until: ${capturePlans[0].waitUntil}`)
   console.log(`artifacts: ${artifactPlan.artifactDir}`)
   for (const plan of capturePlans) {
     console.log(`screenshot ${viewportLabel(plan.viewport)}: ${plan.screenshotFile}`)

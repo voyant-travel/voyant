@@ -101,6 +101,7 @@ export function browserCapturePlan({
   screenshotName = "page.png",
   url = artifactPlan.devServerUrl,
   viewport,
+  waitUntil,
 }) {
   const normalizedViewport = normalizeViewport(viewport)
   const screenshotFile = path.resolve(
@@ -113,6 +114,7 @@ export function browserCapturePlan({
     screenshotFile,
     url,
     viewport: normalizedViewport,
+    waitUntil: normalizeWaitUntil(waitUntil),
   }
 }
 
@@ -121,6 +123,7 @@ export function browserCapturePlans({
   screenshotName = "page.png",
   url = artifactPlan.devServerUrl,
   viewports,
+  waitUntil,
 }) {
   const normalizedViewports = normalizeViewportList(viewports)
   const multipleViewports = normalizedViewports.length > 1
@@ -131,6 +134,7 @@ export function browserCapturePlans({
       screenshotName: screenshotNameForViewport(screenshotName, viewport, multipleViewports),
       url,
       viewport,
+      waitUntil,
     }),
   )
 }
@@ -172,6 +176,19 @@ export function normalizeViewport(viewport) {
   }
 
   return viewportSize(viewport)
+}
+
+export function normalizeWaitUntil(waitUntil) {
+  if (!waitUntil) return "networkidle"
+
+  const normalized = String(waitUntil).trim().toLowerCase()
+  const allowed = new Set(["commit", "domcontentloaded", "load", "networkidle"])
+  if (!allowed.has(normalized)) {
+    throw new Error(
+      `invalid wait-until: ${waitUntil}; expected commit, domcontentloaded, load, or networkidle`,
+    )
+  }
+  return normalized
 }
 
 export async function captureBrowserEvidence({ browserLauncher, capturePlan, timeoutMs = 30_000 }) {
@@ -256,7 +273,7 @@ function prepareBrowserEvidenceArtifacts(artifactPlan) {
 }
 
 async function captureSingleBrowserEvidence({ browserLauncher, capturePlan, timeoutMs }) {
-  const { artifactPlan, screenshotFile, url, viewport } = capturePlan
+  const { artifactPlan, screenshotFile, url, viewport, waitUntil } = capturePlan
   const browser = await browserLauncher.launch({ headless: true })
   let context
   let page
@@ -273,7 +290,7 @@ async function captureSingleBrowserEvidence({ browserLauncher, capturePlan, time
     page = await context.newPage()
     wireBrowserEvidenceEvents({ artifactPlan, page })
 
-    await page.goto(url, { timeout: timeoutMs, waitUntil: "networkidle" })
+    await page.goto(url, { timeout: timeoutMs, waitUntil })
     await page.screenshot({ fullPage: true, path: screenshotFile })
 
     const video = page.video?.()
@@ -291,6 +308,7 @@ async function captureSingleBrowserEvidence({ browserLauncher, capturePlan, time
     url,
     video: videoPath,
     viewport,
+    waitUntil,
   }
 }
 
@@ -339,6 +357,7 @@ export function browserEvidenceMarkdown(result) {
           `### ${capture.viewport.width}x${capture.viewport.height}`,
           "",
           `URL: ${capture.url}`,
+          `Wait until: ${capture.waitUntil}`,
           `Screenshot: ${capture.screenshot}`,
           capture.video ? `Video: ${capture.video}` : null,
         ]
@@ -369,6 +388,7 @@ ${browserIssueMarkdown(result.browserIssues)}
 URL: ${result.url}
 Artifacts: ${result.artifactPointer}
 Viewport: ${result.viewport.width}x${result.viewport.height}
+Wait until: ${result.waitUntil}
 
 ## Files
 
