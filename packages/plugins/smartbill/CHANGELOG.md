@@ -1,5 +1,13 @@
 # @voyantjs/plugin-smartbill
 
+## 0.32.2
+
+### Patch Changes
+
+- @voyantjs/core@0.32.2
+- @voyantjs/finance@0.32.2
+- @voyantjs/storage@0.32.2
+
 ## 0.32.1
 
 ### Patch Changes

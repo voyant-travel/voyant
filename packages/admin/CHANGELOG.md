@@ -1,5 +1,15 @@
 # @voyantjs/admin
 
+## 0.32.2
+
+### Patch Changes
+
+- 778d35e: Align OperatorAdminWorkspaceLayout with the shadcn sidebar composition by using SidebarInset, exposing sidebar variant controls, adding a visible sidebar trigger, and shaping the default brand as a SidebarMenuButton.
+- c1de5a1: Ship reusable Voyant mark and wordmark SVG components and use them in the default operator admin sidebar brand.
+  - @voyantjs/i18n@0.32.2
+  - @voyantjs/react@0.32.2
+  - @voyantjs/ui@0.32.2
+
 ## 0.32.1
 
 ### Patch Changes

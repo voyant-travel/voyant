@@ -1,5 +1,16 @@
 # @voyantjs/finance
 
+## 0.32.2
+
+### Patch Changes
+
+- @voyantjs/bookings@0.32.2
+- @voyantjs/core@0.32.2
+- @voyantjs/db@0.32.2
+- @voyantjs/hono@0.32.2
+- @voyantjs/storage@0.32.2
+- @voyantjs/utils@0.32.2
+
 ## 0.32.1
 
 ### Patch Changes
