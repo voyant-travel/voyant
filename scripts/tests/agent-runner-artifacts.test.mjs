@@ -7,6 +7,7 @@ import { describe, it } from "node:test"
 import {
   artifactPublisherFromEnv,
   publishArtifactDirectory,
+  publishEvidencePacket,
 } from "../lib/agent-runner-artifacts.mjs"
 import { browserEvidenceText } from "../lib/agent-runner-browser-evidence.mjs"
 
@@ -81,6 +82,46 @@ describe("agent runner artifact publishing", () => {
     } finally {
       rmSync(tempDir, { force: true, recursive: true })
     }
+  })
+
+  it("uploads an evidence packet to a durable object key", async () => {
+    const requests = []
+    const publisher = artifactPublisherFromEnv(
+      {
+        VOYANT_AGENT_R2_ACCESS_KEY_ID: "access-key",
+        VOYANT_AGENT_R2_ACCOUNT_ID: "account-id",
+        VOYANT_AGENT_R2_BUCKET: "agent-artifacts",
+        VOYANT_AGENT_R2_PUBLIC_BASE_URL: "https://artifacts.example.com",
+        VOYANT_AGENT_R2_SECRET_ACCESS_KEY: "secret-key",
+      },
+      {
+        fetchImpl: async (url, init) => {
+          requests.push({ init, url })
+          return {
+            ok: true,
+            status: 200,
+            text: async () => "",
+          }
+        },
+      },
+    )
+
+    const publication = await publishEvidencePacket({
+      body: "# Evidence\n\nAll checks passed.\n",
+      issueNumber: 579,
+      publisher,
+      reference: "docs/agent-evidence/active/579-test.md",
+      repository: "voyantjs/voyant",
+    })
+
+    assert.equal(
+      publication.url,
+      "https://artifacts.example.com/agent-evidence/voyantjs/voyant/docs/agent-evidence/active/579-test.md",
+    )
+    assert.equal(publication.contentType, "text/markdown; charset=utf-8")
+    assert.equal(requests.length, 1)
+    assert.match(requests[0].url, /agent-artifacts\/agent-evidence\/voyantjs\/voyant/)
+    assert.equal(requests[0].init.headers["x-amz-meta-issue"], "579")
   })
 
   it("includes remote artifact links in browser evidence text", () => {

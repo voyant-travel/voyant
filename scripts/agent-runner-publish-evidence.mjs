@@ -13,6 +13,11 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  artifactPublisherFromEnv,
+  evidencePacketPublicationPlan,
+  publishEvidencePacket,
+} from "./lib/agent-runner-artifacts.mjs"
+import {
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -28,6 +33,7 @@ maybePrintHelp(args, {
   options: [
     ["--issue <number>", "Issue number whose evidence packet should be published."],
     ["--evidence-path <path>", "Evidence path relative to the task workspace."],
+    ["--publish-artifacts", "Upload the evidence packet to configured R2/S3 object storage."],
     ["--workspace <path>", "Workspace path override."],
     ...repositoryOptions,
     ...mutationOptions,
@@ -68,6 +74,9 @@ if (isRemoteEvidence(evidenceReference)) {
 }
 
 const evidencePath = path.resolve(workspace, evidenceReference)
+if (!isPathInside(evidencePath, workspace)) {
+  fail(`evidence packet is outside the workspace: ${evidenceReference}`)
+}
 if (!existsSync(evidencePath)) {
   fail(`evidence packet does not exist: ${evidencePath}`)
 }
@@ -87,20 +96,42 @@ const existingCommentUrl = findExistingEvidenceComment({
   marker,
   repository,
 })
+const artifactPublisher = args.publishArtifacts ? artifactPublisherFromEnv() : undefined
+const remoteEvidencePlan = artifactPublisher
+  ? evidencePacketPublicationPlan({
+      publisher: artifactPublisher,
+      reference: evidenceReference,
+      repository,
+    })
+  : undefined
 
 if (!args.yes) {
   console.log("agent-runner publish-evidence would update:")
   console.log(`issue: #${item.issue.number} ${item.issue.title}`)
   console.log(`repository: ${repository}`)
   console.log(`evidence file: ${evidencePath}`)
-  console.log(`Evidence: ${existingCommentUrl ?? "<new issue comment URL>"}`)
+  if (remoteEvidencePlan) {
+    console.log(`remote evidence packet: ${remoteEvidencePlan.url}`)
+  }
+  console.log(
+    `Evidence: ${remoteEvidencePlan?.url ?? existingCommentUrl ?? "<new issue comment URL>"}`,
+  )
   fail("publish-evidence mode comments on GitHub and updates Project fields; rerun with --yes")
 }
 
+const remoteEvidence =
+  artifactPublisher &&
+  (await publishEvidencePacket({
+    body: evidenceBody,
+    issueNumber: item.issue.number,
+    publisher: artifactPublisher,
+    reference: evidenceReference,
+    repository,
+  }))
 const commentUrl =
   existingCommentUrl ??
   createIssueComment({
-    body: `${marker}\n\n${evidenceBody}`,
+    body: evidenceCommentBody({ evidenceBody, marker, remoteEvidenceUrl: remoteEvidence?.url }),
     issueNumber: item.issue.number,
     repository,
   })
@@ -109,7 +140,7 @@ updateProjectItemFields({
   project,
   item,
   values: {
-    Evidence: commentUrl,
+    Evidence: remoteEvidence?.url ?? commentUrl,
     "Last Heartbeat": today(),
   },
 })
@@ -117,7 +148,10 @@ updateProjectItemFields({
 console.log("agent-runner publish-evidence: posted issue comment and updated Project fields")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)
 console.log(`repository: ${repository}`)
-console.log(`evidence: ${commentUrl}`)
+console.log(`evidence: ${remoteEvidence?.url ?? commentUrl}`)
+if (remoteEvidence) {
+  console.log(`github comment: ${commentUrl}`)
+}
 
 function findExistingEvidenceComment({ issueNumber, marker, repository }) {
   const result = spawnSync("gh", ["api", `repos/${repository}/issues/${issueNumber}/comments`], {
@@ -190,8 +224,18 @@ function evidenceMarker({ evidenceReference, issueNumber, repository }) {
   return `<!-- voyant-agent-evidence:${key} -->`
 }
 
+function evidenceCommentBody({ evidenceBody, marker, remoteEvidenceUrl }) {
+  const remoteLine = remoteEvidenceUrl ? `Published evidence packet: ${remoteEvidenceUrl}\n\n` : ""
+  return `${marker}\n\n${remoteLine}${evidenceBody}`
+}
+
 function isRemoteEvidence(evidence) {
   return /^https?:\/\//.test(evidence)
+}
+
+function isPathInside(candidatePath, parentPath) {
+  const relative = path.relative(parentPath, candidatePath)
+  return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative)
 }
 
 function today() {
