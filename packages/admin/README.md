@@ -175,6 +175,12 @@ Use `OperatorAdminBootstrapGate` to make that contract explicit:
 </OperatorAdminBootstrapGate>
 ```
 
+The workspace layout follows the shadcn sidebar composition with a
+`SidebarInset` main region and a visible sidebar trigger in the inset header.
+Pass `variant="inset"` or `variant="floating"` and `side="right"` when an app
+needs one of the modern sidebar variants. The sidebar can also be toggled with
+`Cmd+B` on macOS or `Ctrl+B` on Windows and Linux.
+
 Workspace switching and team-management routes remain app-owned opt-ins. Apps
 that intentionally implement workspace switching can opt into
 `mode="organization"` and pass their own workspace readiness state.
