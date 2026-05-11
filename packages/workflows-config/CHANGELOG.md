@@ -1,5 +1,7 @@
 # @voyantjs/workflows-config
 
+## 0.32.0
+
 ## 0.31.4
 
 ## 0.31.3
