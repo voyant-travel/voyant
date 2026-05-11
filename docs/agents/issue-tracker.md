@@ -136,6 +136,11 @@ Until the remote adapter is implemented, local-only commands such as
 reject `sandbox:` workspace references instead of resolving them as paths.
 Use `pnpm agent:queue:remote-inspect -- --issue <number>` to inspect a remote
 workspace reference and confirm whether its provider adapter is configured.
+Remote adapter config is intentionally explicit: pass
+`--adapter-config <path>`, set `VOYANT_AGENT_REMOTE_ADAPTER_CONFIG`, or commit a
+trusted `.agents/remote-workspaces.mjs` config on the runner branch. The module
+should export `remoteWorkspaceAdapters` or a default adapter map keyed by
+provider name.
 
 After start, run a supervised provider-neutral command in the claimed
 workspace:

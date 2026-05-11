@@ -1,3 +1,7 @@
+import { existsSync } from "node:fs"
+import path from "node:path"
+import { pathToFileURL } from "node:url"
+
 import { isRemoteWorkspaceDescriptor } from "./agent-runner-workspace-contract.mjs"
 
 export const remoteWorkspaceCapabilityNames = [
@@ -8,6 +12,8 @@ export const remoteWorkspaceCapabilityNames = [
   "collectArtifacts",
   "dispose",
 ]
+
+const providerNamePattern = /^[a-z][a-z0-9-]{0,31}$/
 
 export function resolveRemoteWorkspaceAdapter(descriptor, { adapters = {} } = {}) {
   assertRemoteWorkspaceDescriptor(descriptor)
@@ -20,6 +26,40 @@ export function resolveRemoteWorkspaceAdapter(descriptor, { adapters = {} } = {}
   }
 
   return validateRemoteWorkspaceAdapter(factory(descriptor), descriptor)
+}
+
+export async function loadRemoteWorkspaceAdapters({
+  configPath,
+  env = process.env,
+  repoRoot,
+} = {}) {
+  const adapterConfigPath = remoteWorkspaceAdapterConfigPath({ configPath, env, repoRoot })
+  if (!adapterConfigPath) return {}
+
+  const moduleExports = await import(pathToFileURL(adapterConfigPath).href)
+  const configuredAdapters = moduleExports.remoteWorkspaceAdapters ?? moduleExports.default
+  const adapters =
+    typeof configuredAdapters === "function"
+      ? await configuredAdapters({ env, repoRoot })
+      : configuredAdapters
+
+  return validateRemoteWorkspaceAdapters(adapters, adapterConfigPath)
+}
+
+export function remoteWorkspaceAdapterConfigPath({ configPath, env = process.env, repoRoot } = {}) {
+  const configuredPath = configPath ?? env.VOYANT_AGENT_REMOTE_ADAPTER_CONFIG
+  if (configuredPath) {
+    const resolvedPath = path.resolve(repoRoot ?? process.cwd(), configuredPath)
+    if (!existsSync(resolvedPath)) {
+      throw new Error(`remote workspace adapter config does not exist: ${resolvedPath}`)
+    }
+    return resolvedPath
+  }
+
+  if (!repoRoot) return null
+
+  const defaultPath = path.join(repoRoot, ".agents", "remote-workspaces.mjs")
+  return existsSync(defaultPath) ? defaultPath : null
 }
 
 export function unsupportedRemoteWorkspaceAdapter(descriptor, { availableProviders = [] } = {}) {
@@ -129,6 +169,26 @@ function normalizeCapabilities(capabilities = {}) {
       Boolean(capabilities[capability]),
     ]),
   )
+}
+
+function validateRemoteWorkspaceAdapters(adapters, adapterConfigPath) {
+  if (!adapters || typeof adapters !== "object" || Array.isArray(adapters)) {
+    throw new Error(
+      `remote workspace adapter config must export an adapter map: ${adapterConfigPath}`,
+    )
+  }
+
+  for (const [provider, factory] of Object.entries(adapters)) {
+    if (!providerNamePattern.test(provider)) {
+      throw new Error(`remote workspace adapter provider is invalid: ${provider}`)
+    }
+
+    if (typeof factory !== "function") {
+      throw new Error(`remote workspace adapter ${provider} must be a factory function`)
+    }
+  }
+
+  return adapters
 }
 
 function assertFunction(adapter, operation, descriptor) {

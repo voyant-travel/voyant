@@ -1173,7 +1173,11 @@ adapter contract and an unsupported-adapter fallback. Queue recommendations for
 `sandbox:<provider>:<id>` items now point maintainers at
 `pnpm agent:queue:remote-inspect -- --issue <number>` so remote references are
 typed and inspectable before a real sandbox adapter is allowed to execute,
-expose HTTP, collect artifacts, or clean up remote state.
+expose HTTP, collect artifacts, or clean up remote state. Remote adapters can
+now be loaded from an explicit config module via `--adapter-config`,
+`VOYANT_AGENT_REMOTE_ADAPTER_CONFIG`, or trusted
+`.agents/remote-workspaces.mjs`; the runner still treats providers as
+unavailable unless a config supplies that provider.
 
 Verification:
 
