@@ -5128,6 +5128,31 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
+  packages/workflows-cloud-adapter:
+    dependencies:
+      '@voyantjs/workflows':
+        specifier: workspace:*
+        version: link:../workflows
+      '@voyantjs/workflows-orchestrator':
+        specifier: workspace:*
+        version: link:../workflows-orchestrator
+      '@voyantjs/workflows-orchestrator-cloudflare':
+        specifier: workspace:*
+        version: link:../workflows-orchestrator-cloudflare
+    devDependencies:
+      '@types/node':
+        specifier: ^20.12.0
+        version: 20.19.39
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@20.19.39)(typescript@5.9.3))(vite@8.0.10(@types/node@20.19.39)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/workflows-config:
     devDependencies:
       '@voyantjs/voyant-typescript-config':

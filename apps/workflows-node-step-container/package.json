@@ -1,10 +1,34 @@
 {
   "name": "@voyantjs/workflows-node-step-container",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.31.3",
   "description": "Reference Node container image for executing `runtime: \"node\"` steps. Deployed alongside the orchestrator as a Cloudflare Container.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "apps/workflows-node-step-container"
+  },
+  "homepage": "https://voyant.cloud/workflows",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
+  },
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "Dockerfile",
+    "LICENSE",
+    "README.md",
+    "NOTICE"
+  ],
+  "bin": {
+    "voyant-workflows-node-step-container": "./dist/server.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check-types": "tsc --noEmit",
@@ -17,5 +41,19 @@
     "@types/node": "^20.12.0",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "typescript": "^5.9.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/server.d.ts",
+        "import": "./dist/server.js"
+      }
+    },
+    "main": "./dist/server.js",
+    "types": "./dist/server.d.ts",
+    "bin": {
+      "voyant-workflows-node-step-container": "./dist/server.js"
+    }
   }
 }
