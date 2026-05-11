@@ -12,6 +12,7 @@ const booleanArgs = new Set([
   "json",
   "publish-artifacts",
   "ready",
+  "update-body",
   "yes",
 ])
 

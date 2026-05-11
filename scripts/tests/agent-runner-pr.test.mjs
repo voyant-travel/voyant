@@ -8,6 +8,7 @@ import {
   pullRequestBody,
   pullRequestCompletionFieldValues,
   pullRequestCreateArgs,
+  pullRequestEditBodyArgs,
   pullRequestFieldValues,
   pullRequestNumberFromUrl,
   pullRequestSyncFieldValues,
@@ -85,6 +86,17 @@ describe("agent runner PR helpers", () => {
       "--draft",
     ])
     assert.equal(args.includes("voyantjs:task/579-test-agent-project-intake-workflow"), false)
+  })
+
+  it("builds PR body update arguments", () => {
+    assert.deepEqual(
+      pullRequestEditBodyArgs({
+        body: "Updated body",
+        prReference: 603,
+        repository: "voyantjs/voyant",
+      }),
+      ["pr", "edit", "603", "--repo", "voyantjs/voyant", "--body", "Updated body"],
+    )
   })
 
   it("parses PR numbers from GitHub pull request URLs", () => {

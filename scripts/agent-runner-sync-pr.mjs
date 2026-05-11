@@ -16,9 +16,12 @@ import {
 } from "./lib/agent-runner-help.mjs"
 import {
   evaluatePullRequestGate,
+  evidenceForPullRequest,
+  pullRequestBody,
   pullRequestNumberFromUrl,
   pullRequestSyncFieldValues,
   readPullRequestStatus,
+  updatePullRequestBody,
 } from "./lib/agent-runner-pr.mjs"
 
 const args = parseArgs(process.argv.slice(2))
@@ -29,7 +32,9 @@ maybePrintHelp(args, {
   options: [
     ["--issue <number>", "Issue number whose linked PR should be synced."],
     ["--pr <url-or-number>", "PR URL or number override. Defaults from the Project PR field."],
+    ["--evidence <url-or-path>", "Evidence override for --update-body."],
     ["--workspace <path>", "Workspace path override for gh context."],
+    ["--update-body", "Refresh the PR body from the current evidence packet."],
     ["--force", "Allow syncing closed issues."],
     ...repositoryOptions,
     ...mutationOptions,
@@ -66,12 +71,25 @@ const clear = result.blockedBy ? [] : ["Blocked By"]
 if (result.blockedBy) {
   values["Blocked By"] = result.blockedBy
 }
+const bodyRefresh = args.updateBody
+  ? buildBodyRefresh({
+      evidenceReference: args.evidence ?? item.fields.Evidence,
+      item,
+      prReference,
+      repoRoot,
+      repository,
+      workspace,
+    })
+  : null
 
 if (!args.yes) {
-  printSyncPlan({ item, pr, repository, result, values, clear })
+  printSyncPlan({ bodyRefresh, item, pr, repository, result, values, clear })
   fail("sync-pr mode updates GitHub Project fields; rerun with --yes")
 }
 
+if (bodyRefresh) {
+  updatePullRequestBody(bodyRefresh)
+}
 updateProjectItemFields({ project, item, values, clear })
 
 console.log("agent-runner sync-pr: updated Project PR review state")
@@ -80,18 +98,49 @@ console.log(`repository: ${repository}`)
 console.log(`pr: ${pr.url}`)
 console.log(`agent state: ${result.agentState}`)
 console.log(`reason: ${result.reason}`)
+if (bodyRefresh) {
+  console.log("pr body: refreshed from evidence")
+}
 
 function normalizePrReference(value) {
   if (!value) return undefined
   return String(pullRequestNumberFromUrl(value) ?? value)
 }
 
-function printSyncPlan({ clear, item, pr, repository, result, values }) {
+function buildBodyRefresh({
+  evidenceReference,
+  item,
+  prReference,
+  repoRoot,
+  repository,
+  workspace,
+}) {
+  const evidence = evidenceForPullRequest({
+    evidenceReference,
+    repoRoot,
+    workspaceReference: item.fields.Workspace ?? item.dryRunPlan.workspace,
+  })
+
+  return {
+    body: pullRequestBody(item, {
+      ...evidence,
+      repository,
+    }),
+    prReference,
+    repository,
+    workspace,
+  }
+}
+
+function printSyncPlan({ bodyRefresh, clear, item, pr, repository, result, values }) {
   console.log("agent-runner sync-pr would update:")
   console.log(`issue: #${item.issue.number} ${item.issue.title}`)
   console.log(`repository: ${repository}`)
   console.log(`pr: ${pr.url}`)
   console.log(`reason: ${result.reason}`)
+  if (bodyRefresh) {
+    console.log("pr body: refresh from evidence")
+  }
   for (const [fieldName, value] of Object.entries(values)) {
     console.log(`${fieldName}: ${value}`)
   }
