@@ -181,11 +181,14 @@ pnpm agent:queue:tick
 
 Tick mode scans the same repository-scoped Project queue and prints ordered
 action recommendations such as `start`, `run-command`, `capture-browser`,
-`publish-evidence`, `open-pr`, `sync-pr`, `cleanup`, or `inspect-stale`. It
+`collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, `cleanup`, or
+`inspect-stale`. It
 does not mutate GitHub, create worktrees, run commands, publish evidence, or
 open PRs. Pass `--json` when a process manager or future control plane needs
 machine-readable actions. `Merge Ready` items with linked PRs keep recommending
 `sync-pr` so the runner can observe maintainer merges and mark the item done.
+`CI Repair` items with failing linked PRs recommend `collect-ci` until a local
+CI repair packet exists.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -196,12 +199,12 @@ pnpm agent:queue:dispatch -- --yes
 Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
-`start`, `publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it refuses
-`run-command`, `capture-browser`, `inspect-stale`, blocked work, and wait states
-so implementation and browser execution remain explicit. Successful dispatch
-attempts append local JSONL audit events to `.agent-runs/events.jsonl` by
-default; pass `--event-log <path>` when a supervisor needs a different local
-ledger path.
+`start`, `collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, and
+`cleanup`; it refuses `run-command`, `capture-browser`, `inspect-stale`, blocked
+work, and wait states so implementation and browser execution remain explicit.
+Successful dispatch attempts append local JSONL audit events to
+`.agent-runs/events.jsonl` by default; pass `--event-log <path>` when a
+supervisor needs a different local ledger path.
 
 Use loop for a bounded supervisor pass:
 
@@ -302,6 +305,18 @@ item to `Agent State = CI Repair`, requested changes move it to
 passing non-draft PRs move it to `Merge Ready`. If the linked PR has already
 been merged by a maintainer, sync-pr marks the Project item `Done`. It updates
 `Status`, `PR`, `Last Heartbeat`, and `Blocked By`; it does not merge the PR.
+
+When a linked PR has failing checks, collect local CI repair context before
+running the fix:
+
+```bash
+pnpm agent:queue:collect-ci -- --issue <number> --yes
+```
+
+Collect-CI mode reads failed PR checks, fetches failed GitHub Actions log
+snippets, writes a local repair packet under ignored `.agent-runs/...`, updates
+`Evidence` to that local packet, and keeps the item in `CI Repair`. Raw CI logs
+stay local; publish only redacted summaries when needed.
 
 After a maintainer merges the PR, mark the Project item complete:
 

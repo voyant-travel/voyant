@@ -1115,6 +1115,8 @@ Deliverables:
 - Watch CI.
 - Move failed PRs to `CI Repair`.
 - Mark Project items done when linked PRs are merged.
+- Collect failed CI check URLs and failed-log snippets into local ignored
+  repair packets.
 - Re-run the agent with CI logs and a narrow repair prompt.
 
 Verification:

@@ -57,6 +57,29 @@ describe("agent runner dispatch helpers", () => {
     ])
   })
 
+  it("dispatches CI evidence collection before repair commands", () => {
+    const recommendation = recommendQueueAction(
+      workItem({
+        fields: {
+          "Agent State": "CI Repair",
+          "Last Heartbeat": new Date().toISOString().slice(0, 10),
+          PR: "https://github.com/voyantjs/voyant/pull/626",
+        },
+      }),
+      { maxAgeDays: 1, repository: "voyantjs/other" },
+    )
+
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+      "agent:queue:collect-ci",
+      "--",
+      "--issue",
+      "579",
+      "--repo",
+      "voyantjs/other",
+      "--yes",
+    ])
+  })
+
   it("passes custom event logs to nested dispatch commands", () => {
     const recommendation = recommendQueueAction(workItem(), {
       maxAgeDays: 1,

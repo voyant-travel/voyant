@@ -40,6 +40,7 @@
     "agent:queue:start": "node scripts/agent-runner-start.mjs",
     "agent:queue:run-command": "node scripts/agent-runner-run-command.mjs",
     "agent:queue:capture-browser": "node scripts/agent-runner-capture-browser.mjs",
+    "agent:queue:collect-ci": "node scripts/agent-runner-collect-ci.mjs",
     "agent:queue:claim": "node scripts/agent-runner-claim.mjs",
     "agent:queue:heartbeat": "node scripts/agent-runner-heartbeat.mjs",
     "agent:queue:handoff": "node scripts/agent-runner-handoff.mjs",
