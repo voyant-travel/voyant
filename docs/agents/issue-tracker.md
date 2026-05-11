@@ -318,6 +318,12 @@ snippets, writes a local repair packet under ignored `.agent-runs/...`, updates
 `Evidence` to that local packet, and keeps the item in `CI Repair`. Raw CI logs
 stay local; publish only redacted summaries when needed.
 
+The next repair command receives the packet through
+`VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH` and
+`VOYANT_AGENT_CI_REPAIR_EVIDENCE_REFERENCE`. Keep the command narrow: diagnose
+from that packet, change only the failing surface, and rerun the smallest
+verification lane that covers the failure.
+
 After a maintainer merges the PR, mark the Project item complete:
 
 ```bash

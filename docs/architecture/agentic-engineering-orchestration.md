@@ -1117,7 +1117,8 @@ Deliverables:
 - Mark Project items done when linked PRs are merged.
 - Collect failed CI check URLs and failed-log snippets into local ignored
   repair packets.
-- Re-run the agent with CI logs and a narrow repair prompt.
+- Re-run the agent with CI logs and a narrow repair prompt exposed through the
+  supervised command environment.
 
 Verification:
 

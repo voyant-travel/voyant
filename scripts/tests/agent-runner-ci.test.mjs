@@ -4,9 +4,11 @@ import { describe, it } from "node:test"
 import {
   buildCiRepairEvidencePacket,
   ciRepairArtifactPlan,
+  ciRepairEvidenceEnvironment,
   collectFailedCheckLogs,
   failingCheckDetails,
   hasCiRepairEvidence,
+  resolveCiRepairEvidencePath,
 } from "../lib/agent-runner-ci.mjs"
 import { workItem } from "./agent-fixtures.mjs"
 
@@ -67,6 +69,34 @@ describe("agent runner CI repair helpers", () => {
     )
     assert.equal(hasCiRepairEvidence(plan.evidencePointer), true)
     assert.equal(hasCiRepairEvidence("docs/agent-evidence/active/579-test.md"), false)
+    assert.equal(hasCiRepairEvidence(".agent-runs/../../tmp/ci-repair-x.md"), false)
+    assert.equal(
+      resolveCiRepairEvidencePath({ evidenceReference: plan.evidencePointer, repoRoot: "/repo" }),
+      "/repo/.agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+    )
+    assert.equal(
+      resolveCiRepairEvidencePath({
+        evidenceReference: ".agent-runs/../../tmp/ci-repair-x.md",
+        repoRoot: "/repo",
+      }),
+      null,
+    )
+    assert.deepEqual(
+      ciRepairEvidenceEnvironment({ evidenceReference: plan.evidencePointer, repoRoot: "/repo" }),
+      {
+        VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH:
+          "/repo/.agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+        VOYANT_AGENT_CI_REPAIR_EVIDENCE_REFERENCE:
+          ".agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+      },
+    )
+    assert.deepEqual(
+      ciRepairEvidenceEnvironment({
+        evidenceReference: "docs/agent-evidence/active/579-test.md",
+        repoRoot: "/repo",
+      }),
+      {},
+    )
   })
 
   it("collects each failed run log once and truncates large outputs", () => {

@@ -6,6 +6,7 @@ import {
   browserEvidenceMissingReason,
   requiresBrowserEvidence,
 } from "./agent-runner-browser-evidence.mjs"
+import { ciRepairEvidenceEnvironment, resolveCiRepairEvidencePath } from "./agent-runner-ci.mjs"
 
 export const commandRunStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
 
@@ -53,6 +54,10 @@ export function commandRunEnvironment({ artifactPlan, branch, item, repository }
 
   return {
     ...browserEvidenceEnvironment({ artifactPlan: browserPlan }),
+    ...ciRepairEvidenceEnvironment({
+      evidenceReference: item.fields.Evidence,
+      repoRoot: artifactPlan.repoRoot,
+    }),
     VOYANT_AGENT_BRANCH: branch,
     VOYANT_AGENT_EVIDENCE_PATH: artifactPlan.evidenceFile,
     VOYANT_AGENT_EVIDENCE_REFERENCE: artifactPlan.evidencePointer,
@@ -147,6 +152,10 @@ Runner command transcript: ${artifactPlan.logFile}
 
 ${formatBrowserEvidenceRequirement(item, uiEvidence)}
 
+## CI Repair Evidence
+
+${formatCiRepairEvidenceReference({ item, repoRoot: artifactPlan.repoRoot })}
+
 ## Residual Risks
 
 Review the command transcript and resulting diff before opening or merging a PR.
@@ -163,6 +172,17 @@ function formatBrowserEvidenceRequirement(item, uiEvidence) {
   }
 
   return "Required for UI-labeled work. Attach screenshots, console log, failed-request log, and video or note the maintainer-approved exception."
+}
+
+function formatCiRepairEvidenceReference({ item, repoRoot }) {
+  const evidenceReference = item.fields.Evidence
+  const evidencePath = resolveCiRepairEvidencePath({ evidenceReference, repoRoot })
+  if (!evidencePath) {
+    return "Not applicable."
+  }
+
+  return `Repair packet: ${evidencePath}
+Reference: ${evidenceReference}`
 }
 
 function isPathInside(candidatePath, parentPath) {
