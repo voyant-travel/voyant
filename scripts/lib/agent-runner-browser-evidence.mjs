@@ -1,6 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
+import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
+
 const uiEvidenceLabels = new Set([
   "browser:evidence",
   "frontend",
@@ -23,7 +25,12 @@ export function browserArtifactPlan({
 }) {
   const slug = slugFromTitle(item.issue.title)
   const timestamp = date.toISOString().replace(/[:.]/g, "-")
-  const workspace = path.resolve(repoRoot, workspaceReference)
+  const localWorkspace = localWorkspaceReferencePlan({
+    commandName: "capture-browser mode",
+    repoRoot,
+    workspaceReference,
+  })
+  const workspace = localWorkspace.workspace
   const artifactPointer = path.posix.join(
     "docs/agent-evidence/browser",
     `${item.issue.number}-${slug}`,
@@ -45,7 +52,7 @@ export function browserArtifactPlan({
     summaryJson: path.join(artifactDir, "summary.json"),
     videoDir: path.join(artifactDir, "videos"),
     workspace,
-    workspaceReference,
+    workspaceReference: localWorkspace.workspaceReference,
   }
 }
 

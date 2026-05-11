@@ -21,6 +21,10 @@ export function parseWorkspaceReference(reference, { repoRoot }) {
     }
   }
 
+  if (normalizedReference.startsWith("sandbox:")) {
+    return invalidWorkspace(normalizedReference, "remote sandbox reference is malformed")
+  }
+
   const workspace = path.resolve(repoRoot, normalizedReference)
   const localRoot = path.resolve(repoRoot, ".agent-worktrees")
 

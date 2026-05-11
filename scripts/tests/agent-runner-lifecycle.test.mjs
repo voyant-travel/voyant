@@ -15,6 +15,7 @@ import {
   canCleanupAgentState,
   cleanupFieldValues,
   cleanupWorkspacePlan,
+  localWorkspaceReferencePlan,
   removeWorkspace,
   workspacePlan,
 } from "../lib/agent-runner-workspace.mjs"
@@ -103,6 +104,55 @@ describe("agent runner lifecycle helpers", () => {
     })
   })
 
+  it("rejects remote sandbox references for local-only workspace commands", () => {
+    assert.deepEqual(
+      localWorkspaceReferencePlan({
+        commandName: "run-command mode",
+        repoRoot: "/repo",
+        workspaceReference: ".agent-worktrees/579-test-agent-project-intake-workflow",
+      }),
+      {
+        workspace: path.resolve("/repo/.agent-worktrees/579-test-agent-project-intake-workflow"),
+        workspaceDescriptor: {
+          agentWorktreeRoot: path.resolve("/repo/.agent-worktrees"),
+          id: "579-test-agent-project-intake-workflow",
+          kind: "local-worktree",
+          provider: null,
+          reference: ".agent-worktrees/579-test-agent-project-intake-workflow",
+          safeLocalWorkspace: true,
+          workspace: path.resolve("/repo/.agent-worktrees/579-test-agent-project-intake-workflow"),
+        },
+        workspaceReference: ".agent-worktrees/579-test-agent-project-intake-workflow",
+      },
+    )
+
+    assert.throws(
+      () =>
+        localWorkspaceReferencePlan({
+          commandName: "run-command mode",
+          onError: (message) => {
+            throw new Error(message)
+          },
+          repoRoot: "/repo",
+          workspaceReference: "sandbox:sprite:task-579",
+        }),
+      /run-command mode requires a local workspace; got remote-sandbox reference sandbox:sprite:task-579/,
+    )
+
+    assert.throws(
+      () =>
+        localWorkspaceReferencePlan({
+          commandName: "run-command mode",
+          onError: (message) => {
+            throw new Error(message)
+          },
+          repoRoot: "/repo",
+          workspaceReference: "sandbox:sprite:task/579",
+        }),
+      /run-command mode requires a local workspace; got remote sandbox reference is malformed/,
+    )
+  })
+
   it("parses local and remote workspace references", () => {
     assert.deepEqual(
       parseWorkspaceReference(".agent-worktrees/579-test-agent-project-intake-workflow", {
@@ -124,6 +174,14 @@ describe("agent runner lifecycle helpers", () => {
       kind: "remote-sandbox",
       provider: "sprite",
       reference: "sandbox:sprite:task-579",
+    })
+
+    assert.deepEqual(parseWorkspaceReference("sandbox:Sprite:task-579", { repoRoot: "/repo" }), {
+      id: null,
+      kind: "invalid",
+      provider: null,
+      reason: "remote sandbox reference is malformed",
+      reference: "sandbox:Sprite:task-579",
     })
 
     assert.deepEqual(

@@ -1,5 +1,4 @@
 import { existsSync } from "node:fs"
-import path from "node:path"
 
 import { updateProjectItemFields } from "./lib/agent-project-fields.mjs"
 import {
@@ -28,6 +27,7 @@ import {
   pullRequestTitle,
   pushBranch,
 } from "./lib/agent-runner-pr.mjs"
+import { localWorkspaceReferencePlan } from "./lib/agent-runner-workspace.mjs"
 
 const args = parseArgs(process.argv.slice(2))
 maybePrintHelp(args, {
@@ -76,7 +76,11 @@ if (!args.force && !openPullRequestStates.has(currentState)) {
 
 const branch = args.branch ?? item.fields.Branch ?? item.dryRunPlan.branch
 const workspaceReference = args.workspace ?? item.fields.Workspace ?? item.dryRunPlan.workspace
-const workspace = path.resolve(repoRoot, workspaceReference)
+const { workspace } = localWorkspaceReferencePlan({
+  commandName: "open-pr mode",
+  repoRoot,
+  workspaceReference,
+})
 if (!existsSync(workspace)) {
   fail(`workspace does not exist: ${workspace}`)
 }

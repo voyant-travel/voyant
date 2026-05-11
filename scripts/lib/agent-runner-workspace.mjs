@@ -32,6 +32,31 @@ export function cleanupWorkspacePlan({ item, repoRoot, workspaceReference }) {
   }
 }
 
+export function localWorkspaceReferencePlan({
+  commandName = "agent-runner",
+  onError = fail,
+  repoRoot,
+  workspaceReference,
+}) {
+  const descriptor = parseWorkspaceReference(workspaceReference, { repoRoot })
+
+  if (!isLocalWorkspaceDescriptor(descriptor)) {
+    const detail =
+      descriptor.kind === "invalid"
+        ? descriptor.reason
+        : `${descriptor.kind} reference ${descriptor.reference}`
+    const message = `${commandName} requires a local workspace; got ${detail}`
+    onError(message)
+    throw new Error(message)
+  }
+
+  return {
+    workspace: descriptor.workspace,
+    workspaceDescriptor: descriptor,
+    workspaceReference: descriptor.reference,
+  }
+}
+
 export function cleanupFieldValues(date = new Date()) {
   return {
     "Last Heartbeat": date.toISOString().slice(0, 10),
