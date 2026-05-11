@@ -6,6 +6,7 @@ import {
   browserEvidenceMissingReason,
   requiresBrowserEvidence,
 } from "./agent-runner-browser-evidence.mjs"
+import { browserEvidenceQualityBlockReason } from "./agent-runner-browser-validation.mjs"
 import { ciRepairEvidenceEnvironment, resolveCiRepairEvidencePath } from "./agent-runner-ci.mjs"
 import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 import {
@@ -87,17 +88,29 @@ export function commandRunEnvironment({ artifactPlan, branch, item, repository }
 }
 
 export function commandRunBrowserEvidenceBlockReason({
+  allowBrowserIssues = false,
   exitCode,
   force = false,
   item,
   uiEvidence,
+  workspace,
 }) {
   if (exitCode !== 0 || force) return null
 
   const missingReason = browserEvidenceMissingReason(item, uiEvidence)
-  if (!missingReason) return null
+  if (missingReason) {
+    return `${missingReason}; pass --ui-evidence or --force with an accepted exception`
+  }
 
-  return `${missingReason}; pass --ui-evidence or --force with an accepted exception`
+  const qualityReason = browserEvidenceQualityBlockReason({
+    allowBrowserIssues,
+    item,
+    uiEvidence,
+    workspace,
+  })
+  if (!qualityReason) return null
+
+  return `${qualityReason}; pass --allow-browser-issues only with an accepted exception`
 }
 
 export function commandRunFieldUpdate({ blockedBy, date = new Date(), evidencePointer, exitCode }) {

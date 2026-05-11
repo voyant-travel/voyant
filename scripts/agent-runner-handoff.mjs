@@ -12,6 +12,7 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import { browserEvidenceMissingReason } from "./lib/agent-runner-browser-evidence.mjs"
+import { browserEvidenceQualityBlockReason } from "./lib/agent-runner-browser-validation.mjs"
 import {
   maybePrintHelp,
   mutationOptions,
@@ -34,6 +35,10 @@ maybePrintHelp(args, {
     [
       "--ui-evidence <text>",
       "Required browser artifacts or approved exception for UI-labeled work.",
+    ],
+    [
+      "--allow-browser-issues",
+      "Allow UI evidence with browser quality issues after maintainer review.",
     ],
     ["--evidence-path <path>", "Evidence path relative to the task workspace."],
     ["--branch <name>", "Branch reference to record in the evidence packet."],
@@ -92,6 +97,18 @@ const { workspace } = localWorkspaceReferencePlan({
 })
 if (!existsSync(workspace)) {
   fail(`workspace does not exist: ${workspace}`)
+}
+
+const browserEvidenceQualityReason = browserEvidenceQualityBlockReason({
+  allowBrowserIssues: Boolean(args.allowBrowserIssues),
+  item,
+  uiEvidence: args.uiEvidence,
+  workspace,
+})
+if (browserEvidenceQualityReason) {
+  fail(
+    `${browserEvidenceQualityReason}; pass --allow-browser-issues only with an accepted exception`,
+  )
 }
 
 const evidencePointer =
