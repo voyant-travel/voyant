@@ -181,6 +181,11 @@ Pass `variant="inset"` or `variant="floating"` and `side="right"` when an app
 needs one of the modern sidebar variants. The sidebar can also be toggled with
 `Cmd+B` on macOS or `Ctrl+B` on Windows and Linux.
 
+The default brand uses the exported `VoyantMark` and `VoyantWordmark` SVG
+components and swaps from wordmark to mark in collapsed icon mode. Apps that
+need a custom lockup can pass `brand={<MyBrand />}` or compose those exported
+brand components directly.
+
 Workspace switching and team-management routes remain app-owned opt-ins. Apps
 that intentionally implement workspace switching can opt into
 `mode="organization"` and pass their own workspace readiness state.
