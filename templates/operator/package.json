@@ -7,7 +7,7 @@
     "dev": "vite dev --port 3300",
     "build": "vite build",
     "preview": "pnpm run build && vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "deploy": "pnpm run build && wrangler deploy",
     "dev:worker": "voyant dev --file src/workflows.ts --port 3310",

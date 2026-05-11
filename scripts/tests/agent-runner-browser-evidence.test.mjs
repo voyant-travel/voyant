@@ -15,6 +15,7 @@ import {
   captureBrowserEvidence,
   captureBrowserEvidenceSet,
   normalizeViewportList,
+  normalizeWaitUntil,
   requiresBrowserEvidence,
   safeScreenshotName,
 } from "../lib/agent-runner-browser-evidence.mjs"
@@ -219,6 +220,17 @@ describe("agent runner browser evidence helpers", () => {
           screenshotName: "../outside.md",
         }),
       /screenshot name must be a file name/,
+    )
+  })
+
+  it("normalizes browser navigation wait events", () => {
+    assert.equal(normalizeWaitUntil(undefined), "networkidle")
+    assert.equal(normalizeWaitUntil("load"), "load")
+    assert.equal(normalizeWaitUntil("DOMContentLoaded"), "domcontentloaded")
+    assert.equal(normalizeWaitUntil("commit"), "commit")
+    assert.throws(
+      () => normalizeWaitUntil("interactive"),
+      /invalid wait-until: interactive; expected commit, domcontentloaded, load, or networkidle/,
     )
   })
 

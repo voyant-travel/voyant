@@ -17,6 +17,15 @@ export type CurrentUser = {
 
 export type BootstrapStatus = { hasUsers: boolean }
 
+function isLocalRequest(request: Request): boolean {
+  const hostname = new URL(request.url).hostname
+  return hostname === "127.0.0.1" || hostname === "localhost"
+}
+
+function useBrowserEvidenceAuthFallback(request: Request): boolean {
+  return process.env.VOYANT_OPERATOR_BROWSER_EVIDENCE === "1" && isLocalRequest(request)
+}
+
 const withRequest = createMiddleware({ type: "request" }).server(({ next, request }) => {
   return next({ context: { request } })
 })
@@ -24,6 +33,10 @@ const withRequest = createMiddleware({ type: "request" }).server(({ next, reques
 export const getBootstrapStatus = createServerFn({ method: "GET" })
   .middleware([withRequest])
   .handler(async ({ context }) => {
+    if (useBrowserEvidenceAuthFallback(context.request)) {
+      return { hasUsers: true }
+    }
+
     const response = await fetch(new URL("/api/auth/bootstrap-status", context.request.url), {
       method: "GET",
     })
@@ -36,6 +49,10 @@ export const getBootstrapStatus = createServerFn({ method: "GET" })
 export const getCurrentUser = createServerFn({ method: "GET" })
   .middleware([withRequest])
   .handler(async ({ context }) => {
+    if (useBrowserEvidenceAuthFallback(context.request)) {
+      return null
+    }
+
     const headers = new Headers()
     const cookie = context.request.headers.get("cookie")
 
