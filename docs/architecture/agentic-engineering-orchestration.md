@@ -1185,8 +1185,11 @@ process management, HTTP exposure, artifact collection, cleanup, evidence
 writing, or PR creation. `agent:queue:remote-bootstrap` can now clone/fetch the
 repository, prefer an existing remote task branch, and check out the task branch
 inside a remote workspace. Ready remote-workspace items can be dispatched
-through that bootstrap path and move to `Planning` after success, but this is
-still repository preparation rather than the full implementation runner.
+through that bootstrap path and move to `Planning` after success.
+`agent:queue:remote-run-command` can run an explicit supervised command in that
+remote repository, write a remote transcript and evidence packet, and move the
+Project item to `Human Review` or `Blocked`. Browser evidence, HTTP exposure,
+remote artifact publishing, cleanup, and PR creation remain future slices.
 
 Verification:
 

@@ -219,6 +219,35 @@ function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
     })
   }
 
+  if (state === "CI Repair" && item.fields.PR && !hasCiRepairEvidence(item.fields.Evidence)) {
+    return null
+  }
+
+  if (["Planning", "Changes Requested", "CI Repair"].includes(state)) {
+    return recommendation(item, {
+      action: "remote-run-command",
+      command: commandWithIssue({
+        command: "remote-run-command",
+        extraArgs: ['--command "<implementation-command>"'],
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: 30,
+      reason: `remote workspace ${descriptor.reference} is ready for supervised command execution`,
+    })
+  }
+
+  if (state === "Running") {
+    return recommendation(item, {
+      action: "wait-running",
+      command: null,
+      heartbeat,
+      priority: 40,
+      reason: "remote command execution is already marked running",
+    })
+  }
+
   if (state === "Done" || state === "Abandoned") {
     return recommendation(item, {
       action: "wait-remote-cleanup",

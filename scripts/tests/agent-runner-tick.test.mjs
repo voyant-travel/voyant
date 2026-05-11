@@ -88,6 +88,38 @@ describe("agent runner tick helpers", () => {
       },
     )
 
+    assert.equal(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "CI Repair",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+            Workspace: "sandbox:sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ).action,
+      "collect-ci",
+    )
+
+    assert.equal(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "CI Repair",
+            Evidence:
+              ".agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+            Workspace: "sandbox:sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ).action,
+      "remote-run-command",
+    )
+
     assert.deepEqual(
       recommendQueueAction(
         workItem({
@@ -243,15 +275,17 @@ describe("agent runner tick helpers", () => {
         { maxAgeDays: 1, repository: "voyantjs/other" },
       ),
       {
-        action: "wait-remote-adapter",
-        command: "pnpm agent:queue:remote-inspect -- --issue 579 --repo voyantjs/other",
+        action: "remote-run-command",
+        command:
+          'pnpm agent:queue:remote-run-command -- --issue 579 --repo voyantjs/other --command "<implementation-command>" --yes',
         heartbeat: {
           reason: "Last Heartbeat is 0 days old",
           stale: false,
         },
         issue: workItem().issue,
-        priority: 29,
-        reason: "remote workspace sandbox:sprite:task-579 requires a remote adapter",
+        priority: 30,
+        reason:
+          "remote workspace sandbox:sprite:task-579 is ready for supervised command execution",
         state: "Planning",
       },
     )
