@@ -1,0 +1,160 @@
+import {
+  publicBookingOverviewLookupQuerySchema,
+  publicBookingOverviewSchema,
+  publicBookingSessionMutationSchema,
+  publicBookingSessionRepriceResultSchema,
+  publicBookingSessionSchema,
+  publicBookingSessionStateSchema,
+  publicCreateBookingSessionSchema,
+  publicRepriceBookingSessionSchema,
+  publicUpdateBookingSessionSchema,
+  publicUpsertBookingSessionStateSchema,
+} from "@voyantjs/bookings/public-validation"
+import {
+  bootstrapCheckoutCollectionSchema,
+  bootstrappedCheckoutCollectionSchema,
+  checkoutCollectionPlanSchema,
+  initiateCheckoutCollectionSchema,
+  initiatedCheckoutCollectionSchema,
+  previewCheckoutCollectionSchema,
+} from "@voyantjs/checkout/validation"
+import {
+  storefrontDepartureItinerarySchema,
+  storefrontDepartureListQuerySchema,
+  storefrontDepartureListResponseSchema,
+  storefrontDeparturePricePreviewInputSchema,
+  storefrontDeparturePricePreviewSchema,
+  storefrontDepartureSchema,
+  storefrontProductAvailabilitySummaryQuerySchema,
+  storefrontProductAvailabilitySummaryResponseSchema,
+  storefrontProductExtensionsQuerySchema,
+  storefrontProductExtensionsResponseSchema,
+  storefrontPromotionalOfferListQuerySchema,
+  storefrontPromotionalOfferSchema,
+  storefrontSettingsSchema,
+} from "@voyantjs/storefront/validation"
+import { z } from "zod"
+
+export const storefrontSingleEnvelopeSchema = <T extends z.ZodTypeAny>(item: T) =>
+  z.object({ data: item })
+export const storefrontArrayEnvelopeSchema = <T extends z.ZodTypeAny>(item: T) =>
+  z.object({ data: z.array(item) })
+
+export {
+  bootstrapCheckoutCollectionSchema,
+  bootstrappedCheckoutCollectionSchema,
+  checkoutCollectionPlanSchema,
+  initiateCheckoutCollectionSchema,
+  initiatedCheckoutCollectionSchema,
+  previewCheckoutCollectionSchema,
+  publicBookingOverviewLookupQuerySchema,
+  publicBookingOverviewSchema,
+  publicBookingSessionMutationSchema,
+  publicBookingSessionRepriceResultSchema,
+  publicBookingSessionSchema,
+  publicBookingSessionStateSchema,
+  publicCreateBookingSessionSchema,
+  publicRepriceBookingSessionSchema,
+  publicUpdateBookingSessionSchema,
+  publicUpsertBookingSessionStateSchema,
+  storefrontDepartureItinerarySchema,
+  storefrontDepartureListQuerySchema,
+  storefrontDepartureListResponseSchema,
+  storefrontDeparturePricePreviewInputSchema,
+  storefrontDeparturePricePreviewSchema,
+  storefrontDepartureSchema,
+  storefrontProductAvailabilitySummaryQuerySchema,
+  storefrontProductAvailabilitySummaryResponseSchema,
+  storefrontProductExtensionsQuerySchema,
+  storefrontProductExtensionsResponseSchema,
+  storefrontPromotionalOfferListQuerySchema,
+  storefrontPromotionalOfferSchema,
+  storefrontSettingsSchema,
+}
+
+export const storefrontSettingsResponseSchema =
+  storefrontSingleEnvelopeSchema(storefrontSettingsSchema)
+export const storefrontDepartureResponseSchema =
+  storefrontSingleEnvelopeSchema(storefrontDepartureSchema)
+export const storefrontDeparturePricePreviewResponseSchema = storefrontSingleEnvelopeSchema(
+  storefrontDeparturePricePreviewSchema,
+)
+export const storefrontDepartureItineraryResponseSchema = storefrontSingleEnvelopeSchema(
+  storefrontDepartureItinerarySchema,
+)
+export const storefrontPromotionalOfferListResponseSchema = storefrontArrayEnvelopeSchema(
+  storefrontPromotionalOfferSchema,
+)
+export const storefrontPromotionalOfferResponseSchema = storefrontSingleEnvelopeSchema(
+  storefrontPromotionalOfferSchema,
+)
+
+export const publicBookingSessionResponseSchema = storefrontSingleEnvelopeSchema(
+  publicBookingSessionSchema,
+)
+export const publicBookingSessionStateResponseSchema = storefrontSingleEnvelopeSchema(
+  publicBookingSessionStateSchema,
+)
+export const publicBookingSessionRepriceResponseSchema = storefrontSingleEnvelopeSchema(
+  publicBookingSessionRepriceResultSchema,
+)
+export const publicBookingOverviewResponseSchema = storefrontSingleEnvelopeSchema(
+  publicBookingOverviewSchema,
+)
+
+export const checkoutCollectionPlanResponseSchema = storefrontSingleEnvelopeSchema(
+  checkoutCollectionPlanSchema,
+)
+export const initiatedCheckoutCollectionResponseSchema = storefrontSingleEnvelopeSchema(
+  initiatedCheckoutCollectionSchema,
+)
+export const bootstrappedCheckoutCollectionResponseSchema = storefrontSingleEnvelopeSchema(
+  bootstrappedCheckoutCollectionSchema,
+)
+
+export type StorefrontSettingsRecord = z.infer<typeof storefrontSettingsSchema>
+export type StorefrontDepartureRecord = z.infer<typeof storefrontDepartureSchema>
+export type StorefrontDepartureListQuery = z.input<typeof storefrontDepartureListQuerySchema>
+export type StorefrontDeparturePricePreviewInput = z.input<
+  typeof storefrontDeparturePricePreviewInputSchema
+>
+export type StorefrontDeparturePricePreviewRecord = z.infer<
+  typeof storefrontDeparturePricePreviewSchema
+>
+export type StorefrontDepartureItineraryRecord = z.infer<typeof storefrontDepartureItinerarySchema>
+export type StorefrontProductAvailabilitySummaryQuery = z.input<
+  typeof storefrontProductAvailabilitySummaryQuerySchema
+>
+export type StorefrontProductExtensionsQuery = z.input<
+  typeof storefrontProductExtensionsQuerySchema
+>
+export type StorefrontPromotionalOfferListQuery = z.input<
+  typeof storefrontPromotionalOfferListQuerySchema
+>
+export type StorefrontPromotionalOfferRecord = z.infer<typeof storefrontPromotionalOfferSchema>
+
+export type PublicCreateBookingSessionInput = z.input<typeof publicCreateBookingSessionSchema>
+export type PublicUpdateBookingSessionInput = z.input<typeof publicUpdateBookingSessionSchema>
+export type PublicBookingSessionMutationInput = z.input<typeof publicBookingSessionMutationSchema>
+export type PublicBookingSessionRepriceInput = z.input<typeof publicRepriceBookingSessionSchema>
+export type PublicUpsertBookingSessionStateInput = z.input<
+  typeof publicUpsertBookingSessionStateSchema
+>
+export type PublicBookingOverviewLookupQuery = z.input<
+  typeof publicBookingOverviewLookupQuerySchema
+>
+export type PublicBookingSessionRecord = z.infer<typeof publicBookingSessionSchema>
+export type PublicBookingSessionStateRecord = z.infer<typeof publicBookingSessionStateSchema>
+export type PublicBookingSessionRepriceResultRecord = z.infer<
+  typeof publicBookingSessionRepriceResultSchema
+>
+export type PublicBookingOverviewRecord = z.infer<typeof publicBookingOverviewSchema>
+
+export type PreviewCheckoutCollectionInput = z.input<typeof previewCheckoutCollectionSchema>
+export type InitiateCheckoutCollectionInput = z.input<typeof initiateCheckoutCollectionSchema>
+export type BootstrapCheckoutCollectionInput = z.input<typeof bootstrapCheckoutCollectionSchema>
+export type CheckoutCollectionPlanRecord = z.infer<typeof checkoutCollectionPlanSchema>
+export type InitiatedCheckoutCollectionRecord = z.infer<typeof initiatedCheckoutCollectionSchema>
+export type BootstrappedCheckoutCollectionRecord = z.infer<
+  typeof bootstrappedCheckoutCollectionSchema
+>

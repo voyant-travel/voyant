@@ -222,10 +222,18 @@ Partially resolved:
 - `@voyantjs/storefront-react` now exposes typed operations, query helpers, and
   hooks for the public storefront contract over settings, departures, pricing
   preview, itinerary, extensions, and promotional offers
+- `@voyantjs/storefront-sdk` now provides the framework-agnostic TypeScript
+  facade for custom storefronts, wrapping existing public storefront, booking
+  session, and checkout collection contracts with derived booking-engine state
+  helpers
 
 Still missing:
 
-- no further shared client-helper blockers; only downstream adoption work
+- migrate React storefront helpers to delegate to `@voyantjs/storefront-sdk`
+  instead of maintaining parallel fetch wrappers
+- lifecycle contracts for legal previews, explicit payment result polling, and
+  finalized checkout side effects still need backend route support before the
+  SDK can expose them
 
 ### Public finance surface
 
