@@ -1090,6 +1090,12 @@ Deliverables:
 - Capture screenshots, console errors, failed requests, and video.
 - Require browser evidence for UI-labeled tasks.
 
+Current status: started. The local runner now allocates deterministic
+per-workspace browser artifact paths and dev-server ports, exposes them to
+supervised commands through `VOYANT_AGENT_*` environment variables, and rejects
+handoff for UI-labeled work that lacks browser evidence or an accepted
+exception.
+
 Verification:
 
 - Run first against `apps/workflows-local-dashboard`, then against a small
