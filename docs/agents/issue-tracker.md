@@ -200,6 +200,18 @@ updates the Project `Evidence` field to the durable URL. It refuses absolute or
 escaping evidence paths and refuses Evidence values that already point at a
 remote URL.
 
+After a remote-backed issue is merged, abandoned, or explicitly force-cleaned,
+dispose the remote workspace through the configured adapter:
+
+```bash
+pnpm agent:queue:remote-cleanup -- --issue <number> --yes
+```
+
+Remote-cleanup mode requires `Agent State = Done` or `Abandoned` unless
+`--force` is passed. It calls the adapter's `dispose` operation and clears the
+Project `Workspace` field only after that operation succeeds. Providers that do
+not declare `dispose` fail closed.
+
 After local start, run a supervised provider-neutral command in the claimed
 workspace:
 
@@ -283,8 +295,9 @@ does not execute implementation commands automatically. Remote `Human Review`
 items with local evidence paths recommend `remote-publish-evidence`; after
 evidence is published, they wait for the future remote PR publisher. Later
 remote workspace states still recommend wait states until a remote adapter owns
-browser evidence, PR creation, and cleanup. Malformed reserved `sandbox:`
-values recommend `inspect-workspace`.
+browser evidence and PR creation. Terminal remote items recommend
+`remote-cleanup`. Malformed reserved `sandbox:` values recommend
+`inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -295,10 +308,10 @@ pnpm agent:queue:dispatch -- --yes
 Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
-`start`, `remote-bootstrap`, `remote-publish-evidence`, `collect-ci`,
-`publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it refuses
-`run-command`, `remote-run-command`, `capture-browser`, `inspect-stale`,
-blocked work, and wait states so
+`start`, `remote-bootstrap`, `remote-publish-evidence`, `remote-cleanup`,
+`collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it
+refuses `run-command`, `remote-run-command`, `capture-browser`,
+`inspect-stale`, blocked work, and wait states so
 implementation and browser execution remain explicit.
 Successful dispatch attempts append local JSONL audit events to
 `.agent-runs/events.jsonl` by default; pass `--event-log <path>` when a
