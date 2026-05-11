@@ -42,6 +42,7 @@ maybePrintHelp(args, {
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
     ["--event-log <path>", "JSONL audit log path. Defaults to .agent-runs/events.jsonl."],
+    ["--update-body", "When dispatching sync-pr, refresh the PR body from evidence."],
     ...repositoryOptions,
     ...mutationOptions,
     ...projectOptions,
@@ -75,7 +76,11 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
   const recommendation = selectLoopRecommendation()
   if (!recommendation) break
 
-  const commandArgs = dispatchCommandArgs(recommendation, { eventLog: args.eventLog, repository })
+  const commandArgs = dispatchCommandArgs(recommendation, {
+    eventLog: args.eventLog,
+    repository,
+    updateBody: Boolean(args.updateBody),
+  })
 
   if (!args.yes) {
     printLoopPlan({ commandArgs, iteration, recommendation })

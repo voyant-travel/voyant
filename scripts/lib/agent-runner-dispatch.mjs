@@ -36,7 +36,7 @@ export function selectDispatchRecommendation(recommendations, { action, issueNum
   }
 }
 
-export function dispatchCommandArgs(recommendation, { eventLog, repository }) {
+export function dispatchCommandArgs(recommendation, { eventLog, repository, updateBody } = {}) {
   if (!dispatchableActions.has(recommendation.action)) {
     throw new Error(`action ${recommendation.action} is not dispatchable`)
   }
@@ -53,6 +53,10 @@ export function dispatchCommandArgs(recommendation, { eventLog, repository }) {
 
   if (eventLog) {
     commandArgs.push("--event-log", eventLog)
+  }
+
+  if (updateBody && recommendation.action === "sync-pr") {
+    commandArgs.push("--update-body")
   }
 
   return commandArgs

@@ -39,6 +39,7 @@ maybePrintHelp(args, {
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
     ["--event-log <path>", "JSONL audit log path. Defaults to .agent-runs/events.jsonl."],
+    ["--update-body", "When dispatching sync-pr, refresh the PR body from evidence."],
     ...repositoryOptions,
     ...mutationOptions,
     ...projectOptions,
@@ -76,7 +77,10 @@ if (!recommendation) {
   fail(reason)
 }
 
-const commandArgs = dispatchCommandArgs(recommendation, { repository })
+const commandArgs = dispatchCommandArgs(recommendation, {
+  repository,
+  updateBody: Boolean(args.updateBody),
+})
 const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 
 if (!args.yes) {

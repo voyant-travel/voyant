@@ -105,6 +105,48 @@ describe("agent runner dispatch helpers", () => {
     )
   })
 
+  it("passes PR body refresh only to sync recommendations", () => {
+    const syncRecommendation = recommendQueueAction(
+      workItem({
+        fields: {
+          "Agent State": "Human Review",
+          PR: "https://github.com/voyantjs/voyant/pull/626",
+        },
+      }),
+      { maxAgeDays: 1, repository: "voyantjs/other" },
+    )
+
+    assert.deepEqual(
+      dispatchCommandArgs(syncRecommendation, {
+        repository: "voyantjs/other",
+        updateBody: true,
+      }),
+      [
+        "agent:queue:sync-pr",
+        "--",
+        "--issue",
+        "579",
+        "--repo",
+        "voyantjs/other",
+        "--yes",
+        "--update-body",
+      ],
+    )
+
+    const startRecommendation = recommendQueueAction(workItem(), {
+      maxAgeDays: 1,
+      repository: "voyantjs/other",
+    })
+
+    assert.equal(
+      dispatchCommandArgs(startRecommendation, {
+        repository: "voyantjs/other",
+        updateBody: true,
+      }).includes("--update-body"),
+      false,
+    )
+  })
+
   it("does not dispatch implementation or wait actions", () => {
     const running = recommendQueueAction(
       workItem({
