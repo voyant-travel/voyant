@@ -14,6 +14,8 @@ This package wraps the shared Voyant auth HTTP contract:
 - `/auth/organization/update-member-role`
 - `/auth/organization/remove-member`
 - `/auth/organization/cancel-invitation`
+- `/auth/api-tokens`
+- `/auth/api-tokens/:keyId`
 
 It provides reusable React surfaces for:
 
@@ -22,6 +24,7 @@ It provides reusable React surfaces for:
 - organization member listing
 - organization invitation listing
 - invite, cancel, remove, and role update mutations
+- API token listing, creation, update, and deletion
 
 ## Single-Tenant Apps
 
@@ -34,3 +37,11 @@ Do not make workspace queries part of the base admin loading gate unless the app
 intentionally requires organization switching or team management. Apps that do
 not mount the organization routes can still use the current-user hooks without
 providing `/auth/workspace/current` or `/auth/organization/*` endpoints.
+
+## API Tokens
+
+The API-token hooks call Voyant's `/auth/api-tokens` facade, not Better Auth's
+raw `/auth/api-key/*` plugin routes. Mount
+`handleApiTokenManagementRequest(...)` from `@voyantjs/auth/server` before
+falling through to `auth.handler(request)` so the shared UI can manage
+permissioned `voy_` service tokens.
