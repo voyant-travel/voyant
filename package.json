@@ -37,6 +37,7 @@
     "agent:queue:dispatch": "node scripts/agent-runner-dispatch.mjs",
     "agent:queue:loop": "node scripts/agent-runner-loop.mjs",
     "agent:queue:remote-inspect": "node scripts/agent-runner-remote-inspect.mjs",
+    "agent:queue:remote-exec": "node scripts/agent-runner-remote-exec.mjs",
     "agent:queue:prepare": "node scripts/agent-runner-prepare.mjs",
     "agent:queue:start": "node scripts/agent-runner-start.mjs",
     "agent:queue:run-command": "node scripts/agent-runner-run-command.mjs",

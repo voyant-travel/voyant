@@ -1177,7 +1177,12 @@ expose HTTP, collect artifacts, or clean up remote state. Remote adapters can
 now be loaded from an explicit config module via `--adapter-config`,
 `VOYANT_AGENT_REMOTE_ADAPTER_CONFIG`, or trusted
 `.agents/remote-workspaces.mjs`; the runner still treats providers as
-unavailable unless a config supplies that provider.
+unavailable unless a config supplies that provider. A conservative CLI-backed
+Sprite adapter is available for one-shot command execution once a maintainer
+enables it through adapter config. `agent:queue:remote-exec` can validate that
+path with a guarded command, but remote execution does not yet own long-running
+process management, HTTP exposure, artifact collection, cleanup, evidence
+writing, PR creation, or repository bootstrap.
 
 Verification:
 
