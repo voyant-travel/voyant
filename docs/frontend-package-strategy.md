@@ -4,9 +4,11 @@ Voyant separates frontend acceleration into three layers:
 
 1. `@voyantjs/<module>`
    Domain and runtime logic. These packages stay transport- and framework-agnostic where possible.
-2. `@voyantjs/<module>-react`
+2. Framework-agnostic SDK packages when a cross-module public workflow needs a
+   stable client facade, for example `@voyantjs/storefront-sdk`.
+3. `@voyantjs/<module>-react`
    React runtime helpers for a module. These packages provide hooks, query keys, typed clients, providers, and frontend view-model helpers.
-3. shadcn registry blocks
+4. shadcn registry blocks
    Source-installed UI components and screens that developers can pull into their own app and customize locally.
 
 ## Why This Split Exists
@@ -29,7 +31,8 @@ That gives Voyant a better product shape than a monolithic starter-only UI and a
 ## What Belongs In `-react`
 
 - Context providers
-- typed fetch clients
+- typed fetch clients for module-local contracts, or React Query wrappers around
+  a framework-agnostic SDK when a workflow spans modules
 - React Query hooks
 - mutation hooks
 - query key helpers

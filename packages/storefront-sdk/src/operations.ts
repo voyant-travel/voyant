@@ -1,0 +1,338 @@
+import {
+  requestHeaders,
+  type StorefrontRequestOptions,
+  storefrontFetchWithValidation,
+  type VoyantStorefrontClientOptions,
+  withStorefrontQueryParams,
+} from "./client.js"
+import {
+  type BootstrapCheckoutCollectionInput,
+  bootstrapCheckoutCollectionSchema,
+  bootstrappedCheckoutCollectionResponseSchema,
+  checkoutCollectionPlanResponseSchema,
+  type InitiateCheckoutCollectionInput,
+  initiateCheckoutCollectionSchema,
+  initiatedCheckoutCollectionResponseSchema,
+  type PreviewCheckoutCollectionInput,
+  type PublicBookingOverviewLookupQuery,
+  type PublicBookingSessionMutationInput,
+  type PublicBookingSessionRepriceInput,
+  type PublicCreateBookingSessionInput,
+  type PublicUpdateBookingSessionInput,
+  type PublicUpsertBookingSessionStateInput,
+  previewCheckoutCollectionSchema,
+  publicBookingOverviewLookupQuerySchema,
+  publicBookingOverviewResponseSchema,
+  publicBookingSessionMutationSchema,
+  publicBookingSessionRepriceResponseSchema,
+  publicBookingSessionResponseSchema,
+  publicBookingSessionStateResponseSchema,
+  publicCreateBookingSessionSchema,
+  publicRepriceBookingSessionSchema,
+  publicUpdateBookingSessionSchema,
+  publicUpsertBookingSessionStateSchema,
+  type StorefrontDepartureListQuery,
+  type StorefrontDeparturePricePreviewInput,
+  type StorefrontProductAvailabilitySummaryQuery,
+  type StorefrontProductExtensionsQuery,
+  type StorefrontPromotionalOfferListQuery,
+  storefrontDepartureItineraryResponseSchema,
+  storefrontDepartureListQuerySchema,
+  storefrontDepartureListResponseSchema,
+  storefrontDeparturePricePreviewInputSchema,
+  storefrontDeparturePricePreviewResponseSchema,
+  storefrontDepartureResponseSchema,
+  storefrontProductAvailabilitySummaryQuerySchema,
+  storefrontProductAvailabilitySummaryResponseSchema,
+  storefrontProductExtensionsQuerySchema,
+  storefrontProductExtensionsResponseSchema,
+  storefrontPromotionalOfferListQuerySchema,
+  storefrontPromotionalOfferListResponseSchema,
+  storefrontPromotionalOfferResponseSchema,
+  storefrontSettingsResponseSchema,
+} from "./schemas.js"
+
+type ResolvedClientOptions = Required<Pick<VoyantStorefrontClientOptions, "baseUrl" | "fetcher">> &
+  Pick<VoyantStorefrontClientOptions, "headers">
+
+export function getStorefrontSettings(client: ResolvedClientOptions) {
+  return storefrontFetchWithValidation(
+    "/v1/public/settings",
+    storefrontSettingsResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function getStorefrontDeparture(client: ResolvedClientOptions, departureId: string) {
+  return storefrontFetchWithValidation(
+    `/v1/public/departures/${encodeURIComponent(departureId)}`,
+    storefrontDepartureResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function listStorefrontProductDepartures(
+  client: ResolvedClientOptions,
+  productId: string,
+  query?: StorefrontDepartureListQuery,
+) {
+  const parsed = query ? storefrontDepartureListQuerySchema.parse(query) : undefined
+  return storefrontFetchWithValidation(
+    withStorefrontQueryParams(
+      `/v1/public/products/${encodeURIComponent(productId)}/departures`,
+      parsed,
+    ),
+    storefrontDepartureListResponseSchema,
+    client,
+  )
+}
+
+export function getStorefrontProductAvailability(
+  client: ResolvedClientOptions,
+  productId: string,
+  query?: StorefrontProductAvailabilitySummaryQuery,
+) {
+  const parsed = query ? storefrontProductAvailabilitySummaryQuerySchema.parse(query) : undefined
+  return storefrontFetchWithValidation(
+    withStorefrontQueryParams(
+      `/v1/public/products/${encodeURIComponent(productId)}/availability`,
+      parsed,
+    ),
+    storefrontProductAvailabilitySummaryResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function previewStorefrontDeparturePrice(
+  client: ResolvedClientOptions,
+  departureId: string,
+  input: StorefrontDeparturePricePreviewInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = storefrontDeparturePricePreviewInputSchema.parse(input)
+  return storefrontFetchWithValidation(
+    `/v1/public/departures/${encodeURIComponent(departureId)}/price`,
+    storefrontDeparturePricePreviewResponseSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function listStorefrontProductExtensions(
+  client: ResolvedClientOptions,
+  productId: string,
+  query?: StorefrontProductExtensionsQuery,
+) {
+  const parsed = query ? storefrontProductExtensionsQuerySchema.parse(query) : undefined
+  return storefrontFetchWithValidation(
+    withStorefrontQueryParams(
+      `/v1/public/products/${encodeURIComponent(productId)}/extensions`,
+      parsed,
+    ),
+    storefrontProductExtensionsResponseSchema,
+    client,
+  )
+}
+
+export function getStorefrontDepartureItinerary(
+  client: ResolvedClientOptions,
+  productId: string,
+  departureId: string,
+) {
+  return storefrontFetchWithValidation(
+    `/v1/public/products/${encodeURIComponent(productId)}/departures/${encodeURIComponent(
+      departureId,
+    )}/itinerary`,
+    storefrontDepartureItineraryResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function listStorefrontProductOffers(
+  client: ResolvedClientOptions,
+  productId: string,
+  query?: StorefrontPromotionalOfferListQuery,
+) {
+  const parsed = query ? storefrontPromotionalOfferListQuerySchema.parse(query) : undefined
+  return storefrontFetchWithValidation(
+    withStorefrontQueryParams(
+      `/v1/public/products/${encodeURIComponent(productId)}/offers`,
+      parsed,
+    ),
+    storefrontPromotionalOfferListResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function getStorefrontOfferBySlug(
+  client: ResolvedClientOptions,
+  slug: string,
+  query?: Pick<StorefrontPromotionalOfferListQuery, "locale">,
+) {
+  return storefrontFetchWithValidation(
+    withStorefrontQueryParams(`/v1/public/offers/${encodeURIComponent(slug)}`, query),
+    storefrontPromotionalOfferResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function createPublicBookingSession(
+  client: ResolvedClientOptions,
+  input: PublicCreateBookingSessionInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = publicCreateBookingSessionSchema.parse(input)
+  return storefrontFetchWithValidation(
+    "/v1/public/bookings/sessions",
+    publicBookingSessionResponseSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function getPublicBookingSession(client: ResolvedClientOptions, sessionId: string) {
+  return storefrontFetchWithValidation(
+    `/v1/public/bookings/sessions/${encodeURIComponent(sessionId)}`,
+    publicBookingSessionResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function updatePublicBookingSession(
+  client: ResolvedClientOptions,
+  sessionId: string,
+  input: PublicUpdateBookingSessionInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = publicUpdateBookingSessionSchema.parse(input)
+  return storefrontFetchWithValidation(
+    `/v1/public/bookings/sessions/${encodeURIComponent(sessionId)}`,
+    publicBookingSessionResponseSchema,
+    client,
+    { method: "PATCH", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function getPublicBookingSessionState(client: ResolvedClientOptions, sessionId: string) {
+  return storefrontFetchWithValidation(
+    `/v1/public/bookings/sessions/${encodeURIComponent(sessionId)}/state`,
+    publicBookingSessionStateResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function updatePublicBookingSessionState(
+  client: ResolvedClientOptions,
+  sessionId: string,
+  input: PublicUpsertBookingSessionStateInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = publicUpsertBookingSessionStateSchema.parse(input)
+  return storefrontFetchWithValidation(
+    `/v1/public/bookings/sessions/${encodeURIComponent(sessionId)}/state`,
+    publicBookingSessionStateResponseSchema,
+    client,
+    { method: "PUT", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function repricePublicBookingSession(
+  client: ResolvedClientOptions,
+  sessionId: string,
+  input: PublicBookingSessionRepriceInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = publicRepriceBookingSessionSchema.parse(input)
+  return storefrontFetchWithValidation(
+    `/v1/public/bookings/sessions/${encodeURIComponent(sessionId)}/reprice`,
+    publicBookingSessionRepriceResponseSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function confirmPublicBookingSession(
+  client: ResolvedClientOptions,
+  sessionId: string,
+  input: PublicBookingSessionMutationInput = {},
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = publicBookingSessionMutationSchema.parse(input)
+  return storefrontFetchWithValidation(
+    `/v1/public/bookings/sessions/${encodeURIComponent(sessionId)}/confirm`,
+    publicBookingSessionResponseSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function expirePublicBookingSession(
+  client: ResolvedClientOptions,
+  sessionId: string,
+  input: PublicBookingSessionMutationInput = {},
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = publicBookingSessionMutationSchema.parse(input)
+  return storefrontFetchWithValidation(
+    `/v1/public/bookings/sessions/${encodeURIComponent(sessionId)}/expire`,
+    publicBookingSessionResponseSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function getPublicBookingOverview(
+  client: ResolvedClientOptions,
+  query: PublicBookingOverviewLookupQuery,
+) {
+  const parsed = publicBookingOverviewLookupQuerySchema.parse(query)
+  return storefrontFetchWithValidation(
+    withStorefrontQueryParams("/v1/public/bookings/overview", parsed),
+    publicBookingOverviewResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function previewCheckoutCollection(
+  client: ResolvedClientOptions,
+  bookingId: string,
+  input: PreviewCheckoutCollectionInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = previewCheckoutCollectionSchema.parse(input)
+  return storefrontFetchWithValidation(
+    `/v1/public/checkout/bookings/${encodeURIComponent(bookingId)}/collection-plan`,
+    checkoutCollectionPlanResponseSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function initiateCheckoutCollection(
+  client: ResolvedClientOptions,
+  bookingId: string,
+  input: InitiateCheckoutCollectionInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = initiateCheckoutCollectionSchema.parse(input)
+  return storefrontFetchWithValidation(
+    `/v1/public/checkout/bookings/${encodeURIComponent(bookingId)}/initiate-collection`,
+    initiatedCheckoutCollectionResponseSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function bootstrapCheckoutCollection(
+  client: ResolvedClientOptions,
+  input: BootstrapCheckoutCollectionInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = bootstrapCheckoutCollectionSchema.parse(input)
+  return storefrontFetchWithValidation(
+    "/v1/public/checkout/collections/bootstrap",
+    bootstrappedCheckoutCollectionResponseSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
