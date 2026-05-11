@@ -166,8 +166,9 @@ Capture-browser mode writes screenshots, video, console logs, failed-request
 logs, and a summary under `docs/agent-evidence/browser/...` inside the claimed
 workspace. By default it targets the deterministic issue URL in
 `VOYANT_AGENT_DEV_SERVER_URL`; pass `--url` for an already-running app or a
-specific route. The command prints a multi-line value that can be passed as
-`--ui-evidence` to `handoff` or `run-command`.
+specific route. Use `--viewports 1440x900,390x844` to capture desktop and
+mobile evidence in the same artifact packet. The command prints a multi-line
+value that can be passed as `--ui-evidence` to `handoff` or `run-command`.
 
 Use the read-only status view to inspect the current queue and active work:
 
