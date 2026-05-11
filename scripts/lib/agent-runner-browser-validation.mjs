@@ -99,6 +99,7 @@ function formatBrowserEvidenceSummaryForReview({ reference, summary, workspace }
 
   return [
     `Browser artifacts: ${artifactPointer}`,
+    summary.remoteArtifactIndex ? `Remote artifact index: ${summary.remoteArtifactIndex}` : null,
     `Browser issue summary: ${formatBrowserIssueSummary(summary.browserIssues)}`,
     `Blocking browser issues: ${summary.browserIssues.hasBlockingIssues ? "yes" : "no"}`,
     "",

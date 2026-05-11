@@ -1227,6 +1227,14 @@ Verification:
   GitHub Actions artifacts are temporary CI/debug convenience, not the durable
   archive. A small internal dashboard can be added later as a viewer over the
   same run store and R2 artifacts.
+- Browser capture can publish artifacts directly to R2-compatible object
+  storage with `pnpm agent:queue:capture-browser -- --publish-artifacts`.
+  Configure it with `VOYANT_AGENT_R2_BUCKET`,
+  `VOYANT_AGENT_R2_ACCESS_KEY_ID`, `VOYANT_AGENT_R2_SECRET_ACCESS_KEY`,
+  `VOYANT_AGENT_R2_ACCOUNT_ID` or `VOYANT_AGENT_R2_ENDPOINT`, and
+  `VOYANT_AGENT_R2_PUBLIC_BASE_URL`. The public base URL should be a durable
+  custom domain or authenticated artifact proxy URL prefix, not a temporary
+  signed URL.
 
 ## Open Questions
 
