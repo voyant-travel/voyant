@@ -14,9 +14,11 @@ import {
 import {
   browserArtifactPlan,
   browserCapturePlan,
+  browserCapturePlans,
   browserEvidenceEnvironment,
   browserEvidenceText,
   captureBrowserEvidence,
+  captureBrowserEvidenceSet,
   requiresBrowserEvidence,
 } from "./lib/agent-runner-browser-evidence.mjs"
 import {
@@ -36,7 +38,8 @@ maybePrintHelp(args, {
     ["--url <url>", "URL to capture. Defaults to the issue-scoped local dev server URL."],
     ["--dev-server-command <shell>", "Optional dev server command to start before capture."],
     ["--workspace <path>", "Workspace path override."],
-    ["--viewport <size>", "Viewport as <width>x<height>. Defaults to 1440x900."],
+    ["--viewport <size>", "Single viewport as <width>x<height>. Defaults to 1440x900."],
+    ["--viewports <sizes>", "Comma-separated viewport list, for example 1440x900,390x844."],
     ["--timeout-ms <number>", "Navigation and dev-server wait timeout. Defaults to 30000."],
     ["--screenshot-name <name>", "Screenshot file name. Defaults to page.png."],
     ["--browser-base-port <number>", "Base port for deterministic issue ports. Defaults to 4300."],
@@ -52,6 +55,10 @@ if (!args.issue) {
 
 const timeoutMs = numberArg(args.timeoutMs, 30_000, "timeout-ms")
 const browserBasePort = numberArg(args.browserBasePort, 4300, "browser-base-port")
+if (args.viewport && args.viewports) {
+  fail("use either --viewport or --viewports, not both")
+}
+
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
@@ -79,6 +86,14 @@ const capturePlan = browserCapturePlan({
   url: args.url ?? artifactPlan.devServerUrl,
   viewport: args.viewport,
 })
+const capturePlans = args.viewports
+  ? browserCapturePlans({
+      artifactPlan,
+      screenshotName: args.screenshotName,
+      url: args.url ?? artifactPlan.devServerUrl,
+      viewports: args.viewports,
+    })
+  : [capturePlan]
 
 if (!artifactPlan.safeArtifactPath) {
   fail(`capture-browser refuses artifacts outside the workspace: ${artifactPlan.artifactDir}`)
@@ -89,7 +104,7 @@ if (!existsSync(artifactPlan.workspace)) {
 }
 
 if (!args.yes) {
-  printCapturePlan({ artifactPlan, capturePlan, item, repository })
+  printCapturePlan({ artifactPlan, item, repository })
   fail("capture-browser mode writes local browser artifacts; rerun with --yes")
 }
 
@@ -110,14 +125,21 @@ let captureError
 
 try {
   if (server) {
-    await waitForUrl(capturePlan.url, { timeoutMs })
+    await waitForUrl(capturePlans[0].url, { timeoutMs })
   }
 
-  result = await captureBrowserEvidence({
-    browserLauncher: chromium,
-    capturePlan,
-    timeoutMs,
-  })
+  result =
+    capturePlans.length === 1
+      ? await captureBrowserEvidence({
+          browserLauncher: chromium,
+          capturePlan: capturePlans[0],
+          timeoutMs,
+        })
+      : await captureBrowserEvidenceSet({
+          browserLauncher: chromium,
+          capturePlans,
+          timeoutMs,
+        })
 } catch (error) {
   captureError = error
 } finally {
@@ -142,20 +164,26 @@ if (!requiresBrowserEvidence(item)) {
   console.log("Note: browser evidence is not required by this issue's labels.")
 }
 
-function printCapturePlan({ artifactPlan, capturePlan, item, repository }) {
+function printCapturePlan({ artifactPlan, item, repository }) {
   console.log("agent-runner capture-browser would capture:")
   console.log(`issue: #${item.issue.number} ${item.issue.title}`)
   console.log(`repository: ${repository}`)
   console.log(`workspace: ${artifactPlan.workspace}`)
-  console.log(`url: ${capturePlan.url}`)
-  console.log(`viewport: ${capturePlan.viewport.width}x${capturePlan.viewport.height}`)
+  console.log(`url: ${capturePlans[0].url}`)
+  console.log(`viewports: ${capturePlans.map((plan) => viewportLabel(plan.viewport)).join(", ")}`)
   console.log(`artifacts: ${artifactPlan.artifactDir}`)
-  console.log(`screenshot: ${capturePlan.screenshotFile}`)
+  for (const plan of capturePlans) {
+    console.log(`screenshot ${viewportLabel(plan.viewport)}: ${plan.screenshotFile}`)
+  }
   console.log(`console log: ${artifactPlan.consoleLog}`)
   console.log(`failed-request log: ${artifactPlan.networkLog}`)
   if (args.devServerCommand) {
     console.log(`dev server command: ${args.devServerCommand}`)
   }
+}
+
+function viewportLabel(viewport) {
+  return `${viewport.width}x${viewport.height}`
 }
 
 function startDevServer({ artifactPlan, command, env }) {

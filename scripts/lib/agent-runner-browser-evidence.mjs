@@ -111,12 +111,48 @@ export function browserCapturePlan({
   }
 }
 
+export function browserCapturePlans({
+  artifactPlan,
+  screenshotName = "page.png",
+  url = artifactPlan.devServerUrl,
+  viewports,
+}) {
+  const normalizedViewports = normalizeViewportList(viewports)
+  const multipleViewports = normalizedViewports.length > 1
+
+  return normalizedViewports.map((viewport) =>
+    browserCapturePlan({
+      artifactPlan,
+      screenshotName: screenshotNameForViewport(screenshotName, viewport, multipleViewports),
+      url,
+      viewport,
+    }),
+  )
+}
+
 export function safeScreenshotName(screenshotName) {
   if (!screenshotName || path.basename(screenshotName) !== screenshotName) {
     throw new Error("screenshot name must be a file name without path separators")
   }
 
   return screenshotName
+}
+
+export function normalizeViewportList(viewports) {
+  if (!viewports) return [normalizeViewport()]
+
+  const viewportValues = Array.isArray(viewports)
+    ? viewports
+    : String(viewports)
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+
+  if (viewportValues.length === 0) {
+    throw new Error("at least one viewport is required")
+  }
+
+  return viewportValues.map((viewport) => normalizeViewport(viewport))
 }
 
 export function normalizeViewport(viewport) {
@@ -138,13 +174,82 @@ export async function captureBrowserEvidence({ browserLauncher, capturePlan, tim
     throw new Error("browser launcher with launch() is required")
   }
 
-  const { artifactPlan, screenshotFile, url, viewport } = capturePlan
+  const artifactPlan = capturePlan.artifactPlan
+  prepareBrowserEvidenceArtifacts(artifactPlan)
+
+  const capture = await captureSingleBrowserEvidence({
+    browserLauncher,
+    capturePlan,
+    timeoutMs,
+  })
+  const result = {
+    ...capture,
+    consoleLog: artifactPlan.consoleLog,
+    failedRequestLog: artifactPlan.networkLog,
+  }
+
+  writeFileSync(artifactPlan.summaryJson, `${JSON.stringify(result, null, 2)}\n`, "utf8")
+  writeFileSync(artifactPlan.readme, browserEvidenceMarkdown(result), "utf8")
+
+  return result
+}
+
+export async function captureBrowserEvidenceSet({
+  browserLauncher,
+  capturePlans,
+  timeoutMs = 30_000,
+}) {
+  if (!browserLauncher?.launch) {
+    throw new Error("browser launcher with launch() is required")
+  }
+
+  if (!Array.isArray(capturePlans) || capturePlans.length === 0) {
+    throw new Error("at least one browser capture plan is required")
+  }
+
+  const artifactPlan = capturePlans[0].artifactPlan
+  for (const capturePlan of capturePlans) {
+    if (capturePlan.artifactPlan !== artifactPlan) {
+      throw new Error("browser capture plans must share an artifact plan")
+    }
+  }
+
+  prepareBrowserEvidenceArtifacts(artifactPlan)
+
+  const captures = []
+  for (const capturePlan of capturePlans) {
+    captures.push(
+      await captureSingleBrowserEvidence({
+        browserLauncher,
+        capturePlan,
+        timeoutMs,
+      }),
+    )
+  }
+
+  const result = {
+    artifactPointer: artifactPlan.artifactPointer,
+    captures,
+    consoleLog: artifactPlan.consoleLog,
+    failedRequestLog: artifactPlan.networkLog,
+  }
+
+  writeFileSync(artifactPlan.summaryJson, `${JSON.stringify(result, null, 2)}\n`, "utf8")
+  writeFileSync(artifactPlan.readme, browserEvidenceMarkdown(result), "utf8")
+
+  return result
+}
+
+function prepareBrowserEvidenceArtifacts(artifactPlan) {
   mkdirSync(artifactPlan.artifactDir, { recursive: true })
   mkdirSync(artifactPlan.screenshotDir, { recursive: true })
   mkdirSync(artifactPlan.videoDir, { recursive: true })
   writeFileSync(artifactPlan.consoleLog, "", "utf8")
   writeFileSync(artifactPlan.networkLog, "", "utf8")
+}
 
+async function captureSingleBrowserEvidence({ browserLauncher, capturePlan, timeoutMs }) {
+  const { artifactPlan, screenshotFile, url, viewport } = capturePlan
   const browser = await browserLauncher.launch({ headless: true })
   let context
   let page
@@ -173,23 +278,33 @@ export async function captureBrowserEvidence({ browserLauncher, capturePlan, tim
     await browser.close().catch(() => undefined)
   }
 
-  const result = {
+  return {
     artifactPointer: artifactPlan.artifactPointer,
-    consoleLog: artifactPlan.consoleLog,
-    failedRequestLog: artifactPlan.networkLog,
     screenshot: screenshotFile,
     url,
     video: videoPath,
     viewport,
   }
-
-  writeFileSync(artifactPlan.summaryJson, `${JSON.stringify(result, null, 2)}\n`, "utf8")
-  writeFileSync(artifactPlan.readme, browserEvidenceMarkdown(result), "utf8")
-
-  return result
 }
 
 export function browserEvidenceText(result) {
+  if (Array.isArray(result.captures)) {
+    const lines = [`browser artifacts: ${result.artifactPointer}`]
+
+    for (const capture of result.captures) {
+      lines.push(
+        `capture ${capture.viewport.width}x${capture.viewport.height}: ${capture.url}`,
+        `screenshot: ${capture.screenshot}`,
+      )
+      if (capture.video) lines.push(`video: ${capture.video}`)
+    }
+
+    lines.push(`console log: ${result.consoleLog}`)
+    lines.push(`failed-request log: ${result.failedRequestLog}`)
+
+    return lines.join("\n")
+  }
+
   const lines = [
     `browser artifacts: ${result.artifactPointer}`,
     `url: ${result.url}`,
@@ -204,6 +319,36 @@ export function browserEvidenceText(result) {
 }
 
 export function browserEvidenceMarkdown(result) {
+  if (Array.isArray(result.captures)) {
+    const captureLines = result.captures
+      .map((capture) =>
+        [
+          `### ${capture.viewport.width}x${capture.viewport.height}`,
+          "",
+          `URL: ${capture.url}`,
+          `Screenshot: ${capture.screenshot}`,
+          capture.video ? `Video: ${capture.video}` : null,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      )
+      .join("\n\n")
+
+    return `# Browser Evidence
+
+Artifacts: ${result.artifactPointer}
+
+## Captures
+
+${captureLines}
+
+## Logs
+
+- Console log: ${result.consoleLog}
+- Failed-request log: ${result.failedRequestLog}
+`
+  }
+
   return `# Browser Evidence
 
 URL: ${result.url}
@@ -217,6 +362,15 @@ Viewport: ${result.viewport.width}x${result.viewport.height}
 - Failed-request log: ${result.failedRequestLog}
 ${result.video ? `- Video: ${result.video}\n` : ""}
 `
+}
+
+function screenshotNameForViewport(screenshotName, viewport, multipleViewports) {
+  const safeName = safeScreenshotName(screenshotName)
+  if (!multipleViewports) return safeName
+
+  const extension = path.extname(safeName) || ".png"
+  const stem = path.basename(safeName, path.extname(safeName))
+  return `${stem}-${viewport.width}x${viewport.height}${extension}`
 }
 
 function wireBrowserEvidenceEvents({ artifactPlan, page }) {

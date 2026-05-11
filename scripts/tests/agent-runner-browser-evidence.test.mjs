@@ -7,11 +7,14 @@ import { describe, it } from "node:test"
 import {
   browserArtifactPlan,
   browserCapturePlan,
+  browserCapturePlans,
   browserEvidenceEnvironment,
   browserEvidenceMissingReason,
   browserEvidenceReferenceKind,
   browserEvidenceText,
   captureBrowserEvidence,
+  captureBrowserEvidenceSet,
+  normalizeViewportList,
   requiresBrowserEvidence,
   safeScreenshotName,
 } from "../lib/agent-runner-browser-evidence.mjs"
@@ -215,6 +218,27 @@ describe("agent runner browser evidence helpers", () => {
     )
   })
 
+  it("plans named browser screenshots for multiple viewports", () => {
+    const artifactPlan = browserArtifactPlan({
+      item: workItem(),
+      repoRoot: "/repo",
+      workspaceReference: ".agent-worktrees/task",
+    })
+    const plans = browserCapturePlans({
+      artifactPlan,
+      screenshotName: "after.png",
+      viewports: "1440x900,390x844",
+    })
+
+    assert.deepEqual(normalizeViewportList("1440x900,390x844"), [
+      { height: 900, width: 1440 },
+      { height: 844, width: 390 },
+    ])
+    assert.equal(path.basename(plans[0].screenshotFile), "after-1440x900.png")
+    assert.equal(path.basename(plans[1].screenshotFile), "after-390x844.png")
+    assert.throws(() => normalizeViewportList(","), /at least one viewport is required/)
+  })
+
   it("captures browser evidence through an injected browser launcher", async () => {
     const tempDir = mkdtempSync(path.join(os.tmpdir(), "voyant-browser-evidence-"))
     try {
@@ -240,12 +264,51 @@ describe("agent runner browser evidence helpers", () => {
       assert.equal(result.viewport.width, 390)
       assert.equal(result.viewport.height, 844)
       assert.equal(result.url, "http://127.0.0.1:4879/dashboard")
+      assert.equal(result.consoleLog, artifactPlan.consoleLog)
+      assert.equal(result.failedRequestLog, artifactPlan.networkLog)
       assert.equal(existsSync(result.screenshot), true)
       assert.match(readFileSync(artifactPlan.consoleLog, "utf8"), /loaded dashboard/)
       assert.match(readFileSync(artifactPlan.networkLog, "utf8"), /http-error/)
       assert.match(readFileSync(artifactPlan.summaryJson, "utf8"), /390/)
+      assert.doesNotMatch(readFileSync(artifactPlan.summaryJson, "utf8"), /"captures"/)
       assert.match(readFileSync(artifactPlan.readme, "utf8"), /Browser Evidence/)
       assert.match(browserEvidenceText(result), /failed-request log:/)
+    } finally {
+      rmSync(tempDir, { force: true, recursive: true })
+    }
+  })
+
+  it("captures a combined browser evidence packet for multiple viewports", async () => {
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), "voyant-browser-evidence-"))
+    try {
+      const item = workItem()
+      const artifactPlan = browserArtifactPlan({
+        date: new Date("2026-05-10T12:34:56.000Z"),
+        item,
+        repoRoot: tempDir,
+        workspaceReference: ".",
+      })
+      const capturePlans = browserCapturePlans({
+        artifactPlan,
+        screenshotName: "page.png",
+        url: "http://127.0.0.1:4879/dashboard",
+        viewports: "1440x900,390x844",
+      })
+
+      const result = await captureBrowserEvidenceSet({
+        browserLauncher: new FakeBrowserLauncher(),
+        capturePlans,
+        timeoutMs: 1000,
+      })
+
+      assert.equal(result.captures.length, 2)
+      assert.equal(path.basename(result.captures[0].screenshot), "page-1440x900.png")
+      assert.equal(path.basename(result.captures[1].screenshot), "page-390x844.png")
+      assert.equal(existsSync(result.captures[0].screenshot), true)
+      assert.equal(existsSync(result.captures[1].screenshot), true)
+      assert.match(readFileSync(artifactPlan.summaryJson, "utf8"), /"captures"/)
+      assert.match(readFileSync(artifactPlan.readme, "utf8"), /1440x900/)
+      assert.match(browserEvidenceText(result), /capture 390x844/)
     } finally {
       rmSync(tempDir, { force: true, recursive: true })
     }
