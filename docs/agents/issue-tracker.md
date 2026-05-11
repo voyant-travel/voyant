@@ -185,6 +185,24 @@ packet under `docs/agent-evidence/active/`, then moves the item to
 branches, expose HTTP, capture browser artifacts, publish evidence, open PRs,
 or clean up the remote workspace.
 
+For UI work in a remote workspace, expose the running remote dev server and
+capture browser evidence from the local runner:
+
+```bash
+pnpm agent:queue:remote-capture-browser -- --issue <number> --port 3000 --yes
+pnpm agent:queue:remote-capture-browser -- --issue <number> --url "https://preview.example.test" --publish-artifacts --yes
+```
+
+Remote-capture-browser mode requires a `sandbox:<provider>:<id>` workspace. With
+`--port`, it calls the adapter's `exposeHttp` operation and captures the
+returned URL with Playwright. With `--url`, it skips adapter exposure and
+captures the supplied URL. Artifacts are written under local `.agent-runs/` so
+remote browser proof does not dirty the task branch; pass `--publish-artifacts`
+to upload screenshots, videos, logs, summaries, and the artifact index to
+configured object storage. Use the printed browser evidence text as
+`--ui-evidence` for the supervised command that writes the final evidence
+packet. Providers that do not declare `exposeHttp` fail closed.
+
 After a successful remote command, publish the remote evidence packet to GitHub
 or configured R2-compatible object storage:
 
