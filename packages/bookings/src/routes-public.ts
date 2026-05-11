@@ -1,5 +1,5 @@
 import { idempotencyKey, parseJsonBody, parseQuery, UnauthorizedApiError } from "@voyantjs/hono"
-import type { Context } from "hono"
+import type { Context, MiddlewareHandler } from "hono"
 import { Hono } from "hono"
 
 import {
@@ -70,6 +70,13 @@ async function requireSessionCapability(c: Context, action: CheckoutCapabilityAc
   await requireCheckoutCapability(c, sessionId, action, getRuntimeEnv(c))
 }
 
+function sessionCapability(action: CheckoutCapabilityAction): MiddlewareHandler<Env> {
+  return async (c, next) => {
+    await requireSessionCapability(c, action)
+    await next()
+  }
+}
+
 export const publicBookingRoutes = new Hono<Env>()
   .post("/sessions", idempotencyKey({ scope: "POST /v1/public/bookings/sessions" }), async (c) => {
     const result = await publicBookingsService.createSession(
@@ -111,10 +118,9 @@ export const publicBookingRoutes = new Hono<Env>()
   })
   .patch(
     "/sessions/:sessionId",
-    idempotencyKey({ scope: "PATCH /v1/public/bookings/sessions" }),
+    sessionCapability("session:update"),
+    idempotencyKey(),
     async (c) => {
-      await requireSessionCapability(c, "session:update")
-
       const result = await publicBookingsService.updateSession(
         c.get("db"),
         c.req.param("sessionId"),
@@ -142,10 +148,9 @@ export const publicBookingRoutes = new Hono<Env>()
   })
   .put(
     "/sessions/:sessionId/state",
-    idempotencyKey({ scope: "PUT /v1/public/bookings/sessions/state" }),
+    sessionCapability("session:update"),
+    idempotencyKey(),
     async (c) => {
-      await requireSessionCapability(c, "session:update")
-
       const result = await publicBookingsService.updateSessionState(
         c.get("db"),
         c.req.param("sessionId"),
@@ -161,10 +166,9 @@ export const publicBookingRoutes = new Hono<Env>()
   )
   .post(
     "/sessions/:sessionId/reprice",
-    idempotencyKey({ scope: "POST /v1/public/bookings/sessions/reprice" }),
+    sessionCapability("session:reprice"),
+    idempotencyKey(),
     async (c) => {
-      await requireSessionCapability(c, "session:reprice")
-
       const result = await publicBookingsService.repriceSession(
         c.get("db"),
         c.req.param("sessionId"),
@@ -193,10 +197,9 @@ export const publicBookingRoutes = new Hono<Env>()
   )
   .post(
     "/sessions/:sessionId/confirm",
-    idempotencyKey({ scope: "POST /v1/public/bookings/sessions/confirm" }),
+    sessionCapability("session:finalize"),
+    idempotencyKey(),
     async (c) => {
-      await requireSessionCapability(c, "session:finalize")
-
       const result = await publicBookingsService.confirmSession(
         c.get("db"),
         c.req.param("sessionId"),
@@ -217,10 +220,9 @@ export const publicBookingRoutes = new Hono<Env>()
   )
   .post(
     "/sessions/:sessionId/expire",
-    idempotencyKey({ scope: "POST /v1/public/bookings/sessions/expire" }),
+    sessionCapability("session:finalize"),
+    idempotencyKey(),
     async (c) => {
-      await requireSessionCapability(c, "session:finalize")
-
       const result = await publicBookingsService.expireSession(
         c.get("db"),
         c.req.param("sessionId"),

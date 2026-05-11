@@ -2,8 +2,8 @@ import {
   type CheckoutCapabilityAction,
   requireCheckoutCapability,
 } from "@voyantjs/bookings/checkout-capability"
-import { idempotencyKey, parseJsonBody, parseQuery } from "@voyantjs/hono"
-import type { Context } from "hono"
+import { idempotencyKey, parseJsonBody, parseQuery, UnauthorizedApiError } from "@voyantjs/hono"
+import type { Context, MiddlewareHandler } from "hono"
 import { Hono } from "hono"
 
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
@@ -36,6 +36,35 @@ async function requireBookingCheckoutCapability(
   action: CheckoutCapabilityAction,
 ) {
   await requireCheckoutCapability(c, bookingId, action, getRuntimeEnv(c))
+}
+
+function bookingCheckoutCapability(action: CheckoutCapabilityAction): MiddlewareHandler<Env> {
+  return async (c, next) => {
+    const bookingId = c.req.param("bookingId")
+    if (!bookingId) {
+      throw new UnauthorizedApiError("Missing checkout booking id")
+    }
+
+    await requireBookingCheckoutCapability(c, bookingId, action)
+    await next()
+  }
+}
+
+function invoiceCheckoutCapability(action: CheckoutCapabilityAction): MiddlewareHandler<Env> {
+  return async (c, next) => {
+    const invoiceId = c.req.param("invoiceId")
+    if (!invoiceId) {
+      throw new UnauthorizedApiError("Missing checkout invoice id")
+    }
+
+    const bookingId = await publicFinanceService.getInvoiceBookingId(c.get("db"), invoiceId)
+    if (!bookingId) {
+      return notFound(c, "Invoice not found")
+    }
+
+    await requireBookingCheckoutCapability(c, bookingId, action)
+    await next()
+  }
 }
 
 export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {}) {
@@ -118,12 +147,9 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
     })
     .post(
       "/bookings/:bookingId/payment-schedules/:scheduleId/payment-session",
-      idempotencyKey({
-        scope: "POST /v1/public/finance/bookings/payment-schedules/payment-session",
-      }),
+      bookingCheckoutCapability("payment:start"),
+      idempotencyKey(),
       async (c) => {
-        await requireBookingCheckoutCapability(c, c.req.param("bookingId"), "payment:start")
-
         try {
           const session = await publicFinanceService.startBookingSchedulePaymentSession(
             c.get("db"),
@@ -142,10 +168,9 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
     )
     .post(
       "/bookings/:bookingId/guarantees/:guaranteeId/payment-session",
-      idempotencyKey({ scope: "POST /v1/public/finance/bookings/guarantees/payment-session" }),
+      bookingCheckoutCapability("payment:start"),
+      idempotencyKey(),
       async (c) => {
-        await requireBookingCheckoutCapability(c, c.req.param("bookingId"), "payment:start")
-
         try {
           const session = await publicFinanceService.startBookingGuaranteePaymentSession(
             c.get("db"),
@@ -164,18 +189,10 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
     )
     .post(
       "/invoices/:invoiceId/payment-session",
-      idempotencyKey({ scope: "POST /v1/public/finance/invoices/payment-session" }),
+      invoiceCheckoutCapability("payment:start"),
+      idempotencyKey(),
       async (c) => {
         try {
-          const bookingId = await publicFinanceService.getInvoiceBookingId(
-            c.get("db"),
-            c.req.param("invoiceId"),
-          )
-          if (!bookingId) {
-            return notFound(c, "Invoice not found")
-          }
-          await requireBookingCheckoutCapability(c, bookingId, "payment:start")
-
           const session = await publicFinanceService.startInvoicePaymentSession(
             c.get("db"),
             c.req.param("invoiceId"),
