@@ -12,7 +12,7 @@ Recommended GitHub Project fields for `Voyant Engineering`.
 | `Verification Lane` | Single select | `package`, `verify:fast`, `verify:full`, `custom`. |
 | `Triage Provider` | Single select | Intake model or `manual`. |
 | `Agent Provider` | Single select | `codex`, `claude`, `manual`, `none`. |
-| `Workspace` | Text | Local path or sandbox id. |
+| `Workspace` | Text | Local worktree path or remote sandbox reference. |
 | `Branch` | Text | Work branch. |
 | `PR` | Text | Pull request URL. |
 | `Last Heartbeat` | Date | Staleness detection. |
@@ -35,6 +35,18 @@ Recommended GitHub Project fields for `Voyant Engineering`.
 
 Only maintainers move an item to `Ready`. Merge remains a maintainer decision
 unless a separate maintainer-approved merge automation is introduced.
+
+## Workspace Values
+
+The runner treats `Workspace` as a typed reference, not arbitrary prose:
+
+- Local worktree: `.agent-worktrees/<issue-number>-<slug>`
+- Remote sandbox: `sandbox:<provider>:<id>`
+
+Local commands currently execute only against local worktrees. Remote sandbox
+references are reserved for the Phase 5 adapter contract and must not be
+treated as filesystem paths. Cleanup only removes local worktrees under
+`.agent-worktrees/`.
 
 ## Status Values
 

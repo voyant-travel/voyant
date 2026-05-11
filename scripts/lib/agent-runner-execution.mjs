@@ -7,6 +7,10 @@ import {
   requiresBrowserEvidence,
 } from "./agent-runner-browser-evidence.mjs"
 import { ciRepairEvidenceEnvironment, resolveCiRepairEvidencePath } from "./agent-runner-ci.mjs"
+import {
+  parseWorkspaceReference,
+  workspaceDescriptorEnvironment,
+} from "./agent-runner-workspace-contract.mjs"
 
 export const commandRunStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
 
@@ -51,6 +55,9 @@ export function commandRunEnvironment({ artifactPlan, branch, item, repository }
     repoRoot: artifactPlan.repoRoot,
     workspaceReference: artifactPlan.workspaceReference,
   })
+  const workspaceDescriptor = parseWorkspaceReference(artifactPlan.workspaceReference, {
+    repoRoot: artifactPlan.repoRoot,
+  })
 
   return {
     ...browserEvidenceEnvironment({ artifactPlan: browserPlan }),
@@ -58,6 +65,7 @@ export function commandRunEnvironment({ artifactPlan, branch, item, repository }
       evidenceReference: item.fields.Evidence,
       repoRoot: artifactPlan.repoRoot,
     }),
+    ...workspaceDescriptorEnvironment(workspaceDescriptor),
     VOYANT_AGENT_BRANCH: branch,
     VOYANT_AGENT_EVIDENCE_PATH: artifactPlan.evidenceFile,
     VOYANT_AGENT_EVIDENCE_REFERENCE: artifactPlan.evidencePointer,
