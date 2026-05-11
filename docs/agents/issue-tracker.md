@@ -191,13 +191,16 @@ pnpm agent:queue:tick
 Tick mode scans the same repository-scoped Project queue and prints ordered
 action recommendations such as `start`, `run-command`, `capture-browser`,
 `collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, `cleanup`, or
-`inspect-stale`. It
-does not mutate GitHub, create worktrees, run commands, publish evidence, or
+`inspect-stale`. It does not mutate GitHub, create worktrees, run commands,
+publish evidence, or
 open PRs. Pass `--json` when a process manager or future control plane needs
 machine-readable actions. `Merge Ready` items with linked PRs keep recommending
 `sync-pr` so the runner can observe maintainer merges and mark the item done.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
-CI repair packet exists.
+CI repair packet exists. Items with `sandbox:<provider>:<id>` workspaces
+recommend wait states instead of local workspace commands until a remote adapter
+owns execution and cleanup. Malformed reserved `sandbox:` values recommend
+`inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
 

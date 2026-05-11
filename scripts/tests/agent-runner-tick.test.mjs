@@ -208,4 +208,121 @@ describe("agent runner tick helpers", () => {
       "run-command",
     )
   })
+
+  it("pauses local queue actions for remote workspace references", () => {
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Ready",
+            Workspace: "sandbox:sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ).action,
+      "wait-remote-adapter",
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Planning",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            Workspace: "sandbox:sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "wait-remote-adapter",
+        command: null,
+        heartbeat: {
+          reason: "Last Heartbeat is 0 days old",
+          stale: false,
+        },
+        issue: workItem().issue,
+        priority: 29,
+        reason: "remote workspace sandbox:sprite:task-579 requires a remote adapter",
+        state: "Planning",
+      },
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Human Review",
+            Evidence: "docs/agent-evidence/active/579-test.md",
+            Workspace: "sandbox:sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ).action,
+      "wait-remote-adapter",
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Human Review",
+            Evidence: "docs/agent-evidence/active/579-test.md",
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+            Workspace: "sandbox:sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ).action,
+      "sync-pr",
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Done",
+            Workspace: "sandbox:sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "wait-remote-cleanup",
+        command: null,
+        heartbeat: null,
+        issue: workItem().issue,
+        priority: 90,
+        reason: "remote workspace sandbox:sprite:task-579 needs remote adapter cleanup",
+        state: "Done",
+      },
+    )
+  })
+
+  it("surfaces malformed sandbox workspace references before local actions", () => {
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Planning",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            Workspace: "sandbox:Sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "inspect-workspace",
+        command: null,
+        heartbeat: {
+          reason: "Last Heartbeat is 0 days old",
+          stale: false,
+        },
+        issue: workItem().issue,
+        priority: 25,
+        reason: "invalid Workspace: remote sandbox reference is malformed",
+        state: "Planning",
+      },
+    )
+  })
 })
