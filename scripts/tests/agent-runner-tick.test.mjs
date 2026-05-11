@@ -71,6 +71,27 @@ describe("agent runner tick helpers", () => {
       recommendQueueAction(
         workItem({
           fields: {
+            "Agent State": "Merge Ready",
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "sync-pr",
+        command: "pnpm agent:queue:sync-pr -- --issue 579 --repo voyantjs/other --yes",
+        heartbeat: null,
+        issue: workItem().issue,
+        priority: 50,
+        reason: "merge-ready PR should be checked for maintainer merge",
+        state: "Merge Ready",
+      },
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
             "Agent State": "Done",
             Workspace: ".agent-worktrees/579-test-agent-project-intake-workflow",
           },

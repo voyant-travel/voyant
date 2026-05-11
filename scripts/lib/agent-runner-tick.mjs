@@ -94,9 +94,24 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
   }
 
   if (state === "Merge Ready") {
+    if (item.fields.PR) {
+      return recommendation(item, {
+        action: "sync-pr",
+        command: commandWithIssue({
+          command: "sync-pr",
+          issueNumber: item.issue.number,
+          repository,
+        }),
+        heartbeat,
+        priority: 50,
+        reason: "merge-ready PR should be checked for maintainer merge",
+      })
+    }
+
     return recommendation(item, {
       action: "wait-maintainer-merge",
       command: null,
+      heartbeat,
       priority: 80,
       reason: "PR is ready for maintainer merge",
     })

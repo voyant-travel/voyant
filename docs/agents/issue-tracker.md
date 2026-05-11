@@ -184,7 +184,8 @@ action recommendations such as `start`, `run-command`, `capture-browser`,
 `publish-evidence`, `open-pr`, `sync-pr`, `cleanup`, or `inspect-stale`. It
 does not mutate GitHub, create worktrees, run commands, publish evidence, or
 open PRs. Pass `--json` when a process manager or future control plane needs
-machine-readable actions.
+machine-readable actions. `Merge Ready` items with linked PRs keep recommending
+`sync-pr` so the runner can observe maintainer merges and mark the item done.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -298,8 +299,9 @@ pnpm agent:queue:sync-pr -- --issue <number> --yes
 Sync-PR mode reads the linked PR and its check rollup. Failing checks move the
 item to `Agent State = CI Repair`, requested changes move it to
 `Changes Requested`, pending checks or draft PRs keep it in `Human Review`, and
-passing non-draft PRs move it to `Merge Ready`. It updates `PR`,
-`Last Heartbeat`, and `Blocked By`; it does not merge the PR.
+passing non-draft PRs move it to `Merge Ready`. If the linked PR has already
+been merged by a maintainer, sync-pr marks the Project item `Done`. It updates
+`Status`, `PR`, `Last Heartbeat`, and `Blocked By`; it does not merge the PR.
 
 After a maintainer merges the PR, mark the Project item complete:
 
