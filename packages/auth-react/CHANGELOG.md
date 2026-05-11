@@ -1,5 +1,15 @@
 # @voyantjs/auth-react
 
+## 0.32.1
+
+### Patch Changes
+
+- 085c01b: Expose a shared `/auth/api-tokens` management facade for permissioned Better Auth API keys and document the React hooks' expected route contract.
+- Updated dependencies [085c01b]
+  - @voyantjs/auth@0.32.1
+  - @voyantjs/react@0.32.1
+  - @voyantjs/types@0.32.1
+
 ## 0.32.0
 
 ### Patch Changes

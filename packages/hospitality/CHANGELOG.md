@@ -1,5 +1,16 @@
 # @voyantjs/hospitality
 
+## 0.32.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.32.1
+- @voyantjs/catalog@0.32.1
+- @voyantjs/core@0.32.1
+- @voyantjs/db@0.32.1
+- @voyantjs/facilities@0.32.1
+- @voyantjs/hono@0.32.1
+
 ## 0.32.0
 
 ### Patch Changes
