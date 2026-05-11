@@ -279,11 +279,10 @@ function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
 
   if (state === "Done" || state === "Abandoned") {
     return recommendation(item, {
-      action: "wait-remote-cleanup",
+      action: "remote-cleanup",
       command: commandWithIssue({
-        command: "remote-inspect",
+        command: "remote-cleanup",
         issueNumber: item.issue.number,
-        mutate: false,
         repository,
       }),
       heartbeat,

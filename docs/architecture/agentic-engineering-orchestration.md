@@ -1192,8 +1192,10 @@ Project item to `Human Review` or `Blocked`. `agent:queue:remote-publish-evidenc
 can read that remote evidence packet through the configured adapter, post or
 reuse a GitHub evidence comment, optionally publish the packet to configured
 R2-compatible object storage, and update the Project `Evidence` field to the
-durable URL. Browser evidence, HTTP exposure, cleanup, and PR creation remain
-future slices.
+durable URL. `agent:queue:remote-cleanup` can call an adapter-owned `dispose`
+operation for terminal remote work and clear the Project `Workspace` field
+after success. Browser evidence, HTTP exposure, and PR creation remain future
+slices.
 
 Verification:
 

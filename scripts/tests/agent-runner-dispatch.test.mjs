@@ -133,6 +133,32 @@ describe("agent runner dispatch helpers", () => {
     ])
   })
 
+  it("dispatches remote cleanup recommendations", () => {
+    const recommendation = recommendQueueAction(
+      workItem({
+        fields: {
+          "Agent State": "Done",
+          Workspace: "sandbox:sprite:task-579",
+        },
+      }),
+      { maxAgeDays: 1, repository: "voyantjs/other" },
+    )
+
+    assert.equal(
+      selectDispatchRecommendation([recommendation]).recommendation.action,
+      "remote-cleanup",
+    )
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+      "agent:queue:remote-cleanup",
+      "--",
+      "--issue",
+      "579",
+      "--repo",
+      "voyantjs/other",
+      "--yes",
+    ])
+  })
+
   it("passes custom event logs to nested dispatch commands", () => {
     const recommendation = recommendQueueAction(workItem(), {
       maxAgeDays: 1,

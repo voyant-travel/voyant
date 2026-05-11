@@ -344,8 +344,8 @@ describe("agent runner tick helpers", () => {
         { maxAgeDays: 1, repository: "voyantjs/other" },
       ),
       {
-        action: "wait-remote-cleanup",
-        command: "pnpm agent:queue:remote-inspect -- --issue 579 --repo voyantjs/other",
+        action: "remote-cleanup",
+        command: "pnpm agent:queue:remote-cleanup -- --issue 579 --repo voyantjs/other --yes",
         heartbeat: null,
         issue: workItem().issue,
         priority: 90,
