@@ -221,7 +221,7 @@ for (const cfg of VERTICAL_CONFIGS) {
 
 interface OrphanProbeDoc {
   id: string
-  ["source.kind"]?: string
+  "source.kind"?: string
 }
 
 async function listOwnedOrphans(
