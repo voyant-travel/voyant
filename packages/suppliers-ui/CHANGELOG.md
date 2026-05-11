@@ -1,5 +1,14 @@
 # @voyantjs/suppliers-ui
 
+## 0.32.3
+
+### Patch Changes
+
+- Updated dependencies [7632a66]
+  - @voyantjs/i18n@0.32.3
+  - @voyantjs/suppliers-react@0.32.3
+  - @voyantjs/ui@0.32.3
+
 ## 0.32.2
 
 ### Patch Changes

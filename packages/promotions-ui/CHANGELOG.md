@@ -1,5 +1,13 @@
 # @voyantjs/promotions-ui
 
+## 0.32.3
+
+### Patch Changes
+
+- Updated dependencies [7632a66]
+  - @voyantjs/promotions-react@0.32.3
+  - @voyantjs/ui@0.32.3
+
 ## 0.32.2
 
 ### Patch Changes

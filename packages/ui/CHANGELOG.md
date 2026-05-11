@@ -1,5 +1,15 @@
 # @voyantjs/ui
 
+## 0.32.3
+
+### Patch Changes
+
+- 7632a66: Export all first-class component modules from the `@voyantjs/ui/components` barrel and add a verifier to prevent future drift.
+  - @voyantjs/i18n@0.32.3
+  - @voyantjs/notifications@0.32.3
+  - @voyantjs/notifications-react@0.32.3
+  - @voyantjs/utils@0.32.3
+
 ## 0.32.2
 
 ### Patch Changes
