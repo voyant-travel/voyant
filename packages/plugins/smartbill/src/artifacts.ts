@@ -107,7 +107,7 @@ export async function persistSmartbillInvoiceArtifact({
   const seriesName = result.series ?? body.seriesName
   const number = result.number
 
-  await financeService.registerInvoiceExternalRef(db, event.id, {
+  const externalRef = await financeService.registerInvoiceExternalRef(db, event.id, {
     provider: "smartbill",
     externalId: number ?? null,
     externalNumber: number ?? null,
@@ -123,6 +123,7 @@ export async function persistSmartbillInvoiceArtifact({
       documentType,
     },
   })
+  if (!externalRef) return { status: "skipped" as const, reason: "missing_invoice" as const }
 
   const storage = await resolveMaybe(runtime.documentStorage, context)
   if (!storage) return { status: "registered_ref" as const }

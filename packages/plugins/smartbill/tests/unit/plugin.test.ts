@@ -342,6 +342,46 @@ describe("smartbillPlugin — invoice PDF artifacts", () => {
     expect(financeServiceMock.createInvoiceRendition).not.toHaveBeenCalled()
     expect(financeServiceMock.createInvoiceAttachment).not.toHaveBeenCalled()
   })
+
+  it("does not upload a PDF when the finance invoice is missing", async () => {
+    financeServiceMock.registerInvoiceExternalRef.mockResolvedValueOnce(null)
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }),
+    )
+    const upload = vi.fn()
+    const storage = {
+      name: "test-storage",
+      upload,
+      delete: vi.fn(),
+      signedUrl: vi.fn(),
+      get: vi.fn(),
+    }
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      logger: makeLogger(),
+      artifacts: {
+        db: {} as never,
+        documentStorage: storage,
+      },
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_missing",
+        clientName: "Test SRL",
+        currency: "RON",
+        lineItems: [{ name: "Tour", quantity: 1, unitPrice: 50000 }],
+      }),
+    )
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(upload).not.toHaveBeenCalled()
+    expect(financeServiceMock.listInvoiceAttachments).not.toHaveBeenCalled()
+    expect(financeServiceMock.createInvoiceRendition).not.toHaveBeenCalled()
+    expect(financeServiceMock.createInvoiceAttachment).not.toHaveBeenCalled()
+  })
 })
 
 describe("smartbillPlugin — invoice.voided subscriber", () => {
