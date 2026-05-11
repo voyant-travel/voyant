@@ -1,3 +1,7 @@
+import {
+  browserEvidenceReferenceKind,
+  requiresBrowserEvidence,
+} from "./agent-runner-browser-evidence.mjs"
 import { evaluateHeartbeat } from "./agent-runner-output.mjs"
 
 const runnableStates = new Set(["Planning", "Changes Requested", "CI Repair"])
@@ -53,6 +57,11 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
       priority: 20,
       reason: "maintainer-approved item is ready to claim",
     })
+  }
+
+  const browserRecommendation = browserEvidenceRecommendation(item, { heartbeat, repository })
+  if (browserRecommendation) {
+    return browserRecommendation
   }
 
   if (runnableStates.has(state)) {
@@ -124,6 +133,11 @@ function humanReviewRecommendation(item, { heartbeat, repository }) {
   const evidence = item.fields.Evidence
   const pr = item.fields.PR
 
+  if (!evidence) {
+    const browserRecommendation = browserEvidenceRecommendation(item, { heartbeat, repository })
+    if (browserRecommendation) return browserRecommendation
+  }
+
   if (pr) {
     return recommendation(item, {
       action: "sync-pr",
@@ -165,6 +179,38 @@ function humanReviewRecommendation(item, { heartbeat, repository }) {
     priority: 60,
     reason: "local evidence should be published before opening a PR",
   })
+}
+
+function browserEvidenceRecommendation(item, { heartbeat, repository }) {
+  const state = item.fields["Agent State"]
+  if (
+    !requiresBrowserEvidence(item) ||
+    browserEvidenceCovered(item.fields.Evidence) ||
+    !item.fields.Workspace
+  ) {
+    return null
+  }
+
+  if (!["Changes Requested", "CI Repair", "Human Review", "Running"].includes(state)) {
+    return null
+  }
+
+  return recommendation(item, {
+    action: "capture-browser",
+    command: commandWithIssue({
+      command: "capture-browser",
+      extraArgs: ['--dev-server-command "<dev-server-command>"'],
+      issueNumber: item.issue.number,
+      repository,
+    }),
+    heartbeat,
+    priority: state === "Human Review" ? 54 : 35,
+    reason: "UI-labeled work needs browser evidence before handoff",
+  })
+}
+
+function browserEvidenceCovered(evidence) {
+  return ["browser-artifacts", "evidence-packet"].includes(browserEvidenceReferenceKind(evidence))
 }
 
 function recommendation(item, { action, command, heartbeat = null, priority, reason }) {

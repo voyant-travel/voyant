@@ -7,6 +7,10 @@ import {
   projectScanConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
+import {
+  browserEvidenceReferenceKind,
+  requiresBrowserEvidence,
+} from "./lib/agent-runner-browser-evidence.mjs"
 import { maybePrintHelp, projectOptions, repositoryOptions } from "./lib/agent-runner-help.mjs"
 import { evaluateHeartbeat } from "./lib/agent-runner-output.mjs"
 
@@ -119,9 +123,24 @@ function printSection(title, sectionItems, extraPrinter) {
     console.log(`- #${item.issue.number} ${item.issue.title}`)
     console.log(`  state: ${item.fields["Agent State"] ?? "unset"}`)
     console.log(`  url: ${item.issue.url}`)
+    printBrowserEvidenceStatus(item)
     if (extraPrinter) extraPrinter(item)
   }
   console.log("")
+}
+
+function printBrowserEvidenceStatus(item) {
+  if (!requiresBrowserEvidence(item)) return
+
+  const referenceKind = browserEvidenceReferenceKind(item.fields.Evidence)
+  console.log(`  browser evidence: required; ${browserEvidenceStatusText(referenceKind)}`)
+}
+
+function browserEvidenceStatusText(referenceKind) {
+  if (referenceKind === "browser-artifacts") return "browser artifact reference is present"
+  if (referenceKind === "evidence-packet") return "inspect evidence packet for browser artifacts"
+  if (referenceKind === "generic") return "Evidence field is not a browser artifact"
+  return "Evidence field is empty"
 }
 
 function printHeartbeat(item) {
@@ -130,6 +149,9 @@ function printHeartbeat(item) {
 }
 
 function summaryItem(item) {
+  const browserEvidenceRequired = requiresBrowserEvidence(item)
+  const browserEvidenceKind = browserEvidenceReferenceKind(item.fields.Evidence)
+
   return {
     issue: item.issue,
     agentState: item.fields["Agent State"] ?? null,
@@ -140,5 +162,10 @@ function summaryItem(item) {
     workspace: item.fields.Workspace ?? null,
     pr: item.fields.PR ?? null,
     evidence: item.fields.Evidence ?? null,
+    browserEvidence: {
+      required: browserEvidenceRequired,
+      referenceKind: browserEvidenceKind,
+      browserArtifactReferencePresent: browserEvidenceKind === "browser-artifacts",
+    },
   }
 }
