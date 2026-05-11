@@ -1168,6 +1168,13 @@ Deliverables:
   artifacts.
 - Compare local and remote performance, cost, and reliability.
 
+Current status: started. The runner has a provider-neutral remote workspace
+adapter contract and an unsupported-adapter fallback. Queue recommendations for
+`sandbox:<provider>:<id>` items now point maintainers at
+`pnpm agent:queue:remote-inspect -- --issue <number>` so remote references are
+typed and inspectable before a real sandbox adapter is allowed to execute,
+expose HTTP, collect artifacts, or clean up remote state.
+
 Verification:
 
 - Run the same task locally and in a Sprite.
