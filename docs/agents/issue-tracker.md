@@ -146,6 +146,20 @@ must pass `--ui-evidence <text>` or they are blocked instead of moved to
 `Human Review`; nonzero exits are still blocked by the command failure. It does
 not push branches, open PRs, or publish evidence comments.
 
+For UI work, capture browser evidence before handoff or before a successful
+`run-command` transition:
+
+```bash
+pnpm agent:queue:capture-browser -- --issue <number> --dev-server-command "pnpm dev" --yes
+```
+
+Capture-browser mode writes screenshots, video, console logs, failed-request
+logs, and a summary under `docs/agent-evidence/browser/...` inside the claimed
+workspace. By default it targets the deterministic issue URL in
+`VOYANT_AGENT_DEV_SERVER_URL`; pass `--url` for an already-running app or a
+specific route. The command prints a multi-line value that can be passed as
+`--ui-evidence` to `handoff` or `run-command`.
+
 Use the read-only status view to inspect the current queue and active work:
 
 ```bash

@@ -39,6 +39,7 @@
     "agent:queue:prepare": "node scripts/agent-runner-prepare.mjs",
     "agent:queue:start": "node scripts/agent-runner-start.mjs",
     "agent:queue:run-command": "node scripts/agent-runner-run-command.mjs",
+    "agent:queue:capture-browser": "node scripts/agent-runner-capture-browser.mjs",
     "agent:queue:claim": "node scripts/agent-runner-claim.mjs",
     "agent:queue:heartbeat": "node scripts/agent-runner-heartbeat.mjs",
     "agent:queue:handoff": "node scripts/agent-runner-handoff.mjs",
@@ -81,8 +82,9 @@
     "depcheck": "^1.4.7",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "semver": "^7.7.2",
+    "playwright": "1.59.1",
     "secretlint": "^11.4.1",
+    "semver": "^7.7.2",
     "tsx": "^4.21.0",
     "turbo": "^2.9.3",
     "vitest": "^4.1.2"
@@ -95,6 +97,7 @@
     "onlyBuiltDependencies": [
       "sharp",
       "esbuild",
+      "playwright",
       "unrs-resolver",
       "@tailwindcss/oxide",
       "core-js-pure",
