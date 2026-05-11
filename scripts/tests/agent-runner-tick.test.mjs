@@ -301,7 +301,21 @@ describe("agent runner tick helpers", () => {
         }),
         { maxAgeDays: 1, repository: "voyantjs/other" },
       ).action,
-      "wait-remote-adapter",
+      "remote-publish-evidence",
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Human Review",
+            Evidence: "https://artifacts.example.com/evidence.md",
+            Workspace: "sandbox:sprite:task-579",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ).action,
+      "wait-remote-pr",
     )
 
     assert.deepEqual(

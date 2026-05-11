@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 
@@ -17,6 +16,13 @@ import {
   evidencePacketPublicationPlan,
   publishEvidencePacket,
 } from "./lib/agent-runner-artifacts.mjs"
+import {
+  createIssueComment,
+  evidenceCommentBody,
+  evidenceMarker,
+  findExistingEvidenceComment,
+  isRemoteEvidence,
+} from "./lib/agent-runner-evidence-publication.mjs"
 import {
   maybePrintHelp,
   mutationOptions,
@@ -151,86 +157,6 @@ console.log(`repository: ${repository}`)
 console.log(`evidence: ${remoteEvidence?.url ?? commentUrl}`)
 if (remoteEvidence) {
   console.log(`github comment: ${commentUrl}`)
-}
-
-function findExistingEvidenceComment({ issueNumber, marker, repository }) {
-  const result = spawnSync("gh", ["api", `repos/${repository}/issues/${issueNumber}/comments`], {
-    encoding: "utf8",
-    maxBuffer: 1024 * 1024 * 10,
-  })
-
-  if (result.error) {
-    fail(`failed to run gh: ${result.error.message}`)
-  }
-
-  if (result.status !== 0) {
-    const stderr = result.stderr.trim()
-    fail(stderr || `gh api exited with ${result.status}`)
-  }
-
-  let payload
-  try {
-    payload = JSON.parse(result.stdout)
-  } catch (error) {
-    fail(`failed to parse gh JSON output: ${error.message}`)
-  }
-
-  const comment = payload.find((candidate) => candidate.body?.includes(marker))
-  return comment?.html_url
-}
-
-function createIssueComment({ body, issueNumber, repository }) {
-  const result = spawnSync(
-    "gh",
-    [
-      "api",
-      `repos/${repository}/issues/${issueNumber}/comments`,
-      "-X",
-      "POST",
-      "-f",
-      `body=${body}`,
-    ],
-    {
-      encoding: "utf8",
-      maxBuffer: 1024 * 1024 * 10,
-    },
-  )
-
-  if (result.error) {
-    fail(`failed to run gh: ${result.error.message}`)
-  }
-
-  if (result.status !== 0) {
-    const stderr = result.stderr.trim()
-    fail(stderr || `gh api exited with ${result.status}`)
-  }
-
-  let payload
-  try {
-    payload = JSON.parse(result.stdout)
-  } catch (error) {
-    fail(`failed to parse gh JSON output: ${error.message}`)
-  }
-
-  if (!payload.html_url) {
-    fail("GitHub did not return an issue comment URL")
-  }
-
-  return payload.html_url
-}
-
-function evidenceMarker({ evidenceReference, issueNumber, repository }) {
-  const key = Buffer.from(`${repository}#${issueNumber}:${evidenceReference}`).toString("base64url")
-  return `<!-- voyant-agent-evidence:${key} -->`
-}
-
-function evidenceCommentBody({ evidenceBody, marker, remoteEvidenceUrl }) {
-  const remoteLine = remoteEvidenceUrl ? `Published evidence packet: ${remoteEvidenceUrl}\n\n` : ""
-  return `${marker}\n\n${remoteLine}${evidenceBody}`
-}
-
-function isRemoteEvidence(evidence) {
-  return /^https?:\/\//.test(evidence)
 }
 
 function isPathInside(candidatePath, parentPath) {
