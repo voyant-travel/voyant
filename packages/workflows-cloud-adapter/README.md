@@ -26,6 +26,11 @@ import { createCloudOrchestrator } from "@voyantjs/workflows-cloud-adapter";
 export const { fetch, WorkflowRunDO } = createCloudOrchestrator(workflows);
 ```
 
+When passing adapter options such as `services`, `now`, or `logger`,
+export `WorkflowRunDO` from the returned object as shown above. The
+returned class is bound to the same options used by the Worker fetch
+handler.
+
 ## Hybrid apps
 
 For Hono/itty-style apps, mount the workflows routes alongside your
@@ -125,4 +130,3 @@ At publish time the platform injects the step-runner namespace binding:
 `VOYANT_WORKFLOW_BUNDLE_R2_ACCOUNT_ID` and
 `VOYANT_WORKFLOW_BUNDLE_R2_BUCKET` can override the account id and
 bucket parsed from `VOYANT_WORKFLOW_BUNDLE_URL_PREFIX`.
-

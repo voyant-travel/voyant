@@ -7,6 +7,7 @@ import {
   handleCloudFetch,
   mountWorkflows,
   WorkflowRunDO,
+  type WorkflowRunDOClass,
 } from "../index.js"
 
 interface AlarmTrackingStorage extends DurableObjectStorageLike {
@@ -47,7 +48,10 @@ function makeStorage(): AlarmTrackingStorage {
   }
 }
 
-function makeRunNamespace(envRef: { env?: CloudWorkflowsEnv }) {
+function makeRunNamespace(envRef: {
+  env?: CloudWorkflowsEnv
+  WorkflowRunDO?: WorkflowRunDOClass<CloudWorkflowsEnv>
+}) {
   const storages = new Map<string, DurableObjectStorageLike>()
   return {
     idFromName(name: string) {
@@ -62,7 +66,8 @@ function makeRunNamespace(envRef: { env?: CloudWorkflowsEnv }) {
       return {
         fetch(request: Request) {
           if (!envRef.env) throw new Error("test env not initialized")
-          const instance = new WorkflowRunDO({ storage }, envRef.env)
+          const RunDO = envRef.WorkflowRunDO ?? WorkflowRunDO
+          const instance = new RunDO({ storage }, envRef.env)
           return instance.fetch(request)
         },
       }
@@ -114,6 +119,44 @@ describe("createCloudOrchestrator", () => {
     const body = (await response.json()) as { status: string; output: unknown }
     expect(body.status).toBe("completed")
     expect(body.output).toBe(3)
+  })
+
+  it("passes orchestrator services into the returned WorkflowRunDO class", async () => {
+    workflow<{ n: number }, string>({
+      id: "services-node",
+      async run(_input, ctx) {
+        return ctx.step("read-service", { runtime: "node" }, async () => {
+          return ctx.services.resolve<{ value: string }>("thing").value
+        })
+      },
+    })
+
+    const services = {
+      resolve<T>(name: string): T {
+        if (name !== "thing") throw new Error(`unexpected service ${name}`)
+        return { value: "from-services" } as T
+      },
+      has(name: string): boolean {
+        return name === "thing"
+      },
+    }
+    const orchestrator = createCloudOrchestrator(undefined, undefined, { services })
+    const envRef: {
+      env?: CloudWorkflowsEnv
+      WorkflowRunDO?: WorkflowRunDOClass<CloudWorkflowsEnv>
+    } = {
+      WorkflowRunDO: orchestrator.WorkflowRunDO,
+    }
+    const env: CloudWorkflowsEnv = {
+      WORKFLOW_RUN_DO: makeRunNamespace(envRef),
+    }
+    envRef.env = env
+
+    const response = await orchestrator.fetch(triggerRequest("services-node", "run_services"), env)
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as { status: string; output: unknown }
+    expect(body.status).toBe("completed")
+    expect(body.output).toBe("from-services")
   })
 
   it("dispatches runtime=node steps to STEP_RUNNER with a signed R2 bundle", async () => {

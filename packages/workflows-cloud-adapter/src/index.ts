@@ -86,15 +86,28 @@ export interface CloudOrchestratorOptions<Env extends CloudWorkflowsEnv = CloudW
 
 export interface CloudOrchestrator<Env extends CloudWorkflowsEnv = CloudWorkflowsEnv> {
   fetch: (request: Request, env?: Env) => Promise<Response>
-  WorkflowRunDO: typeof WorkflowRunDO
+  WorkflowRunDO: WorkflowRunDOClass<Env>
 }
 
 type EnvCache = {
   dispatcher?: StepDispatcher
+  dispatcherOptions?: CloudExecutionOptions<CloudWorkflowsEnv>
   stepHandler?: StepHandler
+  stepHandlerOptions?: CloudExecutionOptions<CloudWorkflowsEnv>
 }
 
 const envCache = new WeakMap<object, EnvCache>()
+const defaultExecutionOptions: CloudExecutionOptions<CloudWorkflowsEnv> = {}
+
+export type WorkflowRunDOClass<Env extends CloudWorkflowsEnv = CloudWorkflowsEnv> = new (
+  state: DurableObjectStateLike,
+  env: Env,
+) => WorkflowRunDO<Env>
+
+type CloudExecutionOptions<Env extends CloudWorkflowsEnv = CloudWorkflowsEnv> = Pick<
+  CloudOrchestratorOptions<Env>,
+  "services" | "now" | "logger"
+>
 
 export function createCloudOrchestrator<Env extends CloudWorkflowsEnv = CloudWorkflowsEnv>(
   workflows?: unknown,
@@ -102,13 +115,14 @@ export function createCloudOrchestrator<Env extends CloudWorkflowsEnv = CloudWor
   options: CloudOrchestratorOptions<Env> = {},
 ): CloudOrchestrator<Env> {
   void workflows
+  const WorkflowRunDOWithOptions = createWorkflowRunDOClass<Env>(options)
 
   return {
     fetch(request, requestEnv) {
       const env = resolveBoundEnv(boundEnv, requestEnv, options)
       return handleCloudFetch(request, env, options)
     },
-    WorkflowRunDO,
+    WorkflowRunDO: WorkflowRunDOWithOptions,
   }
 }
 
@@ -184,39 +198,60 @@ export class WorkflowRunDO<Env extends CloudWorkflowsEnv = CloudWorkflowsEnv> {
   async fetch(request: Request): Promise<Response> {
     return handleDurableObjectRequest(request, {
       storage: this.state.storage,
-      dispatcher: resolveDispatcher(this.env),
+      dispatcher: resolveDispatcher(this.env, this.executionOptions()),
+      now: this.executionOptions().now,
     })
   }
 
   async alarm(): Promise<void> {
     await handleDurableObjectAlarm({
       storage: this.state.storage,
-      dispatcher: resolveDispatcher(this.env),
+      dispatcher: resolveDispatcher(this.env, this.executionOptions()),
+      now: this.executionOptions().now,
     })
+  }
+
+  protected executionOptions(): CloudExecutionOptions<Env> {
+    return defaultExecutionOptions as CloudExecutionOptions<Env>
   }
 }
 
 export function createCloudStepDispatcher<Env extends CloudWorkflowsEnv = CloudWorkflowsEnv>(
   env: Env,
-  options: Pick<CloudOrchestratorOptions<Env>, "services" | "now" | "logger"> = {},
+  options: CloudExecutionOptions<Env> = defaultExecutionOptions as CloudExecutionOptions<Env>,
 ): StepDispatcher {
   return createInlineDispatcher(resolveStepHandler(env, options))
 }
 
-function resolveDispatcher<Env extends CloudWorkflowsEnv>(env: Env): StepDispatcher {
+function createWorkflowRunDOClass<Env extends CloudWorkflowsEnv>(
+  options: CloudExecutionOptions<Env>,
+): WorkflowRunDOClass<Env> {
+  return class CloudWorkflowRunDO extends WorkflowRunDO<Env> {
+    protected override executionOptions(): CloudExecutionOptions<Env> {
+      return options
+    }
+  }
+}
+
+function resolveDispatcher<Env extends CloudWorkflowsEnv>(
+  env: Env,
+  options: CloudExecutionOptions<Env> = defaultExecutionOptions as CloudExecutionOptions<Env>,
+): StepDispatcher {
   const cache = cacheFor(env)
-  if (!cache.dispatcher) {
-    cache.dispatcher = createCloudStepDispatcher(env)
+  if (!cache.dispatcher || cache.dispatcherOptions !== options) {
+    cache.dispatcherOptions = options
+    cache.dispatcher = createCloudStepDispatcher(env, options)
   }
   return cache.dispatcher
 }
 
 function resolveStepHandler<Env extends CloudWorkflowsEnv>(
   env: Env,
-  options: Pick<CloudOrchestratorOptions<Env>, "services" | "now" | "logger"> = {},
+  options: CloudExecutionOptions<Env> = defaultExecutionOptions as CloudExecutionOptions<Env>,
 ): StepHandler {
   const cache = cacheFor(env)
-  if (!cache.stepHandler) {
+  if (!cache.stepHandler || cache.stepHandlerOptions !== options) {
+    cache.stepHandlerOptions = options
     const handlerPromise = buildStepHandler(env, options)
     cache.stepHandler = (req, stepOptions) =>
       handlerPromise.then((handler) => handler(req, stepOptions))
@@ -226,7 +261,7 @@ function resolveStepHandler<Env extends CloudWorkflowsEnv>(
 
 async function buildStepHandler<Env extends CloudWorkflowsEnv>(
   env: Env,
-  options: Pick<CloudOrchestratorOptions<Env>, "services" | "now" | "logger"> = {},
+  options: CloudExecutionOptions<Env> = defaultExecutionOptions as CloudExecutionOptions<Env>,
 ): Promise<StepHandler> {
   const nodeStepRunner = await createNodeStepRunner(env, options)
   const rateLimiter = createInMemoryRateLimiter()
@@ -247,7 +282,7 @@ async function buildStepHandler<Env extends CloudWorkflowsEnv>(
 
 async function createNodeStepRunner<Env extends CloudWorkflowsEnv>(
   env: Env,
-  options: Pick<CloudOrchestratorOptions<Env>, "now" | "logger">,
+  options: CloudExecutionOptions<Env>,
 ): Promise<StepRunner> {
   if (!env.STEP_RUNNER) {
     return createInlineNodeStepRunner(options.now)
