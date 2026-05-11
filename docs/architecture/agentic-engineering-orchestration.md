@@ -1109,9 +1109,11 @@ command for screenshot, video, console, failed-request, and summary artifacts.
 The capture command supports multi-viewport evidence packets so responsive UI
 work can include desktop and mobile proof from one run. Browser summaries
 classify console errors, console warnings, failed HTTP responses, and failed
-requests so reviewers can see quality signals without opening raw logs. Queue
-status and tick output also surface browser-evidence obligations for active UI
-work; capture recommendations remain explicit and are not dispatched
+requests so reviewers can see quality signals without opening raw logs. For
+UI-labeled work, capture fails after writing artifacts when those summaries
+contain blocking issues unless the runner passes an explicit accepted exception.
+Queue status and tick output also surface browser-evidence obligations for
+active UI work; capture recommendations remain explicit and are not dispatched
 automatically.
 
 Verification:
