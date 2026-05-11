@@ -223,6 +223,7 @@ describe("agent runner browser evidence validation", () => {
           ],
           consoleLog: path.join(summaryDir, "console.jsonl"),
           failedRequestLog: path.join(summaryDir, "network.jsonl"),
+          remoteArtifactIndex: "https://artifacts.example.com/runs/index.md",
         }),
       )
 
@@ -232,6 +233,10 @@ describe("agent runner browser evidence validation", () => {
       })
 
       assert.match(markdown, new RegExp(`Browser artifacts: ${artifactPointer}`))
+      assert.match(
+        markdown,
+        /Remote artifact index: https:\/\/artifacts\.example\.com\/runs\/index\.md/,
+      )
       assert.match(markdown, /Browser issue summary: 0 console errors, 1 console warning/)
       assert.match(markdown, /Blocking browser issues: no/)
       assert.match(

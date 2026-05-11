@@ -10,6 +10,7 @@ const booleanArgs = new Set([
   "force",
   "help",
   "json",
+  "publish-artifacts",
   "ready",
   "yes",
 ])

@@ -12,6 +12,11 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  artifactPublicationPlan,
+  artifactPublisherFromEnv,
+  publishArtifactDirectory,
+} from "./lib/agent-runner-artifacts.mjs"
+import {
   browserArtifactPlan,
   browserCapturePlan,
   browserCapturePlans,
@@ -20,6 +25,7 @@ import {
   captureBrowserEvidence,
   captureBrowserEvidenceSet,
   requiresBrowserEvidence,
+  writeBrowserEvidenceSummary,
 } from "./lib/agent-runner-browser-evidence.mjs"
 import { browserIssueBlockReason } from "./lib/agent-runner-browser-issues.mjs"
 import {
@@ -51,6 +57,7 @@ maybePrintHelp(args, {
       "--wait-until <event>",
       "Playwright navigation wait event: commit, domcontentloaded, load, or networkidle. Defaults to networkidle.",
     ],
+    ["--publish-artifacts", "Upload captured artifacts to configured R2/S3 object storage."],
     ["--browser-base-port <number>", "Base port for deterministic issue ports. Defaults to 4300."],
     ...repositoryOptions,
     ...mutationOptions,
@@ -161,6 +168,31 @@ if (captureError) {
   fail(`capture-browser failed: ${captureError.message}`)
 }
 
+if (args.publishArtifacts) {
+  try {
+    const publisher = artifactPublisherFromEnv()
+    const publicationPlan = artifactPublicationPlan({
+      publisher,
+      reference: artifactPlan.artifactPointer,
+      repository,
+    })
+    result = {
+      ...result,
+      remoteArtifactIndex: publicationPlan.indexUrl,
+    }
+    writeBrowserEvidenceSummary(artifactPlan, result)
+    await publishArtifactDirectory({
+      directory: artifactPlan.artifactDir,
+      issueNumber: item.issue.number,
+      publisher,
+      reference: artifactPlan.artifactPointer,
+      repository,
+    })
+  } catch (error) {
+    fail(`capture-browser failed to publish artifacts: ${error.message}`)
+  }
+}
+
 const issueBlockReason = browserIssueBlockReason(result.browserIssues, {
   allowBrowserIssues: Boolean(args.allowBrowserIssues),
   required: requiresBrowserEvidence(item),
@@ -193,6 +225,9 @@ function printCapturePlan({ artifactPlan, item, repository }) {
   console.log(`viewports: ${capturePlans.map((plan) => viewportLabel(plan.viewport)).join(", ")}`)
   console.log(`wait until: ${capturePlans[0].waitUntil}`)
   console.log(`artifacts: ${artifactPlan.artifactDir}`)
+  if (args.publishArtifacts) {
+    console.log("remote artifacts: configured object storage")
+  }
   for (const plan of capturePlans) {
     console.log(`screenshot ${viewportLabel(plan.viewport)}: ${plan.screenshotFile}`)
   }

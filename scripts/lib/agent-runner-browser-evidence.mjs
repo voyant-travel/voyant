@@ -8,13 +8,9 @@ import {
 } from "./agent-runner-browser-issues.mjs"
 import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 
-const uiEvidenceLabels = new Set([
-  "browser:evidence",
-  "frontend",
-  "needs-browser-evidence",
-  "ui",
-  "ui-change",
-])
+const uiEvidenceLabels = new Set(
+  "browser:evidence frontend needs-browser-evidence ui ui-change".split(" "),
+)
 
 export function requiresBrowserEvidence(item) {
   const labels = item.issue?.labels ?? []
@@ -211,8 +207,7 @@ export async function captureBrowserEvidence({ browserLauncher, capturePlan, tim
     failedRequestLog: artifactPlan.networkLog,
   }
 
-  writeFileSync(artifactPlan.summaryJson, `${JSON.stringify(result, null, 2)}\n`, "utf8")
-  writeFileSync(artifactPlan.readme, browserEvidenceMarkdown(result), "utf8")
+  writeBrowserEvidenceSummary(artifactPlan, result)
 
   return result
 }
@@ -258,8 +253,7 @@ export async function captureBrowserEvidenceSet({
     failedRequestLog: artifactPlan.networkLog,
   }
 
-  writeFileSync(artifactPlan.summaryJson, `${JSON.stringify(result, null, 2)}\n`, "utf8")
-  writeFileSync(artifactPlan.readme, browserEvidenceMarkdown(result), "utf8")
+  writeBrowserEvidenceSummary(artifactPlan, result)
 
   return result
 }
@@ -315,6 +309,8 @@ async function captureSingleBrowserEvidence({ browserLauncher, capturePlan, time
 export function browserEvidenceText(result) {
   if (Array.isArray(result.captures)) {
     const lines = [`browser artifacts: ${result.artifactPointer}`]
+    if (result.remoteArtifactIndex)
+      lines.push(`remote artifact index: ${result.remoteArtifactIndex}`)
 
     for (const capture of result.captures) {
       lines.push(
@@ -335,6 +331,7 @@ export function browserEvidenceText(result) {
 
   const lines = [
     `browser artifacts: ${result.artifactPointer}`,
+    result.remoteArtifactIndex ? `remote artifact index: ${result.remoteArtifactIndex}` : null,
     `url: ${result.url}`,
     `screenshot: ${result.screenshot}`,
     result.browserIssues
@@ -347,6 +344,11 @@ export function browserEvidenceText(result) {
   if (result.video) lines.push(`video: ${result.video}`)
 
   return lines.join("\n")
+}
+
+export function writeBrowserEvidenceSummary(artifactPlan, result) {
+  writeFileSync(artifactPlan.summaryJson, `${JSON.stringify(result, null, 2)}\n`, "utf8")
+  writeFileSync(artifactPlan.readme, browserEvidenceMarkdown(result), "utf8")
 }
 
 export function browserEvidenceMarkdown(result) {
@@ -369,6 +371,7 @@ export function browserEvidenceMarkdown(result) {
     return `# Browser Evidence
 
 Artifacts: ${result.artifactPointer}
+${result.remoteArtifactIndex ? `Remote artifact index: ${result.remoteArtifactIndex}\n` : ""}
 
 ## Captures
 
@@ -387,6 +390,7 @@ ${browserIssueMarkdown(result.browserIssues)}
 
 URL: ${result.url}
 Artifacts: ${result.artifactPointer}
+${result.remoteArtifactIndex ? `Remote artifact index: ${result.remoteArtifactIndex}\n` : ""}
 Viewport: ${result.viewport.width}x${result.viewport.height}
 Wait until: ${result.waitUntil}
 
