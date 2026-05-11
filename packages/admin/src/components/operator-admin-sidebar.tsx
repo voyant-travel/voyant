@@ -26,7 +26,9 @@ import { AdminExtensionsProvider } from "../providers/admin-extensions.js"
 import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
 import type { AdminUser, NavItem } from "../types.js"
 import { AdminNavGroup } from "./admin-nav-group.js"
-import type { AdminNavLinkComponent } from "./admin-nav-link.js"
+import { type AdminNavLinkComponent, DefaultAdminNavLink } from "./admin-nav-link.js"
+import { VoyantMark } from "./brand/voyant-mark.js"
+import { VoyantWordmark } from "./brand/voyant-wordmark.js"
 import { OperatorAdminUserMenu } from "./operator-admin-user-menu.js"
 
 export interface OperatorAdminSidebarProps
@@ -42,15 +44,29 @@ export interface OperatorAdminSidebarProps
   user?: AdminUser | null
 }
 
-export function DefaultOperatorAdminBrand() {
+export interface DefaultOperatorAdminBrandProps {
+  href?: string
+  linkComponent?: AdminNavLinkComponent
+}
+
+export function DefaultOperatorAdminBrand({
+  href = "/",
+  linkComponent: LinkComponent = DefaultAdminNavLink,
+}: DefaultOperatorAdminBrandProps) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton tooltip="Voyant" size="lg">
-          <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
-            V
-          </div>
-          <span className="truncate text-sm font-semibold">Voyant</span>
+        <SidebarMenuButton asChild tooltip="Voyant" size="lg">
+          <LinkComponent href={href} target="_self" aria-label="Voyant">
+            <VoyantMark
+              aria-hidden="true"
+              className="hidden! size-5! shrink-0 group-data-[collapsible=icon]:block!"
+            />
+            <VoyantWordmark
+              aria-hidden="true"
+              className="h-6! w-auto! group-data-[collapsible=icon]:hidden!"
+            />
+          </LinkComponent>
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
@@ -59,7 +75,7 @@ export function DefaultOperatorAdminBrand() {
 
 export function OperatorAdminSidebar({
   accountHref,
-  brand = <DefaultOperatorAdminBrand />,
+  brand,
   currentPath,
   extensions,
   icons,
@@ -72,10 +88,11 @@ export function OperatorAdminSidebar({
   const messages = useOperatorAdminMessages()
   const baseItems = navItems ?? createOperatorAdminNavigation({ icons, messages: messages.nav })
   const resolvedItems = resolveAdminNavigation({ baseItems, extensions })
+  const resolvedBrand = brand ?? <DefaultOperatorAdminBrand linkComponent={linkComponent} />
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>{brand}</SidebarHeader>
+      <SidebarHeader>{resolvedBrand}</SidebarHeader>
       <SidebarContent>
         <AdminNavGroup
           currentPath={currentPath}

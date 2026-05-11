@@ -99,5 +99,37 @@ describe("DefaultOperatorAdminBrand", () => {
     expect(container.querySelector("[data-slot='sidebar-menu']")).not.toBeNull()
     expect(container.querySelector("[data-slot='sidebar-menu-item']")).not.toBeNull()
     expect(container.querySelector("[data-slot='sidebar-menu-button']")).not.toBeNull()
+    expect(screen.getByRole("link", { name: "Voyant" }).getAttribute("href")).toBe("/")
+    expect(container.querySelector("[data-slot='voyant-mark']")).not.toBeNull()
+    expect(container.querySelector("[data-slot='voyant-wordmark']")).not.toBeNull()
+  })
+
+  it("uses the workspace link component for the default brand link", () => {
+    const AdminLink = ({
+      "aria-label": ariaLabel,
+      children,
+      href,
+      target,
+      ...props
+    }: {
+      "aria-label"?: string
+      children: ReactNode
+      href: string
+      target?: "_self" | "_blank"
+    } & Omit<React.ComponentPropsWithoutRef<"a">, "href" | "target">) => (
+      <a aria-label={ariaLabel} data-router-link="true" href={href} target={target} {...props}>
+        {children}
+      </a>
+    )
+
+    renderWithAdminProviders(
+      <OperatorAdminWorkspaceLayout currentPath="/" linkComponent={AdminLink} navItems={[]}>
+        <section>Dashboard content</section>
+      </OperatorAdminWorkspaceLayout>,
+    )
+
+    expect(screen.getByRole("link", { name: "Voyant" }).getAttribute("data-router-link")).toBe(
+      "true",
+    )
   })
 })

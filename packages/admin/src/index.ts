@@ -30,6 +30,8 @@ export {
   AdminWidgetSlotRenderer,
   type AdminWidgetSlotRendererProps,
 } from "./components/admin-widget-slot.js"
+export { VoyantMark } from "./components/brand/voyant-mark.js"
+export { VoyantWordmark } from "./components/brand/voyant-wordmark.js"
 export {
   OperatorAdminBootstrapGate,
   type OperatorAdminBootstrapGateProps,
@@ -38,6 +40,7 @@ export {
 } from "./components/operator-admin-bootstrap-gate.js"
 export {
   DefaultOperatorAdminBrand,
+  type DefaultOperatorAdminBrandProps,
   OperatorAdminSidebar,
   type OperatorAdminSidebarProps,
   OperatorAdminWorkspaceLayout,
