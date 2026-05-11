@@ -12,7 +12,10 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import { browserEvidenceMissingReason } from "./lib/agent-runner-browser-evidence.mjs"
-import { browserEvidenceQualityBlockReason } from "./lib/agent-runner-browser-validation.mjs"
+import {
+  browserEvidenceQualityBlockReason,
+  browserEvidenceReviewMarkdown,
+} from "./lib/agent-runner-browser-validation.mjs"
 import {
   maybePrintHelp,
   mutationOptions,
@@ -171,7 +174,7 @@ ${args.verification}
 
 ## UI Evidence
 
-${args.uiEvidence ?? "Not applicable or not provided."}
+${browserEvidenceReviewMarkdown({ uiEvidence: args.uiEvidence, workspace })}
 
 ## Links
 

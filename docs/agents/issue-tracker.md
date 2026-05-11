@@ -178,6 +178,9 @@ When `handoff` or successful `run-command` receives a local browser artifact
 reference, it reads the artifact `summary.json` and blocks handoff if that
 summary still contains blocking browser issues unless `--allow-browser-issues`
 is used with a maintainer-approved exception.
+Evidence packets expand that local browser summary into a review index with
+repo-relative screenshot, video, console-log, failed-request-log, and summary
+links so PR reviewers do not need to decode raw runner output.
 
 Use the read-only status view to inspect the current queue and active work:
 
