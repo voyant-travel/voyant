@@ -42,6 +42,7 @@
     "agent:queue:remote-bootstrap": "node scripts/agent-runner-remote-bootstrap.mjs",
     "agent:queue:remote-publish-evidence": "node scripts/agent-runner-remote-publish-evidence.mjs",
     "agent:queue:remote-cleanup": "node scripts/agent-runner-remote-cleanup.mjs",
+    "agent:queue:remote-capture-browser": "node scripts/agent-runner-remote-capture-browser.mjs",
     "agent:queue:remote-open-pr": "node scripts/agent-runner-remote-open-pr.mjs",
     "agent:queue:remote-run-command": "node scripts/agent-runner-remote-run-command.mjs",
     "agent:queue:prepare": "node scripts/agent-runner-prepare.mjs",

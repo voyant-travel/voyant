@@ -1196,8 +1196,11 @@ durable URL. `agent:queue:remote-cleanup` can call an adapter-owned `dispose`
 operation for terminal remote work and clear the Project `Workspace` field
 after success. `agent:queue:remote-open-pr` can verify and push the remote
 branch through the configured adapter, create or reuse a GitHub PR from the
-local token, and update the Project `PR` field. Browser evidence and HTTP
-exposure remain future slices.
+local token, and update the Project `PR` field. `agent:queue:remote-capture-browser`
+can call adapter-owned HTTP exposure for a remote port, capture that URL through
+local Playwright, store local ignored browser artifacts, and optionally publish
+the artifact directory to configured R2-compatible storage. Long-running remote
+process management remains a future slice.
 
 Verification:
 
