@@ -1229,6 +1229,10 @@ Verification:
   same run store and R2 artifacts.
 - Browser capture can publish artifacts directly to R2-compatible object
   storage with `pnpm agent:queue:capture-browser -- --publish-artifacts`.
+  Evidence publishing can use the same object store with
+  `pnpm agent:queue:publish-evidence -- --publish-artifacts`; in that mode the
+  Project `Evidence` field points at the durable remote evidence packet while
+  the GitHub issue comment remains a readable copy.
   Configure it with `VOYANT_AGENT_R2_BUCKET`,
   `VOYANT_AGENT_R2_ACCESS_KEY_ID`, `VOYANT_AGENT_R2_SECRET_ACCESS_KEY`,
   `VOYANT_AGENT_R2_ACCOUNT_ID` or `VOYANT_AGENT_R2_ENDPOINT`, and

@@ -126,6 +126,27 @@ export async function publishArtifactDirectory({
   }
 }
 
+export async function publishEvidencePacket({
+  body,
+  issueNumber,
+  publisher,
+  reference,
+  repository,
+}) {
+  const plan = evidencePacketPublicationPlan({ publisher, reference, repository })
+  return publisher.upload({
+    body: Buffer.from(body),
+    contentType: "text/markdown; charset=utf-8",
+    key: plan.key,
+    metadata: {
+      issue: String(issueNumber),
+      reference,
+      repository,
+    },
+    path: path.posix.basename(reference) || "evidence.md",
+  })
+}
+
 export function artifactPublicationPlan({ publisher, reference, repository }) {
   const keyPrefix = objectKeyPrefix({
     prefix: publisher.prefix,
@@ -137,6 +158,19 @@ export function artifactPublicationPlan({ publisher, reference, repository }) {
     indexUrl: publisher.publicUrl(`${keyPrefix}/index.md`),
     keyPrefix,
     manifestUrl: publisher.publicUrl(`${keyPrefix}/manifest.json`),
+  }
+}
+
+export function evidencePacketPublicationPlan({ publisher, reference, repository }) {
+  const key = objectKeyPrefix({
+    prefix: publisher.prefix,
+    reference,
+    repository,
+  })
+
+  return {
+    key,
+    url: publisher.publicUrl(key),
   }
 }
 
