@@ -1147,7 +1147,8 @@ failed CI logs into local repair packets, and mark merged PRs done. PR sync can
 also refresh a PR description from the current evidence packet with
 `pnpm agent:queue:sync-pr -- --issue <number> --update-body --yes`; this is
 explicit so maintainer-edited PR descriptions are not overwritten by routine
-state polling.
+state polling. Dispatch, loop, and control-plane planning can pass the same
+option through to `sync-pr` when the runner intentionally wants that refresh.
 
 Verification:
 

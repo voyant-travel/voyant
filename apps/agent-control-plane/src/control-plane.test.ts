@@ -134,6 +134,45 @@ describe("agent control plane", () => {
     })
   })
 
+  it("adds PR body refresh only for sync plans", () => {
+    const syncRecommendation = {
+      action: "sync-pr",
+      reason: "linked PR should be synced back to the Project",
+      issue: {
+        number: 627,
+        title: "Sync review state",
+        url: "https://github.com/voyantjs/voyant/issues/627",
+        repository: "voyantjs/voyant",
+      },
+    }
+
+    expect(
+      selectDispatchPlan({
+        options: { updateBody: true },
+        recommendations: [syncRecommendation],
+        repository: "voyantjs/voyant",
+      }).plan?.command,
+    ).toEqual([
+      "pnpm",
+      "agent:queue:sync-pr",
+      "--",
+      "--issue",
+      "627",
+      "--repo",
+      "voyantjs/voyant",
+      "--yes",
+      "--update-body",
+    ])
+
+    expect(
+      selectDispatchPlan({
+        options: { updateBody: true },
+        recommendations: [recommendations[1]!],
+        repository: "voyantjs/voyant",
+      }).plan?.command,
+    ).not.toContain("--update-body")
+  })
+
   it("serves health and dispatch planning through Hono", async () => {
     const app = createApp({ authTokens: ["secret"] })
 

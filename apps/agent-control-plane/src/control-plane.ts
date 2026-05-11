@@ -18,6 +18,11 @@ export const dispatchPlanRequestSchema = z.object({
       issueNumber: z.number().int().positive().optional(),
     })
     .optional(),
+  options: z
+    .object({
+      updateBody: z.boolean().optional(),
+    })
+    .optional(),
   recommendations: z
     .array(
       z.object({
@@ -106,16 +111,12 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
   return {
     plan: {
       action,
-      command: [
-        "pnpm",
-        `agent:queue:${action}`,
-        "--",
-        "--issue",
-        String(recommendation.issue.number),
-        "--repo",
-        request.repository,
-        "--yes",
-      ],
+      command: dispatchCommand({
+        action,
+        issueNumber: recommendation.issue.number,
+        repository: request.repository,
+        updateBody: request.options?.updateBody,
+      }),
       issue: recommendation.issue,
       reason: recommendation.reason,
       repository: request.repository,
@@ -123,6 +124,35 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
     },
     reason: "matched",
   }
+}
+
+function dispatchCommand({
+  action,
+  issueNumber,
+  repository,
+  updateBody,
+}: {
+  action: DispatchPlan["action"]
+  issueNumber: number
+  repository: string
+  updateBody?: boolean
+}) {
+  const command = [
+    "pnpm",
+    `agent:queue:${action}`,
+    "--",
+    "--issue",
+    String(issueNumber),
+    "--repo",
+    repository,
+    "--yes",
+  ]
+
+  if (updateBody && action === "sync-pr") {
+    command.push("--update-body")
+  }
+
+  return command
 }
 
 function isDispatchableAction(action: string): action is DispatchPlan["action"] {
