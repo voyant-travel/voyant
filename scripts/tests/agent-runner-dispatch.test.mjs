@@ -106,6 +106,33 @@ describe("agent runner dispatch helpers", () => {
     ])
   })
 
+  it("dispatches remote evidence publication recommendations", () => {
+    const recommendation = recommendQueueAction(
+      workItem({
+        fields: {
+          "Agent State": "Human Review",
+          Evidence: "docs/agent-evidence/active/579-test.md",
+          Workspace: "sandbox:sprite:task-579",
+        },
+      }),
+      { maxAgeDays: 1, repository: "voyantjs/other" },
+    )
+
+    assert.equal(
+      selectDispatchRecommendation([recommendation]).recommendation.action,
+      "remote-publish-evidence",
+    )
+    assert.deepEqual(dispatchCommandArgs(recommendation, { repository: "voyantjs/other" }), [
+      "agent:queue:remote-publish-evidence",
+      "--",
+      "--issue",
+      "579",
+      "--repo",
+      "voyantjs/other",
+      "--yes",
+    ])
+  })
+
   it("passes custom event logs to nested dispatch commands", () => {
     const recommendation = recommendQueueAction(workItem(), {
       maxAgeDays: 1,

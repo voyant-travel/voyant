@@ -185,6 +185,21 @@ packet under `docs/agent-evidence/active/`, then moves the item to
 branches, expose HTTP, capture browser artifacts, publish evidence, open PRs,
 or clean up the remote workspace.
 
+After a successful remote command, publish the remote evidence packet to GitHub
+or configured R2-compatible object storage:
+
+```bash
+pnpm agent:queue:remote-publish-evidence -- --issue <number> --yes
+pnpm agent:queue:remote-publish-evidence -- --issue <number> --publish-artifacts --yes
+```
+
+Remote-publish-evidence mode reads the relative Evidence path from the remote
+repository directory through the configured adapter, posts or reuses a GitHub
+issue comment, optionally uploads the packet to configured object storage, and
+updates the Project `Evidence` field to the durable URL. It refuses absolute or
+escaping evidence paths and refuses Evidence values that already point at a
+remote URL.
+
 After local start, run a supervised provider-neutral command in the claimed
 workspace:
 
@@ -264,10 +279,12 @@ CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
 recommend `remote-bootstrap` so dispatch can clone/fetch the repository and
 move the item to `Planning`. Remote workspace items in `Planning`,
 `Changes Requested`, or `CI Repair` recommend `remote-run-command`, but dispatch
-does not execute implementation commands automatically. Later remote workspace
-states still recommend wait states until a remote adapter owns browser evidence,
-PR creation, and cleanup. Malformed reserved `sandbox:` values recommend
-`inspect-workspace`.
+does not execute implementation commands automatically. Remote `Human Review`
+items with local evidence paths recommend `remote-publish-evidence`; after
+evidence is published, they wait for the future remote PR publisher. Later
+remote workspace states still recommend wait states until a remote adapter owns
+browser evidence, PR creation, and cleanup. Malformed reserved `sandbox:`
+values recommend `inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -278,9 +295,10 @@ pnpm agent:queue:dispatch -- --yes
 Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
-`start`, `remote-bootstrap`, `collect-ci`, `publish-evidence`, `open-pr`,
-`sync-pr`, and `cleanup`; it refuses `run-command`, `remote-run-command`,
-`capture-browser`, `inspect-stale`, blocked work, and wait states so
+`start`, `remote-bootstrap`, `remote-publish-evidence`, `collect-ci`,
+`publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it refuses
+`run-command`, `remote-run-command`, `capture-browser`, `inspect-stale`,
+blocked work, and wait states so
 implementation and browser execution remain explicit.
 Successful dispatch attempts append local JSONL audit events to
 `.agent-runs/events.jsonl` by default; pass `--event-log <path>` when a

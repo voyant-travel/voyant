@@ -205,6 +205,35 @@ function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
   if (state === "Human Review" && item.fields.PR) return null
   if (state === "Merge Ready" && item.fields.PR) return null
 
+  if (state === "Human Review" && item.fields.Evidence) {
+    if (isRemoteEvidence(item.fields.Evidence)) {
+      return recommendation(item, {
+        action: "wait-remote-pr",
+        command: commandWithIssue({
+          command: "remote-inspect",
+          issueNumber: item.issue.number,
+          mutate: false,
+          repository,
+        }),
+        heartbeat,
+        priority: 60,
+        reason: `remote workspace ${descriptor.reference} has published evidence but no remote PR publisher`,
+      })
+    }
+
+    return recommendation(item, {
+      action: "remote-publish-evidence",
+      command: commandWithIssue({
+        command: "remote-publish-evidence",
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: 60,
+      reason: `remote workspace ${descriptor.reference} evidence should be published before PR creation`,
+    })
+  }
+
   if (item.ready) {
     return recommendation(item, {
       action: "remote-bootstrap",
