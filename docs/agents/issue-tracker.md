@@ -153,6 +153,19 @@ pnpm agent:queue:remote-exec -- --workspace sandbox:sprite:<id> --command "pwd" 
 This is an adapter validation tool, not the full implementation runner. It does
 not write evidence, open PRs, collect browser artifacts, or perform cleanup.
 
+Use `remote-bootstrap` to clone or update the repository inside the remote
+workspace before running real commands:
+
+```bash
+pnpm agent:queue:remote-bootstrap -- --workspace sandbox:sprite:<id> --repo voyantjs/voyant --branch feature/123-task --yes
+```
+
+For issue-scoped work, `--issue <number>` derives the branch from the execution
+plan. The command creates a deterministic remote repo directory by default,
+fails if that directory exists but is not a Git repository, fetches origin, and
+checks out the existing task branch or creates it from the selected base ref.
+It does not write evidence or update Project fields.
+
 After start, run a supervised provider-neutral command in the claimed
 workspace:
 
