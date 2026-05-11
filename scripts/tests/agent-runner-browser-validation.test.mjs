@@ -6,6 +6,7 @@ import { describe, it } from "node:test"
 
 import {
   browserEvidenceQualityBlockReason,
+  browserEvidenceReviewMarkdown,
   browserEvidenceSummaryPlan,
 } from "../lib/agent-runner-browser-validation.mjs"
 import { commandRunBrowserEvidenceBlockReason } from "../lib/agent-runner-execution.mjs"
@@ -182,6 +183,68 @@ describe("agent runner browser evidence validation", () => {
           workspace: tempDir,
         }),
         null,
+      )
+    } finally {
+      rmSync(tempDir, { force: true, recursive: true })
+    }
+  })
+
+  it("formats local browser summaries with reviewable artifact links", () => {
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), "voyant-browser-validation-"))
+    try {
+      const artifactPointer = "docs/agent-evidence/browser/579-test/2026-05-10T12-34-56-000Z"
+      const summaryDir = path.join(tempDir, artifactPointer)
+      mkdirSync(summaryDir, { recursive: true })
+      writeFileSync(
+        path.join(summaryDir, "summary.json"),
+        JSON.stringify({
+          artifactPointer,
+          browserIssues: {
+            consoleErrors: 0,
+            consoleWarnings: 1,
+            failedRequests: 0,
+            hasBlockingIssues: false,
+            httpErrors: 0,
+            malformedLogLines: 0,
+            requestFailures: 0,
+          },
+          captures: [
+            {
+              screenshot: path.join(summaryDir, "screenshots/page-1440x900.png"),
+              url: "http://127.0.0.1:4879",
+              video: path.join(summaryDir, "videos/desktop.webm"),
+              viewport: { height: 900, width: 1440 },
+            },
+            {
+              screenshot: path.join(summaryDir, "screenshots/page-390x844.png"),
+              url: "http://127.0.0.1:4879",
+              viewport: { height: 844, width: 390 },
+            },
+          ],
+          consoleLog: path.join(summaryDir, "console.jsonl"),
+          failedRequestLog: path.join(summaryDir, "network.jsonl"),
+        }),
+      )
+
+      const markdown = browserEvidenceReviewMarkdown({
+        uiEvidence: `browser artifacts: ${artifactPointer}`,
+        workspace: tempDir,
+      })
+
+      assert.match(markdown, new RegExp(`Browser artifacts: ${artifactPointer}`))
+      assert.match(markdown, /Browser issue summary: 0 console errors, 1 console warning/)
+      assert.match(markdown, /Blocking browser issues: no/)
+      assert.match(
+        markdown,
+        /Screenshot: !\[1440x900 screenshot\]\(docs\/agent-evidence\/browser\/579-test\/2026-05-10T12-34-56-000Z\/screenshots\/page-1440x900\.png\)/,
+      )
+      assert.match(
+        markdown,
+        /Video: docs\/agent-evidence\/browser\/579-test\/2026-05-10T12-34-56-000Z\/videos\/desktop\.webm/,
+      )
+      assert.match(
+        markdown,
+        /Failed-request log: docs\/agent-evidence\/browser\/579-test\/2026-05-10T12-34-56-000Z\/network\.jsonl/,
       )
     } finally {
       rmSync(tempDir, { force: true, recursive: true })

@@ -6,7 +6,10 @@ import {
   browserEvidenceMissingReason,
   requiresBrowserEvidence,
 } from "./agent-runner-browser-evidence.mjs"
-import { browserEvidenceQualityBlockReason } from "./agent-runner-browser-validation.mjs"
+import {
+  browserEvidenceQualityBlockReason,
+  browserEvidenceReviewMarkdown,
+} from "./agent-runner-browser-validation.mjs"
 import { ciRepairEvidenceEnvironment, resolveCiRepairEvidencePath } from "./agent-runner-ci.mjs"
 import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 import {
@@ -177,7 +180,7 @@ Runner command transcript: ${artifactPlan.logFile}
 
 ## Browser Evidence
 
-${formatBrowserEvidenceRequirement(item, uiEvidence)}
+${formatBrowserEvidenceRequirement({ artifactPlan, item, uiEvidence })}
 
 ## CI Repair Evidence
 
@@ -189,13 +192,16 @@ Review the command transcript and resulting diff before opening or merging a PR.
 `
 }
 
-function formatBrowserEvidenceRequirement(item, uiEvidence) {
+function formatBrowserEvidenceRequirement({ artifactPlan, item, uiEvidence }) {
   if (!requiresBrowserEvidence(item)) {
     return "Not required by issue labels."
   }
 
   if (uiEvidence?.trim()) {
-    return uiEvidence.trim()
+    return browserEvidenceReviewMarkdown({
+      uiEvidence,
+      workspace: artifactPlan.workspace,
+    })
   }
 
   return "Required for UI-labeled work. Attach screenshots, console log, failed-request log, and video or note the maintainer-approved exception."
