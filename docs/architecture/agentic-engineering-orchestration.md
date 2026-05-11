@@ -1114,6 +1114,7 @@ Deliverables:
 - Update PR descriptions from evidence packets.
 - Watch CI.
 - Move failed PRs to `CI Repair`.
+- Mark Project items done when linked PRs are merged.
 - Re-run the agent with CI logs and a narrow repair prompt.
 
 Verification:

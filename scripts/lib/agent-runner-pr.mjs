@@ -149,6 +149,16 @@ export function evaluatePullRequestCompletion(pr) {
 export function evaluatePullRequestGate(pr) {
   const checks = summarizeChecks(pr.statusCheckRollup ?? [])
 
+  if (pr.state === "MERGED") {
+    return {
+      agentState: "Done",
+      blockedBy: null,
+      mergeReady: false,
+      projectStatus: "Done",
+      reason: "PR is merged",
+    }
+  }
+
   if (pr.state !== "OPEN") {
     return {
       agentState: "Human Review",
@@ -221,11 +231,17 @@ export function pullRequestCompletionFieldValues({ date = new Date(), pr }) {
 }
 
 export function pullRequestSyncFieldValues({ date = new Date(), pr, result }) {
-  return {
+  const values = {
     "Agent State": result.agentState,
     PR: pr.url,
     "Last Heartbeat": date.toISOString().slice(0, 10),
   }
+
+  if (result.projectStatus) {
+    values.Status = result.projectStatus
+  }
+
+  return values
 }
 
 export function summarizeChecks(checks) {
