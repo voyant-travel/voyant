@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 
 import {
   normalizeRemoteBaseRef,
+  remoteBootstrapFieldValues,
   remoteBootstrapPlan,
 } from "../lib/agent-runner-remote-bootstrap.mjs"
 import { parseWorkspaceReference } from "../lib/agent-runner-workspace-contract.mjs"
@@ -78,5 +79,24 @@ describe("agent runner remote bootstrap helpers", () => {
   it("normalizes remote base refs", () => {
     assert.equal(normalizeRemoteBaseRef("origin/main"), "main")
     assert.equal(normalizeRemoteBaseRef("release/next"), "release/next")
+  })
+
+  it("builds Project field updates after issue-scoped remote bootstrap", () => {
+    assert.deepEqual(
+      remoteBootstrapFieldValues(
+        {
+          branch: "task/579-test-agent-project-intake-workflow",
+          workspaceReference: "sandbox:sprite:task-579",
+        },
+        new Date("2026-05-11T12:00:00.000Z"),
+      ),
+      {
+        Status: "In Progress",
+        "Agent State": "Planning",
+        Branch: "task/579-test-agent-project-intake-workflow",
+        Workspace: "sandbox:sprite:task-579",
+        "Last Heartbeat": "2026-05-11",
+      },
+    )
   })
 })

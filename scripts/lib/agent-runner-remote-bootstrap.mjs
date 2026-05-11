@@ -46,6 +46,16 @@ export function remoteBootstrapPlan({
   }
 }
 
+export function remoteBootstrapFieldValues({ branch, workspaceReference }, date = new Date()) {
+  return {
+    Status: "In Progress",
+    "Agent State": "Planning",
+    Branch: branch,
+    Workspace: workspaceReference,
+    "Last Heartbeat": date.toISOString().slice(0, 10),
+  }
+}
+
 export function remoteBootstrapShell({ baseRef, branch, remoteDir, repoUrl }) {
   return `set -euo pipefail
 repo_dir=${shellQuote(remoteDir)}

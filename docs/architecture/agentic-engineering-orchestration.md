@@ -1183,8 +1183,10 @@ enables it through adapter config. `agent:queue:remote-exec` can validate that
 path with a guarded command, but remote execution does not yet own long-running
 process management, HTTP exposure, artifact collection, cleanup, evidence
 writing, or PR creation. `agent:queue:remote-bootstrap` can now clone/fetch the
-repository and check out the task branch inside a remote workspace, but it is
-still a guarded validation step rather than the full implementation runner.
+repository, prefer an existing remote task branch, and check out the task branch
+inside a remote workspace. Ready remote-workspace items can be dispatched
+through that bootstrap path and move to `Planning` after success, but this is
+still repository preparation rather than the full implementation runner.
 
 Verification:
 

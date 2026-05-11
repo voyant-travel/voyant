@@ -5,6 +5,7 @@ export const dispatchableActions = new Set([
   "cleanup",
   "open-pr",
   "publish-evidence",
+  "remote-bootstrap",
   "start",
   "sync-pr",
 ])

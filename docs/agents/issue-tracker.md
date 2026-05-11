@@ -164,7 +164,10 @@ For issue-scoped work, `--issue <number>` derives the branch from the execution
 plan. The command creates a deterministic remote repo directory by default,
 fails if that directory exists but is not a Git repository, fetches origin, and
 checks out the existing task branch or creates it from the selected base ref.
-It does not write evidence or update Project fields.
+After a successful issue-scoped bootstrap, it updates the Project item to
+`Agent State = Planning`, stores the remote `Workspace`, stores the planned
+branch, and refreshes `Last Heartbeat`. Direct `--workspace` validation without
+an issue remains non-Project-mutating.
 
 After start, run a supervised provider-neutral command in the claimed
 workspace:
@@ -241,11 +244,12 @@ open PRs. Pass `--json` when a process manager or future control plane needs
 machine-readable actions. `Merge Ready` items with linked PRs keep recommending
 `sync-pr` so the runner can observe maintainer merges and mark the item done.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
-CI repair packet exists. Items with `sandbox:<provider>:<id>` workspaces
-recommend wait states instead of local workspace commands until a remote adapter
-owns execution and cleanup; their recommendation includes a read-only
-`remote-inspect` command. Malformed reserved `sandbox:` values recommend
-`inspect-workspace`.
+CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
+recommend `remote-bootstrap` so dispatch can clone/fetch the repository and
+move the item to `Planning`. Later remote workspace states still recommend wait
+states instead of local workspace commands until a remote adapter owns execution
+and cleanup; their recommendation includes a read-only `remote-inspect` command.
+Malformed reserved `sandbox:` values recommend `inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -256,9 +260,10 @@ pnpm agent:queue:dispatch -- --yes
 Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
-`start`, `collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, and
-`cleanup`; it refuses `run-command`, `capture-browser`, `inspect-stale`, blocked
-work, and wait states so implementation and browser execution remain explicit.
+`start`, `remote-bootstrap`, `collect-ci`, `publish-evidence`, `open-pr`,
+`sync-pr`, and `cleanup`; it refuses `run-command`, `capture-browser`,
+`inspect-stale`, blocked work, and wait states so implementation and browser
+execution remain explicit.
 Successful dispatch attempts append local JSONL audit events to
 `.agent-runs/events.jsonl` by default; pass `--event-log <path>` when a
 supervisor needs a different local ledger path.

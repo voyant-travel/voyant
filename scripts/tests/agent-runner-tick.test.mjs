@@ -209,7 +209,7 @@ describe("agent runner tick helpers", () => {
     )
   })
 
-  it("pauses local queue actions for remote workspace references", () => {
+  it("bootstraps ready remote workspace references before pausing local actions", () => {
     assert.deepEqual(
       recommendQueueAction(
         workItem({
@@ -219,8 +219,16 @@ describe("agent runner tick helpers", () => {
           },
         }),
         { maxAgeDays: 1, repository: "voyantjs/other" },
-      ).action,
-      "wait-remote-adapter",
+      ),
+      {
+        action: "remote-bootstrap",
+        command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyantjs/other --yes",
+        heartbeat: null,
+        issue: workItem().issue,
+        priority: 20,
+        reason: "remote workspace sandbox:sprite:task-579 is ready for repository bootstrap",
+        state: "Ready",
+      },
     )
 
     assert.deepEqual(
