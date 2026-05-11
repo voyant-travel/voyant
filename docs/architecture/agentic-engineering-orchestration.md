@@ -1182,7 +1182,9 @@ Sprite adapter is available for one-shot command execution once a maintainer
 enables it through adapter config. `agent:queue:remote-exec` can validate that
 path with a guarded command, but remote execution does not yet own long-running
 process management, HTTP exposure, artifact collection, cleanup, evidence
-writing, PR creation, or repository bootstrap.
+writing, or PR creation. `agent:queue:remote-bootstrap` can now clone/fetch the
+repository and check out the task branch inside a remote workspace, but it is
+still a guarded validation step rather than the full implementation runner.
 
 Verification:
 
