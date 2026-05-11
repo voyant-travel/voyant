@@ -1,7 +1,7 @@
 # Reference image for `runtime: "node"` step execution on Cloudflare
-# Containers. The workflow bundle is baked in at build time — a
-# multi-tenant variant would fetch per-tenant bundles from R2 on cold
-# start instead. See `apps/workflows-node-step-container/README.md`.
+# Containers. The workflow bundle can be baked in at build time or
+# resolved per dispatch from a signed R2 URL. See
+# `apps/workflows-node-step-container/README.md`.
 
 FROM node:20-slim AS builder
 WORKDIR /build

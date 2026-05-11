@@ -1,10 +1,15 @@
 # @voyantjs/workflows-node-step-container
 
-Reference Cloudflare Container image that executes workflow steps
+Reference Cloudflare Container server that executes workflow steps
 declared with `runtime: "node"`. The orchestrator (running as a Worker
 + Durable Object) dispatches individual step invocations to a container
-in this image via `createCfContainerStepRunner` from
+running this package via `createCfContainerStepRunner` from
 `@voyantjs/workflows-orchestrator-cloudflare`.
+
+Voyant Cloud consumes this package from its shared
+`voyant-step-runner` fleet and from platform-operated per-org dedicated
+runner fleets. Enterprise dedicated runners use the same package and
+protocol; only the injected Durable Object binding target changes.
 
 ## Protocol
 
@@ -36,6 +41,24 @@ Response is a `StepJournalEntry`:
   "finishedAt": 1776451106897,
   "runtime": "node"
 }
+```
+
+## Package use
+
+```bash
+pnpm add @voyantjs/workflows-node-step-container
+```
+
+The package entry point starts the HTTP server:
+
+```bash
+voyant-workflows-node-step-container
+```
+
+Container images can also run the built module directly:
+
+```bash
+node node_modules/@voyantjs/workflows-node-step-container/dist/server.js
 ```
 
 ## Wiring
@@ -93,7 +116,7 @@ export class NodeStepContainer extends Container {
 ## Build
 
 ```bash
-# 1. Build your workflow bundle separately
+# 1. Build your workflow bundle separately for single-tenant images
 voyant workflows build --file ./src/workflows.ts --out ./dist
 cp ./dist/bundle.mjs ./apps/workflows-node-step-container/bundle.mjs
 
@@ -101,21 +124,13 @@ cp ./dist/bundle.mjs ./apps/workflows-node-step-container/bundle.mjs
 wrangler deploy
 ```
 
-## Limitations (v1 reference)
+## Bundle modes
 
-The container replays the entire workflow body on each step dispatch
-(no journal is passed through). That means:
+- **Single tenant** — set `WORKFLOW_BUNDLE` to a local `container.mjs`.
+- **Multi tenant** — send `bundle: { url, hash }` in each dispatch
+  payload. The server fetches the signed URL, verifies the SHA-256 hash,
+  imports the bundle, and caches it by hash.
 
-- **Multiple node steps per workflow** — steps other than the target
-  will also execute in the container. Safe only when step bodies are
-  idempotent. Use `idempotencyKey` on `StepOptions` for external
-  side effects.
-- **No in-flight cancellation** — the runner threads `stepCtx.signal`
-  to the `fetch`, but the container's `executeWorkflowStep` call
-  doesn't currently observe a mid-step abort.
-
-Production fixes (tracked separately):
-- Journal pass-through in the dispatch payload (skip cached steps).
-- Stop-after-target sentinel in the container's step runner.
-- Or: per-step registration so bodies can be resolved by id without
-  full body replay.
+The dispatch payload includes the current journal slice, and the server
+stops after the target step has executed so sibling node steps do not
+rerun during body replay.
