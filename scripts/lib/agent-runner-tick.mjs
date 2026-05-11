@@ -2,6 +2,7 @@ import {
   browserEvidenceReferenceKind,
   requiresBrowserEvidence,
 } from "./agent-runner-browser-evidence.mjs"
+import { hasCiRepairEvidence } from "./agent-runner-ci.mjs"
 import { evaluateHeartbeat } from "./agent-runner-output.mjs"
 
 const runnableStates = new Set(["Planning", "Changes Requested", "CI Repair"])
@@ -62,6 +63,20 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
   const browserRecommendation = browserEvidenceRecommendation(item, { heartbeat, repository })
   if (browserRecommendation) {
     return browserRecommendation
+  }
+
+  if (state === "CI Repair" && item.fields.PR && !hasCiRepairEvidence(item.fields.Evidence)) {
+    return recommendation(item, {
+      action: "collect-ci",
+      command: commandWithIssue({
+        command: "collect-ci",
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: 28,
+      reason: "failing PR checks need a local CI repair packet",
+    })
   }
 
   if (runnableStates.has(state)) {

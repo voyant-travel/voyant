@@ -92,6 +92,31 @@ describe("agent runner tick helpers", () => {
       recommendQueueAction(
         workItem({
           fields: {
+            "Agent State": "CI Repair",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "collect-ci",
+        command: "pnpm agent:queue:collect-ci -- --issue 579 --repo voyantjs/other --yes",
+        heartbeat: {
+          reason: "Last Heartbeat is 0 days old",
+          stale: false,
+        },
+        issue: workItem().issue,
+        priority: 28,
+        reason: "failing PR checks need a local CI repair packet",
+        state: "CI Repair",
+      },
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
             "Agent State": "Done",
             Workspace: ".agent-worktrees/579-test-agent-project-intake-workflow",
           },
@@ -99,6 +124,22 @@ describe("agent runner tick helpers", () => {
         { maxAgeDays: 1, repository: "voyantjs/other" },
       ).command,
       "pnpm agent:queue:cleanup -- --issue 579 --repo voyantjs/other --yes",
+    )
+
+    assert.equal(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "CI Repair",
+            Evidence:
+              ".agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ).action,
+      "run-command",
     )
   })
 
