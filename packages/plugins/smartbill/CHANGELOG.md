@@ -1,5 +1,14 @@
 # @voyantjs/plugin-smartbill
 
+## 0.31.4
+
+### Patch Changes
+
+- 4338100: Persist SmartBill invoice and proforma PDFs as finance invoice renditions and attachments when artifact storage is configured.
+  - @voyantjs/core@0.31.4
+  - @voyantjs/finance@0.31.4
+  - @voyantjs/storage@0.31.4
+
 ## 0.31.3
 
 ### Patch Changes
