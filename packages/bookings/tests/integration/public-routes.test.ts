@@ -1,3 +1,4 @@
+import { handleApiError } from "@voyantjs/hono"
 import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
 import { eq } from "drizzle-orm"
 import { Hono } from "hono"
@@ -14,6 +15,7 @@ import { bookingDocuments, bookingFulfillments, bookings } from "../../src/schem
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
+const ORIGINAL_CHECKOUT_CAPABILITY_SECRET = process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET
 
 const json = (body: Record<string, unknown>) => ({
   headers: { "Content-Type": "application/json" },
@@ -25,10 +27,12 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
   let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
 
   beforeAll(async () => {
+    process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET = "public-booking-route-test-secret-32"
     const { createTestDb } = await import("@voyantjs/db/test-utils")
 
     db = createTestDb()
     app = new Hono()
+      .onError(handleApiError)
       .use("*", async (c, next) => {
         c.set("db" as never, db)
         c.set("userId" as never, "public-test-user")
@@ -44,8 +48,13 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
 
   afterAll(async () => {
     const { closeTestDb } = await import("@voyantjs/db/test-utils")
+    process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET = ORIGINAL_CHECKOUT_CAPABILITY_SECRET
     await closeTestDb()
   })
+
+  function capabilityHeaders(session: { checkoutCapability: { token: string } }): HeadersInit {
+    return { "X-Voyant-Checkout-Capability": session.checkoutCapability.token }
+  }
 
   async function seedSlot(overrides: Record<string, unknown> = {}) {
     const [slot] = await db
@@ -175,6 +184,7 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     expect(res.status).toBe(201)
     const body = await res.json()
     expect(body.data.status).toBe("on_hold")
+    expect(body.data.checkoutCapability.actions).toContain("session:update")
     expect(body.data.bookingNumber).toMatch(/^BK-\d{4}-\d{6}$/)
     expect(body.data.travelers).toHaveLength(1)
     expect(body.data.allocations).toHaveLength(1)
@@ -218,7 +228,8 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
 
     const res = await app.request(`/sessions/${session.sessionId}`, {
       method: "PATCH",
-      ...json({
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
         communicationLanguage: "ro",
         travelers: [
           {
@@ -276,6 +287,7 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     const confirmRes = await app.request(`/sessions/${session.sessionId}/confirm`, {
       method: "POST",
       ...json({}),
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
     })
 
     expect(confirmRes.status).toBe(200)
@@ -337,7 +349,8 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
 
     const stateRes = await app.request(`/sessions/${session.sessionId}/state`, {
       method: "PUT",
-      ...json({
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
         currentStep: "rooms",
         completedSteps: ["travelers"],
         payload: {
@@ -351,7 +364,10 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     expect(stateBody.data.currentStep).toBe("rooms")
     expect(stateBody.data.version).toBe(1)
 
-    const sessionRes = await app.request(`/sessions/${session.sessionId}`, { method: "GET" })
+    const sessionRes = await app.request(`/sessions/${session.sessionId}`, {
+      method: "GET",
+      headers: capabilityHeaders(session),
+    })
     expect(sessionRes.status).toBe(200)
     const sessionBody = await sessionRes.json()
     expect(sessionBody.data.state.currentStep).toBe("rooms")
@@ -382,7 +398,8 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
 
     const stateRes = await app.request(`/sessions/${session.sessionId}/state`, {
       method: "PUT",
-      ...json({
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
         currentStep: "billing",
         completedSteps: ["travelers"],
         payload: {
@@ -466,7 +483,8 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
 
     const repriceRes = await app.request(`/sessions/${session.sessionId}/reprice`, {
       method: "POST",
-      ...json({
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
         applyToSession: true,
         selections: [
           {
@@ -484,5 +502,29 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     expect(body.data.pricing.items[0]?.totalSellAmountCents).toBe(50000)
     expect(body.data.session.items[0]?.optionUnitId).toBe(pricing.unit.id)
     expect(body.data.session.sellAmountCents).toBe(50000)
+  })
+
+  it("rejects PII-bearing session reads without a checkout capability", async () => {
+    const slot = await seedSlot()
+
+    const createRes = await app.request("/sessions", {
+      method: "POST",
+      ...json({
+        sellCurrency: "EUR",
+        items: [
+          {
+            title: "Capability check",
+            availabilitySlotId: slot.id,
+            quantity: 1,
+            totalSellAmountCents: 12000,
+          },
+        ],
+      }),
+    })
+
+    const session = (await createRes.json()).data
+    const res = await app.request(`/sessions/${session.sessionId}`, { method: "GET" })
+
+    expect(res.status).toBe(401)
   })
 })

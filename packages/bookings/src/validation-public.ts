@@ -215,6 +215,21 @@ export const publicBookingSessionChecklistSchema = z.object({
   readyForConfirmation: z.boolean(),
 })
 
+export const publicCheckoutCapabilitySchema = z.object({
+  token: z.string().min(1),
+  expiresAt: z.string(),
+  actions: z.array(
+    z.enum([
+      "session:read",
+      "session:update",
+      "session:reprice",
+      "session:finalize",
+      "payment:read",
+      "payment:start",
+    ]),
+  ),
+})
+
 export const publicBookingSessionSchema = z.object({
   sessionId: z.string(),
   bookingNumber: z.string(),
@@ -236,6 +251,7 @@ export const publicBookingSessionSchema = z.object({
   allocations: z.array(publicBookingSessionAllocationSchema),
   checklist: publicBookingSessionChecklistSchema,
   state: publicBookingSessionStateSchema.nullable(),
+  checkoutCapability: publicCheckoutCapabilitySchema.optional(),
 })
 
 export const publicBookingSessionRepriceItemSchema = z.object({
@@ -316,6 +332,7 @@ export const publicBookingOverviewSchema = z.object({
 export type PublicCreateBookingSessionInput = z.infer<typeof publicCreateBookingSessionSchema>
 export type PublicUpdateBookingSessionInput = z.infer<typeof publicUpdateBookingSessionSchema>
 export type PublicBookingSessionMutationInput = z.infer<typeof publicBookingSessionMutationSchema>
+export type PublicCheckoutCapability = z.infer<typeof publicCheckoutCapabilitySchema>
 export type PublicBookingSessionState = z.infer<typeof publicBookingSessionStateSchema>
 export type PublicUpsertBookingSessionStateInput = z.infer<
   typeof publicUpsertBookingSessionStateSchema

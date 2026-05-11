@@ -47,7 +47,7 @@ export type Env = {
   }
 }
 
-export function getRuntimeEnv(c: Context<Env>) {
+export function getRuntimeEnv(c: Context) {
   const processEnv =
     (
       globalThis as typeof globalThis & {

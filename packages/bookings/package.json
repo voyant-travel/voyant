@@ -12,6 +12,7 @@
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
+    "./checkout-capability": "./src/checkout-capability.ts",
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
     "./status-dispatch": "./src/status-dispatch.ts"
   },
@@ -82,6 +83,11 @@
         "types": "./dist/validation-public.d.ts",
         "import": "./dist/validation-public.js",
         "default": "./dist/validation-public.js"
+      },
+      "./checkout-capability": {
+        "types": "./dist/checkout-capability.d.ts",
+        "import": "./dist/checkout-capability.js",
+        "default": "./dist/checkout-capability.js"
       },
       "./extensions/suppliers": {
         "types": "./dist/extensions/suppliers.d.ts",

@@ -4,11 +4,22 @@ import {
   publicBookingOverviewSchema,
   publicBookingSessionSchema,
   publicBookingSessionTravelerInputSchema,
+  publicCheckoutCapabilitySchema,
   publicCreateBookingSessionSchema,
   publicUpdateBookingSessionSchema,
 } from "../../src/validation-public.js"
 
 describe("public booking session traveler schema", () => {
+  it("parses checkout session capability response metadata", () => {
+    const result = publicCheckoutCapabilitySchema.parse({
+      token: "capability-token",
+      expiresAt: "2026-05-11T12:00:00.000Z",
+      actions: ["session:read", "session:update", "payment:start"],
+    })
+
+    expect(result.actions).toContain("payment:start")
+  })
+
   it("uses traveler input as the primary public schema", () => {
     const result = publicBookingSessionTravelerInputSchema.parse({
       firstName: "Ana",

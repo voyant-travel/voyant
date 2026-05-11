@@ -1,7 +1,15 @@
-import { idempotencyKey, parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { idempotencyKey, parseJsonBody, parseQuery, UnauthorizedApiError } from "@voyantjs/hono"
+import type { Context } from "hono"
 import { Hono } from "hono"
 
-import { type Env, notFound } from "./routes-shared.js"
+import {
+  type CheckoutCapabilityAction,
+  checkoutCapabilityActions,
+  checkoutCapabilityCookie,
+  issueCheckoutCapability,
+  requireCheckoutCapability,
+} from "./checkout-capability.js"
+import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
 import { publicBookingsService } from "./service-public.js"
 import {
   publicBookingOverviewLookupQuerySchema,
@@ -39,6 +47,29 @@ function sessionConflictError(status: string) {
   }
 }
 
+function attachCheckoutCapability<T extends { sessionId: string }>(
+  session: T,
+  issued: Awaited<ReturnType<typeof issueCheckoutCapability>>,
+) {
+  return {
+    ...session,
+    checkoutCapability: {
+      token: issued.token,
+      expiresAt: issued.expiresAt.toISOString(),
+      actions: [...checkoutCapabilityActions],
+    },
+  }
+}
+
+async function requireSessionCapability(c: Context, action: CheckoutCapabilityAction) {
+  const sessionId = c.req.param("sessionId")
+  if (!sessionId) {
+    throw new UnauthorizedApiError("Missing checkout session id")
+  }
+
+  await requireCheckoutCapability(c, sessionId, action, getRuntimeEnv(c))
+}
+
 export const publicBookingRoutes = new Hono<Env>()
   .post("/sessions", idempotencyKey({ scope: "POST /v1/public/bookings/sessions" }), async (c) => {
     const result = await publicBookingsService.createSession(
@@ -55,9 +86,22 @@ export const publicBookingRoutes = new Hono<Env>()
       return c.json({ error: sessionConflictError(result.status) }, 409)
     }
 
-    return c.json({ data: result.session }, 201)
+    const capability = await issueCheckoutCapability(
+      (result.session as { sessionId: string }).sessionId,
+      getRuntimeEnv(c),
+    )
+    c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt), {
+      append: true,
+    })
+
+    return c.json(
+      { data: attachCheckoutCapability(result.session as { sessionId: string }, capability) },
+      201,
+    )
   })
   .get("/sessions/:sessionId", async (c) => {
+    await requireSessionCapability(c, "session:read")
+
     const session = await publicBookingsService.getSessionById(
       c.get("db"),
       c.req.param("sessionId"),
@@ -65,72 +109,94 @@ export const publicBookingRoutes = new Hono<Env>()
 
     return session ? c.json({ data: session }) : notFound(c, "Booking session not found")
   })
-  .patch("/sessions/:sessionId", async (c) => {
-    const result = await publicBookingsService.updateSession(
-      c.get("db"),
-      c.req.param("sessionId"),
-      await parseJsonBody(c, publicUpdateBookingSessionSchema),
-      c.get("userId"),
-    )
+  .patch(
+    "/sessions/:sessionId",
+    idempotencyKey({ scope: "PATCH /v1/public/bookings/sessions" }),
+    async (c) => {
+      await requireSessionCapability(c, "session:update")
 
-    if (result.status === "not_found") {
-      return notFound(c, "Booking session not found")
-    }
+      const result = await publicBookingsService.updateSession(
+        c.get("db"),
+        c.req.param("sessionId"),
+        await parseJsonBody(c, publicUpdateBookingSessionSchema),
+        c.get("userId"),
+      )
 
-    if (!hasSessionResult(result)) {
-      return c.json({ error: sessionConflictError(result.status) }, 409)
-    }
+      if (result.status === "not_found") {
+        return notFound(c, "Booking session not found")
+      }
 
-    return c.json({ data: result.session })
-  })
+      if (!hasSessionResult(result)) {
+        return c.json({ error: sessionConflictError(result.status) }, 409)
+      }
+
+      return c.json({ data: result.session })
+    },
+  )
   .get("/sessions/:sessionId/state", async (c) => {
+    await requireSessionCapability(c, "session:read")
+
     const state = await publicBookingsService.getSessionState(c.get("db"), c.req.param("sessionId"))
 
     return state ? c.json({ data: state }) : notFound(c, "Booking session not found")
   })
-  .put("/sessions/:sessionId/state", async (c) => {
-    const result = await publicBookingsService.updateSessionState(
-      c.get("db"),
-      c.req.param("sessionId"),
-      await parseJsonBody(c, publicUpsertBookingSessionStateSchema),
-    )
+  .put(
+    "/sessions/:sessionId/state",
+    idempotencyKey({ scope: "PUT /v1/public/bookings/sessions/state" }),
+    async (c) => {
+      await requireSessionCapability(c, "session:update")
 
-    if (result.status === "not_found") {
-      return notFound(c, "Booking session not found")
-    }
+      const result = await publicBookingsService.updateSessionState(
+        c.get("db"),
+        c.req.param("sessionId"),
+        await parseJsonBody(c, publicUpsertBookingSessionStateSchema),
+      )
 
-    return c.json({ data: result.state })
-  })
-  .post("/sessions/:sessionId/reprice", async (c) => {
-    const result = await publicBookingsService.repriceSession(
-      c.get("db"),
-      c.req.param("sessionId"),
-      await parseJsonBody(c, publicRepriceBookingSessionSchema),
-    )
+      if (result.status === "not_found") {
+        return notFound(c, "Booking session not found")
+      }
 
-    if (result.status === "not_found") {
-      return notFound(c, "Booking session not found")
-    }
+      return c.json({ data: result.state })
+    },
+  )
+  .post(
+    "/sessions/:sessionId/reprice",
+    idempotencyKey({ scope: "POST /v1/public/bookings/sessions/reprice" }),
+    async (c) => {
+      await requireSessionCapability(c, "session:reprice")
 
-    if (result.status === "invalid_selection") {
-      return c.json({ error: "Booking session contains an invalid item selection" }, 400)
-    }
+      const result = await publicBookingsService.repriceSession(
+        c.get("db"),
+        c.req.param("sessionId"),
+        await parseJsonBody(c, publicRepriceBookingSessionSchema),
+      )
 
-    if (result.status !== "ok") {
-      return c.json({ error: sessionConflictError(result.status) }, 409)
-    }
+      if (result.status === "not_found") {
+        return notFound(c, "Booking session not found")
+      }
 
-    return c.json({
-      data: {
-        pricing: result.pricing,
-        session: result.session,
-      },
-    })
-  })
+      if (result.status === "invalid_selection") {
+        return c.json({ error: "Booking session contains an invalid item selection" }, 400)
+      }
+
+      if (result.status !== "ok") {
+        return c.json({ error: sessionConflictError(result.status) }, 409)
+      }
+
+      return c.json({
+        data: {
+          pricing: result.pricing,
+          session: result.session,
+        },
+      })
+    },
+  )
   .post(
     "/sessions/:sessionId/confirm",
     idempotencyKey({ scope: "POST /v1/public/bookings/sessions/confirm" }),
     async (c) => {
+      await requireSessionCapability(c, "session:finalize")
+
       const result = await publicBookingsService.confirmSession(
         c.get("db"),
         c.req.param("sessionId"),
@@ -149,24 +215,30 @@ export const publicBookingRoutes = new Hono<Env>()
       return c.json({ data: result.session })
     },
   )
-  .post("/sessions/:sessionId/expire", async (c) => {
-    const result = await publicBookingsService.expireSession(
-      c.get("db"),
-      c.req.param("sessionId"),
-      await parseJsonBody(c, publicBookingSessionMutationSchema),
-      c.get("userId"),
-    )
+  .post(
+    "/sessions/:sessionId/expire",
+    idempotencyKey({ scope: "POST /v1/public/bookings/sessions/expire" }),
+    async (c) => {
+      await requireSessionCapability(c, "session:finalize")
 
-    if (result.status === "not_found") {
-      return notFound(c, "Booking session not found")
-    }
+      const result = await publicBookingsService.expireSession(
+        c.get("db"),
+        c.req.param("sessionId"),
+        await parseJsonBody(c, publicBookingSessionMutationSchema),
+        c.get("userId"),
+      )
 
-    if (!hasSessionResult(result)) {
-      return c.json({ error: sessionConflictError(result.status) }, 409)
-    }
+      if (result.status === "not_found") {
+        return notFound(c, "Booking session not found")
+      }
 
-    return c.json({ data: result.session })
-  })
+      if (!hasSessionResult(result)) {
+        return c.json({ error: sessionConflictError(result.status) }, 409)
+      }
+
+      return c.json({ data: result.session })
+    },
+  )
   .get("/overview", async (c) => {
     const overview = await publicBookingsService.getOverview(
       c.get("db"),
