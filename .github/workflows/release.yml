@@ -46,8 +46,8 @@ jobs:
 
       # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
       # can't OOM the runner (kernel SIGKILLs the heaviest tsc — exit 137).
-      - name: Build packages
-        run: pnpm turbo build --filter='./packages/**' --continue --concurrency=4
+      - name: Build publishable workspaces
+        run: pnpm turbo build --filter='./packages/**' --filter='./apps/workflows-node-step-container' --continue --concurrency=4
 
       - name: Build registry artifacts
         run: pnpm registry:build
@@ -108,8 +108,8 @@ jobs:
 
       # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
       # can't OOM the runner (kernel SIGKILLs the heaviest tsc — exit 137).
-      - name: Build packages
-        run: pnpm turbo build --filter='./packages/**' --continue --concurrency=4
+      - name: Build publishable workspaces
+        run: pnpm turbo build --filter='./packages/**' --filter='./apps/workflows-node-step-container' --continue --concurrency=4
 
       - name: Build registry artifacts
         run: pnpm registry:build
