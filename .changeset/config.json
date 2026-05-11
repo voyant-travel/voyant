@@ -91,6 +91,7 @@
       "@voyantjs/sellability-ui",
       "@voyantjs/storefront",
       "@voyantjs/storefront-react",
+      "@voyantjs/storefront-sdk",
       "@voyantjs/storefront-verification",
       "@voyantjs/suppliers",
       "@voyantjs/suppliers-react",
