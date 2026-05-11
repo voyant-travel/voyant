@@ -205,6 +205,20 @@ function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
   if (state === "Human Review" && item.fields.PR) return null
   if (state === "Merge Ready" && item.fields.PR) return null
 
+  if (item.ready) {
+    return recommendation(item, {
+      action: "remote-bootstrap",
+      command: commandWithIssue({
+        command: "remote-bootstrap",
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: 20,
+      reason: `remote workspace ${descriptor.reference} is ready for repository bootstrap`,
+    })
+  }
+
   if (state === "Done" || state === "Abandoned") {
     return recommendation(item, {
       action: "wait-remote-cleanup",

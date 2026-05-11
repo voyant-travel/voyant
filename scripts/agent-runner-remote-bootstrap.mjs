@@ -1,3 +1,4 @@
+import { updateProjectItemFields } from "./lib/agent-project-fields.mjs"
 import {
   currentRepositoryFromOrigin,
   fail,
@@ -13,7 +14,10 @@ import {
   projectOptions,
   repositoryOptions,
 } from "./lib/agent-runner-help.mjs"
-import { remoteBootstrapPlan } from "./lib/agent-runner-remote-bootstrap.mjs"
+import {
+  remoteBootstrapFieldValues,
+  remoteBootstrapPlan,
+} from "./lib/agent-runner-remote-bootstrap.mjs"
 import {
   loadRemoteWorkspaceAdapters,
   resolveRemoteWorkspaceAdapter,
@@ -57,7 +61,8 @@ if (!args.yes) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = resolveRepository()
-const item = args.issue ? loadIssueItem({ repository }) : null
+const issueContext = args.issue ? loadIssueItem({ repository }) : null
+const item = issueContext?.item ?? null
 const workspaceReference =
   args.workspace ?? item.fields.Workspace ?? item.dryRunPlan.workspace ?? undefined
 const descriptor = parseWorkspaceReference(workspaceReference, { repoRoot })
@@ -80,6 +85,7 @@ const result = await adapter.exec({
   command: "bash",
   httpPost: true,
 })
+const projectUpdated = maybeUpdateProject({ issueContext, plan, result, workspaceReference })
 
 if (args.json) {
   console.log(
@@ -87,6 +93,7 @@ if (args.json) {
       {
         issue: item?.issue ?? null,
         plan,
+        projectUpdated,
         repository,
         result,
         workspaceReference,
@@ -99,16 +106,22 @@ if (args.json) {
   if (result.stdout) console.log(result.stdout)
   if (result.stderr) console.error(result.stderr)
   console.error(`remote-bootstrap exited with status ${result.status}`)
+  if (projectUpdated) {
+    console.error("agent state: Planning")
+    console.error(`workspace: ${workspaceReference}`)
+    console.error(`branch: ${plan.branch}`)
+  }
 }
 
 process.exitCode = result.status ?? 1
 
 function loadIssueItem({ repository }) {
   const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
-  return findProjectIssueItem(project.items, {
+  const item = findProjectIssueItem(project.items, {
     issueNumber: args.issue,
     repository,
   })
+  return { item, project }
 }
 
 function resolveRepository() {
@@ -150,6 +163,21 @@ function resolveAdapter(descriptor, { adapters }) {
   } catch (error) {
     failInspection(error, { descriptor, workspaceReference })
   }
+}
+
+function maybeUpdateProject({ issueContext, plan, result, workspaceReference }) {
+  if (!issueContext || result.status !== 0) return false
+
+  updateProjectItemFields({
+    item: issueContext.item,
+    project: issueContext.project,
+    values: remoteBootstrapFieldValues({
+      branch: plan.branch,
+      workspaceReference,
+    }),
+  })
+
+  return true
 }
 
 function failInspection(error, { descriptor, workspaceReference }) {
