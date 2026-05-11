@@ -208,16 +208,15 @@ function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
   if (state === "Human Review" && item.fields.Evidence) {
     if (isRemoteEvidence(item.fields.Evidence)) {
       return recommendation(item, {
-        action: "wait-remote-pr",
+        action: "remote-open-pr",
         command: commandWithIssue({
-          command: "remote-inspect",
+          command: "remote-open-pr",
           issueNumber: item.issue.number,
-          mutate: false,
           repository,
         }),
         heartbeat,
         priority: 60,
-        reason: `remote workspace ${descriptor.reference} has published evidence but no remote PR publisher`,
+        reason: `remote workspace ${descriptor.reference} has published evidence and needs a PR`,
       })
     }
 

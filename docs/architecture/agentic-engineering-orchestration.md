@@ -1194,8 +1194,10 @@ reuse a GitHub evidence comment, optionally publish the packet to configured
 R2-compatible object storage, and update the Project `Evidence` field to the
 durable URL. `agent:queue:remote-cleanup` can call an adapter-owned `dispose`
 operation for terminal remote work and clear the Project `Workspace` field
-after success. Browser evidence, HTTP exposure, and PR creation remain future
-slices.
+after success. `agent:queue:remote-open-pr` can verify and push the remote
+branch through the configured adapter, create or reuse a GitHub PR from the
+local token, and update the Project `PR` field. Browser evidence and HTTP
+exposure remain future slices.
 
 Verification:
 

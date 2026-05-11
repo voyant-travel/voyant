@@ -315,7 +315,7 @@ describe("agent runner tick helpers", () => {
         }),
         { maxAgeDays: 1, repository: "voyantjs/other" },
       ).action,
-      "wait-remote-pr",
+      "remote-open-pr",
     )
 
     assert.deepEqual(

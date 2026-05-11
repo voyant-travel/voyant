@@ -88,6 +88,32 @@ describe("agent runner PR helpers", () => {
     assert.equal(args.includes("voyantjs:task/579-test-agent-project-intake-workflow"), false)
   })
 
+  it("opens remote workspace PRs through repository-scoped gh commands", () => {
+    const args = pullRequestCreateArgs({
+      base: "main",
+      body: "PR body",
+      branch: "task/579-test-agent-project-intake-workflow",
+      draft: false,
+      repository: "voyantjs/voyant",
+      title: "Test agent project intake workflow",
+    })
+
+    assert.deepEqual(args, [
+      "pr",
+      "create",
+      "--base",
+      "main",
+      "--head",
+      "task/579-test-agent-project-intake-workflow",
+      "--title",
+      "Test agent project intake workflow",
+      "--body",
+      "PR body",
+      "--repo",
+      "voyantjs/voyant",
+    ])
+  })
+
   it("builds PR body update arguments", () => {
     assert.deepEqual(
       pullRequestEditBodyArgs({

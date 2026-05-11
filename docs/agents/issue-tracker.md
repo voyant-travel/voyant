@@ -200,6 +200,21 @@ updates the Project `Evidence` field to the durable URL. It refuses absolute or
 escaping evidence paths and refuses Evidence values that already point at a
 remote URL.
 
+After remote evidence is published, push the remote branch and open or reuse a
+draft PR:
+
+```bash
+pnpm agent:queue:remote-open-pr -- --issue <number> --yes
+pnpm agent:queue:remote-open-pr -- --issue <number> --ready --yes
+```
+
+Remote-open-pr mode requires the same handoff states as local `open-pr` unless
+`--force` is passed. It verifies the remote repository is on the expected
+branch, refuses uncommitted remote changes unless `--allow-dirty` is passed,
+pushes the branch through the configured adapter, creates or reuses the PR from
+the local GitHub token, and updates the Project `PR` field after the PR URL is
+known.
+
 After a remote-backed issue is merged, abandoned, or explicitly force-cleaned,
 dispose the remote workspace through the configured adapter:
 
@@ -293,11 +308,10 @@ move the item to `Planning`. Remote workspace items in `Planning`,
 `Changes Requested`, or `CI Repair` recommend `remote-run-command`, but dispatch
 does not execute implementation commands automatically. Remote `Human Review`
 items with local evidence paths recommend `remote-publish-evidence`; after
-evidence is published, they wait for the future remote PR publisher. Later
-remote workspace states still recommend wait states until a remote adapter owns
-browser evidence and PR creation. Terminal remote items recommend
-`remote-cleanup`. Malformed reserved `sandbox:` values recommend
-`inspect-workspace`.
+evidence is published, they recommend `remote-open-pr`. Later remote workspace
+states still recommend wait states until a remote adapter owns browser
+evidence. Terminal remote items recommend `remote-cleanup`. Malformed reserved
+`sandbox:` values recommend `inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -308,9 +322,9 @@ pnpm agent:queue:dispatch -- --yes
 Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
-`start`, `remote-bootstrap`, `remote-publish-evidence`, `remote-cleanup`,
-`collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it
-refuses `run-command`, `remote-run-command`, `capture-browser`,
+`start`, `remote-bootstrap`, `remote-publish-evidence`, `remote-open-pr`,
+`remote-cleanup`, `collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, and
+`cleanup`; it refuses `run-command`, `remote-run-command`, `capture-browser`,
 `inspect-stale`, blocked work, and wait states so
 implementation and browser execution remain explicit.
 Successful dispatch attempts append local JSONL audit events to
