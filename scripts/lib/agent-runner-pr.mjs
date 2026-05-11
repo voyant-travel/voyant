@@ -112,6 +112,16 @@ export function pullRequestCreateArgs({ base, body, branch, draft = true, title 
   return args
 }
 
+export function updatePullRequestBody({ body, prReference, repository, workspace }) {
+  runCommand("gh", pullRequestEditBodyArgs({ body, prReference, repository }), {
+    cwd: workspace,
+  })
+}
+
+export function pullRequestEditBodyArgs({ body, prReference, repository }) {
+  return ["pr", "edit", String(prReference), "--repo", repository, "--body", body]
+}
+
 export function isRemoteReference(reference) {
   return /^https?:\/\//.test(reference)
 }

@@ -1141,6 +1141,14 @@ Deliverables:
 - Re-run the agent with CI logs and a narrow repair prompt exposed through the
   supervised command environment.
 
+Current status: started. The local runner can open or reuse PRs from handed-off
+workspaces, sync linked PR review and check state back into the Project, collect
+failed CI logs into local repair packets, and mark merged PRs done. PR sync can
+also refresh a PR description from the current evidence packet with
+`pnpm agent:queue:sync-pr -- --issue <number> --update-body --yes`; this is
+explicit so maintainer-edited PR descriptions are not overwritten by routine
+state polling.
+
 Verification:
 
 - Use a controlled failing test branch.
