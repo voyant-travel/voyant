@@ -89,24 +89,40 @@ export function pushBranch({ branch, workspace }) {
   runGit(["push", "-u", "origin", branch], { cwd: workspace })
 }
 
-export function existingPullRequestUrl({ branch, workspace }) {
-  const result = runCommand("gh", ["pr", "view", branch, "--json", "url", "--jq", ".url"], {
+export function existingPullRequestUrl({ branch, repository, workspace }) {
+  const args = ["pr", "view", branch, "--json", "url", "--jq", ".url"]
+  if (repository) {
+    args.push("--repo", repository)
+  }
+
+  const result = runCommand("gh", args, {
     cwd: workspace,
     allowFailure: true,
   })
   return result || undefined
 }
 
-export function createPullRequest({ base, body, branch, draft = true, title, workspace }) {
-  return runCommand("gh", pullRequestCreateArgs({ base, body, branch, draft, title }), {
+export function createPullRequest({
+  base,
+  body,
+  branch,
+  draft = true,
+  repository,
+  title,
+  workspace,
+}) {
+  return runCommand("gh", pullRequestCreateArgs({ base, body, branch, draft, repository, title }), {
     cwd: workspace,
   })
 }
 
-export function pullRequestCreateArgs({ base, body, branch, draft = true, title }) {
+export function pullRequestCreateArgs({ base, body, branch, draft = true, repository, title }) {
   const args = ["pr", "create", "--base", base, "--head", branch, "--title", title, "--body", body]
   if (draft) {
     args.push("--draft")
+  }
+  if (repository) {
+    args.push("--repo", repository)
   }
 
   return args
