@@ -18,7 +18,10 @@ import {
   requiresBrowserEvidence,
   safeScreenshotName,
 } from "../lib/agent-runner-browser-evidence.mjs"
-import { summarizeBrowserEvidenceIssues } from "../lib/agent-runner-browser-issues.mjs"
+import {
+  browserIssueBlockReason,
+  summarizeBrowserEvidenceIssues,
+} from "../lib/agent-runner-browser-issues.mjs"
 import {
   buildCommandEvidencePacket,
   commandRunArtifactPlan,
@@ -242,6 +245,29 @@ describe("agent runner browser evidence helpers", () => {
         malformedLogLines: 1,
         requestFailures: 1,
       },
+    )
+  })
+
+  it("blocks UI browser evidence with captured blocking issues unless allowed", () => {
+    const summary = summarizeBrowserEvidenceIssues({
+      consoleLogText: JSON.stringify({ text: "React hydration failed", type: "error" }),
+      networkLogText: JSON.stringify({ status: 404, type: "http-error" }),
+    })
+
+    assert.equal(
+      browserIssueBlockReason(summary),
+      "browser evidence has blocking issues: 1 console error, 0 console warnings, 1 failed request",
+    )
+    assert.equal(browserIssueBlockReason(summary, { allowBrowserIssues: true }), null)
+    assert.equal(browserIssueBlockReason(summary, { required: false }), null)
+    assert.equal(
+      browserIssueBlockReason(
+        summarizeBrowserEvidenceIssues({
+          consoleLogText: JSON.stringify({ text: "loaded", type: "log" }),
+          networkLogText: "",
+        }),
+      ),
+      null,
     )
   })
 

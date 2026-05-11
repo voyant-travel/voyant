@@ -21,6 +21,7 @@ import {
   captureBrowserEvidenceSet,
   requiresBrowserEvidence,
 } from "./lib/agent-runner-browser-evidence.mjs"
+import { browserIssueBlockReason } from "./lib/agent-runner-browser-issues.mjs"
 import {
   maybePrintHelp,
   mutationOptions,
@@ -40,6 +41,10 @@ maybePrintHelp(args, {
     ["--workspace <path>", "Workspace path override."],
     ["--viewport <size>", "Single viewport as <width>x<height>. Defaults to 1440x900."],
     ["--viewports <sizes>", "Comma-separated viewport list, for example 1440x900,390x844."],
+    [
+      "--allow-browser-issues",
+      "Allow UI evidence with console errors or failed requests after maintainer review.",
+    ],
     ["--timeout-ms <number>", "Navigation and dev-server wait timeout. Defaults to 30000."],
     ["--screenshot-name <name>", "Screenshot file name. Defaults to page.png."],
     ["--browser-base-port <number>", "Base port for deterministic issue ports. Defaults to 4300."],
@@ -150,6 +155,11 @@ if (captureError) {
   fail(`capture-browser failed: ${captureError.message}`)
 }
 
+const issueBlockReason = browserIssueBlockReason(result.browserIssues, {
+  allowBrowserIssues: Boolean(args.allowBrowserIssues),
+  required: requiresBrowserEvidence(item),
+})
+
 console.log("agent-runner capture-browser: wrote browser evidence")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)
 console.log(`repository: ${repository}`)
@@ -162,6 +172,10 @@ console.log(browserEvidenceText(result))
 if (!requiresBrowserEvidence(item)) {
   console.log("")
   console.log("Note: browser evidence is not required by this issue's labels.")
+}
+
+if (issueBlockReason) {
+  fail(`${issueBlockReason}; pass --allow-browser-issues only with an accepted exception`)
 }
 
 function printCapturePlan({ artifactPlan, item, repository }) {

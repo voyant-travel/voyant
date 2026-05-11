@@ -4,7 +4,15 @@ import path from "node:path"
 import { extractAgentBrief, hasAgentBrief } from "./agent-brief-parser.mjs"
 
 const knownTypes = new Set(["task", "bug", "refactor", "investigation", "cleanup"])
-const booleanArgs = new Set(["allow-dirty", "force", "help", "json", "ready", "yes"])
+const booleanArgs = new Set([
+  "allow-browser-issues",
+  "allow-dirty",
+  "force",
+  "help",
+  "json",
+  "ready",
+  "yes",
+])
 
 export function parseArgs(argv) {
   const parsed = {}

@@ -169,7 +169,10 @@ workspace. By default it targets the deterministic issue URL in
 specific route. Use `--viewports 1440x900,390x844` to capture desktop and
 mobile evidence in the same artifact packet. The summary classifies console
 errors, console warnings, failed HTTP responses, and failed requests so review
-does not require opening raw JSONL logs first. The command prints a multi-line
+does not require opening raw JSONL logs first. For UI-labeled work, capture
+fails after writing artifacts when the summary contains console errors, failed
+requests, or malformed log lines; pass `--allow-browser-issues` only when a
+maintainer accepts a documented exception. The command prints a multi-line
 value that can be passed as `--ui-evidence` to `handoff` or `run-command`.
 
 Use the read-only status view to inspect the current queue and active work:

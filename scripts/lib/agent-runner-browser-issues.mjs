@@ -49,6 +49,15 @@ export function formatBrowserIssueSummary(summary) {
     .join(", ")
 }
 
+export function browserIssueBlockReason(
+  summary,
+  { allowBrowserIssues = false, required = true } = {},
+) {
+  if (!required || allowBrowserIssues || !summary?.hasBlockingIssues) return null
+
+  return `browser evidence has blocking issues: ${formatBrowserIssueSummary(summary)}`
+}
+
 export function browserIssueMarkdown(summary) {
   if (!summary) return ""
 
