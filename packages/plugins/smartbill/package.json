@@ -21,6 +21,9 @@
   },
   "dependencies": {
     "@voyantjs/core": "workspace:*",
+    "@voyantjs/finance": "workspace:*",
+    "@voyantjs/storage": "workspace:*",
+    "drizzle-orm": "^0.45.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {

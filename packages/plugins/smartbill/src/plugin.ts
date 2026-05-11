@@ -1,6 +1,11 @@
 import type { Plugin, Subscriber } from "@voyantjs/core"
 import { ZodError } from "zod"
 
+import {
+  persistSmartbillInvoiceArtifact,
+  type SmartbillArtifactPersistenceOptions,
+  type SmartbillDocumentType,
+} from "./artifacts.js"
 import type { SmartbillClientOptions } from "./client.js"
 import type { mapVoyantInvoiceToSmartbill, SmartbillMappingOptions } from "./mapping.js"
 import { createSmartbillSyncRuntime } from "./runtime.js"
@@ -27,18 +32,58 @@ export interface SmartbillPluginOptions extends SmartbillClientOptions, Smartbil
   events?: SmartbillSyncEventNames
   mapEvent?: SmartbillMapFn
   logger?: SmartbillLogger
+  /**
+   * Optional finance artifact persistence. When `db` is supplied, the plugin
+   * registers the SmartBill external ref after creation. When
+   * `documentStorage` is also supplied, it downloads and stores the generated
+   * SmartBill PDF as both an invoice rendition and attachment.
+   */
+  artifacts?: SmartbillArtifactPersistenceOptions
+  /** @deprecated Use `artifacts.db`. */
+  db?: SmartbillArtifactPersistenceOptions["db"]
+  /** @deprecated Use `artifacts.documentStorage`. */
+  documentStorage?: SmartbillArtifactPersistenceOptions["documentStorage"]
+  /** @deprecated Use `artifacts.documentStorageKeyPrefix`. */
+  documentStorageKeyPrefix?: SmartbillArtifactPersistenceOptions["documentStorageKeyPrefix"]
 }
 
 function coerceEvent(data: unknown): VoyantInvoiceEvent | null {
   if (data == null || typeof data !== "object") return null
   const maybe = data as Record<string, unknown>
-  if (typeof maybe.id !== "string") return null
-  return maybe as VoyantInvoiceEvent
+  if (typeof maybe.id === "string") return maybe as VoyantInvoiceEvent
+  if (typeof maybe.invoiceId === "string") {
+    return { ...maybe, id: maybe.invoiceId } as VoyantInvoiceEvent
+  }
+  return null
 }
 
 export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
   const validatedOptions = parseSmartbillPluginOptions(options)
-  const { client, logger, mapEvent, eventNames } = createSmartbillSyncRuntime(validatedOptions)
+  const { client, logger, mapEvent, eventNames, artifacts } =
+    createSmartbillSyncRuntime(validatedOptions)
+
+  async function persistArtifact(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    body: ReturnType<SmartbillMapFn>,
+    result: Awaited<ReturnType<typeof client.createInvoice>>,
+  ) {
+    try {
+      const persisted = await persistSmartbillInvoiceArtifact({
+        runtime: artifacts,
+        client,
+        event,
+        documentType,
+        body,
+        result,
+      })
+      if (persisted.status === "persisted") {
+        logger.info?.(`[smartbill] ${documentType} PDF persisted for ${event.id}`, persisted)
+      }
+    } catch (err) {
+      logger.error(`[smartbill] artifact persistence failed for ${event.id}`, err)
+    }
+  }
 
   const subscribers: Subscriber[] = [
     {
@@ -53,6 +98,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             `[smartbill] invoice created: ${result.series}-${result.number} for ${event.id}`,
             result,
           )
+          await persistArtifact(event, "invoice", body, result)
         } catch (err) {
           logger.error(
             `[smartbill] createInvoice on "${eventNames.issued}" failed for ${event.id}`,
@@ -75,6 +121,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             `[smartbill] proforma created: ${result.series}-${result.number} for ${event.id}`,
             result,
           )
+          await persistArtifact(event, "proforma", body, result)
         } catch (err) {
           logger.error(
             `[smartbill] createProforma on "${eventNames.proformaIssued}" failed for ${event.id}`,

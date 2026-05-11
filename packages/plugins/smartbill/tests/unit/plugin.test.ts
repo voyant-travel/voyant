@@ -1,7 +1,18 @@
 import type { Plugin } from "@voyantjs/core"
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { smartbillPlugin } from "../../src/plugin.js"
 import type { SmartbillFetch } from "../../src/types.js"
+
+const financeServiceMock = vi.hoisted(() => ({
+  registerInvoiceExternalRef: vi.fn(),
+  listInvoiceAttachments: vi.fn(),
+  createInvoiceRendition: vi.fn(),
+  createInvoiceAttachment: vi.fn(),
+}))
+
+vi.mock("@voyantjs/finance", () => ({
+  financeService: financeServiceMock,
+}))
 
 function eventEnvelope<T>(data: T) {
   return {
@@ -45,6 +56,21 @@ function textResponse(status: number, text: string) {
   return makeResponse(status, text, false)
 }
 
+function bytesResponse(status: number, bytes: Uint8Array, contentType = "application/pdf") {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => {
+      throw new Error("not json")
+    },
+    text: async () => new TextDecoder().decode(bytes),
+    arrayBuffer: async () => bytes.buffer.slice(0),
+    headers: {
+      get: (name: string) => (name.toLowerCase() === "content-type" ? contentType : null),
+    },
+  }
+}
+
 const okEnvelope = { status: "Ok", message: "", errorText: "" }
 
 const baseOptions = {
@@ -66,6 +92,14 @@ function subscriberFor(plugin: Plugin, event: string) {
   if (!subscriber) throw new Error(`Missing SmartBill subscriber for ${event}`)
   return subscriber
 }
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  financeServiceMock.registerInvoiceExternalRef.mockResolvedValue({ id: "iex_1" })
+  financeServiceMock.listInvoiceAttachments.mockResolvedValue([])
+  financeServiceMock.createInvoiceRendition.mockResolvedValue({ id: "invr_1" })
+  financeServiceMock.createInvoiceAttachment.mockResolvedValue({ id: "inva_1" })
+})
 
 describe("smartbillPlugin structure", () => {
   it("returns a Plugin with name and version", () => {
@@ -173,6 +207,180 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
     const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock })
     await subscriberFor(plugin, "invoice.issued").handler(eventEnvelope({ noId: true }))
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("accepts finance issued events that carry invoiceId", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }),
+    )
+    const plugin = smartbillPlugin({ ...baseOptions, fetch: fetchMock, logger: makeLogger() })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        invoiceId: "inv_from_finance",
+        clientName: "Test SRL",
+        currency: "RON",
+        lineItems: [{ name: "Tour", quantity: 1, unitPrice: 50000 }],
+      }),
+    )
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+})
+
+describe("smartbillPlugin — invoice PDF artifacts", () => {
+  it("registers the SmartBill ref and persists the generated invoice PDF when storage is configured", async () => {
+    const pdfBytes = new TextEncoder().encode("%PDF-1.7 smartbill")
+    const fetchMock = vi
+      .fn<SmartbillFetch>()
+      .mockResolvedValueOnce(jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }))
+      .mockResolvedValueOnce(bytesResponse(200, pdfBytes))
+    const upload = vi
+      .fn()
+      .mockResolvedValue({ key: "invoices/inv_123/smartbill/invoice-A-1.pdf", url: "" })
+    const storage = {
+      name: "test-storage",
+      upload,
+      delete: vi.fn(),
+      signedUrl: vi.fn(),
+      get: vi.fn(),
+    }
+    const logger = makeLogger()
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      logger,
+      artifacts: {
+        db: {} as never,
+        documentStorage: storage,
+      },
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_123",
+        clientName: "Test SRL",
+        currency: "RON",
+        lineItems: [{ name: "Tour", quantity: 1, unitPrice: 50000 }],
+      }),
+    )
+
+    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_123",
+      expect.objectContaining({
+        provider: "smartbill",
+        externalNumber: "1",
+        status: "issued",
+      }),
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(String(fetchMock.mock.calls[1]![0])).toContain("/invoice/pdf")
+    expect(upload).toHaveBeenCalledWith(
+      pdfBytes,
+      expect.objectContaining({ contentType: "application/pdf" }),
+    )
+    expect(financeServiceMock.createInvoiceRendition).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_123",
+      expect.objectContaining({
+        format: "pdf",
+        status: "ready",
+        storageKey: "invoices/inv_123/smartbill/invoice-A-1.pdf",
+      }),
+    )
+    expect(financeServiceMock.createInvoiceAttachment).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_123",
+      expect.objectContaining({
+        kind: "smartbill_pdf",
+        name: "SmartBill invoice A-1.pdf",
+        storageKey: "invoices/inv_123/smartbill/invoice-A-1.pdf",
+      }),
+    )
+  })
+
+  it("does not upload again when a SmartBill PDF attachment already exists", async () => {
+    financeServiceMock.listInvoiceAttachments.mockResolvedValueOnce([
+      { id: "inva_existing", kind: "smartbill_pdf" },
+    ])
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }),
+    )
+    const upload = vi.fn()
+    const storage = {
+      name: "test-storage",
+      upload,
+      delete: vi.fn(),
+      signedUrl: vi.fn(),
+      get: vi.fn(),
+    }
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      logger: makeLogger(),
+      artifacts: {
+        db: {} as never,
+        documentStorage: storage,
+      },
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_123",
+        clientName: "Test SRL",
+        currency: "RON",
+        lineItems: [{ name: "Tour", quantity: 1, unitPrice: 50000 }],
+      }),
+    )
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(upload).not.toHaveBeenCalled()
+    expect(financeServiceMock.createInvoiceRendition).not.toHaveBeenCalled()
+    expect(financeServiceMock.createInvoiceAttachment).not.toHaveBeenCalled()
+  })
+
+  it("does not upload a PDF when the finance invoice is missing", async () => {
+    financeServiceMock.registerInvoiceExternalRef.mockResolvedValueOnce(null)
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }),
+    )
+    const upload = vi.fn()
+    const storage = {
+      name: "test-storage",
+      upload,
+      delete: vi.fn(),
+      signedUrl: vi.fn(),
+      get: vi.fn(),
+    }
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      logger: makeLogger(),
+      artifacts: {
+        db: {} as never,
+        documentStorage: storage,
+      },
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_missing",
+        clientName: "Test SRL",
+        currency: "RON",
+        lineItems: [{ name: "Tour", quantity: 1, unitPrice: 50000 }],
+      }),
+    )
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(upload).not.toHaveBeenCalled()
+    expect(financeServiceMock.listInvoiceAttachments).not.toHaveBeenCalled()
+    expect(financeServiceMock.createInvoiceRendition).not.toHaveBeenCalled()
+    expect(financeServiceMock.createInvoiceAttachment).not.toHaveBeenCalled()
   })
 })
 

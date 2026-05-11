@@ -1,3 +1,11 @@
+export type {
+  SmartbillArtifactPersistenceOptions,
+  SmartbillArtifactStorageContext,
+  SmartbillDbResolver,
+  SmartbillDocumentStorageResolver,
+  SmartbillDocumentType,
+  SmartbillStorageKeyPrefixResolver,
+} from "./artifacts.js"
 export type { SmartbillClientApi, SmartbillClientOptions } from "./client.js"
 export { createSmartbillClient } from "./client.js"
 export type { SmartbillMappingOptions } from "./mapping.js"

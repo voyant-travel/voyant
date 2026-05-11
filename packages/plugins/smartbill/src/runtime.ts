@@ -1,3 +1,4 @@
+import type { SmartbillArtifactPersistenceOptions } from "./artifacts.js"
 import { createSmartbillClient } from "./client.js"
 import { mapVoyantInvoiceToSmartbill, type SmartbillMappingOptions } from "./mapping.js"
 import type { SmartbillLogger, SmartbillMapFn, SmartbillPluginOptions } from "./plugin.js"
@@ -15,6 +16,7 @@ export interface SmartbillSyncRuntime {
   logger: SmartbillLogger
   mapEvent: SmartbillMapFn
   eventNames: ResolvedSmartbillSyncEventNames
+  artifacts: SmartbillArtifactPersistenceOptions
 }
 
 export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): SmartbillSyncRuntime {
@@ -42,5 +44,11 @@ export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): Sma
     logger,
     mapEvent,
     eventNames,
+    artifacts: {
+      db: options.artifacts?.db ?? options.db,
+      documentStorage: options.artifacts?.documentStorage ?? options.documentStorage,
+      documentStorageKeyPrefix:
+        options.artifacts?.documentStorageKeyPrefix ?? options.documentStorageKeyPrefix,
+    },
   }
 }
