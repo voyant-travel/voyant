@@ -1,12 +1,18 @@
 import assert from "node:assert/strict"
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import os from "node:os"
 import path from "node:path"
 import { describe, it } from "node:test"
 
 import {
   browserArtifactPlan,
+  browserCapturePlan,
   browserEvidenceEnvironment,
   browserEvidenceMissingReason,
+  browserEvidenceText,
+  captureBrowserEvidence,
   requiresBrowserEvidence,
+  safeScreenshotName,
 } from "../lib/agent-runner-browser-evidence.mjs"
 import {
   buildCommandEvidencePacket,
@@ -57,9 +63,15 @@ describe("agent runner browser evidence helpers", () => {
       networkLog: path.resolve(
         "/repo/.agent-worktrees/579-test-agent-project-intake-workflow/docs/agent-evidence/browser/579-test-agent-project-intake-workflow/2026-05-10T12-34-56-000Z/network.jsonl",
       ),
+      readme: path.resolve(
+        "/repo/.agent-worktrees/579-test-agent-project-intake-workflow/docs/agent-evidence/browser/579-test-agent-project-intake-workflow/2026-05-10T12-34-56-000Z/README.md",
+      ),
       safeArtifactPath: true,
       screenshotDir: path.resolve(
         "/repo/.agent-worktrees/579-test-agent-project-intake-workflow/docs/agent-evidence/browser/579-test-agent-project-intake-workflow/2026-05-10T12-34-56-000Z/screenshots",
+      ),
+      summaryJson: path.resolve(
+        "/repo/.agent-worktrees/579-test-agent-project-intake-workflow/docs/agent-evidence/browser/579-test-agent-project-intake-workflow/2026-05-10T12-34-56-000Z/summary.json",
       ),
       videoDir: path.resolve(
         "/repo/.agent-worktrees/579-test-agent-project-intake-workflow/docs/agent-evidence/browser/579-test-agent-project-intake-workflow/2026-05-10T12-34-56-000Z/videos",
@@ -166,4 +178,154 @@ describe("agent runner browser evidence helpers", () => {
     )
     assert.equal(commandRunBrowserEvidenceBlockReason({ exitCode: 1, item }), null)
   })
+
+  it("keeps screenshot names inside the screenshot artifact directory", () => {
+    assert.equal(safeScreenshotName("after.png"), "after.png")
+    assert.throws(() => safeScreenshotName("../outside.md"), /screenshot name must be a file name/)
+    assert.throws(
+      () =>
+        browserCapturePlan({
+          artifactPlan: browserArtifactPlan({
+            item: workItem(),
+            repoRoot: "/repo",
+            workspaceReference: ".agent-worktrees/task",
+          }),
+          screenshotName: "../outside.md",
+        }),
+      /screenshot name must be a file name/,
+    )
+  })
+
+  it("captures browser evidence through an injected browser launcher", async () => {
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), "voyant-browser-evidence-"))
+    try {
+      const item = workItem()
+      const artifactPlan = browserArtifactPlan({
+        date: new Date("2026-05-10T12:34:56.000Z"),
+        item,
+        repoRoot: tempDir,
+        workspaceReference: ".",
+      })
+      const capturePlan = browserCapturePlan({
+        artifactPlan,
+        url: "http://127.0.0.1:4879/dashboard",
+        viewport: "390x844",
+      })
+
+      const result = await captureBrowserEvidence({
+        browserLauncher: new FakeBrowserLauncher(),
+        capturePlan,
+        timeoutMs: 1000,
+      })
+
+      assert.equal(result.viewport.width, 390)
+      assert.equal(result.viewport.height, 844)
+      assert.equal(result.url, "http://127.0.0.1:4879/dashboard")
+      assert.equal(existsSync(result.screenshot), true)
+      assert.match(readFileSync(artifactPlan.consoleLog, "utf8"), /loaded dashboard/)
+      assert.match(readFileSync(artifactPlan.networkLog, "utf8"), /http-error/)
+      assert.match(readFileSync(artifactPlan.summaryJson, "utf8"), /390/)
+      assert.match(readFileSync(artifactPlan.readme, "utf8"), /Browser Evidence/)
+      assert.match(browserEvidenceText(result), /failed-request log:/)
+    } finally {
+      rmSync(tempDir, { force: true, recursive: true })
+    }
+  })
 })
+
+class FakeBrowserLauncher {
+  async launch(options) {
+    this.options = options
+    return new FakeBrowser()
+  }
+}
+
+class FakeBrowser {
+  async newContext(options) {
+    this.context = new FakeContext(options)
+    return this.context
+  }
+
+  async close() {
+    this.closed = true
+  }
+}
+
+class FakeContext {
+  constructor(options) {
+    this.options = options
+  }
+
+  async newPage() {
+    return new FakePage(this.options)
+  }
+
+  async close() {
+    this.closed = true
+  }
+}
+
+class FakePage {
+  #handlers = new Map()
+
+  constructor(options) {
+    this.options = options
+  }
+
+  on(eventName, handler) {
+    const handlers = this.#handlers.get(eventName) ?? []
+    handlers.push(handler)
+    this.#handlers.set(eventName, handlers)
+  }
+
+  async goto(url, options) {
+    this.gotoOptions = { options, url }
+    this.#emit("console", {
+      location: () => ({ columnNumber: 1, lineNumber: 1, url }),
+      text: () => "loaded dashboard",
+      type: () => "log",
+    })
+    this.#emit("response", new FakeResponse(`${url}/missing.css`))
+  }
+
+  async screenshot(options) {
+    writeFileSync(options.path, "fake screenshot", "utf8")
+  }
+
+  video() {
+    return {
+      path: async () => path.join(this.options.recordVideo.dir, "capture.webm"),
+    }
+  }
+
+  #emit(eventName, value) {
+    for (const handler of this.#handlers.get(eventName) ?? []) {
+      handler(value)
+    }
+  }
+}
+
+class FakeResponse {
+  constructor(url) {
+    this.responseUrl = url
+  }
+
+  request() {
+    return {
+      method: () => "GET",
+      resourceType: () => "stylesheet",
+    }
+  }
+
+  status() {
+    return 404
+  }
+
+  statusText() {
+    return "Not Found"
+  }
+
+  url() {
+    return this.responseUrl
+  }
+}
