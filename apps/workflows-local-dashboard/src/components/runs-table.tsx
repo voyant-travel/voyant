@@ -87,8 +87,8 @@ export function RunsTable({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
+        <div className="relative min-w-[11rem] flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
           <Input
             value={query}
@@ -102,7 +102,7 @@ export function RunsTable({
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v ?? ALL_STATUSES)}
         >
-          <SelectTrigger className="h-8 w-[140px] text-xs">
+          <SelectTrigger className="h-8 w-[140px] min-w-0 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -119,7 +119,7 @@ export function RunsTable({
             value={workflowSelfFilter}
             onValueChange={(v) => setWorkflowSelfFilter(v ?? ALL_WORKFLOWS)}
           >
-            <SelectTrigger className="h-8 w-[170px] text-xs">
+            <SelectTrigger className="h-8 w-[170px] min-w-0 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -154,7 +154,7 @@ export function RunsTable({
       )}
 
       <div className="flex-1 overflow-auto">
-        <Table>
+        <Table className={filtered.length === 0 ? "min-w-full" : "min-w-full sm:min-w-[620px]"}>
           <TableHeader className="bg-background/95 sticky top-0 z-10 backdrop-blur">
             <TableRow>
               <TableHead className="w-[110px] text-[11px] font-medium uppercase tracking-wide">
