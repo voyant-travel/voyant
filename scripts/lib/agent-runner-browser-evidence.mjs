@@ -69,6 +69,21 @@ export function browserEvidenceMissingReason(item, uiEvidence) {
   return null
 }
 
+export function browserEvidenceReferenceKind(evidence) {
+  const normalized = evidence?.trim()
+  if (!normalized) return "missing"
+
+  if (/docs\/agent-evidence\/browser\//.test(normalized)) {
+    return "browser-artifacts"
+  }
+
+  if (/^https?:\/\//.test(normalized) || /docs\/agent-evidence\/active\//.test(normalized)) {
+    return "evidence-packet"
+  }
+
+  return "generic"
+}
+
 export function browserCapturePlan({
   artifactPlan,
   screenshotName = "page.png",

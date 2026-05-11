@@ -9,6 +9,7 @@ import {
   browserCapturePlan,
   browserEvidenceEnvironment,
   browserEvidenceMissingReason,
+  browserEvidenceReferenceKind,
   browserEvidenceText,
   captureBrowserEvidence,
   requiresBrowserEvidence,
@@ -38,6 +39,24 @@ describe("agent runner browser evidence helpers", () => {
       null,
     )
     assert.equal(requiresBrowserEvidence(workItem()), false)
+  })
+
+  it("classifies browser evidence references separately from generic evidence", () => {
+    assert.equal(browserEvidenceReferenceKind(undefined), "missing")
+    assert.equal(
+      browserEvidenceReferenceKind(
+        "browser artifacts: docs/agent-evidence/browser/579-test/2026-05-10T12-34-56-000Z",
+      ),
+      "browser-artifacts",
+    )
+    assert.equal(
+      browserEvidenceReferenceKind("docs/agent-evidence/active/579-test.md"),
+      "evidence-packet",
+    )
+    assert.equal(
+      browserEvidenceReferenceKind(".agent-runs/579-test/2026-05-10T12-34-56-000Z.log"),
+      "generic",
+    )
   })
 
   it("allocates deterministic per-workspace browser artifact paths", () => {

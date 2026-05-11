@@ -169,7 +169,9 @@ pnpm agent:queue:status
 Status mode scans all Project pages for the current repository and reports
 ready, active, stale, blocked, human-review, and merge-ready items. Pass
 `--json` for automation or `--max-age-days <number>` to adjust the heartbeat
-staleness threshold.
+staleness threshold. For UI-labeled work, status distinguishes browser artifact
+references from generic transcript or evidence fields so active runs do not
+hide missing browser capture.
 
 Use the read-only tick view when wiring an always-on supervisor:
 
@@ -178,10 +180,11 @@ pnpm agent:queue:tick
 ```
 
 Tick mode scans the same repository-scoped Project queue and prints ordered
-action recommendations such as `start`, `run-command`, `publish-evidence`,
-`open-pr`, `sync-pr`, `cleanup`, or `inspect-stale`. It does not mutate GitHub,
-create worktrees, run commands, publish evidence, or open PRs. Pass `--json`
-when a process manager or future control plane needs machine-readable actions.
+action recommendations such as `start`, `run-command`, `capture-browser`,
+`publish-evidence`, `open-pr`, `sync-pr`, `cleanup`, or `inspect-stale`. It
+does not mutate GitHub, create worktrees, run commands, publish evidence, or
+open PRs. Pass `--json` when a process manager or future control plane needs
+machine-readable actions.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -193,10 +196,11 @@ Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
 `start`, `publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it refuses
-`run-command`, `inspect-stale`, blocked work, and wait states so implementation
-execution remains explicit. Successful dispatch attempts append local JSONL
-audit events to `.agent-runs/events.jsonl` by default; pass `--event-log <path>`
-when a supervisor needs a different local ledger path.
+`run-command`, `capture-browser`, `inspect-stale`, blocked work, and wait states
+so implementation and browser execution remain explicit. Successful dispatch
+attempts append local JSONL audit events to `.agent-runs/events.jsonl` by
+default; pass `--event-log <path>` when a supervisor needs a different local
+ledger path.
 
 Use loop for a bounded supervisor pass:
 

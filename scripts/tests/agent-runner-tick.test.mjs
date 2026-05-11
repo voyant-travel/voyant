@@ -80,4 +80,58 @@ describe("agent runner tick helpers", () => {
       "pnpm agent:queue:cleanup -- --issue 579 --repo voyantjs/other --yes",
     )
   })
+
+  it("recommends browser capture for active UI work before handoff", () => {
+    const item = workItem({
+      fields: {
+        "Agent State": "Changes Requested",
+        "Last Heartbeat": new Date().toISOString().slice(0, 10),
+        Workspace: ".agent-worktrees/579-test-agent-project-intake-workflow",
+      },
+    })
+    item.issue.labels = ["agent:ready", "ui-change"]
+
+    const recommendation = recommendQueueAction(item, {
+      maxAgeDays: 1,
+      repository: "voyantjs/other",
+    })
+    assert.equal(recommendation.action, "capture-browser")
+    assert.equal(
+      recommendation.command,
+      'pnpm agent:queue:capture-browser -- --issue 579 --repo voyantjs/other --dev-server-command "<dev-server-command>" --yes',
+    )
+    assert.equal(recommendation.heartbeat.stale, false)
+    assert.equal(recommendation.priority, 35)
+    assert.equal(recommendation.reason, "UI-labeled work needs browser evidence before handoff")
+
+    const transcriptItem = workItem({
+      fields: {
+        "Agent State": "Running",
+        Evidence: ".agent-runs/579-test/2026-05-10T12-34-56-000Z.log",
+        "Last Heartbeat": new Date().toISOString().slice(0, 10),
+        Workspace: ".agent-worktrees/579-test-agent-project-intake-workflow",
+      },
+    })
+    transcriptItem.issue.labels = ["agent:ready", "ui-change"]
+
+    assert.equal(
+      recommendQueueAction(transcriptItem, { maxAgeDays: 1, repository: "voyantjs/other" }).action,
+      "capture-browser",
+    )
+
+    const capturedItem = workItem({
+      fields: {
+        "Agent State": "Changes Requested",
+        Evidence: "docs/agent-evidence/active/579-test.md",
+        "Last Heartbeat": new Date().toISOString().slice(0, 10),
+        Workspace: ".agent-worktrees/579-test-agent-project-intake-workflow",
+      },
+    })
+    capturedItem.issue.labels = ["agent:ready", "ui-change"]
+
+    assert.equal(
+      recommendQueueAction(capturedItem, { maxAgeDays: 1, repository: "voyantjs/other" }).action,
+      "run-command",
+    )
+  })
 })

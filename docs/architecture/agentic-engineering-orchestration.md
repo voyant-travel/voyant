@@ -1096,6 +1096,9 @@ supervised commands through `VOYANT_AGENT_*` environment variables, rejects
 handoff and successful run-command transitions for UI-labeled work that lacks
 browser evidence or an accepted exception, and provides a Playwright capture
 command for screenshot, video, console, failed-request, and summary artifacts.
+Queue status and tick output also surface browser-evidence obligations for
+active UI work; capture recommendations remain explicit and are not dispatched
+automatically.
 
 Verification:
 
