@@ -117,9 +117,45 @@ Rule:
 Storefront/public behavior should make locale/market/channel context explicit
 when it affects the contract.
 
+### 7. Mutable checkout sessions use scoped capabilities
+
+Public catalog, availability, and pricing reads can stay anonymously readable
+when the operator chooses to expose them. Booking/session checkout surfaces are
+different: once a public flow creates a booking session, the booking id is only
+an identifier and must not be treated as the bearer secret.
+
+The public checkout/session model is:
+
+- `POST /v1/public/bookings/sessions` creates the booking session and returns a
+  short-lived `checkoutCapability` object. The route also sets an HttpOnly
+  SameSite cookie named `voyant_checkout_session` for same-site storefronts.
+- PII-bearing session reads and all public session mutations require the
+  capability, either via the cookie or the
+  `X-Voyant-Checkout-Capability` header.
+- The capability is scoped to one booking session, a narrow action set
+  (`session:read`, `session:update`, `session:reprice`, `session:finalize`,
+  `payment:read`, `payment:start`), and a short lifetime. Configure the signing
+  secret with `VOYANT_CHECKOUT_CAPABILITY_SECRET`; if unset, runtime falls back
+  to the auth/session secret.
+- Public finance booking payment options, payment-session reads, and
+  payment-session creation require the same booking-scoped capability.
+- Public payment-session creation derives currency and amount from the selected
+  booking schedule, guarantee, or invoice. Public clients can choose the server
+  target, provider, payer metadata, and return/cancel URLs; they cannot author
+  arbitrary payable amounts on these routes.
+- Public mutable session/payment routes accept `Idempotency-Key` so clients can
+  safely retry creation, step updates, repricing, finalization, expiry, and
+  payment bootstrap.
+
+Rule:
+
+Use the checkout capability for public booking-session secrets. Do not rely on
+booking ids, payment-session ids, invoice ids, or URLs as bearer secrets for
+customer checkout state.
+
 ## Frontend Layering
 
-### 7. Keep the frontend split clear
+### 8. Keep the frontend split clear
 
 Voyant already has distinct frontend layers that should remain separate:
 
@@ -135,7 +171,7 @@ Rule:
 Keep public contracts, runtime hooks, UI blocks, and final storefront apps as
 distinct layers.
 
-### 8. Preserve the source-installed UI strategy
+### 9. Preserve the source-installed UI strategy
 
 Voyant should keep the registry/source-installed block approach for storefront
 UI.
@@ -154,7 +190,7 @@ replaced with a more opaque frontend system.
 
 ## Template Ownership
 
-### 9. Storefront apps should remain template-owned
+### 10. Storefront apps should remain template-owned
 
 The final storefront application should remain app/template-owned.
 
@@ -173,7 +209,7 @@ Rule:
 The final storefront UX is template-owned even when the shared public contract
 is framework-owned.
 
-### 10. Shared public contracts should reduce app-local compatibility code
+### 11. Shared public contracts should reduce app-local compatibility code
 
 When a shared public/storefront contract exists upstream, downstream apps should
 not need local wrappers just to consume it.
@@ -199,8 +235,12 @@ When adding or reviewing a storefront/public capability:
 3. Keep `storefront` as the package/runtime term, not a nested HTTP namespace.
 4. Shape the public payload around customer-facing needs, not admin CRUD.
 5. Make market/locale/channel context explicit when it affects the contract.
-6. Keep the final storefront shell template-owned.
-7. Preserve the source-installed UI strategy for editable presentation.
+6. Require a scoped checkout capability for PII-bearing session reads,
+   customer-entered state updates, repricing mutations, finalization, and
+   payment bootstrap.
+7. Keep payment amounts server-derived from booking/payment targets.
+8. Keep the final storefront shell template-owned.
+9. Preserve the source-installed UI strategy for editable presentation.
 
 ## Non-Goals
 

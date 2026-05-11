@@ -43,6 +43,18 @@ export {
   expandHonoPlugins,
 } from "./plugin.js"
 export type {
+  CreatePublicCapabilityOptions,
+  PublicCapabilityCookieOptions,
+  PublicCapabilityPayload,
+  VerifyPublicCapabilityOptions,
+} from "./public-capability.js"
+export {
+  createPublicCapabilityToken,
+  extractPublicCapabilityToken,
+  serializePublicCapabilityCookie,
+  verifyPublicCapabilityToken,
+} from "./public-capability.js"
+export type {
   DbFactory,
   LogEntry,
   LoggerProvider,

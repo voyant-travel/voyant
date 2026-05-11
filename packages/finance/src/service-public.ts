@@ -430,6 +430,16 @@ export const publicFinanceService = {
     return session ? toPublicPaymentSession(session) : null
   },
 
+  async getInvoiceBookingId(db: PostgresJsDatabase, invoiceId: string) {
+    const [invoice] = await db
+      .select({ bookingId: invoices.bookingId })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1)
+
+    return invoice?.bookingId ?? null
+  },
+
   async startBookingSchedulePaymentSession(
     db: PostgresJsDatabase,
     bookingId: string,

@@ -1,4 +1,6 @@
+import { issueCheckoutCapability } from "@voyantjs/bookings/checkout-capability"
 import { bookings } from "@voyantjs/bookings/schema"
+import { handleApiError } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -16,6 +18,7 @@ import {
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 const ORIGINAL_TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
+const ORIGINAL_CHECKOUT_CAPABILITY_SECRET = process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET
 
 const json = (body: Record<string, unknown>) => ({
   headers: { "Content-Type": "application/json" },
@@ -102,12 +105,14 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
 
   beforeAll(async () => {
     process.env.TEST_DATABASE_URL = getIsolatedFinanceTestDbUrl(process.env.TEST_DATABASE_URL)
+    process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET = "public-finance-route-test-secret-32"
     const { createTestDb } = await import("@voyantjs/db/test-utils")
 
     db = createTestDb()
     await cleanupFinanceTestData(db)
 
     app = new Hono()
+    app.onError(handleApiError)
     app.use("*", async (c, next) => {
       c.set("db" as never, db)
       c.set("userId" as never, "public-finance-test-user")
@@ -123,8 +128,17 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
   afterAll(async () => {
     const { closeTestDb } = await import("@voyantjs/db/test-utils")
     process.env.TEST_DATABASE_URL = ORIGINAL_TEST_DATABASE_URL
+    process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET = ORIGINAL_CHECKOUT_CAPABILITY_SECRET
     await closeTestDb()
   })
+
+  async function capabilityHeaders(bookingId: string): Promise<HeadersInit> {
+    const capability = await issueCheckoutCapability(bookingId, {
+      VOYANT_CHECKOUT_CAPABILITY_SECRET: process.env.VOYANT_CHECKOUT_CAPABILITY_SECRET,
+    })
+
+    return { "X-Voyant-Checkout-Capability": capability.token }
+  }
 
   async function seedBooking(overrides: Partial<typeof bookings.$inferInsert> = {}) {
     const [row] = await db
@@ -224,7 +238,9 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       },
     ])
 
-    const res = await app.request(`/bookings/${booking.id}/payment-options`)
+    const res = await app.request(`/bookings/${booking.id}/payment-options`, {
+      headers: await capabilityHeaders(booking.id),
+    })
 
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -267,7 +283,9 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       },
     ])
 
-    const res = await app.request(`/bookings/${booking.id}/documents`)
+    const res = await app.request(`/bookings/${booking.id}/documents`, {
+      headers: await capabilityHeaders(booking.id),
+    })
 
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -325,7 +343,12 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       referenceNumber: "PAY-REF-1001",
     })
 
-    const paymentReferenceRes = await app.request("/documents/by-reference?reference=PAY-REF-1001")
+    const paymentReferenceRes = await app.request(
+      "/documents/by-reference?reference=PAY-REF-1001",
+      {
+        headers: await capabilityHeaders(booking.id),
+      },
+    )
 
     expect(paymentReferenceRes.status).toBe(200)
     expect((await paymentReferenceRes.json()).data).toMatchObject({
@@ -337,7 +360,9 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       downloadUrl: "https://example.com/proforma-by-reference.pdf",
     })
 
-    const invoiceReferenceRes = await app.request("/documents/by-reference?reference=PF-REF-1001")
+    const invoiceReferenceRes = await app.request("/documents/by-reference?reference=PF-REF-1001", {
+      headers: await capabilityHeaders(booking.id),
+    })
 
     expect(invoiceReferenceRes.status).toBe(200)
     expect((await invoiceReferenceRes.json()).data).toMatchObject({
@@ -377,7 +402,9 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       },
     ])
 
-    const res = await app.request(`/bookings/${booking.id}/payments`)
+    const res = await app.request(`/bookings/${booking.id}/payments`, {
+      headers: await capabilityHeaders(booking.id),
+    })
 
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -422,7 +449,8 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       `/bookings/${booking.id}/payment-schedules/${schedule.id}/payment-session`,
       {
         method: "POST",
-        ...json({
+        headers: { ...json({}).headers, ...(await capabilityHeaders(booking.id)) },
+        body: JSON.stringify({
           provider: "netopia",
           payerEmail: "traveler@example.com",
           payerName: "Ana Popescu",
@@ -440,7 +468,9 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(created.amountCents).toBe(18000)
     expect(created.payerEmail).toBe("traveler@example.com")
 
-    const getRes = await app.request(`/payment-sessions/${created.id}`)
+    const getRes = await app.request(`/payment-sessions/${created.id}`, {
+      headers: await capabilityHeaders(booking.id),
+    })
     expect(getRes.status).toBe(200)
     const stored = (await getRes.json()).data
     expect(stored.id).toBe(created.id)
@@ -463,7 +493,8 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
 
     const res = await app.request(`/invoices/${invoice.id}/payment-session`, {
       method: "POST",
-      ...json({
+      headers: { ...json({}).headers, ...(await capabilityHeaders(booking.id)) },
+      body: JSON.stringify({
         provider: "netopia",
         payerEmail: "traveler@example.com",
         returnUrl: "https://example.com/return",
@@ -503,7 +534,8 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
 
     const res = await app.request("/vouchers/validate", {
       method: "POST",
-      ...json({
+      headers: { ...json({}).headers, ...(await capabilityHeaders(booking.id)) },
+      body: JSON.stringify({
         code: "spring-2026",
         bookingId: booking.id,
         currency: "EUR",
@@ -549,6 +581,13 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(body.data.reason).toBe("insufficient_balance")
   })
 
+  it("rejects booking-scoped public payment reads without a checkout capability", async () => {
+    const booking = await seedBooking()
+    const res = await app.request(`/bookings/${booking.id}/payment-options`)
+
+    expect(res.status).toBe(401)
+  })
+
   it("rejects a voucher when booking scope does not match", async () => {
     const booking = await seedBooking()
     const otherBooking = await seedBooking()
@@ -570,7 +609,8 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
 
     const res = await app.request("/vouchers/validate", {
       method: "POST",
-      ...json({
+      headers: { ...json({}).headers, ...(await capabilityHeaders(otherBooking.id)) },
+      body: JSON.stringify({
         code: "SCOPED-1",
         bookingId: otherBooking.id,
       }),
