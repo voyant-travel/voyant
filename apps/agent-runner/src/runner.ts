@@ -2,11 +2,16 @@ import { z } from "zod"
 
 export const supervisorTickRequestSchema = z
   .object({
+    action: z.string().trim().min(1).optional(),
     dryRun: z.boolean().optional(),
+    eventLog: z.string().trim().min(1).optional(),
     holder: z.string().trim().min(1).optional(),
+    issue: z.number().int().positive().optional(),
     iterations: z.number().int().positive().max(100).optional(),
     repository: z.string().trim().min(1).optional(),
     reason: z.string().trim().min(1).optional(),
+    ttlSeconds: z.number().int().min(60).max(3600).optional(),
+    updateBody: z.boolean().optional(),
   })
   .strict()
 
@@ -14,6 +19,7 @@ export type SupervisorTickRequest = z.infer<typeof supervisorTickRequestSchema>
 
 export interface RunnerConfig {
   controlPlaneConfigured: boolean
+  controlPlaneToken?: string
   controlPlaneUrl?: string
   enabled: boolean
   holder?: string
@@ -25,13 +31,14 @@ export function buildRunnerCapabilities(config: RunnerConfig) {
     service: "agent-runner",
     execution: {
       enabled: config.enabled,
-      mode: config.enabled ? "supervisor" : "disabled",
+      mode: config.enabled ? "lease-only" : "disabled",
       reason: config.enabled
-        ? "runner execution is enabled by environment"
+        ? "runner can lease dispatch intents; command execution remains external"
         : "runner execution is disabled until credentials, queue budget, and policy are configured",
     },
     controlPlane: {
       configured: config.controlPlaneConfigured,
+      tokenConfigured: Boolean(config.controlPlaneToken),
       url: config.controlPlaneUrl ?? null,
     },
     defaults: {
@@ -40,6 +47,7 @@ export function buildRunnerCapabilities(config: RunnerConfig) {
     },
     scheduler: {
       cronCompatible: true,
+      mode: "lease-only",
       mutatesByDefault: false,
     },
   }
@@ -76,7 +84,112 @@ export function planSupervisorTick({
     }),
     dryRun: request.dryRun ?? true,
     iterations,
+    mode: "lease-only",
     source,
+  }
+}
+
+export async function runSupervisorTick({
+  config,
+  fetchImpl = fetch,
+  request = {},
+  source,
+}: {
+  config: RunnerConfig
+  fetchImpl?: typeof fetch
+  request?: SupervisorTickRequest
+  source: "api" | "scheduled"
+}) {
+  const plan = planSupervisorTick({ config, request, source })
+  if (!plan.accepted || plan.dryRun) {
+    return {
+      leased: false,
+      plan,
+      reason: plan.accepted ? "dry_run" : "blocked",
+    }
+  }
+
+  if (!config.controlPlaneToken || !config.controlPlaneUrl) {
+    return {
+      leased: false,
+      plan: {
+        ...plan,
+        accepted: false,
+        blockers: [...plan.blockers, "control plane credentials are incomplete"],
+      },
+      reason: "blocked",
+    }
+  }
+
+  const response = await fetchImpl(
+    `${normalizeControlPlaneUrl(config.controlPlaneUrl)}/api/dispatch-intents/latest`,
+    {
+      body: JSON.stringify(buildDispatchIntentRequest({ config, request })),
+      headers: {
+        authorization: `Bearer ${config.controlPlaneToken}`,
+        "content-type": "application/json",
+      },
+      method: "POST",
+    },
+  )
+  const bodyText = await response.text()
+  const body = parseJsonBody(bodyText)
+
+  if (!response.ok) {
+    return {
+      controlPlane: {
+        error: body?.error ?? bodyText,
+        status: response.status,
+      },
+      leased: false,
+      plan,
+      reason: "control_plane_rejected",
+    }
+  }
+
+  return {
+    controlPlane: {
+      status: response.status,
+    },
+    intent: body?.intent ?? null,
+    leased: Boolean(body?.intent),
+    plan,
+    reason: body?.reason ?? (body?.intent ? "leased" : "no_intent"),
+  }
+}
+
+function buildDispatchIntentRequest({
+  config,
+  request,
+}: {
+  config: RunnerConfig
+  request: SupervisorTickRequest
+}) {
+  const holder = request.holder ?? config.holder
+  const repository = request.repository ?? config.repository
+
+  return {
+    repository,
+    lease: {
+      holder,
+      ...(request.ttlSeconds ? { ttlSeconds: request.ttlSeconds } : {}),
+    },
+    ...(request.action || request.issue
+      ? {
+          filters: {
+            ...(request.action ? { action: request.action } : {}),
+            ...(request.issue ? { issueNumber: request.issue } : {}),
+          },
+        }
+      : {}),
+    ...(request.eventLog || request.updateBody
+      ? {
+          options: {
+            ...(request.eventLog ? { eventLog: request.eventLog } : {}),
+            ...(request.updateBody ? { updateBody: true } : {}),
+          },
+        }
+      : {}),
   }
 }
 
@@ -103,4 +216,18 @@ function buildLocalEquivalentCommand({
     command.push("--control-plane-url", controlPlaneUrl)
   }
   return command
+}
+
+function normalizeControlPlaneUrl(url: string) {
+  return url.replace(/\/+$/, "")
+}
+
+function parseJsonBody(bodyText: string) {
+  if (!bodyText) return null
+
+  try {
+    return JSON.parse(bodyText)
+  } catch {
+    return null
+  }
 }

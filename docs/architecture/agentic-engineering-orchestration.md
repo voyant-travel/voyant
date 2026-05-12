@@ -1353,9 +1353,12 @@ Verification:
   outcome, and stops on idle, failure, or the configured iteration limit.
 - A Cloudflare-ready runner shell exists in `apps/agent-runner`. It exposes
   health, capabilities, a scheduled handler, and a guarded supervisor tick
-  planning endpoint. The shell is deliberately non-executing until GitHub
-  polling, budget controls, provider credentials, and execution policy are wired
-  into a later slice.
+  endpoint. By default it is dry-run only. When explicitly enabled, it can lease
+  one dispatch intent from the control-plane app's latest stored queue snapshot,
+  but it still does not execute lifecycle commands, mutate GitHub directly,
+  create workspaces, or spend model budget. Command execution remains owned by
+  trusted runner processes until budget controls, sandbox policy, and
+  task-scoped provider credentials are wired into a later slice.
 
 ## Open Questions
 
