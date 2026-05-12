@@ -337,13 +337,13 @@ export const legalUiRo = {
       refundPercent: "Procent rambursare (puncte de baza)",
       refundType: "Tip rambursare",
       currency: "Moneda",
-      flatAmountCents: "Suma fixa (centi)",
+      flatAmountCents: "Suma fixa",
     },
     placeholders: {
       label: "ex. 30+ zile inainte de plecare",
       daysBeforeDeparture: "ex. 30",
       refundPercent: "ex. 10000 = 100%",
-      flatAmountCents: "ex. 5000",
+      flatAmountCents: "ex. 50,00",
     },
     actions: {
       create: "Creeaza regula",

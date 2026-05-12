@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { DatePicker } from "@/components/ui/date-picker"
 import { api } from "@/lib/api-client"
 import { zodResolver } from "@/lib/zod-resolver"
@@ -46,7 +47,7 @@ function getCommissionFormSchema(
     externalRateId: z.string().optional(),
     externalCategoryId: z.string().optional(),
     commissionType: z.enum(["fixed", "percentage"]),
-    amountCents: z.string().optional(),
+    amountCents: z.number().nullable().optional(),
     percentBasisPoints: z.string().optional(),
     validFrom: z.string().optional(),
     validTo: z.string().optional(),
@@ -88,7 +89,7 @@ export function ChannelCommissionRuleDialog({
       externalRateId: "",
       externalCategoryId: "",
       commissionType: "percentage" as const,
-      amountCents: "",
+      amountCents: null,
       percentBasisPoints: "",
       validFrom: "",
       validTo: "",
@@ -104,7 +105,7 @@ export function ChannelCommissionRuleDialog({
         externalRateId: commissionRule.externalRateId ?? "",
         externalCategoryId: commissionRule.externalCategoryId ?? "",
         commissionType: commissionRule.commissionType,
-        amountCents: commissionRule.amountCents?.toString() ?? "",
+        amountCents: commissionRule.amountCents ?? null,
         percentBasisPoints: commissionRule.percentBasisPoints?.toString() ?? "",
         validFrom: commissionRule.validFrom ?? "",
         validTo: commissionRule.validTo ?? "",
@@ -124,7 +125,7 @@ export function ChannelCommissionRuleDialog({
       externalRateId: nullableString(values.externalRateId),
       externalCategoryId: nullableString(values.externalCategoryId),
       commissionType: values.commissionType,
-      amountCents: nullableNumber(values.amountCents),
+      amountCents: values.amountCents ?? null,
       percentBasisPoints: nullableNumber(values.percentBasisPoints),
       validFrom: nullableString(values.validFrom),
       validTo: nullableString(values.validTo),
@@ -236,7 +237,16 @@ export function ChannelCommissionRuleDialog({
               </div>
               <div className="grid gap-2">
                 <Label>{dialog.fields.amountCents}</Label>
-                <Input {...form.register("amountCents")} type="number" min={0} />
+                <CurrencyInput
+                  value={form.watch("amountCents") as number | null}
+                  onChange={(next) =>
+                    form.setValue("amountCents", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={null}
+                />
               </div>
               <div className="grid gap-2">
                 <Label>{dialog.fields.percentBasisPoints}</Label>

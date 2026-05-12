@@ -1498,7 +1498,7 @@
       "title": "Quote Line Items Card",
       "description": "Editable quote line items card with inline quantity and price updates.",
       "dependencies": ["lucide-react", "@voyantjs/crm-react"],
-      "registryDependencies": ["button", "card", "input"],
+      "registryDependencies": ["button", "card", "currency-input", "input"],
       "files": [
         {
           "path": "registry/crm/quote-detail-sections.tsx",
@@ -3088,6 +3088,7 @@
         "badge",
         "button",
         "card",
+        "currency-input",
         "data-table",
         "dialog",
         "input",
@@ -3721,6 +3722,20 @@
           "path": "registry/ui/currency-combobox.tsx",
           "type": "registry:ui",
           "target": "components/ui/currency-combobox.tsx"
+        }
+      ]
+    },
+    {
+      "name": "currency-input",
+      "type": "registry:ui",
+      "title": "Currency Input",
+      "description": "Money input that displays decimal major units with a currency symbol prefix and code suffix while emitting integer minor units.",
+      "registryDependencies": ["input-group"],
+      "files": [
+        {
+          "path": "registry/ui/currency-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/currency-input.tsx"
         }
       ]
     },

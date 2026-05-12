@@ -337,13 +337,13 @@ export const legalUiEn = {
       refundPercent: "Refund Percent (basis points)",
       refundType: "Refund Type",
       currency: "Currency",
-      flatAmountCents: "Flat Amount (cents)",
+      flatAmountCents: "Flat amount",
     },
     placeholders: {
       label: "e.g. 30+ days before departure",
       daysBeforeDeparture: "e.g. 30",
       refundPercent: "e.g. 10000 = 100%",
-      flatAmountCents: "e.g. 5000",
+      flatAmountCents: "e.g. 50.00",
     },
     actions: {
       create: "Create Rule",

@@ -1,8 +1,9 @@
 import type { QuoteLineRecord } from "@voyantjs/crm-react"
 import { Loader2, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/components/ui"
+import { CurrencyInput } from "@/components/ui/currency-input"
 
 import { useRegistryCrmI18nOrDefault, useRegistryCrmMessagesOrDefault } from "./i18n"
 import { formatRegistryCrmMoney } from "./i18n/utils"
@@ -42,7 +43,7 @@ export function QuoteLinesCard({
   const m = useRegistryCrmMessagesOrDefault()
   const [newDescription, setNewDescription] = useState("")
   const [newQuantity, setNewQuantity] = useState("1")
-  const [newPrice, setNewPrice] = useState("0")
+  const [newPriceCents, setNewPriceCents] = useState<number | null>(0)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,7 +54,7 @@ export function QuoteLinesCard({
       return
     }
     const qty = Number.parseInt(newQuantity, 10) || 1
-    const price = Number.parseInt(newPrice, 10) || 0
+    const price = newPriceCents ?? 0
     setAdding(true)
     setError(null)
     try {
@@ -66,7 +67,7 @@ export function QuoteLinesCard({
       })
       setNewDescription("")
       setNewQuantity("1")
-      setNewPrice("0")
+      setNewPriceCents(0)
     } catch (err) {
       setError(err instanceof Error ? err.message : m.quoteLinesCard.validation.addFailed)
     } finally {
@@ -118,12 +119,12 @@ export function QuoteLinesCard({
               onChange={(e) => setNewQuantity(e.target.value)}
               placeholder={m.quoteLinesCard.fields.quantity}
             />
-            <Input
+            <CurrencyInput
               className="col-span-3 h-8 text-sm"
-              type="number"
-              min={0}
-              value={newPrice}
-              onChange={(e) => setNewPrice(e.target.value)}
+              inputClassName="h-8 text-sm"
+              value={newPriceCents}
+              onChange={setNewPriceCents}
+              currency={currency}
               placeholder={m.quoteLinesCard.fields.priceCents}
             />
             <Button
@@ -169,6 +170,11 @@ function QuoteLineRow({
 }) {
   const i18n = useRegistryCrmI18nOrDefault()
   const [removing, setRemoving] = useState(false)
+  const [draftPriceCents, setDraftPriceCents] = useState<number | null>(line.unitPriceAmountCents)
+
+  useEffect(() => {
+    setDraftPriceCents(line.unitPriceAmountCents)
+  }, [line.unitPriceAmountCents])
 
   async function handleRemove() {
     setRemoving(true)
@@ -190,14 +196,13 @@ function QuoteLineRow({
     })
   }
 
-  async function handlePrice(value: string) {
-    const price = Number.parseInt(value, 10)
-    if (!Number.isFinite(price) || price < 0) {
+  async function handlePrice(value: number | null) {
+    if (value == null || value < 0 || value === line.unitPriceAmountCents) {
       return
     }
     await onUpdate({
-      unitPriceAmountCents: price,
-      totalAmountCents: line.quantity * price,
+      unitPriceAmountCents: value,
+      totalAmountCents: line.quantity * value,
     })
   }
 
@@ -221,12 +226,13 @@ function QuoteLineRow({
           defaultValue={line.quantity}
           onBlur={(e) => void handleQuantity(e.target.value)}
         />
-        <Input
+        <CurrencyInput
           className="col-span-2 h-8 text-sm"
-          type="number"
-          min={0}
-          defaultValue={line.unitPriceAmountCents}
-          onBlur={(e) => void handlePrice(e.target.value)}
+          inputClassName="h-8 text-sm"
+          value={draftPriceCents}
+          onChange={setDraftPriceCents}
+          onBlur={() => void handlePrice(draftPriceCents)}
+          currency={currency}
         />
         <span className="col-span-1 text-right text-sm font-medium">
           {formatRegistryCrmMoney(i18n, line.totalAmountCents, currency)}

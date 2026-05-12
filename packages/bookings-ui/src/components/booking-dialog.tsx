@@ -19,6 +19,7 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DateRangePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
@@ -161,14 +162,8 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
       bookingNumber: values.bookingNumber,
       status: values.status,
       sellCurrency: values.sellCurrency,
-      sellAmountCents:
-        values.sellAmountCents && typeof values.sellAmountCents === "number"
-          ? values.sellAmountCents
-          : null,
-      costAmountCents:
-        values.costAmountCents && typeof values.costAmountCents === "number"
-          ? values.costAmountCents
-          : null,
+      sellAmountCents: typeof values.sellAmountCents === "number" ? values.sellAmountCents : null,
+      costAmountCents: typeof values.costAmountCents === "number" ? values.costAmountCents : null,
       startDate: values.startDate || null,
       endDate: values.endDate || null,
       pax: values.pax && typeof values.pax === "number" ? values.pax : null,
@@ -263,11 +258,37 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDialog.fields.sellAmountCents}</Label>
-                <Input {...form.register("sellAmountCents")} type="number" min="0" />
+                <CurrencyInput
+                  value={
+                    typeof form.watch("sellAmountCents") === "number"
+                      ? (form.watch("sellAmountCents") as number)
+                      : null
+                  }
+                  onChange={(next) =>
+                    form.setValue("sellAmountCents", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("sellCurrency")}
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDialog.fields.costAmountCents}</Label>
-                <Input {...form.register("costAmountCents")} type="number" min="0" />
+                <CurrencyInput
+                  value={
+                    typeof form.watch("costAmountCents") === "number"
+                      ? (form.watch("costAmountCents") as number)
+                      : null
+                  }
+                  onChange={(next) =>
+                    form.setValue("costAmountCents", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("sellCurrency")}
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDialog.fields.pax}</Label>

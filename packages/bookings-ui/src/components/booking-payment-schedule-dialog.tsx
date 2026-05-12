@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Input,
   Label,
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
@@ -222,7 +222,16 @@ export function BookingPaymentScheduleDialog({
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.paymentScheduleDialog.fields.amountCents}</Label>
-                <Input {...form.register("amountCents")} type="number" min={0} />
+                <CurrencyInput
+                  value={form.watch("amountCents") as number}
+                  onChange={(next) =>
+                    form.setValue("amountCents", next ?? 0, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("currency")}
+                />
                 {form.formState.errors.amountCents && (
                   <p className="text-xs text-destructive">
                     {form.formState.errors.amountCents.message}
