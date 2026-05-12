@@ -5,6 +5,7 @@ import {
   CheckoutUiMessagesProvider,
   getCheckoutUiI18n,
   resolveCheckoutUiMessages,
+  useCheckoutUiI18nOrDefault,
   useCheckoutUiMessagesOrDefault,
 } from "./i18n/index.js"
 
@@ -46,9 +47,29 @@ describe("checkout-ui i18n", () => {
 
     expect(html).toContain("Plata")
   })
+
+  it("provides locale-aware currency formatters through the provider", () => {
+    const expected = new Intl.NumberFormat("ro-RO", {
+      currency: "RON",
+      style: "currency",
+    }).format(123.45)
+
+    const html = renderToStaticMarkup(
+      <CheckoutUiMessagesProvider locale="ro-RO">
+        <FormatterProbe />
+      </CheckoutUiMessagesProvider>,
+    )
+
+    expect(html).toContain(expected)
+  })
 })
 
 function MessageProbe() {
   const messages = useCheckoutUiMessagesOrDefault()
   return <span>{messages.paymentStep.title}</span>
+}
+
+function FormatterProbe() {
+  const i18n = useCheckoutUiI18nOrDefault()
+  return <span>{i18n.formatCurrency(123.45, "RON")}</span>
 }

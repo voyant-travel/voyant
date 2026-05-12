@@ -17,7 +17,7 @@ import {
 import { type ReactNode, useState } from "react"
 
 import type { CheckoutUiMessages } from "../i18n/messages.js"
-import { useCheckoutUiMessagesOrDefault } from "../i18n/provider.js"
+import { useCheckoutUiI18nOrDefault, useCheckoutUiMessagesOrDefault } from "../i18n/provider.js"
 
 interface StartCardResponse {
   data?: { redirectUrl: string | null }
@@ -113,7 +113,8 @@ export function PaymentLinkLandingPage({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Header({ session, description }: { session: PublicPaymentSession; description?: string }) {
-  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
+  const i18n = useCheckoutUiI18nOrDefault()
+  const messages = i18n.messages.paymentLinkLandingPage
   return (
     <header className="flex flex-col gap-2 border-b pb-4">
       <h1 className="font-semibold text-2xl">
@@ -122,11 +123,18 @@ function Header({ session, description }: { session: PublicPaymentSession; descr
       {session.notes && <p className="text-muted-foreground text-sm">{session.notes}</p>}
       <div className="flex items-baseline gap-3">
         <span className="font-semibold text-3xl tabular-nums">
-          {formatMoneyCents(session.amountCents, session.currency)}
+          {i18n.formatCurrency(session.amountCents / 100, session.currency)}
         </span>
         {session.expiresAt && session.status !== "paid" && (
           <span className="text-muted-foreground text-sm">
-            {formatMessage(messages.expires, { date: formatDateTime(session.expiresAt) })}
+            {formatMessage(messages.expires, {
+              date: i18n.formatDateTime(session.expiresAt, {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            })}
           </span>
         )}
       </div>
@@ -216,7 +224,8 @@ function CardPanel({
   session: PublicPaymentSession
   onPayByCard?: () => void
 }) {
-  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
+  const i18n = useCheckoutUiI18nOrDefault()
+  const messages = i18n.messages.paymentLinkLandingPage
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -256,7 +265,7 @@ function CardPanel({
       <Button className="w-full" disabled={starting} onClick={handleClick}>
         {starting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {formatMessage(messages.card.payAmount, {
-          amount: formatMoneyCents(session.amountCents, session.currency),
+          amount: i18n.formatCurrency(session.amountCents / 100, session.currency),
         })}
         {!starting && <ExternalLink className="ml-2 h-4 w-4" />}
       </Button>
@@ -276,14 +285,15 @@ function BankTransferPanel({
   session: PublicPaymentSession
   instructions: BankTransferInstructions
 }) {
-  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
+  const i18n = useCheckoutUiI18nOrDefault()
+  const messages = i18n.messages.paymentLinkLandingPage
   const reference =
     instructions.reference ?? session.externalReference ?? session.clientReference ?? session.id
   return (
     <div className="rounded-xl border bg-card p-5 shadow-sm">
       <p className="mb-4 text-muted-foreground text-sm">
         {formatMessage(messages.bank.instructions, {
-          amount: formatMoneyCents(session.amountCents, session.currency),
+          amount: i18n.formatCurrency(session.amountCents / 100, session.currency),
         })}
       </p>
       <dl className="grid grid-cols-1 gap-2 text-sm">
@@ -445,25 +455,4 @@ function defaultDescription(
   messages: CheckoutUiMessages["paymentLinkLandingPage"],
 ): string {
   return messages.descriptions[session.targetType] ?? messages.descriptions.default
-}
-
-function formatMoneyCents(cents: number, currency: string): string {
-  const amount = cents / 100
-  if (!Number.isFinite(amount)) return `${cents} ${currency}`
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(amount)
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d)
 }

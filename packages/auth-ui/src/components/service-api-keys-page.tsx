@@ -41,7 +41,7 @@ import {
 } from "lucide-react"
 import { type FormEvent, useMemo, useState } from "react"
 
-import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
+import { useAuthUiI18nOrDefault, useAuthUiMessagesOrDefault } from "../i18n/provider.js"
 
 export interface ServiceApiKeysPageProps {
   className?: string
@@ -56,13 +56,13 @@ function expiresInSeconds(days: number | null): number | null {
   return days === null ? null : days * 24 * 60 * 60
 }
 
-function formatDate(value: string | null | undefined, fallback: string): string {
+function formatDate(
+  value: string | null | undefined,
+  fallback: string,
+  formatDateTime: (value: string) => string,
+): string {
   if (!value) return fallback
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-    date,
-  )
+  return formatDateTime(value)
 }
 
 function permissionLabel(permission: string, fullAccessLabel: string): string {
@@ -361,7 +361,8 @@ export function ServiceApiKeysPage({
 export const ApiTokensPage = ServiceApiKeysPage
 
 function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
-  const messages = useAuthUiMessagesOrDefault().serviceApiKeysPage
+  const i18n = useAuthUiI18nOrDefault()
+  const messages = i18n.messages.serviceApiKeysPage
   const mutations = useApiTokenMutation()
   const enabled = apiKey.enabled !== false
 
@@ -389,9 +390,9 @@ function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
           </div>
           <p className="text-xs text-muted-foreground">
             {formatMessage(messages.list.metadata, {
-              created: formatDate(apiKey.createdAt, messages.date.never),
-              expires: formatDate(apiKey.expiresAt, messages.date.never),
-              lastUsed: formatDate(apiKey.lastRequest, messages.date.never),
+              created: formatDate(apiKey.createdAt, messages.date.never, i18n.formatDateTime),
+              expires: formatDate(apiKey.expiresAt, messages.date.never, i18n.formatDateTime),
+              lastUsed: formatDate(apiKey.lastRequest, messages.date.never, i18n.formatDateTime),
             })}
           </p>
         </div>

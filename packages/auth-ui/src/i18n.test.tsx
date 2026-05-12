@@ -5,6 +5,7 @@ import {
   AuthUiMessagesProvider,
   getAuthUiI18n,
   resolveAuthUiMessages,
+  useAuthUiI18nOrDefault,
   useAuthUiMessagesOrDefault,
 } from "./i18n/index.js"
 
@@ -48,9 +49,30 @@ describe("auth-ui i18n", () => {
 
     expect(html).toContain("Tokenuri API")
   })
+
+  it("provides locale-aware date formatters through the provider", () => {
+    const value = "2026-05-12T13:45:00.000Z"
+    const expected = new Intl.DateTimeFormat("ro-RO", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value))
+
+    const html = renderToStaticMarkup(
+      <AuthUiMessagesProvider locale="ro-RO">
+        <FormatterProbe value={value} />
+      </AuthUiMessagesProvider>,
+    )
+
+    expect(html).toContain(expected)
+  })
 })
 
 function MessageProbe() {
   const messages = useAuthUiMessagesOrDefault()
   return <span>{messages.serviceApiKeysPage.title}</span>
+}
+
+function FormatterProbe({ value }: { value: string }) {
+  const i18n = useAuthUiI18nOrDefault()
+  return <span>{i18n.formatDateTime(value)}</span>
 }
