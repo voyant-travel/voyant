@@ -8,10 +8,10 @@ This package wraps the shared Voyant auth HTTP contract:
 - `PATCH /auth/me`
 - `/auth/status`
 - `/auth/sign-in/email`
-- `PATCH /auth/me`
 - `/auth/change-password`
 - `/auth/email-otp/request-email-change`
 - `/auth/email-otp/change-email`
+- `/auth/sign-up/email`
 - `/auth/workspace/current`
 - `/auth/workspace/active-organization`
 - `/auth/organization/list-members`
@@ -31,6 +31,7 @@ It provides reusable React surfaces for:
 - organization member listing
 - organization invitation listing
 - email/password sign-in
+- email/password sign-up
 - invite, cancel, remove, and role update mutations
 - API token listing, creation, update, and deletion
 
@@ -90,6 +91,27 @@ await requestEmailChange.mutateAsync({ newEmail })
 const confirmEmailChange = useConfirmAccountEmailChange()
 await confirmEmailChange.mutateAsync({ newEmail, otp })
 ```
+
+## Sign-Up
+
+`useSignUp()` exposes the shared email/password Better Auth registration flow:
+
+```tsx
+const signUp = useSignUp()
+
+await signUp.email.mutateAsync({
+  name,
+  email,
+  password,
+  callbackURL: "/",
+})
+```
+
+The hook posts to the mounted Better Auth `/auth/sign-up/email` endpoint, calls
+`/auth/status` after success for profile provisioning fallback, and invalidates
+the current auth queries. Invitation-backed registration should use the app's
+invitation redemption endpoint, because Better Auth email sign-up cannot redeem
+Voyant admin-issued invite tokens.
 
 ## Single-Tenant Apps
 

@@ -89,6 +89,60 @@ they need router and provider-plugin wiring:
 />
 ```
 
+## Sign-up
+
+`SignUpPage` provides the shared email/password registration surface. It uses
+`useSignUp()` from `@voyantjs/auth-react`, renders without a card wrapper, and
+leaves redirects and post-sign-up behavior to the host app.
+
+```tsx
+import { SignUpPage } from "@voyantjs/auth-ui"
+
+<SignUpPage
+  redirectTo="/"
+  signInHref="/sign-in"
+  onSignedUp={({ email }) => navigate({ to: "/verify-email", search: { email } })}
+/>
+```
+
+Apps that accept typed invitation tokens must route email registration through
+their invitation redemption endpoint. Pass `onEmailSignUp` when an
+`invitationToken` is provided or collected from the form:
+
+```tsx
+<SignUpPage
+  invitationToken={search.invitationToken}
+  signInHref="/sign-in"
+  onEmailSignUp={async ({ name, password, invitationToken }) => {
+    if (!invitationToken) throw new Error("Invitation token is required.")
+
+    const response = await fetch(`/v1/public/invitations/${invitationToken}/redeem`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, password }),
+    })
+
+    if (!response.ok) throw new Error("Could not accept invitation.")
+    return response.json()
+  }}
+/>
+```
+
+Social providers stay app-owned because OAuth setup and routing differ by app:
+
+```tsx
+<SignUpPage
+  socialProviders={[
+    {
+      id: "google",
+      label: "Continue with Google",
+      onSignUp: ({ redirectTo }) =>
+        authClient.signIn.social({ provider: "google", callbackURL: redirectTo }),
+    },
+  ]}
+/>
+```
+
 ## Onboarding
 
 `OnboardingPage` provides the shared first-run profile completion surface. It is
