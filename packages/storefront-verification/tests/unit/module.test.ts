@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs"
 import { createContainer, createEventBus } from "@voyantjs/core"
+import { getTableName } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 
 import {
   createStorefrontVerificationHonoModule,
   STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
+  storefrontVerificationChallenges,
 } from "../../src/index.js"
 
 describe("createStorefrontVerificationHonoModule.bootstrap", () => {
@@ -50,5 +53,28 @@ describe("createStorefrontVerificationHonoModule.bootstrap", () => {
     expect(resolveProviders).toHaveBeenCalledOnce()
     expect(senders.sendEmailChallenge).toBeTypeOf("function")
     expect(senders.sendSmsChallenge).toBeTypeOf("function")
+  })
+
+  it("publishes the schema entrypoint required by explicit Drizzle schema arrays", () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    ) as {
+      exports: Record<string, string>
+      publishConfig: { exports: Record<string, unknown> }
+      voyant: { schema: string; requiresSchemas: string[] }
+    }
+
+    expect(getTableName(storefrontVerificationChallenges)).toBe(
+      "storefront_verification_challenges",
+    )
+    expect(packageJson.exports["./schema"]).toBe("./src/schema.ts")
+    expect(packageJson.publishConfig.exports["./schema"]).toMatchObject({
+      import: "./dist/schema.js",
+      types: "./dist/schema.d.ts",
+    })
+    expect(packageJson.voyant).toEqual({
+      schema: "./schema",
+      requiresSchemas: ["@voyantjs/db"],
+    })
   })
 })
