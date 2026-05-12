@@ -10,7 +10,7 @@ import {
 } from "@voyantjs/hospitality-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
-import { Input } from "@voyantjs/ui/components/input"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Label } from "@voyantjs/ui/components/label"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
@@ -87,24 +87,22 @@ export function RoomInventoryTab({ propertyId }: RoomInventoryTabProps) {
         </div>
         <div className="flex flex-col gap-2">
           <Label>{messages.roomInventoryTab.filters.from}</Label>
-          <Input
+          <DatePicker
             value={dateFrom}
-            onChange={(event) => {
-              setDateFrom(event.target.value)
+            onChange={(nextValue) => {
+              setDateFrom(nextValue ?? "")
               setPageIndex(0)
             }}
-            type="date"
           />
         </div>
         <div className="flex flex-col gap-2">
           <Label>{messages.roomInventoryTab.filters.to}</Label>
-          <Input
+          <DatePicker
             value={dateTo}
-            onChange={(event) => {
-              setDateTo(event.target.value)
+            onChange={(nextValue) => {
+              setDateTo(nextValue ?? "")
               setPageIndex(0)
             }}
-            type="date"
           />
         </div>
       </div>

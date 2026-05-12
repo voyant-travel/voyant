@@ -59,20 +59,16 @@ function combineDateAndTime(date: Date, time: string): Date {
   return next
 }
 
-type TriggerProps = {
-  className?: string
+type TriggerProps = React.ComponentProps<typeof Button> & {
   empty: boolean
-  disabled?: boolean
-  children?: React.ReactNode
 }
 
-function DateTimePickerTrigger({ className, empty, disabled, children }: TriggerProps) {
+function DateTimePickerTrigger({ className, empty, children, ...props }: TriggerProps) {
   return (
     <Button
-      type="button"
+      {...props}
       variant="outline"
       data-empty={empty}
-      disabled={disabled}
       className={cn(
         "w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground",
         className,

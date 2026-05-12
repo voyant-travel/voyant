@@ -24,6 +24,7 @@ import {
   Label,
   Textarea,
 } from "@voyantjs/ui/components"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2, Sparkles, Upload } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
@@ -382,9 +383,14 @@ export function TravelerDialog({
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>{messages.travelerDialog.fields.passportExpiry}</Label>
-                  <Input
-                    {...form.register("passportExpiry")}
-                    type="date"
+                  <DatePicker
+                    value={form.watch("passportExpiry") || null}
+                    onChange={(nextValue) =>
+                      form.setValue("passportExpiry", nextValue ?? "", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
                     placeholder={messages.travelerDialog.placeholders.passportExpiry}
                   />
                 </div>
@@ -409,9 +415,14 @@ export function TravelerDialog({
 
               <div className="flex flex-col gap-2">
                 <Label>{messages.travelerDialog.fields.dateOfBirth}</Label>
-                <Input
-                  {...form.register("dateOfBirth")}
-                  type="date"
+                <DatePicker
+                  value={form.watch("dateOfBirth") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("dateOfBirth", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                   placeholder={messages.travelerDialog.placeholders.dateOfBirth}
                 />
               </div>

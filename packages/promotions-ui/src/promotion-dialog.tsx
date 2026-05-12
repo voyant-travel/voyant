@@ -36,6 +36,7 @@ import {
   Switch,
   Textarea,
 } from "@voyantjs/ui/components"
+import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
 import { useEffect, useState } from "react"
 
 export interface PromotionDialogProps {
@@ -117,8 +118,8 @@ function offerToForm(offer: PromotionalOfferRecord): FormState {
   base.scopeIds = scopeIdsToString(offer.scope)
   base.scopeAudiences = offer.scope.kind === "audiences" ? [...offer.scope.audiences] : ["customer"]
   base.minPax = offer.conditions.minPax != null ? String(offer.conditions.minPax) : ""
-  base.validFrom = offer.validFrom ? toDateInputValue(offer.validFrom) : ""
-  base.validUntil = offer.validUntil ? toDateInputValue(offer.validUntil) : ""
+  base.validFrom = offer.validFrom ? toDateTimePickerValue(offer.validFrom) : ""
+  base.validUntil = offer.validUntil ? toDateTimePickerValue(offer.validUntil) : ""
   base.code = offer.code ?? ""
   base.stackable = offer.stackable
   base.active = offer.active
@@ -140,8 +141,8 @@ function scopeIdsToString(scope: PromotionalOfferScope): string {
   }
 }
 
-function toDateInputValue(iso: string): string {
-  // <input type="datetime-local"> wants `YYYY-MM-DDTHH:mm` (no timezone).
+function toDateTimePickerValue(iso: string): string {
+  // DateTimePicker values use `YYYY-MM-DDTHH:mm` with no timezone.
   return iso.slice(0, 16)
 }
 
@@ -428,20 +429,16 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-valid-from">Valid from</Label>
-              <Input
-                id="promotion-valid-from"
-                type="datetime-local"
+              <DateTimePicker
                 value={state.validFrom}
-                onChange={(e) => setField("validFrom", e.target.value)}
+                onChange={(nextValue) => setField("validFrom", nextValue ?? "")}
               />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-valid-until">Valid until</Label>
-              <Input
-                id="promotion-valid-until"
-                type="datetime-local"
+              <DateTimePicker
                 value={state.validUntil}
-                onChange={(e) => setField("validUntil", e.target.value)}
+                onChange={(nextValue) => setField("validUntil", nextValue ?? "")}
               />
             </div>
           </div>

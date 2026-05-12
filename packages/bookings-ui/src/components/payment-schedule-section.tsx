@@ -1,6 +1,7 @@
 "use client"
 
 import { Button, Input, Label } from "@voyantjs/ui/components"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export type PaymentScheduleMode = "unpaid" | "full" | "advance" | "split"
@@ -152,10 +153,9 @@ export function PaymentScheduleSection({
             {merged.dueDate}
             {currencySuffix}
           </Label>
-          <Input
-            type="date"
+          <DatePicker
             value={value.fullDueDate ?? ""}
-            onChange={(e) => set({ fullDueDate: e.target.value || null })}
+            onChange={(nextValue) => set({ fullDueDate: nextValue })}
           />
         </div>
       )}
@@ -177,10 +177,9 @@ export function PaymentScheduleSection({
           </div>
           <div className="flex flex-col gap-1">
             <Label className="text-xs">{merged.dueDate}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={value.advanceDueDate ?? ""}
-              onChange={(e) => set({ advanceDueDate: e.target.value || null })}
+              onChange={(nextValue) => set({ advanceDueDate: nextValue })}
             />
           </div>
         </div>
@@ -205,10 +204,9 @@ export function PaymentScheduleSection({
               value={centsToMajorString(value.splitFirstAmountCents)}
               onChange={(e) => set({ splitFirstAmountCents: majorStringToCents(e.target.value) })}
             />
-            <Input
-              type="date"
+            <DatePicker
               value={value.splitFirstDueDate ?? ""}
-              onChange={(e) => set({ splitFirstDueDate: e.target.value || null })}
+              onChange={(nextValue) => set({ splitFirstDueDate: nextValue })}
             />
           </div>
 
@@ -222,10 +220,9 @@ export function PaymentScheduleSection({
               value={centsToMajorString(value.splitSecondAmountCents)}
               onChange={(e) => set({ splitSecondAmountCents: majorStringToCents(e.target.value) })}
             />
-            <Input
-              type="date"
+            <DatePicker
               value={value.splitSecondDueDate ?? ""}
-              onChange={(e) => set({ splitSecondDueDate: e.target.value || null })}
+              onChange={(nextValue) => set({ splitSecondDueDate: nextValue })}
             />
           </div>
         </div>

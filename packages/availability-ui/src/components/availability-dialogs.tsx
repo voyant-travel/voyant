@@ -37,6 +37,7 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
@@ -717,7 +718,15 @@ export function AvailabilitySlotDialog(props: {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.dateLabel}</Label>
-                <Input {...form.register("dateLocal")} type="date" />
+                <DatePicker
+                  value={form.watch("dateLocal") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("dateLocal", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
               </div>
               <div className="grid gap-2">
                 <Label>{slotMessages.timezoneLabel}</Label>
@@ -728,11 +737,27 @@ export function AvailabilitySlotDialog(props: {
               </div>
               <div className="grid gap-2">
                 <Label>{slotMessages.startsAtLabel}</Label>
-                <Input {...form.register("startsAt")} type="datetime-local" />
+                <DateTimePicker
+                  value={form.watch("startsAt") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("startsAt", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
               </div>
               <div className="grid gap-2">
                 <Label>{slotMessages.endsAtLabel}</Label>
-                <Input {...form.register("endsAt")} type="datetime-local" />
+                <DateTimePicker
+                  value={form.watch("endsAt") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("endsAt", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
               </div>
             </div>
 
