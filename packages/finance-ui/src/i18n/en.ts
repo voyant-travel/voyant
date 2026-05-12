@@ -192,6 +192,12 @@ export const financeUiEn = {
     },
   },
   invoiceDetailPage: {
+    title: "Invoice",
+    invoiceTypeLabels: {
+      invoice: "Invoice",
+      proforma: "Proforma",
+      credit_note: "Credit note",
+    },
     actions: {
       back: "Back to finance",
       edit: "Edit",
@@ -285,6 +291,11 @@ export const financeUiEn = {
       editTitle: "Edit attachment",
       createAction: "Add attachment",
       nameRequired: "Attachment name is required",
+    },
+    noteDialog: {
+      title: "Add note",
+      createAction: "Add note",
+      contentRequired: "Note content is required",
     },
     creditNoteStatusLabels: {
       draft: "Draft",

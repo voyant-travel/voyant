@@ -192,6 +192,12 @@ export const financeUiRo = {
     },
   },
   invoiceDetailPage: {
+    title: "Factura",
+    invoiceTypeLabels: {
+      invoice: "Factura",
+      proforma: "Proforma",
+      credit_note: "Nota de credit",
+    },
     actions: {
       back: "Inapoi la finante",
       edit: "Editeaza",
@@ -286,6 +292,11 @@ export const financeUiRo = {
       editTitle: "Editeaza atasamentul",
       createAction: "Adauga atasament",
       nameRequired: "Numele atasamentului este obligatoriu",
+    },
+    noteDialog: {
+      title: "Adauga nota",
+      createAction: "Adauga nota",
+      contentRequired: "Continutul notei este obligatoriu",
     },
     creditNoteStatusLabels: {
       draft: "Ciorna",

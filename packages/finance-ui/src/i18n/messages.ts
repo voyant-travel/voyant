@@ -36,6 +36,7 @@ export const paymentMethods = [
 export const supplierPaymentStatuses = ["pending", "completed", "failed", "refunded"] as const
 
 export type InvoiceStatus = InvoiceRecord["status"]
+export type InvoiceType = NonNullable<InvoiceRecord["invoiceType"]>
 export type PaymentMethod = (typeof paymentMethods)[number]
 export type SupplierPaymentMethod = (typeof supplierPaymentMethods)[number]
 export type SupplierPaymentStatus = SupplierPaymentRecord["status"]
@@ -312,6 +313,8 @@ export type FinanceUiMessages = {
     }
   }
   invoiceDetailPage: {
+    title: string
+    invoiceTypeLabels: Record<InvoiceType, string>
     actions: {
       back: string
       edit: string
@@ -404,6 +407,11 @@ export type FinanceUiMessages = {
       editTitle: string
       createAction: string
       nameRequired: string
+    }
+    noteDialog: {
+      title: string
+      createAction: string
+      contentRequired: string
     }
     creditNoteStatusLabels: Record<CreditNoteStatus, string>
   }
