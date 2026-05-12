@@ -10,7 +10,7 @@ import {
 } from "@voyantjs/crm-react"
 import { Button, cn } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import {
@@ -42,6 +42,18 @@ export function OrganizationDetailPage({
   const [activeTab, setActiveTab] = useState<OrganizationDetailTab>("overview")
   const orgQuery = useOrganization(id)
   const { remove, update } = useOrganizationMutation()
+
+  useEffect(() => {
+    const activeCommercialTabIsAvailable =
+      (activeTab === "bookings" && Boolean(slots?.bookingsTab)) ||
+      (activeTab === "invoices" && Boolean(slots?.invoicesTab)) ||
+      (activeTab === "payments" && Boolean(slots?.paymentsTab)) ||
+      (activeTab === "contracts" && Boolean(slots?.contractsTab))
+
+    if (isOrganizationCommercialTab(activeTab) && !activeCommercialTabIsAvailable) {
+      setActiveTab("overview")
+    }
+  }, [activeTab, slots?.bookingsTab, slots?.invoicesTab, slots?.paymentsTab, slots?.contractsTab])
 
   const updateField = async (patch: UpdateOrganizationInput) => {
     await update.mutateAsync({ id, input: patch })
@@ -135,4 +147,10 @@ export function OrganizationDetailPage({
       </div>
     </div>
   )
+}
+
+function isOrganizationCommercialTab(
+  tab: OrganizationDetailTab,
+): tab is "bookings" | "invoices" | "payments" | "contracts" {
+  return tab === "bookings" || tab === "invoices" || tab === "payments" || tab === "contracts"
 }

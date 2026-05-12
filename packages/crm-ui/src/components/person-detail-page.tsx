@@ -53,7 +53,7 @@ import {
   User,
   Users,
 } from "lucide-react"
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useState } from "react"
 
 import { useCrmUiI18nOrDefault, useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { formatCrmDate, formatCrmMoney, formatCrmRelative } from "./crm-format.js"
@@ -188,6 +188,18 @@ export function PersonDetailPage({
   const personQuery = usePerson(id)
   const { remove, update } = usePersonMutation()
   const person = personQuery.data
+
+  useEffect(() => {
+    const activeCommercialTabIsAvailable =
+      (activeTab === "bookings" && Boolean(slots?.bookingsTab)) ||
+      (activeTab === "invoices" && Boolean(slots?.invoicesTab)) ||
+      (activeTab === "payments" && Boolean(slots?.paymentsTab)) ||
+      (activeTab === "contracts" && Boolean(slots?.contractsTab))
+
+    if (isPersonCommercialTab(activeTab) && !activeCommercialTabIsAvailable) {
+      setActiveTab("overview")
+    }
+  }, [activeTab, slots?.bookingsTab, slots?.invoicesTab, slots?.paymentsTab, slots?.contractsTab])
 
   const organizationQuery = useOrganization(person?.organizationId ?? undefined, {
     enabled: Boolean(person?.organizationId),
@@ -720,6 +732,12 @@ export function PersonMain({
 function formatTabLabel(defaultLabel: string, slot: PersonCommercialContextTabSlot): ReactNode {
   const label = slot.label ?? defaultLabel
   return typeof slot.count === "number" ? `${label} (${slot.count})` : label
+}
+
+function isPersonCommercialTab(
+  tab: PersonDetailTab,
+): tab is "bookings" | "invoices" | "payments" | "contracts" {
+  return tab === "bookings" || tab === "invoices" || tab === "payments" || tab === "contracts"
 }
 
 export interface MetricCardProps {
