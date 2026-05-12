@@ -90,11 +90,15 @@ describe("Booking list query schema", () => {
     const result = bookingListQuerySchema.parse({
       productId: "prod_abc",
       optionId: "opto_def",
+      supplierId: "supp_mno",
+      productCategoryId: "pcat_pqr",
       personId: "pers_ghi",
       organizationId: "org_jkl",
     })
     expect(result.productId).toBe("prod_abc")
     expect(result.optionId).toBe("opto_def")
+    expect(result.supplierId).toBe("supp_mno")
+    expect(result.productCategoryId).toBe("pcat_pqr")
     expect(result.personId).toBe("pers_ghi")
     expect(result.organizationId).toBe("org_jkl")
   })

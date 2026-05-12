@@ -108,6 +108,8 @@ export const bookingListQuerySchema = z.object({
   search: z.string().optional(),
   productId: z.string().optional(),
   optionId: z.string().optional(),
+  supplierId: z.string().optional(),
+  productCategoryId: z.string().optional(),
   personId: z.string().optional(),
   organizationId: z.string().optional(),
   dateFrom: z.string().optional(),

@@ -5,25 +5,12 @@ import {
   type BookingsListSortDir,
   type BookingsListSortField,
   bookingStatusBadgeVariant,
-  bookingStatuses,
   useBookings,
 } from "@voyantjs/bookings-react"
-import type { ProductRecord } from "@voyantjs/products-react"
-import { useProducts } from "@voyantjs/products-react"
-import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
-import { DateRangePicker } from "@voyantjs/ui/components/date-picker"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@voyantjs/ui/components/select"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import {
   Table,
@@ -33,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { ArrowDown, ArrowUp, ArrowUpDown, ListFilter, Plus, Search, X } from "lucide-react"
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search, X } from "lucide-react"
 import * as React from "react"
 
 import {
@@ -42,13 +29,12 @@ import {
   useBookingsUiMessagesOrDefault,
 } from "../i18n/provider.js"
 import { BookingDialog } from "./booking-dialog.js"
+import { BOOKING_STATUS_ALL, BookingListFiltersPopover } from "./booking-list-filters.js"
 
 export interface BookingListProps {
   pageSize?: number
   onSelectBooking?: (booking: BookingRecord) => void
 }
-
-const STATUS_ALL = "__all__"
 
 type SortableField = Exclude<BookingsListSortField, "createdAt">
 
@@ -66,10 +52,13 @@ const TABLE_COLUMN_COUNT = 7
 
 export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps = {}) {
   const [search, setSearch] = React.useState("")
-  const [status, setStatus] = React.useState<string>(STATUS_ALL)
+  const [status, setStatus] = React.useState<string>(BOOKING_STATUS_ALL)
   const [productId, setProductId] = React.useState<string | null>(null)
-  const [selectedProduct, setSelectedProduct] = React.useState<ProductRecord | null>(null)
-  const [productSearch, setProductSearch] = React.useState("")
+  const [optionId, setOptionId] = React.useState<string | null>(null)
+  const [supplierId, setSupplierId] = React.useState<string | null>(null)
+  const [productCategoryId, setProductCategoryId] = React.useState<string | null>(null)
+  const [personId, setPersonId] = React.useState<string | null>(null)
+  const [organizationId, setOrganizationId] = React.useState<string | null>(null)
   const [dateRange, setDateRange] = React.useState<{
     from: string | null
     to: string | null
@@ -90,8 +79,13 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
 
   const { data, isPending, isFetching, isError } = useBookings({
     search: search || undefined,
-    status: status === STATUS_ALL ? undefined : status,
+    status: status === BOOKING_STATUS_ALL ? undefined : status,
     productId: productId ?? undefined,
+    optionId: optionId ?? undefined,
+    supplierId: supplierId ?? undefined,
+    productCategoryId: productCategoryId ?? undefined,
+    personId: personId ?? undefined,
+    organizationId: organizationId ?? undefined,
     dateFrom: dateRange?.from ?? undefined,
     dateTo: dateRange?.to ?? undefined,
     paxMin: Number.isFinite(paxMinNumber) ? paxMinNumber : undefined,
@@ -101,12 +95,6 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
     limit: pageSize,
     offset,
   })
-
-  const { data: productsData } = useProducts({
-    search: productSearch || undefined,
-    limit: 20,
-  })
-  const products = productsData?.data ?? []
 
   const bookings = data?.data ?? []
   const total = data?.total ?? 0
@@ -141,18 +129,26 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
   }
 
   const activeFilterCount =
-    (status !== STATUS_ALL ? 1 : 0) +
+    (status !== BOOKING_STATUS_ALL ? 1 : 0) +
     (productId !== null ? 1 : 0) +
+    (optionId !== null ? 1 : 0) +
+    (supplierId !== null ? 1 : 0) +
+    (productCategoryId !== null ? 1 : 0) +
+    (personId !== null ? 1 : 0) +
+    (organizationId !== null ? 1 : 0) +
     (dateRange?.from || dateRange?.to ? 1 : 0) +
     (paxMin !== "" || paxMax !== "" ? 1 : 0)
   const hasActiveFilters = activeFilterCount > 0 || search !== ""
 
   const clearFilters = () => {
     setSearch("")
-    setStatus(STATUS_ALL)
+    setStatus(BOOKING_STATUS_ALL)
     setProductId(null)
-    setSelectedProduct(null)
-    setProductSearch("")
+    setOptionId(null)
+    setSupplierId(null)
+    setProductCategoryId(null)
+    setPersonId(null)
+    setOrganizationId(null)
     setDateRange(null)
     setPaxMin("")
     setPaxMax("")
@@ -183,115 +179,32 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
           />
         </div>
 
-        <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
-          <PopoverTrigger
-            render={
-              <Button variant="outline" size="default">
-                <ListFilter className="mr-2 size-4" />
-                {filterMessages.button}
-                {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="ml-2 px-1.5">
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-            }
-          />
-          <PopoverContent align="start" className="w-[22rem] p-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="bookings-filter-status">{filterMessages.statusLabel}</Label>
-                <Select
-                  value={status}
-                  onValueChange={(value) => {
-                    setStatus(value ?? STATUS_ALL)
-                    resetOffset()
-                  }}
-                >
-                  <SelectTrigger id="bookings-filter-status" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={STATUS_ALL}>{filterMessages.statusAll}</SelectItem>
-                    {bookingStatuses.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {statusLabels[value]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="bookings-filter-product">{filterMessages.productLabel}</Label>
-                <AsyncCombobox<ProductRecord>
-                  value={productId}
-                  onChange={(value) => {
-                    setProductId(value)
-                    if (!value) setSelectedProduct(null)
-                    else {
-                      const match = products.find((p) => p.id === value)
-                      if (match) setSelectedProduct(match)
-                    }
-                    resetOffset()
-                  }}
-                  items={products}
-                  selectedItem={selectedProduct}
-                  getKey={(p) => p.id}
-                  getLabel={(p) => p.name}
-                  onSearchChange={setProductSearch}
-                  placeholder={filterMessages.product}
-                  emptyText={filterMessages.productEmpty}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="bookings-filter-date">{filterMessages.dateRangeLabel}</Label>
-                <DateRangePicker
-                  value={dateRange}
-                  onChange={(value) => {
-                    setDateRange(value)
-                    resetOffset()
-                  }}
-                  placeholder={filterMessages.dateRange}
-                  clearable
-                  className="w-full"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label>{filterMessages.paxLabel}</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder={filterMessages.paxMin}
-                    value={paxMin}
-                    onChange={(event) => {
-                      setPaxMin(event.target.value)
-                      resetOffset()
-                    }}
-                    className="w-full"
-                    aria-label={filterMessages.paxMin}
-                  />
-                  <span className="text-muted-foreground">–</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder={filterMessages.paxMax}
-                    value={paxMax}
-                    onChange={(event) => {
-                      setPaxMax(event.target.value)
-                      resetOffset()
-                    }}
-                    className="w-full"
-                    aria-label={filterMessages.paxMax}
-                  />
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <BookingListFiltersPopover
+          open={filterPopoverOpen}
+          onOpenChange={setFilterPopoverOpen}
+          activeFilterCount={activeFilterCount}
+          status={status}
+          onStatusChange={setStatus}
+          productId={productId}
+          onProductIdChange={setProductId}
+          optionId={optionId}
+          onOptionIdChange={setOptionId}
+          supplierId={supplierId}
+          onSupplierIdChange={setSupplierId}
+          productCategoryId={productCategoryId}
+          onProductCategoryIdChange={setProductCategoryId}
+          personId={personId}
+          onPersonIdChange={setPersonId}
+          organizationId={organizationId}
+          onOrganizationIdChange={setOrganizationId}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          paxMin={paxMin}
+          onPaxMinChange={setPaxMin}
+          paxMax={paxMax}
+          onPaxMaxChange={setPaxMax}
+          onFiltersChanged={resetOffset}
+        />
 
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -508,7 +421,7 @@ function BookingTableSkeleton({ rows }: { rows: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, idx) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable
+        // biome-ignore lint/suspicious/noArrayIndexKey: because skeleton placeholders are stable
         <TableRow key={`skeleton-${idx}`}>
           <TableCell>
             <Skeleton className="h-4 w-24" />

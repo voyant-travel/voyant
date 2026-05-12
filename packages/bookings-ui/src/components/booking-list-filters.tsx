@@ -1,0 +1,387 @@
+"use client"
+
+import { type BookingStatus, bookingStatuses } from "@voyantjs/bookings-react"
+import type { OrganizationRecord, PersonRecord } from "@voyantjs/crm-react"
+import { useOrganizations, usePeople } from "@voyantjs/crm-react"
+import type {
+  ProductCategoryRecord,
+  ProductOptionRecord,
+  ProductRecord,
+} from "@voyantjs/products-react"
+import { useProductCategories, useProductOptions, useProducts } from "@voyantjs/products-react"
+import type { Supplier } from "@voyantjs/suppliers-react"
+import { useSuppliers } from "@voyantjs/suppliers-react"
+import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
+import { DateRangePicker } from "@voyantjs/ui/components/date-picker"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
+import { ListFilter } from "lucide-react"
+import * as React from "react"
+
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+
+export const BOOKING_STATUS_ALL = "__all__"
+
+export interface BookingListFiltersPopoverProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  activeFilterCount: number
+  status: string
+  onStatusChange: (status: string) => void
+  productId: string | null
+  onProductIdChange: (productId: string | null) => void
+  optionId: string | null
+  onOptionIdChange: (optionId: string | null) => void
+  supplierId: string | null
+  onSupplierIdChange: (supplierId: string | null) => void
+  productCategoryId: string | null
+  onProductCategoryIdChange: (productCategoryId: string | null) => void
+  personId: string | null
+  onPersonIdChange: (personId: string | null) => void
+  organizationId: string | null
+  onOrganizationIdChange: (organizationId: string | null) => void
+  dateRange: { from: string | null; to: string | null } | null
+  onDateRangeChange: (dateRange: { from: string | null; to: string | null } | null) => void
+  paxMin: string
+  onPaxMinChange: (paxMin: string) => void
+  paxMax: string
+  onPaxMaxChange: (paxMax: string) => void
+  onFiltersChanged: () => void
+}
+
+export function BookingListFiltersPopover({
+  open,
+  onOpenChange,
+  activeFilterCount,
+  status,
+  onStatusChange,
+  productId,
+  onProductIdChange,
+  optionId,
+  onOptionIdChange,
+  supplierId,
+  onSupplierIdChange,
+  productCategoryId,
+  onProductCategoryIdChange,
+  personId,
+  onPersonIdChange,
+  organizationId,
+  onOrganizationIdChange,
+  dateRange,
+  onDateRangeChange,
+  paxMin,
+  onPaxMinChange,
+  paxMax,
+  onPaxMaxChange,
+  onFiltersChanged,
+}: BookingListFiltersPopoverProps) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const filterMessages = messages.bookingList.filters
+  const statusLabels = messages.common.bookingStatusLabels
+
+  const [selectedProduct, setSelectedProduct] = React.useState<ProductRecord | null>(null)
+  const [productSearch, setProductSearch] = React.useState("")
+  const [selectedOption, setSelectedOption] = React.useState<ProductOptionRecord | null>(null)
+  const [selectedSupplier, setSelectedSupplier] = React.useState<Supplier | null>(null)
+  const [supplierSearch, setSupplierSearch] = React.useState("")
+  const [selectedProductCategory, setSelectedProductCategory] =
+    React.useState<ProductCategoryRecord | null>(null)
+  const [productCategorySearch, setProductCategorySearch] = React.useState("")
+  const [selectedPerson, setSelectedPerson] = React.useState<PersonRecord | null>(null)
+  const [personSearch, setPersonSearch] = React.useState("")
+  const [selectedOrganization, setSelectedOrganization] = React.useState<OrganizationRecord | null>(
+    null,
+  )
+  const [organizationSearch, setOrganizationSearch] = React.useState("")
+
+  const { data: productsData } = useProducts({
+    search: productSearch || undefined,
+    limit: 20,
+  })
+  const products = productsData?.data ?? []
+  const { data: optionsData } = useProductOptions({
+    productId: productId ?? undefined,
+    status: "active",
+    limit: 20,
+    enabled: productId !== null,
+  })
+  const productOptions = optionsData?.data ?? []
+  const { data: suppliersData } = useSuppliers({
+    search: supplierSearch || undefined,
+    limit: 20,
+  })
+  const suppliers = suppliersData?.data ?? []
+  const { data: productCategoriesData } = useProductCategories({
+    search: productCategorySearch || undefined,
+    active: true,
+    limit: 20,
+  })
+  const productCategories = productCategoriesData?.data ?? []
+  const { data: peopleData } = usePeople({
+    search: personSearch || undefined,
+    limit: 20,
+  })
+  const people = peopleData?.data ?? []
+  const { data: organizationsData } = useOrganizations({
+    search: organizationSearch || undefined,
+    limit: 20,
+  })
+  const organizations = organizationsData?.data ?? []
+
+  const markChanged = () => onFiltersChanged()
+
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger
+        render={
+          <Button variant="outline" size="default">
+            <ListFilter className="mr-2 size-4" />
+            {filterMessages.button}
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="ml-2 px-1.5">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+        }
+      />
+      <PopoverContent align="start" className="w-[22rem] p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-status">{filterMessages.statusLabel}</Label>
+            <Select
+              value={status}
+              onValueChange={(value) => {
+                onStatusChange(value ?? BOOKING_STATUS_ALL)
+                markChanged()
+              }}
+            >
+              <SelectTrigger id="bookings-filter-status" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={BOOKING_STATUS_ALL}>{filterMessages.statusAll}</SelectItem>
+                {bookingStatuses.map((value: BookingStatus) => (
+                  <SelectItem key={value} value={value}>
+                    {statusLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-product">{filterMessages.productLabel}</Label>
+            <AsyncCombobox<ProductRecord>
+              value={productId}
+              onChange={(value) => {
+                onProductIdChange(value)
+                onOptionIdChange(null)
+                setSelectedOption(null)
+                if (!value) {
+                  setSelectedProduct(null)
+                } else {
+                  const match = products.find((product) => product.id === value)
+                  if (match) setSelectedProduct(match)
+                }
+                markChanged()
+              }}
+              items={products}
+              selectedItem={selectedProduct}
+              getKey={(product) => product.id}
+              getLabel={(product) => product.name}
+              onSearchChange={setProductSearch}
+              placeholder={filterMessages.product}
+              emptyText={filterMessages.productEmpty}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-option">{filterMessages.optionLabel}</Label>
+            <AsyncCombobox<ProductOptionRecord>
+              value={optionId}
+              onChange={(value) => {
+                onOptionIdChange(value)
+                if (!value) setSelectedOption(null)
+                else {
+                  const match = productOptions.find((option) => option.id === value)
+                  if (match) setSelectedOption(match)
+                }
+                markChanged()
+              }}
+              items={productOptions}
+              selectedItem={selectedOption}
+              getKey={(option) => option.id}
+              getLabel={(option) => option.name}
+              getSecondary={(option) => option.code ?? undefined}
+              placeholder={filterMessages.option}
+              emptyText={productId ? filterMessages.optionEmpty : filterMessages.optionNeedsProduct}
+              disabled={productId === null}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="bookings-filter-category">{filterMessages.categoryLabel}</Label>
+              <AsyncCombobox<ProductCategoryRecord>
+                value={productCategoryId}
+                onChange={(value) => {
+                  onProductCategoryIdChange(value)
+                  if (!value) setSelectedProductCategory(null)
+                  else {
+                    const match = productCategories.find((category) => category.id === value)
+                    if (match) setSelectedProductCategory(match)
+                  }
+                  markChanged()
+                }}
+                items={productCategories}
+                selectedItem={selectedProductCategory}
+                getKey={(category) => category.id}
+                getLabel={(category) => category.name}
+                onSearchChange={setProductCategorySearch}
+                placeholder={filterMessages.category}
+                emptyText={filterMessages.categoryEmpty}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="bookings-filter-supplier">{filterMessages.supplierLabel}</Label>
+              <AsyncCombobox<Supplier>
+                value={supplierId}
+                onChange={(value) => {
+                  onSupplierIdChange(value)
+                  if (!value) setSelectedSupplier(null)
+                  else {
+                    const match = suppliers.find((supplier) => supplier.id === value)
+                    if (match) setSelectedSupplier(match)
+                  }
+                  markChanged()
+                }}
+                items={suppliers}
+                selectedItem={selectedSupplier}
+                getKey={(supplier) => supplier.id}
+                getLabel={(supplier) => supplier.name}
+                getSecondary={(supplier) => supplier.type}
+                onSearchChange={setSupplierSearch}
+                placeholder={filterMessages.supplier}
+                emptyText={filterMessages.supplierEmpty}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="bookings-filter-person">{filterMessages.personLabel}</Label>
+              <AsyncCombobox<PersonRecord>
+                value={personId}
+                onChange={(value) => {
+                  onPersonIdChange(value)
+                  if (!value) setSelectedPerson(null)
+                  else {
+                    const match = people.find((person) => person.id === value)
+                    if (match) setSelectedPerson(match)
+                  }
+                  markChanged()
+                }}
+                items={people}
+                selectedItem={selectedPerson}
+                getKey={(person) => person.id}
+                getLabel={formatPersonName}
+                getSecondary={(person) => person.email ?? undefined}
+                onSearchChange={setPersonSearch}
+                placeholder={filterMessages.person}
+                emptyText={filterMessages.personEmpty}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="bookings-filter-organization">
+                {filterMessages.organizationLabel}
+              </Label>
+              <AsyncCombobox<OrganizationRecord>
+                value={organizationId}
+                onChange={(value) => {
+                  onOrganizationIdChange(value)
+                  if (!value) setSelectedOrganization(null)
+                  else {
+                    const match = organizations.find((organization) => organization.id === value)
+                    if (match) setSelectedOrganization(match)
+                  }
+                  markChanged()
+                }}
+                items={organizations}
+                selectedItem={selectedOrganization}
+                getKey={(organization) => organization.id}
+                getLabel={(organization) => organization.name}
+                getSecondary={(organization) => organization.vatNumber ?? undefined}
+                onSearchChange={setOrganizationSearch}
+                placeholder={filterMessages.organization}
+                emptyText={filterMessages.organizationEmpty}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-date">{filterMessages.dateRangeLabel}</Label>
+            <DateRangePicker
+              value={dateRange}
+              onChange={(value) => {
+                onDateRangeChange(value)
+                markChanged()
+              }}
+              placeholder={filterMessages.dateRange}
+              clearable
+              className="w-full"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{filterMessages.paxLabel}</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                placeholder={filterMessages.paxMin}
+                value={paxMin}
+                onChange={(event) => {
+                  onPaxMinChange(event.target.value)
+                  markChanged()
+                }}
+                className="w-full"
+                aria-label={filterMessages.paxMin}
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="number"
+                min={0}
+                placeholder={filterMessages.paxMax}
+                value={paxMax}
+                onChange={(event) => {
+                  onPaxMaxChange(event.target.value)
+                  markChanged()
+                }}
+                className="w-full"
+                aria-label={filterMessages.paxMax}
+              />
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function formatPersonName(person: PersonRecord) {
+  const name = [person.firstName, person.lastName].filter(Boolean).join(" ").trim()
+  return name || person.email || person.id
+}

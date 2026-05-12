@@ -29,6 +29,7 @@ import {
   bookingItemProductDetailsRef,
   bookingProductDetailsRef,
   optionUnitsRef,
+  productCategoryProductsRef,
   productDayServicesRef,
   productDaysRef,
   productItinerariesRef,
@@ -2015,13 +2016,43 @@ export const bookingsService = {
       conditions.push(lte(bookings.pax, query.paxMax))
     }
 
-    if (query.productId || query.optionId) {
+    if (query.productId || query.optionId || query.supplierId || query.productCategoryId) {
       const itemConditions = [eq(bookingItems.bookingId, bookings.id)]
       if (query.productId) {
         itemConditions.push(eq(bookingItems.productId, query.productId))
       }
       if (query.optionId) {
         itemConditions.push(eq(bookingItems.optionId, query.optionId))
+      }
+      if (query.supplierId) {
+        itemConditions.push(
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(productsRef)
+              .where(
+                and(
+                  eq(productsRef.id, bookingItems.productId),
+                  eq(productsRef.supplierId, query.supplierId),
+                ),
+              ),
+          ),
+        )
+      }
+      if (query.productCategoryId) {
+        itemConditions.push(
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(productCategoryProductsRef)
+              .where(
+                and(
+                  eq(productCategoryProductsRef.productId, bookingItems.productId),
+                  eq(productCategoryProductsRef.categoryId, query.productCategoryId),
+                ),
+              ),
+          ),
+        )
       }
       conditions.push(
         exists(
