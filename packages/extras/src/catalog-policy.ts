@@ -11,10 +11,10 @@
  *     (§5.2), embeddings / RAG (Phase 2). Extras are discovered through
  *     the parent's surface, not via standalone catalog browse.
  *
- * Every field below has `reindex: "none"` because extras don't appear in
- * the search index. Snapshot mode is `"on-book"` (or `"never"` for
- * volatile fields) because refunds and audits need to know exactly what
- * extra a customer added.
+ * Most fields below have `reindex: "none"` because extras are primarily
+ * discovered through their parent product. The `thumbnailUrl` card-image
+ * projection is indexed for operator catalog search surfaces that opt
+ * extras into the shared catalog index.
  *
  * Scope of this file:
  *   - The `product_extras` table (extra catalog definitions).
@@ -186,6 +186,20 @@ const EXTRAS_FIELD_POLICY: FieldPolicyInput[] = [
     reindex: "none",
     snapshot: "on-book",
     query: "blob-only",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "thumbnailUrl",
+    class: "merchandisable",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry",
+    snapshot: "on-book",
+    query: "indexed-column",
     localized: false,
     visibility: ["staff", "customer", "partner"],
     editRole: "none",

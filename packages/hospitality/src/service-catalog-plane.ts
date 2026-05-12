@@ -27,10 +27,14 @@ import {
   resolveEntityView,
 } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 
 import { hospitalityCatalogPolicy } from "./catalog-policy.js"
 import { roomTypes } from "./schema-inventory.js"
+import {
+  HOSPITALITY_CONTENT_MARKET_ANY,
+  hospitalitySourcedContentTable,
+} from "./schema-sourced-content.js"
 
 let _registry: FieldPolicyRegistry | undefined
 function getHospitalityRegistry(): FieldPolicyRegistry {
@@ -69,6 +73,7 @@ export function roomTypeRowToProjection(
     ["name", row.name],
     ["description", row.description],
     ["accessibilityNotes", row.accessibilityNotes],
+    ["thumbnailUrl", pickThumbnailUrl(row.metadata)],
 
     // Structural / facets
     ["inventoryMode", row.inventoryMode],
@@ -208,13 +213,96 @@ export function createRoomTypeDocumentBuilder(
   db: AnyDrizzleDb,
   context: { sellerOperatorId: string; sourceKind?: string; sourceRef?: string },
 ): DocumentBuilder {
-  const emitter = createRoomTypeDocumentEmitter(context)
+  const registry = getHospitalityRegistry()
   return async (entityId: string, slice: IndexerSlice): Promise<IndexerDocument | null> => {
     const rows = await db.select().from(roomTypes).where(eq(roomTypes.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
-    return emitter.emit(row, slice)
+    const projection = new Map(
+      roomTypeRowToProjection(row, {
+        sellerOperatorId: context.sellerOperatorId,
+        sourceKind: context.sourceKind,
+        sourceRef: context.sourceRef,
+      }),
+    )
+    const sourcedThumbnailUrl = await fetchSourcedContentThumbnailUrl(db, entityId, slice)
+    if (sourcedThumbnailUrl) {
+      projection.set("thumbnailUrl", sourcedThumbnailUrl)
+    }
+    return buildIndexerDocument(registry, projection, slice, entityId)
   }
+}
+
+async function fetchSourcedContentThumbnailUrl(
+  db: AnyDrizzleDb,
+  entityId: string,
+  slice: IndexerSlice,
+): Promise<string | null> {
+  const rows = await db
+    .select({
+      market: hospitalitySourcedContentTable.market,
+      payload: hospitalitySourcedContentTable.payload,
+    })
+    .from(hospitalitySourcedContentTable)
+    .where(
+      and(
+        eq(hospitalitySourcedContentTable.entity_id, entityId),
+        eq(hospitalitySourcedContentTable.locale, slice.locale),
+      ),
+    )
+
+  const row =
+    rows.find((candidate) => candidate.market === slice.market) ??
+    rows.find((candidate) => candidate.market === HOSPITALITY_CONTENT_MARKET_ANY) ??
+    rows[0]
+  return pickThumbnailUrl(row?.payload)
+}
+
+function pickThumbnailUrl(value: unknown): string | null {
+  const record = asRecord(value)
+  if (!record) return null
+  return (
+    firstString(
+      record.thumbnailUrl,
+      record.heroImageUrl,
+      record.hero_image_url,
+      record.imageUrl,
+      record.image_url,
+    ) ??
+    firstMediaUrl(record.media) ??
+    firstStringFromArray(record.images) ??
+    firstStringFromArray(record.galleryUrls)
+  )
+}
+
+function firstMediaUrl(value: unknown): string | null {
+  if (!Array.isArray(value)) return null
+  for (const item of value) {
+    const media = asRecord(item)
+    if (!media) continue
+    const type = typeof media.type === "string" ? media.type : null
+    if (type && type !== "image") continue
+    const url = firstString(media.url, media.src)
+    if (url) return url
+  }
+  return null
+}
+
+function firstStringFromArray(value: unknown): string | null {
+  if (!Array.isArray(value)) return null
+  return value.find((item): item is string => typeof item === "string" && item.length > 0) ?? null
+}
+
+function firstString(...values: unknown[]): string | null {
+  return (
+    values.find((value): value is string => typeof value === "string" && value.length > 0) ?? null
+  )
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
 }
 
 export type {

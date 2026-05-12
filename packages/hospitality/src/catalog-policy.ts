@@ -196,6 +196,20 @@ const HOSPITALITY_FIELD_POLICY: FieldPolicyInput[] = [
     overrideFriction: "confirm",
     sourceFreshness: "sync",
   },
+  {
+    path: "thumbnailUrl",
+    class: "merchandisable",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
 
   // ── Structural / facet-affecting ───────────────────────────────────────
   {

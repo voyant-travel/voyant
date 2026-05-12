@@ -67,6 +67,7 @@ export function charterProductRowToProjection(
     ["description", row.description],
     ["shortDescription", row.shortDescription],
     ["heroImageUrl", row.heroImageUrl],
+    ["thumbnailUrl", row.heroImageUrl],
     ["mapImageUrl", row.mapImageUrl],
 
     // Structural
