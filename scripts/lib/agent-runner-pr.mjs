@@ -161,7 +161,59 @@ export function readPullRequestStatus({ prReference, repository, workspace }) {
     ],
     { cwd: workspace },
   )
-  return JSON.parse(payload)
+  const pr = JSON.parse(payload)
+  const reviewThreads = readPullRequestReviewThreads({
+    prNumber: pr.number,
+    repository,
+    workspace,
+  })
+
+  return {
+    ...pr,
+    reviewThreads,
+  }
+}
+
+export function readPullRequestReviewThreads({ prNumber, repository, workspace }) {
+  const [owner, repo] = String(repository).split("/")
+  if (!owner || !repo) {
+    fail(`invalid repository: ${repository}`)
+  }
+
+  const nodes = []
+  let after
+  for (let page = 0; page < 100; page += 1) {
+    const payload = runCommand(
+      "gh",
+      [
+        "api",
+        "graphql",
+        "-f",
+        `query=${reviewThreadsQuery()}`,
+        "-f",
+        `owner=${owner}`,
+        "-f",
+        `repo=${repo}`,
+        "-F",
+        `number=${String(prNumber)}`,
+        ...(after ? ["-f", `after=${after}`] : []),
+      ],
+      { cwd: workspace },
+    )
+    const connection = reviewThreadConnection(JSON.parse(payload))
+    nodes.push(...connection.nodes)
+
+    if (!connection.pageInfo.hasNextPage) {
+      return summarizeReviewThreadNodes(nodes)
+    }
+
+    if (!connection.pageInfo.endCursor) {
+      fail(`PR #${String(prNumber)} review thread pagination is missing an end cursor`)
+    }
+    after = connection.pageInfo.endCursor
+  }
+
+  fail(`PR #${String(prNumber)} review thread pagination exceeded 100 pages`)
 }
 
 export function evaluatePullRequestCompletion(pr) {
@@ -180,6 +232,7 @@ export function evaluatePullRequestCompletion(pr) {
 
 export function evaluatePullRequestGate(pr) {
   const checks = summarizeChecks(pr.statusCheckRollup ?? [])
+  const reviewThreads = unresolvedReviewThreads(pr.reviewThreads)
 
   if (pr.state === "MERGED") {
     return {
@@ -206,6 +259,15 @@ export function evaluatePullRequestGate(pr) {
       blockedBy: "PR changes requested",
       mergeReady: false,
       reason: "review changes requested",
+    }
+  }
+
+  if (reviewThreads.length > 0) {
+    return {
+      agentState: "Changes Requested",
+      blockedBy: `Unresolved PR review threads: ${String(reviewThreads.length)}`,
+      mergeReady: false,
+      reason: "unresolved review threads",
     }
   }
 
@@ -312,6 +374,85 @@ export function summarizeChecks(checks) {
   }
 
   return summary
+}
+
+export function summarizeReviewThreads(payload) {
+  return summarizeReviewThreadNodes(reviewThreadConnection(payload).nodes)
+}
+
+function reviewThreadConnection(payload) {
+  const connection = payload?.data?.repository?.pullRequest?.reviewThreads
+  const nodes = connection?.nodes
+  if (!Array.isArray(nodes)) {
+    return {
+      nodes: [],
+      pageInfo: {
+        endCursor: null,
+        hasNextPage: false,
+      },
+    }
+  }
+
+  return {
+    nodes,
+    pageInfo: {
+      endCursor: connection.pageInfo?.endCursor ?? null,
+      hasNextPage: Boolean(connection.pageInfo?.hasNextPage),
+    },
+  }
+}
+
+function summarizeReviewThreadNodes(nodes) {
+  const unresolved = nodes
+    .filter((thread) => !thread.isResolved && !thread.isOutdated)
+    .map((thread) => {
+      const comment = thread.comments?.nodes?.[0]
+      return {
+        author: comment?.author?.login ?? null,
+        body: comment?.body ?? null,
+        line: thread.line ?? null,
+        path: thread.path ?? null,
+      }
+    })
+
+  return {
+    unresolved,
+    unresolvedCount: unresolved.length,
+  }
+}
+
+function unresolvedReviewThreads(reviewThreads) {
+  if (Array.isArray(reviewThreads?.unresolved)) return reviewThreads.unresolved
+  return []
+}
+
+function reviewThreadsQuery() {
+  return `query($owner: String!, $repo: String!, $number: Int!, $after: String) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      reviewThreads(first: 100, after: $after) {
+        nodes {
+          isOutdated
+          isResolved
+          line
+          path
+          comments(first: 1) {
+            nodes {
+              author {
+                login
+              }
+              body
+            }
+          }
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+      }
+    }
+  }
+}`
 }
 
 function formatEvidence(evidenceReference, evidenceBody) {
