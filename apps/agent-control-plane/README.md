@@ -123,6 +123,18 @@ AGENT_CONTROL_PLANE_TOKEN=... \
 pnpm agent:queue:finish-dispatch -- --intent intent_579 --holder supervisor:local --status completed
 ```
 
+Run the full local supervisor path for one dispatchable item:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:run-dispatch-intent -- --repo voyantjs/voyant --holder supervisor:local --yes
+```
+
+This leases the next intent, validates that the leased command is an allowed
+`pnpm agent:queue:*` lifecycle command, executes it locally, then records
+`completed` or `failed` on the dispatch intent.
+
 ## Optional R2 Storage
 
 Bind an R2 bucket as `AGENT_TICK_SNAPSHOTS` to keep the latest accepted tick
