@@ -7,6 +7,9 @@ import { describe, it } from "node:test"
 import {
   appendAgentRunnerEvent,
   defaultEventLogPath,
+  eventIssueDetails,
+  filterAgentRunnerEvents,
+  formatAgentRunnerEventSummary,
   issueEventDetails,
   readAgentRunnerEvents,
   recommendationEventDetails,
@@ -139,6 +142,62 @@ describe("agent runner event helpers", () => {
       repository: "voyantjs/voyant",
     })
     assert.deepEqual(issueEventDetails(item.issue), issueEventDetails(item))
+  })
+
+  it("formats and filters timeline events by issue, repository, and type", () => {
+    const events = [
+      {
+        timestamp: "2026-05-10T12:00:00.000Z",
+        type: "dispatch.started",
+        repository: "voyantjs/voyant",
+        recommendation: {
+          action: "start",
+          issue: {
+            number: 579,
+            title: "Test agent project intake workflow",
+            url: "https://github.com/voyantjs/voyant/issues/579",
+            repository: "voyantjs/voyant",
+          },
+        },
+      },
+      {
+        timestamp: "2026-05-10T12:01:00.000Z",
+        type: "claim.completed",
+        repository: "voyantjs/voyant",
+        issue: {
+          number: 580,
+          title: "Other task",
+          url: "https://github.com/voyantjs/voyant/issues/580",
+          repository: "voyantjs/voyant",
+        },
+      },
+      {
+        timestamp: "2026-05-10T12:02:00.000Z",
+        type: "claim.completed",
+        repository: "voyantjs/other",
+        issue: {
+          number: 579,
+          title: "Other repo task",
+          url: "https://github.com/voyantjs/other/issues/579",
+          repository: "voyantjs/other",
+        },
+      },
+    ]
+
+    assert.deepEqual(eventIssueDetails(events[0]), events[0].recommendation.issue)
+    assert.deepEqual(eventIssueDetails(events[1]), events[1].issue)
+    assert.equal(
+      formatAgentRunnerEventSummary(events[0]),
+      "2026-05-10T12:00:00.000Z dispatch.started #579 start",
+    )
+    assert.deepEqual(
+      filterAgentRunnerEvents(events, {
+        issueNumber: 579,
+        repository: "voyantjs/voyant",
+        type: "dispatch.started",
+      }),
+      [events[0]],
+    )
   })
 
   it("rejects events without a type", () => {

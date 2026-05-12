@@ -74,6 +74,54 @@ export function issueEventDetails(item) {
   }
 }
 
+export function eventIssueDetails(event) {
+  return event.issue ?? event.recommendation?.issue ?? null
+}
+
+export function filterAgentRunnerEvents(events, { issueNumber, repository, type } = {}) {
+  const normalizedIssueNumber = normalizeIssueNumberFilter(issueNumber)
+  return events.filter((event) => {
+    if (type && event.type !== type) return false
+    if (repository && eventRepository(event) !== repository) return false
+    if (
+      normalizedIssueNumber !== undefined &&
+      eventIssueDetails(event)?.number !== normalizedIssueNumber
+    ) {
+      return false
+    }
+    return true
+  })
+}
+
+export function formatAgentRunnerEventSummary(event) {
+  const issue = eventIssueDetails(event)
+  const action = event.recommendation?.action
+  const status = event.status === undefined ? null : `status ${event.status}`
+  return [
+    event.timestamp ?? "no timestamp",
+    event.type,
+    issue?.number ? `#${issue.number}` : null,
+    action ?? null,
+    status,
+  ]
+    .filter(Boolean)
+    .join(" ")
+}
+
+function eventRepository(event) {
+  return event.repository ?? eventIssueDetails(event)?.repository
+}
+
+function normalizeIssueNumberFilter(issueNumber) {
+  if (issueNumber === undefined) return undefined
+
+  const normalized = Number(issueNumber)
+  if (!Number.isInteger(normalized) || normalized < 1) {
+    throw new Error(`invalid issue number: ${String(issueNumber)}`)
+  }
+  return normalized
+}
+
 function normalizeEvent(event, { now }) {
   if (!event?.type) {
     throw new Error("agent runner event requires a type")

@@ -1149,9 +1149,11 @@ also refresh a PR description from the current evidence packet with
 explicit so maintainer-edited PR descriptions are not overwritten by routine
 state polling. Dispatch, loop, and core lifecycle mutations write JSONL audit
 events, and status can tail recent events so a maintainer or future dashboard
-can see the last supervised actions without opening raw log files. Dispatch,
-loop, and control-plane planning can pass the same option through to `sync-pr`
-when the runner intentionally wants that refresh.
+can see the last supervised actions without opening raw log files. A filterable
+`pnpm agent:queue:events` timeline supports issue-, repository-, and
+event-type-specific debugging before a full dashboard exists. Dispatch, loop,
+and control-plane planning can pass the same event-log option through to
+`sync-pr` when the runner intentionally wants that refresh.
 
 Verification:
 
