@@ -75,13 +75,6 @@ export const productsUiRo = {
       deleteItinerary: "Sterge itinerarul",
       addDay: "Adauga zi",
     },
-    tabs: {
-      overview: "Prezentare",
-      media: "Media",
-      itinerary: "Itinerar",
-      options: "Optiuni",
-      versions: "Versiuni",
-    },
     sections: {
       overview: {
         title: "Prezentare",
@@ -384,21 +377,26 @@ export const productsUiRo = {
     actions: {
       upload: "Incarca",
       addMedia: "Adauga media",
+      reorder: "Reordoneaza",
+      saveOrder: "Salveaza ordinea",
+      cancelReorder: "Anuleaza",
+      drag: "Trage",
       markCover: "Seteaza cover",
+      openPreview: "Deschide previzualizarea media",
+      closePreview: "Inchide previzualizarea",
+      previousMedia: "Media precedenta",
+      nextMedia: "Media urmatoare",
+      openFile: "Deschide fisierul",
       edit: "Editeaza",
       delete: "Sterge",
     },
     loadingError: "Incarcarea media a esuat.",
     empty: "Nu exista inca elemente media configurate.",
+    itemCount: "Elemente media: {count}",
     uploadFailed: "Incarcarea media a esuat.",
     deleteConfirm: "Stergi acest element media?",
+    viewerTitle: "Previzualizare media",
     coverBadge: "Cover",
-    columns: {
-      name: "Nume",
-      type: "Tip",
-      url: "URL",
-      sort: "Ordine",
-    },
   },
   productDayDialog: {
     titles: {

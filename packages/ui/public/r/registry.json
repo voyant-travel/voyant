@@ -664,14 +664,13 @@
       "name": "voyant-products-product-media-section",
       "type": "registry:component",
       "title": "Product Media Section",
-      "description": "List and manage product or day-level media, including cover selection.",
+      "description": "Gallery for product or day-level media, including cover selection, preview, and reorder.",
       "dependencies": ["lucide-react", "@voyantjs/products-react"],
       "registryDependencies": [
         "badge",
         "button",
         "card",
         "dialog",
-        "table",
         "voyant-products-product-media-dialog"
       ],
       "files": [

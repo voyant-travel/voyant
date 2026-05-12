@@ -37,7 +37,6 @@ export {
   ProductDetailPage,
   type ProductDetailPageProps,
   type ProductDetailPageSlots,
-  type ProductDetailPageTab,
   ProductDetailSidebar,
   type ProductDetailSidebarProps,
   ProductItinerarySection,

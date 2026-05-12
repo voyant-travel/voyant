@@ -66,13 +66,6 @@ export type ProductsUiMessages = {
       deleteItinerary: string
       addDay: string
     }
-    tabs: {
-      overview: string
-      media: string
-      itinerary: string
-      options: string
-      versions: string
-    }
     sections: {
       overview: {
         title: string
@@ -373,21 +366,26 @@ export type ProductsUiMessages = {
     actions: {
       upload: string
       addMedia: string
+      reorder: string
+      saveOrder: string
+      cancelReorder: string
+      drag: string
       markCover: string
+      openPreview: string
+      closePreview: string
+      previousMedia: string
+      nextMedia: string
+      openFile: string
       edit: string
       delete: string
     }
     loadingError: string
     empty: string
+    itemCount: string
     uploadFailed: string
     deleteConfirm: string
+    viewerTitle: string
     coverBadge: string
-    columns: {
-      name: string
-      type: string
-      url: string
-      sort: string
-    }
   }
   productDayDialog: {
     titles: {
