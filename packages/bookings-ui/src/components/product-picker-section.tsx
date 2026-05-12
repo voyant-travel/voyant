@@ -1,8 +1,12 @@
 "use client"
 
-import { useProductOptions, useProducts } from "@voyantjs/products-react"
 import {
-  Input,
+  type ProductRecord,
+  useProduct,
+  useProductOptions,
+  useProducts,
+} from "@voyantjs/products-react"
+import {
   Label,
   Select,
   SelectContent,
@@ -10,6 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
+import {
+  Combobox,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
@@ -58,7 +71,27 @@ export function ProductPickerSection({
     limit: 20,
     enabled: enabled && !lockProduct,
   })
-  const products = productsData?.data ?? []
+  const selectedProductQuery = useProduct(value.productId || undefined, {
+    enabled: enabled && Boolean(value.productId),
+  })
+
+  const products = React.useMemo(() => {
+    const map = new Map<string, ProductRecord>()
+    for (const product of productsData?.data ?? []) map.set(product.id, product)
+    if (selectedProductQuery.data) map.set(selectedProductQuery.data.id, selectedProductQuery.data)
+    return Array.from(map.values())
+  }, [productsData?.data, selectedProductQuery.data])
+
+  const productMap = React.useMemo(
+    () => new Map(products.map((product) => [product.id, product])),
+    [products],
+  )
+  const selectedProductLabel = value.productId ? (productMap.get(value.productId)?.name ?? "") : ""
+  const [productInputValue, setProductInputValue] = React.useState(selectedProductLabel)
+
+  React.useEffect(() => {
+    if (selectedProductLabel) setProductInputValue(selectedProductLabel)
+  }, [selectedProductLabel])
 
   const { data: optionsData } = useProductOptions({
     productId: value.productId || undefined,
@@ -74,27 +107,53 @@ export function ProductPickerSection({
           <Label>
             {merged.product} <span className="text-destructive">*</span>
           </Label>
-          <Input
-            placeholder={merged.productSearchPlaceholder}
-            value={productSearch}
-            onChange={(e) => setProductSearch(e.target.value)}
-          />
-          <Select
-            items={products.map((p) => ({ label: p.name, value: p.id }))}
-            value={value.productId}
-            onValueChange={(v) => onChange({ productId: v ?? "", optionId: null })}
+          <Combobox
+            items={products.map((product) => product.id)}
+            value={value.productId || null}
+            inputValue={productInputValue}
+            autoHighlight
+            disabled={!enabled}
+            itemToStringValue={(id) => productMap.get(id as string)?.name ?? ""}
+            onInputValueChange={(next) => {
+              setProductInputValue(next)
+              setProductSearch(next)
+              if (!next) onChange({ productId: "", optionId: null })
+            }}
+            onValueChange={(next) => {
+              const productId = (next as string | null) ?? ""
+              onChange({ productId, optionId: null })
+              setProductInputValue(productId ? (productMap.get(productId)?.name ?? "") : "")
+            }}
           >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={merged.productSelectPlaceholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {products.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <ComboboxInput
+              placeholder={merged.productSearchPlaceholder}
+              showClear={!!value.productId}
+            />
+            <ComboboxContent>
+              <ComboboxEmpty>{merged.productEmpty}</ComboboxEmpty>
+              <ComboboxList>
+                <ComboboxCollection>
+                  {(id) => {
+                    const product = productMap.get(id as string)
+                    if (!product) return null
+                    return (
+                      <ComboboxItem key={product.id} value={product.id}>
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate font-medium">{product.name}</span>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {product.sellCurrency}
+                            {product.sellAmountCents != null
+                              ? ` · ${product.sellAmountCents / 100}`
+                              : ""}
+                          </span>
+                        </div>
+                      </ComboboxItem>
+                    )
+                  }}
+                </ComboboxCollection>
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
       )}
 
