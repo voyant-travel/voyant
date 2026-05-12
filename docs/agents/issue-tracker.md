@@ -388,6 +388,10 @@ maintainer merges and mark the item done.
 The Cloudflare-ready control-plane app can accept this JSON at
 `POST /api/tick-snapshots` for validation and summary counts, but that endpoint
 is non-persistent and does not dispatch work.
+Use `pnpm agent:queue:submit-tick` with `AGENT_CONTROL_PLANE_URL` and
+`AGENT_CONTROL_PLANE_TOKEN` to submit a fresh snapshot. For replayable
+supervisor tests, write `pnpm agent:queue:tick -- --json` to a file and submit
+it with `pnpm agent:queue:submit-tick -- --input <path>`.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
 CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
 recommend `remote-bootstrap` so dispatch can clone/fetch the repository and

@@ -1315,6 +1315,10 @@ Verification:
   `VOYANT_AGENT_R2_PUBLIC_BASE_URL`. The public base URL should be a durable
   custom domain or authenticated artifact proxy URL prefix, not a temporary
   signed URL.
+- The runner can submit fresh or saved tick snapshots to the control-plane
+  app with `pnpm agent:queue:submit-tick`, using `AGENT_CONTROL_PLANE_URL` and
+  `AGENT_CONTROL_PLANE_TOKEN`. This keeps the Cloudflare endpoint exercised
+  without adding storage or automatic dispatch yet.
 
 ## Open Questions
 
