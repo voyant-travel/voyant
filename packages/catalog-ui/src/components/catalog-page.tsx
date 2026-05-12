@@ -7,7 +7,11 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import type { ReactNode } from "react"
 
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
-import type { CatalogDetailEnrichment } from "./catalog-detail-sheet.js"
+import type {
+  CatalogDetailEnrichment,
+  CatalogDetailRenderSlot,
+  CatalogDetailSheetProps,
+} from "./catalog-detail-sheet.js"
 import {
   type CatalogFilterField,
   CatalogSearchPage,
@@ -34,6 +38,12 @@ export interface CatalogPageProps {
   ) => void
   onOpenProductEditor?: (hit: CatalogSearchHit) => void
   onLoadProductDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  detailSheetWidth?: CatalogDetailSheetProps["width"]
+  detailHeaderExtras?: CatalogDetailSheetProps["headerExtras"]
+  renderDetailBrochure?: CatalogDetailRenderSlot
+  renderDetailMedia?: CatalogDetailRenderSlot
+  renderDetailItineraryDay?: CatalogDetailSheetProps["renderItineraryDay"]
+  renderDetailExtraSections?: CatalogDetailRenderSlot
   title?: ReactNode
   className?: string
 }
@@ -48,6 +58,12 @@ export function CatalogPage({
   onBookDeparture,
   onOpenProductEditor,
   onLoadProductDetail,
+  detailSheetWidth,
+  detailHeaderExtras,
+  renderDetailBrochure,
+  renderDetailMedia,
+  renderDetailItineraryDay,
+  renderDetailExtraSections,
   title,
   className,
 }: CatalogPageProps) {
@@ -151,6 +167,12 @@ export function CatalogPage({
         onQueryChange={(q) => onQueryChange?.(q)}
         page={search.page ?? 1}
         onPageChange={(p) => onPageChange?.(p)}
+        detailSheetWidth={detailSheetWidth}
+        detailHeaderExtras={detailHeaderExtras}
+        renderDetailBrochure={renderDetailBrochure}
+        renderDetailMedia={renderDetailMedia}
+        renderDetailItineraryDay={renderDetailItineraryDay}
+        renderDetailExtraSections={renderDetailExtraSections}
         title={
           title ?? (
             <div>

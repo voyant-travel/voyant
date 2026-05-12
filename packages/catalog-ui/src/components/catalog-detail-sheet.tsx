@@ -63,12 +63,37 @@ export interface CatalogDetailEnrichment {
   machineTranslated?: boolean
 }
 
+export type CatalogDetailSheetWidth =
+  | "md"
+  | "lg"
+  | "xl"
+  | "2xl"
+  | "3xl"
+  | "4xl"
+  | "5xl"
+  | "6xl"
+  | string
+
+export type CatalogDetailItineraryDay = NonNullable<CatalogDetailEnrichment["itinerary"]>[number]
+
+export type CatalogDetailRenderSlot = (
+  hit: CatalogSearchHit,
+  enrichment: CatalogDetailEnrichment | null,
+) => ReactNode
+
 export interface CatalogDetailSheetProps {
   hit: CatalogSearchHit | null
   onOpenChange: (open: boolean) => void
   formatters?: Record<string, (value: unknown) => ReactNode>
   actions?: CatalogDetailAction[]
   imageField?: string
+  /**
+   * Sheet max-width token or class name. Defaults to `5xl` so rich catalog
+   * details can use two columns on wide operator screens.
+   */
+  width?: CatalogDetailSheetWidth
+  /** Secondary header content such as print/download icon buttons. */
+  headerExtras?: ReactNode | CatalogDetailRenderSlot
   /**
    * Called once when the sheet opens for a hit. The result is rendered
    * in dedicated sections (description, highlights, itinerary, media,
@@ -85,6 +110,18 @@ export interface CatalogDetailSheetProps {
     hit: CatalogSearchHit,
     departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
   ) => void
+  /** Dedicated brochure/print section rendered above media. */
+  renderBrochure?: CatalogDetailRenderSlot
+  /** Consumer-provided media rendering, replacing the default thumbnail grid. */
+  renderMedia?: CatalogDetailRenderSlot
+  /** Consumer-provided itinerary day renderer for richer day cards. */
+  renderItineraryDay?: (
+    day: CatalogDetailItineraryDay,
+    hit: CatalogSearchHit,
+    enrichment: CatalogDetailEnrichment,
+  ) => ReactNode
+  /** Additional consumer sections rendered above the footer actions. */
+  renderExtraSections?: CatalogDetailRenderSlot
 }
 
 const HIDDEN_FIELDS = new Set([
@@ -113,8 +150,14 @@ export function CatalogDetailSheet({
   formatters,
   actions,
   imageField = "thumbnailUrl",
+  width = "5xl",
+  headerExtras,
   onLoadDetail,
   onBookDeparture,
+  renderBrochure,
+  renderMedia,
+  renderItineraryDay,
+  renderExtraSections,
 }: CatalogDetailSheetProps) {
   const open = hit != null
   const fields = hit?.document.fields ?? {}
@@ -158,6 +201,15 @@ export function CatalogDetailSheet({
   const shortDescription =
     stringOr(enrichment?.shortDescription, null) ?? stringOr(fields.shortDescription, null)
   const imageUrl = stringOr(enrichment?.heroImageUrl, null) ?? stringOr(fields[imageField], null)
+  const resolvedHeaderExtras =
+    hit && headerExtras
+      ? typeof headerExtras === "function"
+        ? headerExtras(hit, enrichment)
+        : headerExtras
+      : null
+  const brochureContent = hit && renderBrochure ? renderBrochure(hit, enrichment) : null
+  const mediaContent = hit && renderMedia ? renderMedia(hit, enrichment) : null
+  const extraSections = hit && renderExtraSections ? renderExtraSections(hit, enrichment) : null
 
   const allEntries = Object.entries(fields).filter(([k]) => !HIDDEN_FIELDS.has(k))
   const arrayEntries: Array<[string, unknown]> = []
@@ -171,297 +223,269 @@ export function CatalogDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full p-0 max-w-3xl!">
+      <SheetContent className={cn("w-full p-0", sheetWidthClass(width))}>
         <div className="flex h-full flex-col">
           {/* Header */}
           <SheetHeader className="border-b bg-muted/20 px-6 py-5">
-            <div className="flex items-start gap-4">
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={name}
-                  className="h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-border"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 text-lg font-medium text-white ring-1 ring-border">
-                  {initialsOf(name)}
-                </div>
-              )}
-              <div className="flex min-w-0 flex-1 flex-col gap-1.5 pr-6">
-                <SheetTitle className="text-base leading-snug">{name}</SheetTitle>
-                <div className="flex flex-wrap items-center gap-2">
-                  {status && (
-                    <Badge
-                      variant={status === "active" || status === "live" ? "default" : "secondary"}
-                      className="capitalize"
-                    >
-                      {status}
-                    </Badge>
-                  )}
-                  {hit?.id && (
-                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                      {hit.id}
-                    </code>
-                  )}
-                  {enrichment?.servedLocale && (
-                    <Badge variant="outline" className="font-normal">
-                      {enrichment.servedLocale}
-                    </Badge>
-                  )}
-                  {enrichment?.matchKind && enrichment.matchKind !== "exact" && (
-                    <Badge variant="outline" className="font-normal">
-                      match: {enrichment.matchKind}
-                    </Badge>
-                  )}
-                  {enrichment?.source && (
-                    <Badge
-                      variant={enrichment.source === "synthesized" ? "outline" : "secondary"}
-                      className="font-normal"
-                    >
-                      {enrichment.source}
-                    </Badge>
-                  )}
-                  {enrichment?.servedStale && (
-                    <Badge variant="outline" className="font-normal">
-                      stale
-                    </Badge>
-                  )}
-                  {enrichment?.machineTranslated && (
-                    <Badge variant="outline" className="font-normal">
-                      MT
-                    </Badge>
-                  )}
+            <div className="flex items-start justify-between gap-4 pr-8">
+              <div className="flex min-w-0 items-start gap-4">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={name}
+                    className="h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-border"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 text-lg font-medium text-white ring-1 ring-border">
+                    {initialsOf(name)}
+                  </div>
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <SheetTitle className="text-base leading-snug">{name}</SheetTitle>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {status && (
+                      <Badge
+                        variant={status === "active" || status === "live" ? "default" : "secondary"}
+                        className="capitalize"
+                      >
+                        {status}
+                      </Badge>
+                    )}
+                    {hit?.id && (
+                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                        {hit.id}
+                      </code>
+                    )}
+                    {enrichment?.servedLocale && (
+                      <Badge variant="outline" className="font-normal">
+                        {enrichment.servedLocale}
+                      </Badge>
+                    )}
+                    {enrichment?.matchKind && enrichment.matchKind !== "exact" && (
+                      <Badge variant="outline" className="font-normal">
+                        match: {enrichment.matchKind}
+                      </Badge>
+                    )}
+                    {enrichment?.source && (
+                      <Badge
+                        variant={enrichment.source === "synthesized" ? "outline" : "secondary"}
+                        className="font-normal"
+                      >
+                        {enrichment.source}
+                      </Badge>
+                    )}
+                    {enrichment?.servedStale && (
+                      <Badge variant="outline" className="font-normal">
+                        stale
+                      </Badge>
+                    )}
+                    {enrichment?.machineTranslated && (
+                      <Badge variant="outline" className="font-normal">
+                        MT
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
+              {resolvedHeaderExtras && (
+                <div className="flex shrink-0 items-center gap-2">{resolvedHeaderExtras}</div>
+              )}
             </div>
           </SheetHeader>
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-6 py-5">
-            <div className="flex flex-col gap-6">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
               {enrichmentLoading && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground xl:col-span-2">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   Loading full content…
                 </div>
               )}
 
-              {(shortDescription || description) && (
-                <Section>
-                  {shortDescription && (
-                    <p className="text-sm font-medium leading-relaxed text-foreground">
-                      {shortDescription}
-                    </p>
-                  )}
-                  {description && (
-                    <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                      {description}
-                    </p>
-                  )}
-                </Section>
-              )}
-
-              {enrichment?.highlights && enrichment.highlights.length > 0 && (
-                <Section title="Highlights">
-                  <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
-                    {enrichment.highlights.map((h) => (
-                      <li key={h}>{h}</li>
-                    ))}
-                  </ul>
-                </Section>
-              )}
-
-              {enrichment?.supplier && (
-                <Section title="Supplier">
-                  <p className="text-sm text-foreground">{enrichment.supplier}</p>
-                </Section>
-              )}
-
-              {enrichment?.itinerary && enrichment.itinerary.length > 0 && (
-                <Section title="Itinerary">
-                  <ol className="space-y-2">
-                    {enrichment.itinerary.map((d) => (
-                      <li
-                        key={d.dayNumber}
-                        className="rounded-md border border-border bg-muted/10 px-3 py-2 text-sm"
-                      >
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            Day {d.dayNumber}
-                          </span>
-                          {d.title && <span className="font-medium">{d.title}</span>}
-                          {d.location && (
-                            <span className="text-xs text-muted-foreground">· {d.location}</span>
-                          )}
-                        </div>
-                        {d.description && (
-                          <p className="mt-1 text-xs text-muted-foreground">{d.description}</p>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                </Section>
-              )}
-
-              {enrichment?.departures && enrichment.departures.length > 0 && (
-                <Section title="Departures">
-                  <ul className="divide-y rounded-md border">
-                    {enrichment.departures.slice(0, 12).map((d) => {
-                      const soldOut =
-                        d.status === "sold_out" ||
-                        d.status === "closed" ||
-                        d.status === "cancelled" ||
-                        (typeof d.remaining === "number" && d.remaining <= 0)
-                      const availabilityLabel = formatDepartureAvailability(d)
-                      return (
-                        <li
-                          key={d.id}
-                          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2 text-sm"
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{formatDeparture(d.startsAt)}</span>
-                            {d.endsAt && (
-                              <span className="text-xs text-muted-foreground">
-                                ends {formatDeparture(d.endsAt)}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {availabilityLabel && (
-                              <span className="text-xs text-muted-foreground">
-                                {availabilityLabel}
-                              </span>
-                            )}
-                            {typeof d.lowestPriceCents === "number" && (
-                              <span className="font-medium tabular-nums">
-                                {formatPriceCents(d.lowestPriceCents, d.currency)}
-                              </span>
-                            )}
-                            {d.status && (
-                              <Badge variant="outline" className="font-normal">
-                                {d.status}
-                              </Badge>
-                            )}
-                            {onBookDeparture && hit && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={soldOut}
-                                onClick={() => onBookDeparture(hit, d)}
-                              >
-                                Book
-                              </Button>
-                            )}
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </Section>
-              )}
-
-              {enrichment?.media && enrichment.media.length > 0 && (
-                <Section title="Media">
-                  <div className="grid grid-cols-3 gap-2">
-                    {enrichment.media.slice(0, 9).map((m, idx) =>
-                      m.type === "image" || m.type == null ? (
-                        <a
-                          // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only and ordering is stable per response
-                          key={`${m.url}-${idx}`}
-                          href={m.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block aspect-square overflow-hidden rounded-md ring-1 ring-border hover:ring-primary"
-                        >
-                          <img
-                            src={m.url}
-                            alt={m.caption ?? ""}
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        </a>
-                      ) : (
-                        <a
-                          // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only
-                          key={`${m.url}-${idx}`}
-                          href={m.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex aspect-square items-center justify-center rounded-md bg-muted text-xs text-muted-foreground ring-1 ring-border hover:ring-primary"
-                        >
-                          {m.type}
-                        </a>
-                      ),
+              <div className="flex min-w-0 flex-col gap-6">
+                {(shortDescription || description) && (
+                  <Section>
+                    {shortDescription && (
+                      <p className="text-sm font-medium leading-relaxed text-foreground">
+                        {shortDescription}
+                      </p>
                     )}
-                  </div>
-                </Section>
-              )}
+                    {description && (
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                        {description}
+                      </p>
+                    )}
+                  </Section>
+                )}
 
-              {enrichment?.options && enrichment.options.length > 0 && (
-                <Section title="Options">
-                  <ul className="space-y-1.5 text-sm">
-                    {enrichment.options.map((o) => (
-                      <li key={o.id} className="rounded-md border border-border px-3 py-2">
-                        <div className="font-medium">{o.name}</div>
-                        {o.description && (
-                          <div className="text-xs text-muted-foreground">{o.description}</div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </Section>
-              )}
+                {enrichment?.highlights && enrichment.highlights.length > 0 && (
+                  <Section title="Highlights">
+                    <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
+                      {enrichment.highlights.map((h) => (
+                        <li key={h}>{h}</li>
+                      ))}
+                    </ul>
+                  </Section>
+                )}
 
-              {enrichment?.policies && enrichment.policies.length > 0 && (
-                <Section title="Policies & terms">
-                  <dl className="space-y-2 text-sm">
-                    {enrichment.policies.map((p, idx) => (
-                      // biome-ignore lint/suspicious/noArrayIndexKey: ordering is stable per render
-                      <div key={`${p.kind}-${idx}`}>
-                        <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          {p.kind.replace(/_/g, " ")}
-                        </dt>
-                        <dd className="mt-0.5 whitespace-pre-line text-muted-foreground">
-                          {p.body}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </Section>
-              )}
+                {enrichment?.supplier && (
+                  <Section title="Supplier">
+                    <p className="text-sm text-foreground">{enrichment.supplier}</p>
+                  </Section>
+                )}
 
-              {arrayEntries.length > 0 && (
-                <Section title="Tags & themes">
-                  <div className="flex flex-col gap-3">
-                    {arrayEntries.map(([key, value]) => (
-                      <div key={key} className="flex flex-col gap-1.5">
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                          {humanize(key)}
-                        </span>
-                        <ArrayBadges value={value} />
-                      </div>
-                    ))}
-                  </div>
-                </Section>
-              )}
+                {enrichment?.itinerary && enrichment.itinerary.length > 0 && (
+                  <Section title="Itinerary">
+                    <ol className="space-y-2">
+                      {enrichment.itinerary.map((d) => (
+                        <li key={d.dayNumber}>
+                          {renderItineraryDay && hit ? (
+                            renderItineraryDay(d, hit, enrichment)
+                          ) : (
+                            <DefaultItineraryDay day={d} />
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </Section>
+                )}
 
-              {attributeEntries.length > 0 && (
-                <Section title="Attributes">
-                  <AttributeList entries={attributeEntries} formatters={formatters} />
-                </Section>
-              )}
+                {arrayEntries.length > 0 && (
+                  <Section title="Tags & themes">
+                    <div className="flex flex-col gap-3">
+                      {arrayEntries.map(([key, value]) => (
+                        <div key={key} className="flex flex-col gap-1.5">
+                          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                            {humanize(key)}
+                          </span>
+                          <ArrayBadges value={value} />
+                        </div>
+                      ))}
+                    </div>
+                  </Section>
+                )}
 
-              {systemEntries.length > 0 && (
-                <details className="group rounded-lg border bg-muted/20">
-                  <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-muted/40 group-open:border-b">
-                    System
-                  </summary>
-                  <div className="px-4 py-3">
-                    <AttributeList entries={systemEntries} formatters={formatters} />
-                  </div>
-                </details>
-              )}
+                {attributeEntries.length > 0 && (
+                  <Section title="Attributes">
+                    <AttributeList entries={attributeEntries} formatters={formatters} />
+                  </Section>
+                )}
+
+                {systemEntries.length > 0 && (
+                  <details className="group rounded-lg border bg-muted/20">
+                    <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-muted/40 group-open:border-b">
+                      System
+                    </summary>
+                    <div className="px-4 py-3">
+                      <AttributeList entries={systemEntries} formatters={formatters} />
+                    </div>
+                  </details>
+                )}
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-6">
+                {enrichment?.departures && enrichment.departures.length > 0 && (
+                  <Section title="Departures">
+                    <ul className="divide-y rounded-md border">
+                      {enrichment.departures.slice(0, 12).map((d) => {
+                        const soldOut =
+                          d.status === "sold_out" ||
+                          d.status === "closed" ||
+                          d.status === "cancelled" ||
+                          (typeof d.remaining === "number" && d.remaining <= 0)
+                        const availabilityLabel = formatDepartureAvailability(d)
+                        return (
+                          <li
+                            key={d.id}
+                            className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2 text-sm"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">{formatDeparture(d.startsAt)}</span>
+                              {d.endsAt && (
+                                <span className="text-xs text-muted-foreground">
+                                  ends {formatDeparture(d.endsAt)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {availabilityLabel && (
+                                <span className="text-xs text-muted-foreground">
+                                  {availabilityLabel}
+                                </span>
+                              )}
+                              {typeof d.lowestPriceCents === "number" && (
+                                <span className="font-medium tabular-nums">
+                                  {formatPriceCents(d.lowestPriceCents, d.currency)}
+                                </span>
+                              )}
+                              {d.status && (
+                                <Badge variant="outline" className="font-normal">
+                                  {d.status}
+                                </Badge>
+                              )}
+                              {onBookDeparture && hit && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={soldOut}
+                                  onClick={() => onBookDeparture(hit, d)}
+                                >
+                                  Book
+                                </Button>
+                              )}
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </Section>
+                )}
+
+                {enrichment?.options && enrichment.options.length > 0 && (
+                  <Section title="Options">
+                    <ul className="space-y-1.5 text-sm">
+                      {enrichment.options.map((o) => (
+                        <li key={o.id} className="rounded-md border border-border px-3 py-2">
+                          <div className="font-medium">{o.name}</div>
+                          {o.description && (
+                            <div className="text-xs text-muted-foreground">{o.description}</div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                )}
+
+                {enrichment?.policies && enrichment.policies.length > 0 && (
+                  <Section title="Policies & terms">
+                    <dl className="space-y-2 text-sm">
+                      {enrichment.policies.map((p, idx) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: ordering is stable per render
+                        <div key={`${p.kind}-${idx}`}>
+                          <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            {p.kind.replace(/_/g, " ")}
+                          </dt>
+                          <dd className="mt-0.5 whitespace-pre-line text-muted-foreground">
+                            {p.body}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </Section>
+                )}
+
+                {brochureContent && <Section title="Brochure">{brochureContent}</Section>}
+
+                {(mediaContent || (enrichment?.media && enrichment.media.length > 0)) && (
+                  <Section title="Media">
+                    {mediaContent ?? <DefaultMediaGrid media={enrichment?.media ?? []} />}
+                  </Section>
+                )}
+
+                {extraSections}
+              </div>
             </div>
           </div>
 
@@ -486,6 +510,71 @@ export function CatalogDetailSheet({
       </SheetContent>
     </Sheet>
   )
+}
+
+function DefaultItineraryDay({ day }: { day: CatalogDetailItineraryDay }) {
+  return (
+    <div className="rounded-md border border-border bg-muted/10 px-3 py-2 text-sm">
+      <div className="flex items-baseline gap-2">
+        <span className="text-xs font-medium text-muted-foreground">Day {day.dayNumber}</span>
+        {day.title && <span className="font-medium">{day.title}</span>}
+        {day.location && <span className="text-xs text-muted-foreground">· {day.location}</span>}
+      </div>
+      {day.description && <p className="mt-1 text-xs text-muted-foreground">{day.description}</p>}
+    </div>
+  )
+}
+
+function DefaultMediaGrid({ media }: { media: NonNullable<CatalogDetailEnrichment["media"]> }) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {media.slice(0, 9).map((m, idx) =>
+        m.type === "image" || m.type == null ? (
+          <a
+            // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only and ordering is stable per response
+            key={`${m.url}-${idx}`}
+            href={m.url}
+            target="_blank"
+            rel="noreferrer"
+            className="block aspect-square overflow-hidden rounded-md ring-1 ring-border hover:ring-primary"
+          >
+            <img
+              src={m.url}
+              alt={m.caption ?? ""}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </a>
+        ) : (
+          <a
+            // biome-ignore lint/suspicious/noArrayIndexKey: gallery is render-only
+            key={`${m.url}-${idx}`}
+            href={m.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex aspect-square items-center justify-center rounded-md bg-muted text-xs text-muted-foreground ring-1 ring-border hover:ring-primary"
+          >
+            {m.type}
+          </a>
+        ),
+      )}
+    </div>
+  )
+}
+
+const SHEET_WIDTH_CLASSES: Record<string, string> = {
+  md: "max-w-md!",
+  lg: "max-w-lg!",
+  xl: "max-w-xl!",
+  "2xl": "max-w-2xl!",
+  "3xl": "max-w-3xl!",
+  "4xl": "max-w-4xl!",
+  "5xl": "max-w-5xl!",
+  "6xl": "max-w-6xl!",
+}
+
+function sheetWidthClass(width: CatalogDetailSheetWidth): string {
+  return SHEET_WIDTH_CLASSES[width] ?? width
 }
 
 function Section({ title, children }: { title?: string; children: ReactNode }) {

@@ -12,7 +12,9 @@ import { type ReactNode, useEffect, useMemo, useState } from "react"
 import {
   type CatalogDetailAction,
   type CatalogDetailEnrichment,
+  type CatalogDetailRenderSlot,
   CatalogDetailSheet,
+  type CatalogDetailSheetProps,
 } from "./catalog-detail-sheet.js"
 import { CatalogFacetedFilter } from "./catalog-faceted-filter.js"
 import { CatalogRangeFilter, type CatalogRangeFilterValue } from "./catalog-range-filter.js"
@@ -103,6 +105,18 @@ export interface CatalogSearchTab {
    * click to do more than just "view details."
    */
   detailActions?: CatalogDetailAction[]
+  /** Optional sheet width override for this tab's detail surface. */
+  detailSheetWidth?: CatalogDetailSheetProps["width"]
+  /** Optional header action area for this tab's detail sheet. */
+  detailHeaderExtras?: CatalogDetailSheetProps["headerExtras"]
+  /** Optional dedicated brochure section for this tab's detail sheet. */
+  renderDetailBrochure?: CatalogDetailRenderSlot
+  /** Optional media renderer for this tab's detail sheet. */
+  renderDetailMedia?: CatalogDetailRenderSlot
+  /** Optional richer itinerary day renderer for this tab's detail sheet. */
+  renderDetailItineraryDay?: CatalogDetailSheetProps["renderItineraryDay"]
+  /** Optional extra sections rendered above this tab's detail footer actions. */
+  renderDetailExtraSections?: CatalogDetailRenderSlot
   /**
    * Optional enrichment loader. Called when the detail sheet opens for
    * a hit. Returns the rich content shape (description, itinerary,
@@ -157,6 +171,18 @@ export interface CatalogSearchPageProps {
   /** Controlled current page (1-indexed) for the active tab. */
   page?: number
   onPageChange?: (page: number) => void
+  /** Optional default detail sheet width for all tabs. Tabs may override it. */
+  detailSheetWidth?: CatalogDetailSheetProps["width"]
+  /** Optional default header action area for all tab detail sheets. */
+  detailHeaderExtras?: CatalogDetailSheetProps["headerExtras"]
+  /** Optional default brochure section for all tab detail sheets. */
+  renderDetailBrochure?: CatalogDetailRenderSlot
+  /** Optional default media renderer for all tab detail sheets. */
+  renderDetailMedia?: CatalogDetailRenderSlot
+  /** Optional default richer itinerary day renderer for all tab detail sheets. */
+  renderDetailItineraryDay?: CatalogDetailSheetProps["renderItineraryDay"]
+  /** Optional default extra sections rendered above detail footer actions. */
+  renderDetailExtraSections?: CatalogDetailRenderSlot
 }
 
 /**
@@ -178,6 +204,12 @@ export function CatalogSearchPage({
   onQueryChange,
   page: pageProp,
   onPageChange,
+  detailSheetWidth,
+  detailHeaderExtras,
+  renderDetailBrochure,
+  renderDetailMedia,
+  renderDetailItineraryDay,
+  renderDetailExtraSections,
 }: CatalogSearchPageProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<string>(
     defaultTab ?? tabs[0]?.id ?? "",
@@ -249,6 +281,12 @@ export function CatalogSearchPage({
               pageSize={pageSize}
               page={tab.id === activeTab ? pageProp : undefined}
               onPageChange={tab.id === activeTab ? onPageChange : undefined}
+              detailSheetWidth={detailSheetWidth}
+              detailHeaderExtras={detailHeaderExtras}
+              renderDetailBrochure={renderDetailBrochure}
+              renderDetailMedia={renderDetailMedia}
+              renderDetailItineraryDay={renderDetailItineraryDay}
+              renderDetailExtraSections={renderDetailExtraSections}
             />
           </TabsContent>
         ))}
@@ -264,6 +302,12 @@ interface CatalogTabPanelProps {
   /** Controlled page (1-indexed). Falls back to internal state when omitted. */
   page?: number
   onPageChange?: (page: number) => void
+  detailSheetWidth?: CatalogDetailSheetProps["width"]
+  detailHeaderExtras?: CatalogDetailSheetProps["headerExtras"]
+  renderDetailBrochure?: CatalogDetailRenderSlot
+  renderDetailMedia?: CatalogDetailRenderSlot
+  renderDetailItineraryDay?: CatalogDetailSheetProps["renderItineraryDay"]
+  renderDetailExtraSections?: CatalogDetailRenderSlot
 }
 
 /**
@@ -284,6 +328,12 @@ function CatalogTabPanel({
   pageSize,
   page: pageProp,
   onPageChange,
+  detailSheetWidth,
+  detailHeaderExtras,
+  renderDetailBrochure,
+  renderDetailMedia,
+  renderDetailItineraryDay,
+  renderDetailExtraSections,
 }: CatalogTabPanelProps) {
   const [selections, setSelections] = useState<FilterSelections>(EMPTY_SELECTIONS)
   const [internalPage, setInternalPage] = useState(1)
@@ -462,8 +512,14 @@ function CatalogTabPanel({
         formatters={tab.detailFormatters}
         actions={tab.detailActions}
         imageField={tab.imageField ?? "thumbnailUrl"}
+        width={tab.detailSheetWidth ?? detailSheetWidth}
+        headerExtras={tab.detailHeaderExtras ?? detailHeaderExtras}
         onLoadDetail={tab.onLoadDetail}
         onBookDeparture={tab.onBookDeparture}
+        renderBrochure={tab.renderDetailBrochure ?? renderDetailBrochure}
+        renderMedia={tab.renderDetailMedia ?? renderDetailMedia}
+        renderItineraryDay={tab.renderDetailItineraryDay ?? renderDetailItineraryDay}
+        renderExtraSections={tab.renderDetailExtraSections ?? renderDetailExtraSections}
       />
     </div>
   )

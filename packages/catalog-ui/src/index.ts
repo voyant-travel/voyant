@@ -18,8 +18,11 @@ export {
 export {
   type CatalogDetailAction,
   type CatalogDetailEnrichment,
+  type CatalogDetailItineraryDay,
+  type CatalogDetailRenderSlot,
   CatalogDetailSheet,
   type CatalogDetailSheetProps,
+  type CatalogDetailSheetWidth,
 } from "./components/catalog-detail-sheet.js"
 export {
   CatalogFacetedFilter,
