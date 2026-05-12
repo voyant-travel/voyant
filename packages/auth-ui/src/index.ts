@@ -33,6 +33,16 @@ export {
   type OnboardingPageSlots,
 } from "./components/onboarding-page.js"
 export {
+  defaultForgotPasswordPageMessages,
+  defaultResetPasswordPageMessages,
+  ForgotPasswordPage,
+  type ForgotPasswordPageMessages,
+  type ForgotPasswordPageProps,
+  ResetPasswordPage,
+  type ResetPasswordPageMessages,
+  type ResetPasswordPageProps,
+} from "./components/password-reset-pages.js"
+export {
   ApiTokensPage,
   type ApiTokensPageProps,
   ServiceApiKeysPage,

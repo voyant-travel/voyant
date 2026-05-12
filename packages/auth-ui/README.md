@@ -196,3 +196,31 @@ of hrefs:
   onSignUp={({ token }) => navigate({ to: "/sign-up", search: { invitation: token } })}
 />
 ```
+
+## Password Reset
+
+`ForgotPasswordPage` and `ResetPasswordPage` provide the shared password reset
+surfaces. They are card-less and router-agnostic like `SignInPage`: pass hrefs
+for plain anchors, callbacks for router navigation, and message overrides for
+app copy.
+
+```tsx
+import { ForgotPasswordPage, ResetPasswordPage } from "@voyantjs/auth-ui"
+
+<ForgotPasswordPage
+  redirectTo="https://operator.example/reset-password"
+  signInHref="/sign-in"
+  onNavigateToSignIn={() => navigate({ to: "/sign-in" })}
+/>
+
+<ResetPasswordPage
+  token={tokenFromRouteOrSearch}
+  signInHref="/sign-in"
+  forgotPasswordHref="/forgot-password"
+  onPasswordReset={() => navigate({ to: "/sign-in" })}
+/>
+```
+
+Apps own token extraction from the route or query string and pass it through the
+`token` prop. `redirectTo` is forwarded to Better Auth's password-reset request
+endpoint so emailed links can return to the app reset route.
