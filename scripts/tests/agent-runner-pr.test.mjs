@@ -14,6 +14,7 @@ import {
   pullRequestSyncFieldValues,
   pullRequestTitle,
   summarizeChecks,
+  summarizeReviewThreads,
 } from "../lib/agent-runner-pr.mjs"
 import { workItem } from "./agent-fixtures.mjs"
 
@@ -178,6 +179,104 @@ describe("agent runner PR helpers", () => {
         blockedBy: "PR changes requested",
         mergeReady: false,
         reason: "review changes requested",
+      },
+    )
+  })
+
+  it("moves unresolved review threads to changes requested", () => {
+    assert.deepEqual(
+      evaluatePullRequestGate({
+        state: "OPEN",
+        isDraft: false,
+        reviewDecision: "",
+        reviewThreads: {
+          unresolved: [
+            {
+              author: "review-bot",
+              body: "Please fix this before merge.",
+              line: 42,
+              path: "scripts/lib/agent-runner-pr.mjs",
+            },
+          ],
+          unresolvedCount: 1,
+        },
+        statusCheckRollup: [{ name: "checks", status: "COMPLETED", conclusion: "SUCCESS" }],
+      }),
+      {
+        agentState: "Changes Requested",
+        blockedBy: "Unresolved PR review threads: 1",
+        mergeReady: false,
+        reason: "unresolved review threads",
+      },
+    )
+  })
+
+  it("summarizes only current unresolved review threads", () => {
+    assert.deepEqual(
+      summarizeReviewThreads({
+        data: {
+          repository: {
+            pullRequest: {
+              reviewThreads: {
+                nodes: [
+                  {
+                    comments: {
+                      nodes: [
+                        {
+                          author: { login: "review-bot" },
+                          body: "Actionable feedback.",
+                        },
+                      ],
+                    },
+                    isOutdated: false,
+                    isResolved: false,
+                    line: 42,
+                    path: "scripts/lib/agent-runner-pr.mjs",
+                  },
+                  {
+                    comments: {
+                      nodes: [
+                        {
+                          author: { login: "review-bot" },
+                          body: "Old feedback.",
+                        },
+                      ],
+                    },
+                    isOutdated: true,
+                    isResolved: false,
+                    line: 41,
+                    path: "scripts/lib/agent-runner-pr.mjs",
+                  },
+                  {
+                    comments: {
+                      nodes: [
+                        {
+                          author: { login: "maintainer" },
+                          body: "Resolved feedback.",
+                        },
+                      ],
+                    },
+                    isOutdated: false,
+                    isResolved: true,
+                    line: 40,
+                    path: "scripts/lib/agent-runner-pr.mjs",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      }),
+      {
+        unresolved: [
+          {
+            author: "review-bot",
+            body: "Actionable feedback.",
+            line: 42,
+            path: "scripts/lib/agent-runner-pr.mjs",
+          },
+        ],
+        unresolvedCount: 1,
       },
     )
   })

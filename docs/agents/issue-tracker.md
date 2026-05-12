@@ -574,9 +574,10 @@ After a PR exists, sync its review/check status back into the Project:
 pnpm agent:queue:sync-pr -- --issue <number> --yes
 ```
 
-Sync-PR mode reads the linked PR and its check rollup. Failing checks move the
-item to `Agent State = CI Repair`, requested changes move it to
-`Changes Requested`, pending checks or draft PRs keep it in `Human Review`, and
+Sync-PR mode reads the linked PR, unresolved non-outdated review threads, and
+its check rollup. Failing checks move the item to `Agent State = CI Repair`.
+Requested changes or unresolved current review threads move it to
+`Changes Requested`. Pending checks or draft PRs keep it in `Human Review`, and
 passing non-draft PRs move it to `Merge Ready`. If the linked PR has already
 been merged by a maintainer, sync-pr marks the Project item `Done`. It updates
 `Status`, `PR`, `Last Heartbeat`, and `Blocked By`; it does not merge the PR.
