@@ -9,6 +9,7 @@
     "./styles.css": "./src/styles.css",
     "./components/admin-nav-group": "./src/components/admin-nav-group.tsx",
     "./components/admin-nav-link": "./src/components/admin-nav-link.tsx",
+    "./components/admin-page-head": "./src/components/admin-page-head.tsx",
     "./components/admin-widget-slot": "./src/components/admin-widget-slot.tsx",
     "./components/operator-admin-bootstrap-gate": "./src/components/operator-admin-bootstrap-gate.tsx",
     "./components/operator-admin-sidebar": "./src/components/operator-admin-sidebar.tsx",
@@ -92,6 +93,11 @@
         "types": "./dist/components/admin-nav-link.d.ts",
         "import": "./dist/components/admin-nav-link.js",
         "default": "./dist/components/admin-nav-link.js"
+      },
+      "./components/admin-page-head": {
+        "types": "./dist/components/admin-page-head.d.ts",
+        "import": "./dist/components/admin-page-head.js",
+        "default": "./dist/components/admin-page-head.js"
       },
       "./components/admin-widget-slot": {
         "types": "./dist/components/admin-widget-slot.d.ts",

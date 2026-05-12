@@ -181,6 +181,30 @@ Pass `variant="inset"` or `variant="floating"` and `side="right"` when an app
 needs one of the modern sidebar variants. The sidebar can also be toggled with
 `Cmd+B` on macOS or `Ctrl+B` on Windows and Linux.
 
+Route-level document titles are derived from `navItems` and `currentPath` by
+default, so `/bookings` renders `Bookings · Voyant` and tracks the active
+locale when the navigation messages change. `AdminPageHead` also keeps
+`<html lang>` synchronized with `useLocale().resolvedLocale` and updates the
+description and Open Graph description meta tags when a description is provided.
+Apps can override detail routes that are not represented by navigation items
+with `useAdminPageHead`:
+
+```tsx
+import { useAdminPageHead } from "@voyantjs/admin"
+
+function ProductDetailPage({ product }) {
+  useAdminPageHead({
+    title: product.name,
+    description: product.summary,
+  })
+
+  return <ProductDetailLayout product={product} />
+}
+```
+
+Set `pageHead={false}` on `OperatorAdminWorkspaceLayout` only when an app owns
+all document metadata itself.
+
 The default brand uses the exported `VoyantMark` and `VoyantWordmark` SVG
 components and swaps from wordmark to mark in collapsed icon mode. Apps that
 need a custom lockup can pass `brand={<MyBrand />}` or compose those exported
