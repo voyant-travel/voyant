@@ -1,9 +1,11 @@
 import type { EventBus } from "@voyantjs/core"
+import type { StorageProvider } from "@voyantjs/storage"
 
 import type { ContractDocumentGenerator, ContractsRouteOptions } from "./routes.js"
 
 export type ContractsRouteRuntime = {
   documentGenerator?: ContractDocumentGenerator
+  documentStorage?: StorageProvider | null
   eventBus?: EventBus
 }
 
@@ -15,6 +17,7 @@ export function buildContractsRouteRuntime(
 ): ContractsRouteRuntime {
   return {
     documentGenerator: options.resolveDocumentGenerator?.(bindings) ?? options.documentGenerator,
+    documentStorage: options.resolveDocumentStorage?.(bindings) ?? options.documentStorage,
     eventBus: options.resolveEventBus?.(bindings) ?? options.eventBus,
   }
 }

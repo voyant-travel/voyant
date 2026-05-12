@@ -39,7 +39,7 @@ describe("legal-ui i18n", () => {
 
     expect(html).toContain("Contract")
     expect(html).toContain("Download")
-    expect(html).toContain("Edit Attachment")
+    expect(html).toContain("Edit Document")
     expect(html).toContain("Manual")
   })
 
@@ -52,7 +52,7 @@ describe("legal-ui i18n", () => {
 
     expect(html).toContain("Contract")
     expect(html).toContain("Descarca")
-    expect(html).toContain("Editeaza atasamentul")
+    expect(html).toContain("Editeaza documentul")
     expect(html).toContain("Manual")
   })
 })

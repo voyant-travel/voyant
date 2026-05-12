@@ -9,7 +9,7 @@ import {
   useLegalContractMutation,
   useLegalContractSignatures,
 } from "@voyantjs/legal-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import { Badge, Button } from "@voyantjs/ui/components"
 import {
   Table,
   TableBody,
@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { ArrowLeft, ExternalLink, FileText, Pencil, Plus, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
@@ -44,7 +45,22 @@ export interface ContractDetailPageProps {
   id: string
   onBackToContracts?: () => void
   renderContractDialog?: (props: ContractDetailDialogRenderProps) => ReactNode
+  renderReference?: (props: ContractReferenceRenderProps) => ReactNode
   getAttachmentDownloadHref?: (attachment: LegalContractAttachmentRecord) => string
+}
+
+export type ContractReferenceKind =
+  | "person"
+  | "organization"
+  | "supplier"
+  | "channel"
+  | "booking"
+  | "order"
+
+export interface ContractReferenceRenderProps {
+  kind: ContractReferenceKind
+  id: string
+  contract: LegalContractRecord
 }
 
 export interface ContractDetailDialogRenderProps {
@@ -58,6 +74,7 @@ export function ContractDetailPage({
   id,
   onBackToContracts,
   renderContractDialog,
+  renderReference,
   getAttachmentDownloadHref,
 }: ContractDetailPageProps) {
   const queryClient = useQueryClient()
@@ -107,6 +124,10 @@ export function ContractDetailPage({
 
   const status = contract.status
   const canAddSignature = status === "issued" || status === "sent" || status === "signed"
+  const renderReferenceValue = (kind: ContractReferenceKind, referenceId: string) =>
+    renderReference?.({ kind, id: referenceId, contract }) ?? (
+      <span className="font-mono text-xs">{referenceId}</span>
+    )
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -117,22 +138,23 @@ export function ContractDetailPage({
           </Button>
         ) : null}
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">{contract.title}</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">{f.title}</h1>
+            <Badge variant={statusVariant[status] ?? "secondary"}>
+              {messages.common.contractStatusLabels[status] ?? status}
+            </Badge>
             <Badge variant="outline">
               {messages.common.contractScopeLabels[
                 contract.scope as keyof typeof messages.common.contractScopeLabels
               ] ?? contract.scope}
             </Badge>
-            <Badge variant={statusVariant[status] ?? "secondary"}>
-              {messages.common.contractStatusLabels[status] ?? status}
-            </Badge>
-            {contract.contractNumber ? (
-              <span className="font-mono text-xs text-muted-foreground">
-                {contract.contractNumber}
-              </span>
-            ) : null}
           </div>
+          <p className="mt-1 truncate font-mono text-muted-foreground text-sm">
+            {contract.contractNumber ?? contract.title}
+          </p>
+          {contract.contractNumber ? (
+            <p className="mt-1 truncate text-muted-foreground text-xs">{contract.title}</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {status === "draft" ? (
@@ -178,166 +200,191 @@ export function ContractDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{f.sections.details}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 text-sm">
-            <DetailRow label={f.fields.language}>{contract.language}</DetailRow>
-            {contract.templateVersionId ? (
-              <DetailRow label={f.fields.templateVersion}>
-                <span className="font-mono text-xs">{contract.templateVersionId}</span>
-              </DetailRow>
-            ) : null}
-            {contract.seriesId ? (
-              <DetailRow label={f.fields.series}>
-                <span className="font-mono text-xs">{contract.seriesId}</span>
-              </DetailRow>
-            ) : null}
-            {contract.expiresAt ? (
-              <DetailRow label={f.fields.expires}>{i18n.formatDate(contract.expiresAt)}</DetailRow>
-            ) : null}
-            <div className="mt-2 border-t pt-3">
-              <DetailRow label={f.fields.created}>{i18n.formatDate(contract.createdAt)}</DetailRow>
-              <DetailRow label={f.fields.updated}>{i18n.formatDate(contract.updatedAt)}</DetailRow>
+      <Tabs defaultValue="details">
+        <TabsList>
+          <TabsTrigger value="details">{f.sections.details}</TabsTrigger>
+          <TabsTrigger value="parties">{f.sections.parties}</TabsTrigger>
+          <TabsTrigger value="signatures">{f.sections.signatures}</TabsTrigger>
+          <TabsTrigger value="documents">{f.sections.documents}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="details" className="mt-4">
+          <ContractSection title={f.sections.details}>
+            <div className="grid gap-3 text-sm">
+              <DetailRow label={f.fields.language}>{contract.language}</DetailRow>
+              {contract.templateVersionId ? (
+                <DetailRow label={f.fields.templateVersion}>
+                  <span className="font-mono text-xs">{contract.templateVersionId}</span>
+                </DetailRow>
+              ) : null}
+              {contract.seriesId ? (
+                <DetailRow label={f.fields.series}>
+                  <span className="font-mono text-xs">{contract.seriesId}</span>
+                </DetailRow>
+              ) : null}
+              {contract.expiresAt ? (
+                <DetailRow label={f.fields.expires}>
+                  {i18n.formatDate(contract.expiresAt)}
+                </DetailRow>
+              ) : null}
+              <div className="mt-2 border-t pt-3">
+                <DetailRow label={f.fields.created}>
+                  {i18n.formatDate(contract.createdAt)}
+                </DetailRow>
+                <DetailRow label={f.fields.updated}>
+                  {i18n.formatDate(contract.updatedAt)}
+                </DetailRow>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{f.sections.parties}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 text-sm">
-            {contract.personId ? (
-              <DetailRow label={f.fields.person}>
-                <span className="font-mono text-xs">{contract.personId}</span>
-              </DetailRow>
-            ) : null}
-            {contract.organizationId ? (
-              <DetailRow label={f.fields.organization}>
-                <span className="font-mono text-xs">{contract.organizationId}</span>
-              </DetailRow>
-            ) : null}
-            {contract.supplierId ? (
-              <DetailRow label={f.fields.supplier}>
-                <span className="font-mono text-xs">{contract.supplierId}</span>
-              </DetailRow>
-            ) : null}
-            {contract.channelId ? (
-              <DetailRow label={f.fields.channel}>
-                <span className="font-mono text-xs">{contract.channelId}</span>
-              </DetailRow>
-            ) : null}
-            {!contract.personId &&
-            !contract.organizationId &&
-            !contract.supplierId &&
-            !contract.channelId ? (
-              <p className="text-muted-foreground">{f.empty.noParties}</p>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>{f.sections.signatures}</CardTitle>
-          {canAddSignature ? (
-            <Button size="sm" onClick={() => setSignOpen(true)}>
-              <Plus className="mr-2 size-4" aria-hidden="true" />
-              {f.actions.addSignature}
-            </Button>
-          ) : null}
-        </CardHeader>
-        <CardContent>
-          {!signatures || signatures.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">{f.empty.noSignatures}</p>
-          ) : (
-            <div className="rounded border bg-background">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{f.fields.name}</TableHead>
-                    <TableHead>{f.fields.email}</TableHead>
-                    <TableHead>{f.fields.role}</TableHead>
-                    <TableHead>{f.fields.method}</TableHead>
-                    <TableHead>{f.fields.signedAt}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {signatures.map((signature) => (
-                    <TableRow key={signature.id}>
-                      <TableCell>{signature.signerName}</TableCell>
-                      <TableCell>
-                        {signature.signerEmail ?? messages.common.noResultsDash}
-                      </TableCell>
-                      <TableCell>{signature.signerRole ?? messages.common.noResultsDash}</TableCell>
-                      <TableCell>{signature.method}</TableCell>
-                      <TableCell>{i18n.formatDateTime(signature.signedAt)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          </ContractSection>
+        </TabsContent>
+        <TabsContent value="parties" className="mt-4">
+          <ContractSection title={f.sections.parties}>
+            <div className="grid gap-3 text-sm">
+              {contract.personId ? (
+                <DetailRow label={f.fields.person}>
+                  {renderReferenceValue("person", contract.personId)}
+                </DetailRow>
+              ) : null}
+              {contract.organizationId ? (
+                <DetailRow label={f.fields.organization}>
+                  {renderReferenceValue("organization", contract.organizationId)}
+                </DetailRow>
+              ) : null}
+              {contract.supplierId ? (
+                <DetailRow label={f.fields.supplier}>
+                  {renderReferenceValue("supplier", contract.supplierId)}
+                </DetailRow>
+              ) : null}
+              {contract.channelId ? (
+                <DetailRow label={f.fields.channel}>
+                  {renderReferenceValue("channel", contract.channelId)}
+                </DetailRow>
+              ) : null}
+              {contract.bookingId ? (
+                <DetailRow label={f.fields.booking}>
+                  {renderReferenceValue("booking", contract.bookingId)}
+                </DetailRow>
+              ) : null}
+              {contract.orderId ? (
+                <DetailRow label={f.fields.order}>
+                  {renderReferenceValue("order", contract.orderId)}
+                </DetailRow>
+              ) : null}
+              {!contract.personId &&
+              !contract.organizationId &&
+              !contract.supplierId &&
+              !contract.channelId &&
+              !contract.bookingId &&
+              !contract.orderId ? (
+                <p className="text-muted-foreground">{f.empty.noParties}</p>
+              ) : null}
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>{f.sections.attachments}</CardTitle>
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditingAttachment(undefined)
-              setAttachOpen(true)
-            }}
+          </ContractSection>
+        </TabsContent>
+        <TabsContent value="signatures" className="mt-4">
+          <ContractSection
+            title={f.sections.signatures}
+            action={
+              canAddSignature ? (
+                <Button size="sm" onClick={() => setSignOpen(true)}>
+                  <Plus className="mr-2 size-4" aria-hidden="true" />
+                  {f.actions.addSignature}
+                </Button>
+              ) : null
+            }
           >
-            <Plus className="mr-2 size-4" aria-hidden="true" />
-            {f.actions.addAttachment}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {!attachments || attachments.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              {f.empty.noAttachments}
-            </p>
-          ) : (
-            <div className="rounded border bg-background">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{f.fields.name}</TableHead>
-                    <TableHead>{f.fields.kind}</TableHead>
-                    <TableHead>{f.fields.mimeType}</TableHead>
-                    <TableHead>{f.fields.size}</TableHead>
-                    <TableHead className="w-16" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attachments.map((attachment) => (
-                    <AttachmentRow
-                      key={attachment.id}
-                      attachment={attachment}
-                      downloadHref={getAttachmentDownloadHref?.(attachment)}
-                      onEdit={() => {
-                        setEditingAttachment(attachment)
-                        setAttachOpen(true)
-                      }}
-                      onDelete={() => {
-                        if (confirm(f.deleteAttachmentConfirm)) {
-                          removeAttachment.mutate({ contractId: id, id: attachment.id })
-                        }
-                      }}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {!signatures || signatures.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                {f.empty.noSignatures}
+              </p>
+            ) : (
+              <div className="rounded border bg-background">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{f.fields.name}</TableHead>
+                      <TableHead>{f.fields.email}</TableHead>
+                      <TableHead>{f.fields.role}</TableHead>
+                      <TableHead>{f.fields.method}</TableHead>
+                      <TableHead>{f.fields.signedAt}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {signatures.map((signature) => (
+                      <TableRow key={signature.id}>
+                        <TableCell>{signature.signerName}</TableCell>
+                        <TableCell>
+                          {signature.signerEmail ?? messages.common.noResultsDash}
+                        </TableCell>
+                        <TableCell>
+                          {signature.signerRole ?? messages.common.noResultsDash}
+                        </TableCell>
+                        <TableCell>{signature.method}</TableCell>
+                        <TableCell>{i18n.formatDateTime(signature.signedAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </ContractSection>
+        </TabsContent>
+        <TabsContent value="documents" className="mt-4">
+          <ContractSection
+            title={f.sections.documents}
+            action={
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingAttachment(undefined)
+                  setAttachOpen(true)
+                }}
+              >
+                <Plus className="mr-2 size-4" aria-hidden="true" />
+                {f.actions.addDocument}
+              </Button>
+            }
+          >
+            {!attachments || attachments.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                {f.empty.noAttachments}
+              </p>
+            ) : (
+              <div className="rounded border bg-background">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{f.fields.name}</TableHead>
+                      <TableHead>{f.fields.kind}</TableHead>
+                      <TableHead>{f.fields.mimeType}</TableHead>
+                      <TableHead>{f.fields.size}</TableHead>
+                      <TableHead className="w-16" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {attachments.map((attachment) => (
+                      <AttachmentRow
+                        key={attachment.id}
+                        attachment={attachment}
+                        downloadHref={getAttachmentDownloadHref?.(attachment)}
+                        onEdit={() => {
+                          setEditingAttachment(attachment)
+                          setAttachOpen(true)
+                        }}
+                        onDelete={() => {
+                          if (confirm(f.deleteAttachmentConfirm)) {
+                            removeAttachment.mutate({ contractId: id, id: attachment.id })
+                          }
+                        }}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </ContractSection>
+        </TabsContent>
+      </Tabs>
 
       {renderContractDialog?.({
         open: editOpen,
@@ -380,6 +427,26 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
     <div>
       <span className="text-muted-foreground">{label}:</span> <span>{children}</span>
     </div>
+  )
+}
+
+function ContractSection({
+  title,
+  action,
+  children,
+}: {
+  title: string
+  action?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <section className="rounded-md border bg-background">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+        <h2 className="font-semibold text-sm">{title}</h2>
+        {action}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
   )
 }
 

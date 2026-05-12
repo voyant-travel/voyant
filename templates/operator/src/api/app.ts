@@ -575,6 +575,8 @@ const legalModule = createLegalHonoModule({
   resolveDb: (bindings) => getDbFromEnv(bindings as unknown as CloudflareBindings),
   resolveDocumentDownloadUrl: (bindings, storageKey) =>
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
+  resolveDocumentStorage: (bindings) =>
+    createDocumentStorage(bindings as unknown as CloudflareBindings),
   resolveDocumentGenerator: (bindings) =>
     resolveContractDocumentGenerator(bindings as unknown as CloudflareBindings) ?? undefined,
   autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,

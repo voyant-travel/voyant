@@ -34,7 +34,12 @@ import { catalogBridgeBundle } from "./catalog-bridge"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { createInvitationsRoutes } from "./invitations"
 import { dbFromEnvForApp } from "./lib/db"
-import { createMediaStorage, guessMimeType, resolveDocumentDownloadUrl } from "./lib/storage"
+import {
+  createDocumentStorage,
+  createMediaStorage,
+  guessMimeType,
+  resolveDocumentDownloadUrl,
+} from "./lib/storage"
 import { mountCatalogMcpRoutes, mountCatalogSearchRoutes } from "./mcp"
 
 const notificationsHonoModule = createNotificationsHonoModule({
@@ -79,6 +84,8 @@ const financeModule = createFinanceHonoModule({
 const legalModule = createLegalHonoModule({
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
+  resolveDocumentStorage: (bindings) =>
+    createDocumentStorage(bindings as unknown as CloudflareBindings),
 })
 
 const crmHonoModule = createCrmHonoModule()

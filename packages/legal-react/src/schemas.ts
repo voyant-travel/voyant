@@ -82,6 +82,9 @@ export const legalContractAttachmentRecordSchema = insertContractAttachmentSchem
 })
 
 export type LegalContractAttachmentRecord = z.infer<typeof legalContractAttachmentRecordSchema>
+export const legalContractAttachmentSingleResponse = singleEnvelope(
+  legalContractAttachmentRecordSchema,
+)
 
 export const legalContractTemplateRecordSchema = insertContractTemplateSchema.extend({
   id: z.string(),
