@@ -404,6 +404,7 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
         db
           .select({
             url: productMedia.url,
+            mediaType: productMedia.mediaType,
             isCover: productMedia.isCover,
             isBrochure: productMedia.isBrochure,
             sortOrder: productMedia.sortOrder,
@@ -430,8 +431,9 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
       ])
 
       const translation = pickTranslation(translations, slice.locale)
-      const cover = mediaRows.filter((m) => !m.isBrochure).find((m) => m.isCover)
-      const primaryMedia = cover ?? mediaRows.find((m) => !m.isBrochure) ?? null
+      const imageMediaRows = mediaRows.filter((m) => !m.isBrochure && m.mediaType === "image")
+      const cover = imageMediaRows.find((m) => m.isCover)
+      const primaryMedia = cover ?? imageMediaRows[0] ?? null
       const coordinateLocation =
         locationRows.find((l) => l.latitude != null && l.longitude != null) ?? null
       const defaultItinerary = itineraryRows.find((it) => it.isDefault) ?? itineraryRows[0]
@@ -443,6 +445,7 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
         ["slug", translation?.slug ?? null],
         ["shortDescription", translation?.shortDescription ?? null],
         ["primaryMediaUrl", primaryMedia?.url ?? null],
+        ["thumbnailUrl", primaryMedia?.url ?? null],
         ["coverMediaUrl", primaryMedia?.url ?? null],
         ["durationDays", durationDays],
         ["latitude", coordinateLocation?.latitude ?? null],

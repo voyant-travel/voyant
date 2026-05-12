@@ -46,6 +46,14 @@ describe("productExtraRowToProjection", () => {
     expect(projection.get("source.kind")).toBe("voyant-connect")
     expect(projection.get("source.ref")).toBe("ext_external_999")
   })
+
+  it("projects thumbnailUrl from extra metadata when present", () => {
+    const projection = productExtraRowToProjection(
+      { ...sampleRow, metadata: { hero_image_url: "https://cdn.example/transfer.jpg" } },
+      { sellerOperatorId: "op_xyz" },
+    )
+    expect(projection.get("thumbnailUrl")).toBe("https://cdn.example/transfer.jpg")
+  })
 })
 
 describe("productExtraProvenance", () => {
@@ -56,14 +64,10 @@ describe("productExtraProvenance", () => {
   })
 })
 
-describe("partial-adoption: resolver acts as visibility filter (no merchandisable fields)", () => {
+describe("partial-adoption: resolver acts as visibility filter for snapshot fields", () => {
   it("the resolver returns the projected view with no overlay merges", () => {
     const projection = productExtraRowToProjection(sampleRow, { sellerOperatorId: "op_xyz" })
     const registry = createFieldPolicyRegistry(extrasCatalogPolicy)
-    // Even when overlay rows happen to exist for an extras entity, the
-    // catalog-policy declares no merchandisable fields, so they would not
-    // affect the resolved view. (Overlay rows for extras shouldn't exist
-    // in v1 — extras opt out of the overlay store entirely.)
     const view = resolveOverlay(registry, projection, [], {
       locale: "en-GB",
       audience: "customer",

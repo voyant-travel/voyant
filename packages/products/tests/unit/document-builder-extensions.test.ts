@@ -215,6 +215,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
       [
         {
           url: "https://cdn.example/cover.jpg",
+          mediaType: "image",
           isCover: true,
           isBrochure: false,
           sortOrder: 0,
@@ -247,6 +248,7 @@ describe("createProductDocumentBuilder — projection extensions", () => {
       slug: "localized-retreat",
       shortDescription: "Short card copy",
       primaryMediaUrl: "https://cdn.example/cover.jpg",
+      thumbnailUrl: "https://cdn.example/cover.jpg",
       coverMediaUrl: "https://cdn.example/cover.jpg",
       durationDays: 4,
       latitude: 45.76,

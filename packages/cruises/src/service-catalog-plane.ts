@@ -69,6 +69,7 @@ export function cruiseRowToProjection(
     ["inclusionsHtml", row.inclusionsHtml],
     ["exclusionsHtml", row.exclusionsHtml],
     ["heroImageUrl", row.heroImageUrl],
+    ["thumbnailUrl", row.heroImageUrl],
     ["mapImageUrl", row.mapImageUrl],
 
     // Structural

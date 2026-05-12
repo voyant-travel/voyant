@@ -56,6 +56,14 @@ describe("roomTypeRowToProjection", () => {
     expect(projection.get("source.kind")).toBe("bedbank:hotelbeds")
     expect(projection.get("source.ref")).toBe("rmtp_external_12345")
   })
+
+  it("projects thumbnailUrl from room metadata when present", () => {
+    const projection = roomTypeRowToProjection(
+      { ...sampleRow, metadata: { images: ["https://cdn.example/family-room.jpg"] } },
+      { sellerOperatorId: "op_xyz" },
+    )
+    expect(projection.get("thumbnailUrl")).toBe("https://cdn.example/family-room.jpg")
+  })
 })
 
 describe("roomTypeProvenance", () => {

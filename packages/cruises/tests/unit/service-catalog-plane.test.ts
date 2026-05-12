@@ -43,6 +43,7 @@ describe("cruiseRowToProjection", () => {
     expect(projection.get("cruiseType")).toBe("river")
     expect(projection.get("lineSupplierId")).toBe("supp_viking")
     expect(projection.get("highlights")).toEqual(["Cologne Cathedral", "Black Forest"])
+    expect(projection.get("thumbnailUrl")).toBe("https://example.com/hero.jpg")
   })
 
   it("synthesizes owned provenance by default", () => {

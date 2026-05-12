@@ -41,6 +41,7 @@ describe("charterProductRowToProjection", () => {
     expect(projection.get("defaultBookingModes[]")).toEqual(["whole_yacht", "per_suite"])
     expect(projection.get("defaultApaPercent")).toBe("27.50")
     expect(projection.get("defaultMybaTemplateId")).toBe("ctpl_myba_2026")
+    expect(projection.get("thumbnailUrl")).toBe("https://example.com/hero.jpg")
   })
 })
 
