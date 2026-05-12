@@ -1968,10 +1968,12 @@ export const bookingsService = {
               title: bookingItems.title,
               itemType: bookingItems.itemType,
               productId: bookingItems.productId,
+              productName: productsRef.name,
               startsAt: bookingItems.startsAt,
               endsAt: bookingItems.endsAt,
             })
             .from(bookingItems)
+            .leftJoin(productsRef, eq(productsRef.id, bookingItems.productId))
             .where(inArray(bookingItems.bookingId, bookingIds))
             .orderBy(asc(bookingItems.createdAt))
         : []
@@ -1979,7 +1981,13 @@ export const bookingsService = {
     const ranges = new Map<string, { startsAt: Date | null; endsAt: Date | null }>()
     const itemSummariesByBooking = new Map<
       string,
-      Array<{ id: string; title: string; itemType: string; productId: string | null }>
+      Array<{
+        id: string
+        title: string
+        itemType: string
+        productId: string | null
+        productName: string | null
+      }>
     >()
     for (const item of items) {
       const current = ranges.get(item.bookingId) ?? { startsAt: null, endsAt: null }
@@ -1997,6 +2005,7 @@ export const bookingsService = {
         title: item.title,
         itemType: item.itemType,
         productId: item.productId,
+        productName: item.productName,
       })
       itemSummariesByBooking.set(item.bookingId, list)
     }
