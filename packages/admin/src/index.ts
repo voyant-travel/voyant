@@ -47,6 +47,10 @@ export {
   type OperatorAdminBootstrapRenderState,
 } from "./components/operator-admin-bootstrap-gate.js"
 export {
+  OperatorAdminPageShell,
+  type OperatorAdminPageShellProps,
+} from "./components/operator-admin-page-shell.js"
+export {
   DefaultOperatorAdminBrand,
   type DefaultOperatorAdminBrandProps,
   OperatorAdminSidebar,
