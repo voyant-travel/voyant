@@ -102,6 +102,42 @@ export async function requestControlPlaneCapabilities({ fetchImpl = fetch, token
   return body
 }
 
+export async function requestRecentTickSnapshots({
+  fetchImpl = fetch,
+  limit,
+  repository,
+  token,
+  url,
+}) {
+  const query = new URLSearchParams({
+    repository,
+    ...(limit ? { limit: String(limit) } : {}),
+  })
+  const response = await fetchImpl(
+    `${normalizeControlPlaneUrl(url)}/api/tick-snapshots/recent?${query.toString()}`,
+    {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      method: "GET",
+    },
+  )
+
+  const bodyText = await response.text()
+  const body = parseJsonBody(bodyText)
+
+  if (!response.ok) {
+    throw new ControlPlaneRequestError({
+      body,
+      endpoint: "recent tick snapshots",
+      responseText: bodyText,
+      status: response.status,
+    })
+  }
+
+  return body
+}
+
 export async function requestLatestDispatchIntent({ fetchImpl = fetch, request, token, url }) {
   const response = await fetchImpl(`${normalizeControlPlaneUrl(url)}/api/dispatch-intents/latest`, {
     body: JSON.stringify(request),

@@ -1,3 +1,14 @@
+export class RunnerAppRequestError extends Error {
+  constructor({ body, endpoint, responseText, status }) {
+    super(formatRunnerAppError({ body, endpoint, responseText, status }))
+    this.name = "RunnerAppRequestError"
+    this.body = body
+    this.endpoint = endpoint
+    this.responseText = responseText
+    this.status = status
+  }
+}
+
 export function runnerAppConfigFromArgs(args, env = process.env) {
   const url = args.runnerUrl ?? env.AGENT_RUNNER_URL
   const token = args.runnerToken ?? env.AGENT_RUNNER_TOKEN
@@ -17,7 +28,37 @@ export function runnerAppConfigFromArgs(args, env = process.env) {
 }
 
 export async function requestRunnerAppCapabilities({ fetchImpl = fetch, token, url }) {
-  const response = await fetchImpl(`${normalizeRunnerAppUrl(url)}/api/capabilities`, {
+  return requestRunnerAppJson({
+    endpoint: "capabilities",
+    fetchImpl,
+    path: "/api/capabilities",
+    token,
+    url,
+  })
+}
+
+export async function requestRecentRunnerSupervisorTicks({
+  fetchImpl = fetch,
+  limit,
+  repository,
+  token,
+  url,
+}) {
+  const query = new URLSearchParams({
+    repository,
+    ...(limit ? { limit: String(limit) } : {}),
+  })
+  return requestRunnerAppJson({
+    endpoint: "recent supervisor ticks",
+    fetchImpl,
+    path: `/api/supervisor/ticks/recent?${query.toString()}`,
+    token,
+    url,
+  })
+}
+
+async function requestRunnerAppJson({ endpoint, fetchImpl = fetch, path, token, url }) {
+  const response = await fetchImpl(`${normalizeRunnerAppUrl(url)}${path}`, {
     headers: {
       authorization: `Bearer ${token}`,
     },
@@ -28,12 +69,12 @@ export async function requestRunnerAppCapabilities({ fetchImpl = fetch, token, u
   const body = parseJsonBody(bodyText)
 
   if (!response.ok) {
-    const detail = body?.error ? `: ${body.error}` : bodyText ? `: ${bodyText}` : ""
-    const error = new Error(`agent runner rejected capabilities with ${response.status}${detail}`)
-    error.status = response.status
-    error.body = body
-    error.responseText = bodyText
-    throw error
+    throw new RunnerAppRequestError({
+      body,
+      endpoint,
+      responseText: bodyText,
+      status: response.status,
+    })
   }
 
   return body
@@ -74,4 +115,9 @@ function parseJsonBody(bodyText) {
   } catch {
     return null
   }
+}
+
+function formatRunnerAppError({ body, endpoint, responseText, status }) {
+  const detail = body?.error ? `: ${body.error}` : responseText ? `: ${responseText}` : ""
+  return `agent runner rejected ${endpoint} with ${status}${detail}`
 }

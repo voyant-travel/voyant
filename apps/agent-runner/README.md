@@ -65,3 +65,11 @@ pnpm agent:queue:deployment-doctor -- --json
 The command reads `AGENT_CONTROL_PLANE_URL`, `AGENT_CONTROL_PLANE_TOKEN`,
 `AGENT_RUNNER_URL`, and `AGENT_RUNNER_TOKEN`, calls both capability endpoints,
 and reports persistence and execution mode without printing token values.
+
+Inspect recent persisted runner ticks with:
+
+```bash
+AGENT_RUNNER_URL=https://agent-runner.example.workers.dev \
+AGENT_RUNNER_TOKEN=... \
+pnpm agent:queue:history -- --source runner --repo voyantjs/voyant
+```

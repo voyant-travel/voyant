@@ -421,7 +421,9 @@ values.
 Use the recent history endpoints when an operator needs to inspect more than
 the latest persisted heartbeat: `GET /api/tick-snapshots/recent` on the control
 plane for queue-state snapshots, and `GET /api/supervisor/ticks/recent` on the
-runner for deployed supervisor tick results.
+runner for deployed supervisor tick results. From the repository checkout, use
+`pnpm agent:queue:history -- --source control-plane` for queue snapshots or
+`pnpm agent:queue:history -- --source runner` for deployed runner ticks.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
 CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
 recommend `remote-bootstrap` so dispatch can clone/fetch the repository and

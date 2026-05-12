@@ -116,6 +116,14 @@ Use `--json` when a supervisor needs the response shape directly. Use `--issue`,
 `--action`, `--event-log`, and `--update-body` to pass through the same filters
 and command options as `POST /api/dispatch-plans/latest`.
 
+Inspect recent stored snapshots with:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:history -- --source control-plane --repo voyantjs/voyant
+```
+
 Create a leased dispatch intent from the latest stored snapshot with:
 
 ```bash
