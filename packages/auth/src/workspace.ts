@@ -165,7 +165,7 @@ function profilePatchValues(input: UpdateCurrentUserProfileInput) {
 
   if ("firstName" in input) values.firstName = input.firstName ?? null
   if ("lastName" in input) values.lastName = input.lastName ?? null
-  if ("locale" in input && input.locale !== null) values.locale = input.locale
+  if ("locale" in input) values.locale = input.locale ?? "en"
   if ("timezone" in input) values.timezone = input.timezone ?? null
 
   return values

@@ -255,9 +255,7 @@ export async function handleAccountProfileRequest(
   if (path === null) return null
 
   try {
-    if (request.method !== "PATCH") {
-      return methodNotAllowed(["PATCH"])
-    }
+    if (request.method !== "PATCH") return null
 
     const session = await requireAccountProfileSession(
       { api: auth.api as BetterAuthApiKeyApi },

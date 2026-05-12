@@ -141,11 +141,11 @@ describe("handleAccountProfileRequest", () => {
     expect(await responseJson(response)).toEqual({ error: "Unauthorized" })
   })
 
-  it("rejects unsupported methods and invalid profile fields", async () => {
+  it("lets non-PATCH profile facade requests fall through", async () => {
     const auth = createAuthMock()
     const updateProfile = vi.fn()
 
-    const methodResponse = await handleAccountProfileRequest(
+    const response = await handleAccountProfileRequest(
       new Request("https://example.com/auth/me", { method: "POST" }),
       auth,
       {
@@ -154,8 +154,14 @@ describe("handleAccountProfileRequest", () => {
       },
     )
 
-    expect(methodResponse?.status).toBe(405)
-    expect(methodResponse?.headers.get("Allow")).toBe("PATCH")
+    expect(response).toBeNull()
+    expect(auth.api.getSession).not.toHaveBeenCalled()
+    expect(updateProfile).not.toHaveBeenCalled()
+  })
+
+  it("rejects invalid profile fields", async () => {
+    const auth = createAuthMock()
+    const updateProfile = vi.fn()
 
     const invalidResponse = await handleAccountProfileRequest(
       new Request("https://example.com/auth/me", {
