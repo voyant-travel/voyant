@@ -9,6 +9,12 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -31,6 +37,7 @@ maybePrintHelp(args, {
     ["--pr <url-or-number>", "PR URL or number override. Defaults from the Project PR field."],
     ["--workspace <path>", "Workspace path override for gh context."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -42,6 +49,7 @@ if (!args.issue) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -68,6 +76,20 @@ if (!args.yes) {
 }
 
 updateProjectItemFields({ project, item, values, clear })
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "complete-pr.completed",
+    clearedFields: clear,
+    fields: values,
+    issue: issueEventDetails(item),
+    pr: {
+      number: pr.number,
+      url: pr.url,
+    },
+    repository,
+  },
+})
 
 console.log("agent-runner complete-pr: marked Project item done")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)

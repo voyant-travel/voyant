@@ -9,6 +9,12 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -37,6 +43,7 @@ maybePrintHelp(args, {
     ["--evidence <url-or-path>", "Evidence pointer to write to the Project item."],
     ["--force", "Allow updates outside the normal heartbeat states."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -48,6 +55,7 @@ if (!args.issue) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -96,6 +104,17 @@ if (!args.yes) {
 }
 
 updateProjectItemFields({ project, item, values, clear })
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "heartbeat.completed",
+    clearedFields: clear,
+    fields: values,
+    issue: issueEventDetails(item),
+    previousAgentState: currentState ?? null,
+    repository,
+  },
+})
 
 console.log("agent-runner heartbeat: updated GitHub Project fields")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)

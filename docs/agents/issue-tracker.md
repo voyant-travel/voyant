@@ -423,6 +423,11 @@ Claim mode checks the same execution gate, then updates GitHub Project fields:
 - `Workspace = <planned workspace>`
 - `Last Heartbeat = <today>`
 
+Successful `claim`, `start`, `heartbeat`, `release`, and `complete-pr`
+commands append local JSONL audit events to `.agent-runs/events.jsonl` by
+default; pass `--event-log <path>` when a supervisor needs a different local
+ledger path.
+
 While work is claimed, refresh the item heartbeat or state:
 
 ```bash
