@@ -74,7 +74,27 @@ const groupMembershipInputSchema = z.discriminatedUnion("action", [
   groupCreateSchema,
 ])
 
-export const quickCreateBookingSchema = z.object({
+function requirePriceOverrideReason(
+  value: {
+    catalogSellAmountCents?: number | null
+    confirmedSellAmountCents?: number | null
+    priceOverrideReason?: string | null
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (value.confirmedSellAmountCents == null) return
+  if (value.catalogSellAmountCents === value.confirmedSellAmountCents) return
+  if (value.priceOverrideReason) return
+
+  ctx.addIssue({
+    code: z.ZodIssueCode.custom,
+    path: ["priceOverrideReason"],
+    message:
+      "A price override reason is required when the confirmed total differs from catalog pricing",
+  })
+}
+
+const quickCreateBookingBaseSchema = z.object({
   // Convert-product fields (mirrors convertProductSchema in bookings)
   productId: z.string().min(1),
   optionId: z.string().optional().nullable(),
@@ -90,6 +110,9 @@ export const quickCreateBookingSchema = z.object({
    * price. Per docs/architecture/promotions-architecture.md §7.1.
    */
   sellAmountCentsOverride: z.number().int().min(0).optional().nullable(),
+  catalogSellAmountCents: z.number().int().min(0).optional().nullable(),
+  confirmedSellAmountCents: z.number().int().min(0).optional().nullable(),
+  priceOverrideReason: z.string().trim().min(1).max(1000).optional().nullable(),
 
   // Orchestration fields
   travelers: z.array(travelerInputSchema).optional(),
@@ -97,6 +120,14 @@ export const quickCreateBookingSchema = z.object({
   voucherRedemption: voucherRedemptionInputSchema.optional(),
   groupMembership: groupMembershipInputSchema.optional(),
 })
+
+export const quickCreateBookingSchema = quickCreateBookingBaseSchema.superRefine(
+  requirePriceOverrideReason,
+)
+
+export const quickCreateBookingSubSchema = quickCreateBookingBaseSchema
+  .omit({ groupMembership: true })
+  .superRefine(requirePriceOverrideReason)
 
 export type QuickCreateBookingInput = z.infer<typeof quickCreateBookingSchema>
 export type QuickCreateTravelerInput = z.infer<typeof travelerInputSchema>
@@ -233,6 +264,9 @@ export async function quickCreateBooking(
         organizationId: input.organizationId ?? null,
         internalNotes: input.internalNotes ?? null,
         sellAmountCentsOverride: input.sellAmountCentsOverride ?? null,
+        catalogSellAmountCents: input.catalogSellAmountCents ?? null,
+        confirmedSellAmountCents: input.confirmedSellAmountCents ?? null,
+        priceOverrideReason: input.priceOverrideReason ?? null,
       })
       if (!booking) {
         // Caller gave us a product that doesn't resolve. Throw so drizzle

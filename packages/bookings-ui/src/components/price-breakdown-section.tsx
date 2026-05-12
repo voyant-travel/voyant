@@ -1,7 +1,8 @@
 "use client"
 
 import { usePricingPreview } from "@voyantjs/bookings-react"
-import { Label } from "@voyantjs/ui/components"
+import { Button, Label, Textarea } from "@voyantjs/ui/components"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import * as React from "react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
@@ -21,6 +22,15 @@ export interface PriceBreakdownLine {
   isGroupRate: boolean
 }
 
+export interface PriceBreakdownValue {
+  catalogAmountCents: number | null
+  confirmedAmountCents: number | null
+  currency: string | null
+  priceOverrideReason: string
+  isManualOverride: boolean
+  requiresReason: boolean
+}
+
 export interface PriceBreakdownSectionProps {
   productId?: string
   optionId?: string | null
@@ -38,7 +48,14 @@ export interface PriceBreakdownSectionProps {
     groupRate?: string
     empty?: string
     noPricing?: string
+    confirmedTotal?: string
+    manualTotal?: string
+    useCatalogTotal?: string
+    overrideReason?: string
+    overrideReasonPlaceholder?: string
+    overrideReasonRequired?: string
   }
+  onChange?: (value: PriceBreakdownValue) => void
 }
 
 interface TierRow {
@@ -83,6 +100,7 @@ export function PriceBreakdownSection({
   unitQuantities,
   catalogId,
   labels,
+  onChange,
 }: PriceBreakdownSectionProps) {
   const { formatCurrency, formatNumber } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
@@ -93,6 +111,15 @@ export function PriceBreakdownSection({
     catalogId: catalogId ?? null,
     enabled: Boolean(productId),
   })
+  const quantitiesKey = React.useMemo(() => JSON.stringify(unitQuantities), [unitQuantities])
+  const [manualAmountCents, setManualAmountCents] = React.useState<number | null>(null)
+  const [overrideReason, setOverrideReason] = React.useState("")
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset manual confirmation when the priced selection changes
+  React.useEffect(() => {
+    setManualAmountCents(null)
+    setOverrideReason("")
+  }, [productId, optionId, catalogId, quantitiesKey])
 
   const snapshot = preview.data?.data
   const currency = snapshot?.catalog.currencyCode ?? null
@@ -213,6 +240,70 @@ export function PriceBreakdownSection({
     return { lines: out, total: anyOnRequest ? null : runningTotal }
   }, [snapshot, unitQuantities, merged.onRequest, merged.groupRate])
 
+  const confirmedAmountCents = manualAmountCents ?? total
+  const isManualOverride =
+    manualAmountCents != null && (total === null || manualAmountCents !== total)
+  const requiresReason = isManualOverride && overrideReason.trim().length === 0
+
+  React.useEffect(() => {
+    onChange?.({
+      catalogAmountCents: total,
+      confirmedAmountCents,
+      currency,
+      priceOverrideReason: overrideReason,
+      isManualOverride,
+      requiresReason,
+    })
+  }, [
+    confirmedAmountCents,
+    currency,
+    isManualOverride,
+    onChange,
+    overrideReason,
+    requiresReason,
+    total,
+  ])
+
+  const manualTotalControls = (
+    <div className="flex flex-col gap-2 border-t pt-2">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs">{merged.manualTotal}</Label>
+          <CurrencyInput
+            value={manualAmountCents}
+            onChange={setManualAmountCents}
+            currency={currency ?? undefined}
+            placeholder={total === null ? merged.onRequest : formatAmount(total)}
+          />
+        </div>
+        {manualAmountCents != null ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setManualAmountCents(null)}
+          >
+            {merged.useCatalogTotal}
+          </Button>
+        ) : null}
+      </div>
+      {isManualOverride ? (
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs">{merged.overrideReason}</Label>
+          <Textarea
+            value={overrideReason}
+            onChange={(event) => setOverrideReason(event.target.value)}
+            placeholder={merged.overrideReasonPlaceholder}
+            rows={2}
+          />
+          {requiresReason ? (
+            <p className="text-xs text-destructive">{merged.overrideReasonRequired}</p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+
   // Empty states
   if (!productId) return null
   if (preview.isError || (preview.isSuccess && !snapshot)) {
@@ -220,6 +311,7 @@ export function PriceBreakdownSection({
       <div className="flex flex-col gap-2 rounded-md border p-3">
         <Label>{merged.heading}</Label>
         <p className="text-xs text-muted-foreground">{merged.noPricing}</p>
+        {manualTotalControls}
       </div>
     )
   }
@@ -228,6 +320,7 @@ export function PriceBreakdownSection({
       <div className="flex flex-col gap-2 rounded-md border p-3">
         <Label>{merged.heading}</Label>
         <p className="text-xs text-muted-foreground">{merged.empty}</p>
+        {manualTotalControls}
       </div>
     )
   }
@@ -259,6 +352,13 @@ export function PriceBreakdownSection({
           {total === null ? merged.onRequest : formatAmount(total)}
         </span>
       </div>
+      <div className="flex items-baseline justify-between text-sm font-medium">
+        <span>{merged.confirmedTotal}</span>
+        <span className="tabular-nums">
+          {confirmedAmountCents === null ? merged.onRequest : formatAmount(confirmedAmountCents)}
+        </span>
+      </div>
+      {manualTotalControls}
     </div>
   )
 }
