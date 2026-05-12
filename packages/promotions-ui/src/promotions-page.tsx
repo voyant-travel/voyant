@@ -8,6 +8,7 @@
  */
 
 import type { QueryClient } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   createPromotionsClientOptions,
   getPromotionsListQueryOptions,
@@ -44,6 +45,8 @@ import { Plus, Search, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
 
+import type { PromotionsUiMessages } from "./i18n/messages.js"
+import { usePromotionsUiMessagesOrDefault } from "./i18n/provider.js"
 import { PromotionDialog } from "./promotion-dialog.js"
 
 const DEFAULT_PAGE_SIZE = 25
@@ -100,6 +103,8 @@ export function PromotionsPage({
   onOpenPromotion,
   renderPromotionDialog,
 }: PromotionsPageProps = {}) {
+  const messages = usePromotionsUiMessagesOrDefault()
+  const pageMessages = messages.promotionsPage
   const [search, setSearch] = useState("")
   const [applicationMode, setApplicationMode] = useState<string>(ALL)
   const [status, setStatus] = useState<string>(ALL)
@@ -183,21 +188,19 @@ export function PromotionsPage({
     <div className={cn("flex flex-col gap-6 p-6", className)}>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
-          <p className="text-sm text-muted-foreground">
-            Auto-applied catalog discounts and code-redeemed offers.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{pageMessages.title}</h1>
+          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="mr-2 size-4" aria-hidden="true" />
-          New promotion
+          {pageMessages.newPromotion}
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[14rem] max-w-sm flex-1">
           <Label htmlFor="promotions-search" className="sr-only">
-            Search promotions
+            {pageMessages.searchLabel}
           </Label>
           <Search
             className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -205,7 +208,7 @@ export function PromotionsPage({
           />
           <Input
             id="promotions-search"
-            placeholder="Search name, slug, description, or code"
+            placeholder={pageMessages.searchPlaceholder}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -223,13 +226,13 @@ export function PromotionsPage({
           }}
         >
           <SelectTrigger className="w-[10.5rem]">
-            <SelectValue placeholder="Mode" />
+            <SelectValue placeholder={pageMessages.modePlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>All modes</SelectItem>
+            <SelectItem value={ALL}>{pageMessages.allModes}</SelectItem>
             {applicationModes.map((mode) => (
               <SelectItem key={mode} value={mode}>
-                {applicationModeLabel(mode)}
+                {messages.common.applicationModeLabels[mode]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -243,13 +246,13 @@ export function PromotionsPage({
           }}
         >
           <SelectTrigger className="w-[10.5rem]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={pageMessages.statusPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>All statuses</SelectItem>
+            <SelectItem value={ALL}>{pageMessages.allStatuses}</SelectItem>
             {statusFilters.map((value) => (
               <SelectItem key={value} value={value}>
-                {statusLabel(value)}
+                {messages.common.statusLabels[value]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -263,13 +266,13 @@ export function PromotionsPage({
           }}
         >
           <SelectTrigger className="w-[11rem]">
-            <SelectValue placeholder="Scope" />
+            <SelectValue placeholder={pageMessages.scopePlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>All scopes</SelectItem>
+            <SelectItem value={ALL}>{pageMessages.allScopes}</SelectItem>
             {scopeKinds.map((value) => (
               <SelectItem key={value} value={value}>
-                {scopeKindLabel(value)}
+                {messages.common.scopeKindLabels[value]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -281,14 +284,14 @@ export function PromotionsPage({
             setValidityRange(value)
             resetPage()
           }}
-          placeholder="Validity range"
+          placeholder={pageMessages.validityRangePlaceholder}
           className="w-[15rem]"
         />
 
         {hasActiveFilters ? (
           <Button variant="ghost" onClick={clearFilters}>
             <X className="mr-2 size-4" aria-hidden="true" />
-            Clear
+            {pageMessages.clearFilters}
           </Button>
         ) : null}
       </div>
@@ -297,13 +300,13 @@ export function PromotionsPage({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Mode</TableHead>
-              <TableHead>Scope</TableHead>
-              <TableHead>Discount</TableHead>
-              <TableHead>Validity</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{pageMessages.columns.name}</TableHead>
+              <TableHead>{pageMessages.columns.mode}</TableHead>
+              <TableHead>{pageMessages.columns.scope}</TableHead>
+              <TableHead>{pageMessages.columns.discount}</TableHead>
+              <TableHead>{pageMessages.columns.validity}</TableHead>
+              <TableHead>{pageMessages.columns.code}</TableHead>
+              <TableHead>{pageMessages.columns.status}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -315,7 +318,9 @@ export function PromotionsPage({
                   colSpan={TABLE_COLUMN_COUNT}
                   className="h-24 text-center text-sm text-destructive"
                 >
-                  Failed to load: {error instanceof Error ? error.message : String(error)}
+                  {formatMessage(pageMessages.loadFailedPrefix, {
+                    message: error instanceof Error ? error.message : String(error),
+                  })}
                 </TableCell>
               </TableRow>
             ) : offers.length === 0 ? (
@@ -324,7 +329,7 @@ export function PromotionsPage({
                   colSpan={TABLE_COLUMN_COUNT}
                   className="h-24 text-center text-sm text-muted-foreground"
                 >
-                  No promotions match the current filters.
+                  {pageMessages.empty}
                 </TableCell>
               </TableRow>
             ) : (
@@ -340,23 +345,27 @@ export function PromotionsPage({
                   </TableCell>
                   <TableCell>
                     <Badge variant={offer.code == null ? "secondary" : "outline"}>
-                      {offer.code == null ? "Auto" : "Code"}
+                      {offer.code == null ? pageMessages.badges.auto : pageMessages.badges.code}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {summarizeScope(offer.scope)}
+                    {summarizeScope(offer.scope, messages)}
                   </TableCell>
-                  <TableCell>{summarizeDiscount(offer)}</TableCell>
+                  <TableCell>{summarizeDiscount(offer, pageMessages)}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {summarizeValidity(offer.validFrom, offer.validUntil)}
+                    {summarizeValidity(offer.validFrom, offer.validUntil, pageMessages)}
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{offer.code ?? "-"}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {offer.code ?? pageMessages.summaries.noCode}
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant={statusBadgeVariant(getOfferStatus(offer))}>
-                        {statusLabel(getOfferStatus(offer))}
+                        {messages.common.statusLabels[getOfferStatus(offer)]}
                       </Badge>
-                      {offer.stackable ? <Badge variant="secondary">Stackable</Badge> : null}
+                      {offer.stackable ? (
+                        <Badge variant="secondary">{pageMessages.badges.stackable}</Badge>
+                      ) : null}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -375,6 +384,7 @@ export function PromotionsPage({
         onNext={() => setPageIndex((prev) => prev + 1)}
         canGoBack={pageIndex > 0}
         canGoForward={(pageIndex + 1) * pageSize < total}
+        messages={pageMessages.pagination}
       />
 
       {dialog}
@@ -391,6 +401,7 @@ function PaginationBar({
   onNext,
   canGoBack,
   canGoForward,
+  messages,
 }: {
   shown: number
   total: number
@@ -400,21 +411,28 @@ function PaginationBar({
   onNext: () => void
   canGoBack: boolean
   canGoForward: boolean
+  messages: PromotionsUiMessages["promotionsPage"]["pagination"]
 }) {
   return (
     <div className="flex items-center justify-between text-sm text-muted-foreground">
       <span>
-        Showing {shown} of {total}
+        {formatMessage(messages.showing, {
+          shown,
+          total,
+        })}
       </span>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" disabled={!canGoBack} onClick={onPrevious}>
-          Previous
+          {messages.previous}
         </Button>
         <span>
-          Page {page} of {pageCount}
+          {formatMessage(messages.page, {
+            page,
+            pageCount,
+          })}
         </span>
         <Button variant="outline" size="sm" disabled={!canGoForward} onClick={onNext}>
-          Next
+          {messages.next}
         </Button>
       </div>
     </div>
@@ -454,38 +472,81 @@ function PromotionRowSkeleton({ rows }: { rows: number }) {
   )
 }
 
-function summarizeScope(scope: PromotionalOfferScope): string {
+function summarizeScope(scope: PromotionalOfferScope, messages: PromotionsUiMessages): string {
+  const summary = messages.promotionsPage.summaries
   switch (scope.kind) {
     case "global":
-      return "Global"
+      return summary.globalScope
     case "products":
-      return `${scope.productIds.length} product${scope.productIds.length === 1 ? "" : "s"}`
+      return formatMessage(summary.productsScope, {
+        count: scope.productIds.length,
+        noun:
+          scope.productIds.length === 1
+            ? summary.productNouns.singular
+            : summary.productNouns.plural,
+      })
     case "categories":
-      return `${scope.categoryIds.length} categor${scope.categoryIds.length === 1 ? "y" : "ies"}`
+      return formatMessage(summary.categoriesScope, {
+        count: scope.categoryIds.length,
+        noun:
+          scope.categoryIds.length === 1
+            ? summary.categoryNouns.singular
+            : summary.categoryNouns.plural,
+      })
     case "destinations":
-      return `${scope.destinationIds.length} destination${scope.destinationIds.length === 1 ? "" : "s"}`
+      return formatMessage(summary.destinationsScope, {
+        count: scope.destinationIds.length,
+        noun:
+          scope.destinationIds.length === 1
+            ? summary.destinationNouns.singular
+            : summary.destinationNouns.plural,
+      })
     case "markets":
-      return `Markets: ${scope.marketIds.join(", ")}`
+      return formatMessage(summary.marketsScope, {
+        markets: scope.marketIds.join(", "),
+      })
     case "audiences":
-      return `Audiences: ${scope.audiences.join(", ")}`
+      return formatMessage(summary.audiencesScope, {
+        audiences: scope.audiences
+          .map((audience) => messages.common.audienceLabels[audience])
+          .join(", "),
+      })
   }
 }
 
-function summarizeDiscount(offer: PromotionalOfferRecord): string {
+function summarizeDiscount(
+  offer: PromotionalOfferRecord,
+  messages: PromotionsUiMessages["promotionsPage"],
+): string {
   if (offer.discountType === "percentage") {
-    return `${offer.discountPercent ?? "?"}%`
+    return `${offer.discountPercent ?? messages.summaries.unknownPercentage}%`
   }
   const cents = offer.discountAmountCents ?? 0
   const currency = offer.currency ?? ""
   return `${(cents / 100).toFixed(2)} ${currency}`.trim()
 }
 
-function summarizeValidity(from: string | null, until: string | null): string {
-  if (from == null && until == null) return "Anytime"
+function summarizeValidity(
+  from: string | null,
+  until: string | null,
+  messages: PromotionsUiMessages["promotionsPage"],
+): string {
+  if (from == null && until == null) return messages.summaries.anytime
   const fmt = (iso: string) => iso.slice(0, 10)
-  if (from == null) return `Until ${fmt(until ?? "")}`
-  if (until == null) return `From ${fmt(from)}`
-  return `${fmt(from)} - ${fmt(until)}`
+  if (from == null) {
+    return formatMessage(messages.summaries.until, {
+      date: fmt(until ?? ""),
+    })
+  }
+  if (until == null) {
+    return formatMessage(messages.summaries.from, {
+      date: fmt(from),
+    })
+  }
+  return formatMessage(messages.summaries.range, {
+    from: fmt(from),
+    until: fmt(until),
+  })
 }
 
 function getOfferStatus(offer: PromotionalOfferRecord): PromotionalOfferListStatus {
@@ -508,39 +569,5 @@ function statusBadgeVariant(
       return "destructive"
     case "archived":
       return "outline"
-  }
-}
-
-function applicationModeLabel(mode: PromotionalOfferApplicationMode): string {
-  return mode === "auto" ? "Auto-applied" : "Code-redeemed"
-}
-
-function statusLabel(status: PromotionalOfferListStatus): string {
-  switch (status) {
-    case "active":
-      return "Active"
-    case "scheduled":
-      return "Scheduled"
-    case "expired":
-      return "Expired"
-    case "archived":
-      return "Archived"
-  }
-}
-
-function scopeKindLabel(scopeKind: PromotionalOfferScopeKind): string {
-  switch (scopeKind) {
-    case "global":
-      return "Global"
-    case "products":
-      return "Products"
-    case "categories":
-      return "Categories"
-    case "destinations":
-      return "Destinations"
-    case "markets":
-      return "Markets"
-    case "audiences":
-      return "Audiences"
   }
 }

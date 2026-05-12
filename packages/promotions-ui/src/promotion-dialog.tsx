@@ -10,9 +10,11 @@
  * search components per scope kind.
  */
 
+import { formatMessage } from "@voyantjs/i18n"
 import {
   type PromotionalOfferRecord,
   type PromotionalOfferScope,
+  type PromotionalOfferScopeKind,
   type PromotionInsertInput,
   promotionalOfferScopeSchema,
   useCreatePromotion,
@@ -39,6 +41,9 @@ import {
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
 import { useEffect, useState } from "react"
+
+import type { PromotionsUiMessages } from "./i18n/messages.js"
+import { usePromotionsUiMessagesOrDefault } from "./i18n/provider.js"
 
 export interface PromotionDialogProps {
   open: boolean
@@ -170,17 +175,20 @@ function parseIds(raw: string): string[] {
     .filter((s) => s.length > 0)
 }
 
-function buildPayload(state: FormState): PromotionInsertInput | { error: string } {
-  if (!state.name.trim()) return { error: "Name is required" }
-  if (!state.slug.trim()) return { error: "Slug is required" }
+function buildPayload(
+  state: FormState,
+  messages: PromotionsUiMessages["promotionDialog"],
+): PromotionInsertInput | { error: string } {
+  if (!state.name.trim()) return { error: messages.validation.nameRequired }
+  if (!state.slug.trim()) return { error: messages.validation.slugRequired }
   if (state.discountType === "percentage" && !state.discountPercent) {
-    return { error: "Discount percent is required for percentage offers" }
+    return { error: messages.validation.discountPercentRequired }
   }
   if (state.discountType === "fixed_amount") {
     if (state.discountAmountCents == null || state.discountAmountCents <= 0) {
-      return { error: "Discount amount is required for fixed-amount offers" }
+      return { error: messages.validation.discountAmountRequired }
     }
-    if (!state.currency.trim()) return { error: "Currency is required for fixed-amount offers" }
+    if (!state.currency.trim()) return { error: messages.validation.currencyRequired }
   }
 
   // Validate scope shape via Zod so the user gets clear errors when (e.g.)
@@ -188,7 +196,11 @@ function buildPayload(state: FormState): PromotionInsertInput | { error: string 
   const scope = buildScope(state)
   const scopeResult = promotionalOfferScopeSchema.safeParse(scope)
   if (!scopeResult.success) {
-    return { error: `Scope: ${scopeResult.error.issues[0]?.message ?? "invalid"}` }
+    return {
+      error: formatMessage(messages.validation.scopeInvalidPrefix, {
+        message: scopeResult.error.issues[0]?.message ?? messages.validation.scopeInvalid,
+      }),
+    }
   }
 
   const payload: PromotionInsertInput = {
@@ -211,6 +223,8 @@ function buildPayload(state: FormState): PromotionInsertInput | { error: string 
 }
 
 export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogProps) {
+  const messages = usePromotionsUiMessagesOrDefault()
+  const dialogMessages = messages.promotionDialog
   const [state, setState] = useState<FormState>(emptyForm())
   const [error, setError] = useState<string | null>(null)
   const createMutation = useCreatePromotion()
@@ -231,7 +245,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
 
   async function handleSave() {
     setError(null)
-    const result = buildPayload(state)
+    const result = buildPayload(state, dialogMessages)
     if ("error" in result) {
       setError(result.error)
       return
@@ -252,50 +266,49 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit promotion" : "New promotion"}</DialogTitle>
-          <DialogDescription>
-            Set discount, scope, and validity. Code-gated offers require a non-empty code; leave it
-            blank for auto-applied offers.
-          </DialogDescription>
+          <DialogTitle>
+            {isEdit ? dialogMessages.titles.edit : dialogMessages.titles.create}
+          </DialogTitle>
+          <DialogDescription>{dialogMessages.description}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="promotion-name">Name</Label>
+              <Label htmlFor="promotion-name">{dialogMessages.fields.name}</Label>
               <Input
                 id="promotion-name"
                 value={state.name}
                 onChange={(e) => setField("name", e.target.value)}
-                placeholder="Spring Sale 2026"
+                placeholder={dialogMessages.placeholders.name}
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="promotion-slug">Slug</Label>
+              <Label htmlFor="promotion-slug">{dialogMessages.fields.slug}</Label>
               <Input
                 id="promotion-slug"
                 value={state.slug}
                 onChange={(e) => setField("slug", e.target.value)}
-                placeholder="spring-sale-2026"
+                placeholder={dialogMessages.placeholders.slug}
               />
             </div>
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="promotion-description">Description</Label>
+            <Label htmlFor="promotion-description">{dialogMessages.fields.description}</Label>
             <Textarea
               id="promotion-description"
               value={state.description}
               onChange={(e) => setField("description", e.target.value)}
               rows={2}
-              placeholder="Internal note — what this offer is for"
+              placeholder={dialogMessages.placeholders.description}
             />
           </div>
 
           {/* Discount block */}
           <div className="grid grid-cols-3 gap-3">
             <div className="grid gap-1.5">
-              <Label>Type</Label>
+              <Label>{dialogMessages.fields.type}</Label>
               <Select
                 value={state.discountType}
                 onValueChange={(v) => {
@@ -306,14 +319,18 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="percentage">Percentage</SelectItem>
-                  <SelectItem value="fixed_amount">Fixed amount</SelectItem>
+                  <SelectItem value="percentage">
+                    {messages.common.discountTypeLabels.percentage}
+                  </SelectItem>
+                  <SelectItem value="fixed_amount">
+                    {messages.common.discountTypeLabels.fixed_amount}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {state.discountType === "percentage" ? (
               <div className="grid gap-1.5">
-                <Label htmlFor="promotion-percent">Percent</Label>
+                <Label htmlFor="promotion-percent">{dialogMessages.fields.percent}</Label>
                 <Input
                   id="promotion-percent"
                   type="number"
@@ -322,28 +339,28 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                   max="100"
                   value={state.discountPercent}
                   onChange={(e) => setField("discountPercent", e.target.value)}
-                  placeholder="20"
+                  placeholder={dialogMessages.placeholders.percent}
                 />
               </div>
             ) : (
               <>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="promotion-amount">Amount</Label>
+                  <Label htmlFor="promotion-amount">{dialogMessages.fields.amount}</Label>
                   <CurrencyInput
                     id="promotion-amount"
                     value={state.discountAmountCents}
                     onChange={(value) => setField("discountAmountCents", value)}
                     currency={state.currency}
-                    placeholder="5.00"
+                    placeholder={dialogMessages.placeholders.amount}
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="promotion-currency">Currency</Label>
+                  <Label htmlFor="promotion-currency">{dialogMessages.fields.currency}</Label>
                   <Input
                     id="promotion-currency"
                     value={state.currency}
                     onChange={(e) => setField("currency", e.target.value)}
-                    placeholder="USD"
+                    placeholder={dialogMessages.placeholders.currency}
                     maxLength={3}
                   />
                 </div>
@@ -353,7 +370,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
 
           {/* Scope picker — discriminated union */}
           <div className="grid gap-1.5">
-            <Label>Scope</Label>
+            <Label>{dialogMessages.fields.scope}</Label>
             <Select
               value={state.scopeKind}
               onValueChange={(v) => {
@@ -368,14 +385,14 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
               <SelectContent>
                 {SCOPE_KINDS.map((kind) => (
                   <SelectItem key={kind} value={kind}>
-                    {kind}
+                    {messages.common.scopeKindLabels[kind]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             {state.scopeKind === "global" ? (
-              <p className="text-sm text-muted-foreground">Applies to every product.</p>
+              <p className="text-sm text-muted-foreground">{dialogMessages.hints.globalScope}</p>
             ) : null}
 
             {(state.scopeKind === "products" ||
@@ -384,20 +401,22 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
               state.scopeKind === "markets") && (
               <div className="grid gap-1.5">
                 <Label htmlFor="promotion-scope-ids">
-                  {scopeIdsLabel(state.scopeKind)} (comma-separated IDs)
+                  {formatMessage(dialogMessages.fields.scopeIds, {
+                    scope: scopeIdsLabel(state.scopeKind, messages.common.scopeKindLabels),
+                  })}
                 </Label>
                 <Input
                   id="promotion-scope-ids"
                   value={state.scopeIds}
                   onChange={(e) => setField("scopeIds", e.target.value)}
-                  placeholder={scopeIdsPlaceholder(state.scopeKind)}
+                  placeholder={scopeIdsPlaceholder(state.scopeKind, dialogMessages.placeholders)}
                 />
               </div>
             )}
 
             {state.scopeKind === "audiences" && (
               <div className="grid gap-2">
-                <Label>Audiences</Label>
+                <Label>{dialogMessages.fields.audiences}</Label>
                 <div className="flex flex-wrap gap-3">
                   {AUDIENCE_OPTIONS.map((audience) => {
                     const selected = state.scopeAudiences.includes(audience)
@@ -413,7 +432,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                             setField("scopeAudiences", next)
                           }}
                         />
-                        {audience}
+                        {messages.common.audienceLabels[audience]}
                       </label>
                     )
                   })}
@@ -425,14 +444,14 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           {/* Validity window */}
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="promotion-valid-from">Valid from</Label>
+              <Label htmlFor="promotion-valid-from">{dialogMessages.fields.validFrom}</Label>
               <DateTimePicker
                 value={state.validFrom}
                 onChange={(nextValue) => setField("validFrom", nextValue ?? "")}
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="promotion-valid-until">Valid until</Label>
+              <Label htmlFor="promotion-valid-until">{dialogMessages.fields.validUntil}</Label>
               <DateTimePicker
                 value={state.validUntil}
                 onChange={(nextValue) => setField("validUntil", nextValue ?? "")}
@@ -443,16 +462,16 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           {/* Code + stacking + minPax + active */}
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="promotion-code">Code (optional)</Label>
+              <Label htmlFor="promotion-code">{dialogMessages.fields.code}</Label>
               <Input
                 id="promotion-code"
                 value={state.code}
                 onChange={(e) => setField("code", e.target.value)}
-                placeholder="EARLYBIRD2026"
+                placeholder={dialogMessages.placeholders.code}
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="promotion-min-pax">Min pax (optional)</Label>
+              <Label htmlFor="promotion-min-pax">{dialogMessages.fields.minPax}</Label>
               <Input
                 id="promotion-min-pax"
                 type="number"
@@ -460,7 +479,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                 step="1"
                 value={state.minPax}
                 onChange={(e) => setField("minPax", e.target.value)}
-                placeholder="4"
+                placeholder={dialogMessages.placeholders.minPax}
               />
             </div>
           </div>
@@ -472,7 +491,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                 checked={state.stackable}
                 onCheckedChange={(v) => setField("stackable", Boolean(v))}
               />
-              <Label htmlFor="promotion-stackable">Stackable with other offers</Label>
+              <Label htmlFor="promotion-stackable">{dialogMessages.fields.stackable}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch
@@ -480,7 +499,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                 checked={state.active}
                 onCheckedChange={(v) => setField("active", Boolean(v))}
               />
-              <Label htmlFor="promotion-active">Active</Label>
+              <Label htmlFor="promotion-active">{dialogMessages.fields.active}</Label>
             </div>
           </div>
 
@@ -489,10 +508,14 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Cancel
+            {messages.common.cancel}
           </Button>
           <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? "Saving…" : isEdit ? "Save changes" : "Create"}
+            {isPending
+              ? messages.common.saving
+              : isEdit
+                ? messages.common.saveChanges
+                : messages.common.create}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -500,28 +523,25 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
   )
 }
 
-function scopeIdsLabel(kind: "products" | "categories" | "destinations" | "markets"): string {
-  switch (kind) {
-    case "products":
-      return "Product IDs"
-    case "categories":
-      return "Category IDs"
-    case "destinations":
-      return "Destination IDs"
-    case "markets":
-      return "Market IDs"
-  }
+function scopeIdsLabel(
+  kind: "products" | "categories" | "destinations" | "markets",
+  labels: Record<PromotionalOfferScopeKind, string>,
+): string {
+  return labels[kind]
 }
 
-function scopeIdsPlaceholder(kind: "products" | "categories" | "destinations" | "markets"): string {
+function scopeIdsPlaceholder(
+  kind: "products" | "categories" | "destinations" | "markets",
+  placeholders: PromotionsUiMessages["promotionDialog"]["placeholders"],
+): string {
   switch (kind) {
     case "products":
-      return "prod_xxx, prod_yyy"
+      return placeholders.productIds
     case "categories":
-      return "cat_xxx"
+      return placeholders.categoryIds
     case "destinations":
-      return "dest_xxx"
+      return placeholders.destinationIds
     case "markets":
-      return "mkt_xxx"
+      return placeholders.marketIds
   }
 }
