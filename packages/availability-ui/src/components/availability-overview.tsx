@@ -33,6 +33,7 @@ import {
   Search,
   Truck,
 } from "lucide-react"
+import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
 import { type AvailabilityColumnsMessages, getSlotStatusLabel } from "./availability-columns.js"
 
 function interpolate(template: string, values: Record<string, string | number>): string {
@@ -108,6 +109,7 @@ export function AvailabilityOverview({
   onJumpToSlots?: () => void
   showFilters?: boolean
 }) {
+  useAvailabilityUiMessagesOrDefault()
   const openSlotsCount =
     providedOpenSlotsCount ?? constrainedSlots.filter((slot) => slot.status === "open").length
   const activeRulesCount = filteredRules.filter((rule) => rule.active).length

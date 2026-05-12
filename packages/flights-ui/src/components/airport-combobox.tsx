@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components
 import { cn } from "@voyantjs/ui/lib/utils"
 import { ChevronDown, MapPin } from "lucide-react"
 import { useState } from "react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface AirportComboboxProps {
   /** Selected IATA code, or null when nothing is selected. */
@@ -40,6 +41,7 @@ export function AirportCombobox({
   className,
   disabled,
 }: AirportComboboxProps) {
+  useFlightsUiMessagesOrDefault()
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState("")
   const search = useAirportSearch(input, { enabled: open, limit: 30 })

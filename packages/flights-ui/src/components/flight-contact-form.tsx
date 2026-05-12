@@ -3,6 +3,7 @@
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
 import { Mail, Phone } from "lucide-react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface FlightContactValue {
   email?: string
@@ -20,6 +21,7 @@ export interface FlightContactFormProps {
  * phone is recommended but optional.
  */
 export function FlightContactForm({ value, onChange }: FlightContactFormProps) {
+  useFlightsUiMessagesOrDefault()
   return (
     <div className="rounded-lg border bg-card p-4 shadow-sm">
       <h3 className="mb-3 font-medium text-sm">Contact details</h3>

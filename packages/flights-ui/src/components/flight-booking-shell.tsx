@@ -15,7 +15,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useMemo, useState } from "react"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { FlightBaggageStep } from "./flight-baggage-step.js"
 import {
   type BillingValue,
@@ -195,6 +195,7 @@ export function FlightBookingShell({
   renderBillingOrgPicker,
   onSaveBillingDefaults,
 }: FlightBookingShellProps) {
+  useFlightsUiMessagesOrDefault()
   const [stepId, setStepId] = useState<StepId>("review")
   const [paxList, setPaxList] = useState<FlightPassenger[]>([])
   const [billing, setBilling] = useState<BillingValue>(emptyBillingValue)

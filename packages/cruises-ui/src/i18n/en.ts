@@ -11,6 +11,12 @@ export const cruisesUiEn: CruisesUiMessages = {
       fallback: "{count}-occupancy",
     },
   },
+  catalogCard: {
+    untitled: "Untitled sailing",
+    priceFrom: "from {amount}",
+    nightsSingular: "{count} night",
+    nightsPlural: "{count} nights",
+  },
   enrichmentProgramList: {
     loading: "Loading enrichment programs…",
     empty: "No enrichment programs published for this cruise.",

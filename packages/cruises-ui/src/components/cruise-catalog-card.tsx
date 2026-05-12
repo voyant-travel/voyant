@@ -4,6 +4,7 @@ import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { useCruisesUiI18nOrDefault } from "../i18n/index.js"
 
 export interface CruiseCatalogCardProps {
   hit: CatalogSearchHit
@@ -17,8 +18,10 @@ export interface CruiseCatalogCardProps {
  * `currency`, `embarkationPort`, `tags`.
  */
 export function CruiseCatalogCard({ hit, onClick, className }: CruiseCatalogCardProps) {
+  const i18n = useCruisesUiI18nOrDefault()
+  const messages = i18n.messages.catalogCard
   const f = hit.document.fields
-  const name = stringOr(f.name, "Untitled sailing")
+  const name = stringOr(f.name, messages.untitled)
   const shipName = stringOr(f.shipName, null)
   const status = stringOr(f.status, null)
   const departureDate = stringOr(f.departureDate, null)
@@ -30,11 +33,11 @@ export function CruiseCatalogCard({ hit, onClick, className }: CruiseCatalogCard
   const currency = stringOr(f.currency ?? f.sellCurrency, null)
   const priceLabel =
     priceFrom != null && currency
-      ? `from ${new Intl.NumberFormat(undefined, {
-          style: "currency",
-          currency,
-          maximumFractionDigits: 0,
-        }).format(priceFrom / 100)}`
+      ? formatTemplate(messages.priceFrom, {
+          amount: i18n.formatCurrency(priceFrom / 100, currency, {
+            maximumFractionDigits: 0,
+          }),
+        })
       : null
 
   return (
@@ -62,7 +65,9 @@ export function CruiseCatalogCard({ hit, onClick, className }: CruiseCatalogCard
           {departureDate && <span>{departureDate}</span>}
           {nights != null && (
             <span>
-              {nights} night{nights === 1 ? "" : "s"}
+              {formatTemplate(nights === 1 ? messages.nightsSingular : messages.nightsPlural, {
+                count: nights,
+              })}
             </span>
           )}
           {embarkationPort && <span>· {embarkationPort}</span>}
@@ -80,6 +85,13 @@ export function CruiseCatalogCard({ hit, onClick, className }: CruiseCatalogCard
       </CardContent>
     </Card>
   )
+}
+
+function formatTemplate(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = values[key]
+    return value === undefined ? "" : String(value)
+  })
 }
 
 function stringOr<T>(value: unknown, fallback: T): string | T {

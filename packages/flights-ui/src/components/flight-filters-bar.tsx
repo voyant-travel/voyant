@@ -16,7 +16,7 @@ import { Input } from "@voyantjs/ui/components/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
 import { PlusCircle, X } from "lucide-react"
 import type { ReactNode } from "react"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"
 
 export interface FlightFiltersValue {
@@ -43,6 +43,7 @@ export interface FlightFiltersBarProps {
 }
 
 export function FlightFiltersBar({ value, onChange, offers, carrierName }: FlightFiltersBarProps) {
+  useFlightsUiMessagesOrDefault()
   const carrierBuckets = deriveCarrierBuckets(offers)
   const stopsBuckets = deriveStopsBuckets(offers)
   const hasSelections =

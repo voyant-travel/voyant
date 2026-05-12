@@ -76,11 +76,59 @@ export type CatalogUiMessages = {
       cruiseName: string
       charterName: string
       roomName: string
+      detailName: string
+    }
+    search: {
+      noTabsConfigured: string
+      clearAll: string
+      noResults: string
+      yourFilters: string
+      resultSingular: string
+      resultPlural: string
+      showing: string
+      previous: string
+      next: string
+      page: string
+    }
+    filtersUi: {
+      min: string
+      max: string
+      to: string
+      clear: string
+      apply: string
+      noResults: string
+      clearFilter: string
+    }
+    detail: {
+      loadingFullContent: string
+      matchPrefix: string
+      stale: string
+      system: string
+      highlights: string
+      supplier: string
+      itinerary: string
+      tagsThemes: string
+      attributes: string
+      departures: string
+      ends: string
+      book: string
+      options: string
+      policies: string
+      brochure: string
+      media: string
+      day: string
+      unlimited: string
+      leftWithCapacity: string
+      left: string
+      capacity: string
     }
     values: {
       active: string
       inactive: string
       empty: string
+      yes: string
+      no: string
+      open: string
     }
   }
   catalogBookingPage: {

@@ -13,6 +13,7 @@ import {
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, ExternalLink, Loader2, Minus } from "lucide-react"
 import { type ReactNode, useEffect, useState } from "react"
+import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface CatalogDetailAction {
   label: string
@@ -159,9 +160,11 @@ export function CatalogDetailSheet({
   renderItineraryDay,
   renderExtraSections,
 }: CatalogDetailSheetProps) {
+  const catalogMessages = useCatalogUiMessagesOrDefault().catalogPage
+  const messages = catalogMessages.detail
   const open = hit != null
   const fields = hit?.document.fields ?? {}
-  const name = stringOr(fields.name, "Untitled")
+  const name = stringOr(fields.name, catalogMessages.fallbacks.detailName)
   const status = stringOr(fields.status, null)
 
   // Enrichment fetch — fires when the sheet opens for a hit. The
@@ -268,7 +271,7 @@ export function CatalogDetailSheet({
                     )}
                     {enrichment?.matchKind && enrichment.matchKind !== "exact" && (
                       <Badge variant="outline" className="font-normal">
-                        match: {enrichment.matchKind}
+                        {formatTemplate(messages.matchPrefix, { kind: enrichment.matchKind })}
                       </Badge>
                     )}
                     {enrichment?.source && (
@@ -281,7 +284,7 @@ export function CatalogDetailSheet({
                     )}
                     {enrichment?.servedStale && (
                       <Badge variant="outline" className="font-normal">
-                        stale
+                        {messages.stale}
                       </Badge>
                     )}
                     {enrichment?.machineTranslated && (
@@ -304,7 +307,7 @@ export function CatalogDetailSheet({
               {enrichmentLoading && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground xl:col-span-2">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Loading full content…
+                  {messages.loadingFullContent}
                 </div>
               )}
 
@@ -325,7 +328,7 @@ export function CatalogDetailSheet({
                 )}
 
                 {enrichment?.highlights && enrichment.highlights.length > 0 && (
-                  <Section title="Highlights">
+                  <Section title={messages.highlights}>
                     <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
                       {enrichment.highlights.map((h) => (
                         <li key={h}>{h}</li>
@@ -335,20 +338,20 @@ export function CatalogDetailSheet({
                 )}
 
                 {enrichment?.supplier && (
-                  <Section title="Supplier">
+                  <Section title={messages.supplier}>
                     <p className="text-sm text-foreground">{enrichment.supplier}</p>
                   </Section>
                 )}
 
                 {enrichment?.itinerary && enrichment.itinerary.length > 0 && (
-                  <Section title="Itinerary">
+                  <Section title={messages.itinerary}>
                     <ol className="space-y-2">
                       {enrichment.itinerary.map((d) => (
                         <li key={d.dayNumber}>
                           {renderItineraryDay && hit ? (
                             renderItineraryDay(d, hit, enrichment)
                           ) : (
-                            <DefaultItineraryDay day={d} />
+                            <DefaultItineraryDay day={d} dayLabel={messages.day} />
                           )}
                         </li>
                       ))}
@@ -357,7 +360,7 @@ export function CatalogDetailSheet({
                 )}
 
                 {arrayEntries.length > 0 && (
-                  <Section title="Tags & themes">
+                  <Section title={messages.tagsThemes}>
                     <div className="flex flex-col gap-3">
                       {arrayEntries.map(([key, value]) => (
                         <div key={key} className="flex flex-col gap-1.5">
@@ -372,7 +375,7 @@ export function CatalogDetailSheet({
                 )}
 
                 {attributeEntries.length > 0 && (
-                  <Section title="Attributes">
+                  <Section title={messages.attributes}>
                     <AttributeList entries={attributeEntries} formatters={formatters} />
                   </Section>
                 )}
@@ -380,7 +383,7 @@ export function CatalogDetailSheet({
                 {systemEntries.length > 0 && (
                   <details className="group rounded-lg border bg-muted/20">
                     <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-muted/40 group-open:border-b">
-                      System
+                      {messages.system}
                     </summary>
                     <div className="px-4 py-3">
                       <AttributeList entries={systemEntries} formatters={formatters} />
@@ -391,7 +394,7 @@ export function CatalogDetailSheet({
 
               <div className="flex min-w-0 flex-col gap-6">
                 {enrichment?.departures && enrichment.departures.length > 0 && (
-                  <Section title="Departures">
+                  <Section title={messages.departures}>
                     <ul className="divide-y rounded-md border">
                       {enrichment.departures.slice(0, 12).map((d) => {
                         const soldOut =
@@ -399,7 +402,7 @@ export function CatalogDetailSheet({
                           d.status === "closed" ||
                           d.status === "cancelled" ||
                           (typeof d.remaining === "number" && d.remaining <= 0)
-                        const availabilityLabel = formatDepartureAvailability(d)
+                        const availabilityLabel = formatDepartureAvailability(d, messages)
                         return (
                           <li
                             key={d.id}
@@ -409,7 +412,9 @@ export function CatalogDetailSheet({
                               <span className="font-medium">{formatDeparture(d.startsAt)}</span>
                               {d.endsAt && (
                                 <span className="text-xs text-muted-foreground">
-                                  ends {formatDeparture(d.endsAt)}
+                                  {formatTemplate(messages.ends, {
+                                    date: formatDeparture(d.endsAt),
+                                  })}
                                 </span>
                               )}
                             </div>
@@ -436,7 +441,7 @@ export function CatalogDetailSheet({
                                   disabled={soldOut}
                                   onClick={() => onBookDeparture(hit, d)}
                                 >
-                                  Book
+                                  {messages.book}
                                 </Button>
                               )}
                             </div>
@@ -448,7 +453,7 @@ export function CatalogDetailSheet({
                 )}
 
                 {enrichment?.options && enrichment.options.length > 0 && (
-                  <Section title="Options">
+                  <Section title={messages.options}>
                     <ul className="space-y-1.5 text-sm">
                       {enrichment.options.map((o) => (
                         <li key={o.id} className="rounded-md border border-border px-3 py-2">
@@ -463,7 +468,7 @@ export function CatalogDetailSheet({
                 )}
 
                 {enrichment?.policies && enrichment.policies.length > 0 && (
-                  <Section title="Policies & terms">
+                  <Section title={messages.policies}>
                     <dl className="space-y-2 text-sm">
                       {enrichment.policies.map((p, idx) => (
                         // biome-ignore lint/suspicious/noArrayIndexKey: ordering is stable per render
@@ -480,10 +485,10 @@ export function CatalogDetailSheet({
                   </Section>
                 )}
 
-                {brochureContent && <Section title="Brochure">{brochureContent}</Section>}
+                {brochureContent && <Section title={messages.brochure}>{brochureContent}</Section>}
 
                 {shouldRenderMediaSection && (
-                  <Section title="Media">
+                  <Section title={messages.media}>
                     {mediaContent ?? <DefaultMediaGrid media={enrichment?.media ?? []} />}
                   </Section>
                 )}
@@ -516,11 +521,19 @@ export function CatalogDetailSheet({
   )
 }
 
-function DefaultItineraryDay({ day }: { day: CatalogDetailItineraryDay }) {
+function DefaultItineraryDay({
+  day,
+  dayLabel,
+}: {
+  day: CatalogDetailItineraryDay
+  dayLabel: string
+}) {
   return (
     <div className="rounded-md border border-border bg-muted/10 px-3 py-2 text-sm">
       <div className="flex items-baseline gap-2">
-        <span className="text-xs font-medium text-muted-foreground">Day {day.dayNumber}</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          {formatTemplate(dayLabel, { day: day.dayNumber })}
+        </span>
         {day.title && <span className="font-medium">{day.title}</span>}
         {day.location && <span className="text-xs text-muted-foreground">· {day.location}</span>}
       </div>
@@ -775,13 +788,28 @@ function formatPriceCents(cents: number, currency?: string | null): string {
 
 function formatDepartureAvailability(
   departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
+  messages: ReturnType<typeof useCatalogUiMessagesOrDefault>["catalogPage"]["detail"],
 ): string | null {
-  if (departure.unlimited) return "Unlimited"
+  if (departure.unlimited) return messages.unlimited
   if (typeof departure.capacity === "number" && typeof departure.remaining === "number") {
-    return `${departure.remaining} / ${departure.capacity} left`
+    return formatTemplate(messages.leftWithCapacity, {
+      remaining: departure.remaining,
+      capacity: departure.capacity,
+    })
   }
-  if (typeof departure.remaining === "number") return `${departure.remaining} left`
-  if (typeof departure.capacity === "number") return `${departure.capacity} capacity`
+  if (typeof departure.remaining === "number") {
+    return formatTemplate(messages.left, { remaining: departure.remaining })
+  }
+  if (typeof departure.capacity === "number") {
+    return formatTemplate(messages.capacity, { capacity: departure.capacity })
+  }
   if (departure.status && departure.status !== "open") return humanize(departure.status)
   return null
+}
+
+function formatTemplate(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = values[key]
+    return value === undefined ? "" : String(value)
+  })
 }

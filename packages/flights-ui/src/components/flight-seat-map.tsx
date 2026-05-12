@@ -9,6 +9,7 @@ import {
 } from "@voyantjs/ui/components/tooltip"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Plane } from "lucide-react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 /**
  * Marker rendered on top of a seat to indicate which passenger picked it.
@@ -48,6 +49,7 @@ export function FlightSeatMap({
   highlightedPaxLabel,
   className,
 }: FlightSeatMapProps) {
+  useFlightsUiMessagesOrDefault()
   const aircraftName =
     (seatMap.providerData?.aircraftName as string | undefined) ?? seatMap.aircraft
 

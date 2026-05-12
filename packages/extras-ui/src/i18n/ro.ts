@@ -1,6 +1,10 @@
 import type { ExtrasUiMessages } from "./messages.js"
 
 export const extrasUiRo = {
+  catalogCard: {
+    untitled: "Extra fara nume",
+    unitPrefix: "/ {unit}",
+  },
   productCombobox: {
     placeholder: "Cauta produse...",
     loading: "Se incarca...",

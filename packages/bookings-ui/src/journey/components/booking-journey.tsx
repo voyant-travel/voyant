@@ -33,7 +33,7 @@ import {
 } from "@voyantjs/catalog-react/booking-engine"
 import { Button } from "@voyantjs/ui/components/button"
 import { useEffect, useMemo, useRef, useState } from "react"
-
+import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
 import {
   type BookingJourneyProps,
@@ -42,7 +42,6 @@ import {
   type JourneyStep,
 } from "../types.js"
 import { ContractPreviewDialog } from "./contract-preview-dialog.js"
-
 import {
   AccommodationStep,
   AddonsStep,
@@ -56,6 +55,7 @@ import { PriceSidePanel } from "./side-panel.js"
 import { StepHeader } from "./step-header.js"
 
 export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
+  useBookingsUiMessagesOrDefault()
   const surface = props.surface ?? "admin"
 
   const [draft, setDraft] = useState<Draft>(() => {

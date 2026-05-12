@@ -14,6 +14,7 @@ import {
 } from "@voyantjs/ui/components/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
 import { PlusCircle } from "lucide-react"
+import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface CatalogFacetedFilterProps {
   /** Field name (matches the indexer document field). */
@@ -51,6 +52,7 @@ export function CatalogFacetedFilter({
   onClear,
   formatValue,
 }: CatalogFacetedFilterProps) {
+  const messages = useCatalogUiMessagesOrDefault().catalogPage.filtersUi
   const selectedSet = new Set(selected)
   const display = (v: string | number) => (formatValue ? formatValue(v) : String(v))
 
@@ -71,7 +73,7 @@ export function CatalogFacetedFilter({
         <Command>
           <CommandInput placeholder={label} />
           <CommandList>
-            <CommandEmpty>No results.</CommandEmpty>
+            <CommandEmpty>{messages.noResults}</CommandEmpty>
             <CommandGroup>
               {buckets.map((bucket) => {
                 const isSelected = selectedSet.has(bucket.value)
@@ -97,7 +99,7 @@ export function CatalogFacetedFilter({
                     onSelect={onClear}
                     className="justify-center text-center text-muted-foreground"
                   >
-                    Clear filter
+                    {messages.clearFilter}
                   </CommandItem>
                 </CommandGroup>
               </>

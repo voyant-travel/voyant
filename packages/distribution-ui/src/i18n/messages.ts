@@ -124,6 +124,70 @@ export type DistributionUiMessages = {
       allChannelsPlaceholder: string
     }
   }
+  channelSync: {
+    title: string
+    description: string
+    throttledTitle: string
+    throttledBody: string
+    statusLabels: Record<"pending" | "ok" | "failed" | "compensated", string>
+    statusTiles: Record<
+      "pending" | "ok" | "failed" | "compensated",
+      {
+        label: string
+        description: string
+      }
+    >
+    filters: {
+      booking: string
+      bookingPlaceholder: string
+      bookingSearching: string
+      bookingEmpty: string
+      channel: string
+      channelPlaceholder: string
+      channelEmpty: string
+    }
+    table: {
+      title: string
+      filteredDescription: string
+      defaultDescription: string
+      noMatchesTitle: string
+      noLinksTitle: string
+      noMatchesDescription: string
+      noLinksDescription: string
+      booking: string
+      channel: string
+      status: string
+      attempts: string
+      lastPush: string
+      externalRef: string
+      actions: string
+      itemPrefix: string
+      deliveries: string
+      retry: string
+    }
+    reconcile: {
+      trigger: string
+      menuLabel: string
+      bookings: string
+      priority: string
+      availability: string
+      content: string
+      lastRun: string
+    }
+    refresh: {
+      loading: string
+      title: string
+      refreshing: string
+      updatedAgo: string
+    }
+    drawer: {
+      title: string
+      emptyTitle: string
+      emptyDescription: string
+      attempt: string
+      httpStatus: string
+    }
+  }
   tables: {
     channel: {
       channel: string

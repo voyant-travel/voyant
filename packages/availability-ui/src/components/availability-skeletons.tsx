@@ -8,8 +8,10 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
+import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
 
 export function AvailabilityBodySkeleton() {
+  const messages = useAvailabilityUiMessagesOrDefault().page.skeleton
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -62,11 +64,11 @@ export function AvailabilityBodySkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Remaining</TableHead>
-              <TableHead>Capacity</TableHead>
+              <TableHead>{messages.date}</TableHead>
+              <TableHead>{messages.product}</TableHead>
+              <TableHead>{messages.status}</TableHead>
+              <TableHead>{messages.remaining}</TableHead>
+              <TableHead>{messages.capacity}</TableHead>
             </TableRow>
           </TableHeader>
           <SkeletonTableRows

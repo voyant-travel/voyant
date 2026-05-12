@@ -43,6 +43,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { zodResolver } from "../form-resolver.js"
+import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
 
 interface RuleDialogMessages {
   validationProductRequired: string
@@ -268,6 +269,7 @@ export function AvailabilityRuleDialog(props: {
   onSubmit: (payload: AvailabilityRuleSubmitPayload, context: SubmitContext) => Promise<void>
   onSuccess: () => void
 }) {
+  useAvailabilityUiMessagesOrDefault()
   const ruleMessages = props.messages.dialogs.rule
   const ruleFormSchema = getRuleFormSchema(props.messages)
   const form = useForm<RuleFormValues, unknown, RuleFormOutput>({

@@ -4,7 +4,7 @@ import type { FareBreakdown, FlightOffer } from "@voyantjs/flights/contract/type
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Separator } from "@voyantjs/ui/components/separator"
 import { cn } from "@voyantjs/ui/lib/utils"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { FlightItinerary } from "./flight-itinerary.js"
 
 export interface FlightOfferDetailProps {
@@ -34,6 +34,7 @@ export function FlightOfferDetail({
   itineraryLabels,
   className,
 }: FlightOfferDetailProps) {
+  useFlightsUiMessagesOrDefault()
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       <section className="flex flex-col gap-5">

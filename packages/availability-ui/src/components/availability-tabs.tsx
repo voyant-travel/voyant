@@ -13,6 +13,7 @@ import { ConfirmActionButton, SelectionActionBar } from "@voyantjs/ui/components
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { TabsContent } from "@voyantjs/ui/components/tabs"
 import type { ReactNode } from "react"
+import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
 import { formatLocalizedSelectionLabel } from "../utils.js"
 import {
   type AvailabilityColumnsMessages,
@@ -128,6 +129,7 @@ export function AvailabilitySlotsTab(props: {
   onEdit: (row: AvailabilitySlotRow) => void
   toolbar?: ReactNode
 }) {
+  useAvailabilityUiMessagesOrDefault()
   const selection = (count: number) =>
     formatLocalizedSelectionLabel(
       count,

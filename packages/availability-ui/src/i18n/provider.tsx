@@ -30,6 +30,13 @@ export type AvailabilityUiMessages = BaseAvailabilityMessages & {
       reset: string
       productSearchEmpty: string
     }
+    skeleton: {
+      date: string
+      product: string
+      status: string
+      remaining: string
+      capacity: string
+    }
   }
 }
 
@@ -50,6 +57,13 @@ const availabilityUiExtraEn = {
       reset: "Reset",
       productSearchEmpty: "No products match that search.",
     },
+    skeleton: {
+      date: "Date",
+      product: "Product",
+      status: "Status",
+      remaining: "Remaining",
+      capacity: "Capacity",
+    },
   },
 } satisfies Pick<AvailabilityUiMessages, "page">
 
@@ -69,6 +83,13 @@ const availabilityUiExtraRo = {
       inactive: "Inactive",
       reset: "Reseteaza",
       productSearchEmpty: "Niciun produs nu se potriveste cautarii.",
+    },
+    skeleton: {
+      date: "Data",
+      product: "Produs",
+      status: "Status",
+      remaining: "Ramase",
+      capacity: "Capacitate",
     },
   },
 } satisfies Pick<AvailabilityUiMessages, "page">

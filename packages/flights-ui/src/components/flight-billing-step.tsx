@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/component
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Building2, ChevronDown, User, Users } from "lucide-react"
 import { type ReactNode, useState } from "react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 /** Tab id — Privat (personal) vs Companie (business invoicing). */
 export type BillingMode = "personal" | "company"
@@ -91,6 +92,7 @@ export function FlightBillingStep({
   renderPersonPicker,
   renderOrgPicker,
 }: FlightBillingStepProps) {
+  useFlightsUiMessagesOrDefault()
   const apply = (prefill: Partial<BillingValue>) => onChange({ ...value, ...prefill })
   const set = (patch: Partial<BillingValue>) => onChange({ ...value, ...patch })
 

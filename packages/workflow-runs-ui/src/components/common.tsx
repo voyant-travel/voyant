@@ -4,7 +4,7 @@ import { Badge } from "@voyantjs/ui/components/badge"
 import { AlertCircle, CheckCircle2, Clock, Copy, RefreshCw, XCircle } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import type { WorkflowRunsUiMessages } from "../i18n/index.js"
+import { useWorkflowRunsUiMessagesOrDefault, type WorkflowRunsUiMessages } from "../i18n/index.js"
 import type { WorkflowRun, WorkflowRunStep, WorkflowRunStepStatus } from "../types.js"
 
 export function StatusIcon({ status }: { status: WorkflowRun["status"] }) {
@@ -42,6 +42,7 @@ export function StatusBadge({
   status: WorkflowRun["status"]
   messages: WorkflowRunsUiMessages
 }) {
+  useWorkflowRunsUiMessagesOrDefault()
   const className = {
     succeeded: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300", // i18n-literal-ok: CSS classes
     failed: "border-destructive/40 bg-destructive/10 text-destructive", // i18n-literal-ok: CSS classes

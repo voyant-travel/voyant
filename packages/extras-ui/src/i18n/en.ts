@@ -1,6 +1,10 @@
 import type { ExtrasUiMessages } from "./messages.js"
 
 export const extrasUiEn = {
+  catalogCard: {
+    untitled: "Untitled extra",
+    unitPrefix: "/ {unit}",
+  },
   productCombobox: {
     placeholder: "Search products...",
     loading: "Loading...",

@@ -19,7 +19,7 @@ import { PhoneInput } from "@voyantjs/ui/components/phone-input"
 import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
 import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
-
+import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import {
   type Draft,
   patchBilling,
@@ -55,6 +55,7 @@ export function ConfigureStep({
 }: StepCommonProps & {
   renderExtras?: () => React.ReactNode
 }): React.ReactElement {
+  useBookingsUiMessagesOrDefault()
   return (
     <Card>
       <CardHeader>

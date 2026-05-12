@@ -4,7 +4,7 @@ import type { FlightOffer, Money, PassengerCounts } from "@voyantjs/flights/cont
 import { Button } from "@voyantjs/ui/components/button"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, Pencil, Plane, Users } from "lucide-react"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"
 
 /**
@@ -77,6 +77,7 @@ export function FlightBookingLedger({
   completedSections,
   className,
 }: FlightBookingLedgerProps) {
+  useFlightsUiMessagesOrDefault()
   const total = computeTotal(selection, outboundExtras, returnExtras)
   const paxTotal = (passengers.adults ?? 0) + (passengers.children ?? 0) + (passengers.infants ?? 0)
 

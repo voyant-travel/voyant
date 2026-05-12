@@ -11,6 +11,7 @@ import {
 } from "@voyantjs/ui/components/dialog"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import * as React from "react"
+import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 
 /**
  * Contract preview dialog. Renders a contract template with the
@@ -82,6 +83,7 @@ export function ContractPreviewDialog({
   marketingLabel,
   termsLabel,
 }: ContractPreviewDialogProps): React.ReactElement {
+  useBookingsUiMessagesOrDefault()
   const [loadState, setLoadState] = React.useState<"idle" | "loading" | "ready" | "error">("idle")
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [renderedHtml, setRenderedHtml] = React.useState<string>("")

@@ -4,7 +4,7 @@ import type { FlightOffer, Itinerary } from "@voyantjs/flights/contract/types"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Plane } from "lucide-react"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"
 
 export interface FlightOfferRowProps {
@@ -39,6 +39,7 @@ export function FlightOfferRow({
   selected,
   className,
 }: FlightOfferRowProps) {
+  useFlightsUiMessagesOrDefault()
   const interactive = !!onClick
   const Container: "button" | "div" = interactive ? "button" : "div"
   return (

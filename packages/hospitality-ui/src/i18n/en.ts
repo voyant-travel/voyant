@@ -95,6 +95,11 @@ export const hospitalityUiEn = {
       empty: "No rate plans found.",
     },
   },
+  catalogCard: {
+    untitled: "Untitled room",
+    ratePerNight: "{amount} / night",
+    sleeps: "sleeps {count}",
+  },
   mealPlansTab: {
     description: "Meal inclusions like BB, HB, FB, all-inclusive, and room-only.",
     add: "Add Meal Plan",

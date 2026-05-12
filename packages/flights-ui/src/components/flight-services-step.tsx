@@ -14,6 +14,7 @@ import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Accessibility, Minus, Package, Plus, Sparkles } from "lucide-react"
 import { useMemo } from "react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 type AssistancePicks = NonNullable<AncillarySelection["assistance"]>
 type ExtrasPicks = NonNullable<AncillarySelection["extras"]>
@@ -53,6 +54,7 @@ export function FlightServicesStep({
   onExtrasChange,
   loading,
 }: FlightServicesStepProps) {
+  useFlightsUiMessagesOrDefault()
   const isRoundTrip = !!returnOffer
   const paxRows = useMemo(
     () => buildPassengerRows(passengers, passengerCounts),

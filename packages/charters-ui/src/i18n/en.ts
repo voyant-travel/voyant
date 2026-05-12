@@ -4,6 +4,12 @@ export const chartersUiEn: ChartersUiMessages = {
   common: {
     fallbackCurrencyAmount: "{currency} {amount}",
   },
+  catalogCard: {
+    untitled: "Untitled charter",
+    ratePerWeek: "{amount} / week",
+    cabinsSingular: "{count} cabin",
+    cabinsPlural: "{count} cabins",
+  },
   externalCharterBadge: {
     title: "Sourced via {sourceProvider}",
     label: "External · {sourceProvider}",

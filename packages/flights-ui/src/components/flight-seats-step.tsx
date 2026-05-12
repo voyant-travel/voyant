@@ -12,7 +12,7 @@ import type {
 import { cn } from "@voyantjs/ui/lib/utils"
 import { CheckCircle2, X } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { FlightSeatMap, type SeatPickMarker } from "./flight-seat-map.js"
 
 type SeatPicks = NonNullable<AncillarySelection["seats"]>
@@ -63,6 +63,7 @@ export function FlightSeatsStep({
   mode,
   onModeChange,
 }: FlightSeatsStepProps) {
+  useFlightsUiMessagesOrDefault()
   const segments = useMemo(
     () => collectSegments(outboundOffer, returnOffer),
     [outboundOffer, returnOffer],
