@@ -78,4 +78,12 @@ export {
   signUpWithEmail,
   useSignUp,
 } from "./use-sign-up.js"
+export {
+  useVerifyEmail,
+  type VerifyEmailInput,
+  type VerifyEmailOtpInput,
+  type VerifyEmailResult,
+  type VerifyEmailTokenInput,
+  verifyEmail,
+} from "./use-verify-email.js"
 export { useWorkspaceMutation } from "./use-workspace-mutation.js"

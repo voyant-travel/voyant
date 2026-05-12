@@ -224,3 +224,31 @@ import { ForgotPasswordPage, ResetPasswordPage } from "@voyantjs/auth-ui"
 Apps own token extraction from the route or query string and pass it through the
 `token` prop. `redirectTo` is forwarded to Better Auth's password-reset request
 endpoint so emailed links can return to the app reset route.
+
+## Email verification
+
+`VerifyEmailPage` provides the shared card-less email verification surface. It
+uses `useVerifyEmail()` from `@voyantjs/auth-react` and supports both Better
+Auth token verification links and the email OTP flow mounted by the templates.
+The page is router-agnostic: pass hrefs for plain links, callbacks for app-owned
+navigation, and `onResendVerification` when the app wires the email OTP client.
+
+```tsx
+import { VerifyEmailPage } from "@voyantjs/auth-ui"
+
+<VerifyEmailPage
+  email={search.email}
+  signInHref="/sign-in"
+  onCompleted={() => navigate({ to: "/" })}
+  onResendVerification={(email) =>
+    authClient.emailOtp.sendVerificationOtp({ email, type: "email-verification" })
+  }
+/>
+```
+
+Token links can pass the token directly. By default the page submits supplied
+tokens on mount.
+
+```tsx
+<VerifyEmailPage token={search.token} onCompleted={() => navigate({ to: "/" })} />
+```

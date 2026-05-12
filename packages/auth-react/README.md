@@ -14,6 +14,8 @@ This package wraps the shared Voyant auth HTTP contract:
 - `/auth/email-otp/request-email-change`
 - `/auth/email-otp/change-email`
 - `/auth/sign-up/email`
+- `/auth/verify-email`
+- `/auth/email-otp/verify-email`
 - `/auth/workspace/current`
 - `/auth/workspace/active-organization`
 - `/auth/organization/list-members`
@@ -35,6 +37,7 @@ It provides reusable React surfaces for:
 - organization invitation listing
 - email/password sign-in
 - email/password sign-up
+- email verification by Better Auth token or email OTP
 - password reset request and confirmation
 - invite, accept, cancel, remove, and role update mutations
 - API token listing, creation, update, and deletion
@@ -162,6 +165,22 @@ await confirmReset.mutateAsync({
 The request hook posts to `/auth/request-password-reset` with `email` and
 `redirectTo`. The confirm hook posts to `/auth/reset-password` with `token` and
 `newPassword`, then invalidates the current auth queries.
+
+## Email Verification
+
+`useVerifyEmail()` exposes the shared Better Auth verification flow. Token links
+call the mounted Better Auth `/auth/verify-email` endpoint; OTP verification
+uses the email OTP plugin route used by the templates.
+
+```tsx
+const verifyEmail = useVerifyEmail()
+
+await verifyEmail.mutateAsync({ token })
+await verifyEmail.mutateAsync({ email, otp })
+```
+
+After verification succeeds, the hook calls `/auth/status` to provision the
+Voyant user profile if needed and invalidates the current auth queries.
 
 ## Single-Tenant Apps
 
