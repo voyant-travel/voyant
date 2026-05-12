@@ -11,6 +11,7 @@ import type { UseSlotsOptions } from "./hooks/use-slots.js"
 import type { UseStartTimesOptions } from "./hooks/use-start-times.js"
 import { availabilityQueryKeys } from "./query-keys.js"
 import {
+  allocationAuditLogResponse,
   availabilityCloseoutListResponse,
   availabilityPickupPointListResponse,
   availabilityRuleListResponse,
@@ -21,6 +22,7 @@ import {
   availabilityStartTimeListResponse,
   bookingSummaryListResponse,
   productListResponse,
+  productOptionResourceTemplatesListResponse,
   productSingleResponse,
   resourceSummaryListResponse,
   slotAllocationManifestResponse,
@@ -210,6 +212,23 @@ export function getSlotAllocationQueryOptions(
   })
 }
 
+export function getSlotAllocationAuditLogQueryOptions(
+  client: FetchWithValidationOptions,
+  slotId: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: availabilityQueryKeys.slotAllocationAuditLog(slotId ?? ""),
+    queryFn: async () => {
+      if (!slotId) throw new Error("getSlotAllocationAuditLogQueryOptions requires a slotId")
+      return fetchWithValidation(
+        `/v1/admin/availability/slots/${slotId}/allocation/audit-log`,
+        allocationAuditLogResponse,
+        client,
+      )
+    },
+  })
+}
+
 export function getProductQueryOptions(
   client: FetchWithValidationOptions,
   id: string | null | undefined,
@@ -219,6 +238,24 @@ export function getProductQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getProductQueryOptions requires an id")
       return fetchWithValidation(`/v1/products/${id}`, productSingleResponse, client)
+    },
+  })
+}
+
+export function getProductResourceTemplatesQueryOptions(
+  client: FetchWithValidationOptions,
+  productId: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: availabilityQueryKeys.productResourceTemplates(productId ?? ""),
+    queryFn: async () => {
+      if (!productId)
+        throw new Error("getProductResourceTemplatesQueryOptions requires a productId")
+      return fetchWithValidation(
+        `/v1/admin/availability/products/${productId}/allocation/resource-templates`,
+        productOptionResourceTemplatesListResponse,
+        client,
+      )
     },
   })
 }

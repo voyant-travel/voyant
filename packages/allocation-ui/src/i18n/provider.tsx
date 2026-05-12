@@ -16,6 +16,15 @@ export type AllocationUiMessages = Record<string, unknown> & {
   empty: string
   back: string
   addRoom: string
+  generateRooms: string
+  generatingRooms: string
+  autoAllocate: string
+  autoAllocating: string
+  exportPassengers: string
+  exportRooming: string
+  auditLog: string
+  auditLogDescription: string
+  auditActions: Record<string, string>
   roomLabel: string
   roomCapacity: string
   createRoom: string
@@ -35,6 +44,8 @@ export type AllocationUiMessages = Record<string, unknown> & {
   noRooms: string
   allocationFailed: string
   createRoomFailed: string
+  generateRoomsFailed: string
+  autoAllocateFailed: string
 }
 
 export const allocationUiEn = {
@@ -43,6 +54,27 @@ export const allocationUiEn = {
   empty: "No travelers on this departure yet.",
   back: "Back",
   addRoom: "Add room",
+  generateRooms: "Generate rooms",
+  generatingRooms: "Generating...",
+  autoAllocate: "Auto-allocate",
+  autoAllocating: "Allocating...",
+  exportPassengers: "Passengers",
+  exportRooming: "Rooming",
+  auditLog: "Audit log",
+  auditLogDescription: "Recent allocation changes for this departure.",
+  auditActions: {
+    "resource.create": "Resource created",
+    "resource.update": "Resource updated",
+    "resource.delete": "Resource deleted",
+    "traveler.assign": "Traveler assigned",
+    "traveler.unassign": "Traveler unassigned",
+    "traveler.sharing-group.set": "Sharing group set",
+    "traveler.sharing-group.clear": "Sharing group cleared",
+    "sharing-group.label.update": "Group label updated",
+    "sharing-group.label.clear": "Group label cleared",
+    "resources.materialize": "Resources generated",
+    "auto-allocate": "Auto-allocate",
+  },
   roomLabel: "Room label",
   roomCapacity: "Capacity",
   createRoom: "Create room",
@@ -62,6 +94,8 @@ export const allocationUiEn = {
   noRooms: "No rooms have been added for this slot.",
   allocationFailed: "Could not update allocation.",
   createRoomFailed: "Could not create room.",
+  generateRoomsFailed: "Could not generate rooms.",
+  autoAllocateFailed: "Could not auto-allocate travelers.",
 } satisfies AllocationUiMessages
 
 export const allocationUiRo = {
@@ -70,6 +104,27 @@ export const allocationUiRo = {
   empty: "Nu exista calatori pe aceasta plecare.",
   back: "Inapoi",
   addRoom: "Adauga camera",
+  generateRooms: "Genereaza camere",
+  generatingRooms: "Se genereaza...",
+  autoAllocate: "Auto-aloca",
+  autoAllocating: "Se aloca...",
+  exportPassengers: "Pasageri",
+  exportRooming: "Rooming",
+  auditLog: "Istoric",
+  auditLogDescription: "Ultimele modificari de alocare pentru aceasta plecare.",
+  auditActions: {
+    "resource.create": "Resursa creata",
+    "resource.update": "Resursa actualizata",
+    "resource.delete": "Resursa stearsa",
+    "traveler.assign": "Calator alocat",
+    "traveler.unassign": "Calator dezalocat",
+    "traveler.sharing-group.set": "Grup partaj setat",
+    "traveler.sharing-group.clear": "Grup partaj sters",
+    "sharing-group.label.update": "Eticheta grup actualizata",
+    "sharing-group.label.clear": "Eticheta grup stearsa",
+    "resources.materialize": "Resurse generate",
+    "auto-allocate": "Auto-alocare",
+  },
   roomLabel: "Eticheta camera",
   roomCapacity: "Capacitate",
   createRoom: "Creeaza camera",
@@ -89,6 +144,8 @@ export const allocationUiRo = {
   noRooms: "Nu exista camere adaugate pentru acest slot.",
   allocationFailed: "Alocarea nu a putut fi actualizata.",
   createRoomFailed: "Camera nu a putut fi creata.",
+  generateRoomsFailed: "Camerele nu au putut fi generate.",
+  autoAllocateFailed: "Calatorii nu au putut fi auto-alocati.",
 } satisfies AllocationUiMessages
 
 const fallbackLocale = "en"

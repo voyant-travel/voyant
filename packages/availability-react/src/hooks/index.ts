@@ -11,9 +11,14 @@ export type { UseRulesOptions } from "./use-rules.js"
 export { useRules } from "./use-rules.js"
 export {
   type UseSlotAllocationOptions,
+  useAllocationAutomationMutation,
   useAllocationResourceMutation,
   useAssignTravelerAllocationMutation,
+  useProductResourceTemplates,
+  useResourceTemplateMutation,
+  useSharingGroupLabelMutation,
   useSlotAllocation,
+  useSlotAllocationAuditLog,
   useTravelerSharingGroupMutation,
 } from "./use-slot-allocation.js"
 export type { UseSlotUnitAvailabilityOptions } from "./use-slot-unit-availability.js"

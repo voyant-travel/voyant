@@ -1,12 +1,19 @@
-import { and, asc, eq, type SQL, sql } from "drizzle-orm"
+import { newId } from "@voyantjs/db/lib/typeid"
+import { and, asc, desc, eq, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-import { allocationResources, availabilitySlots } from "./schema.js"
+import {
+  allocationAuditLog,
+  allocationResources,
+  availabilitySlots,
+  sharingGroupLabels,
+} from "./schema.js"
 import type {
   assignTravelerAllocationSchema,
   insertAllocationResourceSchema,
   pairSharingGroupSchema,
   updateAllocationResourceSchema,
+  updateSharingGroupLabelSchema,
   updateTravelerSharingGroupSchema,
 } from "./validation.js"
 
@@ -15,9 +22,14 @@ export type UpdateAllocationResourceInput = z.infer<typeof updateAllocationResou
 export type AssignTravelerAllocationInput = z.infer<typeof assignTravelerAllocationSchema>
 export type UpdateTravelerSharingGroupInput = z.infer<typeof updateTravelerSharingGroupSchema>
 export type PairSharingGroupInput = z.infer<typeof pairSharingGroupSchema>
+export type UpdateSharingGroupLabelInput = z.infer<typeof updateSharingGroupLabelSchema>
 
 interface SqlExecutor {
   execute(query: SQL): Promise<unknown>
+}
+
+export interface AllocationMutationOptions {
+  actorId?: string | null
 }
 
 export class AllocationServiceError extends Error {
@@ -76,6 +88,7 @@ export interface SlotAllocationManifest {
   }
   bookings: AllocationManifestBooking[]
   resources: Array<typeof allocationResources.$inferSelect>
+  sharingGroupLabels: Record<string, string>
   summary: {
     bookingCount: number
     travelerCount: number
@@ -108,6 +121,7 @@ export async function getSlotAllocationManifest(
       slot: serializeSlot(slot),
       bookings: [],
       resources,
+      sharingGroupLabels: {},
       summary: {
         bookingCount: 0,
         travelerCount: 0,
@@ -164,11 +178,20 @@ export async function getSlotAllocationManifest(
       travelers: travelersByBooking.get(row.id) ?? [],
     }),
   )
+  const sharingGroupLabelMap = await loadSharingGroupLabelMap(
+    db,
+    bookings.flatMap((booking) =>
+      booking.travelers.flatMap((traveler) =>
+        traveler.sharingGroupId ? [traveler.sharingGroupId] : [],
+      ),
+    ),
+  )
 
   return {
     slot: serializeSlot(slot),
     bookings,
     resources,
+    sharingGroupLabels: sharingGroupLabelMap,
     summary: bookings.reduce(
       (acc, booking) => {
         acc.bookingCount += 1
@@ -205,6 +228,7 @@ export async function createAllocationResource(
   db: PostgresJsDatabase,
   slotId: string,
   input: CreateAllocationResourceInput,
+  options: AllocationMutationOptions = {},
 ) {
   const [slot] = await db
     .select({ id: availabilitySlots.id })
@@ -227,6 +251,19 @@ export async function createAllocationResource(
       sortOrder: input.sortOrder ?? 0,
     })
     .returning()
+  if (row) {
+    await recordAllocationAudit(db, {
+      slotId,
+      action: "resource.create",
+      actorId: options.actorId ?? null,
+      resourceId: row.id,
+      after: {
+        kind: row.kind,
+        label: row.label,
+        capacity: row.capacity,
+      },
+    })
+  }
   return row ?? null
 }
 
@@ -235,11 +272,16 @@ export async function updateAllocationResource(
   slotId: string,
   resourceId: string,
   input: UpdateAllocationResourceInput,
+  options: AllocationMutationOptions = {},
 ) {
   const [existing] = await db
     .select({
       id: allocationResources.id,
       kind: allocationResources.kind,
+      label: allocationResources.label,
+      capacity: allocationResources.capacity,
+      flags: allocationResources.flags,
+      sortOrder: allocationResources.sortOrder,
     })
     .from(allocationResources)
     .where(and(eq(allocationResources.id, resourceId), eq(allocationResources.slotId, slotId)))
@@ -266,6 +308,26 @@ export async function updateAllocationResource(
     .set(patch)
     .where(and(eq(allocationResources.id, resourceId), eq(allocationResources.slotId, slotId)))
     .returning()
+  if (row) {
+    await recordAllocationAudit(db, {
+      slotId,
+      action: "resource.update",
+      actorId: options.actorId ?? null,
+      resourceId: row.id,
+      before: {
+        label: existing.label,
+        capacity: existing.capacity,
+        flags: existing.flags,
+        sortOrder: existing.sortOrder,
+      },
+      after: {
+        label: row.label,
+        capacity: row.capacity,
+        flags: row.flags,
+        sortOrder: row.sortOrder,
+      },
+    })
+  }
   return row ?? null
 }
 
@@ -273,12 +335,31 @@ export async function deleteAllocationResource(
   db: PostgresJsDatabase,
   slotId: string,
   resourceId: string,
+  options: AllocationMutationOptions = {},
 ) {
   const [row] = await db
     .delete(allocationResources)
     .where(and(eq(allocationResources.id, resourceId), eq(allocationResources.slotId, slotId)))
-    .returning({ id: allocationResources.id })
-  if (row) await clearTravelerAllocationsForResource(db, resourceId)
+    .returning({
+      id: allocationResources.id,
+      kind: allocationResources.kind,
+      label: allocationResources.label,
+      capacity: allocationResources.capacity,
+    })
+  if (row) {
+    await clearTravelerAllocationsForResource(db, resourceId)
+    await recordAllocationAudit(db, {
+      slotId,
+      action: "resource.delete",
+      actorId: options.actorId ?? null,
+      resourceId: row.id,
+      before: {
+        kind: row.kind,
+        label: row.label,
+        capacity: row.capacity,
+      },
+    })
+  }
   return row ?? null
 }
 
@@ -287,9 +368,12 @@ export async function assignTravelerAllocation(
   slotId: string,
   travelerId: string,
   input: AssignTravelerAllocationInput,
+  options: AllocationMutationOptions = {},
 ) {
+  let beforeResourceId: string | null = null
   await db.transaction(async (tx) => {
     await assertTravelerBelongsToSlot(tx, slotId, travelerId)
+    beforeResourceId = await getTravelerAllocation(tx, travelerId, input.kind)
 
     if (input.resourceId) {
       const [resource] = await executeRows<{
@@ -345,6 +429,14 @@ export async function assignTravelerAllocation(
       `)
     }
   })
+  await recordAllocationAudit(db, {
+    slotId,
+    action: input.resourceId ? "traveler.assign" : "traveler.unassign",
+    actorId: options.actorId ?? null,
+    travelerId,
+    before: { kind: input.kind, resourceId: beforeResourceId },
+    after: { kind: input.kind, resourceId: input.resourceId },
+  })
 
   return { travelerId, kind: input.kind, resourceId: input.resourceId }
 }
@@ -354,8 +446,10 @@ export async function updateTravelerSharingGroup(
   slotId: string,
   travelerId: string,
   input: UpdateTravelerSharingGroupInput,
+  options: AllocationMutationOptions = {},
 ) {
   await assertTravelerBelongsToSlot(db, slotId, travelerId)
+  const beforeSharingGroupId = await getTravelerSharingGroup(db, travelerId)
   await db.execute(sql`
     INSERT INTO booking_traveler_travel_details (traveler_id, sharing_group_id)
     VALUES (${travelerId}, ${input.sharingGroupId})
@@ -363,6 +457,14 @@ export async function updateTravelerSharingGroup(
       sharing_group_id = ${input.sharingGroupId},
       updated_at = now()
   `)
+  await recordAllocationAudit(db, {
+    slotId,
+    action: input.sharingGroupId ? "traveler.sharing-group.set" : "traveler.sharing-group.clear",
+    actorId: options.actorId ?? null,
+    travelerId,
+    before: { sharingGroupId: beforeSharingGroupId },
+    after: { sharingGroupId: input.sharingGroupId },
+  })
 
   return { travelerId, sharingGroupId: input.sharingGroupId }
 }
@@ -371,6 +473,7 @@ export async function pairSharingGroup(
   db: PostgresJsDatabase,
   slotId: string,
   input: PairSharingGroupInput,
+  options: AllocationMutationOptions = {},
 ) {
   for (const travelerId of input.travelerIds) {
     await assertTravelerBelongsToSlot(db, slotId, travelerId)
@@ -385,8 +488,124 @@ export async function pairSharingGroup(
       sharing_group_id = EXCLUDED.sharing_group_id,
       updated_at = now()
   `)
+  await recordAllocationAudit(db, {
+    slotId,
+    action: "traveler.sharing-group.set",
+    actorId: options.actorId ?? null,
+    after: { sharingGroupId, travelerIds: input.travelerIds },
+  })
 
   return { sharingGroupId, travelerIds: input.travelerIds }
+}
+
+export async function updateSharingGroupLabel(
+  db: PostgresJsDatabase,
+  slotId: string,
+  groupId: string,
+  input: UpdateSharingGroupLabelInput,
+  options: AllocationMutationOptions = {},
+) {
+  await assertSharingGroupBelongsToSlot(db, slotId, groupId)
+  const [row] = await db
+    .insert(sharingGroupLabels)
+    .values({ groupId, label: input.label })
+    .onConflictDoUpdate({
+      target: sharingGroupLabels.groupId,
+      set: { label: input.label, updatedAt: new Date() },
+    })
+    .returning()
+  await recordAllocationAudit(db, {
+    slotId,
+    action: "sharing-group.label.update",
+    actorId: options.actorId ?? null,
+    after: { sharingGroupId: groupId, label: row?.label ?? input.label },
+  })
+  return row ?? { groupId, label: input.label, createdAt: new Date(), updatedAt: new Date() }
+}
+
+export async function deleteSharingGroupLabel(
+  db: PostgresJsDatabase,
+  slotId: string,
+  groupId: string,
+  options: AllocationMutationOptions = {},
+) {
+  await assertSharingGroupBelongsToSlot(db, slotId, groupId)
+  const [row] = await db
+    .delete(sharingGroupLabels)
+    .where(eq(sharingGroupLabels.groupId, groupId))
+    .returning()
+  if (row) {
+    await recordAllocationAudit(db, {
+      slotId,
+      action: "sharing-group.label.clear",
+      actorId: options.actorId ?? null,
+      before: { sharingGroupId: groupId, label: row.label },
+    })
+  }
+  return row ?? null
+}
+
+export interface AllocationAuditLogEntry {
+  id: string
+  slotId: string
+  action: string
+  actorId: string | null
+  travelerId: string | null
+  resourceId: string | null
+  before: Record<string, unknown> | null
+  after: Record<string, unknown> | null
+  createdAt: string
+}
+
+export async function listAllocationAuditLog(
+  db: PostgresJsDatabase,
+  slotId: string,
+  limit = 50,
+): Promise<AllocationAuditLogEntry[]> {
+  const rows = await db
+    .select()
+    .from(allocationAuditLog)
+    .where(eq(allocationAuditLog.slotId, slotId))
+    .orderBy(desc(allocationAuditLog.createdAt))
+    .limit(limit)
+  return rows.map((row) => ({
+    id: row.id,
+    slotId: row.slotId,
+    action: row.action,
+    actorId: row.actorId,
+    travelerId: row.travelerId,
+    resourceId: row.resourceId,
+    before: row.before ?? null,
+    after: row.after ?? null,
+    createdAt: row.createdAt.toISOString(),
+  }))
+}
+
+export async function recordAllocationAudit(
+  db: SqlExecutor,
+  input: {
+    slotId: string
+    action: string
+    actorId?: string | null
+    travelerId?: string | null
+    resourceId?: string | null
+    before?: Record<string, unknown> | null
+    after?: Record<string, unknown> | null
+  },
+) {
+  await db.execute(sql`
+    INSERT INTO allocation_audit_log (id, slot_id, action, actor_id, traveler_id, resource_id, before, after)
+    VALUES (
+      ${newId("allocation_audit_log")},
+      ${input.slotId},
+      ${input.action},
+      ${input.actorId ?? null},
+      ${input.travelerId ?? null},
+      ${input.resourceId ?? null},
+      ${JSON.stringify(input.before ?? null)}::jsonb,
+      ${JSON.stringify(input.after ?? null)}::jsonb
+    )
+  `)
 }
 
 async function ensureTravelerTravelDetailsRow(db: SqlExecutor, travelerId: string) {
@@ -395,6 +614,32 @@ async function ensureTravelerTravelDetailsRow(db: SqlExecutor, travelerId: strin
     VALUES (${travelerId})
     ON CONFLICT (traveler_id) DO NOTHING
   `)
+}
+
+async function getTravelerAllocation(db: SqlExecutor, travelerId: string, kind: string) {
+  const rows = await executeRows<{ resource_id: string | null }>(
+    db,
+    sql`
+    SELECT allocations ->> ${kind} AS resource_id
+    FROM booking_traveler_travel_details
+    WHERE traveler_id = ${travelerId}
+    LIMIT 1
+  `,
+  )
+  return rows[0]?.resource_id ?? null
+}
+
+async function getTravelerSharingGroup(db: SqlExecutor, travelerId: string) {
+  const rows = await executeRows<{ sharing_group_id: string | null }>(
+    db,
+    sql`
+    SELECT sharing_group_id
+    FROM booking_traveler_travel_details
+    WHERE traveler_id = ${travelerId}
+    LIMIT 1
+  `,
+  )
+  return rows[0]?.sharing_group_id ?? null
 }
 
 async function assertTravelerBelongsToSlot(db: SqlExecutor, slotId: string, travelerId: string) {
@@ -415,6 +660,28 @@ async function assertTravelerBelongsToSlot(db: SqlExecutor, slotId: string, trav
 
   if (rows.length === 0) {
     throw new AllocationServiceError("Traveler not found for this slot", 404)
+  }
+}
+
+async function assertSharingGroupBelongsToSlot(db: SqlExecutor, slotId: string, groupId: string) {
+  const rows = await executeRows<{ exists: number }>(
+    db,
+    sql`
+    SELECT 1 AS exists
+    FROM booking_traveler_travel_details btd
+    JOIN booking_travelers bt ON bt.id = btd.traveler_id
+    JOIN booking_allocations ba ON ba.booking_id = bt.booking_id
+    JOIN bookings b ON b.id = bt.booking_id
+    WHERE btd.sharing_group_id = ${groupId}
+      AND ba.availability_slot_id = ${slotId}
+      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
+    LIMIT 1
+  `,
+  )
+
+  if (rows.length === 0) {
+    throw new AllocationServiceError("Sharing group not found for this slot", 404)
   }
 }
 
@@ -459,6 +726,24 @@ async function clearTravelerAllocationsForResource(db: PostgresJsDatabase, resou
       WHERE value = to_jsonb(${resourceId}::text)
     )
   `)
+}
+
+async function loadSharingGroupLabelMap(
+  db: PostgresJsDatabase,
+  groupIds: string[],
+): Promise<Record<string, string>> {
+  const uniqueIds = [...new Set(groupIds)]
+  if (uniqueIds.length === 0) return {}
+
+  const rows = await db
+    .select({
+      groupId: sharingGroupLabels.groupId,
+      label: sharingGroupLabels.label,
+    })
+    .from(sharingGroupLabels)
+    .where(sql`${sharingGroupLabels.groupId} = ANY(${uniqueIds}::text[])`)
+
+  return Object.fromEntries(rows.map((row) => [row.groupId, row.label]))
 }
 
 async function executeRows<T>(db: SqlExecutor, query: SQL): Promise<T[]> {

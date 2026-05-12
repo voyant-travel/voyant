@@ -10,6 +10,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core"
 
 export const availabilitySlotStatusEnum = pgEnum("availability_slot_status", [
@@ -183,6 +184,58 @@ export const allocationResources = pgTable(
     index("idx_allocation_resources_slot_kind").on(table.slotId, table.kind),
     index("idx_allocation_resources_parent").on(table.parentId),
     index("idx_allocation_resources_kind_sort").on(table.kind, table.sortOrder, table.createdAt),
+  ],
+)
+
+export const sharingGroupLabels = pgTable("sharing_group_labels", {
+  groupId: text("group_id").primaryKey(),
+  label: text("label").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const allocationAuditLog = pgTable(
+  "allocation_audit_log",
+  {
+    id: typeId("allocation_audit_log"),
+    slotId: typeIdRef("slot_id")
+      .notNull()
+      .references(() => availabilitySlots.id, { onDelete: "cascade" }),
+    action: text("action").notNull(),
+    actorId: text("actor_id"),
+    travelerId: text("traveler_id"),
+    resourceId: text("resource_id"),
+    before: jsonb("before").$type<Record<string, unknown> | null>(),
+    after: jsonb("after").$type<Record<string, unknown> | null>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_allocation_audit_slot_created").on(table.slotId, table.createdAt),
+    index("idx_allocation_audit_traveler").on(table.travelerId),
+  ],
+)
+
+export const productOptionResourceTemplates = pgTable(
+  "product_option_resource_templates",
+  {
+    id: typeId("product_option_resource_templates"),
+    productOptionId: text("product_option_id").notNull(),
+    kind: text("kind").notNull(),
+    refType: text("ref_type"),
+    refId: text("ref_id"),
+    capacity: integer("capacity").notNull(),
+    namePattern: text("name_pattern").notNull(),
+    layout: text("layout"),
+    flags: jsonb("flags").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_product_option_resource_templates_option_kind").on(
+      table.productOptionId,
+      table.kind,
+    ),
+    index("idx_product_option_resource_templates_kind").on(table.kind, table.createdAt),
   ],
 )
 
@@ -397,6 +450,12 @@ export type AvailabilityCloseout = typeof availabilityCloseouts.$inferSelect
 export type NewAvailabilityCloseout = typeof availabilityCloseouts.$inferInsert
 export type AllocationResource = typeof allocationResources.$inferSelect
 export type NewAllocationResource = typeof allocationResources.$inferInsert
+export type SharingGroupLabel = typeof sharingGroupLabels.$inferSelect
+export type NewSharingGroupLabel = typeof sharingGroupLabels.$inferInsert
+export type AllocationAuditLog = typeof allocationAuditLog.$inferSelect
+export type NewAllocationAuditLog = typeof allocationAuditLog.$inferInsert
+export type ProductOptionResourceTemplate = typeof productOptionResourceTemplates.$inferSelect
+export type NewProductOptionResourceTemplate = typeof productOptionResourceTemplates.$inferInsert
 export type AvailabilityPickupPoint = typeof availabilityPickupPoints.$inferSelect
 export type NewAvailabilityPickupPoint = typeof availabilityPickupPoints.$inferInsert
 export type AvailabilitySlotPickup = typeof availabilitySlotPickups.$inferSelect
@@ -449,6 +508,11 @@ export const allocationResourcesRelations = relations(allocationResources, ({ on
     references: [availabilitySlots.id],
   }),
 }))
+
+export const productOptionResourceTemplatesRelations = relations(
+  productOptionResourceTemplates,
+  () => ({}),
+)
 
 export const availabilityPickupPointsRelations = relations(
   availabilityPickupPoints,

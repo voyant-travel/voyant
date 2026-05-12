@@ -83,6 +83,8 @@ export const PREFIXES = {
   availability_slots: "avsl",
   availability_closeouts: "avcl",
   allocation_resources: "alrs",
+  allocation_audit_log: "alal",
+  product_option_resource_templates: "port",
   availability_pickup_points: "avpp",
   availability_slot_pickups: "avsp",
   product_meeting_configs: "pmcf",
