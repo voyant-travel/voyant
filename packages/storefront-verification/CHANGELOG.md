@@ -1,5 +1,15 @@
 # @voyantjs/storefront-verification
 
+## 0.34.0
+
+### Patch Changes
+
+- c397bf9: Document the Drizzle schema entrypoint required by mounted storefront verification routes and keep template migrations/configs aligned with the challenge table.
+  - @voyantjs/core@0.34.0
+  - @voyantjs/db@0.34.0
+  - @voyantjs/hono@0.34.0
+  - @voyantjs/notifications@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

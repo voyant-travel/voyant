@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.34.0
+
+### Patch Changes
+
+- 6ad175a: Add dashboard empty states, KPI empty hints, and localized first-run onboarding copy.
+
 ## 0.33.1
 
 ## 0.33.0

@@ -1,5 +1,20 @@
 # @voyantjs/crm-ui
 
+## 0.34.0
+
+### Patch Changes
+
+- 70ee277: Add a shared CurrencyInput and use it for editable operator money fields so forms display decimal amounts with the currency symbol and code while still submitting minor units.
+- 1c3f635: Give shipped page components default outer padding and document the page mounting contract.
+- Updated dependencies [6ad175a]
+- Updated dependencies [a37d4af]
+- Updated dependencies [70ee277]
+- Updated dependencies [f2d4802]
+  - @voyantjs/crm-react@0.34.0
+  - @voyantjs/i18n@0.34.0
+  - @voyantjs/ui@0.34.0
+  - @voyantjs/utils@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

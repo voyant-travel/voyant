@@ -1,5 +1,20 @@
 # @voyantjs/legal-react
 
+## 0.34.0
+
+### Minor Changes
+
+- 24b6624: Add person-aware contract list search, hydrate contract person details, and expose a ContractsPage person filter.
+
+### Patch Changes
+
+- 6e4a90f: Polish the contract detail page with a clearer header, tabbed document and signature sections, and a file-first attachment dialog.
+- Updated dependencies [6e4a90f]
+- Updated dependencies [24b6624]
+- Updated dependencies [a37d4af]
+  - @voyantjs/legal@0.34.0
+  - @voyantjs/react@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

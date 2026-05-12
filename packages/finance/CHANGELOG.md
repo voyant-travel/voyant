@@ -1,5 +1,18 @@
 # @voyantjs/finance
 
+## 0.34.0
+
+### Patch Changes
+
+- 9095837: Emit a first-class booking payment schedule paid event when schedule-backed payment sessions complete, and include target metadata on generic payment completion events.
+- Updated dependencies [a37d4af]
+  - @voyantjs/bookings@0.34.0
+  - @voyantjs/core@0.34.0
+  - @voyantjs/db@0.34.0
+  - @voyantjs/hono@0.34.0
+  - @voyantjs/storage@0.34.0
+  - @voyantjs/utils@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

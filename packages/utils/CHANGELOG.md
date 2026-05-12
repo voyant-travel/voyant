@@ -1,5 +1,12 @@
 # @voyantjs/utils
 
+## 0.34.0
+
+### Patch Changes
+
+- a37d4af: Validate Liquid syntax in legal contract template bodies before save or preview so rich-text-split tags return structured template errors instead of render-time failures.
+  - @voyantjs/types@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @voyantjs/extras
 
+## 0.34.0
+
+### Patch Changes
+
+- f8312f5: Project a normalized `thumbnailUrl` field into catalog search documents so
+  operator catalog cards can render real cover images across verticals.
+  - @voyantjs/catalog@0.34.0
+  - @voyantjs/core@0.34.0
+  - @voyantjs/db@0.34.0
+  - @voyantjs/hono@0.34.0
+
 ## 0.33.0
 
 ### Patch Changes

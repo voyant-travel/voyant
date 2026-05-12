@@ -1,5 +1,21 @@
 # @voyantjs/promotions-ui
 
+## 0.34.0
+
+### Minor Changes
+
+- f3924a7: Add server-backed promotions list search, filters, pagination, and row-navigation hooks to the operator PromotionsPage.
+
+### Patch Changes
+
+- 70ee277: Add a shared CurrencyInput and use it for editable operator money fields so forms display decimal amounts with the currency symbol and code while still submitting minor units.
+- f2d4802: Replace native date and datetime inputs with shared DatePicker and DateTimePicker controls.
+- Updated dependencies [70ee277]
+- Updated dependencies [f3924a7]
+- Updated dependencies [f2d4802]
+  - @voyantjs/promotions-react@0.34.0
+  - @voyantjs/ui@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes
