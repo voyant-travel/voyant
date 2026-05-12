@@ -136,6 +136,64 @@ if [ -f "$log_file" ]; then
 fi`
 }
 
+export function remoteProcessStatusShell({ plan, tailLines = 80 }) {
+  assertPositiveInteger("tailLines", tailLines)
+
+  return `set -euo pipefail
+pid_file=${shellQuote(plan.pidFile)}
+process_group_file=${shellQuote(plan.processGroupFile)}
+metadata_file=${shellQuote(plan.metadataFile)}
+log_file=${shellQuote(plan.logFile)}
+tail_lines=${shellQuote(String(tailLines))}
+
+status="stopped"
+reason="missing-pid-file"
+pid=""
+process_group="unknown"
+
+if [ -f "$pid_file" ]; then
+  pid="$(cat "$pid_file")"
+  if kill -0 "$pid" 2>/dev/null; then
+    status="running"
+    reason="pid-live"
+  else
+    status="stopped"
+    reason="stale-pid"
+  fi
+fi
+
+if [ -f "$process_group_file" ]; then
+  if [ "$(cat "$process_group_file")" = "1" ]; then
+    process_group="yes"
+  else
+    process_group="no"
+  fi
+fi
+
+echo "status: $status"
+echo "reason: $reason"
+echo "pid: \${pid:-none}"
+echo "process group: $process_group"
+echo "pid file: $pid_file"
+echo "metadata file: $metadata_file"
+echo "log file: $log_file"
+
+if [ -f "$metadata_file" ]; then
+  echo ""
+  echo "--- metadata ---"
+  cat "$metadata_file"
+fi
+
+if [ -f "$log_file" ]; then
+  echo ""
+  echo "--- log tail ($tail_lines) ---"
+  tail -n "$tail_lines" "$log_file" || true
+else
+  echo ""
+  echo "log: missing"
+fi`
+}
+
 export function remoteProcessMetadata({ command, date = new Date(), item, plan, repository }) {
   return {
     command,

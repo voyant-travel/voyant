@@ -206,6 +206,7 @@ capture:
 ```bash
 pnpm agent:queue:remote-start-process -- --issue <number> --name dev-server --command "pnpm dev" --port 3000 --yes
 pnpm agent:queue:remote-capture-browser -- --issue <number> --port 3000 --yes
+pnpm agent:queue:remote-process-status -- --issue <number> --name dev-server
 pnpm agent:queue:remote-stop-process -- --issue <number> --name dev-server --yes
 ```
 
@@ -213,6 +214,8 @@ Remote-stop-process mode is idempotent: stale or missing PID files are treated
 as already stopped, while live processes get a graceful terminate before a
 forced kill. These process commands do not mutate Project state; use them as
 setup and teardown around browser evidence capture.
+Remote-process-status is read-only and reports PID liveness, stored metadata,
+and a bounded remote log tail for debugging a running or failed dev server.
 
 For UI work in a remote workspace, expose the running remote dev server and
 capture browser evidence from the local runner:

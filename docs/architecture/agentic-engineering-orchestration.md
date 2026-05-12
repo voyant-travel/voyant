@@ -1205,8 +1205,10 @@ not require a manually pre-running server.
 `agent:queue:remote-start-process` and `agent:queue:remote-stop-process` can
 manage named long-running processes through adapter command execution, storing
 remote PID, command, log, and metadata files for browser-capture setup and
-teardown. Adapter-native process streaming and richer lifecycle supervision
-remain future slices.
+teardown. `agent:queue:remote-process-status` can inspect those named
+processes without mutating Project state, reporting PID liveness, stored
+metadata, and a bounded remote log tail for debugging. Adapter-native process
+streaming and richer lifecycle supervision remain future slices.
 
 Verification:
 

@@ -46,6 +46,7 @@
     "agent:queue:remote-open-pr": "node scripts/agent-runner-remote-open-pr.mjs",
     "agent:queue:remote-run-command": "node scripts/agent-runner-remote-run-command.mjs",
     "agent:queue:remote-start-process": "node scripts/agent-runner-remote-start-process.mjs",
+    "agent:queue:remote-process-status": "node scripts/agent-runner-remote-process-status.mjs",
     "agent:queue:remote-stop-process": "node scripts/agent-runner-remote-stop-process.mjs",
     "agent:queue:prepare": "node scripts/agent-runner-prepare.mjs",
     "agent:queue:start": "node scripts/agent-runner-start.mjs",
