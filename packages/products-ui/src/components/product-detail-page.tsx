@@ -28,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { ArrowLeft, Edit, FileText, Loader2, Plus, ReceiptText, Trash2 } from "lucide-react"
 import * as React from "react"
@@ -48,8 +47,6 @@ import {
 } from "./product-options-section.js"
 import { ProductVersionsSection } from "./product-versions-section.js"
 
-export type ProductDetailPageTab = "overview" | "media" | "itinerary" | "options" | "versions"
-
 export interface ProductDetailPageSlots {
   header?: React.ReactNode
   afterHeader?: React.ReactNode
@@ -65,7 +62,6 @@ export interface ProductDetailPageSlots {
 export interface ProductDetailPageProps {
   id: string
   className?: string
-  defaultTab?: ProductDetailPageTab
   onBack?: () => void
   onBookingCreate?: (product: ProductRecord) => void
   onDeleted?: () => void
@@ -79,7 +75,6 @@ export interface ProductDetailPageProps {
 export function ProductDetailPage({
   id,
   className,
-  defaultTab = "overview",
   onBack,
   onBookingCreate,
   onDeleted,
@@ -150,54 +145,35 @@ export function ProductDetailPage({
       {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
       {slots?.afterHeader}
 
-      <Tabs defaultValue={defaultTab}>
-        <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="overview">{pageMessages.tabs.overview}</TabsTrigger>
-          <TabsTrigger value="media">{pageMessages.tabs.media}</TabsTrigger>
-          <TabsTrigger value="itinerary">{pageMessages.tabs.itinerary}</TabsTrigger>
-          <TabsTrigger value="options">{pageMessages.tabs.options}</TabsTrigger>
-          <TabsTrigger value="versions">{pageMessages.tabs.versions}</TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex min-w-0 flex-col gap-6">
+          {slots?.overviewStart}
+          <ProductOverviewCard product={product} />
+          <ProductCommercialCard product={product} />
+          {slots?.overviewEnd}
 
-        <TabsContent value="overview" className="mt-4">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="flex flex-col gap-4">
-              {slots?.overviewStart}
-              <ProductOverviewCard product={product} />
-              <ProductCommercialCard product={product} />
-              {slots?.overviewEnd}
-            </div>
-            <div className="flex flex-col gap-4">
-              <ProductDetailSidebar product={product} />
-              {slots?.sidebar}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="media" className="mt-4 space-y-4">
           <ProductMediaSection productId={product.id} uploadMedia={uploadMedia} />
           {slots?.mediaEnd}
-        </TabsContent>
 
-        <TabsContent value="itinerary" className="mt-4 space-y-4">
           <ProductItinerarySection
             productId={product.id}
             renderDayDetails={renderItineraryDayDetails}
             renderServiceActions={renderItineraryServiceActions}
           />
           {slots?.itineraryEnd}
-        </TabsContent>
 
-        <TabsContent value="options" className="mt-4 space-y-4">
           <ProductOptionsSection productId={product.id} renderOptionDetails={renderOptionDetails} />
           {slots?.optionsEnd}
-        </TabsContent>
 
-        <TabsContent value="versions" className="mt-4 space-y-4">
           <ProductVersionsSection productId={product.id} />
           {slots?.versionsEnd}
-        </TabsContent>
-      </Tabs>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-6">
+          <ProductDetailSidebar product={product} />
+          {slots?.sidebar}
+        </div>
+      </div>
 
       <ProductDialog
         open={editOpen}

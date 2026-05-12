@@ -75,13 +75,6 @@ export const productsUiEn = {
       deleteItinerary: "Delete itinerary",
       addDay: "Add day",
     },
-    tabs: {
-      overview: "Overview",
-      media: "Media",
-      itinerary: "Itinerary",
-      options: "Options",
-      versions: "Versions",
-    },
     sections: {
       overview: {
         title: "Overview",
@@ -383,21 +376,26 @@ export const productsUiEn = {
     actions: {
       upload: "Upload",
       addMedia: "Add media",
+      reorder: "Reorder",
+      saveOrder: "Save order",
+      cancelReorder: "Cancel",
+      drag: "Drag",
       markCover: "Mark as cover",
+      openPreview: "Open media preview",
+      closePreview: "Close preview",
+      previousMedia: "Previous media",
+      nextMedia: "Next media",
+      openFile: "Open file",
       edit: "Edit",
       delete: "Delete",
     },
     loadingError: "Failed to load media.",
     empty: "No media items configured yet.",
+    itemCount: "Media items: {count}",
     uploadFailed: "Failed to upload media.",
     deleteConfirm: "Delete this media item?",
+    viewerTitle: "Media preview",
     coverBadge: "Cover",
-    columns: {
-      name: "Name",
-      type: "Type",
-      url: "URL",
-      sort: "Sort",
-    },
   },
   productDayDialog: {
     titles: {
