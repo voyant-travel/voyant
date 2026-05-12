@@ -115,22 +115,25 @@ export const legalUiEn = {
     },
   },
   contractDetailPage: {
+    title: "Contract",
     notFound: "Contract not found",
     backToContracts: "Back to Contracts",
     voidConfirm: "Void this contract?",
     deleteConfirm: 'Delete contract "{title}"?',
-    deleteAttachmentConfirm: "Delete this attachment?",
+    deleteAttachmentConfirm: "Delete this document?",
     actions: {
       issue: "Issue",
       void: "Void",
       addSignature: "Add Signature",
       addAttachment: "Add Attachment",
+      addDocument: "Add Document",
     },
     sections: {
       details: "Contract Details",
       parties: "Parties",
       signatures: "Signatures",
       attachments: "Attachments",
+      documents: "Documents",
     },
     fields: {
       language: "Language",
@@ -143,6 +146,8 @@ export const legalUiEn = {
       organization: "Organization",
       supplier: "Supplier",
       channel: "Channel",
+      booking: "Booking",
+      order: "Order",
       name: "Name",
       email: "Email",
       role: "Role",
@@ -155,7 +160,7 @@ export const legalUiEn = {
     empty: {
       noParties: "No parties assigned.",
       noSignatures: "No signatures yet.",
-      noAttachments: "No attachments yet.",
+      noAttachments: "No documents yet.",
     },
     units: {
       bytes: "B",
@@ -298,19 +303,26 @@ export const legalUiEn = {
   },
   attachmentDialog: {
     titles: {
-      create: "Add Attachment",
-      edit: "Edit Attachment",
+      create: "Add Document",
+      edit: "Edit Document",
     },
     fields: {
+      file: "File",
       name: "Name",
       kind: "Kind",
       mimeType: "MIME Type",
       fileSize: "File Size",
       checksum: "Checksum",
-      storageKey: "Storage Key",
+      storageKey: "Storage Reference",
+    },
+    kindLabels: {
+      document: "Signed document",
+      appendix: "Appendix",
+      scan: "Supporting scan",
     },
     placeholders: {
-      name: "Attachment name",
+      file: "Choose or drop a file",
+      name: "Document name",
       kind: "appendix",
       mimeType: "application/pdf",
       fileSize: "Bytes",
@@ -318,10 +330,11 @@ export const legalUiEn = {
       storageKey: "Optional storage reference",
     },
     actions: {
-      create: "Add Attachment",
+      create: "Add Document",
     },
     validation: {
       nameRequired: "Name is required",
+      fileRequired: "Select a file to upload.",
     },
   },
   policyRuleDialog: {

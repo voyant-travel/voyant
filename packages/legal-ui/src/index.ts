@@ -8,6 +8,8 @@ export {
   type ContractDetailDialogRenderProps,
   ContractDetailPage,
   type ContractDetailPageProps,
+  type ContractReferenceKind,
+  type ContractReferenceRenderProps,
 } from "./components/contract-detail-page.js"
 export {
   type ContractDialogRenderProps,

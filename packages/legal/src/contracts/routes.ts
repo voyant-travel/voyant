@@ -1,6 +1,8 @@
 import type { EventBus, ModuleContainer } from "@voyantjs/core"
 import { parseJsonBody, parseOptionalJsonBody, parseQuery } from "@voyantjs/hono"
+import type { StorageProvider } from "@voyantjs/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { Hono } from "hono"
 
 import {
@@ -50,6 +52,8 @@ export interface ContractsRouteOptions {
     bindings: Record<string, unknown>,
     storageKey: string,
   ) => Promise<string | null> | string | null
+  documentStorage?: StorageProvider | null
+  resolveDocumentStorage?: (bindings: Record<string, unknown>) => StorageProvider | null | undefined
   eventBus?: EventBus
   resolveEventBus?: (bindings: Record<string, unknown>) => EventBus | undefined
 }
@@ -84,6 +88,86 @@ function getFallbackDownloadUrl(metadata: unknown) {
   }
 
   return maybeUrl(record.url)
+}
+
+function getMultipartString(value: unknown) {
+  const resolved = Array.isArray(value) ? value[0] : value
+  return typeof resolved === "string" ? resolved : null
+}
+
+function sanitizeStorageFileName(name: string) {
+  const normalized = name
+    .normalize("NFKD")
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 160)
+  return normalized || "document"
+}
+
+function toHex(buffer: ArrayBuffer) {
+  return Array.from(new Uint8Array(buffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
+}
+
+async function sha256Checksum(buffer: ArrayBuffer) {
+  const digest = await crypto.subtle.digest("SHA-256", buffer.slice(0))
+  return `sha256:${toHex(digest)}`
+}
+
+async function buildUploadedAttachmentInput({
+  storage,
+  contractId,
+  form,
+  file,
+}: {
+  storage: StorageProvider
+  contractId: string
+  form: Record<string, unknown>
+  file: File
+}) {
+  const originalName = file.name || "document"
+  const name = getMultipartString(form.name)?.trim() || originalName
+  const kind = getMultipartString(form.kind)?.trim() || "document"
+  const mimeType = file.type || "application/octet-stream"
+  const body = await file.arrayBuffer()
+  const checksum = await sha256Checksum(body)
+  const storageName = sanitizeStorageFileName(originalName)
+  const key = `contracts/${contractId}/attachments/${crypto.randomUUID()}-${storageName}`
+  const uploaded = await storage.upload(body, {
+    key,
+    contentType: mimeType,
+    metadata: {
+      checksum,
+      contractId,
+      kind,
+      name,
+      originalName,
+    },
+  })
+
+  return {
+    kind,
+    name,
+    mimeType,
+    fileSize: file.size,
+    storageKey: uploaded.key,
+    checksum,
+    metadata: {
+      originalName,
+      uploadedAt: new Date().toISOString(),
+      ...(uploaded.url ? { url: uploaded.url } : {}),
+    },
+  }
+}
+
+async function parseAttachmentUploadRequest(c: Context<Env>) {
+  const form = (await c.req.parseBody()) as Record<string, unknown>
+  const file = Array.isArray(form.file) ? form.file[0] : form.file
+  if (!(file instanceof File)) {
+    return { error: c.json({ error: "Missing file field in multipart body" }, 400) }
+  }
+  return { form, file }
 }
 
 export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) {
@@ -338,6 +422,29 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       if (!row) return c.json({ error: "Contract not found" }, 404)
       return c.json({ data: row }, 201)
     })
+    .post("/:id/attachments/upload", async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const storage = runtime.documentStorage
+      if (!storage) {
+        return c.json({ error: "Contract document storage is not configured" }, 501)
+      }
+
+      const parsed = await parseAttachmentUploadRequest(c)
+      if ("error" in parsed) return parsed.error
+
+      const row = await contractsService.createAttachment(
+        c.get("db"),
+        c.req.param("id"),
+        await buildUploadedAttachmentInput({
+          storage,
+          contractId: c.req.param("id"),
+          form: parsed.form,
+          file: parsed.file,
+        }),
+      )
+      if (!row) return c.json({ error: "Contract not found" }, 404)
+      return c.json({ data: row }, 201)
+    })
     .patch("/attachments/:attachmentId", async (c) => {
       const row = await contractsService.updateAttachment(
         c.get("db"),
@@ -345,6 +452,46 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
         await parseJsonBody(c, updateContractAttachmentSchema),
       )
       if (!row) return c.json({ error: "Attachment not found" }, 404)
+      return c.json({ data: row })
+    })
+    .patch("/attachments/:attachmentId/upload", async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const storage = runtime.documentStorage
+      if (!storage) {
+        return c.json({ error: "Contract document storage is not configured" }, 501)
+      }
+
+      const existing = await contractsService.getAttachmentById(
+        c.get("db"),
+        c.req.param("attachmentId"),
+      )
+      if (!existing) return c.json({ error: "Attachment not found" }, 404)
+
+      const parsed = await parseAttachmentUploadRequest(c)
+      if ("error" in parsed) return parsed.error
+
+      const row = await contractsService.updateAttachment(
+        c.get("db"),
+        c.req.param("attachmentId"),
+        await buildUploadedAttachmentInput({
+          storage,
+          contractId: existing.contractId,
+          form: parsed.form,
+          file: parsed.file,
+        }),
+      )
+      if (!row) return c.json({ error: "Attachment not found" }, 404)
+      if (existing.storageKey && existing.storageKey !== row.storageKey) {
+        try {
+          await storage.delete(existing.storageKey)
+        } catch (error) {
+          console.warn(
+            `[legal] failed to delete replaced contract attachment object ${existing.storageKey}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          )
+        }
+      }
       return c.json({ data: row })
     })
     .get("/attachments/:attachmentId/download", async (c) => {

@@ -41,7 +41,8 @@ export async function fetchWithValidation<TOut>(
 ): Promise<TOut> {
   const url = joinUrl(options.baseUrl, path)
   const headers = new Headers(init?.headers)
-  if (init?.body !== undefined && !headers.has("Content-Type")) {
+  const isFormDataBody = typeof FormData !== "undefined" && init?.body instanceof FormData
+  if (init?.body !== undefined && !isFormDataBody && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json")
   }
 

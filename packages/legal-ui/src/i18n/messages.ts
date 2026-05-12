@@ -127,6 +127,7 @@ export type LegalUiMessages = {
     }
   }
   contractDetailPage: {
+    title: string
     notFound: string
     backToContracts: string
     voidConfirm: string
@@ -137,12 +138,14 @@ export type LegalUiMessages = {
       void: string
       addSignature: string
       addAttachment: string
+      addDocument: string
     }
     sections: {
       details: string
       parties: string
       signatures: string
       attachments: string
+      documents: string
     }
     fields: {
       language: string
@@ -155,6 +158,8 @@ export type LegalUiMessages = {
       organization: string
       supplier: string
       channel: string
+      booking: string
+      order: string
       name: string
       email: string
       role: string
@@ -305,6 +310,7 @@ export type LegalUiMessages = {
       edit: string
     }
     fields: {
+      file: string
       name: string
       kind: string
       mimeType: string
@@ -312,7 +318,13 @@ export type LegalUiMessages = {
       checksum: string
       storageKey: string
     }
+    kindLabels: {
+      document: string
+      appendix: string
+      scan: string
+    }
     placeholders: {
+      file: string
       name: string
       kind: string
       mimeType: string
@@ -325,6 +337,7 @@ export type LegalUiMessages = {
     }
     validation: {
       nameRequired: string
+      fileRequired: string
     }
   }
   policyRuleDialog: {

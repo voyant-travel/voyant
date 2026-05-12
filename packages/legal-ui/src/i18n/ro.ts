@@ -115,22 +115,25 @@ export const legalUiRo = {
     },
   },
   contractDetailPage: {
+    title: "Contract",
     notFound: "Contractul nu a fost gasit",
     backToContracts: "Inapoi la contracte",
     voidConfirm: "Anulezi acest contract?",
     deleteConfirm: 'Stergi contractul "{title}"?',
-    deleteAttachmentConfirm: "Stergi acest atasament?",
+    deleteAttachmentConfirm: "Stergi acest document?",
     actions: {
       issue: "Emite",
       void: "Anuleaza",
       addSignature: "Adauga semnatura",
       addAttachment: "Adauga atasament",
+      addDocument: "Adauga document",
     },
     sections: {
       details: "Detalii contract",
       parties: "Parti",
       signatures: "Semnaturi",
       attachments: "Atasamente",
+      documents: "Documente",
     },
     fields: {
       language: "Limba",
@@ -143,6 +146,8 @@ export const legalUiRo = {
       organization: "Organizatie",
       supplier: "Furnizor",
       channel: "Canal",
+      booking: "Rezervare",
+      order: "Comanda",
       name: "Nume",
       email: "Email",
       role: "Rol",
@@ -155,7 +160,7 @@ export const legalUiRo = {
     empty: {
       noParties: "Nu exista parti asociate.",
       noSignatures: "Nu exista inca semnaturi.",
-      noAttachments: "Nu exista inca atasamente.",
+      noAttachments: "Nu exista inca documente.",
     },
     units: {
       bytes: "B",
@@ -298,19 +303,26 @@ export const legalUiRo = {
   },
   attachmentDialog: {
     titles: {
-      create: "Adauga atasament",
-      edit: "Editeaza atasamentul",
+      create: "Adauga document",
+      edit: "Editeaza documentul",
     },
     fields: {
+      file: "Fisier",
       name: "Nume",
       kind: "Tip",
       mimeType: "Tip MIME",
       fileSize: "Dimensiune fisier",
       checksum: "Checksum",
-      storageKey: "Cheie stocare",
+      storageKey: "Referinta stocare",
+    },
+    kindLabels: {
+      document: "Document semnat",
+      appendix: "Anexa",
+      scan: "Scan suport",
     },
     placeholders: {
-      name: "Numele atasamentului",
+      file: "Alege sau plaseaza un fisier",
+      name: "Numele documentului",
       kind: "appendix",
       mimeType: "application/pdf",
       fileSize: "Octeti",
@@ -318,10 +330,11 @@ export const legalUiRo = {
       storageKey: "Referinta optionala de stocare",
     },
     actions: {
-      create: "Adauga atasament",
+      create: "Adauga document",
     },
     validation: {
       nameRequired: "Numele este obligatoriu",
+      fileRequired: "Selecteaza un fisier pentru incarcare.",
     },
   },
   policyRuleDialog: {
