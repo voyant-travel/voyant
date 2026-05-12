@@ -1157,7 +1157,9 @@ dashboard exists. Dispatch, loop, and control-plane planning can pass the same
 event-log option through to `sync-pr` when the runner intentionally wants that
 refresh. Tick output now carries a recent audit-event tail as well as ordered
 recommendations, and dispatch keeps nested lifecycle command events in the same
-ledger when a supervisor passes a custom `--event-log`.
+ledger when a supervisor passes a custom `--event-log`. The Cloudflare-ready
+control-plane app mirrors the safe local and remote dispatch allow-list and can
+include that event-log context when it returns dry-run lifecycle command plans.
 
 Verification:
 

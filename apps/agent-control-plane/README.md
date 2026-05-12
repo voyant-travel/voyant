@@ -29,7 +29,9 @@ pnpm -C apps/agent-control-plane dev
 
 `POST /api/dispatch-plans` accepts ordered queue recommendations and returns the
 first dispatchable plan that matches the optional filters. It mirrors the local
-runner allow-list: `start`, `collect-ci`, `publish-evidence`, `open-pr`,
-`sync-pr`, and `cleanup`. Pass `options.updateBody = true` to include
-`--update-body` when the selected plan is `sync-pr`; other actions ignore that
-option.
+runner allow-list: `start`, `remote-bootstrap`, `collect-ci`,
+`publish-evidence`, `remote-publish-evidence`, `open-pr`, `remote-open-pr`,
+`sync-pr`, `cleanup`, and `remote-cleanup`. Pass `options.eventLog` to keep the
+planned lifecycle command on a supervisor-specific JSONL ledger. Pass
+`options.updateBody = true` to include `--update-body` when the selected plan is
+`sync-pr`; other actions ignore that option.

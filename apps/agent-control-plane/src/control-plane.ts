@@ -5,6 +5,10 @@ export const dispatchableActions = [
   "cleanup",
   "open-pr",
   "publish-evidence",
+  "remote-bootstrap",
+  "remote-cleanup",
+  "remote-open-pr",
+  "remote-publish-evidence",
   "start",
   "sync-pr",
 ] as const
@@ -20,6 +24,7 @@ export const dispatchPlanRequestSchema = z.object({
     .optional(),
   options: z
     .object({
+      eventLog: z.string().min(1).optional(),
       updateBody: z.boolean().optional(),
     })
     .optional(),
@@ -113,6 +118,7 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
       action,
       command: dispatchCommand({
         action,
+        eventLog: request.options?.eventLog,
         issueNumber: recommendation.issue.number,
         repository: request.repository,
         updateBody: request.options?.updateBody,
@@ -128,11 +134,13 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
 
 function dispatchCommand({
   action,
+  eventLog,
   issueNumber,
   repository,
   updateBody,
 }: {
   action: DispatchPlan["action"]
+  eventLog?: string
   issueNumber: number
   repository: string
   updateBody?: boolean
@@ -147,6 +155,10 @@ function dispatchCommand({
     repository,
     "--yes",
   ]
+
+  if (eventLog) {
+    command.push("--event-log", eventLog)
+  }
 
   if (updateBody && action === "sync-pr") {
     command.push("--update-body")
