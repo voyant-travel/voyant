@@ -1365,7 +1365,9 @@ Verification:
   to R2 through the `AGENT_RUNNER_TICKS` binding and expose it at
   `GET /api/supervisor/ticks/latest`. This gives Cron-based deployments an
   inspectable heartbeat and last lease result without introducing a full run
-  database.
+  database. Lease-conflict ticks preserve the active intent returned by the
+  control plane so maintainers can see the holder, issue, action, and expiration
+  that blocked the run.
 - The runner app enforces a local dispatch policy before calling the control
   plane. `AGENT_RUNNER_ALLOWED_ACTIONS` limits which lifecycle actions a
   deployed runner can lease, `AGENT_RUNNER_ACTION` supplies a default action
