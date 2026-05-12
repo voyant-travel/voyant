@@ -346,9 +346,11 @@ pnpm agent:queue:status
 Status mode scans all Project pages for the current repository and reports
 ready, active, stale, blocked, human-review, and merge-ready items. Pass
 `--json` for automation or `--max-age-days <number>` to adjust the heartbeat
-staleness threshold. For UI-labeled work, status distinguishes browser artifact
-references from generic transcript or evidence fields so active runs do not
-hide missing browser capture.
+staleness threshold. It also tails recent JSONL runner events from
+`.agent-runs/events.jsonl`; pass `--recent-events 0` to hide them or
+`--event-log <path>` to inspect a different audit log. For UI-labeled work,
+status distinguishes browser artifact references from generic transcript or
+evidence fields so active runs do not hide missing browser capture.
 
 Use the read-only tick view when wiring an always-on supervisor:
 
