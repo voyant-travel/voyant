@@ -371,6 +371,7 @@ describe("agent control plane", () => {
     expect(body).toHaveProperty("snapshot.recommendations.0.issue.hasAgentBrief", true)
     expect(body).toHaveProperty("snapshot.recommendations.0.issue.labels", ["agent:ready", "ui"])
     expect(body).toHaveProperty("snapshot.recommendations.0.issue.state", "OPEN")
+    expect(body).toHaveProperty("storage.persisted", false)
   })
 
   it("requires configured bearer auth for API routes", async () => {

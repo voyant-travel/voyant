@@ -80,6 +80,22 @@ export const tickSnapshotRequestSchema = z.object({
 
 export type TickSnapshotRequest = z.infer<typeof tickSnapshotRequestSchema>
 
+const tickSnapshotSummarySchema = z.object({
+  dispatchableRecommendationCount: z.number().int().nonnegative(),
+  firstDispatchableAction: z.string().nullable(),
+  firstDispatchableIssueNumber: z.number().int().positive().nullable(),
+  recentEventCount: z.number().int().nonnegative(),
+  recommendationCount: z.number().int().nonnegative(),
+})
+
+export const tickSnapshotRecordSchema = z.object({
+  acceptedAt: z.string().min(1),
+  snapshot: tickSnapshotRequestSchema,
+  summary: tickSnapshotSummarySchema,
+})
+
+export type TickSnapshotRecord = z.infer<typeof tickSnapshotRecordSchema>
+
 export interface DispatchPlan {
   action: (typeof dispatchableActions)[number]
   command: string[]
@@ -94,7 +110,11 @@ export interface DispatchPlanResult {
   reason: string
 }
 
-export function buildCapabilities() {
+export function buildCapabilities({
+  tickSnapshotPersistence = "none",
+}: {
+  tickSnapshotPersistence?: "latest" | "none"
+} = {}) {
   return {
     service: "agent-control-plane",
     version: 1,
@@ -113,20 +133,33 @@ export function buildCapabilities() {
     snapshotContracts: {
       tick: {
         version: 1,
-        persistence: "none",
+        persistence: tickSnapshotPersistence,
       },
     },
   }
 }
 
 export function acceptTickSnapshot(snapshot: TickSnapshotRequest) {
+  const record = buildTickSnapshotRecord(snapshot)
+
+  return {
+    accepted: true,
+    snapshot: record.snapshot,
+    summary: record.summary,
+  }
+}
+
+export function buildTickSnapshotRecord(
+  snapshot: TickSnapshotRequest,
+  { acceptedAt = new Date().toISOString() }: { acceptedAt?: string } = {},
+): TickSnapshotRecord {
   const dispatchableRecommendations = snapshot.recommendations.filter((recommendation) =>
     isDispatchableAction(recommendation.action),
   )
   const firstDispatchable = dispatchableRecommendations[0] ?? null
 
   return {
-    accepted: true,
+    acceptedAt,
     snapshot,
     summary: {
       dispatchableRecommendationCount: dispatchableRecommendations.length,

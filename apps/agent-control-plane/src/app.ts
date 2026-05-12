@@ -3,16 +3,19 @@ import { Hono } from "hono"
 import {
   acceptTickSnapshot,
   buildCapabilities,
+  buildTickSnapshotRecord,
   dispatchPlanRequestSchema,
   selectDispatchPlan,
   tickSnapshotRequestSchema,
 } from "./control-plane.js"
+import type { TickSnapshotStore } from "./tick-snapshot-store.js"
 
 interface AppOptions {
   authTokens?: string[]
+  tickSnapshotStore?: TickSnapshotStore
 }
 
-export function createApp({ authTokens = [] }: AppOptions = {}): Hono {
+export function createApp({ authTokens = [], tickSnapshotStore }: AppOptions = {}): Hono {
   const app = new Hono()
 
   app.onError((error, c) => {
@@ -36,7 +39,13 @@ export function createApp({ authTokens = [] }: AppOptions = {}): Hono {
     await next()
   })
 
-  app.get("/api/capabilities", (c) => c.json(buildCapabilities()))
+  app.get("/api/capabilities", (c) =>
+    c.json(
+      buildCapabilities({
+        tickSnapshotPersistence: tickSnapshotStore ? "latest" : "none",
+      }),
+    ),
+  )
 
   app.post("/api/dispatch-plans", async (c) => {
     const parsed = dispatchPlanRequestSchema.safeParse(await c.req.json().catch(() => null))
@@ -65,7 +74,37 @@ export function createApp({ authTokens = [] }: AppOptions = {}): Hono {
       )
     }
 
-    return c.json(acceptTickSnapshot(parsed.data))
+    const accepted = acceptTickSnapshot(parsed.data)
+    if (!tickSnapshotStore) {
+      return c.json({
+        ...accepted,
+        storage: { persisted: false, reason: "tick_snapshot_storage_not_configured" },
+      })
+    }
+
+    const write = await tickSnapshotStore.putLatest(buildTickSnapshotRecord(parsed.data))
+    return c.json({
+      ...accepted,
+      storage: { key: write.key, persisted: true },
+    })
+  })
+
+  app.get("/api/tick-snapshots/latest", async (c) => {
+    if (!tickSnapshotStore) {
+      return c.json({ error: "tick_snapshot_storage_not_configured" }, 503)
+    }
+
+    const repository = c.req.query("repository")?.trim()
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+
+    const record = await tickSnapshotStore.getLatest(repository)
+    if (!record) {
+      return c.json({ error: "tick_snapshot_not_found" }, 404)
+    }
+
+    return c.json(record)
   })
 
   return app
