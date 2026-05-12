@@ -5,9 +5,11 @@ import {
 } from "./lib/agent-runner-control-plane.mjs"
 import {
   requestRunnerAppCapabilities,
+  requestRunnerAppSupervisorTick,
   runnerAppConfigFromArgs,
   summarizeControlPlaneCapabilities,
   summarizeRunnerAppCapabilities,
+  summarizeRunnerSmokeTick,
 } from "./lib/agent-runner-deployment-doctor.mjs"
 import { maybePrintHelp } from "./lib/agent-runner-help.mjs"
 
@@ -21,6 +23,12 @@ maybePrintHelp(args, {
     ["AGENT_CONTROL_PLANE_TOKEN", "Bearer token environment variable used for control-plane APIs."],
     ["--runner-url <url>", "Runner app base URL. Defaults to AGENT_RUNNER_URL."],
     ["--runner-token <token>", "Runner app bearer token. Defaults to AGENT_RUNNER_TOKEN."],
+    ["--smoke-tick", "Run a dry-run supervisor tick that validates the control-plane read path."],
+    [
+      "--repo <owner/name>",
+      "Repository for --smoke-tick. Defaults to the deployed runner default.",
+    ],
+    ["--action <name>", "Optional lifecycle action filter for --smoke-tick."],
     ["--json", "Print machine-readable JSON."],
   ],
 })
@@ -104,6 +112,32 @@ async function checkRunnerApp() {
       name: "runner app capabilities",
       ok: false,
     })
+  }
+
+  if (args.smokeTick) {
+    try {
+      const response = await requestRunnerAppSupervisorTick({
+        request: {
+          dryRun: true,
+          reason: "deployment-doctor",
+          validateControlPlane: true,
+          ...(args.repo ? { repository: args.repo } : {}),
+          ...(args.action ? { action: args.action } : {}),
+        },
+        token: config.token,
+        url: config.url,
+      })
+      record({
+        name: "runner app smoke tick",
+        ...summarizeRunnerSmokeTick(response),
+      })
+    } catch (error) {
+      record({
+        detail: error instanceof Error ? error.message : String(error),
+        name: "runner app smoke tick",
+        ok: false,
+      })
+    }
   }
 }
 
