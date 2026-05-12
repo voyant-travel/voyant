@@ -261,7 +261,7 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
       title: messages.dashboard.outstandingInvoicesEmptyTitle,
       description: messages.dashboard.outstandingInvoicesEmptyDescription,
       action: {
-        href: "/finance/invoices",
+        href: "/finance",
         label: messages.dashboard.outstandingInvoicesEmptyAction,
       },
       icon: <FileText className="size-5" />,
@@ -319,7 +319,7 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
               actionLabel={messages.dashboard.onboardingSuppliersAction}
             />
             <OnboardingAction
-              href="/people"
+              href="/contacts"
               icon={<Users className="size-4" />}
               title={messages.dashboard.onboardingCustomersTitle}
               description={messages.dashboard.onboardingCustomersDescription}

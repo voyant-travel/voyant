@@ -143,6 +143,9 @@ describe("DashboardPage empty states", () => {
     expect(screen.getByText("Add a supplier")).not.toBeNull()
     expect(screen.getByText("Import customers")).not.toBeNull()
     expect(screen.getByText("Create a booking")).not.toBeNull()
+    expect(screen.getByRole("link", { name: /Import customers/ }).getAttribute("href")).toBe(
+      "/contacts",
+    )
     expect(screen.queryByText("Revenue Trend")).toBeNull()
   })
 
@@ -161,6 +164,9 @@ describe("DashboardPage empty states", () => {
     expect(screen.getByText("No bookings created in the last 6 months.")).not.toBeNull()
     expect(screen.getByText("No upcoming departures in the next 30 days")).not.toBeNull()
     expect(screen.getByText("All invoices settled — nothing outstanding.")).not.toBeNull()
+    expect(screen.getByRole("link", { name: /View invoices/ }).getAttribute("href")).toBe(
+      "/finance",
+    )
     expect(screen.getAllByLabelText("Not enough data yet").length).toBeGreaterThan(0)
   })
 
