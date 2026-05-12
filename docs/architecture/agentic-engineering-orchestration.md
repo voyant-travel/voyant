@@ -1201,7 +1201,10 @@ can call adapter-owned HTTP exposure for a remote port, capture that URL through
 local Playwright, store local ignored browser artifacts, and optionally publish
 the artifact directory to configured R2-compatible storage. It can also start
 and stop a named remote dev-server command around capture, so UI evidence does
-not require a manually pre-running server.
+not require a manually pre-running server. Queue recommendations now surface
+that remote browser capture command for UI-labeled remote work that lacks
+browser proof, while leaving the dev-server command and port as explicit
+maintainer-filled placeholders.
 `agent:queue:remote-start-process` and `agent:queue:remote-stop-process` can
 manage named long-running processes through adapter command execution, storing
 remote PID, command, log, and metadata files for browser-capture setup and

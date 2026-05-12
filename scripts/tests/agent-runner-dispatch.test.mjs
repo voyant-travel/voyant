@@ -289,6 +289,28 @@ describe("agent runner dispatch helpers", () => {
         reason: "no dispatchable recommendation matched",
       },
     )
+
+    const remoteUiItem = workItem({
+      fields: {
+        "Agent State": "Human Review",
+        "Last Heartbeat": new Date().toISOString().slice(0, 10),
+        Workspace: "sandbox:sprite:task-579",
+      },
+    })
+    remoteUiItem.issue.labels = ["agent:ready", "ui-change"]
+
+    assert.deepEqual(
+      selectDispatchRecommendation([
+        recommendQueueAction(remoteUiItem, {
+          maxAgeDays: 1,
+          repository: "voyantjs/other",
+        }),
+      ]),
+      {
+        recommendation: null,
+        reason: "no dispatchable recommendation matched",
+      },
+    )
   })
 
   it("rejects invalid issue filters before selecting a recommendation", () => {

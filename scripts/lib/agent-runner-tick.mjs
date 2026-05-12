@@ -202,6 +202,13 @@ function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
 
   if (!isRemoteWorkspaceDescriptor(descriptor)) return null
 
+  const remoteBrowserRecommendation = remoteBrowserEvidenceRecommendation(item, {
+    descriptor,
+    heartbeat,
+    repository,
+  })
+  if (remoteBrowserRecommendation) return remoteBrowserRecommendation
+
   if (state === "Human Review" && item.fields.PR) return null
   if (state === "Merge Ready" && item.fields.PR) return null
 
@@ -311,6 +318,30 @@ function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
   }
 
   return null
+}
+
+function remoteBrowserEvidenceRecommendation(item, { descriptor, heartbeat, repository }) {
+  const state = item.fields["Agent State"]
+  if (
+    !requiresBrowserEvidence(item) ||
+    browserEvidenceCovered(item.fields.Evidence) ||
+    !["Changes Requested", "CI Repair", "Human Review"].includes(state)
+  ) {
+    return null
+  }
+
+  return recommendation(item, {
+    action: "remote-capture-browser",
+    command: commandWithIssue({
+      command: "remote-capture-browser",
+      extraArgs: ['--dev-server-command "<dev-server-command>"', "--port <port>"],
+      issueNumber: item.issue.number,
+      repository,
+    }),
+    heartbeat,
+    priority: state === "Human Review" ? 54 : 35,
+    reason: `UI-labeled remote work in ${descriptor.reference} needs browser evidence before handoff`,
+  })
 }
 
 function humanReviewRecommendation(item, { heartbeat, repository }) {
