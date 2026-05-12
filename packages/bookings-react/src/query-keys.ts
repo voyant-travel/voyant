@@ -13,6 +13,11 @@ export interface BookingsListFilters {
   status?: string | undefined
   search?: string | undefined
   productId?: string | undefined
+  optionId?: string | undefined
+  supplierId?: string | undefined
+  productCategoryId?: string | undefined
+  personId?: string | undefined
+  organizationId?: string | undefined
   dateFrom?: string | undefined
   dateTo?: string | undefined
   paxMin?: number | undefined

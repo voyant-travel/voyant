@@ -1,5 +1,5 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { boolean, date, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { boolean, date, integer, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core"
 
 export const productsRef = pgTable("products", {
   id: typeId("products").primaryKey(),
@@ -33,6 +33,18 @@ export const productOptionsRef = pgTable("product_options", {
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
+
+export const productCategoryProductsRef = pgTable(
+  "product_category_products",
+  {
+    productId: typeIdRef("product_id").notNull(),
+    categoryId: typeIdRef("category_id").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.productId, table.categoryId] })],
+)
 
 export const optionUnitsRef = pgTable("option_units", {
   id: typeId("option_units").primaryKey(),

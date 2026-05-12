@@ -766,6 +766,22 @@ export type BookingsUiMessages = {
       productLabel: string
       product: string
       productEmpty: string
+      optionLabel: string
+      option: string
+      optionEmpty: string
+      optionNeedsProduct: string
+      categoryLabel: string
+      category: string
+      categoryEmpty: string
+      supplierLabel: string
+      supplier: string
+      supplierEmpty: string
+      personLabel: string
+      person: string
+      personEmpty: string
+      organizationLabel: string
+      organization: string
+      organizationEmpty: string
       dateRangeLabel: string
       dateRange: string
       paxLabel: string
