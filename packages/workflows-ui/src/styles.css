@@ -1,0 +1,9 @@
+/* Tailwind v4 source-detection helper.
+ *
+ * Templates that consume this package should `@import` this CSS so Tailwind
+ * scans the workflow UI implementation package for utility classes:
+ *
+ *   @import "@voyantjs/workflows-ui/styles.css";
+ */
+@source "./**/*.{ts,tsx}";
+@import "@voyantjs/workflow-runs-ui/styles.css";

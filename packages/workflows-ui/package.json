@@ -1,0 +1,100 @@
+{
+  "name": "@voyantjs/workflows-ui",
+  "version": "0.36.0",
+  "description": "Importable React admin UI for Voyant workflow run observability.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/workflows-ui"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./styles.css": "./src/styles.css",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/en": "./src/i18n/en.ts",
+    "./i18n/ro": "./src/i18n/ro.ts",
+    "./components/workflow-run-detail-page": "./src/components/workflow-run-detail-page.ts",
+    "./components/workflow-runs-page": "./src/components/workflow-runs-page.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@voyantjs/workflow-runs-ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "@voyantjs/ui": "workspace:*",
+    "lucide-react": "^0.475.0 || ^1.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@voyantjs/ui": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist",
+    "src/styles.css"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./client": {
+        "types": "./dist/client.d.ts",
+        "import": "./dist/client.js",
+        "default": "./dist/client.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js",
+        "default": "./dist/i18n/index.js"
+      },
+      "./i18n/en": {
+        "types": "./dist/i18n/en.d.ts",
+        "import": "./dist/i18n/en.js",
+        "default": "./dist/i18n/en.js"
+      },
+      "./i18n/ro": {
+        "types": "./dist/i18n/ro.d.ts",
+        "import": "./dist/i18n/ro.js",
+        "default": "./dist/i18n/ro.js"
+      },
+      "./components/workflow-run-detail-page": {
+        "types": "./dist/components/workflow-run-detail-page.d.ts",
+        "import": "./dist/components/workflow-run-detail-page.js",
+        "default": "./dist/components/workflow-run-detail-page.js"
+      },
+      "./components/workflow-runs-page": {
+        "types": "./dist/components/workflow-runs-page.d.ts",
+        "import": "./dist/components/workflow-runs-page.js",
+        "default": "./dist/components/workflow-runs-page.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  }
+}
