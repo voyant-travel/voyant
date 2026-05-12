@@ -50,6 +50,7 @@
   },
   "files": [
     "dist",
+    "src/components",
     "src/styles.css"
   ],
   "publishConfig": {
