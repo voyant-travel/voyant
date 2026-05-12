@@ -1398,10 +1398,11 @@ Verification:
   dispatch-plan path without leasing work.
 - Operators can use `pnpm agent:queue:deployed-status -- --repo <owner/name>`
   for the steady-state read-only view. It checks the same deployed endpoints
-  and summarizes the control plane's latest queue snapshots plus the runner
-  supervisor's latest and recent ticks without triggering a smoke tick. Pass
-  `--issue <number> --action <name>` to include the active dispatch pointer for
-  a specific lifecycle action.
+  and summarizes the control plane's latest queue snapshots, current read-only
+  dispatch plan, and the runner supervisor's latest and recent ticks without
+  triggering a smoke tick. The dispatch plan uses the deployed runner's default
+  action filter when configured. Pass `--issue <number> --action <name>` to
+  include the active dispatch pointer for a specific lifecycle action.
 
 ## Open Questions
 
