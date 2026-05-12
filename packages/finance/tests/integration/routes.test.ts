@@ -103,6 +103,8 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   let app: Hono
   let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
   const settlementEvents: Array<Record<string, unknown>> = []
+  const paymentCompletedEvents: Array<Record<string, unknown>> = []
+  const schedulePaidEvents: Array<Record<string, unknown>> = []
 
   beforeAll(async () => {
     process.env.TEST_DATABASE_URL = getIsolatedFinanceTestDbUrl(process.env.TEST_DATABASE_URL)
@@ -245,6 +247,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     eventBus.subscribe("invoice.settled", (event) => {
       settlementEvents.push(event as Record<string, unknown>)
     })
+    eventBus.subscribe("payment.completed", (event) => {
+      paymentCompletedEvents.push(event as Record<string, unknown>)
+    })
+    eventBus.subscribe("booking_payment_schedule.paid", (event) => {
+      schedulePaidEvents.push(event as Record<string, unknown>)
+    })
     const financeRouteRuntime = {
       eventBus,
       invoiceSettlementPollers: {},
@@ -273,6 +281,8 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   beforeEach(async () => {
     await cleanupFinanceTestData(db)
     settlementEvents.length = 0
+    paymentCompletedEvents.length = 0
+    schedulePaidEvents.length = 0
   })
 
   afterAll(async () => {
@@ -639,6 +649,36 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         .from(bookingPaymentSchedules)
         .where(eq(bookingPaymentSchedules.id, schedule.id))
       expect(storedSchedule?.status).toBe("paid")
+      expect(schedulePaidEvents).toHaveLength(1)
+      expect(schedulePaidEvents[0]).toMatchObject({
+        bookingId: booking.id,
+        bookingPaymentScheduleId: schedule.id,
+        paymentSessionId: session.id,
+        paymentId: null,
+        scheduleType: schedule.scheduleType,
+        amountCents: schedule.amountCents,
+        currency: schedule.currency,
+        provider: "netopia",
+      })
+      expect(paymentCompletedEvents).toHaveLength(1)
+      expect(paymentCompletedEvents[0]).toMatchObject({
+        paymentSessionId: session.id,
+        targetType: "booking_payment_schedule",
+        targetId: schedule.id,
+        bookingId: booking.id,
+        bookingPaymentScheduleId: schedule.id,
+        bookingGuaranteeId: null,
+        amountCents: 25000,
+        currency: "USD",
+        provider: "netopia",
+      })
+
+      const retryRes = await app.request(`/payment-sessions/${session.id}/complete`, {
+        method: "POST",
+        ...json({ status: "paid", paymentMethod: "credit_card" }),
+      })
+      expect(retryRes.status).toBe(200)
+      expect(schedulePaidEvents).toHaveLength(1)
     })
 
     it("fails and lists payment sessions by status", async () => {

@@ -304,6 +304,16 @@ The payments contract has no concept of "deposit" or "balance" or
 "schedule". It sees individual `PaymentRequest`s. Compose them in the
 vertical's booking service or in finance's payment schedules.
 
+When a session linked to a booking payment schedule is completed,
+`@voyantjs/finance` emits `booking_payment_schedule.paid` after the
+transaction commits. The event includes the booking id, schedule id,
+schedule type, amount, currency, provider, and payment session id. Downstream
+booking lifecycles can subscribe to that event to promote deposit-first
+bookings from `on_hold` to `confirmed` without provider-specific webhook glue.
+The generic `payment.completed` event also carries target metadata
+(`targetType`, `targetId`, schedule id, guarantee id) for subscribers that
+prefer one payment event stream.
+
 ---
 
 ## Package Layout
