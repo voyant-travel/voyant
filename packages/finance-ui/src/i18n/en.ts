@@ -45,7 +45,7 @@ export const financeUiEn = {
     fields: {
       invoiceNumber: "Invoice Number",
       status: "Status",
-      bookingId: "Booking ID",
+      bookingId: "Booking",
       currency: "Currency",
       subtotalCents: "Subtotal",
       taxCents: "Tax",
@@ -56,7 +56,7 @@ export const financeUiEn = {
     },
     placeholders: {
       invoiceNumber: "INV-2025-1234",
-      bookingId: "book_...",
+      bookingId: "Search by booking number, customer, or product",
       issueDate: "Pick issue date",
       dueDate: "Pick due date",
       notes: "Invoice notes...",
@@ -66,7 +66,7 @@ export const financeUiEn = {
     },
     validation: {
       invoiceNumberRequired: "Invoice number is required",
-      bookingIdRequired: "Booking ID is required",
+      bookingIdRequired: "Booking is required",
       currencyIsoCode: "Use 3-letter ISO code",
       issueDateRequired: "Issue date is required",
       dueDateRequired: "Due date is required",
@@ -485,7 +485,7 @@ export const financeUiEn = {
   supplierPaymentDialog: {
     title: "Record Supplier Payment",
     fields: {
-      bookingId: "Booking ID",
+      bookingId: "Booking",
       supplierId: "Supplier ID (optional)",
       amountCents: "Amount",
       currency: "Currency",
@@ -496,7 +496,7 @@ export const financeUiEn = {
       notes: "Notes",
     },
     placeholders: {
-      bookingId: "book_...",
+      bookingId: "Search by booking number, customer, or product",
       supplierId: "supp_...",
       paymentDate: "Select payment date",
       referenceNumber: "TXN-12345",
@@ -506,7 +506,7 @@ export const financeUiEn = {
       create: "Record Payment",
     },
     validation: {
-      bookingIdRequired: "Booking ID is required",
+      bookingIdRequired: "Booking is required",
       amountMinimum: "Amount must be at least 1",
       paymentDateRequired: "Payment date is required",
     },

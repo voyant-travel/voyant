@@ -7,6 +7,10 @@ export {
   type BookingCancellationDialogProps,
 } from "./components/booking-cancellation-dialog.js"
 export {
+  BookingCombobox,
+  type BookingComboboxProps,
+} from "./components/booking-combobox.js"
+export {
   BookingCreateDialog,
   type BookingCreateDialogProps,
   BookingCreateForm,

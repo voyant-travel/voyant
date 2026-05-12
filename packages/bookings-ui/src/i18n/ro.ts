@@ -31,6 +31,11 @@ export const bookingsUiRo = {
     title: "Rezervare noua",
     description: "Creeaza o rezervare, alege platitorul, adauga pasageri si programeaza plata.",
   },
+  bookingCombobox: {
+    placeholder: "Cauta rezervari...",
+    empty: "Nu s-au gasit rezervari.",
+    loading: "Se incarca rezervarile...",
+  },
   bookingDetailPage: {
     notFound: "Rezervarea nu a fost gasita",
     backToBookings: "Inapoi la rezervari",

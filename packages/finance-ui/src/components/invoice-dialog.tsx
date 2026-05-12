@@ -1,3 +1,4 @@
+import { BookingCombobox } from "@voyantjs/bookings-ui"
 import { type InvoiceRecord, useInvoiceMutation } from "@voyantjs/finance-react"
 import {
   Button,
@@ -206,8 +207,14 @@ export function InvoiceDialog({ open, onOpenChange, invoice, onSuccess }: Invoic
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.invoiceDialog.fields.bookingId}</Label>
-                <Input
-                  {...form.register("bookingId")}
+                <BookingCombobox
+                  value={form.watch("bookingId") || null}
+                  onChange={(next) =>
+                    form.setValue("bookingId", next ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                   placeholder={messages.invoiceDialog.placeholders.bookingId}
                 />
                 {form.formState.errors.bookingId ? (
