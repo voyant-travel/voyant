@@ -28,7 +28,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:*"
+    "@voyantjs/i18n": "workspace:*",
+    "@voyantjs/workflows-react": "workspace:*"
   },
   "peerDependencies": {
     "@voyantjs/ui": "workspace:*",
