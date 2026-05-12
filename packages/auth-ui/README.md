@@ -22,6 +22,37 @@ card-less, centered form surfaces intended to sit inside an app-owned auth
 layout. Pass `className` to extend or override spacing when a shell owns the
 page chrome.
 
+## Account self-service
+
+`AccountPage` renders the reusable operator account surface with profile,
+email-change, and password-change forms. It uses `OperatorAdminPageShell` and
+accepts slot/render-prop panels for app-specific account sections such as API
+tokens, sessions, or MFA enrollment.
+
+```tsx
+import { AccountPage } from "@voyantjs/auth-ui/account"
+
+<AccountPage
+  slots={{
+    apiTokensPanel: ({ user }) => <ApiTokensPanel userId={user?.id ?? null} />,
+  }}
+/>
+```
+
+The forms are also exported independently:
+
+```tsx
+import {
+  AccountChangeEmailForm,
+  AccountChangePasswordForm,
+  AccountProfileForm,
+} from "@voyantjs/auth-ui"
+```
+
+`AccountProfileForm` expects the app to support `PATCH /auth/me`.
+`AccountChangePasswordForm`, `AccountChangeEmailForm`, and `AccountPage` use the
+Better Auth password and Email OTP endpoints mounted under `/auth`.
+
 ## Sign-in
 
 `SignInPage` provides the shared email/password sign-in surface. It uses

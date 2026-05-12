@@ -24,6 +24,7 @@ export type UpdateCurrentUserProfileInput = {
   lastName?: string | null
   locale?: string | null
   timezone?: string | null
+  profilePictureUrl?: string | null
 }
 
 export type AuthStatus = {
@@ -156,17 +157,23 @@ export async function ensureCurrentUserProfile(
 }
 
 function profilePatchValues(input: UpdateCurrentUserProfileInput) {
-  const values: {
-    firstName?: string | null
-    lastName?: string | null
-    locale?: string
-    timezone?: string | null
-  } = {}
+  const values: Partial<typeof userProfilesTable.$inferInsert> = {}
 
-  if ("firstName" in input) values.firstName = input.firstName ?? null
-  if ("lastName" in input) values.lastName = input.lastName ?? null
+  if ("firstName" in input) values.firstName = normalizeOptionalText(input.firstName)
+  if ("lastName" in input) values.lastName = normalizeOptionalText(input.lastName)
   if ("locale" in input) values.locale = input.locale ?? "en"
-  if ("timezone" in input) values.timezone = input.timezone ?? null
+  if ("timezone" in input) values.timezone = normalizeOptionalText(input.timezone)
+  if ("profilePictureUrl" in input)
+    values.avatarUrl = normalizeOptionalText(input.profilePictureUrl)
 
   return values
+}
+
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) {
+    return null
+  }
+
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
 }

@@ -1,4 +1,22 @@
 export {
+  AccountChangeEmailForm,
+  type AccountChangeEmailFormProps,
+  AccountChangePasswordForm,
+  type AccountChangePasswordFormProps,
+  AccountProfileForm,
+  type AccountProfileFormProps,
+} from "./components/account-forms.js"
+export {
+  type AccountChangeEmailFormMessages,
+  type AccountChangePasswordFormMessages,
+  type AccountPageMessages,
+  type AccountPageRenderContext,
+  type AccountPageSlot,
+  type AccountPageSlots,
+  type AccountProfileFormMessages,
+  defaultAccountPageMessages,
+} from "./components/account-page-shared.js"
+export {
   defaultOnboardingPageMessages,
   OnboardingPage,
   type OnboardingPageInitialProfile,

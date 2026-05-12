@@ -12,6 +12,7 @@ export interface UpdateAccountProfileInput {
   lastName?: string | null
   locale?: string | null
   timezone?: string | null
+  profilePictureUrl?: string | null
 }
 
 export type UpdateAccountProfileResult = CurrentUser
@@ -47,6 +48,7 @@ function profilePatchBody(input: UpdateAccountProfileInput) {
   if ("lastName" in input) body.lastName = input.lastName
   if ("locale" in input) body.locale = input.locale
   if ("timezone" in input) body.timezone = input.timezone
+  if ("profilePictureUrl" in input) body.profilePictureUrl = input.profilePictureUrl
 
   return body
 }

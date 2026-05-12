@@ -11,6 +11,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./account": "./src/components/account-page.tsx",
     "./styles.css": "./src/styles.css",
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
@@ -27,6 +28,7 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/admin": "workspace:*",
     "@voyantjs/auth-react": "workspace:*",
     "@voyantjs/i18n": "workspace:*",
     "@voyantjs/types": "workspace:*",
@@ -35,10 +37,16 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
+  "peerDependenciesMeta": {
+    "@voyantjs/admin": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@tanstack/react-query": "^5.96.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:*",
     "@voyantjs/auth-react": "workspace:*",
     "@voyantjs/i18n": "workspace:*",
     "@voyantjs/types": "workspace:*",
@@ -61,6 +69,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./account": {
+        "types": "./dist/components/account-page.d.ts",
+        "import": "./dist/components/account-page.js",
+        "default": "./dist/components/account-page.js"
       },
       "./styles.css": {
         "default": "./src/styles.css"

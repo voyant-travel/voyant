@@ -1,3 +1,18 @@
+export {
+  type ChangeAccountPasswordInput,
+  type ConfirmAccountEmailChangeInput,
+  changeAccountPassword,
+  confirmAccountEmailChange,
+  type RequestAccountEmailChangeInput,
+  requestAccountEmailChange,
+  type UpdateAccountProfileInput,
+  updateAccountProfile,
+  useAccountMutation,
+  useChangeAccountPassword,
+  useConfirmAccountEmailChange,
+  useRequestAccountEmailChange,
+  useUpdateAccountProfile,
+} from "./use-account-mutation.js"
 export { type UseAuthStatusOptions, useAuthStatus } from "./use-auth-status.js"
 export { type UseCurrentUserOptions, useCurrentUser } from "./use-current-user.js"
 export { type UseCurrentWorkspaceOptions, useCurrentWorkspace } from "./use-current-workspace.js"
@@ -41,10 +56,4 @@ export {
   signInWithEmail,
   useSignIn,
 } from "./use-sign-in.js"
-export {
-  type UpdateAccountProfileInput,
-  type UpdateAccountProfileResult,
-  updateAccountProfile,
-  useUpdateAccountProfile,
-} from "./use-update-account-profile.js"
 export { useWorkspaceMutation } from "./use-workspace-mutation.js"

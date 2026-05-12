@@ -8,6 +8,10 @@ This package wraps the shared Voyant auth HTTP contract:
 - `PATCH /auth/me`
 - `/auth/status`
 - `/auth/sign-in/email`
+- `PATCH /auth/me`
+- `/auth/change-password`
+- `/auth/email-otp/request-email-change`
+- `/auth/email-otp/change-email`
 - `/auth/workspace/current`
 - `/auth/workspace/active-organization`
 - `/auth/organization/list-members`
@@ -22,7 +26,7 @@ This package wraps the shared Voyant auth HTTP contract:
 It provides reusable React surfaces for:
 
 - current user state
-- account profile updates
+- account profile, password, and email-change mutations
 - optional workspace and organization state
 - organization member listing
 - organization invitation listing
@@ -48,11 +52,10 @@ After Better Auth accepts the credentials, the hook calls `/auth/status` to
 provision the Voyant user profile if needed and invalidates the current auth
 queries.
 
-## Profile Completion
+## Account self-service
 
-`updateAccountProfile()` and `useUpdateAccountProfile()` call `PATCH /auth/me`
-with the current user's profile fields and refresh the cached current user on
-success:
+`useUpdateAccountProfile()` updates Voyant profile fields through
+`PATCH /auth/me` and refreshes the current-user query:
 
 ```tsx
 const updateProfile = useUpdateAccountProfile()
@@ -62,11 +65,31 @@ await updateProfile.mutateAsync({
   lastName: "Pop",
   locale: "ro",
   timezone: "Europe/Bucharest",
+  profilePictureUrl: null,
 })
 ```
 
 Apps can mount `handleAccountProfileRequest(...)` from `@voyantjs/auth/server`
-to provide this route without depending on a specific template.
+to provide this route without depending on a specific template. The mounted
+route validates the session, calls `updateCurrentUserProfile(...)` from
+`@voyantjs/auth/workspace`, and returns the updated current-user shape.
+
+Password and email changes call the mounted Better Auth API:
+
+```tsx
+const changePassword = useChangeAccountPassword()
+await changePassword.mutateAsync({
+  currentPassword,
+  newPassword,
+  revokeOtherSessions: true,
+})
+
+const requestEmailChange = useRequestAccountEmailChange()
+await requestEmailChange.mutateAsync({ newEmail })
+
+const confirmEmailChange = useConfirmAccountEmailChange()
+await confirmEmailChange.mutateAsync({ newEmail, otp })
+```
 
 ## Single-Tenant Apps
 

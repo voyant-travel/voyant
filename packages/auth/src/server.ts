@@ -179,7 +179,13 @@ function readProfileUpdate(
 ): Omit<UpdateCurrentUserProfileInput, "userId"> {
   const input: Omit<UpdateCurrentUserProfileInput, "userId"> = {}
 
-  for (const field of ["firstName", "lastName", "locale", "timezone"] as const) {
+  for (const field of [
+    "firstName",
+    "lastName",
+    "locale",
+    "timezone",
+    "profilePictureUrl",
+  ] as const) {
     const value = body[field]
     if (value === undefined) continue
 
@@ -187,7 +193,14 @@ function readProfileUpdate(
       throw Object.assign(new Error(`${field} must be a string or null`), { status: 400 })
     }
 
-    const maxLength = field === "locale" ? 10 : field === "timezone" ? 64 : 200
+    const maxLength =
+      field === "locale"
+        ? 10
+        : field === "timezone"
+          ? 64
+          : field === "profilePictureUrl"
+            ? 2048
+            : 200
     if (typeof value === "string" && value.length > maxLength) {
       throw Object.assign(new Error(`${field} must be ${maxLength} characters or fewer`), {
         status: 400,
