@@ -4,6 +4,7 @@ import { describe, it } from "node:test"
 import {
   remoteProcessMetadata,
   remoteProcessPlan,
+  remoteProcessStatusShell,
   remoteStartProcessShell,
   remoteStopProcessShell,
 } from "../lib/agent-runner-remote-process.mjs"
@@ -76,6 +77,25 @@ describe("agent runner remote process helpers", () => {
     assert.match(shell, /kill -- "\$target"/)
     assert.match(shell, /kill -KILL -- "\$target"/)
     assert.match(shell, /grace_seconds='7'/)
+  })
+
+  it("builds a remote status shell with metadata and bounded log tail", () => {
+    const descriptor = parseWorkspaceReference("sandbox:sprite:task-579", { repoRoot: "/repo" })
+    const plan = remoteProcessPlan({
+      descriptor,
+      item: workItem(),
+      name: "dev-server",
+      workspaceReference: descriptor.reference,
+    })
+    const shell = remoteProcessStatusShell({ plan, tailLines: 25 })
+
+    assert.match(shell, /status="running"/)
+    assert.match(shell, /reason="stale-pid"/)
+    assert.match(shell, /metadata file:/)
+    assert.match(shell, /--- metadata ---/)
+    assert.match(shell, /--- log tail \(\$tail_lines\) ---/)
+    assert.match(shell, /tail -n "\$tail_lines" "\$log_file"/)
+    assert.match(shell, /tail_lines='25'/)
   })
 
   it("serializes process metadata for evidence and follow-up commands", () => {
