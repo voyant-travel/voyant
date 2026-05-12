@@ -32,6 +32,7 @@ pnpm -C apps/agent-control-plane dev
 - `POST /api/dispatch-intents/:id/finish`
 - `POST /api/tick-snapshots`
 - `GET /api/tick-snapshots/latest?repository=<owner/name>`
+- `GET /api/tick-snapshots/recent?repository=<owner/name>&limit=<n>`
 
 `POST /api/dispatch-plans` accepts ordered queue recommendations and returns the
 first dispatchable plan that matches the optional filters. It mirrors the local
@@ -74,12 +75,17 @@ waiting for TTL expiry.
 `pnpm agent:queue:tick -- --json`, validates the shape, and returns the accepted
 snapshot with counts for total recommendations, dispatchable recommendations,
 and recent events. If the Worker has an `AGENT_TICK_SNAPSHOTS` R2 binding, it
-also stores the latest snapshot for that repository.
+stores both the latest snapshot for that repository and a timestamped history
+record.
 
 `GET /api/tick-snapshots/latest?repository=<owner/name>` reads the latest stored
 snapshot for one repository. It returns
 `tick_snapshot_storage_not_configured` when R2 is not bound, and
 `tick_snapshot_not_found` before the first snapshot is submitted.
+
+`GET /api/tick-snapshots/recent?repository=<owner/name>&limit=<n>` returns
+recent stored snapshots for one repository. `limit` defaults to 20 and is
+clamped to 1..50.
 
 Submit the current queue snapshot from the repo runner with:
 
@@ -179,7 +185,7 @@ available, a command fails, or the iteration limit is reached.
 ## Optional R2 Storage
 
 Bind an R2 bucket as `AGENT_TICK_SNAPSHOTS` to keep the latest accepted tick
-snapshot per repository:
+snapshot plus recent snapshot history per repository:
 
 ```jsonc
 "r2_buckets": [

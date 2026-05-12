@@ -27,6 +27,9 @@ provider commands, or spend model budget.
 - `GET /api/supervisor/ticks/latest?repository=<owner/name>` returns the latest
   persisted supervisor tick for a repository. Requires `AGENT_RUNNER_TOKENS`
   and the `AGENT_RUNNER_TICKS` binding.
+- `GET /api/supervisor/ticks/recent?repository=<owner/name>&limit=<n>` returns
+  recent persisted supervisor ticks for a repository. `limit` defaults to 20
+  and is clamped to 1..50.
 
 ## Configuration
 
@@ -41,7 +44,8 @@ provider commands, or spend model budget.
 - `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS`: optional maximum lease TTL. Defaults to
   900 seconds and is clamped to 60..3600 seconds.
 - `AGENT_RUNNER_REPOSITORY`: default repository, for example `voyantjs/voyant`.
-- `AGENT_RUNNER_TICKS`: optional R2 binding for latest supervisor tick status.
+- `AGENT_RUNNER_TICKS`: optional R2 binding for latest supervisor tick status
+  and recent supervisor tick history.
 - `AGENT_RUNNER_TICK_KEY_PREFIX`: optional R2 key prefix for supervisor ticks.
 - `AGENT_CONTROL_PLANE_URL`: deployed control-plane URL.
 - `AGENT_CONTROL_PLANE_TOKEN`: bearer token for the control plane.

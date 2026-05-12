@@ -53,6 +53,7 @@ export function createApp({
     c.json({
       ...buildRunnerCapabilities(config),
       supervisorTicks: {
+        history: Boolean(supervisorTickStore),
         persistence: supervisorTickStore ? "latest" : "none",
       },
     }),
@@ -110,6 +111,24 @@ export function createApp({
     return c.json(record)
   })
 
+  app.get("/api/supervisor/ticks/recent", async (c) => {
+    if (!supervisorTickStore) {
+      return c.json({ error: "supervisor_tick_storage_not_configured" }, 503)
+    }
+
+    const repository = c.req.query("repository")?.trim()
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+
+    return c.json({
+      records: await supervisorTickStore.listRecent(repository, {
+        limit: parseLimit(c.req.query("limit")),
+      }),
+      repository,
+    })
+  })
+
   return app
 }
 
@@ -153,4 +172,10 @@ function validationIssues(error: { issues: Array<{ path: Array<PropertyKey>; mes
     path: issue.path.join("."),
     message: issue.message,
   }))
+}
+
+function parseLimit(value: string | undefined) {
+  if (!value) return undefined
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
 }

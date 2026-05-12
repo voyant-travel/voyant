@@ -114,6 +114,28 @@ describe("tick snapshot storage", () => {
       },
     })
 
+    const recent = await app.request(
+      "/api/tick-snapshots/recent?repository=voyantjs%2Fvoyant&limit=10",
+      {
+        headers: { authorization: "Bearer secret" },
+      },
+    )
+    expect(recent.status).toBe(200)
+    await expect(recent.json()).resolves.toMatchObject({
+      records: [
+        {
+          snapshot: {
+            repository: "voyantjs/voyant",
+          },
+          summary: {
+            dispatchableRecommendationCount: 1,
+            recommendationCount: 2,
+          },
+        },
+      ],
+      repository: "voyantjs/voyant",
+    })
+
     const capabilities = await app.request("/api/capabilities", {
       headers: { authorization: "Bearer secret" },
     })
@@ -126,7 +148,7 @@ describe("tick snapshot storage", () => {
     })
   })
 
-  it("requires repository and configured storage for latest tick snapshots", async () => {
+  it("requires repository and configured storage for persisted tick snapshots", async () => {
     const noStore = createApp({ authTokens: ["secret"] })
     const noStoreResponse = await noStore.request(
       "/api/tick-snapshots/latest?repository=voyantjs%2Fvoyant",
@@ -148,6 +170,12 @@ describe("tick snapshot storage", () => {
     })
     expect(missingRepository.status).toBe(400)
     await expect(missingRepository.json()).resolves.toEqual({ error: "missing_repository" })
+
+    const missingRecentRepository = await app.request("/api/tick-snapshots/recent", {
+      headers: { authorization: "Bearer secret" },
+    })
+    expect(missingRecentRepository.status).toBe(400)
+    await expect(missingRecentRepository.json()).resolves.toEqual({ error: "missing_repository" })
 
     const missingSnapshot = await app.request(
       "/api/tick-snapshots/latest?repository=voyantjs%2Fvoyant",
@@ -171,6 +199,14 @@ describe("tick snapshot storage", () => {
               } as R2ObjectBody)
             : null
         },
+        async list({ prefix }: { prefix?: string } = {}) {
+          return {
+            objects: Array.from(objects.keys())
+              .filter((key) => !prefix || key.startsWith(prefix))
+              .sort()
+              .map((key) => ({ key })),
+          }
+        },
         async put(key: string, value: string) {
           objects.set(key, String(value))
           return null
@@ -183,10 +219,13 @@ describe("tick snapshot storage", () => {
       acceptedAt: "2026-05-12T05:00:00.000Z",
     })
 
-    await expect(store.putLatest(record)).resolves.toEqual({
+    await expect(store.putLatest(record)).resolves.toMatchObject({
+      historyKey:
+        "supervisor/tick-snapshots/history/voyantjs%2Fvoyant/9005420692740991-2026-05-12T05%3A00%3A00.000Z.json",
       key: "supervisor/tick-snapshots/latest/voyantjs%2Fvoyant.json",
     })
     await expect(store.getLatest("VoyantJS/Voyant")).resolves.toEqual(record)
+    await expect(store.listRecent("VoyantJS/Voyant")).resolves.toEqual([record])
   })
 
   it("stores snapshots without a leading slash when the key prefix is empty", async () => {
@@ -204,7 +243,7 @@ describe("tick snapshot storage", () => {
       keyPrefix: "",
     })
 
-    await expect(store.putLatest(buildTickSnapshotRecord(tickSnapshot))).resolves.toEqual({
+    await expect(store.putLatest(buildTickSnapshotRecord(tickSnapshot))).resolves.toMatchObject({
       key: "tick-snapshots/latest/voyantjs%2Fvoyant.json",
     })
   })
@@ -344,13 +383,20 @@ describe("tick snapshot storage", () => {
 
 function inMemoryTickSnapshotStore(): TickSnapshotStore {
   const latest = new Map<string, TickSnapshotRecord>()
+  const recent: TickSnapshotRecord[] = []
 
   return {
     async getLatest(repository) {
       return latest.get(repository.toLowerCase()) ?? null
     },
+    async listRecent(repository) {
+      return recent.filter(
+        (record) => record.snapshot.repository.toLowerCase() === repository.toLowerCase(),
+      )
+    },
     async putLatest(record) {
       latest.set(record.snapshot.repository.toLowerCase(), record)
+      recent.unshift(record)
       return { key: `latest/${record.snapshot.repository.toLowerCase()}.json` }
     },
   }
