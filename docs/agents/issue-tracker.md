@@ -380,8 +380,11 @@ action recommendations such as `start`, `run-command`, `capture-browser`,
 `inspect-stale`. It does not mutate GitHub, create worktrees, run commands,
 publish evidence, or
 open PRs. Pass `--json` when a process manager or future control plane needs
-machine-readable actions. `Merge Ready` items with linked PRs keep recommending
-`sync-pr` so the runner can observe maintainer merges and mark the item done.
+machine-readable actions. Tick also tails recent JSONL runner events from
+`.agent-runs/events.jsonl`; pass `--recent-events 0` to hide them or
+`--event-log <path>` to inspect a different local ledger. `Merge Ready` items
+with linked PRs keep recommending `sync-pr` so the runner can observe
+maintainer merges and mark the item done.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
 CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
 recommend `remote-bootstrap` so dispatch can clone/fetch the repository and
@@ -410,7 +413,8 @@ recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 implementation and browser execution remain explicit.
 Successful dispatch attempts append local JSONL audit events to
 `.agent-runs/events.jsonl` by default; pass `--event-log <path>` when a
-supervisor needs a different local ledger path.
+supervisor needs a different local ledger path. The same path is passed to the
+nested lifecycle command so dispatch and lifecycle events stay in one ledger.
 
 Use loop for a bounded supervisor pass:
 
@@ -423,7 +427,9 @@ recommendation, then sleeps before the next iteration. It is dry-run by default
 and capped at 100 iterations. It uses the same dispatch allow-list, so it cannot
 run implementation commands or override blocked/wait states. Each iteration is
 recorded in the local event log, alongside the nested dispatch command's own
-events, so unattended queue passes have a minimal timeline.
+events, so unattended queue passes have a minimal timeline. Audit writes are
+best-effort and do not block lifecycle work if the local event log cannot be
+written.
 
 After a workspace is prepared, claim the item before implementation work starts:
 

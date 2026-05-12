@@ -1155,7 +1155,9 @@ without opening raw log files. A filterable `pnpm agent:queue:events` timeline
 supports issue-, repository-, and event-type-specific debugging before a full
 dashboard exists. Dispatch, loop, and control-plane planning can pass the same
 event-log option through to `sync-pr` when the runner intentionally wants that
-refresh.
+refresh. Tick output now carries a recent audit-event tail as well as ordered
+recommendations, and dispatch keeps nested lifecycle command events in the same
+ledger when a supervisor passes a custom `--event-log`.
 
 Verification:
 

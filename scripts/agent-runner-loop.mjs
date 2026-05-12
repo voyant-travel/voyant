@@ -14,9 +14,9 @@ import {
   selectDispatchRecommendation,
 } from "./lib/agent-runner-dispatch.mjs"
 import {
-  appendAgentRunnerEvent,
   recommendationEventDetails,
   resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
 } from "./lib/agent-runner-events.mjs"
 import {
   eventLogOptions,
@@ -90,7 +90,7 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
 
   console.log(`agent-runner loop: dispatch ${iteration}/${loopOptions.iterations}`)
   console.log(`command: pnpm ${commandArgs.join(" ")}`)
-  appendAgentRunnerEvent({
+  tryAppendAgentRunnerEvent({
     eventLogPath,
     event: {
       type: "loop.iteration.started",
@@ -102,7 +102,7 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
     },
   })
   const status = runDispatchCommand(commandArgs) ?? 1
-  appendAgentRunnerEvent({
+  tryAppendAgentRunnerEvent({
     eventLogPath,
     event: {
       type: "loop.iteration.completed",

@@ -7,7 +7,17 @@ import {
   projectScanConfigFromArgs,
   runGit,
 } from "./lib/agent-project-queue.mjs"
-import { maybePrintHelp, projectOptions, repositoryOptions } from "./lib/agent-runner-help.mjs"
+import {
+  formatAgentRunnerEventSummary,
+  readAgentRunnerEvents,
+  resolveEventLogPath,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
+  maybePrintHelp,
+  projectOptions,
+  repositoryOptions,
+} from "./lib/agent-runner-help.mjs"
 import { recommendQueueActions } from "./lib/agent-runner-tick.mjs"
 
 const args = parseArgs(process.argv.slice(2))
@@ -19,6 +29,8 @@ maybePrintHelp(args, {
   options: [
     ["--json", "Print machine-readable JSON."],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    ["--recent-events <number>", "Number of recent runner events to show. Defaults to 5."],
+    ...eventLogOptions,
     ...repositoryOptions,
     ...projectOptions,
   ],
@@ -27,6 +39,8 @@ maybePrintHelp(args, {
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const maxAgeDays = Number(args.maxAgeDays ?? 1)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
+const recentEventLimit = numberArg(args.recentEvents, "recent-events", 5, { min: 0 })
 
 if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
   fail(`invalid max age days: ${String(args.maxAgeDays)}`)
@@ -35,6 +49,7 @@ if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const items = filterItemsByRepository(project.items, repository)
 const recommendations = recommendQueueActions(items, { maxAgeDays, repository })
+const recentEvents = readRecentEvents()
 
 if (args.json) {
   console.log(
@@ -48,6 +63,10 @@ if (args.json) {
         },
         repository,
         maxAgeDays,
+        eventLog: {
+          path: eventLogPath,
+          recentEvents,
+        },
         recommendations,
       },
       null,
@@ -66,6 +85,7 @@ function printHumanSummary() {
   console.log(`items scanned: ${items.length}`)
   console.log(`recommendations: ${recommendations.length}`)
   console.log("")
+  printRecentEvents()
 
   if (recommendations.length === 0) {
     console.log("No runner action recommended.")
@@ -84,4 +104,40 @@ function printHumanSummary() {
       console.log(`  heartbeat: ${recommendation.heartbeat.reason}`)
     }
   }
+}
+
+function printRecentEvents() {
+  if (recentEventLimit === 0 || recentEvents.length === 0) return
+
+  console.log("Recent runner events:")
+  for (const event of recentEvents) {
+    console.log(`- ${formatAgentRunnerEventSummary(event)}`)
+    if (event.recommendation?.reason) {
+      console.log(`  reason: ${event.recommendation.reason}`)
+    }
+    if (Array.isArray(event.command) && event.command.length > 0) {
+      console.log(`  command: ${event.command.join(" ")}`)
+    } else if (typeof event.command === "string") {
+      console.log(`  command: ${event.command}`)
+    }
+  }
+  console.log("")
+}
+
+function readRecentEvents() {
+  try {
+    return readAgentRunnerEvents(eventLogPath, { limit: recentEventLimit })
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error))
+  }
+}
+
+function numberArg(value, name, fallback, { min = 1 } = {}) {
+  if (value === undefined) return fallback
+
+  const number = Number(value)
+  if (!Number.isInteger(number) || number < min) {
+    fail(`invalid ${name}: ${value}`)
+  }
+  return number
 }
