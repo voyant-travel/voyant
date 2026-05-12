@@ -219,6 +219,22 @@ templates. It uses `OperatorAdminShellProvider`'s `VoyantReactProvider` for API
 base URL/fetcher resolution and the operator admin message provider for labels;
 pass the `api` prop only when an app needs a custom invitation transport.
 
+`DashboardPage` renders explicit empty states for charts, upcoming departures,
+and outstanding invoices instead of blank card frames. Brand-new tenants see a
+first-run onboarding panel. Apps that need different empty copy or actions can
+pass `emptyStates` for the affected section:
+
+```tsx
+<DashboardPage
+  emptyStates={{
+    revenueTrend: {
+      title: "No revenue posted yet",
+      action: { href: "/reports", label: "Open reports" },
+    },
+  }}
+/>
+```
+
 ## License
 
 Apache-2.0
