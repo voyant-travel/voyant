@@ -352,6 +352,19 @@ staleness threshold. It also tails recent JSONL runner events from
 status distinguishes browser artifact references from generic transcript or
 evidence fields so active runs do not hide missing browser capture.
 
+Use the local event timeline when a maintainer or supervisor needs more than
+the short status tail:
+
+```bash
+pnpm agent:queue:events -- --issue <number>
+```
+
+Events mode reads `.agent-runs/events.jsonl` and prints a filterable timeline.
+Use `--type <event>` to narrow to one event type, `--limit <number>` to control
+the printed event count, `--scan-limit <number>` to scan a larger recent tail
+before filtering, `--event-log <path>` for a different local ledger, and
+`--json` for dashboard or process-manager consumers.
+
 Use the read-only tick view when wiring an always-on supervisor:
 
 ```bash

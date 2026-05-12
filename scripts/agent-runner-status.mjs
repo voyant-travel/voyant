@@ -11,7 +11,11 @@ import {
   browserEvidenceReferenceKind,
   requiresBrowserEvidence,
 } from "./lib/agent-runner-browser-evidence.mjs"
-import { readAgentRunnerEvents, resolveEventLogPath } from "./lib/agent-runner-events.mjs"
+import {
+  formatAgentRunnerEventSummary,
+  readAgentRunnerEvents,
+  resolveEventLogPath,
+} from "./lib/agent-runner-events.mjs"
 import { maybePrintHelp, projectOptions, repositoryOptions } from "./lib/agent-runner-help.mjs"
 import { evaluateHeartbeat } from "./lib/agent-runner-output.mjs"
 
@@ -164,7 +168,7 @@ function printRecentEvents() {
 
   console.log("Recent runner events:")
   for (const event of recentEvents) {
-    console.log(`- ${formatEventSummary(event)}`)
+    console.log(`- ${formatAgentRunnerEventSummary(event)}`)
     if (event.recommendation?.reason) {
       console.log(`  reason: ${event.recommendation.reason}`)
     }
@@ -173,21 +177,6 @@ function printRecentEvents() {
     }
   }
   console.log("")
-}
-
-function formatEventSummary(event) {
-  const issueNumber = event.recommendation?.issue?.number
-  const action = event.recommendation?.action
-  const status = event.status === undefined ? null : `status ${event.status}`
-  return [
-    event.timestamp ?? "no timestamp",
-    event.type,
-    issueNumber ? `#${issueNumber}` : null,
-    action ?? null,
-    status,
-  ]
-    .filter(Boolean)
-    .join(" ")
 }
 
 function summaryItem(item) {

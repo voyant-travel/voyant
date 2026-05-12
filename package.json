@@ -33,6 +33,7 @@
     "verify:full": "pnpm lint && pnpm verify:agent-quality && pnpm verify:ui-components-barrel && pnpm typecheck && pnpm test && pnpm verify:architecture && pnpm build && pnpm verify:package-exports && pnpm verify:publish-tarballs && pnpm i18n:check",
     "agent:queue:doctor": "node scripts/agent-runner-doctor.mjs",
     "agent:queue:dry-run": "node scripts/agent-runner-dry-run.mjs",
+    "agent:queue:events": "node scripts/agent-runner-events.mjs",
     "agent:queue:status": "node scripts/agent-runner-status.mjs",
     "agent:queue:tick": "node scripts/agent-runner-tick.mjs",
     "agent:queue:dispatch": "node scripts/agent-runner-dispatch.mjs",
