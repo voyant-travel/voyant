@@ -3,11 +3,13 @@ import { describe, it } from "node:test"
 
 import {
   requestRunnerAppCapabilities,
+  requestRunnerAppSupervisorStatus,
   requestRunnerAppSupervisorTick,
   runnerAppConfigFromArgs,
   summarizeControlPlaneCapabilities,
   summarizeRunnerAppCapabilities,
   summarizeRunnerSmokeTick,
+  summarizeRunnerSupervisorStatus,
 } from "../lib/agent-runner-deployment-doctor.mjs"
 
 describe("agent runner deployment doctor helpers", () => {
@@ -123,6 +125,52 @@ describe("agent runner deployment doctor helpers", () => {
     )
   })
 
+  it("reads deployed runner supervisor status", async () => {
+    const calls = []
+    const response = await requestRunnerAppSupervisorStatus({
+      fetchImpl: async (url, init) => {
+        calls.push({ init, url })
+        return new Response(
+          JSON.stringify({
+            capabilities: {
+              execution: {
+                enabled: true,
+                mode: "lease-only",
+              },
+            },
+            repository: "voyantjs/voyant",
+            service: "agent-runner",
+            supervisorTicks: {
+              latest: {
+                result: {
+                  reason: "dry_run",
+                },
+              },
+              recent: [{ result: { reason: "dry_run" } }],
+              storage: {
+                configured: true,
+                persistence: "latest",
+              },
+            },
+          }),
+          { status: 200 },
+        )
+      },
+      limit: 5,
+      repository: "voyantjs/voyant",
+      token: "tok",
+      url: "https://runner.example.com/",
+    })
+
+    assert.equal(response.service, "agent-runner")
+    assert.equal(
+      calls[0].url,
+      "https://runner.example.com/api/supervisor/status?repository=voyantjs%2Fvoyant&limit=5",
+    )
+    assert.equal(calls[0].init.method, "GET")
+    assert.equal(calls[0].init.headers.authorization, "Bearer tok")
+  })
+
   it("surfaces rejected deployed runner supervisor smoke ticks", async () => {
     await assert.rejects(
       requestRunnerAppSupervisorTick({
@@ -190,6 +238,33 @@ describe("agent runner deployment doctor helpers", () => {
       }),
       {
         detail: "reason: dry_run; control plane status: 200; storage persisted: true",
+        ok: true,
+      },
+    )
+
+    assert.deepEqual(
+      summarizeRunnerSupervisorStatus({
+        capabilities: {
+          execution: {
+            enabled: true,
+          },
+        },
+        repository: "voyantjs/voyant",
+        service: "agent-runner",
+        supervisorTicks: {
+          latest: {
+            result: {
+              reason: "dry_run",
+            },
+          },
+          recent: [{ result: { reason: "dry_run" } }],
+          storage: {
+            persistence: "latest",
+          },
+        },
+      }),
+      {
+        detail: "repository: voyantjs/voyant; tick persistence: latest; latest: dry_run; recent: 1",
         ok: true,
       },
     )

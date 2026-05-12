@@ -52,6 +52,28 @@ export async function requestRunnerAppSupervisorTick({ fetchImpl = fetch, reques
   })
 }
 
+export async function requestRunnerAppSupervisorStatus({
+  fetchImpl = fetch,
+  limit,
+  repository,
+  token,
+  url,
+}) {
+  const query = new URLSearchParams({
+    ...(repository ? { repository } : {}),
+    ...(limit ? { limit: String(limit) } : {}),
+  })
+  const path =
+    query.size > 0 ? `/api/supervisor/status?${query.toString()}` : "/api/supervisor/status"
+  return requestRunnerAppJson({
+    endpoint: "supervisor status",
+    fetchImpl,
+    path,
+    token,
+    url,
+  })
+}
+
 export async function requestRecentRunnerSupervisorTicks({
   fetchImpl = fetch,
   limit,
@@ -138,6 +160,18 @@ export function summarizeRunnerSmokeTick(response) {
       Number(controlPlaneStatus) >= 200 &&
       Number(controlPlaneStatus) < 300,
     detail: `reason: ${result?.reason ?? "unknown"}; control plane status: ${String(controlPlaneStatus)}; storage persisted: ${String(response?.storage?.persisted ?? "unknown")}`,
+  }
+}
+
+export function summarizeRunnerSupervisorStatus(status) {
+  const persistence = status?.supervisorTicks?.storage?.persistence ?? "unknown"
+  const latestReason = status?.supervisorTicks?.latest?.result?.reason ?? "none"
+  const recentCount = Array.isArray(status?.supervisorTicks?.recent)
+    ? status.supervisorTicks.recent.length
+    : "unknown"
+  return {
+    ok: status?.service === "agent-runner" && Boolean(status?.capabilities?.execution),
+    detail: `repository: ${status?.repository ?? "unknown"}; tick persistence: ${persistence}; latest: ${latestReason}; recent: ${String(recentCount)}`,
   }
 }
 

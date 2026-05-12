@@ -5,18 +5,20 @@ import {
 } from "./lib/agent-runner-control-plane.mjs"
 import {
   requestRunnerAppCapabilities,
+  requestRunnerAppSupervisorStatus,
   requestRunnerAppSupervisorTick,
   runnerAppConfigFromArgs,
   summarizeControlPlaneCapabilities,
   summarizeRunnerAppCapabilities,
   summarizeRunnerSmokeTick,
+  summarizeRunnerSupervisorStatus,
 } from "./lib/agent-runner-deployment-doctor.mjs"
 import { maybePrintHelp } from "./lib/agent-runner-help.mjs"
 
 const args = parseArgs(process.argv.slice(2))
 maybePrintHelp(args, {
   command: "agent:queue:deployment-doctor",
-  summary: "Check deployed control-plane and runner app capability endpoints.",
+  summary: "Check deployed control-plane and runner app readiness endpoints.",
   usage: "pnpm agent:queue:deployment-doctor -- [--json]",
   options: [
     ["--control-plane-url <url>", "Control-plane base URL. Defaults to AGENT_CONTROL_PLANE_URL."],
@@ -26,7 +28,7 @@ maybePrintHelp(args, {
     ["--smoke-tick", "Run a dry-run supervisor tick that validates the control-plane read path."],
     [
       "--repo <owner/name>",
-      "Repository for --smoke-tick. Defaults to the deployed runner default.",
+      "Repository for runner supervisor status and --smoke-tick. Defaults to the deployed runner default.",
     ],
     ["--action <name>", "Optional lifecycle action filter for --smoke-tick."],
     ["--json", "Print machine-readable JSON."],
@@ -110,6 +112,25 @@ async function checkRunnerApp() {
     record({
       detail: error instanceof Error ? error.message : String(error),
       name: "runner app capabilities",
+      ok: false,
+    })
+  }
+
+  try {
+    const status = await requestRunnerAppSupervisorStatus({
+      limit: 5,
+      ...(args.repo ? { repository: args.repo } : {}),
+      token: config.token,
+      url: config.url,
+    })
+    record({
+      name: "runner app supervisor status",
+      ...summarizeRunnerSupervisorStatus(status),
+    })
+  } catch (error) {
+    record({
+      detail: error instanceof Error ? error.message : String(error),
+      name: "runner app supervisor status",
       ok: false,
     })
   }

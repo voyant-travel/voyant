@@ -52,12 +52,53 @@ export function createApp({
   app.get("/api/capabilities", (c) =>
     c.json({
       ...buildRunnerCapabilities(config),
-      supervisorTicks: {
-        history: Boolean(supervisorTickStore),
-        persistence: supervisorTickStore ? "latest" : "none",
-      },
+      supervisorTicks: supervisorTickCapabilities(supervisorTickStore),
     }),
   )
+
+  app.get("/api/supervisor/status", async (c) => {
+    const repository = c.req.query("repository")?.trim() || config.repository
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+
+    const capabilities = {
+      ...buildRunnerCapabilities(config),
+      supervisorTicks: supervisorTickCapabilities(supervisorTickStore),
+    }
+
+    if (!supervisorTickStore) {
+      return c.json({
+        capabilities,
+        repository,
+        service: "agent-runner",
+        supervisorTicks: {
+          latest: null,
+          recent: [],
+          storage: {
+            configured: false,
+            persistence: "none",
+          },
+        },
+      })
+    }
+
+    return c.json({
+      capabilities,
+      repository,
+      service: "agent-runner",
+      supervisorTicks: {
+        latest: await supervisorTickStore.getLatest(repository),
+        recent: await supervisorTickStore.listRecent(repository, {
+          limit: parseLimit(c.req.query("limit")) ?? 5,
+        }),
+        storage: {
+          configured: true,
+          persistence: "latest",
+        },
+      },
+    })
+  })
 
   app.post("/api/supervisor/ticks", async (c) => {
     const parsed = supervisorTickRequestSchema.safeParse(await c.req.json().catch(() => ({})))
@@ -178,4 +219,11 @@ function parseLimit(value: string | undefined) {
   if (!value) return undefined
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function supervisorTickCapabilities(supervisorTickStore: SupervisorTickStore | undefined) {
+  return {
+    history: Boolean(supervisorTickStore),
+    persistence: supervisorTickStore ? "latest" : "none",
+  }
 }

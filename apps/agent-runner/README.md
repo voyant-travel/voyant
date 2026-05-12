@@ -27,6 +27,11 @@ provider commands, or spend model budget.
   If the control plane rejects the lease because an active intent already
   exists, the tick result includes that active intent so operators can inspect
   the holder and expiration from the persisted supervisor status.
+- `GET /api/supervisor/status?repository=<owner/name>&limit=<n>` returns a
+  non-mutating operator view with runner capabilities, tick storage state, the
+  latest persisted supervisor tick, and recent tick history. If `repository` is
+  omitted, the configured `AGENT_RUNNER_REPOSITORY` is used. The endpoint still
+  returns capabilities when `AGENT_RUNNER_TICKS` is not bound.
 - `GET /api/supervisor/ticks/latest?repository=<owner/name>` returns the latest
   persisted supervisor tick for a repository. Requires `AGENT_RUNNER_TOKENS`
   and the `AGENT_RUNNER_TICKS` binding.
@@ -67,7 +72,8 @@ pnpm agent:queue:deployment-doctor -- --json
 
 The command reads `AGENT_CONTROL_PLANE_URL`, `AGENT_CONTROL_PLANE_TOKEN`,
 `AGENT_RUNNER_URL`, and `AGENT_RUNNER_TOKEN`, calls both capability endpoints,
-and reports persistence and execution mode without printing token values.
+checks the runner supervisor status endpoint, and reports persistence and
+execution mode without printing token values.
 Pass `--smoke-tick` after submitting at least one queue snapshot to validate
 that the deployed runner can call the control plane's read-only dispatch-plan
 path:

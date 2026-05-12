@@ -1370,6 +1370,10 @@ Verification:
   database. Lease-conflict ticks preserve the active intent returned by the
   control plane so maintainers can see the holder, issue, action, and expiration
   that blocked the run.
+- `GET /api/supervisor/status` combines runner capabilities with latest and
+  recent supervisor tick history for one repository. It is non-mutating and
+  still reports capabilities when tick storage is not configured, so operators
+  have one deployed-readiness endpoint before enabling Cron.
 - Operators can inspect persisted control-plane and runner history with
   `pnpm agent:queue:history`, using `--source control-plane` for queue
   snapshots or `--source runner` for deployed supervisor ticks.
@@ -1382,11 +1386,11 @@ Verification:
   queued action.
 - Deployed control-plane and runner setup should be checked with
   `pnpm agent:queue:deployment-doctor` before enabling Cron. The command calls
-  both capability endpoints, verifies auth reaches the deployed apps, and
-  reports persistence and execution mode without printing bearer tokens. After
-  at least one queue snapshot is stored, `--smoke-tick` makes the deployed
-  runner call the control plane's read-only dispatch-plan path without leasing
-  work.
+  both capability endpoints, reads the runner supervisor status, verifies auth
+  reaches the deployed apps, and reports persistence and execution mode without
+  printing bearer tokens. After at least one queue snapshot is stored,
+  `--smoke-tick` makes the deployed runner call the control plane's read-only
+  dispatch-plan path without leasing work.
 
 ## Open Questions
 
