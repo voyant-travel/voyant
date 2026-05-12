@@ -21,6 +21,9 @@ provider commands, or spend model budget.
   intent from `POST /api/dispatch-intents/latest` on the control plane. When
   `AGENT_RUNNER_TICKS` is bound, the result is persisted as the latest
   supervisor tick for the repository.
+  If the control plane rejects the lease because an active intent already
+  exists, the tick result includes that active intent so operators can inspect
+  the holder and expiration from the persisted supervisor status.
 - `GET /api/supervisor/ticks/latest?repository=<owner/name>` returns the latest
   persisted supervisor tick for a repository. Requires `AGENT_RUNNER_TOKENS`
   and the `AGENT_RUNNER_TICKS` binding.

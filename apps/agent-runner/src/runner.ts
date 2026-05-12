@@ -164,6 +164,7 @@ export async function runSupervisorTick({
   if (!response.ok) {
     return {
       controlPlane: {
+        ...(body?.intent ? { activeIntent: body.intent } : {}),
         error: body?.error ?? bodyText,
         status: response.status,
       },
