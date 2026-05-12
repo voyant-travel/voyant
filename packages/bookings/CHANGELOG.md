@@ -1,5 +1,15 @@
 # @voyantjs/bookings
 
+## 0.33.1
+
+### Patch Changes
+
+- 9bee9aa: Hydrate booking list item summaries with product names and prefer those names in the Bookings list "What booked" column.
+  - @voyantjs/core@0.33.1
+  - @voyantjs/db@0.33.1
+  - @voyantjs/hono@0.33.1
+  - @voyantjs/utils@0.33.1
+
 ## 0.33.0
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @voyantjs/bookings-react
 
+## 0.33.1
+
+### Patch Changes
+
+- 9bee9aa: Hydrate booking list item summaries with product names and prefer those names in the Bookings list "What booked" column.
+- Updated dependencies [9bee9aa]
+  - @voyantjs/bookings@0.33.1
+  - @voyantjs/react@0.33.1
+
 ## 0.33.0
 
 ### Patch Changes
