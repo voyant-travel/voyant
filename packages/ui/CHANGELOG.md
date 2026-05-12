@@ -1,5 +1,15 @@
 # @voyantjs/ui
 
+## 0.35.0
+
+### Patch Changes
+
+- baa6134: Replace the tabbed product detail page with the sectioned operator layout and upgrade product media management from a table to a gallery with preview, cover selection, and reorder controls.
+  - @voyantjs/i18n@0.35.0
+  - @voyantjs/notifications@0.35.0
+  - @voyantjs/notifications-react@0.35.0
+  - @voyantjs/utils@0.35.0
+
 ## 0.34.0
 
 ### Patch Changes

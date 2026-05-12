@@ -1,5 +1,24 @@
 # @voyantjs/products-ui
 
+## 0.35.0
+
+### Minor Changes
+
+- baa6134: Replace the tabbed product detail page with the sectioned operator layout and upgrade product media management from a table to a gallery with preview, cover selection, and reorder controls.
+
+### Patch Changes
+
+- Updated dependencies [baa6134]
+  - @voyantjs/availability-react@0.35.0
+  - @voyantjs/catalog-react@0.35.0
+  - @voyantjs/finance@0.35.0
+  - @voyantjs/finance-ui@0.35.0
+  - @voyantjs/i18n@0.35.0
+  - @voyantjs/pricing-react@0.35.0
+  - @voyantjs/products-react@0.35.0
+  - @voyantjs/suppliers-react@0.35.0
+  - @voyantjs/ui@0.35.0
+
 ## 0.34.0
 
 ### Patch Changes

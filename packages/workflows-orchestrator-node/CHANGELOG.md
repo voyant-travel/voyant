@@ -1,5 +1,13 @@
 # @voyantjs/workflows-orchestrator-node
 
+## 0.35.0
+
+### Patch Changes
+
+- 80b6c7b: Expose a `services` resolver option on the Node self-host server helpers and document the `createApp()` migration path for service-backed package workflows.
+  - @voyantjs/workflows@0.35.0
+  - @voyantjs/workflows-orchestrator@0.35.0
+
 ## 0.34.0
 
 ### Patch Changes
