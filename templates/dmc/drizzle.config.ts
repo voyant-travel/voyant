@@ -35,6 +35,9 @@ export default defineConfig({
     "../../packages/finance/src/schema.ts",
     "../../packages/legal/src/schema.ts",
     "../../packages/catalog/src/schema.ts",
+    // Mounted at /v1/public/storefront-verification; keep this schema
+    // alongside the route module so challenge requests do not fail at runtime.
+    "../../packages/storefront-verification/src/schema.ts",
   ],
   out: "./migrations",
   dialect: "postgresql",

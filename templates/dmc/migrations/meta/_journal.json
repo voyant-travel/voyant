@@ -29,6 +29,13 @@
       "when": 1778544000000,
       "tag": "0003_allocation_resources",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778582674000,
+      "tag": "0004_storefront_verification_challenges",
+      "breakpoints": true
     }
   ]
 }

@@ -43,6 +43,9 @@ export default defineConfig({
     "../../packages/flights/src/reference/local-postgres.ts",
     "../../packages/catalog/src/schema.ts",
     "../../packages/workflow-runs/src/schema.ts",
+    // Mounted at /v1/public/storefront-verification; keep this schema
+    // alongside the route module so challenge requests do not fail at runtime.
+    "../../packages/storefront-verification/src/schema.ts",
     // Operator-template-local tables (agency profile + default
     // customer payment policy). Lives in-template since the shape
     // is deployment-flavored.
