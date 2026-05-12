@@ -6,9 +6,30 @@ import {
   noDepositPolicy,
   type PaymentPolicy,
 } from "@voyantjs/finance"
-import { Input, Label, RadioGroup, RadioGroupItem, Switch } from "@voyantjs/ui/components"
+import { formatMessage } from "@voyantjs/i18n"
+import {
+  Button,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@voyantjs/ui/components"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { HelpCircle } from "lucide-react"
 import * as React from "react"
+
+import { useFinanceUiI18nOrDefault } from "../i18n/index.js"
 
 /**
  * Reusable payment-policy editor.
@@ -47,6 +68,9 @@ const DEFAULT_POLICY: PaymentPolicy = {
   balanceDueMinDaysFromNow: 7,
 }
 
+const depositKinds = ["none", "percent", "fixed_cents"] as const
+type DepositKind = (typeof depositKinds)[number]
+
 export function PaymentPolicyForm({
   value,
   onChange,
@@ -55,208 +79,219 @@ export function PaymentPolicyForm({
   disabled,
   className,
 }: PaymentPolicyFormProps): React.ReactElement {
+  const messages = useFinanceUiI18nOrDefault().messages.paymentPolicy.form
   const isInheriting = value === null
   const policy = value ?? noDepositPolicy
 
   const setPolicyField = <K extends keyof PaymentPolicy>(key: K, next: PaymentPolicy[K]) => {
     onChange({ ...(value ?? DEFAULT_POLICY), [key]: next })
   }
+  const setDepositKind = (kind: DepositKind) => {
+    if (kind === "none") {
+      setPolicyField("deposit", { kind: "none" })
+      return
+    }
+    if (kind === "percent") {
+      setPolicyField("deposit", {
+        kind: "percent",
+        percent: policy.deposit.kind === "percent" ? (policy.deposit.percent ?? 50) : 50,
+      })
+      return
+    }
+    setPolicyField("deposit", {
+      kind: "fixed_cents",
+      amountCents:
+        policy.deposit.kind === "fixed_cents" ? (policy.deposit.amountCents ?? 10_000) : 10_000,
+    })
+  }
+  const depositHint = messages.depositHints[policy.deposit.kind]
 
   return (
-    <div className={cn("space-y-5", className)}>
-      {inheritable ? (
-        <div className="flex items-start gap-3 rounded-md border bg-muted/20 p-3">
-          <Switch
-            id="payment-policy-inherit"
-            checked={isInheriting}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                onChange(null)
-              } else {
-                onChange(value ?? DEFAULT_POLICY)
-              }
-            }}
-            disabled={disabled}
-          />
-          <div className="space-y-1">
-            <Label htmlFor="payment-policy-inherit" className="text-sm font-medium">
-              Inherit from parent
-            </Label>
-            <p className="text-muted-foreground text-xs">
-              When on, this layer falls back to the next-broader policy (operator default, category,
-              supplier, …). Switch off to set an explicit policy here.
-            </p>
+    <TooltipProvider>
+      <div className={cn("space-y-4", className)}>
+        {inheritable ? (
+          <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <Label htmlFor="payment-policy-inherit" className="text-sm font-medium">
+                {messages.inherit.label}
+              </Label>
+              <InfoTooltip label={messages.inherit.tooltipLabel}>
+                {messages.inherit.help}
+              </InfoTooltip>
+            </div>
+            <Switch
+              id="payment-policy-inherit"
+              checked={isInheriting}
+              onCheckedChange={(checked) => onChange(checked ? null : (value ?? DEFAULT_POLICY))}
+              disabled={disabled}
+            />
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      <fieldset disabled={disabled || isInheriting} className="space-y-5 disabled:opacity-60">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Deposit</Label>
-          <RadioGroup
-            value={policy.deposit.kind}
-            onValueChange={(kind) => {
-              if (kind === "none") {
-                setPolicyField("deposit", { kind: "none" })
-              } else if (kind === "percent") {
-                setPolicyField("deposit", {
-                  kind: "percent",
-                  percent: policy.deposit.percent ?? 50,
-                })
-              } else if (kind === "fixed_cents") {
-                setPolicyField("deposit", {
-                  kind: "fixed_cents",
-                  amountCents: policy.deposit.amountCents ?? 10_000,
-                })
-              }
-            }}
-            className="grid grid-cols-1 gap-2 md:grid-cols-3"
-          >
-            <DepositKindOption
-              value="none"
-              label="None"
-              hint="Customer pays the full amount up-front."
-              checked={policy.deposit.kind === "none"}
-            />
-            <DepositKindOption
-              value="percent"
-              label="Percent of total"
-              hint="e.g. 50% deposit at booking."
-              checked={policy.deposit.kind === "percent"}
-            />
-            <DepositKindOption
-              value="fixed_cents"
-              label="Fixed amount"
-              hint="A flat per-booking amount."
-              checked={policy.deposit.kind === "fixed_cents"}
-            />
-          </RadioGroup>
-
-          {policy.deposit.kind === "percent" ? (
-            <div className="grid grid-cols-1 gap-3 pt-2 md:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="payment-policy-percent">Deposit percent</Label>
-                <Input
-                  id="payment-policy-percent"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={policy.deposit.percent ?? 50}
-                  onChange={(e) =>
-                    setPolicyField("deposit", {
-                      kind: "percent",
-                      percent: Number(e.target.value),
-                    })
-                  }
-                />
-                <p className="text-muted-foreground text-xs">0–100. Whole numbers recommended.</p>
-              </div>
+        <fieldset disabled={disabled || isInheriting} className="space-y-4 disabled:opacity-60">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(13rem,16rem)_minmax(13rem,1fr)]">
+            <div className="space-y-1.5">
+              <Label htmlFor="payment-policy-deposit-kind">{messages.depositKind.label}</Label>
+              <Select
+                value={policy.deposit.kind}
+                onValueChange={(kind) => setDepositKind(kind as DepositKind)}
+              >
+                <SelectTrigger id="payment-policy-deposit-kind" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {depositKinds.map((kind) => (
+                    <SelectItem key={kind} value={kind}>
+                      {messages.depositKind.options[kind]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          ) : null}
-
-          {policy.deposit.kind === "fixed_cents" ? (
-            <div className="grid grid-cols-1 gap-3 pt-2 md:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="payment-policy-fixed">Deposit amount ({currency})</Label>
-                <Input
-                  id="payment-policy-fixed"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={(policy.deposit.amountCents ?? 0) / 100}
-                  onChange={(e) =>
-                    setPolicyField("deposit", {
-                      kind: "fixed_cents",
-                      amountCents: Math.round(Number(e.target.value) * 100),
-                    })
-                  }
-                />
-                <p className="text-muted-foreground text-xs">
-                  Capped at the booking total when the booking is smaller than this amount.
-                </p>
+            {policy.deposit.kind === "percent" ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="payment-policy-percent">{messages.depositValue.percentLabel}</Label>
+                <InputGroup>
+                  <InputGroupInput
+                    id="payment-policy-percent"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={policy.deposit.percent ?? 50}
+                    onChange={(e) =>
+                      setPolicyField("deposit", {
+                        kind: "percent",
+                        percent: Number(e.target.value),
+                      })
+                    }
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>%</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+                <p className="text-muted-foreground text-xs">{depositHint}</p>
               </div>
-            </div>
-          ) : null}
-        </div>
+            ) : null}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="space-y-1">
-            <Label htmlFor="payment-policy-min-days">Minimum days before departure</Label>
-            <Input
+            {policy.deposit.kind === "fixed_cents" ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="payment-policy-fixed">{messages.depositValue.fixedLabel}</Label>
+                <InputGroup>
+                  <InputGroupInput
+                    id="payment-policy-fixed"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={(policy.deposit.amountCents ?? 0) / 100}
+                    onChange={(e) =>
+                      setPolicyField("deposit", {
+                        kind: "fixed_cents",
+                        amountCents: Math.round(Number(e.target.value) * 100),
+                      })
+                    }
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>{currency}</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+                <p className="text-muted-foreground text-xs">{depositHint}</p>
+              </div>
+            ) : null}
+
+            {policy.deposit.kind === "none" ? (
+              <div className="flex items-end pb-2">
+                <p className="text-muted-foreground text-xs">{depositHint}</p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <DaysInput
               id="payment-policy-min-days"
-              type="number"
-              min={0}
-              step={1}
+              label={messages.days.minDaysLabel}
+              help={messages.days.minDaysHelp}
+              tooltipLabel={messages.days.tooltipLabel}
               value={policy.minDaysBeforeDepartureForDeposit}
-              onChange={(e) =>
-                setPolicyField("minDaysBeforeDepartureForDeposit", Number(e.target.value))
-              }
+              suffix={messages.days.suffix}
+              onChange={(next) => setPolicyField("minDaysBeforeDepartureForDeposit", next)}
             />
-            <p className="text-muted-foreground text-xs">
-              If departure is closer than this, the booking requires the full amount up-front.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="payment-policy-balance-days">Balance due days before departure</Label>
-            <Input
+            <DaysInput
               id="payment-policy-balance-days"
-              type="number"
-              min={0}
-              step={1}
+              label={messages.days.balanceDaysLabel}
+              help={messages.days.balanceDaysHelp}
+              tooltipLabel={messages.days.tooltipLabel}
               value={policy.balanceDueDaysBeforeDeparture}
-              onChange={(e) =>
-                setPolicyField("balanceDueDaysBeforeDeparture", Number(e.target.value))
-              }
+              suffix={messages.days.suffix}
+              onChange={(next) => setPolicyField("balanceDueDaysBeforeDeparture", next)}
             />
-            <p className="text-muted-foreground text-xs">When the balance is due.</p>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="payment-policy-grace">Balance grace days from now</Label>
-            <Input
+            <DaysInput
               id="payment-policy-grace"
-              type="number"
-              min={0}
-              step={1}
+              label={messages.days.graceDaysLabel}
+              help={messages.days.graceDaysHelp}
+              tooltipLabel={messages.days.tooltipLabel}
               value={policy.balanceDueMinDaysFromNow}
-              onChange={(e) => setPolicyField("balanceDueMinDaysFromNow", Number(e.target.value))}
+              suffix={messages.days.suffix}
+              onChange={(next) => setPolicyField("balanceDueMinDaysFromNow", next)}
             />
-            <p className="text-muted-foreground text-xs">
-              Floor on the balance due date so the customer always gets at least this long to pay
-              it.
-            </p>
           </div>
-        </div>
-      </fieldset>
+        </fieldset>
+      </div>
+    </TooltipProvider>
+  )
+}
+
+function DaysInput({
+  id,
+  label,
+  help,
+  tooltipLabel,
+  value,
+  suffix,
+  onChange,
+}: {
+  id: string
+  label: string
+  help: string
+  tooltipLabel: string
+  value: number
+  suffix: string
+  onChange: (next: number) => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <Label htmlFor={id}>{label}</Label>
+        <InfoTooltip label={tooltipLabel}>{help}</InfoTooltip>
+      </div>
+      <InputGroup>
+        <InputGroupInput
+          id={id}
+          type="number"
+          min={0}
+          step={1}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        <InputGroupAddon align="inline-end">
+          <InputGroupText>{suffix}</InputGroupText>
+        </InputGroupAddon>
+      </InputGroup>
     </div>
   )
 }
 
-function DepositKindOption({
-  value,
-  label,
-  hint,
-  checked,
-}: {
-  value: string
-  label: string
-  hint: string
-  checked: boolean
-}) {
+function InfoTooltip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <Label
-      htmlFor={`payment-policy-deposit-${value}`}
-      className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-md border p-3",
-        checked ? "border-primary bg-primary/5" : "bg-background",
-      )}
-    >
-      <RadioGroupItem id={`payment-policy-deposit-${value}`} value={value} className="mt-1" />
-      <div className="space-y-1">
-        <div className="text-sm font-medium">{label}</div>
-        <p className="text-muted-foreground text-xs">{hint}</p>
-      </div>
-    </Label>
+    <Tooltip>
+      <TooltipTrigger
+        render={<Button type="button" variant="ghost" size="icon" className="size-5" />}
+      >
+        <HelpCircle className="size-3.5 text-muted-foreground" aria-hidden="true" />
+        <span className="sr-only">{label}</span>
+      </TooltipTrigger>
+      <TooltipContent>{children}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -283,6 +318,8 @@ export function PaymentPolicyPreview({
   sampleDaysBeforeDeparture = 60,
   className,
 }: PaymentPolicyPreviewProps): React.ReactElement {
+  const i18n = useFinanceUiI18nOrDefault()
+  const messages = i18n.messages.paymentPolicy.preview
   const today = React.useMemo(() => new Date(), [])
   const departureDate = React.useMemo(() => {
     const d = new Date(today.getTime() + sampleDaysBeforeDeparture * 24 * 60 * 60 * 1000)
@@ -304,20 +341,24 @@ export function PaymentPolicyPreview({
     return (
       <div
         className={cn(
-          "rounded-md border border-dashed bg-muted/20 p-3 text-muted-foreground text-xs",
+          "self-start rounded-md border border-dashed bg-muted/20 p-3 text-muted-foreground text-xs",
           className,
         )}
       >
-        Inheriting from parent — no preview at this layer.
+        {messages.inheriting}
       </div>
     )
   }
 
   return (
-    <div className={cn("space-y-2 rounded-md border bg-muted/20 p-3 text-sm", className)}>
+    <div
+      className={cn("self-start space-y-2 rounded-md border bg-muted/20 p-3 text-sm", className)}
+    >
       <div className="text-muted-foreground text-xs">
-        Sample: {formatMoney(sampleTotalCents, currency)} booking, departure in{" "}
-        {sampleDaysBeforeDeparture} days
+        {formatMessage(messages.sample, {
+          amount: i18n.formatCurrency(sampleTotalCents / 100, currency),
+          days: i18n.formatNumber(sampleDaysBeforeDeparture),
+        })}
       </div>
       <ul className="space-y-1">
         {schedule.map((entry) => (
@@ -325,6 +366,10 @@ export function PaymentPolicyPreview({
             key={`${entry.scheduleType}-${entry.dueDate}`}
             entry={entry}
             currency={currency}
+            labels={messages.scheduleTypes}
+            dueLabel={messages.due}
+            formatCurrency={i18n.formatCurrency}
+            formatDate={i18n.formatDate}
           />
         ))}
       </ul>
@@ -332,26 +377,34 @@ export function PaymentPolicyPreview({
   )
 }
 
-function ScheduleRow({ entry, currency }: { entry: ComputedScheduleEntry; currency: string }) {
+function ScheduleRow({
+  entry,
+  currency,
+  labels,
+  dueLabel,
+  formatCurrency,
+  formatDate,
+}: {
+  entry: ComputedScheduleEntry
+  currency: string
+  labels: Record<ComputedScheduleEntry["scheduleType"], string>
+  dueLabel: string
+  formatCurrency: (value: number, currency: string) => string
+  formatDate: (value: string | number | Date) => string
+}) {
   const label =
     entry.scheduleType === "deposit"
-      ? "Deposit"
+      ? labels.deposit
       : entry.scheduleType === "balance"
-        ? "Balance"
-        : "Full payment"
+        ? labels.balance
+        : labels.full
   return (
     <li className="flex items-center justify-between gap-2">
       <span className="font-medium">{label}</span>
-      <span className="font-mono text-xs">{formatMoney(entry.amountCents, currency)}</span>
-      <span className="text-muted-foreground text-xs">due {entry.dueDate}</span>
+      <span className="font-mono text-xs">{formatCurrency(entry.amountCents / 100, currency)}</span>
+      <span className="text-muted-foreground text-xs">
+        {formatMessage(dueLabel, { date: formatDate(entry.dueDate) })}
+      </span>
     </li>
   )
-}
-
-function formatMoney(cents: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100)
-  } catch {
-    return `${(cents / 100).toFixed(2)} ${currency}`
-  }
 }
