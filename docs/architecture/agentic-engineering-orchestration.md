@@ -1319,6 +1319,10 @@ Verification:
   app with `pnpm agent:queue:submit-tick`, using `AGENT_CONTROL_PLANE_URL` and
   `AGENT_CONTROL_PLANE_TOKEN`. This keeps the Cloudflare endpoint exercised
   without adding storage or automatic dispatch yet.
+- The control-plane app can optionally persist the latest accepted tick
+  snapshot per repository to R2 through the `AGENT_TICK_SNAPSHOTS` binding.
+  This gives dashboards and supervisors a durable read model while dispatch
+  remains explicit and runner-owned.
 
 ## Open Questions
 

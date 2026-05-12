@@ -386,8 +386,10 @@ machine-readable actions. Tick also tails recent JSONL runner events from
 with linked PRs keep recommending `sync-pr` so the runner can observe
 maintainer merges and mark the item done.
 The Cloudflare-ready control-plane app can accept this JSON at
-`POST /api/tick-snapshots` for validation and summary counts, but that endpoint
-is non-persistent and does not dispatch work.
+`POST /api/tick-snapshots` for validation and summary counts. When the
+control-plane Worker has an R2 binding, it also stores the latest accepted
+snapshot per repository for dashboard and supervisor reads. This still does not
+dispatch work.
 Use `pnpm agent:queue:submit-tick` with `AGENT_CONTROL_PLANE_URL` and
 `AGENT_CONTROL_PLANE_TOKEN` to submit a fresh snapshot. For replayable
 supervisor tests, write `pnpm agent:queue:tick -- --json` to a file and submit

@@ -3,10 +3,10 @@
 Cloudflare-ready Hono Worker for supervised agent queue orchestration.
 
 This app intentionally starts with a dry-run contract. It can answer health,
-capability, and dispatch-planning requests, but it does not mutate GitHub,
-create workspaces, run provider commands, or spend agent budget. Local runner
-scripts remain the execution boundary until authentication, persistence, and
-worker-to-runner transport are designed.
+capability, dispatch-planning, and snapshot-state requests, but it does not
+mutate GitHub, create workspaces, run provider commands, or spend agent budget.
+Local runner scripts remain the execution boundary until authentication,
+persistence, and worker-to-runner transport are designed.
 
 `/health` is public. `/api/*` requires a bearer token from
 `AGENT_CONTROL_PLANE_TOKENS`, a comma-separated secret value configured in the
@@ -27,6 +27,7 @@ pnpm -C apps/agent-control-plane dev
 - `GET /api/capabilities`
 - `POST /api/dispatch-plans`
 - `POST /api/tick-snapshots`
+- `GET /api/tick-snapshots/latest?repository=<owner/name>`
 
 `POST /api/dispatch-plans` accepts ordered queue recommendations and returns the
 first dispatchable plan that matches the optional filters. It mirrors the local
@@ -40,8 +41,13 @@ planned lifecycle command on a supervisor-specific JSONL ledger. Pass
 `POST /api/tick-snapshots` accepts the JSON emitted by
 `pnpm agent:queue:tick -- --json`, validates the shape, and returns the accepted
 snapshot with counts for total recommendations, dispatchable recommendations,
-and recent events. The current contract is intentionally non-persistent; use it
-to prove worker-to-supervisor shape before adding storage or automatic loops.
+and recent events. If the Worker has an `AGENT_TICK_SNAPSHOTS` R2 binding, it
+also stores the latest snapshot for that repository.
+
+`GET /api/tick-snapshots/latest?repository=<owner/name>` reads the latest stored
+snapshot for one repository. It returns
+`tick_snapshot_storage_not_configured` when R2 is not bound, and
+`tick_snapshot_not_found` before the first snapshot is submitted.
 
 Submit the current queue snapshot from the repo runner with:
 
@@ -59,3 +65,20 @@ AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
 pnpm agent:queue:submit-tick -- --input .agent-runs/tick.json
 ```
+
+## Optional R2 Storage
+
+Bind an R2 bucket as `AGENT_TICK_SNAPSHOTS` to keep the latest accepted tick
+snapshot per repository:
+
+```jsonc
+"r2_buckets": [
+  {
+    "binding": "AGENT_TICK_SNAPSHOTS",
+    "bucket_name": "voyant-agent-control-plane"
+  }
+]
+```
+
+Set `AGENT_TICK_SNAPSHOT_KEY_PREFIX` when multiple environments share one
+bucket.
