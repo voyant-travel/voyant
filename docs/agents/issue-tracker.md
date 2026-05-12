@@ -422,6 +422,11 @@ It reads `AGENT_CONTROL_PLANE_URL`, `AGENT_CONTROL_PLANE_TOKEN`,
 `AGENT_RUNNER_URL`, and `AGENT_RUNNER_TOKEN`, calls both `/api/capabilities`
 endpoints, and reports persistence and execution mode without printing token
 values.
+For day-to-day operator checks after deployment, run
+`pnpm agent:queue:deployed-status -- --repo <owner/name>`. It reads the same
+environment, reports control-plane and runner readiness, and prints the latest
+plus recent runner supervisor ticks without performing a smoke tick or leasing
+work.
 After submitting at least one queue snapshot, pass
 `--smoke-tick --repo <owner/name>` to make the deployed runner perform a
 dry-run supervisor tick that validates the control-plane read path without

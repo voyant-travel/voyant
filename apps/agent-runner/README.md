@@ -74,6 +74,16 @@ The command reads `AGENT_CONTROL_PLANE_URL`, `AGENT_CONTROL_PLANE_TOKEN`,
 `AGENT_RUNNER_URL`, and `AGENT_RUNNER_TOKEN`, calls both capability endpoints,
 checks the runner supervisor status endpoint, and reports persistence and
 execution mode without printing token values.
+
+For steady-state operator checks without a smoke tick:
+
+```bash
+pnpm agent:queue:deployed-status -- --repo voyantjs/voyant
+```
+
+The status command uses the same environment, checks the deployed control-plane
+and runner endpoints, and prints the latest plus recent runner supervisor
+ticks.
 Pass `--smoke-tick` after submitting at least one queue snapshot to validate
 that the deployed runner can call the control plane's read-only dispatch-plan
 path:
