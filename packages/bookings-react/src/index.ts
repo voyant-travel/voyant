@@ -26,11 +26,13 @@ export {
   getBookingItemTravelersQueryOptions,
   getBookingNotesQueryOptions,
   getBookingQueryOptions,
+  getBookingsBySharingGroupQueryOptions,
   getBookingsQueryOptions,
   getBookingTravelerDocumentsQueryOptions,
   getPricingPreviewQueryOptions,
   getPublicBookingSessionQueryOptions,
   getPublicBookingSessionStateQueryOptions,
+  getSharingGroupsForSlotQueryOptions,
   getSupplierStatusesQueryOptions,
   getTravelersQueryOptions,
 } from "./query-options.js"

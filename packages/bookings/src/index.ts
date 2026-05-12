@@ -27,6 +27,8 @@ export {
   shouldRevealBookingPii,
 } from "./pii-redaction.js"
 export type {
+  BookingTravelerSharingGroupMember,
+  BookingTravelerSharingGroupSummary,
   ConvertProductData,
   CreateTravelerWithTravelDetailsInput,
   UpdateTravelerWithTravelDetailsInput,
@@ -227,6 +229,7 @@ export {
   recordBookingRedemptionSchema,
   reserveBookingFromTransactionSchema,
   reserveBookingSchema,
+  sharingGroupsForSlotQuerySchema,
   startBookingSchema,
   updateBookingAllocationSchema,
   updateBookingFulfillmentSchema,

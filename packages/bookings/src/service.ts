@@ -1,5 +1,19 @@
 import type { EventBus } from "@voyantjs/core"
-import { and, asc, desc, eq, exists, gte, ilike, inArray, lte, ne, or, sql } from "drizzle-orm"
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  lte,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
@@ -23,6 +37,7 @@ import {
   productTicketSettingsRef,
   suppliersRef,
 } from "./products-ref.js"
+import { bookingTravelerTravelDetails } from "./schema/travel-details.js"
 import {
   bookingActivityLog,
   bookingAllocations,
@@ -121,6 +136,10 @@ function pickTravelDetailFields(
     dietaryRequirements: data.dietaryRequirements,
     accessibilityNeeds: data.accessibilityNeeds,
     isLeadTraveler: data.isLeadTraveler,
+    sharingGroupId: data.sharingGroupId,
+    roomTypeId: data.roomTypeId,
+    bedPreference: data.bedPreference,
+    allocations: data.allocations,
   }
 }
 type CreateBookingItemInput = z.infer<typeof insertBookingItemSchema>
@@ -299,7 +318,47 @@ export interface BookingStatusOverriddenEvent {
   actorId: string | null
 }
 
+export interface BookingTravelerSharingGroupMember {
+  id: string
+  bookingId: string
+  bookingNumber: string
+  participantType: string
+  travelerCategory: string | null
+  personId: string | null
+  firstName: string
+  lastName: string
+  email: string | null
+  phone: string | null
+  preferredLanguage: string | null
+  specialRequests: string | null
+  isPrimary: boolean
+  notes: string | null
+  isLeadTraveler: boolean
+  sharingGroupId: string
+  roomTypeId: string | null
+  bedPreference: string | null
+  allocations: Record<string, string>
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface BookingTravelerSharingGroupSummary {
+  id: string
+  label: string
+  occupancy: number
+  roomTypeId: string | null
+  bookingIds: string[]
+}
+
 const travelerParticipantTypes = ["traveler", "occupant"] as const
+const sharingGroupBookingStatuses = [
+  "draft",
+  "on_hold",
+  "confirmed",
+  "in_progress",
+  "completed",
+] as const
+const sharingGroupAllocationStatuses = ["held", "confirmed", "fulfilled"] as const
 
 class BookingServiceError extends Error {
   constructor(
@@ -341,6 +400,16 @@ function toTravelerResponse(participant: typeof bookingTravelers.$inferSelect) {
     createdAt: participant.createdAt,
     updatedAt: participant.updatedAt,
   }
+}
+
+function normalizeTravelerAllocationMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {}
+
+  const out: Record<string, string> = {}
+  for (const [key, raw] of Object.entries(value)) {
+    if (typeof raw === "string") out[key] = raw
+  }
+  return out
 }
 
 async function ensureParticipantFlags(
@@ -3796,6 +3865,121 @@ export const bookingsService = {
       )
       .orderBy(asc(bookingTravelers.createdAt))
       .then((rows) => rows.map(toTravelerResponse))
+  },
+
+  async listSharingGroupsForSlot(
+    db: PostgresJsDatabase,
+    slotId: string,
+  ): Promise<BookingTravelerSharingGroupSummary[]> {
+    const rows = await db
+      .select({
+        id: bookingTravelerTravelDetails.sharingGroupId,
+        occupancy: sql<number>`count(distinct ${bookingTravelers.id})::int`,
+        roomTypeId: sql<string | null>`
+          case
+            when count(distinct ${bookingTravelerTravelDetails.roomTypeId})
+              filter (where ${bookingTravelerTravelDetails.roomTypeId} is not null) = 1
+            then min(${bookingTravelerTravelDetails.roomTypeId})
+            else null
+          end
+        `,
+        bookingIds: sql<string[]>`
+          array_agg(distinct ${bookingTravelers.bookingId} order by ${bookingTravelers.bookingId})
+        `,
+      })
+      .from(bookingTravelerTravelDetails)
+      .innerJoin(bookingTravelers, eq(bookingTravelers.id, bookingTravelerTravelDetails.travelerId))
+      .innerJoin(bookings, eq(bookings.id, bookingTravelers.bookingId))
+      .innerJoin(bookingAllocations, eq(bookingAllocations.bookingId, bookings.id))
+      .where(
+        and(
+          eq(bookingAllocations.availabilitySlotId, slotId),
+          isNotNull(bookingTravelerTravelDetails.sharingGroupId),
+          ne(bookingTravelerTravelDetails.sharingGroupId, ""),
+          inArray(bookings.status, sharingGroupBookingStatuses),
+          inArray(bookingAllocations.status, sharingGroupAllocationStatuses),
+          or(...travelerParticipantTypes.map((type) => eq(bookingTravelers.participantType, type))),
+        ),
+      )
+      .groupBy(bookingTravelerTravelDetails.sharingGroupId)
+      .orderBy(asc(bookingTravelerTravelDetails.sharingGroupId))
+
+    return rows.flatMap((row) => {
+      if (!row.id) return []
+      return [
+        {
+          id: row.id,
+          label: row.id,
+          occupancy: row.occupancy,
+          roomTypeId: row.roomTypeId,
+          bookingIds: row.bookingIds,
+        },
+      ]
+    })
+  },
+
+  async listTravelersBySharingGroup(
+    db: PostgresJsDatabase,
+    slotId: string,
+    sharingGroupId: string,
+  ): Promise<BookingTravelerSharingGroupMember[]> {
+    const rows = await db
+      .selectDistinct({
+        id: bookingTravelers.id,
+        bookingId: bookingTravelers.bookingId,
+        bookingNumber: bookings.bookingNumber,
+        participantType: bookingTravelers.participantType,
+        travelerCategory: bookingTravelers.travelerCategory,
+        personId: bookingTravelers.personId,
+        firstName: bookingTravelers.firstName,
+        lastName: bookingTravelers.lastName,
+        email: bookingTravelers.email,
+        phone: bookingTravelers.phone,
+        preferredLanguage: bookingTravelers.preferredLanguage,
+        specialRequests: bookingTravelers.specialRequests,
+        isPrimary: bookingTravelers.isPrimary,
+        notes: bookingTravelers.notes,
+        isLeadTraveler: bookingTravelerTravelDetails.isLeadTraveler,
+        sharingGroupId: bookingTravelerTravelDetails.sharingGroupId,
+        roomTypeId: bookingTravelerTravelDetails.roomTypeId,
+        bedPreference: bookingTravelerTravelDetails.bedPreference,
+        allocations: bookingTravelerTravelDetails.allocations,
+        createdAt: bookingTravelers.createdAt,
+        updatedAt: bookingTravelers.updatedAt,
+      })
+      .from(bookingTravelers)
+      .innerJoin(
+        bookingTravelerTravelDetails,
+        eq(bookingTravelerTravelDetails.travelerId, bookingTravelers.id),
+      )
+      .innerJoin(bookings, eq(bookings.id, bookingTravelers.bookingId))
+      .innerJoin(bookingAllocations, eq(bookingAllocations.bookingId, bookings.id))
+      .where(
+        and(
+          eq(bookingAllocations.availabilitySlotId, slotId),
+          eq(bookingTravelerTravelDetails.sharingGroupId, sharingGroupId),
+          inArray(bookings.status, sharingGroupBookingStatuses),
+          inArray(bookingAllocations.status, sharingGroupAllocationStatuses),
+          or(...travelerParticipantTypes.map((type) => eq(bookingTravelers.participantType, type))),
+        ),
+      )
+      .orderBy(
+        asc(bookings.bookingNumber),
+        desc(bookingTravelers.isPrimary),
+        asc(bookingTravelers.createdAt),
+      )
+
+    return rows.flatMap((row) => {
+      if (!row.sharingGroupId) return []
+      return [
+        {
+          ...row,
+          isLeadTraveler: row.isLeadTraveler,
+          sharingGroupId: row.sharingGroupId,
+          allocations: normalizeTravelerAllocationMap(row.allocations),
+        },
+      ]
+    })
   },
 
   async createTraveler(

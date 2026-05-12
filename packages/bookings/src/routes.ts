@@ -53,6 +53,7 @@ import {
   recordBookingRedemptionSchema,
   reserveBookingFromTransactionSchema,
   reserveBookingSchema,
+  sharingGroupsForSlotQuerySchema,
   startBookingSchema,
   updateBookingFulfillmentSchema,
   updateBookingItemSchema,
@@ -285,6 +286,34 @@ export const bookingRoutes = new Hono<Env>()
     }
 
     return c.json({ data: overview })
+  })
+
+  .get("/sharing-groups", async (c) => {
+    const query = parseQuery(c, sharingGroupsForSlotQuerySchema)
+    const data = await bookingsService.listSharingGroupsForSlot(c.get("db"), query.slotId)
+    return c.json({ data })
+  })
+
+  .get("/sharing-groups/:groupId/travelers", async (c) => {
+    const query = parseQuery(c, sharingGroupsForSlotQuerySchema)
+    const data = await bookingsService.listTravelersBySharingGroup(
+      c.get("db"),
+      query.slotId,
+      c.req.param("groupId"),
+    )
+    const reveal = shouldRevealBookingPii({
+      actor: c.get("actor"),
+      scopes: c.get("scopes"),
+      callerType: c.get("callerType"),
+      isInternalRequest: c.get("isInternalRequest"),
+    })
+    await logBookingPiiAccess(c, {
+      action: "read",
+      outcome: "allowed",
+      reason: reveal ? "sharing_group_travelers_reveal" : "sharing_group_travelers_redacted",
+      metadata: { rowCount: data.length, reveal },
+    })
+    return c.json({ data: reveal ? data : data.map((row) => redactTravelerIdentity(row)) })
   })
 
   // 2. GET /:id — Get single booking

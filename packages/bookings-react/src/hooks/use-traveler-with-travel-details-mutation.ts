@@ -38,6 +38,10 @@ export interface CreateTravelerWithTravelDetailsInput {
   dietaryRequirements?: string | null
   accessibilityNeeds?: string | null
   isLeadTraveler?: boolean | null
+  sharingGroupId?: string | null
+  roomTypeId?: string | null
+  bedPreference?: "single" | "twin" | "double" | "no-preference" | null
+  allocations?: Record<string, string>
 }
 
 export type UpdateTravelerWithTravelDetailsInput = Partial<CreateTravelerWithTravelDetailsInput>

@@ -127,6 +127,10 @@ export const bookingTravelerTravelDetailsSchema = z.object({
   dietaryRequirements: z.string().nullable(),
   accessibilityNeeds: z.string().nullable(),
   isLeadTraveler: z.boolean(),
+  sharingGroupId: z.string().nullable(),
+  roomTypeId: z.string().nullable(),
+  bedPreference: z.enum(["single", "twin", "double", "no-preference"]).nullable(),
+  allocations: z.record(z.string(), z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -138,6 +142,31 @@ export const bookingTravelerRevealRecordSchema = bookingTravelerRecordSchema.ext
 export type BookingTravelerRecord = z.infer<typeof bookingTravelerRecordSchema>
 export type BookingTravelerTravelDetailsRecord = z.infer<typeof bookingTravelerTravelDetailsSchema>
 export type BookingTravelerRevealRecord = z.infer<typeof bookingTravelerRevealRecordSchema>
+
+export const bookingTravelerSharingGroupSummarySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  occupancy: z.number().int(),
+  roomTypeId: z.string().nullable(),
+  bookingIds: z.array(z.string()),
+})
+
+export const bookingTravelerSharingGroupMemberSchema = bookingTravelerRecordSchema.extend({
+  bookingNumber: z.string(),
+  personId: z.string().nullable(),
+  isLeadTraveler: z.boolean(),
+  sharingGroupId: z.string(),
+  roomTypeId: z.string().nullable(),
+  bedPreference: z.string().nullable(),
+  allocations: z.record(z.string(), z.string()),
+})
+
+export type BookingTravelerSharingGroupSummary = z.infer<
+  typeof bookingTravelerSharingGroupSummarySchema
+>
+export type BookingTravelerSharingGroupMember = z.infer<
+  typeof bookingTravelerSharingGroupMemberSchema
+>
 
 export const bookingSupplierStatusRecordSchema = z.object({
   id: z.string(),
@@ -330,6 +359,12 @@ export const bookingGroupForBookingResponse = z.object({
 export type BookingGroupForBookingRecord = z.infer<typeof bookingGroupForBookingSchema>
 export const bookingTravelersResponse = arrayEnvelope(bookingTravelerRecordSchema)
 export const bookingTravelerSingleResponse = singleEnvelope(bookingTravelerRevealRecordSchema)
+export const bookingTravelerSharingGroupsResponse = arrayEnvelope(
+  bookingTravelerSharingGroupSummarySchema,
+)
+export const bookingTravelersBySharingGroupResponse = arrayEnvelope(
+  bookingTravelerSharingGroupMemberSchema,
+)
 export const bookingPassengersResponse = bookingTravelersResponse
 export const bookingItemParticipantsResponse = bookingItemTravelersResponse
 export const bookingSupplierStatusesResponse = arrayEnvelope(bookingSupplierStatusRecordSchema)
