@@ -1,21 +1,20 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { Input } from "@voyantjs/ui/components/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@voyantjs/ui/components/select"
-import { Workflow } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Button } from "@voyantjs/ui/components/button"
+import { Card, CardContent } from "@voyantjs/ui/components/card"
+import { Clock, Workflow } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { useWorkflowRunsUiMessagesOrDefault } from "../i18n/index.js"
-import type { ListWorkflowRunsQuery, WorkflowRun, WorkflowRunsApi } from "../types.js"
-import { formatDuration, formatRelative, StatusIcon, TagChip } from "./common.js"
+import type {
+  ListWorkflowRunsQuery,
+  WorkflowRun,
+  WorkflowRunStatus,
+  WorkflowRunsApi,
+} from "../types.js"
+import { formatDuration, formatRelative, StatusBadge, StatusIcon, TagChip } from "./common.js"
 import { WorkflowRunDetailPage } from "./workflow-run-detail-page.js"
+import { buildFilterOptions, type TimeRange, WorkflowRunsFilters } from "./workflow-runs-filters.js"
 
 export interface WorkflowRunsPageProps {
   api: WorkflowRunsApi
@@ -36,18 +35,37 @@ export function WorkflowRunsPage({
 }: WorkflowRunsPageProps) {
   const messages = useWorkflowRunsUiMessagesOrDefault()
   const [filters, setFilters] = useState<ListWorkflowRunsQuery>(initialFilters ?? { limit: 50 })
+  const [statusFilters, setStatusFilters] = useState<WorkflowRunStatus[]>(
+    initialFilters?.status ? [initialFilters.status] : [],
+  )
+  const [tagFilters, setTagFilters] = useState<string[]>(
+    initialFilters?.tag ? [initialFilters.tag] : [],
+  )
+  const [searchQuery, setSearchQuery] = useState("")
+  const [timeRange, setTimeRange] = useState<TimeRange>("24h")
+  const [live, setLive] = useState(false)
   const [runs, setRuns] = useState<WorkflowRun[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [localSelectedRunId, setLocalSelectedRunId] = useState<string | null>(null)
   const activeRunId = selectedRunId !== undefined ? selectedRunId : localSelectedRunId
 
+  const serverFilters = useMemo(
+    () => ({
+      ...filters,
+      status: statusFilters.length === 1 ? statusFilters[0] : undefined,
+      tag: tagFilters.length === 1 ? tagFilters[0] : undefined,
+    }),
+    [filters, statusFilters, tagFilters],
+  )
+
   useEffect(() => {
     let cancelled = false
     const refresh = async () => {
+      if (typeof document !== "undefined" && document.hidden) return
       setLoading(true)
       try {
-        const res = await api.listRuns(filters)
+        const res = await api.listRuns(serverFilters)
         if (!cancelled) {
           setRuns(res.data)
           setError(null)
@@ -59,17 +77,38 @@ export function WorkflowRunsPage({
       }
     }
     void refresh()
-    const interval = setInterval(() => void refresh(), pollIntervalMs)
+    const interval = setInterval(() => void refresh(), live ? 1000 : pollIntervalMs)
     return () => {
       cancelled = true
       clearInterval(interval)
     }
-  }, [api, filters, messages.page.loadError, pollIntervalMs])
+  }, [api, live, messages.page.loadError, pollIntervalMs, serverFilters])
+
+  const filterOptions = useMemo(
+    () => buildFilterOptions(runs, filters.workflowName),
+    [filters.workflowName, runs],
+  )
+  const filteredRuns = useMemo(
+    () => filterRuns({ runs, statusFilters, tagFilters, searchQuery, timeRange }),
+    [runs, searchQuery, statusFilters, tagFilters, timeRange],
+  )
 
   const openRun = (id: string) => {
     setLocalSelectedRunId(id)
     onOpenRun?.(id)
   }
+  const toggleStatus = (status: WorkflowRunStatus) => {
+    setStatusFilters((current) =>
+      current.includes(status) ? current.filter((item) => item !== status) : [...current, status],
+    )
+  }
+  const addTagFilter = (tag: string) => {
+    const trimmed = tag.trim()
+    if (!trimmed) return
+    setTagFilters((current) => (current.includes(trimmed) ? current : [...current, trimmed]))
+  }
+  const removeTagFilter = (tag: string) =>
+    setTagFilters((current) => current.filter((item) => item !== tag))
 
   return (
     <div className={`flex min-h-screen flex-col bg-background ${className ?? ""}`}>
@@ -80,33 +119,72 @@ export function WorkflowRunsPage({
             <h1 className="font-semibold text-base">{messages.page.title}</h1>
             <p className="text-muted-foreground text-xs">{messages.page.subtitle}</p>
           </div>
-          <span className="ml-auto text-muted-foreground text-xs">
-            {messages.page.runCount(runs.length)}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              type="button"
+              variant={live ? "default" : "outline"}
+              size="sm"
+              onClick={() => setLive((value) => !value)}
+              aria-pressed={live}
+            >
+              <Clock data-icon="inline-start" aria-hidden="true" />
+              {messages.page.live}
+            </Button>
+            <span className="text-muted-foreground text-xs">
+              {messages.page.filteredRunCount(filteredRuns.length, runs.length)}
+            </span>
+          </div>
         </div>
       </header>
       <main className="container mx-auto flex flex-1 flex-col gap-6 px-4 py-6 md:flex-row">
-        <aside className="space-y-3 md:w-80 md:shrink-0">
-          <WorkflowRunsFilters filters={filters} onChange={setFilters} />
+        <aside className="space-y-3 md:w-96 md:shrink-0">
+          <WorkflowRunsFilters
+            filters={filters}
+            workflowOptions={filterOptions.workflows}
+            tagOptions={filterOptions.tags}
+            statusFilters={statusFilters}
+            tagFilters={tagFilters}
+            searchQuery={searchQuery}
+            timeRange={timeRange}
+            onChange={setFilters}
+            onToggleStatus={toggleStatus}
+            onAddTagFilter={addTagFilter}
+            onRemoveTagFilter={removeTagFilter}
+            onSearchChange={setSearchQuery}
+            onTimeRangeChange={setTimeRange}
+            onClear={() => {
+              setFilters({ limit: filters.limit ?? 50 })
+              setStatusFilters([])
+              setTagFilters([])
+              setSearchQuery("")
+              setTimeRange("24h")
+            }}
+          />
           {error ? (
             <Card className="border-destructive/40">
               <CardContent className="pt-4 text-destructive text-sm">{error}</CardContent>
             </Card>
           ) : null}
           <div className="space-y-2">
-            {runs.length === 0 && !loading ? (
+            {filteredRuns.length === 0 && !loading ? (
               <Card>
                 <CardContent className="pt-4 text-muted-foreground text-sm">
                   {messages.page.empty}
                 </CardContent>
               </Card>
             ) : null}
-            {runs.map((run) => (
+            {filteredRuns.map((run) => (
               <RunListItem
                 key={run.id}
                 run={run}
                 selected={activeRunId === run.id}
+                activeTagFilters={tagFilters}
+                activeStatusFilters={statusFilters}
                 onSelect={() => openRun(run.id)}
+                onToggleStatus={toggleStatus}
+                onToggleTag={(tag) =>
+                  tagFilters.includes(tag) ? removeTagFilter(tag) : addTagFilter(tag)
+                }
               />
             ))}
           </div>
@@ -135,8 +213,8 @@ export function WorkflowRunsPageSkeleton() {
         />
       </header>
       <main className="container mx-auto flex flex-1 flex-col gap-6 px-4 py-6 md:flex-row">
-        <aside className="space-y-3 md:w-80 md:shrink-0">
-          <div className="h-40 rounded-md bg-muted" />
+        <aside className="space-y-3 md:w-96 md:shrink-0">
+          <div className="h-56 rounded-md bg-muted" />
           <div className="h-20 rounded-md bg-muted" />
           <div className="h-20 rounded-md bg-muted" />
         </aside>
@@ -146,96 +224,49 @@ export function WorkflowRunsPageSkeleton() {
   )
 }
 
-function WorkflowRunsFilters({
-  filters,
-  onChange,
-}: {
-  filters: ListWorkflowRunsQuery
-  onChange: (next: ListWorkflowRunsQuery) => void
-}) {
-  const messages = useWorkflowRunsUiMessagesOrDefault()
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm">{messages.page.filterTitle}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Field label={messages.page.workflowLabel}>
-          <Input
-            placeholder={messages.page.workflowPlaceholder}
-            value={filters.workflowName ?? ""}
-            onChange={(event) =>
-              onChange({ ...filters, workflowName: event.target.value || undefined })
-            }
-          />
-        </Field>
-        <Field label={messages.page.statusLabel}>
-          <Select
-            value={filters.status ?? "any"}
-            onValueChange={(value) =>
-              onChange({
-                ...filters,
-                status: value === "any" ? undefined : (value as WorkflowRun["status"]),
-              })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">{messages.page.anyStatus}</SelectItem>
-              <SelectItem value="running">{messages.status.running}</SelectItem>
-              <SelectItem value="succeeded">{messages.status.succeeded}</SelectItem>
-              <SelectItem value="failed">{messages.status.failed}</SelectItem>
-              <SelectItem value="cancelled">{messages.status.cancelled}</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field label={messages.page.tagLabel}>
-          <Input
-            placeholder={messages.page.tagPlaceholder}
-            value={filters.tag ?? ""}
-            onChange={(event) => onChange({ ...filters, tag: event.target.value || undefined })}
-          />
-        </Field>
-      </CardContent>
-    </Card>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <span className="text-muted-foreground text-xs">{label}</span>
-      {children}
-    </div>
-  )
-}
-
 function RunListItem({
   run,
   selected,
+  activeTagFilters,
+  activeStatusFilters,
   onSelect,
+  onToggleStatus,
+  onToggleTag,
 }: {
   run: WorkflowRun
   selected: boolean
+  activeTagFilters: string[]
+  activeStatusFilters: WorkflowRunStatus[]
   onSelect: () => void
+  onToggleStatus: (status: WorkflowRunStatus) => void
+  onToggleTag: (tag: string) => void
 }) {
   const messages = useWorkflowRunsUiMessagesOrDefault()
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`w-full rounded-md border bg-card p-3 text-left text-sm transition-colors hover:bg-muted/50 ${
+    <div
+      className={`rounded-md border bg-card p-3 text-sm transition-colors hover:bg-muted/50 ${
         selected ? "border-primary bg-primary/5" : "" // i18n-literal-ok: CSS classes
       }`}
     >
       <div className="flex items-center gap-2">
-        <StatusIcon status={run.status} />
-        <span className="truncate font-medium">{run.workflowName}</span>
-        <span className="ml-auto whitespace-nowrap text-muted-foreground text-xs">
-          {formatRelative(run.startedAt, messages)}
-        </span>
+        <button
+          type="button"
+          onClick={onSelect}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <StatusIcon status={run.status} />
+          <span className="truncate font-medium">{run.workflowName}</span>
+          <span className="ml-auto whitespace-nowrap text-muted-foreground text-xs">
+            {formatRelative(run.startedAt, messages)}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onToggleStatus(run.status)}
+          aria-pressed={activeStatusFilters.includes(run.status)}
+        >
+          <StatusBadge status={run.status} messages={messages} />
+        </button>
       </div>
       {run.durationMs != null ? (
         <div className="mt-1 text-muted-foreground text-xs">{formatDuration(run.durationMs)}</div>
@@ -243,14 +274,24 @@ function RunListItem({
       {run.tags.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1">
           {run.tags.slice(0, 3).map((tag) => (
-            <TagChip key={tag} tag={tag} />
+            <button
+              key={tag}
+              type="button"
+              onClick={() => onToggleTag(tag)}
+              aria-pressed={activeTagFilters.includes(tag)}
+              className={
+                activeTagFilters.includes(tag) ? "rounded-full ring-2 ring-primary/40" : undefined
+              }
+            >
+              <TagChip tag={tag} />
+            </button>
           ))}
           {run.tags.length > 3 ? (
             <span className="text-muted-foreground text-xs">{`+${run.tags.length - 3}`}</span>
           ) : null}
         </div>
       ) : null}
-    </button>
+    </div>
   )
 }
 
@@ -258,10 +299,59 @@ function SelectPrompt() {
   const messages = useWorkflowRunsUiMessagesOrDefault()
   return (
     <Card>
-      <CardContent className="flex h-full min-h-[200px] flex-col items-center justify-center gap-2 text-center text-muted-foreground text-sm">
-        <Workflow className="h-6 w-6 opacity-60" />
+      <CardContent className="flex min-h-[24rem] items-center justify-center text-muted-foreground text-sm">
         {messages.page.selectPrompt}
       </CardContent>
     </Card>
   )
+}
+
+function filterRuns({
+  runs,
+  statusFilters,
+  tagFilters,
+  searchQuery,
+  timeRange,
+}: {
+  runs: WorkflowRun[]
+  statusFilters: WorkflowRunStatus[]
+  tagFilters: string[]
+  searchQuery: string
+  timeRange: TimeRange
+}) {
+  const search = searchQuery.trim().toLowerCase()
+  const cutoff = rangeCutoff(timeRange)
+
+  return runs.filter((run) => {
+    if (statusFilters.length > 0 && !statusFilters.includes(run.status)) return false
+    if (tagFilters.length > 0 && !tagFilters.every((tag) => run.tags.includes(tag))) return false
+    if (cutoff && new Date(run.startedAt).getTime() < cutoff) return false
+    if (!search) return true
+    return runSearchText(run).includes(search)
+  })
+}
+
+function rangeCutoff(range: TimeRange) {
+  if (range === "all") return null
+  const minutes =
+    range === "15m" ? 15 : range === "1h" ? 60 : range === "24h" ? 24 * 60 : 7 * 24 * 60
+  return Date.now() - minutes * 60_000
+}
+
+function runSearchText(run: WorkflowRun) {
+  return [
+    run.id,
+    run.workflowName,
+    run.trigger,
+    run.correlationId,
+    run.status,
+    ...run.tags,
+    run.error?.message,
+    run.error?.code,
+    run.input ? JSON.stringify(run.input) : null,
+    run.result ? JSON.stringify(run.result) : null,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
 }
