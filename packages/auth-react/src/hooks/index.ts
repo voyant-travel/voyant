@@ -1,4 +1,10 @@
 export {
+  type AcceptInvitationInput,
+  type AcceptInvitationResult,
+  acceptInvitation,
+  useAcceptInvitation,
+} from "./use-accept-invitation.js"
+export {
   type ChangeAccountPasswordInput,
   type ConfirmAccountEmailChangeInput,
   changeAccountPassword,
