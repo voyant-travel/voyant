@@ -1,5 +1,12 @@
 # @voyantjs/catalog-mcp
 
+## 0.32.3
+
+### Patch Changes
+
+- @voyantjs/catalog@0.32.3
+- @voyantjs/catalog-rag@0.32.3
+
 ## 0.32.2
 
 ### Patch Changes
