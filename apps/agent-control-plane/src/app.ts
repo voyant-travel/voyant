@@ -3,21 +3,33 @@ import { Hono } from "hono"
 import {
   acceptTickSnapshot,
   buildCapabilities,
+  buildDispatchIntentFromStoredPlan,
   buildTickSnapshotRecord,
   dispatchPlanRequestSchema,
+  latestDispatchIntentRequestSchema,
   latestDispatchPlanRequestSchema,
   selectDispatchPlan,
   selectDispatchPlanFromTickSnapshotRecord,
   tickSnapshotRequestSchema,
 } from "./control-plane.js"
+import type { DispatchIntentStore } from "./dispatch-intent-store.js"
 import type { TickSnapshotStore } from "./tick-snapshot-store.js"
 
 interface AppOptions {
   authTokens?: string[]
+  createDispatchIntentId?: () => string
+  dispatchIntentStore?: DispatchIntentStore
+  now?: () => Date
   tickSnapshotStore?: TickSnapshotStore
 }
 
-export function createApp({ authTokens = [], tickSnapshotStore }: AppOptions = {}): Hono {
+export function createApp({
+  authTokens = [],
+  createDispatchIntentId = () => crypto.randomUUID(),
+  dispatchIntentStore,
+  now = () => new Date(),
+  tickSnapshotStore,
+}: AppOptions = {}): Hono {
   const app = new Hono()
 
   app.onError((error, c) => {
@@ -44,6 +56,7 @@ export function createApp({ authTokens = [], tickSnapshotStore }: AppOptions = {
   app.get("/api/capabilities", (c) =>
     c.json(
       buildCapabilities({
+        dispatchIntentPersistence: dispatchIntentStore ? "leased" : "none",
         tickSnapshotPersistence: tickSnapshotStore ? "latest" : "none",
       }),
     ),
@@ -90,6 +103,68 @@ export function createApp({ authTokens = [], tickSnapshotStore }: AppOptions = {
         record,
         request: parsed.data,
       }),
+    )
+  })
+
+  app.post("/api/dispatch-intents/latest", async (c) => {
+    const parsed = latestDispatchIntentRequestSchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_latest_dispatch_intent_request",
+          issues: validationIssues(parsed.error),
+        },
+        400,
+      )
+    }
+
+    if (!tickSnapshotStore) {
+      return c.json({ error: "tick_snapshot_storage_not_configured" }, 503)
+    }
+
+    if (!dispatchIntentStore) {
+      return c.json({ error: "dispatch_intent_storage_not_configured" }, 503)
+    }
+
+    const snapshot = await tickSnapshotStore.getLatest(parsed.data.repository)
+    if (!snapshot) {
+      return c.json({ error: "tick_snapshot_not_found" }, 404)
+    }
+
+    const planResult = selectDispatchPlanFromTickSnapshotRecord({
+      record: snapshot,
+      request: parsed.data,
+    })
+    const requestedAt = now()
+    const intentResult = buildDispatchIntentFromStoredPlan({
+      id: createDispatchIntentId(),
+      now: requestedAt,
+      request: parsed.data,
+      result: planResult,
+    })
+    if (!intentResult.intent) {
+      return c.json(intentResult)
+    }
+
+    const acquire = await dispatchIntentStore.acquireIntent(intentResult.intent, {
+      now: requestedAt,
+    })
+    if (!acquire.acquired) {
+      return c.json(
+        {
+          error: "dispatch_intent_already_active",
+          intent: acquire.activeIntent,
+        },
+        409,
+      )
+    }
+
+    return c.json(
+      {
+        ...intentResult,
+        storage: { activeKey: acquire.write.activeKey, key: acquire.write.key, persisted: true },
+      },
+      201,
     )
   })
 

@@ -74,6 +74,20 @@ export const latestDispatchPlanRequestSchema = z.object({
 
 export type LatestDispatchPlanRequest = z.infer<typeof latestDispatchPlanRequestSchema>
 
+const dispatchIntentLeaseRequestSchema = z.object({
+  holder: z.string().min(1),
+  ttlSeconds: z.number().int().min(60).max(3600).optional(),
+})
+
+export const latestDispatchIntentRequestSchema = z.object({
+  filters: dispatchPlanFiltersSchema,
+  lease: dispatchIntentLeaseRequestSchema,
+  options: dispatchPlanOptionsSchema,
+  repository: z.string().min(1),
+})
+
+export type LatestDispatchIntentRequest = z.infer<typeof latestDispatchIntentRequestSchema>
+
 export const tickSnapshotRequestSchema = z.object({
   eventLog: z.object({
     path: z.string().min(1),
@@ -108,6 +122,40 @@ export const tickSnapshotRecordSchema = z.object({
 
 export type TickSnapshotRecord = z.infer<typeof tickSnapshotRecordSchema>
 
+const dispatchPlanIssueSchema = issueSchema
+
+const dispatchPlanSchema = z.object({
+  action: z.enum(dispatchableActions),
+  command: z.array(z.string()),
+  issue: dispatchPlanIssueSchema,
+  reason: z.string().min(1),
+  repository: z.string().min(1),
+  requiresMutation: z.literal(true),
+})
+
+const dispatchIntentSourceSchema = z.object({
+  acceptedAt: z.string().min(1),
+  recommendationCount: z.number().int().nonnegative(),
+  repository: z.string().min(1),
+  type: z.literal("latest_tick_snapshot"),
+})
+
+export const dispatchIntentRecordSchema = z.object({
+  createdAt: z.string().min(1),
+  id: z.string().min(1),
+  lease: z.object({
+    acquiredAt: z.string().min(1),
+    expiresAt: z.string().min(1),
+    holder: z.string().min(1),
+    ttlSeconds: z.number().int().min(60).max(3600),
+  }),
+  plan: dispatchPlanSchema,
+  source: dispatchIntentSourceSchema,
+  status: z.literal("leased"),
+})
+
+export type DispatchIntentRecord = z.infer<typeof dispatchIntentRecordSchema>
+
 export interface DispatchPlan {
   action: (typeof dispatchableActions)[number]
   command: string[]
@@ -131,9 +179,17 @@ export interface StoredDispatchPlanResult extends DispatchPlanResult {
   }
 }
 
+export interface DispatchIntentResult {
+  intent: DispatchIntentRecord | null
+  reason: string
+  source: StoredDispatchPlanResult["source"]
+}
+
 export function buildCapabilities({
+  dispatchIntentPersistence = "none",
   tickSnapshotPersistence = "none",
 }: {
+  dispatchIntentPersistence?: "leased" | "none"
   tickSnapshotPersistence?: "latest" | "none"
 } = {}) {
   return {
@@ -160,6 +216,16 @@ export function buildCapabilities({
     dispatchPlanSources: {
       inlineRecommendations: true,
       latestTickSnapshot: tickSnapshotPersistence === "latest",
+    },
+    dispatchIntentContracts: {
+      latestSnapshotLease: {
+        persistence: dispatchIntentPersistence,
+        ttlSeconds: {
+          default: 900,
+          min: 60,
+          max: 3600,
+        },
+      },
     },
   }
 }
@@ -271,6 +337,52 @@ export function selectDispatchPlanFromTickSnapshotRecord({
       type: "latest_tick_snapshot",
     },
   }
+}
+
+export function buildDispatchIntentFromStoredPlan({
+  id,
+  now = new Date(),
+  request,
+  result,
+}: {
+  id: string
+  now?: Date
+  request: LatestDispatchIntentRequest
+  result: StoredDispatchPlanResult
+}): DispatchIntentResult {
+  if (!result.plan) {
+    return {
+      intent: null,
+      reason: result.reason,
+      source: result.source,
+    }
+  }
+
+  const createdAt = now.toISOString()
+  const ttlSeconds = request.lease.ttlSeconds ?? 900
+  const expiresAt = new Date(now.getTime() + ttlSeconds * 1000).toISOString()
+
+  return {
+    intent: {
+      createdAt,
+      id,
+      lease: {
+        acquiredAt: createdAt,
+        expiresAt,
+        holder: request.lease.holder,
+        ttlSeconds,
+      },
+      plan: result.plan,
+      source: result.source,
+      status: "leased",
+    },
+    reason: "leased",
+    source: result.source,
+  }
+}
+
+export function isDispatchIntentActive(intent: DispatchIntentRecord, now = new Date()) {
+  return intent.status === "leased" && Date.parse(intent.lease.expiresAt) > now.getTime()
 }
 
 function dispatchCommand({
