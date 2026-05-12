@@ -1188,7 +1188,11 @@ branch inside a remote workspace. Ready remote-workspace items can be
 dispatched through that bootstrap path and move to `Planning` after success.
 `agent:queue:remote-run-command` can run an explicit supervised command in that
 remote repository, write a remote transcript and evidence packet, and move the
-Project item to `Human Review` or `Blocked`. `agent:queue:remote-publish-evidence`
+Project item to `Human Review` or `Blocked`. For UI-labeled remote work,
+successful remote commands validate `.agent-runs/remote-browser/.../summary.json`
+artifacts before handoff and keep the item blocked when browser capture found
+blocking console or request issues unless a maintainer accepts the exception.
+`agent:queue:remote-publish-evidence`
 can read that remote evidence packet through the configured adapter, post or
 reuse a GitHub evidence comment, optionally publish the packet to configured
 R2-compatible object storage, and update the Project `Evidence` field to the
