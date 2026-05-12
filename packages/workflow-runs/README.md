@@ -10,6 +10,23 @@ pnpm add @voyantjs/workflow-runs
 
 The package is published with the same release-train version as the other installable Voyant packages.
 
+For the matching importable React admin surface, install
+`@voyantjs/workflow-runs-ui` and point its API client at the routes mounted by
+this package:
+
+```tsx
+import {
+  createWorkflowRunsApiClient,
+  WorkflowRunsPage,
+} from "@voyantjs/workflow-runs-ui"
+
+const workflowRunsApi = createWorkflowRunsApiClient({ apiBase: "/api" })
+
+export function WorkflowsRoute() {
+  return <WorkflowRunsPage api={workflowRunsApi} />
+}
+```
+
 ## Mount the admin routes
 
 `mountWorkflowRunsAdminRoutes` adds the workflow-run list, detail, rerun, and resume endpoints under `/v1/admin/workflow-runs`.

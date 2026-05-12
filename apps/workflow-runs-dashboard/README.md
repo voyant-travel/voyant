@@ -1,9 +1,11 @@
 # `@voyantjs/workflow-runs-dashboard`
 
-Standalone Vite + React SPA for the workflow_runs admin surface.
+Standalone Vite + React SPA for the workflow_runs admin surface. The reusable
+React surface ships from `@voyantjs/workflow-runs-ui`; this app is a thin host
+that configures the package against the mounted admin API.
 Reads the `/v1/admin/workflow-runs` endpoints exposed by
 `@voyantjs/workflow-runs/routes` (mounted in any deployment via
-`createWorkflowRunsAdminRoutes()`).
+`mountWorkflowRunsAdminRoutes()`).
 
 Distinct from `@voyantjs/workflows-local-dashboard` — that one is
 the dashboard for the durable `@voyantjs/workflows` SDK driven by
@@ -21,9 +23,9 @@ pnpm -F operator dev    # default port: 3300
 pnpm -F @voyantjs/workflow-runs-dashboard dev    # default port: 3500
 ```
 
-Open http://localhost:3500 — the Vite dev server proxies
-`/v1/admin/*` requests to `http://127.0.0.1:3300` so cookies / auth
-headers flow as if same-origin.
+Open http://localhost:3500 — the Vite dev server proxies `/api/*`
+requests to `http://localhost:3300` so cookies / auth headers flow as
+if same-origin.
 
 Trigger a checkout in the operator's storefront
 (http://localhost:3300/shop) and you'll see a `checkout-finalize`
@@ -52,7 +54,8 @@ VITE_API_BASE=https://operator.example.com pnpm -F @voyantjs/workflow-runs-dashb
 The `dist/` is a plain static bundle. Drop it into the operator
 template's `public/` (or wherever the platform's static assets live)
 and route `/admin/workflow-runs/*` to `index.html`. The SPA uses
-relative URLs so no env var is needed.
+`createWorkflowRunsApiClient({ apiBase: "/api" })`, so no env var is
+needed for the operator template's default API prefix.
 
 ## Filtering
 
