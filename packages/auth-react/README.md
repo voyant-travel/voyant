@@ -7,6 +7,8 @@ This package wraps the shared Voyant auth HTTP contract:
 - `/auth/me`
 - `PATCH /auth/me`
 - `/auth/status`
+- `/auth/request-password-reset`
+- `/auth/reset-password`
 - `/auth/sign-in/email`
 - `/auth/change-password`
 - `/auth/email-otp/request-email-change`
@@ -33,6 +35,7 @@ It provides reusable React surfaces for:
 - organization invitation listing
 - email/password sign-in
 - email/password sign-up
+- password reset request and confirmation
 - invite, accept, cancel, remove, and role update mutations
 - API token listing, creation, update, and deletion
 
@@ -134,6 +137,31 @@ await acceptInvitation.mutateAsync({ invitationId })
 On success, current-user, current-workspace, organization-member, and
 organization-invitation queries are invalidated so app shells can refresh their
 membership state.
+
+## Password Reset
+
+`useRequestPasswordReset()` and `useConfirmPasswordReset()` expose the mounted
+Better Auth reset-password endpoints:
+
+```tsx
+const requestReset = useRequestPasswordReset()
+
+await requestReset.mutateAsync({
+  email,
+  redirectTo: "https://operator.example/reset-password",
+})
+
+const confirmReset = useConfirmPasswordReset()
+
+await confirmReset.mutateAsync({
+  token,
+  newPassword,
+})
+```
+
+The request hook posts to `/auth/request-password-reset` with `email` and
+`redirectTo`. The confirm hook posts to `/auth/reset-password` with `token` and
+`newPassword`, then invalidates the current auth queries.
 
 ## Single-Tenant Apps
 

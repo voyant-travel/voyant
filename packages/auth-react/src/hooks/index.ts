@@ -41,6 +41,16 @@ export {
   useOrganizationMembers,
 } from "./use-organization-members.js"
 export {
+  type ConfirmPasswordResetInput,
+  type ConfirmPasswordResetResult,
+  confirmPasswordReset,
+  type RequestPasswordResetInput,
+  type RequestPasswordResetResult,
+  requestPasswordReset,
+  useConfirmPasswordReset,
+  useRequestPasswordReset,
+} from "./use-password-reset.js"
+export {
   type CreateApiTokenInput,
   type CreateServiceApiKeyInput,
   type DeleteApiTokenInput,
