@@ -1,5 +1,6 @@
 export function workItem({
   fields = {},
+  issueState = "OPEN",
   number = 579,
   title = "Test agent project intake workflow",
 } = {}) {
@@ -9,7 +10,7 @@ export function workItem({
       number,
       title,
       url: `https://github.com/voyantjs/voyant/issues/${number}`,
-      state: "OPEN",
+      state: issueState,
       repository: "voyantjs/voyant",
       labels: ["agent:ready"],
       hasAgentBrief: true,

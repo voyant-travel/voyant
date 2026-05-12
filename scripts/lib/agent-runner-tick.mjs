@@ -45,6 +45,25 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
     ? evaluateHeartbeat(item.fields["Last Heartbeat"], { maxAgeDays })
     : null
 
+  if (
+    item.issue.state === "CLOSED" &&
+    item.fields.PR &&
+    state !== "Done" &&
+    state !== "Abandoned"
+  ) {
+    return recommendation(item, {
+      action: "complete-pr",
+      command: commandWithIssue({
+        command: "complete-pr",
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: 45,
+      reason: "closed issue with linked PR should be completed in the Project",
+    })
+  }
+
   if (stalePreemptionStates.has(state) && heartbeat?.stale) {
     return recommendation(item, {
       action: "inspect-stale",
