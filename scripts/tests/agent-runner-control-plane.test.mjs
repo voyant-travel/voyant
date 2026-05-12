@@ -6,6 +6,7 @@ import {
   controlPlaneConfigFromArgs,
   finishDispatchIntent,
   requestActiveDispatchIntent,
+  requestControlPlaneCapabilities,
   requestLatestDispatchIntent,
   requestLatestDispatchPlan,
   submitTickSnapshot,
@@ -170,6 +171,53 @@ describe("agent runner control plane client", () => {
         url: "https://control.example.com",
       }),
       /404: latest_tick_snapshot_not_found/,
+    )
+  })
+
+  it("reads control plane capabilities", async () => {
+    const calls = []
+    const response = await requestControlPlaneCapabilities({
+      fetchImpl: async (url, init) => {
+        calls.push({ init, url })
+        return new Response(
+          JSON.stringify({
+            dispatchIntentContracts: {
+              latestSnapshotLease: {
+                activeRead: true,
+                persistence: "leased",
+              },
+            },
+            service: "agent-control-plane",
+            snapshotContracts: {
+              tick: {
+                persistence: "latest",
+              },
+            },
+          }),
+          { status: 200 },
+        )
+      },
+      token: "tok",
+      url: "https://control.example.com/",
+    })
+
+    assert.equal(response.service, "agent-control-plane")
+    assert.equal(calls[0].url, "https://control.example.com/api/capabilities")
+    assert.equal(calls[0].init.method, "GET")
+    assert.equal(calls[0].init.headers.authorization, "Bearer tok")
+  })
+
+  it("surfaces rejected control plane capability responses", async () => {
+    await assert.rejects(
+      requestControlPlaneCapabilities({
+        fetchImpl: async () =>
+          new Response(JSON.stringify({ error: "unauthorized" }), {
+            status: 401,
+          }),
+        token: "tok",
+        url: "https://control.example.com",
+      }),
+      /401: unauthorized/,
     )
   })
 

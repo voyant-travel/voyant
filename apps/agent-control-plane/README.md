@@ -129,6 +129,19 @@ AGENT_CONTROL_PLANE_TOKEN=... \
 pnpm agent:queue:active-dispatch -- --repo voyantjs/voyant --issue 579 --action remote-bootstrap
 ```
 
+Validate deployed control-plane and runner capabilities before enabling Cron:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+AGENT_RUNNER_URL=https://agent-runner.example.workers.dev \
+AGENT_RUNNER_TOKEN=... \
+pnpm agent:queue:deployment-doctor -- --json
+```
+
+The doctor calls both `/api/capabilities` endpoints and reports persistence and
+execution mode without printing token values.
+
 Finish the leased dispatch intent after the runner has handled the printed
 command:
 

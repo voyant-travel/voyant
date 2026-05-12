@@ -1375,6 +1375,10 @@ Verification:
   If the action allow-list is narrower than the full lifecycle set, the runner
   refuses unfiltered ticks so the control plane cannot choose a different
   queued action.
+- Deployed control-plane and runner setup should be checked with
+  `pnpm agent:queue:deployment-doctor` before enabling Cron. The command calls
+  both capability endpoints, verifies auth reaches the deployed apps, and
+  reports persistence and execution mode without printing bearer tokens.
 
 ## Open Questions
 
