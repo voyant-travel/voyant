@@ -1341,6 +1341,11 @@ Verification:
   `POST /api/dispatch-intents/:id/finish` and records `completed`, `failed`, or
   `released` without waiting for lease TTL expiry. The holder must match the
   holder recorded on the lease.
+- A local supervisor can run one complete leased lifecycle step with
+  `pnpm agent:queue:run-dispatch-intent -- --holder <id> --yes`. It leases the
+  next intent from the control plane, validates that the command is an allowed
+  `pnpm agent:queue:*` lifecycle command, executes it without a shell, and then
+  records the terminal dispatch intent outcome.
 
 ## Open Questions
 

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { dispatchCommandArgs, selectDispatchRecommendation } from "../lib/agent-runner-dispatch.mjs"
+import {
+  dispatchCommandArgs,
+  dispatchIntentCommandArgs,
+  runDispatchIntentCommand,
+  selectDispatchRecommendation,
+} from "../lib/agent-runner-dispatch.mjs"
 import { recommendQueueAction } from "../lib/agent-runner-tick.mjs"
 import { workItem } from "./agent-fixtures.mjs"
 
@@ -330,4 +335,153 @@ describe("agent runner dispatch helpers", () => {
       /invalid issue number: 0/,
     )
   })
+
+  it("validates and runs leased dispatch intent commands without a shell", () => {
+    const intent = dispatchIntent()
+    assert.deepEqual(dispatchIntentCommandArgs(intent), [
+      "agent:queue:start",
+      "--",
+      "--issue",
+      "579",
+      "--repo",
+      "voyantjs/voyant",
+      "--yes",
+    ])
+
+    const calls = []
+    const status = runDispatchIntentCommand(intent, {
+      spawn: (binary, args, options) => {
+        calls.push({ args, binary, options })
+        return { status: 0 }
+      },
+    })
+
+    assert.equal(status, 0)
+    assert.deepEqual(calls, [
+      {
+        args: dispatchIntentCommandArgs(intent),
+        binary: "pnpm",
+        options: {
+          encoding: "utf8",
+          stdio: "inherit",
+        },
+      },
+    ])
+  })
+
+  it("rejects leased dispatch intent commands outside the runner allow-list", () => {
+    assert.throws(
+      () =>
+        dispatchIntentCommandArgs(
+          dispatchIntent({
+            command: ["node", "-e", "process.exit(0)"],
+          }),
+        ),
+      /must use pnpm/,
+    )
+    assert.throws(
+      () =>
+        dispatchIntentCommandArgs(
+          dispatchIntent({
+            action: "start",
+            command: ["pnpm", "agent:queue:cleanup", "--", "--issue", "579", "--yes"],
+          }),
+        ),
+      /does not match start/,
+    )
+    assert.throws(
+      () =>
+        dispatchIntentCommandArgs(
+          dispatchIntent({
+            command: ["pnpm", "agent:queue:run-command", "--", "--issue", "579", "--yes"],
+          }),
+        ),
+      /does not match start/,
+    )
+    assert.throws(
+      () =>
+        dispatchIntentCommandArgs(
+          dispatchIntent({
+            command: [
+              "pnpm",
+              "agent:queue:start",
+              "--",
+              "--issue",
+              "579",
+              "--repo",
+              "voyantjs/voyant",
+            ],
+          }),
+        ),
+      /must include --yes/,
+    )
+    assert.throws(
+      () =>
+        dispatchIntentCommandArgs(
+          dispatchIntent({
+            command: [
+              "pnpm",
+              "agent:queue:start",
+              "--",
+              "--issue",
+              "580",
+              "--repo",
+              "voyantjs/voyant",
+              "--yes",
+            ],
+          }),
+        ),
+      /issue does not match/,
+    )
+    assert.throws(
+      () =>
+        dispatchIntentCommandArgs(
+          dispatchIntent({
+            command: [
+              "pnpm",
+              "agent:queue:start",
+              "--",
+              "--issue",
+              "579",
+              "--repo",
+              "voyantjs/other",
+              "--yes",
+            ],
+          }),
+        ),
+      /repository does not match/,
+    )
+  })
 })
+
+function dispatchIntent({ action = "start", command } = {}) {
+  return {
+    id: "intent_579",
+    lease: {
+      holder: "supervisor:test",
+    },
+    plan: {
+      action,
+      command: command ?? [
+        "pnpm",
+        "agent:queue:start",
+        "--",
+        "--issue",
+        "579",
+        "--repo",
+        "voyantjs/voyant",
+        "--yes",
+      ],
+      issue: {
+        number: 579,
+        repository: "voyantjs/voyant",
+        title: "Test issue",
+        url: "https://github.com/voyantjs/voyant/issues/579",
+      },
+      reason: "ready",
+      repository: "voyantjs/voyant",
+      requiresMutation: true,
+    },
+    status: "leased",
+  }
+}
