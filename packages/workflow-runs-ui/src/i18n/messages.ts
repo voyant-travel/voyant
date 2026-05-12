@@ -7,15 +7,32 @@ export type WorkflowRunsUiMessages = {
     filterTitle: string
     workflowLabel: string
     workflowPlaceholder: string
+    workflowEmpty: string
+    searchLabel: string
+    searchPlaceholder: string
     statusLabel: string
     tagLabel: string
     tagPlaceholder: string
+    tagEmpty: string
+    addTag: string
+    removeTag: string
+    timeRangeLabel: string
+    live: string
+    clearFilters: string
     anyStatus: string
     empty: string
     selectPrompt: string
     loading: string
     loadError: string
     runCount: (count: number) => string
+    filteredRunCount: (filtered: number, total: number) => string
+    timeRanges: {
+      "15m": string
+      "1h": string
+      "24h": string
+      "7d": string
+      all: string
+    }
   }
   status: Record<WorkflowRunStatus, string>
   stepStatus: Record<WorkflowRunStepStatus, string>
