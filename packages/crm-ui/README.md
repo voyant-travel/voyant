@@ -31,6 +31,37 @@ Page components render with `p-6` outer padding by default and are intended to
 mount directly into an app route outlet. Pass `className` to extend or override
 that spacing when a shell owns the page chrome.
 
+### Commercial Context Slots
+
+`PersonDetailPage` and `OrganizationDetailPage` expose optional tab slots for
+commercial context owned by other modules. This keeps `@voyantjs/crm-ui` free of
+cross-package bookings, finance, and legal dependencies while giving consumers a
+standard place to mount those relationships.
+
+```tsx
+<PersonDetailPage
+  id={personId}
+  slots={{
+    bookingsTab: {
+      count: bookings.length,
+      content: <BookingsTable personId={personId} />,
+    },
+    invoicesTab: {
+      count: invoices.length,
+      content: <InvoicesTable personId={personId} />,
+    },
+    paymentsTab: {
+      count: payments.length,
+      content: <PaymentsTable personId={personId} />,
+    },
+    contractsTab: {
+      count: contracts.length,
+      content: <ContractsTable personId={personId} />,
+    },
+  }}
+/>
+```
+
 ## I18n
 
 Components render English by default. To localize them, wrap your UI in

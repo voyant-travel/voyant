@@ -10,10 +10,11 @@ import {
 } from "@voyantjs/crm-react"
 import { Button, cn } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import {
+  type OrganizationDetailPageSlots,
   type OrganizationDetailTab,
   OrganizationMain,
   OrganizationSidebar,
@@ -26,6 +27,7 @@ export interface OrganizationDetailPageProps {
   onBack?: () => void
   onDeleted?: () => void
   onPersonOpen?: (personId: string) => void
+  slots?: OrganizationDetailPageSlots
 }
 
 export function OrganizationDetailPage({
@@ -34,11 +36,24 @@ export function OrganizationDetailPage({
   onBack,
   onDeleted,
   onPersonOpen,
+  slots,
 }: OrganizationDetailPageProps) {
   const messages = useCrmUiMessagesOrDefault()
   const [activeTab, setActiveTab] = useState<OrganizationDetailTab>("overview")
   const orgQuery = useOrganization(id)
   const { remove, update } = useOrganizationMutation()
+
+  useEffect(() => {
+    const activeCommercialTabIsAvailable =
+      (activeTab === "bookings" && Boolean(slots?.bookingsTab)) ||
+      (activeTab === "invoices" && Boolean(slots?.invoicesTab)) ||
+      (activeTab === "payments" && Boolean(slots?.paymentsTab)) ||
+      (activeTab === "contracts" && Boolean(slots?.contractsTab))
+
+    if (isOrganizationCommercialTab(activeTab) && !activeCommercialTabIsAvailable) {
+      setActiveTab("overview")
+    }
+  }, [activeTab, slots?.bookingsTab, slots?.invoicesTab, slots?.paymentsTab, slots?.contractsTab])
 
   const updateField = async (patch: UpdateOrganizationInput) => {
     await update.mutateAsync({ id, input: patch })
@@ -107,9 +122,12 @@ export function OrganizationDetailPage({
           onBack?.()
         }}
       />
+      {slots?.afterTopBar}
 
       <div className="grid flex-1 grid-cols-12 gap-4 p-4 lg:p-6">
-        <OrganizationSidebar org={org} websiteHref={websiteHref} onUpdateField={updateField} />
+        <OrganizationSidebar org={org} websiteHref={websiteHref} onUpdateField={updateField}>
+          {slots?.sidebarEnd}
+        </OrganizationSidebar>
         <OrganizationMain
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -124,8 +142,15 @@ export function OrganizationDetailPage({
           primaryCurrency={primaryCurrency}
           onOpenPerson={(personId) => onPersonOpen?.(personId)}
           onUpdateField={updateField}
+          slots={slots}
         />
       </div>
     </div>
   )
+}
+
+function isOrganizationCommercialTab(
+  tab: OrganizationDetailTab,
+): tab is "bookings" | "invoices" | "payments" | "contracts" {
+  return tab === "bookings" || tab === "invoices" || tab === "payments" || tab === "contracts"
 }

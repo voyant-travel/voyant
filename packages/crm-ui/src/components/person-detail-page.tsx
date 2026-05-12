@@ -53,7 +53,7 @@ import {
   User,
   Users,
 } from "lucide-react"
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useState } from "react"
 
 import { useCrmUiI18nOrDefault, useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { formatCrmDate, formatCrmMoney, formatCrmRelative } from "./crm-format.js"
@@ -70,6 +70,10 @@ export type PersonDetailTab =
   | "activities"
   | "relationships"
   | "documents"
+  | "bookings"
+  | "invoices"
+  | "payments"
+  | "contracts"
 
 export type PersonData = Pick<
   PersonRecord,
@@ -141,6 +145,12 @@ export type PersonDocument = Pick<
 
 export type PersonTravelSnapshot = PersonTravelSnapshotRecord
 
+export interface PersonCommercialContextTabSlot {
+  label?: string
+  count?: number
+  content: ReactNode
+}
+
 export interface PersonDetailPageSlots {
   afterTopBar?: ReactNode
   sidebarEnd?: ReactNode
@@ -149,6 +159,10 @@ export interface PersonDetailPageSlots {
   activitiesEnd?: ReactNode
   relationshipsEnd?: ReactNode
   documentsEnd?: ReactNode
+  bookingsTab?: PersonCommercialContextTabSlot
+  invoicesTab?: PersonCommercialContextTabSlot
+  paymentsTab?: PersonCommercialContextTabSlot
+  contractsTab?: PersonCommercialContextTabSlot
 }
 
 export interface PersonDetailPageProps {
@@ -174,6 +188,18 @@ export function PersonDetailPage({
   const personQuery = usePerson(id)
   const { remove, update } = usePersonMutation()
   const person = personQuery.data
+
+  useEffect(() => {
+    const activeCommercialTabIsAvailable =
+      (activeTab === "bookings" && Boolean(slots?.bookingsTab)) ||
+      (activeTab === "invoices" && Boolean(slots?.invoicesTab)) ||
+      (activeTab === "payments" && Boolean(slots?.paymentsTab)) ||
+      (activeTab === "contracts" && Boolean(slots?.contractsTab))
+
+    if (isPersonCommercialTab(activeTab) && !activeCommercialTabIsAvailable) {
+      setActiveTab("overview")
+    }
+  }, [activeTab, slots?.bookingsTab, slots?.invoicesTab, slots?.paymentsTab, slots?.contractsTab])
 
   const organizationQuery = useOrganization(person?.organizationId ?? undefined, {
     enabled: Boolean(person?.organizationId),
@@ -594,7 +620,7 @@ export function PersonMain({
       <Card>
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PersonDetailTab)}>
           <CardHeader className="pb-0">
-            <TabsList>
+            <TabsList className="h-auto flex-wrap justify-start">
               <TabsTrigger value="overview">{messages.personDetail.tabs.overview}</TabsTrigger>
               <TabsTrigger value="opportunities">
                 {messages.personDetail.tabs.opportunities} ({opportunities.length})
@@ -608,6 +634,26 @@ export function PersonMain({
               <TabsTrigger value="documents">
                 {messages.personDetail.tabs.documents} ({documents.length})
               </TabsTrigger>
+              {slots?.bookingsTab ? (
+                <TabsTrigger value="bookings">
+                  {formatTabLabel(messages.personDetail.tabs.bookings, slots.bookingsTab)}
+                </TabsTrigger>
+              ) : null}
+              {slots?.invoicesTab ? (
+                <TabsTrigger value="invoices">
+                  {formatTabLabel(messages.personDetail.tabs.invoices, slots.invoicesTab)}
+                </TabsTrigger>
+              ) : null}
+              {slots?.paymentsTab ? (
+                <TabsTrigger value="payments">
+                  {formatTabLabel(messages.personDetail.tabs.payments, slots.paymentsTab)}
+                </TabsTrigger>
+              ) : null}
+              {slots?.contractsTab ? (
+                <TabsTrigger value="contracts">
+                  {formatTabLabel(messages.personDetail.tabs.contracts, slots.contractsTab)}
+                </TabsTrigger>
+              ) : null}
             </TabsList>
           </CardHeader>
           <CardContent className="pt-4">
@@ -651,6 +697,26 @@ export function PersonMain({
               />
               {slots?.documentsEnd}
             </TabsContent>
+            {slots?.bookingsTab ? (
+              <TabsContent value="bookings" className="m-0">
+                {slots.bookingsTab.content}
+              </TabsContent>
+            ) : null}
+            {slots?.invoicesTab ? (
+              <TabsContent value="invoices" className="m-0">
+                {slots.invoicesTab.content}
+              </TabsContent>
+            ) : null}
+            {slots?.paymentsTab ? (
+              <TabsContent value="payments" className="m-0">
+                {slots.paymentsTab.content}
+              </TabsContent>
+            ) : null}
+            {slots?.contractsTab ? (
+              <TabsContent value="contracts" className="m-0">
+                {slots.contractsTab.content}
+              </TabsContent>
+            ) : null}
           </CardContent>
         </Tabs>
       </Card>
@@ -661,6 +727,17 @@ export function PersonMain({
       </div>
     </main>
   )
+}
+
+function formatTabLabel(defaultLabel: string, slot: PersonCommercialContextTabSlot): ReactNode {
+  const label = slot.label ?? defaultLabel
+  return typeof slot.count === "number" ? `${label} (${slot.count})` : label
+}
+
+function isPersonCommercialTab(
+  tab: PersonDetailTab,
+): tab is "bookings" | "invoices" | "payments" | "contracts" {
+  return tab === "bookings" || tab === "invoices" || tab === "payments" || tab === "contracts"
 }
 
 export interface MetricCardProps {

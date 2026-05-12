@@ -259,6 +259,10 @@ export type CrmUiMessages = {
       people: string
       opportunities: string
       activities: string
+      bookings: string
+      invoices: string
+      payments: string
+      contracts: string
     }
     sections: {
       created: string
@@ -316,6 +320,10 @@ export type CrmUiMessages = {
       activities: string
       relationships: string
       documents: string
+      bookings: string
+      invoices: string
+      payments: string
+      contracts: string
     }
     sections: {
       created: string
