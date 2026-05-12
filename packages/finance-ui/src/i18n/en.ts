@@ -303,6 +303,54 @@ export const financeUiEn = {
       applied: "Applied",
     },
   },
+  paymentPolicy: {
+    form: {
+      inherit: {
+        label: "Inherit from parent",
+        help: "Falls back to the next broader policy. Switch off to set an explicit policy here.",
+        tooltipLabel: "Explain inheritance",
+      },
+      depositKind: {
+        label: "Deposit kind",
+        options: {
+          none: "None",
+          percent: "Percent of total",
+          fixed_cents: "Fixed amount",
+        },
+      },
+      depositValue: {
+        percentLabel: "Deposit percent",
+        fixedLabel: "Deposit amount",
+      },
+      depositHints: {
+        none: "Customer pays the full amount up front.",
+        percent: "Use a whole-number percentage between 0 and 100.",
+        fixed_cents: "Capped at the booking total when the booking is smaller than this amount.",
+      },
+      days: {
+        minDaysLabel: "Deposit window",
+        minDaysHelp:
+          "If departure is closer than this, the booking requires the full amount up front.",
+        balanceDaysLabel: "Balance due",
+        balanceDaysHelp: "How many days before departure the remaining balance is due.",
+        graceDaysLabel: "Grace floor",
+        graceDaysHelp:
+          "Minimum number of days from now before the balance can be due, even for close departures.",
+        tooltipLabel: "Show field help",
+        suffix: "days",
+      },
+    },
+    preview: {
+      inheriting: "Inheriting from parent - no preview at this layer.",
+      sample: "Sample: {amount} booking, departure in {days} days",
+      scheduleTypes: {
+        deposit: "Deposit",
+        balance: "Balance",
+        full: "Full payment",
+      },
+      due: "due {date}",
+    },
+  },
   taxesPage: {
     title: "Tax Regimes and Classes",
     description:

@@ -68,6 +68,7 @@ describe("finance-ui i18n", () => {
 
     expect(html).toContain("Edit Invoice")
     expect(html).toContain("Record Supplier Payment")
+    expect(html).toContain("Deposit kind")
     expect(html).toContain("Draft")
     expect(html).toContain("Bank Transfer")
   })
@@ -85,6 +86,7 @@ describe("finance-ui i18n", () => {
 
     expect(html).toContain("Editeaza Factura")
     expect(html).toContain("Inregistreaza Plata Furnizorului")
+    expect(html).toContain("Tip avans")
     expect(html).toContain("Ciorna")
     expect(html).toContain("Transfer Bancar")
   })
@@ -96,6 +98,7 @@ function FinanceMessageProbe() {
   return (
     <div>
       <span>{messages.invoiceDialog.titles.edit}</span>
+      <span>{messages.paymentPolicy.form.depositKind.label}</span>
       <span>{messages.supplierPaymentDialog.title}</span>
       <span>{messages.common.invoiceStatusLabels.draft}</span>
       <span>{messages.common.supplierPaymentMethodLabels.bank_transfer}</span>

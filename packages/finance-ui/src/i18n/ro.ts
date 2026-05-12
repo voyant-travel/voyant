@@ -304,6 +304,55 @@ export const financeUiRo = {
       applied: "Aplicata",
     },
   },
+  paymentPolicy: {
+    form: {
+      inherit: {
+        label: "Mosteneste de la parinte",
+        help: "Foloseste politica mai generala. Dezactiveaza pentru a seta o politica explicita aici.",
+        tooltipLabel: "Explica mostenirea",
+      },
+      depositKind: {
+        label: "Tip avans",
+        options: {
+          none: "Fara",
+          percent: "Procent din total",
+          fixed_cents: "Suma fixa",
+        },
+      },
+      depositValue: {
+        percentLabel: "Procent avans",
+        fixedLabel: "Suma avans",
+      },
+      depositHints: {
+        none: "Clientul plateste suma completa in avans.",
+        percent: "Foloseste un procent intreg intre 0 si 100.",
+        fixed_cents:
+          "Limitat la totalul rezervarii cand rezervarea este mai mica decat aceasta suma.",
+      },
+      days: {
+        minDaysLabel: "Fereastra avans",
+        minDaysHelp:
+          "Daca plecarea este mai aproape decat acest prag, rezervarea cere plata completa in avans.",
+        balanceDaysLabel: "Scadenta sold",
+        balanceDaysHelp: "Cu cate zile inainte de plecare este scadent soldul ramas.",
+        graceDaysLabel: "Perioada minima",
+        graceDaysHelp:
+          "Numarul minim de zile de acum pana cand soldul poate fi scadent, chiar pentru plecari apropiate.",
+        tooltipLabel: "Arata ajutorul campului",
+        suffix: "zile",
+      },
+    },
+    preview: {
+      inheriting: "Se mosteneste de la parinte - fara previzualizare pe acest nivel.",
+      sample: "Exemplu: rezervare de {amount}, plecare in {days} zile",
+      scheduleTypes: {
+        deposit: "Avans",
+        balance: "Sold",
+        full: "Plata completa",
+      },
+      due: "scadent {date}",
+    },
+  },
   taxesPage: {
     title: "Regimuri si clase de taxe",
     description:

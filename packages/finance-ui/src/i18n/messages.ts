@@ -415,6 +415,40 @@ export type FinanceUiMessages = {
     }
     creditNoteStatusLabels: Record<CreditNoteStatus, string>
   }
+  paymentPolicy: {
+    form: {
+      inherit: {
+        label: string
+        help: string
+        tooltipLabel: string
+      }
+      depositKind: {
+        label: string
+        options: Record<"none" | "percent" | "fixed_cents", string>
+      }
+      depositValue: {
+        percentLabel: string
+        fixedLabel: string
+      }
+      depositHints: Record<"none" | "percent" | "fixed_cents", string>
+      days: {
+        minDaysLabel: string
+        minDaysHelp: string
+        balanceDaysLabel: string
+        balanceDaysHelp: string
+        graceDaysLabel: string
+        graceDaysHelp: string
+        tooltipLabel: string
+        suffix: string
+      }
+    }
+    preview: {
+      inheriting: string
+      sample: string
+      scheduleTypes: Record<"deposit" | "balance" | "full", string>
+      due: string
+    }
+  }
   taxesPage: Record<TaxesPageMessageKey, string>
   supplierPaymentDialog: {
     title: string
