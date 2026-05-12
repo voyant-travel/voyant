@@ -1,5 +1,11 @@
 # @voyantjs/catalog-rag
 
+## 0.33.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.33.0
+
 ## 0.32.3
 
 ### Patch Changes

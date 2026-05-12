@@ -1,5 +1,16 @@
 # @voyantjs/extras-ui
 
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [db46afc]
+  - @voyantjs/catalog-react@0.33.0
+  - @voyantjs/extras-react@0.33.0
+  - @voyantjs/i18n@0.33.0
+  - @voyantjs/products-react@0.33.0
+  - @voyantjs/ui@0.33.0
+
 ## 0.32.3
 
 ### Patch Changes
