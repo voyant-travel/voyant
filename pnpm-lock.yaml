@@ -1104,6 +1104,9 @@ importers:
       '@voyantjs/auth-react':
         specifier: workspace:*
         version: link:../auth-react
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@voyantjs/types':
         specifier: workspace:*
         version: link:../types
@@ -1870,6 +1873,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../finance-react
+      '@voyantjs/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@voyantjs/ui':
         specifier: workspace:*
         version: link:../ui

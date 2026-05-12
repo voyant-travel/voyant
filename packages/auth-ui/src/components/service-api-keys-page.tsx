@@ -6,6 +6,7 @@ import {
   useApiTokenMutation,
   useApiTokens,
 } from "@voyantjs/auth-react"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   API_KEY_PERMISSION_GROUPS,
   API_KEY_PERMISSION_PRESETS,
@@ -40,13 +41,7 @@ import {
 } from "lucide-react"
 import { type FormEvent, useMemo, useState } from "react"
 
-const expirationOptions = [
-  { label: "No expiration", days: null },
-  { label: "7 days", days: 7 },
-  { label: "30 days", days: 30 },
-  { label: "90 days", days: 90 },
-  { label: "1 year", days: 365 },
-] as const
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
 
 export interface ServiceApiKeysPageProps {
   className?: string
@@ -61,8 +56,8 @@ function expiresInSeconds(days: number | null): number | null {
   return days === null ? null : days * 24 * 60 * 60
 }
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return "Never"
+function formatDate(value: string | null | undefined, fallback: string): string {
+  if (!value) return fallback
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
@@ -70,8 +65,8 @@ function formatDate(value: string | null | undefined): string {
   )
 }
 
-function permissionLabel(permission: string): string {
-  if (permission === "*") return "Full access"
+function permissionLabel(permission: string, fullAccessLabel: string): string {
+  if (permission === "*") return fullAccessLabel
   const [resource, action] = permission.split(":")
   return `${resource ?? permission}:${action ?? ""}`
 }
@@ -114,9 +109,19 @@ function useClipboard() {
 export function ServiceApiKeysPage({
   className,
   pageSize = 25,
-  title = "API tokens",
-  description = "Create permissioned API tokens for automation, integrations, and third-party systems.",
+  title,
+  description,
 }: ServiceApiKeysPageProps) {
+  const messages = useAuthUiMessagesOrDefault().serviceApiKeysPage
+  const pageTitle = title ?? messages.title
+  const pageDescription = description ?? messages.description
+  const expirationOptions = [
+    { label: messages.create.expirationOptions.never, days: null },
+    { label: messages.create.expirationOptions.sevenDays, days: 7 },
+    { label: messages.create.expirationOptions.thirtyDays, days: 30 },
+    { label: messages.create.expirationOptions.ninetyDays, days: 90 },
+    { label: messages.create.expirationOptions.oneYear, days: 365 },
+  ] as const
   const keys = useApiTokens({ limit: pageSize, sortBy: "createdAt", sortDirection: "desc" })
   const mutations = useApiTokenMutation()
   const clipboard = useClipboard()
@@ -148,12 +153,12 @@ export function ServiceApiKeysPage({
     setCreatedKey(null)
 
     if (!name.trim()) {
-      setError("Token name is required.")
+      setError(messages.create.errors.nameRequired)
       return
     }
 
     if (permissionsToStrings(selectedPermissions).length === 0) {
-      setError("Select at least one permission.")
+      setError(messages.create.errors.permissionRequired)
       return
     }
 
@@ -166,15 +171,15 @@ export function ServiceApiKeysPage({
       setCreatedKey(result)
       setName("")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create API token.")
+      setError(err instanceof Error ? err.message : messages.create.errors.createFailed)
     }
   }
 
   return (
     <div data-slot="api-tokens-page" className={cn("flex flex-col gap-6 p-6", className)}>
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
+        <p className="text-sm text-muted-foreground">{pageDescription}</p>
       </div>
 
       {createdKey && (
@@ -182,9 +187,9 @@ export function ServiceApiKeysPage({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <KeyRound className="h-4 w-4" />
-              New token
+              {messages.createdToken.title}
             </CardTitle>
-            <CardDescription>This token is shown once. Store it before leaving.</CardDescription>
+            <CardDescription>{messages.createdToken.description}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row">
             <Input value={createdKey.key} readOnly className="font-mono text-xs" />
@@ -198,7 +203,7 @@ export function ServiceApiKeysPage({
               ) : (
                 <Copy className="mr-2 h-4 w-4" />
               )}
-              Copy
+              {messages.createdToken.copy}
             </Button>
           </CardContent>
         </Card>
@@ -206,7 +211,7 @@ export function ServiceApiKeysPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Create token</CardTitle>
+          <CardTitle className="text-base">{messages.create.title}</CardTitle>
           <CardDescription>{selectedDescription}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -219,16 +224,16 @@ export function ServiceApiKeysPage({
 
             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
               <div className="space-y-2">
-                <Label htmlFor="api-token-name">Name</Label>
+                <Label htmlFor="api-token-name">{messages.create.name}</Label>
                 <Input
                   id="api-token-name"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="CMS sync, webhook relay, nightly automation"
+                  placeholder={messages.create.namePlaceholder}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="api-token-expiration">Expiration</Label>
+                <Label htmlFor="api-token-expiration">{messages.create.expiration}</Label>
                 <select
                   id="api-token-expiration"
                   value={expirationDays ?? "never"}
@@ -314,7 +319,7 @@ export function ServiceApiKeysPage({
                 ) : (
                   <Plus className="mr-2 h-4 w-4" />
                 )}
-                Create token
+                {messages.create.submit}
               </Button>
             </div>
           </form>
@@ -322,10 +327,10 @@ export function ServiceApiKeysPage({
       </Card>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Existing tokens</h2>
+        <h2 className="text-lg font-semibold">{messages.list.title}</h2>
         <Button type="button" variant="outline" size="sm" onClick={() => void keys.refetch()}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
+          {messages.list.refresh}
         </Button>
       </div>
 
@@ -333,7 +338,7 @@ export function ServiceApiKeysPage({
         <Card>
           <CardContent className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading tokens
+            {messages.list.loading}
           </CardContent>
         </Card>
       ) : keys.data?.apiKeys.length ? (
@@ -345,7 +350,7 @@ export function ServiceApiKeysPage({
       ) : (
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
-            No API tokens have been created yet.
+            {messages.list.empty}
           </CardContent>
         </Card>
       )}
@@ -356,6 +361,7 @@ export function ServiceApiKeysPage({
 export const ApiTokensPage = ServiceApiKeysPage
 
 function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
+  const messages = useAuthUiMessagesOrDefault().serviceApiKeysPage
   const mutations = useApiTokenMutation()
   const enabled = apiKey.enabled !== false
 
@@ -364,9 +370,9 @@ function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
       <CardContent className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-medium">{apiKey.name || "Untitled token"}</h3>
+            <h3 className="font-medium">{apiKey.name || messages.list.untitled}</h3>
             <Badge variant={enabled ? "default" : "secondary"}>
-              {enabled ? "Enabled" : "Disabled"}
+              {enabled ? messages.list.enabled : messages.list.disabled}
             </Badge>
             {apiKey.start && <Badge variant="outline">{apiKey.start}</Badge>}
           </div>
@@ -374,16 +380,19 @@ function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
             {apiKey.permissionList.length ? (
               apiKey.permissionList.map((permission) => (
                 <Badge key={permission} variant="outline" className="font-mono text-[11px]">
-                  {permissionLabel(permission)}
+                  {permissionLabel(permission, messages.permissions.fullAccess)}
                 </Badge>
               ))
             ) : (
-              <span className="text-xs text-muted-foreground">No permissions</span>
+              <span className="text-xs text-muted-foreground">{messages.list.noPermissions}</span>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Created {formatDate(apiKey.createdAt)} · Expires {formatDate(apiKey.expiresAt)} · Last
-            used {formatDate(apiKey.lastRequest)}
+            {formatMessage(messages.list.metadata, {
+              created: formatDate(apiKey.createdAt, messages.date.never),
+              expires: formatDate(apiKey.expiresAt, messages.date.never),
+              lastUsed: formatDate(apiKey.lastRequest, messages.date.never),
+            })}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -397,7 +406,7 @@ function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
             }
           >
             {enabled ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" />}
-            {enabled ? "Disable" : "Enable"}
+            {enabled ? messages.list.disable : messages.list.enable}
           </Button>
           <Button
             type="button"
@@ -407,7 +416,7 @@ function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
             onClick={() => void mutations.remove.mutateAsync({ keyId: apiKey.id })}
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            {messages.list.delete}
           </Button>
         </div>
       </CardContent>

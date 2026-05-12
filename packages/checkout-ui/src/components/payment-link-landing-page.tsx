@@ -1,6 +1,7 @@
 "use client"
 
 import type { PublicPaymentSession } from "@voyantjs/finance/public-validation"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { cn } from "@voyantjs/ui/lib/utils"
@@ -14,6 +15,9 @@ import {
   Loader2,
 } from "lucide-react"
 import { type ReactNode, useState } from "react"
+
+import type { CheckoutUiMessages } from "../i18n/messages.js"
+import { useCheckoutUiMessagesOrDefault } from "../i18n/provider.js"
 
 interface StartCardResponse {
   data?: { redirectUrl: string | null }
@@ -109,9 +113,12 @@ export function PaymentLinkLandingPage({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Header({ session, description }: { session: PublicPaymentSession; description?: string }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   return (
     <header className="flex flex-col gap-2 border-b pb-4">
-      <h1 className="font-semibold text-2xl">{description ?? defaultDescription(session)}</h1>
+      <h1 className="font-semibold text-2xl">
+        {description ?? defaultDescription(session, messages)}
+      </h1>
       {session.notes && <p className="text-muted-foreground text-sm">{session.notes}</p>}
       <div className="flex items-baseline gap-3">
         <span className="font-semibold text-3xl tabular-nums">
@@ -119,7 +126,7 @@ function Header({ session, description }: { session: PublicPaymentSession; descr
         </span>
         {session.expiresAt && session.status !== "paid" && (
           <span className="text-muted-foreground text-sm">
-            Expires {formatDateTime(session.expiresAt)}
+            {formatMessage(messages.expires, { date: formatDateTime(session.expiresAt) })}
           </span>
         )}
       </div>
@@ -138,6 +145,7 @@ function Body({
   onPayByCard?: () => void
   onRetry?: () => Promise<void> | void
 }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   // Terminal states — short-circuit body to a status panel.
   if (session.status === "paid") return <TerminalState status="paid" reason={null} />
   if (session.status === "failed") {
@@ -162,11 +170,8 @@ function Body({
   if (!cardAvailable && !bankAvailable) {
     return (
       <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 text-sm">
-        <p className="font-medium">No payment method available</p>
-        <p className="mt-2 text-muted-foreground">
-          This payment link doesn't have any payment methods configured. Please contact your travel
-          agent.
-        </p>
+        <p className="font-medium">{messages.noMethods.title}</p>
+        <p className="mt-2 text-muted-foreground">{messages.noMethods.body}</p>
       </div>
     )
   }
@@ -185,11 +190,11 @@ function Body({
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="card">
           <CreditCard className="mr-2 h-4 w-4" />
-          Pay by card
+          {messages.cardTab}
         </TabsTrigger>
         <TabsTrigger value="bank">
           <Building2 className="mr-2 h-4 w-4" />
-          Bank transfer
+          {messages.bankTab}
         </TabsTrigger>
       </TabsList>
       <TabsContent value="card" className="mt-4">
@@ -211,6 +216,7 @@ function CardPanel({
   session: PublicPaymentSession
   onPayByCard?: () => void
 }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -235,7 +241,7 @@ function CardPanel({
       })
       const body = (await res.json()) as StartCardResponse
       if (!res.ok || !body.data?.redirectUrl) {
-        throw new Error(body.error ?? "Card payment couldn't be prepared.")
+        throw new Error(body.error ?? messages.card.startFailed)
       }
       window.location.href = body.data.redirectUrl
     } catch (err) {
@@ -246,17 +252,17 @@ function CardPanel({
 
   return (
     <div className="rounded-xl border bg-card p-5 shadow-sm">
-      <p className="mb-4 text-muted-foreground text-sm">
-        You'll be redirected to the secure payment page hosted by the card processor.
-      </p>
+      <p className="mb-4 text-muted-foreground text-sm">{messages.card.description}</p>
       <Button className="w-full" disabled={starting} onClick={handleClick}>
         {starting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Pay {formatMoneyCents(session.amountCents, session.currency)}
+        {formatMessage(messages.card.payAmount, {
+          amount: formatMoneyCents(session.amountCents, session.currency),
+        })}
         {!starting && <ExternalLink className="ml-2 h-4 w-4" />}
       </Button>
       {error && (
         <p className="mt-3 text-destructive text-xs">
-          {error} If the issue persists, please pay by bank transfer or contact your travel agent.
+          {formatMessage(messages.card.errorAdvice, { message: error })}
         </p>
       )}
     </div>
@@ -270,26 +276,28 @@ function BankTransferPanel({
   session: PublicPaymentSession
   instructions: BankTransferInstructions
 }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   const reference =
     instructions.reference ?? session.externalReference ?? session.clientReference ?? session.id
   return (
     <div className="rounded-xl border bg-card p-5 shadow-sm">
       <p className="mb-4 text-muted-foreground text-sm">
-        Wire {formatMoneyCents(session.amountCents, session.currency)} to the account below. Your
-        booking is confirmed once payment is received (typically 1–3 business days).
+        {formatMessage(messages.bank.instructions, {
+          amount: formatMoneyCents(session.amountCents, session.currency),
+        })}
       </p>
       <dl className="grid grid-cols-1 gap-2 text-sm">
-        <Row label="Beneficiary">{instructions.beneficiaryName}</Row>
-        <Row label="IBAN" copyValue={instructions.iban}>
+        <Row label={messages.bank.beneficiary}>{instructions.beneficiaryName}</Row>
+        <Row label={messages.bank.iban} copyValue={instructions.iban}>
           <span className="font-mono">{instructions.iban}</span>
         </Row>
         {instructions.bic && (
-          <Row label="BIC / SWIFT" copyValue={instructions.bic}>
+          <Row label={messages.bank.bicSwift} copyValue={instructions.bic}>
             <span className="font-mono">{instructions.bic}</span>
           </Row>
         )}
-        {instructions.bankName && <Row label="Bank">{instructions.bankName}</Row>}
-        <Row label="Reference" copyValue={reference}>
+        {instructions.bankName && <Row label={messages.bank.bank}>{instructions.bankName}</Row>}
+        <Row label={messages.bank.reference} copyValue={reference}>
           <span className="font-mono">{reference}</span>
         </Row>
       </dl>
@@ -321,11 +329,12 @@ function Row({
 }
 
 function CopyButton({ value }: { value: string }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   const [copied, setCopied] = useState(false)
   return (
     <button
       type="button"
-      aria-label={copied ? "Copied" : `Copy ${value}`}
+      aria-label={copied ? messages.copy.copied : formatMessage(messages.copy.copyValue, { value })}
       className="text-muted-foreground transition-colors hover:text-foreground"
       onClick={async () => {
         try {
@@ -356,32 +365,33 @@ function TerminalState({
   reason: string | null
   onRetry?: () => Promise<void> | void
 }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   const [retrying, setRetrying] = useState(false)
   const [retryError, setRetryError] = useState<string | null>(null)
 
   const cfg = {
     paid: {
       icon: <CheckCircle2 className="h-10 w-10 text-emerald-600" />,
-      title: "Payment received",
-      body: "Thanks — your booking is confirmed. You'll receive a confirmation email shortly.",
+      title: messages.terminal.paid.title,
+      body: messages.terminal.paid.body,
       tone: "border-emerald-500/40 bg-emerald-500/5",
     },
     failed: {
       icon: <CircleAlert className="h-10 w-10 text-destructive" />,
-      title: "Payment failed",
-      body: reason ?? "The payment couldn't be processed. Please try again or contact support.",
+      title: messages.terminal.failed.title,
+      body: reason ?? messages.terminal.failed.body,
       tone: "border-destructive/40 bg-destructive/5",
     },
     expired: {
       icon: <CircleAlert className="h-10 w-10 text-amber-600" />,
-      title: "Payment link expired",
-      body: "This payment link has expired. Please request a new one from your travel agent.",
+      title: messages.terminal.expired.title,
+      body: messages.terminal.expired.body,
       tone: "border-amber-500/40 bg-amber-500/5",
     },
     cancelled: {
       icon: <CircleAlert className="h-10 w-10 text-muted-foreground" />,
-      title: "Payment cancelled",
-      body: "This payment was cancelled. Please contact your travel agent if this is unexpected.",
+      title: messages.terminal.cancelled.title,
+      body: messages.terminal.cancelled.body,
       tone: "border-border bg-muted/20",
     },
   }[status]
@@ -410,7 +420,7 @@ function TerminalState({
             }}
           >
             {retrying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Try again
+            {messages.terminal.tryAgain}
           </Button>
           {retryError && <p className="text-destructive text-xs">{retryError}</p>}
         </>
@@ -420,34 +430,21 @@ function TerminalState({
 }
 
 function ProcessingState() {
+  const messages = useCheckoutUiMessagesOrDefault().paymentLinkLandingPage
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border bg-card p-8 text-center">
       <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-      <h2 className="font-semibold text-lg">Processing payment…</h2>
-      <p className="max-w-md text-muted-foreground text-sm">
-        We're confirming the payment with the processor. This usually takes a few seconds.
-      </p>
+      <h2 className="font-semibold text-lg">{messages.processing.title}</h2>
+      <p className="max-w-md text-muted-foreground text-sm">{messages.processing.body}</p>
     </div>
   )
 }
 
-function defaultDescription(session: PublicPaymentSession): string {
-  switch (session.targetType) {
-    case "booking":
-      return "Booking payment"
-    case "booking_payment_schedule":
-      return "Booking deposit"
-    case "booking_guarantee":
-      return "Booking guarantee"
-    case "invoice":
-      return "Invoice payment"
-    case "order":
-      return "Order payment"
-    case "flight_order":
-      return "Flight payment"
-    default:
-      return "Payment"
-  }
+function defaultDescription(
+  session: PublicPaymentSession,
+  messages: CheckoutUiMessages["paymentLinkLandingPage"],
+): string {
+  return messages.descriptions[session.targetType] ?? messages.descriptions.default
 }
 
 function formatMoneyCents(cents: number, currency: string): string {
