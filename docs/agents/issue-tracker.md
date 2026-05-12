@@ -408,6 +408,10 @@ plan, source snapshot, lease holder, and lease expiration so always-on
 supervisors can coordinate explicit command execution without the Worker
 running the command itself. Use `pnpm agent:queue:lease-dispatch -- --holder
 <id>` to create one from a runner or process manager.
+If a supervisor hits lease contention or needs to inspect the current holder, use
+`pnpm agent:queue:active-dispatch -- --issue <number> --action <name>` to read
+the control-plane active pointer without mutating it. The read reports whether
+the stored pointer is still active or only an expired/terminal record.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
 CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
 recommend `remote-bootstrap` so dispatch can clone/fetch the repository and

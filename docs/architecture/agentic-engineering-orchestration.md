@@ -1163,7 +1163,9 @@ include that event-log context when it returns dry-run lifecycle command plans.
 It also accepts non-persistent tick snapshots that match
 `agent:queue:tick -- --json`, so a future dashboard or supervisor can validate
 queue shape and recommendation counts before storage or automatic loops are
-introduced.
+introduced. The control plane also exposes a read-only active dispatch-intent
+lookup so supervisors can explain lease contention or expired active pointers
+without mutating queue state.
 
 Verification:
 
