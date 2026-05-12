@@ -24,7 +24,9 @@ export {
 export {
   initialsFrom,
   type OrganizationActivity,
+  type OrganizationCommercialContextTabSlot,
   type OrganizationData,
+  type OrganizationDetailPageSlots,
   type OrganizationDetailTab,
   OrganizationMain,
   type OrganizationMainProps,
@@ -72,6 +74,7 @@ export {
   PersonActivitiesPanel,
   type PersonActivitiesPanelProps,
   type PersonActivity,
+  type PersonCommercialContextTabSlot,
   type PersonData,
   PersonDetailPage,
   type PersonDetailPageProps,

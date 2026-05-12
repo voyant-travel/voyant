@@ -277,6 +277,10 @@ export const crmUiEn = {
       people: "People",
       opportunities: "Opportunities",
       activities: "Activities",
+      bookings: "Bookings",
+      invoices: "Invoices",
+      payments: "Payments",
+      contracts: "Contracts",
     },
     sections: {
       created: "Created",
@@ -335,6 +339,10 @@ export const crmUiEn = {
       activities: "Activities",
       relationships: "Relationships",
       documents: "Documents",
+      bookings: "Bookings",
+      invoices: "Invoices",
+      payments: "Payments",
+      contracts: "Contracts",
     },
     sections: {
       created: "Created",

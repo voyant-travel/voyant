@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react"
+import type { ReactNode } from "react"
 
 import { useCrmUiI18nOrDefault, useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { formatCrmDate, formatCrmMoney, formatCrmRelative } from "./crm-format.js"
@@ -44,7 +45,15 @@ import { InlineNumberField } from "./inline-number-field.js"
 import { InlineSelectField } from "./inline-select-field.js"
 import { TagsEditor } from "./tags-editor.js"
 
-export type OrganizationDetailTab = "overview" | "people" | "opportunities" | "activities"
+export type OrganizationDetailTab =
+  | "overview"
+  | "people"
+  | "opportunities"
+  | "activities"
+  | "bookings"
+  | "invoices"
+  | "payments"
+  | "contracts"
 
 export type OrganizationData = Pick<
   OrganizationRecord,
@@ -84,6 +93,25 @@ export type OrganizationActivity = Pick<
   ActivityRecord,
   "createdAt" | "description" | "dueAt" | "id" | "status" | "subject" | "type" | "updatedAt"
 >
+
+export interface OrganizationCommercialContextTabSlot {
+  label?: string
+  count?: number
+  content: ReactNode
+}
+
+export interface OrganizationDetailPageSlots {
+  afterTopBar?: ReactNode
+  sidebarEnd?: ReactNode
+  overviewEnd?: ReactNode
+  peopleEnd?: ReactNode
+  opportunitiesEnd?: ReactNode
+  activitiesEnd?: ReactNode
+  bookingsTab?: OrganizationCommercialContextTabSlot
+  invoicesTab?: OrganizationCommercialContextTabSlot
+  paymentsTab?: OrganizationCommercialContextTabSlot
+  contractsTab?: OrganizationCommercialContextTabSlot
+}
 
 export interface OrganizationTopBarProps {
   orgName: string
@@ -132,9 +160,15 @@ export interface OrganizationSidebarProps {
   org: OrganizationData
   websiteHref?: string
   onUpdateField: (patch: UpdateOrganizationInput) => Promise<void>
+  children?: ReactNode
 }
 
-export function OrganizationSidebar({ org, websiteHref, onUpdateField }: OrganizationSidebarProps) {
+export function OrganizationSidebar({
+  org,
+  websiteHref,
+  onUpdateField,
+  children,
+}: OrganizationSidebarProps) {
   const messages = useCrmUiMessagesOrDefault()
   const relationOptions = [
     { value: "client", label: messages.common.relationTypeLabels.client },
@@ -271,6 +305,8 @@ export function OrganizationSidebar({ org, websiteHref, onUpdateField }: Organiz
           <TagsEditor tags={org.tags} onChange={(tags) => onUpdateField({ tags })} />
         </CardContent>
       </Card>
+
+      {children}
     </aside>
   )
 }
@@ -289,6 +325,7 @@ export interface OrganizationMainProps {
   primaryCurrency: string | null
   onOpenPerson: (id: string) => void
   onUpdateField: (patch: UpdateOrganizationInput) => Promise<void>
+  slots?: OrganizationDetailPageSlots
 }
 
 export function OrganizationMain({
@@ -305,6 +342,7 @@ export function OrganizationMain({
   primaryCurrency,
   onOpenPerson,
   onUpdateField,
+  slots,
 }: OrganizationMainProps) {
   const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
@@ -356,7 +394,7 @@ export function OrganizationMain({
           onValueChange={(value) => setActiveTab(value as OrganizationDetailTab)}
         >
           <CardHeader className="pb-0">
-            <TabsList>
+            <TabsList className="h-auto flex-wrap justify-start">
               <TabsTrigger value="overview">
                 {messages.organizationDetail.tabs.overview}
               </TabsTrigger>
@@ -369,6 +407,26 @@ export function OrganizationMain({
               <TabsTrigger value="activities">
                 {messages.organizationDetail.tabs.activities} ({activities.length})
               </TabsTrigger>
+              {slots?.bookingsTab ? (
+                <TabsTrigger value="bookings">
+                  {formatTabLabel(messages.organizationDetail.tabs.bookings, slots.bookingsTab)}
+                </TabsTrigger>
+              ) : null}
+              {slots?.invoicesTab ? (
+                <TabsTrigger value="invoices">
+                  {formatTabLabel(messages.organizationDetail.tabs.invoices, slots.invoicesTab)}
+                </TabsTrigger>
+              ) : null}
+              {slots?.paymentsTab ? (
+                <TabsTrigger value="payments">
+                  {formatTabLabel(messages.organizationDetail.tabs.payments, slots.paymentsTab)}
+                </TabsTrigger>
+              ) : null}
+              {slots?.contractsTab ? (
+                <TabsTrigger value="contracts">
+                  {formatTabLabel(messages.organizationDetail.tabs.contracts, slots.contractsTab)}
+                </TabsTrigger>
+              ) : null}
             </TabsList>
           </CardHeader>
           <CardContent className="pt-4">
@@ -402,6 +460,7 @@ export function OrganizationMain({
                 value={org.notes}
                 onSave={(next) => onUpdateField({ notes: next })}
               />
+              {slots?.overviewEnd}
             </TabsContent>
 
             <TabsContent value="people" className="m-0">
@@ -450,6 +509,7 @@ export function OrganizationMain({
                   })}
                 </ul>
               )}
+              {slots?.peopleEnd}
             </TabsContent>
 
             <TabsContent value="opportunities" className="m-0">
@@ -495,6 +555,7 @@ export function OrganizationMain({
                   })}
                 </ul>
               )}
+              {slots?.opportunitiesEnd}
             </TabsContent>
 
             <TabsContent value="activities" className="m-0">
@@ -535,7 +596,28 @@ export function OrganizationMain({
                   ))}
                 </ul>
               )}
+              {slots?.activitiesEnd}
             </TabsContent>
+            {slots?.bookingsTab ? (
+              <TabsContent value="bookings" className="m-0">
+                {slots.bookingsTab.content}
+              </TabsContent>
+            ) : null}
+            {slots?.invoicesTab ? (
+              <TabsContent value="invoices" className="m-0">
+                {slots.invoicesTab.content}
+              </TabsContent>
+            ) : null}
+            {slots?.paymentsTab ? (
+              <TabsContent value="payments" className="m-0">
+                {slots.paymentsTab.content}
+              </TabsContent>
+            ) : null}
+            {slots?.contractsTab ? (
+              <TabsContent value="contracts" className="m-0">
+                {slots.contractsTab.content}
+              </TabsContent>
+            ) : null}
           </CardContent>
         </Tabs>
       </Card>
@@ -546,6 +628,14 @@ export function OrganizationMain({
       </div>
     </main>
   )
+}
+
+function formatTabLabel(
+  defaultLabel: string,
+  slot: OrganizationCommercialContextTabSlot,
+): ReactNode {
+  const label = slot.label ?? defaultLabel
+  return typeof slot.count === "number" ? `${label} (${slot.count})` : label
 }
 
 export function initialsFrom(name: string): string {

@@ -277,6 +277,10 @@ export const crmUiRo = {
       people: "Persoane",
       opportunities: "Oportunitati",
       activities: "Activitati",
+      bookings: "Rezervari",
+      invoices: "Facturi",
+      payments: "Plati",
+      contracts: "Contracte",
     },
     sections: {
       created: "Creat",
@@ -335,6 +339,10 @@ export const crmUiRo = {
       activities: "Activitati",
       relationships: "Relatii",
       documents: "Documente",
+      bookings: "Rezervari",
+      invoices: "Facturi",
+      payments: "Plati",
+      contracts: "Contracte",
     },
     sections: {
       created: "Creat",
