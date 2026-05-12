@@ -53,10 +53,14 @@ Mount `handleApiTokenManagementRequest(...)` before falling through to
 ## Account Profile
 
 Voyant auth UIs use `PATCH /auth/me` to update the signed-in user's basic
-profile fields: `firstName`, `lastName`, `locale`, and `timezone`. Mount
-`handleAccountProfileRequest(...)` before falling through to `auth.handler`
-when the app wants the shared onboarding/profile completion UI to submit
-directly to the auth facade.
+profile fields: `firstName`, `lastName`, `locale`, `timezone`, and
+`profilePictureUrl`. Mount `handleAccountProfileRequest(...)` before falling
+through to `auth.handler` when the app wants shared onboarding or account UI to
+submit directly to the auth facade.
+
+`updateCurrentUserProfile(db, { userId, ...patch })` from
+`@voyantjs/auth/workspace` updates the Voyant profile row and returns the
+normalized `CurrentUser`.
 
 ## Exports
 
@@ -66,6 +70,7 @@ directly to the auth facade.
 | `./server` | Node.js/server `createAuth` factory |
 | `./edge` | Edge/Workers `createAuth` factory |
 | `./backend` | Backend helpers (session inspection, API keys) |
+| `./workspace` | Current-user/profile helpers for mounted auth routes |
 | `./permissions` | Permission/role contracts |
 
 ## License
