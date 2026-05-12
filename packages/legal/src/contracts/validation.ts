@@ -1,3 +1,4 @@
+import { validateStructuredTemplateSyntax } from "@voyantjs/utils/template-renderer"
 import { z } from "zod"
 
 export const contractScopeSchema = z.enum(["customer", "supplier", "partner", "channel", "other"])
@@ -23,6 +24,18 @@ const paginationSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 })
 
+const contractTemplateBodySchema = z
+  .string()
+  .min(1)
+  .superRefine((body, ctx) => {
+    for (const issue of validateStructuredTemplateSyntax(body, "html")) {
+      ctx.addIssue({
+        code: "custom",
+        message: `invalid Liquid syntax: ${issue.message}`,
+      })
+    }
+  })
+
 // ---------- contract templates ----------
 
 const contractTemplateCoreSchema = z.object({
@@ -35,7 +48,7 @@ const contractTemplateCoreSchema = z.object({
   scope: contractScopeSchema,
   language: z.string().min(2).max(10).default("en"),
   description: z.string().max(2000).optional().nullable(),
-  body: z.string().min(1),
+  body: contractTemplateBodySchema,
   variableSchema: z.record(z.string(), z.unknown()).optional().nullable(),
   active: z.boolean().default(true),
 })
@@ -69,7 +82,7 @@ export const contractTemplateDefaultQuerySchema = z.object({
 // ---------- contract template versions ----------
 
 export const insertContractTemplateVersionSchema = z.object({
-  body: z.string().min(1),
+  body: contractTemplateBodySchema,
   variableSchema: z.record(z.string(), z.unknown()).optional().nullable(),
   changelog: z.string().max(2000).optional().nullable(),
   createdBy: z.string().max(255).optional().nullable(),

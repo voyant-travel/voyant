@@ -10,6 +10,7 @@ import {
   type RenderTemplateInput,
   renderTemplate,
   type UpdateContractTemplateInput,
+  validateContractTemplateBody,
 } from "./service-shared.js"
 
 export const contractTemplatesService = {
@@ -101,6 +102,7 @@ export const contractTemplatesService = {
     return rows[0] ?? null
   },
   async createTemplate(db: PostgresJsDatabase, data: CreateContractTemplateInput) {
+    validateContractTemplateBody(data.body)
     const [row] = await db.insert(contractTemplates).values(data).returning()
     return row ?? null
   },
@@ -120,6 +122,10 @@ export const contractTemplatesService = {
    * out of sync with the versions table.
    */
   async updateTemplate(db: PostgresJsDatabase, id: string, data: UpdateContractTemplateInput) {
+    if (typeof data.body === "string") {
+      validateContractTemplateBody(data.body)
+    }
+
     return db.transaction(async (tx) => {
       // Read the current row first so we can detect whether the body
       // actually changed. Without this we'd version-bump on every
@@ -199,6 +205,8 @@ export const contractTemplatesService = {
     templateId: string,
     data: CreateContractTemplateVersionInput,
   ) {
+    validateContractTemplateBody(data.body)
+
     return db.transaction(async (tx) => {
       const [template] = await tx
         .select({ id: contractTemplates.id })
@@ -233,6 +241,7 @@ export const contractTemplatesService = {
   },
   renderPreview(input: RenderTemplateInput): string {
     const body = input.body ?? ""
+    validateContractTemplateBody(body)
     return renderTemplate(body, "html", input.variables)
   },
 }

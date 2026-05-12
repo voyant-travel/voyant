@@ -1,4 +1,8 @@
-import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
+import {
+  renderStructuredTemplate,
+  type TemplateSyntaxIssue,
+  validateStructuredTemplateSyntax,
+} from "@voyantjs/utils/template-renderer"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -77,11 +81,39 @@ function resolvePath(obj: unknown, path: string): unknown {
  */
 const CONTRACT_MISSING_VALUE_PLACEHOLDER = "-"
 
+export class ContractTemplateSyntaxError extends Error {
+  readonly issues: TemplateSyntaxIssue[]
+
+  constructor(issues: TemplateSyntaxIssue[]) {
+    super("Contract template contains invalid Liquid syntax")
+    this.name = "ContractTemplateSyntaxError"
+    this.issues = issues
+  }
+}
+
+export function isContractTemplateSyntaxError(
+  error: unknown,
+): error is ContractTemplateSyntaxError {
+  return error instanceof ContractTemplateSyntaxError
+}
+
+export function validateContractTemplateBody(body: string): void {
+  const issues = validateStructuredTemplateSyntax(body, "html")
+  if (issues.length > 0) {
+    throw new ContractTemplateSyntaxError(issues)
+  }
+}
+
 export function renderTemplate(
   body: string,
   bodyFormat: "markdown" | "html" | "lexical_json",
   variables: Record<string, unknown>,
 ): string {
+  const issues = validateStructuredTemplateSyntax(body, bodyFormat)
+  if (issues.length > 0) {
+    throw new ContractTemplateSyntaxError(issues)
+  }
+
   return renderStructuredTemplate(body, bodyFormat, variables, {
     missingValuePlaceholder: CONTRACT_MISSING_VALUE_PLACEHOLDER,
   })

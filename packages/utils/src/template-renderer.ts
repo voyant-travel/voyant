@@ -153,6 +153,10 @@ export interface RenderTemplateOptions {
   missingValuePlaceholder?: string
 }
 
+export interface TemplateSyntaxIssue {
+  message: string
+}
+
 function stringifyValue(value: unknown, placeholder?: string): string {
   if (value === null || value === undefined) return placeholder ?? ""
   if (typeof value === "string") {
@@ -166,6 +170,7 @@ const MUSTACHE_RE = /\{\{\s*([^}]+?)\s*\}\}/g
 const LIQUID_CONTROL_RE = /\{%-?[\s\S]*?-?%\}/
 const LIQUID_FILTER_RE = /\{\{[\s\S]*\|[\s\S]*\}\}/
 const LIQUID_OUTPUT_RE = /\{\{\s*([^}]+?)\s*\}\}/g
+const LIQUID_DELIMITER_RE = /\{\{|\{%/
 const HAS_DEFAULT_FILTER_RE = /\|\s*default\s*:/i
 
 /**
@@ -197,6 +202,69 @@ export function renderMustacheTemplate(
 
 function shouldUseLiquid(body: string) {
   return LIQUID_CONTROL_RE.test(body) || LIQUID_FILTER_RE.test(body)
+}
+
+function validateStringTemplateSyntax(body: string): TemplateSyntaxIssue[] {
+  if (!LIQUID_DELIMITER_RE.test(body)) return []
+
+  try {
+    liquid.parse(body)
+    return []
+  } catch (error) {
+    return [{ message: error instanceof Error ? error.message : String(error) }]
+  }
+}
+
+function collectLexicalTextIssues(node: LexicalNode, issues: TemplateSyntaxIssue[]) {
+  if (typeof node.text === "string") {
+    issues.push(...validateStringTemplateSyntax(node.text))
+  }
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      collectLexicalTextIssues(child, issues)
+    }
+  }
+}
+
+/**
+ * Parse-check Liquid syntax without rendering. Rich-text editors can split
+ * Liquid delimiters across HTML blocks; validating the raw body catches those
+ * templates before they are persisted or previewed.
+ */
+export function validateStructuredTemplateSyntax(
+  body: string,
+  bodyFormat: StructuredTemplateBodyFormat,
+): TemplateSyntaxIssue[] {
+  if (bodyFormat !== "lexical_json") {
+    return validateStringTemplateSyntax(body)
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(body)
+    const issues: TemplateSyntaxIssue[] = []
+    if (Array.isArray(parsed)) {
+      for (const entry of parsed) {
+        if (entry && typeof entry === "object") {
+          collectLexicalTextIssues(entry as LexicalNode, issues)
+        }
+      }
+      return issues
+    }
+
+    if (parsed && typeof parsed === "object") {
+      const obj = parsed as { root?: unknown } & Record<string, unknown>
+      if (obj.root && typeof obj.root === "object") {
+        collectLexicalTextIssues(obj.root as LexicalNode, issues)
+        return issues
+      }
+      collectLexicalTextIssues(obj as LexicalNode, issues)
+      return issues
+    }
+
+    return []
+  } catch {
+    return validateStringTemplateSyntax(body)
+  }
 }
 
 export function renderStringTemplate(

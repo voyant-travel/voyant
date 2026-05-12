@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { renderTemplate, validateTemplateVariables } from "../../src/contracts/service.js"
+import {
+  ContractTemplateSyntaxError,
+  renderTemplate,
+  validateContractTemplateBody,
+  validateTemplateVariables,
+} from "../../src/contracts/service.js"
 
 /**
  * Unit tests for `renderTemplate` and `validateTemplateVariables`.
@@ -260,5 +265,29 @@ describe("validateTemplateVariables", () => {
   it("ignores non-array required field", () => {
     const schema = { required: "not an array" }
     expect(validateTemplateVariables(schema, {})).toEqual([])
+  })
+})
+
+describe("validateContractTemplateBody", () => {
+  it("accepts valid contract Liquid bodies", () => {
+    expect(() =>
+      validateContractTemplateBody(
+        "{% if contract.signed_at %}{{ contract.signed_at | format_date }}{% endif %}",
+      ),
+    ).not.toThrow()
+  })
+
+  it("rejects rich-text-split Liquid output tags before rendering", () => {
+    expect(() =>
+      validateContractTemplateBody('{{ </p><p>contract.signed_at | default: "-" }}'),
+    ).toThrow(ContractTemplateSyntaxError)
+  })
+
+  it("renderTemplate reports malformed Liquid as a template syntax error", () => {
+    expect(() =>
+      renderTemplate('{{ </p><p>contract.signed_at | default: "-" }}', "html", {
+        contract: { signed_at: "2026-05-12" },
+      }),
+    ).toThrow(ContractTemplateSyntaxError)
   })
 })

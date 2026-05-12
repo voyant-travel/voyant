@@ -51,8 +51,11 @@ export {
 } from "./schema.js"
 export {
   allocateContractNumber,
+  ContractTemplateSyntaxError,
   contractsService,
+  isContractTemplateSyntaxError,
   renderTemplate,
+  validateContractTemplateBody,
   validateTemplateVariables,
 } from "./service.js"
 export type {
