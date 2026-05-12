@@ -2,8 +2,10 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import {
+  ControlPlaneRequestError,
   controlPlaneConfigFromArgs,
   finishDispatchIntent,
+  requestActiveDispatchIntent,
   requestLatestDispatchIntent,
   requestLatestDispatchPlan,
   submitTickSnapshot,
@@ -262,9 +264,21 @@ describe("agent runner control plane client", () => {
     await assert.rejects(
       requestLatestDispatchIntent({
         fetchImpl: async () =>
-          new Response(JSON.stringify({ error: "dispatch_intent_already_active" }), {
-            status: 409,
-          }),
+          new Response(
+            JSON.stringify({
+              error: "dispatch_intent_already_active",
+              intent: {
+                id: "intent_579",
+                lease: {
+                  expiresAt: "2026-05-12T12:15:00.000Z",
+                  holder: "supervisor:other",
+                },
+              },
+            }),
+            {
+              status: 409,
+            },
+          ),
         request: {
           lease: { holder: "supervisor:test" },
           repository: "voyantjs/voyant",
@@ -272,7 +286,72 @@ describe("agent runner control plane client", () => {
         token: "tok",
         url: "https://control.example.com",
       }),
-      /409: dispatch_intent_already_active/,
+      (error) => {
+        assert.ok(error instanceof ControlPlaneRequestError)
+        assert.equal(error.status, 409)
+        assert.equal(error.body.intent.id, "intent_579")
+        assert.match(error.message, /409: dispatch_intent_already_active/)
+        assert.match(error.message, /id=intent_579/)
+        assert.match(error.message, /holder=supervisor:other/)
+        assert.match(error.message, /expiresAt=2026-05-12T12:15:00.000Z/)
+        return true
+      },
+    )
+  })
+
+  it("reads active dispatch intents", async () => {
+    const calls = []
+    const response = await requestActiveDispatchIntent({
+      fetchImpl: async (url, init) => {
+        calls.push({ init, url })
+        return new Response(
+          JSON.stringify({
+            intent: {
+              id: "intent_579",
+              lease: {
+                holder: "supervisor:test",
+              },
+              status: "leased",
+            },
+            reason: "active",
+          }),
+          { status: 200 },
+        )
+      },
+      request: {
+        action: "remote-bootstrap",
+        issueNumber: 579,
+        repository: "voyantjs/voyant",
+      },
+      token: "tok",
+      url: "https://control.example.com/",
+    })
+
+    assert.equal(response.intent.id, "intent_579")
+    assert.equal(
+      calls[0].url,
+      "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant",
+    )
+    assert.equal(calls[0].init.method, "GET")
+    assert.equal(calls[0].init.headers.authorization, "Bearer tok")
+  })
+
+  it("surfaces rejected active dispatch intent reads", async () => {
+    await assert.rejects(
+      requestActiveDispatchIntent({
+        fetchImpl: async () =>
+          new Response(JSON.stringify({ error: "invalid_active_dispatch_intent_request" }), {
+            status: 400,
+          }),
+        request: {
+          action: "remote-bootstrap",
+          issueNumber: 579,
+          repository: "voyantjs/voyant",
+        },
+        token: "tok",
+        url: "https://control.example.com",
+      }),
+      /400: invalid_active_dispatch_intent_request/,
     )
   })
 
