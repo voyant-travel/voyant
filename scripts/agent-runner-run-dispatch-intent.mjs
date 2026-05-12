@@ -4,16 +4,10 @@ import {
   finishDispatchIntent,
   requestLatestDispatchIntent,
 } from "./lib/agent-runner-control-plane.mjs"
-import {
-  dispatchableActions,
-  dispatchIntentCommandArgs,
-  runDispatchIntentCommand,
-} from "./lib/agent-runner-dispatch.mjs"
-import {
-  issueEventDetails,
-  resolveEventLogPath,
-  tryAppendAgentRunnerEvent,
-} from "./lib/agent-runner-events.mjs"
+import { buildLatestDispatchIntentRequest } from "./lib/agent-runner-control-plane-tick.mjs"
+import { dispatchableActions } from "./lib/agent-runner-dispatch.mjs"
+import { runLeasedDispatchIntent } from "./lib/agent-runner-dispatch-intent-runner.mjs"
+import { resolveEventLogPath } from "./lib/agent-runner-events.mjs"
 import { eventLogOptions, maybePrintHelp, repositoryOptions } from "./lib/agent-runner-help.mjs"
 
 const args = parseArgs(process.argv.slice(2))
@@ -55,29 +49,15 @@ if (args.action && !dispatchableActions.has(args.action)) {
 const issueNumber = optionalPositiveInteger(args.issue, "issue")
 const ttlSeconds = optionalInteger(args.ttlSeconds, "ttl-seconds", { max: 3600, min: 60 })
 const config = readControlPlaneConfig()
-const request = {
+const request = buildLatestDispatchIntentRequest({
+  action: args.action,
+  eventLog: args.eventLog,
+  holder,
+  issue: issueNumber,
   repository,
-  lease: {
-    holder,
-    ...(ttlSeconds ? { ttlSeconds } : {}),
-  },
-  ...(issueNumber || args.action
-    ? {
-        filters: {
-          ...(args.action ? { action: args.action } : {}),
-          ...(issueNumber ? { issueNumber } : {}),
-        },
-      }
-    : {}),
-  ...(args.eventLog || args.updateBody
-    ? {
-        options: {
-          ...(args.eventLog ? { eventLog: args.eventLog } : {}),
-          ...(args.updateBody ? { updateBody: true } : {}),
-        },
-      }
-    : {}),
-}
+  ttlSeconds,
+  updateBody: args.updateBody,
+})
 
 let leaseResult
 try {
@@ -100,71 +80,25 @@ if (!leaseResult.intent) {
 }
 
 const intent = leaseResult.intent
-let commandArgs
 let finishResult
 let status = 1
 let terminalStatus = "failed"
-let terminalReason = "command failed"
 
 try {
-  commandArgs = dispatchIntentCommandArgs(intent)
-  printIntent({ commandArgs, controlPlaneUrl: config.url, intent })
-  tryAppendAgentRunnerEvent({
+  const result = await runLeasedDispatchIntent({
+    config,
     eventLogPath,
-    event: {
-      type: "dispatch-intent.started",
-      command: ["pnpm", ...commandArgs],
-      intent: intentEventDetails(intent),
-      issue: issueEventDetails(intent.plan),
-      repository,
-    },
+    finishDispatchIntent,
+    holder,
+    intent,
+    repository,
+    requestLatestDispatchIntentResult: leaseResult,
   })
-  status = runDispatchIntentCommand(intent) ?? 1
-  terminalStatus = status === 0 ? "completed" : "failed"
-  terminalReason = status === 0 ? "command completed" : `command exited with status ${status}`
-} catch (error) {
-  terminalStatus = "failed"
-  terminalReason = error instanceof Error ? error.message : String(error)
-  console.error(`dispatch intent failed before completion: ${terminalReason}`)
-}
-
-try {
-  finishResult = await finishDispatchIntent({
-    id: intent.id,
-    request: {
-      exitCode: status,
-      holder,
-      reason: terminalReason,
-      status: terminalStatus,
-    },
-    token: config.token,
-    url: config.url,
-  })
-  tryAppendAgentRunnerEvent({
-    eventLogPath,
-    event: {
-      type: "dispatch-intent.finished",
-      intent: intentEventDetails(finishResult.intent),
-      issue: issueEventDetails(intent.plan),
-      repository,
-      status,
-      terminalStatus,
-    },
-  })
+  finishResult = result.finish
+  status = result.status
+  terminalStatus = result.terminalStatus
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error)
-  tryAppendAgentRunnerEvent({
-    eventLogPath,
-    event: {
-      type: "dispatch-intent.finish_failed",
-      error: message,
-      intent: intentEventDetails(intent),
-      issue: issueEventDetails(intent.plan),
-      repository,
-      status,
-      terminalStatus,
-    },
-  })
   fail(message)
 }
 
@@ -185,25 +119,6 @@ if (args.json) {
 }
 
 process.exitCode = status
-
-function printIntent({ commandArgs, controlPlaneUrl, intent }) {
-  console.log("agent-runner dispatch intent")
-  console.log(`control plane: ${controlPlaneUrl}`)
-  console.log(`intent: ${intent.id}`)
-  console.log(`holder: ${intent.lease.holder}`)
-  console.log(`issue: #${intent.plan.issue.number} ${intent.plan.issue.title}`)
-  console.log(`action: ${intent.plan.action}`)
-  console.log(`command: pnpm ${commandArgs.join(" ")}`)
-}
-
-function intentEventDetails(intent) {
-  return {
-    action: intent.plan.action,
-    holder: intent.lease.holder,
-    id: intent.id,
-    status: intent.status,
-  }
-}
 
 function readControlPlaneConfig() {
   try {

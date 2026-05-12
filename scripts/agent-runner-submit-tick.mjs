@@ -1,26 +1,18 @@
-import fs from "node:fs"
-
-import {
-  currentRepositoryFromOrigin,
-  fail,
-  filterItemsByRepository,
-  loadAllEvaluatedProject,
-  parseArgs,
-  projectScanConfigFromArgs,
-  runGit,
-} from "./lib/agent-project-queue.mjs"
+import { fail, parseArgs, runGit } from "./lib/agent-project-queue.mjs"
 import {
   controlPlaneConfigFromArgs,
   submitTickSnapshot,
 } from "./lib/agent-runner-control-plane.mjs"
-import { readAgentRunnerEvents, resolveEventLogPath } from "./lib/agent-runner-events.mjs"
+import {
+  generateControlPlaneTickSnapshot,
+  readControlPlaneTickSnapshotInput,
+} from "./lib/agent-runner-control-plane-tick.mjs"
 import {
   eventLogOptions,
   maybePrintHelp,
   projectOptions,
   repositoryOptions,
 } from "./lib/agent-runner-help.mjs"
-import { recommendQueueActions } from "./lib/agent-runner-tick.mjs"
 
 const args = parseArgs(process.argv.slice(2))
 maybePrintHelp(args, {
@@ -43,7 +35,9 @@ maybePrintHelp(args, {
 })
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
-const snapshot = args.input ? readSnapshotInput(args.input) : generateSnapshot()
+const snapshot = args.input
+  ? readControlPlaneTickSnapshotInput(args.input)
+  : generateControlPlaneTickSnapshot(args, { repoRoot })
 const config = readControlPlaneConfig()
 
 try {
@@ -67,67 +61,10 @@ try {
   fail(error instanceof Error ? error.message : String(error))
 }
 
-function generateSnapshot() {
-  const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
-  const maxAgeDays = Number(args.maxAgeDays ?? 1)
-  const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
-  const recentEventLimit = numberArg(args.recentEvents, "recent-events", 5, { min: 0 })
-
-  if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
-    fail(`invalid max age days: ${String(args.maxAgeDays)}`)
-  }
-
-  const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
-  const items = filterItemsByRepository(project.items, repository)
-
-  return {
-    project: {
-      owner: project.owner,
-      number: project.projectNumber,
-      title: project.projectTitle,
-      url: project.projectUrl,
-    },
-    repository,
-    maxAgeDays,
-    eventLog: {
-      path: eventLogPath,
-      recentEvents: readRecentEvents(eventLogPath, recentEventLimit),
-    },
-    recommendations: recommendQueueActions(items, { maxAgeDays, repository }),
-  }
-}
-
-function readSnapshotInput(input) {
-  const text = input === "-" ? fs.readFileSync(0, "utf8") : fs.readFileSync(input, "utf8")
-  try {
-    return JSON.parse(text)
-  } catch (error) {
-    fail(`invalid tick snapshot JSON: ${error instanceof Error ? error.message : String(error)}`)
-  }
-}
-
 function readControlPlaneConfig() {
   try {
     return controlPlaneConfigFromArgs(args)
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error))
   }
-}
-
-function readRecentEvents(eventLogPath, limit) {
-  try {
-    return readAgentRunnerEvents(eventLogPath, { limit })
-  } catch (error) {
-    fail(error instanceof Error ? error.message : String(error))
-  }
-}
-
-function numberArg(value, name, fallback, { min = 1 } = {}) {
-  if (value === undefined) return fallback
-
-  const number = Number(value)
-  if (!Number.isInteger(number) || number < min) {
-    fail(`invalid ${name}: ${value}`)
-  }
-  return number
 }

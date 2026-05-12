@@ -1346,6 +1346,11 @@ Verification:
   next intent from the control plane, validates that the command is an allowed
   `pnpm agent:queue:*` lifecycle command, executes it without a shell, and then
   records the terminal dispatch intent outcome.
+- A bounded local supervisor loop can use
+  `pnpm agent:queue:control-plane-loop -- --holder <id> --iterations <n> --yes`.
+  Each iteration submits a fresh tick snapshot, leases one intent from that
+  stored snapshot, runs the leased lifecycle command, records the terminal
+  outcome, and stops on idle, failure, or the configured iteration limit.
 
 ## Open Questions
 

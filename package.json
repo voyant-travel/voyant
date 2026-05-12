@@ -43,6 +43,7 @@
     "agent:queue:lease-dispatch": "node scripts/agent-runner-lease-dispatch.mjs",
     "agent:queue:finish-dispatch": "node scripts/agent-runner-finish-dispatch.mjs",
     "agent:queue:run-dispatch-intent": "node scripts/agent-runner-run-dispatch-intent.mjs",
+    "agent:queue:control-plane-loop": "node scripts/agent-runner-control-plane-loop.mjs",
     "agent:queue:dispatch": "node scripts/agent-runner-dispatch.mjs",
     "agent:queue:loop": "node scripts/agent-runner-loop.mjs",
     "agent:queue:remote-inspect": "node scripts/agent-runner-remote-inspect.mjs",

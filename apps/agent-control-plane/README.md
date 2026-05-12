@@ -135,6 +135,19 @@ This leases the next intent, validates that the leased command is an allowed
 `pnpm agent:queue:*` lifecycle command, executes it locally, then records
 `completed` or `failed` on the dispatch intent.
 
+Run a bounded supervisor loop against the control plane with:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:control-plane-loop -- --repo voyantjs/voyant --holder supervisor:local --iterations 3 --yes
+```
+
+Each iteration submits a fresh tick snapshot, leases one dispatch intent from
+that stored snapshot, executes the leased command, and records the terminal
+outcome before continuing. The loop stops when no dispatchable intent is
+available, a command fails, or the iteration limit is reached.
+
 ## Optional R2 Storage
 
 Bind an R2 bucket as `AGENT_TICK_SNAPSHOTS` to keep the latest accepted tick
