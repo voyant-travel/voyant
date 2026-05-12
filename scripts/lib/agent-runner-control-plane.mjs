@@ -79,6 +79,29 @@ export async function requestLatestDispatchPlan({ fetchImpl = fetch, request, to
   return body
 }
 
+export async function requestControlPlaneCapabilities({ fetchImpl = fetch, token, url }) {
+  const response = await fetchImpl(`${normalizeControlPlaneUrl(url)}/api/capabilities`, {
+    headers: {
+      authorization: `Bearer ${token}`,
+    },
+    method: "GET",
+  })
+
+  const bodyText = await response.text()
+  const body = parseJsonBody(bodyText)
+
+  if (!response.ok) {
+    throw new ControlPlaneRequestError({
+      body,
+      endpoint: "capabilities",
+      responseText: bodyText,
+      status: response.status,
+    })
+  }
+
+  return body
+}
+
 export async function requestLatestDispatchIntent({ fetchImpl = fetch, request, token, url }) {
   const response = await fetchImpl(`${normalizeControlPlaneUrl(url)}/api/dispatch-intents/latest`, {
     body: JSON.stringify(request),

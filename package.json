@@ -34,6 +34,7 @@
     "verify:fast": "pnpm lint:changed && pnpm verify:agent-quality:changed && pnpm verify:ui-components-barrel && pnpm verify:native-date-inputs && pnpm verify:raw-minor-unit-labels && pnpm typecheck:affected && pnpm test:affected && pnpm verify:architecture",
     "verify:full": "pnpm lint && pnpm verify:agent-quality && pnpm verify:ui-components-barrel && pnpm verify:native-date-inputs && pnpm verify:raw-minor-unit-labels && pnpm typecheck && pnpm test && pnpm verify:architecture && pnpm build && pnpm verify:package-exports && pnpm verify:publish-tarballs && pnpm i18n:check",
     "agent:queue:doctor": "node scripts/agent-runner-doctor.mjs",
+    "agent:queue:deployment-doctor": "node scripts/agent-runner-deployment-doctor.mjs",
     "agent:queue:dry-run": "node scripts/agent-runner-dry-run.mjs",
     "agent:queue:events": "node scripts/agent-runner-events.mjs",
     "agent:queue:status": "node scripts/agent-runner-status.mjs",

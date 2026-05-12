@@ -50,3 +50,14 @@ Cron triggers should stay disabled until queue snapshots and control-plane
 dispatch intent storage are configured. Keep provider execution outside this
 Worker unless a later design adds explicit budget controls, sandbox policy, and
 task-scoped credentials.
+
+Before enabling Cron, validate the deployed control plane and runner app from
+the repository checkout:
+
+```bash
+pnpm agent:queue:deployment-doctor -- --json
+```
+
+The command reads `AGENT_CONTROL_PLANE_URL`, `AGENT_CONTROL_PLANE_TOKEN`,
+`AGENT_RUNNER_URL`, and `AGENT_RUNNER_TOKEN`, calls both capability endpoints,
+and reports persistence and execution mode without printing token values.
