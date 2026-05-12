@@ -16,9 +16,5 @@ export const Route = createFileRoute("/_workspace/settings/product-tags")({
 })
 
 function ProductTagsRoute() {
-  return (
-    <div className="p-6">
-      <ProductTagsPage />
-    </div>
-  )
+  return <ProductTagsPage />
 }

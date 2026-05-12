@@ -6,9 +6,5 @@ export const Route = createFileRoute("/_workspace/settings/api-tokens")({
 })
 
 function ApiTokensSettingsPage() {
-  return (
-    <div className="p-6">
-      <ApiTokensPage />
-    </div>
-  )
+  return <ApiTokensPage />
 }

@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { ArrowDown, ArrowUp, Plus, Search, SlidersHorizontal } from "lucide-react"
 import * as React from "react"
 import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"
@@ -32,6 +33,7 @@ export type SuppliersPageProps = {
   onSupplierOpen?: (supplier: Supplier) => void
   onSupplierCreated?: (supplier: Supplier) => void
   initialSearch?: string
+  className?: string
 }
 
 export function SuppliersPage({
@@ -39,6 +41,7 @@ export function SuppliersPage({
   onSupplierOpen,
   onSupplierCreated,
   initialSearch = "",
+  className,
 }: SuppliersPageProps = {}) {
   const messages = useSuppliersUiMessagesOrDefault()
   const [search, setSearch] = React.useState(initialSearch)
@@ -87,7 +90,7 @@ export function SuppliersPage({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div data-slot="suppliers-page" className={cn("flex flex-col gap-6 p-6", className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">{messages.suppliersPage.title}</h1>

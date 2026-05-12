@@ -16,9 +16,5 @@ export const Route = createFileRoute("/_workspace/products/categories")({
 })
 
 function ProductCategoriesRoute() {
-  return (
-    <div className="p-6">
-      <ProductCategoriesPage />
-    </div>
-  )
+  return <ProductCategoriesPage />
 }

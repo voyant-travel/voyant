@@ -16,9 +16,5 @@ export const Route = createFileRoute("/_workspace/settings/pricing-categories")(
 })
 
 function PricingCategoriesRoute() {
-  return (
-    <div className="p-6">
-      <PricingCategoriesPage />
-    </div>
-  )
+  return <PricingCategoriesPage />
 }

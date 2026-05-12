@@ -13,12 +13,10 @@ function SuppliersRoute() {
   const navigate = useNavigate()
 
   return (
-    <div className="p-6">
-      <SuppliersPage
-        onSupplierOpen={(supplier) =>
-          void navigate({ to: "/suppliers/$id", params: { id: supplier.id } })
-        }
-      />
-    </div>
+    <SuppliersPage
+      onSupplierOpen={(supplier) =>
+        void navigate({ to: "/suppliers/$id", params: { id: supplier.id } })
+      }
+    />
   )
 }

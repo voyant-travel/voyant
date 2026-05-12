@@ -20,12 +20,10 @@ function ProductsRoute() {
   const navigate = useNavigate()
 
   return (
-    <div className="p-6">
-      <ProductsPage
-        onProductOpen={(product) =>
-          void navigate({ to: "/products/$id", params: { id: product.id } })
-        }
-      />
-    </div>
+    <ProductsPage
+      onProductOpen={(product) =>
+        void navigate({ to: "/products/$id", params: { id: product.id } })
+      }
+    />
   )
 }
