@@ -53,15 +53,13 @@ function SupplierDetailRoute() {
   const { resolvedLocale } = useLocale()
 
   return (
-    <div className="p-6">
-      <SupplierDetailPage
-        id={id}
-        locale={resolvedLocale}
-        onBack={() => void navigate({ to: "/suppliers" })}
-        onDeleted={() => void navigate({ to: "/suppliers" })}
-        renderCustomerPaymentPolicy={(args) => <SupplierPaymentPolicy {...args} />}
-      />
-    </div>
+    <SupplierDetailPage
+      id={id}
+      locale={resolvedLocale}
+      onBack={() => void navigate({ to: "/suppliers" })}
+      onDeleted={() => void navigate({ to: "/suppliers" })}
+      renderCustomerPaymentPolicy={(args) => <SupplierPaymentPolicy {...args} />}
+    />
   )
 }
 

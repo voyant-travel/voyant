@@ -14,12 +14,10 @@ function OrganizationsRoute() {
   const navigate = useNavigate()
 
   return (
-    <div className="p-6">
-      <OrganizationsPage
-        onOrganizationOpen={(organization) =>
-          void navigate({ to: "/organizations/$id", params: { id: organization.id } })
-        }
-      />
-    </div>
+    <OrganizationsPage
+      onOrganizationOpen={(organization) =>
+        void navigate({ to: "/organizations/$id", params: { id: organization.id } })
+      }
+    />
   )
 }

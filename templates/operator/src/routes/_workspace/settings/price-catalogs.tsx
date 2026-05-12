@@ -16,9 +16,5 @@ export const Route = createFileRoute("/_workspace/settings/price-catalogs")({
 })
 
 function PriceCatalogsRoute() {
-  return (
-    <div className="p-6">
-      <PriceCatalogsPage />
-    </div>
-  )
+  return <PriceCatalogsPage />
 }

@@ -18,12 +18,10 @@ function BookingsRoute() {
   const navigate = useNavigate()
 
   return (
-    <div className="p-6">
-      <BookingsPage
-        onBookingOpen={(booking) =>
-          void navigate({ to: "/bookings/$id", params: { id: booking.id } })
-        }
-      />
-    </div>
+    <BookingsPage
+      onBookingOpen={(booking) =>
+        void navigate({ to: "/bookings/$id", params: { id: booking.id } })
+      }
+    />
   )
 }

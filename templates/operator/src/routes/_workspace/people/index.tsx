@@ -14,10 +14,8 @@ function PeopleRoute() {
   const navigate = useNavigate()
 
   return (
-    <div className="p-6">
-      <PeoplePage
-        onPersonOpen={(person) => void navigate({ to: "/people/$id", params: { id: person.id } })}
-      />
-    </div>
+    <PeoplePage
+      onPersonOpen={(person) => void navigate({ to: "/people/$id", params: { id: person.id } })}
+    />
   )
 }
