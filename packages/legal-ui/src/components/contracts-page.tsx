@@ -1,5 +1,6 @@
+import { type PersonRecord, usePeople } from "@voyantjs/crm-react"
 import { formatMessage } from "@voyantjs/i18n"
-import { useLegalContracts } from "@voyantjs/legal-react"
+import { type LegalContractRecord, useLegalContracts } from "@voyantjs/legal-react"
 import {
   Badge,
   Button,
@@ -11,6 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@voyantjs/ui/components/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import {
   Table,
@@ -21,9 +32,9 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { Plus, Search } from "lucide-react"
+import { ChevronDown, Plus, Search, User, X } from "lucide-react"
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { useLegalUiI18nOrDefault, useLegalUiMessagesOrDefault } from "../i18n/index.js"
 import { legalContractScopes, legalContractStatuses } from "../i18n/messages.js"
@@ -48,18 +59,40 @@ export interface ContractDialogRenderProps {
   onSuccess: () => void
 }
 
+export interface ContractPersonSummary {
+  id: string
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+  phone?: string | null
+}
+
+export interface ContractPersonFilterRenderProps {
+  personId: string | null
+  selectedPerson: ContractPersonSummary | null
+  onPersonChange: (personId: string | null, person?: ContractPersonSummary | null) => void
+}
+
 export interface ContractsPageProps {
   className?: string
+  defaultPersonId?: string | null
+  personId?: string | null
+  onPersonIdChange?: (personId: string | null) => void
   onOpenContract?: (contractId: string) => void
   renderContractDialog?: (props: ContractDialogRenderProps) => ReactNode
-  renderPersonCell?: (personId: string | null) => ReactNode
+  renderPersonCell?: (personId: string | null, person: ContractPersonSummary | null) => ReactNode
+  renderPersonFilter?: (props: ContractPersonFilterRenderProps) => ReactNode
 }
 
 export function ContractsPage({
   className,
+  defaultPersonId,
+  personId,
+  onPersonIdChange,
   onOpenContract,
   renderContractDialog,
   renderPersonCell,
+  renderPersonFilter,
 }: ContractsPageProps = {}) {
   const i18n = useLegalUiI18nOrDefault()
   const messages = useLegalUiMessagesOrDefault()
@@ -67,13 +100,19 @@ export function ContractsPage({
   const [search, setSearch] = useState("")
   const [scope, setScope] = useState<string>(SCOPE_ALL)
   const [status, setStatus] = useState<string>(STATUS_ALL)
+  const [internalPersonId, setInternalPersonId] = useState(() =>
+    getInitialPersonId(defaultPersonId),
+  )
+  const [selectedPerson, setSelectedPerson] = useState<ContractPersonSummary | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [pageIndex, setPageIndex] = useState(0)
+  const resolvedPersonId = personId ?? internalPersonId
 
   const { data, isPending, isFetching, isError, refetch } = useLegalContracts({
     search,
     scope: scope === SCOPE_ALL ? "all" : scope,
     status: status === STATUS_ALL ? "all" : status,
+    personId: resolvedPersonId || undefined,
     limit: PAGE_SIZE,
     offset: pageIndex * PAGE_SIZE,
   })
@@ -85,6 +124,24 @@ export function ContractsPage({
   const showSkeleton = isPending || (isFetching && contracts.length === 0)
 
   const resetPage = () => setPageIndex(0)
+  const contractPersonSummary = useMemo(() => {
+    if (!resolvedPersonId) return null
+    if (selectedPerson?.id === resolvedPersonId) return selectedPerson
+    for (const contract of contracts) {
+      const person = getContractPersonSummary(contract)
+      if (person?.id === resolvedPersonId) return person
+    }
+    return { id: resolvedPersonId }
+  }, [contracts, resolvedPersonId, selectedPerson])
+  const handlePersonChange = (
+    nextPersonId: string | null,
+    person?: ContractPersonSummary | null,
+  ) => {
+    if (personId === undefined) setInternalPersonId(nextPersonId ?? "")
+    setSelectedPerson(person ?? null)
+    onPersonIdChange?.(nextPersonId)
+    resetPage()
+  }
 
   return (
     <div className={cn("flex flex-col gap-6 p-6", className)}>
@@ -159,6 +216,19 @@ export function ContractsPage({
             ))}
           </SelectContent>
         </Select>
+        {renderPersonFilter ? (
+          renderPersonFilter({
+            personId: resolvedPersonId || null,
+            selectedPerson: contractPersonSummary,
+            onPersonChange: handlePersonChange,
+          })
+        ) : (
+          <ContractsPersonFilter
+            value={resolvedPersonId || null}
+            selectedPerson={contractPersonSummary}
+            onChange={handlePersonChange}
+          />
+        )}
       </div>
 
       <div className="rounded-md border">
@@ -212,13 +282,7 @@ export function ContractsPage({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {renderPersonCell ? (
-                      renderPersonCell(contract.personId)
-                    ) : (
-                      <span className="font-mono text-xs">
-                        {contract.personId ?? messages.common.noResultsDash}
-                      </span>
-                    )}
+                    <ContractPersonCell contract={contract} renderPersonCell={renderPersonCell} />
                   </TableCell>
                   <TableCell>{i18n.formatDate(contract.createdAt)}</TableCell>
                 </TableRow>
@@ -248,6 +312,186 @@ export function ContractsPage({
           void refetch()
         },
       })}
+    </div>
+  )
+}
+
+function getInitialPersonId(defaultPersonId: string | null | undefined) {
+  if (defaultPersonId !== undefined) return defaultPersonId ?? ""
+  if (typeof window === "undefined") return ""
+  return new URLSearchParams(window.location.search).get("personId") ?? ""
+}
+
+function personSummaryFromRecord(person: PersonRecord): ContractPersonSummary {
+  return {
+    id: person.id,
+    firstName: person.firstName,
+    lastName: person.lastName,
+    email: person.email,
+    phone: person.phone,
+  }
+}
+
+function getContractPersonSummary(contract: LegalContractRecord): ContractPersonSummary | null {
+  if (!contract.personId) return null
+  return {
+    id: contract.personId,
+    firstName: contract.personFirstName,
+    lastName: contract.personLastName,
+    email: contract.personEmail,
+    phone: contract.personPhone,
+  }
+}
+
+function formatPersonName(person: ContractPersonSummary | null) {
+  if (!person) return null
+  const name = [person.firstName, person.lastName].filter(Boolean).join(" ").trim()
+  return name || null
+}
+
+function formatPersonLabel(person: ContractPersonSummary | null, fallback?: string | null) {
+  return formatPersonName(person) ?? person?.email ?? person?.phone ?? fallback ?? null
+}
+
+function ContractsPersonFilter({
+  value,
+  selectedPerson,
+  onChange,
+}: {
+  value: string | null
+  selectedPerson: ContractPersonSummary | null
+  onChange: (personId: string | null, person?: ContractPersonSummary | null) => void
+}) {
+  const messages = useLegalUiMessagesOrDefault().contractsPage.filters
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const peopleQuery = usePeople({
+    search: search.trim() || undefined,
+    limit: 25,
+    enabled: open,
+  })
+  const people = peopleQuery.data?.data ?? []
+  const label = formatPersonLabel(selectedPerson, value) ?? messages.allPeople
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              className="w-[14rem] justify-between gap-2 px-3"
+            />
+          }
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <User className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="truncate">{label}</span>
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        </PopoverTrigger>
+        <PopoverContent className="w-[20rem] p-0" align="start">
+          <Command shouldFilter={false}>
+            <CommandInput
+              value={search}
+              onValueChange={setSearch}
+              placeholder={messages.personSearchPlaceholder}
+            />
+            <CommandList>
+              <CommandEmpty>
+                {peopleQuery.isLoading ? messages.personSearching : messages.personEmpty}
+              </CommandEmpty>
+              <CommandGroup>
+                {people.map((person) => {
+                  const summary = personSummaryFromRecord(person)
+                  const name = formatPersonName(summary)
+                  return (
+                    <CommandItem
+                      key={person.id}
+                      value={`${name ?? ""} ${person.email ?? ""} ${person.phone ?? ""}`}
+                      onSelect={() => {
+                        onChange(person.id, summary)
+                        setOpen(false)
+                        setSearch("")
+                      }}
+                    >
+                      <div className="flex min-w-0 flex-1 flex-col leading-tight">
+                        <span className="truncate font-medium text-sm">{name ?? person.id}</span>
+                        {(person.email || person.phone) && (
+                          <span className="truncate text-muted-foreground text-xs">
+                            {person.email ?? person.phone}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  )
+                })}
+              </CommandGroup>
+              {value ? (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup>
+                    <CommandItem
+                      value="__clear_person_filter"
+                      onSelect={() => {
+                        onChange(null, null)
+                        setOpen(false)
+                        setSearch("")
+                      }}
+                    >
+                      <X className="mr-2 size-4" aria-hidden="true" />
+                      {messages.clearPerson}
+                    </CommandItem>
+                  </CommandGroup>
+                </>
+              ) : null}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {value ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={messages.clearPerson}
+          onClick={() => onChange(null, null)}
+        >
+          <X className="size-4" aria-hidden="true" />
+        </Button>
+      ) : null}
+    </div>
+  )
+}
+
+function ContractPersonCell({
+  contract,
+  renderPersonCell,
+}: {
+  contract: LegalContractRecord
+  renderPersonCell?: (personId: string | null, person: ContractPersonSummary | null) => ReactNode
+}) {
+  const messages = useLegalUiMessagesOrDefault()
+  const person = getContractPersonSummary(contract)
+  if (renderPersonCell) return renderPersonCell(contract.personId, person)
+  if (!contract.personId) {
+    return <span className="text-muted-foreground text-xs">{messages.common.noResultsDash}</span>
+  }
+
+  const name = formatPersonName(person)
+  if (!name && !person?.email && !person?.phone) {
+    return <span className="font-mono text-xs">{contract.personId}</span>
+  }
+
+  return (
+    <div className="flex min-w-0 flex-col leading-tight">
+      <span className="truncate font-medium text-sm">{name ?? contract.personId}</span>
+      {(person?.email || person?.phone) && (
+        <span className="truncate text-muted-foreground text-xs">
+          {person.email ?? person.phone}
+        </span>
+      )}
     </div>
   )
 }

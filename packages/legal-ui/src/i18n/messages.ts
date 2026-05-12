@@ -108,8 +108,14 @@ export type LegalUiMessages = {
     filters: {
       scope: string
       status: string
+      person: string
       allScopes: string
       allStatuses: string
+      allPeople: string
+      personSearchPlaceholder: string
+      personEmpty: string
+      personSearching: string
+      clearPerson: string
     }
     columns: {
       number: string

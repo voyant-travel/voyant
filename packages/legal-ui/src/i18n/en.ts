@@ -96,8 +96,14 @@ export const legalUiEn = {
     filters: {
       scope: "Scope",
       status: "Status",
+      person: "Person",
       allScopes: "All scopes",
       allStatuses: "All statuses",
+      allPeople: "All people",
+      personSearchPlaceholder: "Search people...",
+      personEmpty: "No people found.",
+      personSearching: "Searching people...",
+      clearPerson: "Clear person filter",
     },
     columns: {
       number: "Number",

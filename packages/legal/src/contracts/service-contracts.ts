@@ -1,4 +1,5 @@
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
+import { people, personDirectoryView } from "@voyantjs/crm/schema"
+import { and, desc, eq, getTableColumns, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -30,20 +31,44 @@ export const contractRecordsService = {
     if (query.supplierId) conditions.push(eq(contracts.supplierId, query.supplierId))
     if (query.bookingId) conditions.push(eq(contracts.bookingId, query.bookingId))
     if (query.orderId) conditions.push(eq(contracts.orderId, query.orderId))
-    if (query.search) {
-      const term = `%${query.search}%`
-      conditions.push(or(ilike(contracts.title, term), ilike(contracts.contractNumber, term)))
+    const search = query.search?.trim()
+    if (search) {
+      const term = `%${search}%`
+      conditions.push(
+        or(
+          ilike(contracts.title, term),
+          ilike(contracts.contractNumber, term),
+          ilike(people.firstName, term),
+          ilike(people.lastName, term),
+          sql`${people.firstName} || ' ' || ${people.lastName} ILIKE ${term}`,
+          ilike(personDirectoryView.email, term),
+          ilike(personDirectoryView.phone, term),
+        ),
+      )
     }
     const where = conditions.length ? and(...conditions) : undefined
     return paginate(
       db
-        .select()
+        .select({
+          ...getTableColumns(contracts),
+          personFirstName: people.firstName,
+          personLastName: people.lastName,
+          personEmail: personDirectoryView.email,
+          personPhone: personDirectoryView.phone,
+        })
         .from(contracts)
+        .leftJoin(people, eq(contracts.personId, people.id))
+        .leftJoin(personDirectoryView, eq(contracts.personId, personDirectoryView.personId))
         .where(where)
         .limit(query.limit)
         .offset(query.offset)
         .orderBy(desc(contracts.createdAt)),
-      db.select({ total: sql<number>`count(*)::int` }).from(contracts).where(where),
+      db
+        .select({ total: sql<number>`count(*)::int` })
+        .from(contracts)
+        .leftJoin(people, eq(contracts.personId, people.id))
+        .leftJoin(personDirectoryView, eq(contracts.personId, personDirectoryView.personId))
+        .where(where),
       query.limit,
       query.offset,
     )
