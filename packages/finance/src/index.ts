@@ -203,8 +203,10 @@ export {
   vouchers,
 } from "./schema.js"
 export type {
+  BookingPaymentSchedulePaidEvent,
   CreateInvoiceFromBookingInput,
   InvoiceFromBookingData,
+  PaymentCompletedEvent,
   UnifiedPaymentRow,
 } from "./service.js"
 export { financeService, renderInvoiceBody } from "./service.js"

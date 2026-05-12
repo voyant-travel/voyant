@@ -1,7 +1,7 @@
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
 import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
-import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gte, ilike, lte, ne, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import {
@@ -378,6 +378,66 @@ export interface FinanceServiceRuntime {
   eventBus?: EventBus
 }
 
+export interface BookingPaymentSchedulePaidEvent {
+  bookingId: string
+  bookingPaymentScheduleId: string
+  paymentSessionId: string
+  paymentId: string | null
+  scheduleType: (typeof bookingPaymentSchedules.$inferSelect)["scheduleType"]
+  amountCents: number
+  currency: string
+  provider: string | null
+}
+
+export interface PaymentCompletedEvent {
+  paymentSessionId: string
+  targetType: (typeof paymentSessions.$inferSelect)["targetType"]
+  targetId: string | null
+  bookingId: string | null
+  orderId: string | null
+  invoiceId: string | null
+  bookingPaymentScheduleId: string | null
+  bookingGuaranteeId: string | null
+  amountCents: number
+  currency: string
+  provider: string | null
+}
+
+export function buildBookingPaymentSchedulePaidEvent(
+  schedule: typeof bookingPaymentSchedules.$inferSelect,
+  session: typeof paymentSessions.$inferSelect,
+  paymentId: string | null,
+): BookingPaymentSchedulePaidEvent {
+  return {
+    bookingId: schedule.bookingId,
+    bookingPaymentScheduleId: schedule.id,
+    paymentSessionId: session.id,
+    paymentId,
+    scheduleType: schedule.scheduleType,
+    amountCents: schedule.amountCents,
+    currency: schedule.currency,
+    provider: session.provider,
+  }
+}
+
+export function buildPaymentCompletedEvent(
+  session: typeof paymentSessions.$inferSelect,
+): PaymentCompletedEvent {
+  return {
+    paymentSessionId: session.id,
+    targetType: session.targetType,
+    targetId: session.targetId,
+    bookingId: session.bookingId,
+    orderId: session.orderId,
+    invoiceId: session.invoiceId,
+    bookingPaymentScheduleId: session.bookingPaymentScheduleId,
+    bookingGuaranteeId: session.bookingGuaranteeId,
+    amountCents: session.amountCents,
+    currency: session.currency,
+    provider: session.provider,
+  }
+}
+
 interface RawUnifiedPaymentRow {
   kind: "customer" | "supplier"
   id: string
@@ -733,6 +793,7 @@ export const financeService = {
       // a consistent post-update view. Stays null when this call doesn't
       // result in a new payment being applied to an invoice.
       let settlementForEmit: InvoiceSettledEvent | null = null
+      let bookingSchedulePaidForEmit: BookingPaymentSchedulePaidEvent | null = null
 
       if (!authorizationId) {
         const [authorization] = await tx
@@ -869,10 +930,24 @@ export const financeService = {
       }
 
       if (data.status === "paid" && session.bookingPaymentScheduleId) {
-        await tx
+        const [paidSchedule] = await tx
           .update(bookingPaymentSchedules)
           .set({ status: "paid", updatedAt: new Date() })
-          .where(eq(bookingPaymentSchedules.id, session.bookingPaymentScheduleId))
+          .where(
+            and(
+              eq(bookingPaymentSchedules.id, session.bookingPaymentScheduleId),
+              ne(bookingPaymentSchedules.status, "paid"),
+            ),
+          )
+          .returning()
+
+        if (paidSchedule) {
+          bookingSchedulePaidForEmit = buildBookingPaymentSchedulePaidEvent(
+            paidSchedule,
+            session,
+            paymentId,
+          )
+        }
       }
 
       if (session.bookingGuaranteeId && authorizationId) {
@@ -914,11 +989,22 @@ export const financeService = {
         .where(eq(paymentSessions.id, id))
         .returning()
 
-      return { updated: updated ?? null, settlement: settlementForEmit }
+      return {
+        updated: updated ?? null,
+        settlement: settlementForEmit,
+        bookingSchedulePaid: bookingSchedulePaidForEmit,
+      }
     })
 
     if (txResult.settlement) {
       await runtime.eventBus?.emit("invoice.settled", txResult.settlement, {
+        category: "domain",
+        source: "service",
+      })
+    }
+
+    if (txResult.bookingSchedulePaid) {
+      await runtime.eventBus?.emit("booking_payment_schedule.paid", txResult.bookingSchedulePaid, {
         category: "domain",
         source: "service",
       })
@@ -934,19 +1020,10 @@ export const financeService = {
       txResult.updated &&
       (session.bookingId || session.orderId || session.invoiceId)
     ) {
-      await runtime.eventBus?.emit(
-        "payment.completed",
-        {
-          paymentSessionId: id,
-          bookingId: session.bookingId,
-          orderId: session.orderId,
-          invoiceId: session.invoiceId,
-          amountCents: session.amountCents,
-          currency: session.currency,
-          provider: session.provider,
-        },
-        { category: "domain", source: "service" },
-      )
+      await runtime.eventBus?.emit("payment.completed", buildPaymentCompletedEvent(session), {
+        category: "domain",
+        source: "service",
+      })
     }
 
     return txResult.updated
