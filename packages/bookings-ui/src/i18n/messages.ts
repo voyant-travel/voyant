@@ -34,6 +34,7 @@ export type BookingsUiMessages = {
     noValue: string
     tbd: string
     summarySell: string
+    summaryPriceOverride: string
     summaryCostMargin: string
     summaryDates: string
     summaryTravelers: string
@@ -345,6 +346,12 @@ export type BookingsUiMessages = {
       groupRate: string
       empty: string
       noPricing: string
+      confirmedTotal: string
+      manualTotal: string
+      useCatalogTotal: string
+      overrideReason: string
+      overrideReasonPlaceholder: string
+      overrideReasonRequired: string
     }
   }
   bookingDocumentDialog: {
@@ -745,6 +752,12 @@ export type BookingsUiMessages = {
       breakdownGroupRate: string
       breakdownEmpty: string
       breakdownNoPricing: string
+      breakdownConfirmedTotal: string
+      breakdownManualTotal: string
+      breakdownUseCatalogTotal: string
+      breakdownOverrideReason: string
+      breakdownOverrideReasonPlaceholder: string
+      breakdownOverrideReasonRequired: string
     }
   }
   bookingList: {

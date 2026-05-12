@@ -89,6 +89,22 @@ describe("Booking schema", () => {
     expect(() => insertBookingSchema.parse({ ...valid, sellAmountCents: -1 })).toThrow()
   })
 
+  it("accepts a stamped manual price override payload", () => {
+    const result = insertBookingSchema.parse({
+      ...valid,
+      priceOverride: {
+        isManual: true,
+        originalAmountCents: 10000,
+        overriddenAmountCents: 12000,
+        currency: "USD",
+        reason: "Approved custom quote",
+        overriddenBy: "user_123",
+        overriddenAt: "2026-05-12T10:00:00.000Z",
+      },
+    })
+    expect(result.priceOverride?.overriddenAmountCents).toBe(12000)
+  })
+
   it("accepts positive pax", () => {
     expect(insertBookingSchema.parse({ ...valid, pax: 5 }).pax).toBe(5)
   })
@@ -225,6 +241,27 @@ describe("Convert product schema", () => {
       bookingNumber: "BK-001",
     })
     expect(result.slotId).toBeUndefined()
+  })
+
+  it("allows confirmed catalog totals without an override reason", () => {
+    const result = convertProductSchema.parse({
+      productId: "prod_abc",
+      bookingNumber: "BK-001",
+      catalogSellAmountCents: 15000,
+      confirmedSellAmountCents: 15000,
+    })
+    expect(result.confirmedSellAmountCents).toBe(15000)
+  })
+
+  it("requires a reason when confirmed total differs from catalog pricing", () => {
+    expect(() =>
+      convertProductSchema.parse({
+        productId: "prod_abc",
+        bookingNumber: "BK-001",
+        catalogSellAmountCents: 15000,
+        confirmedSellAmountCents: 12500,
+      }),
+    ).toThrow()
   })
 })
 

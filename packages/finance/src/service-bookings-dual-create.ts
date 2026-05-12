@@ -8,7 +8,7 @@ import {
   type QuickCreateBookingOutcome,
   type QuickCreateBookingResult,
   quickCreateBooking,
-  quickCreateBookingSchema,
+  quickCreateBookingSubSchema,
 } from "./service-bookings-quick-create.js"
 
 // ---------- validation ----------
@@ -19,7 +19,7 @@ import {
  * bookings linked as members) so accepting a nested group override would
  * just be an opportunity for the caller to desync.
  */
-const dualSubBookingSchema = quickCreateBookingSchema.omit({ groupMembership: true })
+const dualSubBookingSchema = quickCreateBookingSubSchema
 
 const dualCreateGroupSchema = z.object({
   kind: z.enum(["shared_room", "other"]).default("shared_room"),

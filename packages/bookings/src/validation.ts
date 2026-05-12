@@ -37,6 +37,16 @@ const bookingCustomerPaymentPolicySchema = z.object({
   balanceDueMinDaysFromNow: z.number().int().min(0),
 })
 
+export const bookingPriceOverrideSchema = z.object({
+  isManual: z.literal(true),
+  originalAmountCents: z.number().int().min(0).nullable(),
+  overriddenAmountCents: z.number().int().min(0),
+  currency: z.string().min(3).max(3),
+  reason: z.string().trim().min(1).max(1000),
+  overriddenBy: z.string().min(1),
+  overriddenAt: z.string().datetime(),
+})
+
 const bookingCoreSchema = z.object({
   bookingNumber: z.string().min(1).max(50),
   status: bookingStatusSchema.default("draft"),
@@ -67,6 +77,7 @@ const bookingCoreSchema = z.object({
   pax: z.number().int().positive().optional().nullable(),
   internalNotes: z.string().optional().nullable(),
   customerPaymentPolicy: bookingCustomerPaymentPolicySchema.optional().nullable(),
+  priceOverride: bookingPriceOverrideSchema.optional().nullable(),
   holdExpiresAt: z.string().datetime().optional().nullable(),
   confirmedAt: z.string().datetime().optional().nullable(),
   expiredAt: z.string().datetime().optional().nullable(),
@@ -137,24 +148,51 @@ export const sharingGroupsForSlotQuerySchema = z.object({
   slotId: z.string().min(1),
 })
 
-export const convertProductSchema = z.object({
-  productId: z.string().min(1),
-  optionId: z.string().optional().nullable(),
-  slotId: z.string().optional().nullable(),
-  bookingNumber: z.string().min(1).max(50),
-  personId: z.string().optional().nullable(),
-  organizationId: z.string().optional().nullable(),
-  internalNotes: z.string().optional().nullable(),
-  /**
-   * Override the seed `sellAmountCents` on the new booking + line item.
-   * When unset, the converter uses `product.sellAmountCents` as before.
-   * Used by the catalog booking-engine when promotional offers are
-   * applied to the quote — the discounted base flows through here so
-   * the booking row's payable amount reflects the customer-shown total
-   * (per docs/architecture/promotions-architecture.md §7.1).
-   */
-  sellAmountCentsOverride: z.number().int().min(0).optional().nullable(),
-})
+export const convertProductSchema = z
+  .object({
+    productId: z.string().min(1),
+    optionId: z.string().optional().nullable(),
+    slotId: z.string().optional().nullable(),
+    bookingNumber: z.string().min(1).max(50),
+    personId: z.string().optional().nullable(),
+    organizationId: z.string().optional().nullable(),
+    internalNotes: z.string().optional().nullable(),
+    /**
+     * Override the seed `sellAmountCents` on the new booking + line item.
+     * When unset, the converter uses `product.sellAmountCents` as before.
+     * Used by the catalog booking-engine when promotional offers are
+     * applied to the quote — the discounted base flows through here so
+     * the booking row's payable amount reflects the customer-shown total
+     * (per docs/architecture/promotions-architecture.md §7.1).
+     */
+    sellAmountCentsOverride: z.number().int().min(0).optional().nullable(),
+    /**
+     * Catalog-resolved preview total shown to the operator. Unlike
+     * `sellAmountCentsOverride`, this is not a promotion adjustment; it lets
+     * the create flow seed the booking total from the pricing preview even
+     * when the legacy product row has no static price.
+     */
+    catalogSellAmountCents: z.number().int().min(0).optional().nullable(),
+    /**
+     * Operator-confirmed booking total. If it differs from the catalog preview
+     * (or there was no catalog preview), `priceOverrideReason` is required and
+     * the service stamps an audit payload onto `bookings.price_override`.
+     */
+    confirmedSellAmountCents: z.number().int().min(0).optional().nullable(),
+    priceOverrideReason: z.string().trim().min(1).max(1000).optional().nullable(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.confirmedSellAmountCents == null) return
+    if (value.catalogSellAmountCents === value.confirmedSellAmountCents) return
+    if (value.priceOverrideReason) return
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["priceOverrideReason"],
+      message:
+        "A price override reason is required when the confirmed total differs from catalog pricing",
+    })
+  })
 
 /**
  * Admin pricing-preview request. Mirrors the storefront pricing session

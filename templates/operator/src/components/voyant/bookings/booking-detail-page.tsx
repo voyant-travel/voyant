@@ -136,6 +136,9 @@ export function BookingDetailPage({ id }: { id: string }) {
   }
 
   const canCancel = ["draft", "on_hold", "confirmed", "in_progress"].includes(booking.status)
+  const sellHint = booking.priceOverride?.isManual
+    ? `${detailMessages.summaryPriceOverride}: ${booking.priceOverride.reason}`
+    : booking.sellCurrency
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -201,7 +204,7 @@ export function BookingDetailPage({ id }: { id: string }) {
               resolvedLocale,
               detailMessages.noValue,
             )}
-            hint={booking.sellCurrency}
+            hint={sellHint}
           />
           <SummaryStat
             label={detailMessages.summaryCostMargin}

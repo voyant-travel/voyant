@@ -2169,8 +2169,28 @@ export const bookingsService = {
     // engine pass the promotion-discounted base through to the booking
     // row so the customer is charged the post-discount amount, not the
     // product's list price. Per docs/architecture/promotions-architecture.md §7.1.
+    const confirmedSellAmountCents = data.confirmedSellAmountCents ?? null
+    const catalogSellAmountCents = data.catalogSellAmountCents ?? product.sellAmountCents
     const effectiveSellAmountCents =
-      data.sellAmountCentsOverride != null ? data.sellAmountCentsOverride : product.sellAmountCents
+      confirmedSellAmountCents != null
+        ? confirmedSellAmountCents
+        : data.sellAmountCentsOverride != null
+          ? data.sellAmountCentsOverride
+          : product.sellAmountCents
+    const priceOverrideReason = data.priceOverrideReason?.trim() ?? null
+    const isManualPriceOverride =
+      confirmedSellAmountCents != null && confirmedSellAmountCents !== catalogSellAmountCents
+    const priceOverride = isManualPriceOverride
+      ? {
+          isManual: true as const,
+          originalAmountCents: catalogSellAmountCents,
+          overriddenAmountCents: confirmedSellAmountCents,
+          currency: product.sellCurrency,
+          reason: priceOverrideReason ?? "Manual price override",
+          overriddenBy: userId ?? "system",
+          overriddenAt: new Date().toISOString(),
+        }
+      : null
 
     const [booking] = await db
       .insert(bookings)
@@ -2181,6 +2201,7 @@ export const bookingsService = {
         organizationId: data.organizationId ?? null,
         sellCurrency: product.sellCurrency,
         sellAmountCents: effectiveSellAmountCents,
+        priceOverride,
         costAmountCents: product.costAmountCents,
         marginPercent: product.marginPercent,
         startDate,
@@ -2330,6 +2351,16 @@ export const bookingsService = {
         slotId: slot?.id ?? null,
       },
     })
+
+    if (priceOverride) {
+      await db.insert(bookingActivityLog).values({
+        bookingId: booking.id,
+        actorId: userId ?? "system",
+        activityType: "system_action",
+        description: "Booking sell total manually overridden during create",
+        metadata: { kind: "booking_price_overridden", ...priceOverride },
+      })
+    }
 
     return booking
   },

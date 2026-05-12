@@ -53,7 +53,7 @@ import {
   PersonPickerSection,
   type PersonPickerValue,
 } from "./person-picker-section.js"
-import { PriceBreakdownSection } from "./price-breakdown-section.js"
+import { PriceBreakdownSection, type PriceBreakdownValue } from "./price-breakdown-section.js"
 import { ProductPickerSection, type ProductPickerValue } from "./product-picker-section.js"
 import {
   emptyRoomsStepperValue,
@@ -199,6 +199,7 @@ export function BookingCreateDialog({
   const [sharedRoom, setSharedRoom] = React.useState<SharedRoomValue>(emptySharedRoomValue)
   const [passengers, setPassengers] = React.useState<PassengerListValue>(emptyPassengerListValue)
   const [voucher, setVoucher] = React.useState<VoucherPickerValue>(emptyVoucherPickerValue)
+  const [pricing, setPricing] = React.useState<PriceBreakdownValue | null>(null)
   const [paymentSchedule, setPaymentSchedule] =
     React.useState<PaymentScheduleValue>(emptyPaymentScheduleValue)
   const [notes, setNotes] = React.useState("")
@@ -223,6 +224,7 @@ export function BookingCreateDialog({
       setSharedRoom(emptySharedRoomValue)
       setPassengers(emptyPassengerListValue)
       setVoucher(emptyVoucherPickerValue)
+      setPricing(null)
       setPaymentSchedule(emptyPaymentScheduleValue)
       setNotes("")
       setConfirmAfterCreate(false)
@@ -303,6 +305,8 @@ export function BookingCreateDialog({
   // Consumers hooking in real product data should override this by wrapping
   // the component or swapping in their own currency-aware hook.
   const currency = messages.bookingCreateDialog.labels.currency
+  const pricingCurrency = pricing?.currency ?? currency
+  const pricingTotalAmountCents = pricing?.confirmedAmountCents ?? undefined
 
   const { create: createPerson } = usePersonMutation()
   const quickCreateMutation = useBookingQuickCreateMutation()
@@ -344,8 +348,20 @@ export function BookingCreateDialog({
       }
 
       const bookingNumber = generateBookingNumber()
+      const confirmedSellAmountCents = pricing?.confirmedAmountCents ?? null
+      const catalogSellAmountCents = pricing?.catalogAmountCents ?? null
+      const priceOverrideReason = pricing?.priceOverrideReason.trim() ?? ""
 
-      const paymentSchedules = paymentScheduleToRows(paymentSchedule, currency, null)
+      if (pricing?.requiresReason) {
+        setError(messages.bookingCreateDialog.labels.breakdownOverrideReasonRequired)
+        return
+      }
+
+      const paymentSchedules = paymentScheduleToRows(
+        paymentSchedule,
+        pricingCurrency,
+        confirmedSellAmountCents,
+      )
 
       const travelers = passengersToRows(passengers)
 
@@ -379,6 +395,9 @@ export function BookingCreateDialog({
         personId: resolvedPersonId,
         organizationId: person.organizationId,
         internalNotes: notes.trim() || null,
+        catalogSellAmountCents,
+        confirmedSellAmountCents,
+        priceOverrideReason: priceOverrideReason || null,
         travelers: travelers.length > 0 ? travelers : undefined,
         paymentSchedules: paymentSchedules.length > 0 ? paymentSchedules : undefined,
         voucherRedemption,
@@ -545,7 +564,16 @@ export function BookingCreateDialog({
                 groupRate: messages.bookingCreateDialog.labels.breakdownGroupRate,
                 empty: messages.bookingCreateDialog.labels.breakdownEmpty,
                 noPricing: messages.bookingCreateDialog.labels.breakdownNoPricing,
+                confirmedTotal: messages.bookingCreateDialog.labels.breakdownConfirmedTotal,
+                manualTotal: messages.bookingCreateDialog.labels.breakdownManualTotal,
+                useCatalogTotal: messages.bookingCreateDialog.labels.breakdownUseCatalogTotal,
+                overrideReason: messages.bookingCreateDialog.labels.breakdownOverrideReason,
+                overrideReasonPlaceholder:
+                  messages.bookingCreateDialog.labels.breakdownOverrideReasonPlaceholder,
+                overrideReasonRequired:
+                  messages.bookingCreateDialog.labels.breakdownOverrideReasonRequired,
               }}
+              onChange={setPricing}
             />
           ) : null}
 
@@ -566,7 +594,8 @@ export function BookingCreateDialog({
           <PaymentScheduleSection
             value={paymentSchedule}
             onChange={setPaymentSchedule}
-            currency={currency}
+            currency={pricingCurrency}
+            totalAmountCents={pricingTotalAmountCents}
             labels={{
               heading: messages.bookingCreateDialog.labels.paymentHeading,
               modeUnpaid: messages.bookingCreateDialog.labels.paymentModeUnpaid,

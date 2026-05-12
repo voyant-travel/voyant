@@ -52,6 +52,18 @@ export const bookingPaymentPolicySchema = z.object({
 
 export type BookingPaymentPolicy = z.infer<typeof bookingPaymentPolicySchema>
 
+export const bookingPriceOverrideSchema = z.object({
+  isManual: z.literal(true),
+  originalAmountCents: z.number().int().nullable(),
+  overriddenAmountCents: z.number().int(),
+  currency: z.string(),
+  reason: z.string(),
+  overriddenBy: z.string(),
+  overriddenAt: z.string(),
+})
+
+export type BookingPriceOverride = z.infer<typeof bookingPriceOverrideSchema>
+
 export const bookingRecordItemSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -91,6 +103,7 @@ export const bookingRecordSchema = z.object({
   contactAddressLine1: z.string().nullable().optional(),
   contactPostalCode: z.string().nullable().optional(),
   customerPaymentPolicy: bookingPaymentPolicySchema.nullable().optional(),
+  priceOverride: bookingPriceOverrideSchema.nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })

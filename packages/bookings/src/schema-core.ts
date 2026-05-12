@@ -21,6 +21,16 @@ import {
   bookingTravelerCategoryEnum,
 } from "./schema-shared.js"
 
+export interface BookingPriceOverride {
+  isManual: true
+  originalAmountCents: number | null
+  overriddenAmountCents: number
+  currency: string
+  reason: string
+  overriddenBy: string
+  overriddenAt: string
+}
+
 export const bookings = pgTable(
   "bookings",
   {
@@ -67,6 +77,7 @@ export const bookings = pgTable(
      * specific deal, etc.).
      */
     customerPaymentPolicy: jsonb("customer_payment_policy"),
+    priceOverride: jsonb("price_override").$type<BookingPriceOverride | null>(),
     holdExpiresAt: timestamp("hold_expires_at", { withTimezone: true }),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     expiredAt: timestamp("expired_at", { withTimezone: true }),

@@ -65,6 +65,9 @@ export interface QuickCreateBookingInput {
   personId?: string | null
   organizationId?: string | null
   internalNotes?: string | null
+  catalogSellAmountCents?: number | null
+  confirmedSellAmountCents?: number | null
+  priceOverrideReason?: string | null
 
   travelers?: QuickCreateTravelerInput[]
   paymentSchedules?: QuickCreatePaymentScheduleInput[]
