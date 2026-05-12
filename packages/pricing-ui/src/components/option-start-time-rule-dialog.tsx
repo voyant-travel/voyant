@@ -31,6 +31,7 @@ import { z } from "zod/v4"
 import type { StartTimeRuleMode } from "../i18n/messages.js"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import { OptionPriceRuleCombobox } from "./option-price-rule-combobox.js"
+import { ProductOptionCombobox } from "./product-option-combobox.js"
 
 const RULE_MODES = ["included", "excluded", "override", "adjustment"] as const
 type RuleMode = (typeof RULE_MODES)[number]
@@ -175,9 +176,15 @@ export function OptionStartTimeRuleDialog({ open, onOpenChange, rule, onSuccess 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionStartTimeRuleDialog.fields.optionId}</Label>
-                <Input
-                  {...form.register("optionId")}
-                  placeholder={messages.optionStartTimeRuleDialog.placeholders.optionId}
+                <ProductOptionCombobox
+                  value={form.watch("optionId")}
+                  onChange={(value) =>
+                    form.setValue("optionId", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  requireProduct={false}
                 />
               </div>
               <div className="flex flex-col gap-2">

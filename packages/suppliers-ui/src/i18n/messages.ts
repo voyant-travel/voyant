@@ -86,6 +86,11 @@ export type SuppliersUiMessages = {
       updated: string
     }
   }
+  supplierCombobox: {
+    placeholder: string
+    empty: string
+    loading: string
+  }
   dialogs: {
     supplier: SupplierFormMessages
     service: ServiceFormMessages

@@ -47,6 +47,10 @@ export const productsUiEn = {
     },
   },
   comboboxes: {
+    product: {
+      placeholder: "Search products...",
+      empty: "No products found.",
+    },
     productCategory: {
       placeholder: "Search parent category...",
       empty: "No product categories found.",
@@ -445,7 +449,7 @@ export const productsUiEn = {
       notes: "Notes",
     },
     placeholders: {
-      supplierService: "Optional supplier service id",
+      supplierService: "Select a supplier service",
       countryCode: "RO",
       name: "Hotel stay",
       description: "Operational service details",

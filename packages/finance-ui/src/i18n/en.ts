@@ -486,7 +486,7 @@ export const financeUiEn = {
     title: "Record Supplier Payment",
     fields: {
       bookingId: "Booking",
-      supplierId: "Supplier ID (optional)",
+      supplierId: "Supplier (optional)",
       amountCents: "Amount",
       currency: "Currency",
       paymentDate: "Payment Date",
@@ -497,7 +497,7 @@ export const financeUiEn = {
     },
     placeholders: {
       bookingId: "Search by booking number, customer, or product",
-      supplierId: "supp_...",
+      supplierId: "Search suppliers...",
       paymentDate: "Select payment date",
       referenceNumber: "TXN-12345",
       notes: "Payment notes...",

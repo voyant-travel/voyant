@@ -47,6 +47,10 @@ export const productsUiRo = {
     },
   },
   comboboxes: {
+    product: {
+      placeholder: "Cauta produse...",
+      empty: "Nu au fost gasite produse.",
+    },
     productCategory: {
       placeholder: "Cauta categoria parinte...",
       empty: "Nu au fost gasite categorii de produs.",
@@ -446,7 +450,7 @@ export const productsUiRo = {
       notes: "Note",
     },
     placeholders: {
-      supplierService: "ID serviciu furnizor optional",
+      supplierService: "Selecteaza un serviciu furnizor",
       countryCode: "RO",
       name: "Cazare hotel",
       description: "Detalii operationale ale serviciului",

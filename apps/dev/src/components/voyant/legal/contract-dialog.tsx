@@ -21,6 +21,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const contractFormSchema = z.object({
@@ -48,6 +49,22 @@ type ContractDialogProps = {
   onSuccess: () => void
 }
 
+type PersonRef = {
+  id: string
+  displayName?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+}
+type OrganizationRef = {
+  id: string
+  name: string
+  website?: string | null
+  industry?: string | null
+}
+type SupplierRef = { id: string; name: string; city?: string | null; country?: string | null }
+type ChannelRef = { id: string; name: string; kind?: string | null; status?: string | null }
+
 const SCOPES = [
   { value: "customer", label: "Customer" },
   { value: "supplier", label: "Supplier" },
@@ -55,6 +72,12 @@ const SCOPES = [
   { value: "channel", label: "Channel" },
   { value: "other", label: "Other" },
 ] as const
+
+function personLabel(person: PersonRef) {
+  if (person.displayName) return person.displayName
+  const fullName = [person.firstName, person.lastName].filter(Boolean).join(" ")
+  return fullName || person.email || person.id
+}
 
 export function ContractDialog({ open, onOpenChange, contract, onSuccess }: ContractDialogProps) {
   const isEditing = !!contract
@@ -123,6 +146,13 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
     onSuccess()
   }
 
+  const setReferenceField = (
+    field: "personId" | "organizationId" | "supplierId" | "channelId",
+    value: string | null,
+  ) => {
+    form.setValue(field, value ?? "", { shouldDirty: true, shouldValidate: true })
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
@@ -178,23 +208,66 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Person ID</Label>
-                <Input {...form.register("personId")} placeholder="Optional" />
+                <Label>Person</Label>
+                <EntityCombobox<PersonRef>
+                  value={form.watch("personId") || null}
+                  onChange={(id) => setReferenceField("personId", id)}
+                  endpoint="/v1/crm/people"
+                  detailEndpoint="/v1/crm/people/:id"
+                  queryKey={["legal", "contracts", "people"]}
+                  getLabel={personLabel}
+                  getSecondary={(person) => person.email ?? undefined}
+                  placeholder="Search people"
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Organization ID</Label>
-                <Input {...form.register("organizationId")} placeholder="Optional" />
+                <Label>Organization</Label>
+                <EntityCombobox<OrganizationRef>
+                  value={form.watch("organizationId") || null}
+                  onChange={(id) => setReferenceField("organizationId", id)}
+                  endpoint="/v1/crm/organizations"
+                  detailEndpoint="/v1/crm/organizations/:id"
+                  queryKey={["legal", "contracts", "organizations"]}
+                  getLabel={(organization) => organization.name}
+                  getSecondary={(organization) =>
+                    [organization.website, organization.industry].filter(Boolean).join(" / ") ||
+                    undefined
+                  }
+                  placeholder="Search organizations"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Supplier ID</Label>
-                <Input {...form.register("supplierId")} placeholder="Optional" />
+                <Label>Supplier</Label>
+                <EntityCombobox<SupplierRef>
+                  value={form.watch("supplierId") || null}
+                  onChange={(id) => setReferenceField("supplierId", id)}
+                  endpoint="/v1/suppliers"
+                  detailEndpoint="/v1/suppliers/:id"
+                  queryKey={["legal", "contracts", "suppliers"]}
+                  getLabel={(supplier) => supplier.name}
+                  getSecondary={(supplier) =>
+                    [supplier.city, supplier.country].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search suppliers"
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Channel ID</Label>
-                <Input {...form.register("channelId")} placeholder="Optional" />
+                <Label>Channel</Label>
+                <EntityCombobox<ChannelRef>
+                  value={form.watch("channelId") || null}
+                  onChange={(id) => setReferenceField("channelId", id)}
+                  endpoint="/v1/distribution/channels"
+                  detailEndpoint="/v1/distribution/channels/:id"
+                  queryKey={["legal", "contracts", "channels"]}
+                  getLabel={(channel) => channel.name}
+                  getSecondary={(channel) =>
+                    [channel.kind, channel.status].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search channels"
+                />
               </div>
             </div>
 

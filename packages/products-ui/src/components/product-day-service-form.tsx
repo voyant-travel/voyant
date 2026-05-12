@@ -248,16 +248,10 @@ export function ProductDayServiceForm({
         })
       ) : (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-supplier-service">
-            {serviceMessages.fields.supplierService}
-          </Label>
-          <Input
-            id="product-day-service-supplier-service"
-            value={state.supplierServiceId}
-            onChange={(event) => handleSupplierServiceChange(event.target.value || null)}
-            placeholder={serviceMessages.placeholders.supplierService}
-            disabled={isSubmitting}
-          />
+          <Label>{serviceMessages.fields.supplierService}</Label>
+          <div className="flex min-h-10 items-center rounded-md border border-dashed px-3 text-sm text-muted-foreground">
+            {serviceMessages.placeholders.supplierService}
+          </div>
         </div>
       )}
 

@@ -45,14 +45,21 @@ export const identityUiRo = {
       "Gestioneaza punctele de contact, adresele si contactele nominale atasate oricarei entitati.",
     fields: {
       entityType: "Tip entitate",
-      entityId: "ID entitate",
+      entity: "Entitate",
+      customEntityType: "Alt tip de entitate",
     },
     placeholders: {
       entityType: "person, organization, supplier...",
-      entityId: "pers_... / org_... / supp_...",
+      entity: "Insereaza o referinta pentru tipuri custom",
     },
-    emptyScope:
-      "Introdu mai sus tipul entitatii si ID-ul pentru a vedea inregistrarile de identitate.",
+    entityTypeLabels: {
+      person: "Persoana",
+      organization: "Organizatie",
+      supplier: "Furnizor",
+      booking: "Rezervare",
+      product: "Produs",
+    },
+    emptyScope: "Alege o entitate mai sus pentru a vedea inregistrarile de identitate.",
     tabs: {
       contactPoints: "Puncte de contact",
       addresses: "Adrese",

@@ -1,3 +1,4 @@
+export { EntityRefPicker, type EntityRefPickerProps } from "./components/entity-ref-picker.js"
 export { ExternalRefDialog, type ExternalRefDialogProps } from "./components/external-ref-dialog.js"
 export {
   ExternalRefsPage,

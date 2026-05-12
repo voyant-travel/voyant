@@ -27,6 +27,7 @@ import { z } from "zod/v4"
 
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import { OptionPriceRuleCombobox } from "./option-price-rule-combobox.js"
+import { ProductOptionCombobox } from "./product-option-combobox.js"
 
 const ADDON_PRICING_MODES = [
   "included",
@@ -165,9 +166,15 @@ export function ExtraPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: Pr
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.optionId}</Label>
-                <Input
-                  {...form.register("optionId")}
-                  placeholder={messages.locationPriceRuleDialog.placeholders.optionId}
+                <ProductOptionCombobox
+                  value={form.watch("optionId")}
+                  onChange={(value) =>
+                    form.setValue("optionId", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  requireProduct={false}
                 />
               </div>
               <div className="flex flex-col gap-2">

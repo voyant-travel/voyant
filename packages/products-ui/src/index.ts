@@ -17,6 +17,7 @@ export {
   ProductCategoryList,
   type ProductCategoryListProps,
 } from "./components/product-category-list.js"
+export { ProductCombobox, type ProductComboboxProps } from "./components/product-combobox.js"
 export { ProductDayDialog, type ProductDayDialogProps } from "./components/product-day-dialog.js"
 export { ProductDayForm, type ProductDayFormProps } from "./components/product-day-form.js"
 export {

@@ -1,5 +1,6 @@
 export { RateDialog, type RateDialogProps } from "./components/rate-dialog.js"
 export { ServiceDialog, type ServiceDialogProps } from "./components/service-dialog.js"
+export { SupplierCombobox, type SupplierComboboxProps } from "./components/supplier-combobox.js"
 export {
   SupplierDetailPage,
   type SupplierDetailPageProps,

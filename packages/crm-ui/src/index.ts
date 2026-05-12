@@ -18,6 +18,10 @@ export {
   type OrganizationCardProps,
 } from "./components/organization-card.js"
 export {
+  OrganizationCombobox,
+  type OrganizationComboboxProps,
+} from "./components/organization-combobox.js"
+export {
   OrganizationDetailPage,
   type OrganizationDetailPageProps,
 } from "./components/organization-detail-page.js"
@@ -62,6 +66,7 @@ export {
   PersonCardConnected,
   type PersonCardConnectedProps,
 } from "./components/person-card-connected.js"
+export { PersonCombobox, type PersonComboboxProps } from "./components/person-combobox.js"
 export {
   EmptyRow,
   type EmptyRowProps,

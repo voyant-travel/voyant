@@ -101,6 +101,15 @@ export type PricingUiMessages = {
       empty: string
       missingParent: string
     }
+    optionUnit: {
+      placeholder: string
+      empty: string
+      missingParent: string
+    }
+    optionUnitPriceRule: {
+      placeholder: string
+      empty: string
+    }
   }
   pricingCategoriesPage: {
     title: string
@@ -414,8 +423,8 @@ export type PricingUiMessages = {
     }
     fields: {
       optionPriceRule: string
-      optionId: string
-      unitId: string
+      option: string
+      unit: string
       pricingCategory: string
       pricingMode: string
       sellAmount: string
@@ -427,14 +436,12 @@ export type PricingUiMessages = {
       notes: string
     }
     placeholders: {
-      optionId: string
-      unitId: string
       pricingCategory: string
     }
     validation: {
       optionPriceRuleRequired: string
-      optionIdRequired: string
-      unitIdRequired: string
+      optionRequired: string
+      unitRequired: string
     }
     actions: {
       create: string
@@ -446,7 +453,7 @@ export type PricingUiMessages = {
       edit: string
     }
     fields: {
-      optionUnitPriceRuleId: string
+      optionUnitPriceRule: string
       minQuantity: string
       maxQuantity: string
       sellAmount: string
@@ -455,10 +462,10 @@ export type PricingUiMessages = {
       active: string
     }
     placeholders: {
-      optionUnitPriceRuleId: string
+      optionUnitPriceRule: string
     }
     validation: {
-      optionUnitPriceRuleIdRequired: string
+      optionUnitPriceRuleRequired: string
       minQuantityMin: string
     }
     actions: {

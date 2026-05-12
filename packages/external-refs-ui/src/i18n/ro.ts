@@ -14,13 +14,21 @@ export const externalRefsUiRo: ExternalRefsUiMessages = {
       "ID-uri din sisteme terte legate de entitati Voyant. Introdu tipul entitatii si ID-ul de mai jos pentru a gestiona referintele externe.",
     fields: {
       entityType: "Tip entitate",
-      entityId: "ID entitate",
+      entity: "Entitate",
+      customEntityType: "Alt tip de entitate",
     },
     placeholders: {
       entityType: "person, booking, product...",
-      entityId: "pers_... / book_... / prod_...",
+      entity: "Insereaza o referinta pentru tipuri custom",
     },
-    emptyScope: "Introdu mai sus tipul entitatii si ID-ul pentru a vedea referintele externe.",
+    entityTypeLabels: {
+      person: "Persoana",
+      organization: "Organizatie",
+      supplier: "Furnizor",
+      booking: "Rezervare",
+      product: "Produs",
+    },
+    emptyScope: "Alege o entitate mai sus pentru a vedea referintele externe.",
   },
   externalRefsTab: {
     description: "Legaturi intre aceasta entitate si ID-uri din sisteme externe.",

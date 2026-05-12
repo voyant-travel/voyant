@@ -272,8 +272,8 @@ export function PolicyDetailPage({ id }: { id: string }) {
                 <thead>
                   <tr className="border-b text-muted-foreground">
                     <th className="p-2 text-left font-medium">Version ID</th>
-                    <th className="p-2 text-left font-medium">Person ID</th>
-                    <th className="p-2 text-left font-medium">Booking ID</th>
+                    <th className="p-2 text-left font-medium">Person</th>
+                    <th className="p-2 text-left font-medium">Booking</th>
                     <th className="p-2 text-left font-medium">Method</th>
                     <th className="p-2 text-left font-medium">Accepted At</th>
                   </tr>
