@@ -1167,6 +1167,10 @@ queue shape and recommendation counts before storage or automatic loops are
 introduced. The control plane also exposes a read-only active dispatch-intent
 lookup so supervisors can explain lease contention or expired active pointers
 without mutating queue state.
+`pnpm agent:queue:ci-repair-drill` exercises the CI repair state machine
+locally with synthetic PR status, proving the failing-check, repair-packet,
+command-environment, and green-PR sync transitions before intentionally spending
+CI minutes on a controlled failing PR.
 
 Verification:
 
