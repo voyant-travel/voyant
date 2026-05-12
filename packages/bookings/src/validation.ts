@@ -1,6 +1,10 @@
 import { z } from "zod"
 
 import {
+  bookingTravelerBedPreferenceSchema,
+  travelerAllocationMapSchema,
+} from "./schema/travel-details.js"
+import {
   bookingAllocationStatusSchema,
   bookingAllocationTypeSchema,
   bookingDocumentTypeSchema,
@@ -125,6 +129,10 @@ export const bookingAggregatesQuerySchema = z.object({
    * dashboards / digests can share the endpoint.
    */
   upcomingLimit: z.coerce.number().int().min(0).max(20).default(8),
+})
+
+export const sharingGroupsForSlotQuerySchema = z.object({
+  slotId: z.string().min(1),
 })
 
 export const convertProductSchema = z.object({
@@ -330,6 +338,10 @@ export const upsertTravelerTravelDetailsSchema = z.object({
   dietaryRequirements: z.string().optional().nullable(),
   accessibilityNeeds: z.string().optional().nullable(),
   isLeadTraveler: z.boolean().optional().nullable(),
+  sharingGroupId: z.string().max(255).optional().nullable(),
+  roomTypeId: z.string().max(255).optional().nullable(),
+  bedPreference: bookingTravelerBedPreferenceSchema.optional().nullable(),
+  allocations: travelerAllocationMapSchema.optional(),
 })
 
 // Flat shape combining plaintext traveler columns + encrypted travel-details

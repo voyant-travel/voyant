@@ -153,6 +153,10 @@ describe("Traveler travel detail schema alias", () => {
       nationality: "RO",
       dateOfBirth: "1990-02-03",
       isLeadTraveler: true,
+      sharingGroupId: "share_1",
+      roomTypeId: "rt_double",
+      bedPreference: "twin",
+      allocations: { room: "resource_room_102" },
     })
 
     expect(result).toEqual({
@@ -162,6 +166,10 @@ describe("Traveler travel detail schema alias", () => {
       dateOfBirth: "1990-02-03",
       dietaryRequirements: undefined,
       isLeadTraveler: true,
+      sharingGroupId: "share_1",
+      roomTypeId: "rt_double",
+      bedPreference: "twin",
+      allocations: { room: "resource_room_102" },
     })
   })
 })

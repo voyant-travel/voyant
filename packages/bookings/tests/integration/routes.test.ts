@@ -1451,6 +1451,10 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
             passportNumber: "X1234567",
             dietaryRequirements: "vegetarian",
             isLeadTraveler: true,
+            sharingGroupId: "share_route_1",
+            roomTypeId: "rt_double",
+            bedPreference: "twin",
+            allocations: { room: "room_102" },
           }),
         },
       )
@@ -1478,6 +1482,86 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(body.data.nationality).toBe("RO")
       expect(body.data.dietaryRequirements).toBe("vegetarian")
       expect(body.data.isLeadTraveler).toBe(true)
+      expect(body.data.sharingGroupId).toBe("share_route_1")
+      expect(body.data.roomTypeId).toBe("rt_double")
+      expect(body.data.bedPreference).toBe("twin")
+      expect(body.data.allocations).toEqual({ room: "room_102" })
+    })
+
+    it("lists slot sharing groups and their travelers", async () => {
+      const slot = await seedSlot()
+      const booking = await seedBooking({ status: "confirmed" })
+      const [item] = await db
+        .insert(bookingItems)
+        .values({
+          bookingId: booking.id,
+          title: "Double sharing",
+          itemType: "accommodation",
+          status: "confirmed",
+          quantity: 1,
+          sellCurrency: "USD",
+        })
+        .returning()
+
+      await db.insert(bookingAllocations).values({
+        bookingId: booking.id,
+        bookingItemId: item!.id,
+        availabilitySlotId: slot.id,
+        quantity: 1,
+        status: "confirmed",
+      })
+
+      const travelerPayloads = [
+        { firstName: "Ana", lastName: "One", isLeadTraveler: true },
+        { firstName: "Bogdan", lastName: "Two", isLeadTraveler: false },
+      ]
+
+      for (const travelerPayload of travelerPayloads) {
+        const createRes = await app.request(`/${booking.id}/travelers`, {
+          method: "POST",
+          ...json({
+            firstName: travelerPayload.firstName,
+            lastName: travelerPayload.lastName,
+          }),
+        })
+        const { data: traveler } = await createRes.json()
+        await app.request(`/${booking.id}/travelers/${traveler.id}/travel-details`, {
+          method: "PATCH",
+          ...json({
+            isLeadTraveler: travelerPayload.isLeadTraveler,
+            sharingGroupId: "share_slot_1",
+            roomTypeId: "rt_double",
+            bedPreference: "double",
+          }),
+        })
+      }
+
+      const groupsRes = await app.request(`/sharing-groups?slotId=${slot.id}`)
+      expect(groupsRes.status).toBe(200)
+      const groupsBody = await groupsRes.json()
+      expect(groupsBody.data).toEqual([
+        {
+          id: "share_slot_1",
+          label: "share_slot_1",
+          occupancy: 2,
+          roomTypeId: "rt_double",
+          bookingIds: [booking.id],
+        },
+      ])
+
+      const travelersRes = await app.request(
+        `/sharing-groups/share_slot_1/travelers?slotId=${slot.id}`,
+      )
+      expect(travelersRes.status).toBe(200)
+      const travelersBody = await travelersRes.json()
+      expect(travelersBody.data).toHaveLength(2)
+      expect(travelersBody.data[0]).toMatchObject({
+        bookingId: booking.id,
+        bookingNumber: booking.bookingNumber,
+        sharingGroupId: "share_slot_1",
+        roomTypeId: "rt_double",
+        bedPreference: "double",
+      })
     })
 
     it("preserves unspecified travel detail fields on partial update", async () => {

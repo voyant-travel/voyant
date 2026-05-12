@@ -28,7 +28,9 @@ import {
   bookingSingleResponse,
   bookingSupplierStatusesResponse,
   bookingTravelerDocumentsResponse,
+  bookingTravelerSharingGroupsResponse,
   bookingTravelerSingleResponse,
+  bookingTravelersBySharingGroupResponse,
   bookingTravelersResponse,
   pricingPreviewResponse,
   publicBookingSessionResponse,
@@ -138,6 +140,39 @@ export function getTravelersQueryOptions(
     queryKey: bookingsQueryKeys.travelers(bookingId ?? ""),
     queryFn: () =>
       fetchWithValidation(`/v1/bookings/${bookingId}/travelers`, bookingTravelersResponse, client),
+  })
+}
+
+export function getSharingGroupsForSlotQueryOptions(
+  client: FetchWithValidationOptions,
+  slotId: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: bookingsQueryKeys.sharingGroupsForSlot(slotId ?? ""),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/bookings/sharing-groups?slotId=${encodeURIComponent(slotId ?? "")}`,
+        bookingTravelerSharingGroupsResponse,
+        client,
+      ),
+  })
+}
+
+export function getBookingsBySharingGroupQueryOptions(
+  client: FetchWithValidationOptions,
+  slotId: string | null | undefined,
+  groupId: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: bookingsQueryKeys.travelersBySharingGroup(slotId ?? "", groupId ?? ""),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/bookings/sharing-groups/${encodeURIComponent(
+          groupId ?? "",
+        )}/travelers?slotId=${encodeURIComponent(slotId ?? "")}`,
+        bookingTravelersBySharingGroupResponse,
+        client,
+      ),
   })
 }
 
