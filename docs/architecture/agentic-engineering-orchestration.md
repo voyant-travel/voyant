@@ -1344,6 +1344,11 @@ Verification:
   `POST /api/dispatch-intents/:id/finish` and records `completed`, `failed`, or
   `released` without waiting for lease TTL expiry. The holder must match the
   holder recorded on the lease.
+- Operators can release an expired active dispatch intent by reference with
+  `pnpm agent:queue:release-dispatch -- --issue <number> --action <name>`.
+  The command reads the active pointer, refuses still-active leases unless
+  `--force` is passed, and then finishes the intent as `released` using the
+  stored holder.
 - A local supervisor can run one complete leased lifecycle step with
   `pnpm agent:queue:run-dispatch-intent -- --holder <id> --yes`. It leases the
   next intent from the control plane, validates that the command is an allowed
