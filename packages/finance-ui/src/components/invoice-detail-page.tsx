@@ -72,6 +72,7 @@ export interface InvoiceDetailPageProps {
   onPaymentCreate?: (invoice: InvoiceRecord) => void
   onCreditNoteCreate?: (invoice: InvoiceRecord) => void
   getAttachmentDownloadHref?: (attachment: InvoiceAttachmentRecord) => string | undefined
+  renderInvoiceNoteDialog?: (props: InvoiceNoteDialogProps) => ReactNode
   slots?: InvoiceDetailPageSlots
 }
 
@@ -88,13 +89,14 @@ export function InvoiceDetailPage({
   onPaymentCreate,
   onCreditNoteCreate,
   getAttachmentDownloadHref,
+  renderInvoiceNoteDialog,
   slots,
 }: InvoiceDetailPageProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const [editOpen, setEditOpen] = useState(false)
   const [attachmentOpen, setAttachmentOpen] = useState(false)
   const [editingAttachment, setEditingAttachment] = useState<InvoiceAttachmentRecord | undefined>()
-  const [noteContent, setNoteContent] = useState("")
+  const [noteOpen, setNoteOpen] = useState(false)
 
   const invoiceQuery = useInvoice(id)
   const invoice = invoiceQuery.data?.data
@@ -133,6 +135,13 @@ export function InvoiceDetailPage({
   const creditNotes = creditNotesQuery.data?.data ?? []
   const attachments = attachmentsQuery.data?.data ?? []
   const notes = notesQuery.data?.data ?? []
+  const handleCreateNote = async (nextContent: string) => {
+    const content = nextContent.trim()
+    if (!content) return
+    await addNote.mutateAsync({ content })
+    setNoteOpen(false)
+    void notesQuery.refetch()
+  }
 
   return (
     <div data-slot="invoice-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
@@ -214,16 +223,9 @@ export function InvoiceDetailPage({
 
       <InvoiceNotesCard
         notes={notes}
-        noteContent={noteContent}
         pending={notesQuery.isPending}
         addPending={addNote.isPending}
-        onNoteChange={setNoteContent}
-        onAddNote={async () => {
-          const content = noteContent.trim()
-          if (!content) return
-          await addNote.mutateAsync({ content })
-          setNoteContent("")
-        }}
+        onCreate={() => setNoteOpen(true)}
       />
       {slots?.afterNotes}
 
@@ -239,6 +241,21 @@ export function InvoiceDetailPage({
           void attachmentsQuery.refetch()
         }}
       />
+      {renderInvoiceNoteDialog ? (
+        renderInvoiceNoteDialog({
+          open: noteOpen,
+          onOpenChange: setNoteOpen,
+          pending: addNote.isPending,
+          onSubmit: handleCreateNote,
+        })
+      ) : (
+        <InvoiceNoteDialog
+          open={noteOpen}
+          onOpenChange={setNoteOpen}
+          pending={addNote.isPending}
+          onSubmit={handleCreateNote}
+        />
+      )}
       {slots?.dialogs}
     </div>
   )
@@ -264,6 +281,7 @@ export function InvoiceDetailHeader({
   const messages = useFinanceUiMessagesOrDefault()
   const detail = messages.invoiceDetailPage
   const canDelete = invoice.status === "draft"
+  const invoiceType = invoice.invoiceType ?? "invoice"
 
   return (
     <div
@@ -278,15 +296,20 @@ export function InvoiceDetailHeader({
       ) : null}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="truncate text-2xl font-bold tracking-tight">{invoice.invoiceNumber}</h1>
-          <Badge variant="outline">{invoice.invoiceType ?? "invoice"}</Badge>
+          <h1 className="text-2xl font-bold tracking-tight">{detail.title}</h1>
+          <Badge variant={invoiceStatusVariant[invoice.status] ?? "secondary"}>
+            {messages.common.invoiceStatusLabels[invoice.status]}
+          </Badge>
+          <Badge variant="outline">{detail.invoiceTypeLabels[invoiceType]}</Badge>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">{invoice.bookingId}</p>
+        <p className="mt-1 truncate font-mono text-muted-foreground text-sm">
+          {invoice.invoiceNumber}
+        </p>
+        <p className="mt-1 text-muted-foreground text-xs">
+          {detail.fields.booking}: {invoice.bookingId}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
-        <Badge variant={invoiceStatusVariant[invoice.status] ?? "secondary"}>
-          {messages.common.invoiceStatusLabels[invoice.status]}
-        </Badge>
         <Button type="button" variant="outline" onClick={onEdit}>
           <Pencil className="size-4" aria-hidden="true" />
           {detail.actions.edit}
@@ -450,84 +473,85 @@ export function InvoiceLineItemsCard({
   const detail = messages.invoiceDetailPage
 
   return (
-    <Card data-slot="invoice-line-items-card" className={className}>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{detail.titles.lineItems}</CardTitle>
-        {onCreate ? (
+    <InvoiceSection
+      dataSlot="invoice-line-items-card"
+      title={detail.titles.lineItems}
+      className={className}
+      action={
+        onCreate ? (
           <Button size="sm" onClick={() => onCreate(invoice)}>
             <Plus className="size-4" aria-hidden="true" />
             {detail.actions.addLineItem}
           </Button>
-        ) : null}
-      </CardHeader>
-      <CardContent>
-        {pending ? (
-          <LoadingRow />
-        ) : lineItems.length === 0 ? (
-          <EmptyRow>{detail.states.noLineItems}</EmptyRow>
-        ) : (
-          <div className="overflow-hidden rounded border bg-background">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="p-2 text-left font-medium">{detail.columns.description}</th>
-                  <th className="p-2 text-right font-medium">{detail.columns.quantity}</th>
-                  <th className="p-2 text-right font-medium">{detail.columns.unitPrice}</th>
-                  <th className="p-2 text-right font-medium">{detail.columns.total}</th>
-                  <th className="p-2 text-right font-medium">{detail.columns.taxRate}</th>
-                  <th className="w-20 p-2" />
+        ) : null
+      }
+    >
+      {pending ? (
+        <LoadingRow />
+      ) : lineItems.length === 0 ? (
+        <EmptyRow>{detail.states.noLineItems}</EmptyRow>
+      ) : (
+        <div className="overflow-hidden rounded border bg-background">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-muted-foreground">
+                <th className="p-2 text-left font-medium">{detail.columns.description}</th>
+                <th className="p-2 text-right font-medium">{detail.columns.quantity}</th>
+                <th className="p-2 text-right font-medium">{detail.columns.unitPrice}</th>
+                <th className="p-2 text-right font-medium">{detail.columns.total}</th>
+                <th className="p-2 text-right font-medium">{detail.columns.taxRate}</th>
+                <th className="w-20 p-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {lineItems.map((lineItem) => (
+                <tr key={lineItem.id} className="border-b last:border-b-0">
+                  <td className="p-2">{lineItem.description}</td>
+                  <td className="p-2 text-right">{lineItem.quantity}</td>
+                  <td className="p-2 text-right">
+                    <Money cents={lineItem.unitPriceCents} currency={invoice.currency} />
+                  </td>
+                  <td className="p-2 text-right">
+                    <Money cents={lineItem.totalCents} currency={invoice.currency} />
+                  </td>
+                  <td className="p-2 text-right">
+                    {lineItem.taxRate === null ? detail.states.noValue : `${lineItem.taxRate}%`}
+                  </td>
+                  <td className="p-2">
+                    <div className="flex justify-end gap-1">
+                      {onEdit ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => onEdit(lineItem, invoice)}
+                        >
+                          <Pencil className="size-4" aria-hidden="true" />
+                          <span className="sr-only">{detail.actions.editLineItem}</span>
+                        </Button>
+                      ) : null}
+                      {onDelete ? (
+                        <ConfirmActionButton
+                          buttonLabel={detail.actions.deleteLineItemShort}
+                          confirmLabel={detail.actions.delete}
+                          cancelLabel={messages.common.cancel}
+                          title={detail.actions.deleteLineItemTitle}
+                          description={detail.actions.deleteLineItemDescription}
+                          disabled={deletePending}
+                          variant="ghost"
+                          confirmVariant="destructive"
+                          onConfirm={() => onDelete(lineItem.id)}
+                        />
+                      ) : null}
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {lineItems.map((lineItem) => (
-                  <tr key={lineItem.id} className="border-b last:border-b-0">
-                    <td className="p-2">{lineItem.description}</td>
-                    <td className="p-2 text-right">{lineItem.quantity}</td>
-                    <td className="p-2 text-right">
-                      <Money cents={lineItem.unitPriceCents} currency={invoice.currency} />
-                    </td>
-                    <td className="p-2 text-right">
-                      <Money cents={lineItem.totalCents} currency={invoice.currency} />
-                    </td>
-                    <td className="p-2 text-right">
-                      {lineItem.taxRate === null ? detail.states.noValue : `${lineItem.taxRate}%`}
-                    </td>
-                    <td className="p-2">
-                      <div className="flex justify-end gap-1">
-                        {onEdit ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => onEdit(lineItem, invoice)}
-                          >
-                            <Pencil className="size-4" aria-hidden="true" />
-                            <span className="sr-only">{detail.actions.editLineItem}</span>
-                          </Button>
-                        ) : null}
-                        {onDelete ? (
-                          <ConfirmActionButton
-                            buttonLabel={detail.actions.deleteLineItemShort}
-                            confirmLabel={detail.actions.delete}
-                            cancelLabel={messages.common.cancel}
-                            title={detail.actions.deleteLineItemTitle}
-                            description={detail.actions.deleteLineItemDescription}
-                            disabled={deletePending}
-                            variant="ghost"
-                            confirmVariant="destructive"
-                            onConfirm={() => onDelete(lineItem.id)}
-                          />
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </InvoiceSection>
   )
 }
 
@@ -548,43 +572,44 @@ export function InvoicePaymentsCard({
   const detail = messages.invoiceDetailPage
 
   return (
-    <Card data-slot="invoice-payments-card" className={className}>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{detail.titles.payments}</CardTitle>
-        {onCreate ? (
+    <InvoiceSection
+      dataSlot="invoice-payments-card"
+      title={detail.titles.payments}
+      className={className}
+      action={
+        onCreate ? (
           <Button size="sm" onClick={() => onCreate(invoice)}>
             <Plus className="size-4" aria-hidden="true" />
             {detail.actions.recordPayment}
           </Button>
-        ) : null}
-      </CardHeader>
-      <CardContent>
-        {pending ? (
-          <LoadingRow />
-        ) : payments.length === 0 ? (
-          <EmptyRow>{detail.states.noPayments}</EmptyRow>
-        ) : (
-          <ul className="divide-y">
-            {payments.map((payment) => (
-              <li key={payment.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {formatPaymentMethod(payment.paymentMethod, messages)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{payment.paymentDate}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Money cents={payment.amountCents} currency={payment.currency} />
-                  <Badge variant={paymentStatusVariant[payment.status] ?? "secondary"}>
-                    {messages.common.supplierPaymentStatusLabels[payment.status]}
-                  </Badge>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+        ) : null
+      }
+    >
+      {pending ? (
+        <LoadingRow />
+      ) : payments.length === 0 ? (
+        <EmptyRow>{detail.states.noPayments}</EmptyRow>
+      ) : (
+        <ul className="divide-y">
+          {payments.map((payment) => (
+            <li key={payment.id} className="flex items-center justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {formatPaymentMethod(payment.paymentMethod, messages)}
+                </p>
+                <p className="text-xs text-muted-foreground">{payment.paymentDate}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Money cents={payment.amountCents} currency={payment.currency} />
+                <Badge variant={paymentStatusVariant[payment.status] ?? "secondary"}>
+                  {messages.common.supplierPaymentStatusLabels[payment.status]}
+                </Badge>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </InvoiceSection>
   )
 }
 
@@ -605,41 +630,42 @@ export function InvoiceCreditNotesCard({
   const detail = messages.invoiceDetailPage
 
   return (
-    <Card data-slot="invoice-credit-notes-card" className={className}>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{detail.titles.creditNotes}</CardTitle>
-        {onCreate ? (
+    <InvoiceSection
+      dataSlot="invoice-credit-notes-card"
+      title={detail.titles.creditNotes}
+      className={className}
+      action={
+        onCreate ? (
           <Button size="sm" onClick={() => onCreate(invoice)}>
             <Plus className="size-4" aria-hidden="true" />
             {detail.actions.addCreditNote}
           </Button>
-        ) : null}
-      </CardHeader>
-      <CardContent>
-        {pending ? (
-          <LoadingRow />
-        ) : creditNotes.length === 0 ? (
-          <EmptyRow>{detail.states.noCreditNotes}</EmptyRow>
-        ) : (
-          <ul className="divide-y">
-            {creditNotes.map((creditNote) => (
-              <li key={creditNote.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{creditNote.creditNoteNumber}</p>
-                  <p className="line-clamp-2 text-xs text-muted-foreground">{creditNote.reason}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Money cents={creditNote.amountCents} currency={creditNote.currency} />
-                  <Badge variant={creditNoteStatusVariant[creditNote.status] ?? "secondary"}>
-                    {detail.creditNoteStatusLabels[creditNote.status]}
-                  </Badge>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+        ) : null
+      }
+    >
+      {pending ? (
+        <LoadingRow />
+      ) : creditNotes.length === 0 ? (
+        <EmptyRow>{detail.states.noCreditNotes}</EmptyRow>
+      ) : (
+        <ul className="divide-y">
+          {creditNotes.map((creditNote) => (
+            <li key={creditNote.id} className="flex items-center justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{creditNote.creditNoteNumber}</p>
+                <p className="line-clamp-2 text-xs text-muted-foreground">{creditNote.reason}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Money cents={creditNote.amountCents} currency={creditNote.currency} />
+                <Badge variant={creditNoteStatusVariant[creditNote.status] ?? "secondary"}>
+                  {detail.creditNoteStatusLabels[creditNote.status]}
+                </Badge>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </InvoiceSection>
   )
 }
 
@@ -667,106 +693,105 @@ export function InvoiceAttachmentsCard({
   const detail = messages.invoiceDetailPage
 
   return (
-    <Card data-slot="invoice-attachments-card" className={className}>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{detail.titles.attachments}</CardTitle>
+    <InvoiceSection
+      dataSlot="invoice-attachments-card"
+      title={detail.titles.attachments}
+      className={className}
+      action={
         <Button size="sm" onClick={onCreate}>
           <Plus className="size-4" aria-hidden="true" />
           {detail.actions.addAttachment}
         </Button>
-      </CardHeader>
-      <CardContent>
-        {pending ? (
-          <LoadingRow />
-        ) : attachments.length === 0 ? (
-          <EmptyRow>{detail.states.noAttachments}</EmptyRow>
-        ) : (
-          <div className="overflow-hidden rounded border bg-background">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="p-2 text-left font-medium">{detail.columns.name}</th>
-                  <th className="p-2 text-left font-medium">{detail.columns.kind}</th>
-                  <th className="p-2 text-left font-medium">{detail.columns.mimeType}</th>
-                  <th className="p-2 text-right font-medium">{detail.columns.size}</th>
-                  <th className="w-20 p-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {attachments.map((attachment) => {
-                  const downloadHref = getDownloadHref?.(attachment)
-                  return (
-                    <tr key={attachment.id} className="border-b last:border-b-0">
-                      <td className="min-w-0 p-2">
-                        {downloadHref ? (
-                          <a
-                            href={downloadHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex max-w-full items-center gap-1.5 hover:underline"
-                          >
-                            <FileText className="size-3.5 shrink-0 opacity-60" aria-hidden="true" />
-                            <span className="truncate">{attachment.name}</span>
-                            <ExternalLink
-                              className="size-3 shrink-0 opacity-60"
-                              aria-hidden="true"
-                            />
-                          </a>
-                        ) : (
+      }
+    >
+      {pending ? (
+        <LoadingRow />
+      ) : attachments.length === 0 ? (
+        <EmptyRow>{detail.states.noAttachments}</EmptyRow>
+      ) : (
+        <div className="overflow-hidden rounded border bg-background">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-muted-foreground">
+                <th className="p-2 text-left font-medium">{detail.columns.name}</th>
+                <th className="p-2 text-left font-medium">{detail.columns.kind}</th>
+                <th className="p-2 text-left font-medium">{detail.columns.mimeType}</th>
+                <th className="p-2 text-right font-medium">{detail.columns.size}</th>
+                <th className="w-20 p-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {attachments.map((attachment) => {
+                const downloadHref = getDownloadHref?.(attachment)
+                return (
+                  <tr key={attachment.id} className="border-b last:border-b-0">
+                    <td className="min-w-0 p-2">
+                      {downloadHref ? (
+                        <a
+                          href={downloadHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex max-w-full items-center gap-1.5 hover:underline"
+                        >
+                          <FileText className="size-3.5 shrink-0 opacity-60" aria-hidden="true" />
                           <span className="truncate">{attachment.name}</span>
-                        )}
-                      </td>
-                      <td className="p-2">{attachment.kind}</td>
-                      <td className="p-2">{attachment.mimeType ?? detail.states.noValue}</td>
-                      <td className="p-2 text-right">
-                        {attachment.fileSize == null
-                          ? detail.states.noValue
-                          : formatBytes(attachment.fileSize)}
-                      </td>
-                      <td className="p-2">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => onEdit(attachment)}
-                          >
-                            <Pencil className="size-4" aria-hidden="true" />
-                            <span className="sr-only">{detail.actions.editAttachment}</span>
-                          </Button>
-                          <ConfirmActionButton
-                            buttonLabel={detail.actions.deleteAttachmentShort}
-                            confirmLabel={detail.actions.delete}
-                            cancelLabel={messages.common.cancel}
-                            title={detail.actions.deleteAttachmentTitle}
-                            description={detail.actions.deleteAttachmentDescription}
-                            disabled={deletePending}
-                            variant="ghost"
-                            confirmVariant="destructive"
-                            onConfirm={() => onDelete(attachment.id)}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                          <ExternalLink className="size-3 shrink-0 opacity-60" aria-hidden="true" />
+                        </a>
+                      ) : (
+                        <span className="truncate">{attachment.name}</span>
+                      )}
+                    </td>
+                    <td className="p-2">{attachment.kind}</td>
+                    <td className="p-2">{attachment.mimeType ?? detail.states.noValue}</td>
+                    <td className="p-2 text-right">
+                      {attachment.fileSize == null
+                        ? detail.states.noValue
+                        : formatBytes(attachment.fileSize)}
+                    </td>
+                    <td className="p-2">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => onEdit(attachment)}
+                        >
+                          <Pencil className="size-4" aria-hidden="true" />
+                          <span className="sr-only">{detail.actions.editAttachment}</span>
+                        </Button>
+                        <ConfirmActionButton
+                          buttonLabel={detail.actions.deleteAttachmentShort}
+                          confirmLabel={detail.actions.delete}
+                          cancelLabel={messages.common.cancel}
+                          title={detail.actions.deleteAttachmentTitle}
+                          description={detail.actions.deleteAttachmentDescription}
+                          disabled={deletePending}
+                          variant="ghost"
+                          confirmVariant="destructive"
+                          onConfirm={() => onDelete(attachment.id)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </InvoiceSection>
   )
 }
 
 export interface InvoiceNotesCardProps {
   notes: FinanceNoteRecord[]
-  noteContent: string
+  noteContent?: string
   pending?: boolean
   addPending?: boolean
   className?: string
-  onNoteChange: (value: string) => void
-  onAddNote: () => Promise<void>
+  onNoteChange?: (value: string) => void
+  onAddNote?: () => Promise<void>
+  onCreate?: () => void
 }
 
 export function InvoiceNotesCard({
@@ -777,33 +802,45 @@ export function InvoiceNotesCard({
   className,
   onNoteChange,
   onAddNote,
+  onCreate,
 }: InvoiceNotesCardProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const detail = messages.invoiceDetailPage
+  const controlledNoteContent = noteContent ?? ""
 
   return (
-    <Card data-slot="invoice-notes-card" className={className}>
-      <CardHeader>
-        <CardTitle>{detail.titles.notes}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {pending ? (
-          <LoadingRow />
-        ) : notes.length === 0 ? (
-          <EmptyRow>{detail.states.noNotes}</EmptyRow>
-        ) : (
-          <ul className="divide-y">
-            {notes.map((note) => (
-              <li key={note.id} className="py-3">
-                <p className="whitespace-pre-wrap text-sm">{note.content}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{note.createdAt}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="flex flex-col gap-2">
+    <InvoiceSection
+      dataSlot="invoice-notes-card"
+      title={detail.titles.notes}
+      className={className}
+      action={
+        onCreate ? (
+          <Button size="sm" onClick={onCreate} disabled={addPending}>
+            {addPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+            <Plus className="size-4" aria-hidden="true" />
+            {detail.actions.addNote}
+          </Button>
+        ) : null
+      }
+    >
+      {pending ? (
+        <LoadingRow />
+      ) : notes.length === 0 ? (
+        <EmptyRow>{detail.states.noNotes}</EmptyRow>
+      ) : (
+        <ul className="divide-y">
+          {notes.map((note) => (
+            <li key={note.id} className="py-3">
+              <p className="whitespace-pre-wrap text-sm">{note.content}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{note.createdAt}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      {!onCreate && onNoteChange && onAddNote ? (
+        <div className="mt-4 flex flex-col gap-2">
           <Textarea
-            value={noteContent}
+            value={controlledNoteContent}
             onChange={(event) => onNoteChange(event.target.value)}
             placeholder={detail.placeholders.note}
             rows={3}
@@ -811,15 +848,97 @@ export function InvoiceNotesCard({
           <Button
             type="button"
             className="self-end"
-            disabled={addPending || noteContent.trim().length === 0}
+            disabled={addPending || controlledNoteContent.trim().length === 0}
             onClick={() => void onAddNote()}
           >
             {addPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
             {detail.actions.addNote}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      ) : null}
+    </InvoiceSection>
+  )
+}
+
+function createInvoiceNoteFormSchema(messages: ReturnType<typeof useFinanceUiMessagesOrDefault>) {
+  return z.object({
+    content: z.string().trim().min(1, messages.invoiceDetailPage.noteDialog.contentRequired),
+  })
+}
+
+type InvoiceNoteFormSchema = ReturnType<typeof createInvoiceNoteFormSchema>
+type InvoiceNoteFormValues = z.input<InvoiceNoteFormSchema>
+type InvoiceNoteFormOutput = z.output<InvoiceNoteFormSchema>
+
+export interface InvoiceNoteDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  pending?: boolean
+  onSubmit: (content: string) => Promise<void>
+}
+
+export function InvoiceNoteDialog({
+  open,
+  onOpenChange,
+  pending,
+  onSubmit,
+}: InvoiceNoteDialogProps) {
+  const messages = useFinanceUiMessagesOrDefault()
+  const detail = messages.invoiceDetailPage
+  const noteFormSchema = createInvoiceNoteFormSchema(messages)
+
+  const form = useForm<InvoiceNoteFormValues, unknown, InvoiceNoteFormOutput>({
+    resolver: zodResolver(noteFormSchema),
+    defaultValues: {
+      content: "",
+    },
+  })
+
+  useEffect(() => {
+    if (open) {
+      form.reset({ content: "" })
+    }
+  }, [form, open])
+
+  const handleSubmit = async (values: InvoiceNoteFormOutput) => {
+    await onSubmit(values.content)
+    form.reset({ content: "" })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{detail.noteDialog.title}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <DialogBody className="grid gap-4">
+            <div className="flex flex-col gap-2">
+              <Label>{detail.fields.notes}</Label>
+              <Textarea
+                {...form.register("content")}
+                placeholder={detail.placeholders.note}
+                rows={4}
+              />
+              {form.formState.errors.content ? (
+                <p className="text-xs text-destructive">{form.formState.errors.content.message}</p>
+              ) : null}
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              {messages.common.cancel}
+            </Button>
+            <Button type="submit" disabled={pending || form.formState.isSubmitting}>
+              {pending || form.formState.isSubmitting ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : null}
+              {detail.noteDialog.createAction}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -993,6 +1112,32 @@ function formatBytes(bytes: number): string {
 export interface MoneyProps {
   cents: number
   currency: string
+}
+
+export interface InvoiceSectionProps {
+  dataSlot: string
+  title: string
+  action?: ReactNode
+  children: ReactNode
+  className?: string
+}
+
+export function InvoiceSection({
+  dataSlot,
+  title,
+  action,
+  children,
+  className,
+}: InvoiceSectionProps) {
+  return (
+    <section data-slot={dataSlot} className={cn("rounded-md border bg-background", className)}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+        <h2 className="font-semibold text-sm">{title}</h2>
+        {action}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  )
 }
 
 export function Money({ cents, currency }: MoneyProps) {
