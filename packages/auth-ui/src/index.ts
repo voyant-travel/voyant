@@ -1,4 +1,12 @@
 export {
+  type AcceptInvitationAcceptedOptions,
+  type AcceptInvitationHandoffOptions,
+  AcceptInvitationPage,
+  type AcceptInvitationPageMessages,
+  type AcceptInvitationPageProps,
+  defaultAcceptInvitationPageMessages,
+} from "./components/accept-invitation-page.js"
+export {
   AccountChangeEmailForm,
   type AccountChangeEmailFormProps,
   AccountChangePasswordForm,

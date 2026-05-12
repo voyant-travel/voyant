@@ -164,3 +164,35 @@ import { OnboardingPage } from "@voyantjs/auth-ui"
 The page submits first name, last name, and optional locale/timezone fields via
 `useUpdateAccountProfile()`. Pass `showLocale={false}` or
 `showTimezone={false}` if the mounted app API does not support those fields.
+
+## Invitation Acceptance
+
+`AcceptInvitationPage` provides a card-less, router-agnostic organization
+invitation flow. Pass a token when the route already parsed one, or omit it to
+render a token input. Signed-out and new-user flows stay app-owned through
+callbacks or links so apps can wire their own sign-in and sign-up routes.
+
+```tsx
+import { AcceptInvitationPage } from "@voyantjs/auth-ui"
+
+<AcceptInvitationPage
+  token={search.id}
+  isAuthenticated={Boolean(user)}
+  signInHref={`/sign-in?next=${encodeURIComponent(location.href)}`}
+  signUpHref={`/sign-up?next=${encodeURIComponent(location.href)}`}
+  continueHref="/"
+  onAccepted={({ token }) => console.log("accepted", token)}
+/>
+```
+
+For apps that handle navigation imperatively, use the handoff callbacks instead
+of hrefs:
+
+```tsx
+<AcceptInvitationPage
+  defaultToken={search.id}
+  isAuthenticated={false}
+  onSignIn={({ token }) => navigate({ to: "/sign-in", search: { invitation: token } })}
+  onSignUp={({ token }) => navigate({ to: "/sign-up", search: { invitation: token } })}
+/>
+```
