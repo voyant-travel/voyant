@@ -113,7 +113,6 @@ export function SharedRoomSection({
   const set = (patch: Partial<SharedRoomValue>) => onChange({ ...value, ...patch })
   const selectCreateMode = () => {
     if (!enabled) return
-    set({ enabled: true, mode: "create", groupId: "" })
     setCreateSheetOpen(true)
   }
   const selectJoinMode = () => {
