@@ -16,6 +16,10 @@ export type AssignTravelerAllocationInput = z.infer<typeof assignTravelerAllocat
 export type UpdateTravelerSharingGroupInput = z.infer<typeof updateTravelerSharingGroupSchema>
 export type PairSharingGroupInput = z.infer<typeof pairSharingGroupSchema>
 
+interface SqlExecutor {
+  execute(query: SQL): Promise<unknown>
+}
+
 export class AllocationServiceError extends Error {
   readonly status: number
   readonly detail?: unknown
@@ -243,7 +247,7 @@ export async function updateAllocationResource(
   if (!existing) return null
 
   if (input.capacity !== undefined) {
-    const current = await countResourceOccupants(db, existing.kind, resourceId)
+    const current = await countResourceOccupants(db, slotId, existing.kind, resourceId)
     if (current > input.capacity) {
       throw new AllocationServiceError("Resource over capacity", 409, {
         capacity: input.capacity,
@@ -284,55 +288,63 @@ export async function assignTravelerAllocation(
   travelerId: string,
   input: AssignTravelerAllocationInput,
 ) {
-  await assertTravelerBelongsToSlot(db, slotId, travelerId)
+  await db.transaction(async (tx) => {
+    await assertTravelerBelongsToSlot(tx, slotId, travelerId)
 
-  if (input.resourceId) {
-    const [resource] = await db
-      .select({
-        id: allocationResources.id,
-        kind: allocationResources.kind,
-        capacity: allocationResources.capacity,
-      })
-      .from(allocationResources)
-      .where(
-        and(
-          eq(allocationResources.id, input.resourceId),
-          eq(allocationResources.slotId, slotId),
-          eq(allocationResources.kind, input.kind),
-        ),
+    if (input.resourceId) {
+      const [resource] = await executeRows<{
+        id: string
+        kind: string
+        capacity: number
+      }>(
+        tx,
+        sql`
+          SELECT id, kind, capacity
+          FROM allocation_resources
+          WHERE id = ${input.resourceId}
+            AND slot_id = ${slotId}
+            AND kind = ${input.kind}
+          FOR UPDATE
+        `,
       )
-      .limit(1)
 
-    if (!resource) {
-      throw new AllocationServiceError("Resource not found for this slot/kind", 404)
+      if (!resource) {
+        throw new AllocationServiceError("Resource not found for this slot/kind", 404)
+      }
+
+      const current = await countResourceOccupants(
+        tx,
+        slotId,
+        input.kind,
+        input.resourceId,
+        travelerId,
+      )
+      if (current + 1 > resource.capacity) {
+        throw new AllocationServiceError("Resource over capacity", 409, {
+          capacity: resource.capacity,
+          current,
+        })
+      }
     }
 
-    const current = await countResourceOccupants(db, input.kind, input.resourceId, travelerId)
-    if (current + 1 > resource.capacity) {
-      throw new AllocationServiceError("Resource over capacity", 409, {
-        capacity: resource.capacity,
-        current,
-      })
+    await ensureTravelerTravelDetailsRow(tx, travelerId)
+
+    if (input.resourceId) {
+      await tx.execute(sql`
+        UPDATE booking_traveler_travel_details
+        SET allocations = COALESCE(allocations, '{}'::jsonb) || jsonb_build_object(${input.kind}::text, ${input.resourceId}::text),
+            updated_at = now()
+        WHERE traveler_id = ${travelerId}
+      `)
+    } else {
+      await tx.execute(sql`
+        UPDATE booking_traveler_travel_details
+        SET allocations = COALESCE(allocations, '{}'::jsonb) - ${input.kind}::text,
+            updated_at = now()
+        WHERE traveler_id = ${travelerId}
+      `)
     }
-  }
-
-  await ensureTravelerTravelDetailsRow(db, travelerId)
-
-  if (input.resourceId) {
-    await db.execute(sql`
-      UPDATE booking_traveler_travel_details
-      SET allocations = COALESCE(allocations, '{}'::jsonb) || jsonb_build_object(${input.kind}::text, ${input.resourceId}::text),
-          updated_at = now()
-      WHERE traveler_id = ${travelerId}
-    `)
-  } else {
-    await db.execute(sql`
-      UPDATE booking_traveler_travel_details
-      SET allocations = COALESCE(allocations, '{}'::jsonb) - ${input.kind}::text,
-          updated_at = now()
-      WHERE traveler_id = ${travelerId}
-    `)
-  }
+  })
 
   return { travelerId, kind: input.kind, resourceId: input.resourceId }
 }
@@ -377,7 +389,7 @@ export async function pairSharingGroup(
   return { sharingGroupId, travelerIds: input.travelerIds }
 }
 
-async function ensureTravelerTravelDetailsRow(db: PostgresJsDatabase, travelerId: string) {
+async function ensureTravelerTravelDetailsRow(db: SqlExecutor, travelerId: string) {
   await db.execute(sql`
     INSERT INTO booking_traveler_travel_details (traveler_id)
     VALUES (${travelerId})
@@ -385,19 +397,18 @@ async function ensureTravelerTravelDetailsRow(db: PostgresJsDatabase, travelerId
   `)
 }
 
-async function assertTravelerBelongsToSlot(
-  db: PostgresJsDatabase,
-  slotId: string,
-  travelerId: string,
-) {
+async function assertTravelerBelongsToSlot(db: SqlExecutor, slotId: string, travelerId: string) {
   const rows = await executeRows<{ exists: number }>(
     db,
     sql`
     SELECT 1 AS exists
     FROM booking_travelers bt
     JOIN booking_allocations ba ON ba.booking_id = bt.booking_id
+    JOIN bookings b ON b.id = bt.booking_id
     WHERE bt.id = ${travelerId}
       AND ba.availability_slot_id = ${slotId}
+      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
     LIMIT 1
   `,
   )
@@ -408,7 +419,8 @@ async function assertTravelerBelongsToSlot(
 }
 
 async function countResourceOccupants(
-  db: PostgresJsDatabase,
+  db: SqlExecutor,
+  slotId: string,
   kind: string,
   resourceId: string,
   excludeTravelerId?: string,
@@ -416,10 +428,16 @@ async function countResourceOccupants(
   const rows = await executeRows<{ count: number }>(
     db,
     sql`
-    SELECT COUNT(*)::int AS count
-    FROM booking_traveler_travel_details
-    WHERE allocations ->> ${kind} = ${resourceId}
-      AND (${excludeTravelerId ?? null}::text IS NULL OR traveler_id <> ${excludeTravelerId ?? null})
+    SELECT COUNT(DISTINCT btd.traveler_id)::int AS count
+    FROM booking_traveler_travel_details btd
+    JOIN booking_travelers bt ON bt.id = btd.traveler_id
+    JOIN booking_allocations ba ON ba.booking_id = bt.booking_id
+    JOIN bookings b ON b.id = bt.booking_id
+    WHERE btd.allocations ->> ${kind} = ${resourceId}
+      AND ba.availability_slot_id = ${slotId}
+      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
+      AND (${excludeTravelerId ?? null}::text IS NULL OR btd.traveler_id <> ${excludeTravelerId ?? null})
   `,
   )
 
@@ -443,7 +461,7 @@ async function clearTravelerAllocationsForResource(db: PostgresJsDatabase, resou
   `)
 }
 
-async function executeRows<T>(db: PostgresJsDatabase, query: SQL): Promise<T[]> {
+async function executeRows<T>(db: SqlExecutor, query: SQL): Promise<T[]> {
   const rows = await db.execute(query)
   return Array.isArray(rows) ? (rows as T[]) : []
 }
@@ -510,6 +528,8 @@ async function loadSlotBookingRows(db: PostgresJsDatabase, slotId: string): Prom
     FROM bookings b
     JOIN booking_allocations ba ON ba.booking_id = b.id
     WHERE ba.availability_slot_id = ${slotId}
+      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
     ORDER BY b.booking_number
   `,
   )
