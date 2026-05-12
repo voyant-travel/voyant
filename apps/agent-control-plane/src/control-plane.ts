@@ -43,24 +43,36 @@ const runnerEventSchema = z
   })
   .passthrough()
 
+const dispatchPlanFiltersSchema = z
+  .object({
+    action: z.string().optional(),
+    issueNumber: z.number().int().positive().optional(),
+  })
+  .optional()
+
+const dispatchPlanOptionsSchema = z
+  .object({
+    eventLog: z.string().min(1).optional(),
+    updateBody: z.boolean().optional(),
+  })
+  .optional()
+
 export const dispatchPlanRequestSchema = z.object({
-  filters: z
-    .object({
-      action: z.string().optional(),
-      issueNumber: z.number().int().positive().optional(),
-    })
-    .optional(),
-  options: z
-    .object({
-      eventLog: z.string().min(1).optional(),
-      updateBody: z.boolean().optional(),
-    })
-    .optional(),
+  filters: dispatchPlanFiltersSchema,
+  options: dispatchPlanOptionsSchema,
   recommendations: z.array(queueRecommendationSchema).min(1),
   repository: z.string().min(1),
 })
 
 export type DispatchPlanRequest = z.infer<typeof dispatchPlanRequestSchema>
+
+export const latestDispatchPlanRequestSchema = z.object({
+  filters: dispatchPlanFiltersSchema,
+  options: dispatchPlanOptionsSchema,
+  repository: z.string().min(1),
+})
+
+export type LatestDispatchPlanRequest = z.infer<typeof latestDispatchPlanRequestSchema>
 
 export const tickSnapshotRequestSchema = z.object({
   eventLog: z.object({
@@ -110,6 +122,15 @@ export interface DispatchPlanResult {
   reason: string
 }
 
+export interface StoredDispatchPlanResult extends DispatchPlanResult {
+  source: {
+    acceptedAt: string
+    recommendationCount: number
+    repository: string
+    type: "latest_tick_snapshot"
+  }
+}
+
 export function buildCapabilities({
   tickSnapshotPersistence = "none",
 }: {
@@ -135,6 +156,10 @@ export function buildCapabilities({
         version: 1,
         persistence: tickSnapshotPersistence,
       },
+    },
+    dispatchPlanSources: {
+      inlineRecommendations: true,
+      latestTickSnapshot: tickSnapshotPersistence === "latest",
     },
   }
 }
@@ -220,6 +245,31 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
       requiresMutation: true,
     },
     reason: "matched",
+  }
+}
+
+export function selectDispatchPlanFromTickSnapshotRecord({
+  record,
+  request,
+}: {
+  record: TickSnapshotRecord
+  request: LatestDispatchPlanRequest
+}): StoredDispatchPlanResult {
+  const result = selectDispatchPlan({
+    filters: request.filters,
+    options: request.options,
+    recommendations: record.snapshot.recommendations,
+    repository: request.repository,
+  })
+
+  return {
+    ...result,
+    source: {
+      acceptedAt: record.acceptedAt,
+      recommendationCount: record.summary.recommendationCount,
+      repository: record.snapshot.repository,
+      type: "latest_tick_snapshot",
+    },
   }
 }
 

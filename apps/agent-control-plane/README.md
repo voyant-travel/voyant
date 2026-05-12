@@ -26,6 +26,7 @@ pnpm -C apps/agent-control-plane dev
 - `GET /health`
 - `GET /api/capabilities`
 - `POST /api/dispatch-plans`
+- `POST /api/dispatch-plans/latest`
 - `POST /api/tick-snapshots`
 - `GET /api/tick-snapshots/latest?repository=<owner/name>`
 
@@ -37,6 +38,12 @@ runner allow-list: `start`, `remote-bootstrap`, `collect-ci`,
 planned lifecycle command on a supervisor-specific JSONL ledger. Pass
 `options.updateBody = true` to include `--update-body` when the selected plan is
 `sync-pr`; other actions ignore that option.
+
+`POST /api/dispatch-plans/latest` accepts `{ repository, filters?, options? }`,
+loads the latest stored tick snapshot for that repository, and returns the same
+dispatch plan shape with source metadata. This is the supervisor-friendly path:
+submit snapshots on one cadence, then ask for dispatch plans without reposting
+the full queue payload.
 
 `POST /api/tick-snapshots` accepts the JSON emitted by
 `pnpm agent:queue:tick -- --json`, validates the shape, and returns the accepted
@@ -65,6 +72,18 @@ AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
 AGENT_CONTROL_PLANE_TOKEN=... \
 pnpm agent:queue:submit-tick -- --input .agent-runs/tick.json
 ```
+
+Request the next plan from the latest stored snapshot with:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:plan-dispatch -- --repo voyantjs/voyant
+```
+
+Use `--json` when a supervisor needs the response shape directly. Use `--issue`,
+`--action`, `--event-log`, and `--update-body` to pass through the same filters
+and command options as `POST /api/dispatch-plans/latest`.
 
 ## Optional R2 Storage
 

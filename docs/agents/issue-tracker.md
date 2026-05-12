@@ -390,10 +390,18 @@ The Cloudflare-ready control-plane app can accept this JSON at
 control-plane Worker has an R2 binding, it also stores the latest accepted
 snapshot per repository for dashboard and supervisor reads. This still does not
 dispatch work.
+After a snapshot is stored, a supervisor can call
+`POST /api/dispatch-plans/latest` with `{ repository, filters?, options? }` to
+plan the next allow-listed lifecycle command from that stored snapshot without
+resubmitting the full tick payload.
 Use `pnpm agent:queue:submit-tick` with `AGENT_CONTROL_PLANE_URL` and
 `AGENT_CONTROL_PLANE_TOKEN` to submit a fresh snapshot. For replayable
 supervisor tests, write `pnpm agent:queue:tick -- --json` to a file and submit
 it with `pnpm agent:queue:submit-tick -- --input <path>`.
+Use `pnpm agent:queue:plan-dispatch` with the same control-plane environment to
+request the next read-only dispatch plan from the latest stored snapshot. Pass
+`--json` for supervisors, or `--issue`, `--action`, `--event-log`, and
+`--update-body` to shape the returned lifecycle command.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
 CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
 recommend `remote-bootstrap` so dispatch can clone/fetch the repository and
