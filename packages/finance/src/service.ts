@@ -135,6 +135,18 @@ type CreateSupplierPaymentInput = z.infer<typeof insertSupplierPaymentSchema>
 type UpdateSupplierPaymentInput = z.infer<typeof updateSupplierPaymentSchema>
 type PaymentListQuery = z.infer<typeof paymentListQuerySchema>
 
+export class PaymentValidationError extends Error {
+  readonly status = 400
+  readonly code = "invalid_request"
+  readonly details?: Record<string, unknown>
+
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message)
+    this.name = "PaymentValidationError"
+    this.details = details
+  }
+}
+
 export interface UnifiedPaymentRow {
   kind: "customer" | "supplier"
   id: string
@@ -498,6 +510,40 @@ function mapRawPayment(row: RawUnifiedPaymentRow): UnifiedPaymentRow {
     createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
     updatedAt: row.updated_at instanceof Date ? row.updated_at : new Date(row.updated_at),
   }
+}
+
+function paymentSettlementAmountSql(invoiceCurrency: string) {
+  return sql<number>`
+    coalesce(
+      sum(
+        case
+          when ${payments.currency} = ${invoiceCurrency} then ${payments.amountCents}
+          when ${payments.baseCurrency} = ${invoiceCurrency} then coalesce(${payments.baseAmountCents}, 0)
+          else 0
+        end
+      ),
+      0
+    )::int
+  `
+}
+
+function assertPaymentCanSettleInvoice(invoiceCurrency: string, data: CreatePaymentInput) {
+  if (data.status !== "completed" || data.currency === invoiceCurrency) {
+    return
+  }
+
+  if (data.baseCurrency === invoiceCurrency && data.baseAmountCents && data.baseAmountCents > 0) {
+    return
+  }
+
+  throw new PaymentValidationError(
+    "Completed cross-currency payments require a base amount in the invoice currency",
+    {
+      invoiceCurrency,
+      paymentCurrency: data.currency,
+      fields: ["baseCurrency", "baseAmountCents"],
+    },
+  )
 }
 
 export const financeService = {
@@ -2454,6 +2500,8 @@ export const financeService = {
       return null
     }
 
+    assertPaymentCanSettleInvoice(invoice.currency, data)
+
     return db.transaction(async (tx) => {
       const [payment] = await tx
         .insert(payments)
@@ -2467,7 +2515,7 @@ export const financeService = {
         .returning()
 
       const [sumResult] = await tx
-        .select({ total: sql<number>`coalesce(sum(amount_cents), 0)::int` })
+        .select({ total: paymentSettlementAmountSql(invoice.currency) })
         .from(payments)
         .where(and(eq(payments.invoiceId, invoiceId), eq(payments.status, "completed")))
 

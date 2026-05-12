@@ -11,6 +11,9 @@ import { paymentRecordSchema } from "../schemas.js"
 export interface CreateInvoicePaymentInput {
   amountCents: number
   currency: string
+  baseCurrency?: string | null
+  baseAmountCents?: number | null
+  fxRateSetId?: string | null
   paymentMethod: "bank_transfer" | "credit_card" | "cash" | "cheque" | "other"
   status: "pending" | "completed" | "failed" | "refunded"
   referenceNumber?: string | null

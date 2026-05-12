@@ -170,6 +170,7 @@ export const financeUiRo = {
     fields: {
       amount: "Suma",
       baseAmount: "Suma de baza",
+      fxRate: "Curs valutar",
       status: "Status",
       method: "Metoda de plata",
       date: "Data platii",

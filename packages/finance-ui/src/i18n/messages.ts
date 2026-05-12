@@ -291,6 +291,7 @@ export type FinanceUiMessages = {
     fields: {
       amount: string
       baseAmount: string
+      fxRate: string
       status: string
       method: string
       date: string

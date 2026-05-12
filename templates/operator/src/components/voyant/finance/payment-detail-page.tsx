@@ -74,6 +74,7 @@ export function PaymentDetailPage({ id }: { id: string }) {
   }
 
   const payment = data.data
+  const fxRateLabel = formatFxRate(payment)
 
   // Subtitle surfaces the related document (invoice / booking number) so an
   // operator can recognise *what* this payment is for, but the page itself
@@ -126,6 +127,11 @@ export function PaymentDetailPage({ id }: { id: string }) {
                   <span className="font-mono">
                     {formatAmount(payment.baseAmountCents, payment.baseCurrency)}
                   </span>
+                </Row>
+              ) : null}
+              {fxRateLabel ? (
+                <Row label={detail.fxRateLabel}>
+                  <span className="font-mono">{fxRateLabel}</span>
                 </Row>
               ) : null}
               <Row label={detail.statusLabel}>
@@ -269,6 +275,27 @@ export function PaymentDetailPage({ id }: { id: string }) {
       </Card>
     </div>
   )
+}
+
+function formatFxRate(payment: {
+  amountCents: number
+  currency: string
+  baseAmountCents: number | null
+  baseCurrency: string | null
+}) {
+  if (
+    payment.baseAmountCents === null ||
+    !payment.baseCurrency ||
+    payment.baseAmountCents <= 0 ||
+    payment.currency === payment.baseCurrency
+  ) {
+    return null
+  }
+
+  const rate = payment.amountCents / payment.baseAmountCents
+  return `1 ${payment.baseCurrency} = ${new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 6,
+  }).format(rate)} ${payment.currency}`
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
