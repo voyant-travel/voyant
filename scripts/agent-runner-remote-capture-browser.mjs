@@ -23,6 +23,12 @@ import {
 } from "./lib/agent-runner-browser-evidence.mjs"
 import { browserIssueBlockReason } from "./lib/agent-runner-browser-issues.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -86,6 +92,7 @@ maybePrintHelp(args, {
       "Optional remote adapter config module. Defaults to .agents/remote-workspaces.mjs when present.",
     ],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -111,6 +118,7 @@ const timeoutMs = numberArg(args.timeoutMs, 30_000, "timeout-ms")
 const port = args.port ? numberArg(args.port, undefined, "port") : undefined
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -294,6 +302,22 @@ if (processStopResult?.status !== 0) {
 const issueBlockReason = browserIssueBlockReason(result.browserIssues, {
   allowBrowserIssues: Boolean(args.allowBrowserIssues),
   required: requiresBrowserEvidence(item),
+})
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "remote-capture-browser.completed",
+    artifacts: result.remoteArtifactIndex ?? artifactPlan.artifactPointer,
+    blockedBy: issueBlockReason ?? null,
+    browserIssueCount: result.browserIssues.length,
+    issue: issueEventDetails(item),
+    process: processPlan?.processName ?? null,
+    remoteDir: artifactPlan.workspace,
+    repository,
+    required: requiresBrowserEvidence(item),
+    url: captureUrl,
+    workspace: workspaceReference,
+  },
 })
 
 console.log("agent-runner remote-capture-browser: wrote browser evidence")

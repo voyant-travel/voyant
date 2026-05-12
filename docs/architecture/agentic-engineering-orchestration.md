@@ -1147,13 +1147,15 @@ failed CI logs into local repair packets, and mark merged PRs done. PR sync can
 also refresh a PR description from the current evidence packet with
 `pnpm agent:queue:sync-pr -- --issue <number> --update-body --yes`; this is
 explicit so maintainer-edited PR descriptions are not overwritten by routine
-state polling. Dispatch, loop, and core lifecycle mutations write JSONL audit
-events, and status can tail recent events so a maintainer or future dashboard
-can see the last supervised actions without opening raw log files. A filterable
-`pnpm agent:queue:events` timeline supports issue-, repository-, and
-event-type-specific debugging before a full dashboard exists. Dispatch, loop,
-and control-plane planning can pass the same event-log option through to
-`sync-pr` when the runner intentionally wants that refresh.
+state polling. Dispatch, loop, lifecycle mutations, supervised command exits,
+browser capture, CI evidence collection, evidence publication, PR sync/open
+commands, and cleanup commands write JSONL audit events. Status can tail recent
+events so a maintainer or future dashboard can see the last supervised actions
+without opening raw log files. A filterable `pnpm agent:queue:events` timeline
+supports issue-, repository-, and event-type-specific debugging before a full
+dashboard exists. Dispatch, loop, and control-plane planning can pass the same
+event-log option through to `sync-pr` when the runner intentionally wants that
+refresh.
 
 Verification:
 
@@ -1197,6 +1199,9 @@ Project item to `Human Review` or `Blocked`. For UI-labeled remote work,
 successful remote commands validate `.agent-runs/remote-browser/.../summary.json`
 artifacts before handoff and keep the item blocked when browser capture found
 blocking console or request issues unless a maintainer accepts the exception.
+Remote execution, browser capture, evidence publication, PR creation, and
+cleanup append the same local JSONL audit events as local runner commands, so a
+supervisor can trace remote work without provider-specific dashboards.
 `agent:queue:remote-publish-evidence`
 can read that remote evidence packet through the configured adapter, post or
 reuse a GitHub evidence comment, optionally publish the packet to configured

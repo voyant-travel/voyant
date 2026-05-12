@@ -9,6 +9,12 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -59,6 +65,7 @@ maybePrintHelp(args, {
     ],
     ["--json", "Print machine-readable JSON."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -70,6 +77,7 @@ if (!args.issue) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -188,6 +196,24 @@ updateProjectItemFields({
   item,
   project,
   values: pullRequestFieldValues({ prUrl }),
+})
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "remote-open-pr.completed",
+    base,
+    branch: plan.branch,
+    draft: !args.ready,
+    issue: issueEventDetails(item),
+    pr: {
+      url: prUrl,
+    },
+    pushStatus: pushResult.status,
+    remoteDir: plan.workspace,
+    repository,
+    reused: Boolean(existingPrUrl),
+    workspace: workspaceReference,
+  },
 })
 
 if (args.json) {

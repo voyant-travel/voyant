@@ -363,7 +363,10 @@ Events mode reads `.agent-runs/events.jsonl` and prints a filterable timeline.
 Use `--type <event>` to narrow to one event type, `--limit <number>` to control
 the printed event count, `--scan-limit <number>` to scan a larger recent tail
 before filtering, `--event-log <path>` for a different local ledger, and
-`--json` for dashboard or process-manager consumers.
+`--json` for dashboard or process-manager consumers. The timeline includes
+queue recommendations, lifecycle mutations, supervised command exits, browser
+capture summaries, CI evidence collection, evidence publication, PR sync/open
+events, and cleanup events.
 
 Use the read-only tick view when wiring an always-on supervisor:
 
@@ -436,10 +439,12 @@ Claim mode checks the same execution gate, then updates GitHub Project fields:
 - `Workspace = <planned workspace>`
 - `Last Heartbeat = <today>`
 
-Successful `claim`, `start`, `heartbeat`, `release`, and `complete-pr`
-commands append local JSONL audit events to `.agent-runs/events.jsonl` by
-default; pass `--event-log <path>` when a supervisor needs a different local
-ledger path.
+Successful mutating runner commands append local JSONL audit events to
+`.agent-runs/events.jsonl` by default. This includes `claim`, `start`,
+`heartbeat`, `run-command`, `capture-browser`, `collect-ci`,
+`publish-evidence`, `open-pr`, `sync-pr`, `complete-pr`, `cleanup`, `release`,
+and their remote execution/evidence/PR/cleanup counterparts. Pass
+`--event-log <path>` when a supervisor needs a different local ledger path.
 
 While work is claimed, refresh the item heartbeat or state:
 

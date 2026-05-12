@@ -15,6 +15,12 @@ import {
   writeCiRepairEvidencePacket,
 } from "./lib/agent-runner-ci.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -33,6 +39,7 @@ maybePrintHelp(args, {
     ["--workspace <path>", "Workspace path override for gh context."],
     ["--max-log-bytes <number>", "Maximum failed log bytes per run. Defaults to 120000."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -49,6 +56,7 @@ if (!Number.isInteger(maxLogBytes) || maxLogBytes < 1) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -89,6 +97,25 @@ const logs = collectFailedCheckLogs({
 })
 writeCiRepairEvidencePacket({ artifactPlan, checks, item, logs, pr, repository })
 updateProjectItemFields({ project, item, values })
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "collect-ci.completed",
+    checks: checks.map((check) => ({
+      name: check.name,
+      status: check.status,
+      conclusion: check.conclusion,
+    })),
+    evidence: artifactPlan.evidencePointer,
+    fields: values,
+    issue: issueEventDetails(item),
+    pr: {
+      number: pr.number,
+      url: pr.url,
+    },
+    repository,
+  },
+})
 
 console.log("agent-runner collect-ci: wrote CI repair evidence and updated Project fields")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)

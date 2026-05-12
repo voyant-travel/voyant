@@ -9,6 +9,12 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -37,6 +43,7 @@ maybePrintHelp(args, {
     ["--update-body", "Refresh the PR body from the current evidence packet."],
     ["--force", "Allow syncing closed issues."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -48,6 +55,7 @@ if (!args.issue) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -91,6 +99,22 @@ if (bodyRefresh) {
   updatePullRequestBody(bodyRefresh)
 }
 updateProjectItemFields({ project, item, values, clear })
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "sync-pr.completed",
+    bodyRefreshed: Boolean(bodyRefresh),
+    clearedFields: clear,
+    fields: values,
+    issue: issueEventDetails(item),
+    pr: {
+      number: pr.number,
+      url: pr.url,
+    },
+    reason: result.reason,
+    repository,
+  },
+})
 
 console.log("agent-runner sync-pr: updated Project PR review state")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)

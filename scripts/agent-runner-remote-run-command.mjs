@@ -9,11 +9,17 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
   buildCommandEvidencePacket,
   canRunCommandState,
   commandRunStates,
 } from "./lib/agent-runner-execution.mjs"
 import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -67,6 +73,7 @@ maybePrintHelp(args, {
     ],
     ["--json", "Print machine-readable JSON."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -86,6 +93,7 @@ if (!args.yes) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -244,6 +252,25 @@ updateProjectItemFields({
   item,
   project,
   values: finalUpdate.values,
+})
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "remote-run-command.completed",
+    blockedBy: finalUpdate.blockedBy ?? null,
+    branch,
+    clearedFields: finalUpdate.clear,
+    command: args.command,
+    evidence: artifactPlan.evidencePointer,
+    evidenceWriteStatus: evidenceWriteResult.status ?? 1,
+    exitCode,
+    fields: finalUpdate.values,
+    issue: issueEventDetails(item),
+    log: artifactPlan.logPointer,
+    repository,
+    remoteDir: artifactPlan.workspace,
+    workspace: workspaceReference,
+  },
 })
 
 if (args.json) {
