@@ -9,6 +9,12 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -42,6 +48,7 @@ maybePrintHelp(args, {
     ],
     ["--json", "Print machine-readable JSON."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -53,6 +60,7 @@ if (!args.issue) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -106,6 +114,18 @@ try {
 }
 
 updateProjectItemFields({ clear, item, project, values })
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "remote-cleanup.completed",
+    clearedFields: clear,
+    disposed: result ?? null,
+    fields: values,
+    issue: issueEventDetails(item),
+    repository,
+    workspace: workspaceReference,
+  },
+})
 
 if (args.json) {
   console.log(

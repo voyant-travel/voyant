@@ -17,6 +17,11 @@ import {
   publishEvidencePacket,
 } from "./lib/agent-runner-artifacts.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
   createIssueComment,
   evidenceCommentBody,
   evidenceMarker,
@@ -24,6 +29,7 @@ import {
   isRemoteEvidence,
 } from "./lib/agent-runner-evidence-publication.mjs"
 import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -42,6 +48,7 @@ maybePrintHelp(args, {
     ["--publish-artifacts", "Upload the evidence packet to configured R2/S3 object storage."],
     ["--workspace <path>", "Workspace path override."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -53,6 +60,7 @@ if (!args.issue) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -148,6 +156,19 @@ updateProjectItemFields({
   values: {
     Evidence: remoteEvidence?.url ?? commentUrl,
     "Last Heartbeat": today(),
+  },
+})
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "publish-evidence.completed",
+    evidence: remoteEvidence?.url ?? commentUrl,
+    githubComment: commentUrl,
+    issue: issueEventDetails(item),
+    publishedArtifact: remoteEvidence ?? null,
+    repository,
+    sourceEvidence: evidenceReference,
+    workspace,
   },
 })
 

@@ -11,6 +11,12 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -44,6 +50,7 @@ maybePrintHelp(args, {
     ["--allow-dirty", "Allow opening a PR from a workspace with uncommitted changes."],
     ["--force", "Allow opening outside the normal handoff states."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -55,6 +62,7 @@ if (!args.issue) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -127,6 +135,22 @@ updateProjectItemFields({
   project,
   item,
   values: pullRequestFieldValues({ prUrl }),
+})
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "open-pr.completed",
+    base,
+    branch,
+    draft: !args.ready,
+    issue: issueEventDetails(item),
+    pr: {
+      url: prUrl,
+    },
+    repository,
+    reused: Boolean(existingPrUrl),
+    workspace,
+  },
 })
 
 console.log("agent-runner open-pr: pushed branch, opened or reused PR, and updated Project fields")

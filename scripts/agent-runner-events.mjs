@@ -91,9 +91,16 @@ function printEventDetail(event) {
   if (event.recommendation?.reason) console.log(`  reason: ${event.recommendation.reason}`)
   if (Array.isArray(event.command) && event.command.length > 0) {
     console.log(`  command: ${event.command.join(" ")}`)
+  } else if (typeof event.command === "string") {
+    console.log(`  command: ${event.command}`)
   }
   if (event.branch) console.log(`  branch: ${event.branch}`)
   if (event.workspace) console.log(`  workspace: ${event.workspace}`)
+  if (event.remoteDir) console.log(`  remote dir: ${event.remoteDir}`)
+  if (event.evidence) console.log(`  evidence: ${event.evidence}`)
+  if (event.artifacts) console.log(`  artifacts: ${event.artifacts}`)
+  if (event.exitCode !== undefined) console.log(`  exit code: ${event.exitCode}`)
+  if (event.blockedBy) console.log(`  blocked by: ${event.blockedBy}`)
   if (event.pr?.url) console.log(`  pr: ${event.pr.url}`)
 }
 

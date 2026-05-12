@@ -29,6 +29,12 @@ import {
 } from "./lib/agent-runner-browser-evidence.mjs"
 import { browserIssueBlockReason } from "./lib/agent-runner-browser-issues.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -60,6 +66,7 @@ maybePrintHelp(args, {
     ["--publish-artifacts", "Upload captured artifacts to configured R2/S3 object storage."],
     ["--browser-base-port <number>", "Base port for deterministic issue ports. Defaults to 4300."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -77,6 +84,7 @@ if (args.viewport && args.viewports) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -196,6 +204,21 @@ if (args.publishArtifacts) {
 const issueBlockReason = browserIssueBlockReason(result.browserIssues, {
   allowBrowserIssues: Boolean(args.allowBrowserIssues),
   required: requiresBrowserEvidence(item),
+})
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "capture-browser.completed",
+    artifacts: result.remoteArtifactIndex ?? artifactPlan.artifactPointer,
+    blockedBy: issueBlockReason ?? null,
+    browserIssueCount: result.browserIssues.length,
+    issue: issueEventDetails(item),
+    repository,
+    required: requiresBrowserEvidence(item),
+    url: capturePlans[0].url,
+    viewports: capturePlans.map((plan) => viewportLabel(plan.viewport)),
+    workspace: artifactPlan.workspace,
+  },
 })
 
 console.log("agent-runner capture-browser: wrote browser evidence")
