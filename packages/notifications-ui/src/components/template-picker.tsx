@@ -8,6 +8,8 @@ import {
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
 import * as React from "react"
 
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+
 export interface TemplatePickerProps {
   /** Currently selected template id (or null when nothing is picked). */
   value: string | null
@@ -29,10 +31,11 @@ export function TemplatePicker({
   value,
   onChange,
   channel,
-  placeholder = "Search templates…",
-  emptyText = "No templates found.",
+  placeholder,
+  emptyText,
   disabled,
 }: TemplatePickerProps) {
+  const messages = useNotificationsUiMessagesOrDefault().pickers.templates
   const [search, setSearch] = React.useState("")
   const { data } = useNotificationTemplates({
     channel,
@@ -55,8 +58,8 @@ export function TemplatePicker({
       getLabel={(template) => template.name}
       getSecondary={(template) => template.slug}
       onSearchChange={setSearch}
-      placeholder={placeholder}
-      emptyText={emptyText}
+      placeholder={placeholder ?? messages.placeholder}
+      emptyText={emptyText ?? messages.empty}
       disabled={disabled}
       clearable
     />

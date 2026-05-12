@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components/select"
 import { Minus, Plus, Users } from "lucide-react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface PaxCabinPopoverProps {
   passengers: PassengerCounts
@@ -33,6 +34,7 @@ const CABIN_LABEL: Record<CabinClass, string> = {
  * pattern; keeps the search form on one row.
  */
 export function PaxCabinPopover({ passengers, cabin, onChange, className }: PaxCabinPopoverProps) {
+  useFlightsUiMessagesOrDefault()
   const total = passengers.adults + (passengers.children ?? 0) + (passengers.infants ?? 0)
   const summary = `${total} ${total === 1 ? "passenger" : "passengers"} · ${CABIN_LABEL[cabin]}`
 

@@ -11,6 +11,12 @@ export const cruisesUiRo: CruisesUiMessages = {
       fallback: "{count} locuri",
     },
   },
+  catalogCard: {
+    untitled: "Croaziera fara nume",
+    priceFrom: "de la {amount}",
+    nightsSingular: "{count} noapte",
+    nightsPlural: "{count} nopti",
+  },
   enrichmentProgramList: {
     loading: "Se incarca programele de imbogatire…",
     empty: "Nu exista programe de imbogatire publicate pentru aceasta croaziera.",

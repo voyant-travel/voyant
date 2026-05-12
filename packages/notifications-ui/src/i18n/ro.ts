@@ -127,6 +127,16 @@ export const notificationsUiRo: NotificationsUiMessages = {
       removeBlackoutDate: "Șterge",
     },
   },
+  pickers: {
+    templates: {
+      placeholder: "Caută șabloane…",
+      empty: "Nu s-a găsit niciun șablon.",
+    },
+    timezones: {
+      placeholder: "Caută fusuri orare…",
+      empty: "Nu s-a găsit niciun fus orar.",
+    },
+  },
   preview: {
     dateLabel: "Dată",
     empty: "Nimic nu s-ar declanșa la această dată.",

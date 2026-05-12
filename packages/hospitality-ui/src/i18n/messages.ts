@@ -75,6 +75,11 @@ export type HospitalityUiMessages = {
       empty: string
     }
   }
+  catalogCard: {
+    untitled: string
+    ratePerNight: string
+    sleeps: string
+  }
   mealPlansTab: {
     description: string
     add: string

@@ -47,6 +47,9 @@ export type ProductsUiMessages = {
       empty: string
     }
   }
+  catalogCard: {
+    untitled: string
+  }
   productCategoriesPage: {
     title: string
     description: string

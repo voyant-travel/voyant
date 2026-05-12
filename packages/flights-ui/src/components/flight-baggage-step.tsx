@@ -13,6 +13,7 @@ import { Label } from "@voyantjs/ui/components/label"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Briefcase, CheckCircle2, Luggage } from "lucide-react"
 import { useMemo } from "react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 type BaggagePicks = NonNullable<AncillarySelection["baggage"]>
 type BaggagePick = BaggagePicks[number]
@@ -58,6 +59,7 @@ export function FlightBaggageStep({
   onSameForBothDirectionsChange,
   loading,
 }: FlightBaggageStepProps) {
+  useFlightsUiMessagesOrDefault()
   const isRoundTrip = !!returnOffer
   const paxRows = useMemo(
     () => buildPassengerRows(passengers, passengerCounts),

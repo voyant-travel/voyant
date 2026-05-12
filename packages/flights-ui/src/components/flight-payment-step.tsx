@@ -10,6 +10,7 @@ import {
 import type { PaymentIntent } from "@voyantjs/flights/contract/types"
 import { Landmark } from "lucide-react"
 import { useMemo } from "react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 // Re-export the canonical types so existing flights-ui consumers don't
 // need to import from `@voyantjs/checkout-ui` directly.
@@ -52,6 +53,7 @@ export function FlightPaymentStep({
   onSelectSaved,
   capabilities,
 }: FlightPaymentStepProps) {
+  useFlightsUiMessagesOrDefault()
   const choice = useMemo<PaymentChoice | null>(
     () => intentToChoice(value, savedMethods, selectedSavedId),
     [value, savedMethods, selectedSavedId],

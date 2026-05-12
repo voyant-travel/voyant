@@ -4,6 +4,7 @@ import type { PaymentIntent } from "@voyantjs/flights/contract/types"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Banknote, Clock, CreditCard } from "lucide-react"
 import type { ReactNode } from "react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface FlightPaymentSelectorProps {
   value: PaymentIntent
@@ -52,6 +53,7 @@ const INTENTS: IntentMeta[] = [
 ]
 
 export function FlightPaymentSelector({ value, onChange, available }: FlightPaymentSelectorProps) {
+  useFlightsUiMessagesOrDefault()
   const visibleIntents = available ? INTENTS.filter((i) => available.includes(i.id)) : INTENTS
 
   return (

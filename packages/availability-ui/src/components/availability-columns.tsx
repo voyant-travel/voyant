@@ -15,6 +15,7 @@ import {
 import { Badge, Button } from "@voyantjs/ui/components"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { ExternalLink } from "lucide-react"
+import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface AvailabilityColumnsMessages {
   activeLabel: string
@@ -64,6 +65,7 @@ export function getSlotStatusLabel(
 }
 
 function ViewButton({ label, onClick }: { label: string; onClick: () => void }) {
+  useAvailabilityUiMessagesOrDefault()
   return (
     <Button
       variant="ghost"

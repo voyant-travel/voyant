@@ -4,6 +4,10 @@ export type ProductStatus = ProductRecord["status"]
 export type ProductBookingMode = ProductRecord["bookingMode"]
 
 export type ExtrasUiMessages = {
+  catalogCard: {
+    untitled: string
+    unitPrefix: string
+  }
   productCombobox: {
     placeholder: string
     loading: string

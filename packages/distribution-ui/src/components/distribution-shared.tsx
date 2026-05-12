@@ -30,8 +30,13 @@ import {
 import { Badge, Button } from "@voyantjs/ui/components"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { ExternalLink } from "lucide-react"
+import type { MouseEvent } from "react"
 import type { DistributionUiMessages } from "../i18n/index.js"
-import { type DistributionUiI18n, getDistributionUiI18n } from "../i18n/index.js"
+import {
+  type DistributionUiI18n,
+  getDistributionUiI18n,
+  useDistributionUiMessagesOrDefault,
+} from "../i18n/index.js"
 
 export type BatchMutationResponse<T = unknown> = {
   data?: T[]
@@ -73,6 +78,22 @@ export {
 }
 
 const defaultDistributionUiI18n = getDistributionUiI18n({ locale: "en" })
+
+function DistributionOpenButton({
+  label,
+  onClick,
+}: {
+  label: string
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void
+}) {
+  useDistributionUiMessagesOrDefault()
+  return (
+    <Button variant="ghost" size="sm" aria-label={label} title={label} onClick={onClick}>
+      <ExternalLink className="mr-2 h-4 w-4" />
+      {label}
+    </Button>
+  )
+}
 
 export function formatDistributionDateTime(
   value: Date | string | number | null | undefined,
@@ -183,19 +204,13 @@ export const channelColumns = (
     id: "view",
     header: i18n.messages.common.view,
     cell: ({ row }) => (
-      <Button
-        variant="ghost"
-        size="sm"
-        aria-label={i18n.messages.common.open}
-        title={i18n.messages.common.open}
+      <DistributionOpenButton
+        label={i18n.messages.common.open}
         onClick={(event) => {
           event.stopPropagation()
           onView(row.original.id)
         }}
-      >
-        <ExternalLink className="mr-2 h-4 w-4" />
-        {i18n.messages.common.open}
-      </Button>
+      />
     ),
   },
 ]

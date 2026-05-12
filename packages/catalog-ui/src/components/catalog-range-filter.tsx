@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components
 import { Separator } from "@voyantjs/ui/components/separator"
 import { PlusCircle } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface CatalogRangeFilterValue {
   gte?: number
@@ -47,11 +48,14 @@ export function CatalogRangeFilter({
   value,
   onChange,
   step = 1,
-  minPlaceholder = "Min",
-  maxPlaceholder = "Max",
+  minPlaceholder,
+  maxPlaceholder,
   format = "number",
   currency,
 }: CatalogRangeFilterProps) {
+  const messages = useCatalogUiMessagesOrDefault().catalogPage.filtersUi
+  const resolvedMinPlaceholder = minPlaceholder ?? messages.min
+  const resolvedMaxPlaceholder = maxPlaceholder ?? messages.max
   // Track local string state so users can type freely without the parent
   // re-rendering between keystrokes.
   const [minText, setMinText] = useState(value?.gte != null ? String(value.gte) : "")
@@ -103,17 +107,17 @@ export function CatalogRangeFilter({
               type="number"
               inputMode="decimal"
               step={step}
-              placeholder={minPlaceholder}
+              placeholder={resolvedMinPlaceholder}
               value={minText}
               onChange={(e) => setMinText(e.target.value)}
               className="h-8"
             />
-            <span className="text-muted-foreground text-xs">to</span>
+            <span className="text-muted-foreground text-xs">{messages.to}</span>
             <Input
               type="number"
               inputMode="decimal"
               step={step}
-              placeholder={maxPlaceholder}
+              placeholder={resolvedMaxPlaceholder}
               value={maxText}
               onChange={(e) => setMaxText(e.target.value)}
               className="h-8"
@@ -126,10 +130,10 @@ export function CatalogRangeFilter({
               onClick={clear}
               disabled={!active && !minText && !maxText}
             >
-              Clear
+              {messages.clear}
             </Button>
             <Button size="sm" onClick={apply}>
-              Apply
+              {messages.apply}
             </Button>
           </div>
         </div>

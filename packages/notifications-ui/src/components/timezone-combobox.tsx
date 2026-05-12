@@ -11,6 +11,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+
 const TIMEZONES: readonly string[] = (() => {
   const intl = Intl as typeof Intl & {
     supportedValuesOf?: (key: string) => string[]
@@ -70,10 +72,11 @@ export interface TimezoneComboboxProps {
 export function TimezoneCombobox({
   value,
   onChange,
-  placeholder = "Search timezones…",
-  emptyText = "No timezones found.",
+  placeholder,
+  emptyText,
   disabled,
 }: TimezoneComboboxProps) {
+  const messages = useNotificationsUiMessagesOrDefault().pickers.timezones
   const [inputValue, setInputValue] = React.useState(value ?? "")
   React.useEffect(() => {
     setInputValue(value ?? "")
@@ -98,9 +101,9 @@ export function TimezoneCombobox({
         setInputValue(tz ?? "")
       }}
     >
-      <ComboboxInput placeholder={placeholder} showClear={Boolean(value)} />
+      <ComboboxInput placeholder={placeholder ?? messages.placeholder} showClear={Boolean(value)} />
       <ComboboxContent>
-        <ComboboxEmpty>{emptyText}</ComboboxEmpty>
+        <ComboboxEmpty>{emptyText ?? messages.empty}</ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
             {(tz) => (

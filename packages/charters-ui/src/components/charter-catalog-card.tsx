@@ -4,6 +4,7 @@ import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { useChartersUiI18nOrDefault } from "../i18n/index.js"
 
 export interface CharterCatalogCardProps {
   hit: CatalogSearchHit
@@ -17,8 +18,10 @@ export interface CharterCatalogCardProps {
  * `currency`, `homePort`, `tags`.
  */
 export function CharterCatalogCard({ hit, onClick, className }: CharterCatalogCardProps) {
+  const i18n = useChartersUiI18nOrDefault()
+  const messages = i18n.messages.catalogCard
   const f = hit.document.fields
-  const name = stringOr(f.name, "Untitled charter")
+  const name = stringOr(f.name, messages.untitled)
   const yachtName = stringOr(f.yachtName, null)
   const lengthMeters = numberOr(f.lengthMeters, null)
   const cabins = numberOr(f.cabins, null)
@@ -30,11 +33,11 @@ export function CharterCatalogCard({ hit, onClick, className }: CharterCatalogCa
   const currency = stringOr(f.currency ?? f.sellCurrency, null)
   const rateLabel =
     rate != null && currency
-      ? `${new Intl.NumberFormat(undefined, {
-          style: "currency",
-          currency,
-          maximumFractionDigits: 0,
-        }).format(rate / 100)} / week`
+      ? formatTemplate(messages.ratePerWeek, {
+          amount: i18n.formatCurrency(rate / 100, currency, {
+            maximumFractionDigits: 0,
+          }),
+        })
       : null
 
   return (
@@ -62,7 +65,10 @@ export function CharterCatalogCard({ hit, onClick, className }: CharterCatalogCa
           {lengthMeters != null && <span>{lengthMeters} m</span>}
           {cabins != null && (
             <span>
-              · {cabins} cabin{cabins === 1 ? "" : "s"}
+              ·{" "}
+              {formatTemplate(cabins === 1 ? messages.cabinsSingular : messages.cabinsPlural, {
+                count: cabins,
+              })}
             </span>
           )}
           {homePort && <span>· {homePort}</span>}
@@ -80,6 +86,13 @@ export function CharterCatalogCard({ hit, onClick, className }: CharterCatalogCa
       </CardContent>
     </Card>
   )
+}
+
+function formatTemplate(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = values[key]
+    return value === undefined ? "" : String(value)
+  })
 }
 
 function stringOr<T>(value: unknown, fallback: T): string | T {

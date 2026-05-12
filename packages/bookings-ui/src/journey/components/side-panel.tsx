@@ -8,7 +8,7 @@ import {
 } from "@voyantjs/ui/components/accordion"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
-
+import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import type { BookingEntitySummary, JourneyStep, SidePanelState } from "../types.js"
 
 /**
@@ -28,6 +28,7 @@ export function PriceSidePanel({
   draft,
   className,
 }: SidePanelState & { className?: string }): React.ReactElement {
+  useBookingsUiMessagesOrDefault()
   return (
     <Card className={className}>
       {entitySummary ? <EntityHeader summary={entitySummary} /> : null}

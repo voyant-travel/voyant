@@ -4,6 +4,12 @@ export const chartersUiRo: ChartersUiMessages = {
   common: {
     fallbackCurrencyAmount: "{currency} {amount}",
   },
+  catalogCard: {
+    untitled: "Charter fara nume",
+    ratePerWeek: "{amount} / saptamana",
+    cabinsSingular: "{count} cabina",
+    cabinsPlural: "{count} cabine",
+  },
   externalCharterBadge: {
     title: "Preluat prin {sourceProvider}",
     label: "Extern · {sourceProvider}",

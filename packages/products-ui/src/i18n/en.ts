@@ -56,6 +56,9 @@ export const productsUiEn = {
       empty: "No product types found.",
     },
   },
+  catalogCard: {
+    untitled: "Untitled product",
+  },
   productCategoriesPage: {
     title: "Categories",
     description: "Hierarchical product categories for organizing your catalog.",

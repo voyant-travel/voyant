@@ -12,7 +12,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import {
   FlightContactForm,
   type FlightContactValue,
@@ -73,6 +73,7 @@ export function FlightBookingJourney({
   airportName,
   renderPassengerPicker,
 }: FlightBookingJourneyProps) {
+  useFlightsUiMessagesOrDefault()
   const [stepIdx, setStepIdx] = useState(0)
   const [paxList, setPaxList] = useState<FlightPassenger[]>([])
   const [contact, setContact] = useState<FlightContactValue>({})

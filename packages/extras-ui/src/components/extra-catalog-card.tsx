@@ -4,6 +4,7 @@ import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { useExtrasUiI18nOrDefault } from "../i18n/index.js"
 
 export interface ExtraCatalogCardProps {
   hit: CatalogSearchHit
@@ -17,8 +18,10 @@ export interface ExtraCatalogCardProps {
  * `unit` (per_person | per_booking | per_night), `tags`.
  */
 export function ExtraCatalogCard({ hit, onClick, className }: ExtraCatalogCardProps) {
+  const i18n = useExtrasUiI18nOrDefault()
+  const messages = i18n.messages.catalogCard
   const f = hit.document.fields
-  const name = stringOr(f.name, "Untitled extra")
+  const name = stringOr(f.name, messages.untitled)
   const category = stringOr(f.category, null)
   const unit = stringOr(f.unit, null)
   const status = stringOr(f.status, null)
@@ -28,11 +31,9 @@ export function ExtraCatalogCard({ hit, onClick, className }: ExtraCatalogCardPr
   const currency = stringOr(f.currency ?? f.sellCurrency, null)
   const priceLabel =
     price != null && currency
-      ? new Intl.NumberFormat(undefined, {
-          style: "currency",
-          currency,
+      ? i18n.formatCurrency(price / 100, currency, {
           maximumFractionDigits: 2,
-        }).format(price / 100)
+        })
       : null
 
   return (
@@ -59,7 +60,9 @@ export function ExtraCatalogCard({ hit, onClick, className }: ExtraCatalogCardPr
             <span className="ml-auto font-medium text-foreground">
               {priceLabel}
               {unit && (
-                <span className="ml-1 text-muted-foreground">/ {unit.replace(/_/g, " ")}</span>
+                <span className="ml-1 text-muted-foreground">
+                  {formatTemplate(messages.unitPrefix, { unit: unit.replace(/_/g, " ") })}
+                </span>
               )}
             </span>
           )}
@@ -76,6 +79,13 @@ export function ExtraCatalogCard({ hit, onClick, className }: ExtraCatalogCardPr
       </CardContent>
     </Card>
   )
+}
+
+function formatTemplate(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = values[key]
+    return value === undefined ? "" : String(value)
+  })
 }
 
 function stringOr<T>(value: unknown, fallback: T): string | T {

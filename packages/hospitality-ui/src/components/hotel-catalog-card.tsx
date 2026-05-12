@@ -4,6 +4,7 @@ import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { useHospitalityUiI18nOrDefault } from "../i18n/index.js"
 
 export interface HotelCatalogCardProps {
   hit: CatalogSearchHit
@@ -17,8 +18,10 @@ export interface HotelCatalogCardProps {
  * `roomCapacity`, `nightlyRateFromCents`, `currency`, `tags`.
  */
 export function HotelCatalogCard({ hit, onClick, className }: HotelCatalogCardProps) {
+  const i18n = useHospitalityUiI18nOrDefault()
+  const messages = i18n.messages.catalogCard
   const f = hit.document.fields
-  const name = stringOr(f.name, "Untitled room")
+  const name = stringOr(f.name, messages.untitled)
   const propertyName = stringOr(f.propertyName, null)
   const city = stringOr(f.city, null)
   const country = stringOr(f.country, null)
@@ -31,11 +34,11 @@ export function HotelCatalogCard({ hit, onClick, className }: HotelCatalogCardPr
   const currency = stringOr(f.currency ?? f.sellCurrency, null)
   const rateLabel =
     rate != null && currency
-      ? `${new Intl.NumberFormat(undefined, {
-          style: "currency",
-          currency,
-          maximumFractionDigits: 0,
-        }).format(rate / 100)} / night`
+      ? formatTemplate(messages.ratePerNight, {
+          amount: i18n.formatCurrency(rate / 100, currency, {
+            maximumFractionDigits: 0,
+          }),
+        })
       : null
 
   const location = [city, country].filter(Boolean).join(", ")
@@ -64,7 +67,9 @@ export function HotelCatalogCard({ hit, onClick, className }: HotelCatalogCardPr
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
           {starRating != null && <span>{"★".repeat(Math.round(starRating))}</span>}
           {location && <span>{location}</span>}
-          {capacity != null && <span>· sleeps {capacity}</span>}
+          {capacity != null && (
+            <span>· {formatTemplate(messages.sleeps, { count: capacity })}</span>
+          )}
           {rateLabel && <span className="ml-auto font-medium text-foreground">{rateLabel}</span>}
         </div>
         {tags.length > 0 && (
@@ -79,6 +84,13 @@ export function HotelCatalogCard({ hit, onClick, className }: HotelCatalogCardPr
       </CardContent>
     </Card>
   )
+}
+
+function formatTemplate(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = values[key]
+    return value === undefined ? "" : String(value)
+  })
 }
 
 function stringOr<T>(value: unknown, fallback: T): string | T {

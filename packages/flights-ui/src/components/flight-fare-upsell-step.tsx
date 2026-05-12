@@ -11,6 +11,7 @@ import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Briefcase, Check, Crown, Luggage, Sparkles, X } from "lucide-react"
 import { type ReactNode, useMemo } from "react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 type FareBundlePicks = NonNullable<AncillarySelection["fareBundle"]>
 type FareBundlePick = FareBundlePicks[number]
@@ -47,6 +48,7 @@ export function FlightFareUpsellStep({
   sameForAllPassengers,
   onSameForAllPassengersChange,
 }: FlightFareUpsellStepProps) {
+  useFlightsUiMessagesOrDefault()
   const paxRows = useMemo(
     () => buildPassengerRows(passengers, passengerCounts),
     [passengers, passengerCounts],

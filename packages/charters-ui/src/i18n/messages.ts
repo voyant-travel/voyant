@@ -8,6 +8,12 @@ export type ChartersUiMessages = {
   common: {
     fallbackCurrencyAmount: string
   }
+  catalogCard: {
+    untitled: string
+    ratePerWeek: string
+    cabinsSingular: string
+    cabinsPlural: string
+  }
   externalCharterBadge: {
     title: string
     label: string

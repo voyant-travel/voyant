@@ -11,7 +11,7 @@ import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-group"
 import { ArrowLeftRight, Search } from "lucide-react"
 import { useState } from "react"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { AirportCombobox } from "./airport-combobox.js"
 import { PaxCabinPopover } from "./pax-cabin-popover.js"
 
@@ -27,6 +27,7 @@ export interface FlightSearchFormProps {
 }
 
 export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFormProps) {
+  useFlightsUiMessagesOrDefault()
   const initialSlices = initial?.slices ?? []
   const [tripType, setTripType] = useState<TripType>(
     initial?.tripType ?? (initialSlices.length === 2 ? "round_trip" : "one_way"),

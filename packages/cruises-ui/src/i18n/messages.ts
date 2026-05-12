@@ -15,6 +15,12 @@ export type CruisesUiMessages = {
       fallback: string
     }
   }
+  catalogCard: {
+    untitled: string
+    priceFrom: string
+    nightsSingular: string
+    nightsPlural: string
+  }
   enrichmentProgramList: {
     loading: string
     empty: string

@@ -20,6 +20,7 @@ import {
 } from "@voyantjs/ui/components/select"
 import { CircleAlert, IdCard } from "lucide-react"
 import { type ReactNode, useEffect, useMemo } from "react"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 /** Subset of FlightPassenger that a picker can pre-fill into a card. */
 export type PassengerPrefill = Partial<
@@ -85,6 +86,7 @@ export function FlightPassengerForm({
   documentsRequired,
   renderPicker,
 }: FlightPassengerFormProps) {
+  useFlightsUiMessagesOrDefault()
   // Derive the canonical pax slots from `counts`. Passenger ids are stable
   // by position so re-ordering is safe.
   const slots = useMemo(() => buildSlots(counts), [counts])

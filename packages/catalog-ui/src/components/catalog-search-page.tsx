@@ -8,7 +8,7 @@ import { Input } from "@voyantjs/ui/components/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
 import { type ReactNode, useEffect, useMemo, useState } from "react"
-
+import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import {
   type CatalogDetailAction,
   type CatalogDetailEnrichment,
@@ -196,7 +196,7 @@ export function CatalogSearchPage({
   defaultTab,
   pageSize = 20,
   title,
-  searchPlaceholder = "Search the catalog…",
+  searchPlaceholder,
   queryDebounceMs = 200,
   activeTab: activeTabProp,
   onActiveTabChange,
@@ -211,6 +211,8 @@ export function CatalogSearchPage({
   renderDetailItineraryDay,
   renderDetailExtraSections,
 }: CatalogSearchPageProps) {
+  const messages = useCatalogUiMessagesOrDefault().catalogPage
+  const resolvedSearchPlaceholder = searchPlaceholder ?? messages.searchPlaceholder
   const [internalActiveTab, setInternalActiveTab] = useState<string>(
     defaultTab ?? tabs[0]?.id ?? "",
   )
@@ -247,7 +249,7 @@ export function CatalogSearchPage({
   if (tabs.length === 0) {
     return (
       <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
-        No catalog tabs configured.
+        {messages.search.noTabsConfigured}
       </div>
     )
   }
@@ -261,7 +263,7 @@ export function CatalogSearchPage({
           type="search"
           value={rawQuery}
           onChange={(e) => setInternalRawQuery(e.target.value)}
-          placeholder={searchPlaceholder}
+          placeholder={resolvedSearchPlaceholder}
           className="pl-9"
         />
       </div>
@@ -287,6 +289,7 @@ export function CatalogSearchPage({
               renderDetailMedia={renderDetailMedia}
               renderDetailItineraryDay={renderDetailItineraryDay}
               renderDetailExtraSections={renderDetailExtraSections}
+              messages={messages}
             />
           </TabsContent>
         ))}
@@ -308,6 +311,7 @@ interface CatalogTabPanelProps {
   renderDetailMedia?: CatalogDetailRenderSlot
   renderDetailItineraryDay?: CatalogDetailSheetProps["renderItineraryDay"]
   renderDetailExtraSections?: CatalogDetailRenderSlot
+  messages: ReturnType<typeof useCatalogUiMessagesOrDefault>["catalogPage"]
 }
 
 /**
@@ -334,6 +338,7 @@ function CatalogTabPanel({
   renderDetailMedia,
   renderDetailItineraryDay,
   renderDetailExtraSections,
+  messages,
 }: CatalogTabPanelProps) {
   const [selections, setSelections] = useState<FilterSelections>(EMPTY_SELECTIONS)
   const [internalPage, setInternalPage] = useState(1)
@@ -441,7 +446,7 @@ function CatalogTabPanel({
               className="h-8 px-2 text-muted-foreground hover:text-foreground"
             >
               <X className="mr-1 h-3.5 w-3.5" />
-              Clear all
+              {messages.search.clearAll}
             </Button>
           )}
         </div>
@@ -458,13 +463,16 @@ function CatalogTabPanel({
       ) : hits.length === 0 ? (
         (tab.emptyState ?? (
           <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No results for {query ? `"${query}"` : "your filters"} in {tab.label.toLowerCase()}.
+            {formatTemplate(messages.search.noResults, {
+              query: query ? `"${query}"` : messages.search.yourFilters,
+              tab: tab.label.toLowerCase(),
+            })}
           </div>
         ))
       ) : (
         <>
           <div className="text-muted-foreground text-sm">
-            {total} result{total === 1 ? "" : "s"}
+            {total} {total === 1 ? messages.search.resultSingular : messages.search.resultPlural}
           </div>
           <DataTable
             columns={tab.columns}
@@ -477,7 +485,11 @@ function CatalogTabPanel({
           {totalPages > 1 && (
             <div className="mt-1 flex items-center justify-between gap-2">
               <span className="text-muted-foreground text-sm">
-                Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
+                {formatTemplate(messages.search.showing, {
+                  from: (page - 1) * pageSize + 1,
+                  to: Math.min(page * pageSize, total),
+                  total,
+                })}
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -486,10 +498,10 @@ function CatalogTabPanel({
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page <= 1}
                 >
-                  <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+                  <ChevronLeft className="mr-1 h-4 w-4" /> {messages.search.previous}
                 </Button>
                 <span className="text-muted-foreground text-sm">
-                  Page {page} of {totalPages}
+                  {formatTemplate(messages.search.page, { page, totalPages })}
                 </span>
                 <Button
                   variant="outline"
@@ -497,7 +509,7 @@ function CatalogTabPanel({
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page >= totalPages}
                 >
-                  Next <ChevronRight className="ml-1 h-4 w-4" />
+                  {messages.search.next} <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -575,4 +587,11 @@ function setRange(
     ranges[field] = next
   }
   return { ...prev, ranges }
+}
+
+function formatTemplate(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = values[key]
+    return value === undefined ? "" : String(value)
+  })
 }

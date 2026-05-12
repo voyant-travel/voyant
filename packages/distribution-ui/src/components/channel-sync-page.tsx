@@ -41,6 +41,7 @@ import {
 } from "@voyantjs/ui/components/table"
 import { AlertTriangle, ChevronDown, Loader2, RotateCw, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { useDistributionUiMessagesOrDefault } from "../i18n/index.js"
 
 // Types matching the admin API at distribution/src/channel-push/admin-routes.ts
 
@@ -168,28 +169,14 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | 
   compensated: "outline",
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pending",
-  ok: "OK",
-  failed: "Failed",
-  compensated: "Compensated",
-}
-
 const STATUS_TILES: ReadonlyArray<{
   key: PushStatus
-  label: string
-  description: string
   tone: "default" | "secondary" | "destructive" | "outline"
 }> = [
-  { key: "pending", label: "Pending", description: "In flight", tone: "secondary" },
-  { key: "ok", label: "Delivered", description: "Channel acknowledged", tone: "default" },
-  { key: "failed", label: "Failed", description: "Needs attention", tone: "destructive" },
-  {
-    key: "compensated",
-    label: "Compensated",
-    description: "Rolled back",
-    tone: "outline",
-  },
+  { key: "pending", tone: "secondary" },
+  { key: "ok", tone: "default" },
+  { key: "failed", tone: "destructive" },
+  { key: "compensated", tone: "outline" },
 ]
 
 const LINKS_REFETCH_MS = 15_000
@@ -198,6 +185,7 @@ const THROTTLING_REFETCH_MS = 60_000
 // Page
 
 export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPageProps = {}) {
+  const messages = useDistributionUiMessagesOrDefault().channelSync
   const context = useVoyantDistributionContext()
   const client = {
     baseUrl: baseUrl ?? context.baseUrl,
@@ -298,22 +286,21 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Channel sync</h2>
-          <p className="text-sm text-muted-foreground">
-            Outbound delivery to syndication channels. Bookings push first; availability and content
-            ride along in the background.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{messages.title}</h2>
+          <p className="text-sm text-muted-foreground">{messages.description}</p>
         </div>
         <div className="flex items-center gap-3">
           <AutoRefreshIndicator
             isFetching={linksQuery.isFetching}
             dataUpdatedAt={linksQuery.dataUpdatedAt}
             intervalMs={LINKS_REFETCH_MS}
+            messages={messages}
           />
           <ReconcileMenu
             onRun={(flow) => reconcileMutation.mutate(flow)}
             isRunning={reconcileMutation.isPending}
             lastResult={reconcileMutation.data ?? null}
+            messages={messages}
           />
         </div>
       </div>
@@ -323,12 +310,13 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
         <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <span className="font-medium">Throttled.</span>{" "}
+            <span className="font-medium">{messages.throttledTitle}</span>{" "}
             <span>
-              {throttledChannels.reduce((sum, c) => sum + c.count, 0)} rate-limited deliveries in
-              the last hour across {throttledChannels.length} channel
-              {throttledChannels.length === 1 ? "" : "s"}. Lower the per-channel RPS in settings if
-              this persists.
+              {formatTemplate(messages.throttledBody, {
+                count: throttledChannels.reduce((sum, c) => sum + c.count, 0),
+                channels: throttledChannels.length,
+                channelLabel: throttledChannels.length === 1 ? "channel" : "channels",
+              })}
             </span>
           </div>
         </div>
@@ -339,6 +327,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
         {STATUS_TILES.map((tile) => {
           const isActive = statusFilter === tile.key
           const value = counts[tile.key] ?? 0
+          const tileMessages = messages.statusTiles[tile.key]
           return (
             <button
               key={tile.key}
@@ -353,14 +342,14 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {tile.label}
+                  {tileMessages.label}
                 </span>
                 {tile.key === "failed" && value > 0 ? (
                   <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
                 ) : null}
               </div>
               <div className="mt-1 text-3xl font-semibold tabular-nums">{value}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{tile.description}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{tileMessages.description}</div>
             </button>
           )
         })}
@@ -370,7 +359,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
       <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label htmlFor="cs-booking" className="text-xs">
-            Booking
+            {messages.filters.booking}
           </Label>
           <AsyncCombobox<BookingRecord>
             value={bookingId}
@@ -388,14 +377,18 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
             getLabel={(b) => b.bookingNumber}
             getSecondary={(b) => b.status}
             onSearchChange={setBookingSearch}
-            placeholder="Search by booking number..."
-            emptyText={bookingsQuery.isFetching ? "Searching..." : "No bookings match that search."}
+            placeholder={messages.filters.bookingPlaceholder}
+            emptyText={
+              bookingsQuery.isFetching
+                ? messages.filters.bookingSearching
+                : messages.filters.bookingEmpty
+            }
             triggerClassName="w-full"
           />
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <Label htmlFor="cs-channel" className="text-xs">
-            Channel
+            {messages.filters.channel}
           </Label>
           <AsyncCombobox<ChannelRecord>
             value={channelId}
@@ -412,8 +405,8 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
             getKey={(c) => c.id}
             getLabel={(c) => c.name}
             getSecondary={(c) => formatChannelKind(c.kind)}
-            placeholder="Pick a channel..."
-            emptyText="No channels configured yet."
+            placeholder={messages.filters.channelPlaceholder}
+            emptyText={messages.filters.channelEmpty}
             triggerClassName="w-full"
           />
         </div>
@@ -428,11 +421,11 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
       {/* Links table */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Booking links</CardTitle>
+          <CardTitle className="text-sm">{messages.table.title}</CardTitle>
           <CardDescription>
             {filtersActive
-              ? `Showing ${rows.length} of the most recent matching pushes.`
-              : "The most recent per-channel push attempts."}
+              ? formatTemplate(messages.table.filteredDescription, { count: rows.length })
+              : messages.table.defaultDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -443,11 +436,13 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
           ) : rows.length === 0 ? (
             <Empty className="border-0">
               <EmptyHeader>
-                <EmptyTitle>{filtersActive ? "No matches" : "No links yet"}</EmptyTitle>
+                <EmptyTitle>
+                  {filtersActive ? messages.table.noMatchesTitle : messages.table.noLinksTitle}
+                </EmptyTitle>
                 <EmptyDescription>
                   {filtersActive
-                    ? "Try clearing the filters or picking a different booking or channel."
-                    : "Channel-push booking links show up here as bookings confirm. The page refreshes automatically."}
+                    ? messages.table.noMatchesDescription
+                    : messages.table.noLinksDescription}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -455,13 +450,13 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Booking</TableHead>
-                  <TableHead>Channel</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Attempts</TableHead>
-                  <TableHead>Last push</TableHead>
-                  <TableHead>External ref</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{messages.table.booking}</TableHead>
+                  <TableHead>{messages.table.channel}</TableHead>
+                  <TableHead>{messages.table.status}</TableHead>
+                  <TableHead className="text-right">{messages.table.attempts}</TableHead>
+                  <TableHead>{messages.table.lastPush}</TableHead>
+                  <TableHead>{messages.table.externalRef}</TableHead>
+                  <TableHead className="text-right">{messages.table.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -476,7 +471,9 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
                         <div>{row.link.bookingId}</div>
                         {row.link.bookingItemId ? (
                           <div className="text-muted-foreground">
-                            item: {row.link.bookingItemId}
+                            {formatTemplate(messages.table.itemPrefix, {
+                              id: row.link.bookingItemId,
+                            })}
                           </div>
                         ) : null}
                       </TableCell>
@@ -488,7 +485,8 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
                       </TableCell>
                       <TableCell>
                         <Badge variant={STATUS_VARIANTS[row.link.pushStatus] ?? "outline"}>
-                          {STATUS_LABELS[row.link.pushStatus] ?? row.link.pushStatus}
+                          {messages.statusLabels[row.link.pushStatus as PushStatus] ??
+                            row.link.pushStatus}
                         </Badge>
                         {row.link.lastError ? (
                           <div
@@ -515,7 +513,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
                             size="sm"
                             onClick={() => setDrilldownBookingId(row.link.bookingId)}
                           >
-                            Deliveries
+                            {messages.table.deliveries}
                           </Button>
                           <Button
                             variant="outline"
@@ -530,7 +528,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
                             retryMutation.variables === row.link.bookingId ? (
                               <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                             ) : null}
-                            Retry
+                            {messages.table.retry}
                           </Button>
                         </div>
                       </TableCell>
@@ -547,6 +545,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
         bookingId={drilldownBookingId}
         client={client}
         onClose={() => setDrilldownBookingId(null)}
+        messages={messages}
       />
     </div>
   )
@@ -556,10 +555,12 @@ function ReconcileMenu({
   onRun,
   isRunning,
   lastResult,
+  messages,
 }: {
   onRun: (flow: "bookings" | "availability" | "content") => void
   isRunning: boolean
   lastResult: ReconcilerResult | null
+  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"]
 }) {
   return (
     <DropdownMenu>
@@ -571,26 +572,35 @@ function ReconcileMenu({
             ) : (
               <RotateCw className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Reconcile
+            {messages.reconcile.trigger}
             <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
           </Button>
         }
       />
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Run reconciler</DropdownMenuLabel>
+          <DropdownMenuLabel>{messages.reconcile.menuLabel}</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => onRun("bookings")}>
-            Bookings
-            <span className="ml-auto text-xs text-muted-foreground">priority</span>
+            {messages.reconcile.bookings}
+            <span className="ml-auto text-xs text-muted-foreground">
+              {messages.reconcile.priority}
+            </span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onRun("availability")}>Availability</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onRun("content")}>Content</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRun("availability")}>
+            {messages.reconcile.availability}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRun("content")}>
+            {messages.reconcile.content}
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         {lastResult ? (
           <>
             <DropdownMenuSeparator />
             <div className="px-2 py-1.5 text-xs text-muted-foreground">
-              Last run: scanned {lastResult.scanned}, triggered {lastResult.triggered}.
+              {formatTemplate(messages.reconcile.lastRun, {
+                scanned: lastResult.scanned,
+                triggered: lastResult.triggered,
+              })}
             </div>
           </>
         ) : null}
@@ -603,10 +613,12 @@ function AutoRefreshIndicator({
   isFetching,
   dataUpdatedAt,
   intervalMs,
+  messages,
 }: {
   isFetching: boolean
   dataUpdatedAt: number
   intervalMs: number
+  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"]
 }) {
   // Tick every second so the "Updated Xs ago" stays current.
   const [, setNow] = useState(Date.now())
@@ -619,7 +631,7 @@ function AutoRefreshIndicator({
     return (
       <span className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex">
         <Loader2 className="h-3 w-3 animate-spin" />
-        Loading...
+        {messages.refresh.loading}
       </span>
     )
   }
@@ -630,7 +642,7 @@ function AutoRefreshIndicator({
   return (
     <span
       className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex"
-      title={`Auto-refreshes every ${intervalSec}s`}
+      title={formatTemplate(messages.refresh.title, { seconds: intervalSec })}
     >
       {isFetching ? (
         <Loader2 className="h-3 w-3 animate-spin" />
@@ -641,7 +653,11 @@ function AutoRefreshIndicator({
         </span>
       )}
       <span className="tabular-nums">
-        {isFetching ? "Refreshing..." : `Updated ${formatShortDuration(seconds)} ago`}
+        {isFetching
+          ? messages.refresh.refreshing
+          : formatTemplate(messages.refresh.updatedAgo, {
+              duration: formatShortDuration(seconds),
+            })}
       </span>
     </span>
   )
@@ -664,10 +680,12 @@ function DeliveriesDrawer({
   bookingId,
   client,
   onClose,
+  messages,
 }: {
   bookingId: string | null
   client: { baseUrl: string; fetcher: VoyantFetcher }
   onClose: () => void
+  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"]
 }) {
   const isOpen = bookingId !== null
   const query = useQuery<DeliveriesResponse>({
@@ -688,7 +706,9 @@ function DeliveriesDrawer({
     <Sheet open={isOpen} onOpenChange={(open) => (open ? null : onClose())}>
       <SheetContent side="right" size="xl">
         <SheetHeader>
-          <SheetTitle>Delivery log - {bookingId ?? ""}</SheetTitle>
+          <SheetTitle>
+            {formatTemplate(messages.drawer.title, { bookingId: bookingId ?? "" })}
+          </SheetTitle>
         </SheetHeader>
         <SheetBody className="flex flex-col gap-3">
           {query.isPending ? (
@@ -698,10 +718,8 @@ function DeliveriesDrawer({
           ) : rows.length === 0 ? (
             <Empty>
               <EmptyHeader>
-                <EmptyTitle>No deliveries yet</EmptyTitle>
-                <EmptyDescription>
-                  Channel-push attempts log here once they dispatch.
-                </EmptyDescription>
+                <EmptyTitle>{messages.drawer.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{messages.drawer.emptyDescription}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -714,7 +732,9 @@ function DeliveriesDrawer({
                         {row.status}
                       </Badge>
                       <span className="font-mono">{row.sourceEvent}</span>
-                      <span className="text-muted-foreground">attempt #{row.attemptNumber}</span>
+                      <span className="text-muted-foreground">
+                        {formatTemplate(messages.drawer.attempt, { number: row.attemptNumber })}
+                      </span>
                     </div>
                     <span className="text-muted-foreground">
                       {row.durationMs != null ? `${row.durationMs}ms` : ""}
@@ -727,7 +747,9 @@ function DeliveriesDrawer({
                 <CardContent className="space-y-2">
                   <div className="flex flex-wrap gap-2">
                     {row.responseStatus != null ? (
-                      <Badge variant="outline">HTTP {row.responseStatus}</Badge>
+                      <Badge variant="outline">
+                        {formatTemplate(messages.drawer.httpStatus, { status: row.responseStatus })}
+                      </Badge>
                     ) : null}
                     {row.errorClass ? <Badge variant="destructive">{row.errorClass}</Badge> : null}
                     <span className="text-muted-foreground">{formatRelative(row.createdAt)}</span>
@@ -781,4 +803,11 @@ function formatRelative(iso: string): string {
   if (hours < 24) return `${hours}h ago`
   const days = Math.round(hours / 24)
   return `${days}d ago`
+}
+
+function formatTemplate(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = values[key]
+    return value === undefined ? "" : String(value)
+  })
 }

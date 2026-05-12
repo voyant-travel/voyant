@@ -56,6 +56,9 @@ export const productsUiRo = {
       empty: "Nu au fost gasite tipuri de produs.",
     },
   },
+  catalogCard: {
+    untitled: "Produs fara nume",
+  },
   productCategoriesPage: {
     title: "Categorii",
     description: "Categorii ierarhice de produse pentru organizarea catalogului.",

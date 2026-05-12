@@ -4,6 +4,7 @@ import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { useProductsUiI18nOrDefault } from "../i18n/index.js"
 
 export interface ProductCatalogCardProps {
   hit: CatalogSearchHit
@@ -18,8 +19,9 @@ export interface ProductCatalogCardProps {
  * `tags` from the resolved indexer document.
  */
 export function ProductCatalogCard({ hit, onClick, className }: ProductCatalogCardProps) {
+  const i18n = useProductsUiI18nOrDefault()
   const fields = hit.document.fields
-  const name = stringOr(fields.name, "Untitled product")
+  const name = stringOr(fields.name, i18n.messages.catalogCard.untitled)
   const status = stringOr(fields.status, null)
   const bookingMode = stringOr(fields.bookingMode, null)
   const sellAmount = numberOr(fields.sellAmountCents, null)
@@ -28,11 +30,9 @@ export function ProductCatalogCard({ hit, onClick, className }: ProductCatalogCa
 
   const price =
     sellAmount != null && sellCurrency
-      ? new Intl.NumberFormat(undefined, {
-          style: "currency",
-          currency: sellCurrency,
+      ? i18n.formatCurrency(sellAmount / 100, sellCurrency, {
           maximumFractionDigits: 0,
-        }).format(sellAmount / 100)
+        })
       : null
 
   return (

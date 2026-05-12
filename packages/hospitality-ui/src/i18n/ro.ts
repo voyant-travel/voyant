@@ -95,6 +95,11 @@ export const hospitalityUiRo = {
       empty: "Nu au fost gasite planuri tarifare.",
     },
   },
+  catalogCard: {
+    untitled: "Camera fara nume",
+    ratePerNight: "{amount} / noapte",
+    sleeps: "capacitate {count}",
+  },
   mealPlansTab: {
     description: "Includeri de masa precum BB, HB, FB, all-inclusive si doar camera.",
     add: "Adauga Plan de Masa",

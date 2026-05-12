@@ -7,7 +7,7 @@ import { Separator } from "@voyantjs/ui/components/separator"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { CheckCircle2, Clock, Mail, Phone, Ticket, XCircle } from "lucide-react"
 import type { ReactNode } from "react"
-
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { FlightOfferDetail } from "./flight-offer-detail.js"
 
 export interface FlightOrderConfirmationProps {
@@ -40,6 +40,7 @@ export function FlightOrderConfirmation({
   airportName,
   aircraftName,
 }: FlightOrderConfirmationProps) {
+  useFlightsUiMessagesOrDefault()
   const status = STATUS_VARIANTS[order.status]
   const isCancellable =
     onCancel != null && (order.status === "confirmed" || order.status === "ticketed")
