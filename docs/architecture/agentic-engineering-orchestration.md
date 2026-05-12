@@ -1364,6 +1364,13 @@ Verification:
   `GET /api/supervisor/ticks/latest`. This gives Cron-based deployments an
   inspectable heartbeat and last lease result without introducing a full run
   database.
+- The runner app enforces a local dispatch policy before calling the control
+  plane. `AGENT_RUNNER_ALLOWED_ACTIONS` limits which lifecycle actions a
+  deployed runner can lease, `AGENT_RUNNER_ACTION` supplies a default action
+  filter for Cron, and `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS` caps lease TTLs.
+  If the action allow-list is narrower than the full lifecycle set, the runner
+  refuses unfiltered ticks so the control plane cannot choose a different
+  queued action.
 
 ## Open Questions
 

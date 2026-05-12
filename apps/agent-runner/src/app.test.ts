@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { createApp } from "./app.js"
+import { runnerDispatchActions } from "./runner.js"
 import {
   createR2SupervisorTickStore,
   type SupervisorTickBucket,
@@ -88,6 +89,12 @@ describe("agent runner app", () => {
           dryRun: true,
           iterations: 3,
           mode: "lease-only",
+          policy: {
+            allowedActions: Array.from(runnerDispatchActions).sort(),
+            defaultAction: null,
+            maxLeaseTtlSeconds: 900,
+            requiresActionFilter: false,
+          },
           source: "api",
         },
         reason: "dry_run",
@@ -189,6 +196,169 @@ describe("agent runner app", () => {
       },
     ])
     expect(calls[0]?.headers.get("authorization")).toBe("Bearer control-token")
+  })
+
+  it("applies runner action and lease TTL policy before calling the control plane", async () => {
+    const calls: string[] = []
+    const app = createApp({
+      authTokens: ["token"],
+      config: {
+        allowedActions: ["sync-pr"],
+        controlPlaneConfigured: true,
+        controlPlaneToken: "control-token",
+        controlPlaneUrl: "https://control.example.com/",
+        enabled: true,
+        holder: "runner:cloudflare",
+        maxLeaseTtlSeconds: 120,
+        repository: "voyantjs/voyant",
+      },
+      fetchImpl: async (url) => {
+        calls.push(String(url))
+        return new Response(JSON.stringify({ reason: "leased" }), { status: 201 })
+      },
+      now: () => new Date("2026-05-12T11:00:00.000Z"),
+    })
+
+    const missingAction = await app.request("/api/supervisor/ticks", {
+      body: JSON.stringify({ dryRun: false }),
+      headers: {
+        authorization: "Bearer token",
+        "content-type": "application/json",
+      },
+      method: "POST",
+    })
+    expect(missingAction.status).toBe(200)
+    await expect(missingAction.json()).resolves.toMatchObject({
+      result: {
+        leased: false,
+        plan: {
+          accepted: false,
+          blockers: ["runner policy requires an action filter"],
+        },
+        reason: "blocked",
+      },
+    })
+
+    const blocked = await app.request("/api/supervisor/ticks", {
+      body: JSON.stringify({ action: "cleanup", dryRun: false, ttlSeconds: 300 }),
+      headers: {
+        authorization: "Bearer token",
+        "content-type": "application/json",
+      },
+      method: "POST",
+    })
+    expect(blocked.status).toBe(200)
+    await expect(blocked.json()).resolves.toMatchObject({
+      result: {
+        leased: false,
+        plan: {
+          accepted: false,
+          blockers: [
+            "action cleanup is not allowed by runner policy",
+            "lease TTL 300s exceeds runner policy maximum 120s",
+          ],
+        },
+        reason: "blocked",
+      },
+    })
+    expect(calls).toEqual([])
+  })
+
+  it("treats typoed full-length action allow-lists as restricted", async () => {
+    const allowedActions = [
+      ...runnerDispatchActions.filter((action) => action !== "cleanup"),
+      "clean-up",
+    ]
+    expect(new Set(allowedActions).size).toBe(runnerDispatchActions.length)
+
+    const app = createApp({
+      authTokens: ["token"],
+      config: {
+        allowedActions,
+        controlPlaneConfigured: true,
+        controlPlaneToken: "control-token",
+        controlPlaneUrl: "https://control.example.com/",
+        enabled: true,
+        holder: "runner:cloudflare",
+        repository: "voyantjs/voyant",
+      },
+    })
+
+    const response = await app.request("/api/supervisor/ticks", {
+      body: JSON.stringify({ dryRun: false }),
+      headers: {
+        authorization: "Bearer token",
+        "content-type": "application/json",
+      },
+      method: "POST",
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      result: {
+        leased: false,
+        plan: {
+          accepted: false,
+          policy: {
+            requiresActionFilter: true,
+          },
+          blockers: ["runner policy requires an action filter"],
+        },
+        reason: "blocked",
+      },
+    })
+  })
+
+  it("uses the configured default action when scheduled ticks are action-restricted", async () => {
+    const calls: Array<{ body: unknown; url: string }> = []
+    const app = createApp({
+      authTokens: ["token"],
+      config: {
+        allowedActions: ["sync-pr"],
+        controlPlaneConfigured: true,
+        controlPlaneToken: "control-token",
+        controlPlaneUrl: "https://control.example.com/",
+        defaultAction: "sync-pr",
+        enabled: true,
+        holder: "runner:cloudflare",
+        repository: "voyantjs/voyant",
+      },
+      fetchImpl: async (url, init) => {
+        calls.push({ body: JSON.parse(String(init?.body)), url: String(url) })
+        return new Response(JSON.stringify({ reason: "idle" }), { status: 200 })
+      },
+    })
+
+    const response = await app.request("/api/supervisor/ticks", {
+      body: JSON.stringify({ dryRun: false }),
+      headers: {
+        authorization: "Bearer token",
+        "content-type": "application/json",
+      },
+      method: "POST",
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      result: {
+        leased: false,
+        reason: "idle",
+      },
+    })
+    expect(calls).toEqual([
+      {
+        body: {
+          filters: {
+            action: "sync-pr",
+          },
+          lease: {
+            holder: "runner:cloudflare",
+          },
+          repository: "voyantjs/voyant",
+        },
+        url: "https://control.example.com/api/dispatch-intents/latest",
+      },
+    ])
   })
 
   it("reads the latest persisted supervisor tick", async () => {

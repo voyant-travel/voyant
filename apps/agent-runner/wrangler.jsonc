@@ -12,6 +12,8 @@
   // Configure AGENT_CONTROL_PLANE_TOKEN separately when the runner is allowed to
   // call the control plane. Cron triggers should stay disabled until execution
   // policy, queue budget, and provider credentials are configured.
+  // Optional: set AGENT_RUNNER_ALLOWED_ACTIONS and AGENT_RUNNER_ACTION to keep
+  // scheduled ticks constrained to one approved lifecycle action.
   // Optional: bind an R2 bucket as AGENT_RUNNER_TICKS to store the latest
   // supervisor tick status per repository. Set AGENT_RUNNER_TICK_KEY_PREFIX
   // when multiple environments share one bucket.
