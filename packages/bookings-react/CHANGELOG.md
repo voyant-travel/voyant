@@ -1,5 +1,17 @@
 # @voyantjs/bookings-react
 
+## 0.36.0
+
+### Minor Changes
+
+- 15e6953: Expose slot-scoped traveler sharing groups through bookings routes and React hooks, and wire traveler allocation metadata through travel-details validation.
+
+### Patch Changes
+
+- Updated dependencies [15e6953]
+  - @voyantjs/bookings@0.36.0
+  - @voyantjs/react@0.36.0
+
 ## 0.35.0
 
 ### Patch Changes
