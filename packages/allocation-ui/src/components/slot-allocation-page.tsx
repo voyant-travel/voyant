@@ -1,11 +1,14 @@
 "use client"
 
 import {
+  type AllocationAuditLogEntry,
   type AllocationManifestTraveler,
   type AllocationResource,
+  useAllocationAutomationMutation,
   useAllocationResourceMutation,
   useAssignTravelerAllocationMutation,
   useSlotAllocation,
+  useSlotAllocationAuditLog,
 } from "@voyantjs/availability-react"
 import {
   Badge,
@@ -23,10 +26,14 @@ import {
   ArrowLeft,
   Bed,
   Crown,
+  Download,
+  History,
   Plus,
+  Sparkles,
   Trash2,
   Users,
   UtensilsCrossed,
+  Wand2,
 } from "lucide-react"
 import { type DragEvent, type FormEvent, type ReactNode, useMemo, useState } from "react"
 
@@ -51,8 +58,10 @@ export function SlotAllocationPage({
 }: SlotAllocationPageProps) {
   const messages = useAllocationUiMessagesOrDefault()
   const allocation = useSlotAllocation({ slotId })
+  const auditLog = useSlotAllocationAuditLog({ slotId })
   const resourceMutation = useAllocationResourceMutation(slotId)
   const assignMutation = useAssignTravelerAllocationMutation(slotId)
+  const automationMutation = useAllocationAutomationMutation(slotId)
   const [addingRoom, setAddingRoom] = useState(false)
   const [roomLabel, setRoomLabel] = useState("")
   const [roomCapacity, setRoomCapacity] = useState(2)
@@ -89,6 +98,12 @@ export function SlotAllocationPage({
     return { byRoom, unallocated }
   }, [travelers])
 
+  function downloadExport(kind: "passengers" | "rooming-list") {
+    globalThis.location.assign(
+      `/v1/admin/availability/slots/${encodeURIComponent(slotId)}/allocation/export-${kind}`,
+    )
+  }
+
   async function assignTraveler(travelerId: string, resourceId: string | null) {
     setError(null)
     try {
@@ -112,6 +127,24 @@ export function SlotAllocationPage({
       setAddingRoom(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : messages.createRoomFailed)
+    }
+  }
+
+  async function generateRooms() {
+    setError(null)
+    try {
+      await automationMutation.autoMaterialize.mutateAsync({ kind: ROOM_KIND })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : messages.generateRoomsFailed)
+    }
+  }
+
+  async function autoAllocate() {
+    setError(null)
+    try {
+      await automationMutation.autoAllocate.mutateAsync({ kind: ROOM_KIND })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : messages.autoAllocateFailed)
     }
   }
 
@@ -153,6 +186,37 @@ export function SlotAllocationPage({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {renderExtraActions?.({ slotId })}
+          <Button variant="outline" onClick={() => downloadExport("passengers")}>
+            <Download data-icon="inline-start" aria-hidden="true" />
+            {messages.exportPassengers}
+          </Button>
+          <Button variant="outline" onClick={() => downloadExport("rooming-list")}>
+            <Download data-icon="inline-start" aria-hidden="true" />
+            {messages.exportRooming}
+          </Button>
+          {rooms.length === 0 ? (
+            <Button
+              variant="outline"
+              onClick={() => void generateRooms()}
+              disabled={automationMutation.autoMaterialize.isPending}
+            >
+              <Sparkles data-icon="inline-start" aria-hidden="true" />
+              {automationMutation.autoMaterialize.isPending
+                ? messages.generatingRooms
+                : messages.generateRooms}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => void autoAllocate()}
+              disabled={automationMutation.autoAllocate.isPending}
+            >
+              <Wand2 data-icon="inline-start" aria-hidden="true" />
+              {automationMutation.autoAllocate.isPending
+                ? messages.autoAllocating
+                : messages.autoAllocate}
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setAddingRoom((value) => !value)}>
             <Plus data-icon="inline-start" aria-hidden="true" />
             {messages.addRoom}
@@ -217,6 +281,9 @@ export function SlotAllocationPage({
             <TravelerTile
               key={traveler.id}
               traveler={traveler}
+              sharingGroupLabel={
+                traveler.sharingGroupId ? data.sharingGroupLabels[traveler.sharingGroupId] : null
+              }
               renderActions={renderTravelerActions}
             />
           ))}
@@ -237,6 +304,7 @@ export function SlotAllocationPage({
                   occupants={roomOccupants}
                   onDropTraveler={(travelerId) => void assignTraveler(travelerId, room.id)}
                   onRemoveRoom={() => void resourceMutation.remove.mutateAsync(room.id)}
+                  sharingGroupLabels={data.sharingGroupLabels}
                   renderTravelerActions={renderTravelerActions}
                 />
               )
@@ -244,6 +312,7 @@ export function SlotAllocationPage({
           )}
         </div>
       </div>
+      <AuditLogCard entries={auditLog.data?.data ?? []} />
     </div>
   )
 }
@@ -253,12 +322,14 @@ function RoomColumn({
   occupants,
   onDropTraveler,
   onRemoveRoom,
+  sharingGroupLabels,
   renderTravelerActions,
 }: {
   room: AllocationResource
   occupants: AllocationManifestTraveler[]
   onDropTraveler: (travelerId: string) => void
   onRemoveRoom: () => void
+  sharingGroupLabels: Record<string, string>
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
@@ -285,7 +356,14 @@ function RoomColumn({
         </Badge>
       ) : null}
       {occupants.map((traveler) => (
-        <TravelerTile key={traveler.id} traveler={traveler} renderActions={renderTravelerActions} />
+        <TravelerTile
+          key={traveler.id}
+          traveler={traveler}
+          sharingGroupLabel={
+            traveler.sharingGroupId ? sharingGroupLabels[traveler.sharingGroupId] : null
+          }
+          renderActions={renderTravelerActions}
+        />
       ))}
       {!full ? (
         <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
@@ -363,9 +441,11 @@ function DropColumn({
 
 function TravelerTile({
   traveler,
+  sharingGroupLabel,
   renderActions,
 }: {
   traveler: AllocationManifestTraveler
+  sharingGroupLabel?: string | null
   renderActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
@@ -390,7 +470,7 @@ function TravelerTile({
           <span className="truncate font-medium">{traveler.fullName}</span>
           {traveler.sharingGroupId ? (
             <Badge variant="secondary" className="text-[10px]">
-              {messages.sharingGroup}
+              {sharingGroupLabel ?? messages.sharingGroup}
             </Badge>
           ) : null}
         </div>
@@ -407,4 +487,63 @@ function TravelerTile({
       {renderActions ? <div className="shrink-0">{renderActions(traveler)}</div> : null}
     </div>
   )
+}
+
+function AuditLogCard({ entries }: { entries: AllocationAuditLogEntry[] }) {
+  const messages = useAllocationUiMessagesOrDefault()
+  if (entries.length === 0) return null
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center gap-2 space-y-0 py-3">
+        <History className="size-4 text-muted-foreground" aria-hidden="true" />
+        <div>
+          <CardTitle className="text-base">{messages.auditLog}</CardTitle>
+          <p className="text-xs text-muted-foreground">{messages.auditLogDescription}</p>
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2">
+        {entries.slice(0, 8).map((entry) => (
+          <div key={entry.id} className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-muted-foreground">
+              {new Date(entry.createdAt).toLocaleString()}
+            </span>
+            <Badge variant="outline">{actionLabel(entry.action, messages)}</Badge>
+            <span className="min-w-0 flex-1 truncate text-muted-foreground">
+              {entryDetail(entry)}
+            </span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+function actionLabel(
+  action: string,
+  messages: ReturnType<typeof useAllocationUiMessagesOrDefault>,
+) {
+  return messages.auditActions[action] ?? action
+}
+
+function entryDetail(entry: AllocationAuditLogEntry) {
+  const after = entry.after ?? {}
+  if (entry.action === "auto-allocate") {
+    return `${after.kind ?? ""}: ${after.assigned ?? 0} assigned, ${after.skipped ?? 0} skipped`
+  }
+  if (entry.action === "resources.materialize") {
+    return `${after.kind ?? ""}: ${after.created ?? 0} created`
+  }
+  if (entry.action.startsWith("resource.")) {
+    return [after.kind, after.label, after.capacity ? `capacity ${after.capacity}` : null]
+      .filter(Boolean)
+      .join(" · ")
+  }
+  if (entry.action.startsWith("traveler.")) {
+    return [after.kind, after.resourceId, after.sharingGroupId].filter(Boolean).join(" · ")
+  }
+  if (entry.action.startsWith("sharing-group.")) {
+    return [after.sharingGroupId, after.label].filter(Boolean).join(" · ")
+  }
+  return JSON.stringify(after)
 }

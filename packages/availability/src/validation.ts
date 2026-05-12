@@ -153,6 +153,27 @@ export const pairSharingGroupSchema = z.object({
   sharingGroupId: z.string().trim().min(1).optional(),
 })
 
+export const updateSharingGroupLabelSchema = z.object({
+  label: z.string().trim().min(1).max(120),
+})
+
+export const upsertResourceTemplateSchema = z.object({
+  capacity: z.number().int().min(1),
+  namePattern: z.string().trim().min(1).max(160).default("Room {sequence}"),
+  refType: z.string().trim().min(1).nullable().optional(),
+  refId: z.string().trim().min(1).nullable().optional(),
+  layout: z.string().trim().min(1).nullable().optional(),
+  flags: allocationResourceFlagsSchema.default({}),
+})
+
+export const allocationAutomationSchema = z.object({
+  kind: allocationResourceKindSchema.default("room"),
+})
+
+export const allocationAuditLogQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+})
+
 export const availabilityPickupPointCoreSchema = z.object({
   productId: z.string(),
   facilityId: z.string().nullable().optional(),

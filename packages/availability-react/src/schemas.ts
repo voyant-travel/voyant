@@ -7,6 +7,7 @@ import {
   updateAvailabilityRuleSchema,
   updateAvailabilitySlotSchema,
   updateAvailabilityStartTimeSchema,
+  upsertResourceTemplateSchema,
 } from "@voyantjs/availability"
 import { z } from "zod"
 
@@ -253,6 +254,7 @@ export const slotAllocationManifestSchema = z.object({
   }),
   bookings: z.array(allocationManifestBookingSchema),
   resources: z.array(allocationResourceSchema),
+  sharingGroupLabels: z.record(z.string(), z.string()),
   summary: z.object({
     bookingCount: z.number().int(),
     travelerCount: z.number().int(),
@@ -263,6 +265,76 @@ export const slotAllocationManifestSchema = z.object({
 
 export type SlotAllocationManifest = z.infer<typeof slotAllocationManifestSchema>
 export const slotAllocationManifestResponse = singleEnvelope(slotAllocationManifestSchema)
+
+export const resourceTemplateSchema = z.object({
+  id: z.string(),
+  productOptionId: z.string(),
+  kind: z.string(),
+  refType: z.string().nullable(),
+  refId: z.string().nullable(),
+  capacity: z.number().int(),
+  namePattern: z.string(),
+  layout: z.string().nullable(),
+  flags: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type ResourceTemplate = z.infer<typeof resourceTemplateSchema>
+
+export const productOptionResourceTemplatesSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  code: z.string().nullable(),
+  description: z.string().nullable(),
+  status: z.string(),
+  isDefault: z.boolean(),
+  sortOrder: z.number().int(),
+  templates: z.array(resourceTemplateSchema),
+})
+
+export type ProductOptionResourceTemplates = z.infer<typeof productOptionResourceTemplatesSchema>
+
+export const productOptionResourceTemplatesListResponse = z.object({
+  data: z.array(productOptionResourceTemplatesSchema),
+})
+
+export const allocationAutomationResponse = singleEnvelope(
+  z.object({
+    kind: z.string(),
+    assigned: z.number().int().optional(),
+    skipped: z.number().int().optional(),
+    created: z.number().int().optional(),
+    resources: z.array(allocationResourceSchema).optional(),
+  }),
+)
+
+export const sharingGroupLabelSchema = z.object({
+  groupId: z.string(),
+  label: z.string(),
+  createdAt: z.string().or(z.date()),
+  updatedAt: z.string().or(z.date()),
+})
+
+export type SharingGroupLabel = z.infer<typeof sharingGroupLabelSchema>
+
+export const allocationAuditLogEntrySchema = z.object({
+  id: z.string(),
+  slotId: z.string(),
+  action: z.string(),
+  actorId: z.string().nullable(),
+  travelerId: z.string().nullable(),
+  resourceId: z.string().nullable(),
+  before: z.record(z.string(), z.unknown()).nullable(),
+  after: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+})
+
+export type AllocationAuditLogEntry = z.infer<typeof allocationAuditLogEntrySchema>
+
+export const allocationAuditLogResponse = z.object({
+  data: z.array(allocationAuditLogEntrySchema),
+})
 
 export const slotUnitAvailabilityRecordSchema = z.object({
   optionUnitId: z.string(),
@@ -286,10 +358,12 @@ export {
   updateAvailabilityRuleSchema,
   updateAvailabilitySlotSchema,
   updateAvailabilityStartTimeSchema,
+  upsertResourceTemplateSchema,
 }
 
 export type CreateAllocationResourceInput = z.input<typeof insertAllocationResourceSchema>
 export type UpdateAllocationResourceInput = z.input<typeof updateAllocationResourceSchema>
+export type UpsertResourceTemplateInput = z.input<typeof upsertResourceTemplateSchema>
 export type CreateAvailabilityRuleInput = z.input<typeof insertAvailabilityRuleSchema>
 export type UpdateAvailabilityRuleInput = z.input<typeof updateAvailabilityRuleSchema>
 export type CreateAvailabilityStartTimeInput = z.input<typeof insertAvailabilityStartTimeSchema>

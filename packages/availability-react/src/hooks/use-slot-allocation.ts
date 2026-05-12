@@ -6,12 +6,20 @@ import { z } from "zod"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantAvailabilityContext } from "../provider.js"
 import { availabilityQueryKeys } from "../query-keys.js"
-import { getSlotAllocationQueryOptions } from "../query-options.js"
 import {
+  getProductResourceTemplatesQueryOptions,
+  getSlotAllocationAuditLogQueryOptions,
+  getSlotAllocationQueryOptions,
+} from "../query-options.js"
+import {
+  allocationAutomationResponse,
   allocationResourceSchema,
   type CreateAllocationResourceInput,
+  resourceTemplateSchema,
+  sharingGroupLabelSchema,
   singleEnvelope,
   type UpdateAllocationResourceInput,
+  type UpsertResourceTemplateInput,
 } from "../schemas.js"
 
 const assignTravelerAllocationResponse = singleEnvelope(
@@ -49,11 +57,36 @@ export function useSlotAllocation({ slotId, enabled = true }: UseSlotAllocationO
   })
 }
 
+export function useSlotAllocationAuditLog({ slotId, enabled = true }: UseSlotAllocationOptions) {
+  const client = useVoyantAvailabilityContext()
+  return useQuery({
+    ...getSlotAllocationAuditLogQueryOptions(client, slotId),
+    enabled: enabled && Boolean(slotId),
+  })
+}
+
+export function useProductResourceTemplates({
+  productId,
+  enabled = true,
+}: {
+  productId: string | null | undefined
+  enabled?: boolean
+}) {
+  const client = useVoyantAvailabilityContext()
+  return useQuery({
+    ...getProductResourceTemplatesQueryOptions(client, productId),
+    enabled: enabled && Boolean(productId),
+  })
+}
+
 export function useAllocationResourceMutation(slotId: string) {
   const { baseUrl, fetcher } = useVoyantAvailabilityContext()
   const queryClient = useQueryClient()
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: availabilityQueryKeys.slotAllocation(slotId) })
+    await queryClient.invalidateQueries({
+      queryKey: availabilityQueryKeys.slotAllocationAuditLog(slotId),
+    })
   }
 
   const create = useMutation({
@@ -102,6 +135,89 @@ export function useAllocationResourceMutation(slotId: string) {
   return { create, update, remove }
 }
 
+export function useResourceTemplateMutation(productId: string) {
+  const { baseUrl, fetcher } = useVoyantAvailabilityContext()
+  const queryClient = useQueryClient()
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: availabilityQueryKeys.productResourceTemplates(productId),
+    })
+  }
+
+  const upsert = useMutation({
+    mutationFn: async ({
+      optionId,
+      kind,
+      input,
+    }: {
+      optionId: string
+      kind: string
+      input: UpsertResourceTemplateInput
+    }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/availability/products/${productId}/options/${optionId}/allocation/resource-templates/${kind}`,
+        singleEnvelope(resourceTemplateSchema),
+        { baseUrl, fetcher },
+        { method: "PUT", body: JSON.stringify(input) },
+      )
+      return data
+    },
+    onSuccess: invalidate,
+  })
+
+  const remove = useMutation({
+    mutationFn: async ({ optionId, kind }: { optionId: string; kind: string }) =>
+      fetchWithValidation(
+        `/v1/admin/availability/products/${productId}/options/${optionId}/allocation/resource-templates/${kind}`,
+        singleEnvelope(z.object({ productOptionId: z.string(), kind: z.string() })),
+        { baseUrl, fetcher },
+        { method: "DELETE" },
+      ),
+    onSuccess: invalidate,
+  })
+
+  return { upsert, remove }
+}
+
+export function useAllocationAutomationMutation(slotId: string) {
+  const { baseUrl, fetcher } = useVoyantAvailabilityContext()
+  const queryClient = useQueryClient()
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: availabilityQueryKeys.slotAllocation(slotId) })
+    await queryClient.invalidateQueries({
+      queryKey: availabilityQueryKeys.slotAllocationAuditLog(slotId),
+    })
+  }
+
+  const autoMaterialize = useMutation({
+    mutationFn: async (input: { kind?: string }) => {
+      const result = await fetchWithValidation(
+        `/v1/admin/availability/slots/${slotId}/allocation/auto-materialize`,
+        allocationAutomationResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input) },
+      )
+      return result.data
+    },
+    onSuccess: invalidate,
+  })
+
+  const autoAllocate = useMutation({
+    mutationFn: async (input: { kind?: string }) => {
+      const result = await fetchWithValidation(
+        `/v1/admin/availability/slots/${slotId}/allocation/auto-allocate`,
+        allocationAutomationResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input) },
+      )
+      return result.data
+    },
+    onSuccess: invalidate,
+  })
+
+  return { autoMaterialize, autoAllocate }
+}
+
 export function useAssignTravelerAllocationMutation(slotId: string) {
   const { baseUrl, fetcher } = useVoyantAvailabilityContext()
   const queryClient = useQueryClient()
@@ -121,8 +237,46 @@ export function useAssignTravelerAllocationMutation(slotId: string) {
       await queryClient.invalidateQueries({
         queryKey: availabilityQueryKeys.slotAllocation(slotId),
       })
+      await queryClient.invalidateQueries({
+        queryKey: availabilityQueryKeys.slotAllocationAuditLog(slotId),
+      })
     },
   })
+}
+
+export function useSharingGroupLabelMutation(slotId: string) {
+  const { baseUrl, fetcher } = useVoyantAvailabilityContext()
+  const queryClient = useQueryClient()
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: availabilityQueryKeys.slotAllocation(slotId) })
+    await queryClient.invalidateQueries({
+      queryKey: availabilityQueryKeys.slotAllocationAuditLog(slotId),
+    })
+  }
+
+  const update = useMutation({
+    mutationFn: (input: { groupId: string; label: string }) =>
+      fetchWithValidation(
+        `/v1/admin/availability/slots/${slotId}/allocation/sharing-groups/${input.groupId}/label`,
+        singleEnvelope(sharingGroupLabelSchema),
+        { baseUrl, fetcher },
+        { method: "PUT", body: JSON.stringify({ label: input.label }) },
+      ),
+    onSuccess: invalidate,
+  })
+
+  const remove = useMutation({
+    mutationFn: (groupId: string) =>
+      fetchWithValidation(
+        `/v1/admin/availability/slots/${slotId}/allocation/sharing-groups/${groupId}/label`,
+        singleEnvelope(sharingGroupLabelSchema),
+        { baseUrl, fetcher },
+        { method: "DELETE" },
+      ),
+    onSuccess: invalidate,
+  })
+
+  return { update, remove }
 }
 
 export function useTravelerSharingGroupMutation(slotId: string) {
@@ -140,6 +294,9 @@ export function useTravelerSharingGroupMutation(slotId: string) {
       await queryClient.invalidateQueries({
         queryKey: availabilityQueryKeys.slotAllocation(slotId),
       })
+      await queryClient.invalidateQueries({
+        queryKey: availabilityQueryKeys.slotAllocationAuditLog(slotId),
+      })
     },
   })
 
@@ -154,6 +311,9 @@ export function useTravelerSharingGroupMutation(slotId: string) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: availabilityQueryKeys.slotAllocation(slotId),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: availabilityQueryKeys.slotAllocationAuditLog(slotId),
       })
     },
   })

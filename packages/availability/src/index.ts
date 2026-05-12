@@ -27,6 +27,7 @@ export {
   generateAvailabilitySlots,
 } from "./generate-slots.js"
 export type {
+  AllocationAuditLog,
   AllocationResource,
   AvailabilityCloseout,
   AvailabilityPickupPoint,
@@ -48,11 +49,15 @@ export type {
   NewPickupGroup,
   NewPickupLocation,
   NewProductMeetingConfig,
+  NewProductOptionResourceTemplate,
   PickupGroup,
   PickupLocation,
   ProductMeetingConfig,
+  ProductOptionResourceTemplate,
+  SharingGroupLabel,
 } from "./schema.js"
 export {
+  allocationAuditLog,
   allocationResources,
   availabilityCloseouts,
   availabilityPickupPoints,
@@ -65,8 +70,17 @@ export {
   pickupGroups,
   pickupLocations,
   productMeetingConfigs,
+  productOptionResourceTemplates,
+  sharingGroupLabels,
 } from "./schema.js"
 export {
+  allocationExportFilename,
+  buildAllocationPassengersCsv,
+  buildAllocationRoomingCsv,
+} from "./service-allocation-exports.js"
+export {
+  allocationAuditLogQuerySchema,
+  allocationAutomationSchema,
   assignTravelerAllocationSchema,
   availabilityCloseoutListQuerySchema,
   availabilityPickupPointListQuerySchema,
@@ -104,6 +118,8 @@ export {
   updatePickupGroupSchema,
   updatePickupLocationSchema,
   updateProductMeetingConfigSchema,
+  updateSharingGroupLabelSchema,
   updateTravelerSharingGroupSchema,
+  upsertResourceTemplateSchema,
 } from "./validation.js"
 export { availabilityService }
