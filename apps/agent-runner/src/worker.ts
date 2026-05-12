@@ -1,5 +1,5 @@
 import { createApp } from "./app.js"
-import { planSupervisorTick } from "./runner.js"
+import { runSupervisorTick } from "./runner.js"
 
 interface Env {
   AGENT_CONTROL_PLANE_TOKEN?: string
@@ -20,20 +20,22 @@ export default {
   },
 
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
-    const plan = planSupervisorTick({
+    const result = await runSupervisorTick({
       config: runnerConfigFromEnv(env),
       request: {
+        dryRun: env.AGENT_RUNNER_ENABLED !== "true",
         reason: "cloudflare-cron",
       },
       source: "scheduled",
     })
-    console.log(JSON.stringify({ service: "agent-runner", supervisorTick: plan }))
+    console.log(JSON.stringify({ service: "agent-runner", supervisorTick: result }))
   },
 } satisfies ExportedHandler<Env>
 
 function runnerConfigFromEnv(env: Env) {
   return {
     controlPlaneConfigured: Boolean(env.AGENT_CONTROL_PLANE_URL && env.AGENT_CONTROL_PLANE_TOKEN),
+    controlPlaneToken: env.AGENT_CONTROL_PLANE_TOKEN,
     controlPlaneUrl: env.AGENT_CONTROL_PLANE_URL,
     enabled: env.AGENT_RUNNER_ENABLED === "true",
     holder: env.AGENT_RUNNER_HOLDER,

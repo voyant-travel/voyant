@@ -2,14 +2,15 @@ import { Hono } from "hono"
 
 import {
   buildRunnerCapabilities,
-  planSupervisorTick,
   type RunnerConfig,
+  runSupervisorTick,
   supervisorTickRequestSchema,
 } from "./runner.js"
 
 interface AppOptions {
   authTokens?: string[]
   config?: RunnerConfig
+  fetchImpl?: typeof fetch
   now?: () => Date
 }
 
@@ -19,6 +20,7 @@ export function createApp({
     controlPlaneConfigured: false,
     enabled: false,
   },
+  fetchImpl = fetch,
   now = () => new Date(),
 }: AppOptions = {}): Hono {
   const app = new Hono()
@@ -60,8 +62,9 @@ export function createApp({
 
     return c.json({
       plannedAt: now().toISOString(),
-      plan: planSupervisorTick({
+      result: await runSupervisorTick({
         config,
+        fetchImpl,
         request: parsed.data,
         source: "api",
       }),
