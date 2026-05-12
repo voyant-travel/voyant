@@ -17,7 +17,20 @@
 
 import type { EventBus } from "@voyantjs/core"
 import { productCategoryProducts, productDestinations } from "@voyantjs/products/schema"
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm"
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -205,6 +218,56 @@ async function listOffers(db: PostgresJsDatabase, query: PromotionalOfferListQue
   const where = []
   if (query.active !== undefined) where.push(eq(promotionalOffers.active, query.active))
   if (query.code !== undefined) where.push(eq(promotionalOffers.code, query.code.toLowerCase()))
+  if (query.search !== undefined) {
+    const term = `%${query.search}%`
+    where.push(
+      or(
+        ilike(promotionalOffers.name, term),
+        ilike(promotionalOffers.slug, term),
+        ilike(promotionalOffers.description, term),
+        ilike(promotionalOffers.code, term),
+      ),
+    )
+  }
+  if (query.applicationMode === "auto") where.push(isNull(promotionalOffers.code))
+  if (query.applicationMode === "code") where.push(isNotNull(promotionalOffers.code))
+  if (query.scopeKind !== undefined) {
+    where.push(sql`${promotionalOffers.scope}->>'kind' = ${query.scopeKind}`)
+  }
+  if (query.status !== undefined) {
+    const now = new Date()
+    if (query.status === "archived") {
+      where.push(eq(promotionalOffers.active, false))
+    } else if (query.status === "scheduled") {
+      where.push(and(eq(promotionalOffers.active, true), gte(promotionalOffers.validFrom, now)))
+    } else if (query.status === "expired") {
+      where.push(and(eq(promotionalOffers.active, true), lte(promotionalOffers.validUntil, now)))
+    } else {
+      where.push(
+        and(
+          eq(promotionalOffers.active, true),
+          or(isNull(promotionalOffers.validFrom), lte(promotionalOffers.validFrom, now)),
+          or(isNull(promotionalOffers.validUntil), gte(promotionalOffers.validUntil, now)),
+        ),
+      )
+    }
+  }
+  if (query.validFrom !== undefined) {
+    where.push(
+      or(
+        isNull(promotionalOffers.validUntil),
+        gte(promotionalOffers.validUntil, startOfDay(query.validFrom)),
+      ),
+    )
+  }
+  if (query.validUntil !== undefined) {
+    where.push(
+      or(
+        isNull(promotionalOffers.validFrom),
+        lte(promotionalOffers.validFrom, endOfDay(query.validUntil)),
+      ),
+    )
+  }
 
   const filter = where.length > 0 ? and(...where) : undefined
   const limit = query.limit ?? 50
@@ -225,6 +288,14 @@ async function listOffers(db: PostgresJsDatabase, query: PromotionalOfferListQue
     .offset(offset)
 
   return { data, total, limit, offset }
+}
+
+function startOfDay(isoDate: string): Date {
+  return new Date(`${isoDate}T00:00:00.000Z`)
+}
+
+function endOfDay(isoDate: string): Date {
+  return new Date(`${isoDate}T23:59:59.999Z`)
 }
 
 async function getOfferById(db: PostgresJsDatabase, id: string): Promise<PromotionalOffer | null> {

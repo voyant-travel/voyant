@@ -161,6 +161,14 @@ export const promotionalOfferListQuerySchema = z.object({
     .transform((v) => v === "true")
     .optional(),
   code: z.string().min(1).max(80).optional(),
+  search: z.string().trim().min(1).max(200).optional(),
+  applicationMode: z.enum(["auto", "code"]).optional(),
+  status: z.enum(["active", "scheduled", "expired", "archived"]).optional(),
+  scopeKind: z
+    .enum(["global", "products", "categories", "destinations", "markets", "audiences"])
+    .optional(),
+  validFrom: z.string().date().optional(),
+  validUntil: z.string().date().optional(),
   limit: z.coerce.number().int().positive().max(200).optional().default(50),
   offset: z.coerce.number().int().nonnegative().optional().default(0),
 })
@@ -170,3 +178,7 @@ export type InsertPromotionalOffer = z.infer<typeof insertPromotionalOfferSchema
 export type UpdatePromotionalOfferInput = z.input<typeof updatePromotionalOfferSchema>
 export type UpdatePromotionalOffer = z.infer<typeof updatePromotionalOfferSchema>
 export type PromotionalOfferListQuery = z.infer<typeof promotionalOfferListQuerySchema>
+export type PromotionalOfferApplicationMode = NonNullable<
+  PromotionalOfferListQuery["applicationMode"]
+>
+export type PromotionalOfferListStatus = NonNullable<PromotionalOfferListQuery["status"]>
