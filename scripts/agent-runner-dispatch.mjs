@@ -14,9 +14,9 @@ import {
   selectDispatchRecommendation,
 } from "./lib/agent-runner-dispatch.mjs"
 import {
-  appendAgentRunnerEvent,
   recommendationEventDetails,
   resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
 } from "./lib/agent-runner-events.mjs"
 import {
   eventLogOptions,
@@ -79,6 +79,7 @@ if (!recommendation) {
 }
 
 const commandArgs = dispatchCommandArgs(recommendation, {
+  eventLog: args.eventLog,
   repository,
   updateBody: Boolean(args.updateBody),
 })
@@ -89,7 +90,7 @@ if (!args.yes) {
   fail("dispatch mode runs one queue mutation; rerun with --yes")
 }
 
-appendAgentRunnerEvent({
+tryAppendAgentRunnerEvent({
   eventLogPath,
   event: {
     type: "dispatch.started",
@@ -99,7 +100,7 @@ appendAgentRunnerEvent({
   },
 })
 const status = runDispatchCommand(commandArgs)
-appendAgentRunnerEvent({
+tryAppendAgentRunnerEvent({
   eventLogPath,
   event: {
     type: "dispatch.completed",
