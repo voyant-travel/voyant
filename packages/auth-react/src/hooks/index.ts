@@ -41,4 +41,10 @@ export {
   signInWithEmail,
   useSignIn,
 } from "./use-sign-in.js"
+export {
+  type UpdateAccountProfileInput,
+  type UpdateAccountProfileResult,
+  updateAccountProfile,
+  useUpdateAccountProfile,
+} from "./use-update-account-profile.js"
 export { useWorkspaceMutation } from "./use-workspace-mutation.js"

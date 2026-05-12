@@ -1,4 +1,12 @@
 export {
+  defaultOnboardingPageMessages,
+  OnboardingPage,
+  type OnboardingPageInitialProfile,
+  type OnboardingPageMessages,
+  type OnboardingPageProps,
+  type OnboardingPageSlots,
+} from "./components/onboarding-page.js"
+export {
   ApiTokensPage,
   type ApiTokensPageProps,
   ServiceApiKeysPage,

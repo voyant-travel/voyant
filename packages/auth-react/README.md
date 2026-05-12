@@ -5,6 +5,7 @@ React runtime package for Voyant authentication and optional workspace state.
 This package wraps the shared Voyant auth HTTP contract:
 
 - `/auth/me`
+- `PATCH /auth/me`
 - `/auth/status`
 - `/auth/sign-in/email`
 - `/auth/workspace/current`
@@ -21,6 +22,7 @@ This package wraps the shared Voyant auth HTTP contract:
 It provides reusable React surfaces for:
 
 - current user state
+- account profile updates
 - optional workspace and organization state
 - organization member listing
 - organization invitation listing
@@ -45,6 +47,26 @@ await signIn.email.mutateAsync({
 After Better Auth accepts the credentials, the hook calls `/auth/status` to
 provision the Voyant user profile if needed and invalidates the current auth
 queries.
+
+## Profile Completion
+
+`updateAccountProfile()` and `useUpdateAccountProfile()` call `PATCH /auth/me`
+with the current user's profile fields and refresh the cached current user on
+success:
+
+```tsx
+const updateProfile = useUpdateAccountProfile()
+
+await updateProfile.mutateAsync({
+  firstName: "Ana",
+  lastName: "Pop",
+  locale: "ro",
+  timezone: "Europe/Bucharest",
+})
+```
+
+Apps can mount `handleAccountProfileRequest(...)` from `@voyantjs/auth/server`
+to provide this route without depending on a specific template.
 
 ## Single-Tenant Apps
 

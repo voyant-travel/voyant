@@ -1,6 +1,6 @@
 import type { getDb } from "@voyantjs/db"
 import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 
 type WorkspaceDb = ReturnType<typeof getDb>
 
@@ -10,10 +10,20 @@ export type CurrentUser = {
   phoneNumber?: string | null
   firstName: string | null
   lastName: string | null
+  locale: string
+  timezone: string | null
   isSuperAdmin: boolean
   isSupportUser: boolean
   createdAt: string
   profilePictureUrl?: string | null
+}
+
+export type UpdateCurrentUserProfileInput = {
+  userId: string
+  firstName?: string | null
+  lastName?: string | null
+  locale?: string | null
+  timezone?: string | null
 }
 
 export type AuthStatus = {
@@ -34,6 +44,8 @@ export async function getCurrentUser(
       createdAt: authUser.createdAt,
       firstName: userProfilesTable.firstName,
       lastName: userProfilesTable.lastName,
+      locale: userProfilesTable.locale,
+      timezone: userProfilesTable.timezone,
       avatarUrl: userProfilesTable.avatarUrl,
       isSuperAdmin: userProfilesTable.isSuperAdmin,
       isSupportUser: userProfilesTable.isSupportUser,
@@ -53,11 +65,37 @@ export async function getCurrentUser(
     phoneNumber: row.phoneNumber ?? null,
     firstName: row.firstName ?? null,
     lastName: row.lastName ?? null,
+    locale: row.locale ?? "en",
+    timezone: row.timezone ?? null,
     isSuperAdmin: row.isSuperAdmin ?? false,
     isSupportUser: row.isSupportUser ?? false,
     createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
     profilePictureUrl: row.avatarUrl ?? null,
   }
+}
+
+export async function updateCurrentUserProfile(
+  db: WorkspaceDb,
+  input: UpdateCurrentUserProfileInput,
+): Promise<CurrentUser | null> {
+  const values = {
+    id: input.userId,
+    ...profilePatchValues(input),
+    updatedAt: sql`now()`,
+  }
+
+  await db
+    .insert(userProfilesTable)
+    .values(values)
+    .onConflictDoUpdate({
+      target: userProfilesTable.id,
+      set: {
+        ...profilePatchValues(input),
+        updatedAt: sql`now()`,
+      },
+    })
+
+  return getCurrentUser(db, { userId: input.userId })
 }
 
 export async function ensureCurrentUserProfile(
@@ -115,4 +153,20 @@ export async function ensureCurrentUserProfile(
       reason: `Provisioning error: ${message}`,
     }
   }
+}
+
+function profilePatchValues(input: UpdateCurrentUserProfileInput) {
+  const values: {
+    firstName?: string | null
+    lastName?: string | null
+    locale?: string
+    timezone?: string | null
+  } = {}
+
+  if ("firstName" in input) values.firstName = input.firstName ?? null
+  if ("lastName" in input) values.lastName = input.lastName ?? null
+  if ("locale" in input) values.locale = input.locale ?? "en"
+  if ("timezone" in input) values.timezone = input.timezone ?? null
+
+  return values
 }
