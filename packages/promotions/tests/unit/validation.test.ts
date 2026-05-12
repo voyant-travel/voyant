@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   insertPromotionalOfferSchema,
   promotionalOfferConditionsSchema,
+  promotionalOfferListQuerySchema,
   promotionalOfferScopeSchema,
   updatePromotionalOfferSchema,
 } from "../../src/validation.js"
@@ -263,5 +264,31 @@ describe("updatePromotionalOfferSchema", () => {
         discountAmountCents: 100,
       }),
     ).toThrow(/percentage offers/i)
+  })
+})
+
+describe("promotionalOfferListQuerySchema", () => {
+  it("accepts operator list filters", () => {
+    expect(
+      promotionalOfferListQuerySchema.parse({
+        search: "spring",
+        applicationMode: "code",
+        status: "scheduled",
+        scopeKind: "products",
+        validFrom: "2026-05-01",
+        validUntil: "2026-05-31",
+        limit: "25",
+        offset: "50",
+      }),
+    ).toEqual({
+      search: "spring",
+      applicationMode: "code",
+      status: "scheduled",
+      scopeKind: "products",
+      validFrom: "2026-05-01",
+      validUntil: "2026-05-31",
+      limit: 25,
+      offset: 50,
+    })
   })
 })

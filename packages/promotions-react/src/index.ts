@@ -8,7 +8,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query"
 import {
+  type PromotionalOfferApplicationMode,
+  type PromotionalOfferListStatus,
   type PromotionalOfferScope,
+  type PromotionalOfferScopeKind,
   promotionalOfferScopeSchema,
 } from "@voyantjs/promotions/validation"
 import {
@@ -35,7 +38,10 @@ export {
 // ---------- Schemas ----------
 
 export {
+  type PromotionalOfferApplicationMode,
+  type PromotionalOfferListStatus,
   type PromotionalOfferScope,
+  type PromotionalOfferScopeKind,
   promotionalOfferScopeSchema,
 } from "@voyantjs/promotions/validation"
 
@@ -76,6 +82,12 @@ const singleResponseSchema = z.object({ data: promotionalOfferRecordSchema })
 export interface PromotionsListQuery {
   active?: boolean
   code?: string
+  search?: string
+  applicationMode?: PromotionalOfferApplicationMode
+  status?: PromotionalOfferListStatus
+  scopeKind?: PromotionalOfferScopeKind
+  validFrom?: string
+  validUntil?: string
   limit?: number
   offset?: number
 }
@@ -89,6 +101,12 @@ function buildSearch(query: PromotionsListQuery): string {
   const params = new URLSearchParams()
   if (query.active !== undefined) params.set("active", String(query.active))
   if (query.code) params.set("code", query.code)
+  if (query.search) params.set("search", query.search)
+  if (query.applicationMode) params.set("applicationMode", query.applicationMode)
+  if (query.status) params.set("status", query.status)
+  if (query.scopeKind) params.set("scopeKind", query.scopeKind)
+  if (query.validFrom) params.set("validFrom", query.validFrom)
+  if (query.validUntil) params.set("validUntil", query.validUntil)
   if (query.limit !== undefined) params.set("limit", String(query.limit))
   if (query.offset !== undefined) params.set("offset", String(query.offset))
   const s = params.toString()

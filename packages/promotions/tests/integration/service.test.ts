@@ -23,9 +23,7 @@ import type { InsertPromotionalOfferInput, PromotionalOfferScope } from "../../s
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
 
-const db: PostgresJsDatabase = DB_AVAILABLE
-  ? createTestDb()
-  : (null as unknown as PostgresJsDatabase)
+let db: PostgresJsDatabase
 
 interface RecordedEvent {
   topic: string
@@ -66,6 +64,7 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
   let destinationId: string
 
   beforeAll(() => {
+    db = createTestDb()
     productAId = newId("products")
     productBId = newId("products")
     productCId = newId("products")
@@ -360,6 +359,67 @@ describe.skipIf(!DB_AVAILABLE)("promotionsService", () => {
       })
       expect(result.total).toBe(1)
       expect(result.data[0]?.code).toBe("findme")
+    })
+
+    it("filters by search, application mode, and scope kind", async () => {
+      await promotionsService.createOffer(
+        db,
+        baseOffer({
+          name: "Spring product offer",
+          slug: "spring-product",
+          code: "SPRING",
+          scope: { kind: "products", productIds: [productAId] },
+        }),
+      )
+      await promotionsService.createOffer(
+        db,
+        baseOffer({
+          name: "Spring auto offer",
+          slug: "spring-auto",
+          scope: { kind: "global" },
+        }),
+      )
+
+      const result = await promotionsService.listOffers(db, {
+        search: "spring",
+        applicationMode: "code",
+        scopeKind: "products",
+        limit: 50,
+        offset: 0,
+      })
+
+      expect(result.total).toBe(1)
+      expect(result.data[0]?.slug).toBe("spring-product")
+    })
+
+    it("filters by derived status and validity overlap", async () => {
+      const dayMs = 24 * 60 * 60 * 1000
+      const past = new Date(Date.now() - dayMs)
+      const future = new Date(Date.now() + dayMs)
+      const furtherFuture = new Date(Date.now() + dayMs * 10)
+      await promotionsService.createOffer(db, baseOffer({ slug: "current" }))
+      await promotionsService.createOffer(
+        db,
+        baseOffer({ slug: "scheduled", validFrom: future, validUntil: furtherFuture }),
+      )
+      await promotionsService.createOffer(db, baseOffer({ slug: "expired", validUntil: past }))
+
+      const scheduled = await promotionsService.listOffers(db, {
+        status: "scheduled",
+        limit: 50,
+        offset: 0,
+      })
+      expect(scheduled.total).toBe(1)
+      expect(scheduled.data[0]?.slug).toBe("scheduled")
+
+      const overlapping = await promotionsService.listOffers(db, {
+        validFrom: future.toISOString().slice(0, 10),
+        validUntil: furtherFuture.toISOString().slice(0, 10),
+        limit: 50,
+        offset: 0,
+      })
+      expect(overlapping.data.map((offer) => offer.slug)).toContain("scheduled")
+      expect(overlapping.data.map((offer) => offer.slug)).not.toContain("expired")
     })
   })
 
