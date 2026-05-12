@@ -1,6 +1,8 @@
 import {
   controlPlaneConfigFromArgs,
+  requestActiveDispatchIntent,
   requestControlPlaneCapabilities,
+  requestRecentTickSnapshots,
 } from "./agent-runner-control-plane.mjs"
 import {
   requestRunnerAppCapabilities,
@@ -15,6 +17,7 @@ export async function buildDeployedStatusReport({
   args = {},
   env = process.env,
   fetchImpl = fetch,
+  activeDispatchRequest,
   limit = 5,
   repository,
 }) {
@@ -27,7 +30,15 @@ export async function buildDeployedStatusReport({
     runner: null,
   }
 
-  await readControlPlaneStatus({ args, env, fetchImpl, report })
+  await readControlPlaneStatus({
+    activeDispatchRequest,
+    args,
+    env,
+    fetchImpl,
+    limit,
+    repository,
+    report,
+  })
   await readRunnerStatus({ args, env, fetchImpl, limit, repository, report })
 
   report.ok = report.checks.every((check) => check.ok)
@@ -48,7 +59,50 @@ export function recentRunnerSupervisorTicks(status) {
   return recent.map(summarizeRunnerTick)
 }
 
-async function readControlPlaneStatus({ args, env, fetchImpl, report }) {
+export function latestControlPlaneTickSnapshot(snapshotHistory) {
+  const latest = snapshotHistory?.records?.[0]
+  if (!latest) return null
+
+  return summarizeTickSnapshot(latest)
+}
+
+export function recentControlPlaneTickSnapshots(snapshotHistory) {
+  const recent = snapshotHistory?.records
+  if (!Array.isArray(recent)) return []
+
+  return recent.map(summarizeTickSnapshot)
+}
+
+export function summarizeActiveDispatchIntent(result) {
+  const intent = result?.intent
+  if (!intent) {
+    return {
+      active: false,
+      found: false,
+    }
+  }
+
+  return {
+    action: intent.plan?.action ?? null,
+    active: Boolean(result.active),
+    expiresAt: intent.lease?.expiresAt ?? null,
+    found: true,
+    holder: intent.lease?.holder ?? null,
+    intentId: intent.id ?? null,
+    issueNumber: intent.plan?.issue?.number ?? null,
+    status: intent.status ?? null,
+  }
+}
+
+async function readControlPlaneStatus({
+  activeDispatchRequest,
+  args,
+  env,
+  fetchImpl,
+  limit,
+  repository,
+  report,
+}) {
   let config
   try {
     config = controlPlaneConfigFromArgs(args, env)
@@ -85,6 +139,68 @@ async function readControlPlaneStatus({ args, env, fetchImpl, report }) {
     report.checks.push({
       detail: errorMessage(error),
       name: "control plane capabilities",
+      ok: false,
+    })
+  }
+
+  try {
+    const recentTickSnapshots = await requestRecentTickSnapshots({
+      fetchImpl,
+      limit,
+      repository,
+      token: config.token,
+      url: config.url,
+    })
+    report.controlPlane.recentTickSnapshots = recentTickSnapshots
+    const latest = latestControlPlaneTickSnapshot(recentTickSnapshots)
+    report.checks.push({
+      detail: latest
+        ? `latest accepted: ${latest.acceptedAt}; recommendations: ${String(latest.recommendationCount)}; dispatchable: ${String(latest.dispatchableRecommendationCount)}`
+        : "no persisted queue snapshots found",
+      name: "control plane queue snapshots",
+      ok: true,
+    })
+  } catch (error) {
+    report.checks.push({
+      detail: errorMessage(error),
+      name: "control plane queue snapshots",
+      ok: false,
+    })
+  }
+
+  if (!activeDispatchRequest) return
+
+  try {
+    const activeDispatch = await requestActiveDispatchIntent({
+      fetchImpl,
+      request: activeDispatchRequest,
+      token: config.token,
+      url: config.url,
+    })
+    report.controlPlane.activeDispatch = activeDispatch
+    const summary = summarizeActiveDispatchIntent(activeDispatch)
+    report.checks.push({
+      detail: `intent: ${summary.intentId}; status: ${summary.status}; active: ${String(summary.active)}; holder: ${summary.holder ?? "unknown"}`,
+      name: "control plane active dispatch",
+      ok: true,
+    })
+  } catch (error) {
+    if (error?.status === 404) {
+      report.controlPlane.activeDispatch = {
+        active: false,
+        intent: null,
+      }
+      report.checks.push({
+        detail: `no active dispatch intent for #${activeDispatchRequest.issueNumber} ${activeDispatchRequest.action}`,
+        name: "control plane active dispatch",
+        ok: true,
+      })
+      return
+    }
+
+    report.checks.push({
+      detail: errorMessage(error),
+      name: "control plane active dispatch",
       ok: false,
     })
   }
@@ -163,6 +279,16 @@ function summarizeRunnerTick(record) {
     leased: result.leased ?? null,
     reason: result.reason ?? null,
     recordedAt: record.recordedAt ?? null,
+  }
+}
+
+function summarizeTickSnapshot(record) {
+  return {
+    acceptedAt: record.acceptedAt ?? null,
+    dispatchableRecommendationCount: record.summary?.dispatchableRecommendationCount ?? null,
+    firstDispatchableAction: record.summary?.firstDispatchableAction ?? null,
+    firstDispatchableIssueNumber: record.summary?.firstDispatchableIssueNumber ?? null,
+    recommendationCount: record.summary?.recommendationCount ?? null,
   }
 }
 

@@ -82,8 +82,9 @@ pnpm agent:queue:deployed-status -- --repo voyantjs/voyant
 ```
 
 The status command uses the same environment, checks the deployed control-plane
-and runner endpoints, and prints the latest plus recent runner supervisor
-ticks.
+and runner endpoints, and prints the latest plus recent control-plane queue
+snapshots and runner supervisor ticks. Add `--issue <number> --action <name>`
+to include the active dispatch pointer for one lifecycle action.
 Pass `--smoke-tick` after submitting at least one queue snapshot to validate
 that the deployed runner can call the control plane's read-only dispatch-plan
 path:

@@ -3,8 +3,11 @@ import { describe, it } from "node:test"
 
 import {
   buildDeployedStatusReport,
+  latestControlPlaneTickSnapshot,
   latestRunnerSupervisorTick,
+  recentControlPlaneTickSnapshots,
   recentRunnerSupervisorTicks,
+  summarizeActiveDispatchIntent,
 } from "../lib/agent-runner-deployed-status.mjs"
 
 describe("agent runner deployed status helpers", () => {
@@ -23,12 +26,19 @@ describe("agent runner deployed status helpers", () => {
         calls.push({ init, url })
         return jsonResponse(responseForUrl(url))
       },
+      activeDispatchRequest: {
+        action: "remote-bootstrap",
+        issueNumber: 579,
+        repository: "voyantjs/voyant",
+      },
       limit: 2,
       repository: "voyantjs/voyant",
     })
 
     assert.equal(report.ok, true)
     assert.equal(report.controlPlane.endpoint, "https://control.example.com")
+    assert.equal(report.controlPlane.recentTickSnapshots.records.length, 1)
+    assert.equal(report.controlPlane.activeDispatch.intent.id, "intent_579")
     assert.equal(report.runner.endpoint, "https://runner.example.com")
     assert.equal(report.runner.supervisorStatus.repository, "voyantjs/voyant")
     assert.deepEqual(
@@ -36,6 +46,8 @@ describe("agent runner deployed status helpers", () => {
       [
         ["control plane configuration", true],
         ["control plane capabilities", true],
+        ["control plane queue snapshots", true],
+        ["control plane active dispatch", true],
         ["runner app configuration", true],
         ["runner app capabilities", true],
         ["runner app supervisor status", true],
@@ -45,6 +57,14 @@ describe("agent runner deployed status helpers", () => {
       calls.map((call) => [call.url, call.init.headers.authorization]),
       [
         ["https://control.example.com/api/capabilities", "Bearer control-token"],
+        [
+          "https://control.example.com/api/tick-snapshots/recent?repository=voyantjs%2Fvoyant&limit=2",
+          "Bearer control-token",
+        ],
+        [
+          "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant",
+          "Bearer control-token",
+        ],
         ["https://runner.example.com/api/capabilities", "Bearer runner-token"],
         [
           "https://runner.example.com/api/supervisor/status?repository=voyantjs%2Fvoyant&limit=2",
@@ -52,6 +72,38 @@ describe("agent runner deployed status helpers", () => {
         ],
       ],
     )
+  })
+
+  it("treats a missing active dispatch lookup as an empty status", async () => {
+    const report = await buildDeployedStatusReport({
+      args: {
+        controlPlaneUrl: "https://control.example.com/",
+        runnerUrl: "https://runner.example.com/",
+      },
+      env: {
+        AGENT_CONTROL_PLANE_TOKEN: "control-token",
+        AGENT_RUNNER_TOKEN: "runner-token",
+      },
+      fetchImpl: async (url) => {
+        if (url.includes("/api/dispatch-intents/active")) {
+          return jsonResponse({ error: "dispatch_intent_not_found" }, { status: 404 })
+        }
+        return jsonResponse(responseForUrl(url))
+      },
+      activeDispatchRequest: {
+        action: "remote-bootstrap",
+        issueNumber: 579,
+        repository: "voyantjs/voyant",
+      },
+      limit: 2,
+      repository: "voyantjs/voyant",
+    })
+
+    assert.equal(report.ok, true)
+    assert.deepEqual(summarizeActiveDispatchIntent(report.controlPlane.activeDispatch), {
+      active: false,
+      found: false,
+    })
   })
 
   it("reports missing configuration without calling deployed apps", async () => {
@@ -75,6 +127,31 @@ describe("agent runner deployed status helpers", () => {
         ["runner app configuration", false],
       ],
     )
+  })
+
+  it("summarizes latest and recent control-plane snapshots", () => {
+    const history = {
+      records: [
+        queueSnapshot({
+          acceptedAt: "2026-05-12T12:00:00.000Z",
+          dispatchableRecommendationCount: 1,
+          firstDispatchableAction: "remote-bootstrap",
+          firstDispatchableIssueNumber: 579,
+          recommendationCount: 3,
+        }),
+      ],
+    }
+
+    const expected = {
+      acceptedAt: "2026-05-12T12:00:00.000Z",
+      dispatchableRecommendationCount: 1,
+      firstDispatchableAction: "remote-bootstrap",
+      firstDispatchableIssueNumber: 579,
+      recommendationCount: 3,
+    }
+
+    assert.deepEqual(latestControlPlaneTickSnapshot(history), expected)
+    assert.deepEqual(recentControlPlaneTickSnapshots(history), [expected])
   })
 
   it("summarizes latest and recent runner supervisor ticks", () => {
@@ -132,6 +209,33 @@ function responseForUrl(url) {
     }
   }
 
+  if (
+    url ===
+    "https://control.example.com/api/tick-snapshots/recent?repository=voyantjs%2Fvoyant&limit=2"
+  ) {
+    return {
+      records: [
+        queueSnapshot({
+          dispatchableRecommendationCount: 1,
+          firstDispatchableAction: "remote-bootstrap",
+          firstDispatchableIssueNumber: 579,
+          recommendationCount: 3,
+        }),
+      ],
+      repository: "voyantjs/voyant",
+    }
+  }
+
+  if (
+    url ===
+    "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant"
+  ) {
+    return {
+      active: true,
+      intent: dispatchIntent(),
+    }
+  }
+
   if (url === "https://runner.example.com/api/capabilities") {
     return {
       execution: {
@@ -169,6 +273,41 @@ function responseForUrl(url) {
   }
 
   throw new Error(`unexpected URL: ${url}`)
+}
+
+function dispatchIntent() {
+  return {
+    id: "intent_579",
+    lease: {
+      expiresAt: "2026-05-12T12:15:00.000Z",
+      holder: "runner:cloudflare",
+    },
+    plan: {
+      action: "remote-bootstrap",
+      issue: {
+        number: 579,
+      },
+    },
+    status: "leased",
+  }
+}
+
+function queueSnapshot({
+  acceptedAt = "2026-05-12T12:00:00.000Z",
+  dispatchableRecommendationCount = 0,
+  firstDispatchableAction,
+  firstDispatchableIssueNumber,
+  recommendationCount = 0,
+} = {}) {
+  return {
+    acceptedAt,
+    summary: {
+      dispatchableRecommendationCount,
+      firstDispatchableAction,
+      firstDispatchableIssueNumber,
+      recommendationCount,
+    },
+  }
 }
 
 function runnerTick({ id, intentId, leased = true, reason = "dry_run" } = {}) {
