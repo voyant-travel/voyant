@@ -57,6 +57,84 @@ When the parent id comes from an external admin recorder such as
 `seedResults` from that recorder's `WorkflowResumeContext`. Seeded steps are
 replayed from the journal, so their side effects do not run again.
 
+## Service-backed package workflows
+
+Package workflows can resolve host-provided services through
+`ctx.services.resolve(...)`. For example, `@voyantjs/promotions` exports the
+`promotions.reindex-all-products` workflow, which resolves the bulk reindex
+service registered under `BULK_REINDEX_SERVICE_KEY`.
+
+For app-integrated Node runtimes, prefer the `createApp()` workflow runtime.
+`createApp()` builds the module container, passes a read-only service resolver
+to the driver factory, and the Node standalone driver forwards that resolver
+into every workflow step:
+
+```ts
+import { createApp } from "@voyantjs/hono"
+import type { HonoModule } from "@voyantjs/hono/module"
+import { createNodeStandaloneDriver } from "@voyantjs/workflows-orchestrator-node"
+import {
+  BULK_REINDEX_SERVICE_KEY,
+  promotionsHonoModule,
+} from "@voyantjs/promotions"
+
+const promotionsWorkflowServices: HonoModule = {
+  module: {
+    name: BULK_REINDEX_SERVICE_KEY,
+    service: bulkReindexProductsService,
+  },
+}
+
+const app = createApp({
+  db: () => db,
+  modules: [promotionsHonoModule, promotionsWorkflowServices],
+  workflows: {
+    driver: () => createNodeStandaloneDriver({ db }),
+    environment: "production",
+  },
+})
+
+await app.ready()
+```
+
+The key point is that service registration happens in the host app and the
+driver receives the framework's service resolver from `createApp()`; workflow
+code stays package-owned and deployment-agnostic.
+
+If you are still using the standalone self-host HTTP helper directly with an
+entry file, pass the same read-only resolver to `startNodeSelfHostServer()` or
+`createNodeSelfHostDeps()`:
+
+```ts
+import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/promotions"
+import type { ServiceResolver } from "@voyantjs/workflows/driver"
+import { startNodeSelfHostServer } from "@voyantjs/workflows-orchestrator-node"
+
+const services: ServiceResolver = {
+  resolve<T>(name: string): T {
+    if (name === BULK_REINDEX_SERVICE_KEY) {
+      return bulkReindexProductsService as T
+    }
+    throw new Error(`Service "${name}" is not registered`)
+  },
+  has(name: string): boolean {
+    return name === BULK_REINDEX_SERVICE_KEY
+  },
+}
+
+await startNodeSelfHostServer({
+  entryFile: "./dist/workflows.mjs",
+  databaseUrl: process.env.DATABASE_URL,
+  services,
+})
+```
+
+That direct helper is useful for existing entry-file deployments. New
+service-backed package workflow integrations should usually migrate to
+`createApp({ workflows: { driver: () => createNodeStandaloneDriver({ db }) } })`
+so module services, event filters, manifest registration, and `ctx.services`
+all come from one app composition path.
+
 ## Postgres migrations
 
 The PostgreSQL schema for the Node self-host target lives in

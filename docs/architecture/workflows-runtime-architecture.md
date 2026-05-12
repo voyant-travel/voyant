@@ -211,9 +211,13 @@ export function createInMemoryDriver(opts?: InMemoryOpts): DriverFactory
 The user-facing shape:
 
 ```ts
-// Mode 2 default — shorthand
-createApp({ workflows: { db } })
-  // framework wraps as: ({ services }) => createNodeStandaloneDriver({ db, services, ... })
+// Mode 2 — Node standalone driver
+createApp({
+  workflows: {
+    driver: () => createNodeStandaloneDriver({ db }),
+  },
+})
+// createApp() invokes the returned DriverFactory with { services, logger, now? }.
 
 // Mode 1 — explicit factory
 createApp({
@@ -587,13 +591,34 @@ Three coordinated changes:
 
 1. **Extend `StepHandlerDeps`** (`packages/workflows/src/handler/index.ts:38`) with an optional `services?: ModuleContainer`. When set, every step invocation forwards it into `executeWorkflowStep`.
 2. **Extend `CtxBuildArgs`** (`packages/workflows/src/runtime/ctx.ts:127`) with the same `services` field, and surface it on `WorkflowContext` as `services: ModuleContainerView`. The view is read-only — workflows resolve, they don't register.
-3. **Wire from `createApp()`**. The driver factory accepts `services?: ModuleContainer` as a constructor argument:
+3. **Wire from `createApp()`**. `createApp()` invokes the configured driver factory
+   after it has built the module container, passing a read-only service resolver
+   in the factory deps:
 
    ```ts
-   const driver = createNodeStandaloneDriver({ db, services: container })
+   const promotionsWorkflowServices = {
+     module: {
+       name: BULK_REINDEX_SERVICE_KEY,
+       service: bulkReindexProductsService,
+     },
+   }
+
+   const app = createApp({
+     modules: [promotionsHonoModule, promotionsWorkflowServices],
+     workflows: {
+       driver: () => createNodeStandaloneDriver({ db }),
+     },
+   })
    ```
 
-   `createApp()` calls the factory with the container it already builds. No underscore-prefixed methods, no setter API on the driver — the factory takes what it needs at construction time.
+   The Node factory closes over `db`; `createApp()` supplies `{ services }`
+   when it constructs the driver. No underscore-prefixed methods, no setter API
+   on the driver — the factory takes framework services at construction time.
+
+   Existing entry-file self-host deployments that use
+   `startNodeSelfHostServer()` directly can pass the same read-only resolver via
+   `services`; new package workflow integrations should prefer the `createApp()`
+   composition path.
 
 The container reaches the workflow body through the same path the rest of `StepHandlerDeps` does: orchestrator → step handler → executor → ctx → workflow `run`. No new transport.
 
@@ -649,7 +674,11 @@ This is convention, not enforcement. The framework doesn't care which keys you u
 | `now` | `() => number` | Injectable clock. |
 | Module names | Module's `service` value | Whatever each module registered (existing behavior). |
 
-Templates or plugins can register additional keys before `createApp()` returns. This is where catalog services like `indexer` and `productDocBuilder` come from in the operator template.
+Templates or plugins can publish additional keys by registering a host-owned
+module `service` under the key workflows resolve, or by registering into the
+same container during bootstrap when the workflow cannot run before that
+bootstrap completes. This is where catalog services like `indexer` and
+`productDocBuilder` come from in an app template.
 
 ### 11.5 Step-level vs ctx-level access
 
@@ -661,7 +690,7 @@ Concrete patterns the gap blocks today:
 
 - **Modules ship workflow bodies that read shared services.** `bulkReindexProducts` uses `ctx.services.resolve("indexer")` instead of constructing one. Move the workflow between templates → it still works, as long as the host template registers an `indexer`.
 - **Plugins inject services for module workflows.** A `@voyantjs/plugin-typesense` could register `indexer` against a Typesense client; a `@voyantjs/plugin-meilisearch` could register the same key against Meilisearch. Module workflows are unchanged.
-- **Tests inject mocks.** `createInMemoryDriver({ services: testContainer })` for isolated workflow body tests; `createNodeStandaloneDriver({ db: testDb, services: testContainer })` for integration tests.
+- **Tests inject mocks.** `createInMemoryDriver({ services: testContainer })` for isolated workflow body tests; `createNodeStandaloneDriver({ db: testDb })(testFactoryDeps({ services: testContainer }))` for integration tests.
 
 ### 11.7 What it does NOT do
 
@@ -973,7 +1002,7 @@ What `createApp()` does at construction time (synchronous):
 
 1. Resolves modules + plugins (existing pipeline).
 2. Builds the `ModuleContainer` and registers each module's `service` plus the framework-owned defaults (`db` — see lifecycle note below — `eventBus`, `logger`, `now`; see §11.4).
-3. If `workflows: { db }` was passed, synthesizes the default `DriverFactory` `({ services }) => createNodeStandaloneDriver({ db, services })`. If `workflows: { driver }` was passed, takes the supplied factory as-is. Invokes the factory with `{ services: container, logger, db?, now? }` and stores the resulting `WorkflowDriver`.
+3. Invokes `workflows.driver(bindings)` to obtain a `DriverFactory`, then invokes that factory with `{ services: container, logger, now? }` and stores the resulting `WorkflowDriver`. For Node self-host apps this is typically `driver: () => createNodeStandaloneDriver({ db })`; the framework-supplied services arrive through the factory deps, not the `createNodeStandaloneDriver()` options.
 4. Calls `collectWorkflows(modules, plugins)` and `collectEventFilters(modules, plugins)`.
 5. Mounts HTTP routes (existing pipeline).
 6. Sets up the lazy `bootstrapPromise` to fire on first request.

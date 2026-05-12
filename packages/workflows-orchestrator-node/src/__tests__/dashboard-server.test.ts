@@ -125,6 +125,68 @@ describe("createNodeSelfHostDeps validation", () => {
     }
   })
 
+  it("surfaces configured services to self-host workflow bodies", async () => {
+    const root = await mkdtemp(join(process.cwd(), ".tmp-services-workflow-entry-"))
+    let deps: Awaited<ReturnType<typeof createNodeSelfHostDeps>> | undefined
+    try {
+      const entryFile = join(root, "services-workflows.mjs")
+      const staticDir = join(root, "static")
+      await mkdir(staticDir, { recursive: true })
+      await writeFile(
+        entryFile,
+        [
+          'import { workflow } from "@voyantjs/workflows";',
+          'workflow({ id: "service_probe", async run(_input, ctx) {',
+          '  const catalog = ctx.services.resolve("catalog:indexer");',
+          "  return { serviceName: catalog.name, optional: ctx.services.has('missing') };",
+          "}});",
+        ].join("\n"),
+        "utf8",
+      )
+
+      deps = await createNodeSelfHostDeps({
+        entryFile,
+        staticDir,
+        cacheBustEntry: true,
+        services: {
+          resolve<T>(name: string): T {
+            if (name === "catalog:indexer") return { name: "test-indexer" } as T
+            throw new Error(`missing service ${name}`)
+          },
+          has(name) {
+            return name === "catalog:indexer"
+          },
+        },
+        store: createFsSnapshotRunStore({ rootDir: join(root, "runs") }),
+      })
+
+      const response = await handleRequest(
+        {
+          method: "POST",
+          url: "http://local/api/runs",
+          body: JSON.stringify({ workflowId: "service_probe", input: {} }),
+        },
+        deps,
+      )
+
+      expect(response.status).toBe(200)
+      const triggered = JSON.parse(String(response.body)) as {
+        saved: {
+          status: string
+          result: { output: { serviceName: string; optional: boolean } }
+        }
+      }
+      expect(triggered.saved.status).toBe("completed")
+      expect(triggered.saved.result.output).toEqual({
+        serviceName: "test-indexer",
+        optional: false,
+      })
+    } finally {
+      await deps?.shutdown?.()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it("resumes a failed self-host run from its seeded successful steps", async () => {
     const root = await mkdtemp(join(process.cwd(), ".tmp-resume-workflow-entry-"))
     const previousProbe = (globalThis as { __voyantResumeProbeA?: number }).__voyantResumeProbeA
