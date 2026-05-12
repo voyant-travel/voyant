@@ -185,6 +185,24 @@ packet under `docs/agent-evidence/active/`, then moves the item to
 branches, expose HTTP, capture browser artifacts, publish evidence, open PRs,
 or clean up the remote workspace.
 
+Use a named remote process when a UI verification flow needs a long-running
+server before browser capture:
+
+```bash
+pnpm agent:queue:remote-start-process -- --issue <number> --name dev-server --command "pnpm dev" --port 3000 --yes
+pnpm agent:queue:remote-capture-browser -- --issue <number> --port 3000 --yes
+pnpm agent:queue:remote-stop-process -- --issue <number> --name dev-server --yes
+```
+
+Remote-start-process mode runs through the adapter's command execution
+capability and stores process metadata, the command, the PID, and logs under
+remote `.agent-runs/remote-processes/<name>/`. It refuses to replace an already
+running process with the same name, waits briefly, then fails with the remote
+log tail if startup exits early. Remote-stop-process mode is idempotent: stale
+or missing PID files are treated as already stopped, while live processes get a
+graceful terminate before a forced kill. These commands do not mutate Project
+state; use them as setup and teardown around browser evidence capture.
+
 For UI work in a remote workspace, expose the running remote dev server and
 capture browser evidence from the local runner:
 
