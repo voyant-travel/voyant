@@ -1351,6 +1351,11 @@ Verification:
   Each iteration submits a fresh tick snapshot, leases one intent from that
   stored snapshot, runs the leased lifecycle command, records the terminal
   outcome, and stops on idle, failure, or the configured iteration limit.
+- A Cloudflare-ready runner shell exists in `apps/agent-runner`. It exposes
+  health, capabilities, a scheduled handler, and a guarded supervisor tick
+  planning endpoint. The shell is deliberately non-executing until GitHub
+  polling, budget controls, provider credentials, and execution policy are wired
+  into a later slice.
 
 ## Open Questions
 
