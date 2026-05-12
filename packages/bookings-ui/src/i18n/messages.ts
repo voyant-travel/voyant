@@ -21,6 +21,10 @@ export type BookingsUiMessages = {
     title: string
     description: string
   }
+  bookingCreatePage: {
+    title: string
+    description: string
+  }
   bookingDetailPage: {
     notFound: string
     backToBookings: string
@@ -260,6 +264,7 @@ export type BookingsUiMessages = {
       product: string
       productSearchPlaceholder: string
       productSelectPlaceholder: string
+      productEmpty: string
       option: string
       optionNone: string
     }
@@ -267,10 +272,18 @@ export type BookingsUiMessages = {
   personPickerSection: {
     labels: {
       person: string
+      organization: string
+      billTo: string
+      billToPerson: string
+      billToOrganization: string
       createNewPerson: string
+      createNewOrganization: string
+      createPersonSheetTitle: string
+      createOrganizationSheetTitle: string
       selectExistingPerson: string
       personSearchPlaceholder: string
       personSelectPlaceholder: string
+      personEmpty: string
       firstName: string
       firstNamePlaceholder: string
       lastName: string
@@ -279,8 +292,9 @@ export type BookingsUiMessages = {
       emailPlaceholder: string
       phone: string
       phonePlaceholder: string
-      organization: string
       organizationSearchPlaceholder: string
+      organizationSelectPlaceholder: string
+      organizationEmpty: string
       organizationNone: string
     }
   }
@@ -336,6 +350,10 @@ export type BookingsUiMessages = {
       selectPlaceholder: string
       noGroups: string
       createHint: string
+      createSheetTitle: string
+      groupLabel: string
+      groupLabelPlaceholder: string
+      createAction: string
     }
   }
   priceBreakdownSection: {
@@ -690,6 +708,7 @@ export type BookingsUiMessages = {
     validation: {
       selectProduct: string
       selectPerson: string
+      selectOrganization: string
       firstAndLastNameRequired: string
       selectSharedRoomGroup: string
       confirmFailedPrefix: string

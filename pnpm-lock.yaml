@@ -1461,6 +1461,9 @@ importers:
       '@voyantjs/crm-react':
         specifier: workspace:*
         version: link:../crm-react
+      '@voyantjs/crm-ui':
+        specifier: workspace:*
+        version: link:../crm-ui
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../finance-react
