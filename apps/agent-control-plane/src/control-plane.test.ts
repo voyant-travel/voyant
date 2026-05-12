@@ -92,6 +92,7 @@ describe("agent control plane", () => {
       dryRunOnly: true,
       dispatchableActions: [
         "collect-ci",
+        "complete-pr",
         "cleanup",
         "open-pr",
         "publish-evidence",

@@ -2,6 +2,7 @@ import { z } from "zod"
 
 export const dispatchableActions = [
   "collect-ci",
+  "complete-pr",
   "cleanup",
   "open-pr",
   "publish-evidence",

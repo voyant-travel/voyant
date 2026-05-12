@@ -88,6 +88,32 @@ describe("agent runner tick helpers", () => {
       },
     )
 
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Human Review",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+          },
+          issueState: "CLOSED",
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "complete-pr",
+        command: "pnpm agent:queue:complete-pr -- --issue 579 --repo voyantjs/other --yes",
+        heartbeat: {
+          reason: "Last Heartbeat is 0 days old",
+          stale: false,
+        },
+        issue: workItem({ issueState: "CLOSED" }).issue,
+        priority: 45,
+        reason: "closed issue with linked PR should be completed in the Project",
+        state: "Human Review",
+      },
+    )
+
     assert.equal(
       recommendQueueAction(
         workItem({
