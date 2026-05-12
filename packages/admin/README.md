@@ -181,6 +181,37 @@ Pass `variant="inset"` or `variant="floating"` and `side="right"` when an app
 needs one of the modern sidebar variants. The sidebar can also be toggled with
 `Cmd+B` on macOS or `Ctrl+B` on Windows and Linux.
 
+Use `OperatorAdminPageShell` when a route needs the standard per-page header:
+sidebar trigger, breadcrumbs, page-level actions, and a padded body. Disable the
+workspace layout's fallback trigger header so the page shell owns the route
+header:
+
+```tsx
+import { OperatorAdminPageShell, OperatorAdminWorkspaceLayout } from "@voyantjs/admin"
+
+function Workspace({ children }) {
+  return (
+    <OperatorAdminWorkspaceLayout currentPath="/bookings" showSidebarTrigger={false}>
+      {children}
+    </OperatorAdminWorkspaceLayout>
+  )
+}
+
+function BookingsRoute() {
+  return (
+    <OperatorAdminPageShell
+      breadcrumbs={<BreadcrumbTrail current="Bookings" />}
+      actions={<NewBookingButton />}
+    >
+      <BookingsPage />
+    </OperatorAdminPageShell>
+  )
+}
+```
+
+Pass `padded={false}` for full-bleed pages such as maps, workflow timelines, or
+canvas-style tools that own their own spacing.
+
 Route-level document titles are derived from `navItems` and `currentPath` by
 default, so `/bookings` renders `Bookings · Voyant` and tracks the active
 locale when the navigation messages change. `AdminPageHead` also keeps

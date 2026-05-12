@@ -52,6 +52,12 @@ The workspace shell uses the shared `OperatorAdminWorkspaceLayout`. Operators
 can collapse or expand the sidebar from the header trigger, or with `Cmd+B` on
 macOS and `Ctrl+B` on Windows and Linux.
 
+Use `OperatorAdminPageShell` from `@voyantjs/admin` for route-level chrome:
+breadcrumbs, page actions, and the padded page body. When a route adopts the
+page shell, pass `showSidebarTrigger={false}` to `OperatorAdminWorkspaceLayout`
+so the shell owns the only visible route header. Pass `padded={false}` to the
+page shell for full-bleed operator tools that own their own spacing.
+
 Route-level browser titles are auto-derived from the shared navigation items
 and active locale. Override detail pages that need entity-specific metadata
 with `useAdminPageHead({ title, description })` from `@voyantjs/admin`. The
