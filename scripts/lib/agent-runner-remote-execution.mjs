@@ -1,7 +1,10 @@
 import path from "node:path"
 
 import { browserEvidenceMissingReason } from "./agent-runner-browser-evidence.mjs"
-import { commandRunFieldUpdate } from "./agent-runner-execution.mjs"
+import {
+  commandRunBrowserEvidenceBlockReason,
+  commandRunFieldUpdate,
+} from "./agent-runner-execution.mjs"
 import { defaultRemoteWorkspaceRepoDir } from "./agent-runner-remote-bootstrap.mjs"
 import { workspaceDescriptorEnvironment } from "./agent-runner-workspace-contract.mjs"
 
@@ -64,18 +67,20 @@ export function remoteCommandRunEnvironment({
   }
 }
 
-export function remoteCommandRunFieldUpdate({
-  allowMissingBrowserEvidence = false,
-  artifactPlan,
-  date = new Date(),
-  evidenceWriteStatus,
-  exitCode,
-  item,
-  uiEvidence,
-}) {
+export function remoteCommandRunFieldUpdate(options) {
+  const {
+    allowMissingBrowserEvidence = false,
+    artifactPlan,
+    date = new Date(),
+    evidenceWriteStatus,
+    exitCode,
+    item,
+    uiEvidence,
+  } = options
   const evidenceWriteFailed = evidenceWriteStatus !== 0
-  const browserBlock =
-    allowMissingBrowserEvidence || exitCode !== 0
+  const browserBlock = Object.hasOwn(options, "browserBlockReason")
+    ? options.browserBlockReason
+    : allowMissingBrowserEvidence || exitCode !== 0
       ? null
       : browserEvidenceMissingReason(item, uiEvidence)
   const blockedBy = evidenceWriteFailed
@@ -91,6 +96,24 @@ export function remoteCommandRunFieldUpdate({
       exitCode: evidenceWriteFailed ? evidenceWriteStatus : exitCode,
     }),
   }
+}
+
+export function remoteCommandRunBrowserEvidenceBlockReason({
+  allowBrowserIssues = false,
+  exitCode,
+  force = false,
+  item,
+  repoRoot,
+  uiEvidence,
+}) {
+  return commandRunBrowserEvidenceBlockReason({
+    allowBrowserIssues,
+    exitCode,
+    force: force && !uiEvidence?.trim(),
+    item,
+    uiEvidence,
+    workspace: repoRoot,
+  })
 }
 
 export function remoteLoggedCommandShell({ command, logFile }) {

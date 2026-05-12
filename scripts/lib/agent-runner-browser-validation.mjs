@@ -69,7 +69,9 @@ export function browserEvidenceSummaryPlan({ uiEvidence, workspace }) {
 }
 
 function browserEvidenceReferenceFromText(uiEvidence) {
-  const match = uiEvidence?.match(/docs\/agent-evidence\/browser\/[^\s)]+/)
+  const match = uiEvidence?.match(
+    /(?:docs\/agent-evidence\/browser|\.agent-runs\/remote-browser)\/[^\s)]+/,
+  )
   return match?.[0]?.replace(/[),.;]+$/g, "") ?? null
 }
 

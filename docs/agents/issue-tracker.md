@@ -184,6 +184,11 @@ packet under `docs/agent-evidence/active/`, then moves the item to
 `Human Review` on exit code `0` or `Blocked` on nonzero exit. It does not push
 branches, expose HTTP, capture browser artifacts, publish evidence, open PRs,
 or clean up the remote workspace.
+For UI-labeled work, pass `--ui-evidence` with the browser evidence text from
+`remote-capture-browser`. Successful remote commands validate local
+`.agent-runs/remote-browser/.../summary.json` artifacts before moving to review;
+blocking console or request issues keep the Project item in `Blocked` unless a
+maintainer explicitly passes `--allow-browser-issues`.
 
 Use a named remote process when a UI verification flow needs a long-running
 server before browser capture:
@@ -367,9 +372,9 @@ move the item to `Planning`. Remote workspace items in `Planning`,
 does not execute implementation commands automatically. Remote `Human Review`
 items with local evidence paths recommend `remote-publish-evidence`; after
 evidence is published, they recommend `remote-open-pr`. Later remote workspace
-states still recommend wait states until a remote adapter owns browser
-evidence. Terminal remote items recommend `remote-cleanup`. Malformed reserved
-`sandbox:` values recommend `inspect-workspace`.
+states still recommend explicit wait or manual evidence steps. Terminal remote
+items recommend `remote-cleanup`. Malformed reserved `sandbox:` values recommend
+`inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
 

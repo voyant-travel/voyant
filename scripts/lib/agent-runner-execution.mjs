@@ -200,7 +200,7 @@ function formatBrowserEvidenceRequirement({ artifactPlan, item, uiEvidence }) {
   if (uiEvidence?.trim()) {
     return browserEvidenceReviewMarkdown({
       uiEvidence,
-      workspace: artifactPlan.workspace,
+      workspace: artifactPlan.browserEvidenceWorkspace ?? artifactPlan.workspace,
     })
   }
 

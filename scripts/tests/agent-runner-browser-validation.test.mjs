@@ -35,6 +35,21 @@ describe("agent runner browser evidence validation", () => {
       }),
       null,
     )
+
+    assert.deepEqual(
+      browserEvidenceSummaryPlan({
+        uiEvidence:
+          "browser artifacts: .agent-runs/remote-browser/579-test/2026-05-10T12-34-56-000Z",
+        workspace: "/repo",
+      }),
+      {
+        reference: ".agent-runs/remote-browser/579-test/2026-05-10T12-34-56-000Z/summary.json",
+        safePath: true,
+        summaryPath: path.resolve(
+          "/repo/.agent-runs/remote-browser/579-test/2026-05-10T12-34-56-000Z/summary.json",
+        ),
+      },
+    )
   })
 
   it("blocks local browser evidence summaries with captured blocking issues", () => {
@@ -86,6 +101,48 @@ describe("agent runner browser evidence validation", () => {
           workspace: tempDir,
         }),
         "browser evidence has blocking issues: 1 console error, 0 console warnings, 1 failed request; pass --allow-browser-issues only with an accepted exception",
+      )
+    } finally {
+      rmSync(tempDir, { force: true, recursive: true })
+    }
+  })
+
+  it("blocks remote browser evidence summaries with captured blocking issues", () => {
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), "voyant-remote-browser-validation-"))
+    try {
+      const summaryDir = path.join(
+        tempDir,
+        ".agent-runs/remote-browser/579-test/2026-05-10T12-34-56-000Z",
+      )
+      mkdirSync(summaryDir, { recursive: true })
+      writeFileSync(
+        path.join(summaryDir, "summary.json"),
+        JSON.stringify({
+          browserIssues: {
+            consoleErrors: 0,
+            consoleWarnings: 0,
+            failedRequests: 1,
+            hasBlockingIssues: true,
+            httpErrors: 1,
+            malformedLogLines: 0,
+            requestFailures: 0,
+          },
+        }),
+      )
+
+      const item = workItem()
+      item.issue.labels = ["ui"]
+      const uiEvidence =
+        "browser artifacts: .agent-runs/remote-browser/579-test/2026-05-10T12-34-56-000Z"
+
+      assert.equal(
+        commandRunBrowserEvidenceBlockReason({
+          exitCode: 0,
+          item,
+          uiEvidence,
+          workspace: tempDir,
+        }),
+        "browser evidence has blocking issues: 0 console errors, 0 console warnings, 1 failed request; pass --allow-browser-issues only with an accepted exception",
       )
     } finally {
       rmSync(tempDir, { force: true, recursive: true })

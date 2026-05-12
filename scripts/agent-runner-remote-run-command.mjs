@@ -21,6 +21,7 @@ import {
 } from "./lib/agent-runner-help.mjs"
 import {
   remoteCommandRunArtifactPlan,
+  remoteCommandRunBrowserEvidenceBlockReason,
   remoteCommandRunEnvironment,
   remoteCommandRunFieldUpdate,
   remoteLoggedCommandShell,
@@ -54,6 +55,10 @@ maybePrintHelp(args, {
     [
       "--ui-evidence <text>",
       "Browser artifacts or approved exception for successful UI-labeled work.",
+    ],
+    [
+      "--allow-browser-issues",
+      "Allow UI evidence with browser quality issues after maintainer review.",
     ],
     ["--force", "Allow command execution outside the normal run states."],
     [
@@ -164,9 +169,17 @@ const commandResult = await runRemoteExec({
 })
 const stoppedAt = new Date()
 const exitCode = commandResult.status ?? 1
+const browserBlockReason = remoteCommandRunBrowserEvidenceBlockReason({
+  allowBrowserIssues: Boolean(args.allowBrowserIssues),
+  exitCode,
+  force: Boolean(args.force),
+  item,
+  repoRoot,
+  uiEvidence: args.uiEvidence,
+})
 const evidencePacket = buildCommandEvidencePacket({
-  artifactPlan: { ...artifactPlan, repoRoot },
-  blockedBy: null,
+  artifactPlan: { ...artifactPlan, browserEvidenceWorkspace: repoRoot, repoRoot },
+  blockedBy: browserBlockReason,
   branch,
   command: args.command,
   exitCode,
@@ -192,6 +205,7 @@ const evidenceWriteResult = await runRemoteExec({
 const finalUpdate = remoteCommandRunFieldUpdate({
   allowMissingBrowserEvidence: Boolean(args.force),
   artifactPlan,
+  browserBlockReason,
   evidenceWriteStatus: evidenceWriteResult.status ?? 1,
   exitCode,
   item,
@@ -205,7 +219,7 @@ if (finalUpdate.blockedBy && evidenceWriteResult.status === 0) {
       "-lc",
       remoteWriteFileShell({
         content: buildCommandEvidencePacket({
-          artifactPlan: { ...artifactPlan, repoRoot },
+          artifactPlan: { ...artifactPlan, browserEvidenceWorkspace: repoRoot, repoRoot },
           blockedBy: finalUpdate.blockedBy,
           branch,
           command: args.command,
