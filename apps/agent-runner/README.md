@@ -30,7 +30,13 @@ provider commands, or spend model budget.
 - `AGENT_RUNNER_TOKENS`: comma-separated bearer tokens for `/api/*`.
 - `AGENT_RUNNER_ENABLED`: must be `true` before scheduled ticks can lease
   dispatch intents.
+- `AGENT_RUNNER_ALLOWED_ACTIONS`: optional comma-separated lifecycle action
+  allow-list. Defaults to all runner-supported lifecycle actions.
+- `AGENT_RUNNER_ACTION`: optional default lifecycle action filter, useful when
+  `AGENT_RUNNER_ALLOWED_ACTIONS` restricts Cron to one action such as `sync-pr`.
 - `AGENT_RUNNER_HOLDER`: default lease holder, for example `runner:cloudflare`.
+- `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS`: optional maximum lease TTL. Defaults to
+  900 seconds and is clamped to 60..3600 seconds.
 - `AGENT_RUNNER_REPOSITORY`: default repository, for example `voyantjs/voyant`.
 - `AGENT_RUNNER_TICKS`: optional R2 binding for latest supervisor tick status.
 - `AGENT_RUNNER_TICK_KEY_PREFIX`: optional R2 key prefix for supervisor ticks.

@@ -1,5 +1,21 @@
 import { z } from "zod"
 
+export const runnerDispatchActions = [
+  "collect-ci",
+  "complete-pr",
+  "cleanup",
+  "open-pr",
+  "publish-evidence",
+  "remote-bootstrap",
+  "remote-cleanup",
+  "remote-open-pr",
+  "remote-publish-evidence",
+  "start",
+  "sync-pr",
+] as const
+
+const runnerDispatchActionSet = new Set<string>(runnerDispatchActions)
+
 export const supervisorTickRequestSchema = z
   .object({
     action: z.string().trim().min(1).optional(),
@@ -18,11 +34,14 @@ export const supervisorTickRequestSchema = z
 export type SupervisorTickRequest = z.infer<typeof supervisorTickRequestSchema>
 
 export interface RunnerConfig {
+  allowedActions?: string[]
   controlPlaneConfigured: boolean
   controlPlaneToken?: string
   controlPlaneUrl?: string
+  defaultAction?: string
   enabled: boolean
   holder?: string
+  maxLeaseTtlSeconds?: number
   repository?: string
 }
 
@@ -42,9 +61,11 @@ export function buildRunnerCapabilities(config: RunnerConfig) {
       url: config.controlPlaneUrl ?? null,
     },
     defaults: {
+      action: config.defaultAction ?? null,
       holder: config.holder ?? null,
       repository: config.repository ?? null,
     },
+    policy: buildRunnerPolicy(config),
     scheduler: {
       cronCompatible: true,
       mode: "lease-only",
@@ -65,12 +86,16 @@ export function planSupervisorTick({
   const holder = request.holder ?? config.holder
   const repository = request.repository ?? config.repository
   const iterations = request.iterations ?? 1
+  const policy = buildRunnerPolicy(config)
+  const action = request.action ?? config.defaultAction
 
   const blockers = [
     config.enabled ? null : "runner execution is disabled",
     config.controlPlaneConfigured ? null : "control plane is not configured",
     holder ? null : "holder is not configured",
     repository ? null : "repository is not configured",
+    actionPolicyBlocker({ action, policy }),
+    ttlPolicyBlocker({ policy, ttlSeconds: request.ttlSeconds }),
   ].filter((blocker): blocker is string => Boolean(blocker))
 
   return {
@@ -85,6 +110,7 @@ export function planSupervisorTick({
     dryRun: request.dryRun ?? true,
     iterations,
     mode: "lease-only",
+    policy,
     source,
   }
 }
@@ -167,6 +193,7 @@ function buildDispatchIntentRequest({
 }) {
   const holder = request.holder ?? config.holder
   const repository = request.repository ?? config.repository
+  const action = request.action ?? config.defaultAction
 
   return {
     repository,
@@ -174,10 +201,10 @@ function buildDispatchIntentRequest({
       holder,
       ...(request.ttlSeconds ? { ttlSeconds: request.ttlSeconds } : {}),
     },
-    ...(request.action || request.issue
+    ...(action || request.issue
       ? {
           filters: {
-            ...(request.action ? { action: request.action } : {}),
+            ...(action ? { action } : {}),
             ...(request.issue ? { issueNumber: request.issue } : {}),
           },
         }
@@ -191,6 +218,68 @@ function buildDispatchIntentRequest({
         }
       : {}),
   }
+}
+
+function buildRunnerPolicy(config: RunnerConfig) {
+  const allowedActions = normalizeAllowedActions(config.allowedActions)
+  const maxLeaseTtlSeconds = normalizeMaxLeaseTtlSeconds(config.maxLeaseTtlSeconds)
+  const restrictsActions = runnerDispatchActions.some((action) => !allowedActions.includes(action))
+
+  return {
+    allowedActions,
+    defaultAction: config.defaultAction ?? null,
+    maxLeaseTtlSeconds,
+    requiresActionFilter: restrictsActions,
+  }
+}
+
+function normalizeAllowedActions(allowedActions: string[] | undefined) {
+  const normalized = (allowedActions?.length ? allowedActions : Array.from(runnerDispatchActions))
+    .map((action) => action.trim())
+    .filter((action) => action.length > 0)
+
+  return Array.from(new Set(normalized)).sort()
+}
+
+function normalizeMaxLeaseTtlSeconds(value: number | undefined) {
+  if (!value) return 900
+  return Math.min(Math.max(value, 60), 3600)
+}
+
+function actionPolicyBlocker({
+  action,
+  policy,
+}: {
+  action?: string
+  policy: ReturnType<typeof buildRunnerPolicy>
+}) {
+  if (action && !runnerDispatchActionSet.has(action)) {
+    return `action ${action} is not dispatchable`
+  }
+
+  if (action && !policy.allowedActions.includes(action)) {
+    return `action ${action} is not allowed by runner policy`
+  }
+
+  if (!action && policy.requiresActionFilter) {
+    return "runner policy requires an action filter"
+  }
+
+  return null
+}
+
+function ttlPolicyBlocker({
+  policy,
+  ttlSeconds,
+}: {
+  policy: ReturnType<typeof buildRunnerPolicy>
+  ttlSeconds?: number
+}) {
+  if (ttlSeconds && ttlSeconds > policy.maxLeaseTtlSeconds) {
+    return `lease TTL ${ttlSeconds}s exceeds runner policy maximum ${policy.maxLeaseTtlSeconds}s`
+  }
+
+  return null
 }
 
 function buildLocalEquivalentCommand({
