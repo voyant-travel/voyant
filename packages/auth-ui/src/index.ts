@@ -37,6 +37,14 @@ export {
   type SignInPageProps,
   type SignInSocialProvider,
 } from "./components/sign-in-page.js"
+export {
+  defaultSignUpPageMessages,
+  type SignUpEmailSubmitInput,
+  SignUpPage,
+  type SignUpPageMessages,
+  type SignUpPageProps,
+  type SignUpSocialProvider,
+} from "./components/sign-up-page.js"
 export type { AuthUiMessages } from "./i18n/index.js"
 export {
   type AuthUiMessageOverrides,

@@ -56,4 +56,10 @@ export {
   signInWithEmail,
   useSignIn,
 } from "./use-sign-in.js"
+export {
+  type SignUpEmailInput,
+  type SignUpEmailResult,
+  signUpWithEmail,
+  useSignUp,
+} from "./use-sign-up.js"
 export { useWorkspaceMutation } from "./use-workspace-mutation.js"
