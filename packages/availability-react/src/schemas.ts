@@ -1,7 +1,9 @@
 import {
+  insertAllocationResourceSchema,
   insertAvailabilityRuleSchema,
   insertAvailabilitySlotSchema,
   insertAvailabilityStartTimeSchema,
+  updateAllocationResourceSchema,
   updateAvailabilityRuleSchema,
   updateAvailabilitySlotSchema,
   updateAvailabilityStartTimeSchema,
@@ -186,6 +188,82 @@ export const availabilitySlotAssignmentListResponse = paginatedEnvelope(
 export const bookingSummaryListResponse = paginatedEnvelope(bookingSummarySchema)
 export const resourceSummaryListResponse = paginatedEnvelope(resourceSummarySchema)
 
+export const allocationResourceSchema = z.object({
+  id: z.string(),
+  slotId: z.string(),
+  kind: z.string(),
+  refType: z.string().nullable(),
+  refId: z.string().nullable(),
+  label: z.string().nullable(),
+  capacity: z.number().int(),
+  flags: z.record(z.string(), z.unknown()),
+  parentId: z.string().nullable(),
+  sortOrder: z.number().int(),
+  createdAt: z.string().or(z.date()),
+  updatedAt: z.string().or(z.date()),
+})
+
+export type AllocationResource = z.infer<typeof allocationResourceSchema>
+
+export const allocationManifestTravelerSchema = z.object({
+  id: z.string(),
+  bookingId: z.string(),
+  bookingNumber: z.string(),
+  bookingStatus: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  fullName: z.string(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  isLeadTraveler: z.boolean(),
+  isPrimary: z.boolean(),
+  sharingGroupId: z.string().nullable(),
+  roomTypeId: z.string().nullable(),
+  bedPreference: z.string().nullable(),
+  allocations: z.record(z.string(), z.string()),
+  travelerCategory: z.string().nullable(),
+  participantType: z.string(),
+  hasAccessibilityNeeds: z.boolean(),
+  hasDietaryRequirements: z.boolean(),
+})
+
+export type AllocationManifestTraveler = z.infer<typeof allocationManifestTravelerSchema>
+
+export const allocationManifestBookingSchema = z.object({
+  id: z.string(),
+  bookingNumber: z.string(),
+  status: z.string(),
+  contactFirstName: z.string().nullable(),
+  contactLastName: z.string().nullable(),
+  contactEmail: z.string().nullable(),
+  contactPhone: z.string().nullable(),
+  sellCurrency: z.string().nullable(),
+  pax: z.number().int().nullable(),
+  travelers: z.array(allocationManifestTravelerSchema),
+})
+
+export type AllocationManifestBooking = z.infer<typeof allocationManifestBookingSchema>
+
+export const slotAllocationManifestSchema = z.object({
+  slot: z.object({
+    id: z.string(),
+    productId: z.string().nullable(),
+    startsAt: z.string().nullable(),
+    endsAt: z.string().nullable(),
+  }),
+  bookings: z.array(allocationManifestBookingSchema),
+  resources: z.array(allocationResourceSchema),
+  summary: z.object({
+    bookingCount: z.number().int(),
+    travelerCount: z.number().int(),
+    leadTravelerCount: z.number().int(),
+    bookingsByStatus: z.record(z.string(), z.number().int()),
+  }),
+})
+
+export type SlotAllocationManifest = z.infer<typeof slotAllocationManifestSchema>
+export const slotAllocationManifestResponse = singleEnvelope(slotAllocationManifestSchema)
+
 export const slotUnitAvailabilityRecordSchema = z.object({
   optionUnitId: z.string(),
   unitName: z.string(),
@@ -200,14 +278,18 @@ export const slotUnitAvailabilityListResponse = z.object({
 })
 
 export {
+  insertAllocationResourceSchema,
   insertAvailabilityRuleSchema,
   insertAvailabilitySlotSchema,
   insertAvailabilityStartTimeSchema,
+  updateAllocationResourceSchema,
   updateAvailabilityRuleSchema,
   updateAvailabilitySlotSchema,
   updateAvailabilityStartTimeSchema,
 }
 
+export type CreateAllocationResourceInput = z.input<typeof insertAllocationResourceSchema>
+export type UpdateAllocationResourceInput = z.input<typeof updateAllocationResourceSchema>
 export type CreateAvailabilityRuleInput = z.input<typeof insertAvailabilityRuleSchema>
 export type UpdateAvailabilityRuleInput = z.input<typeof updateAvailabilityRuleSchema>
 export type CreateAvailabilityStartTimeInput = z.input<typeof insertAvailabilityStartTimeSchema>

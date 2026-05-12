@@ -10,6 +10,9 @@ export const availabilitySlotStatusSchema = z.enum(["open", "closed", "sold_out"
 export const meetingModeSchema = z.enum(["meeting_only", "pickup_only", "meet_or_pickup"])
 export const pickupGroupKindSchema = z.enum(["pickup", "dropoff", "meeting"])
 export const pickupTimingModeSchema = z.enum(["fixed_time", "offset_from_start"])
+export const allocationResourceKindSchema = z.string().trim().min(1).max(80)
+export const allocationResourceFlagsSchema = z.record(z.string(), z.unknown())
+export const travelerAllocationMapSchema = z.record(z.string(), z.string())
 
 const isoDateSchema = z.string().date()
 const isoDateTimeSchema = z.string().datetime()
@@ -114,6 +117,40 @@ export const availabilityCloseoutListQuerySchema = paginationSchema.extend({
   productId: z.string().optional(),
   slotId: z.string().optional(),
   dateLocal: isoDateSchema.optional(),
+})
+
+export const allocationResourceCoreSchema = z.object({
+  kind: allocationResourceKindSchema,
+  refType: z.string().nullable().optional(),
+  refId: z.string().nullable().optional(),
+  label: z.string().nullable().optional(),
+  capacity: z.number().int().min(1),
+  flags: allocationResourceFlagsSchema.default({}),
+  parentId: z.string().nullable().optional(),
+  sortOrder: z.number().int().default(0),
+})
+
+export const insertAllocationResourceSchema = allocationResourceCoreSchema
+export const updateAllocationResourceSchema = allocationResourceCoreSchema
+  .omit({ kind: true })
+  .strict()
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "Patch payload is required",
+  })
+
+export const assignTravelerAllocationSchema = z.object({
+  kind: allocationResourceKindSchema,
+  resourceId: z.string().nullable(),
+})
+
+export const updateTravelerSharingGroupSchema = z.object({
+  sharingGroupId: z.string().trim().min(1).nullable(),
+})
+
+export const pairSharingGroupSchema = z.object({
+  travelerIds: z.array(z.string().min(1)).min(2).max(20),
+  sharingGroupId: z.string().trim().min(1).optional(),
 })
 
 export const availabilityPickupPointCoreSchema = z.object({

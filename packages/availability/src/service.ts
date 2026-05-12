@@ -1,5 +1,15 @@
 import { getAvailabilityAggregates } from "./service-aggregates.js"
 import {
+  assignTravelerAllocation,
+  createAllocationResource,
+  deleteAllocationResource,
+  getSlotAllocationManifest,
+  listAllocationResources,
+  pairSharingGroup,
+  updateAllocationResource,
+  updateTravelerSharingGroup,
+} from "./service-allocation.js"
+import {
   createCloseout,
   createRule,
   createSlot,
@@ -61,6 +71,14 @@ import {
 import { getSlotUnitAvailability } from "./service-unit-availability.js"
 
 export const availabilityService = {
+  getSlotAllocationManifest,
+  listAllocationResources,
+  createAllocationResource,
+  updateAllocationResource,
+  deleteAllocationResource,
+  assignTravelerAllocation,
+  updateTravelerSharingGroup,
+  pairSharingGroup,
   getSlotUnitAvailability,
   getAvailabilityAggregates,
   listRules,

@@ -111,13 +111,16 @@ export type { BookingRoutes } from "./routes.js"
 export type { PublicBookingRoutes } from "./routes-public.js"
 export { publicBookingRoutes } from "./routes-public.js"
 export type {
+  BookingTravelerBedPreference,
   BookingTravelerDietary,
   BookingTravelerIdentity,
   BookingTravelerTravelDetail,
   DecryptedBookingTravelerTravelDetail,
   NewBookingTravelerTravelDetail,
+  TravelerAllocationMap,
 } from "./schema/travel-details.js"
 export {
+  bookingTravelerBedPreferenceSchema,
   bookingTravelerDietarySchema,
   bookingTravelerIdentitySchema,
   bookingTravelerTravelDetailInsertSchema,
@@ -125,6 +128,7 @@ export {
   bookingTravelerTravelDetails,
   bookingTravelerTravelDetailUpdateSchema,
   decryptedBookingTravelerTravelDetailSchema,
+  travelerAllocationMapSchema,
 } from "./schema/travel-details.js"
 export type {
   Booking,

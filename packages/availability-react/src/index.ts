@@ -19,6 +19,7 @@ export {
   getProductQueryOptions,
   getProductsQueryOptions,
   getRulesQueryOptions,
+  getSlotAllocationQueryOptions,
   getSlotAssignmentsQueryOptions,
   getSlotBookingsQueryOptions,
   getSlotCloseoutsQueryOptions,

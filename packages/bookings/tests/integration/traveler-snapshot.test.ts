@@ -52,7 +52,7 @@ describe("applyTravelDetailSnapshot (pure)", () => {
 })
 
 describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test db typing
+  // biome-ignore lint/suspicious/noExplicitAny: issue #695; test db helpers return a broad Drizzle client type.
   let db: any
 
   beforeAll(async () => {
@@ -68,12 +68,19 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
         accessibility_encrypted jsonb,
         passport_person_document_id text,
         is_lead_traveler boolean DEFAULT false NOT NULL,
+        sharing_group_id text,
+        room_type_id text,
+        bed_preference text,
+        allocations jsonb DEFAULT '{}'::jsonb NOT NULL,
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL
       )
     `)
     await db.execute(
       sql`CREATE INDEX idx_bttd_lead_traveler ON booking_traveler_travel_details (is_lead_traveler)`,
+    )
+    await db.execute(
+      sql`CREATE INDEX idx_bttd_sharing_group ON booking_traveler_travel_details (sharing_group_id)`,
     )
   })
 

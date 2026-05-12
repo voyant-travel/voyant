@@ -78,5 +78,7 @@ export const availabilityQueryKeys = {
     [...availabilityQueryKeys.slots(), "resources", "list", filters] as const,
   slotBookingsList: (filters: PaginationFilters) =>
     [...availabilityQueryKeys.slots(), "bookings", "list", filters] as const,
+  slotAllocation: (slotId: string) =>
+    [...availabilityQueryKeys.slots(), "allocation", slotId] as const,
   product: (id: string) => [...availabilityQueryKeys.products(), "detail", id] as const,
 } as const
