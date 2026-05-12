@@ -349,6 +349,10 @@ function inMemoryTickSnapshotStore(records: TickSnapshotRecord[] = []): TickSnap
     async getLatest(repository) {
       return latest.get(repository.toLowerCase()) ?? null
     },
+    async listRecent(repository) {
+      const record = latest.get(repository.toLowerCase())
+      return record ? [record] : []
+    },
     async putLatest(record) {
       latest.set(record.snapshot.repository.toLowerCase(), record)
       return { key: `latest/${record.snapshot.repository.toLowerCase()}.json` }

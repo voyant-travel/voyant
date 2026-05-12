@@ -10,15 +10,22 @@ export type SupervisorTickRecord = z.infer<typeof supervisorTickRecordSchema>
 
 export interface SupervisorTickStore {
   getLatest(repository: string): Promise<SupervisorTickRecord | null>
+  listRecent(repository: string, options?: { limit?: number }): Promise<SupervisorTickRecord[]>
   putLatest(record: SupervisorTickRecord): Promise<SupervisorTickStoreWrite>
 }
 
 export interface SupervisorTickStoreWrite {
+  historyKey?: string
   key: string
 }
 
 export interface SupervisorTickBucket {
   get(key: string): Promise<{ text(): Promise<string> } | null>
+  list?(options?: { cursor?: string; limit?: number; prefix?: string }): Promise<{
+    cursor?: string
+    objects: Array<{ key: string }>
+    truncated?: boolean
+  }>
   put(
     key: string,
     value: string,
@@ -62,15 +69,50 @@ export function createR2SupervisorTickStore({
       return parsed.data
     },
 
+    async listRecent(repository, options = {}) {
+      if (!bucket.list) {
+        return []
+      }
+
+      const limit = boundedLimit(options.limit)
+      const prefix = historyTickPrefix({ keyPrefix, repository })
+      const listed = await bucket.list({
+        limit,
+        prefix,
+      })
+
+      const records: SupervisorTickRecord[] = []
+      for (const object of listed.objects.slice(0, limit)) {
+        const stored = await bucket.get(object.key)
+        if (!stored) continue
+
+        const parsed = supervisorTickRecordSchema.safeParse(JSON.parse(await stored.text()))
+        if (!parsed.success) {
+          throw new Error(`stored supervisor tick is invalid for ${repository}`)
+        }
+        records.push(parsed.data)
+      }
+
+      return records
+    },
+
     async putLatest(record) {
       const key = latestTickKey({ keyPrefix, repository: record.repository })
-      await bucket.put(key, JSON.stringify(record), {
+      const historyKey = historyTickKey({
+        keyPrefix,
+        recordedAt: record.recordedAt,
+        repository: record.repository,
+      })
+      const value = JSON.stringify(record)
+      const options = {
         httpMetadata: {
           contentType: "application/json",
         },
-      })
+      }
+      await bucket.put(key, value, options)
+      await bucket.put(historyKey, value, options)
 
-      return { key }
+      return { historyKey, key }
     },
   }
 }
@@ -80,4 +122,31 @@ function latestTickKey({ keyPrefix, repository }: { keyPrefix: string; repositor
   const encodedRepository = encodeURIComponent(repository.trim().toLowerCase())
   const key = `supervisor-ticks/latest/${encodedRepository}.json`
   return normalizedPrefix ? `${normalizedPrefix}/${key}` : key
+}
+
+function historyTickPrefix({ keyPrefix, repository }: { keyPrefix: string; repository: string }) {
+  const normalizedPrefix = keyPrefix.replace(/^\/+|\/+$/g, "")
+  const encodedRepository = encodeURIComponent(repository.trim().toLowerCase())
+  const key = `supervisor-ticks/history/${encodedRepository}/`
+  return normalizedPrefix ? `${normalizedPrefix}/${key}` : key
+}
+
+function historyTickKey({
+  keyPrefix,
+  recordedAt,
+  repository,
+}: {
+  keyPrefix: string
+  recordedAt: string
+  repository: string
+}) {
+  const timestamp = Date.parse(recordedAt)
+  const sortable = Number.isFinite(timestamp)
+    ? String(Number.MAX_SAFE_INTEGER - timestamp).padStart(16, "0")
+    : encodeURIComponent(recordedAt)
+  return `${historyTickPrefix({ keyPrefix, repository })}${sortable}-${encodeURIComponent(recordedAt)}.json`
+}
+
+function boundedLimit(limit = 20) {
+  return Math.min(Math.max(Math.trunc(limit), 1), 50)
 }

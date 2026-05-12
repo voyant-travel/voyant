@@ -1323,6 +1323,7 @@ Verification:
   without adding storage or automatic dispatch yet.
 - The control-plane app can optionally persist the latest accepted tick
   snapshot per repository to R2 through the `AGENT_TICK_SNAPSHOTS` binding.
+  It also writes timestamped recent-history records for operator inspection.
   This gives dashboards and supervisors a durable read model while dispatch
   remains explicit and runner-owned.
 - The control-plane app can also plan dispatch from that latest stored snapshot
@@ -1363,8 +1364,9 @@ Verification:
   task-scoped provider credentials are wired into a later slice.
 - The runner app can persist the latest supervisor tick result per repository
   to R2 through the `AGENT_RUNNER_TICKS` binding and expose it at
-  `GET /api/supervisor/ticks/latest`. This gives Cron-based deployments an
-  inspectable heartbeat and last lease result without introducing a full run
+  `GET /api/supervisor/ticks/latest` and recent records at
+  `GET /api/supervisor/ticks/recent`. This gives Cron-based deployments an
+  inspectable heartbeat and recent lease results without introducing a full run
   database. Lease-conflict ticks preserve the active intent returned by the
   control plane so maintainers can see the holder, issue, action, and expiration
   that blocked the run.

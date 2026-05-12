@@ -303,6 +303,24 @@ export function createApp({
     return c.json(record)
   })
 
+  app.get("/api/tick-snapshots/recent", async (c) => {
+    if (!tickSnapshotStore) {
+      return c.json({ error: "tick_snapshot_storage_not_configured" }, 503)
+    }
+
+    const repository = c.req.query("repository")?.trim()
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+
+    return c.json({
+      records: await tickSnapshotStore.listRecent(repository, {
+        limit: parseLimit(c.req.query("limit")),
+      }),
+      repository,
+    })
+  })
+
   return app
 }
 
@@ -316,4 +334,10 @@ function validationIssues(error: { issues: Array<{ path: Array<PropertyKey>; mes
     path: issue.path.join("."),
     message: issue.message,
   }))
+}
+
+function parseLimit(value: string | undefined) {
+  if (!value) return undefined
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
 }

@@ -2,12 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { createApp } from "./app.js"
 import { runnerDispatchActions } from "./runner.js"
-import {
-  createR2SupervisorTickStore,
-  type SupervisorTickBucket,
-  type SupervisorTickRecord,
-  type SupervisorTickStore,
-} from "./supervisor-tick-store.js"
+import type { SupervisorTickRecord, SupervisorTickStore } from "./supervisor-tick-store.js"
 
 describe("agent runner app", () => {
   it("serves public health without runner auth", async () => {
@@ -401,9 +396,33 @@ describe("agent runner app", () => {
         reason: "dry_run",
       },
     })
+
+    const recent = await app.request(
+      "/api/supervisor/ticks/recent?repository=voyantjs%2Fvoyant&limit=5",
+      {
+        headers: {
+          authorization: "Bearer token",
+        },
+      },
+    )
+
+    expect(recent.status).toBe(200)
+    await expect(recent.json()).resolves.toMatchObject({
+      records: [
+        {
+          recordedAt: "2026-05-12T12:00:00.000Z",
+          repository: "voyantjs/voyant",
+          result: {
+            leased: false,
+            reason: "dry_run",
+          },
+        },
+      ],
+      repository: "voyantjs/voyant",
+    })
   })
 
-  it("requires storage and repository before reading latest supervisor ticks", async () => {
+  it("requires storage and repository before reading persisted supervisor ticks", async () => {
     const noStore = createApp({ authTokens: ["token"] })
     const noStoreResponse = await noStore.request(
       "/api/supervisor/ticks/latest?repository=voyantjs%2Fvoyant",
@@ -430,6 +449,14 @@ describe("agent runner app", () => {
     expect(missingRepository.status).toBe(400)
     await expect(missingRepository.json()).resolves.toEqual({ error: "missing_repository" })
 
+    const missingRecentRepository = await app.request("/api/supervisor/ticks/recent", {
+      headers: {
+        authorization: "Bearer token",
+      },
+    })
+    expect(missingRecentRepository.status).toBe(400)
+    await expect(missingRecentRepository.json()).resolves.toEqual({ error: "missing_repository" })
+
     const missingTick = await app.request(
       "/api/supervisor/ticks/latest?repository=voyantjs%2Fvoyant",
       {
@@ -441,47 +468,22 @@ describe("agent runner app", () => {
     expect(missingTick.status).toBe(404)
     await expect(missingTick.json()).resolves.toEqual({ error: "supervisor_tick_not_found" })
   })
-
-  it("stores latest supervisor ticks in R2-compatible object storage", async () => {
-    const objects = new Map<string, string>()
-    const store = createR2SupervisorTickStore({
-      bucket: {
-        async get(key: string) {
-          const text = objects.get(key)
-          return text ? { text: async () => text } : null
-        },
-        async put(key: string, value: string) {
-          objects.set(key, String(value))
-          return null
-        },
-      } satisfies SupervisorTickBucket,
-      keyPrefix: "/runner/",
-    })
-    const record: SupervisorTickRecord = {
-      recordedAt: "2026-05-12T12:00:00.000Z",
-      repository: "voyantjs/voyant",
-      result: {
-        leased: false,
-        reason: "dry_run",
-      },
-    }
-
-    await expect(store.putLatest(record)).resolves.toEqual({
-      key: "runner/supervisor-ticks/latest/voyantjs%2Fvoyant.json",
-    })
-    await expect(store.getLatest("VoyantJS/Voyant")).resolves.toEqual(record)
-  })
 })
 
 function inMemorySupervisorTickStore(): SupervisorTickStore {
   const latest = new Map<string, SupervisorTickRecord>()
+  const recent: SupervisorTickRecord[] = []
 
   return {
     async getLatest(repository) {
       return latest.get(repository.toLowerCase()) ?? null
     },
+    async listRecent(repository) {
+      return recent.filter((record) => record.repository.toLowerCase() === repository.toLowerCase())
+    },
     async putLatest(record) {
       latest.set(record.repository.toLowerCase(), record)
+      recent.unshift(record)
       return { key: `latest/${record.repository.toLowerCase()}.json` }
     },
   }

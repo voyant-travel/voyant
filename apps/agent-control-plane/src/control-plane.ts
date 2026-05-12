@@ -237,6 +237,7 @@ export function buildCapabilities({
     },
     snapshotContracts: {
       tick: {
+        history: tickSnapshotPersistence === "latest",
         version: 1,
         persistence: tickSnapshotPersistence,
       },
