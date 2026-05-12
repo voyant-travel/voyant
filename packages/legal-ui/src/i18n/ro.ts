@@ -96,8 +96,14 @@ export const legalUiRo = {
     filters: {
       scope: "Domeniu",
       status: "Status",
+      person: "Persoana",
       allScopes: "Toate domeniile",
       allStatuses: "Toate statusurile",
+      allPeople: "Toate persoanele",
+      personSearchPlaceholder: "Cauta persoane...",
+      personEmpty: "Nu exista persoane.",
+      personSearching: "Se cauta persoane...",
+      clearPerson: "Sterge filtrul de persoana",
     },
     columns: {
       number: "Numar",
