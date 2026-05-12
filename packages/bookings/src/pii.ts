@@ -3,11 +3,13 @@ import { decryptOptionalJsonEnvelope, encryptOptionalJsonEnvelope } from "@voyan
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
+  type BookingTravelerBedPreference,
   bookingTravelerAccessibilitySchema,
   bookingTravelerDietarySchema,
   bookingTravelerIdentitySchema,
   bookingTravelerTravelDetails,
   type DecryptedBookingTravelerTravelDetail,
+  type TravelerAllocationMap,
 } from "./schema/travel-details.js"
 import { bookingTravelers } from "./schema.js"
 
@@ -23,6 +25,10 @@ export interface UpsertBookingTravelerTravelDetailInput {
   dietaryRequirements?: string | null
   accessibilityNeeds?: string | null
   isLeadTraveler?: boolean | null
+  sharingGroupId?: string | null
+  roomTypeId?: string | null
+  bedPreference?: BookingTravelerBedPreference | null
+  allocations?: TravelerAllocationMap
 }
 
 /**
@@ -195,6 +201,10 @@ async function loadExistingTravelDetails(
     dietaryRequirements: dietary?.dietaryRequirements ?? null,
     accessibilityNeeds: accessibility?.accessibilityNeeds ?? null,
     isLeadTraveler: row.isLeadTraveler,
+    sharingGroupId: row.sharingGroupId ?? null,
+    roomTypeId: row.roomTypeId ?? null,
+    bedPreference: row.bedPreference ?? null,
+    allocations: row.allocations ?? {},
   }
 }
 
@@ -239,6 +249,15 @@ function mergeTravelDetailInput(
       input.isLeadTraveler === undefined
         ? (existing?.isLeadTraveler ?? false)
         : input.isLeadTraveler,
+    sharingGroupId:
+      input.sharingGroupId === undefined
+        ? (existing?.sharingGroupId ?? null)
+        : input.sharingGroupId,
+    roomTypeId: input.roomTypeId === undefined ? (existing?.roomTypeId ?? null) : input.roomTypeId,
+    bedPreference:
+      input.bedPreference === undefined ? (existing?.bedPreference ?? null) : input.bedPreference,
+    allocations:
+      input.allocations === undefined ? (existing?.allocations ?? {}) : input.allocations,
   }
 }
 
@@ -294,6 +313,10 @@ export function createBookingPiiService(options: BookingPiiServiceOptions): Book
         dietaryRequirements: dietary?.dietaryRequirements ?? null,
         accessibilityNeeds: accessibility?.accessibilityNeeds ?? null,
         isLeadTraveler: row.isLeadTraveler,
+        sharingGroupId: row.sharingGroupId ?? null,
+        roomTypeId: row.roomTypeId ?? null,
+        bedPreference: row.bedPreference ?? null,
+        allocations: row.allocations ?? {},
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       }
@@ -344,6 +367,10 @@ export function createBookingPiiService(options: BookingPiiServiceOptions): Book
           accessibilityEncrypted,
           passportPersonDocumentId: mergedInput.passportPersonDocumentId ?? null,
           isLeadTraveler: mergedInput.isLeadTraveler ?? false,
+          sharingGroupId: mergedInput.sharingGroupId ?? null,
+          roomTypeId: mergedInput.roomTypeId ?? null,
+          bedPreference: mergedInput.bedPreference ?? null,
+          allocations: mergedInput.allocations ?? {},
           updatedAt: now,
         })
         .onConflictDoUpdate({
@@ -354,6 +381,10 @@ export function createBookingPiiService(options: BookingPiiServiceOptions): Book
             accessibilityEncrypted,
             passportPersonDocumentId: mergedInput.passportPersonDocumentId ?? null,
             isLeadTraveler: mergedInput.isLeadTraveler ?? false,
+            sharingGroupId: mergedInput.sharingGroupId ?? null,
+            roomTypeId: mergedInput.roomTypeId ?? null,
+            bedPreference: mergedInput.bedPreference ?? null,
+            allocations: mergedInput.allocations ?? {},
             updatedAt: now,
           },
         })

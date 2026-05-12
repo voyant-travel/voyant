@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  allocationResourceKindSchema,
+  assignTravelerAllocationSchema,
   availabilityRuleListQuerySchema,
   availabilitySlotStatusSchema,
   customPickupAreaListQuerySchema,
+  insertAllocationResourceSchema,
   insertAvailabilityCloseoutSchema,
   insertAvailabilityPickupPointSchema,
   insertAvailabilityRuleSchema,
@@ -16,8 +19,11 @@ import {
   insertPickupLocationSchema,
   insertProductMeetingConfigSchema,
   meetingModeSchema,
+  pairSharingGroupSchema,
   pickupGroupKindSchema,
   pickupTimingModeSchema,
+  updateAllocationResourceSchema,
+  updateTravelerSharingGroupSchema,
 } from "../../src/validation.js"
 
 describe("Enum schemas", () => {
@@ -47,6 +53,73 @@ describe("Enum schemas", () => {
     for (const m of ["fixed_time", "offset_from_start"]) {
       expect(pickupTimingModeSchema.parse(m)).toBe(m)
     }
+  })
+
+  it("accepts valid allocation resource kinds", () => {
+    for (const kind of ["room", "vehicle", "guide", "equipment", "custom"]) {
+      expect(allocationResourceKindSchema.parse(kind)).toBe(kind)
+    }
+  })
+})
+
+describe("Allocation schema", () => {
+  it("accepts an allocation resource with defaults", () => {
+    const result = insertAllocationResourceSchema.parse({
+      slotId: "slot_abc",
+      kind: "room",
+      label: "Room 101",
+      capacity: 2,
+    })
+
+    expect(result.kind).toBe("room")
+    expect(result.capacity).toBe(2)
+    expect(result.sortOrder).toBe(0)
+    expect(result.flags).toEqual({})
+  })
+
+  it("rejects non-positive capacity", () => {
+    expect(() =>
+      insertAllocationResourceSchema.parse({
+        slotId: "slot_abc",
+        kind: "room",
+        label: "Invalid room",
+        capacity: 0,
+      }),
+    ).toThrow()
+  })
+
+  it("does not allow changing a resource kind through patch input", () => {
+    expect(() =>
+      updateAllocationResourceSchema.parse({
+        kind: "vehicle",
+      }),
+    ).toThrow()
+  })
+
+  it("accepts traveler allocation assignment and clearing", () => {
+    expect(
+      assignTravelerAllocationSchema.parse({
+        kind: "room",
+        resourceId: "resource_abc",
+      }),
+    ).toEqual({ kind: "room", resourceId: "resource_abc" })
+
+    expect(assignTravelerAllocationSchema.parse({ kind: "room", resourceId: null })).toEqual({
+      kind: "room",
+      resourceId: null,
+    })
+  })
+
+  it("accepts sharing-group updates and pairing requests", () => {
+    expect(updateTravelerSharingGroupSchema.parse({ sharingGroupId: "share_abc" })).toEqual({
+      sharingGroupId: "share_abc",
+    })
+
+    expect(
+      pairSharingGroupSchema.parse({
+        travelerIds: ["traveler_a", "traveler_b"],
+      }),
+    ).toEqual({ travelerIds: ["traveler_a", "traveler_b"] })
   })
 })
 

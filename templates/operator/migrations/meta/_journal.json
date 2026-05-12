@@ -71,6 +71,13 @@
       "when": 1778446136397,
       "tag": "0009_invoice_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778544000000,
+      "tag": "0010_allocation_resources",
+      "breakpoints": true
     }
   ]
 }

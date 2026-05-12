@@ -23,6 +23,7 @@ import {
   productListResponse,
   productSingleResponse,
   resourceSummaryListResponse,
+  slotAllocationManifestResponse,
   slotUnitAvailabilityListResponse,
 } from "./schemas.js"
 
@@ -186,6 +187,23 @@ export function getSlotUnitAvailabilityQueryOptions(
       return fetchWithValidation(
         `/v1/availability/slots/${slotId}/unit-availability`,
         slotUnitAvailabilityListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getSlotAllocationQueryOptions(
+  client: FetchWithValidationOptions,
+  slotId: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: availabilityQueryKeys.slotAllocation(slotId ?? ""),
+    queryFn: async () => {
+      if (!slotId) throw new Error("getSlotAllocationQueryOptions requires a slotId")
+      return fetchWithValidation(
+        `/v1/admin/availability/slots/${slotId}/allocation`,
+        slotAllocationManifestResponse,
         client,
       )
     },

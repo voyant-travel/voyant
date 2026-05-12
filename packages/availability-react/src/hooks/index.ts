@@ -9,6 +9,13 @@ export type { UseProductsOptions } from "./use-products.js"
 export { useProducts } from "./use-products.js"
 export type { UseRulesOptions } from "./use-rules.js"
 export { useRules } from "./use-rules.js"
+export {
+  type UseSlotAllocationOptions,
+  useAllocationResourceMutation,
+  useAssignTravelerAllocationMutation,
+  useSlotAllocation,
+  useTravelerSharingGroupMutation,
+} from "./use-slot-allocation.js"
 export type { UseSlotUnitAvailabilityOptions } from "./use-slot-unit-availability.js"
 export { useSlotUnitAvailability } from "./use-slot-unit-availability.js"
 export type { UseSlotsOptions } from "./use-slots.js"

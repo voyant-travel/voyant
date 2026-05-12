@@ -5,6 +5,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -157,6 +158,31 @@ export const availabilityCloseouts = pgTable(
     index("idx_availability_closeouts_product_created").on(table.productId, table.createdAt),
     index("idx_availability_closeouts_slot_created").on(table.slotId, table.createdAt),
     index("idx_availability_closeouts_date_created").on(table.dateLocal, table.createdAt),
+  ],
+)
+
+export const allocationResources = pgTable(
+  "allocation_resources",
+  {
+    id: typeId("allocation_resources"),
+    slotId: typeIdRef("slot_id")
+      .notNull()
+      .references(() => availabilitySlots.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    refType: text("ref_type"),
+    refId: text("ref_id"),
+    label: text("label"),
+    capacity: integer("capacity").notNull(),
+    flags: jsonb("flags").$type<Record<string, unknown>>().notNull().default({}),
+    parentId: text("parent_id"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_allocation_resources_slot_kind").on(table.slotId, table.kind),
+    index("idx_allocation_resources_parent").on(table.parentId),
+    index("idx_allocation_resources_kind_sort").on(table.kind, table.sortOrder, table.createdAt),
   ],
 )
 
@@ -369,6 +395,8 @@ export type AvailabilitySlot = typeof availabilitySlots.$inferSelect
 export type NewAvailabilitySlot = typeof availabilitySlots.$inferInsert
 export type AvailabilityCloseout = typeof availabilityCloseouts.$inferSelect
 export type NewAvailabilityCloseout = typeof availabilityCloseouts.$inferInsert
+export type AllocationResource = typeof allocationResources.$inferSelect
+export type NewAllocationResource = typeof allocationResources.$inferInsert
 export type AvailabilityPickupPoint = typeof availabilityPickupPoints.$inferSelect
 export type NewAvailabilityPickupPoint = typeof availabilityPickupPoints.$inferInsert
 export type AvailabilitySlotPickup = typeof availabilitySlotPickups.$inferSelect
@@ -405,11 +433,19 @@ export const availabilitySlotsRelations = relations(availabilitySlots, ({ one, m
   pickups: many(availabilitySlotPickups),
   closeouts: many(availabilityCloseouts),
   locationPickupTimes: many(locationPickupTimes),
+  allocationResources: many(allocationResources),
 }))
 
 export const availabilityCloseoutsRelations = relations(availabilityCloseouts, ({ one }) => ({
   slot: one(availabilitySlots, {
     fields: [availabilityCloseouts.slotId],
+    references: [availabilitySlots.id],
+  }),
+}))
+
+export const allocationResourcesRelations = relations(allocationResources, ({ one }) => ({
+  slot: one(availabilitySlots, {
+    fields: [allocationResources.slotId],
     references: [availabilitySlots.id],
   }),
 }))

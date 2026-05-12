@@ -1,4 +1,5 @@
 import { type KmsEnvelope, kmsEnvelopeSchema } from "@voyantjs/db/schema/iam"
+import { sql } from "drizzle-orm"
 import { boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
@@ -27,6 +28,15 @@ export const bookingTravelerAccessibilitySchema = z.object({
   accessibilityNeeds: z.string().optional().nullable(),
 })
 
+export const bookingTravelerBedPreferenceSchema = z.enum([
+  "single",
+  "twin",
+  "double",
+  "no-preference",
+])
+
+export const travelerAllocationMapSchema = z.record(z.string(), z.string())
+
 const decryptedBookingTravelerTravelDetailRecordSchema = z.object({
   travelerId: z.string(),
   nationality: z.string().nullable(),
@@ -39,6 +49,10 @@ const decryptedBookingTravelerTravelDetailRecordSchema = z.object({
   dietaryRequirements: z.string().nullable(),
   accessibilityNeeds: z.string().nullable(),
   isLeadTraveler: z.boolean(),
+  sharingGroupId: z.string().nullable(),
+  roomTypeId: z.string().nullable(),
+  bedPreference: bookingTravelerBedPreferenceSchema.nullable(),
+  allocations: travelerAllocationMapSchema,
   createdAt: z.date(),
   updatedAt: z.date(),
 })
@@ -63,10 +77,35 @@ export const bookingTravelerTravelDetails = pgTable(
      */
     passportPersonDocumentId: text("passport_person_document_id"),
     isLeadTraveler: boolean("is_lead_traveler").notNull().default(false),
+    /**
+     * Groups travelers across different bookings who share one resource
+     * while paying independently. Travelers on the same booking are grouped
+     * implicitly by `bookingId`.
+     */
+    sharingGroupId: text("sharing_group_id"),
+    /**
+     * Plain cross-package reference to a room type/catalog unit. No FK:
+     * hospitality/product catalogs are optional packages.
+     */
+    roomTypeId: text("room_type_id"),
+    bedPreference:
+      text("bed_preference").$type<z.infer<typeof bookingTravelerBedPreferenceSchema>>(),
+    /**
+     * Generic per-resource-kind allocation map, e.g.
+     * `{ room: "resource-id", vehicle_seat: "resource-id" }`.
+     */
+    allocations: jsonb("allocations")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("idx_bptd_lead_traveler").on(t.isLeadTraveler)],
+  (t) => [
+    index("idx_bptd_lead_traveler").on(t.isLeadTraveler),
+    index("idx_bptd_sharing_group").on(t.sharingGroupId),
+    index("idx_bptd_room_type").on(t.roomTypeId),
+  ],
 )
 
 const bookingTravelerTravelDetailRecordCoreSchema = z.object({
@@ -91,6 +130,10 @@ const bookingTravelerTravelDetailRecordCoreSchema = z.object({
     .nullable(),
   passportPersonDocumentId: z.string().nullable().optional(),
   isLeadTraveler: z.boolean().default(false),
+  sharingGroupId: z.string().nullable().optional(),
+  roomTypeId: z.string().nullable().optional(),
+  bedPreference: bookingTravelerBedPreferenceSchema.nullable().optional(),
+  allocations: travelerAllocationMapSchema.default({}),
 })
 
 export const bookingTravelerTravelDetailInsertSchema = bookingTravelerTravelDetailRecordCoreSchema
@@ -112,6 +155,8 @@ export const bookingTravelerTravelDetailSelectSchema =
 export type BookingTravelerIdentity = z.infer<typeof bookingTravelerIdentitySchema>
 export type BookingTravelerDietary = z.infer<typeof bookingTravelerDietarySchema>
 export type BookingTravelerAccessibility = z.infer<typeof bookingTravelerAccessibilitySchema>
+export type BookingTravelerBedPreference = z.infer<typeof bookingTravelerBedPreferenceSchema>
+export type TravelerAllocationMap = z.infer<typeof travelerAllocationMapSchema>
 export type BookingTravelerTravelDetail = z.infer<typeof bookingTravelerTravelDetailSelectSchema>
 export type NewBookingTravelerTravelDetail = z.infer<typeof bookingTravelerTravelDetailInsertSchema>
 export type DecryptedBookingTravelerTravelDetail = z.infer<

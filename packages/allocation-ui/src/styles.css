@@ -1,0 +1,6 @@
+/* Tailwind v4 source-detection helper.
+ *
+ * Templates that consume this package should `@import` this CSS so Tailwind
+ * scans these component files for utility classes.
+ */
+@source "./components/**/*.{ts,tsx}";

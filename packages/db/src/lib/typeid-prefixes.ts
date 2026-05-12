@@ -82,6 +82,7 @@ export const PREFIXES = {
   availability_start_times: "avst",
   availability_slots: "avsl",
   availability_closeouts: "avcl",
+  allocation_resources: "alrs",
   availability_pickup_points: "avpp",
   availability_slot_pickups: "avsp",
   product_meeting_configs: "pmcf",

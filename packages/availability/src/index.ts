@@ -1,10 +1,10 @@
 import type { Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 
-import { availabilityRoutes } from "./routes.js"
+import { availabilityAdminRoutes, availabilityRoutes } from "./routes.js"
 import { availabilityService } from "./service.js"
 
-export type { AvailabilityRoutes } from "./routes.js"
+export type { AvailabilityAdminRoutes, AvailabilityRoutes } from "./routes.js"
 
 export const availabilityModule: Module = {
   name: "availability",
@@ -13,6 +13,7 @@ export const availabilityModule: Module = {
 export const availabilityHonoModule: HonoModule = {
   module: availabilityModule,
   routes: availabilityRoutes,
+  adminRoutes: availabilityAdminRoutes,
 }
 
 export {
@@ -26,6 +27,7 @@ export {
   generateAvailabilitySlots,
 } from "./generate-slots.js"
 export type {
+  AllocationResource,
   AvailabilityCloseout,
   AvailabilityPickupPoint,
   AvailabilityRule,
@@ -34,6 +36,7 @@ export type {
   AvailabilityStartTime,
   CustomPickupArea,
   LocationPickupTime,
+  NewAllocationResource,
   NewAvailabilityCloseout,
   NewAvailabilityPickupPoint,
   NewAvailabilityRule,
@@ -50,6 +53,7 @@ export type {
   ProductMeetingConfig,
 } from "./schema.js"
 export {
+  allocationResources,
   availabilityCloseouts,
   availabilityPickupPoints,
   availabilityRules,
@@ -63,6 +67,7 @@ export {
   productMeetingConfigs,
 } from "./schema.js"
 export {
+  assignTravelerAllocationSchema,
   availabilityCloseoutListQuerySchema,
   availabilityPickupPointListQuerySchema,
   availabilityRuleListQuerySchema,
@@ -70,6 +75,7 @@ export {
   availabilitySlotPickupListQuerySchema,
   availabilityStartTimeListQuerySchema,
   customPickupAreaListQuerySchema,
+  insertAllocationResourceSchema,
   insertAvailabilityCloseoutSchema,
   insertAvailabilityPickupPointSchema,
   insertAvailabilityRuleSchema,
@@ -82,9 +88,11 @@ export {
   insertPickupLocationSchema,
   insertProductMeetingConfigSchema,
   locationPickupTimeListQuerySchema,
+  pairSharingGroupSchema,
   pickupGroupListQuerySchema,
   pickupLocationListQuerySchema,
   productMeetingConfigListQuerySchema,
+  updateAllocationResourceSchema,
   updateAvailabilityCloseoutSchema,
   updateAvailabilityPickupPointSchema,
   updateAvailabilityRuleSchema,
@@ -96,5 +104,6 @@ export {
   updatePickupGroupSchema,
   updatePickupLocationSchema,
   updateProductMeetingConfigSchema,
+  updateTravelerSharingGroupSchema,
 } from "./validation.js"
 export { availabilityService }

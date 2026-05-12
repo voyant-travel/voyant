@@ -17,7 +17,9 @@ describe("traveler travel detail schema aliases", () => {
       travelerId: "bkpt_abc",
       identityEncrypted: undefined,
       dietaryEncrypted: undefined,
+      accessibilityEncrypted: undefined,
       isLeadTraveler: true,
+      allocations: {},
     })
   })
 
@@ -27,7 +29,12 @@ describe("traveler travel detail schema aliases", () => {
       travelerId: "bkpt_abc",
       identityEncrypted: null,
       dietaryEncrypted: null,
+      accessibilityEncrypted: null,
       isLeadTraveler: false,
+      sharingGroupId: "share_1",
+      roomTypeId: "rt_double",
+      bedPreference: "twin",
+      allocations: { room: "alloc_1" },
       createdAt: now,
       updatedAt: now,
     })
@@ -36,7 +43,12 @@ describe("traveler travel detail schema aliases", () => {
       travelerId: "bkpt_abc",
       identityEncrypted: null,
       dietaryEncrypted: null,
+      accessibilityEncrypted: null,
       isLeadTraveler: false,
+      sharingGroupId: "share_1",
+      roomTypeId: "rt_double",
+      bedPreference: "twin",
+      allocations: { room: "alloc_1" },
       createdAt: now,
       updatedAt: now,
     })
@@ -56,6 +68,10 @@ describe("traveler travel detail schema aliases", () => {
       dietaryRequirements: null,
       accessibilityNeeds: null,
       isLeadTraveler: false,
+      sharingGroupId: "share_1",
+      roomTypeId: "rt_double",
+      bedPreference: "twin",
+      allocations: { room: "alloc_1" },
       createdAt: now,
       updatedAt: now,
     })
@@ -72,8 +88,33 @@ describe("traveler travel detail schema aliases", () => {
       dietaryRequirements: null,
       accessibilityNeeds: null,
       isLeadTraveler: false,
+      sharingGroupId: "share_1",
+      roomTypeId: "rt_double",
+      bedPreference: "twin",
+      allocations: { room: "alloc_1" },
       createdAt: now,
       updatedAt: now,
+    })
+  })
+
+  it("parses sharing, room type, bed preference, and generic allocations", () => {
+    const result = bookingTravelerTravelDetailInsertSchema.parse({
+      travelerId: "bkpt_abc",
+      sharingGroupId: "share_1",
+      roomTypeId: "rt_double",
+      bedPreference: "double",
+      allocations: {
+        room: "resource_room_102",
+        vehicle_seat: "resource_seat_3a",
+      },
+    })
+
+    expect(result.sharingGroupId).toBe("share_1")
+    expect(result.roomTypeId).toBe("rt_double")
+    expect(result.bedPreference).toBe("double")
+    expect(result.allocations).toEqual({
+      room: "resource_room_102",
+      vehicle_seat: "resource_seat_3a",
     })
   })
 
