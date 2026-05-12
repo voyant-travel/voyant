@@ -50,6 +50,10 @@ function upsertMeta(selector: string, attributes: Record<string, string>, conten
   element.content = content
 }
 
+function removeMeta(selector: string) {
+  document.head.querySelector<HTMLMetaElement>(selector)?.remove()
+}
+
 function useApplyAdminPageHead({
   brand,
   description,
@@ -80,7 +84,13 @@ function useApplyAdminPageHead({
   }, [brand, enabled, title])
 
   useEffect(() => {
-    if (!enabled || typeof document === "undefined" || description == null) {
+    if (!enabled || typeof document === "undefined") {
+      return
+    }
+
+    if (description == null) {
+      removeMeta('meta[name="description"]')
+      removeMeta('meta[property="og:description"]')
       return
     }
 

@@ -78,7 +78,12 @@ describe("AdminPageHead", () => {
     const { getByRole } = renderWithAdminProvider(<Harness />)
 
     await waitFor(() => expect(document.title).toBe("Danube Cruise · Acme"))
+    expect(document.head.querySelector('meta[name="description"]')?.getAttribute("content")).toBe(
+      "Detailed product view",
+    )
     getByRole("button", { name: "Close detail" }).click()
     await waitFor(() => expect(document.title).toBe("Products · Acme"))
+    expect(document.head.querySelector('meta[name="description"]')).toBeNull()
+    expect(document.head.querySelector('meta[property="og:description"]')).toBeNull()
   })
 })
