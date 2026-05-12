@@ -208,7 +208,11 @@ export function CatalogDetailSheet({
         : headerExtras
       : null
   const brochureContent = hit && renderBrochure ? renderBrochure(hit, enrichment) : null
+  const hasCustomMediaRenderer = hit != null && renderMedia != null
   const mediaContent = hit && renderMedia ? renderMedia(hit, enrichment) : null
+  const shouldRenderMediaSection = hasCustomMediaRenderer
+    ? mediaContent !== null && mediaContent !== undefined && mediaContent !== false
+    : enrichment?.media != null && enrichment.media.length > 0
   const extraSections = hit && renderExtraSections ? renderExtraSections(hit, enrichment) : null
 
   const allEntries = Object.entries(fields).filter(([k]) => !HIDDEN_FIELDS.has(k))
@@ -478,7 +482,7 @@ export function CatalogDetailSheet({
 
                 {brochureContent && <Section title="Brochure">{brochureContent}</Section>}
 
-                {(mediaContent || (enrichment?.media && enrichment.media.length > 0)) && (
+                {shouldRenderMediaSection && (
                   <Section title="Media">
                     {mediaContent ?? <DefaultMediaGrid media={enrichment?.media ?? []} />}
                   </Section>
