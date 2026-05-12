@@ -52,6 +52,13 @@ The workspace shell uses the shared `OperatorAdminWorkspaceLayout`. Operators
 can collapse or expand the sidebar from the header trigger, or with `Cmd+B` on
 macOS and `Ctrl+B` on Windows and Linux.
 
+## Charts
+
+The dashboard uses `recharts` through `@voyantjs/ui` and `@voyantjs/admin`.
+If chart cards render headers with blank bodies, run `pnpm -r why recharts`
+and confirm the app resolves a single `recharts` version. Add a workspace
+override only if a downstream dependency forces a second copy.
+
 ## License
 
 Apache-2.0
