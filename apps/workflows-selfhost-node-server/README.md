@@ -47,6 +47,15 @@ Supported flags:
 - `--database-url <url>` or `DATABASE_URL`
 - `--cache-bust-entry`
 
+The CLI flags intentionally cover only entry loading, HTTP binding, static
+assets, and storage. Workflows that call `ctx.services.resolve(...)` need a
+host-provided service resolver. For those, either start the server from code
+with `startNodeSelfHostServer({ services })`, or prefer the app-integrated
+Node path with `createApp({ workflows: { driver: () =>
+createNodeStandaloneDriver({ db }) } })`. See
+[`@voyantjs/workflows-orchestrator-node`](../../packages/workflows-orchestrator-node/README.md#service-backed-package-workflows)
+for an example using the promotions catalog reindex workflow.
+
 Operational endpoints:
 
 - `GET /healthz` for liveness

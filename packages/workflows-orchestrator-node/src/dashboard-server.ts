@@ -2,6 +2,7 @@ import { readFile, stat } from "node:fs/promises"
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import { extname, join, resolve as resolvePath } from "node:path"
 import { URL } from "node:url"
+import type { ServiceResolver } from "@voyantjs/workflows/driver"
 import { handleStepRequest, type StepRunner } from "@voyantjs/workflows/handler"
 import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
 import {
@@ -818,6 +819,14 @@ export interface NodeSelfHostServerOptions {
   host?: string
   staticDir?: string
   cacheBustEntry?: boolean
+  /**
+   * Read-only service resolver surfaced to workflow bodies as `ctx.services`.
+   *
+   * Use this when the loaded entry file registers package workflows that
+   * resolve host-provided services, for example
+   * `ctx.services.resolve("promotions:bulk-reindex-products")`.
+   */
+  services?: ServiceResolver
   store?: SnapshotRunStore
   databaseUrl?: string
   wakeupPollIntervalMs?: number
@@ -844,6 +853,7 @@ export async function createNodeSelfHostDeps(
     | "entryFile"
     | "staticDir"
     | "cacheBustEntry"
+    | "services"
     | "store"
     | "databaseUrl"
     | "wakeupPollIntervalMs"
@@ -914,7 +924,7 @@ export async function createNodeSelfHostDeps(
   }
 
   const stepHandler: StepHandler = async (req, stepOpts) =>
-    handleStepRequest(req, { rateLimiter, nodeStepRunner }, stepOpts)
+    handleStepRequest(req, { rateLimiter, nodeStepRunner, services: opts.services }, stepOpts)
   const tenantMeta = {
     tenantId: "tnt_local",
     projectId: "prj_local",
