@@ -189,19 +189,30 @@ Use a named remote process when a UI verification flow needs a long-running
 server before browser capture:
 
 ```bash
+pnpm agent:queue:remote-capture-browser -- --issue <number> --dev-server-command "pnpm dev" --port 3000 --yes
+```
+
+With `--dev-server-command`, remote-capture-browser starts a named remote
+process, exposes the requested port, captures browser evidence from the local
+runner, then stops the process even when capture fails. It stores process
+metadata, the command, the PID, process-group marker, and logs under remote
+`.agent-runs/remote-processes/<name>/`. It refuses to replace an already
+running process with the same name, waits briefly, then fails with the remote
+log tail if startup exits early.
+
+For manual debugging, use the standalone process commands around browser
+capture:
+
+```bash
 pnpm agent:queue:remote-start-process -- --issue <number> --name dev-server --command "pnpm dev" --port 3000 --yes
 pnpm agent:queue:remote-capture-browser -- --issue <number> --port 3000 --yes
 pnpm agent:queue:remote-stop-process -- --issue <number> --name dev-server --yes
 ```
 
-Remote-start-process mode runs through the adapter's command execution
-capability and stores process metadata, the command, the PID, and logs under
-remote `.agent-runs/remote-processes/<name>/`. It refuses to replace an already
-running process with the same name, waits briefly, then fails with the remote
-log tail if startup exits early. Remote-stop-process mode is idempotent: stale
-or missing PID files are treated as already stopped, while live processes get a
-graceful terminate before a forced kill. These commands do not mutate Project
-state; use them as setup and teardown around browser evidence capture.
+Remote-stop-process mode is idempotent: stale or missing PID files are treated
+as already stopped, while live processes get a graceful terminate before a
+forced kill. These process commands do not mutate Project state; use them as
+setup and teardown around browser evidence capture.
 
 For UI work in a remote workspace, expose the running remote dev server and
 capture browser evidence from the local runner:
@@ -214,12 +225,15 @@ pnpm agent:queue:remote-capture-browser -- --issue <number> --url "https://previ
 Remote-capture-browser mode requires a `sandbox:<provider>:<id>` workspace. With
 `--port`, it calls the adapter's `exposeHttp` operation and captures the
 returned URL with Playwright. With `--url`, it skips adapter exposure and
-captures the supplied URL. Artifacts are written under local `.agent-runs/` so
-remote browser proof does not dirty the task branch; pass `--publish-artifacts`
-to upload screenshots, videos, logs, summaries, and the artifact index to
+captures the supplied URL. With `--dev-server-command`, it also requires
+adapter command execution so the runner can start and stop the remote server
+for the capture. Artifacts are written under local `.agent-runs/` so remote
+browser proof does not dirty the task branch; pass `--publish-artifacts` to
+upload screenshots, videos, logs, summaries, and the artifact index to
 configured object storage. Use the printed browser evidence text as
 `--ui-evidence` for the supervised command that writes the final evidence
-packet. Providers that do not declare `exposeHttp` fail closed.
+packet. Providers that do not declare the required adapter capabilities fail
+closed.
 
 After a successful remote command, publish the remote evidence packet to GitHub
 or configured R2-compatible object storage:

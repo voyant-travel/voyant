@@ -4,6 +4,7 @@ import { describe, it } from "node:test"
 import {
   normalizeRemoteHttpExposure,
   remoteBrowserArtifactPlan,
+  waitForRemoteHttpReady,
 } from "../lib/agent-runner-remote-browser.mjs"
 import { parseWorkspaceReference } from "../lib/agent-runner-workspace-contract.mjs"
 import { workItem } from "./agent-fixtures.mjs"
@@ -51,6 +52,34 @@ describe("agent runner remote browser helpers", () => {
     assert.throws(
       () => normalizeRemoteHttpExposure({ port: 3000, result: { url: "ftp://preview.test" } }),
       /did not return a URL/,
+    )
+  })
+
+  it("waits until the exposed remote HTTP URL is ready", async () => {
+    let attempts = 0
+
+    await waitForRemoteHttpReady("https://preview.test", {
+      fetchImpl: async () => {
+        attempts += 1
+        return { status: attempts === 1 ? 503 : 200 }
+      },
+      intervalMs: 1,
+      timeoutMs: 100,
+    })
+
+    assert.equal(attempts, 2)
+  })
+
+  it("fails when the exposed remote HTTP URL never becomes ready", async () => {
+    await assert.rejects(
+      waitForRemoteHttpReady("https://preview.test", {
+        fetchImpl: async () => {
+          throw new Error("connection refused")
+        },
+        intervalMs: 1,
+        timeoutMs: 5,
+      }),
+      /timed out waiting for https:\/\/preview\.test: connection refused/,
     )
   })
 })

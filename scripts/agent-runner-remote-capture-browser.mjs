@@ -31,7 +31,15 @@ import {
 import {
   normalizeRemoteHttpExposure,
   remoteBrowserArtifactPlan,
+  waitForRemoteHttpReady,
 } from "./lib/agent-runner-remote-browser.mjs"
+import { remoteWriteFileShell } from "./lib/agent-runner-remote-execution.mjs"
+import {
+  remoteProcessMetadata,
+  remoteProcessPlan,
+  remoteStartProcessShell,
+  remoteStopProcessShell,
+} from "./lib/agent-runner-remote-process.mjs"
 import {
   loadRemoteWorkspaceAdapters,
   resolveRemoteWorkspaceAdapter,
@@ -45,11 +53,17 @@ const args = parseArgs(process.argv.slice(2))
 maybePrintHelp(args, {
   command: "agent:queue:remote-capture-browser",
   summary: "Expose a remote workspace URL and capture local browser evidence for it.",
-  usage: "pnpm agent:queue:remote-capture-browser -- --issue <number> --port 3000 --yes",
+  usage:
+    'pnpm agent:queue:remote-capture-browser -- --issue <number> --dev-server-command "pnpm dev" --port 3000 --yes',
   options: [
     ["--issue <number>", "Issue number whose remote workspace should receive browser proof."],
     ["--port <number>", "Remote HTTP port to expose through the adapter."],
     ["--url <url>", "Already-exposed URL to capture instead of calling exposeHttp."],
+    [
+      "--dev-server-command <shell>",
+      "Optional remote command to start before capture and stop afterward.",
+    ],
+    ["--process-name <name>", "Stable remote process name. Defaults from the issue."],
     [
       "--workspace <reference>",
       "Workspace reference override, for example sandbox:sprite:task-579.",
@@ -83,6 +97,10 @@ if (!args.issue) {
 
 if (!args.url && !args.port) {
   fail("remote-capture-browser mode requires --url or --port <number>")
+}
+
+if (args.devServerCommand && !args.port) {
+  fail("remote-capture-browser mode requires --port when --dev-server-command is provided")
 }
 
 if (args.viewport && args.viewports) {
@@ -127,56 +145,90 @@ if (!artifactPlan.safeArtifactPath) {
 }
 
 if (!args.yes) {
-  printCapturePlan({ artifactPlan, item, port, repository, url: args.url })
+  printCapturePlan({
+    artifactPlan,
+    devServerCommand: args.devServerCommand,
+    item,
+    port,
+    processName: args.processName,
+    repository,
+    url: args.url,
+  })
   fail("remote-capture-browser exposes HTTP and writes local artifacts; rerun with --yes")
 }
 
 let captureUrl = args.url
 let exposure = null
+const needsAdapter = Boolean(args.devServerCommand) || !captureUrl
+const adapters = needsAdapter ? await loadAdapters({ descriptor, workspaceReference }) : null
+const adapter = adapters ? resolveAdapter(descriptor, { adapters }) : null
+
+if (args.devServerCommand && !adapter.capabilities.exec) {
+  failInspection(
+    new Error(`remote workspace provider ${descriptor.provider} cannot exec commands`),
+    { descriptor, workspaceReference },
+  )
+}
+
 if (!captureUrl) {
-  const adapters = await loadAdapters({ descriptor, workspaceReference })
-  const adapter = resolveAdapter(descriptor, { adapters })
   if (!adapter.capabilities.exposeHttp) {
     failInspection(
       new Error(`remote workspace provider ${descriptor.provider} cannot expose HTTP ports`),
       { descriptor, workspaceReference },
     )
   }
+}
 
-  try {
+const processPlan = args.devServerCommand
+  ? remoteProcessPlan({
+      descriptor,
+      item,
+      name: args.processName,
+      port,
+      workspaceReference,
+    })
+  : null
+
+let processStopResult = null
+let result
+let runError = null
+
+try {
+  if (processPlan) {
+    await startRemoteDevServer({ adapter, item, plan: processPlan, repository })
+  }
+
+  if (!captureUrl) {
     exposure = normalizeRemoteHttpExposure({
       port,
       result: await adapter.exposeHttp(port),
     })
     captureUrl = exposure.url
-  } catch (error) {
-    failInspection(error, { descriptor, workspaceReference })
   }
-}
 
-const capturePlan = browserCapturePlan({
-  artifactPlan,
-  screenshotName: args.screenshotName,
-  url: captureUrl,
-  viewport: args.viewport,
-  waitUntil: args.waitUntil,
-})
-const capturePlans = args.viewports
-  ? browserCapturePlans({
-      artifactPlan,
-      screenshotName: args.screenshotName,
-      url: captureUrl,
-      viewports: args.viewports,
-      waitUntil: args.waitUntil,
-    })
-  : [capturePlan]
+  if (processPlan) {
+    await waitForRemoteHttpReady(captureUrl, { timeoutMs })
+  }
 
-const { chromium } = await import("playwright").catch((error) => {
-  fail(`Playwright is not available: ${error.message}`)
-})
+  const capturePlan = browserCapturePlan({
+    artifactPlan,
+    screenshotName: args.screenshotName,
+    url: captureUrl,
+    viewport: args.viewport,
+    waitUntil: args.waitUntil,
+  })
+  const capturePlans = args.viewports
+    ? browserCapturePlans({
+        artifactPlan,
+        screenshotName: args.screenshotName,
+        url: captureUrl,
+        viewports: args.viewports,
+        waitUntil: args.waitUntil,
+      })
+    : [capturePlan]
 
-let result
-try {
+  const { chromium } = await import("playwright")
+
   result =
     capturePlans.length === 1
       ? await captureBrowserEvidence({
@@ -189,12 +241,8 @@ try {
           capturePlans,
           timeoutMs,
         })
-} catch (error) {
-  fail(`remote-capture-browser failed: ${error.message}`)
-}
 
-if (args.publishArtifacts) {
-  try {
+  if (args.publishArtifacts) {
     const publisher = artifactPublisherFromEnv()
     const publicationPlan = artifactPublicationPlan({
       publisher,
@@ -213,9 +261,34 @@ if (args.publishArtifacts) {
       reference: artifactPlan.artifactPointer,
       repository,
     })
-  } catch (error) {
-    fail(`remote-capture-browser failed to publish artifacts: ${error.message}`)
   }
+} catch (error) {
+  runError = error
+} finally {
+  if (processPlan) {
+    processStopResult = await stopRemoteDevServer({ adapter, plan: processPlan })
+  }
+}
+
+if (runError) {
+  const message = runError instanceof Error ? runError.message : String(runError)
+  const stopMessage =
+    processStopResult?.status && processStopResult.status !== 0
+      ? `; remote dev server stop also exited with ${
+          processStopResult.status
+        }: ${processStopResult.stderr?.trim()}`
+      : ""
+  fail(`remote-capture-browser failed: ${message}${stopMessage}`)
+}
+
+if (processStopResult?.status !== 0) {
+  failInspection(
+    new Error(
+      processStopResult.stderr?.trim() ||
+        `remote dev server stop exited with ${processStopResult.status}`,
+    ),
+    { descriptor, workspaceReference },
+  )
 }
 
 const issueBlockReason = browserIssueBlockReason(result.browserIssues, {
@@ -230,6 +303,10 @@ console.log(`workspace: ${workspaceReference}`)
 if (exposure) console.log(`exposed port: ${exposure.port}`)
 console.log(`url: ${captureUrl}`)
 console.log(`artifacts: ${artifactPlan.artifactDir}`)
+if (processPlan) {
+  console.log(`remote process: ${processPlan.processName}`)
+  console.log(`remote process log: ${processPlan.logFile}`)
+}
 console.log("")
 console.log("Use this value with --ui-evidence:")
 console.log(browserEvidenceText(result))
@@ -254,6 +331,95 @@ async function loadAdapters({ descriptor, workspaceReference }) {
   }
 }
 
+async function startRemoteDevServer({ adapter, item, plan, repository }) {
+  const startResult = await runRemoteExec({
+    adapter,
+    args: [
+      "-lc",
+      remoteStartProcessShell({
+        command: args.devServerCommand,
+        plan,
+      }),
+    ],
+    command: "bash",
+    cwd: plan.workspace,
+    httpPost: true,
+  })
+
+  if (startResult.status !== 0) {
+    failInspection(
+      new Error(
+        startResult.stderr?.trim() || `remote dev server exited with ${startResult.status}`,
+      ),
+      { descriptor, workspaceReference },
+    )
+  }
+
+  const metadata = remoteProcessMetadata({
+    command: args.devServerCommand,
+    item,
+    plan,
+    repository,
+  })
+  const metadataWrite = await runRemoteExec({
+    adapter,
+    args: [
+      "-lc",
+      remoteWriteFileShell({
+        content: `${JSON.stringify(metadata, null, 2)}\n`,
+        file: plan.metadataFile,
+      }),
+    ],
+    command: "bash",
+    cwd: plan.workspace,
+    httpPost: true,
+  })
+
+  if (metadataWrite.status !== 0) {
+    const stopResult = await stopRemoteDevServer({ adapter, plan })
+    const stopMessage =
+      stopResult.status === 0
+        ? ""
+        : `; stop also exited with ${stopResult.status}: ${stopResult.stderr?.trim()}`
+    failInspection(
+      new Error(
+        `${
+          metadataWrite.stderr?.trim() ||
+          `remote dev server metadata write exited with ${metadataWrite.status}`
+        }${stopMessage}`,
+      ),
+      { descriptor, workspaceReference },
+    )
+  }
+}
+
+async function stopRemoteDevServer({ adapter, plan }) {
+  return runRemoteExec({
+    adapter,
+    args: [
+      "-lc",
+      remoteStopProcessShell({
+        plan,
+      }),
+    ],
+    command: "bash",
+    cwd: plan.workspace,
+    httpPost: true,
+  })
+}
+
+async function runRemoteExec({ adapter, ...command }) {
+  try {
+    return await adapter.exec(command)
+  } catch (error) {
+    return {
+      status: 1,
+      stderr: error instanceof Error ? error.message : String(error),
+      stdout: "",
+    }
+  }
+}
+
 function resolveAdapter(descriptor, { adapters }) {
   try {
     return resolveRemoteWorkspaceAdapter(descriptor, { adapters })
@@ -271,13 +437,25 @@ function failInspection(error, { descriptor, workspaceReference }) {
   )
 }
 
-function printCapturePlan({ artifactPlan, item, port, repository, url }) {
+function printCapturePlan({
+  artifactPlan,
+  devServerCommand,
+  item,
+  port,
+  processName,
+  repository,
+  url,
+}) {
   console.log("agent-runner remote-capture-browser would capture:")
   console.log(`issue: #${item.issue.number} ${item.issue.title}`)
   console.log(`repository: ${repository}`)
   console.log(`workspace: ${artifactPlan.workspaceReference}`)
   console.log(`url: ${url ?? `<expose port ${port}>`}`)
   console.log(`artifacts: ${artifactPlan.artifactDir}`)
+  if (devServerCommand) {
+    console.log(`remote dev server command: ${devServerCommand}`)
+    console.log(`remote process: ${processName ?? "<issue default>"}`)
+  }
   if (args.publishArtifacts) {
     console.log("remote artifacts: configured object storage")
   }
