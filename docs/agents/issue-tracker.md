@@ -238,6 +238,11 @@ configured object storage. Use the printed browser evidence text as
 packet. Providers that do not declare the required adapter capabilities fail
 closed.
 
+Queue tick recommends this remote browser command for UI-labeled remote work
+that is in review or repair without browser proof. It intentionally leaves
+`<dev-server-command>` and `<port>` as maintainer-filled placeholders, so
+dispatch does not run it unattended.
+
 After a successful remote command, publish the remote evidence packet to GitHub
 or configured R2-compatible object storage:
 

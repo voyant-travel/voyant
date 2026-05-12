@@ -241,6 +241,62 @@ describe("agent runner tick helpers", () => {
     )
   })
 
+  it("recommends remote browser capture for remote UI work before handoff", () => {
+    const item = workItem({
+      fields: {
+        "Agent State": "Human Review",
+        "Last Heartbeat": new Date().toISOString().slice(0, 10),
+        Workspace: "sandbox:sprite:task-579",
+      },
+    })
+    item.issue.labels = ["agent:ready", "ui-change"]
+
+    const recommendation = recommendQueueAction(item, {
+      maxAgeDays: 1,
+      repository: "voyantjs/other",
+    })
+    assert.equal(recommendation.action, "remote-capture-browser")
+    assert.equal(
+      recommendation.command,
+      'pnpm agent:queue:remote-capture-browser -- --issue 579 --repo voyantjs/other --dev-server-command "<dev-server-command>" --port <port> --yes',
+    )
+    assert.equal(recommendation.heartbeat.stale, false)
+    assert.equal(recommendation.priority, 54)
+    assert.equal(
+      recommendation.reason,
+      "UI-labeled remote work in sandbox:sprite:task-579 needs browser evidence before handoff",
+    )
+
+    const prLinkedItem = workItem({
+      fields: {
+        "Agent State": "Human Review",
+        "Last Heartbeat": new Date().toISOString().slice(0, 10),
+        PR: "https://github.com/voyantjs/voyant/pull/626",
+        Workspace: "sandbox:sprite:task-579",
+      },
+    })
+    prLinkedItem.issue.labels = ["agent:ready", "ui-change"]
+
+    assert.equal(
+      recommendQueueAction(prLinkedItem, { maxAgeDays: 1, repository: "voyantjs/other" }).action,
+      "remote-capture-browser",
+    )
+
+    const coveredItem = workItem({
+      fields: {
+        "Agent State": "Human Review",
+        Evidence: "docs/agent-evidence/active/579-test.md",
+        Workspace: "sandbox:sprite:task-579",
+      },
+    })
+    coveredItem.issue.labels = ["agent:ready", "ui-change"]
+
+    assert.equal(
+      recommendQueueAction(coveredItem, { maxAgeDays: 1, repository: "voyantjs/other" }).action,
+      "remote-publish-evidence",
+    )
+  })
+
   it("bootstraps ready remote workspace references before pausing local actions", () => {
     assert.deepEqual(
       recommendQueueAction(
