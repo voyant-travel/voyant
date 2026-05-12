@@ -9,6 +9,12 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -35,6 +41,7 @@ maybePrintHelp(args, {
     ["--evidence <text>", "Explicit Evidence field value. Defaults from --reason."],
     ["--force", "Allow release outside the normal claimed states."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -46,6 +53,7 @@ if (!args.issue) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findProjectIssueItem(project.items, {
   issueNumber: args.issue,
@@ -79,6 +87,17 @@ if (!args.yes) {
 }
 
 updateProjectItemFields({ project, item, values, clear })
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "release.completed",
+    clearedFields: clear,
+    fields: values,
+    issue: issueEventDetails(item),
+    previousAgentState: currentState ?? null,
+    repository,
+  },
+})
 
 console.log("agent-runner release: updated GitHub Project fields")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)

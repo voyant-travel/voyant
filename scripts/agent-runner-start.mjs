@@ -9,6 +9,12 @@ import {
 } from "./lib/agent-project-queue.mjs"
 import { claimFieldValues, claimProjectItem, printClaimUpdate } from "./lib/agent-runner-claim.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -29,6 +35,7 @@ maybePrintHelp(args, {
     ["--issue <number>", "Issue number to start. Required when multiple items are ready."],
     ["--base <ref>", "Base ref for the new worktree branch. Defaults to origin/main."],
     ...repositoryOptions,
+    ...eventLogOptions,
     ...mutationOptions,
     ...projectOptions,
   ],
@@ -36,6 +43,7 @@ maybePrintHelp(args, {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const item = findSelectedReadyItem(project.items, {
   issueNumber: args.issue,
@@ -43,7 +51,8 @@ const item = findSelectedReadyItem(project.items, {
 })
 const baseRef = args.base ?? "origin/main"
 const plan = workspacePlan({ baseRef, item, repoRoot })
-const values = claimFieldValues(item)
+const claimedAt = new Date()
+const values = claimFieldValues(item, claimedAt)
 
 if (!args.yes) {
   printWorkspacePlan({ item, plan, repository })
@@ -53,7 +62,20 @@ if (!args.yes) {
 }
 
 prepareWorkspace({ baseRef, item, repoRoot })
-claimProjectItem({ item, project })
+claimProjectItem({ date: claimedAt, item, project })
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "start.completed",
+    baseRef,
+    branch: plan.branch,
+    fields: values,
+    issue: issueEventDetails(item),
+    planPath: plan.planPath,
+    repository,
+    workspace: plan.workspace,
+  },
+})
 
 console.log("agent-runner start: created local workspace and claimed Project item")
 console.log(`issue: #${item.issue.number} ${item.issue.title}`)

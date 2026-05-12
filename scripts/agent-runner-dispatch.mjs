@@ -19,6 +19,7 @@ import {
   resolveEventLogPath,
 } from "./lib/agent-runner-events.mjs"
 import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -38,7 +39,7 @@ maybePrintHelp(args, {
       `Only dispatch this action. Allowed: ${Array.from(dispatchableActions).join(", ")}.`,
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
-    ["--event-log <path>", "JSONL audit log path. Defaults to .agent-runs/events.jsonl."],
+    ...eventLogOptions,
     ["--update-body", "When dispatching sync-pr, refresh the PR body from evidence."],
     ...repositoryOptions,
     ...mutationOptions,

@@ -16,6 +16,10 @@ export const mutationOptions = [
   ["--yes", "Apply the mutation. Without this, the command prints the planned change."],
 ]
 
+export const eventLogOptions = [
+  ["--event-log <path>", "JSONL audit log path. Defaults to .agent-runs/events.jsonl."],
+]
+
 export function maybePrintHelp(args, help) {
   if (!args.help) return
   printCommandHelp(help)

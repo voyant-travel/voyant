@@ -7,9 +7,11 @@ import { describe, it } from "node:test"
 import {
   appendAgentRunnerEvent,
   defaultEventLogPath,
+  issueEventDetails,
   readAgentRunnerEvents,
   recommendationEventDetails,
   resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
 } from "../lib/agent-runner-events.mjs"
 import { recommendQueueAction } from "../lib/agent-runner-tick.mjs"
 import { workItem } from "./agent-fixtures.mjs"
@@ -45,6 +47,27 @@ describe("agent runner event helpers", () => {
       repository: "voyantjs/voyant",
     })
     assert.equal(`${JSON.stringify(entry)}\n`, readFileSync(eventLogPath, "utf8"))
+  })
+
+  it("can treat event log write failures as non-fatal", () => {
+    const tempDir = mkdtempSync(path.join(tmpdir(), "agent-runner-events-"))
+    const eventLogParent = path.join(tempDir, "event-parent")
+    const eventLogPath = path.join(eventLogParent, "events.jsonl")
+    const warnings = []
+
+    writeFileSync(eventLogParent, "not a directory", "utf8")
+
+    const entry = tryAppendAgentRunnerEvent({
+      eventLogPath,
+      event: {
+        type: "claim.completed",
+        repository: "voyantjs/voyant",
+      },
+      warn: (message) => warnings.push(message),
+    })
+
+    assert.equal(entry, null)
+    assert.match(warnings[0], /agent-runner event log warning:/)
   })
 
   it("reads a bounded tail of JSONL runner events", () => {
@@ -104,6 +127,18 @@ describe("agent runner event helpers", () => {
         repository: "voyantjs/voyant",
       },
     })
+  })
+
+  it("extracts stable issue details for command events", () => {
+    const item = workItem({ number: 579 })
+
+    assert.deepEqual(issueEventDetails(item), {
+      number: 579,
+      title: "Test agent project intake workflow",
+      url: "https://github.com/voyantjs/voyant/issues/579",
+      repository: "voyantjs/voyant",
+    })
+    assert.deepEqual(issueEventDetails(item.issue), issueEventDetails(item))
   })
 
   it("rejects events without a type", () => {

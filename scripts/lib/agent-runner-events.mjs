@@ -24,6 +24,20 @@ export function appendAgentRunnerEvent({ event, eventLogPath, now = new Date() }
   return entry
 }
 
+export function tryAppendAgentRunnerEvent({
+  event,
+  eventLogPath,
+  now = new Date(),
+  warn = console.warn,
+}) {
+  try {
+    return appendAgentRunnerEvent({ event, eventLogPath, now })
+  } catch (error) {
+    warn(`agent-runner event log warning: ${error.message}`)
+    return null
+  }
+}
+
 export function readAgentRunnerEvents(
   eventLogPath,
   { limit = 20, maxBytes = defaultEventLogTailBytes } = {},
@@ -46,12 +60,17 @@ export function recommendationEventDetails(recommendation) {
   return {
     action: recommendation.action,
     reason: recommendation.reason,
-    issue: {
-      number: recommendation.issue.number,
-      title: recommendation.issue.title,
-      url: recommendation.issue.url,
-      repository: recommendation.issue.repository,
-    },
+    issue: issueEventDetails(recommendation),
+  }
+}
+
+export function issueEventDetails(item) {
+  const issue = item.issue ?? item
+  return {
+    number: issue.number,
+    title: issue.title,
+    url: issue.url,
+    repository: issue.repository,
   }
 }
 
