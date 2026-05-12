@@ -79,6 +79,22 @@ export const financeUiRo = {
     actions: {
       newInvoice: "Factura noua",
     },
+    bulkActions: {
+      selectionSummary: "{count} selectate",
+      clearSelection: "Sterge selectia",
+      markPaid: "Marcheaza platite",
+      markPaidConfirm: "Marcheaza platite",
+      markPaidTitle: "Marchezi {count} facturi ca platite?",
+      markPaidDescription:
+        "Facturile selectate trec in Platita, suma platita devine totalul facturii, iar restul de plata devine zero.",
+      selectAllOnPage: "Selecteaza toate facturile din pagina",
+      selectInvoice: "Selecteaza factura",
+      successTitle: "Facturi actualizate",
+      successDescription: "{updated} din {total} facturi au fost marcate ca platite.",
+      partialTitle: "Unele facturi nu au fost actualizate",
+      partialDescription:
+        "{updated} din {total} facturi au fost marcate ca platite. {failed} au esuat.",
+    },
     filters: {
       button: "Filtre",
       statusLabel: "Status",
