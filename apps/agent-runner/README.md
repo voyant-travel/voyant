@@ -21,6 +21,9 @@ provider commands, or spend model budget.
   intent from `POST /api/dispatch-intents/latest` on the control plane. When
   `AGENT_RUNNER_TICKS` is bound, the result is persisted as the latest
   supervisor tick for the repository.
+  For deployment smoke tests, pass
+  `{ "dryRun": true, "validateControlPlane": true }` to call the control
+  plane's read-only latest dispatch-plan endpoint without leasing work.
   If the control plane rejects the lease because an active intent already
   exists, the tick result includes that active intent so operators can inspect
   the holder and expiration from the persisted supervisor status.
@@ -65,6 +68,13 @@ pnpm agent:queue:deployment-doctor -- --json
 The command reads `AGENT_CONTROL_PLANE_URL`, `AGENT_CONTROL_PLANE_TOKEN`,
 `AGENT_RUNNER_URL`, and `AGENT_RUNNER_TOKEN`, calls both capability endpoints,
 and reports persistence and execution mode without printing token values.
+Pass `--smoke-tick` after submitting at least one queue snapshot to validate
+that the deployed runner can call the control plane's read-only dispatch-plan
+path:
+
+```bash
+pnpm agent:queue:deployment-doctor -- --smoke-tick --repo voyantjs/voyant --json
+```
 
 Inspect recent persisted runner ticks with:
 

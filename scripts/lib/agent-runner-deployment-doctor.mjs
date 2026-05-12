@@ -37,6 +37,21 @@ export async function requestRunnerAppCapabilities({ fetchImpl = fetch, token, u
   })
 }
 
+export async function requestRunnerAppSupervisorTick({ fetchImpl = fetch, request, token, url }) {
+  return requestRunnerAppJson({
+    endpoint: "supervisor tick",
+    fetchImpl,
+    headers: {
+      "content-type": "application/json",
+    },
+    method: "POST",
+    path: "/api/supervisor/ticks",
+    requestBody: JSON.stringify(request),
+    token,
+    url,
+  })
+}
+
 export async function requestRecentRunnerSupervisorTicks({
   fetchImpl = fetch,
   limit,
@@ -57,12 +72,23 @@ export async function requestRecentRunnerSupervisorTicks({
   })
 }
 
-async function requestRunnerAppJson({ endpoint, fetchImpl = fetch, path, token, url }) {
+async function requestRunnerAppJson({
+  endpoint,
+  fetchImpl = fetch,
+  headers = {},
+  method = "GET",
+  path,
+  requestBody,
+  token,
+  url,
+}) {
   const response = await fetchImpl(`${normalizeRunnerAppUrl(url)}${path}`, {
     headers: {
       authorization: `Bearer ${token}`,
+      ...headers,
     },
-    method: "GET",
+    ...(requestBody ? { body: requestBody } : {}),
+    method,
   })
 
   const bodyText = await response.text()
@@ -100,6 +126,18 @@ export function summarizeRunnerAppCapabilities(capabilities) {
   return {
     ok: Boolean(capabilities?.execution),
     detail: `execution: ${capabilities?.execution?.mode ?? "unknown"}; enabled: ${String(capabilities?.execution?.enabled ?? "unknown")}; tick persistence: ${capabilities?.supervisorTicks?.persistence ?? "unknown"}`,
+  }
+}
+
+export function summarizeRunnerSmokeTick(response) {
+  const result = response?.result
+  const controlPlaneStatus = result?.controlPlane?.status ?? "unknown"
+  return {
+    ok:
+      result?.reason === "dry_run" &&
+      Number(controlPlaneStatus) >= 200 &&
+      Number(controlPlaneStatus) < 300,
+    detail: `reason: ${result?.reason ?? "unknown"}; control plane status: ${String(controlPlaneStatus)}; storage persisted: ${String(response?.storage?.persisted ?? "unknown")}`,
   }
 }
 

@@ -28,6 +28,7 @@ export const supervisorTickRequestSchema = z
     reason: z.string().trim().min(1).optional(),
     ttlSeconds: z.number().int().min(60).max(3600).optional(),
     updateBody: z.boolean().optional(),
+    validateControlPlane: z.boolean().optional(),
   })
   .strict()
 
@@ -112,6 +113,7 @@ export function planSupervisorTick({
     mode: "lease-only",
     policy,
     source,
+    ...(request.validateControlPlane ? { validatesControlPlane: true } : {}),
   }
 }
 
@@ -127,11 +129,19 @@ export async function runSupervisorTick({
   source: "api" | "scheduled"
 }) {
   const plan = planSupervisorTick({ config, request, source })
-  if (!plan.accepted || plan.dryRun) {
+  if (!plan.accepted) {
     return {
       leased: false,
       plan,
-      reason: plan.accepted ? "dry_run" : "blocked",
+      reason: "blocked",
+    }
+  }
+
+  if (plan.dryRun && !request.validateControlPlane) {
+    return {
+      leased: false,
+      plan,
+      reason: "dry_run",
     }
   }
 
@@ -145,6 +155,15 @@ export async function runSupervisorTick({
       },
       reason: "blocked",
     }
+  }
+
+  if (plan.dryRun) {
+    return await validateControlPlaneDispatchPlan({
+      config,
+      fetchImpl,
+      plan,
+      request,
+    })
   }
 
   const response = await fetchImpl(
@@ -182,6 +201,85 @@ export async function runSupervisorTick({
     leased: Boolean(body?.intent),
     plan,
     reason: body?.reason ?? (body?.intent ? "leased" : "no_intent"),
+  }
+}
+
+async function validateControlPlaneDispatchPlan({
+  config,
+  fetchImpl,
+  plan,
+  request,
+}: {
+  config: RunnerConfig
+  fetchImpl: typeof fetch
+  plan: ReturnType<typeof planSupervisorTick>
+  request: SupervisorTickRequest
+}) {
+  const response = await fetchImpl(
+    `${normalizeControlPlaneUrl(config.controlPlaneUrl ?? "")}/api/dispatch-plans/latest`,
+    {
+      body: JSON.stringify(buildDispatchPlanRequest({ config, request })),
+      headers: {
+        authorization: `Bearer ${config.controlPlaneToken}`,
+        "content-type": "application/json",
+      },
+      method: "POST",
+    },
+  )
+  const bodyText = await response.text()
+  const body = parseJsonBody(bodyText)
+
+  if (!response.ok) {
+    return {
+      controlPlane: {
+        error: body?.error ?? bodyText,
+        status: response.status,
+      },
+      leased: false,
+      plan,
+      reason: "control_plane_rejected",
+    }
+  }
+
+  return {
+    controlPlane: {
+      status: response.status,
+    },
+    dispatchPlan: body?.plan ?? null,
+    leased: false,
+    plan,
+    reason: "dry_run",
+  }
+}
+
+function buildDispatchPlanRequest({
+  config,
+  request,
+}: {
+  config: RunnerConfig
+  request: SupervisorTickRequest
+}) {
+  const repository = request.repository ?? config.repository
+  const action = request.action ?? config.defaultAction
+
+  return {
+    repository,
+    ...(action || request.issue
+      ? {
+          filters: {
+            ...(action ? { action } : {}),
+            ...(request.issue ? { issueNumber: request.issue } : {}),
+          },
+        }
+      : {}),
+    ...(request.eventLog || request.updateBody
+      ? {
+          options: {
+            ...(request.eventLog ? { eventLog: request.eventLog } : {}),
+            ...(request.updateBody ? { updateBody: true } : {}),
+          },
+        }
+      : {}),
   }
 }
 

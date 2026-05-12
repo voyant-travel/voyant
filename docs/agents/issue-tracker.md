@@ -418,6 +418,10 @@ It reads `AGENT_CONTROL_PLANE_URL`, `AGENT_CONTROL_PLANE_TOKEN`,
 `AGENT_RUNNER_URL`, and `AGENT_RUNNER_TOKEN`, calls both `/api/capabilities`
 endpoints, and reports persistence and execution mode without printing token
 values.
+After submitting at least one queue snapshot, pass
+`--smoke-tick --repo <owner/name>` to make the deployed runner perform a
+dry-run supervisor tick that validates the control-plane read path without
+leasing work.
 Use the recent history endpoints when an operator needs to inspect more than
 the latest persisted heartbeat: `GET /api/tick-snapshots/recent` on the control
 plane for queue-state snapshots, and `GET /api/supervisor/ticks/recent` on the

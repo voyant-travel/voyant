@@ -155,6 +155,9 @@ pnpm agent:queue:deployment-doctor -- --json
 
 The doctor calls both `/api/capabilities` endpoints and reports persistence and
 execution mode without printing token values.
+After a queue snapshot exists, add `--smoke-tick --repo voyantjs/voyant` to
+verify that the deployed runner can call `POST /api/dispatch-plans/latest`
+through its dry-run supervisor tick without leasing work.
 
 Finish the leased dispatch intent after the runner has handled the printed
 command:

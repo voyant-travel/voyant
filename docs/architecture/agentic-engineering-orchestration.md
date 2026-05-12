@@ -1383,7 +1383,10 @@ Verification:
 - Deployed control-plane and runner setup should be checked with
   `pnpm agent:queue:deployment-doctor` before enabling Cron. The command calls
   both capability endpoints, verifies auth reaches the deployed apps, and
-  reports persistence and execution mode without printing bearer tokens.
+  reports persistence and execution mode without printing bearer tokens. After
+  at least one queue snapshot is stored, `--smoke-tick` makes the deployed
+  runner call the control plane's read-only dispatch-plan path without leasing
+  work.
 
 ## Open Questions
 

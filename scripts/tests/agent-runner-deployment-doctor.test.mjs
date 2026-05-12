@@ -3,9 +3,11 @@ import { describe, it } from "node:test"
 
 import {
   requestRunnerAppCapabilities,
+  requestRunnerAppSupervisorTick,
   runnerAppConfigFromArgs,
   summarizeControlPlaneCapabilities,
   summarizeRunnerAppCapabilities,
+  summarizeRunnerSmokeTick,
 } from "../lib/agent-runner-deployment-doctor.mjs"
 
 describe("agent runner deployment doctor helpers", () => {
@@ -76,6 +78,66 @@ describe("agent runner deployment doctor helpers", () => {
     )
   })
 
+  it("runs deployed runner supervisor smoke ticks", async () => {
+    const calls = []
+    const response = await requestRunnerAppSupervisorTick({
+      fetchImpl: async (url, init) => {
+        calls.push({ init, url })
+        return new Response(
+          JSON.stringify({
+            result: {
+              controlPlane: {
+                status: 200,
+              },
+              leased: false,
+              reason: "dry_run",
+            },
+            storage: {
+              persisted: true,
+            },
+          }),
+          { status: 200 },
+        )
+      },
+      request: {
+        dryRun: true,
+        repository: "voyantjs/voyant",
+        validateControlPlane: true,
+      },
+      token: "tok",
+      url: "https://runner.example.com/",
+    })
+
+    assert.equal(response.result.reason, "dry_run")
+    assert.equal(calls[0].url, "https://runner.example.com/api/supervisor/ticks")
+    assert.equal(calls[0].init.method, "POST")
+    assert.equal(calls[0].init.headers.authorization, "Bearer tok")
+    assert.equal(calls[0].init.headers["content-type"], "application/json")
+    assert.equal(
+      calls[0].init.body,
+      JSON.stringify({
+        dryRun: true,
+        repository: "voyantjs/voyant",
+        validateControlPlane: true,
+      }),
+    )
+  })
+
+  it("surfaces rejected deployed runner supervisor smoke ticks", async () => {
+    await assert.rejects(
+      requestRunnerAppSupervisorTick({
+        fetchImpl: async () =>
+          new Response(JSON.stringify({ error: "invalid_supervisor_tick_request" }), {
+            status: 400,
+          }),
+        request: {},
+        token: "tok",
+        url: "https://runner.example.com",
+      }),
+      /400: invalid_supervisor_tick_request/,
+    )
+  })
+
   it("summarizes deployed capabilities without including secrets", () => {
     assert.deepEqual(
       summarizeControlPlaneCapabilities({
@@ -113,6 +175,24 @@ describe("agent runner deployment doctor helpers", () => {
         ok: true,
       },
     )
+
+    assert.deepEqual(
+      summarizeRunnerSmokeTick({
+        result: {
+          controlPlane: {
+            status: 200,
+          },
+          reason: "dry_run",
+        },
+        storage: {
+          persisted: true,
+        },
+      }),
+      {
+        detail: "reason: dry_run; control plane status: 200; storage persisted: true",
+        ok: true,
+      },
+    )
   })
 
   it("fails control plane summaries until required stores are configured", () => {
@@ -133,6 +213,25 @@ describe("agent runner deployment doctor helpers", () => {
       }),
       {
         detail: "tick snapshots: none; dispatch intents: none; active read: false",
+        ok: false,
+      },
+    )
+
+    assert.deepEqual(
+      summarizeRunnerSmokeTick({
+        result: {
+          controlPlane: {
+            status: 404,
+          },
+          reason: "control_plane_rejected",
+        },
+        storage: {
+          persisted: true,
+        },
+      }),
+      {
+        detail:
+          "reason: control_plane_rejected; control plane status: 404; storage persisted: true",
         ok: false,
       },
     )
