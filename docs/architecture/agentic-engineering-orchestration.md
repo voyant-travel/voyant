@@ -1160,6 +1160,10 @@ recommendations, and dispatch keeps nested lifecycle command events in the same
 ledger when a supervisor passes a custom `--event-log`. The Cloudflare-ready
 control-plane app mirrors the safe local and remote dispatch allow-list and can
 include that event-log context when it returns dry-run lifecycle command plans.
+It also accepts non-persistent tick snapshots that match
+`agent:queue:tick -- --json`, so a future dashboard or supervisor can validate
+queue shape and recommendation counts before storage or automatic loops are
+introduced.
 
 Verification:
 

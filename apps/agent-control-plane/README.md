@@ -26,6 +26,7 @@ pnpm -C apps/agent-control-plane dev
 - `GET /health`
 - `GET /api/capabilities`
 - `POST /api/dispatch-plans`
+- `POST /api/tick-snapshots`
 
 `POST /api/dispatch-plans` accepts ordered queue recommendations and returns the
 first dispatchable plan that matches the optional filters. It mirrors the local
@@ -35,3 +36,9 @@ runner allow-list: `start`, `remote-bootstrap`, `collect-ci`,
 planned lifecycle command on a supervisor-specific JSONL ledger. Pass
 `options.updateBody = true` to include `--update-body` when the selected plan is
 `sync-pr`; other actions ignore that option.
+
+`POST /api/tick-snapshots` accepts the JSON emitted by
+`pnpm agent:queue:tick -- --json`, validates the shape, and returns the accepted
+snapshot with counts for total recommendations, dispatchable recommendations,
+and recent events. The current contract is intentionally non-persistent; use it
+to prove worker-to-supervisor shape before adding storage or automatic loops.

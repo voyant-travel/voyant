@@ -385,6 +385,9 @@ machine-readable actions. Tick also tails recent JSONL runner events from
 `--event-log <path>` to inspect a different local ledger. `Merge Ready` items
 with linked PRs keep recommending `sync-pr` so the runner can observe
 maintainer merges and mark the item done.
+The Cloudflare-ready control-plane app can accept this JSON at
+`POST /api/tick-snapshots` for validation and summary counts, but that endpoint
+is non-persistent and does not dispatch work.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
 CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
 recommend `remote-bootstrap` so dispatch can clone/fetch the repository and

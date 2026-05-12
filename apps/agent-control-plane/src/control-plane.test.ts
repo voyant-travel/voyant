@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest"
 
 import { createApp } from "./app.js"
-import { buildCapabilities, selectDispatchPlan } from "./control-plane.js"
+import {
+  acceptTickSnapshot,
+  buildCapabilities,
+  selectDispatchPlan,
+  tickSnapshotRequestSchema,
+} from "./control-plane.js"
 
 const recommendations = [
   {
@@ -26,6 +31,60 @@ const recommendations = [
   },
 ]
 
+const tickSnapshot = {
+  project: {
+    owner: "voyantjs",
+    number: 1,
+    title: "Voyant Engineering",
+    url: "https://github.com/orgs/voyantjs/projects/1",
+  },
+  repository: "voyantjs/voyant",
+  maxAgeDays: 1,
+  eventLog: {
+    path: "/repo/.agent-runs/events.jsonl",
+    recentEvents: [
+      {
+        timestamp: "2026-05-12T05:00:00.000Z",
+        type: "dispatch.completed",
+        issue: { number: 579 },
+      },
+    ],
+  },
+  recommendations: [
+    {
+      action: "remote-bootstrap",
+      command: "pnpm agent:queue:remote-bootstrap -- --issue 579 --repo voyantjs/voyant --yes",
+      issue: {
+        number: 579,
+        title: "Test agent project intake workflow",
+        url: "https://github.com/voyantjs/voyant/issues/579",
+        repository: "voyantjs/voyant",
+        agentBrief: "Acceptance criteria and verification lane.",
+        hasAgentBrief: true,
+        labels: ["agent:ready", "ui"],
+        state: "OPEN",
+      },
+      priority: 20,
+      reason: "remote workspace is ready for repository bootstrap",
+      state: "Ready",
+    },
+    {
+      action: "remote-run-command",
+      command:
+        'pnpm agent:queue:remote-run-command -- --issue 580 --repo voyantjs/voyant --command "<implementation-command>" --yes',
+      issue: {
+        number: 580,
+        title: "Run implementation",
+        url: "https://github.com/voyantjs/voyant/issues/580",
+        repository: "voyantjs/voyant",
+      },
+      priority: 30,
+      reason: "implementation execution remains explicit",
+      state: "Planning",
+    },
+  ],
+}
+
 describe("agent control plane", () => {
   it("reports dry-run capabilities", () => {
     expect(buildCapabilities()).toMatchObject({
@@ -43,6 +102,35 @@ describe("agent control plane", () => {
         "start",
         "sync-pr",
       ],
+      snapshotContracts: {
+        tick: {
+          persistence: "none",
+          version: 1,
+        },
+      },
+    })
+  })
+
+  it("accepts and summarizes tick snapshots without dispatching work", () => {
+    expect(acceptTickSnapshot(tickSnapshot)).toEqual({
+      accepted: true,
+      snapshot: tickSnapshot,
+      summary: {
+        dispatchableRecommendationCount: 1,
+        firstDispatchableAction: "remote-bootstrap",
+        firstDispatchableIssueNumber: 579,
+        recentEventCount: 1,
+        recommendationCount: 2,
+      },
+    })
+  })
+
+  it("preserves extra issue metadata when validating tick snapshots", () => {
+    expect(tickSnapshotRequestSchema.parse(tickSnapshot).recommendations[0]?.issue).toMatchObject({
+      agentBrief: "Acceptance criteria and verification lane.",
+      hasAgentBrief: true,
+      labels: ["agent:ready", "ui"],
+      state: "OPEN",
     })
   })
 
@@ -261,6 +349,30 @@ describe("agent control plane", () => {
     })
   })
 
+  it("accepts tick snapshots through Hono", async () => {
+    const app = createApp({ authTokens: ["secret"] })
+    const response = await app.request("/api/tick-snapshots", {
+      method: "POST",
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
+      body: JSON.stringify(tickSnapshot),
+    })
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body).toMatchObject({
+      accepted: true,
+      summary: {
+        dispatchableRecommendationCount: 1,
+        firstDispatchableAction: "remote-bootstrap",
+        recentEventCount: 1,
+        recommendationCount: 2,
+      },
+    })
+    expect(body).toHaveProperty("snapshot.recommendations.0.issue.hasAgentBrief", true)
+    expect(body).toHaveProperty("snapshot.recommendations.0.issue.labels", ["agent:ready", "ui"])
+    expect(body).toHaveProperty("snapshot.recommendations.0.issue.state", "OPEN")
+  })
+
   it("requires configured bearer auth for API routes", async () => {
     const missingConfig = createApp()
     const root = await missingConfig.request("/")
@@ -288,15 +400,26 @@ describe("agent control plane", () => {
 
   it("returns validation errors for malformed planning requests", async () => {
     const app = createApp({ authTokens: ["secret"] })
-    const response = await app.request("/api/dispatch-plans", {
+    const planResponse = await app.request("/api/dispatch-plans", {
       method: "POST",
       headers: { authorization: "Bearer secret", "content-type": "application/json" },
       body: JSON.stringify({ recommendations: [] }),
     })
 
-    expect(response.status).toBe(400)
-    await expect(response.json()).resolves.toMatchObject({
+    expect(planResponse.status).toBe(400)
+    await expect(planResponse.json()).resolves.toMatchObject({
       error: "invalid_dispatch_plan_request",
+    })
+
+    const snapshotResponse = await app.request("/api/tick-snapshots", {
+      method: "POST",
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
+      body: JSON.stringify({ recommendations: [] }),
+    })
+
+    expect(snapshotResponse.status).toBe(400)
+    await expect(snapshotResponse.json()).resolves.toMatchObject({
+      error: "invalid_tick_snapshot_request",
     })
   })
 })
