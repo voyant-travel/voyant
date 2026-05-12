@@ -6,6 +6,7 @@ import {
   recentControlPlaneTickSnapshots,
   recentRunnerSupervisorTicks,
   summarizeActiveDispatchIntent,
+  summarizeDispatchPlan,
 } from "./lib/agent-runner-deployed-status.mjs"
 import { dispatchableActions } from "./lib/agent-runner-dispatch.mjs"
 import { maybePrintHelp, repositoryOptions } from "./lib/agent-runner-help.mjs"
@@ -70,6 +71,7 @@ function printHumanSummary(report) {
   }
 
   printControlPlaneSnapshotDetails(report.controlPlane?.recentTickSnapshots)
+  printDispatchPlanDetails(report.controlPlane?.dispatchPlan)
   printActiveDispatchDetails(report.controlPlane?.activeDispatch)
   printRunnerSupervisorDetails(report.runner?.supervisorStatus)
 }
@@ -104,6 +106,28 @@ function printControlPlaneSnapshotDetails(snapshotHistory) {
     console.log(
       `  - ${snapshot.acceptedAt ?? "unknown"} recommendations=${String(snapshot.recommendationCount ?? "unknown")} dispatchable=${String(snapshot.dispatchableRecommendationCount ?? "unknown")}`,
     )
+  }
+}
+
+function printDispatchPlanDetails(dispatchPlan) {
+  if (!dispatchPlan) return
+
+  const summary = summarizeDispatchPlan(dispatchPlan)
+
+  console.log("")
+  console.log("Control-plane dispatch plan:")
+  if (!summary.found) {
+    console.log(`  plan: none (${summary.reason ?? "unknown"})`)
+    return
+  }
+
+  const issueTitle = summary.issueTitle ? ` ${summary.issueTitle}` : ""
+  console.log(`  issue: #${summary.issueNumber ?? "unknown"}${issueTitle}`)
+  console.log(`  action: ${summary.action ?? "unknown"}`)
+  console.log(`  reason: ${summary.reason ?? "unknown"}`)
+  console.log(`  command: ${summary.command ?? "unknown"}`)
+  if (summary.snapshotAcceptedAt) {
+    console.log(`  snapshot accepted: ${summary.snapshotAcceptedAt}`)
   }
 }
 

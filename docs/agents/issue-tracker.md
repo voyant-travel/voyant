@@ -425,10 +425,12 @@ values.
 For day-to-day operator checks after deployment, run
 `pnpm agent:queue:deployed-status -- --repo <owner/name>`. It reads the same
 environment, reports control-plane and runner readiness, and prints the latest
-plus recent control-plane queue snapshots and runner supervisor ticks without
-performing a smoke tick or leasing work. Pass `--issue <number> --action
-<name>` when you also need to inspect the active dispatch pointer for a specific
-lifecycle action.
+plus recent control-plane queue snapshots, the current read-only dispatch plan,
+and runner supervisor ticks without performing a smoke tick or leasing work. The
+dispatch plan request uses the deployed runner's default action filter when one
+is configured, so the status output matches what scheduled ticks would lease.
+Pass `--issue <number> --action <name>` when you also need to inspect the active
+dispatch pointer for a specific lifecycle action.
 After submitting at least one queue snapshot, pass
 `--smoke-tick --repo <owner/name>` to make the deployed runner perform a
 dry-run supervisor tick that validates the control-plane read path without

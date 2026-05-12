@@ -3,11 +3,13 @@ import { describe, it } from "node:test"
 
 import {
   buildDeployedStatusReport,
+  dispatchPlanRequestForDeployedRunner,
   latestControlPlaneTickSnapshot,
   latestRunnerSupervisorTick,
   recentControlPlaneTickSnapshots,
   recentRunnerSupervisorTicks,
   summarizeActiveDispatchIntent,
+  summarizeDispatchPlan,
 } from "../lib/agent-runner-deployed-status.mjs"
 
 describe("agent runner deployed status helpers", () => {
@@ -38,40 +40,77 @@ describe("agent runner deployed status helpers", () => {
     assert.equal(report.ok, true)
     assert.equal(report.controlPlane.endpoint, "https://control.example.com")
     assert.equal(report.controlPlane.recentTickSnapshots.records.length, 1)
+    assert.equal(report.controlPlane.dispatchPlan.plan.issue.number, 579)
     assert.equal(report.controlPlane.activeDispatch.intent.id, "intent_579")
     assert.equal(report.runner.endpoint, "https://runner.example.com")
     assert.equal(report.runner.supervisorStatus.repository, "voyantjs/voyant")
     assert.deepEqual(
       report.checks.map((check) => [check.name, check.ok]),
       [
-        ["control plane configuration", true],
-        ["control plane capabilities", true],
-        ["control plane queue snapshots", true],
-        ["control plane active dispatch", true],
         ["runner app configuration", true],
         ["runner app capabilities", true],
         ["runner app supervisor status", true],
+        ["control plane configuration", true],
+        ["control plane capabilities", true],
+        ["control plane queue snapshots", true],
+        ["control plane dispatch plan", true],
+        ["control plane active dispatch", true],
       ],
     )
     assert.deepEqual(
       calls.map((call) => [call.url, call.init.headers.authorization]),
       [
-        ["https://control.example.com/api/capabilities", "Bearer control-token"],
-        [
-          "https://control.example.com/api/tick-snapshots/recent?repository=voyantjs%2Fvoyant&limit=2",
-          "Bearer control-token",
-        ],
-        [
-          "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant",
-          "Bearer control-token",
-        ],
         ["https://runner.example.com/api/capabilities", "Bearer runner-token"],
         [
           "https://runner.example.com/api/supervisor/status?repository=voyantjs%2Fvoyant&limit=2",
           "Bearer runner-token",
         ],
+        ["https://control.example.com/api/capabilities", "Bearer control-token"],
+        [
+          "https://control.example.com/api/tick-snapshots/recent?repository=voyantjs%2Fvoyant&limit=2",
+          "Bearer control-token",
+        ],
+        ["https://control.example.com/api/dispatch-plans/latest", "Bearer control-token"],
+        [
+          "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant",
+          "Bearer control-token",
+        ],
       ],
     )
+    assert.deepEqual(JSON.parse(calls[4].init.body), {
+      filters: {
+        action: "remote-bootstrap",
+      },
+      repository: "voyantjs/voyant",
+    })
+  })
+
+  it("treats a missing dispatch snapshot as an empty plan", async () => {
+    const report = await buildDeployedStatusReport({
+      args: {
+        controlPlaneUrl: "https://control.example.com/",
+        runnerUrl: "https://runner.example.com/",
+      },
+      env: {
+        AGENT_CONTROL_PLANE_TOKEN: "control-token",
+        AGENT_RUNNER_TOKEN: "runner-token",
+      },
+      fetchImpl: async (url) => {
+        if (url === "https://control.example.com/api/dispatch-plans/latest") {
+          return jsonResponse({ error: "tick_snapshot_not_found" }, { status: 404 })
+        }
+        return jsonResponse(responseForUrl(url))
+      },
+      limit: 2,
+      repository: "voyantjs/voyant",
+    })
+
+    assert.equal(report.ok, true)
+    assert.deepEqual(summarizeDispatchPlan(report.controlPlane.dispatchPlan), {
+      found: false,
+      reason: "tick_snapshot_not_found",
+      snapshotAcceptedAt: null,
+    })
   })
 
   it("treats a missing active dispatch lookup as an empty status", async () => {
@@ -123,8 +162,8 @@ describe("agent runner deployed status helpers", () => {
     assert.deepEqual(
       report.checks.map((check) => [check.name, check.ok]),
       [
-        ["control plane configuration", false],
         ["runner app configuration", false],
+        ["control plane configuration", false],
       ],
     )
   })
@@ -152,6 +191,65 @@ describe("agent runner deployed status helpers", () => {
 
     assert.deepEqual(latestControlPlaneTickSnapshot(history), expected)
     assert.deepEqual(recentControlPlaneTickSnapshots(history), [expected])
+  })
+
+  it("summarizes dispatch plans", () => {
+    assert.deepEqual(
+      summarizeDispatchPlan({
+        plan: dispatchPlan(),
+        source: {
+          acceptedAt: "2026-05-12T12:00:00.000Z",
+        },
+      }),
+      {
+        action: "remote-bootstrap",
+        command: "pnpm agent:queue:remote-bootstrap",
+        found: true,
+        issueNumber: 579,
+        issueTitle: "Bootstrap remote workspace",
+        reason: "ready",
+        snapshotAcceptedAt: "2026-05-12T12:00:00.000Z",
+      },
+    )
+
+    assert.deepEqual(summarizeDispatchPlan({ plan: null, reason: "queue_empty" }), {
+      found: false,
+      reason: "queue_empty",
+      snapshotAcceptedAt: null,
+    })
+  })
+
+  it("builds dispatch plan requests from deployed runner defaults", () => {
+    assert.deepEqual(
+      dispatchPlanRequestForDeployedRunner({
+        repository: "voyantjs/voyant",
+        runnerCapabilities: {
+          defaults: {
+            action: "sync-pr",
+          },
+        },
+      }),
+      {
+        filters: {
+          action: "sync-pr",
+        },
+        repository: "voyantjs/voyant",
+      },
+    )
+
+    assert.deepEqual(
+      dispatchPlanRequestForDeployedRunner({
+        repository: "voyantjs/voyant",
+        runnerCapabilities: {
+          defaults: {
+            action: null,
+          },
+        },
+      }),
+      {
+        repository: "voyantjs/voyant",
+      },
+    )
   })
 
   it("summarizes latest and recent runner supervisor ticks", () => {
@@ -226,6 +324,16 @@ function responseForUrl(url) {
     }
   }
 
+  if (url === "https://control.example.com/api/dispatch-plans/latest") {
+    return {
+      plan: dispatchPlan(),
+      reason: "selected",
+      source: {
+        acceptedAt: "2026-05-12T12:00:00.000Z",
+      },
+    }
+  }
+
   if (
     url ===
     "https://control.example.com/api/dispatch-intents/active?action=remote-bootstrap&issueNumber=579&repository=voyantjs%2Fvoyant"
@@ -241,6 +349,9 @@ function responseForUrl(url) {
       execution: {
         enabled: true,
         mode: "lease-only",
+      },
+      defaults: {
+        action: "remote-bootstrap",
       },
       service: "agent-runner",
       supervisorTicks: {
@@ -273,6 +384,18 @@ function responseForUrl(url) {
   }
 
   throw new Error(`unexpected URL: ${url}`)
+}
+
+function dispatchPlan() {
+  return {
+    action: "remote-bootstrap",
+    command: ["pnpm", "agent:queue:remote-bootstrap"],
+    issue: {
+      number: 579,
+      title: "Bootstrap remote workspace",
+    },
+    reason: "ready",
+  }
 }
 
 function dispatchIntent() {

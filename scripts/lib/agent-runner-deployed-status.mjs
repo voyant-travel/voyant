@@ -2,6 +2,7 @@ import {
   controlPlaneConfigFromArgs,
   requestActiveDispatchIntent,
   requestControlPlaneCapabilities,
+  requestLatestDispatchPlan,
   requestRecentTickSnapshots,
 } from "./agent-runner-control-plane.mjs"
 import {
@@ -30,16 +31,20 @@ export async function buildDeployedStatusReport({
     runner: null,
   }
 
+  await readRunnerStatus({ args, env, fetchImpl, limit, repository, report })
   await readControlPlaneStatus({
     activeDispatchRequest,
     args,
+    dispatchPlanRequest: dispatchPlanRequestForDeployedRunner({
+      repository,
+      runnerCapabilities: report.runner?.capabilities,
+    }),
     env,
     fetchImpl,
     limit,
     repository,
     report,
   })
-  await readRunnerStatus({ args, env, fetchImpl, limit, repository, report })
 
   report.ok = report.checks.every((check) => check.ok)
   return report
@@ -94,9 +99,46 @@ export function summarizeActiveDispatchIntent(result) {
   }
 }
 
+export function summarizeDispatchPlan(result) {
+  const plan = result?.plan
+  if (!plan) {
+    return {
+      found: false,
+      reason: result?.reason ?? null,
+      snapshotAcceptedAt: result?.source?.acceptedAt ?? null,
+    }
+  }
+
+  return {
+    action: plan.action ?? null,
+    command: Array.isArray(plan.command) ? plan.command.join(" ") : null,
+    found: true,
+    issueNumber: plan.issue?.number ?? null,
+    issueTitle: plan.issue?.title ?? null,
+    reason: plan.reason ?? null,
+    snapshotAcceptedAt: result?.source?.acceptedAt ?? null,
+  }
+}
+
+export function dispatchPlanRequestForDeployedRunner({ repository, runnerCapabilities }) {
+  const action = runnerCapabilities?.defaults?.action
+
+  return {
+    repository,
+    ...(action
+      ? {
+          filters: {
+            action,
+          },
+        }
+      : {}),
+  }
+}
+
 async function readControlPlaneStatus({
   activeDispatchRequest,
   args,
+  dispatchPlanRequest,
   env,
   fetchImpl,
   limit,
@@ -166,6 +208,45 @@ async function readControlPlaneStatus({
       name: "control plane queue snapshots",
       ok: false,
     })
+  }
+
+  try {
+    const dispatchPlan = await requestLatestDispatchPlan({
+      fetchImpl,
+      request: dispatchPlanRequest,
+      token: config.token,
+      url: config.url,
+    })
+    report.controlPlane.dispatchPlan = dispatchPlan
+    const summary = summarizeDispatchPlan(dispatchPlan)
+    const actionFilter = dispatchPlanRequest?.filters?.action
+    report.checks.push({
+      detail: summary.found
+        ? `next: #${summary.issueNumber} ${summary.action}; reason: ${summary.reason ?? "unknown"}${actionFilter ? `; filter: ${actionFilter}` : ""}`
+        : `plan: none (${summary.reason ?? "unknown"})${actionFilter ? `; filter: ${actionFilter}` : ""}`,
+      name: "control plane dispatch plan",
+      ok: true,
+    })
+  } catch (error) {
+    const snapshotMissing =
+      error?.status === 404 && error?.body?.error === "tick_snapshot_not_found"
+    if (snapshotMissing) {
+      report.controlPlane.dispatchPlan = {
+        plan: null,
+        reason: "tick_snapshot_not_found",
+      }
+      report.checks.push({
+        detail: "plan: none (tick_snapshot_not_found)",
+        name: "control plane dispatch plan",
+        ok: true,
+      })
+    } else {
+      report.checks.push({
+        detail: errorMessage(error),
+        name: "control plane dispatch plan",
+        ok: false,
+      })
+    }
   }
 
   if (!activeDispatchRequest) return
