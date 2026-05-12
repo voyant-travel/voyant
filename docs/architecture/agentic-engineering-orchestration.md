@@ -1370,6 +1370,9 @@ Verification:
   database. Lease-conflict ticks preserve the active intent returned by the
   control plane so maintainers can see the holder, issue, action, and expiration
   that blocked the run.
+- Operators can inspect persisted control-plane and runner history with
+  `pnpm agent:queue:history`, using `--source control-plane` for queue
+  snapshots or `--source runner` for deployed supervisor ticks.
 - The runner app enforces a local dispatch policy before calling the control
   plane. `AGENT_RUNNER_ALLOWED_ACTIONS` limits which lifecycle actions a
   deployed runner can lease, `AGENT_RUNNER_ACTION` supplies a default action
