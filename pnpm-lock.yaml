@@ -5172,6 +5172,9 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:*
         version: link:../i18n
+      '@voyantjs/workflows-react':
+        specifier: workspace:*
+        version: link:../workflows-react
     devDependencies:
       '@types/react':
         specifier: ^19.2.14
@@ -5364,6 +5367,9 @@ importers:
 
   packages/workflows-react:
     dependencies:
+      '@voyantjs/react':
+        specifier: workspace:*
+        version: link:../react
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../workflows
@@ -5371,6 +5377,9 @@ importers:
         specifier: workspace:*
         version: link:../workflows-errors
     devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.96.2
+        version: 5.96.2(react@19.2.4)
       '@types/react':
         specifier: ^19.1.0
         version: 19.2.14
@@ -5380,6 +5389,9 @@ importers:
       react:
         specifier: ^19.1.0
         version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
       typescript:
         specifier: ^5.9.2
         version: 5.9.3

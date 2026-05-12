@@ -1,3 +1,5 @@
+"use client"
+
 // @voyantjs/workflows-react
 //
 // React hooks for triggering Voyant Workflows and subscribing to run
@@ -10,6 +12,8 @@
 import type { RunStatus } from "@voyantjs/workflows"
 import type { StreamEvent } from "@voyantjs/workflows/protocol"
 import type { VoyantError } from "@voyantjs/workflows-errors"
+
+export * from "./workflow-runs.js"
 
 // ---- useTriggerWorkflow ----
 
