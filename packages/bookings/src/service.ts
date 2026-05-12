@@ -804,6 +804,44 @@ async function resolvePolicyHoldMinutes(
   return candidates.length > 0 ? Math.min(...candidates) : DEFAULT_HOLD_MINUTES
 }
 
+async function listBookingItemsForSummaries(db: PostgresJsDatabase, bookingIds: string[]) {
+  if (bookingIds.length === 0) return []
+
+  return db
+    .select({
+      id: bookingItems.id,
+      bookingId: bookingItems.bookingId,
+      title: bookingItems.title,
+      itemType: bookingItems.itemType,
+      productId: bookingItems.productId,
+      productName: productsRef.name,
+      startsAt: bookingItems.startsAt,
+      endsAt: bookingItems.endsAt,
+    })
+    .from(bookingItems)
+    .leftJoin(productsRef, eq(productsRef.id, bookingItems.productId))
+    .where(inArray(bookingItems.bookingId, bookingIds))
+    .orderBy(asc(bookingItems.createdAt))
+    .catch(async (error: unknown) => {
+      if (!isUndefinedTableError(error)) throw error
+
+      return db
+        .select({
+          id: bookingItems.id,
+          bookingId: bookingItems.bookingId,
+          title: bookingItems.title,
+          itemType: bookingItems.itemType,
+          productId: bookingItems.productId,
+          productName: sql<null>`null`,
+          startsAt: bookingItems.startsAt,
+          endsAt: bookingItems.endsAt,
+        })
+        .from(bookingItems)
+        .where(inArray(bookingItems.bookingId, bookingIds))
+        .orderBy(asc(bookingItems.createdAt))
+    })
+}
+
 async function computeHoldExpiresAt(
   db: PostgresJsDatabase,
   input: { holdMinutes?: number; holdExpiresAt?: string | null },
@@ -1959,24 +1997,7 @@ export const bookingsService = {
       db.select({ count: sql<number>`count(*)::int` }).from(bookings).where(where),
     ])
     const bookingIds = rows.map((row) => row.id)
-    const items =
-      bookingIds.length > 0
-        ? await db
-            .select({
-              id: bookingItems.id,
-              bookingId: bookingItems.bookingId,
-              title: bookingItems.title,
-              itemType: bookingItems.itemType,
-              productId: bookingItems.productId,
-              productName: productsRef.name,
-              startsAt: bookingItems.startsAt,
-              endsAt: bookingItems.endsAt,
-            })
-            .from(bookingItems)
-            .leftJoin(productsRef, eq(productsRef.id, bookingItems.productId))
-            .where(inArray(bookingItems.bookingId, bookingIds))
-            .orderBy(asc(bookingItems.createdAt))
-        : []
+    const items = await listBookingItemsForSummaries(db, bookingIds)
 
     const ranges = new Map<string, { startsAt: Date | null; endsAt: Date | null }>()
     const itemSummariesByBooking = new Map<
