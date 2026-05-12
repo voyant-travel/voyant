@@ -79,6 +79,17 @@ const dispatchIntentLeaseRequestSchema = z.object({
   ttlSeconds: z.number().int().min(60).max(3600).optional(),
 })
 
+const dispatchIntentTerminalStatusSchema = z.enum(["completed", "failed", "released"])
+
+export const dispatchIntentFinishRequestSchema = z.object({
+  exitCode: z.number().int().optional(),
+  holder: z.string().min(1),
+  reason: z.string().min(1).optional(),
+  status: dispatchIntentTerminalStatusSchema,
+})
+
+export type DispatchIntentFinishRequest = z.infer<typeof dispatchIntentFinishRequestSchema>
+
 export const latestDispatchIntentRequestSchema = z.object({
   filters: dispatchPlanFiltersSchema,
   lease: dispatchIntentLeaseRequestSchema,
@@ -150,8 +161,16 @@ export const dispatchIntentRecordSchema = z.object({
     ttlSeconds: z.number().int().min(60).max(3600),
   }),
   plan: dispatchPlanSchema,
+  resolution: z
+    .object({
+      finishedAt: z.string().min(1),
+      holder: z.string().min(1),
+      exitCode: z.number().int().optional(),
+      reason: z.string().min(1).optional(),
+    })
+    .optional(),
   source: dispatchIntentSourceSchema,
-  status: z.literal("leased"),
+  status: z.union([z.literal("leased"), dispatchIntentTerminalStatusSchema]),
 })
 
 export type DispatchIntentRecord = z.infer<typeof dispatchIntentRecordSchema>
@@ -220,6 +239,7 @@ export function buildCapabilities({
     dispatchIntentContracts: {
       latestSnapshotLease: {
         persistence: dispatchIntentPersistence,
+        terminalStatuses: dispatchIntentTerminalStatusSchema.options,
         ttlSeconds: {
           default: 900,
           min: 60,
@@ -383,6 +403,27 @@ export function buildDispatchIntentFromStoredPlan({
 
 export function isDispatchIntentActive(intent: DispatchIntentRecord, now = new Date()) {
   return intent.status === "leased" && Date.parse(intent.lease.expiresAt) > now.getTime()
+}
+
+export function finishDispatchIntent({
+  intent,
+  now = new Date(),
+  request,
+}: {
+  intent: DispatchIntentRecord
+  now?: Date
+  request: DispatchIntentFinishRequest
+}): DispatchIntentRecord {
+  return {
+    ...intent,
+    resolution: {
+      finishedAt: now.toISOString(),
+      holder: request.holder,
+      ...(request.exitCode === undefined ? {} : { exitCode: request.exitCode }),
+      ...(request.reason ? { reason: request.reason } : {}),
+    },
+    status: request.status,
+  }
 }
 
 function dispatchCommand({

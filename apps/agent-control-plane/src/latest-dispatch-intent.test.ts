@@ -4,6 +4,8 @@ import { createApp } from "./app.js"
 import {
   buildTickSnapshotRecord,
   type DispatchIntentRecord,
+  finishDispatchIntent,
+  isDispatchIntentActive,
   type TickSnapshotRecord,
 } from "./control-plane.js"
 import type { DispatchIntentStore } from "./dispatch-intent-store.js"
@@ -356,6 +358,7 @@ function inMemoryTickSnapshotStore(records: TickSnapshotRecord[] = []): TickSnap
 
 function inMemoryDispatchIntentStore(): DispatchIntentStore {
   const active = new Map<string, DispatchIntentRecord>()
+  const byId = new Map<string, DispatchIntentRecord>()
 
   return {
     async acquireIntent(record, { now }) {
@@ -365,11 +368,12 @@ function inMemoryDispatchIntentStore(): DispatchIntentStore {
         repository: record.plan.repository,
       })
       const existing = active.get(key)
-      if (existing && Date.parse(existing.lease.expiresAt) > now.getTime()) {
+      if (existing && isDispatchIntentActive(existing, now)) {
         return { acquired: false, activeIntent: existing }
       }
 
       active.set(key, record)
+      byId.set(record.id, record)
       return {
         acquired: true,
         write: {
@@ -378,10 +382,45 @@ function inMemoryDispatchIntentStore(): DispatchIntentStore {
         },
       }
     },
+    async finishIntent({ id, now, request }) {
+      const intent = byId.get(id)
+      if (!intent) {
+        return { finished: false, reason: "not_found" }
+      }
+      if (intent.status !== "leased") {
+        return { finished: false, intent, reason: "intent_not_active" }
+      }
+      if (intent.lease.holder !== request.holder) {
+        return { finished: false, intent, reason: "holder_mismatch" }
+      }
+
+      const finishedIntent = finishDispatchIntent({ intent, now, request })
+      const activeKey = activeIntentKey({
+        action: intent.plan.action,
+        issueNumber: intent.plan.issue.number,
+        repository: intent.plan.repository,
+      })
+      byId.set(id, finishedIntent)
+      const activeUpdated = active.get(activeKey)?.id === id
+      if (activeUpdated) {
+        active.set(activeKey, finishedIntent)
+      }
+
+      return {
+        finished: true,
+        intent: finishedIntent,
+        write: {
+          activeKey,
+          activeUpdated,
+          key: `${intent.id}.json`,
+        },
+      }
+    },
     async getActive(reference) {
       return active.get(activeIntentKey(reference)) ?? null
     },
     async putIntent(record) {
+      byId.set(record.id, record)
       active.set(
         activeIntentKey({
           action: record.plan.action,

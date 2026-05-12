@@ -28,6 +28,7 @@ pnpm -C apps/agent-control-plane dev
 - `POST /api/dispatch-plans`
 - `POST /api/dispatch-plans/latest`
 - `POST /api/dispatch-intents/latest`
+- `POST /api/dispatch-intents/:id/finish`
 - `POST /api/tick-snapshots`
 - `GET /api/tick-snapshots/latest?repository=<owner/name>`
 
@@ -54,6 +55,13 @@ is an operator, supervisor, or runner identifier; the TTL defaults to 900
 seconds and must be between 60 and 3600 seconds. If a non-expired intent already
 exists for the same repository, issue, and action, the endpoint returns
 `dispatch_intent_already_active`.
+
+`POST /api/dispatch-intents/:id/finish` accepts
+`{ holder, status, reason?, exitCode? }` where `status` is `completed`,
+`failed`, or `released`. The holder must match the lease holder. Finishing an
+intent writes a terminal record and updates the active pointer when it still
+points at that lease, allowing the next supervisor lease to proceed without
+waiting for TTL expiry.
 
 `POST /api/tick-snapshots` accepts the JSON emitted by
 `pnpm agent:queue:tick -- --json`, validates the shape, and returns the accepted
@@ -105,6 +113,15 @@ pnpm agent:queue:lease-dispatch -- --repo voyantjs/voyant --holder supervisor:lo
 
 This records the lease and prints the command to run. It does not execute the
 command.
+
+Finish the leased dispatch intent after the runner has handled the printed
+command:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:finish-dispatch -- --intent intent_579 --holder supervisor:local --status completed
+```
 
 ## Optional R2 Storage
 

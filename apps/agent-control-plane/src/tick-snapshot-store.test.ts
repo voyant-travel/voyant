@@ -293,6 +293,52 @@ describe("tick snapshot storage", () => {
         id: "intent_579",
       },
     })
+
+    await expect(
+      store.finishIntent({
+        id: "intent_579",
+        now: new Date("2026-05-12T05:41:00.000Z"),
+        request: {
+          holder: "supervisor:test",
+          reason: "command completed",
+          status: "completed",
+        },
+      }),
+    ).resolves.toMatchObject({
+      finished: true,
+      intent: {
+        id: "intent_579",
+        resolution: {
+          finishedAt: "2026-05-12T05:41:00.000Z",
+          holder: "supervisor:test",
+          reason: "command completed",
+        },
+        status: "completed",
+      },
+      write: {
+        activeUpdated: true,
+      },
+    })
+
+    await expect(
+      store.acquireIntent(
+        {
+          ...intent,
+          id: "intent_580",
+          lease: {
+            ...intent.lease,
+            holder: "supervisor:next",
+          },
+        },
+        { now: new Date("2026-05-12T05:42:00.000Z") },
+      ),
+    ).resolves.toMatchObject({
+      acquired: true,
+      write: {
+        activeKey: "supervisor/dispatch-intents/active/voyantjs%2Fvoyant/579/remote-bootstrap.json",
+        key: "supervisor/dispatch-intents/by-id/intent_580.json",
+      },
+    })
   })
 })
 

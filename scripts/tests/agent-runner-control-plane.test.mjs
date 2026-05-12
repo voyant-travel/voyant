@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 
 import {
   controlPlaneConfigFromArgs,
+  finishDispatchIntent,
   requestLatestDispatchIntent,
   requestLatestDispatchPlan,
   submitTickSnapshot,
@@ -272,6 +273,77 @@ describe("agent runner control plane client", () => {
         url: "https://control.example.com",
       }),
       /409: dispatch_intent_already_active/,
+    )
+  })
+
+  it("finishes dispatch intents", async () => {
+    const calls = []
+    const response = await finishDispatchIntent({
+      fetchImpl: async (url, init) => {
+        calls.push({ init, url })
+        return new Response(
+          JSON.stringify({
+            intent: {
+              id: "intent_579",
+              lease: {
+                holder: "supervisor:test",
+              },
+              resolution: {
+                finishedAt: "2026-05-12T12:05:00.000Z",
+                holder: "supervisor:test",
+                reason: "done",
+              },
+              status: "completed",
+            },
+            storage: {
+              activeUpdated: true,
+              persisted: true,
+            },
+          }),
+          { status: 200 },
+        )
+      },
+      id: "intent_579",
+      request: {
+        holder: "supervisor:test",
+        reason: "done",
+        status: "completed",
+      },
+      token: "tok",
+      url: "https://control.example.com/",
+    })
+
+    assert.equal(response.intent.status, "completed")
+    assert.equal(calls[0].url, "https://control.example.com/api/dispatch-intents/intent_579/finish")
+    assert.equal(calls[0].init.method, "POST")
+    assert.equal(calls[0].init.headers.authorization, "Bearer tok")
+    assert.equal(calls[0].init.headers["content-type"], "application/json")
+    assert.equal(
+      calls[0].init.body,
+      JSON.stringify({
+        holder: "supervisor:test",
+        reason: "done",
+        status: "completed",
+      }),
+    )
+  })
+
+  it("surfaces rejected dispatch intent finish responses", async () => {
+    await assert.rejects(
+      finishDispatchIntent({
+        fetchImpl: async () =>
+          new Response(JSON.stringify({ error: "dispatch_intent_holder_mismatch" }), {
+            status: 409,
+          }),
+        id: "intent_579",
+        request: {
+          holder: "supervisor:other",
+          status: "released",
+        },
+        token: "tok",
+        url: "https://control.example.com",
+      }),
+      /409: dispatch_intent_holder_mismatch/,
     )
   })
 })
