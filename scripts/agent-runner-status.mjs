@@ -11,6 +11,7 @@ import {
   browserEvidenceReferenceKind,
   requiresBrowserEvidence,
 } from "./lib/agent-runner-browser-evidence.mjs"
+import { readAgentRunnerEvents, resolveEventLogPath } from "./lib/agent-runner-events.mjs"
 import { maybePrintHelp, projectOptions, repositoryOptions } from "./lib/agent-runner-help.mjs"
 import { evaluateHeartbeat } from "./lib/agent-runner-output.mjs"
 
@@ -31,6 +32,8 @@ maybePrintHelp(args, {
   options: [
     ["--json", "Print machine-readable JSON."],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    ["--event-log <path>", "JSONL audit log path. Defaults to .agent-runs/events.jsonl."],
+    ["--recent-events <number>", "Number of recent runner events to show. Defaults to 5."],
     ...repositoryOptions,
     ...projectOptions,
   ],
@@ -39,6 +42,8 @@ maybePrintHelp(args, {
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const maxAgeDays = Number(args.maxAgeDays ?? 1)
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
+const recentEventLimit = numberArg(args.recentEvents, "recent-events", 5, { min: 0 })
 
 if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
   fail(`invalid max age days: ${String(args.maxAgeDays)}`)
@@ -57,6 +62,7 @@ const staleItems = activeItems.filter((item) => item.heartbeat.stale)
 const blockedItems = items.filter((item) => item.fields["Agent State"] === "Blocked")
 const reviewItems = items.filter((item) => item.fields["Agent State"] === "Human Review")
 const mergeReadyItems = items.filter((item) => item.fields["Agent State"] === "Merge Ready")
+const recentEvents = readRecentEvents()
 
 if (args.json) {
   console.log(
@@ -70,6 +76,10 @@ if (args.json) {
         },
         repository,
         maxAgeDays,
+        eventLog: {
+          path: eventLogPath,
+          recentEvents,
+        },
         counts: {
           scanned: items.length,
           ready: readyItems.length,
@@ -113,6 +123,7 @@ function printHumanSummary() {
   printSection("Blocked items", blockedItems)
   printSection("Human review items", reviewItems)
   printSection("Merge ready items", mergeReadyItems)
+  printRecentEvents()
 }
 
 function printSection(title, sectionItems, extraPrinter) {
@@ -148,6 +159,37 @@ function printHeartbeat(item) {
   console.log(`  reason: ${item.heartbeat.reason}`)
 }
 
+function printRecentEvents() {
+  if (recentEventLimit === 0 || recentEvents.length === 0) return
+
+  console.log("Recent runner events:")
+  for (const event of recentEvents) {
+    console.log(`- ${formatEventSummary(event)}`)
+    if (event.recommendation?.reason) {
+      console.log(`  reason: ${event.recommendation.reason}`)
+    }
+    if (Array.isArray(event.command) && event.command.length > 0) {
+      console.log(`  command: ${event.command.join(" ")}`)
+    }
+  }
+  console.log("")
+}
+
+function formatEventSummary(event) {
+  const issueNumber = event.recommendation?.issue?.number
+  const action = event.recommendation?.action
+  const status = event.status === undefined ? null : `status ${event.status}`
+  return [
+    event.timestamp ?? "no timestamp",
+    event.type,
+    issueNumber ? `#${issueNumber}` : null,
+    action ?? null,
+    status,
+  ]
+    .filter(Boolean)
+    .join(" ")
+}
+
 function summaryItem(item) {
   const browserEvidenceRequired = requiresBrowserEvidence(item)
   const browserEvidenceKind = browserEvidenceReferenceKind(item.fields.Evidence)
@@ -168,4 +210,22 @@ function summaryItem(item) {
       browserArtifactReferencePresent: browserEvidenceKind === "browser-artifacts",
     },
   }
+}
+
+function readRecentEvents() {
+  try {
+    return readAgentRunnerEvents(eventLogPath, { limit: recentEventLimit })
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error))
+  }
+}
+
+function numberArg(value, name, fallback, { min = 1 } = {}) {
+  if (value === undefined) return fallback
+
+  const number = Number(value)
+  if (!Number.isInteger(number) || number < min) {
+    fail(`invalid ${name}: ${value}`)
+  }
+  return number
 }

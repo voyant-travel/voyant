@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { mkdtempSync, readFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { describe, it } from "node:test"
@@ -7,6 +7,7 @@ import { describe, it } from "node:test"
 import {
   appendAgentRunnerEvent,
   defaultEventLogPath,
+  readAgentRunnerEvents,
   recommendationEventDetails,
   resolveEventLogPath,
 } from "../lib/agent-runner-events.mjs"
@@ -46,6 +47,47 @@ describe("agent runner event helpers", () => {
     assert.equal(`${JSON.stringify(entry)}\n`, readFileSync(eventLogPath, "utf8"))
   })
 
+  it("reads a bounded tail of JSONL runner events", () => {
+    const tempDir = mkdtempSync(path.join(tmpdir(), "agent-runner-events-"))
+    const eventLogPath = path.join(tempDir, "events.jsonl")
+
+    writeFileSync(
+      eventLogPath,
+      [
+        JSON.stringify({ timestamp: "2026-05-10T12:00:00.000Z", type: "one" }),
+        "",
+        JSON.stringify({ timestamp: "2026-05-10T12:01:00.000Z", type: "two" }),
+        JSON.stringify({ timestamp: "2026-05-10T12:02:00.000Z", type: "three" }),
+      ].join("\n"),
+      "utf8",
+    )
+
+    assert.deepEqual(readAgentRunnerEvents(eventLogPath, { limit: 2 }), [
+      { timestamp: "2026-05-10T12:01:00.000Z", type: "two" },
+      { timestamp: "2026-05-10T12:02:00.000Z", type: "three" },
+    ])
+    assert.deepEqual(readAgentRunnerEvents(eventLogPath, { limit: 0 }), [])
+    assert.deepEqual(readAgentRunnerEvents(path.join(tempDir, "missing.jsonl")), [])
+  })
+
+  it("does not parse historical event lines outside the bounded tail", () => {
+    const tempDir = mkdtempSync(path.join(tmpdir(), "agent-runner-events-"))
+    const eventLogPath = path.join(tempDir, "events.jsonl")
+    const historicalLine = `${JSON.stringify({ timestamp: "2026-05-10T12:00:00.000Z" })}${"x".repeat(200)}`
+    const recentEvents = [
+      { timestamp: "2026-05-10T12:01:00.000Z", type: "two" },
+      { timestamp: "2026-05-10T12:02:00.000Z", type: "three" },
+    ]
+
+    writeFileSync(
+      eventLogPath,
+      [historicalLine, ...recentEvents.map((event) => JSON.stringify(event))].join("\n"),
+      "utf8",
+    )
+
+    assert.deepEqual(readAgentRunnerEvents(eventLogPath, { limit: 2, maxBytes: 150 }), recentEvents)
+  })
+
   it("extracts stable recommendation details for logs", () => {
     const recommendation = recommendQueueAction(workItem({ number: 579 }), {
       maxAgeDays: 1,
@@ -72,6 +114,21 @@ describe("agent runner event helpers", () => {
           event: {},
         }),
       /agent runner event requires a type/,
+    )
+  })
+
+  it("rejects invalid event read limits and missing event types", () => {
+    const tempDir = mkdtempSync(path.join(tmpdir(), "agent-runner-events-"))
+    const eventLogPath = path.join(tempDir, "events.jsonl")
+    writeFileSync(eventLogPath, `${JSON.stringify({ timestamp: "2026-05-10T12:00:00.000Z" })}\n`)
+
+    assert.throws(
+      () => readAgentRunnerEvents(eventLogPath, { limit: "x" }),
+      /agent runner event limit must be a non-negative integer: x/,
+    )
+    assert.throws(
+      () => readAgentRunnerEvents(eventLogPath),
+      /agent runner event log line is missing type/,
     )
   })
 })
