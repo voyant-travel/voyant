@@ -1,13 +1,15 @@
 import {
   type FinanceInvoiceListSortDir,
   type FinanceInvoiceListSortField,
+  type InvoiceBulkStatusResult,
   type InvoiceRecord,
+  useInvoiceBulkStatusMutation,
   useInvoices,
 } from "@voyantjs/finance-react"
-import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
   Button,
+  Checkbox,
   Input,
   Label,
   Select,
@@ -19,7 +21,6 @@ import {
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { DateRangePicker } from "@voyantjs/ui/components/date-picker"
 import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
-import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -29,11 +30,19 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { ArrowDown, ArrowUp, ArrowUpDown, ListFilter, Plus, Search, X } from "lucide-react"
-import { useState } from "react"
+import { ListFilter, Plus, Search, X } from "lucide-react"
+import { useEffect, useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import { invoiceStatuses } from "../i18n/messages.js"
+import { InvoiceBulkActions } from "./invoice-bulk-actions.js"
 import { InvoiceDialog } from "./invoice-dialog.js"
+import {
+  formatInvoiceAmount,
+  InvoiceRowSkeleton,
+  invoiceStatusVariant,
+  PaginationBar,
+  SortHeader,
+} from "./invoice-table-parts.js"
 
 const PAGE_SIZE = 25
 const STATUS_ALL = "__all__"
@@ -43,19 +52,6 @@ type InvoiceSortableField = Exclude<FinanceInvoiceListSortField, "createdAt">
 export interface InvoicesPageProps {
   className?: string
   onOpenInvoice?: (invoiceId: string) => void
-}
-
-const invoiceStatusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  draft: "outline",
-  sent: "secondary",
-  partially_paid: "secondary",
-  paid: "default",
-  overdue: "destructive",
-  void: "destructive",
-}
-
-function formatAmount(cents: number, currency: string): string {
-  return `${(cents / 100).toFixed(2)} ${currency}`
 }
 
 export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {}) {
@@ -73,6 +69,9 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
   const [sortDir, setSortDir] = useState<FinanceInvoiceListSortDir>("desc")
   const [pageIndex, setPageIndex] = useState(0)
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(() => new Set())
+  const [bulkResult, setBulkResult] = useState<InvoiceBulkStatusResult | null>(null)
+  const bulkStatusMutation = useInvoiceBulkStatusMutation()
 
   const { data, isPending, isFetching, isError } = useInvoices({
     search: search || undefined,
@@ -91,8 +90,62 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
   const page = pageIndex + 1
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const showSkeleton = isPending || (isFetching && invoices.length === 0)
+  const selectedInvoices = invoices.filter((invoice) => selectedInvoiceIds.has(invoice.id))
+  const selectedCount = selectedInvoices.length
+  const allPageInvoicesSelected =
+    invoices.length > 0 && invoices.every((invoice) => selectedInvoiceIds.has(invoice.id))
+  const somePageInvoicesSelected =
+    invoices.some((invoice) => selectedInvoiceIds.has(invoice.id)) && !allPageInvoicesSelected
 
-  const resetPage = () => setPageIndex(0)
+  useEffect(() => {
+    const visibleInvoiceIds = new Set(invoices.map((invoice) => invoice.id))
+    setSelectedInvoiceIds((previous) => {
+      const next = new Set([...previous].filter((id) => visibleInvoiceIds.has(id)))
+      return next.size === previous.size ? previous : next
+    })
+  }, [invoices])
+
+  const clearInvoiceSelection = () => setSelectedInvoiceIds(new Set())
+
+  const resetPage = () => {
+    setPageIndex(0)
+    clearInvoiceSelection()
+  }
+
+  const setInvoiceSelected = (invoiceId: string, selected: boolean) => {
+    setBulkResult(null)
+    setSelectedInvoiceIds((previous) => {
+      const next = new Set(previous)
+      if (selected) next.add(invoiceId)
+      else next.delete(invoiceId)
+      return next
+    })
+  }
+
+  const setAllPageInvoicesSelected = (selected: boolean) => {
+    setBulkResult(null)
+    setSelectedInvoiceIds((previous) => {
+      const next = new Set(previous)
+      for (const invoice of invoices) {
+        if (selected) next.add(invoice.id)
+        else next.delete(invoice.id)
+      }
+      return next
+    })
+  }
+
+  const markSelectedInvoicesPaid = async () => {
+    const result = await bulkStatusMutation.mutateAsync({
+      invoices: selectedInvoices,
+      status: "paid",
+    })
+    setBulkResult(result)
+    if (result.failed.length === 0) {
+      clearInvoiceSelection()
+      return
+    }
+    setSelectedInvoiceIds(new Set(result.failed.map((failure) => failure.id)))
+  }
 
   const handleSort = (field: InvoiceSortableField) => {
     resetPage()
@@ -239,10 +292,28 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
           </div>
         </div>
 
+        <InvoiceBulkActions
+          selectedCount={selectedCount}
+          result={bulkResult}
+          pending={bulkStatusMutation.isPending}
+          onClear={clearInvoiceSelection}
+          onMarkPaid={markSelectedInvoicesPaid}
+        />
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    aria-label={f.bulkActions.selectAllOnPage}
+                    checked={allPageInvoicesSelected}
+                    indeterminate={somePageInvoicesSelected}
+                    disabled={showSkeleton || invoices.length === 0}
+                    onClickCapture={(event) => event.stopPropagation()}
+                    onCheckedChange={(checked) => setAllPageInvoicesSelected(Boolean(checked))}
+                  />
+                </TableHead>
                 <TableHead>
                   <SortHeader
                     label={f.columns.invoiceNumber}
@@ -304,13 +375,13 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
                 <InvoiceRowSkeleton rows={6} />
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-sm text-destructive">
+                  <TableCell colSpan={7} className="h-24 text-center text-sm text-destructive">
                     {f.loadFailed}
                   </TableCell>
                 </TableRow>
               ) : invoices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={7} className="h-24 text-center text-sm text-muted-foreground">
                     {f.empty}
                   </TableCell>
                 </TableRow>
@@ -321,6 +392,14 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
                     onClick={() => onOpenInvoice?.(row.id)}
                     className={cn(onOpenInvoice && "cursor-pointer")}
                   >
+                    <TableCell>
+                      <Checkbox
+                        aria-label={f.bulkActions.selectInvoice}
+                        checked={selectedInvoiceIds.has(row.id)}
+                        onClickCapture={(event) => event.stopPropagation()}
+                        onCheckedChange={(checked) => setInvoiceSelected(row.id, Boolean(checked))}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{row.invoiceNumber}</TableCell>
                     <TableCell>
                       <Badge
@@ -331,13 +410,13 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
                       </Badge>
                     </TableCell>
                     <TableCell className="font-mono">
-                      {formatAmount(row.totalCents, row.currency)}
+                      {formatInvoiceAmount(row.totalCents, row.currency)}
                     </TableCell>
                     <TableCell className="font-mono">
-                      {formatAmount(row.paidCents, row.currency)}
+                      {formatInvoiceAmount(row.paidCents, row.currency)}
                     </TableCell>
                     <TableCell className="font-mono">
-                      {formatAmount(row.balanceDueCents, row.currency)}
+                      {formatInvoiceAmount(row.balanceDueCents, row.currency)}
                     </TableCell>
                     <TableCell>{row.dueDate}</TableCell>
                   </TableRow>
@@ -352,8 +431,14 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
           total={total}
           page={page}
           pageCount={pageCount}
-          onPrevious={() => setPageIndex((prev) => Math.max(0, prev - 1))}
-          onNext={() => setPageIndex((prev) => prev + 1)}
+          onPrevious={() => {
+            clearInvoiceSelection()
+            setPageIndex((prev) => Math.max(0, prev - 1))
+          }}
+          onNext={() => {
+            clearInvoiceSelection()
+            setPageIndex((prev) => prev + 1)
+          }}
           canGoBack={pageIndex > 0}
           canGoForward={(pageIndex + 1) * PAGE_SIZE < total}
         />
@@ -361,104 +446,5 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
 
       <InvoiceDialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen} />
     </div>
-  )
-}
-
-interface SortHeaderProps<TField extends string> {
-  label: string
-  field: TField
-  sortBy: string
-  sortDir: "asc" | "desc"
-  onSort: (field: TField) => void
-}
-
-function SortHeader<TField extends string>({
-  label,
-  field,
-  sortBy,
-  sortDir,
-  onSort,
-}: SortHeaderProps<TField>) {
-  const active = sortBy === field
-  const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown
-  return (
-    <button
-      type="button"
-      onClick={() => onSort(field)}
-      className="-ml-2 inline-flex h-8 items-center gap-1 rounded-sm px-2 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <span>{label}</span>
-      <Icon
-        className={`size-3.5 ${active ? "text-foreground" : "text-muted-foreground/60"}`}
-        aria-hidden
-      />
-    </button>
-  )
-}
-
-function PaginationBar({
-  shown,
-  total,
-  page,
-  pageCount,
-  onPrevious,
-  onNext,
-  canGoBack,
-  canGoForward,
-}: {
-  shown: number
-  total: number
-  page: number
-  pageCount: number
-  onPrevious: () => void
-  onNext: () => void
-  canGoBack: boolean
-  canGoForward: boolean
-}) {
-  const messages = useFinanceUiMessagesOrDefault()
-  const f = messages.invoicesPage.pagination
-  return (
-    <div className="flex items-center justify-between text-sm text-muted-foreground">
-      <span>{formatMessage(f.showing, { count: shown, total })}</span>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" disabled={!canGoBack} onClick={onPrevious}>
-          {f.previous}
-        </Button>
-        <span>{formatMessage(f.page, { page, pageCount })}</span>
-        <Button variant="outline" size="sm" disabled={!canGoForward} onClick={onNext}>
-          {f.next}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function InvoiceRowSkeleton({ rows }: { rows: number }) {
-  return (
-    <>
-      {Array.from({ length: rows }).map((_, idx) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders are stable
-        <TableRow key={`skeleton-${idx}`}>
-          <TableCell>
-            <Skeleton className="h-4 w-32" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-5 w-20 rounded-full" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-24" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-24" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-24" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-24" />
-          </TableCell>
-        </TableRow>
-      ))}
-    </>
   )
 }

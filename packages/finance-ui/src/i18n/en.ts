@@ -79,6 +79,21 @@ export const financeUiEn = {
     actions: {
       newInvoice: "New Invoice",
     },
+    bulkActions: {
+      selectionSummary: "{count} selected",
+      clearSelection: "Clear selection",
+      markPaid: "Mark paid",
+      markPaidConfirm: "Mark paid",
+      markPaidTitle: "Mark {count} invoices as paid?",
+      markPaidDescription:
+        "Selected invoices will move to Paid, with paid amount set to the invoice total and balance due set to zero.",
+      selectAllOnPage: "Select all invoices on this page",
+      selectInvoice: "Select invoice",
+      successTitle: "Invoices updated",
+      successDescription: "{updated} of {total} invoices were marked paid.",
+      partialTitle: "Some invoices were not updated",
+      partialDescription: "{updated} of {total} invoices were marked paid. {failed} failed.",
+    },
     filters: {
       button: "Filters",
       statusLabel: "Status",

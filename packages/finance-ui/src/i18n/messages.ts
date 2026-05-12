@@ -200,6 +200,20 @@ export type FinanceUiMessages = {
     actions: {
       newInvoice: string
     }
+    bulkActions: {
+      selectionSummary: string
+      clearSelection: string
+      markPaid: string
+      markPaidConfirm: string
+      markPaidTitle: string
+      markPaidDescription: string
+      selectAllOnPage: string
+      selectInvoice: string
+      successTitle: string
+      successDescription: string
+      partialTitle: string
+      partialDescription: string
+    }
     filters: {
       button: string
       statusLabel: string
