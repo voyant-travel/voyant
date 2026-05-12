@@ -15,6 +15,34 @@ export const dispatchableActions = [
 
 const dispatchableActionSet = new Set<string>(dispatchableActions)
 
+const issueSchema = z
+  .object({
+    number: z.number().int().positive(),
+    title: z.string().min(1),
+    url: z.string().url(),
+    repository: z.string().min(1),
+  })
+  .passthrough()
+
+const queueRecommendationSchema = z
+  .object({
+    action: z.string(),
+    command: z.string().nullable().optional(),
+    heartbeat: z.record(z.string(), z.unknown()).nullable().optional(),
+    issue: issueSchema,
+    priority: z.number().finite().optional(),
+    reason: z.string().min(1),
+    state: z.string().nullable().optional(),
+  })
+  .passthrough()
+
+const runnerEventSchema = z
+  .object({
+    timestamp: z.string().min(1).optional(),
+    type: z.string().min(1).optional(),
+  })
+  .passthrough()
+
 export const dispatchPlanRequestSchema = z.object({
   filters: z
     .object({
@@ -28,24 +56,29 @@ export const dispatchPlanRequestSchema = z.object({
       updateBody: z.boolean().optional(),
     })
     .optional(),
-  recommendations: z
-    .array(
-      z.object({
-        action: z.string(),
-        reason: z.string().min(1),
-        issue: z.object({
-          number: z.number().int().positive(),
-          title: z.string().min(1),
-          url: z.string().url(),
-          repository: z.string().min(1),
-        }),
-      }),
-    )
-    .min(1),
+  recommendations: z.array(queueRecommendationSchema).min(1),
   repository: z.string().min(1),
 })
 
 export type DispatchPlanRequest = z.infer<typeof dispatchPlanRequestSchema>
+
+export const tickSnapshotRequestSchema = z.object({
+  eventLog: z.object({
+    path: z.string().min(1),
+    recentEvents: z.array(runnerEventSchema),
+  }),
+  maxAgeDays: z.number().int().nonnegative(),
+  project: z.object({
+    number: z.number().int().positive(),
+    owner: z.string().min(1),
+    title: z.string().min(1),
+    url: z.string().url(),
+  }),
+  recommendations: z.array(queueRecommendationSchema),
+  repository: z.string().min(1),
+})
+
+export type TickSnapshotRequest = z.infer<typeof tickSnapshotRequestSchema>
 
 export interface DispatchPlan {
   action: (typeof dispatchableActions)[number]
@@ -76,6 +109,31 @@ export function buildCapabilities() {
         min: 0,
         max: 3600,
       },
+    },
+    snapshotContracts: {
+      tick: {
+        version: 1,
+        persistence: "none",
+      },
+    },
+  }
+}
+
+export function acceptTickSnapshot(snapshot: TickSnapshotRequest) {
+  const dispatchableRecommendations = snapshot.recommendations.filter((recommendation) =>
+    isDispatchableAction(recommendation.action),
+  )
+  const firstDispatchable = dispatchableRecommendations[0] ?? null
+
+  return {
+    accepted: true,
+    snapshot,
+    summary: {
+      dispatchableRecommendationCount: dispatchableRecommendations.length,
+      firstDispatchableAction: firstDispatchable?.action ?? null,
+      firstDispatchableIssueNumber: firstDispatchable?.issue.number ?? null,
+      recentEventCount: snapshot.eventLog.recentEvents.length,
+      recommendationCount: snapshot.recommendations.length,
     },
   }
 }

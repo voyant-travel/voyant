@@ -1,9 +1,11 @@
 import { Hono } from "hono"
 
 import {
+  acceptTickSnapshot,
   buildCapabilities,
   dispatchPlanRequestSchema,
   selectDispatchPlan,
+  tickSnapshotRequestSchema,
 } from "./control-plane.js"
 
 interface AppOptions {
@@ -42,10 +44,7 @@ export function createApp({ authTokens = [] }: AppOptions = {}): Hono {
       return c.json(
         {
           error: "invalid_dispatch_plan_request",
-          issues: parsed.error.issues.map((issue) => ({
-            path: issue.path.join("."),
-            message: issue.message,
-          })),
+          issues: validationIssues(parsed.error),
         },
         400,
       )
@@ -54,10 +53,32 @@ export function createApp({ authTokens = [] }: AppOptions = {}): Hono {
     return c.json(selectDispatchPlan(parsed.data))
   })
 
+  app.post("/api/tick-snapshots", async (c) => {
+    const parsed = tickSnapshotRequestSchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_tick_snapshot_request",
+          issues: validationIssues(parsed.error),
+        },
+        400,
+      )
+    }
+
+    return c.json(acceptTickSnapshot(parsed.data))
+  })
+
   return app
 }
 
 function bearerToken(header: string | undefined) {
   const match = header?.match(/^Bearer\s+(.+)$/i)
   return match?.[1]?.trim()
+}
+
+function validationIssues(error: { issues: Array<{ path: Array<PropertyKey>; message: string }> }) {
+  return error.issues.map((issue) => ({
+    path: issue.path.join("."),
+    message: issue.message,
+  }))
 }
