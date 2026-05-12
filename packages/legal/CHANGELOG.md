@@ -1,5 +1,25 @@
 # @voyantjs/legal
 
+## 0.34.0
+
+### Minor Changes
+
+- 24b6624: Add person-aware contract list search, hydrate contract person details, and expose a ContractsPage person filter.
+
+### Patch Changes
+
+- 6e4a90f: Polish the contract detail page with a clearer header, tabbed document and signature sections, and a file-first attachment dialog.
+- a37d4af: Validate Liquid syntax in legal contract template bodies before save or preview so rich-text-split tags return structured template errors instead of render-time failures.
+- Updated dependencies [a37d4af]
+  - @voyantjs/bookings@0.34.0
+  - @voyantjs/core@0.34.0
+  - @voyantjs/crm@0.34.0
+  - @voyantjs/db@0.34.0
+  - @voyantjs/hono@0.34.0
+  - @voyantjs/storage@0.34.0
+  - @voyantjs/suppliers@0.34.0
+  - @voyantjs/utils@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

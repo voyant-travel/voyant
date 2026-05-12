@@ -1,5 +1,21 @@
 # @voyantjs/admin
 
+## 0.34.0
+
+### Minor Changes
+
+- 74f0331: Add locale-aware admin page metadata helpers and derive workspace titles from navigation.
+- 6ad175a: Add dashboard empty states, KPI empty hints, and localized first-run onboarding copy.
+
+### Patch Changes
+
+- Updated dependencies [6ad175a]
+- Updated dependencies [70ee277]
+- Updated dependencies [f2d4802]
+  - @voyantjs/i18n@0.34.0
+  - @voyantjs/react@0.34.0
+  - @voyantjs/ui@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

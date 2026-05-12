@@ -1,5 +1,17 @@
 # @voyantjs/promotions-react
 
+## 0.34.0
+
+### Minor Changes
+
+- f3924a7: Add server-backed promotions list search, filters, pagination, and row-navigation hooks to the operator PromotionsPage.
+
+### Patch Changes
+
+- Updated dependencies [f3924a7]
+  - @voyantjs/promotions@0.34.0
+  - @voyantjs/react@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

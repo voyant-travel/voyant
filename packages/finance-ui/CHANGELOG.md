@@ -1,5 +1,24 @@
 # @voyantjs/finance-ui
 
+## 0.34.0
+
+### Minor Changes
+
+- 57157cb: Compact the payment policy editor and localize its form and preview copy.
+
+### Patch Changes
+
+- 66ab219: Polish the invoice detail page with a dialog-based note flow, lighter detail sections, and a clearer invoice header.
+- 70ee277: Add a shared CurrencyInput and use it for editable operator money fields so forms display decimal amounts with the currency symbol and code while still submitting minor units.
+- Updated dependencies [6ad175a]
+- Updated dependencies [9095837]
+- Updated dependencies [70ee277]
+- Updated dependencies [f2d4802]
+  - @voyantjs/finance@0.34.0
+  - @voyantjs/finance-react@0.34.0
+  - @voyantjs/i18n@0.34.0
+  - @voyantjs/ui@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

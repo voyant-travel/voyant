@@ -1,5 +1,28 @@
 # @voyantjs/bookings-ui
 
+## 0.34.0
+
+### Patch Changes
+
+- 70ee277: Add a shared CurrencyInput and use it for editable operator money fields so forms display decimal amounts with the currency symbol and code while still submitting minor units.
+- f2d4802: Replace native date and datetime inputs with shared DatePicker and DateTimePicker controls.
+- 1c3f635: Give shipped page components default outer padding and document the page mounting contract.
+- Updated dependencies [6ad175a]
+- Updated dependencies [6e4a90f]
+- Updated dependencies [24b6624]
+- Updated dependencies [70ee277]
+- Updated dependencies [f2d4802]
+  - @voyantjs/availability-react@0.34.0
+  - @voyantjs/bookings-react@0.34.0
+  - @voyantjs/catalog@0.34.0
+  - @voyantjs/catalog-react@0.34.0
+  - @voyantjs/crm-react@0.34.0
+  - @voyantjs/finance-react@0.34.0
+  - @voyantjs/i18n@0.34.0
+  - @voyantjs/legal-react@0.34.0
+  - @voyantjs/products-react@0.34.0
+  - @voyantjs/ui@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

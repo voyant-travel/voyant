@@ -1,5 +1,18 @@
 # @voyantjs/ui
 
+## 0.34.0
+
+### Patch Changes
+
+- 70ee277: Add a shared CurrencyInput and use it for editable operator money fields so forms display decimal amounts with the currency symbol and code while still submitting minor units.
+- f2d4802: Replace native date and datetime inputs with shared DatePicker and DateTimePicker controls.
+- Updated dependencies [6ad175a]
+- Updated dependencies [a37d4af]
+  - @voyantjs/i18n@0.34.0
+  - @voyantjs/notifications@0.34.0
+  - @voyantjs/notifications-react@0.34.0
+  - @voyantjs/utils@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

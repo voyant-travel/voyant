@@ -1,5 +1,16 @@
 # @voyantjs/markets-ui
 
+## 0.34.0
+
+### Patch Changes
+
+- Updated dependencies [6ad175a]
+- Updated dependencies [70ee277]
+- Updated dependencies [f2d4802]
+  - @voyantjs/i18n@0.34.0
+  - @voyantjs/markets-react@0.34.0
+  - @voyantjs/ui@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes
