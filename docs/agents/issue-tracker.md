@@ -600,6 +600,18 @@ The next repair command receives the packet through
 from that packet, change only the failing surface, and rerun the smallest
 verification lane that covers the failure.
 
+Before testing this flow with a real failing PR, run the local non-mutating
+drill:
+
+```bash
+pnpm agent:queue:ci-repair-drill -- --repo <owner/name>
+```
+
+The drill uses the same PR gate, failed-check extraction, repair-packet, command
+environment, and green-PR sync helpers against synthetic PR status. It should
+show `CI Repair -> Human Review -> Merge Ready` without opening a PR, updating
+the Project, or spending CI minutes.
+
 After a maintainer merges the PR, mark the Project item complete:
 
 ```bash
