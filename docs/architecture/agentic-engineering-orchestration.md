@@ -1336,6 +1336,11 @@ Verification:
   binding is configured. This gives always-on supervisors a durable coordination
   record for the selected lifecycle command, lease holder, and expiration while
   command execution remains runner-owned.
+- Runners can finish those leased dispatch intents with
+  `pnpm agent:queue:finish-dispatch`, which calls
+  `POST /api/dispatch-intents/:id/finish` and records `completed`, `failed`, or
+  `released` without waiting for lease TTL expiry. The holder must match the
+  holder recorded on the lease.
 
 ## Open Questions
 

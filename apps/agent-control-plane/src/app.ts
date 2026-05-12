@@ -5,6 +5,7 @@ import {
   buildCapabilities,
   buildDispatchIntentFromStoredPlan,
   buildTickSnapshotRecord,
+  dispatchIntentFinishRequestSchema,
   dispatchPlanRequestSchema,
   latestDispatchIntentRequestSchema,
   latestDispatchPlanRequestSchema,
@@ -166,6 +167,62 @@ export function createApp({
       },
       201,
     )
+  })
+
+  app.post("/api/dispatch-intents/:id/finish", async (c) => {
+    const id = c.req.param("id")?.trim()
+    if (!id) {
+      return c.json({ error: "missing_dispatch_intent_id" }, 400)
+    }
+
+    const parsed = dispatchIntentFinishRequestSchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_dispatch_intent_finish_request",
+          issues: validationIssues(parsed.error),
+        },
+        400,
+      )
+    }
+
+    if (!dispatchIntentStore) {
+      return c.json({ error: "dispatch_intent_storage_not_configured" }, 503)
+    }
+
+    const result = await dispatchIntentStore.finishIntent({
+      id,
+      now: now(),
+      request: parsed.data,
+    })
+    if (!result.finished) {
+      if (result.reason === "not_found") {
+        return c.json({ error: "dispatch_intent_not_found" }, 404)
+      }
+
+      return c.json(
+        {
+          error:
+            result.reason === "holder_mismatch"
+              ? "dispatch_intent_holder_mismatch"
+              : result.reason === "finish_contention"
+                ? "dispatch_intent_finish_contention"
+                : "dispatch_intent_not_active",
+          ...(result.intent ? { intent: result.intent } : {}),
+        },
+        409,
+      )
+    }
+
+    return c.json({
+      intent: result.intent,
+      storage: {
+        activeKey: result.write.activeKey,
+        activeUpdated: result.write.activeUpdated,
+        key: result.write.key,
+        persisted: true,
+      },
+    })
   })
 
   app.post("/api/tick-snapshots", async (c) => {
