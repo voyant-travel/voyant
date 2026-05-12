@@ -3,19 +3,8 @@
   "name": "voyant-date-time-picker",
   "title": "Date & Time Picker",
   "description": "Combined date + time picker. Calendar in a popover with an `HH:mm` time input beneath it. Value is serialized as `YYYY-MM-DDTHH:mm` so it's a drop-in replacement for native `<input type=\"datetime-local\">`.",
-  "dependencies": [
-    "date-fns",
-    "lucide-react",
-    "react-day-picker"
-  ],
-  "registryDependencies": [
-    "button",
-    "calendar",
-    "input",
-    "label",
-    "popover",
-    "separator"
-  ],
+  "dependencies": ["date-fns", "lucide-react", "react-day-picker"],
+  "registryDependencies": ["button", "calendar", "input", "label", "popover", "separator"],
   "files": [
     {
       "path": "registry/ui/date-time-picker.tsx",
