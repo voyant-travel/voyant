@@ -10,6 +10,7 @@ import {
   CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY,
   type ContractsRouteRuntime,
 } from "./route-runtime.js"
+import { renderPreviewResponse } from "./route-template-preview.js"
 import { contractsService } from "./service.js"
 import {
   contractListQuerySchema,
@@ -213,8 +214,7 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       const template = await contractsService.getTemplateById(c.get("db"), c.req.param("id"))
       if (!template) return c.json({ error: "Template not found" }, 404)
       const body = input.body ?? template.body
-      const rendered = contractsService.renderPreview({ ...input, body })
-      return c.json({ data: { rendered } })
+      return renderPreviewResponse(c, { ...input, body })
     })
     .get("/templates/:id/versions", async (c) => {
       const rows = await contractsService.listTemplateVersions(c.get("db"), c.req.param("id"))
@@ -342,8 +342,7 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       const input = await parseJsonBody(c, renderTemplateInputSchema)
       const contract = await contractsService.getContractById(c.get("db"), c.req.param("id"))
       if (!contract) return c.json({ error: "Contract not found" }, 404)
-      const rendered = contractsService.renderPreview(input)
-      return c.json({ data: { rendered } })
+      return renderPreviewResponse(c, input)
     })
     .post("/:id/generate-document", async (c) => {
       const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
@@ -538,11 +537,10 @@ export function createContractsPublicRoutes() {
         const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
         const template = await contractsService.getTemplateById(c.get("db"), c.req.param("id"))
         if (!template?.active) return c.json({ error: "Template not found" }, 404)
-        const rendered = contractsService.renderPreview({
+        return renderPreviewResponse(c, {
           variables: input.variables,
           body: template.body,
         })
-        return c.json({ data: { rendered } })
       })
       /**
        * Slug-based variant — storefronts wire products to a contract
@@ -554,12 +552,13 @@ export function createContractsPublicRoutes() {
         const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
         const template = await contractsService.findTemplateBySlug(c.get("db"), c.req.param("slug"))
         if (!template?.active) return c.json({ error: "Template not found" }, 404)
-        const rendered = contractsService.renderPreview({
-          variables: input.variables,
-          body: template.body,
-        })
-        return c.json({
-          data: {
+        return renderPreviewResponse(
+          c,
+          {
+            variables: input.variables,
+            body: template.body,
+          },
+          {
             template: {
               id: template.id,
               slug: template.slug,
@@ -567,9 +566,8 @@ export function createContractsPublicRoutes() {
               language: template.language,
               scope: template.scope,
             },
-            rendered,
           },
-        })
+        )
       })
       .get("/:id", async (c) => {
         const row = await contractsService.getContractById(c.get("db"), c.req.param("id"))

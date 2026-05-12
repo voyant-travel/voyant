@@ -7,7 +7,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { contractAttachments, contracts, contractTemplateVersions } from "./schema.js"
 import { contractRecordsService } from "./service-contracts.js"
 import type { CreateContractAttachmentInput } from "./service-shared.js"
-import { renderTemplate } from "./service-shared.js"
+import { isContractTemplateSyntaxError, renderTemplate } from "./service-shared.js"
 import type { GenerateContractDocumentInput } from "./validation.js"
 
 export interface GeneratedContractDocumentArtifact {
@@ -267,7 +267,15 @@ async function ensureRenderedContract(
   }
 
   if (contract.status === "draft" && issueIfDraft) {
-    const issued = await contractRecordsService.issueContract(db, contractId)
+    let issued: Awaited<ReturnType<typeof contractRecordsService.issueContract>>
+    try {
+      issued = await contractRecordsService.issueContract(db, contractId)
+    } catch (error) {
+      if (isContractTemplateSyntaxError(error)) {
+        return { status: "render_unavailable" as const, contract, templateVersion: null }
+      }
+      throw error
+    }
     if (issued.status !== "issued" || !issued.contract) {
       if (issued.status === "not_found") {
         return { status: "not_found" }
@@ -283,7 +291,14 @@ async function ensureRenderedContract(
 
   if ((!renderedBody || !renderedBodyFormat) && templateVersion) {
     const variables = (contract.variables as Record<string, unknown> | null) ?? {}
-    renderedBody = renderTemplate(templateVersion.body, "html", variables)
+    try {
+      renderedBody = renderTemplate(templateVersion.body, "html", variables)
+    } catch (error) {
+      if (isContractTemplateSyntaxError(error)) {
+        return { status: "render_unavailable" as const, contract, templateVersion }
+      }
+      throw error
+    }
     renderedBodyFormat = "html"
 
     const [updated] = await db

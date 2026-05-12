@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { renderStructuredTemplate } from "../src/template-renderer.js"
+import {
+  renderStructuredTemplate,
+  validateStructuredTemplateSyntax,
+} from "../src/template-renderer.js"
 
 describe("renderStructuredTemplate", () => {
   it("keeps simple mustache interpolation compatibility", () => {
@@ -122,5 +125,39 @@ describe("renderStructuredTemplate", () => {
         renderStructuredTemplate("{{ d | format_date }}", "markdown", { d: "not-a-date" }),
       ).toBe("not-a-date")
     })
+  })
+})
+
+describe("validateStructuredTemplateSyntax", () => {
+  it("accepts valid Liquid and mustache bodies", () => {
+    expect(
+      validateStructuredTemplateSyntax(
+        "{% if travelers.size > 0 %}{{ travelers[0].name }}{% endif %}",
+        "html",
+      ),
+    ).toEqual([])
+  })
+
+  it("rejects rich-text-split Liquid output tags", () => {
+    const issues = validateStructuredTemplateSyntax(
+      '{{ </p><p>contract.signed_at | default: "-" }}',
+      "html",
+    )
+
+    expect(issues).toHaveLength(1)
+    expect(issues[0]?.message).toContain("expected")
+  })
+
+  it("checks Liquid syntax inside lexical text nodes", () => {
+    const body = JSON.stringify({
+      root: {
+        children: [{ type: "text", text: "{% if customer %}Hi" }],
+      },
+    })
+
+    const issues = validateStructuredTemplateSyntax(body, "lexical_json")
+
+    expect(issues).toHaveLength(1)
+    expect(issues[0]?.message).toContain("not closed")
   })
 })
