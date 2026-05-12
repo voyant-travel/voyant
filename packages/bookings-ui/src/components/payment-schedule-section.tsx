@@ -1,6 +1,7 @@
 "use client"
 
-import { Button, Input, Label } from "@voyantjs/ui/components"
+import { Button, Label } from "@voyantjs/ui/components"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
@@ -58,24 +59,6 @@ export interface PaymentScheduleSectionProps {
 }
 
 /**
- * Converts an `<input type="number">` string value to minor units (cents).
- * Accepts `""` / `NaN` → `null`. Multiplies by 100 and rounds to avoid
- * floating-point garbage (`19.99 * 100` → `1999`, not `1998.99999...`).
- */
-function majorStringToCents(value: string): number | null {
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  const parsed = Number(trimmed)
-  if (!Number.isFinite(parsed) || parsed < 0) return null
-  return Math.round(parsed * 100)
-}
-
-function centsToMajorString(cents: number | null | undefined): string {
-  if (cents == null) return ""
-  return (cents / 100).toFixed(2)
-}
-
-/**
  * Payment schedule picker for booking-create flows. Operators choose one of
  * four modes; only the relevant fields render for the selected mode, so the
  * UI stays narrow.
@@ -106,7 +89,6 @@ export function PaymentScheduleSection({
   const merged = { ...messages.paymentScheduleSection.labels, ...labels }
   const set = (patch: Partial<PaymentScheduleValue>) => onChange({ ...value, ...patch })
 
-  const currencySuffix = currency ? ` ${currency}` : ""
   const modes: Array<{ id: PaymentScheduleMode; label: string }> = [
     { id: "unpaid", label: merged.modeUnpaid },
     { id: "full", label: merged.modeFull },
@@ -149,10 +131,7 @@ export function PaymentScheduleSection({
 
       {value.mode === "full" && (
         <div className="flex flex-col gap-1">
-          <Label className="text-xs">
-            {merged.dueDate}
-            {currencySuffix}
-          </Label>
+          <Label className="text-xs">{merged.dueDate}</Label>
           <DatePicker
             value={value.fullDueDate ?? ""}
             onChange={(nextValue) => set({ fullDueDate: nextValue })}
@@ -163,16 +142,11 @@ export function PaymentScheduleSection({
       {value.mode === "advance" && (
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">
-              {merged.amount}
-              {currencySuffix}
-            </Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={centsToMajorString(value.advanceAmountCents)}
-              onChange={(e) => set({ advanceAmountCents: majorStringToCents(e.target.value) })}
+            <Label className="text-xs">{merged.amount}</Label>
+            <CurrencyInput
+              value={value.advanceAmountCents}
+              onChange={(next) => set({ advanceAmountCents: next })}
+              currency={currency}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -196,13 +170,11 @@ export function PaymentScheduleSection({
             ) : null}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               placeholder={merged.amount}
-              value={centsToMajorString(value.splitFirstAmountCents)}
-              onChange={(e) => set({ splitFirstAmountCents: majorStringToCents(e.target.value) })}
+              value={value.splitFirstAmountCents}
+              onChange={(next) => set({ splitFirstAmountCents: next })}
+              currency={currency}
             />
             <DatePicker
               value={value.splitFirstDueDate ?? ""}
@@ -212,13 +184,11 @@ export function PaymentScheduleSection({
 
           <div className="text-xs font-medium">{merged.secondInstallment}</div>
           <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               placeholder={merged.amount}
-              value={centsToMajorString(value.splitSecondAmountCents)}
-              onChange={(e) => set({ splitSecondAmountCents: majorStringToCents(e.target.value) })}
+              value={value.splitSecondAmountCents}
+              onChange={(next) => set({ splitSecondAmountCents: next })}
+              currency={currency}
             />
             <DatePicker
               value={value.splitSecondDueDate ?? ""}

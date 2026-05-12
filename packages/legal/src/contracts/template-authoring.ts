@@ -178,45 +178,45 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
       { key: "booking.sellCurrency", label: "Sell currency", example: "EUR", type: "string" },
       {
         key: "booking.sellAmountCents",
-        label: "Sell total (cents)",
+        label: "Sell total",
         example: "249900",
         type: "cents",
         description: "Render with `| cents: booking.sellCurrency`.",
       },
       {
         key: "booking.subtotalAmountCents",
-        label: "Subtotal (cents)",
+        label: "Subtotal",
         example: "210000",
         type: "cents",
       },
       {
         key: "booking.taxAmountCents",
-        label: "Tax total (cents)",
+        label: "Tax total",
         example: "39900",
         type: "cents",
       },
       {
         key: "booking.discountAmountCents",
-        label: "Discount (cents)",
+        label: "Discount",
         example: "0",
         type: "cents",
       },
       {
         key: "booking.totalAmountCents",
-        label: "Total (alias, cents)",
+        label: "Total (alias)",
         example: "249900",
         type: "cents",
       },
       { key: "booking.currency", label: "Currency (alias)", example: "EUR", type: "string" },
       {
         key: "booking.paidAmountCents",
-        label: "Paid so far (cents)",
+        label: "Paid so far",
         example: "0",
         type: "cents",
       },
       {
         key: "booking.balanceDueCents",
-        label: "Balance due (cents)",
+        label: "Balance due",
         example: "249900",
         type: "cents",
       },
@@ -224,7 +224,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
       // booking_payment_schedules)
       {
         key: "booking.depositAmountCents",
-        label: "Deposit amount (cents)",
+        label: "Deposit amount",
         example: "50000",
         type: "cents",
         description:
@@ -238,7 +238,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
       },
       {
         key: "booking.balanceAmountCents",
-        label: "Balance amount (cents)",
+        label: "Balance amount",
         example: "199900",
         type: "cents",
         description: "Pulled from the `balance` row in booking_payment_schedules.",
@@ -440,13 +440,13 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
       { key: "item.quantity", label: "Quantity", example: "2", type: "number" },
       {
         key: "item.unitAmountCents",
-        label: "Unit amount (cents)",
+        label: "Unit amount",
         example: "124950",
         type: "cents",
       },
       {
         key: "item.totalAmountCents",
-        label: "Total amount (cents)",
+        label: "Total amount",
         example: "249900",
         type: "cents",
       },
@@ -568,7 +568,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
       { key: "payment.method", label: "Method label", example: "Card payment", type: "string" },
       {
         key: "payment.amountCents",
-        label: "Amount (cents)",
+        label: "Amount",
         example: "249900",
         type: "cents",
       },
@@ -602,7 +602,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         type: "string",
         description: "deposit | installment | balance | hold | other",
       },
-      { key: "line.amountCents", label: "Amount (cents)", example: "50000", type: "cents" },
+      { key: "line.amountCents", label: "Amount", example: "50000", type: "cents" },
       { key: "line.currency", label: "Currency", example: "EUR", type: "string" },
       { key: "line.dueDate", label: "Due date", example: "2026-05-10", type: "date" },
       {

@@ -17,6 +17,7 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
@@ -236,15 +237,42 @@ export function InvoiceDialog({ open, onOpenChange, invoice, onSuccess }: Invoic
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.invoiceDialog.fields.subtotalCents}</Label>
-                <Input {...form.register("subtotalCents")} type="number" min="0" />
+                <CurrencyInput
+                  value={form.watch("subtotalCents") as number}
+                  onChange={(next) =>
+                    form.setValue("subtotalCents", next ?? 0, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("currency")}
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.invoiceDialog.fields.taxCents}</Label>
-                <Input {...form.register("taxCents")} type="number" min="0" />
+                <CurrencyInput
+                  value={form.watch("taxCents") as number}
+                  onChange={(next) =>
+                    form.setValue("taxCents", next ?? 0, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("currency")}
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.invoiceDialog.fields.totalCents}</Label>
-                <Input {...form.register("totalCents")} type="number" min="0" />
+                <CurrencyInput
+                  value={form.watch("totalCents") as number}
+                  onChange={(next) =>
+                    form.setValue("totalCents", next ?? 0, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("currency")}
+                />
               </div>
             </div>
 

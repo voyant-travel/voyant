@@ -277,7 +277,7 @@ export const registryDistributionRo = {
         scope: "Domeniu",
         product: "Produs",
         commissionType: "Tip comision",
-        amountCents: "Valoare in centi",
+        amountCents: "Valoare",
         percentBasisPoints: "Puncte baza procentuale",
         externalRateId: "ID tarif extern",
         externalCategoryId: "ID categorie externa",

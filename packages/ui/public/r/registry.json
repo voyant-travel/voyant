@@ -686,9 +686,16 @@
       "name": "voyant-bookings-booking-dialog",
       "type": "registry:component",
       "title": "Booking Dialog",
-      "description": "Modal wrapper around the core booking create/edit form.",
+      "description": "Single booking dialog for both create and edit: delegates to BookingCreateDialog (composed picker sections) when no booking prop is supplied, renders a flat edit form when one is. Use this from booking list/detail pages rather than BookingCreateDialog directly — the wrapper keeps state handling identical for both modes.",
       "dependencies": ["@voyantjs/bookings-react", "lucide-react"],
-      "registryDependencies": ["dialog", "input", "label", "select", "textarea"],
+      "registryDependencies": [
+        "dialog",
+        "input",
+        "label",
+        "select",
+        "textarea",
+        "voyant-bookings-booking-create-dialog"
+      ],
       "files": [
         {
           "path": "registry/bookings/booking-dialog.tsx",
@@ -701,15 +708,14 @@
       "name": "voyant-bookings-booking-list",
       "type": "registry:component",
       "title": "Booking List",
-      "description": "Searchable booking table with create/edit dialog and operator quick-book CTA.",
+      "description": "Searchable booking table with create/edit dialog.",
       "dependencies": ["@voyantjs/bookings-react", "lucide-react"],
       "registryDependencies": [
         "badge",
         "button",
         "input",
         "table",
-        "voyant-bookings-booking-dialog",
-        "voyant-bookings-quick-book-dialog"
+        "voyant-bookings-booking-dialog"
       ],
       "files": [
         {
@@ -755,22 +761,157 @@
       ]
     },
     {
-      "name": "voyant-bookings-quick-book-dialog",
+      "name": "voyant-bookings-product-picker-section",
       "type": "registry:component",
-      "title": "Quick Book Dialog",
-      "description": "Operator quick-book workflow: pick a product, select or create a person, and create a draft booking via the convert-from-product endpoint.",
-      "dependencies": [
-        "@voyantjs/bookings-react",
-        "@voyantjs/crm-react",
-        "@voyantjs/products-react",
-        "lucide-react"
-      ],
-      "registryDependencies": ["button", "dialog", "input", "label", "select", "textarea"],
+      "title": "Booking Product Picker Section",
+      "description": "Controlled product + option picker for booking-create flows. Cascades option list from the selected product; accepts a pre-locked productId for product-page entry points.",
+      "dependencies": ["@voyantjs/products-react"],
+      "registryDependencies": ["input", "label", "select"],
       "files": [
         {
-          "path": "registry/bookings/quick-book-dialog.tsx",
+          "path": "registry/bookings/product-picker-section.tsx",
           "type": "registry:component",
-          "target": "components/voyant/bookings/quick-book-dialog.tsx"
+          "target": "components/voyant/bookings/product-picker-section.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-bookings-person-picker-section",
+      "type": "registry:component",
+      "title": "Booking Person Picker Section",
+      "description": "Controlled person picker with inline-create and optional organization attachment. Parent owns the create-person mutation so the dialog can defer it to submit time.",
+      "dependencies": ["@voyantjs/crm-react", "lucide-react"],
+      "registryDependencies": ["button", "input", "label", "select"],
+      "files": [
+        {
+          "path": "registry/bookings/person-picker-section.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/bookings/person-picker-section.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-bookings-shared-room-section",
+      "type": "registry:component",
+      "title": "Booking Shared-Room Section",
+      "description": "Partaj (shared-room) section for booking create: toggle + create/join mode + group selector. Parent owns the booking_groups mutations (they fire after booking insert).",
+      "dependencies": ["@voyantjs/bookings-react"],
+      "registryDependencies": ["button", "label", "select"],
+      "files": [
+        {
+          "path": "registry/bookings/shared-room-section.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/bookings/shared-room-section.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-bookings-payment-schedule-section",
+      "type": "registry:component",
+      "title": "Booking Payment Schedule Section",
+      "description": "Operator payment schedule picker: unpaid / full / advance / split (two installments with a 50-50 preset). Produces a controlled PaymentScheduleValue; parent creates booking_payment_schedules rows at submit time.",
+      "dependencies": [],
+      "registryDependencies": ["button", "input", "label"],
+      "files": [
+        {
+          "path": "registry/bookings/payment-schedule-section.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/bookings/payment-schedule-section.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-bookings-passengers-section",
+      "type": "registry:component",
+      "title": "Booking Passengers Section",
+      "description": "Multi-row passenger list for booking-create: name + email + role (lead / adult / child / infant) + optional room assignment, with add/remove. Parent creates CRM people + booking_travelers rows at submit time.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button", "input", "label", "select"],
+      "files": [
+        {
+          "path": "registry/bookings/passengers-section.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/bookings/passengers-section.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-bookings-rooms-stepper-section",
+      "type": "registry:component",
+      "title": "Booking Rooms Stepper Section",
+      "description": "Per-option-unit quantity stepper for booking-create, driven by GET /v1/availability/slots/:id/unit-availability. Shows live 'N left' counters; min/max enforced against the server's remaining count so the UI can't queue up a 409.",
+      "dependencies": ["@voyantjs/availability-react", "lucide-react"],
+      "registryDependencies": ["button", "label"],
+      "files": [
+        {
+          "path": "registry/bookings/rooms-stepper-section.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/bookings/rooms-stepper-section.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-bookings-price-breakdown-section",
+      "type": "registry:component",
+      "title": "Booking Price Breakdown Section",
+      "description": "Read-only live price breakdown for booking-create flows. Reads the catalog-resolved pricing snapshot via usePricingPreview and computes per-unit tiered lines + total against the operator's current unit quantities — same math the storefront runs.",
+      "dependencies": ["@voyantjs/bookings-react"],
+      "registryDependencies": ["label"],
+      "files": [
+        {
+          "path": "registry/bookings/price-breakdown-section.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/bookings/price-breakdown-section.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-bookings-booking-create-dialog",
+      "type": "registry:component",
+      "title": "Booking Create Dialog",
+      "description": "Operator booking-create workflow composing every picker section (product, departure, rooms, person, shared-room, passengers, price breakdown, voucher, payment schedule) and submitting atomically via POST /v1/bookings/quick-create. Consumed by BookingDialog for the create branch; apps that need a bespoke flow can install the sections individually and assemble their own dialog.",
+      "dependencies": [
+        "@voyantjs/availability-react",
+        "@voyantjs/bookings-react",
+        "@voyantjs/crm-react",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "button",
+        "checkbox",
+        "dialog",
+        "label",
+        "select",
+        "textarea",
+        "voyant-bookings-product-picker-section",
+        "voyant-bookings-person-picker-section",
+        "voyant-bookings-shared-room-section",
+        "voyant-bookings-rooms-stepper-section",
+        "voyant-bookings-passengers-section",
+        "voyant-bookings-price-breakdown-section",
+        "voyant-bookings-voucher-picker-section",
+        "voyant-bookings-payment-schedule-section"
+      ],
+      "files": [
+        {
+          "path": "registry/bookings/booking-create-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/bookings/booking-create-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-bookings-voucher-picker-section",
+      "type": "registry:component",
+      "title": "Booking Voucher Picker Section",
+      "description": "Operator voucher picker: enter a code, validate against POST /v1/public/vouchers/validate (status / expiry / currency / booking-assignment / balance guards apply). Returns the picked voucher on success; parent redeems at submit time when the final amount is known.",
+      "dependencies": ["@voyantjs/finance-react", "lucide-react"],
+      "registryDependencies": ["button", "input", "label"],
+      "files": [
+        {
+          "path": "registry/bookings/voucher-picker-section.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/bookings/voucher-picker-section.tsx"
         }
       ]
     },
@@ -1357,7 +1498,7 @@
       "title": "Quote Line Items Card",
       "description": "Editable quote line items card with inline quantity and price updates.",
       "dependencies": ["lucide-react", "@voyantjs/crm-react"],
-      "registryDependencies": ["button", "card", "input"],
+      "registryDependencies": ["button", "card", "currency-input", "input"],
       "files": [
         {
           "path": "registry/crm/quote-detail-sections.tsx",
@@ -2947,6 +3088,7 @@
         "badge",
         "button",
         "card",
+        "currency-input",
         "data-table",
         "dialog",
         "input",
@@ -3282,6 +3424,21 @@
       ]
     },
     {
+      "name": "voyant-legal-booking-contract-card",
+      "type": "registry:component",
+      "title": "Booking Contract Card",
+      "description": "Operator booking-detail card that lists the contracts linked to a booking, shows each contract's status + number, lets the operator download the generated PDF (opens in a new tab), and offers a Regenerate action that forces a fresh render via POST /contracts/:id/regenerate-document.",
+      "dependencies": ["lucide-react", "@voyantjs/legal-react"],
+      "registryDependencies": ["badge", "button", "card"],
+      "files": [
+        {
+          "path": "registry/legal/booking-contract-card.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/legal/booking-contract-card.tsx"
+        }
+      ]
+    },
+    {
       "name": "voyant-legal-contract-detail-page",
       "type": "registry:component",
       "title": "Contract Detail Page",
@@ -3569,6 +3726,20 @@
       ]
     },
     {
+      "name": "currency-input",
+      "type": "registry:ui",
+      "title": "Currency Input",
+      "description": "Money input that displays decimal major units with a currency symbol prefix and code suffix while emitting integer minor units.",
+      "registryDependencies": ["input-group"],
+      "files": [
+        {
+          "path": "registry/ui/currency-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/currency-input.tsx"
+        }
+      ]
+    },
+    {
       "name": "voyant-date-time-picker",
       "type": "registry:ui",
       "title": "Date & Time Picker",
@@ -3580,6 +3751,171 @@
           "path": "registry/ui/date-time-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/date-time-picker.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-cruises-external-badge",
+      "type": "registry:component",
+      "title": "External Cruise Badge",
+      "description": "Inline pill that surfaces 'External · <provider>' provenance for adapter-sourced cruises.",
+      "dependencies": ["@voyantjs/cruises-react"],
+      "registryDependencies": ["badge"],
+      "files": [
+        {
+          "path": "registry/cruises/external-badge.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/cruises/external-badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-cruises-cruise-card",
+      "type": "registry:component",
+      "title": "Cruise Card",
+      "description": "Display card for a cruise summary — line, ship, ports, lowest price, with provenance badge for external entries.",
+      "dependencies": ["lucide-react", "@voyantjs/cruises-react"],
+      "registryDependencies": ["badge", "card", "voyant-cruises-external-badge"],
+      "files": [
+        {
+          "path": "registry/cruises/cruise-card.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/cruises/cruise-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-cruises-cruise-list",
+      "type": "registry:component",
+      "title": "Cruise List",
+      "description": "Connected storefront list — paginated, filterable browse against cruise_search_index.",
+      "dependencies": ["@voyantjs/cruises-react"],
+      "registryDependencies": ["voyant-cruises-cruise-card"],
+      "files": [
+        {
+          "path": "registry/cruises/cruise-list.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/cruises/cruise-list.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-cruises-pricing-grid",
+      "type": "registry:component",
+      "title": "Cruise Pricing Grid",
+      "description": "Cabin × occupancy pricing matrix for a sailing — the load-bearing component of any cruise booking flow.",
+      "dependencies": ["@voyantjs/cruises-react"],
+      "registryDependencies": ["badge", "table"],
+      "files": [
+        {
+          "path": "registry/cruises/pricing-grid.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/cruises/pricing-grid.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-cruises-quote-display",
+      "type": "registry:component",
+      "title": "Cruise Quote Display",
+      "description": "Itemised cruise quote — base + additions/credits/inclusions + per-person/per-cabin totals.",
+      "dependencies": ["@voyantjs/cruises-react"],
+      "registryDependencies": ["card"],
+      "files": [
+        {
+          "path": "registry/cruises/quote-display.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/cruises/quote-display.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-cruises-enrichment-program-list",
+      "type": "registry:component",
+      "title": "Enrichment Program List",
+      "description": "Connected list of expedition staff (naturalist / historian / photographer / lecturer / expert).",
+      "dependencies": ["lucide-react", "@voyantjs/cruises-react"],
+      "registryDependencies": ["avatar", "badge", "card"],
+      "files": [
+        {
+          "path": "registry/cruises/enrichment-program-list.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/cruises/enrichment-program-list.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-charters-external-badge",
+      "type": "registry:component",
+      "title": "External Charter Badge",
+      "description": "Inline pill that surfaces 'External · <provider>' provenance for adapter-sourced charters.",
+      "dependencies": ["@voyantjs/charters-react"],
+      "registryDependencies": ["badge"],
+      "files": [
+        {
+          "path": "registry/charters/external-badge.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/charters/external-badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-charters-product-card",
+      "type": "registry:component",
+      "title": "Charter Product Card",
+      "description": "Display card for a charter brand/product summary — line, yacht, regions, lowest price, with provenance badge for external entries.",
+      "dependencies": ["lucide-react", "@voyantjs/charters-react"],
+      "registryDependencies": ["badge", "card", "voyant-charters-external-badge"],
+      "files": [
+        {
+          "path": "registry/charters/charter-product-card.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/charters/charter-product-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-charters-voyage-suite-grid",
+      "type": "registry:component",
+      "title": "Voyage Suite Grid",
+      "description": "Per-suite pricing grid for a charter voyage — suite cards with category, availability, multi-currency price, and a quote/book CTA.",
+      "dependencies": ["@voyantjs/charters-react"],
+      "registryDependencies": ["badge", "button", "card"],
+      "files": [
+        {
+          "path": "registry/charters/voyage-suite-grid.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/charters/voyage-suite-grid.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-charters-whole-yacht-quote-card",
+      "type": "registry:component",
+      "title": "Whole-Yacht Quote Card",
+      "description": "Itemised whole-yacht quote — charter fee + APA + total, with explanatory copy. Ships with a per-suite sibling component.",
+      "dependencies": ["@voyantjs/charters-react"],
+      "registryDependencies": ["card"],
+      "files": [
+        {
+          "path": "registry/charters/whole-yacht-quote-card.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/charters/whole-yacht-quote-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-charters-apa-tracker",
+      "type": "registry:component",
+      "title": "APA Tracker",
+      "description": "Pre-/post-charter APA reconciliation panel — quoted, paid, spent, refund balance, settled status. Pure presentational; wire actions via useRecordApaPayment / useReconcileApa.",
+      "dependencies": ["lucide-react", "@voyantjs/charters-react"],
+      "registryDependencies": ["badge", "card"],
+      "files": [
+        {
+          "path": "registry/charters/apa-tracker.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/charters/apa-tracker.tsx"
         }
       ]
     }

@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
@@ -241,9 +242,15 @@ export function PolicyRuleDialog({
 
             <div className="flex flex-col gap-2">
               <Label>{messages.policyRuleDialog.fields.flatAmountCents}</Label>
-              <Input
-                {...form.register("flatAmountCents")}
-                type="number"
+              <CurrencyInput
+                value={form.watch("flatAmountCents") as number | undefined}
+                onChange={(next) =>
+                  form.setValue("flatAmountCents", next ?? undefined, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                currency={form.watch("currency")}
                 placeholder={messages.policyRuleDialog.placeholders.flatAmountCents}
               />
             </div>

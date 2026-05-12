@@ -273,7 +273,7 @@ export const registryDistributionEn = {
         scope: "Scope",
         product: "Product",
         commissionType: "Commission Type",
-        amountCents: "Amount Cents",
+        amountCents: "Amount",
         percentBasisPoints: "Percent Basis Points",
         externalRateId: "External Rate ID",
         externalCategoryId: "External Category ID",

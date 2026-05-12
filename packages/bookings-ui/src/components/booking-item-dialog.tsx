@@ -19,6 +19,7 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
@@ -132,11 +133,11 @@ export function BookingItemDialog({
       status: values.status,
       quantity: values.quantity,
       sellCurrency: values.sellCurrency,
-      unitSellAmountCents: values.unitSellAmountCents || null,
-      totalSellAmountCents: values.totalSellAmountCents || null,
+      unitSellAmountCents: values.unitSellAmountCents ?? null,
+      totalSellAmountCents: values.totalSellAmountCents ?? null,
       costCurrency: values.costCurrency || null,
-      unitCostAmountCents: values.unitCostAmountCents || null,
-      totalCostAmountCents: values.totalCostAmountCents || null,
+      unitCostAmountCents: values.unitCostAmountCents ?? null,
+      totalCostAmountCents: values.totalCostAmountCents ?? null,
       serviceDate: values.serviceDate || null,
       description: values.description || null,
       notes: values.notes || null,
@@ -246,17 +247,29 @@ export function BookingItemDialog({
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingItemDialog.fields.unitSellAmountCents}</Label>
-                <Input
-                  {...form.register("unitSellAmountCents")}
-                  type="number"
+                <CurrencyInput
+                  value={form.watch("unitSellAmountCents") as number | null}
+                  onChange={(next) =>
+                    form.setValue("unitSellAmountCents", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("sellCurrency")}
                   placeholder={messages.bookingItemDialog.placeholders.unitSellAmountCents}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingItemDialog.fields.totalSellAmountCents}</Label>
-                <Input
-                  {...form.register("totalSellAmountCents")}
-                  type="number"
+                <CurrencyInput
+                  value={form.watch("totalSellAmountCents") as number | null}
+                  onChange={(next) =>
+                    form.setValue("totalSellAmountCents", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("sellCurrency")}
                   placeholder={messages.bookingItemDialog.placeholders.totalSellAmountCents}
                 />
               </div>
@@ -277,17 +290,29 @@ export function BookingItemDialog({
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingItemDialog.fields.unitCostAmountCents}</Label>
-                <Input
-                  {...form.register("unitCostAmountCents")}
-                  type="number"
+                <CurrencyInput
+                  value={form.watch("unitCostAmountCents") as number | null}
+                  onChange={(next) =>
+                    form.setValue("unitCostAmountCents", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("costCurrency") || form.watch("sellCurrency")}
                   placeholder={messages.bookingItemDialog.placeholders.unitCostAmountCents}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingItemDialog.fields.totalCostAmountCents}</Label>
-                <Input
-                  {...form.register("totalCostAmountCents")}
-                  type="number"
+                <CurrencyInput
+                  value={form.watch("totalCostAmountCents") as number | null}
+                  onChange={(next) =>
+                    form.setValue("totalCostAmountCents", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("costCurrency") || form.watch("sellCurrency")}
                   placeholder={messages.bookingItemDialog.placeholders.totalCostAmountCents}
                 />
               </div>

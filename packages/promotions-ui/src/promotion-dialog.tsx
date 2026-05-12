@@ -36,6 +36,7 @@ import {
   Switch,
   Textarea,
 } from "@voyantjs/ui/components"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
 import { useEffect, useState } from "react"
 
@@ -70,7 +71,7 @@ interface FormState {
   description: string
   discountType: "percentage" | "fixed_amount"
   discountPercent: string
-  discountAmountCents: string
+  discountAmountCents: number | null
   currency: string
   scopeKind: ScopeKind
   scopeIds: string // comma-separated for products/categories/destinations/markets
@@ -90,7 +91,7 @@ function emptyForm(): FormState {
     description: "",
     discountType: "percentage",
     discountPercent: "",
-    discountAmountCents: "",
+    discountAmountCents: null,
     currency: "USD",
     scopeKind: "global",
     scopeIds: "",
@@ -111,8 +112,7 @@ function offerToForm(offer: PromotionalOfferRecord): FormState {
   base.description = offer.description ?? ""
   base.discountType = offer.discountType
   base.discountPercent = offer.discountPercent ?? ""
-  base.discountAmountCents =
-    offer.discountAmountCents != null ? String(offer.discountAmountCents) : ""
+  base.discountAmountCents = offer.discountAmountCents ?? null
   base.currency = offer.currency ?? "USD"
   base.scopeKind = offer.scope.kind
   base.scopeIds = scopeIdsToString(offer.scope)
@@ -177,7 +177,7 @@ function buildPayload(state: FormState): PromotionInsertInput | { error: string 
     return { error: "Discount percent is required for percentage offers" }
   }
   if (state.discountType === "fixed_amount") {
-    if (!state.discountAmountCents) {
+    if (state.discountAmountCents == null || state.discountAmountCents <= 0) {
       return { error: "Discount amount is required for fixed-amount offers" }
     }
     if (!state.currency.trim()) return { error: "Currency is required for fixed-amount offers" }
@@ -197,8 +197,7 @@ function buildPayload(state: FormState): PromotionInsertInput | { error: string 
     description: state.description.trim() || null,
     discountType: state.discountType,
     discountPercent: state.discountType === "percentage" ? Number(state.discountPercent) : null,
-    discountAmountCents:
-      state.discountType === "fixed_amount" ? Number(state.discountAmountCents) : null,
+    discountAmountCents: state.discountType === "fixed_amount" ? state.discountAmountCents : null,
     currency: state.discountType === "fixed_amount" ? state.currency.trim().toUpperCase() : null,
     scope,
     conditions: state.minPax ? { minPax: Number(state.minPax) } : {},
@@ -329,15 +328,13 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
             ) : (
               <>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="promotion-cents">Amount (cents)</Label>
-                  <Input
-                    id="promotion-cents"
-                    type="number"
-                    step="1"
-                    min="1"
+                  <Label htmlFor="promotion-amount">Amount</Label>
+                  <CurrencyInput
+                    id="promotion-amount"
                     value={state.discountAmountCents}
-                    onChange={(e) => setField("discountAmountCents", e.target.value)}
-                    placeholder="500"
+                    onChange={(value) => setField("discountAmountCents", value)}
+                    currency={state.currency}
+                    placeholder="5.00"
                   />
                 </div>
                 <div className="grid gap-1.5">

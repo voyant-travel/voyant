@@ -411,7 +411,7 @@ export const crmUiRo = {
     fields: {
       description: "Descriere",
       quantity: "Cant.",
-      priceCents: "Pret (bani)",
+      priceCents: "Pret",
     },
     validation: {
       descriptionRequired: "Descrierea este obligatorie",

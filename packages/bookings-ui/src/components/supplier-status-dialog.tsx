@@ -22,6 +22,7 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
@@ -196,10 +197,15 @@ export function SupplierStatusDialog({
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.supplierStatusDialog.fields.costAmountCents}</Label>
-                <Input
-                  {...form.register("costAmountCents", { valueAsNumber: true })}
-                  type="number"
-                  min="0"
+                <CurrencyInput
+                  value={form.watch("costAmountCents") as number}
+                  onChange={(next) =>
+                    form.setValue("costAmountCents", next ?? 0, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("costCurrency")}
                 />
               </div>
               <div className="flex flex-col gap-2">

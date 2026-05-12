@@ -112,7 +112,7 @@ export const registryCrmRo = {
     fields: {
       description: "Descriere",
       quantity: "Cant.",
-      priceCents: "Pret (centi)",
+      priceCents: "Pret",
     },
     validation: {
       descriptionRequired: "Descrierea este obligatorie",

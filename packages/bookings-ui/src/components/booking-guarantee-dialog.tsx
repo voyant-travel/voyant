@@ -19,6 +19,7 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
@@ -223,7 +224,16 @@ export function BookingGuaranteeDialog({
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.amountCents}</Label>
-                <Input {...form.register("amountCents")} type="number" min={0} />
+                <CurrencyInput
+                  value={form.watch("amountCents") as number | null}
+                  onChange={(next) =>
+                    form.setValue("amountCents", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  currency={form.watch("currency")}
+                />
               </div>
             </div>
 
