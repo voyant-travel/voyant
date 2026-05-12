@@ -1331,6 +1331,11 @@ Verification:
   `pnpm agent:queue:plan-dispatch`, using the same control-plane URL and token
   as snapshot submission. It prints the planned lifecycle command or JSON for a
   supervisor, but does not execute the mutation.
+- The control-plane app can persist leased dispatch intents with
+  `POST /api/dispatch-intents/latest` when an `AGENT_DISPATCH_INTENTS` R2
+  binding is configured. This gives always-on supervisors a durable coordination
+  record for the selected lifecycle command, lease holder, and expiration while
+  command execution remains runner-owned.
 
 ## Open Questions
 

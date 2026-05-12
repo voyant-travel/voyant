@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { createApp } from "./app.js"
 import { buildTickSnapshotRecord, type TickSnapshotRecord } from "./control-plane.js"
+import { createR2DispatchIntentStore, type DispatchIntentBucket } from "./dispatch-intent-store.js"
 import {
   createR2TickSnapshotStore,
   type TickSnapshotBucket,
@@ -205,6 +206,92 @@ describe("tick snapshot storage", () => {
 
     await expect(store.putLatest(buildTickSnapshotRecord(tickSnapshot))).resolves.toEqual({
       key: "tick-snapshots/latest/voyantjs%2Fvoyant.json",
+    })
+  })
+
+  it("stores active dispatch intents in R2-compatible object storage", async () => {
+    const objects = new Map<string, { etag: string; value: string }>()
+    const store = createR2DispatchIntentStore({
+      bucket: {
+        async get(key: string) {
+          const object = objects.get(key)
+          return object
+            ? ({
+                etag: object.etag,
+                text: async () => object.value,
+              } satisfies Awaited<ReturnType<DispatchIntentBucket["get"]>>)
+            : null
+        },
+        async put(key: string, value: string, options) {
+          const object = objects.get(key)
+          if (options?.onlyIf?.etagDoesNotMatch === "*" && object) {
+            return null
+          }
+          if (options?.onlyIf?.etagMatches && object?.etag !== options.onlyIf.etagMatches) {
+            return null
+          }
+
+          objects.set(key, { etag: `${key}:${String(value).length}`, value: String(value) })
+          return {}
+        },
+      } satisfies DispatchIntentBucket,
+      keyPrefix: "/supervisor/",
+    })
+    const intent = {
+      createdAt: "2026-05-12T05:30:00.000Z",
+      id: "intent_579",
+      lease: {
+        acquiredAt: "2026-05-12T05:30:00.000Z",
+        expiresAt: "2026-05-12T05:45:00.000Z",
+        holder: "supervisor:test",
+        ttlSeconds: 900,
+      },
+      plan: {
+        action: "remote-bootstrap" as const,
+        command: ["pnpm", "agent:queue:remote-bootstrap"],
+        issue: tickSnapshot.recommendations[0]!.issue,
+        reason: "remote workspace is ready for repository bootstrap",
+        repository: "voyantjs/voyant",
+        requiresMutation: true as const,
+      },
+      source: {
+        acceptedAt: "2026-05-12T05:00:00.000Z",
+        recommendationCount: 2,
+        repository: "voyantjs/voyant",
+        type: "latest_tick_snapshot" as const,
+      },
+      status: "leased" as const,
+    }
+
+    await expect(store.putIntent(intent)).resolves.toEqual({
+      activeKey: "supervisor/dispatch-intents/active/voyantjs%2Fvoyant/579/remote-bootstrap.json",
+      key: "supervisor/dispatch-intents/by-id/intent_579.json",
+    })
+    await expect(
+      store.getActive({
+        action: "remote-bootstrap",
+        issueNumber: 579,
+        repository: "VoyantJS/Voyant",
+      }),
+    ).resolves.toEqual(intent)
+
+    await expect(
+      store.acquireIntent(
+        {
+          ...intent,
+          id: "intent_580",
+          lease: {
+            ...intent.lease,
+            expiresAt: "2026-05-12T05:50:00.000Z",
+          },
+        },
+        { now: new Date("2026-05-12T05:40:00.000Z") },
+      ),
+    ).resolves.toMatchObject({
+      acquired: false,
+      activeIntent: {
+        id: "intent_579",
+      },
     })
   })
 })

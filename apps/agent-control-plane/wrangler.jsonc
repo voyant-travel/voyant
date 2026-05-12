@@ -12,6 +12,9 @@
   // Optional: bind an R2 bucket as AGENT_TICK_SNAPSHOTS to store the latest
   // accepted tick snapshot per repository. Set AGENT_TICK_SNAPSHOT_KEY_PREFIX
   // when multiple environments share one bucket.
+  // Optional: bind an R2 bucket as AGENT_DISPATCH_INTENTS to store leased
+  // dispatch intents. Set AGENT_DISPATCH_INTENT_KEY_PREFIX when multiple
+  // environments share one bucket.
   "observability": {
     "enabled": true
   }
