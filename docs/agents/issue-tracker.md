@@ -412,6 +412,10 @@ If a supervisor hits lease contention or needs to inspect the current holder, us
 `pnpm agent:queue:active-dispatch -- --issue <number> --action <name>` to read
 the control-plane active pointer without mutating it. The read reports whether
 the stored pointer is still active or only an expired/terminal record.
+Use `pnpm agent:queue:release-dispatch -- --issue <number> --action <name>` to
+release an expired active pointer by reference. It refuses unexpired active
+leases unless `--force` is passed, then records the dispatch intent as
+`released` with the stored holder.
 Before enabling a deployed control plane or scheduled runner, run
 `pnpm agent:queue:deployment-doctor -- --json` from the repository checkout.
 It reads `AGENT_CONTROL_PLANE_URL`, `AGENT_CONTROL_PLANE_TOKEN`,

@@ -169,6 +169,14 @@ AGENT_CONTROL_PLANE_TOKEN=... \
 pnpm agent:queue:finish-dispatch -- --intent intent_579 --holder supervisor:local --status completed
 ```
 
+Release an expired active dispatch intent without copying its holder manually:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:release-dispatch -- --issue 579 --action sync-pr --repo voyantjs/voyant
+```
+
 Run the full local supervisor path for one dispatchable item:
 
 ```bash
