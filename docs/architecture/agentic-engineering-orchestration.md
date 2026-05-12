@@ -1180,12 +1180,12 @@ now be loaded from an explicit config module via `--adapter-config`,
 unavailable unless a config supplies that provider. A conservative CLI-backed
 Sprite adapter is available for one-shot command execution once a maintainer
 enables it through adapter config. `agent:queue:remote-exec` can validate that
-path with a guarded command, but remote execution does not yet own long-running
-process management, HTTP exposure, artifact collection, cleanup, evidence
-writing, or PR creation. `agent:queue:remote-bootstrap` can now clone/fetch the
-repository, prefer an existing remote task branch, and check out the task branch
-inside a remote workspace. Ready remote-workspace items can be dispatched
-through that bootstrap path and move to `Planning` after success.
+path with a guarded command, while higher-level remote commands own bootstrap,
+execution, evidence publication, browser capture, process management, cleanup,
+and PR creation. `agent:queue:remote-bootstrap` can now clone/fetch the
+repository, prefer an existing remote task branch, and check out the task
+branch inside a remote workspace. Ready remote-workspace items can be
+dispatched through that bootstrap path and move to `Planning` after success.
 `agent:queue:remote-run-command` can run an explicit supervised command in that
 remote repository, write a remote transcript and evidence packet, and move the
 Project item to `Human Review` or `Blocked`. `agent:queue:remote-publish-evidence`
@@ -1199,7 +1199,9 @@ branch through the configured adapter, create or reuse a GitHub PR from the
 local token, and update the Project `PR` field. `agent:queue:remote-capture-browser`
 can call adapter-owned HTTP exposure for a remote port, capture that URL through
 local Playwright, store local ignored browser artifacts, and optionally publish
-the artifact directory to configured R2-compatible storage.
+the artifact directory to configured R2-compatible storage. It can also start
+and stop a named remote dev-server command around capture, so UI evidence does
+not require a manually pre-running server.
 `agent:queue:remote-start-process` and `agent:queue:remote-stop-process` can
 manage named long-running processes through adapter command execution, storing
 remote PID, command, log, and metadata files for browser-capture setup and

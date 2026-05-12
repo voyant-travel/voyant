@@ -57,6 +57,28 @@ export function normalizeRemoteHttpExposure({ port, result }) {
   }
 }
 
+export async function waitForRemoteHttpReady(
+  url,
+  { fetchImpl = fetch, intervalMs = 500, timeoutMs },
+) {
+  const startedAt = Date.now()
+  let lastError
+
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      const response = await fetchImpl(url, { redirect: "manual" })
+      if (response.status < 500) return
+      lastError = new Error(`HTTP ${response.status}`)
+    } catch (error) {
+      lastError = error
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
+
+  throw new Error(`timed out waiting for ${url}: ${lastError?.message ?? "no response"}`)
+}
+
 function isPathInside(candidatePath, parentPath) {
   const relative = path.relative(parentPath, candidatePath)
   return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative)
