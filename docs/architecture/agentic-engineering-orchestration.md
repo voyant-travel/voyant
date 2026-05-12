@@ -1323,6 +1323,10 @@ Verification:
   snapshot per repository to R2 through the `AGENT_TICK_SNAPSHOTS` binding.
   This gives dashboards and supervisors a durable read model while dispatch
   remains explicit and runner-owned.
+- The control-plane app can also plan dispatch from that latest stored snapshot
+  with `POST /api/dispatch-plans/latest`. This keeps the write path split:
+  runners submit observed queue state, supervisors request safe lifecycle plans,
+  and actual command execution remains outside the Worker.
 
 ## Open Questions
 

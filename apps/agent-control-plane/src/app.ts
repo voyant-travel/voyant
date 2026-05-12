@@ -5,7 +5,9 @@ import {
   buildCapabilities,
   buildTickSnapshotRecord,
   dispatchPlanRequestSchema,
+  latestDispatchPlanRequestSchema,
   selectDispatchPlan,
+  selectDispatchPlanFromTickSnapshotRecord,
   tickSnapshotRequestSchema,
 } from "./control-plane.js"
 import type { TickSnapshotStore } from "./tick-snapshot-store.js"
@@ -60,6 +62,35 @@ export function createApp({ authTokens = [], tickSnapshotStore }: AppOptions = {
     }
 
     return c.json(selectDispatchPlan(parsed.data))
+  })
+
+  app.post("/api/dispatch-plans/latest", async (c) => {
+    const parsed = latestDispatchPlanRequestSchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_latest_dispatch_plan_request",
+          issues: validationIssues(parsed.error),
+        },
+        400,
+      )
+    }
+
+    if (!tickSnapshotStore) {
+      return c.json({ error: "tick_snapshot_storage_not_configured" }, 503)
+    }
+
+    const record = await tickSnapshotStore.getLatest(parsed.data.repository)
+    if (!record) {
+      return c.json({ error: "tick_snapshot_not_found" }, 404)
+    }
+
+    return c.json(
+      selectDispatchPlanFromTickSnapshotRecord({
+        record,
+        request: parsed.data,
+      }),
+    )
   })
 
   app.post("/api/tick-snapshots", async (c) => {
