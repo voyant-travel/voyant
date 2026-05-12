@@ -20,6 +20,7 @@ import {
   bookingAllocations,
   bookingDocuments,
   bookingFulfillments,
+  bookingItems,
   bookingPiiAccessLog,
   bookingStaffAssignments,
   bookingTravelers,
@@ -505,6 +506,64 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       const body = await res.json()
       expect(body.data).toBeInstanceOf(Array)
       expect(body.total).toBeGreaterThanOrEqual(1)
+    })
+
+    it("hydrates booking list item summaries with product names", async () => {
+      const { product } = await seedProductBundle()
+      const booking = await seedBooking()
+
+      await db.insert(bookingItems).values({
+        bookingId: booking.id,
+        title: "Adult x 1",
+        productId: product.id,
+        itemType: "unit",
+        status: "confirmed",
+        quantity: 1,
+        sellCurrency: "EUR",
+      })
+
+      const res = await app.request("/", { method: "GET" })
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      const listedBooking = body.data.find((row: { id: string }) => row.id === booking.id)
+
+      expect(listedBooking?.items[0]).toMatchObject({
+        title: "Adult x 1",
+        productId: product.id,
+        productName: product.name,
+      })
+    })
+
+    it("lists bookings when the products table is not installed", async () => {
+      const booking = await seedBooking()
+      const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
+
+      await db.insert(bookingItems).values({
+        bookingId: booking.id,
+        title: "Standalone item",
+        productId: "prod_standalone",
+        itemType: "unit",
+        status: "confirmed",
+        quantity: 1,
+        sellCurrency: "EUR",
+      })
+
+      await db.execute(sql`DROP TABLE IF EXISTS products CASCADE`)
+
+      try {
+        const res = await app.request("/", { method: "GET" })
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        const listedBooking = body.data.find((row: { id: string }) => row.id === booking.id)
+
+        expect(listedBooking?.items[0]).toMatchObject({
+          title: "Standalone item",
+          productId: "prod_standalone",
+          productName: null,
+        })
+      } finally {
+        await cleanupTestDb(db)
+      }
     })
 
     it("returns dashboard aggregates", async () => {

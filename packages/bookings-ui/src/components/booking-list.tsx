@@ -542,10 +542,11 @@ function formatBookingItems(booking: BookingRecord, moreTemplate: string): React
   if (items.length === 0) return <span className="text-muted-foreground">—</span>
   const [first, ...rest] = items
   if (!first) return <span className="text-muted-foreground">—</span>
-  if (rest.length === 0) return first.title
+  const label = first.productName ?? first.title
+  if (rest.length === 0) return label
   return (
     <span>
-      {first.title}
+      {label}
       <span className="ml-1 text-xs text-muted-foreground">
         {formatMessage(moreTemplate, { count: rest.length })}
       </span>

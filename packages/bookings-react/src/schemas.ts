@@ -57,6 +57,7 @@ export const bookingRecordItemSummarySchema = z.object({
   title: z.string(),
   itemType: z.string(),
   productId: z.string().nullable(),
+  productName: z.string().nullable().optional(),
 })
 
 export type BookingRecordItemSummary = z.infer<typeof bookingRecordItemSummarySchema>
