@@ -18,6 +18,7 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
@@ -165,10 +166,26 @@ export function RateDialog({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={dialog.validFromLabel}>
-                <Input {...form.register("validFrom")} type="date" />
+                <DatePicker
+                  value={form.watch("validFrom") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("validFrom", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
               </Field>
               <Field label={dialog.validToLabel}>
-                <Input {...form.register("validTo")} type="date" />
+                <DatePicker
+                  value={form.watch("validTo") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("validTo", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
