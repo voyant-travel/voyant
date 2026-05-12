@@ -16,6 +16,8 @@ const fixtureUser: CurrentUser = {
   email: "ana@example.com",
   firstName: "Ana",
   lastName: "Popescu",
+  locale: "ro",
+  timezone: "Europe/Bucharest",
   isSuperAdmin: false,
   isSupportUser: false,
   createdAt: "2026-05-12T00:00:00.000Z",

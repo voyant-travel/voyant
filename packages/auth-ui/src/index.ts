@@ -1,12 +1,4 @@
 export {
-  defaultOnboardingPageMessages,
-  OnboardingPage,
-  type OnboardingPageInitialProfile,
-  type OnboardingPageMessages,
-  type OnboardingPageProps,
-  type OnboardingPageSlots,
-} from "./components/onboarding-page.js"
-export {
   AccountChangeEmailForm,
   type AccountChangeEmailFormProps,
   AccountChangePasswordForm,
@@ -24,6 +16,14 @@ export {
   type AccountProfileFormMessages,
   defaultAccountPageMessages,
 } from "./components/account-page-shared.js"
+export {
+  defaultOnboardingPageMessages,
+  OnboardingPage,
+  type OnboardingPageInitialProfile,
+  type OnboardingPageMessages,
+  type OnboardingPageProps,
+  type OnboardingPageSlots,
+} from "./components/onboarding-page.js"
 export {
   ApiTokensPage,
   type ApiTokensPageProps,

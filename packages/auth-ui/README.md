@@ -30,7 +30,7 @@ accepts slot/render-prop panels for app-specific account sections such as API
 tokens, sessions, or MFA enrollment.
 
 ```tsx
-import { AccountPage } from "@voyantjs/auth-ui"
+import { AccountPage } from "@voyantjs/auth-ui/account"
 
 <AccountPage
   slots={{
