@@ -16,6 +16,44 @@ All components accept a `className` prop and merge it with `cn()`. Wrap or
 compose to extend; use the registry copy-paste path for components you want to
 fork outright.
 
-Page components render with `p-6` outer padding by default and are intended to
-mount directly into an app route outlet. Pass `className` to extend or override
-that spacing when a shell owns the page chrome.
+Workspace page components render with `p-6` outer padding by default and are
+intended to mount directly into an app route outlet. Auth flow pages are
+card-less, centered form surfaces intended to sit inside an app-owned auth
+layout. Pass `className` to extend or override spacing when a shell owns the
+page chrome.
+
+## Sign-in
+
+`SignInPage` provides the shared email/password sign-in surface. It uses
+`useSignIn()` from `@voyantjs/auth-react`, which posts to the mounted Better
+Auth email endpoint and refreshes Voyant auth queries after success.
+
+```tsx
+import { SignInPage } from "@voyantjs/auth-ui"
+
+<SignInPage
+  redirectTo="/"
+  forgotPasswordHref="/forgot-password"
+  signUpHref="/sign-up"
+  onSignedIn={({ redirectTo }) => navigate({ to: redirectTo ?? "/" })}
+/>
+```
+
+Social providers and email-verification resend behavior stay app-owned because
+they need router and provider-plugin wiring:
+
+```tsx
+<SignInPage
+  socialProviders={[
+    {
+      id: "google",
+      label: "Continue with Google",
+      onSignIn: ({ redirectTo }) =>
+        authClient.signIn.social({ provider: "google", callbackURL: redirectTo }),
+    },
+  ]}
+  onResendVerification={(email) =>
+    authClient.emailOtp.sendVerificationOtp({ email, type: "email-verification" })
+  }
+/>
+```

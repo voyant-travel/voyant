@@ -1,0 +1,280 @@
+"use client"
+
+import { useSignIn } from "@voyantjs/auth-react"
+import { VoyantApiError } from "@voyantjs/auth-react/client"
+import { Button, cn, Input, Label } from "@voyantjs/ui/components"
+import { Loader2, LogIn } from "lucide-react"
+import { type FormEvent, type ReactNode, useState } from "react"
+
+export interface SignInPageMessages {
+  title: string
+  description: string
+  emailLabel: string
+  emailPlaceholder: string
+  passwordLabel: string
+  forgotPassword: string
+  submit: string
+  signingIn: string
+  invalidEmailOrPassword: string
+  emailRequired: string
+  passwordRequired: string
+  emailNotVerified: string
+  resendVerificationCode: string
+  sending: string
+  somethingWentWrong: string
+  or: string
+  noAccount: string
+  signUp: string
+}
+
+export interface SignInSocialProvider {
+  id: string
+  label: string
+  icon?: ReactNode
+  onSignIn: (options: { redirectTo?: string }) => Promise<void> | void
+}
+
+export interface SignInPageProps {
+  className?: string
+  messages?: Partial<SignInPageMessages>
+  redirectTo?: string
+  forgotPasswordHref?: string
+  signUpHref?: string
+  socialProviders?: readonly SignInSocialProvider[]
+  onSignedIn?: (options: { redirectTo?: string }) => Promise<void> | void
+  onResendVerification?: (email: string) => Promise<void> | void
+}
+
+export const defaultSignInPageMessages: SignInPageMessages = {
+  title: "Sign in",
+  description: "Use your operator account to continue.",
+  emailLabel: "Email",
+  emailPlaceholder: "ana@example.com",
+  passwordLabel: "Password",
+  forgotPassword: "Forgot password?",
+  submit: "Sign in",
+  signingIn: "Signing in",
+  invalidEmailOrPassword: "Invalid email or password.",
+  emailRequired: "Email is required.",
+  passwordRequired: "Password is required.",
+  emailNotVerified: "Your email address has not been verified.",
+  resendVerificationCode: "Resend verification code",
+  sending: "Sending",
+  somethingWentWrong: "Something went wrong. Try again.",
+  or: "Or",
+  noAccount: "No account yet?",
+  signUp: "Create one",
+}
+
+function isEmailNotVerified(error: unknown): boolean {
+  if (error instanceof VoyantApiError && error.status === 403) {
+    return true
+  }
+
+  if (error instanceof Error) {
+    return error.message.toLowerCase().includes("not verified")
+  }
+
+  return false
+}
+
+function errorMessage(error: unknown, messages: SignInPageMessages): string {
+  if (isEmailNotVerified(error)) {
+    return messages.emailNotVerified
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  return messages.invalidEmailOrPassword
+}
+
+export function SignInPage({
+  className,
+  messages: messageOverrides,
+  redirectTo,
+  forgotPasswordHref,
+  signUpHref,
+  socialProviders = [],
+  onSignedIn,
+  onResendVerification,
+}: SignInPageProps) {
+  const messages = { ...defaultSignInPageMessages, ...messageOverrides }
+  const signIn = useSignIn()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [emailNotVerified, setEmailNotVerified] = useState(false)
+  const [resendingVerification, setResendingVerification] = useState(false)
+  const [pendingSocialProvider, setPendingSocialProvider] = useState<string | null>(null)
+
+  const isSubmitting = signIn.email.isPending
+  const hasSocialProviders = socialProviders.length > 0
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
+    setEmailNotVerified(false)
+
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      setError(messages.emailRequired)
+      return
+    }
+
+    if (!password) {
+      setError(messages.passwordRequired)
+      return
+    }
+
+    try {
+      await signIn.email.mutateAsync({ email: trimmedEmail, password, callbackURL: redirectTo })
+      await onSignedIn?.({ redirectTo })
+    } catch (err) {
+      const needsVerification = isEmailNotVerified(err)
+      setEmailNotVerified(needsVerification)
+      setError(errorMessage(err, messages))
+    }
+  }
+
+  const handleResendVerification = async () => {
+    if (!onResendVerification) {
+      return
+    }
+
+    setError(null)
+    setResendingVerification(true)
+    try {
+      await onResendVerification(email.trim())
+    } catch {
+      setError(messages.somethingWentWrong)
+    } finally {
+      setResendingVerification(false)
+    }
+  }
+
+  const handleSocialSignIn = async (provider: SignInSocialProvider) => {
+    setError(null)
+    setPendingSocialProvider(provider.id)
+    try {
+      await provider.onSignIn({ redirectTo })
+    } catch {
+      setError(messages.somethingWentWrong)
+      setPendingSocialProvider(null)
+    }
+  }
+
+  return (
+    <div
+      data-slot="sign-in-page"
+      className={cn("mx-auto flex w-full max-w-sm flex-col gap-6", className)}
+    >
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight">{messages.title}</h1>
+        <p className="text-sm text-muted-foreground">{messages.description}</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p>{error}</p>
+            {emailNotVerified && onResendVerification && (
+              <button
+                type="button"
+                onClick={() => void handleResendVerification()}
+                disabled={resendingVerification}
+                className="mt-2 font-medium underline hover:no-underline disabled:opacity-50"
+              >
+                {resendingVerification ? messages.sending : messages.resendVerificationCode}
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="auth-sign-in-email">{messages.emailLabel}</Label>
+          <Input
+            id="auth-sign-in-email"
+            type="email"
+            placeholder={messages.emailPlaceholder}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            autoComplete="email"
+            autoFocus
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <Label htmlFor="auth-sign-in-password">{messages.passwordLabel}</Label>
+            {forgotPasswordHref && (
+              <a
+                href={forgotPasswordHref}
+                className="text-xs text-muted-foreground hover:underline"
+              >
+                {messages.forgotPassword}
+              </a>
+            )}
+          </div>
+          <Input
+            id="auth-sign-in-password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            autoComplete="current-password"
+          />
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <LogIn className="mr-2 h-4 w-4" />
+          )}
+          {isSubmitting ? messages.signingIn : messages.submit}
+        </Button>
+      </form>
+
+      {hasSocialProviders && (
+        <>
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs uppercase text-muted-foreground">{messages.or}</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <div className="space-y-2">
+            {socialProviders.map((provider) => {
+              const isPending = pendingSocialProvider === provider.id
+              return (
+                <Button
+                  key={provider.id}
+                  variant="outline"
+                  className="w-full"
+                  type="button"
+                  disabled={pendingSocialProvider !== null}
+                  onClick={() => void handleSocialSignIn(provider)}
+                >
+                  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : provider.icon}
+                  {provider.label}
+                </Button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {signUpHref && (
+        <p className="text-center text-sm text-muted-foreground">
+          {messages.noAccount}{" "}
+          <a href={signUpHref} className="font-medium text-primary hover:underline">
+            {messages.signUp}
+          </a>
+        </p>
+      )}
+    </div>
+  )
+}

@@ -35,4 +35,10 @@ export {
   useApiTokens,
   useServiceApiKeys,
 } from "./use-service-api-keys.js"
+export {
+  type SignInEmailInput,
+  type SignInEmailResult,
+  signInWithEmail,
+  useSignIn,
+} from "./use-sign-in.js"
 export { useWorkspaceMutation } from "./use-workspace-mutation.js"

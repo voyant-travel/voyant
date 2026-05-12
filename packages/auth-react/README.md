@@ -6,6 +6,7 @@ This package wraps the shared Voyant auth HTTP contract:
 
 - `/auth/me`
 - `/auth/status`
+- `/auth/sign-in/email`
 - `/auth/workspace/current`
 - `/auth/workspace/active-organization`
 - `/auth/organization/list-members`
@@ -23,8 +24,27 @@ It provides reusable React surfaces for:
 - optional workspace and organization state
 - organization member listing
 - organization invitation listing
+- email/password sign-in
 - invite, cancel, remove, and role update mutations
 - API token listing, creation, update, and deletion
+
+## Sign-In
+
+`useSignIn()` exposes the shared email/password Better Auth flow:
+
+```tsx
+const signIn = useSignIn()
+
+await signIn.email.mutateAsync({
+  email,
+  password,
+  callbackURL: "/",
+})
+```
+
+After Better Auth accepts the credentials, the hook calls `/auth/status` to
+provision the Voyant user profile if needed and invalidates the current auth
+queries.
 
 ## Single-Tenant Apps
 
