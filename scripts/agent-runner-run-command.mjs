@@ -180,7 +180,7 @@ tryAppendAgentRunnerEvent({
   eventLogPath,
   event: {
     type: "run-command.completed",
-    blockedBy: finalUpdate.blockedBy ?? null,
+    blockedBy: finalUpdate.values["Blocked By"] ?? blockedBy ?? null,
     branch,
     clearedFields: finalUpdate.clear,
     command: args.command,
