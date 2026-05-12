@@ -126,6 +126,16 @@ export const notificationsUiEn: NotificationsUiMessages = {
       removeBlackoutDate: "Remove",
     },
   },
+  pickers: {
+    templates: {
+      placeholder: "Search templates…",
+      empty: "No templates found.",
+    },
+    timezones: {
+      placeholder: "Search timezones…",
+      empty: "No timezones found.",
+    },
+  },
   preview: {
     dateLabel: "Date",
     empty: "Nothing would fire on this date.",

@@ -123,6 +123,16 @@ export type NotificationsUiMessages = {
       removeBlackoutDate: string
     }
   }
+  pickers: {
+    templates: {
+      placeholder: string
+      empty: string
+    }
+    timezones: {
+      placeholder: string
+      empty: string
+    }
+  }
   preview: {
     dateLabel: string
     empty: string
