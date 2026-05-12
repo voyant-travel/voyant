@@ -6,12 +6,14 @@ import {
   runSupervisorTick,
   supervisorTickRequestSchema,
 } from "./runner.js"
+import { createSupervisorTickRecord, type SupervisorTickStore } from "./supervisor-tick-store.js"
 
 interface AppOptions {
   authTokens?: string[]
   config?: RunnerConfig
   fetchImpl?: typeof fetch
   now?: () => Date
+  supervisorTickStore?: SupervisorTickStore
 }
 
 export function createApp({
@@ -22,6 +24,7 @@ export function createApp({
   },
   fetchImpl = fetch,
   now = () => new Date(),
+  supervisorTickStore,
 }: AppOptions = {}): Hono {
   const app = new Hono()
 
@@ -46,7 +49,14 @@ export function createApp({
     await next()
   })
 
-  app.get("/api/capabilities", (c) => c.json(buildRunnerCapabilities(config)))
+  app.get("/api/capabilities", (c) =>
+    c.json({
+      ...buildRunnerCapabilities(config),
+      supervisorTicks: {
+        persistence: supervisorTickStore ? "latest" : "none",
+      },
+    }),
+  )
 
   app.post("/api/supervisor/ticks", async (c) => {
     const parsed = supervisorTickRequestSchema.safeParse(await c.req.json().catch(() => ({})))
@@ -60,18 +70,77 @@ export function createApp({
       )
     }
 
+    const recordedAt = now()
+    const result = await runSupervisorTick({
+      config,
+      fetchImpl,
+      request: parsed.data,
+      source: "api",
+    })
+    const repository = parsed.data.repository ?? config.repository
+    const storage = await persistSupervisorTick({
+      recordedAt,
+      repository,
+      result,
+      supervisorTickStore,
+    })
+
     return c.json({
-      plannedAt: now().toISOString(),
-      result: await runSupervisorTick({
-        config,
-        fetchImpl,
-        request: parsed.data,
-        source: "api",
-      }),
+      plannedAt: recordedAt.toISOString(),
+      result,
+      storage,
     })
   })
 
+  app.get("/api/supervisor/ticks/latest", async (c) => {
+    if (!supervisorTickStore) {
+      return c.json({ error: "supervisor_tick_storage_not_configured" }, 503)
+    }
+
+    const repository = c.req.query("repository")?.trim()
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+
+    const record = await supervisorTickStore.getLatest(repository)
+    if (!record) {
+      return c.json({ error: "supervisor_tick_not_found" }, 404)
+    }
+
+    return c.json(record)
+  })
+
   return app
+}
+
+export async function persistSupervisorTick({
+  recordedAt,
+  repository,
+  result,
+  supervisorTickStore,
+}: {
+  recordedAt: Date
+  repository?: string
+  result: unknown
+  supervisorTickStore?: SupervisorTickStore
+}) {
+  if (!supervisorTickStore) {
+    return { persisted: false, reason: "supervisor_tick_storage_not_configured" }
+  }
+
+  if (!repository) {
+    return { persisted: false, reason: "missing_repository" }
+  }
+
+  const write = await supervisorTickStore.putLatest(
+    createSupervisorTickRecord({
+      recordedAt,
+      repository,
+      result,
+    }),
+  )
+
+  return { key: write.key, persisted: true }
 }
 
 function bearerToken(header: string | undefined) {

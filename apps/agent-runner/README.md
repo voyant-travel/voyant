@@ -18,7 +18,12 @@ provider commands, or spend model budget.
 - `POST /api/supervisor/ticks` validates a supervisor tick request and returns
   the equivalent local command plan. By default it is a dry run. With
   `AGENT_RUNNER_ENABLED=true` and `{ "dryRun": false }`, it leases one dispatch
-  intent from `POST /api/dispatch-intents/latest` on the control plane.
+  intent from `POST /api/dispatch-intents/latest` on the control plane. When
+  `AGENT_RUNNER_TICKS` is bound, the result is persisted as the latest
+  supervisor tick for the repository.
+- `GET /api/supervisor/ticks/latest?repository=<owner/name>` returns the latest
+  persisted supervisor tick for a repository. Requires `AGENT_RUNNER_TOKENS`
+  and the `AGENT_RUNNER_TICKS` binding.
 
 ## Configuration
 
@@ -27,6 +32,8 @@ provider commands, or spend model budget.
   dispatch intents.
 - `AGENT_RUNNER_HOLDER`: default lease holder, for example `runner:cloudflare`.
 - `AGENT_RUNNER_REPOSITORY`: default repository, for example `voyantjs/voyant`.
+- `AGENT_RUNNER_TICKS`: optional R2 binding for latest supervisor tick status.
+- `AGENT_RUNNER_TICK_KEY_PREFIX`: optional R2 key prefix for supervisor ticks.
 - `AGENT_CONTROL_PLANE_URL`: deployed control-plane URL.
 - `AGENT_CONTROL_PLANE_TOKEN`: bearer token for the control plane.
 

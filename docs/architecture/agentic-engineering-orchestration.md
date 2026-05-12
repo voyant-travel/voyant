@@ -1359,6 +1359,11 @@ Verification:
   create workspaces, or spend model budget. Command execution remains owned by
   trusted runner processes until budget controls, sandbox policy, and
   task-scoped provider credentials are wired into a later slice.
+- The runner app can persist the latest supervisor tick result per repository
+  to R2 through the `AGENT_RUNNER_TICKS` binding and expose it at
+  `GET /api/supervisor/ticks/latest`. This gives Cron-based deployments an
+  inspectable heartbeat and last lease result without introducing a full run
+  database.
 
 ## Open Questions
 

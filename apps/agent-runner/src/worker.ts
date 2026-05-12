@@ -1,5 +1,6 @@
-import { createApp } from "./app.js"
+import { createApp, persistSupervisorTick } from "./app.js"
 import { runSupervisorTick } from "./runner.js"
+import { createR2SupervisorTickStore } from "./supervisor-tick-store.js"
 
 interface Env {
   AGENT_CONTROL_PLANE_TOKEN?: string
@@ -7,6 +8,8 @@ interface Env {
   AGENT_RUNNER_ENABLED?: string
   AGENT_RUNNER_HOLDER?: string
   AGENT_RUNNER_REPOSITORY?: string
+  AGENT_RUNNER_TICK_KEY_PREFIX?: string
+  AGENT_RUNNER_TICKS?: R2Bucket
   AGENT_RUNNER_TOKENS?: string
 }
 
@@ -15,11 +18,13 @@ export default {
     const app = createApp({
       authTokens: parseTokens(env.AGENT_RUNNER_TOKENS),
       config: runnerConfigFromEnv(env),
+      supervisorTickStore: supervisorTickStoreFromEnv(env),
     })
     return await app.fetch(request)
   },
 
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+    const recordedAt = new Date()
     const result = await runSupervisorTick({
       config: runnerConfigFromEnv(env),
       request: {
@@ -28,7 +33,13 @@ export default {
       },
       source: "scheduled",
     })
-    console.log(JSON.stringify({ service: "agent-runner", supervisorTick: result }))
+    const storage = await persistSupervisorTick({
+      recordedAt,
+      repository: env.AGENT_RUNNER_REPOSITORY,
+      result,
+      supervisorTickStore: supervisorTickStoreFromEnv(env),
+    })
+    console.log(JSON.stringify({ service: "agent-runner", supervisorTick: result, storage }))
   },
 } satisfies ExportedHandler<Env>
 
@@ -41,6 +52,15 @@ function runnerConfigFromEnv(env: Env) {
     holder: env.AGENT_RUNNER_HOLDER,
     repository: env.AGENT_RUNNER_REPOSITORY,
   }
+}
+
+function supervisorTickStoreFromEnv(env: Env) {
+  return env.AGENT_RUNNER_TICKS
+    ? createR2SupervisorTickStore({
+        bucket: env.AGENT_RUNNER_TICKS,
+        keyPrefix: env.AGENT_RUNNER_TICK_KEY_PREFIX,
+      })
+    : undefined
 }
 
 function parseTokens(value: string | undefined) {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
 import { createApp } from "./app.js"
+import {
+  createR2SupervisorTickStore,
+  type SupervisorTickBucket,
+  type SupervisorTickRecord,
+  type SupervisorTickStore,
+} from "./supervisor-tick-store.js"
 
 describe("agent runner app", () => {
   it("serves public health without runner auth", async () => {
@@ -86,6 +92,10 @@ describe("agent runner app", () => {
         },
         reason: "dry_run",
       },
+      storage: {
+        persisted: false,
+        reason: "supervisor_tick_storage_not_configured",
+      },
     })
   })
 
@@ -123,6 +133,7 @@ describe("agent runner app", () => {
         )
       },
       now: () => new Date("2026-05-12T11:00:00.000Z"),
+      supervisorTickStore: inMemorySupervisorTickStore(),
     })
 
     const response = await app.request("/api/supervisor/ticks", {
@@ -152,6 +163,10 @@ describe("agent runner app", () => {
         leased: true,
         reason: "leased",
       },
+      storage: {
+        key: "latest/voyantjs/voyant.json",
+        persisted: true,
+      },
     })
     expect(calls).toEqual([
       {
@@ -175,4 +190,129 @@ describe("agent runner app", () => {
     ])
     expect(calls[0]?.headers.get("authorization")).toBe("Bearer control-token")
   })
+
+  it("reads the latest persisted supervisor tick", async () => {
+    const supervisorTickStore = inMemorySupervisorTickStore()
+    const app = createApp({
+      authTokens: ["token"],
+      config: {
+        controlPlaneConfigured: true,
+        controlPlaneUrl: "https://control.example.com",
+        enabled: true,
+        holder: "runner:cloudflare",
+        repository: "voyantjs/voyant",
+      },
+      now: () => new Date("2026-05-12T12:00:00.000Z"),
+      supervisorTickStore,
+    })
+
+    const tick = await app.request("/api/supervisor/ticks", {
+      body: JSON.stringify({ dryRun: true }),
+      headers: {
+        authorization: "Bearer token",
+        "content-type": "application/json",
+      },
+      method: "POST",
+    })
+    expect(tick.status).toBe(200)
+
+    const latest = await app.request("/api/supervisor/ticks/latest?repository=voyantjs%2Fvoyant", {
+      headers: {
+        authorization: "Bearer token",
+      },
+    })
+
+    expect(latest.status).toBe(200)
+    await expect(latest.json()).resolves.toMatchObject({
+      recordedAt: "2026-05-12T12:00:00.000Z",
+      repository: "voyantjs/voyant",
+      result: {
+        leased: false,
+        reason: "dry_run",
+      },
+    })
+  })
+
+  it("requires storage and repository before reading latest supervisor ticks", async () => {
+    const noStore = createApp({ authTokens: ["token"] })
+    const noStoreResponse = await noStore.request(
+      "/api/supervisor/ticks/latest?repository=voyantjs%2Fvoyant",
+      {
+        headers: {
+          authorization: "Bearer token",
+        },
+      },
+    )
+    expect(noStoreResponse.status).toBe(503)
+    await expect(noStoreResponse.json()).resolves.toEqual({
+      error: "supervisor_tick_storage_not_configured",
+    })
+
+    const app = createApp({
+      authTokens: ["token"],
+      supervisorTickStore: inMemorySupervisorTickStore(),
+    })
+    const missingRepository = await app.request("/api/supervisor/ticks/latest", {
+      headers: {
+        authorization: "Bearer token",
+      },
+    })
+    expect(missingRepository.status).toBe(400)
+    await expect(missingRepository.json()).resolves.toEqual({ error: "missing_repository" })
+
+    const missingTick = await app.request(
+      "/api/supervisor/ticks/latest?repository=voyantjs%2Fvoyant",
+      {
+        headers: {
+          authorization: "Bearer token",
+        },
+      },
+    )
+    expect(missingTick.status).toBe(404)
+    await expect(missingTick.json()).resolves.toEqual({ error: "supervisor_tick_not_found" })
+  })
+
+  it("stores latest supervisor ticks in R2-compatible object storage", async () => {
+    const objects = new Map<string, string>()
+    const store = createR2SupervisorTickStore({
+      bucket: {
+        async get(key: string) {
+          const text = objects.get(key)
+          return text ? { text: async () => text } : null
+        },
+        async put(key: string, value: string) {
+          objects.set(key, String(value))
+          return null
+        },
+      } satisfies SupervisorTickBucket,
+      keyPrefix: "/runner/",
+    })
+    const record: SupervisorTickRecord = {
+      recordedAt: "2026-05-12T12:00:00.000Z",
+      repository: "voyantjs/voyant",
+      result: {
+        leased: false,
+        reason: "dry_run",
+      },
+    }
+
+    await expect(store.putLatest(record)).resolves.toEqual({
+      key: "runner/supervisor-ticks/latest/voyantjs%2Fvoyant.json",
+    })
+    await expect(store.getLatest("VoyantJS/Voyant")).resolves.toEqual(record)
+  })
 })
+
+function inMemorySupervisorTickStore(): SupervisorTickStore {
+  const latest = new Map<string, SupervisorTickRecord>()
+
+  return {
+    async getLatest(repository) {
+      return latest.get(repository.toLowerCase()) ?? null
+    },
+    async putLatest(record) {
+      latest.set(record.repository.toLowerCase(), record)
+      return { key: `latest/${record.repository.toLowerCase()}.json` }
+    },
+  }
+}
