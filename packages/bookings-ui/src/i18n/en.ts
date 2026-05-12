@@ -32,6 +32,11 @@ export const bookingsUiEn = {
     description:
       "Create a booking, select the billed customer, add travelers, and schedule payment.",
   },
+  bookingCombobox: {
+    placeholder: "Search bookings...",
+    empty: "No bookings found.",
+    loading: "Loading bookings...",
+  },
   bookingDetailPage: {
     notFound: "Booking not found",
     backToBookings: "Back to bookings",

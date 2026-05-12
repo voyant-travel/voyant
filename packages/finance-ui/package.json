@@ -27,6 +27,7 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/bookings-ui": "workspace:*",
     "@voyantjs/finance": "workspace:*",
     "@voyantjs/finance-react": "workspace:*",
     "@voyantjs/ui": "workspace:*",
@@ -42,6 +43,7 @@
     "@tanstack/react-query": "^5.96.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/bookings-ui": "workspace:*",
     "@voyantjs/finance": "workspace:*",
     "@voyantjs/finance-react": "workspace:*",
     "@voyantjs/i18n": "workspace:*",

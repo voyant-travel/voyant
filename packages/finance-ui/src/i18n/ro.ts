@@ -45,7 +45,7 @@ export const financeUiRo = {
     fields: {
       invoiceNumber: "Numar Factura",
       status: "Status",
-      bookingId: "ID Rezervare",
+      bookingId: "Rezervare",
       currency: "Moneda",
       subtotalCents: "Subtotal",
       taxCents: "Taxa",
@@ -56,7 +56,7 @@ export const financeUiRo = {
     },
     placeholders: {
       invoiceNumber: "INV-2025-1234",
-      bookingId: "book_...",
+      bookingId: "Cauta dupa numar, client sau produs",
       issueDate: "Alege data emiterii",
       dueDate: "Alege data scadentei",
       notes: "Note factura...",
@@ -66,7 +66,7 @@ export const financeUiRo = {
     },
     validation: {
       invoiceNumberRequired: "Numarul facturii este obligatoriu",
-      bookingIdRequired: "ID-ul rezervarii este obligatoriu",
+      bookingIdRequired: "Rezervarea este obligatorie",
       currencyIsoCode: "Foloseste cod ISO din 3 litere",
       issueDateRequired: "Data emiterii este obligatorie",
       dueDateRequired: "Data scadentei este obligatorie",
@@ -489,7 +489,7 @@ export const financeUiRo = {
   supplierPaymentDialog: {
     title: "Inregistreaza Plata Furnizorului",
     fields: {
-      bookingId: "ID Rezervare",
+      bookingId: "Rezervare",
       supplierId: "ID Furnizor (optional)",
       amountCents: "Suma",
       currency: "Moneda",
@@ -500,7 +500,7 @@ export const financeUiRo = {
       notes: "Note",
     },
     placeholders: {
-      bookingId: "book_...",
+      bookingId: "Cauta dupa numar, client sau produs",
       supplierId: "supp_...",
       paymentDate: "Selecteaza data platii",
       referenceNumber: "TXN-12345",
@@ -510,7 +510,7 @@ export const financeUiRo = {
       create: "Inregistreaza Plata",
     },
     validation: {
-      bookingIdRequired: "ID-ul rezervarii este obligatoriu",
+      bookingIdRequired: "Rezervarea este obligatorie",
       amountMinimum: "Suma trebuie sa fie cel putin 1",
       paymentDateRequired: "Data platii este obligatorie",
     },

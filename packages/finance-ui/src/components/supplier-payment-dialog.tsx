@@ -1,3 +1,4 @@
+import { BookingCombobox } from "@voyantjs/bookings-ui"
 import { useSupplierPaymentMutation } from "@voyantjs/finance-react"
 import {
   Button,
@@ -126,8 +127,14 @@ export function SupplierPaymentDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.supplierPaymentDialog.fields.bookingId}</Label>
-                <Input
-                  {...form.register("bookingId")}
+                <BookingCombobox
+                  value={form.watch("bookingId") || null}
+                  onChange={(next) =>
+                    form.setValue("bookingId", next ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                   placeholder={messages.supplierPaymentDialog.placeholders.bookingId}
                 />
                 {form.formState.errors.bookingId ? (

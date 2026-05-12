@@ -25,6 +25,11 @@ export type BookingsUiMessages = {
     title: string
     description: string
   }
+  bookingCombobox: {
+    placeholder: string
+    empty: string
+    loading: string
+  }
   bookingDetailPage: {
     notFound: string
     backToBookings: string

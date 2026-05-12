@@ -2830,6 +2830,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/bookings-ui':
+        specifier: workspace:*
+        version: link:../bookings-ui
       '@voyantjs/finance':
         specifier: workspace:*
         version: link:../finance
