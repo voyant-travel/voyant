@@ -100,6 +100,14 @@ export const latestDispatchIntentRequestSchema = z.object({
 
 export type LatestDispatchIntentRequest = z.infer<typeof latestDispatchIntentRequestSchema>
 
+export const activeDispatchIntentRequestSchema = z.object({
+  action: z.enum(dispatchableActions),
+  issueNumber: z.coerce.number().int().positive(),
+  repository: z.string().trim().min(1),
+})
+
+export type ActiveDispatchIntentRequest = z.infer<typeof activeDispatchIntentRequestSchema>
+
 export const tickSnapshotRequestSchema = z.object({
   eventLog: z.object({
     path: z.string().min(1),
@@ -239,6 +247,7 @@ export function buildCapabilities({
     },
     dispatchIntentContracts: {
       latestSnapshotLease: {
+        activeRead: dispatchIntentPersistence === "leased",
         persistence: dispatchIntentPersistence,
         terminalStatuses: dispatchIntentTerminalStatusSchema.options,
         ttlSeconds: {

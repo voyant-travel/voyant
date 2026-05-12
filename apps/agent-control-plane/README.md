@@ -28,6 +28,7 @@ pnpm -C apps/agent-control-plane dev
 - `POST /api/dispatch-plans`
 - `POST /api/dispatch-plans/latest`
 - `POST /api/dispatch-intents/latest`
+- `GET /api/dispatch-intents/active?repository=<owner/name>&issue=<number>&action=<name>`
 - `POST /api/dispatch-intents/:id/finish`
 - `POST /api/tick-snapshots`
 - `GET /api/tick-snapshots/latest?repository=<owner/name>`
@@ -55,6 +56,12 @@ is an operator, supervisor, or runner identifier; the TTL defaults to 900
 seconds and must be between 60 and 3600 seconds. If a non-expired intent already
 exists for the same repository, issue, and action, the endpoint returns
 `dispatch_intent_already_active`.
+
+`GET /api/dispatch-intents/active` reads the active-pointer record for one
+repository, issue, and lifecycle action. It returns `{ active, intent }`, where
+`active` is false when the stored pointer is expired or terminal. Use this to
+explain lease contention before rerunning or releasing work; it does not mutate
+the lease.
 
 `POST /api/dispatch-intents/:id/finish` accepts
 `{ holder, status, reason?, exitCode? }` where `status` is `completed`,
@@ -113,6 +120,14 @@ pnpm agent:queue:lease-dispatch -- --repo voyantjs/voyant --holder supervisor:lo
 
 This records the lease and prints the command to run. It does not execute the
 command.
+
+Inspect an active lease when a supervisor reports lease contention:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:active-dispatch -- --repo voyantjs/voyant --issue 579 --action remote-bootstrap
+```
 
 Finish the leased dispatch intent after the runner has handled the printed
 command:

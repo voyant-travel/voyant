@@ -83,6 +83,35 @@ export async function requestLatestDispatchIntent({ fetchImpl = fetch, request, 
   return body
 }
 
+export async function requestActiveDispatchIntent({ fetchImpl = fetch, request, token, url }) {
+  const query = new URLSearchParams({
+    action: request.action,
+    issueNumber: String(request.issueNumber),
+    repository: request.repository,
+  })
+  const response = await fetchImpl(
+    `${normalizeControlPlaneUrl(url)}/api/dispatch-intents/active?${query.toString()}`,
+    {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      method: "GET",
+    },
+  )
+
+  const bodyText = await response.text()
+  const body = parseJsonBody(bodyText)
+
+  if (!response.ok) {
+    const detail = body?.error ? `: ${body.error}` : bodyText ? `: ${bodyText}` : ""
+    throw new Error(
+      `control plane rejected active dispatch intent read with ${response.status}${detail}`,
+    )
+  }
+
+  return body
+}
+
 export async function finishDispatchIntent({ fetchImpl = fetch, id, request, token, url }) {
   const response = await fetchImpl(
     `${normalizeControlPlaneUrl(url)}/api/dispatch-intents/${encodeURIComponent(id)}/finish`,

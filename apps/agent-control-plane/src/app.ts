@@ -2,11 +2,13 @@ import { Hono } from "hono"
 
 import {
   acceptTickSnapshot,
+  activeDispatchIntentRequestSchema,
   buildCapabilities,
   buildDispatchIntentFromStoredPlan,
   buildTickSnapshotRecord,
   dispatchIntentFinishRequestSchema,
   dispatchPlanRequestSchema,
+  isDispatchIntentActive,
   latestDispatchIntentRequestSchema,
   latestDispatchPlanRequestSchema,
   selectDispatchPlan,
@@ -167,6 +169,37 @@ export function createApp({
       },
       201,
     )
+  })
+
+  app.get("/api/dispatch-intents/active", async (c) => {
+    const parsed = activeDispatchIntentRequestSchema.safeParse({
+      action: c.req.query("action"),
+      issueNumber: c.req.query("issueNumber") ?? c.req.query("issue"),
+      repository: c.req.query("repository"),
+    })
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_active_dispatch_intent_request",
+          issues: validationIssues(parsed.error),
+        },
+        400,
+      )
+    }
+
+    if (!dispatchIntentStore) {
+      return c.json({ error: "dispatch_intent_storage_not_configured" }, 503)
+    }
+
+    const intent = await dispatchIntentStore.getActive(parsed.data)
+    if (!intent) {
+      return c.json({ error: "dispatch_intent_not_found" }, 404)
+    }
+
+    return c.json({
+      active: isDispatchIntentActive(intent, now()),
+      intent,
+    })
   })
 
   app.post("/api/dispatch-intents/:id/finish", async (c) => {
