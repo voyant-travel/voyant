@@ -1396,6 +1396,10 @@ Verification:
   printing bearer tokens. After at least one queue snapshot is stored,
   `--smoke-tick` makes the deployed runner call the control plane's read-only
   dispatch-plan path without leasing work.
+- Operators can use `pnpm agent:queue:deployed-status -- --repo <owner/name>`
+  for the steady-state read-only view. It checks the same deployed endpoints
+  and summarizes the runner supervisor's latest and recent ticks without
+  triggering a smoke tick.
 
 ## Open Questions
 
