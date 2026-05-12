@@ -57,3 +57,25 @@ they need router and provider-plugin wiring:
   }
 />
 ```
+
+## Onboarding
+
+`OnboardingPage` provides the shared first-run profile completion surface. It is
+card-less and router-agnostic: apps own the surrounding auth layout and decide
+where to navigate after `onCompleted`.
+
+```tsx
+import { OnboardingPage } from "@voyantjs/auth-ui"
+
+<OnboardingPage
+  initialProfile={user}
+  onCompleted={() => navigate({ to: "/" })}
+  slots={{
+    afterFields: <WorkspaceInvitePicker />,
+  }}
+/>
+```
+
+The page submits first name, last name, and optional locale/timezone fields via
+`useUpdateAccountProfile()`. Pass `showLocale={false}` or
+`showTimezone={false}` if the mounted app API does not support those fields.

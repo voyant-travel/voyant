@@ -9,6 +9,8 @@ export const currentUserSchema = z.object({
   phoneNumber: z.string().nullable().optional(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
+  locale: z.string().default("en"),
+  timezone: z.string().nullable().default(null),
   isSuperAdmin: z.boolean(),
   isSupportUser: z.boolean(),
   createdAt: z.string(),

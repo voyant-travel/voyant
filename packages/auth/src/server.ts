@@ -14,6 +14,12 @@ import { emailOTP } from "better-auth/plugins"
 import type { BetterAuthPlugin } from "better-auth/types"
 import { sql } from "drizzle-orm"
 
+import {
+  type CurrentUser,
+  type UpdateCurrentUserProfileInput,
+  updateCurrentUserProfile,
+} from "./workspace.js"
+
 type BetterAuthApiKeySession = {
   user: {
     id: string
@@ -39,6 +45,21 @@ export interface HandleApiTokenManagementRequestOptions {
    */
   basePath?: string
 }
+
+export interface HandleAccountProfileRequestOptions {
+  /**
+   * Auth route mount path. Voyant operator APIs mount Better Auth under
+   * `/auth`, which makes the account profile route `/auth/me`.
+   */
+  basePath?: string
+  db: ReturnType<typeof getDb>
+  updateProfile?: AccountProfileUpdateHandler
+}
+
+export type AccountProfileUpdateHandler = (
+  db: ReturnType<typeof getDb>,
+  input: UpdateCurrentUserProfileInput,
+) => Promise<CurrentUser | null>
 
 type ApiTokenErrorStatus = 400 | 401 | 403 | 404 | 405 | 429 | 500
 
@@ -132,6 +153,14 @@ function apiTokenFacadePath(pathname: string, basePath: string): string | null {
   return null
 }
 
+function accountProfileFacadePath(pathname: string, basePath: string): string | null {
+  const trimmedBase = basePath.replace(/^\/+|\/+$/g, "")
+  const normalizedBase = trimmedBase ? `/${trimmedBase}` : ""
+  const normalizedPath = pathname.replace(/\/+$/g, "") || "/"
+
+  return normalizedPath === `${normalizedBase}/me` ? "/me" : null
+}
+
 function readApiKeyQuery(request: Request): Record<string, unknown> {
   const query: Record<string, unknown> = {}
   const params = new URL(request.url).searchParams
@@ -143,6 +172,32 @@ function readApiKeyQuery(request: Request): Record<string, unknown> {
   }
 
   return query
+}
+
+function readProfileUpdate(
+  body: Record<string, unknown>,
+): Omit<UpdateCurrentUserProfileInput, "userId"> {
+  const input: Omit<UpdateCurrentUserProfileInput, "userId"> = {}
+
+  for (const field of ["firstName", "lastName", "locale", "timezone"] as const) {
+    const value = body[field]
+    if (value === undefined) continue
+
+    if (value !== null && typeof value !== "string") {
+      throw Object.assign(new Error(`${field} must be a string or null`), { status: 400 })
+    }
+
+    const maxLength = field === "locale" ? 10 : field === "timezone" ? 64 : 200
+    if (typeof value === "string" && value.length > maxLength) {
+      throw Object.assign(new Error(`${field} must be ${maxLength} characters or fewer`), {
+        status: 400,
+      })
+    }
+
+    input[field] = value
+  }
+
+  return input
 }
 
 async function readOptionalJson(request: Request): Promise<Record<string, unknown>> {
@@ -172,6 +227,56 @@ async function requireApiTokenSession(auth: BetterAuthApiTokenManagement, header
     throw Object.assign(new Error("Unauthorized"), { status: 401 })
   }
   return session
+}
+
+async function requireAccountProfileSession(auth: BetterAuthApiTokenManagement, headers: Headers) {
+  const session = await auth.api.getSession({ headers })
+  if (!session) {
+    throw Object.assign(new Error("Unauthorized"), { status: 401 })
+  }
+  return session
+}
+
+/**
+ * Handles Voyant's stable account-profile update facade:
+ *
+ * - `PATCH /auth/me`
+ *
+ * Apps can mount this before falling through to `auth.handler(request)` for
+ * the rest of Better Auth. The route updates only the current session user's
+ * non-sensitive `user_profiles` fields.
+ */
+export async function handleAccountProfileRequest(
+  request: Request,
+  auth: { api: unknown },
+  options: HandleAccountProfileRequestOptions,
+): Promise<Response | null> {
+  const path = accountProfileFacadePath(new URL(request.url).pathname, options.basePath ?? "/auth")
+  if (path === null) return null
+
+  try {
+    if (request.method !== "PATCH") {
+      return methodNotAllowed(["PATCH"])
+    }
+
+    const session = await requireAccountProfileSession(
+      { api: auth.api as BetterAuthApiKeyApi },
+      request.headers,
+    )
+    const body = await readOptionalJson(request)
+    const profile = await (options.updateProfile ?? updateCurrentUserProfile)(options.db, {
+      userId: session.user.id,
+      ...readProfileUpdate(body),
+    })
+
+    if (!profile) {
+      return jsonResponse({ error: "User not found" }, 404)
+    }
+
+    return jsonResponse(profile)
+  } catch (error) {
+    return authApiErrorResponse(error)
+  }
 }
 
 /**
