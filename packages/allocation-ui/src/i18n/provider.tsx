@@ -16,8 +16,11 @@ export type AllocationUiMessages = Record<string, unknown> & {
   empty: string
   back: string
   addRoom: string
+  addResource: string
   generateRooms: string
   generatingRooms: string
+  generateResources: string
+  generatingResources: string
   autoAllocate: string
   autoAllocating: string
   exportPassengers: string
@@ -28,23 +31,43 @@ export type AllocationUiMessages = Record<string, unknown> & {
   roomLabel: string
   roomCapacity: string
   createRoom: string
+  resourceLabel: string
+  resourceCapacity: string
+  createResource: string
   cancel: string
   unallocated: string
   unallocatedDescription: string
   rooms: string
+  resources: string
+  vehicleSeats: string
+  cabins: string
+  flightSeats: string
   travelers: string
   capacity: string
   lead: string
   sharingGroup: string
   accessibility: string
   dietary: string
+  smokingAllowed: string
   remove: string
   overCapacity: string
   dropHere: string
   noRooms: string
+  noResources: string
+  noSeats: string
+  windowSeat: string
+  aisleSeat: string
+  middleSeat: string
+  validationTitle: string
+  validationClear: string
+  validationUnallocated: string
+  validationOverCapacity: string
+  validationSplitGroup: string
   allocationFailed: string
   createRoomFailed: string
+  createResourceFailed: string
   generateRoomsFailed: string
+  generateResourcesFailed: string
   autoAllocateFailed: string
 }
 
@@ -54,8 +77,11 @@ export const allocationUiEn = {
   empty: "No travelers on this departure yet.",
   back: "Back",
   addRoom: "Add room",
+  addResource: "Add resource",
   generateRooms: "Generate rooms",
   generatingRooms: "Generating...",
+  generateResources: "Generate resources",
+  generatingResources: "Generating...",
   autoAllocate: "Auto-allocate",
   autoAllocating: "Allocating...",
   exportPassengers: "Passengers",
@@ -78,23 +104,43 @@ export const allocationUiEn = {
   roomLabel: "Room label",
   roomCapacity: "Capacity",
   createRoom: "Create room",
+  resourceLabel: "Resource label",
+  resourceCapacity: "Capacity",
+  createResource: "Create resource",
   cancel: "Cancel",
   unallocated: "Unallocated",
-  unallocatedDescription: "Travelers not assigned to a room.",
+  unallocatedDescription: "Travelers not assigned to this resource kind.",
   rooms: "Rooms",
+  resources: "Resources",
+  vehicleSeats: "Vehicle seats",
+  cabins: "Cabins",
+  flightSeats: "Flight seats",
   travelers: "travelers",
   capacity: "Capacity",
   lead: "Lead",
   sharingGroup: "Sharing group",
   accessibility: "Accessibility",
   dietary: "Dietary",
+  smokingAllowed: "Smoking",
   remove: "Remove",
-  overCapacity: "Room is full",
+  overCapacity: "Resource is full",
   dropHere: "Drop traveler here",
   noRooms: "No rooms have been added for this slot.",
+  noResources: "No resources have been added for this slot.",
+  noSeats: "No vehicle seats have been generated for this slot.",
+  windowSeat: "Window",
+  aisleSeat: "Aisle",
+  middleSeat: "Middle",
+  validationTitle: "Allocation needs attention",
+  validationClear: "No validation issues",
+  validationUnallocated: "unallocated",
+  validationOverCapacity: "is over capacity",
+  validationSplitGroup: "Split sharing group",
   allocationFailed: "Could not update allocation.",
   createRoomFailed: "Could not create room.",
+  createResourceFailed: "Could not create resource.",
   generateRoomsFailed: "Could not generate rooms.",
+  generateResourcesFailed: "Could not generate resources.",
   autoAllocateFailed: "Could not auto-allocate travelers.",
 } satisfies AllocationUiMessages
 
@@ -104,8 +150,11 @@ export const allocationUiRo = {
   empty: "Nu exista calatori pe aceasta plecare.",
   back: "Inapoi",
   addRoom: "Adauga camera",
+  addResource: "Adauga resursa",
   generateRooms: "Genereaza camere",
   generatingRooms: "Se genereaza...",
+  generateResources: "Genereaza resurse",
+  generatingResources: "Se genereaza...",
   autoAllocate: "Auto-aloca",
   autoAllocating: "Se aloca...",
   exportPassengers: "Pasageri",
@@ -128,23 +177,43 @@ export const allocationUiRo = {
   roomLabel: "Eticheta camera",
   roomCapacity: "Capacitate",
   createRoom: "Creeaza camera",
+  resourceLabel: "Eticheta resursa",
+  resourceCapacity: "Capacitate",
+  createResource: "Creeaza resursa",
   cancel: "Anuleaza",
   unallocated: "Nealocati",
-  unallocatedDescription: "Calatori fara camera alocata.",
+  unallocatedDescription: "Calatori fara acest tip de resursa alocat.",
   rooms: "Camere",
+  resources: "Resurse",
+  vehicleSeats: "Locuri vehicul",
+  cabins: "Cabine",
+  flightSeats: "Locuri zbor",
   travelers: "calatori",
   capacity: "Capacitate",
   lead: "Lead",
   sharingGroup: "Grup partaj",
   accessibility: "Accesibilitate",
   dietary: "Dieta",
+  smokingAllowed: "Fumat",
   remove: "Scoate",
-  overCapacity: "Camera este plina",
+  overCapacity: "Resursa este plina",
   dropHere: "Trage calatorul aici",
   noRooms: "Nu exista camere adaugate pentru acest slot.",
+  noResources: "Nu exista resurse adaugate pentru acest slot.",
+  noSeats: "Nu exista locuri generate pentru acest slot.",
+  windowSeat: "Geam",
+  aisleSeat: "Culoar",
+  middleSeat: "Mijloc",
+  validationTitle: "Alocarea necesita atentie",
+  validationClear: "Fara probleme de validare",
+  validationUnallocated: "nealocati",
+  validationOverCapacity: "depaseste capacitatea",
+  validationSplitGroup: "Grup partaj impartit",
   allocationFailed: "Alocarea nu a putut fi actualizata.",
   createRoomFailed: "Camera nu a putut fi creata.",
+  createResourceFailed: "Resursa nu a putut fi creata.",
   generateRoomsFailed: "Camerele nu au putut fi generate.",
+  generateResourcesFailed: "Resursele nu au putut fi generate.",
   autoAllocateFailed: "Calatorii nu au putut fi auto-alocati.",
 } satisfies AllocationUiMessages
 
