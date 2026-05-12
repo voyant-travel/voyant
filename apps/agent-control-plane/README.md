@@ -42,3 +42,20 @@ planned lifecycle command on a supervisor-specific JSONL ledger. Pass
 snapshot with counts for total recommendations, dispatchable recommendations,
 and recent events. The current contract is intentionally non-persistent; use it
 to prove worker-to-supervisor shape before adding storage or automatic loops.
+
+Submit the current queue snapshot from the repo runner with:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:submit-tick
+```
+
+The same command can submit a saved tick JSON file:
+
+```bash
+pnpm agent:queue:tick -- --json > .agent-runs/tick.json
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:submit-tick -- --input .agent-runs/tick.json
+```
