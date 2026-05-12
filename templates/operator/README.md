@@ -52,6 +52,12 @@ The workspace shell uses the shared `OperatorAdminWorkspaceLayout`. Operators
 can collapse or expand the sidebar from the header trigger, or with `Cmd+B` on
 macOS and `Ctrl+B` on Windows and Linux.
 
+Route-level browser titles are auto-derived from the shared navigation items
+and active locale. Override detail pages that need entity-specific metadata
+with `useAdminPageHead({ title, description })` from `@voyantjs/admin`. The
+root document also sets `robots: noindex,nofollow`; keep operator deployments
+out of search indexes.
+
 ## Charts
 
 The dashboard uses `recharts` through `@voyantjs/ui` and `@voyantjs/admin`.

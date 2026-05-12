@@ -1,10 +1,11 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   DefaultOperatorAdminBrand,
   OperatorAdminWorkspaceLayout,
+  resolveAdminPageTitle,
 } from "../../src/components/operator-admin-sidebar.js"
 import { AdminProvider } from "../../src/providers/admin-provider.js"
 import { OperatorAdminMessagesProvider } from "../../src/providers/operator-admin-messages.js"
@@ -18,6 +19,7 @@ function renderWithAdminProviders(children: ReactNode) {
 }
 
 beforeEach(() => {
+  document.title = ""
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
@@ -81,6 +83,65 @@ describe("OperatorAdminWorkspaceLayout", () => {
     )
 
     expect(directSlots).toEqual(["sidebar-inset", "sidebar"])
+  })
+
+  it("derives document titles from the matching navigation item", async () => {
+    renderWithAdminProviders(
+      <OperatorAdminWorkspaceLayout
+        currentPath="/finance/invoices/123"
+        navItems={[
+          {
+            id: "finance",
+            title: "Finance",
+            url: "/finance/invoices",
+            items: [
+              { id: "invoices", title: "Invoices", url: "/finance/invoices" },
+              { id: "payments", title: "Payments", url: "/finance/payments" },
+            ],
+          },
+          { id: "settings", title: "Settings", url: "/settings" },
+        ]}
+      >
+        <section>Invoice detail</section>
+      </OperatorAdminWorkspaceLayout>,
+    )
+
+    await waitFor(() => expect(document.title).toBe("Invoices · Voyant"))
+  })
+
+  it("allows workspace consumers to disable automatic page metadata", async () => {
+    document.title = "Consumer owned"
+
+    renderWithAdminProviders(
+      <OperatorAdminWorkspaceLayout
+        currentPath="/settings"
+        navItems={[{ id: "settings", title: "Settings", url: "/settings" }]}
+        pageHead={false}
+      >
+        <section>Settings</section>
+      </OperatorAdminWorkspaceLayout>,
+    )
+
+    await waitFor(() => expect(document.title).toBe("Consumer owned"))
+  })
+})
+
+describe("resolveAdminPageTitle", () => {
+  it("uses the longest route-prefix match and keeps the root route exact", () => {
+    expect(
+      resolveAdminPageTitle("/finance/payments/pm_123", [
+        { id: "dashboard", title: "Dashboard", url: "/" },
+        {
+          id: "finance",
+          title: "Finance",
+          url: "/finance/invoices",
+          items: [
+            { id: "invoices", title: "Invoices", url: "/finance/invoices" },
+            { id: "payments", title: "Payments", url: "/finance/payments" },
+          ],
+        },
+      ]),
+    ).toBe("Payments")
   })
 })
 

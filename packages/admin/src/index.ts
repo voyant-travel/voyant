@@ -27,6 +27,14 @@ export {
   DefaultAdminNavLink,
 } from "./components/admin-nav-link.js"
 export {
+  AdminPageHead,
+  type AdminPageHeadOptions,
+  type AdminPageHeadProps,
+  AdminPageHeadProvider,
+  type AdminPageHeadProviderProps,
+  useAdminPageHead,
+} from "./components/admin-page-head.js"
+export {
   AdminWidgetSlotRenderer,
   type AdminWidgetSlotRendererProps,
 } from "./components/admin-widget-slot.js"
@@ -45,6 +53,7 @@ export {
   type OperatorAdminSidebarProps,
   OperatorAdminWorkspaceLayout,
   type OperatorAdminWorkspaceLayoutProps,
+  resolveAdminPageTitle,
 } from "./components/operator-admin-sidebar.js"
 export {
   OperatorAdminUserMenu,

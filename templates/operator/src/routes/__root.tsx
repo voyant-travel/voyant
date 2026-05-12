@@ -28,6 +28,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "robots", content: "noindex,nofollow" },
+      { name: "description", content: "Voyant operator workspace" },
+      { name: "theme-color", content: "#ffffff" },
+      { property: "og:title", content: "Voyant" },
+      { property: "og:type", content: "website" },
       { title: "Voyant" },
     ],
     links: [

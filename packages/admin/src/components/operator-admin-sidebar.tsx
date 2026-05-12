@@ -24,9 +24,10 @@ import {
 } from "../navigation/operator-navigation.js"
 import { AdminExtensionsProvider } from "../providers/admin-extensions.js"
 import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
-import type { AdminUser, NavItem } from "../types.js"
+import type { AdminUser, NavItem, NavSubItem } from "../types.js"
 import { AdminNavGroup } from "./admin-nav-group.js"
 import { type AdminNavLinkComponent, DefaultAdminNavLink } from "./admin-nav-link.js"
+import { type AdminPageHeadOptions, AdminPageHeadProvider } from "./admin-page-head.js"
 import { VoyantMark } from "./brand/voyant-mark.js"
 import { VoyantWordmark } from "./brand/voyant-wordmark.js"
 import { OperatorAdminUserMenu } from "./operator-admin-user-menu.js"
@@ -129,11 +130,56 @@ export interface OperatorAdminWorkspaceLayoutProps {
   mainClassName?: string
   navItems?: ReadonlyArray<NavItem>
   onSignOut?: () => void | Promise<void>
+  pageHead?: (AdminPageHeadOptions & { titleOverride?: string | null }) | false
   side?: React.ComponentProps<typeof Sidebar>["side"]
   sidebarProps?: Omit<OperatorAdminSidebarProps, "currentPath">
   showSidebarTrigger?: boolean
   user?: AdminUser | null
   variant?: React.ComponentProps<typeof Sidebar>["variant"]
+}
+
+function normalizePath(path: string): string {
+  const withoutHash = path.split("#")[0] ?? ""
+  const withoutSearch = withoutHash.split("?")[0] ?? ""
+  const normalized = withoutSearch.replace(/\/+$/, "")
+
+  return normalized || "/"
+}
+
+function navUrlMatchesPath(navUrl: string, currentPath: string): boolean {
+  const normalizedUrl = normalizePath(navUrl)
+  const normalizedPath = normalizePath(currentPath)
+
+  if (normalizedUrl === "/") {
+    return normalizedPath === "/"
+  }
+
+  return normalizedPath === normalizedUrl || normalizedPath.startsWith(`${normalizedUrl}/`)
+}
+
+export function resolveAdminPageTitle(
+  currentPath: string,
+  navItems: ReadonlyArray<NavItem>,
+): string | null {
+  let matchedTitle: string | null = null
+  let matchedUrlLength = -1
+  const visitItem = (item: NavItem | NavSubItem) => {
+    if (navUrlMatchesPath(item.url, currentPath)) {
+      const urlLength = normalizePath(item.url).length
+      if (urlLength >= matchedUrlLength) {
+        matchedTitle = item.title
+        matchedUrlLength = urlLength
+      }
+    }
+
+    if ("items" in item) {
+      item.items?.forEach(visitItem)
+    }
+  }
+
+  navItems.forEach(visitItem)
+
+  return matchedTitle
 }
 
 export function OperatorAdminWorkspaceLayout({
@@ -150,27 +196,59 @@ export function OperatorAdminWorkspaceLayout({
   mainClassName = "flex-1",
   navItems,
   onSignOut,
+  pageHead,
   side,
   sidebarProps,
   showSidebarTrigger = true,
   user,
   variant,
 }: OperatorAdminWorkspaceLayoutProps) {
-  const resolvedSide = sidebarProps?.side ?? side
+  const messages = useOperatorAdminMessages()
+  const {
+    extensions: sidebarExtensions,
+    navItems: sidebarNavItems,
+    side: sidebarSide,
+    ...restSidebarProps
+  } = sidebarProps ?? {}
+  const baseItems =
+    sidebarNavItems ?? navItems ?? createOperatorAdminNavigation({ icons, messages: messages.nav })
+  const resolvedItems = resolveAdminNavigation({
+    baseItems,
+    extensions: sidebarExtensions ?? extensions,
+  })
+  const resolvedSide = sidebarSide ?? side
+  let pageTitle: string | null = null
+  if (pageHead !== false) {
+    if (pageHead?.titleOverride !== undefined) {
+      pageTitle = pageHead.titleOverride
+    } else if (pageHead?.title !== undefined) {
+      pageTitle = pageHead.title
+    } else {
+      pageTitle = resolveAdminPageTitle(currentPath, resolvedItems)
+    }
+  }
+  const pageHeadBase =
+    pageHead === false
+      ? null
+      : {
+          brand: pageHead?.brand ?? "Voyant",
+          description: pageHead?.description ?? null,
+          title: pageTitle,
+        }
   const sidebar = (
     <OperatorAdminSidebar
       accountHref={accountHref}
       brand={brand}
       currentPath={currentPath}
-      extensions={extensions}
+      extensions={undefined}
       icons={icons}
       linkComponent={linkComponent}
-      navItems={navItems}
+      navItems={resolvedItems}
       onSignOut={onSignOut}
-      side={side}
+      side={resolvedSide}
       user={user}
       variant={variant}
-      {...sidebarProps}
+      {...restSidebarProps}
     />
   )
   const inset = (
@@ -197,20 +275,26 @@ export function OperatorAdminWorkspaceLayout({
       {children}
     </SidebarInset>
   )
+  const workspace =
+    resolvedSide === "right" ? (
+      <>
+        {inset}
+        {sidebar}
+      </>
+    ) : (
+      <>
+        {sidebar}
+        {inset}
+      </>
+    )
 
   return (
     <AdminExtensionsProvider extensions={extensions}>
       <SidebarProvider defaultOpen={defaultOpen}>
-        {resolvedSide === "right" ? (
-          <>
-            {inset}
-            {sidebar}
-          </>
+        {pageHead === false ? (
+          workspace
         ) : (
-          <>
-            {sidebar}
-            {inset}
-          </>
+          <AdminPageHeadProvider baseHead={pageHeadBase}>{workspace}</AdminPageHeadProvider>
         )}
       </SidebarProvider>
     </AdminExtensionsProvider>
