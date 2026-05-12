@@ -64,7 +64,13 @@ export {
   type TeamSettingsPageApi,
   type TeamSettingsPageProps,
 } from "./components/team-settings-page.js"
-export { DashboardPage } from "./dashboard/dashboard-page.js"
+export {
+  type DashboardEmptyAction,
+  type DashboardEmptyStateConfig,
+  type DashboardEmptyStateKey,
+  DashboardPage,
+  type DashboardPageProps,
+} from "./dashboard/dashboard-page.js"
 export {
   type BookingsAggregates,
   bookingStatusConfig,
