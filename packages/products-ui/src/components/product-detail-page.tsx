@@ -136,7 +136,7 @@ export function ProductDetailPage({
   }
 
   return (
-    <div data-slot="product-detail-page" className={cn("flex flex-col gap-6", className)}>
+    <div data-slot="product-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
       <ProductDetailHeader
         product={product}
         onBack={onBack}
@@ -651,7 +651,7 @@ function ProductDetailPageLoading({ className }: { className?: string }) {
   return (
     <div
       data-slot="product-detail-page-loading"
-      className={cn("flex min-h-48 items-center justify-center", className)}
+      className={cn("flex min-h-48 items-center justify-center p-6", className)}
     >
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -675,7 +675,7 @@ function ProductDetailPageState({
   const messages = useProductsUiMessagesOrDefault()
 
   return (
-    <div data-slot="product-detail-page-state" className={cn("flex flex-col gap-4", className)}>
+    <div data-slot="product-detail-page-state" className={cn("flex flex-col gap-4 p-6", className)}>
       {onBack ? (
         <Button type="button" variant="ghost" className="w-fit" onClick={onBack}>
           <ArrowLeft className="mr-2 size-4" aria-hidden="true" />

@@ -27,6 +27,10 @@ function App() {
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 
+Page components render with `p-6` outer padding by default and are intended to
+mount directly into an app route outlet. Pass `className` to extend or override
+that spacing when a shell owns the page chrome.
+
 ## I18n
 
 Components render English by default. To localize them, wrap your UI in

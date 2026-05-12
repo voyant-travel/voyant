@@ -171,7 +171,7 @@ export function ServiceApiKeysPage({
   }
 
   return (
-    <div data-slot="api-tokens-page" className={cn("flex flex-col gap-6", className)}>
+    <div data-slot="api-tokens-page" className={cn("flex flex-col gap-6 p-6", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">{description}</p>

@@ -23,6 +23,7 @@ import {
   CardTitle,
   Textarea,
 } from "@voyantjs/ui/components"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"
@@ -37,6 +38,7 @@ export type SupplierDetailPageProps = {
   onBack?: () => void
   onDeleted?: () => void
   confirmAction?: (message: string) => boolean
+  className?: string
   renderCustomerPaymentPolicy?: (args: {
     supplier: Supplier
     updateSupplier: (input: UpdateSupplierInput) => Promise<Supplier>
@@ -50,6 +52,7 @@ export function SupplierDetailPage({
   onBack,
   onDeleted,
   confirmAction = (message) => globalThis.confirm?.(message) ?? true,
+  className,
   renderCustomerPaymentPolicy,
 }: SupplierDetailPageProps) {
   const messages = useSuppliersUiMessagesOrDefault()
@@ -99,17 +102,27 @@ export function SupplierDetailPage({
     setNoteContent("")
   }
 
-  if (supplierQuery.isPending) return <SupplierDetailSkeleton />
+  if (supplierQuery.isPending) return <SupplierDetailSkeleton className={className} />
 
   if (supplierQuery.isError) {
     return (
-      <EmptyState message={detail.loadFailed} onBack={onBack} backLabel={detail.backToSuppliers} />
+      <EmptyState
+        message={detail.loadFailed}
+        onBack={onBack}
+        backLabel={detail.backToSuppliers}
+        className={className}
+      />
     )
   }
 
   if (!supplier) {
     return (
-      <EmptyState message={detail.notFound} onBack={onBack} backLabel={detail.backToSuppliers} />
+      <EmptyState
+        message={detail.notFound}
+        onBack={onBack}
+        backLabel={detail.backToSuppliers}
+        className={className}
+      />
     )
   }
 
@@ -117,7 +130,7 @@ export function SupplierDetailPage({
   const notes = notesQuery.data?.data ?? []
 
   return (
-    <div className="flex flex-col gap-6">
+    <div data-slot="supplier-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col gap-3">
           {onBack && (
@@ -357,13 +370,20 @@ function EmptyState({
   message,
   onBack,
   backLabel,
+  className,
 }: {
   message: string
   onBack?: () => void
   backLabel: string
+  className?: string
 }) {
   return (
-    <div className="flex min-h-80 flex-col items-center justify-center gap-4 text-center">
+    <div
+      className={cn(
+        "flex min-h-80 flex-col items-center justify-center gap-4 p-6 text-center",
+        className,
+      )}
+    >
       <p className="text-muted-foreground">{message}</p>
       {onBack && (
         <Button type="button" variant="outline" onClick={onBack}>
@@ -375,9 +395,9 @@ function EmptyState({
   )
 }
 
-function SupplierDetailSkeleton() {
+function SupplierDetailSkeleton({ className }: { className?: string }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className={cn("flex flex-col gap-6 p-6", className)}>
       <div className="h-9 w-72 animate-pulse rounded bg-muted" />
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="h-64 animate-pulse rounded-md bg-muted" />
