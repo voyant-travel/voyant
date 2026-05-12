@@ -1392,6 +1392,76 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(fullInv.status).toBe("paid")
     })
 
+    it("settles cross-currency completed payments using the base invoice amount", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, {
+        currency: "EUR",
+        totalCents: 10000,
+        balanceDueCents: 10000,
+      })
+
+      const res = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 50000,
+          currency: "RON",
+          baseCurrency: "EUR",
+          baseAmountCents: 10000,
+          paymentMethod: "bank_transfer",
+          paymentDate: "2025-06-15",
+          status: "completed",
+        }),
+      })
+      expect(res.status).toBe(201)
+      const { data: payment } = await res.json()
+      expect(payment.amountCents).toBe(50000)
+      expect(payment.currency).toBe("RON")
+      expect(payment.baseAmountCents).toBe(10000)
+      expect(payment.baseCurrency).toBe("EUR")
+
+      const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
+      const { data: paidInv } = await check.json()
+      expect(paidInv.paidCents).toBe(10000)
+      expect(paidInv.balanceDueCents).toBe(0)
+      expect(paidInv.status).toBe("paid")
+    })
+
+    it("rejects completed cross-currency payments without a base invoice amount", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, {
+        currency: "EUR",
+        totalCents: 10000,
+        balanceDueCents: 10000,
+      })
+
+      const res = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 50000,
+          currency: "RON",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2025-06-15",
+          status: "completed",
+        }),
+      })
+
+      expect(res.status).toBe(400)
+      const body = await res.json()
+      expect(body.error).toBe(
+        "Completed cross-currency payments require a base amount in the invoice currency",
+      )
+
+      const list = await app.request(`/invoices/${inv.id}/payments`, { method: "GET" })
+      const { data: paymentRows } = await list.json()
+      expect(paymentRows).toHaveLength(0)
+
+      const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
+      const { data: unchangedInv } = await check.json()
+      expect(unchangedInv.paidCents).toBe(0)
+      expect(unchangedInv.balanceDueCents).toBe(10000)
+      expect(unchangedInv.status).toBe("draft")
+    })
+
     it("does not update invoice when payment is pending", async () => {
       const booking = await seedBooking()
       const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })

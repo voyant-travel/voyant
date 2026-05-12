@@ -43,6 +43,7 @@ type PaymentStatus = (typeof PAYMENT_STATUSES)[number]
 interface FormState {
   amountCents: string
   currency: string
+  baseAmountCents: string
   paymentMethod: PaymentMethod
   status: PaymentStatus
   paymentDate: string
@@ -55,6 +56,7 @@ const todayIso = () => new Date().toISOString().split("T")[0]!
 const initialState = (): FormState => ({
   amountCents: "",
   currency: "EUR",
+  baseAmountCents: "",
   paymentMethod: "bank_transfer",
   status: "completed",
   paymentDate: todayIso(),
@@ -155,7 +157,7 @@ export function RecordPaymentDialog({
   // server stores currency on the invoice in the first place.
   useEffect(() => {
     if (selectedInvoice) {
-      setForm((prev) => ({ ...prev, currency: selectedInvoice.currency }))
+      setForm((prev) => ({ ...prev, currency: selectedInvoice.currency, baseAmountCents: "" }))
     }
   }, [selectedInvoice])
 
@@ -186,6 +188,15 @@ export function RecordPaymentDialog({
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  const baseCurrency =
+    kind === "customer" ? selectedInvoice?.currency : (selectedBooking?.sellCurrency ?? null)
+  const normalizedPaymentCurrency = form.currency.trim().toUpperCase()
+  const normalizedBaseCurrency = baseCurrency?.trim().toUpperCase() ?? null
+  const requiresBaseAmount =
+    normalizedBaseCurrency !== null &&
+    normalizedPaymentCurrency !== "" &&
+    normalizedPaymentCurrency !== normalizedBaseCurrency
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
@@ -200,6 +211,16 @@ export function RecordPaymentDialog({
       return
     }
 
+    let baseAmountCents: number | null = null
+    if (requiresBaseAmount) {
+      const parsedBaseAmountCents = Number.parseInt(form.baseAmountCents, 10)
+      if (!Number.isFinite(parsedBaseAmountCents) || parsedBaseAmountCents < 1) {
+        setError(f.paymentDialog.validationBaseAmountRequired)
+        return
+      }
+      baseAmountCents = parsedBaseAmountCents
+    }
+
     if (kind === "customer") {
       if (!invoiceId) {
         setError(dialog.invoiceRequired)
@@ -207,7 +228,9 @@ export function RecordPaymentDialog({
       }
       await customerMutation.mutateAsync({
         amountCents,
-        currency: form.currency,
+        currency: normalizedPaymentCurrency,
+        baseCurrency: requiresBaseAmount ? normalizedBaseCurrency : null,
+        baseAmountCents: requiresBaseAmount ? baseAmountCents : null,
         paymentMethod: form.paymentMethod,
         status: form.status,
         referenceNumber: form.referenceNumber || null,
@@ -223,7 +246,9 @@ export function RecordPaymentDialog({
         bookingId,
         supplierId: supplierId ?? null,
         amountCents,
-        currency: form.currency,
+        currency: normalizedPaymentCurrency,
+        baseCurrency: requiresBaseAmount ? normalizedBaseCurrency : null,
+        baseAmountCents: requiresBaseAmount ? baseAmountCents : null,
         paymentMethod: form.paymentMethod,
         status: form.status,
         referenceNumber: form.referenceNumber || null,
@@ -368,6 +393,32 @@ export function RecordPaymentDialog({
                 />
               </div>
             </div>
+
+            {requiresBaseAmount ? (
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="mb-3">
+                  <h3 className="text-sm font-medium">{f.paymentDialog.fxSectionTitle}</h3>
+                  <p className="text-muted-foreground text-xs">
+                    {f.paymentDialog.baseCurrencyHelp}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label>{f.paymentDialog.baseAmountLabel}</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.baseAmountCents}
+                      onChange={(e) => setField("baseAmountCents", e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>{f.paymentDialog.currencyLabel}</Label>
+                    <Input value={normalizedBaseCurrency ?? ""} readOnly className="uppercase" />
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">

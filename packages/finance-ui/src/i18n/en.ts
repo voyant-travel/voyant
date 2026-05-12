@@ -170,6 +170,7 @@ export const financeUiEn = {
     fields: {
       amount: "Amount",
       baseAmount: "Base amount",
+      fxRate: "FX rate",
       status: "Status",
       method: "Payment method",
       date: "Payment date",

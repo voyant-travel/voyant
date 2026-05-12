@@ -4,7 +4,7 @@ import { Hono } from "hono"
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
 import type { publicFinanceRoutes } from "./routes-public.js"
 import type { Env } from "./routes-shared.js"
-import { financeService } from "./service.js"
+import { financeService, PaymentValidationError } from "./service.js"
 import { VoucherServiceError } from "./service-vouchers.js"
 import {
   agingReportQuerySchema,
@@ -896,17 +896,28 @@ export const financeRoutes = new Hono<Env>()
 
   // POST /invoices/:id/payments — Record payment (transaction)
   .post("/invoices/:id/payments", async (c) => {
-    const row = await financeService.createPayment(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, insertPaymentSchema),
-    )
+    try {
+      const row = await financeService.createPayment(
+        c.get("db"),
+        c.req.param("id"),
+        await parseJsonBody(c, insertPaymentSchema),
+      )
 
-    if (!row) {
-      return c.json({ error: "Invoice not found" }, 404)
+      if (!row) {
+        return c.json({ error: "Invoice not found" }, 404)
+      }
+
+      return c.json({ data: row }, 201)
+    } catch (error) {
+      if (error instanceof PaymentValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+
+      throw error
     }
-
-    return c.json({ data: row }, 201)
   })
 
   // ========================================================================

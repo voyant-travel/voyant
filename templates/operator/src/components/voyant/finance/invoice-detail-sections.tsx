@@ -339,7 +339,12 @@ export function InvoicePaymentsCard({
                       {getPaymentMethodLabel(messages, payment.paymentMethod)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatAmount(payment.amountCents, payment.currency)}
+                      <div>{formatAmount(payment.amountCents, payment.currency)}</div>
+                      {payment.baseAmountCents !== null && payment.baseCurrency ? (
+                        <div className="text-muted-foreground text-xs">
+                          {formatAmount(payment.baseAmountCents, payment.baseCurrency)}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="p-2">
                       <Badge

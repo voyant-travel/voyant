@@ -129,8 +129,9 @@ export interface PaymentDetailCardProps {
 
 export function PaymentSummaryCard({ payment, className }: PaymentDetailCardProps) {
   const messages = useFinanceUiMessagesOrDefault()
-  const { formatCurrency } = useFinanceUiI18nOrDefault()
+  const { formatCurrency, formatNumber } = useFinanceUiI18nOrDefault()
   const detail = messages.paymentDetailPage
+  const fxRateLabel = formatFxRate(payment, formatNumber)
 
   return (
     <Card data-slot="payment-summary-card" className={className}>
@@ -149,6 +150,11 @@ export function PaymentSummaryCard({ payment, className }: PaymentDetailCardProp
               <span className="font-mono">
                 {formatCurrency(payment.baseAmountCents / 100, payment.baseCurrency)}
               </span>
+            </DetailRow>
+          ) : null}
+          {fxRateLabel ? (
+            <DetailRow label={detail.fields.fxRate}>
+              <span className="font-mono">{fxRateLabel}</span>
             </DetailRow>
           ) : null}
           <DetailRow label={detail.fields.status}>
@@ -175,6 +181,25 @@ export function PaymentSummaryCard({ payment, className }: PaymentDetailCardProp
       </CardContent>
     </Card>
   )
+}
+
+function formatFxRate(
+  payment: UnifiedPaymentRecord,
+  formatNumber: (value: number | string | bigint, options?: Intl.NumberFormatOptions) => string,
+) {
+  if (
+    payment.baseAmountCents === null ||
+    !payment.baseCurrency ||
+    payment.baseAmountCents <= 0 ||
+    payment.currency === payment.baseCurrency
+  ) {
+    return null
+  }
+
+  const rate = payment.amountCents / payment.baseAmountCents
+  return `1 ${payment.baseCurrency} = ${formatNumber(rate, { maximumFractionDigits: 6 })} ${
+    payment.currency
+  }`
 }
 
 export interface PaymentLinksCardProps extends PaymentDetailCardProps {

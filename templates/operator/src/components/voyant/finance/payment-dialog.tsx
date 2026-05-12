@@ -27,6 +27,10 @@ function getPaymentFormSchema(messages: AdminMessages) {
   return z.object({
     amountCents: z.coerce.number().int().min(1, messages.finance.paymentDialog.validationAmountMin),
     currency: z.string().min(3).max(3),
+    baseAmountCents: z.preprocess(
+      (value) => (value === "" || value === null ? undefined : value),
+      z.coerce.number().int().min(1).optional(),
+    ),
     paymentMethod: z.enum(["bank_transfer", "credit_card", "cash", "cheque", "other"]),
     status: z.enum(["pending", "completed", "failed", "refunded"]),
     referenceNumber: z.string().optional().nullable(),
@@ -83,6 +87,7 @@ export function PaymentDialog({
     defaultValues: {
       amountCents: 0,
       currency: invoiceCurrency,
+      baseAmountCents: undefined,
       paymentMethod: "bank_transfer",
       status: "completed",
       referenceNumber: "",
@@ -97,6 +102,7 @@ export function PaymentDialog({
       form.reset({
         amountCents: 0,
         currency: invoiceCurrency,
+        baseAmountCents: undefined,
         paymentMethod: "bank_transfer",
         status: "completed",
         referenceNumber: "",
@@ -106,10 +112,27 @@ export function PaymentDialog({
     }
   }, [open, invoiceCurrency, form])
 
+  const paymentCurrency = form.watch("currency").trim().toUpperCase()
+  const invoiceCurrencyCode = invoiceCurrency.trim().toUpperCase()
+  const requiresBaseAmount = paymentCurrency !== "" && paymentCurrency !== invoiceCurrencyCode
+
   const onSubmit = async (values: PaymentFormOutput) => {
+    const normalizedCurrency = values.currency.trim().toUpperCase()
+    const baseAmountCents =
+      normalizedCurrency !== invoiceCurrencyCode ? values.baseAmountCents : undefined
+
+    if (normalizedCurrency !== invoiceCurrencyCode && !baseAmountCents) {
+      form.setError("baseAmountCents", {
+        message: messages.finance.paymentDialog.validationBaseAmountRequired,
+      })
+      return
+    }
+
     await createPayment.mutateAsync({
       amountCents: values.amountCents,
-      currency: values.currency,
+      currency: normalizedCurrency,
+      baseCurrency: baseAmountCents ? invoiceCurrencyCode : null,
+      baseAmountCents: baseAmountCents ?? null,
       paymentMethod: values.paymentMethod,
       status: values.status,
       referenceNumber: values.referenceNumber || null,
@@ -149,6 +172,34 @@ export function PaymentDialog({
                 />
               </div>
             </div>
+
+            {requiresBaseAmount ? (
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="mb-3">
+                  <h3 className="text-sm font-medium">
+                    {messages.finance.paymentDialog.fxSectionTitle}
+                  </h3>
+                  <p className="text-muted-foreground text-xs">
+                    {messages.finance.paymentDialog.baseCurrencyHelp}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label>{messages.finance.paymentDialog.baseAmountLabel}</Label>
+                    <Input {...form.register("baseAmountCents")} type="number" min="1" />
+                    {form.formState.errors.baseAmountCents ? (
+                      <p className="text-xs text-destructive">
+                        {form.formState.errors.baseAmountCents.message}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>{messages.finance.paymentDialog.currencyLabel}</Label>
+                    <Input value={invoiceCurrencyCode} readOnly className="uppercase" />
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
