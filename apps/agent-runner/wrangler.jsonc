@@ -1,0 +1,18 @@
+{
+  // Reference Cloudflare Worker for the agent queue runner shell.
+  // This first deployment is intentionally non-executing: it exposes the
+  // deployable surface, auth, scheduled handler, and control-plane wiring before
+  // any remote GitHub or provider mutation is enabled.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "voyant-agent-runner",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-01-01",
+  // Configure AGENT_RUNNER_TOKENS as a secret before exposing /api/*:
+  // pnpm -C apps/agent-runner wrangler secret put AGENT_RUNNER_TOKENS
+  // Configure AGENT_CONTROL_PLANE_TOKEN separately when the runner is allowed to
+  // call the control plane. Cron triggers should stay disabled until execution
+  // policy, queue budget, and provider credentials are configured.
+  "observability": {
+    "enabled": true
+  }
+}
