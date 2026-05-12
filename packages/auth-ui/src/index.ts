@@ -63,6 +63,13 @@ export {
   type SignUpPageProps,
   type SignUpSocialProvider,
 } from "./components/sign-up-page.js"
+export {
+  defaultVerifyEmailPageMessages,
+  VerifyEmailPage,
+  type VerifyEmailPageMessages,
+  type VerifyEmailPageMode,
+  type VerifyEmailPageProps,
+} from "./components/verify-email-page.js"
 export type { AuthUiMessages } from "./i18n/index.js"
 export {
   type AuthUiMessageOverrides,
