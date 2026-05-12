@@ -1,7 +1,8 @@
 # @voyantjs/workflows-react
 
 React hooks for triggering Voyant Workflows and subscribing to runs in
-real time.
+real time. The package also includes admin workflow-run observability hooks for
+the `/v1/admin/workflow-runs` routes exposed by `@voyantjs/workflow-runs`.
 
 ```tsx
 import { useTriggerWorkflow, useRealtimeRun } from "@voyantjs/workflows-react";

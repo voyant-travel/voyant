@@ -28,6 +28,8 @@
     "build": "tsc -p tsconfig.json",
     "check-types": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
     "dev": "tsc -w -p tsconfig.json"
   },
   "dependencies": {
@@ -43,11 +45,13 @@
   "devDependencies": {
     "@tanstack/react-query": "^5.96.2",
     "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.2.3",
     "@voyantjs/react": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.2.4",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.2"
   },
   "publishConfig": {
     "access": "public",
