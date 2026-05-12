@@ -6,12 +6,15 @@ import type {
   PaymentStepCapabilities,
   SavedPaymentAccount,
 } from "@voyantjs/checkout-react"
+import { formatMessage } from "@voyantjs/i18n"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
 import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Banknote, CreditCard, Wallet } from "lucide-react"
 import { type ReactNode, useState } from "react"
+
+import { useCheckoutUiMessagesOrDefault } from "../i18n/provider.js"
 
 /**
  * UI-side extension of the `PaymentStepExtraOption` from checkout-react —
@@ -66,13 +69,12 @@ export function PaymentStep({
   extraOptions,
   hideHoldOption,
 }: PaymentStepProps) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentStep
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="font-semibold text-base">Payment</h2>
-        <p className="text-muted-foreground text-sm">
-          Pick a saved method or use a different payment option.
-        </p>
+        <h2 className="font-semibold text-base">{messages.title}</h2>
+        <p className="text-muted-foreground text-sm">{messages.description}</p>
       </div>
 
       {capabilities.chargeSavedCard && (
@@ -108,19 +110,22 @@ function SavedMethodsSection({
   selectedId: string | null
   onSelect: (method: SavedPaymentAccount) => void
 }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentStep.savedMethods
   return (
     <section className="rounded-xl border bg-card p-5 shadow-sm">
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="font-medium text-sm">Saved payment methods</h3>
+        <h3 className="font-medium text-sm">{messages.title}</h3>
         {methods.length > 0 && (
-          <span className="text-muted-foreground text-xs">{methods.length} on file</span>
+          <span className="text-muted-foreground text-xs">
+            {formatMessage(messages.countOnFile, { count: methods.length })}
+          </span>
         )}
       </header>
       {loading ? (
         <div className="h-16 animate-pulse rounded-md bg-muted/40" />
       ) : methods.length === 0 ? (
         <div className="rounded-md border border-dashed p-4 text-center text-muted-foreground text-xs">
-          No saved methods on file for this contact.
+          {messages.empty}
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -150,17 +155,22 @@ function SavedMethodsSection({
                       )}
                       {m.isDefault && (
                         <span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 font-medium text-[9px] text-primary uppercase tracking-wider">
-                          Default
+                          {messages.defaultBadge}
                         </span>
                       )}
                     </span>
                     {m.expiryMonth && m.expiryYear && (
                       <span className="text-muted-foreground text-xs">
-                        Expires {String(m.expiryMonth).padStart(2, "0")}/{m.expiryYear}
+                        {formatMessage(messages.expires, {
+                          month: String(m.expiryMonth).padStart(2, "0"),
+                          year: m.expiryYear,
+                        })}
                       </span>
                     )}
                   </div>
-                  {selected && <span className="font-medium text-primary text-xs">Selected</span>}
+                  {selected && (
+                    <span className="font-medium text-primary text-xs">{messages.selected}</span>
+                  )}
                 </button>
               </li>
             )
@@ -186,6 +196,7 @@ function AltMethodsSection({
   extraOptions: ReadonlyArray<PaymentStepExtraOption>
   hideHoldOption?: boolean
 }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentStep.otherOptions
   const [newCardName, setNewCardName] = useState("")
   const [newCardNumber, setNewCardNumber] = useState("")
   const [newCardExp, setNewCardExp] = useState("")
@@ -217,7 +228,7 @@ function AltMethodsSection({
   return (
     <section className="rounded-xl border bg-card p-5 shadow-sm">
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="font-medium text-sm">Other payment options</h3>
+        <h3 className="font-medium text-sm">{messages.title}</h3>
       </header>
       <RadioGroup
         value={activeId ?? "__none"}
@@ -233,13 +244,13 @@ function AltMethodsSection({
           <AltRow
             id="new_card"
             icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
-            title="New credit / debit card"
-            body="Charge a one-off card now."
+            title={messages.newCard.title}
+            body={messages.newCard.body}
             active={activeId === "new_card"}
           >
             {activeId === "new_card" && (
               <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-                <Field label="Cardholder name">
+                <Field label={messages.newCard.cardholderName}>
                   <Input
                     value={newCardName}
                     onChange={(e) => {
@@ -250,10 +261,10 @@ function AltMethodsSection({
                     }}
                   />
                 </Field>
-                <Field label="Card number">
+                <Field label={messages.newCard.cardNumber}>
                   <Input
                     inputMode="numeric"
-                    placeholder="•••• •••• •••• ••••"
+                    placeholder={messages.newCard.cardNumberPlaceholder}
                     value={newCardNumber}
                     onChange={(e) => {
                       setNewCardNumber(e.target.value)
@@ -263,7 +274,7 @@ function AltMethodsSection({
                     }}
                   />
                 </Field>
-                <Field label="MM/YY">
+                <Field label={messages.newCard.expiry}>
                   <Input
                     value={newCardExp}
                     onChange={(e) => {
@@ -272,7 +283,7 @@ function AltMethodsSection({
                         onChange({ ...value, expiry: e.target.value })
                       }
                     }}
-                    placeholder="08/29"
+                    placeholder={messages.newCard.expiryPlaceholder}
                   />
                 </Field>
               </div>
@@ -295,8 +306,8 @@ function AltMethodsSection({
           <AltRow
             id="hold"
             icon={<Wallet className="h-4 w-4 text-muted-foreground" />}
-            title="Hold — generate payment link"
-            body="Lock the order and generate a payment link the customer can open to pay by card or bank transfer. Share it however you prefer."
+            title={messages.hold.title}
+            body={messages.hold.body}
             active={activeId === "hold"}
           />
         )}
@@ -305,8 +316,7 @@ function AltMethodsSection({
       {showNewCard && (
         <p className="mt-4 flex items-start gap-1.5 text-[11px] text-muted-foreground">
           <Banknote className="mt-0.5 h-3 w-3" />
-          Card numbers entered here are tokenized in production via the processor's hosted form —
-          never sent through this UI.
+          {messages.cardSecurityNote}
         </p>
       )}
     </section>
@@ -359,9 +369,10 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function BrandTile({ brand }: { brand: string | null }) {
+  const messages = useCheckoutUiMessagesOrDefault().paymentStep.otherOptions
   return (
     <span className="flex h-9 w-12 shrink-0 items-center justify-center rounded-md border bg-muted/30 font-mono text-[10px] uppercase tracking-wider">
-      {(brand ?? "card").slice(0, 4)}
+      {(brand ?? messages.brandFallback).slice(0, 4)}
     </span>
   )
 }

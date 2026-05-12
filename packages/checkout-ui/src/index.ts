@@ -34,3 +34,15 @@ export {
   type PaymentStepExtraOption,
   type PaymentStepProps,
 } from "./components/payment-step.js"
+export type { CheckoutPaymentTargetType, CheckoutUiMessages } from "./i18n/index.js"
+export {
+  type CheckoutUiMessageOverrides,
+  CheckoutUiMessagesProvider,
+  checkoutUiMessageDefinitions,
+  getCheckoutUiI18n,
+  resolveCheckoutUiMessages,
+  useCheckoutUiI18n,
+  useCheckoutUiI18nOrDefault,
+  useCheckoutUiMessages,
+  useCheckoutUiMessagesOrDefault,
+} from "./i18n/index.js"

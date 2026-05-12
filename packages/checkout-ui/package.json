@@ -12,6 +12,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/en": "./src/i18n/en.ts",
+    "./i18n/ro": "./src/i18n/ro.ts",
     "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
@@ -27,6 +30,7 @@
     "@voyantjs/checkout-react": "workspace:*",
     "@voyantjs/finance": "workspace:*",
     "@voyantjs/finance-react": "workspace:*",
+    "@voyantjs/i18n": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "react": "^19.0.0",
@@ -41,6 +45,7 @@
     "@voyantjs/checkout-react": "workspace:*",
     "@voyantjs/finance": "workspace:*",
     "@voyantjs/finance-react": "workspace:*",
+    "@voyantjs/i18n": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "lucide-react": "^0.475.0",
@@ -64,6 +69,21 @@
       },
       "./styles.css": {
         "default": "./src/styles.css"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js",
+        "default": "./dist/i18n/index.js"
+      },
+      "./i18n/en": {
+        "types": "./dist/i18n/en.d.ts",
+        "import": "./dist/i18n/en.js",
+        "default": "./dist/i18n/en.js"
+      },
+      "./i18n/ro": {
+        "types": "./dist/i18n/ro.d.ts",
+        "import": "./dist/i18n/ro.js",
+        "default": "./dist/i18n/ro.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",

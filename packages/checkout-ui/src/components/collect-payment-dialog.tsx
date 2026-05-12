@@ -2,6 +2,7 @@
 
 import type { InitiatedCheckoutCollectionRecord } from "@voyantjs/checkout"
 import { type PaymentChoice, useCollectPayment } from "@voyantjs/checkout-react"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import {
   Dialog,
@@ -17,6 +18,7 @@ import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
+import { useCheckoutUiMessagesOrDefault } from "../i18n/provider.js"
 import { PaymentStep } from "./payment-step.js"
 
 /**
@@ -89,6 +91,7 @@ export function CollectPaymentDialog({
   cancelUrl,
   cardProvider,
 }: CollectPaymentDialogProps) {
+  const messages = useCheckoutUiMessagesOrDefault().collectPaymentDialog
   const [amountCents, setAmountCents] = useState<number>(defaultAmountCents ?? 0)
   const [choice, setChoice] = useState<PaymentChoice | null>(null)
   const [result, setResult] = useState<InitiatedCheckoutCollectionRecord | null>(null)
@@ -116,17 +119,17 @@ export function CollectPaymentDialog({
 
   async function submit() {
     if (!choice || choice.type !== "hold") {
-      toast.error("Pick 'Hold — generate payment link' to produce a shareable link.")
+      toast.error(messages.validation.pickHold)
       return
     }
     if (amountCents <= 0) {
-      toast.error("Enter an amount above zero.")
+      toast.error(messages.validation.amountAboveZero)
       return
     }
     try {
       const data = await collect.mutateAsync({ choice, amountCents })
       setResult(data)
-      toast.success("Payment link ready — copy or share it with the customer.")
+      toast.success(messages.validation.linkReady)
     } catch (err) {
       toast.error((err as Error).message)
     }
@@ -142,11 +145,8 @@ export function CollectPaymentDialog({
     >
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Generate payment link</DialogTitle>
-          <DialogDescription>
-            Hold the booking and produce a payment link the customer can open to pay by card or bank
-            transfer. Share it however you prefer (email, chat, etc.).
-          </DialogDescription>
+          <DialogTitle>{messages.title}</DialogTitle>
+          <DialogDescription>{messages.description}</DialogDescription>
         </DialogHeader>
 
         {result ? (
@@ -154,7 +154,9 @@ export function CollectPaymentDialog({
         ) : (
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="collect-amount">Amount ({defaultCurrency})</Label>
+              <Label htmlFor="collect-amount">
+                {formatMessage(messages.amountLabel, { currency: defaultCurrency })}
+              </Label>
               <Input
                 id="collect-amount"
                 type="number"
@@ -167,9 +169,7 @@ export function CollectPaymentDialog({
                   setAmountCents(Number.isFinite(raw) ? Math.round(raw * 100) : 0)
                 }}
               />
-              <p className="text-muted-foreground text-xs">
-                Defaults to the booking's sell amount. Override for a deposit or partial collection.
-              </p>
+              <p className="text-muted-foreground text-xs">{messages.amountHelp}</p>
             </div>
 
             <PaymentStep value={choice} onChange={setChoice} capabilities={CAPABILITIES} />
@@ -178,7 +178,7 @@ export function CollectPaymentDialog({
 
         <DialogFooter>
           {result ? (
-            <Button onClick={() => onOpenChange(false)}>Done</Button>
+            <Button onClick={() => onOpenChange(false)}>{messages.done}</Button>
           ) : (
             <>
               <Button
@@ -186,11 +186,11 @@ export function CollectPaymentDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={collect.isPending}
               >
-                Cancel
+                {messages.cancel}
               </Button>
               <Button onClick={submit} disabled={collect.isPending || choice?.type !== "hold"}>
                 {collect.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate link
+                {messages.generateLink}
               </Button>
             </>
           )}
@@ -201,6 +201,7 @@ export function CollectPaymentDialog({
 }
 
 function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) {
+  const messages = useCheckoutUiMessagesOrDefault().collectPaymentDialog
   const sessionId = result.paymentSession?.id ?? null
   const landingUrl =
     sessionId && typeof window !== "undefined" ? `${window.location.origin}/pay/${sessionId}` : null
@@ -208,8 +209,9 @@ function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) 
   if (!landingUrl) {
     return (
       <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 text-sm">
-        The session was created but no link could be built. Session id:{" "}
-        <span className="font-mono">{sessionId ?? "—"}</span>.
+        {formatMessage(messages.result.noLink, {
+          sessionId: sessionId ?? messages.result.noSession,
+        })}
       </div>
     )
   }
@@ -218,16 +220,14 @@ function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) 
     <div className="flex flex-col gap-4 rounded-xl border bg-card p-5">
       <div className="flex items-center gap-2 text-emerald-700">
         <CheckCircle2 className="h-5 w-5" />
-        <span className="font-medium">Payment link ready</span>
+        <span className="font-medium">{messages.result.ready}</span>
       </div>
-      <p className="text-muted-foreground text-sm">
-        Share this link with the customer. They'll choose card or bank transfer on the page.
-      </p>
+      <p className="text-muted-foreground text-sm">{messages.result.body}</p>
       <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3 font-mono text-xs">
         <span className="flex-1 break-all">{landingUrl}</span>
         <button
           type="button"
-          aria-label="Copy link"
+          aria-label={messages.result.copyLink}
           className="text-muted-foreground hover:text-foreground"
           onClick={() => {
             navigator.clipboard?.writeText(landingUrl).catch(() => undefined)
@@ -239,7 +239,7 @@ function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) 
           href={landingUrl}
           target="_blank"
           rel="noreferrer"
-          aria-label="Open link"
+          aria-label={messages.result.openLink}
           className="text-muted-foreground hover:text-foreground"
         >
           <ExternalLink className="h-3.5 w-3.5" />
