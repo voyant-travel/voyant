@@ -36,6 +36,10 @@ describe("agent control plane", () => {
         "cleanup",
         "open-pr",
         "publish-evidence",
+        "remote-bootstrap",
+        "remote-cleanup",
+        "remote-open-pr",
+        "remote-publish-evidence",
         "start",
         "sync-pr",
       ],
@@ -134,6 +138,59 @@ describe("agent control plane", () => {
     })
   })
 
+  it("plans allow-listed remote lifecycle actions", () => {
+    const remoteRecommendation = {
+      action: "remote-publish-evidence",
+      reason: "remote workspace evidence should be published before PR creation",
+      issue: {
+        number: 628,
+        title: "Publish remote evidence",
+        url: "https://github.com/voyantjs/voyant/issues/628",
+        repository: "voyantjs/voyant",
+      },
+    }
+
+    expect(
+      selectDispatchPlan({
+        recommendations: [remoteRecommendation],
+        repository: "voyantjs/voyant",
+      }).plan,
+    ).toMatchObject({
+      action: "remote-publish-evidence",
+      command: [
+        "pnpm",
+        "agent:queue:remote-publish-evidence",
+        "--",
+        "--issue",
+        "628",
+        "--repo",
+        "voyantjs/voyant",
+        "--yes",
+      ],
+    })
+  })
+
+  it("adds event log context to planned lifecycle commands", () => {
+    expect(
+      selectDispatchPlan({
+        options: { eventLog: ".agent-runs/supervisor.jsonl" },
+        recommendations: [recommendations[1]!],
+        repository: "voyantjs/voyant",
+      }).plan?.command,
+    ).toEqual([
+      "pnpm",
+      "agent:queue:start",
+      "--",
+      "--issue",
+      "579",
+      "--repo",
+      "voyantjs/voyant",
+      "--yes",
+      "--event-log",
+      ".agent-runs/supervisor.jsonl",
+    ])
+  })
+
   it("adds PR body refresh only for sync plans", () => {
     const syncRecommendation = {
       action: "sync-pr",
@@ -148,7 +205,7 @@ describe("agent control plane", () => {
 
     expect(
       selectDispatchPlan({
-        options: { updateBody: true },
+        options: { eventLog: ".agent-runs/supervisor.jsonl", updateBody: true },
         recommendations: [syncRecommendation],
         repository: "voyantjs/voyant",
       }).plan?.command,
@@ -161,6 +218,8 @@ describe("agent control plane", () => {
       "--repo",
       "voyantjs/voyant",
       "--yes",
+      "--event-log",
+      ".agent-runs/supervisor.jsonl",
       "--update-body",
     ])
 

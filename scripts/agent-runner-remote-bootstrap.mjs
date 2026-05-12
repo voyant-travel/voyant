@@ -9,6 +9,12 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  issueEventDetails,
+  resolveEventLogPath,
+  tryAppendAgentRunnerEvent,
+} from "./lib/agent-runner-events.mjs"
+import {
+  eventLogOptions,
   maybePrintHelp,
   mutationOptions,
   projectOptions,
@@ -45,6 +51,7 @@ maybePrintHelp(args, {
       "Optional remote adapter config module. Defaults to .agents/remote-workspaces.mjs when present.",
     ],
     ["--json", "Print machine-readable JSON."],
+    ...eventLogOptions,
     ...mutationOptions,
     ...repositoryOptions,
     ...projectOptions,
@@ -61,6 +68,7 @@ if (!args.yes) {
 
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = resolveRepository()
+const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const issueContext = args.issue ? loadIssueItem({ repository }) : null
 const item = issueContext?.item ?? null
 const workspaceReference =
@@ -86,6 +94,20 @@ const result = await adapter.exec({
   httpPost: true,
 })
 const projectUpdated = maybeUpdateProject({ issueContext, plan, result, workspaceReference })
+tryAppendAgentRunnerEvent({
+  eventLogPath,
+  event: {
+    type: "remote-bootstrap.completed",
+    branch: plan.branch,
+    issue: item ? issueEventDetails(item) : null,
+    projectUpdated,
+    repository,
+    result: {
+      status: result.status ?? null,
+    },
+    workspace: workspaceReference,
+  },
+})
 
 if (args.json) {
   console.log(
