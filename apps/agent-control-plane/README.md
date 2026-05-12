@@ -73,6 +73,18 @@ AGENT_CONTROL_PLANE_TOKEN=... \
 pnpm agent:queue:submit-tick -- --input .agent-runs/tick.json
 ```
 
+Request the next plan from the latest stored snapshot with:
+
+```bash
+AGENT_CONTROL_PLANE_URL=https://agent-control-plane.example.workers.dev \
+AGENT_CONTROL_PLANE_TOKEN=... \
+pnpm agent:queue:plan-dispatch -- --repo voyantjs/voyant
+```
+
+Use `--json` when a supervisor needs the response shape directly. Use `--issue`,
+`--action`, `--event-log`, and `--update-body` to pass through the same filters
+and command options as `POST /api/dispatch-plans/latest`.
+
 ## Optional R2 Storage
 
 Bind an R2 bucket as `AGENT_TICK_SNAPSHOTS` to keep the latest accepted tick

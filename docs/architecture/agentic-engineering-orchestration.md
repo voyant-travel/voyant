@@ -1327,6 +1327,10 @@ Verification:
   with `POST /api/dispatch-plans/latest`. This keeps the write path split:
   runners submit observed queue state, supervisors request safe lifecycle plans,
   and actual command execution remains outside the Worker.
+- The runner can request that read-only plan with
+  `pnpm agent:queue:plan-dispatch`, using the same control-plane URL and token
+  as snapshot submission. It prints the planned lifecycle command or JSON for a
+  supervisor, but does not execute the mutation.
 
 ## Open Questions
 

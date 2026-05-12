@@ -39,6 +39,27 @@ export async function submitTickSnapshot({ fetchImpl = fetch, snapshot, token, u
   return body
 }
 
+export async function requestLatestDispatchPlan({ fetchImpl = fetch, request, token, url }) {
+  const response = await fetchImpl(`${normalizeControlPlaneUrl(url)}/api/dispatch-plans/latest`, {
+    body: JSON.stringify(request),
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    method: "POST",
+  })
+
+  const bodyText = await response.text()
+  const body = parseJsonBody(bodyText)
+
+  if (!response.ok) {
+    const detail = body?.error ? `: ${body.error}` : bodyText ? `: ${bodyText}` : ""
+    throw new Error(`control plane rejected latest dispatch plan with ${response.status}${detail}`)
+  }
+
+  return body
+}
+
 function normalizeControlPlaneUrl(url) {
   return String(url).replace(/\/+$/, "")
 }
