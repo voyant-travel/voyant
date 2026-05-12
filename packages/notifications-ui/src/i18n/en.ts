@@ -29,6 +29,15 @@ export const notificationsUiEn: NotificationsUiMessages = {
       maxSendsInStage: "Max sends in stage",
       respectQuietHours: "Respect quiet hours",
     },
+    descriptions: {
+      window: "When the eligibility window opens, relative to the chosen anchor.",
+      cadence: "How often this stage may fire while inside the window.",
+      emptyIntervals:
+        "Add buckets keyed on days-until-due to scale cadence as the deadline approaches.",
+      stopConditions: "Stop conditions",
+      maxSendsInStage: "Leave blank for no limit. When reached, the next stage takes over.",
+      respectQuietHours: "Defer fires that would land inside the tenant's quiet-hours window.",
+    },
     placeholders: {
       name: "First reminder",
     },

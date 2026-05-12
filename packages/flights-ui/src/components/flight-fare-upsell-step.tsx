@@ -7,6 +7,7 @@ import type {
   FlightPassenger,
   PassengerCounts,
 } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Briefcase, Check, Crown, Luggage, Sparkles, X } from "lucide-react"
@@ -48,10 +49,10 @@ export function FlightFareUpsellStep({
   sameForAllPassengers,
   onSameForAllPassengersChange,
 }: FlightFareUpsellStepProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const paxRows = useMemo(
-    () => buildPassengerRows(passengers, passengerCounts),
-    [passengers, passengerCounts],
+    () => buildPassengerRows(passengers, passengerCounts, messages),
+    [passengers, passengerCounts, messages],
   )
   const isMultiPax = paxRows.length > 1
   const outboundBundles = outboundOffer.fareBundles ?? []
@@ -60,7 +61,7 @@ export function FlightFareUpsellStep({
   if (outboundBundles.length === 0 && returnBundles.length === 0) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
-        This offer doesn't surface fare upgrade tiers.
+        {messages.flightFareUpsellStep.unavailable}
       </div>
     )
   }
@@ -98,9 +99,9 @@ export function FlightFareUpsellStep({
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-base">Upgrade your fare</h2>
+          <h2 className="font-semibold text-base">{messages.flightFareUpsellStep.title}</h2>
           <p className="text-muted-foreground text-sm">
-            Add bag, seat picks, and flexibility per leg — or keep the base fare.
+            {messages.flightFareUpsellStep.description}
           </p>
         </div>
         {isMultiPax && (
@@ -111,14 +112,14 @@ export function FlightFareUpsellStep({
               onCheckedChange={(v) => onSameForAllPassengersChange(!!v)}
             />
             <label htmlFor="fare-same-for-all" className="cursor-pointer">
-              Same fare for all passengers
+              {messages.flightFareUpsellStep.sameForAllPassengers}
             </label>
           </div>
         )}
       </div>
 
       <FareLegSection
-        label="Outbound"
+        label={messages.common.legLabels.outbound}
         bundles={outboundBundles}
         sliceIndex={0}
         paxRows={paxRows}
@@ -126,11 +127,12 @@ export function FlightFareUpsellStep({
         sameForAll={sameForAllPassengers || !isMultiPax}
         onSetPick={setPick}
         onSetLegPick={setLegPick}
+        messages={messages}
       />
 
       {returnOffer && returnBundles.length > 0 && (
         <FareLegSection
-          label="Return"
+          label={messages.common.legLabels.return}
           bundles={returnBundles}
           sliceIndex={1}
           paxRows={paxRows}
@@ -138,6 +140,7 @@ export function FlightFareUpsellStep({
           sameForAll={sameForAllPassengers || !isMultiPax}
           onSetPick={setPick}
           onSetLegPick={setLegPick}
+          messages={messages}
         />
       )}
     </div>
@@ -160,6 +163,7 @@ function FareLegSection({
   sameForAll,
   onSetPick,
   onSetLegPick,
+  messages,
 }: {
   label: string
   bundles: FareBundle[]
@@ -169,6 +173,7 @@ function FareLegSection({
   sameForAll: boolean
   onSetPick: (passengerId: string, sliceIndex: number, bundleId: string | null) => void
   onSetLegPick: (sliceIndex: number, bundleId: string | null) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   // For "same for all" mode we treat the leg as having one selection — the
   // bundleId common to every pax pick on this leg (null when split or none).
@@ -196,7 +201,7 @@ function FareLegSection({
             onClick={() => onSetLegPick(sliceIndex, null)}
             className="text-muted-foreground text-xs hover:text-foreground"
           >
-            Reset to Basic
+            {messages.flightFareUpsellStep.resetToBasic}
           </button>
         )}
       </header>
@@ -205,8 +210,15 @@ function FareLegSection({
         <BundleGrid
           bundles={bundles}
           selectedId={legPick}
-          contextLabel={paxRows.length > 1 ? `Applies to all ${paxRows.length} passengers` : null}
+          contextLabel={
+            paxRows.length > 1
+              ? formatMessage(messages.flightFareUpsellStep.appliesToAllPassengers, {
+                  count: paxRows.length,
+                })
+              : null
+          }
           onPick={(id) => onSetLegPick(sliceIndex, id)}
+          messages={messages}
         />
       ) : (
         <div className="flex flex-col gap-4">
@@ -221,6 +233,7 @@ function FareLegSection({
                   bundles={bundles}
                   selectedId={pick?.bundleId ?? null}
                   onPick={(id) => onSetPick(pax.passengerId, sliceIndex, id)}
+                  messages={messages}
                 />
               </div>
             )
@@ -236,11 +249,13 @@ function BundleGrid({
   selectedId,
   contextLabel,
   onPick,
+  messages,
 }: {
   bundles: FareBundle[]
   selectedId: string | null
   contextLabel?: string | null
   onPick: (bundleId: string | null) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -252,6 +267,7 @@ function BundleGrid({
             selected={selectedId === b.id}
             isBasicByDefault={selectedId == null && b.tier === "basic"}
             onPick={() => onPick(b.tier === "basic" ? null : b.id)}
+            messages={messages}
           />
         ))}
       </div>
@@ -265,15 +281,19 @@ function BundleCard({
   selected,
   isBasicByDefault,
   onPick,
+  messages,
 }: {
   bundle: FareBundle
   selected: boolean
   isBasicByDefault: boolean
   onPick: () => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   const delta = Number(bundle.priceDelta.amount)
   const deltaLabel =
-    delta > 0 ? `+${formatMoney(bundle.priceDelta.amount, bundle.priceDelta.currency)}` : "Included"
+    delta > 0
+      ? `+${formatMoney(bundle.priceDelta.amount, bundle.priceDelta.currency)}`
+      : messages.common.included
   const showActiveRing = selected || isBasicByDefault
 
   return (
@@ -290,7 +310,7 @@ function BundleCard({
     >
       {bundle.recommended && (
         <span className="-translate-y-1/2 absolute top-0 left-4 rounded-full bg-primary px-2 py-0.5 font-medium text-[9px] text-primary-foreground uppercase tracking-wider">
-          Recommended
+          {messages.common.recommended}
         </span>
       )}
       <div className="flex items-baseline justify-between gap-2">
@@ -310,8 +330,12 @@ function BundleCard({
           icon={<Briefcase className="h-3.5 w-3.5" />}
           label={
             bundle.inclusions.cabinBag?.included
-              ? `Cabin bag ${bundle.inclusions.cabinBag.weightKg ? `(${bundle.inclusions.cabinBag.weightKg} kg)` : ""}`.trim()
-              : "No cabin bag"
+              ? formatMessage(messages.flightFareUpsellStep.cabinBag, {
+                  weight: bundle.inclusions.cabinBag.weightKg
+                    ? `(${bundle.inclusions.cabinBag.weightKg} kg)`
+                    : "",
+                }).trim()
+              : messages.flightFareUpsellStep.noCabinBag
           }
         />
         <Inclusion
@@ -319,16 +343,16 @@ function BundleCard({
           icon={<Luggage className="h-3.5 w-3.5" />}
           label={
             bundle.inclusions.checkedBag?.included
-              ? `Checked bag ${
-                  bundle.inclusions.checkedBag.weightKg
+              ? formatMessage(messages.flightFareUpsellStep.checkedBag, {
+                  weight: bundle.inclusions.checkedBag.weightKg
                     ? `${bundle.inclusions.checkedBag.weightKg} kg`
-                    : ""
-                }${
-                  bundle.inclusions.checkedBag.pieces && bundle.inclusions.checkedBag.pieces > 1
-                    ? ` × ${bundle.inclusions.checkedBag.pieces}`
-                    : ""
-                }`.trim()
-              : "No checked bag"
+                    : "",
+                  pieces:
+                    bundle.inclusions.checkedBag.pieces && bundle.inclusions.checkedBag.pieces > 1
+                      ? ` × ${bundle.inclusions.checkedBag.pieces}`
+                      : "",
+                }).trim()
+              : messages.flightFareUpsellStep.noCheckedBag
           }
         />
         <Inclusion
@@ -336,21 +360,35 @@ function BundleCard({
           icon={<Sparkles className="h-3.5 w-3.5" />}
           label={
             bundle.inclusions.seatSelection === "free"
-              ? "Free seat selection"
+              ? messages.flightFareUpsellStep.freeSeatSelection
               : bundle.inclusions.seatSelection === "standard"
-                ? "Standard seat selection"
-                : "No seat selection"
+                ? messages.flightFareUpsellStep.standardSeatSelection
+                : messages.flightFareUpsellStep.noSeatSelection
           }
         />
-        <Inclusion ok={!!bundle.inclusions.priorityBoarding} label="Priority boarding" />
-        <Inclusion ok={!!bundle.inclusions.loungeAccess} label="Lounge access" />
+        <Inclusion
+          ok={!!bundle.inclusions.priorityBoarding}
+          label={messages.flightFareUpsellStep.priorityBoarding}
+        />
+        <Inclusion
+          ok={!!bundle.inclusions.loungeAccess}
+          label={messages.flightFareUpsellStep.loungeAccess}
+        />
         <Inclusion
           ok={!!bundle.inclusions.changeable}
-          label={bundle.inclusions.changeable ? "Free changes" : "Changes for a fee"}
+          label={
+            bundle.inclusions.changeable
+              ? messages.flightFareUpsellStep.freeChanges
+              : messages.flightFareUpsellStep.changesForFee
+          }
         />
         <Inclusion
           ok={!!bundle.inclusions.refundable}
-          label={bundle.inclusions.refundable ? "Refundable" : "Non-refundable"}
+          label={
+            bundle.inclusions.refundable
+              ? messages.flightFareUpsellStep.refundable
+              : messages.flightFareUpsellStep.nonRefundable
+          }
         />
         {bundle.inclusions.notes?.map((n) => (
           <Inclusion key={n} ok label={n} />
@@ -358,7 +396,8 @@ function BundleCard({
       </ul>
       {selected && (
         <span className="mt-1 inline-flex items-center gap-1 self-start font-medium text-primary text-xs">
-          <Check className="h-3 w-3" /> Selected
+          <Check className="h-3 w-3" />
+          <span>{messages.common.selected}</span>
         </span>
       )}
     </button>
@@ -393,31 +432,47 @@ function TierIcon({ tier }: { tier: FareBundle["tier"] }) {
   }
 }
 
-function buildPassengerRows(passengers: FlightPassenger[], counts: PassengerCounts): PaxRow[] {
+function buildPassengerRows(
+  passengers: FlightPassenger[],
+  counts: PassengerCounts,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): PaxRow[] {
   if (passengers.length > 0) {
     return passengers.map((p, idx) => ({
       passengerId: p.passengerId,
-      label: nameOrFallback(p, idx),
+      label: nameOrFallback(p, idx, messages),
     }))
   }
   const out: PaxRow[] = []
   for (let i = 1; i <= counts.adults; i++) {
-    out.push({ passengerId: `pax_adult_${i}`, label: `Adult ${i}` })
+    out.push({
+      passengerId: `pax_adult_${i}`,
+      label: `${messages.common.passengerTypeLabels.adult} ${i}`,
+    })
   }
   for (let i = 1; i <= (counts.children ?? 0); i++) {
-    out.push({ passengerId: `pax_child_${i}`, label: `Child ${i}` })
+    out.push({
+      passengerId: `pax_child_${i}`,
+      label: `${messages.common.passengerTypeLabels.child} ${i}`,
+    })
   }
   for (let i = 1; i <= (counts.infants ?? 0); i++) {
-    out.push({ passengerId: `pax_infant_${i}`, label: `Infant ${i}` })
+    out.push({
+      passengerId: `pax_infant_${i}`,
+      label: `${messages.common.passengerTypeLabels.infant} ${i}`,
+    })
   }
   return out
 }
 
-function nameOrFallback(p: FlightPassenger, idx: number): string {
+function nameOrFallback(
+  p: FlightPassenger,
+  idx: number,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
   const full = `${p.firstName} ${p.lastName}`.trim()
   if (full) return full
-  const cap = p.type[0]?.toUpperCase() + p.type.slice(1)
-  return `${cap} ${idx + 1}`
+  return `${messages.common.passengerTypeLabels[p.type]} ${idx + 1}`
 }
 
 function formatMoney(amount: string, currency: string): string {

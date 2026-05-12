@@ -19,7 +19,7 @@ import { PhoneInput } from "@voyantjs/ui/components/phone-input"
 import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
 import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
-import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
+import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import {
   type Draft,
   patchBilling,
@@ -55,11 +55,11 @@ export function ConfigureStep({
 }: StepCommonProps & {
   renderExtras?: () => React.ReactNode
 }): React.ReactElement {
-  useBookingsUiMessagesOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Configure</CardTitle>
+        <CardTitle>{messages.bookingJourney.steps.configure}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
@@ -70,9 +70,10 @@ export function ConfigureStep({
 }
 
 function PaxBands({ draft, setDraft, shape }: StepCommonProps): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <div className="space-y-3">
-      <Label>Travelers</Label>
+      <Label>{messages.bookingJourney.configure.travelers}</Label>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {shape.paxBands.map((band) => {
           const value = draft.configure.pax?.[band.code] ?? 0
@@ -82,7 +83,7 @@ function PaxBands({ draft, setDraft, shape }: StepCommonProps): React.ReactEleme
                 <div className="font-medium">{band.label}</div>
                 {band.minAge != null || band.maxAge != null ? (
                   <div className="text-muted-foreground text-xs">
-                    {ageHint(band.minAge, band.maxAge)}
+                    {ageHint(band.minAge, band.maxAge, messages)}
                   </div>
                 ) : null}
               </div>
@@ -123,17 +124,27 @@ function PaxValidation({
   draft: Draft
   shape: BookingDraftShape
 }): React.ReactNode {
+  const messages = useBookingsUiMessagesOrDefault()
   const total = totalPax(draft)
   const { min, max } = shape.paxBandsAllowedTotal
   if (total < min) {
     return (
       <p className="text-sm text-amber-600">
-        Add at least {min} traveler{min === 1 ? "" : "s"} to continue.
+        {formatMessage(messages.bookingJourney.validation.addAtLeastTravelers, {
+          count: min,
+          plural: min === 1 ? "" : "s",
+        })}
       </p>
     )
   }
   if (total > max) {
-    return <p className="text-sm text-destructive">Max {max} travelers per booking.</p>
+    return (
+      <p className="text-sm text-destructive">
+        {formatMessage(messages.bookingJourney.validation.maxTravelersPerBooking, {
+          count: max,
+        })}
+      </p>
+    )
   }
   return null
 }
@@ -201,17 +212,18 @@ function DepartureBasic({
   draft: Draft
   setDraft: (next: Draft) => void
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <DateField
         id="bj-departure-date"
-        label="Departure date"
+        label={messages.bookingJourney.configure.departureDate}
         value={draft.configure.departureDate ?? ""}
         onChange={(v) => setDraft(patchConfigure(draft, { departureDate: v }))}
         range="future"
       />
       <div className="space-y-1">
-        <Label htmlFor="bj-departure-time">Time (optional)</Label>
+        <Label htmlFor="bj-departure-time">{messages.bookingJourney.configure.timeOptional}</Label>
         <Input
           id="bj-departure-time"
           type="time"
@@ -234,12 +246,13 @@ function DateRangeFields({
   minNights: number
   maxNights: number
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const range = draft.configure.dateRange
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <DateField
         id="bj-checkin"
-        label="Check-in"
+        label={messages.bookingJourney.configure.checkIn}
         value={range?.checkIn ?? ""}
         onChange={(v) =>
           setDraft(
@@ -252,7 +265,10 @@ function DateRangeFields({
       />
       <DateField
         id="bj-checkout"
-        label={`Check-out (${minNights}–${maxNights} nights)`}
+        label={formatMessage(messages.bookingJourney.configure.checkOutWithNights, {
+          minNights,
+          maxNights,
+        })}
         value={range?.checkOut ?? ""}
         onChange={(v) =>
           setDraft(
@@ -276,9 +292,10 @@ function CabinCategoryFields({
   setDraft: (next: Draft) => void
   categories: ReadonlyArray<{ id: string; name: string; description?: string }>
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <div className="space-y-2">
-      <Label>Cabin category</Label>
+      <Label>{messages.bookingJourney.configure.cabinCategory}</Label>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {categories.map((cat) => {
           const selected = draft.configure.cabinCategoryId === cat.id
@@ -314,6 +331,7 @@ function AirArrangementFields({
   draft: Draft
   setDraft: (next: Draft) => void
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const current = draft.configure.airArrangement
   const options: Array<{
     value: "cruise_line" | "independent" | "none"
@@ -322,24 +340,23 @@ function AirArrangementFields({
   }> = [
     {
       value: "cruise_line",
-      label: "Cruise-line-arranged flights",
-      description:
-        "The cruise line books your flights in a coordinated package. Operator follows up with the air desk.",
+      label: messages.bookingJourney.configure.airOptions.cruise_line.label,
+      description: messages.bookingJourney.configure.airOptions.cruise_line.description,
     },
     {
       value: "independent",
-      label: "Independent flights",
-      description: "Book flights yourself or via a separate flight booking line.",
+      label: messages.bookingJourney.configure.airOptions.independent.label,
+      description: messages.bookingJourney.configure.airOptions.independent.description,
     },
     {
       value: "none",
-      label: "No flights needed",
-      description: "Regional cruise / driving to the port.",
+      label: messages.bookingJourney.configure.airOptions.none.label,
+      description: messages.bookingJourney.configure.airOptions.none.description,
     },
   ]
   return (
     <div className="space-y-2">
-      <Label>Air arrangements</Label>
+      <Label>{messages.bookingJourney.configure.airArrangements}</Label>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {options.map((opt) => {
           const selected = current === opt.value
@@ -371,12 +388,13 @@ function CabinNumberFields({
   setDraft: (next: Draft) => void
   perCategory: Record<string, ReadonlyArray<{ id: string; label: string }>>
 }): React.ReactNode {
+  const messages = useBookingsUiMessagesOrDefault()
   const catId = draft.configure.cabinCategoryId
   if (!catId) return null
   const cabins = perCategory[catId] ?? []
   return (
     <div className="space-y-2">
-      <Label>Cabin number</Label>
+      <Label>{messages.bookingJourney.configure.cabinNumber}</Label>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {cabins.map((cabin) => {
           const selected = draft.configure.cabinNumberId === cabin.id
@@ -411,6 +429,7 @@ export function BillingStep({
   renderLeadContactPicker?: (props: LeadContactPickerProps) => React.ReactNode
   renderExtras?: () => React.ReactNode
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const billing = draft.billing
   const apply: LeadContactPickerProps["apply"] = (contact) => {
     setDraft(
@@ -427,11 +446,11 @@ export function BillingStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Billing & lead contact</CardTitle>
+        <CardTitle>{messages.bookingJourney.billing.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label>Buyer type</Label>
+          <Label>{messages.bookingJourney.billing.buyerType}</Label>
           <RadioGroup
             value={billing.buyerType}
             onValueChange={(v) => setDraft(patchBilling(draft, { buyerType: v as "B2C" | "B2B" }))}
@@ -440,11 +459,11 @@ export function BillingStep({
             {/* RadioGroupItem from radix wires its own internal label association — biome can't see it */}
             {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control */}
             <label className="flex items-center gap-2 text-sm">
-              <RadioGroupItem value="B2C" /> Individual (B2C)
+              <RadioGroupItem value="B2C" /> {messages.bookingJourney.billing.individual}
             </label>
             {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control */}
             <label className="flex items-center gap-2 text-sm">
-              <RadioGroupItem value="B2B" /> Company (B2B)
+              <RadioGroupItem value="B2B" /> {messages.bookingJourney.billing.company}
             </label>
           </RadioGroup>
         </div>
@@ -454,7 +473,7 @@ export function BillingStep({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field
             id="bj-billing-firstName"
-            label="First name"
+            label={messages.bookingJourney.billing.firstName}
             value={billing.contact.firstName}
             onChange={(v) =>
               setDraft(patchBilling(draft, { contact: { ...billing.contact, firstName: v } }))
@@ -462,7 +481,7 @@ export function BillingStep({
           />
           <Field
             id="bj-billing-lastName"
-            label="Last name"
+            label={messages.bookingJourney.billing.lastName}
             value={billing.contact.lastName}
             onChange={(v) =>
               setDraft(patchBilling(draft, { contact: { ...billing.contact, lastName: v } }))
@@ -470,7 +489,7 @@ export function BillingStep({
           />
           <Field
             id="bj-billing-email"
-            label="Email"
+            label={messages.bookingJourney.billing.email}
             type="email"
             value={billing.contact.email}
             onChange={(v) =>
@@ -479,7 +498,7 @@ export function BillingStep({
           />
           <PhoneField
             id="bj-billing-phone"
-            label="Phone"
+            label={messages.bookingJourney.billing.phone}
             value={billing.contact.phone ?? ""}
             onChange={(v) =>
               setDraft(patchBilling(draft, { contact: { ...billing.contact, phone: v } }))
@@ -490,7 +509,7 @@ export function BillingStep({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field
             id="bj-billing-line1"
-            label="Address line 1"
+            label={messages.bookingJourney.billing.addressLine1}
             value={billing.address.line1 ?? ""}
             onChange={(v) =>
               setDraft(patchBilling(draft, { address: { ...billing.address, line1: v } }))
@@ -498,7 +517,7 @@ export function BillingStep({
           />
           <Field
             id="bj-billing-line2"
-            label="Address line 2 (optional)"
+            label={messages.bookingJourney.billing.addressLine2Optional}
             value={billing.address.line2 ?? ""}
             onChange={(v) =>
               setDraft(patchBilling(draft, { address: { ...billing.address, line2: v } }))
@@ -506,7 +525,7 @@ export function BillingStep({
           />
           <Field
             id="bj-billing-city"
-            label="City"
+            label={messages.bookingJourney.billing.city}
             value={billing.address.city ?? ""}
             onChange={(v) =>
               setDraft(patchBilling(draft, { address: { ...billing.address, city: v } }))
@@ -514,14 +533,14 @@ export function BillingStep({
           />
           <Field
             id="bj-billing-postal"
-            label="Postal code"
+            label={messages.bookingJourney.billing.postalCode}
             value={billing.address.postal ?? ""}
             onChange={(v) =>
               setDraft(patchBilling(draft, { address: { ...billing.address, postal: v } }))
             }
           />
           <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor="bj-billing-country">Country</Label>
+            <Label htmlFor="bj-billing-country">{messages.bookingJourney.billing.country}</Label>
             <CountryCombobox
               value={billing.address.country ?? null}
               onChange={(code) =>
@@ -539,7 +558,7 @@ export function BillingStep({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field
               id="bj-billing-companyName"
-              label="Company name"
+              label={messages.bookingJourney.billing.companyName}
               value={billing.company?.name ?? ""}
               onChange={(v) =>
                 setDraft(
@@ -551,7 +570,7 @@ export function BillingStep({
             />
             <Field
               id="bj-billing-vatId"
-              label="VAT id"
+              label={messages.bookingJourney.billing.vatId}
               value={billing.company?.vatId ?? ""}
               onChange={(v) =>
                 setDraft(
@@ -582,6 +601,7 @@ export function TravelersStep({
 }: StepCommonProps & {
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => React.ReactNode
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const total = totalPax(draft)
   // Auto-resize the travelers list to match pax counts. Newly-added
   // rows pick a band based on the lowest-count band that's not yet
@@ -615,13 +635,11 @@ export function TravelersStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Travelers</CardTitle>
+        <CardTitle>{messages.bookingJourney.travelers.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {ensured.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            Pick traveler counts in the Configure step to start adding details.
-          </p>
+          <p className="text-muted-foreground text-sm">{messages.bookingJourney.travelers.empty}</p>
         ) : null}
         {ensured.map((traveler, idx) => {
           const apply: TravelerContactPickerProps["apply"] = (contact) => {
@@ -655,7 +673,7 @@ export function TravelersStep({
         {canAddMore ? (
           <div className="border-t pt-3">
             <Button type="button" variant="outline" size="sm" onClick={addTraveler}>
-              + Add traveler
+              {messages.bookingJourney.travelers.addTraveler}
             </Button>
           </div>
         ) : null}
@@ -694,6 +712,7 @@ function TravelerCard({
   apply: TravelerContactPickerProps["apply"]
   onRemove?: () => void
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   // The band is bookkeeping — only show fields that apply to this
   // band per the descriptor, but never expose the band tag in the UI.
   // The user just sees a flat traveler list.
@@ -763,16 +782,24 @@ function TravelerCard({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="space-y-0.5">
           <div className="font-medium">
-            Traveler {idx + 1}
+            {formatMessage(messages.bookingJourney.travelers.travelerNumber, {
+              number: idx + 1,
+            })}
             {computedAge != null ? (
-              <span className="text-muted-foreground font-normal"> · age {computedAge}</span>
+              <span className="text-muted-foreground font-normal">
+                {" "}
+                ·{" "}
+                {formatMessage(messages.bookingJourney.travelers.ageLabel, {
+                  age: computedAge,
+                })}
+              </span>
             ) : null}
           </div>
         </div>
         <div className="flex items-center gap-2">
           {canCopyFromBilling ? (
             <Button type="button" variant="outline" size="sm" onClick={copyFromBilling}>
-              Copy from billing
+              {messages.bookingJourney.travelers.copyFromBilling}
             </Button>
           ) : null}
           {renderTravelerContactPicker
@@ -786,7 +813,7 @@ function TravelerCard({
               className="text-destructive hover:text-destructive"
               onClick={onRemove}
             >
-              Remove
+              {messages.bookingJourney.travelers.remove}
             </Button>
           ) : null}
         </div>
@@ -794,20 +821,20 @@ function TravelerCard({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field
           id={`bj-trav-${idx}-first`}
-          label="First name"
+          label={messages.bookingJourney.billing.firstName}
           value={traveler.firstName}
           onChange={(v) => updateTraveler(draft, setDraft, idx, { firstName: v })}
         />
         <Field
           id={`bj-trav-${idx}-last`}
-          label="Last name"
+          label={messages.bookingJourney.billing.lastName}
           value={traveler.lastName}
           onChange={(v) => updateTraveler(draft, setDraft, idx, { lastName: v })}
         />
         {applicableFields.some((f) => f.key === "email") ? (
           <Field
             id={`bj-trav-${idx}-email`}
-            label="Email"
+            label={messages.bookingJourney.billing.email}
             type="email"
             value={traveler.email ?? ""}
             onChange={(v) => updateTraveler(draft, setDraft, idx, { email: v })}
@@ -816,6 +843,7 @@ function TravelerCard({
         {phoneField ? (
           <PhoneField
             id={`bj-trav-${idx}-phone`}
+            // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
             label={phoneField.label + (phoneField.required ? " *" : "")}
             value={traveler.phone ?? ""}
             onChange={(v) => updateTraveler(draft, setDraft, idx, { phone: v })}
@@ -825,6 +853,7 @@ function TravelerCard({
           <div className="space-y-1">
             <DateField
               id={`bj-trav-${idx}-dob`}
+              // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
               label={dobField.label + (dobField.required ? " *" : "")}
               value={traveler.dateOfBirth ?? ""}
               onChange={onDobChange}
@@ -832,7 +861,10 @@ function TravelerCard({
             />
             {ageOutOfBounds ? (
               <p className="text-amber-600 text-xs dark:text-amber-400">
-                ⚠ Age {computedAge} is outside the accepted range for this product.
+                ⚠{" "}
+                {formatMessage(messages.bookingJourney.validation.ageOutOfRange, {
+                  age: computedAge,
+                })}
               </p>
             ) : null}
           </div>
@@ -843,6 +875,7 @@ function TravelerCard({
             updateTraveler(draft, setDraft, idx, {
               documents: { ...traveler.documents, [field.key]: v },
             })
+          // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
           const labelText = field.label + (field.required ? " *" : "")
           if (field.type === "select" && field.options) {
             return (
@@ -970,6 +1003,7 @@ function rebandTraveler(draft: Draft, idx: number, fromBand: string, toBand: str
 // ─────────────────────────────────────────────────────────────────
 
 export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const subSteps = shape.accommodation?.subSteps ?? []
   const rooms = shape.accommodation?.roomOptions ?? []
   const accommodation = draft.accommodation ?? { rooms: [], travelerAssignments: {} }
@@ -977,12 +1011,12 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Accommodation</CardTitle>
+        <CardTitle>{messages.bookingJourney.accommodation.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {rooms.length === 0 && subSteps.length === 0 ? (
           <p className="text-muted-foreground text-sm">
-            No accommodation options for this product.
+            {messages.bookingJourney.accommodation.empty}
           </p>
         ) : (
           <div className="space-y-3">
@@ -1058,8 +1092,10 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
             {subSteps.map((sub) =>
               sub.kind === "extensions" ? (
                 <div key="extensions" className="rounded border p-3 text-muted-foreground text-sm">
-                  {sub.options.length} extension option{sub.options.length === 1 ? "" : "s"}{" "}
-                  available — UI lands in Phase F.
+                  {formatMessage(messages.bookingJourney.accommodation.extensionsAvailable, {
+                    count: sub.options.length,
+                    plural: sub.options.length === 1 ? "" : "s",
+                  })}
                 </div>
               ) : null,
             )}
@@ -1088,9 +1124,12 @@ function RatePlanPicker({
   selected?: string
   onSelect: (id: string) => void
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <div className="space-y-2 border-t pt-3">
-      <Label htmlFor={`bj-rate-plan-${roomId}`}>Rate plan</Label>
+      <Label htmlFor={`bj-rate-plan-${roomId}`}>
+        {messages.bookingJourney.accommodation.ratePlan}
+      </Label>
       <div className="space-y-2">
         {ratePlans.map((plan) => {
           const isSelected = plan.id === selected
@@ -1109,12 +1148,14 @@ function RatePlanPicker({
               ) : null}
               {plan.cancellationPolicy ? (
                 <div className="text-muted-foreground text-xs">
-                  Cancellation: {plan.cancellationPolicy}
+                  {messages.bookingJourney.accommodation.cancellationPrefix}{" "}
+                  {plan.cancellationPolicy}
                 </div>
               ) : null}
               {plan.inclusions && plan.inclusions.length > 0 ? (
                 <div className="text-muted-foreground text-xs">
-                  Includes: {plan.inclusions.join(", ")}
+                  {messages.bookingJourney.accommodation.includesPrefix}{" "}
+                  {plan.inclusions.join(", ")}
                 </div>
               ) : null}
             </button>
@@ -1130,24 +1171,28 @@ function RatePlanPicker({
 // ─────────────────────────────────────────────────────────────────
 
 export function AddonsStep({ draft, setDraft, shape }: StepCommonProps): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const flat = shape.addons?.catalog ?? []
   const groups = shape.addons?.groups ?? []
   const all = [...flat, ...groups.flatMap((g) => g.items)]
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add-ons</CardTitle>
+        <CardTitle>{messages.bookingJourney.addons.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {all.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No add-ons available for this product.</p>
+          <p className="text-muted-foreground text-sm">{messages.bookingJourney.addons.empty}</p>
         ) : null}
         {groups.map((group) => {
           // Group by port/day when the descriptor asks — cruise
           // excursions arrive grouped by port name.
           const buckets =
             group.groupBy === "port" || group.groupBy === "day"
-              ? bucketBy(group.items, (i) => i.groupKey ?? "Other")
+              ? bucketBy(
+                  group.items,
+                  (i) => i.groupKey ?? messages.bookingJourney.addons.otherBucket,
+                )
               : new Map([["", group.items as ReadonlyArray<(typeof group.items)[number]>]])
           return (
             <div key={group.label} className="space-y-3">
@@ -1242,6 +1287,7 @@ export function PaymentStep({
   capabilities: PaymentProviderCapabilities
   renderProviderStep?: (props: PaymentProviderStepRenderProps) => React.ReactNode
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   // The descriptor lists what the *engine* supports; capabilities
   // narrow further to what the *deployment* turned on. Both must
   // accept an intent for the user to see it.
@@ -1258,13 +1304,11 @@ export function PaymentStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Payment</CardTitle>
+        <CardTitle>{messages.bookingJourney.payment.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {allowed.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            No payment methods are available for this booking.
-          </p>
+          <p className="text-muted-foreground text-sm">{messages.bookingJourney.payment.empty}</p>
         ) : (
           <RadioGroup
             value={intent}
@@ -1274,7 +1318,7 @@ export function PaymentStep({
             className="grid grid-cols-1 gap-2"
           >
             {allowed.map((i) => {
-              const meta = intentMeta(i)
+              const meta = intentMeta(i, messages)
               const selected = i === intent
               return (
                 // biome-ignore lint/a11y/noLabelWithoutControl: RadioGroupItem provides the control
@@ -1311,7 +1355,7 @@ export function PaymentStep({
             // payment page after the customer accepts the contract. Inline
             // card collection is opt-in via `renderPaymentProviderStep`.
             <p className="text-muted-foreground text-sm">
-              You'll be redirected to our secure payment page after confirming the booking.
+              {messages.bookingJourney.payment.redirectedAfterConfirm}
             </p>
           )
         ) : null}
@@ -1320,9 +1364,7 @@ export function PaymentStep({
 
         {intent === "inquiry" ? (
           <p className="rounded border border-amber-300 bg-amber-50 p-3 text-amber-900 text-xs dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
-            We'll send your details to the operator without locking inventory or taking payment.
-            They'll get back to you with availability and a quote — typically within one business
-            day.
+            {messages.bookingJourney.payment.inquiryNotice}
           </p>
         ) : null}
       </CardContent>
@@ -1335,14 +1377,15 @@ function BankTransferDetails({
 }: {
   capabilities: PaymentProviderCapabilities
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const note = capabilities.config?.bankTransferNote
   return (
     <div className="rounded border bg-muted/30 p-3 text-sm">
-      <p className="font-medium">Bank transfer instructions</p>
+      <p className="font-medium">{messages.bookingJourney.payment.bankTransferInstructions}</p>
       <p className="text-muted-foreground text-xs">
         {typeof note === "string" && note.length > 0
           ? note
-          : "After you submit, you'll receive an email with our bank details and a payment reference. Inventory is held pending payment."}
+          : messages.bookingJourney.payment.bankTransferDefaultNote}
       </p>
     </div>
   )
@@ -1366,39 +1409,16 @@ function isCapabilityEnabled(
   }
 }
 
-function intentMeta(intent: "hold" | "card" | "bank_transfer" | "ticket_on_credit" | "inquiry"): {
+function intentMeta(
+  intent: "hold" | "card" | "bank_transfer" | "ticket_on_credit" | "inquiry",
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+): {
   label: string
   description: string
 } {
-  switch (intent) {
-    case "card":
-      return {
-        label: "Pay by card",
-        description: "Charged immediately. Inventory is reserved on confirmation.",
-      }
-    case "bank_transfer":
-      return {
-        label: "Bank transfer",
-        description:
-          "We'll send you bank details and a reference. Inventory is held while we wait for the transfer.",
-      }
-    case "hold":
-      return {
-        label: "Hold for now",
-        description:
-          "Reserve inventory without paying. The operator follows up to collect payment.",
-      }
-    case "ticket_on_credit":
-      return {
-        label: "Agency credit account",
-        description: "Charge against an agency's credit line. Operator surfaces only.",
-      }
-    case "inquiry":
-      return {
-        label: "Send as inquiry",
-        description:
-          "No payment, no inventory hold. The operator gets back to you with availability and a quote.",
-      }
+  return {
+    label: messages.bookingJourney.payment.intentLabels[intent],
+    description: messages.bookingJourney.payment.intentDescriptions[intent],
   }
 }
 
@@ -1427,22 +1447,23 @@ export function ReviewStep({
    */
   surface?: "admin" | "public"
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const isPublic = surface === "public"
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Review & confirm</CardTitle>
+        <CardTitle>{messages.bookingJourney.review.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <div className="font-medium">Lead contact</div>
+          <div className="font-medium">{messages.bookingJourney.review.leadContact}</div>
           <div className="text-muted-foreground text-sm">
-            {draft.billing.contact.firstName} {draft.billing.contact.lastName} —{" "}
+            {draft.billing.contact.firstName} {draft.billing.contact.lastName} ·{" "}
             {draft.billing.contact.email}
           </div>
         </div>
         <div>
-          <div className="font-medium">Travelers</div>
+          <div className="font-medium">{messages.bookingJourney.review.travelers}</div>
           <ul className="text-muted-foreground text-sm">
             {draft.travelers.map((t, i) => (
               <li key={t.rowId ?? i}>
@@ -1453,17 +1474,21 @@ export function ReviewStep({
         </div>
         {isPublic ? (
           <div className="space-y-1">
-            <Label htmlFor="bj-customer-notes">Notes</Label>
+            <Label htmlFor="bj-customer-notes">
+              {messages.bookingJourney.review.customerNotes}
+            </Label>
             <Textarea
               id="bj-customer-notes"
-              placeholder="Anything we should know? (allergies, accessibility needs, special occasion…)"
+              placeholder={messages.bookingJourney.review.customerNotesPlaceholder}
               value={draft.customerNotes ?? ""}
               onChange={(e) => setDraft({ ...draft, customerNotes: e.target.value })}
             />
           </div>
         ) : (
           <div className="space-y-1">
-            <Label htmlFor="bj-internal-notes">Internal notes (operator-only)</Label>
+            <Label htmlFor="bj-internal-notes">
+              {messages.bookingJourney.review.internalNotes}
+            </Label>
             <Textarea
               id="bj-internal-notes"
               value={draft.internalNotes ?? ""}
@@ -1476,10 +1501,10 @@ export function ReviewStep({
           {isCommitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Confirming…
+              {messages.bookingJourney.review.confirming}
             </>
           ) : (
-            "Confirm booking"
+            messages.bookingJourney.review.confirmBooking
           )}
         </Button>
       </CardContent>
@@ -1614,6 +1639,7 @@ function SelectField({
   options: ReadonlyArray<{ value: string; label: string }>
   onChange: (v: string) => void
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <div className="space-y-1">
       <Label htmlFor={id}>{label}</Label>
@@ -1623,7 +1649,7 @@ function SelectField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="">Select…</option>
+        <option value="">{messages.bookingJourney.values.selectPlaceholder}</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
@@ -1649,13 +1675,24 @@ function computeAge(dob: string): number | null {
   return age >= 0 ? age : null
 }
 
-function ageHint(min?: number, max?: number): string {
-  if (min != null && max != null) return `${min}–${max}y`
-  if (min != null) return `${min}y+`
-  if (max != null) return `up to ${max}y`
+function ageHint(
+  min: number | undefined,
+  max: number | undefined,
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+): string {
+  if (min != null && max != null) {
+    return formatMessage(messages.bookingJourney.configure.ageHintRange, { min, max })
+  }
+  if (min != null) {
+    return formatMessage(messages.bookingJourney.configure.ageHintMinimum, { min })
+  }
+  if (max != null) {
+    return formatMessage(messages.bookingJourney.configure.ageHintMaximum, { max })
+  }
   return ""
 }
 
+// i18n-literal-ok Generic helper type signature, not user-visible copy.
 function bucketBy<T>(items: ReadonlyArray<T>, keyFn: (item: T) => string): Map<string, T[]> {
   const map = new Map<string, T[]>()
   for (const item of items) {

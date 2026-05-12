@@ -14,6 +14,7 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, ExternalLink, Loader2, Minus } from "lucide-react"
 import { type ReactNode, useEffect, useState } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogUiMessages } from "../i18n/messages.js"
 
 export interface CatalogDetailAction {
   label: string
@@ -376,7 +377,11 @@ export function CatalogDetailSheet({
 
                 {attributeEntries.length > 0 && (
                   <Section title={messages.attributes}>
-                    <AttributeList entries={attributeEntries} formatters={formatters} />
+                    <AttributeList
+                      entries={attributeEntries}
+                      formatters={formatters}
+                      messages={catalogMessages}
+                    />
                   </Section>
                 )}
 
@@ -386,7 +391,11 @@ export function CatalogDetailSheet({
                       {messages.system}
                     </summary>
                     <div className="px-4 py-3">
-                      <AttributeList entries={systemEntries} formatters={formatters} />
+                      <AttributeList
+                        entries={systemEntries}
+                        formatters={formatters}
+                        messages={catalogMessages}
+                      />
                     </div>
                   </details>
                 )}
@@ -610,9 +619,11 @@ function Section({ title, children }: { title?: string; children: ReactNode }) {
 function AttributeList({
   entries,
   formatters,
+  messages,
 }: {
   entries: Array<[string, unknown]>
   formatters?: Record<string, (value: unknown) => ReactNode>
+  messages: CatalogUiMessages["catalogPage"]
 }) {
   return (
     <div className="divide-y rounded-lg border">
@@ -620,7 +631,7 @@ function AttributeList({
         <div key={key} className="grid grid-cols-[140px_1fr] items-baseline gap-4 px-3 py-2.5">
           <span className="text-xs text-muted-foreground">{humanize(key)}</span>
           <span className="text-sm break-words">
-            {formatters?.[key] ? formatters[key](value) : defaultFormat(key, value)}
+            {formatters?.[key] ? formatters[key](value) : defaultFormat(key, value, messages)}
           </span>
         </div>
       ))}
@@ -648,7 +659,11 @@ function ArrayBadges({ value }: { value: unknown }) {
 // Field formatting
 // ─────────────────────────────────────────────────────────────────────────────
 
-function defaultFormat(field: string, value: unknown): ReactNode {
+function defaultFormat(
+  field: string,
+  value: unknown,
+  messages: CatalogUiMessages["catalogPage"],
+): ReactNode {
   if (value == null || value === "") {
     return <span className="text-muted-foreground">—</span>
   }
@@ -664,7 +679,7 @@ function defaultFormat(field: string, value: unknown): ReactNode {
         )}
       >
         {truthy ? <Check className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
-        {truthy ? "Yes" : "No"}
+        {truthy ? messages.values.yes : messages.values.no}
       </span>
     )
   }
@@ -678,7 +693,7 @@ function defaultFormat(field: string, value: unknown): ReactNode {
         rel="noreferrer"
         className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
       >
-        Open
+        {messages.values.open}
         <ExternalLink className="h-3 w-3" />
       </a>
     )

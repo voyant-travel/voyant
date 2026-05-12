@@ -266,7 +266,7 @@ export function AvailabilityRuleDialog(props: {
   onOpenChange: (open: boolean) => void
   rule?: AvailabilityRuleRow
   products: ProductOption[]
-  onSubmit: (payload: AvailabilityRuleSubmitPayload, context: SubmitContext) => Promise<void>
+  onSubmit: (payload: AvailabilityRuleSubmitPayload, context: SubmitContext) => Promise<void> // i18n-literal-ok type annotation
   onSuccess: () => void
 }) {
   useAvailabilityUiMessagesOrDefault()
@@ -276,8 +276,8 @@ export function AvailabilityRuleDialog(props: {
     resolver: zodResolver(ruleFormSchema),
     defaultValues: {
       productId: "",
-      timezone: "Europe/Bucharest",
-      recurrenceRule: "FREQ=DAILY;INTERVAL=1",
+      timezone: "Europe/Bucharest", // i18n-literal-ok IANA timezone default
+      recurrenceRule: "FREQ=DAILY;INTERVAL=1", // i18n-literal-ok RRULE default
       maxCapacity: 0,
       maxPickupCapacity: "",
       minTotalPax: "",
@@ -428,7 +428,7 @@ export function AvailabilityStartTimeDialog(props: {
   onOpenChange: (open: boolean) => void
   startTime?: AvailabilityStartTimeRow
   products: ProductOption[]
-  onSubmit: (payload: AvailabilityStartTimeSubmitPayload, context: SubmitContext) => Promise<void>
+  onSubmit: (payload: AvailabilityStartTimeSubmitPayload, context: SubmitContext) => Promise<void> // i18n-literal-ok type annotation
   onSuccess: () => void
 }) {
   const startTimeMessages = props.messages.dialogs.startTime
@@ -570,7 +570,7 @@ export function AvailabilitySlotDialog(props: {
   products: ProductOption[]
   rules: AvailabilityRuleRow[]
   startTimes: AvailabilityStartTimeRow[]
-  onSubmit: (payload: AvailabilitySlotSubmitPayload, context: SubmitContext) => Promise<void>
+  onSubmit: (payload: AvailabilitySlotSubmitPayload, context: SubmitContext) => Promise<void> // i18n-literal-ok type annotation
   onSuccess: () => void
 }) {
   const slotMessages = props.messages.dialogs.slot
@@ -584,7 +584,7 @@ export function AvailabilitySlotDialog(props: {
       dateLocal: "",
       startsAt: "",
       endsAt: "",
-      timezone: "Europe/Bucharest",
+      timezone: "Europe/Bucharest", // i18n-literal-ok IANA timezone default
       status: "open",
       unlimited: false,
       initialPax: "",
@@ -890,7 +890,7 @@ export function AvailabilityCloseoutDialog(props: {
   closeout?: AvailabilityCloseoutRow
   products: ProductOption[]
   slots: AvailabilitySlotRow[]
-  onSubmit: (payload: AvailabilityCloseoutSubmitPayload, context: SubmitContext) => Promise<void>
+  onSubmit: (payload: AvailabilityCloseoutSubmitPayload, context: SubmitContext) => Promise<void> // i18n-literal-ok type annotation
   onSuccess: () => void
 }) {
   const closeoutMessages = props.messages.dialogs.closeout
@@ -1027,7 +1027,7 @@ export function AvailabilityPickupPointDialog(props: {
   onOpenChange: (open: boolean) => void
   pickupPoint?: AvailabilityPickupPointRow
   products: ProductOption[]
-  onSubmit: (payload: AvailabilityPickupPointSubmitPayload, context: SubmitContext) => Promise<void>
+  onSubmit: (payload: AvailabilityPickupPointSubmitPayload, context: SubmitContext) => Promise<void> // i18n-literal-ok type annotation
   onSuccess: () => void
 }) {
   const pickupPointMessages = props.messages.dialogs.pickupPoint

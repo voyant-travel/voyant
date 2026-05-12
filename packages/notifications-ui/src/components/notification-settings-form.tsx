@@ -49,7 +49,7 @@ const nextBlackoutKey = () => `bo-${++blackoutSeq}`
 const emptyForm: FormState = {
   quietHoursStart: "",
   quietHoursEnd: "",
-  quietHoursTz: "UTC",
+  quietHoursTz: "UTC", // i18n-literal-ok IANA timezone default
   blackoutDates: [],
   skipWeekends: false,
   recipientRateLimitPerDay: "",
@@ -67,7 +67,7 @@ export function NotificationSettingsForm() {
     setForm({
       quietHoursStart: settings.quietHoursLocal?.start ?? "",
       quietHoursEnd: settings.quietHoursLocal?.end ?? "",
-      quietHoursTz: settings.quietHoursLocal?.tz ?? "UTC",
+      quietHoursTz: settings.quietHoursLocal?.tz ?? "UTC", // i18n-literal-ok IANA timezone default
       blackoutDates: (settings.blackoutDates ?? []).map((date) => ({
         rowKey: nextBlackoutKey(),
         date,
@@ -100,7 +100,7 @@ export function NotificationSettingsForm() {
       .filter((d): d is string => Boolean(d && /^\d{4}-\d{2}-\d{2}$/.test(d)))
     const quiet =
       form.quietHoursStart && form.quietHoursEnd
-        ? { start: form.quietHoursStart, end: form.quietHoursEnd, tz: form.quietHoursTz || "UTC" }
+        ? { start: form.quietHoursStart, end: form.quietHoursEnd, tz: form.quietHoursTz || "UTC" } // i18n-literal-ok IANA timezone default
         : null
 
     await mutation.mutateAsync({
@@ -170,7 +170,12 @@ export function NotificationSettingsForm() {
                   <FieldLabel>{messages.settings.fields.quietHoursTz}</FieldLabel>
                   <TimezoneCombobox
                     value={form.quietHoursTz}
-                    onChange={(value) => setField("quietHoursTz", value ?? "UTC")}
+                    onChange={(value) =>
+                      setField(
+                        "quietHoursTz",
+                        value ?? "UTC" /* i18n-literal-ok IANA timezone default */,
+                      )
+                    }
                     placeholder={messages.settings.placeholders.tz}
                   />
                 </Field>

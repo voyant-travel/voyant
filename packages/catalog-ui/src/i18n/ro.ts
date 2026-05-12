@@ -78,6 +78,17 @@ export const catalogUiRo = {
       roomName: "Camera fara nume",
       detailName: "Fara nume",
     },
+    sourceKinds: {
+      owned: "Propriu",
+      voyantConnect: "Voyant Connect",
+      manual: "Manual",
+      gdsAmadeus: "Amadeus",
+      gdsSabre: "Sabre",
+      gdsTravelport: "Travelport",
+      bedbankHotelbeds: "Hotelbeds",
+      bedbankExpedia: "Expedia",
+      directSuffix: "(direct)",
+    },
     search: {
       noTabsConfigured: "Nu sunt configurate taburi de catalog.",
       clearAll: "Sterge tot",

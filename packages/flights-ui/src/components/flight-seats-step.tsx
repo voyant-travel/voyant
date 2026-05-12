@@ -63,14 +63,14 @@ export function FlightSeatsStep({
   mode,
   onModeChange,
 }: FlightSeatsStepProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const segments = useMemo(
-    () => collectSegments(outboundOffer, returnOffer),
-    [outboundOffer, returnOffer],
+    () => collectSegments(outboundOffer, returnOffer, messages),
+    [outboundOffer, returnOffer, messages],
   )
   const paxRows = useMemo(
-    () => buildPassengerRows(passengers, passengerCounts),
-    [passengers, passengerCounts],
+    () => buildPassengerRows(passengers, passengerCounts, messages),
+    [passengers, passengerCounts, messages],
   )
 
   const [activeSegmentIdx, setActiveSegmentIdx] = useState(0)
@@ -100,13 +100,11 @@ export function FlightSeatsStep({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="font-semibold text-base">Choose your seats</h2>
-        <p className="text-muted-foreground text-sm">
-          Sit where you want, or let the airline assign seats at check-in.
-        </p>
+        <h2 className="font-semibold text-base">{messages.flightSeatsStep.title}</h2>
+        <p className="text-muted-foreground text-sm">{messages.flightSeatsStep.description}</p>
       </div>
 
-      <ModePicker mode={mode} onChange={onModeChange} />
+      <ModePicker mode={mode} onChange={onModeChange} messages={messages} />
 
       {mode === "now" && activeSegment && (
         <div className="flex flex-col gap-4">
@@ -146,6 +144,7 @@ export function FlightSeatsStep({
             activePaxIdx={activePaxIdx}
             picks={value}
             segmentId={activeSegment.segmentId}
+            messages={messages}
             onPick={(seat) => {
               const pax = paxRows[activePaxIdx]
               if (!pax) return
@@ -197,27 +196,36 @@ const PAX_SWATCHES = [
   "bg-indigo-600 text-white border-indigo-700",
 ]
 
-function ModePicker({ mode, onChange }: { mode: SeatMode; onChange: (next: SeatMode) => void }) {
+function ModePicker({
+  mode,
+  onChange,
+  messages,
+}: {
+  mode: SeatMode
+  onChange: (next: SeatMode) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
+}) {
   return (
     <div className="grid gap-2 md:grid-cols-3">
       <ModeCard
         active={mode === "skip"}
         onClick={() => onChange("skip")}
-        title="Pick seats later"
-        body="Seats will be assigned automatically at check-in. May not be next to each other."
+        title={messages.flightSeatsStep.modes.skip.title}
+        body={messages.flightSeatsStep.modes.skip.body}
       />
       <ModeCard
         active={mode === "auto"}
         onClick={() => onChange("auto")}
-        title="Auto-assign together"
-        body="Airline picks seats trying to keep your party together. No fee."
+        title={messages.flightSeatsStep.modes.auto.title}
+        body={messages.flightSeatsStep.modes.auto.body}
         recommended
+        messages={messages}
       />
       <ModeCard
         active={mode === "now"}
         onClick={() => onChange("now")}
-        title="Choose seats now"
-        body="Pick exact seats per leg — windows, exit rows, extra legroom."
+        title={messages.flightSeatsStep.modes.now.title}
+        body={messages.flightSeatsStep.modes.now.body}
       />
     </div>
   )
@@ -229,12 +237,14 @@ function ModeCard({
   title,
   body,
   recommended,
+  messages,
 }: {
   active: boolean
   onClick: () => void
   title: string
   body: string
   recommended?: boolean
+  messages?: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <button
@@ -247,7 +257,7 @@ function ModeCard({
     >
       {recommended && (
         <span className="absolute top-2 right-2 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-[9px] text-primary uppercase tracking-wider">
-          Recommended
+          {messages?.common.recommended}
         </span>
       )}
       {active && <CheckCircle2 className="absolute top-3 right-3 h-4 w-4 text-primary" />}
@@ -375,6 +385,7 @@ function SeatMapPanel({
   picks,
   segmentId,
   onPick,
+  messages,
 }: {
   slot: FlightSeatMapSlot
   paxRows: PaxRow[]
@@ -382,6 +393,7 @@ function SeatMapPanel({
   picks: SeatPicks
   segmentId: string
   onPick: (seat: Seat) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   if (slot.loading) {
     return <div className="h-72 animate-pulse rounded-2xl bg-muted/40" />
@@ -396,7 +408,7 @@ function SeatMapPanel({
   if (!slot.seatMap) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
-        Seat map unavailable for this segment.
+        {messages.flightSeatsStep.seatMapUnavailable}
       </div>
     )
   }
@@ -428,13 +440,17 @@ function SeatMapPanel({
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function collectSegments(outbound: FlightOffer, returnLeg: FlightOffer | undefined): SegmentRow[] {
+function collectSegments(
+  outbound: FlightOffer,
+  returnLeg: FlightOffer | undefined,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): SegmentRow[] {
   const out: SegmentRow[] = []
   for (const seg of itinerarySegments(outbound)) {
     out.push({
       offerId: outbound.offerId,
       segmentId: seg.segmentId,
-      legLabel: "Outbound",
+      legLabel: messages.common.legLabels.outbound,
       origin: seg.departure.iataCode,
       destination: seg.arrival.iataCode,
       carrier: seg.carrierCode,
@@ -446,7 +462,7 @@ function collectSegments(outbound: FlightOffer, returnLeg: FlightOffer | undefin
       out.push({
         offerId: returnLeg.offerId,
         segmentId: seg.segmentId,
-        legLabel: "Return",
+        legLabel: messages.common.legLabels.return,
         origin: seg.departure.iataCode,
         destination: seg.arrival.iataCode,
         carrier: seg.carrierCode,
@@ -465,7 +481,11 @@ function itinerarySegments(offer: FlightOffer): FlightSegment[] {
   return out
 }
 
-function buildPassengerRows(passengers: FlightPassenger[], counts: PassengerCounts): PaxRow[] {
+function buildPassengerRows(
+  passengers: FlightPassenger[],
+  counts: PassengerCounts,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): PaxRow[] {
   const rows: PaxRow[] = []
   const total =
     passengers.length > 0
@@ -476,14 +496,14 @@ function buildPassengerRows(passengers: FlightPassenger[], counts: PassengerCoun
     if (p) {
       rows.push({
         passengerId: p.passengerId,
-        label: nameOrFallback(p, i),
+        label: nameOrFallback(p, i, messages),
         short: shortLabel(p, i),
         swatch: PAX_SWATCHES[i % PAX_SWATCHES.length] ?? PAX_SWATCHES[0]!,
       })
     } else {
       rows.push({
         passengerId: synthPaxId(i, counts),
-        label: synthPaxLabel(i, counts),
+        label: synthPaxLabel(i, counts, messages),
         short: String(i + 1),
         swatch: PAX_SWATCHES[i % PAX_SWATCHES.length] ?? PAX_SWATCHES[0]!,
       })
@@ -492,11 +512,14 @@ function buildPassengerRows(passengers: FlightPassenger[], counts: PassengerCoun
   return rows
 }
 
-function nameOrFallback(p: FlightPassenger, idx: number): string {
+function nameOrFallback(
+  p: FlightPassenger,
+  idx: number,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
   const full = `${p.firstName} ${p.lastName}`.trim()
   if (full) return full
-  const cap = p.type[0]?.toUpperCase() + p.type.slice(1)
-  return `${cap} ${idx + 1}`
+  return `${messages.common.passengerTypeLabels[p.type]} ${idx + 1}`
 }
 
 function shortLabel(p: FlightPassenger, idx: number): string {
@@ -512,9 +535,17 @@ function synthPaxId(i: number, counts: PassengerCounts): string {
   return `pax_infant_${i - counts.adults - (counts.children ?? 0) + 1}`
 }
 
-function synthPaxLabel(i: number, counts: PassengerCounts): string {
-  if (i < counts.adults) return `Adult ${i + 1}`
+function synthPaxLabel(
+  i: number,
+  counts: PassengerCounts,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
+  if (i < counts.adults) return `${messages.common.passengerTypeLabels.adult} ${i + 1}`
   const afterAdults = i - counts.adults
-  if (afterAdults < (counts.children ?? 0)) return `Child ${afterAdults + 1}`
-  return `Infant ${i - counts.adults - (counts.children ?? 0) + 1}`
+  if (afterAdults < (counts.children ?? 0)) {
+    return `${messages.common.passengerTypeLabels.child} ${afterAdults + 1}`
+  }
+  return `${messages.common.passengerTypeLabels.infant} ${
+    i - counts.adults - (counts.children ?? 0) + 1
+  }`
 }

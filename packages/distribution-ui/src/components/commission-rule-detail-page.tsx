@@ -76,7 +76,7 @@ export function CommissionRuleDetailPage({
   const remove = useMutation({
     mutationFn: () =>
       fetchWithValidation(`/v1/distribution/commission-rules/${id}`, successEnvelope, client, {
-        method: "DELETE",
+        method: "DELETE", // i18n-literal-ok HTTP method
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: distributionQueryKeys.commissionRules() })

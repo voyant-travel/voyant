@@ -9,23 +9,11 @@ import { Button, cn, Input, Label } from "@voyantjs/ui/components"
 import { CheckCircle2, Loader2 } from "lucide-react"
 import { type FormEvent, type ReactNode, useMemo, useState } from "react"
 
-export interface OnboardingPageMessages {
-  title: string
-  description: string
-  firstNameLabel: string
-  firstNamePlaceholder: string
-  lastNameLabel: string
-  lastNamePlaceholder: string
-  localeLabel: string
-  localePlaceholder: string
-  timezoneLabel: string
-  timezonePlaceholder: string
-  firstNameRequired: string
-  lastNameRequired: string
-  submit: string
-  submitting: string
-  somethingWentWrong: string
-}
+import { authUiEn } from "../i18n/en.js"
+import type { OnboardingPageMessages } from "../i18n/messages.js"
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
+
+export type { OnboardingPageMessages } from "../i18n/messages.js"
 
 export interface OnboardingPageSlots {
   beforeFields?: ReactNode
@@ -50,23 +38,7 @@ export interface OnboardingPageProps {
   onCompleted?: (profile: CurrentUser) => Promise<void> | void
 }
 
-export const defaultOnboardingPageMessages: OnboardingPageMessages = {
-  title: "Complete your profile",
-  description: "Add the basic account details your team will see in Voyant.",
-  firstNameLabel: "First name",
-  firstNamePlaceholder: "Ana",
-  lastNameLabel: "Last name",
-  lastNamePlaceholder: "Pop",
-  localeLabel: "Locale",
-  localePlaceholder: "en",
-  timezoneLabel: "Timezone",
-  timezonePlaceholder: "Europe/Bucharest",
-  firstNameRequired: "First name is required.",
-  lastNameRequired: "Last name is required.",
-  submit: "Continue",
-  submitting: "Saving",
-  somethingWentWrong: "Something went wrong. Try again.",
-}
+export const defaultOnboardingPageMessages = authUiEn.onboardingPage
 
 export function OnboardingPage({
   className,
@@ -77,9 +49,10 @@ export function OnboardingPage({
   slots,
   onCompleted,
 }: OnboardingPageProps) {
+  const defaultMessages = useAuthUiMessagesOrDefault().onboardingPage
   const messages = useMemo(
-    () => ({ ...defaultOnboardingPageMessages, ...messageOverrides }),
-    [messageOverrides],
+    () => ({ ...defaultMessages, ...messageOverrides }),
+    [defaultMessages, messageOverrides],
   )
   const updateProfile = useUpdateAccountProfile()
   const [firstName, setFirstName] = useState(initialProfile?.firstName ?? "")

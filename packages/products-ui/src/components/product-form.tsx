@@ -65,7 +65,7 @@ function initialState(mode: ProductFormMode): FormState {
     status: "draft",
     bookingMode: "itinerary",
     productTypeId: "__none__",
-    sellCurrency: "EUR",
+    sellCurrency: "EUR", // i18n-literal-ok ISO default currency
     sellAmount: "",
     costAmount: "",
     tags: [],

@@ -233,8 +233,11 @@ export function CatalogBookingPage({
     }
   }
 
+  const rootClassName =
+    className ?? "mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-6 lg:px-8" // i18n-literal-ok fallback CSS classes
+
   return (
-    <div className={className ?? "mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-6 lg:px-8"}>
+    <div className={rootClassName}>
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-semibold text-2xl">{messages.title}</h1>
@@ -668,8 +671,10 @@ function Field({
   hideLabel?: boolean
   children: ReactNode
 }) {
+  const fieldClassName = hideLabel ? "" : "flex flex-col gap-1" // i18n-literal-ok conditional CSS classes
+
   return (
-    <div className={hideLabel ? "" : "flex flex-col gap-1"}>
+    <div className={fieldClassName}>
       {!hideLabel && (
         <Label className="text-muted-foreground text-xs">
           {label}
@@ -723,7 +728,7 @@ export function createCatalogBookingFetchers({
     return json as T
   }
   return {
-    quote: (request) => postJson<CatalogQuoteResponse>("/v1/admin/catalog/quote", request),
-    book: (request) => postJson<CatalogBookResponse>("/v1/admin/catalog/book", request),
+    quote: (request) => postJson<CatalogQuoteResponse>("/v1/admin/catalog/quote", request), // i18n-literal-ok API path
+    book: (request) => postJson<CatalogBookResponse>("/v1/admin/catalog/book", request), // i18n-literal-ok API path
   }
 }

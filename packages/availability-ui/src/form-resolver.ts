@@ -33,6 +33,7 @@ function setFieldError(
 export function zodResolver<TSchema extends z.ZodType<FieldValues, FieldValues>>(
   schema: TSchema,
 ): Resolver<z.input<TSchema>, unknown, z.output<TSchema>> {
+  // i18n-literal-ok type annotation
   return async (values) => {
     const result = await schema.safeParseAsync(values)
 

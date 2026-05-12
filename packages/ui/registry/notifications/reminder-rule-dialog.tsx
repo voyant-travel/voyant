@@ -118,6 +118,11 @@ export function NotificationReminderRuleDialog({
   const channel = form.watch("channel")
   const targetType = form.watch("targetType")
   const usesDueDateTiming = dueDateTargetTypes.has(targetType)
+  const timingGridClassName = [
+    "grid",
+    usesDueDateTiming ? "grid-cols-3" : "grid-cols-2",
+    "gap-4",
+  ].join(" ") // i18n-literal-ok conditional CSS classes
   const { data: templates } = useNotificationTemplates({
     channel,
     status: "active",
@@ -231,9 +236,7 @@ export function NotificationReminderRuleDialog({
               </div>
             </div>
 
-            <div
-              className={usesDueDateTiming ? "grid grid-cols-3 gap-4" : "grid grid-cols-2 gap-4"}
-            >
+            <div className={timingGridClassName}>
               <div className="flex flex-col gap-2">
                 <Label>{dialogMessages.fields.channel}</Label>
                 <Select

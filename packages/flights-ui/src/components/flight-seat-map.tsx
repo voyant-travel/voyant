@@ -1,6 +1,7 @@
 "use client"
 
 import type { Seat, SeatMap } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   Tooltip,
   TooltipContent,
@@ -49,7 +50,7 @@ export function FlightSeatMap({
   highlightedPaxLabel,
   className,
 }: FlightSeatMapProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const aircraftName =
     (seatMap.providerData?.aircraftName as string | undefined) ?? seatMap.aircraft
 
@@ -58,20 +59,22 @@ export function FlightSeatMap({
       <div className={cn("flex flex-col items-center gap-3", className)}>
         <div className="flex items-center gap-2 text-muted-foreground text-xs">
           <Plane className="h-3.5 w-3.5" />
-          {aircraftName ?? "Cabin"}
+          {aircraftName ?? messages.flightSeatMap.cabin}
           {highlightedPaxLabel && (
             <>
               <span className="text-foreground/60">·</span>
               <span className="text-foreground">
-                Picking seat for <span className="font-medium">{highlightedPaxLabel}</span>
+                {formatMessage(messages.flightSeatMap.pickingSeatFor, {
+                  passenger: highlightedPaxLabel,
+                })}
               </span>
             </>
           )}
         </div>
         <div className="rounded-2xl border bg-card p-4">
-          <Cabin seatMap={seatMap} picks={picks} onSeatClick={onSeatClick} />
+          <Cabin seatMap={seatMap} picks={picks} onSeatClick={onSeatClick} messages={messages} />
         </div>
-        <Legend />
+        <Legend messages={messages} />
       </div>
     </TooltipProvider>
   )
@@ -83,10 +86,12 @@ function Cabin({
   seatMap,
   picks,
   onSeatClick,
+  messages,
 }: {
   seatMap: SeatMap
   picks: SeatPickMarker[]
   onSeatClick?: (seat: Seat) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   const layout = seatMap.columnLayout
   const pickIndex = new Map(picks.map((p) => [p.seatNumber, p]))
@@ -102,6 +107,7 @@ function Cabin({
           seats={row.seats}
           pickIndex={pickIndex}
           onSeatClick={onSeatClick}
+          messages={messages}
         />
       ))}
     </div>
@@ -136,12 +142,14 @@ function SeatRowView({
   seats,
   pickIndex,
   onSeatClick,
+  messages,
 }: {
   rowNumber: number
   layout: SeatMap["columnLayout"]
   seats: Seat[]
   pickIndex: Map<string, SeatPickMarker>
   onSeatClick?: (seat: Seat) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   const seatByCol = new Map(seats.map((s) => [s.column, s]))
   return (
@@ -172,6 +180,7 @@ function SeatRowView({
             seat={seat}
             pick={pickIndex.get(seat.seatNumber) ?? null}
             onClick={onSeatClick}
+            messages={messages}
           />
         )
       })}
@@ -183,10 +192,12 @@ function SeatTile({
   seat,
   pick,
   onClick,
+  messages,
 }: {
   seat: Seat
   pick: SeatPickMarker | null
   onClick?: (seat: Seat) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   const isClickable =
     !!onClick && (seat.status === "available" || seat.status === "selected" || pick != null)
@@ -217,42 +228,66 @@ function SeatTile({
     <Tooltip>
       <TooltipTrigger render={tile} />
       <TooltipContent className="max-w-[220px]">
-        <SeatTooltip seat={seat} pickedBy={pick?.label} />
+        <SeatTooltip seat={seat} pickedBy={pick?.label} messages={messages} />
       </TooltipContent>
     </Tooltip>
   )
 }
 
-function SeatTooltip({ seat, pickedBy }: { seat: Seat; pickedBy?: string }) {
+function SeatTooltip({
+  seat,
+  pickedBy,
+  messages,
+}: {
+  seat: Seat
+  pickedBy?: string
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
+}) {
   return (
     <div className="flex flex-col gap-1 text-xs">
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono font-semibold">{seat.seatNumber}</span>
         <span className="text-muted-foreground">
-          {humanCategory(seat.category)}
-          {seat.window && " · window"}
-          {seat.aisle && " · aisle"}
+          {humanCategory(seat.category, messages)}
+          {seat.window && ` · ${messages.flightSeatMap.window}`}
+          {seat.aisle && ` · ${messages.flightSeatMap.aisle}`}
         </span>
       </div>
       {seat.price ? (
         <span className="font-medium">+{formatMoney(seat.price.amount, seat.price.currency)}</span>
       ) : (
-        <span className="text-muted-foreground">No charge</span>
+        <span className="text-muted-foreground">{messages.flightSeatMap.noCharge}</span>
       )}
       {seat.notes && <span className="text-muted-foreground">{seat.notes}</span>}
-      {pickedBy && <span className="text-primary">Picked by {pickedBy}</span>}
+      {pickedBy && (
+        <span className="text-primary">
+          {formatMessage(messages.flightSeatMap.pickedBy, { passenger: pickedBy })}
+        </span>
+      )}
     </div>
   )
 }
 
-function Legend() {
+function Legend({ messages }: { messages: ReturnType<typeof useFlightsUiMessagesOrDefault> }) {
   return (
     <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-muted-foreground">
-      <LegendChip className="border-emerald-500/60 bg-card" label="Available" />
-      <LegendChip className="border-cyan-500/60 bg-cyan-500/5" label="Preferred" />
-      <LegendChip className="border-amber-500/60 bg-amber-500/5" label="Exit row" />
-      <LegendChip className="bg-primary text-primary-foreground" label="Picked" />
-      <LegendChip className="bg-muted/60" label="Taken" />
+      <LegendChip
+        className="border-emerald-500/60 bg-card"
+        label={messages.flightSeatMap.legend.available}
+      />
+      <LegendChip
+        className="border-cyan-500/60 bg-cyan-500/5"
+        label={messages.flightSeatMap.legend.preferred}
+      />
+      <LegendChip
+        className="border-amber-500/60 bg-amber-500/5"
+        label={messages.flightSeatMap.legend.exitRow}
+      />
+      <LegendChip
+        className="bg-primary text-primary-foreground"
+        label={messages.flightSeatMap.legend.picked}
+      />
+      <LegendChip className="bg-muted/60" label={messages.flightSeatMap.legend.taken} />
     </div>
   )
 }
@@ -283,20 +318,23 @@ function categoryClasses(category: Seat["category"]): string {
   }
 }
 
-function humanCategory(c: Seat["category"]): string {
+function humanCategory(
+  c: Seat["category"],
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
   switch (c) {
     case "exit_row":
-      return "Exit row · extra legroom"
+      return messages.flightSeatMap.categories.exit_row
     case "extra_legroom":
-      return "Extra legroom"
+      return messages.flightSeatMap.categories.extra_legroom
     case "preferred":
-      return "Preferred"
+      return messages.flightSeatMap.categories.preferred
     case "premium":
-      return "Premium"
+      return messages.flightSeatMap.categories.premium
     case "bulkhead":
-      return "Bulkhead"
+      return messages.flightSeatMap.categories.bulkhead
     default:
-      return "Standard"
+      return messages.flightSeatMap.categories.standard
   }
 }
 

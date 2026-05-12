@@ -13,32 +13,13 @@ import {
 import { CheckCircle2, Loader2, RotateCcw } from "lucide-react"
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
+import { authUiEn } from "../i18n/en.js"
+import type { VerifyEmailPageMessages } from "../i18n/messages.js"
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
+
 export type VerifyEmailPageMode = "otp" | "token"
 
-export interface VerifyEmailPageMessages {
-  title: string
-  description: string
-  tokenDescription: string
-  emailLabel: string
-  emailPlaceholder: string
-  codeLabel: string
-  tokenLabel: string
-  tokenPlaceholder: string
-  submit: string
-  verifying: string
-  emailRequired: string
-  codeRequired: string
-  tokenRequired: string
-  invalidVerification: string
-  successTitle: string
-  successDescription: string
-  resendCode: string
-  sending: string
-  resent: string
-  resendFailed: string
-  signIn: string
-  changeEmail: string
-}
+export type { VerifyEmailPageMessages } from "../i18n/messages.js"
 
 export interface VerifyEmailPageProps {
   className?: string
@@ -60,30 +41,7 @@ export interface VerifyEmailPageProps {
   onChangeEmailClick?: () => Promise<void> | void
 }
 
-export const defaultVerifyEmailPageMessages: VerifyEmailPageMessages = {
-  title: "Verify your email",
-  description: "Enter the verification code we sent to your email.",
-  tokenDescription: "Confirm the verification token from your email link.",
-  emailLabel: "Email",
-  emailPlaceholder: "ana@example.com",
-  codeLabel: "Verification code",
-  tokenLabel: "Verification token",
-  tokenPlaceholder: "Paste your verification token",
-  submit: "Verify email",
-  verifying: "Verifying",
-  emailRequired: "Email is required.",
-  codeRequired: "Verification code is required.",
-  tokenRequired: "Verification token is required.",
-  invalidVerification: "We could not verify that email. Check the code or request a new one.",
-  successTitle: "Email verified",
-  successDescription: "You can continue to your account.",
-  resendCode: "Resend code",
-  sending: "Sending",
-  resent: "A new verification code has been sent.",
-  resendFailed: "Failed to resend code. Try again.",
-  signIn: "Sign in",
-  changeEmail: "Use a different email",
-}
+export const defaultVerifyEmailPageMessages = authUiEn.verifyEmailPage
 
 function verificationErrorMessage(error: unknown, messages: VerifyEmailPageMessages): string {
   if (error instanceof Error && error.message.trim().length > 0) {
@@ -93,8 +51,11 @@ function verificationErrorMessage(error: unknown, messages: VerifyEmailPageMessa
   return messages.invalidVerification
 }
 
-function mergeMessages(overrides?: Partial<VerifyEmailPageMessages>): VerifyEmailPageMessages {
-  return { ...defaultVerifyEmailPageMessages, ...overrides }
+function mergeMessages(
+  defaults: VerifyEmailPageMessages,
+  overrides?: Partial<VerifyEmailPageMessages>,
+): VerifyEmailPageMessages {
+  return { ...defaults, ...overrides }
 }
 
 export function VerifyEmailPage({
@@ -113,7 +74,11 @@ export function VerifyEmailPage({
   onSignInClick,
   onChangeEmailClick,
 }: VerifyEmailPageProps) {
-  const messages = useMemo(() => mergeMessages(messageOverrides), [messageOverrides])
+  const defaultMessages = useAuthUiMessagesOrDefault().verifyEmailPage
+  const messages = useMemo(
+    () => mergeMessages(defaultMessages, messageOverrides),
+    [defaultMessages, messageOverrides],
+  )
   const verifyEmailMutation = useVerifyEmail()
   const selectedMode: VerifyEmailPageMode = mode ?? (token ? "token" : "otp")
   const autoSubmittedTokenRef = useRef<string | null>(null)

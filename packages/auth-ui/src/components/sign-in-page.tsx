@@ -6,26 +6,11 @@ import { Button, cn, Input, Label } from "@voyantjs/ui/components"
 import { Loader2, LogIn } from "lucide-react"
 import { type FormEvent, type ReactNode, useState } from "react"
 
-export interface SignInPageMessages {
-  title: string
-  description: string
-  emailLabel: string
-  emailPlaceholder: string
-  passwordLabel: string
-  forgotPassword: string
-  submit: string
-  signingIn: string
-  invalidEmailOrPassword: string
-  emailRequired: string
-  passwordRequired: string
-  emailNotVerified: string
-  resendVerificationCode: string
-  sending: string
-  somethingWentWrong: string
-  or: string
-  noAccount: string
-  signUp: string
-}
+import { authUiEn } from "../i18n/en.js"
+import type { SignInPageMessages } from "../i18n/messages.js"
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
+
+export type { SignInPageMessages } from "../i18n/messages.js"
 
 export interface SignInSocialProvider {
   id: string
@@ -45,26 +30,7 @@ export interface SignInPageProps {
   onResendVerification?: (email: string) => Promise<void> | void
 }
 
-export const defaultSignInPageMessages: SignInPageMessages = {
-  title: "Sign in",
-  description: "Use your operator account to continue.",
-  emailLabel: "Email",
-  emailPlaceholder: "ana@example.com",
-  passwordLabel: "Password",
-  forgotPassword: "Forgot password?",
-  submit: "Sign in",
-  signingIn: "Signing in",
-  invalidEmailOrPassword: "Invalid email or password.",
-  emailRequired: "Email is required.",
-  passwordRequired: "Password is required.",
-  emailNotVerified: "Your email address has not been verified.",
-  resendVerificationCode: "Resend verification code",
-  sending: "Sending",
-  somethingWentWrong: "Something went wrong. Try again.",
-  or: "Or",
-  noAccount: "No account yet?",
-  signUp: "Create one",
-}
+export const defaultSignInPageMessages = authUiEn.signInPage
 
 function isEmailNotVerified(error: unknown): boolean {
   if (error instanceof VoyantApiError && error.status === 403) {
@@ -100,7 +66,8 @@ export function SignInPage({
   onSignedIn,
   onResendVerification,
 }: SignInPageProps) {
-  const messages = { ...defaultSignInPageMessages, ...messageOverrides }
+  const defaultMessages = useAuthUiMessagesOrDefault().signInPage
+  const messages = { ...defaultMessages, ...messageOverrides }
   const signIn = useSignIn()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

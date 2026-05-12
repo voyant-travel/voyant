@@ -225,6 +225,11 @@ export const productsUiEn = {
       description: "Description",
       sortOrder: "Sort order",
       active: "Active",
+      customerPaymentPolicy: "Customer payment policy",
+    },
+    descriptions: {
+      customerPaymentPolicy:
+        "When set, products in this category inherit these terms unless the listing or booking sets its own override. Wins over the supplier-level policy.",
     },
     placeholders: {
       name: "Adventure",

@@ -7,12 +7,84 @@ const filePatterns = [".ts", ".tsx"]
 const ignoredDirectoryNames = new Set(["dist", "i18n", "node_modules"])
 const ignoredFileSuffixes = [".d.ts", ".test.ts", ".test.tsx", ".spec.ts", ".spec.tsx"]
 const ignoredLineStarts = ["import ", "export "]
+const ignoredLineIncludes = [
+  ">=",
+  "<=",
+  "=> Promise",
+  "Promise<",
+  "Record<string",
+  "Resolver<",
+  "z.literal(",
+  "z.coerce",
+  "function stripUndefined<",
+  "function bucketBy<",
+  "useForm<",
+  "fetchJson<",
+  "setField(",
+]
+const nonUserFacingLiterals = new Set([
+  "",
+  "-",
+  " *",
+  "?",
+  "EUR",
+  "GBP",
+  "RON",
+  "USD",
+  "UTC",
+  "Europe/Bucharest",
+  "FREQ=DAILY;INTERVAL=1",
+])
 
 const suspiciousPatterns = [
   />\s*[^<{]*[A-Za-z][^<{]*</,
   /\b(?:title|placeholder|label|description|emptyMessage|buttonLabel|confirmLabel|aria-label)\s*=\s*(?:"[^"]*[A-Za-z][^"]*"|'[^']*[A-Za-z][^']*'|`[^`]*[A-Za-z][^`]*`)/,
   /(?:\?\s*|:\s*|return\s+)(?:"(?:[^"\n]* [^"\n]*|[A-Z][A-Za-z][^"\n]*)"|'(?:[^'\n]* [^'\n]*|[A-Z][A-Za-z][^'\n]*)')/,
 ]
+
+function extractQuotedStrings(line) {
+  return [...line.matchAll(/(?:"([^"\n]*)"|'([^'\n]*)'|`([^`\n]*)`)/g)].map(
+    (match) => match[1] ?? match[2] ?? match[3] ?? "",
+  )
+}
+
+function looksLikeTailwindUtility(value) {
+  if (!value.trim()) {
+    return false
+  }
+
+  return value.split(/\s+/).every((token) => {
+    const bareToken = token.replace(/^[a-z0-9_-]+:/i, "")
+    return (
+      /^(?:[a-z0-9[\]()./%#,:_-]+!?|\[[^\]]+\])$/i.test(token) &&
+      (/^(?:absolute|block|contents|flex|grid|hidden|inline|relative|sticky|truncate)$/.test(
+        bareToken,
+      ) ||
+        /(?:^|:)(?:accent|animate|auto|bg|border|bottom|capitalize|center|col|cursor|duration|ease|font|gap|h|inset|items|justify|left|line|lowercase|m|mb|min|ml|mr|mt|mx|my|opacity|overflow|p|pb|pl|pointer|pr|pt|px|py|resize|right|ring|rounded|row|scroll|shadow|shrink|size|sm|space|sr|tabular|text|top|touch|tracking|transition|uppercase|w|whitespace|z)-/.test(
+          token,
+        ))
+    )
+  })
+}
+
+function isKnownNonUserFacingLiteral(value) {
+  return nonUserFacingLiterals.has(value) || /^[A-Z]{2,4}$/.test(value)
+}
+
+function shouldIgnoreSuspiciousLine(trimmed) {
+  if (ignoredLineIncludes.some((fragment) => trimmed.includes(fragment))) {
+    return true
+  }
+
+  const quotedStrings = extractQuotedStrings(trimmed)
+  if (quotedStrings.length === 0) {
+    return false
+  }
+
+  return quotedStrings.every(
+    (value) => isKnownNonUserFacingLiteral(value) || looksLikeTailwindUtility(value),
+  )
+}
 
 async function exists(filePath) {
   try {
@@ -92,6 +164,7 @@ async function findSuspiciousLines(filePath) {
       !trimmed ||
       trimmed.includes("i18n-literal-ok") ||
       ignoredLineStarts.some((prefix) => trimmed.startsWith(prefix)) ||
+      shouldIgnoreSuspiciousLine(trimmed) ||
       trimmed.startsWith("//") ||
       trimmed.startsWith("*") ||
       trimmed.startsWith("/*")

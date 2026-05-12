@@ -1,10 +1,11 @@
 "use client"
 
 import type { FlightOffer, Money, PassengerCounts } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, Pencil, Plane, Users } from "lucide-react"
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"
 
 /**
@@ -77,7 +78,8 @@ export function FlightBookingLedger({
   completedSections,
   className,
 }: FlightBookingLedgerProps) {
-  useFlightsUiMessagesOrDefault()
+  const i18n = useFlightsUiI18nOrDefault()
+  const messages = i18n.messages
   const total = computeTotal(selection, outboundExtras, returnExtras)
   const paxTotal = (passengers.adults ?? 0) + (passengers.children ?? 0) + (passengers.infants ?? 0)
 
@@ -89,45 +91,51 @@ export function FlightBookingLedger({
       )}
     >
       <LegBlock
-        label={selection.return ? "Outbound" : "Flight"}
+        label={
+          selection.return
+            ? messages.flightBookingLedger.outbound
+            : messages.flightBookingLedger.flight
+        }
         offer={selection.outbound}
         carrierName={carrierName}
         airportName={airportName}
         extras={outboundExtras}
         onEdit={onEditOutbound}
         complete={completedSections?.has("flights")}
+        i18n={i18n}
       />
       {selection.return && (
         <LegBlock
-          label="Return"
+          label={messages.flightBookingLedger.return}
           offer={selection.return}
           carrierName={carrierName}
           airportName={airportName}
           extras={returnExtras}
           onEdit={onEditReturn}
           complete={completedSections?.has("flights")}
+          i18n={i18n}
         />
       )}
 
       <SectionRow
         icon={<Users className="h-3.5 w-3.5" />}
-        label="Passengers"
-        right={`${paxTotal} pax`}
+        label={messages.flightBookingLedger.passengers}
+        right={`${paxTotal} ${messages.common.pax}`}
         complete={completedSections?.has("passengers")}
       />
 
-      <PlaceholderSections completed={completedSections} />
+      <PlaceholderSections completed={completedSections} messages={messages} />
 
       <div className="mt-2 flex items-center justify-between border-t pt-3">
-        <span className="font-medium text-sm">Total</span>
+        <span className="font-medium text-sm">{messages.common.total}</span>
         <span className="font-semibold text-lg tabular-nums">
-          {formatMoney(total.amount, total.currency)}
+          {formatMoney(total.amount, total.currency, i18n)}
         </span>
       </div>
 
       {cta && (
         <Button className="w-full" onClick={cta.onClick} disabled={cta.disabled || cta.loading}>
-          {cta.loading ? "Working…" : cta.label}
+          {cta.loading ? messages.flightBookingLedger.working : cta.label}
         </Button>
       )}
     </aside>
@@ -144,6 +152,7 @@ function LegBlock({
   extras,
   onEdit,
   complete,
+  i18n,
 }: {
   label: string
   offer: FlightOffer
@@ -152,7 +161,9 @@ function LegBlock({
   extras?: LedgerLineItem[]
   onEdit?: () => void
   complete?: boolean
+  i18n: ReturnType<typeof useFlightsUiI18nOrDefault>
 }) {
+  const messages = i18n.messages
   const itin = offer.itineraries[0]
   if (!itin) return null
   const segs = itin.segments
@@ -177,7 +188,7 @@ function LegBlock({
         </div>
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm tabular-nums">
-            {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency)}
+            {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency, i18n)}
           </span>
           {onEdit && (
             <Button
@@ -205,8 +216,7 @@ function LegBlock({
           </span>
           <span className="text-[11px] text-muted-foreground">
             {formatDate(first.departure.at)} · {formatTime(first.departure.at)} –{" "}
-            {formatTime(last.arrival.at)} ·{" "}
-            {stops === 0 ? "Nonstop" : `${stops} stop${stops > 1 ? "s" : ""}`}
+            {formatTime(last.arrival.at)} · {formatStops(stops, messages)}
           </span>
         </div>
       </div>
@@ -221,7 +231,7 @@ function LegBlock({
             >
               <span>{x.label}</span>
               <span className="tabular-nums">
-                {x.amount ? formatMoney(x.amount.amount, x.amount.currency) : (x.meta ?? "")}
+                {x.amount ? formatMoney(x.amount.amount, x.amount.currency, i18n) : (x.meta ?? "")}
               </span>
             </li>
           ))}
@@ -257,14 +267,22 @@ function SectionRow({
   )
 }
 
-function PlaceholderSections({ completed }: { completed?: ReadonlySet<LedgerSection> }) {
+function PlaceholderSections({
+  completed,
+  messages,
+}: {
+  completed?: ReadonlySet<LedgerSection>
+  messages: ReturnType<typeof useFlightsUiI18nOrDefault>["messages"]
+}) {
   // Phase 1 only renders Passengers above; later phases will replace this with
   // bags/seats/services/documents/billing rows. The shape stays consistent so
   // the ledger doesn't need to change later.
   if (!completed) return null
   const items: { id: LedgerSection; label: string }[] = []
-  if (completed.has("billing")) items.push({ id: "billing", label: "Billing" })
-  if (completed.has("payment")) items.push({ id: "payment", label: "Payment" })
+  if (completed.has("billing"))
+    items.push({ id: "billing", label: messages.flightBookingLedger.billing })
+  if (completed.has("payment"))
+    items.push({ id: "payment", label: messages.flightBookingLedger.payment })
   if (items.length === 0) return null
   return (
     <>
@@ -296,20 +314,33 @@ function num(v: string | undefined): number {
   return Number.isFinite(n) ? n : 0
 }
 
-function formatMoney(amount: string, currency: string): string {
+function formatMoney(
+  amount: string,
+  currency: string,
+  i18n: ReturnType<typeof useFlightsUiI18nOrDefault>,
+): string {
   const n = Number(amount)
   if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n)
+  return i18n.formatCurrency(n, currency, { maximumFractionDigits: 0 })
 }
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(d)
+}
+
+function formatStops(
+  stops: number,
+  messages: ReturnType<typeof useFlightsUiI18nOrDefault>["messages"],
+): string {
+  if (stops === 0) return messages.common.stops.nonstop
+  return formatMessage(
+    stops === 1 ? messages.common.stops.oneStop : messages.common.stops.manyStops,
+    {
+      count: stops,
+    },
+  )
 }
 
 function formatDate(iso: string): string {

@@ -22,12 +22,11 @@ import {
 } from "@voyantjs/ui/components"
 import { KeyRound, Loader2, Mail, Save, UserRound } from "lucide-react"
 import { type FormEvent, useEffect, useState } from "react"
-
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
 import {
   type AccountChangeEmailFormMessages,
   type AccountChangePasswordFormMessages,
   type AccountProfileFormMessages,
-  defaultAccountPageMessages,
   messageFromError,
 } from "./account-page-shared.js"
 
@@ -60,7 +59,8 @@ export function AccountProfileForm({
   messages: messageOverrides,
   onUpdated,
 }: AccountProfileFormProps) {
-  const messages = { ...defaultAccountPageMessages.profile, ...messageOverrides }
+  const defaultMessages = useAuthUiMessagesOrDefault().accountPage.profile
+  const messages = { ...defaultMessages, ...messageOverrides }
   const userQuery = useCurrentUser({ enabled: currentUser === undefined })
   const user = currentUser === undefined ? (userQuery.data ?? null) : currentUser
   const mutation = useUpdateAccountProfile()
@@ -183,7 +183,8 @@ export function AccountChangeEmailForm({
   onCodeSent,
   onChanged,
 }: AccountChangeEmailFormProps) {
-  const messages = { ...defaultAccountPageMessages.email, ...messageOverrides }
+  const defaultMessages = useAuthUiMessagesOrDefault().accountPage.email
+  const messages = { ...defaultMessages, ...messageOverrides }
   const requestEmailChange = useRequestAccountEmailChange()
   const confirmEmailChange = useConfirmAccountEmailChange()
   const [newEmail, setNewEmail] = useState("")
@@ -345,7 +346,8 @@ export function AccountChangePasswordForm({
   revokeOtherSessionsDefault = true,
   onChanged,
 }: AccountChangePasswordFormProps) {
-  const messages = { ...defaultAccountPageMessages.password, ...messageOverrides }
+  const defaultMessages = useAuthUiMessagesOrDefault().accountPage.password
+  const messages = { ...defaultMessages, ...messageOverrides }
   const mutation = useChangeAccountPassword()
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")

@@ -4,7 +4,7 @@ import { OperatorAdminPageShell } from "@voyantjs/admin"
 import { type CurrentUser, useCurrentUser } from "@voyantjs/auth-react"
 import { cn } from "@voyantjs/ui/components"
 import { type ReactNode, useMemo } from "react"
-
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
 import {
   AccountChangeEmailForm,
   AccountChangePasswordForm,
@@ -67,7 +67,8 @@ export function AccountPage({
   slots,
   showSidebarTrigger,
 }: AccountPageProps) {
-  const messages: AccountPageMessages = mergeAccountPageMessages(messageOverrides)
+  const defaultMessages = useAuthUiMessagesOrDefault().accountPage
+  const messages: AccountPageMessages = mergeAccountPageMessages(messageOverrides, defaultMessages)
   const userQuery = useCurrentUser({ enabled: currentUser === undefined })
   const user = currentUser === undefined ? (userQuery.data ?? null) : currentUser
   const isLoading = currentUser === undefined && userQuery.isLoading

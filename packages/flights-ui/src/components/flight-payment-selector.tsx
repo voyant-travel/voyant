@@ -19,8 +19,6 @@ export interface FlightPaymentSelectorProps {
 
 interface IntentMeta {
   id: PaymentIntent["type"]
-  title: string
-  description: string
   icon: ReactNode
   build: () => PaymentIntent
 }
@@ -28,41 +26,29 @@ interface IntentMeta {
 const INTENTS: IntentMeta[] = [
   {
     id: "hold",
-    title: "Hold seats — pay later",
-    description:
-      "Confirms the booking now and locks in the price for the connector's hold window. Tickets issue when payment lands.",
     icon: <Clock className="h-5 w-5" />,
     build: () => ({ type: "hold" }),
   },
   {
     id: "card",
-    title: "Pay by card",
-    description:
-      "Tickets issue immediately. Card details handled outside this form by the connector's tokenization flow.",
     icon: <CreditCard className="h-5 w-5" />,
     build: () => ({ type: "card", token: "demo_card_token" }),
   },
   {
     id: "ticket_on_credit",
-    title: "Ticket on agency credit",
-    description:
-      "Issue against the operator's IATA office credit line. Settles via BSP in the next reporting cycle.",
     icon: <Banknote className="h-5 w-5" />,
     build: () => ({ type: "ticket_on_credit" }),
   },
 ]
 
 export function FlightPaymentSelector({ value, onChange, available }: FlightPaymentSelectorProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault().flightPaymentSelector
   const visibleIntents = available ? INTENTS.filter((i) => available.includes(i.id)) : INTENTS
 
   return (
     <div className="rounded-lg border bg-card p-4 shadow-sm">
-      <h3 className="mb-3 font-medium text-sm">Payment intent</h3>
-      <p className="mb-4 text-xs text-muted-foreground">
-        How the booking should be paid. Hold lets you confirm seats now and ticket later; card /
-        on-credit issue tickets immediately.
-      </p>
+      <h3 className="mb-3 font-medium text-sm">{messages.title}</h3>
+      <p className="mb-4 text-xs text-muted-foreground">{messages.description}</p>
       <div role="radiogroup" className="flex flex-col gap-2">
         {visibleIntents.map((intent) => {
           const isSelected = value.type === intent.id
@@ -90,8 +76,10 @@ export function FlightPaymentSelector({ value, onChange, available }: FlightPaym
                 {intent.icon}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="text-sm font-medium">{intent.title}</span>
-                <span className="text-xs text-muted-foreground">{intent.description}</span>
+                <span className="text-sm font-medium">{messages.intents[intent.id].title}</span>
+                <span className="text-xs text-muted-foreground">
+                  {messages.intents[intent.id].description}
+                </span>
               </div>
               <div
                 className={cn(

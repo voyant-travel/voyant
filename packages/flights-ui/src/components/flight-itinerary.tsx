@@ -1,10 +1,12 @@
 "use client"
 
 import type { FlightSegment, Itinerary } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Plane } from "lucide-react"
 
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"
 
 export interface FlightItineraryProps {
@@ -43,6 +45,7 @@ export function FlightItinerary({
   compact,
   className,
 }: FlightItineraryProps) {
+  const messages = useFlightsUiMessagesOrDefault()
   const segs = itinerary.segments
   const first = segs[0]
   const last = segs[segs.length - 1]
@@ -78,7 +81,7 @@ export function FlightItinerary({
             {formatTime(first.departure.at)} – {formatTime(last.arrival.at)}
           </span>
           <span className="ml-auto text-[11px] text-muted-foreground">
-            {stops === 0 ? "Nonstop" : `${stops} stop${stops > 1 ? "s" : ""}`}
+            {formatStops(stops, messages)}
             {totalDuration && ` · ${formatDuration(totalDuration)}`}
           </span>
         </div>
@@ -99,7 +102,10 @@ export function FlightItinerary({
             <span className="text-[11px] text-muted-foreground">
               {sublabel}
               {sublabel && totalDuration && " · "}
-              {totalDuration && `Total ${formatDuration(totalDuration)}`}
+              {totalDuration &&
+                formatMessage(messages.flightItinerary.totalDuration, {
+                  duration: formatDuration(totalDuration),
+                })}
             </span>
           )}
         </div>
@@ -112,6 +118,7 @@ export function FlightItinerary({
             carrierName={carrierName}
             airportName={airportName}
             aircraftName={aircraftName}
+            messages={messages}
             layoverBefore={idx > 0 ? layoverBetween(segs[idx - 1], seg) : null}
           />
         ))}
@@ -127,12 +134,14 @@ function SegmentBlock({
   carrierName,
   airportName,
   aircraftName,
+  messages,
   layoverBefore,
 }: {
   segment: FlightSegment
   carrierName?: (iataCode: string) => string | undefined
   airportName?: (iataCode: string) => string | undefined
   aircraftName?: (iataCode: string) => string | undefined
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
   layoverBefore: { airport: string; dwell: string } | null
 }) {
   const isCodeshare =
@@ -144,7 +153,11 @@ function SegmentBlock({
         <div className="my-1 flex items-center gap-2 px-2 text-xs text-muted-foreground">
           <div className="h-px flex-1 bg-border" />
           <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">
-            Layover · {layoverBefore.dwell} in {layoverBefore.airport}
+            {messages.flightItinerary.layover} ·{" "}
+            {formatMessage(messages.flightItinerary.layoverIn, {
+              duration: layoverBefore.dwell,
+              airport: layoverBefore.airport,
+            })}
           </span>
           <div className="h-px flex-1 bg-border" />
         </div>
@@ -165,12 +178,16 @@ function SegmentBlock({
           </span>
           {isCodeshare && (
             <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
-              Operated by{" "}
-              {carrierName?.(segment.operatingCarrierCode ?? "") ?? segment.operatingCarrierCode}
+              {formatMessage(messages.flightItinerary.operatedBy, {
+                carrier:
+                  carrierName?.(segment.operatingCarrierCode ?? "") ??
+                  segment.operatingCarrierCode ??
+                  "",
+              })}
             </Badge>
           )}
           <Badge variant="outline" className="ml-auto capitalize">
-            {segment.cabin.replace("_", " ")}
+            {messages.common.cabinLabels[segment.cabin]}
           </Badge>
         </div>
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -179,6 +196,7 @@ function SegmentBlock({
             iata={segment.departure.iataCode}
             terminal={segment.departure.terminal}
             airportName={airportName?.(segment.departure.iataCode)}
+            messages={messages}
           />
           <div className="flex flex-col items-center gap-1 text-muted-foreground text-xs">
             <Plane className="h-3.5 w-3.5" />
@@ -190,11 +208,12 @@ function SegmentBlock({
             terminal={segment.arrival.terminal}
             airportName={airportName?.(segment.arrival.iataCode)}
             align="end"
+            messages={messages}
           />
         </div>
         {segment.aircraft && (
           <div className="mt-2 text-[11px] text-muted-foreground">
-            Aircraft:{" "}
+            {messages.flightItinerary.aircraft}{" "}
             <span className="text-foreground">
               {aircraftName?.(segment.aircraft) ?? segment.aircraft}
             </span>
@@ -210,12 +229,14 @@ function Endpoint({
   iata,
   terminal,
   airportName,
+  messages,
   align = "start",
 }: {
   at: string
   iata: string
   terminal?: string
   airportName?: string
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
   align?: "start" | "end"
 }) {
   return (
@@ -225,9 +246,26 @@ function Endpoint({
       <span className="font-semibold text-lg tabular-nums">{formatTime(at)}</span>
       <span className="font-mono text-muted-foreground text-xs">{iata}</span>
       {airportName && <span className="text-[11px] text-muted-foreground">{airportName}</span>}
-      {terminal && <span className="text-[10px] text-muted-foreground">Terminal {terminal}</span>}
+      {terminal && (
+        <span className="text-[10px] text-muted-foreground">
+          {formatMessage(messages.flightItinerary.terminal, { terminal })}
+        </span>
+      )}
       <span className="mt-0.5 text-[10px] text-muted-foreground">{formatDate(at)}</span>
     </div>
+  )
+}
+
+function formatStops(
+  stops: number,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
+  if (stops === 0) return messages.common.stops.nonstop
+  return formatMessage(
+    stops === 1 ? messages.common.stops.oneStop : messages.common.stops.manyStops,
+    {
+      count: stops,
+    },
   )
 }
 

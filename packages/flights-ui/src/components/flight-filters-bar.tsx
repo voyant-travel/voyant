@@ -1,6 +1,7 @@
 "use client"
 
 import type { FlightOffer } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import {
@@ -43,7 +44,7 @@ export interface FlightFiltersBarProps {
 }
 
 export function FlightFiltersBar({ value, onChange, offers, carrierName }: FlightFiltersBarProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const carrierBuckets = deriveCarrierBuckets(offers)
   const stopsBuckets = deriveStopsBuckets(offers)
   const hasSelections =
@@ -55,6 +56,7 @@ export function FlightFiltersBar({ value, onChange, offers, carrierName }: Fligh
         buckets={carrierBuckets}
         selected={value.carriers}
         carrierName={carrierName}
+        messages={messages.flightFiltersBar}
         onToggle={(code) =>
           onChange({
             ...value,
@@ -70,11 +72,13 @@ export function FlightFiltersBar({ value, onChange, offers, carrierName }: Fligh
         buckets={stopsBuckets}
         selected={value.maxStops}
         onSelect={(maxStops) => onChange({ ...value, maxStops })}
+        messages={messages}
       />
 
       <PriceFilter
         value={value.maxPrice}
         onChange={(maxPrice) => onChange({ ...value, maxPrice })}
+        messages={messages.flightFiltersBar}
       />
 
       {hasSelections && (
@@ -85,7 +89,7 @@ export function FlightFiltersBar({ value, onChange, offers, carrierName }: Fligh
           onClick={() => onChange(EMPTY_FLIGHT_FILTERS)}
         >
           <X className="mr-1 h-3.5 w-3.5" />
-          Clear all
+          {messages.flightFiltersBar.clearAll}
         </Button>
       )}
     </div>
@@ -139,25 +143,27 @@ function CarrierFilter({
   carrierName,
   onToggle,
   onClear,
+  messages,
 }: {
   buckets: CarrierBucket[]
   selected: string[]
   carrierName?: (iataCode: string) => string | undefined
   onToggle: (iataCode: string) => void
   onClear: () => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>["flightFiltersBar"]
 }) {
   if (buckets.length === 0) return null
   const selectedSet = new Set(selected)
   return (
     <Popover>
       <PopoverTrigger render={<Button variant="outline" size="sm" className={TRIGGER_CLASS} />}>
-        <TriggerContents label="Airlines" count={selected.length} />
+        <TriggerContents label={messages.airlines} count={selected.length} />
       </PopoverTrigger>
       <PopoverContent className="w-[260px] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Filter airlines…" />
+          <CommandInput placeholder={messages.filterAirlinesPlaceholder} />
           <CommandList>
-            <CommandEmpty>No airlines.</CommandEmpty>
+            <CommandEmpty>{messages.noAirlines}</CommandEmpty>
             <CommandGroup>
               {buckets.map((b) => {
                 const isSelected = selectedSet.has(b.iataCode)
@@ -191,7 +197,7 @@ function CarrierFilter({
                     onSelect={onClear}
                     className="justify-center text-center text-muted-foreground"
                   >
-                    Clear filter
+                    {messages.clearFilter}
                   </CommandItem>
                 </CommandGroup>
               </>
@@ -232,22 +238,25 @@ function StopsFilter({
   buckets,
   selected,
   onSelect,
+  messages,
 }: {
   buckets: StopsBucket[]
   selected: number | null
   onSelect: (maxStops: number | null) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   if (buckets.length === 0) return null
+  const filterMessages = messages.flightFiltersBar
   const preview =
     selected != null ? (
       <span className="text-muted-foreground">
-        {selected === 0 ? "· Nonstop" : `· ≤ ${selected}`}
+        {selected === 0 ? `· ${messages.common.stops.nonstop}` : `· ≤ ${selected}`}
       </span>
     ) : null
   return (
     <Popover>
       <PopoverTrigger render={<Button variant="outline" size="sm" className={TRIGGER_CLASS} />}>
-        <TriggerContents label="Stops" preview={preview} />
+        <TriggerContents label={filterMessages.stops} preview={preview} />
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0" align="start">
         <Command>
@@ -264,7 +273,14 @@ function StopsFilter({
                       className="mr-2 pointer-events-none"
                     />
                     <span className="flex-1">
-                      {b.stops === 0 ? "Nonstop" : `Up to ${b.stops} stop${b.stops > 1 ? "s" : ""}`}
+                      {b.stops === 0
+                        ? messages.common.stops.nonstop
+                        : formatMessage(
+                            b.stops === 1
+                              ? messages.common.stops.upToOne
+                              : messages.common.stops.upToMany,
+                            { count: b.stops },
+                          )}
                     </span>
                     <span className="ml-2 text-xs text-muted-foreground">{b.count}</span>
                   </CommandItem>
@@ -279,7 +295,7 @@ function StopsFilter({
                     onSelect={() => onSelect(null)}
                     className="justify-center text-center text-muted-foreground"
                   >
-                    Clear filter
+                    {filterMessages.clearFilter}
                   </CommandItem>
                 </CommandGroup>
               </>
@@ -309,24 +325,26 @@ function deriveStopsBuckets(offers: FlightOffer[]): StopsBucket[] {
 function PriceFilter({
   value,
   onChange,
+  messages,
 }: {
   value: number | null
   onChange: (max: number | null) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>["flightFiltersBar"]
 }) {
   const preview = value != null ? <span className="text-muted-foreground">· ≤ {value}</span> : null
   return (
     <Popover>
       <PopoverTrigger render={<Button variant="outline" size="sm" className={TRIGGER_CLASS} />}>
-        <TriggerContents label="Price" preview={preview} />
+        <TriggerContents label={messages.price} preview={preview} />
       </PopoverTrigger>
       <PopoverContent className="w-[240px] p-3" align="start">
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted-foreground">Maximum price</span>
+          <span className="text-xs font-medium text-muted-foreground">{messages.maximumPrice}</span>
           <Input
             type="number"
             inputMode="decimal"
             min={0}
-            placeholder="No cap"
+            placeholder={messages.noCap}
             defaultValue={value ?? ""}
             className="h-8"
             onBlur={(e) => {
@@ -341,7 +359,7 @@ function PriceFilter({
             disabled={value == null}
             className="self-start"
           >
-            Clear
+            {messages.clear}
           </Button>
         </div>
       </PopoverContent>

@@ -32,7 +32,7 @@ export function VehicleSeatsView({
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
-  const groups = groupSeatsByVehicle(seats, vehicles)
+  const groups = groupSeatsByVehicle(seats, vehicles, messages)
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(18rem,22rem)_1fr]">
@@ -147,8 +147,10 @@ function VehicleSeatCell({
       id={`seat:${seat.id}`}
       className={cn(
         "min-h-24 rounded-md border bg-background p-2 text-left text-xs transition-colors",
-        over ? "border-primary bg-primary/5" : null,
-        overflow ? "border-destructive bg-destructive/5" : null,
+        over ? "border-primary bg-primary/5" /* i18n-literal-ok CSS class token */ : null,
+        overflow
+          ? "border-destructive bg-destructive/5" /* i18n-literal-ok CSS class token */
+          : null,
       )}
       onDragOver={(event) => {
         event.preventDefault()
@@ -158,7 +160,7 @@ function VehicleSeatCell({
       onDrop={onDrop}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="font-medium">{seat.label ?? seatName(seat)}</span>
+        <span className="font-medium">{seat.label ?? seatName(seat, messages)}</span>
         <SeatPositionBadge seat={seat} />
       </div>
       {occupant ? (

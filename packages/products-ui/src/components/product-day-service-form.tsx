@@ -100,7 +100,7 @@ function initialState(mode: Mode): FormState {
     description: "",
     countryCode: "",
     supplierServiceId: "",
-    costCurrency: "EUR",
+    costCurrency: "EUR", // i18n-literal-ok ISO default currency
     costAmount: "0",
     quantity: "1",
     sortOrder: mode.sortOrder == null ? "" : String(mode.sortOrder),

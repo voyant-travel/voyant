@@ -8,7 +8,7 @@ import {
 } from "@voyantjs/ui/components/accordion"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
+import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import type { BookingEntitySummary, JourneyStep, SidePanelState } from "../types.js"
 
 /**
@@ -28,7 +28,7 @@ export function PriceSidePanel({
   draft,
   className,
 }: SidePanelState & { className?: string }): React.ReactElement {
-  useBookingsUiMessagesOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <Card className={className}>
       {entitySummary ? <EntityHeader summary={entitySummary} /> : null}
@@ -74,7 +74,7 @@ export function PriceSidePanel({
               </ul>
             ) : null}
             <div className="flex justify-between border-t pt-2 font-medium">
-              <span>Total</span>
+              <span>{messages.bookingJourney.sidePanel.total}</span>
               <span>{formatMoney(pricing.total, pricing.currency)}</span>
             </div>
           </div>
@@ -85,6 +85,7 @@ export function PriceSidePanel({
 }
 
 function EntityHeader({ summary }: { summary: BookingEntitySummary }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <div className="overflow-hidden rounded-t-xl">
       {summary.heroImageUrl ? (
@@ -95,7 +96,9 @@ function EntityHeader({ summary }: { summary: BookingEntitySummary }): React.Rea
         />
       ) : null}
       <div className="space-y-1 px-6 pt-4 pb-2">
-        <div className="text-muted-foreground text-xs uppercase tracking-wide">You're booking</div>
+        <div className="text-muted-foreground text-xs uppercase tracking-wide">
+          {messages.bookingJourney.sidePanel.youAreBooking}
+        </div>
         <div className="font-semibold leading-tight">{summary.name}</div>
         {summary.subtitle ? (
           <div className="text-muted-foreground text-sm">{summary.subtitle}</div>
@@ -119,6 +122,7 @@ function StepRecap({
   currentStep: JourneyStep
   draft: SidePanelState["draft"]
 }): React.ReactElement | null {
+  const messages = useBookingsUiMessagesOrDefault()
   if (!draft) return null
   // Default-open the current step. Uncontrolled — users can toggle
   // freely. Re-mounts when currentStep changes (key) so the
@@ -134,7 +138,7 @@ function StepRecap({
                   step === currentStep ? "font-semibold" : "text-muted-foreground font-medium"
                 }
               >
-                {STEP_LABELS[step]}
+                {stepLabel(step, messages)}
               </span>
               <StepSummaryLine step={step} draft={draft} />
             </div>
@@ -155,48 +159,68 @@ function StepSummaryLine({
   step: JourneyStep
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement | null {
-  const text = stepHeadline(step, draft)
+  const messages = useBookingsUiMessagesOrDefault()
+  const text = stepHeadline(step, draft, messages)
   if (!text) return null
   return <span className="text-muted-foreground text-xs">{text}</span>
 }
 
-function stepHeadline(step: JourneyStep, draft: NonNullable<SidePanelState["draft"]>): string {
+function stepHeadline(
+  step: JourneyStep,
+  draft: NonNullable<SidePanelState["draft"]>,
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+): string {
   switch (step) {
     case "configure": {
       const total = paxTotal(draft)
       const slot = draft.configure?.departureSlotId ?? draft.configure?.departureDate ?? undefined
       const range = draft.configure?.dateRange
       const when = range?.checkIn && range?.checkOut ? `${range.checkIn} → ${range.checkOut}` : slot
-      return when ? `${total} ${total === 1 ? "guest" : "guests"} · ${when}` : `${total} guests`
+      const guestLabel =
+        total === 1
+          ? messages.bookingJourney.sidePanel.guestSingular
+          : messages.bookingJourney.sidePanel.guestPlural
+      return when ? `${total} ${guestLabel} · ${when}` : `${total} ${guestLabel}`
     }
     case "billing": {
       const c = draft.billing.contact
       const name = [c.firstName, c.lastName].filter(Boolean).join(" ").trim()
-      return name || c.email || "Not set"
+      return name || c.email || messages.bookingJourney.values.notSet
     }
     case "travelers": {
       const filled = draft.travelers.filter((t) => t.firstName && t.lastName).length
-      return `${filled} of ${draft.travelers.length} filled`
+      return formatMessage(messages.bookingJourney.sidePanel.filledOf, {
+        filled,
+        total: draft.travelers.length,
+      })
     }
     case "accommodation": {
       const rooms = draft.accommodation?.rooms ?? []
       if (rooms.length === 0) return ""
-      return `${rooms.length} room${rooms.length === 1 ? "" : "s"}`
+      return `${rooms.length} ${
+        rooms.length === 1
+          ? messages.bookingJourney.sidePanel.roomSingular
+          : messages.bookingJourney.sidePanel.roomPlural
+      }`
     }
     case "addons": {
       const addons = draft.addons ?? []
-      if (addons.length === 0) return "None"
-      return `${addons.length} add-on${addons.length === 1 ? "" : "s"}`
+      if (addons.length === 0) return messages.bookingJourney.values.none
+      return `${addons.length} ${
+        addons.length === 1
+          ? messages.bookingJourney.sidePanel.addOnSingular
+          : messages.bookingJourney.sidePanel.addOnPlural
+      }`
     }
     case "payment": {
       const intent = draft.payment.intent
-      if (intent === "card") return "Card"
-      if (intent === "hold") return "Hold"
-      if (intent === "ticket_on_credit") return "On credit"
+      if (intent === "card") return messages.bookingJourney.sidePanel.card
+      if (intent === "hold") return messages.bookingJourney.sidePanel.hold
+      if (intent === "ticket_on_credit") return messages.bookingJourney.sidePanel.onCredit
       return ""
     }
     case "review":
-      return "Confirm and book"
+      return messages.bookingJourney.sidePanel.confirmAndBook
     default:
       return ""
   }
@@ -209,6 +233,7 @@ function StepDetails({
   step: JourneyStep
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement | null {
+  const messages = useBookingsUiMessagesOrDefault()
   switch (step) {
     case "configure":
       return <ConfigureDetails draft={draft} />
@@ -224,7 +249,9 @@ function StepDetails({
       return <PaymentDetails draft={draft} />
     case "review":
       return (
-        <p className="text-muted-foreground text-xs">Review your details and confirm to book.</p>
+        <p className="text-muted-foreground text-xs">
+          {messages.bookingJourney.sidePanel.reviewDetails}
+        </p>
       )
     default:
       return null
@@ -236,18 +263,33 @@ function ConfigureDetails({
 }: {
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const cfg = draft.configure ?? {}
   const range = cfg.dateRange
   return (
     <dl className="space-y-1 text-xs">
-      <Row label="Adults" value={String(cfg.pax?.adult ?? 0)} />
-      {(cfg.pax?.child ?? 0) > 0 ? <Row label="Children" value={String(cfg.pax.child)} /> : null}
-      {(cfg.pax?.infant ?? 0) > 0 ? <Row label="Infants" value={String(cfg.pax.infant)} /> : null}
-      {cfg.departureSlotId ? <Row label="Departure" value={cfg.departureSlotId} /> : null}
-      {cfg.departureDate ? <Row label="Date" value={cfg.departureDate} /> : null}
-      {range?.checkIn ? <Row label="Check-in" value={range.checkIn} /> : null}
-      {range?.checkOut ? <Row label="Check-out" value={range.checkOut} /> : null}
-      {cfg.cabinCategoryId ? <Row label="Cabin" value={cfg.cabinCategoryId} /> : null}
+      <Row label={messages.bookingJourney.sidePanel.adults} value={String(cfg.pax?.adult ?? 0)} />
+      {(cfg.pax?.child ?? 0) > 0 ? (
+        <Row label={messages.bookingJourney.sidePanel.children} value={String(cfg.pax.child)} />
+      ) : null}
+      {(cfg.pax?.infant ?? 0) > 0 ? (
+        <Row label={messages.bookingJourney.sidePanel.infants} value={String(cfg.pax.infant)} />
+      ) : null}
+      {cfg.departureSlotId ? (
+        <Row label={messages.bookingJourney.sidePanel.departure} value={cfg.departureSlotId} />
+      ) : null}
+      {cfg.departureDate ? (
+        <Row label={messages.bookingJourney.sidePanel.date} value={cfg.departureDate} />
+      ) : null}
+      {range?.checkIn ? (
+        <Row label={messages.bookingJourney.sidePanel.checkIn} value={range.checkIn} />
+      ) : null}
+      {range?.checkOut ? (
+        <Row label={messages.bookingJourney.sidePanel.checkOut} value={range.checkOut} />
+      ) : null}
+      {cfg.cabinCategoryId ? (
+        <Row label={messages.bookingJourney.sidePanel.cabin} value={cfg.cabinCategoryId} />
+      ) : null}
     </dl>
   )
 }
@@ -257,22 +299,41 @@ function BillingDetails({
 }: {
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const c = draft.billing.contact
   const a = draft.billing.address
   const addressLine = [a.line1, a.line2, a.city, a.postal, a.country].filter(Boolean).join(", ")
   return (
     <dl className="space-y-1 text-xs">
-      <Row label="Name" value={[c.firstName, c.lastName].filter(Boolean).join(" ") || "—"} />
-      <Row label="Email" value={c.email || "—"} />
-      {c.phone ? <Row label="Phone" value={c.phone} /> : null}
-      <Row label="Buyer" value={draft.billing.buyerType === "B2B" ? "Company" : "Individual"} />
+      <Row
+        label={messages.bookingJourney.sidePanel.name}
+        value={
+          [c.firstName, c.lastName].filter(Boolean).join(" ") ||
+          messages.bookingJourney.values.noValue
+        }
+      />
+      <Row
+        label={messages.bookingJourney.sidePanel.email}
+        value={c.email || messages.bookingJourney.values.noValue}
+      />
+      {c.phone ? <Row label={messages.bookingJourney.sidePanel.phone} value={c.phone} /> : null}
+      <Row
+        label={messages.bookingJourney.sidePanel.buyer}
+        value={
+          draft.billing.buyerType === "B2B"
+            ? messages.bookingJourney.sidePanel.company
+            : messages.bookingJourney.sidePanel.individual
+        }
+      />
       {draft.billing.company?.name ? (
-        <Row label="Company" value={draft.billing.company.name} />
+        <Row label={messages.bookingJourney.sidePanel.company} value={draft.billing.company.name} />
       ) : null}
       {draft.billing.company?.vatId ? (
-        <Row label="VAT" value={draft.billing.company.vatId} />
+        <Row label={messages.bookingJourney.sidePanel.vat} value={draft.billing.company.vatId} />
       ) : null}
-      {addressLine ? <Row label="Address" value={addressLine} /> : null}
+      {addressLine ? (
+        <Row label={messages.bookingJourney.sidePanel.address} value={addressLine} />
+      ) : null}
     </dl>
   )
 }
@@ -282,8 +343,13 @@ function TravelersDetails({
 }: {
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   if (draft.travelers.length === 0) {
-    return <p className="text-muted-foreground text-xs">No travelers yet.</p>
+    return (
+      <p className="text-muted-foreground text-xs">
+        {messages.bookingJourney.sidePanel.noTravelersYet}
+      </p>
+    )
   }
   return (
     <ul className="space-y-3 text-xs">
@@ -299,13 +365,21 @@ function TravelersDetails({
         return (
           <li key={key} className="space-y-0.5">
             <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">Traveler {i + 1}</span>
-              <span className="truncate font-medium">{name || "—"}</span>
+              <span className="text-muted-foreground">
+                {formatMessage(messages.bookingJourney.sidePanel.travelerNumber, {
+                  number: i + 1,
+                })}
+              </span>
+              <span className="truncate font-medium">
+                {name || messages.bookingJourney.values.noValue}
+              </span>
             </div>
             {t.email ? <div className="text-muted-foreground truncate">{t.email}</div> : null}
             {t.phone ? <div className="text-muted-foreground">{t.phone}</div> : null}
             {t.dateOfBirth ? (
-              <div className="text-muted-foreground">DOB {t.dateOfBirth}</div>
+              <div className="text-muted-foreground">
+                {messages.bookingJourney.sidePanel.dob} {t.dateOfBirth}
+              </div>
             ) : null}
             {docLine ? <div className="text-muted-foreground">{docLine}</div> : null}
           </li>
@@ -320,9 +394,14 @@ function AccommodationDetails({
 }: {
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const rooms = draft.accommodation?.rooms ?? []
   if (rooms.length === 0) {
-    return <p className="text-muted-foreground text-xs">Not selected.</p>
+    return (
+      <p className="text-muted-foreground text-xs">
+        {messages.bookingJourney.sidePanel.notSelected}
+      </p>
+    )
   }
   return (
     <ul className="space-y-1 text-xs">
@@ -347,9 +426,14 @@ function AddonsDetails({
 }: {
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const addons = draft.addons ?? []
   if (addons.length === 0) {
-    return <p className="text-muted-foreground text-xs">No add-ons selected.</p>
+    return (
+      <p className="text-muted-foreground text-xs">
+        {messages.bookingJourney.sidePanel.noAddonsSelected}
+      </p>
+    )
   }
   return (
     <ul className="space-y-1 text-xs">
@@ -368,18 +452,22 @@ function PaymentDetails({
 }: {
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   const intent = draft.payment.intent
   const label =
     intent === "card"
-      ? "Pay by card"
+      ? messages.bookingJourney.sidePanel.payByCard
       : intent === "ticket_on_credit"
-        ? "Ticket on credit"
-        : "Hold (no charge yet)"
+        ? messages.bookingJourney.sidePanel.ticketOnCredit
+        : messages.bookingJourney.sidePanel.holdNoChargeYet
   return (
     <dl className="space-y-1 text-xs">
-      <Row label="Method" value={label} />
+      <Row label={messages.bookingJourney.sidePanel.method} value={label} />
       {draft.payment.schedule ? (
-        <Row label="Schedule" value={String(draft.payment.schedule)} />
+        <Row
+          label={messages.bookingJourney.sidePanel.schedule}
+          value={String(draft.payment.schedule)}
+        />
       ) : null}
     </dl>
   )
@@ -394,14 +482,12 @@ function Row({ label, value }: { label: string; value: string }): React.ReactEle
   )
 }
 
-const STEP_LABELS: Record<JourneyStep, string> = {
-  configure: "Configure",
-  billing: "Billing & contact",
-  travelers: "Travelers",
-  accommodation: "Accommodation",
-  addons: "Add-ons",
-  payment: "Payment",
-  review: "Review",
+function stepLabel(
+  step: JourneyStep,
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+): string {
+  if (step === "billing") return messages.bookingJourney.steps.billingAndContact
+  return messages.bookingJourney.steps[step]
 }
 
 function paxTotal(draft: NonNullable<SidePanelState["draft"]>): number {

@@ -60,7 +60,7 @@ export function WebhookEventDetailPage({
   const remove = useMutation({
     mutationFn: () =>
       fetchWithValidation(`/v1/distribution/webhook-events/${id}`, successEnvelope, client, {
-        method: "DELETE",
+        method: "DELETE", // i18n-literal-ok HTTP method
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: distributionQueryKeys.webhookEvents() })

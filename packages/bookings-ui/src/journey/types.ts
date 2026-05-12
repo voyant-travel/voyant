@@ -238,7 +238,7 @@ export interface BookingJourneyProps {
     resolveVariables: (input: {
       draft: BookingDraftV1
       pricing: PricingBreakdownV1 | null
-    }) => Record<string, unknown>
+    }) => Record<string, unknown> // i18n-literal-ok Type signature return shape, not user-visible copy.
     marketingLabel?: ReactNode
     termsLabel?: ReactNode
   }

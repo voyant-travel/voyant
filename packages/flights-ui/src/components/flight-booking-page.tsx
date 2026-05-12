@@ -110,7 +110,7 @@ export function FlightBookingPage({
       try {
         const result = await priceMutation.mutateAsync({ offerId: offer.offerId, offer })
         if (cancelled) return null
-        if (!result.valid) return result.invalidReason ?? "This offer is no longer available."
+        if (!result.valid) return result.invalidReason ?? messages.offerUnavailable
         setter(result.offer)
         return null
       } catch (err) {
@@ -145,7 +145,7 @@ export function FlightBookingPage({
     loading: outboundAncillaries.isLoading || (returnLeg != null && returnAncillaries.isLoading),
   }
 
-  const seatMaps = useSeatMapFetcher({ outbound, returnLeg, enabled: pricedReady })
+  const seatMaps = useSeatMapFetcher({ outbound, returnLeg, enabled: pricedReady, messages })
 
   const savedMethodsQuery = useSavedPaymentMethods(selectedPersonId, {
     enabled: !!selectedPersonId,
@@ -153,7 +153,7 @@ export function FlightBookingPage({
   const savedPaymentMethods: FlightBookingSavedPaymentMethods = {
     methods: (savedMethodsQuery.data?.data ?? []).map((method) => ({
       id: method.id,
-      label: [brandHumanLabel(method.brand), method.last4 ? `....${method.last4}` : null]
+      label: [brandHumanLabel(method.brand, messages), method.last4 ? `....${method.last4}` : null]
         .filter(Boolean)
         .join(" "),
       provider: null,
@@ -279,18 +279,21 @@ export function FlightBookingPage({
   )
 }
 
-function brandHumanLabel(brand: string): string {
+function brandHumanLabel(
+  brand: string,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>["flightBookingPage"],
+): string {
   switch (brand) {
     case "visa":
-      return "Visa"
+      return messages.paymentBrandLabels.visa
     case "mastercard":
-      return "Mastercard"
+      return messages.paymentBrandLabels.mastercard
     case "amex":
-      return "Amex"
+      return messages.paymentBrandLabels.amex
     case "revolut":
-      return "Revolut Pay"
+      return messages.paymentBrandLabels.revolut
     case "bank_transfer":
-      return "Bank transfer"
+      return messages.paymentBrandLabels.bank_transfer
     default:
       return brand
   }
@@ -317,10 +320,12 @@ function useSeatMapFetcher({
   outbound,
   returnLeg,
   enabled,
+  messages,
 }: {
   outbound: FlightOffer | null
   returnLeg: FlightOffer | null
   enabled: boolean
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>["flightBookingPage"]
 }): FlightBookingSeatMaps {
   const client = useVoyantFlightsContext()
 
@@ -363,8 +368,8 @@ function useSeatMapFetcher({
   return useMemo<FlightBookingSeatMaps>(
     () => ({
       getSeatMap: ({ segmentId }) =>
-        slotsBySegment.get(segmentId) ?? { seatMap: null, error: "Segment not found" },
+        slotsBySegment.get(segmentId) ?? { seatMap: null, error: messages.segmentNotFound },
     }),
-    [slotsBySegment],
+    [slotsBySegment, messages.segmentNotFound],
   )
 }

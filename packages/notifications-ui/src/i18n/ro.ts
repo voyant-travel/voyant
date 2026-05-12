@@ -29,6 +29,16 @@ export const notificationsUiRo: NotificationsUiMessages = {
       maxSendsInStage: "Trimiteri maxime per etapă",
       respectQuietHours: "Respectă orele de liniște",
     },
+    descriptions: {
+      window: "Când se deschide fereastra de eligibilitate, relativ la reperul ales.",
+      cadence: "Cât de des se poate declanșa etapa în interiorul ferestrei.",
+      emptyIntervals:
+        "Adaugă praguri bazate pe zile-până-la-scadență pentru a ajusta cadența pe măsură ce se apropie termenul.",
+      stopConditions: "Condiții de oprire",
+      maxSendsInStage: "Lasă gol pentru fără limită. Când se atinge limita, preia etapa următoare.",
+      respectQuietHours:
+        "Amână declanșările care ar cădea în intervalul de ore de liniște al tenantului.",
+    },
     placeholders: {
       name: "Prima reamintire",
     },

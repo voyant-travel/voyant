@@ -80,7 +80,7 @@ export function ContractDetailPage({
   const remove = useMutation({
     mutationFn: () =>
       fetchWithValidation(`/v1/distribution/contracts/${id}`, successEnvelope, client, {
-        method: "DELETE",
+        method: "DELETE", // i18n-literal-ok HTTP method
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: distributionQueryKeys.contracts() })

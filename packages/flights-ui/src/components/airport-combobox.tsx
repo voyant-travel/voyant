@@ -37,11 +37,11 @@ export interface AirportComboboxProps {
 export function AirportCombobox({
   value,
   onChange,
-  placeholder = "Airport",
+  placeholder,
   className,
   disabled,
 }: AirportComboboxProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault().airportCombobox
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState("")
   const search = useAirportSearch(input, { enabled: open, limit: 30 })
@@ -70,7 +70,9 @@ export function AirportCombobox({
               )}
             </span>
           ) : (
-            <span className="truncate text-sm text-muted-foreground">{placeholder}</span>
+            <span className="truncate text-sm text-muted-foreground">
+              {placeholder ?? messages.placeholder}
+            </span>
           )}
         </div>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -80,10 +82,10 @@ export function AirportCombobox({
           <CommandInput
             value={input}
             onValueChange={setInput}
-            placeholder="Type city or IATA code…"
+            placeholder={messages.searchPlaceholder}
           />
           <CommandList>
-            <CommandEmpty>{search.isLoading ? "Searching…" : "No airports."}</CommandEmpty>
+            <CommandEmpty>{search.isLoading ? messages.searching : messages.empty}</CommandEmpty>
             <CommandGroup>
               {airports.map((a) => (
                 <CommandItem

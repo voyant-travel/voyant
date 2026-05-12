@@ -40,6 +40,8 @@ export type AllocationUiMessages = Record<string, unknown> & {
   rooms: string
   resources: string
   vehicleSeats: string
+  vehicle: string
+  seat: string
   cabins: string
   flightSeats: string
   travelers: string
@@ -113,6 +115,8 @@ export const allocationUiEn = {
   rooms: "Rooms",
   resources: "Resources",
   vehicleSeats: "Vehicle seats",
+  vehicle: "Vehicle",
+  seat: "Seat",
   cabins: "Cabins",
   flightSeats: "Flight seats",
   travelers: "travelers",
@@ -186,6 +190,8 @@ export const allocationUiRo = {
   rooms: "Camere",
   resources: "Resurse",
   vehicleSeats: "Locuri vehicul",
+  vehicle: "Vehicul",
+  seat: "Loc",
   cabins: "Cabine",
   flightSeats: "Locuri zbor",
   travelers: "calatori",

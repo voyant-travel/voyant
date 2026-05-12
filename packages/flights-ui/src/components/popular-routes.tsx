@@ -4,6 +4,8 @@ import type { CabinClass, FlightSearchRequest } from "@voyantjs/flights/contract
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { ArrowRight, Sparkles } from "lucide-react"
+import { flightsUiEn } from "../i18n/en.js"
+import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 export interface PopularRoute {
   /** Origin IATA code. */
@@ -43,88 +45,55 @@ export interface PopularRoutesProps {
  * /flights page has something to click without having to type airports.
  * Pages can pass their own `routes` to override.
  */
-export const DEFAULT_POPULAR_ROUTES: PopularRoute[] = [
+const DEFAULT_POPULAR_ROUTE_CODES: Array<Pick<PopularRoute, "origin" | "destination">> = [
   {
     origin: "LHR",
-    originLabel: "London",
     destination: "JFK",
-    destinationLabel: "New York",
-    tag: "Transatlantic",
-    hint: "Premium cabins, daily",
   },
   {
     origin: "CDG",
-    originLabel: "Paris",
     destination: "DXB",
-    destinationLabel: "Dubai",
-    tag: "Connecting hub",
-    hint: "Wide carrier mix",
   },
   {
     origin: "AMS",
-    originLabel: "Amsterdam",
     destination: "SIN",
-    destinationLabel: "Singapore",
-    tag: "Long-haul",
-    hint: "Nonstop options",
   },
   {
     origin: "FRA",
-    originLabel: "Frankfurt",
     destination: "NRT",
-    destinationLabel: "Tokyo",
-    tag: "Long-haul",
-    hint: "12-13h nonstop",
   },
   {
     origin: "MAD",
-    originLabel: "Madrid",
     destination: "GRU",
-    destinationLabel: "São Paulo",
-    tag: "Latin America",
-    hint: "10h nonstop",
   },
   {
     origin: "BCN",
-    originLabel: "Barcelona",
     destination: "FCO",
-    destinationLabel: "Rome",
-    tag: "Short-haul",
-    hint: "From €60",
   },
   {
     origin: "LGW",
-    originLabel: "London Gatwick",
     destination: "MAD",
-    destinationLabel: "Madrid",
-    tag: "Short-haul",
-    hint: "LCC dominant",
   },
   {
     origin: "DXB",
-    originLabel: "Dubai",
     destination: "BKK",
-    destinationLabel: "Bangkok",
-    tag: "Asia",
-    hint: "6h nonstop",
   },
   {
     origin: "SFO",
-    originLabel: "San Francisco",
     destination: "HND",
-    destinationLabel: "Tokyo",
-    tag: "Trans-Pacific",
-    hint: "11h nonstop",
   },
   {
     origin: "ZRH",
-    originLabel: "Zurich",
     destination: "JNB",
-    destinationLabel: "Johannesburg",
-    tag: "Africa",
-    hint: "11h overnight",
   },
 ]
+
+export const DEFAULT_POPULAR_ROUTES: PopularRoute[] = DEFAULT_POPULAR_ROUTE_CODES.map(
+  (route, index) => ({
+    ...route,
+    ...defaultRouteMessages(flightsUiEn.popularRoutes.defaults, index),
+  }),
+)
 
 /**
  * A grid of clickable popular-route cards. Each card synthesizes a
@@ -142,8 +111,18 @@ export function PopularRoutes({
   cabin = "economy",
   adults = 1,
   className,
-  title = "Popular routes",
+  title,
 }: PopularRoutesProps) {
+  const messages = useFlightsUiMessagesOrDefault().popularRoutes
+  const resolvedRoutes = routes.map((route, index) =>
+    route === DEFAULT_POPULAR_ROUTES[index]
+      ? {
+          ...route,
+          ...defaultRouteMessages(messages.defaults, index),
+        }
+      : route,
+  )
+  const resolvedTitle = title === undefined ? messages.title : title
   const today = new Date()
   const departure = isoDate(addDays(today, daysOut))
   const returnDate = isoDate(addDays(today, daysOut + tripNights))
@@ -164,14 +143,14 @@ export function PopularRoutes({
 
   return (
     <section className={cn("flex flex-col gap-3", className)}>
-      {title && (
+      {resolvedTitle && (
         <div className="flex items-center gap-2 text-muted-foreground text-sm">
           <Sparkles className="h-4 w-4" />
-          <span>{title}</span>
+          <span>{resolvedTitle}</span>
         </div>
       )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {routes.map((route) => (
+        {resolvedRoutes.map((route) => (
           <button
             key={`${route.origin}-${route.destination}`}
             type="button"
@@ -212,4 +191,18 @@ function addDays(d: Date, n: number): Date {
 
 function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10)
+}
+
+function defaultRouteMessages(
+  defaults: Array<Pick<PopularRoute, "originLabel" | "destinationLabel" | "tag" | "hint">>,
+  index: number,
+): Pick<PopularRoute, "originLabel" | "destinationLabel" | "tag" | "hint"> {
+  return (
+    defaults[index] ?? {
+      originLabel: "",
+      destinationLabel: "",
+      tag: "",
+      hint: "",
+    }
+  )
 }

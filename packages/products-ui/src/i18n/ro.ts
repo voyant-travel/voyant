@@ -225,6 +225,11 @@ export const productsUiRo = {
       description: "Descriere",
       sortOrder: "Ordine sortare",
       active: "Activ",
+      customerPaymentPolicy: "Politica de plată client",
+    },
+    descriptions: {
+      customerPaymentPolicy:
+        "Când este setată, produsele din această categorie moștenesc acești termeni dacă listarea sau rezervarea nu definește o suprascriere. Are prioritate peste politica de la nivel de furnizor.",
     },
     placeholders: {
       name: "Aventura",
