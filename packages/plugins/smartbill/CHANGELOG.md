@@ -1,5 +1,17 @@
 # @voyantjs/plugin-smartbill
 
+## 0.40.0
+
+### Minor Changes
+
+- 4d0ff64: Add event-specific SmartBill mapping hooks, duplicate-event idempotency, error external-ref recording, and a PDF reattachment helper.
+
+### Patch Changes
+
+- @voyantjs/core@0.40.0
+- @voyantjs/finance@0.40.0
+- @voyantjs/storage@0.40.0
+
 ## 0.39.0
 
 ### Patch Changes
