@@ -1195,6 +1195,7 @@ export async function createNodeSelfHostDeps(
           ]),
           timeoutMs: durationToMs(workflow.config.timeout),
           initialJournal: resumeSeed.journal,
+          initialMetadataAppliedCount: resumeSeed.metadataAppliedCount,
         },
         {
           store: memStore,

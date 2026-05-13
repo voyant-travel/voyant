@@ -59,6 +59,13 @@ export interface TriggerArgs {
    */
   initialJournal?: JournalSlice
   /**
+   * Metadata cursor paired with `initialJournal`. Resume callers that
+   * seed a journal with an existing `metadataState` must also seed the
+   * positional cursor so replayed metadata mutations are not applied
+   * twice.
+   */
+  initialMetadataAppliedCount?: number
+  /**
    * Compute-time budget in ms, typically from `WorkflowConfig.timeout`.
    * Parked time on waitpoints does not count against this. When the
    * cumulative invocation time exceeds it, the run ends `failed`
@@ -109,7 +116,7 @@ export async function trigger(args: TriggerArgs, deps: OrchestratorDeps): Promis
     input: args.input,
     journal: args.initialJournal ? cloneJournal(args.initialJournal) : emptyJournal(),
     invocationCount: 0,
-    metadataAppliedCount: 0,
+    metadataAppliedCount: args.initialMetadataAppliedCount ?? 0,
     computeTimeMs: 0,
     timeoutMs: args.timeoutMs,
     priority: args.priority,

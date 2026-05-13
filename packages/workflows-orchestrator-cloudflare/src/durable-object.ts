@@ -102,6 +102,9 @@ export async function handleDurableObjectRequest(
             ? new Date(payload.delay.wakeAt)
             : payload.delay,
         priority: payload.priority,
+        initialJournal: payload.initialJournal,
+        initialMetadataAppliedCount: payload.initialMetadataAppliedCount,
+        timeoutMs: payload.timeoutMs,
       },
       { store, handler, now: deps.now },
     )
