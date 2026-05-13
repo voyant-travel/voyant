@@ -228,7 +228,7 @@ describe("agent runner deployment doctor helpers", () => {
       }),
       {
         detail:
-          "execution: disabled; enabled: false; tick persistence: latest; allowed actions: 2; default action: none; requires action filter: true; CI repair opt-in: off",
+          "execution: disabled; enabled: false; tick persistence: latest; allowed actions: 2; default action: none; daily lease budget: none; requires action filter: true; CI repair opt-in: off",
         ok: true,
       },
     )
@@ -329,6 +329,7 @@ describe("agent runner deployment doctor helpers", () => {
         },
         policy: {
           allowedActions: ["remote-repair-ci", "sync-pr"],
+          maxDailyLeases: 4,
           requiresActionFilter: true,
         },
       }),
@@ -338,7 +339,8 @@ describe("agent runner deployment doctor helpers", () => {
         ciRepairEnabled: true,
         defaultAction: "remote-repair-ci",
         detail:
-          "allowed actions: 2; default action: remote-repair-ci; requires action filter: true; CI repair opt-in: remote-repair-ci",
+          "allowed actions: 2; default action: remote-repair-ci; daily lease budget: 4; requires action filter: true; CI repair opt-in: remote-repair-ci",
+        maxDailyLeases: 4,
         ok: true,
         requiresActionFilter: true,
       },
@@ -360,7 +362,8 @@ describe("agent runner deployment doctor helpers", () => {
         ciRepairEnabled: false,
         defaultAction: "repair-ci",
         detail:
-          "allowed actions: 1; default action: repair-ci; requires action filter: false; CI repair opt-in: off; default action is not allowed",
+          "allowed actions: 1; default action: repair-ci; daily lease budget: none; requires action filter: false; CI repair opt-in: off; default action is not allowed",
+        maxDailyLeases: null,
         ok: false,
         requiresActionFilter: false,
       },
@@ -382,7 +385,8 @@ describe("agent runner deployment doctor helpers", () => {
         ciRepairEnabled: false,
         defaultAction: "syn-pr",
         detail:
-          "allowed actions: 1; default action: syn-pr; requires action filter: true; CI repair opt-in: off; default action is not dispatchable",
+          "allowed actions: 1; default action: syn-pr; daily lease budget: none; requires action filter: true; CI repair opt-in: off; default action is not dispatchable",
+        maxDailyLeases: null,
         ok: false,
         requiresActionFilter: true,
       },

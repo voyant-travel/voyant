@@ -87,6 +87,7 @@ describe("agent runner app", () => {
           policy: {
             allowedActions: Array.from(runnerDefaultDispatchActions).sort(),
             defaultAction: null,
+            maxDailyLeases: null,
             maxLeaseTtlSeconds: 900,
             requiresActionFilter: false,
           },
@@ -470,9 +471,12 @@ describe("agent runner app", () => {
   })
 })
 
-function inMemorySupervisorTickStore(): SupervisorTickStore {
+function inMemorySupervisorTickStore(records: SupervisorTickRecord[] = []): SupervisorTickStore {
   const latest = new Map<string, SupervisorTickRecord>()
-  const recent: SupervisorTickRecord[] = []
+  const recent: SupervisorTickRecord[] = [...records]
+  for (const record of records) {
+    latest.set(record.repository.toLowerCase(), record)
+  }
 
   return {
     async getLatest(repository) {

@@ -2,11 +2,17 @@ import { Hono } from "hono"
 
 import {
   buildRunnerCapabilities,
+  planSupervisorTick,
   type RunnerConfig,
   runSupervisorTick,
+  type SupervisorTickRequest,
   supervisorTickRequestSchema,
 } from "./runner.js"
-import { createSupervisorTickRecord, type SupervisorTickStore } from "./supervisor-tick-store.js"
+import {
+  createSupervisorTickRecord,
+  type SupervisorLeaseRecord,
+  type SupervisorTickStore,
+} from "./supervisor-tick-store.js"
 
 interface AppOptions {
   authTokens?: string[]
@@ -112,26 +118,16 @@ export function createApp({
       )
     }
 
-    const recordedAt = now()
-    const result = await runSupervisorTick({
-      config,
-      fetchImpl,
-      request: parsed.data,
-      source: "api",
-    })
-    const repository = parsed.data.repository ?? config.repository
-    const storage = await persistSupervisorTick({
-      recordedAt,
-      repository,
-      result,
-      supervisorTickStore,
-    })
-
-    return c.json({
-      plannedAt: recordedAt.toISOString(),
-      result,
-      storage,
-    })
+    return c.json(
+      await runPersistentSupervisorTick({
+        config,
+        fetchImpl,
+        now,
+        request: parsed.data,
+        source: "api",
+        supervisorTickStore,
+      }),
+    )
   })
 
   app.get("/api/supervisor/ticks/latest", async (c) => {
@@ -173,6 +169,91 @@ export function createApp({
   return app
 }
 
+export async function runPersistentSupervisorTick({
+  config,
+  fetchImpl = fetch,
+  now = () => new Date(),
+  request = {},
+  source,
+  supervisorTickStore,
+}: {
+  config: RunnerConfig
+  fetchImpl?: typeof fetch
+  now?: () => Date
+  request?: SupervisorTickRequest
+  source: "api" | "scheduled"
+  supervisorTickStore?: SupervisorTickStore
+}) {
+  const recordedAt = now()
+  const budget = await evaluateSupervisorLeaseBudget({
+    config,
+    recordedAt,
+    request,
+    supervisorTickStore,
+  })
+  let result = budget.blocked
+    ? {
+        budget,
+        leased: false,
+        plan: planSupervisorTick({ config, request, source }),
+        reason: "lease_budget_exhausted",
+      }
+    : budget.configured
+      ? {
+          ...(await runSupervisorTick({
+            config,
+            fetchImpl,
+            request,
+            source,
+          })),
+          budget,
+        }
+      : await runSupervisorTick({
+          config,
+          fetchImpl,
+          request,
+          source,
+        })
+  const repository = request.repository ?? config.repository
+  if (
+    budget.configured &&
+    "usedLeases" in budget &&
+    "maxDailyLeases" in budget &&
+    !budget.blocked &&
+    repository &&
+    isLeasedResult(result)
+  ) {
+    await supervisorTickStore?.putLease?.(
+      createSupervisorLeaseRecord({
+        leasedAt: recordedAt,
+        repository,
+        result,
+      }),
+    )
+    const usedLeases = budget.usedLeases + 1
+    result = {
+      ...result,
+      budget: {
+        ...budget,
+        remainingLeases: Math.max(budget.maxDailyLeases - usedLeases, 0),
+        usedLeases,
+      },
+    }
+  }
+  const storage = await persistSupervisorTick({
+    recordedAt,
+    repository,
+    result,
+    supervisorTickStore,
+  })
+
+  return {
+    plannedAt: recordedAt.toISOString(),
+    result,
+    storage,
+  }
+}
+
 export async function persistSupervisorTick({
   recordedAt,
   repository,
@@ -203,6 +284,96 @@ export async function persistSupervisorTick({
   return { key: write.key, persisted: true }
 }
 
+async function evaluateSupervisorLeaseBudget({
+  config,
+  recordedAt,
+  request,
+  supervisorTickStore,
+}: {
+  config: RunnerConfig
+  recordedAt: Date
+  request: SupervisorTickRequest
+  supervisorTickStore?: SupervisorTickStore
+}) {
+  const maxDailyLeases = normalizeDailyLeaseLimit(config.maxDailyLeases)
+  if (!maxDailyLeases) {
+    return { blocked: false, configured: false }
+  }
+
+  const repository = request.repository ?? config.repository
+  const dryRun = request.dryRun ?? true
+  const windowStartedAt = new Date(recordedAt.getTime() - 24 * 60 * 60 * 1000).toISOString()
+  const base = {
+    blocked: false,
+    configured: true,
+    maxDailyLeases,
+    remainingLeases: maxDailyLeases,
+    usedLeases: 0,
+    windowStartedAt,
+  }
+
+  if (dryRun || !config.enabled) {
+    return base
+  }
+
+  if (!repository) {
+    return base
+  }
+
+  if (!supervisorTickStore?.listLeases || !supervisorTickStore.putLease) {
+    return {
+      ...base,
+      blocked: true,
+      reason: "lease budget requires supervisor lease history storage",
+      remainingLeases: 0,
+    }
+  }
+
+  const recentLeases = await supervisorTickStore.listLeases(repository, { since: windowStartedAt })
+  const usedLeases = recentLeases.length
+  const remainingLeases = Math.max(maxDailyLeases - usedLeases, 0)
+
+  return {
+    ...base,
+    blocked: usedLeases >= maxDailyLeases,
+    remainingLeases,
+    usedLeases,
+    ...(usedLeases >= maxDailyLeases ? { reason: "daily lease budget exhausted" } : {}),
+  }
+}
+
+function normalizeDailyLeaseLimit(value: number | undefined) {
+  if (!value) return null
+  return Math.min(Math.max(Math.trunc(value), 1), 100)
+}
+
+function isLeasedResult(result: unknown): result is { leased: true } {
+  return Boolean(
+    result && typeof result === "object" && "leased" in result && result.leased === true,
+  )
+}
+
+function createSupervisorLeaseRecord({
+  leasedAt,
+  repository,
+  result,
+}: {
+  leasedAt: Date
+  repository: string
+  result: unknown
+}): SupervisorLeaseRecord {
+  return {
+    id: leaseRecordId(leasedAt),
+    leasedAt: leasedAt.toISOString(),
+    repository,
+    result,
+  }
+}
+
+function leaseRecordId(leasedAt: Date) {
+  return `lease_${leasedAt.getTime()}_${Math.random().toString(36).slice(2)}`
+}
+
 function bearerToken(header: string | undefined) {
   const match = header?.match(/^Bearer\s+(.+)$/i)
   return match?.[1]?.trim()
@@ -224,6 +395,7 @@ function parseLimit(value: string | undefined) {
 function supervisorTickCapabilities(supervisorTickStore: SupervisorTickStore | undefined) {
   return {
     history: Boolean(supervisorTickStore),
+    leaseBudgetHistory: Boolean(supervisorTickStore?.listLeases && supervisorTickStore.putLease),
     persistence: supervisorTickStore ? "latest" : "none",
   }
 }

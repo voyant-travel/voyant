@@ -20,7 +20,9 @@ provider commands, or spend model budget.
   `AGENT_RUNNER_ENABLED=true` and `{ "dryRun": false }`, it leases one dispatch
   intent from `POST /api/dispatch-intents/latest` on the control plane. When
   `AGENT_RUNNER_TICKS` is bound, the result is persisted as the latest
-  supervisor tick for the repository.
+  supervisor tick for the repository. If `AGENT_RUNNER_MAX_DAILY_LEASES` is
+  configured, real leases are refused once the R2 lease-specific history shows
+  the daily limit has been used.
   For deployment smoke tests, pass
   `{ "dryRun": true, "validateControlPlane": true }` to call the control
   plane's read-only latest dispatch-plan endpoint without leasing work.
@@ -54,6 +56,10 @@ provider commands, or spend model budget.
   when the runner environment also configures the corresponding supervised
   repair command outside this Worker.
 - `AGENT_RUNNER_HOLDER`: default lease holder, for example `runner:cloudflare`.
+- `AGENT_RUNNER_MAX_DAILY_LEASES`: optional daily lease budget for deployed
+  API and Cron ticks. Requires `AGENT_RUNNER_TICKS`; real leases are refused if
+  the budget is configured without persistent tick storage. The value is
+  clamped to 1..100.
 - `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS`: optional maximum lease TTL. Defaults to
   900 seconds and is clamped to 60..3600 seconds.
 - `AGENT_RUNNER_REPOSITORY`: default repository, for example `voyantjs/voyant`.
@@ -63,10 +69,10 @@ provider commands, or spend model budget.
 - `AGENT_CONTROL_PLANE_URL`: deployed control-plane URL.
 - `AGENT_CONTROL_PLANE_TOKEN`: bearer token for the control plane.
 
-Cron triggers should stay disabled until queue snapshots and control-plane
-dispatch intent storage are configured. Keep provider execution outside this
-Worker unless a later design adds explicit budget controls, sandbox policy, and
-task-scoped credentials.
+Cron triggers should stay disabled until queue snapshots, control-plane dispatch
+intent storage, runner tick storage, and an explicit daily lease budget are
+configured. Keep provider execution outside this Worker unless a later design
+adds sandbox policy and task-scoped credentials.
 
 Before enabling Cron, validate the deployed control plane and runner app from
 the repository checkout:
@@ -92,8 +98,9 @@ snapshots, current read-only dispatch plan, and runner supervisor ticks. The
 dispatch plan uses the deployed runner's default action filter when one is
 configured. It also reports the deployed runner policy, including allowed
 action count, default action, whether an action filter is required, and whether
-CI repair actions are explicitly enabled. Add `--issue <number> --action
-<name>` to include the active dispatch pointer for one lifecycle action.
+CI repair actions are explicitly enabled. It also prints the configured daily
+lease budget when present. Add `--issue <number> --action <name>` to include
+the active dispatch pointer for one lifecycle action.
 Pass `--smoke-tick` after submitting at least one queue snapshot to validate
 that the deployed runner can call the control plane's read-only dispatch-plan
 path:

@@ -49,6 +49,7 @@ export interface RunnerConfig {
   defaultAction?: string
   enabled: boolean
   holder?: string
+  maxDailyLeases?: number
   maxLeaseTtlSeconds?: number
   repository?: string
 }
@@ -329,6 +330,7 @@ function buildDispatchIntentRequest({
 function buildRunnerPolicy(config: RunnerConfig) {
   const configuredAllowedActions = normalizeConfiguredAllowedActions(config.allowedActions)
   const allowedActions = configuredAllowedActions ?? Array.from(runnerDefaultDispatchActions).sort()
+  const maxDailyLeases = normalizeMaxDailyLeases(config.maxDailyLeases)
   const maxLeaseTtlSeconds = normalizeMaxLeaseTtlSeconds(config.maxLeaseTtlSeconds)
   const restrictsActions = configuredAllowedActions
     ? runnerDispatchActions.some((action) => !allowedActions.includes(action))
@@ -337,6 +339,7 @@ function buildRunnerPolicy(config: RunnerConfig) {
   return {
     allowedActions,
     defaultAction: config.defaultAction ?? null,
+    maxDailyLeases,
     maxLeaseTtlSeconds,
     requiresActionFilter: restrictsActions,
   }
@@ -355,6 +358,11 @@ function normalizeConfiguredAllowedActions(allowedActions: string[] | undefined)
 function normalizeMaxLeaseTtlSeconds(value: number | undefined) {
   if (!value) return 900
   return Math.min(Math.max(value, 60), 3600)
+}
+
+function normalizeMaxDailyLeases(value: number | undefined) {
+  if (!value) return null
+  return Math.min(Math.max(Math.trunc(value), 1), 100)
 }
 
 function actionPolicyBlocker({

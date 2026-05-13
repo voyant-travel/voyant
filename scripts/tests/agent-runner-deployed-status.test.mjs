@@ -49,7 +49,8 @@ describe("agent runner deployed status helpers", () => {
       ciRepairEnabled: false,
       defaultAction: "remote-bootstrap",
       detail:
-        "allowed actions: 2; default action: remote-bootstrap; requires action filter: true; CI repair opt-in: off",
+        "allowed actions: 2; default action: remote-bootstrap; daily lease budget: 6; requires action filter: true; CI repair opt-in: off",
+      maxDailyLeases: 6,
       ok: true,
       requiresActionFilter: true,
     })
@@ -367,6 +368,7 @@ function responseForUrl(url) {
       policy: {
         allowedActions: ["remote-bootstrap", "sync-pr"],
         defaultAction: "remote-bootstrap",
+        maxDailyLeases: 6,
         maxLeaseTtlSeconds: 900,
         requiresActionFilter: true,
       },
