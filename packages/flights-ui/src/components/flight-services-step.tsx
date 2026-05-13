@@ -9,6 +9,7 @@ import type {
   FlightPassenger,
   PassengerCounts,
 } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { cn } from "@voyantjs/ui/lib/utils"
@@ -54,11 +55,11 @@ export function FlightServicesStep({
   onExtrasChange,
   loading,
 }: FlightServicesStepProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const isRoundTrip = !!returnOffer
   const paxRows = useMemo(
-    () => buildPassengerRows(passengers, passengerCounts),
-    [passengers, passengerCounts],
+    () => buildPassengerRows(passengers, passengerCounts, messages),
+    [passengers, passengerCounts, messages],
   )
 
   if (loading) {
@@ -73,7 +74,7 @@ export function FlightServicesStep({
   if (!outboundCatalog) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
-        Services couldn't be loaded for this offer.
+        {messages.flightServicesStep.servicesUnavailable}
       </div>
     )
   }
@@ -109,8 +110,8 @@ export function FlightServicesStep({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="font-semibold text-base">Services & extras</h2>
-        <p className="text-muted-foreground text-sm">Optional — leave anything blank to skip.</p>
+        <h2 className="font-semibold text-base">{messages.flightServicesStep.title}</h2>
+        <p className="text-muted-foreground text-sm">{messages.flightServicesStep.description}</p>
       </div>
 
       <AssistanceSection
@@ -118,27 +119,30 @@ export function FlightServicesStep({
         options={outboundCatalog.assistance}
         value={assistance}
         onToggle={toggleAssistance}
+        messages={messages}
       />
 
       <ExtrasSection
-        legLabel="Outbound"
+        legLabel={messages.common.legLabels.outbound}
         offer={outboundOffer}
         catalog={outboundCatalog}
         passengers={paxRows}
         sliceIndex={0}
         value={extras}
         onSetQty={setExtraQty}
+        messages={messages}
       />
 
       {isRoundTrip && returnCatalog && returnOffer && (
         <ExtrasSection
-          legLabel="Return"
+          legLabel={messages.common.legLabels.return}
           offer={returnOffer}
           catalog={returnCatalog}
           passengers={paxRows}
           sliceIndex={1}
           value={extras}
           onSetQty={setExtraQty}
+          messages={messages}
         />
       )}
     </div>
@@ -157,17 +161,19 @@ function AssistanceSection({
   options,
   value,
   onToggle,
+  messages,
 }: {
   passengers: PaxRow[]
   options: AncillaryAssistanceOption[]
   value: AssistancePicks
   onToggle: (passengerId: string, optionId: string, checked: boolean) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <section className="rounded-xl border bg-card p-5 shadow-sm">
       <header className="mb-4 flex items-center gap-2">
         <Accessibility className="h-4 w-4 text-muted-foreground" />
-        <h3 className="font-medium text-sm">Special assistance</h3>
+        <h3 className="font-medium text-sm">{messages.flightServicesStep.specialAssistance}</h3>
       </header>
 
       <div className="flex flex-col gap-5">
@@ -178,7 +184,9 @@ function AssistanceSection({
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-medium text-sm">{pax.label}</span>
                 <span className="text-[11px] text-muted-foreground">
-                  {paxPicks.length === 0 ? "No assistance needed" : `${paxPicks.length} selected`}
+                  {paxPicks.length === 0
+                    ? messages.flightServicesStep.noAssistanceNeeded
+                    : `${paxPicks.length} ${messages.common.selected}`}
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -223,6 +231,7 @@ function ExtrasSection({
   sliceIndex,
   value,
   onSetQty,
+  messages,
 }: {
   legLabel: string
   offer: FlightOffer
@@ -231,6 +240,7 @@ function ExtrasSection({
   sliceIndex: number
   value: ExtrasPicks
   onSetQty: (passengerId: string, sliceIndex: number, optionId: string, quantity: number) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   if (catalog.extras.length === 0) return null
   const itin = offer.itineraries[0]
@@ -242,7 +252,7 @@ function ExtrasSection({
       <header className="mb-4 flex items-baseline justify-between gap-2">
         <h3 className="flex items-center gap-2 font-medium text-sm">
           <Sparkles className="h-4 w-4 text-muted-foreground" />
-          {legLabel} extras
+          {formatMessage(messages.flightServicesStep.extras, { leg: legLabel })}
         </h3>
         {first && last && (
           <span className="text-muted-foreground text-xs">
@@ -327,32 +337,47 @@ function ExtraRow({
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function buildPassengerRows(passengers: FlightPassenger[], counts: PassengerCounts): PaxRow[] {
+function buildPassengerRows(
+  passengers: FlightPassenger[],
+  counts: PassengerCounts,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): PaxRow[] {
   if (passengers.length > 0) {
     return passengers.map((p) => ({
       passengerId: p.passengerId,
-      label: nameOrFallback(p),
+      label: nameOrFallback(p, messages),
     }))
   }
   const out: PaxRow[] = []
   for (let i = 1; i <= counts.adults; i++) {
-    out.push({ passengerId: `pax_adult_${i}`, label: `Adult ${i}` })
+    out.push({
+      passengerId: `pax_adult_${i}`,
+      label: `${messages.common.passengerTypeLabels.adult} ${i}`,
+    })
   }
   for (let i = 1; i <= (counts.children ?? 0); i++) {
-    out.push({ passengerId: `pax_child_${i}`, label: `Child ${i}` })
+    out.push({
+      passengerId: `pax_child_${i}`,
+      label: `${messages.common.passengerTypeLabels.child} ${i}`,
+    })
   }
   for (let i = 1; i <= (counts.infants ?? 0); i++) {
-    out.push({ passengerId: `pax_infant_${i}`, label: `Infant ${i}` })
+    out.push({
+      passengerId: `pax_infant_${i}`,
+      label: `${messages.common.passengerTypeLabels.infant} ${i}`,
+    })
   }
   return out
 }
 
-function nameOrFallback(p: FlightPassenger): string {
+function nameOrFallback(
+  p: FlightPassenger,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
   const full = `${p.firstName} ${p.lastName}`.trim()
   if (full) return full
   const idx = p.passengerId.match(/_(\d+)$/)?.[1] ?? "1"
-  const cap = p.type[0]?.toUpperCase() + p.type.slice(1)
-  return `${cap} ${idx}`
+  return `${messages.common.passengerTypeLabels[p.type]} ${idx}`
 }
 
 function formatMoney(amount: string, currency: string): string {

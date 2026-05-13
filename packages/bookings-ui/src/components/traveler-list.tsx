@@ -13,7 +13,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/c
 import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
 
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { formatMessage, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { TravelerDialog } from "./traveler-dialog.js"
 
 export interface TravelerListProps {
@@ -96,9 +96,15 @@ export function TravelerList({ bookingId, autoReveal = false }: TravelerListProp
                   <th className="p-2 text-left font-medium">
                     {messages.travelerList.columns.phone}
                   </th>
-                  <th className="p-2 text-left font-medium">Role</th>
-                  <th className="p-2 text-left font-medium">DOB / age</th>
-                  <th className="p-2 text-left font-medium">Documents</th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.travelerList.columns.role}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.travelerList.columns.dobAge}
+                  </th>
+                  <th className="p-2 text-left font-medium">
+                    {messages.travelerList.columns.documents}
+                  </th>
                   <th className="w-20 p-2" />
                 </tr>
               </thead>
@@ -177,6 +183,7 @@ function TravelerRow({
   onEdit: () => void
   onDelete: () => void
 }) {
+  const messages = useBookingsUiMessagesOrDefault()
   const reveal = useRevealTraveler(bookingId, traveler.id, { enabled: revealed })
   // Use the revealed copy when available; otherwise fall back to
   // the masked row from the list endpoint. This keeps the UI snappy
@@ -208,13 +215,19 @@ function TravelerRow({
         </td>
         <td className="p-2">
           <div className="flex flex-wrap gap-1.5">
-            {display.isPrimary ? <MiniPill>Primary</MiniPill> : null}
-            {travelDetails?.isLeadTraveler ? <MiniPill>Lead</MiniPill> : null}
+            {display.isPrimary ? <MiniPill>{messages.travelerList.roles.primary}</MiniPill> : null}
+            {travelDetails?.isLeadTraveler ? (
+              <MiniPill>{messages.travelerList.roles.lead}</MiniPill>
+            ) : null}
             {display.travelerCategory ? <MiniPill>{display.travelerCategory}</MiniPill> : null}
           </div>
         </td>
         <td className="p-2">
-          {showLoading ? <RowLoading /> : formatDobAge(travelDetails?.dateOfBirth)}
+          {showLoading ? (
+            <RowLoading />
+          ) : (
+            formatDobAge(travelDetails?.dateOfBirth, messages.travelerList.values.fieldUnavailable)
+          )}
         </td>
         <td className="p-2">
           {documents.length > 0 ? (
@@ -225,7 +238,9 @@ function TravelerRow({
               {documents.length > 2 ? <MiniPill>+{documents.length - 2}</MiniPill> : null}
             </div>
           ) : (
-            <span className="text-muted-foreground">-</span>
+            <span className="text-muted-foreground">
+              {messages.travelerList.values.documentsUnavailable}
+            </span>
           )}
         </td>
         <td className="p-2">
@@ -235,9 +250,15 @@ function TravelerRow({
                 type="button"
                 onClick={onToggleReveal}
                 className="text-muted-foreground hover:text-foreground"
-                title={revealed ? "Hide details" : "Reveal contact details"}
+                title={
+                  revealed
+                    ? messages.travelerList.actions.hideContactDetails
+                    : messages.travelerList.actions.revealContactDetails
+                }
                 aria-label={
-                  revealed ? "Hide traveler contact details" : "Reveal traveler contact details"
+                  revealed
+                    ? messages.travelerList.actions.hideTravelerContactDetails
+                    : messages.travelerList.actions.revealTravelerContactDetails
                 }
               >
                 {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -247,7 +268,7 @@ function TravelerRow({
               type="button"
               onClick={onEdit}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Edit traveler"
+              aria-label={messages.travelerList.actions.editTraveler}
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
@@ -255,14 +276,16 @@ function TravelerRow({
               type="button"
               onClick={onDelete}
               className="text-muted-foreground hover:text-destructive"
-              aria-label="Delete traveler"
+              aria-label={messages.travelerList.actions.deleteTraveler}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
           {revealError ? (
             <div className="mt-1 text-[10px] text-destructive">
-              {revealError instanceof Error ? revealError.message : "Reveal failed"}
+              {revealError instanceof Error
+                ? revealError.message
+                : messages.travelerList.validation.revealFailed}
             </div>
           ) : null}
         </td>
@@ -282,10 +305,11 @@ function TravelerRow({
 }
 
 function RowLoading() {
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <span className="inline-flex items-center gap-1.5 text-muted-foreground">
       <Loader2 className="h-3 w-3 animate-spin" />
-      <span className="text-xs">Decrypting…</span>
+      <span className="text-xs">{messages.travelerList.loading.decrypting}</span>
     </span>
   )
 }
@@ -301,33 +325,44 @@ function TravelerContextGrid({
   documents: BookingTravelerDocumentRecord[]
   loading: boolean
 }) {
+  const messages = useBookingsUiMessagesOrDefault()
   if (loading) return <RowLoading />
 
   const fields = [
-    ["Nationality", travelDetails?.nationality],
-    ["Passport", travelDetails?.passportNumber],
-    ["Passport expiry", formatDateValue(travelDetails?.passportExpiry)],
-    ["Language", traveler.preferredLanguage],
-    ["Dietary", travelDetails?.dietaryRequirements],
-    ["Accessibility", travelDetails?.accessibilityNeeds],
-    ["Special requests", traveler.specialRequests],
-    ["Notes", traveler.notes],
+    [messages.travelerList.context.nationality, travelDetails?.nationality],
+    [messages.travelerList.context.passport, travelDetails?.passportNumber],
+    [messages.travelerList.context.passportExpiry, formatDateValue(travelDetails?.passportExpiry)],
+    [messages.travelerList.context.language, traveler.preferredLanguage],
+    [messages.travelerList.context.dietary, travelDetails?.dietaryRequirements],
+    [messages.travelerList.context.accessibility, travelDetails?.accessibilityNeeds],
+    [messages.travelerList.context.specialRequests, traveler.specialRequests],
+    [messages.travelerList.context.notes, traveler.notes],
   ] as const
   const visibleFields = fields.filter(([, value]) => Boolean(value))
 
   if (visibleFields.length === 0 && documents.length === 0) {
-    return <span className="text-xs text-muted-foreground">No additional traveler context</span>
+    return (
+      <span className="text-xs text-muted-foreground">
+        {messages.travelerList.values.noAdditionalContext}
+      </span>
+    )
   }
 
   return (
     <div className="grid gap-3 md:grid-cols-4">
       {visibleFields.map(([label, value]) => (
-        <DetailField key={label} label={label} value={value ?? "-"} />
+        <DetailField
+          key={label}
+          label={label}
+          value={value ?? messages.travelerList.values.fieldUnavailable}
+        />
       ))}
       {documents.map((document) => (
         <DetailField
           key={document.id}
-          label={`Document · ${document.type.replaceAll("_", " ")}`}
+          label={formatMessage(messages.travelerList.context.documentLabel, {
+            type: document.type.replaceAll("_", " "),
+          })}
           value={document.fileName}
         />
       ))}
@@ -352,8 +387,8 @@ function MiniPill({ children }: { children: React.ReactNode }) {
   )
 }
 
-function formatDobAge(value: string | null | undefined): string {
-  if (!value) return "-"
+function formatDobAge(value: string | null | undefined, unavailable: string): string {
+  if (!value) return unavailable
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   const today = new Date()

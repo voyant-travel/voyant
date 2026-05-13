@@ -1,6 +1,7 @@
 "use client"
 
 import type { CabinClass, PassengerCounts } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
 import {
@@ -20,13 +21,6 @@ export interface PaxCabinPopoverProps {
   className?: string
 }
 
-const CABIN_LABEL: Record<CabinClass, string> = {
-  economy: "Economy",
-  premium_economy: "Premium economy",
-  business: "Business",
-  first: "First",
-}
-
 /**
  * Compact pax + cabin selector — single trigger button summarizing
  * "2 adults · Economy" that opens a popover with steppers for each pax
@@ -34,9 +28,11 @@ const CABIN_LABEL: Record<CabinClass, string> = {
  * pattern; keeps the search form on one row.
  */
 export function PaxCabinPopover({ passengers, cabin, onChange, className }: PaxCabinPopoverProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const total = passengers.adults + (passengers.children ?? 0) + (passengers.infants ?? 0)
-  const summary = `${total} ${total === 1 ? "passenger" : "passengers"} · ${CABIN_LABEL[cabin]}`
+  const summary = `${total} ${
+    total === 1 ? messages.common.passengerSingular : messages.common.passengerPlural
+  } · ${messages.common.cabinLabels[cabin]}`
 
   const setCount = (key: keyof PassengerCounts, value: number) => {
     onChange({
@@ -59,29 +55,32 @@ export function PaxCabinPopover({ passengers, cabin, onChange, className }: PaxC
       <PopoverContent align="end">
         <div className="flex flex-col gap-3">
           <PaxStepper
-            label="Adults"
-            sublabel="12+"
+            label={messages.paxCabinPopover.adults}
+            sublabel={messages.paxCabinPopover.adultsSublabel}
             value={passengers.adults}
             min={1}
             onChange={(v) => setCount("adults", v)}
+            messages={messages}
           />
           <PaxStepper
-            label="Children"
-            sublabel="2-11"
+            label={messages.paxCabinPopover.children}
+            sublabel={messages.paxCabinPopover.childrenSublabel}
             value={passengers.children ?? 0}
             min={0}
             onChange={(v) => setCount("children", v)}
+            messages={messages}
           />
           <PaxStepper
-            label="Infants"
-            sublabel="under 2"
+            label={messages.paxCabinPopover.infants}
+            sublabel={messages.paxCabinPopover.infantsSublabel}
             value={passengers.infants ?? 0}
             min={0}
             onChange={(v) => setCount("infants", v)}
+            messages={messages}
           />
           <div className="mt-1 flex flex-col gap-1.5 border-t pt-3">
             <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              Cabin
+              {messages.paxCabinPopover.cabin}
             </span>
             <Select
               value={cabin}
@@ -93,9 +92,9 @@ export function PaxCabinPopover({ passengers, cabin, onChange, className }: PaxC
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(CABIN_LABEL) as CabinClass[]).map((c) => (
+                {(Object.keys(messages.common.cabinLabels) as CabinClass[]).map((c) => (
                   <SelectItem key={c} value={c}>
-                    {CABIN_LABEL[c]}
+                    {messages.common.cabinLabels[c]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -113,12 +112,14 @@ function PaxStepper({
   value,
   min,
   onChange,
+  messages,
 }: {
   label: string
   sublabel: string
   value: number
   min: number
   onChange: (n: number) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <div className="flex items-center justify-between">
@@ -134,7 +135,7 @@ function PaxStepper({
           className="h-7 w-7"
           onClick={() => onChange(value - 1)}
           disabled={value <= min}
-          aria-label={`Decrease ${label}`}
+          aria-label={formatMessage(messages.paxCabinPopover.decrease, { label })}
         >
           <Minus className="h-3.5 w-3.5" />
         </Button>
@@ -145,7 +146,7 @@ function PaxStepper({
           size="icon"
           className="h-7 w-7"
           onClick={() => onChange(value + 1)}
-          aria-label={`Increase ${label}`}
+          aria-label={formatMessage(messages.paxCabinPopover.increase, { label })}
         >
           <Plus className="h-3.5 w-3.5" />
         </Button>

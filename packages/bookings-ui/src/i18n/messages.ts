@@ -120,14 +120,47 @@ export type BookingsUiMessages = {
     values: {
       emailUnavailable: string
       phoneUnavailable: string
+      documentsUnavailable: string
+      fieldUnavailable: string
+      noAdditionalContext: string
     }
     columns: {
       name: string
       email: string
       phone: string
+      role: string
+      dobAge: string
+      documents: string
+    }
+    roles: {
+      primary: string
+      lead: string
+    }
+    context: {
+      nationality: string
+      passport: string
+      passportExpiry: string
+      language: string
+      dietary: string
+      accessibility: string
+      specialRequests: string
+      notes: string
+      documentLabel: string
+    }
+    loading: {
+      decrypting: string
     }
     actions: {
       deleteConfirm: string
+      revealContactDetails: string
+      hideContactDetails: string
+      revealTravelerContactDetails: string
+      hideTravelerContactDetails: string
+      editTraveler: string
+      deleteTraveler: string
+    }
+    validation: {
+      revealFailed: string
     }
   }
   bookingItemDialog: {
@@ -421,6 +454,177 @@ export type BookingsUiMessages = {
       deleteConfirm: string
     }
   }
+  bookingJourney: {
+    steps: Record<
+      "configure" | "billing" | "travelers" | "accommodation" | "addons" | "payment" | "review",
+      string
+    > & {
+      billingAndContact: string
+      reviewAndConfirm: string
+    }
+    navigation: {
+      back: string
+      next: string
+      checking: string
+    }
+    values: {
+      noValue: string
+      notSet: string
+      none: string
+      selectPlaceholder: string
+    }
+    validation: {
+      completeStepBeforeContinuing: string
+      unableToContinue: string
+      addAtLeastTravelers: string
+      maxTravelersPerBooking: string
+      ageOutOfRange: string
+    }
+    warnings: {
+      phoneMissing: string
+      billingCountryMissing: string
+      vatMissing: string
+      travelerFieldRequired: string
+      paymentIntentMissing: string
+      noTravelers: string
+    }
+    configure: {
+      travelers: string
+      departureDate: string
+      timeOptional: string
+      checkIn: string
+      checkOutWithNights: string
+      cabinCategory: string
+      cabinNumber: string
+      airArrangements: string
+      airOptions: Record<
+        "cruise_line" | "independent" | "none",
+        { label: string; description: string }
+      >
+      ageHintRange: string
+      ageHintMinimum: string
+      ageHintMaximum: string
+    }
+    billing: {
+      title: string
+      buyerType: string
+      individual: string
+      company: string
+      firstName: string
+      lastName: string
+      email: string
+      phone: string
+      addressLine1: string
+      addressLine2Optional: string
+      city: string
+      postalCode: string
+      country: string
+      companyName: string
+      vatId: string
+    }
+    travelers: {
+      title: string
+      empty: string
+      addTraveler: string
+      travelerNumber: string
+      ageLabel: string
+      copyFromBilling: string
+      remove: string
+    }
+    accommodation: {
+      title: string
+      empty: string
+      extensionsAvailable: string
+      ratePlan: string
+      cancellationPrefix: string
+      includesPrefix: string
+    }
+    addons: {
+      title: string
+      empty: string
+      otherBucket: string
+    }
+    payment: {
+      title: string
+      empty: string
+      redirectedAfterConfirm: string
+      inquiryNotice: string
+      bankTransferInstructions: string
+      bankTransferDefaultNote: string
+      intentLabels: Record<
+        "card" | "bank_transfer" | "hold" | "ticket_on_credit" | "inquiry",
+        string
+      >
+      intentDescriptions: Record<
+        "card" | "bank_transfer" | "hold" | "ticket_on_credit" | "inquiry",
+        string
+      >
+    }
+    review: {
+      title: string
+      leadContact: string
+      travelers: string
+      customerNotes: string
+      customerNotesPlaceholder: string
+      internalNotes: string
+      confirmBooking: string
+      confirming: string
+    }
+    contract: {
+      defaultTitle: string
+      description: string
+      errorPrefix: string
+      iframeTitle: string
+      termsLabel: string
+      marketingLabel: string
+      cancel: string
+      acceptAndContinue: string
+      previewRequestFailed: string
+      previewMissing: string
+    }
+    sidePanel: {
+      youAreBooking: string
+      total: string
+      guestSingular: string
+      guestPlural: string
+      filledOf: string
+      roomSingular: string
+      roomPlural: string
+      addOnSingular: string
+      addOnPlural: string
+      card: string
+      hold: string
+      onCredit: string
+      confirmAndBook: string
+      reviewDetails: string
+      noTravelersYet: string
+      notSelected: string
+      noAddonsSelected: string
+      adults: string
+      children: string
+      infants: string
+      departure: string
+      date: string
+      checkIn: string
+      checkOut: string
+      cabin: string
+      name: string
+      email: string
+      phone: string
+      buyer: string
+      company: string
+      individual: string
+      vat: string
+      address: string
+      travelerNumber: string
+      dob: string
+      method: string
+      schedule: string
+      payByCard: string
+      ticketOnCredit: string
+      holdNoChargeYet: string
+    }
+  }
   statusChangeDialog: {
     title: string
     fields: {
@@ -489,6 +693,10 @@ export type BookingsUiMessages = {
     }
     actions: {
       deleteConfirm: string
+      expandItem: string
+      collapseItem: string
+      editItem: string
+      deleteItem: string
     }
   }
   bookingPaymentScheduleList: {
@@ -832,6 +1040,8 @@ export type BookingsUiMessages = {
     empty: string
     showingSummary: string
     pageSummary: string
+    previousPage: string
+    nextPage: string
   }
   bookingPaymentsSummary: {
     title: string

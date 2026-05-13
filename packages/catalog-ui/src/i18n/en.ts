@@ -78,6 +78,17 @@ export const catalogUiEn = {
       roomName: "Untitled room",
       detailName: "Untitled",
     },
+    sourceKinds: {
+      owned: "Owned",
+      voyantConnect: "Voyant Connect",
+      manual: "Manual",
+      gdsAmadeus: "Amadeus",
+      gdsSabre: "Sabre",
+      gdsTravelport: "Travelport",
+      bedbankHotelbeds: "Hotelbeds",
+      bedbankExpedia: "Expedia",
+      directSuffix: "(direct)",
+    },
     search: {
       noTabsConfigured: "No catalog tabs configured.",
       clearAll: "Clear all",

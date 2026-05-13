@@ -6,26 +6,9 @@ import { Button, cn, Input, Label } from "@voyantjs/ui/components"
 import { AlertCircle, CheckCircle2, Loader2, LogIn, UserPlus } from "lucide-react"
 import { type FormEvent, useEffect, useId, useState } from "react"
 
-export interface AcceptInvitationPageMessages {
-  title: string
-  description: string
-  tokenLabel: string
-  tokenPlaceholder: string
-  tokenRequired: string
-  submit: string
-  submitting: string
-  handoffTitle: string
-  handoffDescription: string
-  signIn: string
-  signUp: string
-  successTitle: string
-  successDescription: string
-  continue: string
-  failureTitle: string
-  failureDescription: string
-  signInRequired: string
-  somethingWentWrong: string
-}
+import { authUiEn } from "../i18n/en.js"
+import type { AcceptInvitationPageMessages } from "../i18n/messages.js"
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
 
 export interface AcceptInvitationHandoffOptions {
   token: string
@@ -51,27 +34,9 @@ export interface AcceptInvitationPageProps {
   onContinue?: (options: AcceptInvitationAcceptedOptions) => Promise<void> | void
 }
 
-export const defaultAcceptInvitationPageMessages: AcceptInvitationPageMessages = {
-  title: "Accept invitation",
-  description: "Join the organization that invited you to Voyant.",
-  tokenLabel: "Invitation token",
-  tokenPlaceholder: "Paste your invitation token",
-  tokenRequired: "Invitation token is required.",
-  submit: "Accept invitation",
-  submitting: "Accepting invitation",
-  handoffTitle: "Sign in to accept this invitation",
-  handoffDescription:
-    "Use an existing account or create a new one, then return to accept the invitation.",
-  signIn: "Sign in",
-  signUp: "Create account",
-  successTitle: "Invitation accepted",
-  successDescription: "You can now access the organization.",
-  continue: "Continue",
-  failureTitle: "Invitation could not be accepted",
-  failureDescription: "Check the invitation token or ask for a new invitation.",
-  signInRequired: "Sign in before accepting this invitation.",
-  somethingWentWrong: "Something went wrong. Try again.",
-}
+export type { AcceptInvitationPageMessages } from "../i18n/messages.js"
+
+export const defaultAcceptInvitationPageMessages = authUiEn.acceptInvitationPage
 
 function invitationErrorMessage(error: unknown, messages: AcceptInvitationPageMessages): string {
   if (error instanceof VoyantApiError && (error.status === 401 || error.status === 403)) {
@@ -99,7 +64,8 @@ export function AcceptInvitationPage({
   onAccepted,
   onContinue,
 }: AcceptInvitationPageProps) {
-  const messages = { ...defaultAcceptInvitationPageMessages, ...messageOverrides }
+  const defaultMessages = useAuthUiMessagesOrDefault().acceptInvitationPage
+  const messages = { ...defaultMessages, ...messageOverrides }
   const acceptInvitation = useAcceptInvitation()
   const tokenInputId = useId()
   const [tokenValue, setTokenValue] = useState(token ?? defaultToken)

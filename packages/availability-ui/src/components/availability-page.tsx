@@ -91,27 +91,27 @@ type DialogSubmitContext = { isEditing: boolean; id?: string }
 export type AvailabilityPageRuleSubmitHandler = (
   payload: AvailabilityRuleSubmitPayload,
   context: DialogSubmitContext,
-) => Promise<void>
+) => Promise<void> // i18n-literal-ok type annotation
 
 export type AvailabilityPageStartTimeSubmitHandler = (
   payload: AvailabilityStartTimeSubmitPayload,
   context: DialogSubmitContext,
-) => Promise<void>
+) => Promise<void> // i18n-literal-ok type annotation
 
 export type AvailabilityPageSlotSubmitHandler = (
   payload: AvailabilitySlotSubmitPayload,
   context: DialogSubmitContext,
-) => Promise<void>
+) => Promise<void> // i18n-literal-ok type annotation
 
 export type AvailabilityPageCloseoutSubmitHandler = (
   payload: AvailabilityCloseoutSubmitPayload,
   context: DialogSubmitContext,
-) => Promise<void>
+) => Promise<void> // i18n-literal-ok type annotation
 
 export type AvailabilityPagePickupPointSubmitHandler = (
   payload: AvailabilityPickupPointSubmitPayload,
   context: DialogSubmitContext,
-) => Promise<void>
+) => Promise<void> // i18n-literal-ok type annotation
 
 export interface AvailabilityPageSlots {
   headerEnd?: ReactNode
@@ -225,7 +225,7 @@ export function AvailabilityPage({
   const matchesActive = (active: boolean, filter: AvailabilityPageActiveFilter) =>
     filter === "all" || (filter === "active" ? active : !active)
   const matchesDateRange = (date: string, range: DateRangeValue | null) =>
-    (!range?.from || date >= range.from) && (!range?.to || date <= range.to)
+    (!range?.from || date >= range.from) && (!range?.to || date <= range.to) // i18n-literal-ok comparison expression
 
   const filteredRules = rules.filter(
     (rule) => matchesProduct(rule.productId) && matchesActive(rule.active, ruleActiveFilter),

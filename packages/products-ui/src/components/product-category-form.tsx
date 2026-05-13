@@ -189,10 +189,11 @@ export function ProductCategoryForm({ mode, onSuccess, onCancel }: ProductCatego
 
       <div className="flex flex-col gap-3 rounded-md border bg-muted/10 p-4">
         <div>
-          <h3 className="text-sm font-medium">Customer payment policy</h3>
+          <h3 className="text-sm font-medium">
+            {messages.productCategoryForm.fields.customerPaymentPolicy}
+          </h3>
           <p className="text-muted-foreground text-xs">
-            When set, products in this category inherit these terms unless the listing or booking
-            sets its own override. Wins over the supplier-level policy.
+            {messages.productCategoryForm.descriptions.customerPaymentPolicy}
           </p>
         </div>
         <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">

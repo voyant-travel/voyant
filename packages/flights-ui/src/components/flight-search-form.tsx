@@ -27,7 +27,7 @@ export interface FlightSearchFormProps {
 }
 
 export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFormProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault().flightSearchForm
   const initialSlices = initial?.slices ?? []
   const [tripType, setTripType] = useState<TripType>(
     initial?.tripType ?? (initialSlices.length === 2 ? "round_trip" : "one_way"),
@@ -92,10 +92,10 @@ export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFor
           }}
         >
           <ToggleGroupItem size="lg" value="round_trip">
-            Round-trip
+            {messages.roundTrip}
           </ToggleGroupItem>
           <ToggleGroupItem size="lg" value="one_way">
-            One-way
+            {messages.oneWay}
           </ToggleGroupItem>
         </ToggleGroup>
 
@@ -104,7 +104,7 @@ export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFor
           <AirportCombobox
             value={origin}
             onChange={setOrigin}
-            placeholder="From"
+            placeholder={messages.fromPlaceholder}
             className="flex-1"
           />
           <Button
@@ -112,7 +112,7 @@ export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFor
             variant="outline"
             size="icon"
             onClick={swap}
-            aria-label="Swap origin and destination"
+            aria-label={messages.swapAriaLabel}
             className="size-10 shrink-0"
           >
             <ArrowLeftRight className="h-4 w-4" />
@@ -120,7 +120,7 @@ export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFor
           <AirportCombobox
             value={destination}
             onChange={setDestination}
-            placeholder="To"
+            placeholder={messages.toPlaceholder}
             className="flex-1"
           />
         </div>
@@ -130,13 +130,13 @@ export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFor
           <DatePicker
             value={departureDate}
             onChange={setDepartureDate}
-            placeholder="Depart"
+            placeholder={messages.departPlaceholder}
             className="h-10 flex-1 min-w-32"
           />
           <DatePicker
             value={returnDate}
             onChange={setReturnDate}
-            placeholder="Return"
+            placeholder={messages.returnPlaceholder}
             disabled={tripType === "one_way"}
             className="h-10 flex-1 min-w-32"
           />
@@ -153,7 +153,7 @@ export function FlightSearchForm({ onSearch, loading, initial }: FlightSearchFor
 
         <Button type="submit" size="lg" disabled={!ready || loading} className="shrink-0 px-6">
           <Search className="mr-2 h-4 w-4" />
-          {loading ? "Searching…" : "Search"}
+          {loading ? messages.searching : messages.search}
         </Button>
       </div>
     </form>

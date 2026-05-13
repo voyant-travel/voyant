@@ -72,7 +72,7 @@ export function CatalogPage({
     typeof value === "string" ? formatSupplier(value) : String(value ?? "")
   const sourceKindFormatter = (value: unknown) =>
     typeof value === "string" || typeof value === "number"
-      ? formatSourceKind(value)
+      ? formatSourceKind(value, messages)
       : String(value ?? "")
 
   const tabs: CatalogSearchTab[] = [
@@ -278,7 +278,11 @@ function makeProductFilters(
 ): CatalogFilterField[] {
   return [
     { field: "status", label: messages.filters.status },
-    { field: "source.kind", label: messages.filters.source, formatValue: formatSourceKind },
+    {
+      field: "source.kind",
+      label: messages.filters.source,
+      formatValue: (value) => formatSourceKind(value, messages),
+    },
     { field: "supplierId", label: messages.filters.supplier, formatValue: formatSupplier },
     { field: "bookingMode", label: messages.filters.bookingMode },
     { field: "productTypeId", label: messages.filters.type },
@@ -311,7 +315,11 @@ function makeExtraFilters(
 ): CatalogFilterField[] {
   return [
     { field: "active", label: messages.filters.active },
-    { field: "source.kind", label: messages.filters.source, formatValue: formatSourceKind },
+    {
+      field: "source.kind",
+      label: messages.filters.source,
+      formatValue: (value) => formatSourceKind(value, messages),
+    },
     { field: "supplierId", label: messages.filters.supplier, formatValue: formatSupplier },
     { field: "selectionType", label: messages.filters.selection },
     { field: "pricingMode", label: messages.filters.pricingMode },
@@ -339,7 +347,11 @@ function makeCruiseFilters(
 ): CatalogFilterField[] {
   return [
     { field: "status", label: messages.filters.status },
-    { field: "source.kind", label: messages.filters.source, formatValue: formatSourceKind },
+    {
+      field: "source.kind",
+      label: messages.filters.source,
+      formatValue: (value) => formatSourceKind(value, messages),
+    },
     { field: "cruiseType", label: messages.filters.type },
     { field: "lineSupplierId", label: messages.filters.supplier, formatValue: formatSupplier },
     { field: "defaultShipId", label: messages.filters.ship },
@@ -363,7 +375,11 @@ function makeCharterFilters(
 ): CatalogFilterField[] {
   return [
     { field: "status", label: messages.filters.status },
-    { field: "source.kind", label: messages.filters.source, formatValue: formatSourceKind },
+    {
+      field: "source.kind",
+      label: messages.filters.source,
+      formatValue: (value) => formatSourceKind(value, messages),
+    },
     { field: "lineSupplierId", label: messages.filters.supplier, formatValue: formatSupplier },
     { field: "defaultYachtId", label: messages.filters.yacht },
     { field: "defaultBookingModes", label: messages.filters.bookingMode },
@@ -396,7 +412,11 @@ function makeHospitalityFilters(
 ): CatalogFilterField[] {
   return [
     { field: "active", label: messages.filters.active },
-    { field: "source.kind", label: messages.filters.source, formatValue: formatSourceKind },
+    {
+      field: "source.kind",
+      label: messages.filters.source,
+      formatValue: (value) => formatSourceKind(value, messages),
+    },
     { field: "supplierId", label: messages.filters.supplier, formatValue: formatSupplier },
     { field: "inventoryMode", label: messages.filters.inventory },
     { field: "roomClass", label: messages.filters.class },
@@ -504,26 +524,30 @@ function sourceColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit
       const kind = stringField(row.original, "source.kind", null)
       if (!kind) return <span className="text-muted-foreground">{messages.values.empty}</span>
       return (
-        <Badge variant={kind === "owned" ? "secondary" : "outline"}>{formatSourceKind(kind)}</Badge>
+        <Badge variant={kind === "owned" ? "secondary" : "outline"}>
+          {formatSourceKind(kind, messages)}
+        </Badge>
       )
     },
   }
 }
 
-function formatSourceKind(value: string | number): string {
+function formatSourceKind(value: unknown, messages: CatalogPageMessages): string {
   const raw = String(value)
   const known: Record<string, string> = {
-    owned: "Owned",
-    "voyant-connect": "Voyant Connect",
-    manual: "Manual",
-    "gds:amadeus": "Amadeus",
-    "gds:sabre": "Sabre",
-    "gds:travelport": "Travelport",
-    "bedbank:hotelbeds": "Hotelbeds",
-    "bedbank:expedia": "Expedia",
+    owned: messages.sourceKinds.owned,
+    "voyant-connect": messages.sourceKinds.voyantConnect,
+    manual: messages.sourceKinds.manual,
+    "gds:amadeus": messages.sourceKinds.gdsAmadeus,
+    "gds:sabre": messages.sourceKinds.gdsSabre,
+    "gds:travelport": messages.sourceKinds.gdsTravelport,
+    "bedbank:hotelbeds": messages.sourceKinds.bedbankHotelbeds,
+    "bedbank:expedia": messages.sourceKinds.bedbankExpedia,
   }
   if (known[raw]) return known[raw]
-  if (raw.startsWith("direct:")) return `${raw.slice("direct:".length).toUpperCase()} (direct)`
+  if (raw.startsWith("direct:")) {
+    return `${raw.slice("direct:".length).toUpperCase()} ${messages.sourceKinds.directSuffix}`
+  }
   return raw
     .split(/[:\-_]/)
     .filter(Boolean)

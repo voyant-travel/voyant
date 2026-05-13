@@ -185,7 +185,8 @@ const THROTTLING_REFETCH_MS = 60_000
 // Page
 
 export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPageProps = {}) {
-  const messages = useDistributionUiMessagesOrDefault().channelSync
+  const distributionMessages = useDistributionUiMessagesOrDefault()
+  const messages = distributionMessages.channelSync
   const context = useVoyantDistributionContext()
   const client = {
     baseUrl: baseUrl ?? context.baseUrl,
@@ -413,7 +414,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
         {filtersActive ? (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             <X className="mr-1.5 h-3.5 w-3.5" />
-            Clear filters
+            {distributionMessages.common.clearFilters}
           </Button>
         ) : null}
       </div>

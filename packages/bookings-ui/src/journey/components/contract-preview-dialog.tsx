@@ -11,7 +11,7 @@ import {
 } from "@voyantjs/ui/components/dialog"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import * as React from "react"
-import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
+import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 
 /**
  * Contract preview dialog. Renders a contract template with the
@@ -83,7 +83,7 @@ export function ContractPreviewDialog({
   marketingLabel,
   termsLabel,
 }: ContractPreviewDialogProps): React.ReactElement {
-  useBookingsUiMessagesOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
   const [loadState, setLoadState] = React.useState<"idle" | "loading" | "ready" | "error">("idle")
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [renderedHtml, setRenderedHtml] = React.useState<string>("")
@@ -121,14 +121,18 @@ export function ContractPreviewDialog({
     })
       .then(async (res) => {
         if (!res.ok) {
-          throw new Error(`Preview request failed: ${res.status}`)
+          throw new Error(
+            formatMessage(messages.bookingJourney.contract.previewRequestFailed, {
+              status: res.status,
+            }),
+          )
         }
         const json = (await res.json()) as PreviewResponse
         if (cancelled) return
         const body = json.data?.rendered ?? ""
         const tmpl = json.data?.template
         if (!body || !tmpl) {
-          throw new Error("Preview response missing rendered body or template metadata")
+          throw new Error(messages.bookingJourney.contract.previewMissing)
         }
         setRenderedHtml(body)
         setTemplate({ id: tmpl.id, slug: tmpl.slug, name: tmpl.name })
@@ -163,10 +167,11 @@ export function ContractPreviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] w-[95vw] max-w-4xl flex-col gap-0 p-0">
         <DialogHeader className="border-b p-6 pb-4">
-          <DialogTitle>{template?.name ?? "Booking contract"}</DialogTitle>
+          <DialogTitle>
+            {template?.name ?? messages.bookingJourney.contract.defaultTitle}
+          </DialogTitle>
           <p className="text-muted-foreground text-sm">
-            Please review the contract below. You can scroll through the document, then tick the
-            boxes and click Accept to continue.
+            {messages.bookingJourney.contract.description}
           </p>
         </DialogHeader>
 
@@ -183,13 +188,15 @@ export function ContractPreviewDialog({
           {loadState === "error" ? (
             <div className="p-6">
               <p className="text-destructive text-sm">
-                Couldn't load the contract preview: {errorMessage}
+                {messages.bookingJourney.contract.errorPrefix} {errorMessage}
               </p>
             </div>
           ) : null}
           {loadState === "ready" ? (
             <iframe
-              title={`${template?.name ?? "Contract"} preview`}
+              title={formatMessage(messages.bookingJourney.contract.iframeTitle, {
+                name: template?.name ?? messages.bookingJourney.contract.defaultTitle,
+              })}
               srcDoc={wrapPreviewHtml(renderedHtml)}
               sandbox=""
               className="h-full w-full border-0 bg-white"
@@ -206,14 +213,7 @@ export function ContractPreviewDialog({
                 onCheckedChange={(v) => setAcceptedTerms(v === true)}
                 className="mt-0.5"
               />
-              <span>
-                {termsLabel ?? (
-                  <>
-                    I have read and agree to the terms of this contract. I understand that this
-                    booking is binding once accepted.
-                  </>
-                )}
-              </span>
+              <span>{termsLabel ?? <>{messages.bookingJourney.contract.termsLabel}</>}</span>
             </label>
             {/* biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the input element under the hood */}
             <label className="flex items-start gap-2">
@@ -222,18 +222,15 @@ export function ContractPreviewDialog({
                 onCheckedChange={(v) => setAcceptedMarketing(v === true)}
                 className="mt-0.5"
               />
-              <span>
-                {marketingLabel ??
-                  "I'd like to receive occasional travel offers and updates by email. (You can unsubscribe at any time.)"}
-              </span>
+              <span>{marketingLabel ?? messages.bookingJourney.contract.marketingLabel}</span>
             </label>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.bookingJourney.contract.cancel}
             </Button>
             <Button type="button" disabled={!canAccept} onClick={handleAccept}>
-              Accept and continue
+              {messages.bookingJourney.contract.acceptAndContinue}
             </Button>
           </div>
         </DialogFooter>

@@ -204,9 +204,7 @@ export function StageEditorDialog({
             {/* Window */}
             <FieldSet>
               <FieldLegend variant="label">{messages.stage.fields.anchor}</FieldLegend>
-              <FieldDescription>
-                When the eligibility window opens, relative to the chosen anchor.
-              </FieldDescription>
+              <FieldDescription>{messages.stage.descriptions.window}</FieldDescription>
               <FieldGroup className="gap-4">
                 <Field>
                   <Select
@@ -255,9 +253,7 @@ export function StageEditorDialog({
             {/* Cadence */}
             <FieldSet>
               <FieldLegend variant="label">{messages.stage.fields.cadenceKind}</FieldLegend>
-              <FieldDescription>
-                How often this stage may fire while inside the window.
-              </FieldDescription>
+              <FieldDescription>{messages.stage.descriptions.cadence}</FieldDescription>
               <FieldGroup className="gap-4">
                 <Field>
                   <Select
@@ -305,8 +301,7 @@ export function StageEditorDialog({
                     </div>
                     {form.cadenceIntervals.length === 0 ? (
                       <FieldDescription>
-                        Add buckets keyed on days-until-due to scale cadence as the deadline
-                        approaches.
+                        {messages.stage.descriptions.emptyIntervals}
                       </FieldDescription>
                     ) : null}
                     <div className="space-y-2">
@@ -378,7 +373,9 @@ export function StageEditorDialog({
 
             {/* Stop conditions + behaviour */}
             <FieldSet>
-              <FieldLegend variant="label">Stop conditions</FieldLegend>
+              <FieldLegend variant="label">
+                {messages.stage.descriptions.stopConditions}
+              </FieldLegend>
               <FieldGroup className="gap-4">
                 <Field>
                   <FieldLabel htmlFor="max-sends">
@@ -394,9 +391,7 @@ export function StageEditorDialog({
                     }
                     placeholder={messages.common.optionalPlaceholder}
                   />
-                  <FieldDescription>
-                    Leave blank for no limit. When reached, the next stage takes over.
-                  </FieldDescription>
+                  <FieldDescription>{messages.stage.descriptions.maxSendsInStage}</FieldDescription>
                 </Field>
 
                 <Field orientation="horizontal">
@@ -408,7 +403,7 @@ export function StageEditorDialog({
                   <FieldLabel htmlFor="respect-quiet-hours" className="!w-auto !flex-row">
                     <FieldTitle>{messages.stage.fields.respectQuietHours}</FieldTitle>
                     <FieldDescription>
-                      Defer fires that would land inside the tenant's quiet-hours window.
+                      {messages.stage.descriptions.respectQuietHours}
                     </FieldDescription>
                   </FieldLabel>
                 </Field>

@@ -50,7 +50,9 @@ export function DropColumn({
       id={id}
       className={cn(
         "min-h-40 transition-colors",
-        over && !disabled ? "border-primary bg-primary/5" : null,
+        over && !disabled
+          ? "border-primary bg-primary/5" /* i18n-literal-ok CSS class token */
+          : null,
       )}
       onDragOver={(event) => {
         event.preventDefault()

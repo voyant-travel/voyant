@@ -2,6 +2,7 @@
 
 import { Button } from "@voyantjs/ui/components/button"
 
+import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import type { JourneyHeaderState, JourneyStep } from "../types.js"
 
 interface StepHeaderProps extends JourneyHeaderState {
@@ -14,6 +15,7 @@ export function StepHeader({
   steps,
   onJumpTo,
 }: StepHeaderProps): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
   return (
     <ol className="flex flex-wrap gap-2">
       {steps.map((step, idx) => {
@@ -29,30 +31,11 @@ export function StepHeader({
               onClick={() => onJumpTo(step)}
             >
               <span className="mr-1 font-mono text-xs">{idx + 1}.</span>
-              {labelForStep(step)}
+              {messages.bookingJourney.steps[step]}
             </Button>
           </li>
         )
       })}
     </ol>
   )
-}
-
-function labelForStep(step: JourneyStep): string {
-  switch (step) {
-    case "configure":
-      return "Configure"
-    case "billing":
-      return "Billing"
-    case "travelers":
-      return "Travelers"
-    case "accommodation":
-      return "Accommodation"
-    case "addons":
-      return "Add-ons"
-    case "payment":
-      return "Payment"
-    case "review":
-      return "Review"
-  }
 }

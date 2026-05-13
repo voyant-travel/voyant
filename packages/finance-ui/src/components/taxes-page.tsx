@@ -109,10 +109,10 @@ function createTaxesPageApi(
       }),
     patch: <T = unknown>(path: string, body?: unknown) =>
       request<T>(path, {
-        method: "PATCH",
+        method: "PATCH", // i18n-literal-ok HTTP method
         body: body !== undefined ? JSON.stringify(body) : undefined,
       }),
-    delete: <T = unknown>(path: string) => request<T>(path, { method: "DELETE" }),
+    delete: <T = unknown>(path: string) => request<T>(path, { method: "DELETE" }), // i18n-literal-ok HTTP method
   }
 
   return api
@@ -373,7 +373,7 @@ function parsePolicyConditionExpression(
       key: nextTaxPolicyConditionKey("accommodation-countries"),
       fact: "accommodationCountries",
       operator: "contains",
-      value: typeof record.contains === "string" ? record.contains : "RO",
+      value: typeof record.contains === "string" ? record.contains : "RO", // i18n-literal-ok ISO country default
     }
   }
   return null

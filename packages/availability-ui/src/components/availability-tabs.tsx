@@ -104,7 +104,7 @@ export type AvailabilityBulkUpdateFn = (args: {
   payload: Record<string, unknown>
   successVerb: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok type annotation
 
 export type AvailabilityBulkDeleteFn = (args: {
   ids: string[]
@@ -113,7 +113,7 @@ export type AvailabilityBulkDeleteFn = (args: {
   nounSingular: string
   nounPlural: string
   clearSelection: () => void
-}) => Promise<void>
+}) => Promise<void> // i18n-literal-ok type annotation
 
 export function AvailabilitySlotsTab(props: {
   messages: AvailabilityTabMessages

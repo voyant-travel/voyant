@@ -27,6 +27,14 @@ export type NotificationsUiMessages = {
       maxSendsInStage: string
       respectQuietHours: string
     }
+    descriptions: {
+      window: string
+      cadence: string
+      emptyIntervals: string
+      stopConditions: string
+      maxSendsInStage: string
+      respectQuietHours: string
+    }
     placeholders: {
       name: string
     }
@@ -86,6 +94,9 @@ export type NotificationsUiMessages = {
     }
     placeholders: {
       template: string
+    }
+    descriptions: {
+      automaticProvider: string
     }
   }
   settings: {

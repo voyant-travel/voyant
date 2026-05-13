@@ -102,7 +102,11 @@ export function splitSharingGroups(travelers: AllocationManifestTraveler[], kind
   return split
 }
 
-export function groupSeatsByVehicle(seats: AllocationResource[], vehicles: AllocationResource[]) {
+export function groupSeatsByVehicle(
+  seats: AllocationResource[],
+  vehicles: AllocationResource[],
+  messages: AllocationUiMessages,
+) {
   const vehiclesById = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]))
   const grouped = new Map<
     string,
@@ -117,7 +121,7 @@ export function groupSeatsByVehicle(seats: AllocationResource[], vehicles: Alloc
       grouped
         .set(parentId, {
           id: parentId,
-          label: parent?.label ?? "Vehicle",
+          label: parent?.label ?? messages.vehicle,
           sortOrder: parent?.sortOrder ?? 0,
           seats: [],
         })
@@ -151,11 +155,11 @@ export function seatRows(seats: AllocationResource[]) {
     .sort((a, b) => Number(a.rowKey) - Number(b.rowKey) || a.rowKey.localeCompare(b.rowKey))
 }
 
-export function seatName(seat: AllocationResource) {
+export function seatName(seat: AllocationResource, messages: AllocationUiMessages) {
   const row = flagNumber(seat.flags.row)
   const column = flagString(seat.flags.column)
   if (row && column) return `${row}${column}`
-  return seat.label ?? "Seat"
+  return seat.label ?? messages.seat
 }
 
 export function parentKindFor(kind: string) {

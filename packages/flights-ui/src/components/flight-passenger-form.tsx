@@ -20,6 +20,7 @@ import {
 } from "@voyantjs/ui/components/select"
 import { CircleAlert, IdCard } from "lucide-react"
 import { type ReactNode, useEffect, useMemo } from "react"
+import { flightsUiEn } from "../i18n/en.js"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 /** Subset of FlightPassenger that a picker can pre-fill into a card. */
@@ -86,7 +87,7 @@ export function FlightPassengerForm({
   documentsRequired,
   renderPicker,
 }: FlightPassengerFormProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   // Derive the canonical pax slots from `counts`. Passenger ids are stable
   // by position so re-ordering is safe.
   const slots = useMemo(() => buildSlots(counts), [counts])
@@ -112,10 +113,7 @@ export function FlightPassengerForm({
       {documentsRequired && (
         <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-amber-700 text-sm">
           <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
-            This route looks international — adding travel documents now speeds up online check-in
-            and avoids airport-counter fees. You can still skip and add them later.
-          </span>
+          <span>{messages.flightPassengerForm.documentsRequiredNotice}</span>
         </div>
       )}
       {slots.map((slot, i) => {
@@ -126,7 +124,8 @@ export function FlightPassengerForm({
         return (
           <PassengerCard
             key={slot.passengerId}
-            label={`${labelFor(slot.type)} ${idx}`}
+            label={`${labelFor(slot.type, messages)} ${idx}`}
+            messages={messages}
             value={pax}
             onChange={(patch) => set(slot.passengerId, patch)}
             picker={renderPicker?.(slot, (prefill) =>
@@ -152,11 +151,13 @@ function PassengerCard({
   value,
   onChange,
   picker,
+  messages,
 }: {
   label: string
   value: FlightPassenger
   onChange: (patch: Partial<FlightPassenger>) => void
   picker?: ReactNode
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   const doc = value.documents?.[0] ?? null
   const setDoc = (next: TravelDocument | null) => {
@@ -173,32 +174,32 @@ function PassengerCard({
         {picker}
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <Field label="First name" required>
+        <Field label={messages.flightPassengerForm.fields.firstName} required>
           <Input
             value={value.firstName}
             onChange={(e) => onChange({ firstName: e.target.value })}
-            placeholder="As on passport"
+            placeholder={messages.flightPassengerForm.placeholders.asOnPassport}
           />
         </Field>
-        <Field label="Middle name">
+        <Field label={messages.flightPassengerForm.fields.middleName}>
           <Input
             value={value.middleName ?? ""}
             onChange={(e) => onChange({ middleName: e.target.value })}
-            placeholder="Optional"
+            placeholder={messages.flightPassengerForm.placeholders.optional}
           />
         </Field>
-        <Field label="Last name" required>
+        <Field label={messages.flightPassengerForm.fields.lastName} required>
           <Input
             value={value.lastName}
             onChange={(e) => onChange({ lastName: e.target.value })}
-            placeholder="As on passport"
+            placeholder={messages.flightPassengerForm.placeholders.asOnPassport}
           />
         </Field>
-        <Field label="Date of birth" required>
+        <Field label={messages.flightPassengerForm.fields.dateOfBirth} required>
           <DatePicker
             value={value.dateOfBirth || null}
             onChange={(v) => onChange({ dateOfBirth: v ?? "" })}
-            placeholder="Select date"
+            placeholder={messages.flightPassengerForm.placeholders.selectDate}
             className="w-full"
             captionLayout="dropdown"
             startMonth={DOB_START_MONTH}
@@ -206,7 +207,7 @@ function PassengerCard({
             disabled={{ after: DOB_END_MONTH }}
           />
         </Field>
-        <Field label="Gender">
+        <Field label={messages.flightPassengerForm.fields.gender}>
           <Select
             value={value.gender ?? ""}
             onValueChange={(v: string | null) => {
@@ -214,12 +215,12 @@ function PassengerCard({
             }}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder={messages.flightPassengerForm.placeholders.select} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="M">Male</SelectItem>
-              <SelectItem value="F">Female</SelectItem>
-              <SelectItem value="X">Unspecified / X</SelectItem>
+              <SelectItem value="M">{messages.common.genderLabels.M}</SelectItem>
+              <SelectItem value="F">{messages.common.genderLabels.F}</SelectItem>
+              <SelectItem value="X">{messages.common.genderLabels.X}</SelectItem>
             </SelectContent>
           </Select>
         </Field>
@@ -229,7 +230,7 @@ function PassengerCard({
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="flex items-center gap-1.5 font-medium text-sm">
             <IdCard className="h-3.5 w-3.5 text-muted-foreground" />
-            Travel document
+            {messages.flightPassengerForm.fields.travelDocument}
           </span>
           <div className="flex items-center gap-2 text-muted-foreground text-xs">
             <Checkbox
@@ -238,18 +239,18 @@ function PassengerCard({
               onCheckedChange={(v) => setDoc(v ? emptyDoc() : null)}
             />
             <label htmlFor={`pax-${value.passengerId}-doc-toggle`} className="cursor-pointer">
-              Add now
+              {messages.flightPassengerForm.addNow}
             </label>
           </div>
         </div>
         {!doc && (
           <p className="text-muted-foreground text-xs">
-            Skip to add at check-in. Required up-front for most international travel.
+            {messages.flightPassengerForm.skipDocuments}
           </p>
         )}
         {doc && (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <Field label="Document type" required>
+            <Field label={messages.flightPassengerForm.fields.documentType} required>
               <Select
                 value={doc.type}
                 onValueChange={(v: string | null) => {
@@ -261,37 +262,41 @@ function PassengerCard({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="passport">Passport</SelectItem>
-                  <SelectItem value="national_id">National ID</SelectItem>
-                  <SelectItem value="visa">Visa</SelectItem>
+                  <SelectItem value="passport">
+                    {messages.common.documentTypeLabels.passport}
+                  </SelectItem>
+                  <SelectItem value="national_id">
+                    {messages.common.documentTypeLabels.national_id}
+                  </SelectItem>
+                  <SelectItem value="visa">{messages.common.documentTypeLabels.visa}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Document number" required>
+            <Field label={messages.flightPassengerForm.fields.documentNumber} required>
               <Input
                 value={doc.number}
                 onChange={(e) => updateDoc({ number: e.target.value })}
-                placeholder="As printed on document"
+                placeholder={messages.flightPassengerForm.placeholders.asPrintedOnDocument}
                 autoCapitalize="characters"
               />
             </Field>
-            <Field label="Country of issue" required>
+            <Field label={messages.flightPassengerForm.fields.countryOfIssue} required>
               <CountryCombobox
                 value={doc.countryOfIssue || null}
                 onChange={(code) => updateDoc({ countryOfIssue: code ?? "" })}
               />
             </Field>
-            <Field label="Country of nationality">
+            <Field label={messages.flightPassengerForm.fields.countryOfNationality}>
               <CountryCombobox
                 value={doc.countryOfNationality ?? null}
                 onChange={(code) => updateDoc({ countryOfNationality: code ?? undefined })}
               />
             </Field>
-            <Field label="Expiry date" required>
+            <Field label={messages.flightPassengerForm.fields.expiryDate} required>
               <DatePicker
                 value={doc.expiryDate ?? null}
                 onChange={(v) => updateDoc({ expiryDate: v ?? undefined })}
-                placeholder="Select date"
+                placeholder={messages.flightPassengerForm.placeholders.selectDate}
                 className="w-full"
                 captionLayout="dropdown"
                 startMonth={EXPIRY_START_MONTH}
@@ -367,8 +372,11 @@ function blankPassenger(passengerId: string, type: PassengerType): FlightPasseng
   }
 }
 
-function labelFor(type: PassengerType): string {
-  return type[0]?.toUpperCase() + type.slice(1)
+function labelFor(
+  type: PassengerType,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
+  return messages.common.passengerTypeLabels[type]
 }
 
 function sameTypeIndex(slots: PassengerSlot[], slot: PassengerSlot, idx: number): number {
@@ -386,17 +394,19 @@ function sameTypeIndex(slots: PassengerSlot[], slot: PassengerSlot, idx: number)
  * the operator opted to add one its required fields must be filled.
  */
 export function validatePassengers(value: FlightPassenger[]): Record<string, string> {
+  const messages = flightsUiEn.flightPassengerForm.validation
   const errors: Record<string, string> = {}
   for (const p of value) {
-    if (!p.firstName.trim()) errors[p.passengerId] = "First name required"
-    else if (!p.lastName.trim()) errors[p.passengerId] = "Last name required"
-    else if (!p.dateOfBirth) errors[p.passengerId] = "Date of birth required"
+    if (!p.firstName.trim()) errors[p.passengerId] = messages.firstNameRequired
+    else if (!p.lastName.trim()) errors[p.passengerId] = messages.lastNameRequired
+    else if (!p.dateOfBirth) errors[p.passengerId] = messages.dateOfBirthRequired
     else {
       const doc = p.documents?.[0]
       if (doc) {
-        if (!doc.number.trim()) errors[p.passengerId] = "Document number required"
-        else if (!doc.countryOfIssue.trim()) errors[p.passengerId] = "Document country required"
-        else if (!doc.expiryDate) errors[p.passengerId] = "Document expiry required"
+        if (!doc.number.trim()) errors[p.passengerId] = messages.documentNumberRequired
+        else if (!doc.countryOfIssue.trim())
+          errors[p.passengerId] = messages.documentCountryRequired
+        else if (!doc.expiryDate) errors[p.passengerId] = messages.documentExpiryRequired
       }
     }
   }

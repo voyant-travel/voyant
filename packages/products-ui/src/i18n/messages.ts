@@ -216,6 +216,10 @@ export type ProductsUiMessages = {
       description: string
       sortOrder: string
       active: string
+      customerPaymentPolicy: string
+    }
+    descriptions: {
+      customerPaymentPolicy: string
     }
     placeholders: {
       name: string

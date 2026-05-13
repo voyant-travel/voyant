@@ -8,6 +8,7 @@ import type {
   FlightPassenger,
   PassengerCounts,
 } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { Label } from "@voyantjs/ui/components/label"
 import { cn } from "@voyantjs/ui/lib/utils"
@@ -59,11 +60,11 @@ export function FlightBaggageStep({
   onSameForBothDirectionsChange,
   loading,
 }: FlightBaggageStepProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const isRoundTrip = !!returnOffer
   const paxRows = useMemo(
-    () => buildPassengerRows(passengers, passengerCounts),
-    [passengers, passengerCounts],
+    () => buildPassengerRows(passengers, passengerCounts, messages),
+    [passengers, passengerCounts, messages],
   )
 
   if (loading) {
@@ -79,7 +80,7 @@ export function FlightBaggageStep({
   if (!outboundCatalog) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
-        Bags couldn't be loaded for this offer.
+        {messages.flightBaggageStep.unavailable}
       </div>
     )
   }
@@ -106,11 +107,8 @@ export function FlightBaggageStep({
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-base">Add checked baggage</h2>
-          <p className="text-muted-foreground text-sm">
-            Carry-on under the seat is included. Pick a checked bag tier per passenger or skip this
-            step.
-          </p>
+          <h2 className="font-semibold text-base">{messages.flightBaggageStep.title}</h2>
+          <p className="text-muted-foreground text-sm">{messages.flightBaggageStep.description}</p>
         </div>
         {isRoundTrip && (
           <div className="flex shrink-0 items-center gap-2 text-sm">
@@ -120,30 +118,32 @@ export function FlightBaggageStep({
               onCheckedChange={(v) => onSameForBothDirectionsChange(!!v)}
             />
             <label htmlFor="baggage-same-for-both" className="cursor-pointer">
-              Same for both directions
+              {messages.flightBaggageStep.sameForBothDirections}
             </label>
           </div>
         )}
       </div>
 
       <BaggageLegSection
-        legLabel="Outbound"
+        legLabel={messages.common.legLabels.outbound}
         catalog={outboundCatalog}
         offer={outboundOffer}
         passengers={paxRows}
         sliceIndex={0}
         value={value}
+        messages={messages}
         onPick={setPick}
       />
 
       {isRoundTrip && returnCatalog && !sameForBothDirections && (
         <BaggageLegSection
-          legLabel="Return"
+          legLabel={messages.common.legLabels.return}
           catalog={returnCatalog}
           offer={returnOffer ?? outboundOffer}
           passengers={paxRows}
           sliceIndex={1}
           value={value}
+          messages={messages}
           onPick={setPick}
         />
       )}
@@ -166,6 +166,7 @@ function BaggageLegSection({
   sliceIndex,
   value,
   onPick,
+  messages,
 }: {
   legLabel: string
   catalog: AncillaryCatalog
@@ -174,6 +175,7 @@ function BaggageLegSection({
   sliceIndex: number
   value: BaggagePicks
   onPick: (next: BaggagePick | null, removeMatch: BaggagePick) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   const itin = offer.itineraries[0]
   const first = itin?.segments[0]
@@ -184,7 +186,7 @@ function BaggageLegSection({
       <header className="mb-4 flex items-baseline justify-between gap-2">
         <h3 className="font-medium text-sm">
           <Luggage className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" />
-          {legLabel} bags
+          {formatMessage(messages.flightBaggageStep.bags, { leg: legLabel })}
         </h3>
         {first && last && (
           <span className="text-muted-foreground text-xs">
@@ -204,6 +206,7 @@ function BaggageLegSection({
               pax={pax}
               options={catalog.baggage}
               selectedOptionId={pick?.optionId ?? null}
+              messages={messages}
               onSelect={(optionId) =>
                 onPick(
                   optionId
@@ -225,18 +228,22 @@ function PaxBaggageRow({
   options,
   selectedOptionId,
   onSelect,
+  messages,
 }: {
   pax: PaxRow
   options: AncillaryBaggageOption[]
   selectedOptionId: string | null
   onSelect: (optionId: string | null) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <Label className="font-medium text-sm">{pax.label}</Label>
         {selectedOptionId == null && (
-          <span className="text-[11px] text-muted-foreground">No checked bag</span>
+          <span className="text-[11px] text-muted-foreground">
+            {messages.flightBaggageStep.noCheckedBag}
+          </span>
         )}
       </div>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -257,7 +264,7 @@ function PaxBaggageRow({
             >
               {opt.recommended && (
                 <span className="-translate-y-1/2 absolute top-0 left-1/2 -translate-x-1/2 rounded-full bg-primary px-2 py-0.5 font-medium text-[9px] text-primary-foreground uppercase tracking-wider">
-                  Recommended
+                  {messages.common.recommended}
                 </span>
               )}
               {isSelected && (
@@ -269,7 +276,7 @@ function PaxBaggageRow({
               </span>
               <span className="font-mono text-[11px] text-muted-foreground">
                 {opt.price.amount === "0.00"
-                  ? "Included"
+                  ? messages.common.included
                   : `+${formatMoney(opt.price.amount, opt.price.currency)}`}
               </span>
             </button>
@@ -282,33 +289,48 @@ function PaxBaggageRow({
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function buildPassengerRows(passengers: FlightPassenger[], counts: PassengerCounts): PaxRow[] {
+function buildPassengerRows(
+  passengers: FlightPassenger[],
+  counts: PassengerCounts,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): PaxRow[] {
   if (passengers.length > 0) {
     return passengers.map((p) => ({
       passengerId: p.passengerId,
-      label: nameOrFallback(p),
+      label: nameOrFallback(p, messages),
     }))
   }
   // Synthesize from counts when passengers haven't been filled yet.
   const out: PaxRow[] = []
   for (let i = 1; i <= counts.adults; i++) {
-    out.push({ passengerId: `pax_adult_${i}`, label: `Adult ${i}` })
+    out.push({
+      passengerId: `pax_adult_${i}`,
+      label: `${messages.common.passengerTypeLabels.adult} ${i}`,
+    })
   }
   for (let i = 1; i <= (counts.children ?? 0); i++) {
-    out.push({ passengerId: `pax_child_${i}`, label: `Child ${i}` })
+    out.push({
+      passengerId: `pax_child_${i}`,
+      label: `${messages.common.passengerTypeLabels.child} ${i}`,
+    })
   }
   for (let i = 1; i <= (counts.infants ?? 0); i++) {
-    out.push({ passengerId: `pax_infant_${i}`, label: `Infant ${i}` })
+    out.push({
+      passengerId: `pax_infant_${i}`,
+      label: `${messages.common.passengerTypeLabels.infant} ${i}`,
+    })
   }
   return out
 }
 
-function nameOrFallback(p: FlightPassenger): string {
+function nameOrFallback(
+  p: FlightPassenger,
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+): string {
   const full = `${p.firstName} ${p.lastName}`.trim()
   if (full) return full
   const idx = p.passengerId.match(/_(\d+)$/)?.[1] ?? "1"
-  const cap = p.type[0]?.toUpperCase() + p.type.slice(1)
-  return `${cap} ${idx}`
+  return `${messages.common.passengerTypeLabels[p.type]} ${idx}`
 }
 
 function formatMoney(amount: string, currency: string): string {

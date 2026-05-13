@@ -53,10 +53,23 @@ export function FlightPaymentStep({
   onSelectSaved,
   capabilities,
 }: FlightPaymentStepProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault().flightPaymentStep
+  const extraAgencyCredit = useMemo<PaymentStepExtraOption>(
+    () => ({
+      id: "ticket_on_credit",
+      label: messages.agencyCreditLabel,
+      description: messages.agencyCreditDescription,
+      icon: <Landmark className="h-4 w-4 text-muted-foreground" />,
+    }),
+    [messages],
+  )
+  const extraOptions = useMemo<ReadonlyArray<PaymentStepExtraOption>>(
+    () => [extraAgencyCredit],
+    [extraAgencyCredit],
+  )
   const choice = useMemo<PaymentChoice | null>(
-    () => intentToChoice(value, savedMethods, selectedSavedId),
-    [value, savedMethods, selectedSavedId],
+    () => intentToChoice(value, savedMethods, selectedSavedId, extraAgencyCredit.id),
+    [value, savedMethods, selectedSavedId, extraAgencyCredit.id],
   )
 
   return (
@@ -91,7 +104,7 @@ export function FlightPaymentStep({
           })
           return
         }
-        if (next.type === "extra" && next.optionId === EXTRA_AGENCY_CREDIT.id) {
+        if (next.type === "extra" && next.optionId === extraAgencyCredit.id) {
           onChange({ type: "ticket_on_credit" })
           return
         }
@@ -102,23 +115,10 @@ export function FlightPaymentStep({
       capabilities={capabilities ?? {}}
       savedMethods={savedMethods}
       loadingSavedMethods={loadingSavedMethods}
-      extraOptions={FLIGHT_EXTRA_OPTIONS}
+      extraOptions={extraOptions}
     />
   )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Flight-specific extras
-// ─────────────────────────────────────────────────────────────────────────────
-
-const EXTRA_AGENCY_CREDIT: PaymentStepExtraOption = {
-  id: "ticket_on_credit",
-  label: "Issue ticket on agency credit",
-  description: "Bill against the agency's IATA / consolidator credit line.",
-  icon: <Landmark className="h-4 w-4 text-muted-foreground" />,
-}
-
-const FLIGHT_EXTRA_OPTIONS: ReadonlyArray<PaymentStepExtraOption> = [EXTRA_AGENCY_CREDIT]
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PaymentIntent ⇄ PaymentChoice translation
@@ -128,9 +128,10 @@ function intentToChoice(
   intent: PaymentIntent,
   savedMethods: SavedPaymentAccount[],
   selectedSavedId: string | null,
+  agencyCreditOptionId: string,
 ): PaymentChoice | null {
   if (intent.type === "ticket_on_credit") {
-    return { type: "extra", optionId: EXTRA_AGENCY_CREDIT.id }
+    return { type: "extra", optionId: agencyCreditOptionId }
   }
   if (intent.type === "card") {
     if (selectedSavedId) {

@@ -1,10 +1,11 @@
 "use client"
 
 import type { FlightOffer, Itinerary } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Plane } from "lucide-react"
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"
 
 export interface FlightOfferRowProps {
@@ -34,12 +35,13 @@ export function FlightOfferRow({
   offer,
   onClick,
   onSelect,
-  selectLabel = "Select",
+  selectLabel,
   carrierName,
   selected,
   className,
 }: FlightOfferRowProps) {
-  useFlightsUiMessagesOrDefault()
+  const i18n = useFlightsUiI18nOrDefault()
+  const messages = i18n.messages
   const interactive = !!onClick
   const Container: "button" | "div" = interactive ? "button" : "div"
   return (
@@ -56,14 +58,14 @@ export function FlightOfferRow({
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {offer.itineraries.map((itin, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return)
-          <ItineraryRow key={i} itinerary={itin} carrierName={carrierName} />
+          <ItineraryRow key={i} itinerary={itin} carrierName={carrierName} messages={messages} />
         ))}
       </div>
       <div className="flex shrink-0 flex-col items-end justify-center gap-2 border-l pl-4">
         <div className="font-semibold text-2xl tabular-nums">
-          {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency)}
+          {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency, i18n)}
         </div>
-        <PriceFootnote offer={offer} />
+        <PriceFootnote offer={offer} i18n={i18n} />
         {onSelect && (
           <button
             type="button"
@@ -73,7 +75,7 @@ export function FlightOfferRow({
             }}
             className="mt-1 inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 font-medium text-primary-foreground text-xs hover:bg-primary/90"
           >
-            {selectLabel}
+            {selectLabel ?? messages.flightOfferRow.select}
           </button>
         )}
       </div>
@@ -81,19 +83,30 @@ export function FlightOfferRow({
   )
 }
 
-function PriceFootnote({ offer }: { offer: FlightOffer }) {
+function PriceFootnote({
+  offer,
+  i18n,
+}: {
+  offer: FlightOffer
+  i18n: ReturnType<typeof useFlightsUiI18nOrDefault>
+}) {
+  const messages = i18n.messages
   const totalPax = offer.fareBreakdowns.reduce((n, b) => n + b.passengerCount, 0)
   const adult = offer.fareBreakdowns.find((b) => b.passengerType === "adult")
   if (totalPax <= 1) {
-    return <div className="text-muted-foreground text-xs">total</div>
+    return <div className="text-muted-foreground text-xs">{messages.common.total}</div>
   }
   return (
     <div className="flex flex-col items-end gap-0.5 text-muted-foreground text-xs">
-      <span>total · {totalPax} pax</span>
+      <span>
+        {messages.common.total} · {totalPax} {messages.common.pax}
+      </span>
       {adult && (
         <span>
-          {formatMoney(adult.total.amount, adult.total.currency)}
-          <span className="ml-0.5 text-muted-foreground/70">/adult</span>
+          {formatMoney(adult.total.amount, adult.total.currency, i18n)}
+          <span className="ml-0.5 text-muted-foreground/70">
+            {messages.common.adultPerPassenger}
+          </span>
         </span>
       )}
     </div>
@@ -103,9 +116,11 @@ function PriceFootnote({ offer }: { offer: FlightOffer }) {
 function ItineraryRow({
   itinerary,
   carrierName,
+  messages,
 }: {
   itinerary: Itinerary
   carrierName?: (iataCode: string) => string | undefined
+  messages: ReturnType<typeof useFlightsUiI18nOrDefault>["messages"]
 }) {
   const segs = itinerary.segments
   const first = segs[0]
@@ -139,24 +154,29 @@ function ItineraryRow({
           </div>
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
             {stops === 0 ? (
-              <span className="font-medium text-emerald-600">Nonstop</span>
+              <span className="font-medium text-emerald-600">{messages.common.stops.nonstop}</span>
             ) : (
               <span>
-                {stops} stop{stops > 1 ? "s" : ""} via{" "}
-                {segs
-                  .slice(0, -1)
-                  .map((s) => s.arrival.iataCode)
-                  .join(", ")}
+                {formatMessage(messages.common.stops.via, {
+                  stops: formatMessage(
+                    stops === 1 ? messages.common.stops.oneStop : messages.common.stops.manyStops,
+                    { count: stops },
+                  ),
+                  airports: segs
+                    .slice(0, -1)
+                    .map((s) => s.arrival.iataCode)
+                    .join(", "),
+                })}
               </span>
             )}
             {hasInterline && (
               <Badge variant="secondary" className="px-1.5 py-0 text-[9px]">
-                Interline
+                {messages.flightOfferRow.interline}
               </Badge>
             )}
             {hasCodeshare && (
               <Badge variant="secondary" className="px-1.5 py-0 text-[9px]">
-                Codeshare
+                {messages.flightOfferRow.codeshare}
               </Badge>
             )}
           </div>
@@ -164,7 +184,7 @@ function ItineraryRow({
         <Endpoint at={last.arrival.at} iata={last.arrival.iataCode} align="end" />
       </div>
       <Badge variant="outline" className="shrink-0 capitalize">
-        {first.cabin.replace("_", " ")}
+        {messages.common.cabinLabels[first.cabin]}
       </Badge>
     </div>
   )
@@ -192,14 +212,14 @@ function Endpoint({
   )
 }
 
-function formatMoney(amount: string, currency: string): string {
+function formatMoney(
+  amount: string,
+  currency: string,
+  i18n: ReturnType<typeof useFlightsUiI18nOrDefault>,
+): string {
   const n = Number(amount)
   if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n)
+  return i18n.formatCurrency(n, currency, { maximumFractionDigits: 0 })
 }
 
 function formatTime(iso: string): string {

@@ -12,7 +12,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault } from "../i18n/index.js"
 import {
   FlightContactForm,
   type FlightContactValue,
@@ -28,11 +28,11 @@ import { FlightPaymentSelector } from "./flight-payment-selector.js"
 
 type StepId = "review" | "passengers" | "contact" | "confirm"
 
-const STEPS: ReadonlyArray<{ id: StepId; label: string }> = [
-  { id: "review", label: "Review offer" },
-  { id: "passengers", label: "Passengers" },
-  { id: "contact", label: "Contact & payment" },
-  { id: "confirm", label: "Confirm" },
+const STEPS: ReadonlyArray<{ id: StepId }> = [
+  { id: "review" },
+  { id: "passengers" },
+  { id: "contact" },
+  { id: "confirm" },
 ]
 
 export interface FlightBookingJourneyProps {
@@ -73,7 +73,8 @@ export function FlightBookingJourney({
   airportName,
   renderPassengerPicker,
 }: FlightBookingJourneyProps) {
-  useFlightsUiMessagesOrDefault()
+  const i18n = useFlightsUiI18nOrDefault()
+  const messages = i18n.messages.flightBookingJourney
   const [stepIdx, setStepIdx] = useState(0)
   const [paxList, setPaxList] = useState<FlightPassenger[]>([])
   const [contact, setContact] = useState<FlightContactValue>({})
@@ -128,7 +129,7 @@ export function FlightBookingJourney({
 
   return (
     <div className="flex flex-col gap-6">
-      <Stepper currentIdx={stepIdx} />
+      <Stepper currentIdx={stepIdx} messages={messages.steps} />
 
       {error && (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
@@ -139,7 +140,7 @@ export function FlightBookingJourney({
       <div className="flex flex-col gap-4">
         {step.id === "review" && (
           <div className="rounded-xl border bg-card p-5 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold">Review your selected flight</h2>
+            <h2 className="mb-4 text-base font-semibold">{messages.reviewTitle}</h2>
             <FlightOfferDetail offer={offer} carrierName={carrierName} airportName={airportName} />
           </div>
         )}
@@ -161,7 +162,13 @@ export function FlightBookingJourney({
         )}
 
         {step.id === "confirm" && (
-          <ConfirmSummary offer={offer} passengers={paxList} contact={contact} payment={payment} />
+          <ConfirmSummary
+            offer={offer}
+            passengers={paxList}
+            contact={contact}
+            payment={payment}
+            i18n={i18n}
+          />
         )}
       </div>
 
@@ -173,15 +180,15 @@ export function FlightBookingJourney({
           disabled={submitting}
         >
           <ChevronLeft className="mr-1 h-4 w-4" />
-          {stepIdx === 0 ? "Back to results" : "Back"}
+          {stepIdx === 0 ? messages.backToResults : messages.back}
         </Button>
         {step.id === "confirm" ? (
           <Button onClick={submit} disabled={submitting}>
-            {submitting ? "Booking…" : "Confirm booking"}
+            {submitting ? messages.booking : messages.confirmBooking}
           </Button>
         ) : (
           <Button onClick={goNext} disabled={!canContinue}>
-            Continue
+            {messages.continue}
             <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         )}
@@ -194,7 +201,15 @@ export function FlightBookingJourney({
 // Stepper indicator
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Stepper({ currentIdx }: { currentIdx: number }) {
+function Stepper({
+  currentIdx,
+  messages,
+}: {
+  currentIdx: number
+  messages: ReturnType<
+    typeof useFlightsUiI18nOrDefault
+  >["messages"]["flightBookingJourney"]["steps"]
+}) {
   return (
     <ol className="flex items-center gap-2">
       {STEPS.map((s, i) => {
@@ -218,7 +233,7 @@ function Stepper({ currentIdx }: { currentIdx: number }) {
                 isActive ? "font-medium text-foreground" : "text-muted-foreground",
               )}
             >
-              {s.label}
+              {messages[s.id]}
             </span>
             {i < STEPS.length - 1 && <div className="h-px flex-1 bg-border" />}
           </li>
@@ -237,37 +252,36 @@ function ConfirmSummary({
   passengers,
   contact,
   payment,
+  i18n,
 }: {
   offer: FlightOffer
   passengers: FlightPassenger[]
   contact: FlightContactValue
   payment: PaymentIntent
+  i18n: ReturnType<typeof useFlightsUiI18nOrDefault>
 }) {
+  const messages = i18n.messages.flightBookingJourney
   return (
     <div className="rounded-xl border bg-card p-5 shadow-sm">
-      <h2 className="mb-4 text-base font-semibold">Confirm booking</h2>
+      <h2 className="mb-4 text-base font-semibold">{messages.confirmBooking}</h2>
 
-      <Row label="Total">
+      <Row label={messages.rows.total}>
         <span className="font-semibold tabular-nums">
-          {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency)}
+          {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency, i18n)}
         </span>
       </Row>
-      <Row label="Passengers">{passengers.length}</Row>
-      <Row label="Contact">{contact.email ?? "—"}</Row>
-      <Row label="Payment">
+      <Row label={messages.rows.passengers}>{passengers.length}</Row>
+      <Row label={messages.rows.contact}>{contact.email ?? i18n.messages.common.noValue}</Row>
+      <Row label={messages.rows.payment}>
         <span className="capitalize">{payment.type.replace("_", " ")}</span>
       </Row>
       {offer.expiresAt && (
-        <Row label="Offer expires">
-          <time dateTime={offer.expiresAt}>{formatDateTime(offer.expiresAt)}</time>
+        <Row label={messages.rows.offerExpires}>
+          <time dateTime={offer.expiresAt}>{i18n.formatDateTime(offer.expiresAt)}</time>
         </Row>
       )}
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        Submitting will hold seats with the connector and (depending on the chosen payment intent)
-        either issue tickets immediately or open a ticketing window. Once confirmed, the booking
-        appears under the order id below.
-      </p>
+      <p className="mt-4 text-xs text-muted-foreground">{messages.confirmDescription}</p>
     </div>
   )
 }
@@ -281,23 +295,12 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
-function formatMoney(amount: string, currency: string): string {
+function formatMoney(
+  amount: string,
+  currency: string,
+  i18n: ReturnType<typeof useFlightsUiI18nOrDefault>,
+): string {
   const n = Number(amount)
   if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n)
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d)
+  return i18n.formatCurrency(n, currency, { maximumFractionDigits: 0 })
 }

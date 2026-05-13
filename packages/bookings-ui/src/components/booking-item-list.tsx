@@ -107,7 +107,11 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                               setExpandedItemId(isExpanded ? null : item.id)
                             }}
                             className="text-muted-foreground hover:text-foreground"
-                            aria-label={isExpanded ? "Collapse item" : "Expand item"}
+                            aria-label={
+                              isExpanded
+                                ? messages.bookingItemList.actions.collapseItem
+                                : messages.bookingItemList.actions.expandItem
+                            }
                           >
                             {isExpanded ? (
                               <ChevronDown className="h-3.5 w-3.5" />
@@ -150,7 +154,7 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                                 setDialogOpen(true)
                               }}
                               className="text-muted-foreground hover:text-foreground"
-                              aria-label="Edit item"
+                              aria-label={messages.bookingItemList.actions.editItem}
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
@@ -163,7 +167,7 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                                 }
                               }}
                               className="text-muted-foreground hover:text-destructive"
-                              aria-label="Delete item"
+                              aria-label={messages.bookingItemList.actions.deleteItem}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>

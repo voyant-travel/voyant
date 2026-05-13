@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/component
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Building2, ChevronDown, User, Users } from "lucide-react"
 import { type ReactNode, useState } from "react"
+import { flightsUiEn } from "../i18n/en.js"
 import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 /** Tab id — Privat (personal) vs Companie (business invoicing). */
@@ -92,7 +93,7 @@ export function FlightBillingStep({
   renderPersonPicker,
   renderOrgPicker,
 }: FlightBillingStepProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const apply = (prefill: Partial<BillingValue>) => onChange({ ...value, ...prefill })
   const set = (patch: Partial<BillingValue>) => onChange({ ...value, ...patch })
 
@@ -101,10 +102,8 @@ export function FlightBillingStep({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="font-semibold text-base">Billing</h2>
-        <p className="text-muted-foreground text-sm">
-          The receipt and tax documents will be issued in this name.
-        </p>
+        <h2 className="font-semibold text-base">{messages.flightBillingStep.title}</h2>
+        <p className="text-muted-foreground text-sm">{messages.flightBillingStep.description}</p>
       </div>
 
       <Tabs
@@ -114,11 +113,11 @@ export function FlightBillingStep({
         <TabsList>
           <TabsTrigger value="personal">
             <User className="mr-1.5 h-3.5 w-3.5" />
-            Personal
+            {messages.flightBillingStep.tabs.personal}
           </TabsTrigger>
           <TabsTrigger value="company">
             <Building2 className="mr-1.5 h-3.5 w-3.5" />
-            Company
+            {messages.flightBillingStep.tabs.company}
           </TabsTrigger>
         </TabsList>
 
@@ -128,6 +127,7 @@ export function FlightBillingStep({
               {hasPassengerOptions && (
                 <PassengerPickerTrigger
                   passengers={eligiblePassengers ?? []}
+                  messages={messages}
                   onPick={(p) =>
                     apply({
                       mode: "personal",
@@ -141,18 +141,18 @@ export function FlightBillingStep({
               {renderPersonPicker?.(apply)}
             </div>
           )}
-          <NameRow value={value} onChange={set} />
-          <ContactRow value={value} onChange={set} />
-          <AddressBlock value={value} onChange={set} />
-          <SaveDefaultRow value={value} onChange={set} />
+          <NameRow value={value} onChange={set} messages={messages} />
+          <ContactRow value={value} onChange={set} messages={messages} />
+          <AddressBlock value={value} onChange={set} messages={messages} />
+          <SaveDefaultRow value={value} onChange={set} messages={messages} />
         </TabsContent>
 
         <TabsContent value="company" className="mt-5 flex flex-col gap-4">
           {renderOrgPicker && <div className="flex justify-end">{renderOrgPicker(apply)}</div>}
-          <CompanyRow value={value} onChange={set} />
-          <ContactRow value={value} onChange={set} workPhone />
-          <AddressBlock value={value} onChange={set} />
-          <SaveDefaultRow value={value} onChange={set} />
+          <CompanyRow value={value} onChange={set} messages={messages} />
+          <ContactRow value={value} onChange={set} workPhone messages={messages} />
+          <AddressBlock value={value} onChange={set} messages={messages} />
+          <SaveDefaultRow value={value} onChange={set} messages={messages} />
         </TabsContent>
       </Tabs>
     </div>
@@ -164,16 +164,18 @@ export function FlightBillingStep({
 function NameRow({
   value,
   onChange,
+  messages,
 }: {
   value: BillingValue
   onChange: (patch: Partial<BillingValue>) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <Field label="First name" required>
+      <Field label={messages.flightBillingStep.fields.firstName} required>
         <Input value={value.firstName} onChange={(e) => onChange({ firstName: e.target.value })} />
       </Field>
-      <Field label="Last name" required>
+      <Field label={messages.flightBillingStep.fields.lastName} required>
         <Input value={value.lastName} onChange={(e) => onChange({ lastName: e.target.value })} />
       </Field>
     </div>
@@ -183,23 +185,25 @@ function NameRow({
 function CompanyRow({
   value,
   onChange,
+  messages,
 }: {
   value: BillingValue
   onChange: (patch: Partial<BillingValue>) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <Field label="Company name" required>
+      <Field label={messages.flightBillingStep.fields.companyName} required>
         <Input
           value={value.companyName ?? ""}
           onChange={(e) => onChange({ companyName: e.target.value })}
         />
       </Field>
-      <Field label="Tax id / VAT number" required>
+      <Field label={messages.flightBillingStep.fields.vatNumber} required>
         <Input
           value={value.vatNumber ?? ""}
           onChange={(e) => onChange({ vatNumber: e.target.value })}
-          placeholder="e.g. RO43917962"
+          placeholder={messages.flightBillingStep.placeholders.vatNumber}
         />
       </Field>
     </div>
@@ -210,21 +214,29 @@ function ContactRow({
   value,
   onChange,
   workPhone,
+  messages,
 }: {
   value: BillingValue
   onChange: (patch: Partial<BillingValue>) => void
   workPhone?: boolean
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <Field label="Email" required>
+      <Field label={messages.flightBillingStep.fields.email} required>
         <Input
           type="email"
           value={value.email}
           onChange={(e) => onChange({ email: e.target.value })}
         />
       </Field>
-      <Field label={workPhone ? "Work phone" : "Phone"}>
+      <Field
+        label={
+          workPhone
+            ? messages.flightBillingStep.fields.workPhone
+            : messages.flightBillingStep.fields.phone
+        }
+      >
         <PhoneInput
           value={(value.phone ?? "") as never}
           onChange={(v) => onChange({ phone: v ? String(v) : undefined })}
@@ -239,37 +251,39 @@ function ContactRow({
 function AddressBlock({
   value,
   onChange,
+  messages,
 }: {
   value: BillingValue
   onChange: (patch: Partial<BillingValue>) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <Field label="Street address" required>
+      <Field label={messages.flightBillingStep.fields.streetAddress} required>
         <Input
           value={value.line1}
           onChange={(e) => onChange({ line1: e.target.value })}
-          placeholder="Street + number"
+          placeholder={messages.flightBillingStep.placeholders.streetAddress}
         />
       </Field>
-      <Field label="Address line 2">
+      <Field label={messages.flightBillingStep.fields.addressLine2}>
         <Input
           value={value.line2 ?? ""}
           onChange={(e) => onChange({ line2: e.target.value })}
-          placeholder="Apartment, suite, etc."
+          placeholder={messages.flightBillingStep.placeholders.addressLine2}
         />
       </Field>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <Field label="City" required>
+        <Field label={messages.flightBillingStep.fields.city} required>
           <Input value={value.city} onChange={(e) => onChange({ city: e.target.value })} />
         </Field>
-        <Field label="Postal code">
+        <Field label={messages.flightBillingStep.fields.postalCode}>
           <Input
             value={value.postalCode ?? ""}
             onChange={(e) => onChange({ postalCode: e.target.value })}
           />
         </Field>
-        <Field label="Country" required>
+        <Field label={messages.flightBillingStep.fields.country} required>
           <CountryCombobox
             value={value.countryCode || null}
             onChange={(code) => onChange({ countryCode: code ?? "" })}
@@ -283,9 +297,11 @@ function AddressBlock({
 function SaveDefaultRow({
   value,
   onChange,
+  messages,
 }: {
   value: BillingValue
   onChange: (patch: Partial<BillingValue>) => void
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   const id = "billing-save-default"
   return (
@@ -296,7 +312,7 @@ function SaveDefaultRow({
         onCheckedChange={(v) => onChange({ saveAsDefault: !!v })}
       />
       <label htmlFor={id} className="cursor-pointer">
-        Save these details as the default for this contact
+        {messages.flightBillingStep.saveDefault}
       </label>
     </div>
   )
@@ -333,9 +349,11 @@ function Field({
  */
 function PassengerPickerTrigger({
   passengers,
+  messages,
   onPick,
 }: {
   passengers: BillingEligiblePassenger[]
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
   onPick: (passenger: BillingEligiblePassenger) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -345,14 +363,14 @@ function PassengerPickerTrigger({
         render={<Button type="button" variant="outline" size="sm" className="gap-2" />}
       >
         <Users className="h-3.5 w-3.5" />
-        Pick from passengers
+        {messages.flightBillingStep.pickFromPassengers}
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-0" align="end">
         <Command>
-          <CommandInput placeholder="Search passengers…" />
+          <CommandInput placeholder={messages.flightBillingStep.placeholders.searchPassengers} />
           <CommandList>
-            <CommandEmpty>No matching passengers.</CommandEmpty>
+            <CommandEmpty>{messages.flightBillingStep.noMatchingPassengers}</CommandEmpty>
             <CommandGroup>
               {passengers.map((p) => {
                 const fullName = [p.firstName, p.middleName, p.lastName]
@@ -367,7 +385,9 @@ function PassengerPickerTrigger({
                       setOpen(false)
                     }}
                   >
-                    <span className="truncate font-medium text-sm">{fullName || "—"}</span>
+                    <span className="truncate font-medium text-sm">
+                      {fullName || messages.common.noValue}
+                    </span>
                   </CommandItem>
                 )
               })}
@@ -396,17 +416,18 @@ export function emptyBillingValue(): BillingValue {
  * when valid. Drives the journey's Continue gate.
  */
 export function validateBilling(v: BillingValue): string | null {
-  if (!v.email.trim()) return "Email is required"
-  if (!/^\S+@\S+\.\S+$/.test(v.email.trim())) return "Email looks invalid"
-  if (!v.line1.trim()) return "Street address is required"
-  if (!v.city.trim()) return "City is required"
-  if (!v.countryCode.trim()) return "Country is required"
+  const messages = flightsUiEn.flightBillingStep.validation
+  if (!v.email.trim()) return messages.emailRequired
+  if (!/^\S+@\S+\.\S+$/.test(v.email.trim())) return messages.emailInvalid
+  if (!v.line1.trim()) return messages.streetAddressRequired
+  if (!v.city.trim()) return messages.cityRequired
+  if (!v.countryCode.trim()) return messages.countryRequired
   if (v.mode === "personal") {
-    if (!v.firstName.trim()) return "First name is required"
-    if (!v.lastName.trim()) return "Last name is required"
+    if (!v.firstName.trim()) return messages.firstNameRequired
+    if (!v.lastName.trim()) return messages.lastNameRequired
   } else {
-    if (!v.companyName?.trim()) return "Company name is required"
-    if (!v.vatNumber?.trim()) return "VAT / tax number is required"
+    if (!v.companyName?.trim()) return messages.companyNameRequired
+    if (!v.vatNumber?.trim()) return messages.vatNumberRequired
   }
   return null
 }

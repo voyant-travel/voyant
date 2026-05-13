@@ -11,6 +11,7 @@ import type {
   PaymentIntent,
   SeatMap,
 } from "@voyantjs/flights/contract/types"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
@@ -56,19 +57,18 @@ type StepId =
 
 interface StepDef {
   id: StepId
-  label: string
 }
 
 const ALL_STEPS: ReadonlyArray<StepDef> = [
-  { id: "review", label: "Review" },
-  { id: "fares", label: "Fare" },
-  { id: "passengers", label: "Passengers" },
-  { id: "bags", label: "Bags" },
-  { id: "seats", label: "Seats" },
-  { id: "services", label: "Services" },
-  { id: "billing", label: "Billing" },
-  { id: "payment", label: "Payment" },
-  { id: "confirm", label: "Confirm" },
+  { id: "review" },
+  { id: "fares" },
+  { id: "passengers" },
+  { id: "bags" },
+  { id: "seats" },
+  { id: "services" },
+  { id: "billing" },
+  { id: "payment" },
+  { id: "confirm" },
 ]
 
 /**
@@ -195,7 +195,7 @@ export function FlightBookingShell({
   renderBillingOrgPicker,
   onSaveBillingDefaults,
 }: FlightBookingShellProps) {
-  useFlightsUiMessagesOrDefault()
+  const messages = useFlightsUiMessagesOrDefault()
   const [stepId, setStepId] = useState<StepId>("review")
   const [paxList, setPaxList] = useState<FlightPassenger[]>([])
   const [billing, setBilling] = useState<BillingValue>(emptyBillingValue)
@@ -295,6 +295,7 @@ export function FlightBookingShell({
         outboundCatalog: ancillaries?.outboundCatalog ?? null,
         returnCatalog: ancillaries?.returnCatalog ?? null,
         seatMaps,
+        messages,
       }),
     [
       baggage,
@@ -307,6 +308,7 @@ export function FlightBookingShell({
       ancillaries?.outboundCatalog,
       ancillaries?.returnCatalog,
       seatMaps,
+      messages,
     ],
   )
 
@@ -411,7 +413,7 @@ export function FlightBookingShell({
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_360px] lg:items-start">
       <div className="flex min-w-0 flex-col gap-5">
-        <Stepper steps={steps} currentIdx={stepIdx} />
+        <Stepper steps={steps} currentIdx={stepIdx} messages={messages} />
 
         {error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-destructive text-sm">
@@ -474,7 +476,8 @@ export function FlightBookingShell({
               mode={seatsMode}
               onModeChange={setSeatsMode}
               getSeatMap={
-                seatMaps?.getSeatMap ?? (() => ({ seatMap: null, error: "Seat maps unavailable" }))
+                seatMaps?.getSeatMap ??
+                (() => ({ seatMap: null, error: messages.flightBookingShell.seatMapsUnavailable }))
               }
             />
           )}
@@ -547,15 +550,19 @@ export function FlightBookingShell({
             disabled={submitting}
           >
             <ChevronLeft className="mr-1 h-4 w-4" />
-            {stepIdx === 0 ? "Back to results" : "Back"}
+            {stepIdx === 0
+              ? messages.flightBookingShell.backToResults
+              : messages.flightBookingShell.back}
           </Button>
           {step.id === "confirm" ? (
             <Button onClick={submit} disabled={submitting}>
-              {submitting ? "Booking…" : "Confirm booking"}
+              {submitting
+                ? messages.flightBookingShell.booking
+                : messages.flightBookingShell.confirmBooking}
             </Button>
           ) : (
             <Button onClick={goNext} disabled={!canContinue}>
-              Continue
+              {messages.flightBookingShell.continue}
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           )}
@@ -592,22 +599,25 @@ function ReviewStep({
   carrierName?: (iataCode: string) => string | undefined
   airportName?: (iataCode: string) => string | undefined
 }) {
+  const messages = useFlightsUiMessagesOrDefault()
   const isRoundTrip = !!selection.return
   return (
     <div className="flex flex-col gap-5 rounded-xl border bg-card p-5 shadow-sm">
       <h2 className="font-semibold text-base">
-        {isRoundTrip ? "Review your trip" : "Review your flight"}
+        {isRoundTrip
+          ? messages.flightBookingShell.reviewTrip
+          : messages.flightBookingShell.reviewFlight}
       </h2>
       <FlightItinerary
         itinerary={selection.outbound.itineraries[0] ?? { segments: [] }}
-        label={isRoundTrip ? "Outbound" : undefined}
+        label={isRoundTrip ? messages.common.legLabels.outbound : undefined}
         carrierName={carrierName}
         airportName={airportName}
       />
       {selection.return && (
         <FlightItinerary
           itinerary={selection.return.itineraries[0] ?? { segments: [] }}
-          label="Return"
+          label={messages.common.legLabels.return}
           carrierName={carrierName}
           airportName={airportName}
         />
@@ -631,15 +641,16 @@ function ConfirmStep({
   carrierName?: (iataCode: string) => string | undefined
   airportName?: (iataCode: string) => string | undefined
 }) {
+  const messages = useFlightsUiMessagesOrDefault()
   const docsCount = passengers.filter((p) => (p.documents?.length ?? 0) > 0).length
   const isRoundTrip = !!selection.return
   return (
     <div className="flex flex-col gap-5 rounded-xl border bg-card p-5 shadow-sm">
-      <h2 className="font-semibold text-base">Confirm booking</h2>
+      <h2 className="font-semibold text-base">{messages.flightBookingShell.confirmTitle}</h2>
       <div className="flex flex-col gap-4">
         <FlightItinerary
           itinerary={selection.outbound.itineraries[0] ?? { segments: [] }}
-          label={isRoundTrip ? "Outbound" : undefined}
+          label={isRoundTrip ? messages.common.legLabels.outbound : undefined}
           compact
           carrierName={carrierName}
           airportName={airportName}
@@ -647,34 +658,37 @@ function ConfirmStep({
         {selection.return && (
           <FlightItinerary
             itinerary={selection.return.itineraries[0] ?? { segments: [] }}
-            label="Return"
+            label={messages.common.legLabels.return}
             compact
             carrierName={carrierName}
             airportName={airportName}
           />
         )}
       </div>
-      <Row label="Passengers">{passengers.length}</Row>
-      <Row label="Documents">
+      <Row label={messages.flightBookingShell.rows.passengers}>{passengers.length}</Row>
+      <Row label={messages.flightBookingShell.rows.documents}>
         {docsCount === passengers.length && passengers.length > 0
-          ? `All ${docsCount} added`
+          ? formatMessage(messages.flightBookingShell.documentsAllAdded, { count: docsCount })
           : docsCount > 0
-            ? `${docsCount} of ${passengers.length} added`
-            : "Add at check-in"}
+            ? formatMessage(messages.flightBookingShell.documentsSomeAdded, {
+                count: docsCount,
+                total: passengers.length,
+              })
+            : messages.flightBookingShell.documentsAddAtCheckIn}
       </Row>
-      <Row label="Contact">{billing.email || "—"}</Row>
-      <Row label="Billed to">
+      <Row label={messages.flightBookingShell.rows.contact}>
+        {billing.email || messages.common.noValue}
+      </Row>
+      <Row label={messages.flightBookingShell.rows.billedTo}>
         {billing.mode === "company"
-          ? `${billing.companyName ?? "—"} · ${billing.vatNumber ?? ""}`
-          : `${billing.firstName} ${billing.lastName}`.trim() || "—"}
+          ? `${billing.companyName ?? messages.common.noValue} · ${billing.vatNumber ?? ""}`
+          : `${billing.firstName} ${billing.lastName}`.trim() || messages.common.noValue}
       </Row>
-      <Row label="Payment">
+      <Row label={messages.flightBookingShell.rows.payment}>
         <span className="capitalize">{payment.type.replace("_", " ")}</span>
       </Row>
       <p className="text-muted-foreground text-xs">
-        Submitting will hold seats with the connector and (depending on the chosen payment intent)
-        either issue tickets immediately or open a ticketing window. The booking will appear under
-        the order id once confirmed.
+        {messages.flightBookingShell.confirmDescription}
       </p>
     </div>
   )
@@ -693,7 +707,15 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 // Stepper
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Stepper({ steps, currentIdx }: { steps: ReadonlyArray<StepDef>; currentIdx: number }) {
+function Stepper({
+  steps,
+  currentIdx,
+  messages,
+}: {
+  steps: ReadonlyArray<StepDef>
+  currentIdx: number
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
+}) {
   return (
     <ol className="flex items-center gap-2 overflow-x-auto">
       {steps.map((s, i) => {
@@ -717,7 +739,7 @@ function Stepper({ steps, currentIdx }: { steps: ReadonlyArray<StepDef>; current
                 isActive ? "font-medium text-foreground" : "text-muted-foreground",
               )}
             >
-              {s.label}
+              {messages.flightBookingShell.steps[s.id]}
             </span>
             {i < steps.length - 1 && <div className="h-px flex-1 bg-border" />}
           </li>
@@ -742,6 +764,7 @@ function buildLedgerExtras({
   outboundCatalog,
   returnCatalog,
   seatMaps,
+  messages,
 }: {
   baggage: NonNullable<AncillarySelection["baggage"]>
   extras: NonNullable<AncillarySelection["extras"]>
@@ -753,6 +776,7 @@ function buildLedgerExtras({
   outboundCatalog: AncillaryCatalog | null
   returnCatalog: AncillaryCatalog | null
   seatMaps?: FlightBookingSeatMaps
+  messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }): { outboundExtras: LedgerLineItem[]; returnExtras: LedgerLineItem[] } {
   const lines = (
     sliceIndex: number,
@@ -788,11 +812,14 @@ function buildLedgerExtras({
         }
       }
       for (const [, v] of agg) {
-        const labelSuffix = v.count > 1 ? ` (${v.count} pax)` : ""
+        const labelSuffix = v.count > 1 ? ` (${v.count} ${messages.common.pax})` : ""
         out.push({
-          label: `${v.label} fare${labelSuffix}`,
+          label: formatMessage(messages.flightBookingShell.lineItems.fare, {
+            label: v.label,
+            suffix: labelSuffix,
+          }),
           amount: v.price > 0 ? { amount: v.price.toFixed(2), currency: v.currency } : undefined,
-          meta: v.price === 0 ? "Included" : undefined,
+          meta: v.price === 0 ? messages.common.included : undefined,
         })
       }
     }
@@ -826,7 +853,7 @@ function buildLedgerExtras({
         out.push({
           label: v.count > 1 ? `${v.count}× ${v.label}` : v.label,
           amount: v.price > 0 ? { amount: v.price.toFixed(2), currency: v.currency } : undefined,
-          meta: v.price === 0 ? "Included" : undefined,
+          meta: v.price === 0 ? messages.common.included : undefined,
         })
       }
 
@@ -880,9 +907,12 @@ function buildLedgerExtras({
           }
         }
         out.push({
-          label: `${seatPicks.length} seat${seatPicks.length > 1 ? "s" : ""} picked`,
+          label: formatMessage(messages.flightBookingShell.lineItems.seatsPicked, {
+            count: seatPicks.length,
+            plural: seatPicks.length > 1 ? "s" : "",
+          }),
           amount: total > 0 ? { amount: total.toFixed(2), currency } : undefined,
-          meta: total === 0 ? "Free" : undefined,
+          meta: total === 0 ? messages.common.free : undefined,
         })
       }
     }
@@ -890,8 +920,10 @@ function buildLedgerExtras({
     // Assistance — only on the outbound block (it's trip-wide, not per leg).
     if (sliceIndex === 0 && assistance.length > 0) {
       out.push({
-        label: `Special assistance (${assistance.length})`,
-        meta: "Free",
+        label: formatMessage(messages.flightBookingShell.lineItems.specialAssistance, {
+          count: assistance.length,
+        }),
+        meta: messages.common.free,
       })
     }
     return out

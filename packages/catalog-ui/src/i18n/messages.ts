@@ -78,6 +78,18 @@ export type CatalogUiMessages = {
       roomName: string
       detailName: string
     }
+    sourceKinds: Record<
+      | "owned"
+      | "voyantConnect"
+      | "manual"
+      | "gdsAmadeus"
+      | "gdsSabre"
+      | "gdsTravelport"
+      | "bedbankHotelbeds"
+      | "bedbankExpedia"
+      | "directSuffix",
+      string
+    >
     search: {
       noTabsConfigured: string
       clearAll: string

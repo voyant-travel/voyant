@@ -5,19 +5,11 @@ import { Button, cn, Input, Label } from "@voyantjs/ui/components"
 import { CheckCircle2, KeyRound, Loader2, Mail } from "lucide-react"
 import { type FormEvent, type ReactNode, useState } from "react"
 
-export interface ForgotPasswordPageMessages {
-  title: string
-  description: string
-  emailLabel: string
-  emailPlaceholder: string
-  submit: string
-  submitting: string
-  emailRequired: string
-  successTitle: string
-  successDescription: (email: string) => ReactNode
-  somethingWentWrong: string
-  backToSignIn: string
-}
+import { authUiEn } from "../i18n/en.js"
+import type { ForgotPasswordPageMessages, ResetPasswordPageMessages } from "../i18n/messages.js"
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
+
+export type { ForgotPasswordPageMessages, ResetPasswordPageMessages } from "../i18n/messages.js"
 
 export interface ForgotPasswordPageProps {
   className?: string
@@ -26,24 +18,6 @@ export interface ForgotPasswordPageProps {
   signInHref?: string
   onResetRequested?: (options: { email: string; redirectTo?: string }) => Promise<void> | void
   onNavigateToSignIn?: () => Promise<void> | void
-}
-
-export interface ResetPasswordPageMessages {
-  title: string
-  description: string
-  newPasswordLabel: string
-  confirmPasswordLabel: string
-  submit: string
-  submitting: string
-  tokenRequired: string
-  passwordRequired: string
-  passwordsDoNotMatch: string
-  passwordTooShort: (minPasswordLength: number) => string
-  successTitle: string
-  successDescription: string
-  somethingWentWrong: string
-  signIn: string
-  requestNewLink: string
 }
 
 export interface ResetPasswordPageProps {
@@ -58,38 +32,9 @@ export interface ResetPasswordPageProps {
   onNavigateToForgotPassword?: () => Promise<void> | void
 }
 
-export const defaultForgotPasswordPageMessages: ForgotPasswordPageMessages = {
-  title: "Forgot password",
-  description: "Enter your email and we will send a reset link.",
-  emailLabel: "Email",
-  emailPlaceholder: "ana@example.com",
-  submit: "Send reset link",
-  submitting: "Sending",
-  emailRequired: "Email is required.",
-  successTitle: "Check your email",
-  successDescription: (email) => `We sent a password reset link to ${email}.`,
-  somethingWentWrong: "Could not send a password reset link. Try again.",
-  backToSignIn: "Back to sign in",
-}
+export const defaultForgotPasswordPageMessages = authUiEn.forgotPasswordPage
 
-export const defaultResetPasswordPageMessages: ResetPasswordPageMessages = {
-  title: "Reset password",
-  description: "Enter a new password for your account.",
-  newPasswordLabel: "New password",
-  confirmPasswordLabel: "Confirm password",
-  submit: "Reset password",
-  submitting: "Resetting",
-  tokenRequired: "This password reset link is missing or invalid.",
-  passwordRequired: "Password is required.",
-  passwordsDoNotMatch: "Passwords do not match.",
-  passwordTooShort: (minPasswordLength) =>
-    `Password must be at least ${minPasswordLength} characters.`,
-  successTitle: "Password reset",
-  successDescription: "Your password has been updated.",
-  somethingWentWrong: "Could not reset password. Try again.",
-  signIn: "Sign in",
-  requestNewLink: "Request a new link",
-}
+export const defaultResetPasswordPageMessages = authUiEn.resetPasswordPage
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim().length > 0) {
@@ -150,7 +95,8 @@ export function ForgotPasswordPage({
   onResetRequested,
   onNavigateToSignIn,
 }: ForgotPasswordPageProps) {
-  const messages = { ...defaultForgotPasswordPageMessages, ...messageOverrides }
+  const defaultMessages = useAuthUiMessagesOrDefault().forgotPasswordPage
+  const messages = { ...defaultMessages, ...messageOverrides }
   const requestReset = useRequestPasswordReset()
   const [email, setEmail] = useState("")
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
@@ -266,7 +212,8 @@ export function ResetPasswordPage({
   onNavigateToSignIn,
   onNavigateToForgotPassword,
 }: ResetPasswordPageProps) {
-  const messages = { ...defaultResetPasswordPageMessages, ...messageOverrides }
+  const defaultMessages = useAuthUiMessagesOrDefault().resetPasswordPage
+  const messages = { ...defaultMessages, ...messageOverrides }
   const confirmReset = useConfirmPasswordReset()
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")

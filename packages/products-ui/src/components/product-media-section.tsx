@@ -286,7 +286,9 @@ export function ProductMediaSection({
           <ul
             className={cn(
               "m-0 grid list-none gap-3 p-0",
-              compact ? "grid-cols-2" : "sm:grid-cols-2 2xl:grid-cols-3",
+              compact
+                ? "grid-cols-2" /* i18n-literal-ok CSS class token */
+                : "sm:grid-cols-2 2xl:grid-cols-3" /* i18n-literal-ok CSS class token */,
             )}
           >
             {visibleMedia.map((item, index) => (

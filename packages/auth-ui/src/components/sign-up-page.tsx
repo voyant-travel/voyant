@@ -5,28 +5,11 @@ import { Button, cn, Input, Label } from "@voyantjs/ui/components"
 import { Loader2, UserPlus } from "lucide-react"
 import { type FormEvent, type ReactNode, useState } from "react"
 
-export interface SignUpPageMessages {
-  title: string
-  description: string
-  nameLabel: string
-  namePlaceholder: string
-  emailLabel: string
-  emailPlaceholder: string
-  passwordLabel: string
-  invitationTokenLabel: string
-  invitationTokenPlaceholder: string
-  submit: string
-  signingUp: string
-  nameRequired: string
-  emailRequired: string
-  passwordRequired: string
-  invitationSignUpRequiresHandler: string
-  couldNotCreateAccount: string
-  somethingWentWrong: string
-  or: string
-  haveAccount: string
-  signIn: string
-}
+import { authUiEn } from "../i18n/en.js"
+import type { SignUpPageMessages } from "../i18n/messages.js"
+import { useAuthUiMessagesOrDefault } from "../i18n/provider.js"
+
+export type { SignUpPageMessages } from "../i18n/messages.js"
 
 export interface SignUpSocialProvider {
   id: string
@@ -60,28 +43,7 @@ export interface SignUpPageProps {
   }) => Promise<void> | void
 }
 
-export const defaultSignUpPageMessages: SignUpPageMessages = {
-  title: "Create account",
-  description: "Set up your operator account to continue.",
-  nameLabel: "Full name",
-  namePlaceholder: "Ana Voyant",
-  emailLabel: "Email",
-  emailPlaceholder: "ana@example.com",
-  passwordLabel: "Password",
-  invitationTokenLabel: "Invitation token",
-  invitationTokenPlaceholder: "Paste your invitation token",
-  submit: "Create account",
-  signingUp: "Creating account",
-  nameRequired: "Full name is required.",
-  emailRequired: "Email is required.",
-  passwordRequired: "Password is required.",
-  invitationSignUpRequiresHandler: "Invitation sign-ups must be handled by the host app.",
-  couldNotCreateAccount: "Could not create account.",
-  somethingWentWrong: "Something went wrong. Try again.",
-  or: "Or",
-  haveAccount: "Already have an account?",
-  signIn: "Sign in",
-}
+export const defaultSignUpPageMessages = authUiEn.signUpPage
 
 function errorMessage(error: unknown, messages: SignUpPageMessages): string {
   if (error instanceof Error && error.message.trim().length > 0) {
@@ -102,7 +64,8 @@ export function SignUpPage({
   onEmailSignUp,
   onSignedUp,
 }: SignUpPageProps) {
-  const messages = { ...defaultSignUpPageMessages, ...messageOverrides }
+  const defaultMessages = useAuthUiMessagesOrDefault().signUpPage
+  const messages = { ...defaultMessages, ...messageOverrides }
   const signUp = useSignUp()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")

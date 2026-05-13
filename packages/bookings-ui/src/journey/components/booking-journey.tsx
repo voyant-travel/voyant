@@ -33,7 +33,7 @@ import {
 } from "@voyantjs/catalog-react/booking-engine"
 import { Button } from "@voyantjs/ui/components/button"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
+import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
 import {
   type BookingJourneyProps,
@@ -55,7 +55,7 @@ import { PriceSidePanel } from "./side-panel.js"
 import { StepHeader } from "./step-header.js"
 
 export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
-  useBookingsUiMessagesOrDefault()
+  const messages = useBookingsUiMessagesOrDefault()
   const surface = props.surface ?? "admin"
 
   const [draft, setDraft] = useState<Draft>(() => {
@@ -206,7 +206,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   }, [holdSignature, currentStep])
 
   const canAdvance = canAdvanceFromStep(currentStep, draft, shape, quote.data?.available !== false)
-  const warnings = warningsForStep(currentStep, draft, shape)
+  const warnings = warningsForStep(currentStep, draft, shape, messages)
   const [isAdvanceGuardPending, setIsAdvanceGuardPending] = useState(false)
   const [advanceGuardError, setAdvanceGuardError] = useState<string | null>(null)
 
@@ -239,7 +239,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         }
 
         if (guardResult === false) {
-          setAdvanceGuardError("Complete this step before continuing.")
+          setAdvanceGuardError(messages.bookingJourney.validation.completeStepBeforeContinuing)
           return
         }
         if (
@@ -248,12 +248,16 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           "allow" in guardResult &&
           guardResult.allow === false
         ) {
-          setAdvanceGuardError(guardResult.message ?? "Complete this step before continuing.")
+          setAdvanceGuardError(
+            guardResult.message ?? messages.bookingJourney.validation.completeStepBeforeContinuing,
+          )
           return
         }
       } catch (error) {
         setAdvanceGuardError(
-          error instanceof Error ? error.message : "Unable to continue. Please try again.",
+          error instanceof Error
+            ? error.message
+            : messages.bookingJourney.validation.unableToContinue,
         )
         return
       } finally {
@@ -424,7 +428,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
                 else props.onCancelled?.()
               }}
             >
-              Back
+              {messages.bookingJourney.navigation.back}
             </Button>
             {next ? (
               <Button
@@ -433,7 +437,9 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
                 disabled={!canAdvance || isAdvanceGuardPending}
                 className="ml-auto"
               >
-                {isAdvanceGuardPending ? "Checking..." : "Next"}
+                {isAdvanceGuardPending
+                  ? messages.bookingJourney.navigation.checking
+                  : messages.bookingJourney.navigation.next}
               </Button>
             ) : null}
           </div>
@@ -543,19 +549,20 @@ function warningsForStep(
   step: JourneyStep,
   draft: Draft,
   shape: BookingDraftShape,
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
 ): ReadonlyArray<string> {
   const warnings: string[] = []
   switch (step) {
     case "billing": {
       const c = draft.billing.contact
       if (c.phone == null || c.phone.length === 0) {
-        warnings.push("Phone number not set — useful for last-minute supplier contact.")
+        warnings.push(messages.bookingJourney.warnings.phoneMissing)
       }
       if (!draft.billing.address.country) {
-        warnings.push("Billing country not set — taxes won't compute until it's filled in.")
+        warnings.push(messages.bookingJourney.warnings.billingCountryMissing)
       }
       if (draft.billing.buyerType === "B2B" && !draft.billing.company?.vatId) {
-        warnings.push("VAT id missing — required for B2B reverse-charge invoicing.")
+        warnings.push(messages.bookingJourney.warnings.vatMissing)
       }
       break
     }
@@ -570,8 +577,14 @@ function warningsForStep(
           // the document map.
           const value = key === "email" ? t.email : (docs as Record<string, unknown>)[key]
           if (value == null || value === "") {
-            const traveler = `${t.firstName || "Traveler"} ${t.lastName || ""}`.trim()
-            warnings.push(`${traveler}: ${labelForFieldKey(key, shape)} is required.`)
+            const traveler =
+              `${t.firstName || messages.bookingJourney.steps.travelers} ${t.lastName || ""}`.trim()
+            warnings.push(
+              formatMessage(messages.bookingJourney.warnings.travelerFieldRequired, {
+                traveler,
+                field: labelForFieldKey(key, shape),
+              }),
+            )
           }
         }
       }
@@ -579,10 +592,10 @@ function warningsForStep(
     }
     case "review": {
       if (!draft.payment.intent) {
-        warnings.push("Payment intent not set — booking will default to hold.")
+        warnings.push(messages.bookingJourney.warnings.paymentIntentMissing)
       }
       if (draft.travelers.length === 0) {
-        warnings.push("No travelers added — at least one is recommended for ops handoff.")
+        warnings.push(messages.bookingJourney.warnings.noTravelers)
       }
       break
     }

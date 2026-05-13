@@ -94,6 +94,7 @@ export function ProductMediaSection({
   }, [media, reorderMode])
 
   const visibleMedia = reorderMode ? localOrder : media
+  const mediaGridVariantClassName = compact ? "grid-cols-2" : "sm:grid-cols-2 2xl:grid-cols-3" // i18n-literal-ok conditional CSS classes
   const resolvedTitle =
     title ?? (dayId ? sectionMessages.titles.dayMedia : sectionMessages.titles.media)
   const resolvedDescription =
@@ -277,12 +278,7 @@ export function ProductMediaSection({
           <div className="text-xs text-muted-foreground">
             {sectionMessages.itemCount.replace("{count}", String(media.length))}
           </div>
-          <ul
-            className={cn(
-              "m-0 grid list-none gap-3 p-0",
-              compact ? "grid-cols-2" : "sm:grid-cols-2 2xl:grid-cols-3",
-            )}
-          >
+          <ul className={cn("m-0 grid list-none gap-3 p-0", mediaGridVariantClassName)}>
             {visibleMedia.map((item, index) => (
               <MediaTile
                 key={item.id}
