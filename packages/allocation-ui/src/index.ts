@@ -1,6 +1,8 @@
 export {
   SlotAllocationPage,
+  type SlotAllocationPageExtraTab,
   type SlotAllocationPageProps,
+  type SlotAllocationPageRenderContext,
 } from "./components/slot-allocation-page.js"
 export {
   type AllocationUiMessageOverrides,
