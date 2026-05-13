@@ -1,15 +1,19 @@
 import type { Plugin, Subscriber } from "@voyantjs/core"
+import { financeService } from "@voyantjs/finance"
 import { ZodError } from "zod"
 
 import {
   persistSmartbillInvoiceArtifact,
+  retrySmartbillInvoiceArtifact,
   type SmartbillArtifactPersistenceOptions,
+  type SmartbillArtifactStorageContext,
   type SmartbillDocumentType,
+  type SmartbillExternalRef,
 } from "./artifacts.js"
 import type { SmartbillClientOptions } from "./client.js"
-import type { mapVoyantInvoiceToSmartbill, SmartbillMappingOptions } from "./mapping.js"
+import type { SmartbillMappingOptions } from "./mapping.js"
 import { createSmartbillSyncRuntime } from "./runtime.js"
-import type { VoyantInvoiceEvent } from "./types.js"
+import type { SmartbillInvoiceBody, SmartbillInvoiceResponse, VoyantInvoiceEvent } from "./types.js"
 import { smartbillPluginOptionsSchema } from "./validation.js"
 
 export interface SmartbillSyncEventNames {
@@ -26,12 +30,28 @@ export interface SmartbillLogger {
 
 export type SmartbillMapFn = (
   event: VoyantInvoiceEvent,
-) => ReturnType<typeof mapVoyantInvoiceToSmartbill>
+) => SmartbillInvoiceBody | Promise<SmartbillInvoiceBody>
+
+export interface SmartbillIdempotencyOptions {
+  /**
+   * When artifact DB access is configured, skip SmartBill create calls for
+   * duplicate invoice events that already have a non-error SmartBill ref.
+   * Defaults to true.
+   */
+  skipExistingExternalRef?: boolean
+}
+
+export type SmartbillErrorHandler = (
+  event: VoyantInvoiceEvent,
+  error: unknown,
+) => void | Promise<void>
 
 export interface SmartbillPluginOptions extends SmartbillClientOptions, SmartbillMappingOptions {
   events?: SmartbillSyncEventNames
   mapEvent?: SmartbillMapFn
   logger?: SmartbillLogger
+  idempotency?: SmartbillIdempotencyOptions
+  onError?: SmartbillErrorHandler
   /**
    * Optional finance artifact persistence. When `db` is supplied, the plugin
    * registers the SmartBill external ref after creation. When
@@ -59,13 +79,81 @@ function coerceEvent(data: unknown): VoyantInvoiceEvent | null {
 
 export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
   const validatedOptions = parseSmartbillPluginOptions(options)
-  const { client, logger, mapEvent, eventNames, artifacts } =
+  const { client, logger, mapEvent, eventNames, artifacts, idempotency, onError } =
     createSmartbillSyncRuntime(validatedOptions)
+
+  async function resolveMaybe<TContext, TValue>(
+    value: TValue | ((context: TContext) => TValue | Promise<TValue>) | undefined | null,
+    context: TContext,
+  ) {
+    return typeof value === "function"
+      ? await (value as (context: TContext) => TValue | Promise<TValue>)(context)
+      : value
+  }
+
+  async function resolveArtifactDb(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    body?: SmartbillInvoiceBody,
+    result?: SmartbillInvoiceResponse,
+  ) {
+    if (!artifacts.db) return null
+    const context: SmartbillArtifactStorageContext = {
+      event,
+      documentType,
+      body: body ?? {
+        companyVatCode: validatedOptions.companyVatCode,
+        client: { name: "Client" },
+        seriesName: "unknown",
+        currency: "RON",
+        products: [],
+      },
+      result: result ?? {},
+    }
+    return (await resolveMaybe(artifacts.db, context)) ?? null
+  }
+
+  async function findExistingSmartbillRef(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    body: SmartbillInvoiceBody,
+  ): Promise<SmartbillExternalRef | null> {
+    if (idempotency.skipExistingExternalRef === false) return null
+    const db = await resolveArtifactDb(event, documentType, body)
+    if (!db) return null
+
+    const refs = await financeService.listInvoiceExternalRefs(db, event.id)
+    return refs.find((ref) => isUsableSmartbillRef(ref)) ?? null
+  }
+
+  async function handleExistingSmartbillRef(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    externalRef: SmartbillExternalRef,
+  ) {
+    logger.info?.(
+      `[smartbill] ${documentType} already has SmartBill ref for ${event.id}; skipping create`,
+      externalRef,
+    )
+    try {
+      const persisted = await retrySmartbillInvoiceArtifact({
+        runtime: artifacts,
+        client,
+        externalRef,
+        documentType,
+      })
+      if (persisted.status === "persisted") {
+        logger.info?.(`[smartbill] ${documentType} PDF re-attached for ${event.id}`, persisted)
+      }
+    } catch (err) {
+      logger.error(`[smartbill] artifact re-attach failed for ${event.id}`, err)
+    }
+  }
 
   async function persistArtifact(
     event: VoyantInvoiceEvent,
     documentType: SmartbillDocumentType,
-    body: ReturnType<SmartbillMapFn>,
+    body: Awaited<ReturnType<SmartbillMapFn>>,
     result: Awaited<ReturnType<typeof client.createInvoice>>,
   ) {
     try {
@@ -85,6 +173,49 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
     }
   }
 
+  async function recordSyncError(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    err: unknown,
+  ) {
+    try {
+      await onError?.(event, err)
+    } catch (handlerError) {
+      logger.error(`[smartbill] onError handler failed for ${event.id}`, handlerError)
+    }
+
+    try {
+      const db = await resolveArtifactDb(event, documentType)
+      if (!db) return
+      const refs = await financeService.listInvoiceExternalRefs(db, event.id)
+      if (refs.some((ref) => isUsableSmartbillRef(ref))) return
+
+      await financeService.registerInvoiceExternalRef(db, event.id, {
+        provider: "smartbill",
+        externalId: null,
+        externalNumber: null,
+        externalUrl: null,
+        status: "error",
+        syncedAt: new Date().toISOString(),
+        syncError: errorMessage(err),
+        metadata: { documentType },
+      })
+    } catch (recordError) {
+      logger.error(`[smartbill] error external-ref recording failed for ${event.id}`, recordError)
+    }
+  }
+
+  async function resolveConfiguredSeriesName(event: VoyantInvoiceEvent) {
+    const value = validatedOptions.seriesName
+    return typeof value === "function" ? await value(event) : value
+  }
+
+  async function resolveExternalSeriesName(event: VoyantInvoiceEvent) {
+    return typeof event.externalSeriesName === "string"
+      ? event.externalSeriesName
+      : await resolveConfiguredSeriesName(event)
+  }
+
   const subscribers: Subscriber[] = [
     {
       event: eventNames.issued,
@@ -92,7 +223,12 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         const event = coerceEvent(envelope.data)
         if (!event) return
         try {
-          const body = mapEvent(event)
+          const body = await mapEvent(event)
+          const existingRef = await findExistingSmartbillRef(event, "invoice", body)
+          if (existingRef) {
+            await handleExistingSmartbillRef(event, "invoice", existingRef)
+            return
+          }
           const result = await client.createInvoice(body)
           logger.info?.(
             `[smartbill] invoice created: ${result.series}-${result.number} for ${event.id}`,
@@ -104,6 +240,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             `[smartbill] createInvoice on "${eventNames.issued}" failed for ${event.id}`,
             err,
           )
+          await recordSyncError(event, "invoice", err)
         }
       },
     },
@@ -115,7 +252,12 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         try {
           // Same shape as createInvoice — SmartBill's `/proforma`
           // endpoint accepts the same body as `/invoice`.
-          const body = mapEvent(event)
+          const body = await mapEvent(event)
+          const existingRef = await findExistingSmartbillRef(event, "proforma", body)
+          if (existingRef) {
+            await handleExistingSmartbillRef(event, "proforma", existingRef)
+            return
+          }
           const result = await client.createProforma(body)
           logger.info?.(
             `[smartbill] proforma created: ${result.series}-${result.number} for ${event.id}`,
@@ -127,6 +269,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             `[smartbill] createProforma on "${eventNames.proformaIssued}" failed for ${event.id}`,
             err,
           )
+          await recordSyncError(event, "proforma", err)
         }
       },
     },
@@ -136,10 +279,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         const event = coerceEvent(envelope.data)
         if (!event) return
         try {
-          const seriesName =
-            typeof event.externalSeriesName === "string"
-              ? event.externalSeriesName
-              : validatedOptions.seriesName
+          const seriesName = await resolveExternalSeriesName(event)
           const number =
             typeof event.externalNumber === "string"
               ? event.externalNumber
@@ -166,10 +306,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         const event = coerceEvent(envelope.data)
         if (!event) return
         try {
-          const seriesName =
-            typeof event.externalSeriesName === "string"
-              ? event.externalSeriesName
-              : validatedOptions.seriesName
+          const seriesName = await resolveExternalSeriesName(event)
           const number =
             typeof event.externalNumber === "string"
               ? event.externalNumber
@@ -209,6 +346,25 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
     version: "0.1.0",
     subscribers,
   }
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function isUsableSmartbillRef(ref: {
+  provider: string
+  status?: string | null
+  syncError?: string | null
+  externalNumber?: string | null
+  externalId?: string | null
+}) {
+  return (
+    ref.provider === "smartbill" &&
+    ref.status !== "error" &&
+    !ref.syncError &&
+    Boolean(ref.externalNumber || ref.externalId)
+  )
 }
 
 function parseSmartbillPluginOptions(options: SmartbillPluginOptions): SmartbillPluginOptions {

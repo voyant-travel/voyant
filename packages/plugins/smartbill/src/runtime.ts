@@ -1,6 +1,6 @@
 import type { SmartbillArtifactPersistenceOptions } from "./artifacts.js"
 import { createSmartbillClient } from "./client.js"
-import { mapVoyantInvoiceToSmartbill, type SmartbillMappingOptions } from "./mapping.js"
+import { mapVoyantInvoiceToSmartbillAsync, type SmartbillMappingOptions } from "./mapping.js"
 import type { SmartbillLogger, SmartbillMapFn, SmartbillPluginOptions } from "./plugin.js"
 import type { VoyantInvoiceEvent } from "./types.js"
 
@@ -17,6 +17,8 @@ export interface SmartbillSyncRuntime {
   mapEvent: SmartbillMapFn
   eventNames: ResolvedSmartbillSyncEventNames
   artifacts: SmartbillArtifactPersistenceOptions
+  idempotency: NonNullable<SmartbillPluginOptions["idempotency"]>
+  onError: SmartbillPluginOptions["onError"]
 }
 
 export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): SmartbillSyncRuntime {
@@ -28,10 +30,13 @@ export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): Sma
     language: options.language,
     isTaxIncluded: options.isTaxIncluded,
     art311SpecialRegime: options.art311SpecialRegime,
+    art311SpecialRegimeText: options.art311SpecialRegimeText,
+    mentions: options.mentions,
+    observations: options.observations,
   }
   const mapEvent: SmartbillMapFn =
     options.mapEvent ??
-    ((event: VoyantInvoiceEvent) => mapVoyantInvoiceToSmartbill(event, mappingOptions))
+    ((event: VoyantInvoiceEvent) => mapVoyantInvoiceToSmartbillAsync(event, mappingOptions))
   const eventNames: ResolvedSmartbillSyncEventNames = {
     issued: options.events?.issued ?? "invoice.issued",
     proformaIssued: options.events?.proformaIssued ?? "invoice.proforma.issued",
@@ -50,5 +55,9 @@ export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): Sma
       documentStorageKeyPrefix:
         options.artifacts?.documentStorageKeyPrefix ?? options.documentStorageKeyPrefix,
     },
+    idempotency: {
+      skipExistingExternalRef: options.idempotency?.skipExistingExternalRef ?? true,
+    },
+    onError: options.onError,
   }
 }

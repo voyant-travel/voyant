@@ -11,7 +11,7 @@ const baseOptions = {
 }
 
 describe("createSmartbillSyncRuntime", () => {
-  it("builds the default client, logger, mapper, and event names", () => {
+  it("builds the default client, logger, mapper, and event names", async () => {
     const fetchMock = vi.fn<SmartbillFetch>()
     const runtime = createSmartbillSyncRuntime({
       ...baseOptions,
@@ -27,7 +27,7 @@ describe("createSmartbillSyncRuntime", () => {
       syncRequested: "invoice.external.sync.requested",
     })
     expect(
-      runtime.mapEvent({
+      await runtime.mapEvent({
         id: "inv_123",
         clientName: "Client SRL",
         currency: "RON",

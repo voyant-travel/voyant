@@ -5,20 +5,46 @@ import type {
   VoyantInvoiceEvent,
 } from "./types.js"
 
+export type SmartbillMaybePromise<T> = T | Promise<T>
+
+export type SmartbillEventValue<T> = T | ((event: VoyantInvoiceEvent) => SmartbillMaybePromise<T>)
+
+const DEFAULT_ART311_SPECIAL_REGIME_TEXT =
+  "Regimul special de taxare - agentie de turism (Art. 311 Cod Fiscal)"
+
 /**
  * Options for the default invoice mapper.
  */
 export interface SmartbillMappingOptions {
   /** Romanian company VAT code (e.g. `"RO12345678"`). */
   companyVatCode: string
-  /** SmartBill invoice series name (e.g. `"A"`). */
-  seriesName: string
+  /** SmartBill invoice series name (e.g. `"A"`), or an event-specific resolver. */
+  seriesName: SmartbillEventValue<string>
   /** Invoice language. Defaults to `"RO"`. */
   language?: string
   /** Whether VAT is included in line item prices. Defaults to `true`. */
   isTaxIncluded?: boolean
   /** Whether to use Art. 311 special regime (margin scheme for travel). */
   art311SpecialRegime?: boolean
+  /** Text appended to mentions when Art. 311 special regime is enabled. */
+  art311SpecialRegimeText?: string
+  /** SmartBill mentions override, or an event-specific resolver. Defaults to event.mentions. */
+  mentions?: SmartbillEventValue<string | null | undefined>
+  /** SmartBill observations override, or an event-specific resolver. Defaults to event.observations. */
+  observations?: SmartbillEventValue<string | null | undefined>
+}
+
+interface ResolvedMappingOptions {
+  companyVatCode: string
+  seriesName: string
+  language?: string
+  isTaxIncluded?: boolean
+  art311SpecialRegime?: boolean
+  art311SpecialRegimeText?: string
+  mentions?: string
+  observations?: string
+  hasMentionsOverride: boolean
+  hasObservationsOverride: boolean
 }
 
 /**
@@ -47,7 +73,7 @@ export function mapClient(event: VoyantInvoiceEvent): SmartbillClient {
  */
 export function mapLineItems(
   event: VoyantInvoiceEvent,
-  options: SmartbillMappingOptions,
+  options: Pick<SmartbillMappingOptions, "isTaxIncluded">,
 ): SmartbillProduct[] {
   const items = event.lineItems
   if (!Array.isArray(items)) return []
@@ -74,6 +100,25 @@ export function mapVoyantInvoiceToSmartbill(
   event: VoyantInvoiceEvent,
   options: SmartbillMappingOptions,
 ): SmartbillInvoiceBody {
+  return buildSmartbillInvoiceBody(event, resolveMappingOptionsSync(event, options))
+}
+
+/**
+ * Async variant of the default mapper. Use this when mapping options include
+ * promise-returning callbacks such as `seriesName`, `mentions`, or
+ * `observations`.
+ */
+export async function mapVoyantInvoiceToSmartbillAsync(
+  event: VoyantInvoiceEvent,
+  options: SmartbillMappingOptions,
+): Promise<SmartbillInvoiceBody> {
+  return buildSmartbillInvoiceBody(event, await resolveMappingOptions(event, options))
+}
+
+function buildSmartbillInvoiceBody(
+  event: VoyantInvoiceEvent,
+  options: ResolvedMappingOptions,
+): SmartbillInvoiceBody {
   const body: SmartbillInvoiceBody = {
     companyVatCode: options.companyVatCode,
     client: mapClient(event),
@@ -87,13 +132,21 @@ export function mapVoyantInvoiceToSmartbill(
   if (typeof event.dueDate === "string") body.dueDate = event.dueDate
   if (typeof event.issueDate === "string") body.issueDate = event.issueDate
   if (typeof event.deliveryDate === "string") body.deliveryDate = event.deliveryDate
-  if (typeof event.mentions === "string") body.mentions = event.mentions
-  if (typeof event.observations === "string") body.observations = event.observations
+
+  const mentions = options.hasMentionsOverride
+    ? options.mentions
+    : asStringOrUndefined(event.mentions)
+  if (mentions) body.mentions = mentions
+
+  const observations = options.hasObservationsOverride
+    ? options.observations
+    : asStringOrUndefined(event.observations)
+  if (observations) body.observations = observations
 
   if (options.art311SpecialRegime) {
     body.mentions = [
       body.mentions,
-      "Regimul special de taxare - agentie de turism (Art. 311 Cod Fiscal)",
+      options.art311SpecialRegimeText ?? DEFAULT_ART311_SPECIAL_REGIME_TEXT,
     ]
       .filter(Boolean)
       .join("\n")
@@ -103,6 +156,82 @@ export function mapVoyantInvoiceToSmartbill(
 }
 
 // --- helpers ---
+
+function resolveMappingOptionsSync(
+  event: VoyantInvoiceEvent,
+  options: SmartbillMappingOptions,
+): ResolvedMappingOptions {
+  return {
+    companyVatCode: options.companyVatCode,
+    seriesName: resolveEventValueSync(event, options.seriesName, "seriesName"),
+    language: options.language,
+    isTaxIncluded: options.isTaxIncluded,
+    art311SpecialRegime: options.art311SpecialRegime,
+    art311SpecialRegimeText: options.art311SpecialRegimeText,
+    mentions: normalizeOptionalText(resolveEventValueSync(event, options.mentions, "mentions")),
+    observations: normalizeOptionalText(
+      resolveEventValueSync(event, options.observations, "observations"),
+    ),
+    hasMentionsOverride: options.mentions !== undefined,
+    hasObservationsOverride: options.observations !== undefined,
+  }
+}
+
+async function resolveMappingOptions(
+  event: VoyantInvoiceEvent,
+  options: SmartbillMappingOptions,
+): Promise<ResolvedMappingOptions> {
+  return {
+    companyVatCode: options.companyVatCode,
+    seriesName: await resolveEventValue(event, options.seriesName),
+    language: options.language,
+    isTaxIncluded: options.isTaxIncluded,
+    art311SpecialRegime: options.art311SpecialRegime,
+    art311SpecialRegimeText: options.art311SpecialRegimeText,
+    mentions: normalizeOptionalText(await resolveEventValue(event, options.mentions)),
+    observations: normalizeOptionalText(await resolveEventValue(event, options.observations)),
+    hasMentionsOverride: options.mentions !== undefined,
+    hasObservationsOverride: options.observations !== undefined,
+  }
+}
+
+function resolveEventValueSync<T>(
+  event: VoyantInvoiceEvent,
+  value: SmartbillEventValue<T> | undefined,
+  field: string,
+): T | undefined {
+  const resolved =
+    typeof value === "function"
+      ? (value as (event: VoyantInvoiceEvent) => SmartbillMaybePromise<T>)(event)
+      : value
+  if (isPromiseLike(resolved)) {
+    throw new Error(
+      `SmartBill mapping option "${field}" returned a Promise; use mapVoyantInvoiceToSmartbillAsync`,
+    )
+  }
+  return resolved
+}
+
+async function resolveEventValue<T>(
+  event: VoyantInvoiceEvent,
+  value: SmartbillEventValue<T> | undefined,
+): Promise<T | undefined> {
+  return typeof value === "function"
+    ? await (value as (event: VoyantInvoiceEvent) => SmartbillMaybePromise<T>)(event)
+    : value
+}
+
+function isPromiseLike<T>(value: T | Promise<T> | undefined): value is Promise<T> {
+  return (
+    value != null &&
+    typeof value === "object" &&
+    typeof (value as { then?: unknown }).then === "function"
+  )
+}
+
+function normalizeOptionalText(value: string | null | undefined) {
+  return typeof value === "string" && value.length > 0 ? value : undefined
+}
 
 function asString(value: unknown, fallback: string): string {
   if (typeof value === "string" && value.length > 0) return value

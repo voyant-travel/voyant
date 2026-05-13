@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { mapClient, mapLineItems, mapVoyantInvoiceToSmartbill } from "../../src/mapping.js"
+import {
+  mapClient,
+  mapLineItems,
+  mapVoyantInvoiceToSmartbill,
+  mapVoyantInvoiceToSmartbillAsync,
+} from "../../src/mapping.js"
 import type { VoyantInvoiceEvent } from "../../src/types.js"
 
 const defaultOptions = {
@@ -184,5 +189,36 @@ describe("mapVoyantInvoiceToSmartbill", () => {
   it("passes through observations", () => {
     const result = mapVoyantInvoiceToSmartbill(event({ observations: "Test obs" }), defaultOptions)
     expect(result.observations).toBe("Test obs")
+  })
+
+  it("resolves synchronous mapping callbacks", () => {
+    const result = mapVoyantInvoiceToSmartbill(event({ channel: "proforma" }), {
+      ...defaultOptions,
+      seriesName: (invoice) => (invoice.channel === "proforma" ? "PF" : "A"),
+      mentions: (invoice) => `Invoice ${invoice.id}`,
+      observations: "Operator note",
+    })
+    expect(result.seriesName).toBe("PF")
+    expect(result.mentions).toBe("Invoice inv_test")
+    expect(result.observations).toBe("Operator note")
+  })
+
+  it("resolves async mapping callbacks", async () => {
+    const result = await mapVoyantInvoiceToSmartbillAsync(event({ channel: "online" }), {
+      ...defaultOptions,
+      seriesName: async (invoice) => (invoice.channel === "online" ? "WEB" : "A"),
+      mentions: async (invoice) => `Async ${invoice.id}`,
+    })
+    expect(result.seriesName).toBe("WEB")
+    expect(result.mentions).toBe("Async inv_test")
+  })
+
+  it("uses custom Art. 311 text", () => {
+    const result = mapVoyantInvoiceToSmartbill(event(), {
+      ...defaultOptions,
+      art311SpecialRegime: true,
+      art311SpecialRegimeText: "Custom Art. 311 disclosure",
+    })
+    expect(result.mentions).toBe("Custom Art. 311 disclosure")
   })
 })

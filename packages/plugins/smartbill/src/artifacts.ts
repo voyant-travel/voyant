@@ -1,4 +1,4 @@
-import { financeService } from "@voyantjs/finance"
+import { financeService, type InvoiceExternalRef } from "@voyantjs/finance"
 import type { StorageProvider } from "@voyantjs/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -52,6 +52,34 @@ export interface PersistSmartbillInvoiceArtifactInput {
   result: SmartbillInvoiceResponse
 }
 
+export type SmartbillExternalRef = Pick<
+  InvoiceExternalRef,
+  "id" | "invoiceId" | "externalId" | "externalNumber" | "externalUrl" | "metadata"
+>
+
+export interface RetrySmartbillInvoiceArtifactInput {
+  runtime: SmartbillArtifactPersistenceRuntime
+  client: SmartbillClientApi
+  externalRef: SmartbillExternalRef
+  documentType: SmartbillDocumentType
+}
+
+type InvoiceAttachmentRecord = Awaited<ReturnType<typeof financeService.createInvoiceAttachment>>
+type InvoiceRenditionRecord = Awaited<ReturnType<typeof financeService.createInvoiceRendition>>
+
+export type SmartbillArtifactPersistenceResult =
+  | {
+      status: "skipped"
+      reason:
+        | "missing_db"
+        | "missing_invoice"
+        | "missing_document_storage"
+        | "missing_smartbill_reference"
+    }
+  | { status: "registered_ref"; reason?: "missing_number" }
+  | { status: "already_exists"; attachment: InvoiceAttachmentRecord }
+  | { status: "persisted"; rendition: InvoiceRenditionRecord; attachment: InvoiceAttachmentRecord }
+
 const SMARTBILL_ATTACHMENT_KIND = "smartbill_pdf"
 
 function isResolver<TContext, TValue>(
@@ -90,6 +118,17 @@ function smartbillAttachmentName(
   return `SmartBill ${documentType} ${seriesName}-${number}.pdf`
 }
 
+function coerceMetadata(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function metadataString(metadata: Record<string, unknown> | null, key: string) {
+  const value = metadata?.[key]
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
 export async function persistSmartbillInvoiceArtifact({
   runtime,
   client,
@@ -97,7 +136,7 @@ export async function persistSmartbillInvoiceArtifact({
   documentType,
   body,
   result,
-}: PersistSmartbillInvoiceArtifactInput) {
+}: PersistSmartbillInvoiceArtifactInput): Promise<SmartbillArtifactPersistenceResult> {
   if (!runtime.db) return { status: "skipped" as const, reason: "missing_db" as const }
 
   const context: SmartbillArtifactStorageContext = { event, documentType, body, result }
@@ -129,7 +168,105 @@ export async function persistSmartbillInvoiceArtifact({
   if (!storage) return { status: "registered_ref" as const }
   if (!number) return { status: "registered_ref" as const, reason: "missing_number" as const }
 
-  const existingAttachments = await financeService.listInvoiceAttachments(db, event.id)
+  const keyPrefix = await resolveMaybe(runtime.documentStorageKeyPrefix, context)
+  return persistSmartbillPdfArtifact({
+    db,
+    storage,
+    client,
+    invoiceId: event.id,
+    documentType,
+    companyVatCode: body.companyVatCode,
+    seriesName,
+    number,
+    language: body.language ?? null,
+    keyPrefix,
+  })
+}
+
+export async function retrySmartbillInvoiceArtifact({
+  runtime,
+  client,
+  externalRef,
+  documentType,
+}: RetrySmartbillInvoiceArtifactInput): Promise<SmartbillArtifactPersistenceResult> {
+  if (!runtime.db) return { status: "skipped" as const, reason: "missing_db" as const }
+
+  const metadata = coerceMetadata(externalRef.metadata)
+  const companyVatCode =
+    metadataString(metadata, "companyVatCode") ?? metadataString(metadata, "vatCode")
+  const seriesName = metadataString(metadata, "series") ?? metadataString(metadata, "seriesName")
+  const number =
+    metadataString(metadata, "number") ??
+    externalRef.externalNumber ??
+    externalRef.externalId ??
+    null
+
+  if (!companyVatCode || !seriesName || !number) {
+    return { status: "skipped" as const, reason: "missing_smartbill_reference" as const }
+  }
+
+  const context: SmartbillArtifactStorageContext = {
+    event: { id: externalRef.invoiceId },
+    documentType,
+    body: {
+      companyVatCode,
+      client: { name: "Client" },
+      seriesName,
+      currency: "RON",
+      language: metadataString(metadata, "language") ?? undefined,
+      products: [],
+    },
+    result: {
+      number,
+      series: seriesName,
+      url: externalRef.externalUrl ?? undefined,
+    },
+  }
+  const db = await resolveMaybe(runtime.db, context)
+  if (!db) return { status: "skipped" as const, reason: "missing_db" as const }
+
+  const storage = await resolveMaybe(runtime.documentStorage, context)
+  if (!storage) return { status: "skipped" as const, reason: "missing_document_storage" as const }
+
+  const keyPrefix = await resolveMaybe(runtime.documentStorageKeyPrefix, context)
+  return persistSmartbillPdfArtifact({
+    db,
+    storage,
+    client,
+    invoiceId: externalRef.invoiceId,
+    documentType,
+    companyVatCode,
+    seriesName,
+    number,
+    language: metadataString(metadata, "language"),
+    keyPrefix,
+  })
+}
+
+async function persistSmartbillPdfArtifact({
+  db,
+  storage,
+  client,
+  invoiceId,
+  documentType,
+  companyVatCode,
+  seriesName,
+  number,
+  language,
+  keyPrefix,
+}: {
+  db: PostgresJsDatabase
+  storage: StorageProvider
+  client: SmartbillClientApi
+  invoiceId: string
+  documentType: SmartbillDocumentType
+  companyVatCode: string
+  seriesName: string
+  number: string
+  language?: string | null
+  keyPrefix?: string
+}): Promise<SmartbillArtifactPersistenceResult> {
+  const existingAttachments = await financeService.listInvoiceAttachments(db, invoiceId)
   const existingSmartbillAttachment = existingAttachments.find(
     (attachment) => attachment.kind === SMARTBILL_ATTACHMENT_KIND,
   )
@@ -139,12 +276,12 @@ export async function persistSmartbillInvoiceArtifact({
 
   const pdf =
     documentType === "proforma"
-      ? await client.viewEstimatePdf(body.companyVatCode, seriesName, number)
-      : await client.viewInvoicePdf(body.companyVatCode, seriesName, number)
+      ? await client.viewEstimatePdf(companyVatCode, seriesName, number)
+      : await client.viewInvoicePdf(companyVatCode, seriesName, number)
 
-  const defaultPrefix = `invoices/${event.id}/smartbill`
-  const keyPrefix = (await resolveMaybe(runtime.documentStorageKeyPrefix, context)) ?? defaultPrefix
-  const key = `${keyPrefix.replace(/\/$/, "")}/${documentType}-${sanitizeKeyPart(seriesName)}-${sanitizeKeyPart(number)}.pdf`
+  const defaultPrefix = `invoices/${invoiceId}/smartbill`
+  const resolvedKeyPrefix = keyPrefix ?? defaultPrefix
+  const key = `${resolvedKeyPrefix.replace(/\/$/, "")}/${documentType}-${sanitizeKeyPart(seriesName)}-${sanitizeKeyPart(number)}.pdf`
   const contentType = pdf.contentType || "application/pdf"
   const checksum = await sha256(pdf.bytes)
   const uploaded = await storage.upload(pdf.bytes, {
@@ -153,7 +290,7 @@ export async function persistSmartbillInvoiceArtifact({
     metadata: {
       provider: "smartbill",
       documentType,
-      invoiceId: event.id,
+      invoiceId,
       seriesName,
       number,
     },
@@ -162,25 +299,25 @@ export async function persistSmartbillInvoiceArtifact({
   const commonMetadata = {
     provider: "smartbill",
     documentType,
-    companyVatCode: body.companyVatCode,
+    companyVatCode,
     seriesName,
     number,
     storageProvider: storage.name,
     ...(uploaded.url ? { url: uploaded.url } : {}),
   }
 
-  const rendition = await financeService.createInvoiceRendition(db, event.id, {
+  const rendition = await financeService.createInvoiceRendition(db, invoiceId, {
     format: "pdf",
     status: "ready",
     storageKey: uploaded.key,
     fileSize: pdf.bytes.byteLength,
     checksum,
-    language: body.language ?? null,
+    language: language ?? null,
     generatedAt: new Date().toISOString(),
     metadata: commonMetadata,
   })
 
-  const attachment = await financeService.createInvoiceAttachment(db, event.id, {
+  const attachment = await financeService.createInvoiceAttachment(db, invoiceId, {
     kind: SMARTBILL_ATTACHMENT_KIND,
     name: smartbillAttachmentName(documentType, seriesName, number),
     mimeType: contentType,
