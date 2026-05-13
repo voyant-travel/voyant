@@ -1,3 +1,18 @@
+import {
+  bootstrapBookingEnginePayment,
+  confirmBookingEngineSession,
+  expireBookingEngineSession,
+  getBookingEngineOverview,
+  getBookingEngineProgress,
+  getBookingEngineSessionSnapshot,
+  previewBookingEnginePayment,
+  repriceBookingEngineSession,
+  reserveBookingEngineSession,
+  startBookingEnginePayment,
+  updateBookingEngineProgress,
+  updateBookingEngineSession,
+  updateBookingEngineTravelers,
+} from "./booking-engine.js"
 import { defaultStorefrontFetcher, type VoyantStorefrontClientOptions } from "./client.js"
 import {
   canRunBookingEngineAction,
@@ -28,6 +43,7 @@ import {
   updatePublicBookingSessionState,
 } from "./operations.js"
 
+export * from "./booking-engine.js"
 export type {
   StorefrontQueryParamValue,
   StorefrontRequestOptions,
@@ -53,6 +69,7 @@ export {
   deriveBookingEngineState,
   getAllowedBookingEngineActions,
 } from "./engine-state.js"
+export * from "./errors.js"
 export * from "./operations.js"
 export * from "./schemas.js"
 
@@ -127,6 +144,63 @@ export function createVoyantStorefrontClient(options: VoyantStorefrontClientOpti
       ) => expirePublicBookingSession(client, sessionId, input, requestOptions),
       getOverview: (query: Parameters<typeof getPublicBookingOverview>[1]) =>
         getPublicBookingOverview(client, query),
+      deriveState: deriveBookingEngineState,
+      createSnapshot: createBookingEngineSnapshot,
+      canRunAction: canRunBookingEngineAction,
+    },
+    bookingEngine: {
+      reserve: (
+        input: Parameters<typeof reserveBookingEngineSession>[1],
+        requestOptions?: Parameters<typeof reserveBookingEngineSession>[2],
+      ) => reserveBookingEngineSession(client, input, requestOptions),
+      getSnapshot: (sessionId: string) => getBookingEngineSessionSnapshot(client, sessionId),
+      updateSession: (
+        sessionId: string,
+        input: Parameters<typeof updateBookingEngineSession>[2],
+        requestOptions?: Parameters<typeof updateBookingEngineSession>[3],
+      ) => updateBookingEngineSession(client, sessionId, input, requestOptions),
+      updateTravelers: (
+        sessionId: string,
+        input: Parameters<typeof updateBookingEngineTravelers>[2],
+        requestOptions?: Parameters<typeof updateBookingEngineTravelers>[3],
+      ) => updateBookingEngineTravelers(client, sessionId, input, requestOptions),
+      getProgress: (sessionId: string) => getBookingEngineProgress(client, sessionId),
+      updateProgress: (
+        sessionId: string,
+        input: Parameters<typeof updateBookingEngineProgress>[2],
+        requestOptions?: Parameters<typeof updateBookingEngineProgress>[3],
+      ) => updateBookingEngineProgress(client, sessionId, input, requestOptions),
+      reprice: (
+        sessionId: string,
+        input: Parameters<typeof repriceBookingEngineSession>[2],
+        requestOptions?: Parameters<typeof repriceBookingEngineSession>[3],
+      ) => repriceBookingEngineSession(client, sessionId, input, requestOptions),
+      confirm: (
+        sessionId: string,
+        input?: Parameters<typeof confirmBookingEngineSession>[2],
+        requestOptions?: Parameters<typeof confirmBookingEngineSession>[3],
+      ) => confirmBookingEngineSession(client, sessionId, input, requestOptions),
+      expire: (
+        sessionId: string,
+        input?: Parameters<typeof expireBookingEngineSession>[2],
+        requestOptions?: Parameters<typeof expireBookingEngineSession>[3],
+      ) => expireBookingEngineSession(client, sessionId, input, requestOptions),
+      getOverview: (query: Parameters<typeof getBookingEngineOverview>[1]) =>
+        getBookingEngineOverview(client, query),
+      previewPayment: (
+        bookingId: string,
+        input: Parameters<typeof previewBookingEnginePayment>[2],
+        requestOptions?: Parameters<typeof previewBookingEnginePayment>[3],
+      ) => previewBookingEnginePayment(client, bookingId, input, requestOptions),
+      startPayment: (
+        bookingId: string,
+        input: Parameters<typeof startBookingEnginePayment>[2],
+        requestOptions?: Parameters<typeof startBookingEnginePayment>[3],
+      ) => startBookingEnginePayment(client, bookingId, input, requestOptions),
+      bootstrapPayment: (
+        input: Parameters<typeof bootstrapBookingEnginePayment>[1],
+        requestOptions?: Parameters<typeof bootstrapBookingEnginePayment>[2],
+      ) => bootstrapBookingEnginePayment(client, input, requestOptions),
       deriveState: deriveBookingEngineState,
       createSnapshot: createBookingEngineSnapshot,
       canRunAction: canRunBookingEngineAction,

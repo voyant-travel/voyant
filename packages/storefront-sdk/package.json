@@ -11,8 +11,10 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./booking-engine": "./src/booking-engine.ts",
     "./client": "./src/client.ts",
     "./engine-state": "./src/engine-state.ts",
+    "./errors": "./src/errors.ts",
     "./operations": "./src/operations.ts",
     "./schemas": "./src/schemas.ts"
   },
@@ -50,6 +52,11 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
+      "./booking-engine": {
+        "types": "./dist/booking-engine.d.ts",
+        "import": "./dist/booking-engine.js",
+        "default": "./dist/booking-engine.js"
+      },
       "./client": {
         "types": "./dist/client.d.ts",
         "import": "./dist/client.js",
@@ -59,6 +66,11 @@
         "types": "./dist/engine-state.d.ts",
         "import": "./dist/engine-state.js",
         "default": "./dist/engine-state.js"
+      },
+      "./errors": {
+        "types": "./dist/errors.d.ts",
+        "import": "./dist/errors.js",
+        "default": "./dist/errors.js"
       },
       "./operations": {
         "types": "./dist/operations.d.ts",
