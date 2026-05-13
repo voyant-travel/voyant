@@ -1,5 +1,32 @@
 # @voyantjs/bookings-ui
 
+## 0.39.0
+
+### Minor Changes
+
+- f4235ea: Finish the bookings passenger-to-traveler rename across the React/UI layer and shadcn registry.
+
+  `@voyantjs/bookings-ui` now exposes `TravelersSection` and traveler-first section value/types. `@voyantjs/bookings-react` uses traveler hooks/query helpers over the traveler endpoints. The bookings activity enum now emits `traveler_update`; dev/operator/DMC migrations rename existing `passenger_update` activity rows.
+
+  The shadcn registry now publishes `voyant-bookings-travelers-section` and removes the stale passenger dialog/list/section registry artifacts.
+
+### Patch Changes
+
+- Updated dependencies [f4235ea]
+- Updated dependencies [f01fc0f]
+  - @voyantjs/availability-react@0.39.0
+  - @voyantjs/bookings-react@0.39.0
+  - @voyantjs/catalog@0.39.0
+  - @voyantjs/catalog-react@0.39.0
+  - @voyantjs/crm-react@0.39.0
+  - @voyantjs/crm-ui@0.39.0
+  - @voyantjs/finance-react@0.39.0
+  - @voyantjs/i18n@0.39.0
+  - @voyantjs/legal-react@0.39.0
+  - @voyantjs/products-react@0.39.0
+  - @voyantjs/suppliers-react@0.39.0
+  - @voyantjs/ui@0.39.0
+
 ## 0.38.2
 
 ### Patch Changes
