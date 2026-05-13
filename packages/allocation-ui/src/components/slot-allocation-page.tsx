@@ -2,6 +2,7 @@
 
 import {
   type AllocationManifestTraveler,
+  type SlotAllocationManifest,
   useAllocationAutomationMutation,
   useAllocationResourceMutation,
   useAssignTravelerAllocationMutation,
@@ -28,12 +29,33 @@ import { ResourceColumnsView } from "./slot-allocation-resource-view.js"
 import { VehicleSeatsView } from "./slot-allocation-seat-view.js"
 import { AuditLogCard, ValidationSummary } from "./slot-allocation-shared.js"
 
+export interface SlotAllocationPageRenderContext {
+  slotId: string
+  tabId: string
+  kind: string
+  allocationKind: string
+  manifest: SlotAllocationManifest
+  travelers: AllocationManifestTraveler[]
+  allocationKinds: string[]
+}
+
+export interface SlotAllocationPageExtraTab {
+  id: string
+  label: ReactNode
+  icon?: ReactNode
+  render: (context: SlotAllocationPageRenderContext) => ReactNode
+}
+
 export interface SlotAllocationPageProps {
   slotId: string
   className?: string
   onBack?: () => void
   renderExtraActions?: (context: { slotId: string; kind: string }) => ReactNode
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
+  renderHeaderEnd?: (context: SlotAllocationPageRenderContext) => ReactNode
+  renderBefore?: (context: SlotAllocationPageRenderContext) => ReactNode
+  renderAfter?: (context: SlotAllocationPageRenderContext) => ReactNode
+  extraTabs?: SlotAllocationPageExtraTab[]
 }
 
 export function SlotAllocationPage({
@@ -42,6 +64,10 @@ export function SlotAllocationPage({
   onBack,
   renderExtraActions,
   renderTravelerActions,
+  renderHeaderEnd,
+  renderBefore,
+  renderAfter,
+  extraTabs = [],
 }: SlotAllocationPageProps) {
   const messages = useAllocationUiMessagesOrDefault()
   const allocation = useSlotAllocation({ slotId })
@@ -54,6 +80,9 @@ export function SlotAllocationPage({
   const [resourceLabel, setResourceLabel] = useState("")
   const [resourceCapacity, setResourceCapacity] = useState(2)
   const [error, setError] = useState<string | null>(null)
+  const hasPageExtensions = Boolean(
+    renderHeaderEnd || renderBefore || renderAfter || extraTabs.length,
+  )
 
   const data = allocation.data?.data
   const templates = useProductResourceTemplates({
@@ -89,6 +118,11 @@ export function SlotAllocationPage({
   const activeKind = allocationKinds.includes(selectedKind)
     ? selectedKind
     : (allocationKinds[0] ?? ROOM_KIND)
+  const visibleExtraTabs = extraTabs.filter((tab) => !allocationKinds.includes(tab.id))
+  const selectedExtraTab = allocationKinds.includes(selectedKind)
+    ? undefined
+    : visibleExtraTabs.find((tab) => tab.id === selectedKind)
+  const activeTabId = selectedExtraTab?.id ?? activeKind
   const resources = useMemo(
     () => (data?.resources ?? []).filter((resource) => resource.kind === activeKind),
     [data?.resources, activeKind],
@@ -187,7 +221,7 @@ export function SlotAllocationPage({
     )
   }
 
-  if (!data || travelers.length === 0) {
+  if (!data || (travelers.length === 0 && !hasPageExtensions)) {
     return (
       <div className={cn("flex flex-col items-center justify-center gap-3 p-8", className)}>
         <Users className="size-6 text-muted-foreground" aria-hidden="true" />
@@ -198,6 +232,15 @@ export function SlotAllocationPage({
 
   const isSeatMap = activeKind === VEHICLE_SEAT_KIND
   const canManuallyAddResource = !isSeatMap
+  const context: SlotAllocationPageRenderContext = {
+    slotId,
+    tabId: activeTabId,
+    kind: activeTabId,
+    allocationKind: activeKind,
+    manifest: data,
+    travelers,
+    allocationKinds,
+  }
 
   return (
     <div className={cn("flex flex-col gap-4 p-6", className)}>
@@ -214,61 +257,68 @@ export function SlotAllocationPage({
               <span>
                 {data.summary.travelerCount} {messages.travelers}
               </span>
-              <span>
-                {resources.length} {kindLabel(activeKind, messages).toLowerCase()}
-              </span>
+              {selectedExtraTab ? null : (
+                <span>
+                  {resources.length} {kindLabel(activeKind, messages).toLowerCase()}
+                </span>
+              )}
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {renderExtraActions?.({ slotId, kind: activeKind })}
-          <Button variant="outline" onClick={() => downloadExport("passengers")}>
-            <Download data-icon="inline-start" aria-hidden="true" />
-            {messages.exportPassengers}
-          </Button>
-          <Button variant="outline" onClick={() => downloadExport("rooming-list")}>
-            <Download data-icon="inline-start" aria-hidden="true" />
-            {messages.exportRooming}
-          </Button>
-          {resources.length === 0 ? (
-            <Button
-              variant="outline"
-              onClick={() => void generateResources()}
-              disabled={automationMutation.autoMaterialize.isPending}
-            >
-              <Sparkles data-icon="inline-start" aria-hidden="true" />
-              {automationMutation.autoMaterialize.isPending
-                ? messages.generatingResources
-                : messages.generateResources}
+        <div className="flex flex-col gap-3 md:items-end">
+          {renderHeaderEnd?.(context)}
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedExtraTab ? null : renderExtraActions?.({ slotId, kind: activeKind })}
+            <Button variant="outline" onClick={() => downloadExport("passengers")}>
+              <Download data-icon="inline-start" aria-hidden="true" />
+              {messages.exportPassengers}
             </Button>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => void autoAllocate()}
-              disabled={automationMutation.autoAllocate.isPending}
-            >
-              <Wand2 data-icon="inline-start" aria-hidden="true" />
-              {automationMutation.autoAllocate.isPending
-                ? messages.autoAllocating
-                : messages.autoAllocate}
+            <Button variant="outline" onClick={() => downloadExport("rooming-list")}>
+              <Download data-icon="inline-start" aria-hidden="true" />
+              {messages.exportRooming}
             </Button>
-          )}
-          {canManuallyAddResource ? (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setResourceCapacity(defaultCapacityFor(activeKind))
-                setAddingResource((value) => !value)
-              }}
-            >
-              <Plus data-icon="inline-start" aria-hidden="true" />
-              {messages.addResource}
-            </Button>
-          ) : null}
+            {selectedExtraTab ? null : resources.length === 0 ? (
+              <Button
+                variant="outline"
+                onClick={() => void generateResources()}
+                disabled={automationMutation.autoMaterialize.isPending}
+              >
+                <Sparkles data-icon="inline-start" aria-hidden="true" />
+                {automationMutation.autoMaterialize.isPending
+                  ? messages.generatingResources
+                  : messages.generateResources}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => void autoAllocate()}
+                disabled={automationMutation.autoAllocate.isPending}
+              >
+                <Wand2 data-icon="inline-start" aria-hidden="true" />
+                {automationMutation.autoAllocate.isPending
+                  ? messages.autoAllocating
+                  : messages.autoAllocate}
+              </Button>
+            )}
+            {!selectedExtraTab && canManuallyAddResource ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setResourceCapacity(defaultCapacityFor(activeKind))
+                  setAddingResource((value) => !value)
+                }}
+              >
+                <Plus data-icon="inline-start" aria-hidden="true" />
+                {messages.addResource}
+              </Button>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      <Tabs value={activeKind} onValueChange={setSelectedKind}>
+      {renderBefore?.(context)}
+
+      <Tabs value={activeTabId} onValueChange={setSelectedKind}>
         <TabsList className="flex h-auto w-fit flex-wrap justify-start">
           {allocationKinds.map((kind) => (
             <TabsTrigger key={kind} value={kind} className="gap-2">
@@ -280,81 +330,105 @@ export function SlotAllocationPage({
               {kindLabel(kind, messages)}
             </TabsTrigger>
           ))}
+          {visibleExtraTabs.map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id} className="gap-2">
+              {tab.icon}
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
-      {error ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </div>
-      ) : null}
-
-      {addingResource && canManuallyAddResource ? (
-        <form
-          className="grid gap-3 rounded-md border bg-muted/30 p-3 sm:grid-cols-[1fr_8rem_auto_auto]"
-          onSubmit={createResource}
-        >
-          <div className="grid gap-1">
-            <Label htmlFor="allocation-resource-label">{messages.resourceLabel}</Label>
-            <Input
-              id="allocation-resource-label"
-              value={resourceLabel}
-              onChange={(event) => setResourceLabel(event.target.value)}
-              placeholder={activeKind === ROOM_KIND ? "102" : kindLabel(activeKind, messages)}
-            />
-          </div>
-          <div className="grid gap-1">
-            <Label htmlFor="allocation-resource-capacity">{messages.resourceCapacity}</Label>
-            <Input
-              id="allocation-resource-capacity"
-              type="number"
-              min={1}
-              value={resourceCapacity}
-              onChange={(event) => setResourceCapacity(Number(event.target.value) || 1)}
-            />
-          </div>
-          <Button type="submit" className="self-end" disabled={resourceMutation.create.isPending}>
-            {messages.createResource}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="self-end"
-            onClick={() => setAddingResource(false)}
-          >
-            {messages.cancel}
-          </Button>
-        </form>
-      ) : null}
-
-      <ValidationSummary
-        issues={validationIssues}
-        resources={resources}
-        unallocatedCount={occupants.unallocated.length}
-      />
-
-      {isSeatMap ? (
-        <VehicleSeatsView
-          seats={resources}
-          vehicles={parentResources}
-          occupants={occupants}
-          sharingGroupLabels={data.sharingGroupLabels}
-          onDropTraveler={(travelerId, resourceId) => void swapOrAssignSeat(travelerId, resourceId)}
-          onUnassignTraveler={(travelerId) => void assignTraveler(travelerId, null)}
-          renderTravelerActions={renderTravelerActions}
-        />
+      {selectedExtraTab ? (
+        selectedExtraTab.render(context)
       ) : (
-        <ResourceColumnsView
-          kind={activeKind}
-          resources={resources}
-          travelers={travelers}
-          occupants={occupants}
-          sharingGroupLabels={data.sharingGroupLabels}
-          onDropTraveler={(travelerId, resourceId) => void assignTraveler(travelerId, resourceId)}
-          onRemoveResource={(resourceId) => void resourceMutation.remove.mutateAsync(resourceId)}
-          renderTravelerActions={renderTravelerActions}
-        />
+        <>
+          {error ? (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
+
+          {addingResource && canManuallyAddResource ? (
+            <form
+              className="grid gap-3 rounded-md border bg-muted/30 p-3 sm:grid-cols-[1fr_8rem_auto_auto]"
+              onSubmit={createResource}
+            >
+              <div className="grid gap-1">
+                <Label htmlFor="allocation-resource-label">{messages.resourceLabel}</Label>
+                <Input
+                  id="allocation-resource-label"
+                  value={resourceLabel}
+                  onChange={(event) => setResourceLabel(event.target.value)}
+                  placeholder={activeKind === ROOM_KIND ? "102" : kindLabel(activeKind, messages)}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="allocation-resource-capacity">{messages.resourceCapacity}</Label>
+                <Input
+                  id="allocation-resource-capacity"
+                  type="number"
+                  min={1}
+                  value={resourceCapacity}
+                  onChange={(event) => setResourceCapacity(Number(event.target.value) || 1)}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="self-end"
+                disabled={resourceMutation.create.isPending}
+              >
+                {messages.createResource}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="self-end"
+                onClick={() => setAddingResource(false)}
+              >
+                {messages.cancel}
+              </Button>
+            </form>
+          ) : null}
+
+          <ValidationSummary
+            issues={validationIssues}
+            resources={resources}
+            unallocatedCount={occupants.unallocated.length}
+          />
+
+          {isSeatMap ? (
+            <VehicleSeatsView
+              seats={resources}
+              vehicles={parentResources}
+              occupants={occupants}
+              sharingGroupLabels={data.sharingGroupLabels}
+              onDropTraveler={(travelerId, resourceId) =>
+                void swapOrAssignSeat(travelerId, resourceId)
+              }
+              onUnassignTraveler={(travelerId) => void assignTraveler(travelerId, null)}
+              renderTravelerActions={renderTravelerActions}
+            />
+          ) : (
+            <ResourceColumnsView
+              kind={activeKind}
+              resources={resources}
+              travelers={travelers}
+              occupants={occupants}
+              sharingGroupLabels={data.sharingGroupLabels}
+              onDropTraveler={(travelerId, resourceId) =>
+                void assignTraveler(travelerId, resourceId)
+              }
+              onRemoveResource={(resourceId) =>
+                void resourceMutation.remove.mutateAsync(resourceId)
+              }
+              renderTravelerActions={renderTravelerActions}
+            />
+          )}
+        </>
       )}
+
+      {renderAfter?.(context)}
 
       <AuditLogCard entries={auditLog.data?.data ?? []} />
     </div>
