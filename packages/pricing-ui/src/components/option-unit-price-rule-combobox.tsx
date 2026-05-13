@@ -34,8 +34,10 @@ export function OptionUnitPriceRuleCombobox({ value, onChange, placeholder, disa
   const items = React.useMemo(() => {
     const map = new Map<string, OptionUnitPriceRuleRecord>()
     for (const item of listQuery.data?.data ?? []) {
-      const label = `${item.optionId} / ${item.unitId}`
-      if (!search || label.toLowerCase().includes(search.toLowerCase())) map.set(item.id, item)
+      const searchableText = `${item.optionId} / ${item.unitId}`
+      if (!search || searchableText.toLowerCase().includes(search.toLowerCase())) {
+        map.set(item.id, item)
+      }
     }
     if (selectedQuery.data) map.set(selectedQuery.data.id, selectedQuery.data)
     return Array.from(map.values())
