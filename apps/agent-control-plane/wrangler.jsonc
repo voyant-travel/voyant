@@ -15,6 +15,20 @@
   // Optional: bind an R2 bucket as AGENT_DISPATCH_INTENTS to store leased
   // dispatch intents. Set AGENT_DISPATCH_INTENT_KEY_PREFIX when multiple
   // environments share one bucket.
+  "vars": {
+    "AGENT_DISPATCH_INTENT_KEY_PREFIX": "prod/dispatch-intents",
+    "AGENT_TICK_SNAPSHOT_KEY_PREFIX": "prod/tick-snapshots"
+  },
+  "r2_buckets": [
+    {
+      "binding": "AGENT_TICK_SNAPSHOTS",
+      "bucket_name": "voyant-agent-control-plane"
+    },
+    {
+      "binding": "AGENT_DISPATCH_INTENTS",
+      "bucket_name": "voyant-agent-control-plane"
+    }
+  ],
   "observability": {
     "enabled": true
   }

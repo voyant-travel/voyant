@@ -4,6 +4,7 @@ import { createD1AgentRunnerLedgerStore } from "./run-ledger-store.js"
 import { createR2SupervisorTickStore } from "./supervisor-tick-store.js"
 
 interface Env {
+  AGENT_CONTROL_PLANE?: Fetcher
   AGENT_CONTROL_PLANE_TOKEN?: string
   AGENT_CONTROL_PLANE_URL?: string
   AGENT_RUNNER_ACTION?: string
@@ -58,7 +59,10 @@ export { AgentRunnerCoordinator }
 function runnerConfigFromEnv(env: Env) {
   return {
     allowedActions: parseList(env.AGENT_RUNNER_ALLOWED_ACTIONS),
-    controlPlaneConfigured: Boolean(env.AGENT_CONTROL_PLANE_URL && env.AGENT_CONTROL_PLANE_TOKEN),
+    controlPlaneConfigured: Boolean(
+      (env.AGENT_CONTROL_PLANE || env.AGENT_CONTROL_PLANE_URL) && env.AGENT_CONTROL_PLANE_TOKEN,
+    ),
+    controlPlaneService: env.AGENT_CONTROL_PLANE,
     controlPlaneToken: env.AGENT_CONTROL_PLANE_TOKEN,
     controlPlaneUrl: env.AGENT_CONTROL_PLANE_URL,
     defaultAction: env.AGENT_RUNNER_ACTION,
