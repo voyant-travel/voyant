@@ -98,6 +98,9 @@ export const notificationsUiEn: NotificationsUiMessages = {
     placeholders: {
       template: "Search templates…",
     },
+    descriptions: {
+      automaticProvider: "Use Automatic to fall back to the deployment default for this channel.",
+    },
   },
   settings: {
     heading: "Notification settings",

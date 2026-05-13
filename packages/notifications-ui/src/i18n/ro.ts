@@ -99,6 +99,10 @@ export const notificationsUiRo: NotificationsUiMessages = {
     placeholders: {
       template: "Caută șabloane…",
     },
+    descriptions: {
+      automaticProvider:
+        "Folosește Automat pentru a utiliza valoarea implicită a deploymentului pentru acest canal.",
+    },
   },
   settings: {
     heading: "Setări notificări",

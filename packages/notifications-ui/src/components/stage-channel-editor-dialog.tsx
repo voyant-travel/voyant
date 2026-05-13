@@ -216,7 +216,7 @@ export function StageChannelEditorDialog({
                   </SelectContent>
                 </Select>
                 <FieldDescription>
-                  Use Automatic to fall back to the deployment default for this channel.
+                  {messages.channel.descriptions.automaticProvider}
                 </FieldDescription>
               </Field>
             </div>

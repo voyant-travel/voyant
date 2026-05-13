@@ -1040,6 +1040,8 @@ export type BookingsUiMessages = {
     empty: string
     showingSummary: string
     pageSummary: string
+    previousPage: string
+    nextPage: string
   }
   bookingPaymentsSummary: {
     title: string

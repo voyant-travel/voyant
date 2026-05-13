@@ -1110,6 +1110,8 @@ export const bookingsUiRo = {
     empty: "Nu au fost gasite rezervari.",
     showingSummary: "Afisezi {count} din {total}",
     pageSummary: "Pagina {page} / {pageCount}",
+    previousPage: "Anterior",
+    nextPage: "Urmator",
   },
   bookingPaymentsSummary: {
     title: "Plati",

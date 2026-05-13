@@ -95,6 +95,9 @@ export type NotificationsUiMessages = {
     placeholders: {
       template: string
     }
+    descriptions: {
+      automaticProvider: string
+    }
   }
   settings: {
     heading: string

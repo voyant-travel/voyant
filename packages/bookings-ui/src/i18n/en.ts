@@ -1108,6 +1108,8 @@ export const bookingsUiEn = {
     empty: "No bookings found.",
     showingSummary: "Showing {count} of {total}",
     pageSummary: "Page {page} / {pageCount}",
+    previousPage: "Previous",
+    nextPage: "Next",
   },
   bookingPaymentsSummary: {
     title: "Payments",

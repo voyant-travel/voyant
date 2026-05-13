@@ -360,7 +360,7 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
             disabled={offset === 0}
             onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
           >
-            Previous
+            {messages.bookingList.previousPage}
           </Button>
           <span>
             {formatMessage(messages.bookingList.pageSummary, {
@@ -374,7 +374,7 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
             disabled={offset + pageSize >= total}
             onClick={() => setOffset((prev) => prev + pageSize)}
           >
-            Next
+            {messages.bookingList.nextPage}
           </Button>
         </div>
       </div>

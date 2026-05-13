@@ -218,7 +218,7 @@ function SeatTile({
       {pick ? <span className="font-semibold">{pick.label}</span> : null}
       {seat.category === "exit_row" && !pick && (
         <span className="absolute top-0 right-0 text-[7px] font-bold leading-none text-amber-600">
-          E
+          {/* i18n-literal-ok compact exit-row seat marker */}E
         </span>
       )}
     </button>

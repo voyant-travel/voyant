@@ -71,6 +71,17 @@ function isKnownNonUserFacingLiteral(value) {
   return nonUserFacingLiterals.has(value) || /^[A-Z]{2,4}$/.test(value)
 }
 
+function shouldIgnoreLine(trimmed) {
+  return (
+    !trimmed ||
+    trimmed.includes("i18n-literal-ok") ||
+    ignoredLineStarts.some((prefix) => trimmed.startsWith(prefix)) ||
+    trimmed.startsWith("//") ||
+    trimmed.startsWith("*") ||
+    trimmed.startsWith("/*")
+  )
+}
+
 function shouldIgnoreSuspiciousLine(trimmed) {
   if (ignoredLineIncludes.some((fragment) => trimmed.includes(fragment))) {
     return true
@@ -84,6 +95,69 @@ function shouldIgnoreSuspiciousLine(trimmed) {
   return quotedStrings.every(
     (value) => isKnownNonUserFacingLiteral(value) || looksLikeTailwindUtility(value),
   )
+}
+
+function normalizeJsxText(value) {
+  return value.replace(/\s+/g, " ").trim()
+}
+
+function getPreviousMeaningfulLine(lines, startIndex) {
+  for (let index = startIndex - 1; index >= 0; index -= 1) {
+    const trimmed = lines[index].trim()
+    if (trimmed) {
+      return trimmed
+    }
+  }
+
+  return ""
+}
+
+function getNextMeaningfulLine(lines, startIndex) {
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const trimmed = lines[index].trim()
+    if (trimmed) {
+      return trimmed
+    }
+  }
+
+  return ""
+}
+
+function looksLikeJsxOpeningContext(trimmed) {
+  return (
+    trimmed === ">" ||
+    /^<[A-Z_a-z][^>]*>$/.test(trimmed) ||
+    /[({]\s*<[A-Z_a-z][^>]*>$/.test(trimmed) ||
+    /^[A-Za-z_$][\w$]*=.*>$/.test(trimmed)
+  )
+}
+
+function looksLikeJsxClosingContext(trimmed) {
+  return (
+    trimmed.startsWith("</") ||
+    trimmed.startsWith("<") ||
+    trimmed.startsWith("{") ||
+    trimmed.startsWith(")")
+  )
+}
+
+function looksLikeStandaloneJsxText(lines, index) {
+  const text = normalizeJsxText(lines[index])
+
+  if (
+    !/[A-Za-z]/.test(text) ||
+    /[<>{}`=;]/.test(text) ||
+    !/^[A-Za-z][A-Za-z0-9 '&/+.-]*[.!?]?$/.test(text) ||
+    isKnownNonUserFacingLiteral(text) ||
+    looksLikeTailwindUtility(text)
+  ) {
+    return false
+  }
+
+  const previous = getPreviousMeaningfulLine(lines, index)
+  const next = getNextMeaningfulLine(lines, index)
+
+  return looksLikeJsxOpeningContext(previous) && looksLikeJsxClosingContext(next)
 }
 
 async function exists(filePath) {
@@ -161,22 +235,21 @@ async function findSuspiciousLines(filePath) {
   for (const [index, line] of lines.entries()) {
     const trimmed = line.trim()
     if (
-      !trimmed ||
-      trimmed.includes("i18n-literal-ok") ||
-      ignoredLineStarts.some((prefix) => trimmed.startsWith(prefix)) ||
+      shouldIgnoreLine(trimmed) ||
       shouldIgnoreSuspiciousLine(trimmed) ||
-      trimmed.startsWith("//") ||
-      trimmed.startsWith("*") ||
-      trimmed.startsWith("/*")
+      (index > 0 && lines[index - 1].includes("i18n-literal-ok"))
     ) {
       continue
     }
 
-    if (suspiciousPatterns.some((pattern) => pattern.test(line))) {
+    if (
+      suspiciousPatterns.some((pattern) => pattern.test(line)) ||
+      looksLikeStandaloneJsxText(lines, index)
+    ) {
       findings.push({
         filePath,
         line: index + 1,
-        text: trimmed,
+        text: normalizeJsxText(trimmed),
       })
     }
   }
