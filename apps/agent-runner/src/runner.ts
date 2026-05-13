@@ -1,10 +1,6 @@
 import { z } from "zod"
-import {
-  acquireRemoteWorkspaceSlot,
-  type RemoteWorkspacePool,
-  type RemoteWorkspaceSlotLease,
-  releaseRemoteWorkspaceSlot,
-} from "./remote-workspace-pool.js"
+import type { RemoteWorkspacePool } from "./remote-workspace-pool.js"
+import { leaseDispatchIntentWithRemoteWorkspacePool } from "./runner-remote-workspace-pool.js"
 
 export const runnerDispatchActions = [
   "collect-ci",
@@ -197,24 +193,37 @@ export async function runSupervisorTick({
     })
   }
 
-  const workspaceLease = await maybeAcquireRemoteWorkspaceSlot({
-    config,
-    coordinatorService,
-    request,
-  })
-  if (workspaceLease.blocked) {
-    return {
-      leased: false,
+  if (usesRemoteWorkspacePool({ config, request })) {
+    return await leaseDispatchIntentWithRemoteWorkspacePool({
+      config,
+      coordinatorService,
       plan,
-      reason: workspaceLease.reason,
-      remoteWorkspacePool: workspaceLease.remoteWorkspacePool,
-    }
+      request,
+      requestIntent: async (remoteWorkspace) => {
+        const response = await requestControlPlane({
+          body: buildDispatchIntentRequest({
+            config,
+            remoteWorkspace,
+            request,
+          }),
+          config,
+          fetchImpl,
+          path: "/api/dispatch-intents/latest",
+        })
+        const bodyText = await response.text()
+        return {
+          body: parseJsonBody(bodyText),
+          bodyText,
+          ok: response.ok,
+          status: response.status,
+        }
+      },
+    })
   }
 
   const response = await requestControlPlane({
     body: buildDispatchIntentRequest({
       config,
-      remoteWorkspace: workspaceLease.lease?.slot.workspaceReference,
       request,
     }),
     config,
@@ -225,11 +234,6 @@ export async function runSupervisorTick({
   const body = parseJsonBody(bodyText)
 
   if (!response.ok) {
-    await releaseRemoteWorkspaceSlot({
-      coordinator: coordinatorService,
-      holder: request.holder ?? config.holder ?? "",
-      lease: workspaceLease.lease,
-    })
     return {
       controlPlane: {
         ...(body?.intent ? { activeIntent: body.intent } : {}),
@@ -239,16 +243,7 @@ export async function runSupervisorTick({
       leased: false,
       plan,
       reason: "control_plane_rejected",
-      ...(workspaceLease.lease ? { remoteWorkspaceLease: workspaceLease.lease } : {}),
     }
-  }
-
-  if (!body?.intent) {
-    await releaseRemoteWorkspaceSlot({
-      coordinator: coordinatorService,
-      holder: request.holder ?? config.holder ?? "",
-      lease: workspaceLease.lease,
-    })
   }
 
   return {
@@ -259,58 +254,6 @@ export async function runSupervisorTick({
     leased: Boolean(body?.intent),
     plan,
     reason: body?.reason ?? (body?.intent ? "leased" : "no_intent"),
-    ...(workspaceLease.lease ? { remoteWorkspaceLease: workspaceLease.lease } : {}),
-  }
-}
-
-async function maybeAcquireRemoteWorkspaceSlot({
-  config,
-  coordinatorService,
-  request,
-}: {
-  config: RunnerConfig
-  coordinatorService?: CoordinatorService
-  request: SupervisorTickRequest
-}): Promise<
-  | { blocked: false; lease?: RemoteWorkspaceSlotLease }
-  | {
-      blocked: true
-      reason: "remote_workspace_pool_full" | "remote_workspace_pool_not_configured"
-      remoteWorkspacePool: { configured: boolean; slots: number }
-    }
-> {
-  if (!usesRemoteWorkspacePool({ config, request })) {
-    return { blocked: false }
-  }
-
-  const holder = request.holder ?? config.holder
-  if (!holder) {
-    return { blocked: false }
-  }
-
-  const ttlSeconds = request.ttlSeconds ?? config.leaseTtlSeconds ?? 900
-  const acquired = await acquireRemoteWorkspaceSlot({
-    coordinator: coordinatorService,
-    holder,
-    pool: config.remoteWorkspacePool,
-    ttlSeconds,
-  })
-  if (acquired.acquired) {
-    return { blocked: false, lease: acquired.lease }
-  }
-
-  const remoteWorkspacePool = {
-    configured: Boolean(config.remoteWorkspacePool?.configured),
-    slots: config.remoteWorkspacePool?.slots.length ?? 0,
-  }
-
-  return {
-    blocked: true,
-    reason:
-      acquired.reason === "pool_full"
-        ? "remote_workspace_pool_full"
-        : "remote_workspace_pool_not_configured",
-    remoteWorkspacePool,
   }
 }
 
