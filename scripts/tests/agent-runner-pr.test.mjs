@@ -4,6 +4,7 @@ import { describe, it } from "node:test"
 import {
   evaluatePullRequestCompletion,
   evaluatePullRequestGate,
+  isAgentArtifactPath,
   isRemoteReference,
   pullRequestBody,
   pullRequestCompletionFieldValues,
@@ -15,6 +16,7 @@ import {
   pullRequestTitle,
   summarizeChecks,
   summarizeReviewThreads,
+  uncommittedNonAgentArtifactPaths,
 } from "../lib/agent-runner-pr.mjs"
 import { workItem } from "./agent-fixtures.mjs"
 
@@ -62,6 +64,30 @@ describe("agent runner PR helpers", () => {
     assert.equal(isRemoteReference("docs/agent-evidence/active/579-test.md"), false)
     assert.match(body, /- https:\/\/github\.com\/voyantjs\/voyant\/issues\/579#issuecomment-1/)
     assert.doesNotMatch(body, /<details>/)
+  })
+
+  it("allows generated agent artifacts to remain uncommitted before opening a PR", () => {
+    assert.equal(isAgentArtifactPath("docs/agent-plans/active/579-test.md"), true)
+    assert.equal(isAgentArtifactPath("docs/agent-evidence/active/579-test.md"), true)
+    assert.equal(
+      isAgentArtifactPath(
+        "docs/agent-evidence/browser/579-test/2026-05-10T12-34-56-000Z/summary.json",
+      ),
+      true,
+    )
+    assert.equal(isAgentArtifactPath("apps/agent-control-plane/src/control-plane.test.ts"), false)
+
+    assert.deepEqual(
+      uncommittedNonAgentArtifactPaths(
+        [
+          "?? docs/agent-plans/active/579-test.md",
+          "?? docs/agent-evidence/active/579-test.md",
+          " M apps/agent-control-plane/src/control-plane.test.ts",
+          "R  docs/agent-evidence/active/old.md -> docs/agent-evidence/active/new.md",
+        ].join("\n"),
+      ),
+      ["apps/agent-control-plane/src/control-plane.test.ts"],
+    )
   })
 
   it("opens same-repository PRs with an unqualified head branch", () => {

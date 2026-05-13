@@ -6,6 +6,11 @@ import { actionableReviewDetails, reviewRepairBlocker } from "./agent-runner-rev
 import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 
 export const openPullRequestStates = new Set(["Human Review", "CI Repair", "Changes Requested"])
+const generatedAgentArtifactPrefixes = [
+  "docs/agent-evidence/active/",
+  "docs/agent-evidence/browser/",
+  "docs/agent-plans/active/",
+]
 const successfulCheckConclusions = new Set(["SUCCESS", "SKIPPED", "NEUTRAL"])
 const failedCheckConclusions = new Set([
   "ACTION_REQUIRED",
@@ -81,8 +86,47 @@ export function assertWorkspaceReadyForPullRequest({ allowDirty = false, branch,
   }
 
   const status = runGit(["status", "--porcelain"], { cwd: workspace })
-  if (status && !allowDirty) {
-    fail("workspace has uncommitted changes; commit them or pass --allow-dirty")
+  const nonArtifactPaths = uncommittedNonAgentArtifactPaths(status)
+  if (nonArtifactPaths.length > 0 && !allowDirty) {
+    fail(
+      `workspace has uncommitted changes outside generated agent artifacts: ${nonArtifactPaths.join(
+        ", ",
+      )}; commit them or pass --allow-dirty`,
+    )
+  }
+}
+
+export function uncommittedNonAgentArtifactPaths(status) {
+  return parsePorcelainStatusPaths(status).filter((filePath) => !isAgentArtifactPath(filePath))
+}
+
+export function isAgentArtifactPath(filePath) {
+  return generatedAgentArtifactPrefixes.some((prefix) => filePath.startsWith(prefix))
+}
+
+function parsePorcelainStatusPaths(status) {
+  if (!status) return []
+
+  return status
+    .split("\n")
+    .flatMap((line) => {
+      const filePath = line.slice(3).trim()
+      if (!filePath) return []
+      if (filePath.includes(" -> ")) {
+        return filePath.split(" -> ").map((part) => unquotePath(part))
+      }
+      return [unquotePath(filePath)]
+    })
+    .filter(Boolean)
+}
+
+function unquotePath(filePath) {
+  if (!filePath.startsWith('"') || !filePath.endsWith('"')) return filePath
+
+  try {
+    return JSON.parse(filePath)
+  } catch {
+    return filePath.slice(1, -1)
   }
 }
 

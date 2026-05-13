@@ -1407,6 +1407,13 @@ Verification:
   gate and fails the intent without running the command if placeholders,
   missing command inputs, invalid remote ports, or blocked destructive git
   patterns are present.
+- Trusted dedicated server runners should pass implementation work to Codex with
+  full local shell access, for example
+  `codex exec --sandbox danger-full-access --skip-git-repo-check "<agent prompt>"`.
+  In this model the runner host, worktree, repository credentials, and queue
+  gates are the isolation boundary. Avoid the local Codex workspace sandbox on
+  these hosts when it blocks normal package-manager, test, browser, or network
+  commands.
 - The executor can recover from stale active dispatch pointers with
   `--release-expired-intents`. When the control plane rejects a lease because an
   active intent has already expired, the executor finishes that intent as
