@@ -2,17 +2,10 @@ import {
   browserEvidenceReferenceKind,
   requiresBrowserEvidence,
 } from "./agent-runner-browser-evidence.mjs"
-import { hasCiRepairEvidence } from "./agent-runner-ci.mjs"
-import {
-  localCiRepairRecommendationPlan,
-  remoteCiRepairCommandPlan,
-} from "./agent-runner-ci-repair-recommendation.mjs"
+import { localCiRepairRecommendationPlan } from "./agent-runner-ci-repair-recommendation.mjs"
 import { evaluateHeartbeat } from "./agent-runner-output.mjs"
 import { hasReviewRepairEvidence } from "./agent-runner-review.mjs"
-import {
-  isRemoteWorkspaceDescriptor,
-  parseWorkspaceReference,
-} from "./agent-runner-workspace-contract.mjs"
+import { remoteWorkspaceRecommendation } from "./agent-runner-tick-remote.mjs"
 
 const runnableStates = new Set(["Planning", "Changes Requested", "CI Repair"])
 const stalePreemptionStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
@@ -20,10 +13,30 @@ const watchedStates = new Set([...stalePreemptionStates, "Blocked", "Human Revie
 
 export function recommendQueueActions(
   items,
-  { ciRepairDispatchEnabled = false, maxAgeDays, repository },
+  {
+    browserDevServerCommand,
+    ciRepairDispatchEnabled = false,
+    implementationCommand,
+    maxAgeDays,
+    remoteBrowserDevServerCommand,
+    remoteBrowserPort,
+    remoteImplementationCommand,
+    repository,
+  },
 ) {
   return items
-    .map((item) => recommendQueueAction(item, { ciRepairDispatchEnabled, maxAgeDays, repository }))
+    .map((item) =>
+      recommendQueueAction(item, {
+        browserDevServerCommand,
+        ciRepairDispatchEnabled,
+        implementationCommand,
+        maxAgeDays,
+        remoteBrowserDevServerCommand,
+        remoteBrowserPort,
+        remoteImplementationCommand,
+        repository,
+      }),
+    )
     .filter((recommendation) => recommendation.action !== "ignore")
     .sort(
       (left, right) =>
@@ -33,7 +46,16 @@ export function recommendQueueActions(
 
 export function recommendQueueAction(
   item,
-  { ciRepairDispatchEnabled = false, maxAgeDays, repository },
+  {
+    browserDevServerCommand,
+    ciRepairDispatchEnabled = false,
+    implementationCommand,
+    maxAgeDays,
+    remoteBrowserDevServerCommand,
+    remoteBrowserPort,
+    remoteImplementationCommand,
+    repository,
+  },
 ) {
   if (!item.issue) {
     return recommendation(item, {
@@ -78,9 +100,13 @@ export function recommendQueueAction(
     })
   }
 
-  const workspaceRecommendation = remoteWorkspaceRecommendation(item, {
+  const workspaceRecommendation = remoteWorkspaceRecommendation({
+    item,
     ciRepairDispatchEnabled,
     heartbeat,
+    remoteBrowserDevServerCommand,
+    remoteBrowserPort,
+    remoteImplementationCommand,
     repository,
   })
   if (workspaceRecommendation) {
@@ -96,7 +122,11 @@ export function recommendQueueAction(
     })
   }
 
-  const browserRecommendation = browserEvidenceRecommendation(item, { heartbeat, repository })
+  const browserRecommendation = browserEvidenceRecommendation(item, {
+    browserDevServerCommand,
+    heartbeat,
+    repository,
+  })
   if (browserRecommendation) {
     return browserRecommendation
   }
@@ -137,7 +167,7 @@ export function recommendQueueAction(
       action: "run-command",
       command: commandWithIssue({
         command: "run-command",
-        extraArgs: ['--command "<implementation-command>"'],
+        extraArgs: ["--command", shellArg(implementationCommand ?? "<implementation-command>")],
         issueNumber: item.issue.number,
         repository,
       }),
@@ -212,201 +242,6 @@ export function recommendQueueAction(
   })
 }
 
-function remoteWorkspaceRecommendation(item, { ciRepairDispatchEnabled, heartbeat, repository }) {
-  const workspace = item.fields.Workspace
-  if (!workspace) return null
-
-  const descriptor = parseWorkspaceReference(workspace, { repoRoot: "/" })
-  const state = item.fields["Agent State"]
-
-  if (descriptor.kind === "invalid") {
-    return recommendation(item, {
-      action: "inspect-workspace",
-      command: null,
-      heartbeat,
-      priority: 25,
-      reason: `invalid Workspace: ${descriptor.reason}`,
-    })
-  }
-
-  if (!isRemoteWorkspaceDescriptor(descriptor)) return null
-
-  const remoteBrowserRecommendation = remoteBrowserEvidenceRecommendation(item, {
-    descriptor,
-    heartbeat,
-    repository,
-  })
-  if (remoteBrowserRecommendation) return remoteBrowserRecommendation
-
-  if (state === "Human Review" && item.fields.PR) return null
-  if (state === "Merge Ready" && item.fields.PR) return null
-
-  if (state === "Human Review" && item.fields.Evidence) {
-    if (isRemoteEvidence(item.fields.Evidence)) {
-      return recommendation(item, {
-        action: "remote-open-pr",
-        command: commandWithIssue({
-          command: "remote-open-pr",
-          issueNumber: item.issue.number,
-          repository,
-        }),
-        heartbeat,
-        priority: 60,
-        reason: `remote workspace ${descriptor.reference} has published evidence and needs a PR`,
-      })
-    }
-
-    return recommendation(item, {
-      action: "remote-publish-evidence",
-      command: commandWithIssue({
-        command: "remote-publish-evidence",
-        issueNumber: item.issue.number,
-        repository,
-      }),
-      heartbeat,
-      priority: 60,
-      reason: `remote workspace ${descriptor.reference} evidence should be published before PR creation`,
-    })
-  }
-
-  if (item.ready) {
-    return recommendation(item, {
-      action: "remote-bootstrap",
-      command: commandWithIssue({
-        command: "remote-bootstrap",
-        issueNumber: item.issue.number,
-        repository,
-      }),
-      heartbeat,
-      priority: 20,
-      reason: `remote workspace ${descriptor.reference} is ready for repository bootstrap`,
-    })
-  }
-
-  if (state === "CI Repair" && item.fields.PR && !hasCiRepairEvidence(item.fields.Evidence)) {
-    return null
-  }
-
-  const reviewRepairPlan = reviewRepairRecommendationPlan(item)
-  if (reviewRepairPlan) {
-    return recommendation(item, {
-      action: reviewRepairPlan.action,
-      command: commandWithIssue({
-        command: reviewRepairPlan.command,
-        issueNumber: item.issue.number,
-        repository,
-      }),
-      heartbeat,
-      priority: reviewRepairPlan.priority,
-      reason: reviewRepairPlan.reason,
-    })
-  }
-
-  const ciRepairPlan = remoteCiRepairCommandPlan(item, {
-    ciRepairDispatchEnabled,
-    workspaceReference: descriptor.reference,
-  })
-  if (ciRepairPlan) {
-    return recommendation(item, {
-      action: ciRepairPlan.action,
-      command: commandWithIssue({
-        command: ciRepairPlan.command,
-        extraArgs: ciRepairPlan.extraArgs,
-        issueNumber: item.issue.number,
-        repository,
-      }),
-      heartbeat,
-      priority: ciRepairPlan.priority,
-      reason: ciRepairPlan.reason,
-    })
-  }
-
-  if (["Planning", "Changes Requested", "CI Repair"].includes(state)) {
-    return recommendation(item, {
-      action: "remote-run-command",
-      command: commandWithIssue({
-        command: "remote-run-command",
-        extraArgs: ['--command "<implementation-command>"'],
-        issueNumber: item.issue.number,
-        repository,
-      }),
-      heartbeat,
-      priority: 30,
-      reason: `remote workspace ${descriptor.reference} is ready for supervised command execution`,
-    })
-  }
-
-  if (state === "Running") {
-    return recommendation(item, {
-      action: "wait-running",
-      command: null,
-      heartbeat,
-      priority: 40,
-      reason: "remote command execution is already marked running",
-    })
-  }
-
-  if (state === "Done" || state === "Abandoned") {
-    return recommendation(item, {
-      action: "remote-cleanup",
-      command: commandWithIssue({
-        command: "remote-cleanup",
-        issueNumber: item.issue.number,
-        repository,
-      }),
-      heartbeat,
-      priority: 90,
-      reason: `remote workspace ${descriptor.reference} needs remote adapter cleanup`,
-    })
-  }
-
-  if (
-    ["Ready", "Planning", "Running", "Changes Requested", "CI Repair", "Human Review"].includes(
-      state,
-    ) ||
-    item.ready
-  ) {
-    return recommendation(item, {
-      action: "wait-remote-adapter",
-      command: commandWithIssue({
-        command: "remote-inspect",
-        issueNumber: item.issue.number,
-        mutate: false,
-        repository,
-      }),
-      heartbeat,
-      priority: 29,
-      reason: `remote workspace ${descriptor.reference} requires a remote adapter`,
-    })
-  }
-
-  return null
-}
-
-function remoteBrowserEvidenceRecommendation(item, { descriptor, heartbeat, repository }) {
-  const state = item.fields["Agent State"]
-  if (
-    !requiresBrowserEvidence(item) ||
-    browserEvidenceCovered(item.fields.Evidence) ||
-    !["Changes Requested", "CI Repair", "Human Review"].includes(state)
-  ) {
-    return null
-  }
-
-  return recommendation(item, {
-    action: "remote-capture-browser",
-    command: commandWithIssue({
-      command: "remote-capture-browser",
-      extraArgs: ['--dev-server-command "<dev-server-command>"', "--port <port>"],
-      issueNumber: item.issue.number,
-      repository,
-    }),
-    heartbeat,
-    priority: state === "Human Review" ? 54 : 35,
-    reason: `UI-labeled remote work in ${descriptor.reference} needs browser evidence before handoff`,
-  })
-}
-
 function humanReviewRecommendation(item, { heartbeat, repository }) {
   const evidence = item.fields.Evidence
   const pr = item.fields.PR
@@ -459,7 +294,7 @@ function humanReviewRecommendation(item, { heartbeat, repository }) {
   })
 }
 
-function browserEvidenceRecommendation(item, { heartbeat, repository }) {
+function browserEvidenceRecommendation(item, { browserDevServerCommand, heartbeat, repository }) {
   const state = item.fields["Agent State"]
   if (
     !requiresBrowserEvidence(item) ||
@@ -477,7 +312,10 @@ function browserEvidenceRecommendation(item, { heartbeat, repository }) {
     action: "capture-browser",
     command: commandWithIssue({
       command: "capture-browser",
-      extraArgs: ['--dev-server-command "<dev-server-command>"'],
+      extraArgs: [
+        "--dev-server-command",
+        shellArg(browserDevServerCommand ?? "<dev-server-command>"),
+      ],
       issueNumber: item.issue.number,
       repository,
     }),
@@ -539,4 +377,13 @@ function commandWithRepo({ command, repository }) {
   return [`pnpm agent:queue:${command}`, repository ? `-- --repo ${repository}` : null]
     .filter(Boolean)
     .join(" ")
+}
+
+function shellArg(value) {
+  const normalized = String(value)
+  if (/^[A-Za-z0-9_./:=@+-]+$/.test(normalized)) {
+    return normalized
+  }
+
+  return `"${normalized.replace(/(["\\$`])/g, "\\$1")}"`
 }

@@ -994,9 +994,10 @@ Use the existing package strategy: reusable runner primitives belong in
 
 ## Implementation Plan
 
-Status: Phases 0-2 have a working local pilot. The remaining orchestration
-work should focus on Phase 3 browser and UI evidence, then Phase 4 PR shepherd
-and CI repair.
+Status: Phases 0-2 have a working local pilot and the deployed runner pilot now
+has explicit Cloudflare storage roles. The remaining orchestration work should
+focus on deploying and exercising the pilot, then Phase 3 browser and UI
+evidence, Phase 4 PR shepherd/CI repair, and Phase 5 remote execution.
 
 ### Phase 0: Record And Enforce The Operating Contract
 
@@ -1290,6 +1291,12 @@ Verification:
   control API/webhooks, Cron Triggers for polling and stale-run checks, Queues
   for dispatch, Durable Objects for per-run coordination and locks, R2 for
   artifacts, and D1 or Postgres/Neon for run metadata.
+- The Cloudflare pilot uses both D1 and Durable Objects. D1 is the durable,
+  queryable run ledger for runs, leases, supervisor events, heartbeats, and
+  dashboard/status reads. Durable Objects are the coordination surface for
+  per-run or per-repository locks. They are intentionally not the historical
+  database. R2 remains the durable artifact store for tick history, logs,
+  browser captures, videos, and evidence packets.
 - Codex gets the first execution adapter because it is the primary target for
   this orchestration work. Claude remains a supported provider option,
   especially for UI-heavy slices, but UI quality is enforced through repo docs,
@@ -1373,6 +1380,21 @@ Verification:
   Each iteration submits a fresh tick snapshot, leases one intent from that
   stored snapshot, runs the leased lifecycle command, records the terminal
   outcome, and stops on idle, failure, or the configured iteration limit.
+- The same loop is also exposed as `pnpm agent:queue:executor` for the 24/7
+  execution process. It can lease implementation and browser-capture work only
+  when concrete executor inputs are supplied, such as `--implementation-command`,
+  `--remote-implementation-command`, `--browser-dev-server-command`,
+  `--remote-browser-dev-server-command`, and `--remote-browser-port`.
+  Recommendations that still contain placeholders are deliberately not
+  leaseable. Immediately before execution, the executor runs a second quality
+  gate and fails the intent without running the command if placeholders,
+  missing command inputs, invalid remote ports, or blocked destructive git
+  patterns are present.
+- The executor can recover from stale active dispatch pointers with
+  `--release-expired-intents`. When the control plane rejects a lease because an
+  active intent has already expired, the executor finishes that intent as
+  `released` using the stored holder, records a recovery event, and retries the
+  lease once. It does not release still-active leases.
 - A Cloudflare-ready runner shell exists in `apps/agent-runner`. It exposes
   health, capabilities, a scheduled handler, and a guarded supervisor tick
   endpoint. By default it is dry-run only. When explicitly enabled, it can lease
@@ -1384,11 +1406,24 @@ Verification:
 - The runner app can persist the latest supervisor tick result per repository
   to R2 through the `AGENT_RUNNER_TICKS` binding and expose it at
   `GET /api/supervisor/ticks/latest` and recent records at
-  `GET /api/supervisor/ticks/recent`. This gives Cron-based deployments an
-  inspectable heartbeat and recent lease results without introducing a full run
-  database. Lease-conflict ticks preserve the active intent returned by the
-  control plane so maintainers can see the holder, issue, action, and expiration
-  that blocked the run.
+  `GET /api/supervisor/ticks/recent`. Successful deployed leases are stored in
+  a separate lease-budget history exposed at
+  `GET /api/supervisor/leases/recent`, so operators can inspect what consumed
+  the daily budget without scanning non-lease tick records. Lease-conflict ticks
+  preserve the active intent returned by the control plane so maintainers can
+  see the holder, issue, action, and expiration that blocked the run.
+- The runner app can also bind `AGENT_RUNNER_DB` to D1 for the queryable run
+  ledger. The first migration creates run, lease, and event tables. The runner
+  writes supervisor ticks and successful leases into the ledger and exposes
+  `GET /api/ledger/status`, `GET /api/ledger/runs/recent`, and
+  `GET /api/ledger/leases/recent`. `GET /api/supervisor/status` includes the
+  same ledger summary so deployment doctor and steady-state status checks can
+  report whether the durable run database is actually present.
+- The runner app can bind `AGENT_RUNNER_COORDINATOR` to the
+  `AgentRunnerCoordinator` Durable Object. The initial contract is a small lock
+  API for acquire, release, inspect, and health. Later execution adapters should
+  use it for per-run or per-repository coordination while keeping historical
+  state in D1 and artifacts in R2.
 - `GET /api/supervisor/status` combines runner capabilities with latest and
   recent supervisor tick history for one repository. It is non-mutating and
   still reports capabilities when tick storage is not configured, so operators
@@ -1421,12 +1456,12 @@ Verification:
 - Operators can use `pnpm agent:queue:deployed-status -- --repo <owner/name>`
   for the steady-state read-only view. It checks the same deployed endpoints
   and summarizes the control plane's latest queue snapshots, current read-only
-  dispatch plan, runner policy, and the runner supervisor's latest and recent
-  ticks without triggering a smoke tick. The dispatch plan uses the deployed
-  runner's default action filter when configured. The policy summary makes
-  CI-repair opt-in visible before Cron is enabled. Pass `--issue <number>
-  --action <name>` to include the active dispatch pointer for a specific
-  lifecycle action.
+  dispatch plan, runner policy, D1 run ledger status, and the runner
+  supervisor's latest and recent ticks without triggering a smoke tick. The
+  dispatch plan uses the deployed runner's default action filter when
+  configured. The policy summary makes CI-repair opt-in visible before Cron is
+  enabled. Pass `--issue <number> --action <name>` to include the active
+  dispatch pointer for a specific lifecycle action.
 
 ## Open Questions
 

@@ -1,5 +1,21 @@
 import { Hono } from "hono"
-
+import {
+  bearerToken,
+  createSupervisorLeaseRecord,
+  isLeasedResult,
+  normalizeDailyLeaseLimit,
+  parseLimit,
+  parseSince,
+  persistRunLedgerSupervisorTick,
+  validationIssues,
+} from "./app-helpers.js"
+import {
+  coordinatorCapabilities,
+  readRunLedgerStatus,
+  runLedgerCapabilities,
+  supervisorTickCapabilities,
+} from "./app-status.js"
+import type { AgentRunnerLedgerStore } from "./run-ledger-store.js"
 import {
   buildRunnerCapabilities,
   planSupervisorTick,
@@ -8,17 +24,15 @@ import {
   type SupervisorTickRequest,
   supervisorTickRequestSchema,
 } from "./runner.js"
-import {
-  createSupervisorTickRecord,
-  type SupervisorLeaseRecord,
-  type SupervisorTickStore,
-} from "./supervisor-tick-store.js"
+import { createSupervisorTickRecord, type SupervisorTickStore } from "./supervisor-tick-store.js"
 
 interface AppOptions {
   authTokens?: string[]
   config?: RunnerConfig
   fetchImpl?: typeof fetch
   now?: () => Date
+  runLedgerStore?: AgentRunnerLedgerStore
+  coordinatorConfigured?: boolean
   supervisorTickStore?: SupervisorTickStore
 }
 
@@ -30,6 +44,8 @@ export function createApp({
   },
   fetchImpl = fetch,
   now = () => new Date(),
+  runLedgerStore,
+  coordinatorConfigured = false,
   supervisorTickStore,
 }: AppOptions = {}): Hono {
   const app = new Hono()
@@ -58,6 +74,8 @@ export function createApp({
   app.get("/api/capabilities", (c) =>
     c.json({
       ...buildRunnerCapabilities(config),
+      coordinator: coordinatorCapabilities(coordinatorConfigured),
+      runLedger: runLedgerCapabilities(runLedgerStore),
       supervisorTicks: supervisorTickCapabilities(supervisorTickStore),
     }),
   )
@@ -67,17 +85,33 @@ export function createApp({
     if (!repository) {
       return c.json({ error: "missing_repository" }, 400)
     }
+    const limit = parseLimit(c.req.query("limit")) ?? 5
 
     const capabilities = {
       ...buildRunnerCapabilities(config),
+      coordinator: coordinatorCapabilities(coordinatorConfigured),
+      runLedger: runLedgerCapabilities(runLedgerStore),
       supervisorTicks: supervisorTickCapabilities(supervisorTickStore),
     }
+    const runLedger = await readRunLedgerStatus({
+      limit,
+      repository,
+      runLedgerStore,
+    })
 
     if (!supervisorTickStore) {
       return c.json({
         capabilities,
         repository,
+        runLedger,
         service: "agent-runner",
+        supervisorLeases: {
+          recent: [],
+          storage: {
+            configured: false,
+            persistence: "none",
+          },
+        },
         supervisorTicks: {
           latest: null,
           recent: [],
@@ -92,17 +126,108 @@ export function createApp({
     return c.json({
       capabilities,
       repository,
+      runLedger,
       service: "agent-runner",
+      supervisorLeases: {
+        recent: supervisorTickStore.listLeases
+          ? await supervisorTickStore.listLeases(repository, { limit })
+          : [],
+        storage: {
+          configured: Boolean(supervisorTickStore.listLeases && supervisorTickStore.putLease),
+          persistence:
+            supervisorTickStore.listLeases && supervisorTickStore.putLease ? "history" : "none",
+        },
+      },
       supervisorTicks: {
         latest: await supervisorTickStore.getLatest(repository),
         recent: await supervisorTickStore.listRecent(repository, {
-          limit: parseLimit(c.req.query("limit")) ?? 5,
+          limit,
         }),
         storage: {
           configured: true,
           persistence: "latest",
         },
       },
+    })
+  })
+
+  app.get("/api/ledger/status", async (c) => {
+    if (!runLedgerStore) {
+      return c.json({ error: "run_ledger_not_configured" }, 503)
+    }
+
+    const repository = c.req.query("repository")?.trim() || config.repository
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+
+    return c.json({
+      repository,
+      status: await runLedgerStore.getStatus(repository),
+    })
+  })
+
+  app.get("/api/ledger/runs/recent", async (c) => {
+    if (!runLedgerStore) {
+      return c.json({ error: "run_ledger_not_configured" }, 503)
+    }
+
+    const repository = c.req.query("repository")?.trim() || config.repository
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+
+    return c.json({
+      records: await runLedgerStore.listRecentRuns(repository, {
+        limit: parseLimit(c.req.query("limit")),
+      }),
+      repository,
+    })
+  })
+
+  app.get("/api/ledger/leases/recent", async (c) => {
+    if (!runLedgerStore) {
+      return c.json({ error: "run_ledger_not_configured" }, 503)
+    }
+
+    const repository = c.req.query("repository")?.trim() || config.repository
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+    const since = parseSince(c.req.query("since"))
+    if (since === false) {
+      return c.json({ error: "invalid_since" }, 400)
+    }
+
+    return c.json({
+      records: await runLedgerStore.listRecentLeases(repository, {
+        limit: parseLimit(c.req.query("limit")) ?? 20,
+        since,
+      }),
+      repository,
+    })
+  })
+
+  app.get("/api/supervisor/leases/recent", async (c) => {
+    if (!supervisorTickStore?.listLeases) {
+      return c.json({ error: "supervisor_lease_storage_not_configured" }, 503)
+    }
+
+    const repository = c.req.query("repository")?.trim()
+    if (!repository) {
+      return c.json({ error: "missing_repository" }, 400)
+    }
+    const since = parseSince(c.req.query("since"))
+    if (since === false) {
+      return c.json({ error: "invalid_since" }, 400)
+    }
+
+    return c.json({
+      records: await supervisorTickStore.listLeases(repository, {
+        limit: parseLimit(c.req.query("limit")) ?? 20,
+        since,
+      }),
+      repository,
     })
   })
 
@@ -124,6 +249,7 @@ export function createApp({
         fetchImpl,
         now,
         request: parsed.data,
+        runLedgerStore,
         source: "api",
         supervisorTickStore,
       }),
@@ -174,6 +300,7 @@ export async function runPersistentSupervisorTick({
   fetchImpl = fetch,
   now = () => new Date(),
   request = {},
+  runLedgerStore,
   source,
   supervisorTickStore,
 }: {
@@ -181,6 +308,7 @@ export async function runPersistentSupervisorTick({
   fetchImpl?: typeof fetch
   now?: () => Date
   request?: SupervisorTickRequest
+  runLedgerStore?: AgentRunnerLedgerStore
   source: "api" | "scheduled"
   supervisorTickStore?: SupervisorTickStore
 }) {
@@ -215,29 +343,34 @@ export async function runPersistentSupervisorTick({
           source,
         })
   const repository = request.repository ?? config.repository
-  if (
-    budget.configured &&
-    "usedLeases" in budget &&
-    "maxDailyLeases" in budget &&
-    !budget.blocked &&
-    repository &&
-    isLeasedResult(result)
-  ) {
-    await supervisorTickStore?.putLease?.(
-      createSupervisorLeaseRecord({
-        leasedAt: recordedAt,
-        repository,
-        result,
-      }),
-    )
-    const usedLeases = budget.usedLeases + 1
-    result = {
-      ...result,
-      budget: {
-        ...budget,
-        remainingLeases: Math.max(budget.maxDailyLeases - usedLeases, 0),
-        usedLeases,
-      },
+  if (repository && isLeasedResult(result)) {
+    const leaseRecord = createSupervisorLeaseRecord({
+      leasedAt: recordedAt,
+      repository,
+      result,
+    })
+    await supervisorTickStore?.putLease?.(leaseRecord)
+    await runLedgerStore?.recordSupervisorLease({
+      leasedAt: leaseRecord.leasedAt,
+      repository,
+      result,
+      supervisorLeaseId: leaseRecord.id,
+    })
+    if (
+      budget.configured &&
+      "usedLeases" in budget &&
+      "maxDailyLeases" in budget &&
+      !budget.blocked
+    ) {
+      const usedLeases = budget.usedLeases + 1
+      result = {
+        ...result,
+        budget: {
+          ...budget,
+          remainingLeases: Math.max(budget.maxDailyLeases - usedLeases, 0),
+          usedLeases,
+        },
+      }
     }
   }
   const storage = await persistSupervisorTick({
@@ -246,11 +379,17 @@ export async function runPersistentSupervisorTick({
     result,
     supervisorTickStore,
   })
+  const runLedger = await persistRunLedgerSupervisorTick({
+    recordedAt,
+    repository,
+    result,
+    runLedgerStore,
+  })
 
   return {
     plannedAt: recordedAt.toISOString(),
     result,
-    storage,
+    storage: runLedger ? { ...storage, runLedger } : storage,
   }
 }
 
@@ -339,63 +478,5 @@ async function evaluateSupervisorLeaseBudget({
     remainingLeases,
     usedLeases,
     ...(usedLeases >= maxDailyLeases ? { reason: "daily lease budget exhausted" } : {}),
-  }
-}
-
-function normalizeDailyLeaseLimit(value: number | undefined) {
-  if (!value) return null
-  return Math.min(Math.max(Math.trunc(value), 1), 100)
-}
-
-function isLeasedResult(result: unknown): result is { leased: true } {
-  return Boolean(
-    result && typeof result === "object" && "leased" in result && result.leased === true,
-  )
-}
-
-function createSupervisorLeaseRecord({
-  leasedAt,
-  repository,
-  result,
-}: {
-  leasedAt: Date
-  repository: string
-  result: unknown
-}): SupervisorLeaseRecord {
-  return {
-    id: leaseRecordId(leasedAt),
-    leasedAt: leasedAt.toISOString(),
-    repository,
-    result,
-  }
-}
-
-function leaseRecordId(leasedAt: Date) {
-  return `lease_${leasedAt.getTime()}_${Math.random().toString(36).slice(2)}`
-}
-
-function bearerToken(header: string | undefined) {
-  const match = header?.match(/^Bearer\s+(.+)$/i)
-  return match?.[1]?.trim()
-}
-
-function validationIssues(error: { issues: Array<{ path: Array<PropertyKey>; message: string }> }) {
-  return error.issues.map((issue) => ({
-    path: issue.path.join("."),
-    message: issue.message,
-  }))
-}
-
-function parseLimit(value: string | undefined) {
-  if (!value) return undefined
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : undefined
-}
-
-function supervisorTickCapabilities(supervisorTickStore: SupervisorTickStore | undefined) {
-  return {
-    history: Boolean(supervisorTickStore),
-    leaseBudgetHistory: Boolean(supervisorTickStore?.listLeases && supervisorTickStore.putLease),
-    persistence: supervisorTickStore ? "latest" : "none",
   }
 }

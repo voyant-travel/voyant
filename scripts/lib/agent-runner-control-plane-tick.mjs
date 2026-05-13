@@ -38,8 +38,14 @@ export function generateControlPlaneTickSnapshot(args, { repoRoot }) {
       recentEvents: readRecentEvents(eventLogPath, recentEventLimit),
     },
     recommendations: recommendQueueActions(items, {
+      browserDevServerCommand: args.browserDevServerCommand,
+      browserPort: args.browserPort,
       ciRepairDispatchEnabled: ciRepairDispatchEnabled(args),
+      implementationCommand: args.implementationCommand,
       maxAgeDays,
+      remoteBrowserDevServerCommand: args.remoteBrowserDevServerCommand,
+      remoteBrowserPort: args.remoteBrowserPort,
+      remoteImplementationCommand: args.remoteImplementationCommand,
       repository,
     }),
   }

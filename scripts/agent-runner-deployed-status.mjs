@@ -4,6 +4,9 @@ import {
   latestControlPlaneTickSnapshot,
   latestRunnerSupervisorTick,
   recentControlPlaneTickSnapshots,
+  recentRunnerLedgerLeases,
+  recentRunnerLedgerRuns,
+  recentRunnerSupervisorLeases,
   recentRunnerSupervisorTicks,
   summarizeActiveDispatchIntent,
   summarizeDispatchPlan,
@@ -157,13 +160,27 @@ function printRunnerSupervisorDetails(status) {
   if (!status) return
 
   const storage = status.supervisorTicks?.storage
+  const leaseStorage = status.supervisorLeases?.storage
   const latest = latestRunnerSupervisorTick(status)
   const recent = recentRunnerSupervisorTicks(status)
+  const recentLeases = recentRunnerSupervisorLeases(status)
+  const ledgerStorage = status.runLedger?.storage
+  const ledgerStatus = status.runLedger?.status
+  const ledgerRuns = recentRunnerLedgerRuns(status)
+  const ledgerLeases = recentRunnerLedgerLeases(status)
 
   console.log("")
   console.log("Runner supervisor:")
   console.log(`  storage configured: ${String(storage?.configured ?? "unknown")}`)
   console.log(`  persistence: ${storage?.persistence ?? "unknown"}`)
+  console.log(`  lease history configured: ${String(leaseStorage?.configured ?? "unknown")}`)
+  console.log(`  run ledger configured: ${String(ledgerStorage?.configured ?? "unknown")}`)
+  console.log(`  run ledger persistence: ${ledgerStorage?.persistence ?? "unknown"}`)
+  if (ledgerStatus) {
+    console.log(`  ledger runs: ${String(ledgerStatus.recentRunCount ?? "unknown")}`)
+    console.log(`  ledger leases: ${String(ledgerStatus.recentLeaseCount ?? "unknown")}`)
+    console.log(`  latest heartbeat: ${ledgerStatus.latestHeartbeatAt ?? "none"}`)
+  }
   if (latest) {
     console.log(`  latest: ${latest.recordedAt ?? "unknown"} ${latest.reason ?? "unknown"}`)
     console.log(`  latest leased: ${String(latest.leased ?? "unknown")}`)
@@ -174,14 +191,41 @@ function printRunnerSupervisorDetails(status) {
     console.log("  latest: none")
   }
 
-  if (recent.length === 0) return
+  if (recent.length > 0) {
+    console.log("  recent:")
+    for (const tick of recent) {
+      const intent = tick.intentId ? ` intent=${tick.intentId}` : ""
+      console.log(
+        `  - ${tick.recordedAt ?? "unknown"} ${tick.reason ?? "unknown"} leased=${String(tick.leased ?? "unknown")}${intent}`,
+      )
+    }
+  }
 
-  console.log("  recent:")
-  for (const tick of recent) {
-    const intent = tick.intentId ? ` intent=${tick.intentId}` : ""
-    console.log(
-      `  - ${tick.recordedAt ?? "unknown"} ${tick.reason ?? "unknown"} leased=${String(tick.leased ?? "unknown")}${intent}`,
-    )
+  if (recentLeases.length > 0) {
+    console.log("  recent leases:")
+    for (const lease of recentLeases) {
+      const intent = lease.intentId ? ` intent=${lease.intentId}` : ""
+      console.log(`  - ${lease.leasedAt ?? "unknown"} ${lease.reason ?? "unknown"}${intent}`)
+    }
+  }
+
+  if (ledgerRuns.length > 0) {
+    console.log("  ledger recent runs:")
+    for (const run of ledgerRuns) {
+      console.log(
+        `  - ${run.updatedAt ?? "unknown"} ${run.id ?? "unknown"} status=${run.status ?? "unknown"} action=${run.action ?? "unknown"}`,
+      )
+    }
+  }
+
+  if (ledgerLeases.length > 0) {
+    console.log("  ledger recent leases:")
+    for (const lease of ledgerLeases) {
+      const intent = lease.intentId ? ` intent=${lease.intentId}` : ""
+      console.log(
+        `  - ${lease.leasedAt ?? "unknown"} status=${lease.status ?? "unknown"} action=${lease.action ?? "unknown"}${intent}`,
+      )
+    }
   }
 }
 

@@ -114,5 +114,8 @@ describe("supervisor tick storage", () => {
     await expect(
       store.listLeases?.("VoyantJS/Voyant", { since: "2026-05-11T12:00:00.000Z" }),
     ).resolves.toEqual([currentLease])
+    await expect(store.listLeases?.("VoyantJS/Voyant", { limit: 1 })).resolves.toEqual([
+      currentLease,
+    ])
   })
 })

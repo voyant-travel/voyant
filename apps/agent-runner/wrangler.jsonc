@@ -17,6 +17,30 @@
   // Optional: bind an R2 bucket as AGENT_RUNNER_TICKS to store the latest
   // supervisor tick status per repository. Set AGENT_RUNNER_TICK_KEY_PREFIX
   // when multiple environments share one bucket.
+  // Bind AGENT_RUNNER_DB to the D1 run ledger before enabling Cron. Replace
+  // the placeholder database_id with the id created by `wrangler d1 create`.
+  "d1_databases": [
+    {
+      "binding": "AGENT_RUNNER_DB",
+      "database_name": "voyant-agent-runner",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "AGENT_RUNNER_COORDINATOR",
+        "class_name": "AgentRunnerCoordinator"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["AgentRunnerCoordinator"]
+    }
+  ],
   "observability": {
     "enabled": true
   }

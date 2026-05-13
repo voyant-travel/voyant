@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process"
 
 export const dispatchableActions = new Set([
+  "capture-browser",
   "collect-ci",
   "collect-review",
   "complete-pr",
@@ -8,11 +9,14 @@ export const dispatchableActions = new Set([
   "open-pr",
   "publish-evidence",
   "remote-bootstrap",
+  "remote-capture-browser",
   "remote-cleanup",
   "remote-open-pr",
   "remote-publish-evidence",
   "remote-repair-ci",
+  "remote-run-command",
   "repair-ci",
+  "run-command",
   "start",
   "sync-pr",
 ])
@@ -27,7 +31,10 @@ export function selectDispatchRecommendation(recommendations, { action, issueNum
     ) {
       return false
     }
-    return dispatchableActions.has(recommendation.action)
+    return (
+      dispatchableActions.has(recommendation.action) &&
+      !containsExecutorPlaceholder(recommendation.command)
+    )
   })
 
   if (matches.length === 0) {
@@ -155,4 +162,8 @@ function repositoriesMatch(left, right) {
     typeof right === "string" &&
     left.trim().toLowerCase() === right.trim().toLowerCase()
   )
+}
+
+function containsExecutorPlaceholder(command) {
+  return typeof command === "string" && /<[^>]+>/.test(command)
 }

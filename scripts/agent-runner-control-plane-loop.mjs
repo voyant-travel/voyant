@@ -12,6 +12,7 @@ import {
 } from "./lib/agent-runner-control-plane-tick.mjs"
 import { dispatchableActions } from "./lib/agent-runner-dispatch.mjs"
 import { runLeasedDispatchIntent } from "./lib/agent-runner-dispatch-intent-runner.mjs"
+import { releaseExpiredActiveDispatchIntent } from "./lib/agent-runner-dispatch-recovery.mjs"
 import { resolveEventLogPath, tryAppendAgentRunnerEvent } from "./lib/agent-runner-events.mjs"
 import {
   eventLogOptions,
@@ -40,6 +41,28 @@ maybePrintHelp(args, {
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
     ["--recent-events <number>", "Number of recent runner events to include. Defaults to 5."],
+    [
+      "--implementation-command <shell>",
+      "Command used when dispatching local run-command items. Without this, placeholders are not leaseable.",
+    ],
+    [
+      "--remote-implementation-command <shell>",
+      "Command used when dispatching remote-run-command items. Defaults to --implementation-command.",
+    ],
+    [
+      "--browser-dev-server-command <shell>",
+      "Dev-server command used when dispatching local browser capture.",
+    ],
+    ["--browser-port <number>", "Browser dev-server port for local capture metadata."],
+    [
+      "--remote-browser-dev-server-command <shell>",
+      "Dev-server command used when dispatching remote browser capture.",
+    ],
+    ["--remote-browser-port <number>", "Required port when dispatching remote browser capture."],
+    [
+      "--release-expired-intents",
+      "Release an expired active dispatch intent once and retry leasing in the same iteration.",
+    ],
     ...ciRepairCommandOptions,
     ...eventLogOptions,
     ["--update-body", "When leasing sync-pr, include --update-body in the returned command."],
@@ -76,7 +99,7 @@ try {
 for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
   console.log(`agent-runner control-plane loop: iteration ${iteration}/${loopOptions.iterations}`)
 
-  const snapshot = generateControlPlaneTickSnapshot(args, { repoRoot })
+  const snapshot = generateControlPlaneTickSnapshot(executorArgs(args), { repoRoot })
   const submitted = await submitTickSnapshot({
     snapshot,
     token: config.token,
@@ -85,7 +108,7 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
     fail(error instanceof Error ? error.message : String(error))
   })
 
-  const leaseResult = await requestLatestDispatchIntent({
+  const leaseResult = await requestLatestDispatchIntentWithRecovery({
     request: buildLatestDispatchIntentRequest({
       action: args.action,
       ciRepairCommand: args.ciRepairCommand,
@@ -96,10 +119,6 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
       ttlSeconds: args.ttlSeconds,
       updateBody: args.updateBody,
     }),
-    token: config.token,
-    url: config.url,
-  }).catch((error) => {
-    fail(error instanceof Error ? error.message : String(error))
   })
 
   tryAppendAgentRunnerEvent({
@@ -176,4 +195,58 @@ function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms)
   })
+}
+
+function executorArgs(args) {
+  return {
+    ...args,
+    remoteImplementationCommand: args.remoteImplementationCommand ?? args.implementationCommand,
+  }
+}
+
+async function requestLatestDispatchIntentWithRecovery({ request }) {
+  try {
+    return await requestLatestDispatchIntent({
+      request,
+      token: config.token,
+      url: config.url,
+    })
+  } catch (error) {
+    if (!args.releaseExpiredIntents) {
+      fail(error instanceof Error ? error.message : String(error))
+    }
+
+    const recovery = await releaseExpiredActiveDispatchIntent({
+      config,
+      error,
+      finishDispatchIntent,
+    }).catch((releaseError) => {
+      fail(releaseError instanceof Error ? releaseError.message : String(releaseError))
+    })
+    if (!recovery?.released) {
+      fail(error instanceof Error ? error.message : String(error))
+    }
+
+    tryAppendAgentRunnerEvent({
+      eventLogPath,
+      event: {
+        type: "control-plane-loop.expired_intent_released",
+        intent: {
+          action: recovery.intent.plan?.action,
+          holder: recovery.intent.lease?.holder,
+          id: recovery.intent.id,
+          status: recovery.intent.status,
+        },
+        repository,
+      },
+    })
+
+    return await requestLatestDispatchIntent({
+      request,
+      token: config.token,
+      url: config.url,
+    }).catch((retryError) => {
+      fail(retryError instanceof Error ? retryError.message : String(retryError))
+    })
+  }
 }
