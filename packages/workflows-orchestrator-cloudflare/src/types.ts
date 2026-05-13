@@ -3,7 +3,7 @@
 // shape is enough, and tests can pass plain objects.
 
 import type { Duration, EnvironmentName, RunTrigger } from "@voyantjs/workflows"
-import type { WaitpointInjection } from "@voyantjs/workflows-orchestrator"
+import type { JournalSlice, WaitpointInjection } from "@voyantjs/workflows-orchestrator"
 
 /**
  * Subset of Cloudflare's `DurableObjectStorage` we actually use.
@@ -62,6 +62,17 @@ export interface TriggerPayload {
   delay?: Duration | { wakeAt: number }
   priority?: number
   triggeredBy?: RunTrigger
+  /**
+   * Optional journal seed for failed-step resume / replay flows.
+   * Steps already present in the journal are replayed from their
+   * stored results, so the workflow starts doing new work at the
+   * first unseeded step.
+   */
+  initialJournal?: JournalSlice
+  /** Cursor paired with `initialJournal.metadataState` for resume replay dedupe. */
+  initialMetadataAppliedCount?: number
+  /** Compute-time budget in ms; copied from parent runs during resume. */
+  timeoutMs?: number
   concurrencyLease?: ConcurrencyLease
 }
 

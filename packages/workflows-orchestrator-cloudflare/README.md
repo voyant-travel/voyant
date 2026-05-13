@@ -65,6 +65,7 @@ export class WorkflowRunDO implements DurableObject {
 |---|---|
 | `POST /api/runs` | Trigger a new run. Body: `{ workflowId, workflowVersion, input, tenantMeta, runId? }`. |
 | `GET  /api/runs/:id` | Fetch the current `RunRecord`. |
+| `POST /api/runs/:id/resume` | Start a new run from a failed parent run. Body: `{ input?, workflowId?, resumeFromStep?, seedResults?, runId?, tags?, triggeredByUserId? }`. |
 | `POST /api/runs/:id/events` | Inject an `EVENT` waitpoint resolution. |
 | `POST /api/runs/:id/signals` | Inject a `SIGNAL` waitpoint resolution. |
 | `POST /api/runs/:id/tokens/:tokenId` | Inject a `MANUAL` (token) waitpoint resolution. |
@@ -72,6 +73,10 @@ export class WorkflowRunDO implements DurableObject {
 
 Injection bodies are `{ eventType, payload? }` / `{ name, payload? }`
 / `{ payload? }` respectively.
+
+If the parent id on `/api/runs/:id/resume` is not stored in this
+orchestrator, pass `workflowId`, `resumeFromStep`, and `seedResults`
+to resume from an external workflow-runs parent.
 
 ## Durable Object model
 

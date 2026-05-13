@@ -6,16 +6,28 @@
 // Routes (all JSON bodies):
 //   POST /api/runs                     → trigger a run
 //   GET  /api/runs/:id                 → fetch a run
+//   POST /api/runs/:id/resume          → start a new run from a failed parent step
 //   POST /api/runs/:id/signals         → inject a SIGNAL waitpoint
 //   POST /api/runs/:id/events          → inject an EVENT waitpoint
 //   POST /api/runs/:id/tokens/:token   → inject a MANUAL (token) waitpoint
 //   POST /api/runs/:id/cancel          → cancel a run
 
-import type { WaitpointInjection } from "@voyantjs/workflows-orchestrator"
+import {
+  buildResumeJournal,
+  buildSeededResumeJournal,
+  type RunRecord,
+  type WaitpointInjection,
+} from "@voyantjs/workflows-orchestrator"
 
 import { handleIngestEvent } from "./event-handler.js"
 import { handleGetManifest, handleRegisterManifest } from "./manifest-handler.js"
 import type { CfManifestStore } from "./manifest-kv-store.js"
+
+const DEFAULT_TENANT_META = {
+  tenantId: "default",
+  projectId: "default",
+  organizationId: "default",
+}
 
 /**
  * Minimal shape of a DO namespace. `idFromName` returns an opaque id;
@@ -133,10 +145,11 @@ export async function handleWorkerRequest<Id>(
       return json(400, { error: "invalid_json", message: errMsg(err) })
     }
     const runId = typeof payload.runId === "string" ? payload.runId : defaultRunId(deps)
+    const publicPayload = sanitizePublicTriggerPayload(payload)
     const forward = new Request(`https://do-internal/trigger`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...payload, runId }),
+      body: JSON.stringify({ ...publicPayload, runId }),
     })
     return forwardToRunDO(runId, forward, deps)
   }
@@ -166,6 +179,82 @@ export async function handleWorkerRequest<Id>(
       }),
       deps,
     )
+  }
+
+  if (req.method === "POST" && tail === "/resume") {
+    const body = await safeJson(req)
+    if (isErrorBody(body)) return json(400, body)
+    const parsed = parseResumeRunBody(body)
+    if ("error" in parsed) return json(400, parsed)
+
+    const parent = await fetchRunRecord(runId, deps)
+    if ("error" in parent) return parent.error
+
+    const workflowId = parsed.body.workflowId ?? parent.record?.workflowId
+    if (!workflowId) {
+      return json(404, {
+        error: "resume_failed",
+        message:
+          `parent run "${runId}" not found; pass workflowId, resumeFromStep, ` +
+          "and seedResults to resume from an external workflow-runs parent",
+      })
+    }
+
+    let resumeSeed: ReturnType<typeof buildResumeJournal>
+    try {
+      resumeSeed = parent.record
+        ? buildResumeJournal({
+            parent: parent.record,
+            resumeFromStep: parsed.body.resumeFromStep,
+            seedResults: parsed.body.seedResults,
+            now: deps.now,
+          })
+        : buildSeededResumeJournal({
+            parentRunId: runId,
+            resumeFromStep: requireExternalResumeFromStep(parsed.body.resumeFromStep),
+            seedResults: requireExternalSeedResults(parsed.body.seedResults),
+            now: deps.now,
+          })
+    } catch (err) {
+      return json(400, { error: "resume_failed", message: errMsg(err) })
+    }
+
+    const nextRunId = parsed.body.runId ?? defaultRunId(deps)
+    const triggerRes = await forwardToRunDO(
+      nextRunId,
+      new Request("https://do-internal/trigger", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          workflowId,
+          workflowVersion: parent.record?.workflowVersion ?? "local",
+          input: parsed.body.hasInput ? parsed.body.input : parent.record?.input,
+          tenantMeta: parent.record?.tenantMeta ?? deps.tenantMeta ?? DEFAULT_TENANT_META,
+          environment: parent.record?.environment,
+          tags: mergeTags(parent.record?.tags, [
+            "resume:true",
+            `parentRunId:${parent.record?.id ?? runId}`,
+            ...(parsed.body.tags ?? []),
+          ]),
+          runId: nextRunId,
+          triggeredBy:
+            parsed.body.triggeredByUserId === undefined || parsed.body.triggeredByUserId === null
+              ? { kind: "api" }
+              : { kind: "api", actor: parsed.body.triggeredByUserId },
+          timeoutMs: parent.record?.timeoutMs,
+          initialJournal: resumeSeed.journal,
+          initialMetadataAppliedCount: resumeSeed.metadataAppliedCount,
+        }),
+      }),
+      deps,
+    )
+    if (!triggerRes.ok) return triggerRes
+    const saved = (await triggerRes.json()) as RunRecord
+    return json(200, {
+      saved,
+      parentRunId: parent.record?.id ?? runId,
+      resumeFromStep: resumeSeed.resumeFromStep,
+    })
   }
 
   // Waitpoint injections: events, signals, tokens.
@@ -221,6 +310,78 @@ function parseInjection(
   return { error: "route_not_found", message: `unknown path suffix ${tail}` }
 }
 
+function parseResumeRunBody(body: Record<string, unknown>):
+  | {
+      body: {
+        hasInput: boolean
+        input?: unknown
+        workflowId?: string
+        resumeFromStep?: string
+        seedResults?: Record<string, unknown>
+        runId?: string
+        tags?: string[]
+        triggeredByUserId?: string | null
+      }
+    }
+  | { error: string; message: string } {
+  if (!isPlainObject(body)) {
+    return { error: "invalid_body", message: "request body must be an object" }
+  }
+  if (body.resumeFromStep !== undefined && typeof body.resumeFromStep !== "string") {
+    return { error: "invalid_body", message: "`resumeFromStep` must be a string when provided" }
+  }
+  if (body.workflowId !== undefined && typeof body.workflowId !== "string") {
+    return { error: "invalid_body", message: "`workflowId` must be a string when provided" }
+  }
+  if (body.runId !== undefined && typeof body.runId !== "string") {
+    return { error: "invalid_body", message: "`runId` must be a string when provided" }
+  }
+  if (
+    body.triggeredByUserId !== undefined &&
+    body.triggeredByUserId !== null &&
+    typeof body.triggeredByUserId !== "string"
+  ) {
+    return {
+      error: "invalid_body",
+      message: "`triggeredByUserId` must be a string or null when provided",
+    }
+  }
+  if (body.tags !== undefined && !isStringArray(body.tags)) {
+    return { error: "invalid_body", message: "`tags` must be an array of strings when provided" }
+  }
+  if (body.seedResults !== undefined && !isPlainObject(body.seedResults)) {
+    return { error: "invalid_body", message: "`seedResults` must be an object when provided" }
+  }
+  return {
+    body: {
+      hasInput: Object.hasOwn(body, "input"),
+      input: body.input,
+      workflowId: body.workflowId,
+      resumeFromStep: body.resumeFromStep,
+      seedResults: body.seedResults as Record<string, unknown> | undefined,
+      runId: body.runId,
+      tags: body.tags as string[] | undefined,
+      triggeredByUserId: body.triggeredByUserId as string | null | undefined,
+    },
+  }
+}
+
+async function fetchRunRecord<Id>(
+  runId: string,
+  deps: WorkerFetchDeps<Id>,
+): Promise<{ record?: RunRecord } | { error: Response }> {
+  const res = await forwardToRunDO(
+    runId,
+    new Request("https://do-internal/get", { method: "GET" }),
+    deps,
+  )
+  if (res.status === 404) {
+    return {}
+  }
+  if (!res.ok) return { error: res }
+  return { record: (await res.json()) as RunRecord }
+}
+
 async function forwardToRunDO<Id>(
   runId: string,
   req: Request,
@@ -255,10 +416,46 @@ async function safeJson(
   const text = await req.text()
   if (text.length === 0) return {}
   try {
-    return JSON.parse(text) as Record<string, unknown>
+    const parsed = JSON.parse(text) as unknown
+    if (!isPlainObject(parsed)) {
+      return { error: "invalid_body", message: "request body must be an object" }
+    }
+    return parsed
   } catch (err) {
     return { error: "invalid_json", message: errMsg(err) }
   }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string")
+}
+
+function mergeTags(...groups: ReadonlyArray<ReadonlyArray<string> | undefined>): string[] {
+  const tags = new Set<string>()
+  for (const group of groups) {
+    for (const tag of group ?? []) tags.add(tag)
+  }
+  return Array.from(tags)
+}
+
+function requireExternalResumeFromStep(resumeFromStep: string | undefined): string {
+  if (!resumeFromStep) {
+    throw new Error("resumeFromStep is required when the parent run is not stored by this worker")
+  }
+  return resumeFromStep
+}
+
+function requireExternalSeedResults(
+  seedResults: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  if (!seedResults) {
+    throw new Error("seedResults is required when the parent run is not stored by this worker")
+  }
+  return seedResults
 }
 
 function corsHeaders(methods: string): Record<string, string> {
@@ -267,6 +464,16 @@ function corsHeaders(methods: string): Record<string, string> {
     "access-control-allow-methods": methods,
     "access-control-allow-headers": "content-type, x-voyant-protocol",
   }
+}
+
+function sanitizePublicTriggerPayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const {
+    initialJournal: _initialJournal,
+    initialMetadataAppliedCount: _initialMetadataAppliedCount,
+    timeoutMs: _timeoutMs,
+    ...publicPayload
+  } = payload
+  return publicPayload
 }
 
 function json(status: number, body: unknown): Response {

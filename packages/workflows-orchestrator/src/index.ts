@@ -51,6 +51,13 @@ export {
   trigger,
 } from "./orchestrator.js"
 export {
+  type BuildResumeJournalInput,
+  type BuildResumeJournalResult,
+  type BuildSeededResumeJournalInput,
+  buildResumeJournal,
+  buildSeededResumeJournal,
+} from "./resume-run.js"
+export {
   type CronSpec,
   computeNextFire,
   createScheduler,
