@@ -1,5 +1,7 @@
 import type { z } from "zod"
 
+import { parseStorefrontApiErrorEnvelope, type StorefrontApiErrorEnvelope } from "./errors.js"
+
 export type VoyantStorefrontFetcher = (url: string, init?: RequestInit) => Promise<Response>
 
 export const defaultStorefrontFetcher: VoyantStorefrontFetcher = (url, init) =>
@@ -8,12 +10,19 @@ export const defaultStorefrontFetcher: VoyantStorefrontFetcher = (url, init) =>
 export class VoyantStorefrontApiError extends Error {
   readonly status: number
   readonly body: unknown
+  readonly normalizedError: StorefrontApiErrorEnvelope | null
 
-  constructor(message: string, status: number, body: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    body: unknown,
+    normalizedError: StorefrontApiErrorEnvelope | null = parseStorefrontApiErrorEnvelope(body),
+  ) {
     super(message)
     this.name = "VoyantStorefrontApiError"
     this.status = status
     this.body = body
+    this.normalizedError = normalizedError
   }
 }
 
@@ -120,6 +129,9 @@ export function requestHeaders(options?: StorefrontRequestOptions): HeadersInit 
 }
 
 function extractErrorMessage(status: number, statusText: string, body: unknown): string {
+  const normalizedError = parseStorefrontApiErrorEnvelope(body)
+  if (normalizedError) return normalizedError.message
+
   if (typeof body === "object" && body !== null && "error" in body) {
     const err = (body as { error: unknown }).error
     if (typeof err === "string") return err

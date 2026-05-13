@@ -27,7 +27,7 @@ Use this stack for custom booking UIs:
 
 1. Public Hono route modules expose `/v1/public/*` capability contracts.
 2. `@voyantjs/storefront-sdk` provides framework-agnostic TypeScript operations
-   and booking-engine state helpers.
+   and a first-class `bookingEngine` facade.
 3. `@voyantjs/storefront-react` provides React Query hooks on top of the SDK.
 4. Registry UI blocks and app/template storefronts provide presentation.
 
@@ -59,6 +59,87 @@ These states are derived from existing public booking-session snapshots:
 
 The state model is intentionally derived rather than persisted. The canonical
 backend lifecycle remains the `bookings` status model plus public session state.
+
+## Booking Engine Facade
+
+Custom booking UIs should start from `createVoyantStorefrontClient(...)` and use
+the `bookingEngine` property for customer checkout flow code:
+
+```ts
+const voyant = createVoyantStorefrontClient({ baseUrl })
+const booking = await voyant.bookingEngine.reserve(input)
+
+await voyant.bookingEngine.updateTravelers(booking.session.sessionId, {
+  travelers,
+})
+
+await voyant.bookingEngine.updateProgress(booking.session.sessionId, {
+  currentStep: "terms",
+  completedSteps: ["billing", "travelers"],
+})
+
+const repriced = await voyant.bookingEngine.reprice(booking.session.sessionId, {
+  applyToSession: true,
+  selections,
+})
+
+const payableSession = repriced.session
+if (payableSession?.engine.state === "ready_for_payment") {
+  await voyant.bookingEngine.startPayment(payableSession.session.sessionId, {
+    method: "card",
+  })
+}
+```
+
+The facade deliberately returns a `{ session, engine }` snapshot for session
+reads and mutations. `session` is the public booking-session DTO. `engine` is
+the canonical derived state, current step, hold expiry, checklist readiness, and
+allowed actions. This lets a custom UI branch on one stable object without
+persisting another backend lifecycle field.
+
+The public route family behind the facade remains:
+
+| Flow step | SDK method | Public route |
+| --- | --- | --- |
+| Reserve capacity | `bookingEngine.reserve` | `POST /v1/public/bookings/sessions` |
+| Resume session | `bookingEngine.getSnapshot` | `GET /v1/public/bookings/sessions/:sessionId` |
+| Update travelers/session data | `bookingEngine.updateTravelers`, `bookingEngine.updateSession` | `PATCH /v1/public/bookings/sessions/:sessionId` |
+| Persist UI progress | `bookingEngine.updateProgress` | `PUT /v1/public/bookings/sessions/:sessionId/state` |
+| Quote or reprice | `bookingEngine.reprice` | `POST /v1/public/bookings/sessions/:sessionId/reprice` |
+| Start checkout collection | `bookingEngine.startPayment` | `POST /v1/public/checkout/bookings/:bookingId/initiate-collection` |
+| Resume redirect/bootstrap | `bookingEngine.bootstrapPayment` | `POST /v1/public/checkout/collections/bootstrap` |
+| Finalize booking | `bookingEngine.confirm` | `POST /v1/public/bookings/sessions/:sessionId/confirm` |
+| Expire abandoned hold | `bookingEngine.expire` | `POST /v1/public/bookings/sessions/:sessionId/expire` |
+| Success summary | `bookingEngine.getOverview` | `GET /v1/public/bookings/overview` |
+
+## Errors
+
+`VoyantStorefrontApiError` exposes `normalizedError` when a public route returns
+a structured error envelope. Custom booking engines should prefer this field
+over parsing raw response bodies.
+
+The booking-engine error vocabulary is exported from
+`@voyantjs/storefront-sdk/errors`:
+
+- `contract_template_missing`
+- `reservation_expired`
+- `departure_unavailable`
+- `invalid_traveler_payload`
+- `payment_provider_unavailable`
+- `payment_url_missing`
+- `payment_webhook_pending`
+- `checkout_finalization_failed`
+
+Structured errors use:
+
+```ts
+{
+  code: "payment_webhook_pending",
+  message: "Payment webhook has not finalized the booking yet.",
+  recoverable: true,
+  nextAction: "poll_payment_status",
+}
+```
 
 ## Rules
 

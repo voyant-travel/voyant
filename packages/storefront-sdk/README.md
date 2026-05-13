@@ -29,5 +29,29 @@ const session = await voyant.booking.createSession({
 const state = voyant.booking.deriveState(session)
 ```
 
+For custom booking engines, prefer the `bookingEngine` facade. It keeps the
+route-shaped public booking and checkout calls behind flow-oriented methods and
+returns a canonical engine snapshot alongside session reads and mutations.
+
+```ts
+const booking = await voyant.bookingEngine.reserve({
+  sellCurrency: "EUR",
+  items: [
+    {
+      title: "Danube tour",
+      availabilitySlotId: "slot_123",
+      quantity: 2,
+      totalSellAmountCents: 24000,
+    },
+  ],
+})
+
+if (voyant.bookingEngine.canRunAction(booking.engine.state, "start_payment")) {
+  await voyant.bookingEngine.startPayment(booking.session.sessionId, {
+    method: "card",
+  })
+}
+```
+
 React consumers should layer React Query hooks on top of this package rather
 than reimplementing request paths directly.
