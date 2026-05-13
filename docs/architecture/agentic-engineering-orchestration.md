@@ -812,6 +812,13 @@ reject `sandbox:` workspace references explicitly. Queue recommendation code
 must also pause remote-workspace items with adapter wait states instead of
 dispatching local lifecycle commands.
 
+The Sprite adapter supports two execution paths behind the same provider key:
+an API path using `SPRITES_TOKEN` or `SPRITE_TOKEN`, and a CLI fallback using
+`sprite`. Prefer the API path for unattended runners because it removes the
+local CLI dependency and can own `inspect`, `exec`, and `dispose` through
+documented HTTP endpoints. Keep Sprite-specific details behind the adapter
+boundary; queue state should continue to use `sandbox:sprite:<id>`.
+
 ```ts
 interface AgentWorkspace {
   id: string
