@@ -138,6 +138,7 @@ export type ProductsUiMessages = {
       deleteConfirm: string
       deleteItineraryConfirm: string
       deleteDayConfirm: string
+      deleteServiceConfirm: string
       deleteFailed: string
       minutes: string
     }
@@ -493,6 +494,16 @@ export type ProductsUiMessages = {
     actions: {
       addService: string
       saveService: string
+    }
+  }
+  productDayServiceDialog: {
+    titles: {
+      create: string
+      edit: string
+    }
+    descriptions: {
+      create: string
+      edit: string
     }
   }
   productItineraryDayRow: {
