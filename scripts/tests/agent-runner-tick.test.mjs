@@ -51,6 +51,7 @@ describe("agent runner tick helpers", () => {
         priority: 20,
         reason: "maintainer-approved item is ready to claim",
         state: null,
+        workspace: null,
       },
     )
 
@@ -85,6 +86,58 @@ describe("agent runner tick helpers", () => {
         priority: 50,
         reason: "merge-ready PR should be checked for maintainer merge",
         state: "Merge Ready",
+        workspace: null,
+      },
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Human Review",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "wait-human-review",
+        command: null,
+        heartbeat: {
+          reason: "Last Heartbeat is 0 days old",
+          stale: false,
+        },
+        issue: workItem().issue,
+        priority: 80,
+        reason: "linked PR is awaiting human review",
+        state: "Human Review",
+        workspace: null,
+      },
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Human Review",
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "sync-pr",
+        command: "pnpm agent:queue:sync-pr -- --issue 579 --repo voyantjs/other --yes",
+        heartbeat: {
+          reason: "Last Heartbeat is unset",
+          stale: true,
+        },
+        issue: workItem().issue,
+        priority: 50,
+        reason: "stale linked PR should be synced back to the Project",
+        state: "Human Review",
+        workspace: null,
       },
     )
 
@@ -110,6 +163,7 @@ describe("agent runner tick helpers", () => {
         priority: 29,
         reason: "requested PR changes need a local review repair packet",
         state: "Changes Requested",
+        workspace: null,
       },
     )
 
@@ -152,6 +206,7 @@ describe("agent runner tick helpers", () => {
         priority: 45,
         reason: "closed issue with linked PR should be completed in the Project",
         state: "Human Review",
+        workspace: null,
       },
     )
 
@@ -209,6 +264,7 @@ describe("agent runner tick helpers", () => {
         priority: 28,
         reason: "failing PR checks need a local CI repair packet",
         state: "CI Repair",
+        workspace: null,
       },
     )
 
@@ -250,6 +306,7 @@ describe("agent runner tick helpers", () => {
         priority: 30,
         reason: "CI repair packet is ready for a narrow repair command",
         state: "CI Repair",
+        workspace: null,
       },
     )
   })
