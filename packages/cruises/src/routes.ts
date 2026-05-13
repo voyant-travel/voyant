@@ -1,3 +1,4 @@
+import type { EventBus } from "@voyantjs/core"
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -51,6 +52,7 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    eventBus?: EventBus
     /**
      * Catalog source-adapter registry. Required for the `/:key`
      * external branch — the route dispatches through `getCruiseContent`
@@ -346,7 +348,9 @@ export const cruiseAdminRoutes = new Hono<Env>()
   })
   .post("/", async (c) => {
     const data = await parseJsonBody(c, insertCruiseSchema)
-    const row = await cruisesService.createCruise(c.get("db"), data)
+    const row = await cruisesService.createCruise(c.get("db"), data, {
+      eventBus: c.get("eventBus"),
+    })
     return c.json({ data: row }, 201)
   })
   // --- per-cruise (parses unified key, dispatches local or external) ---
@@ -426,7 +430,9 @@ export const cruiseAdminRoutes = new Hono<Env>()
     }
     if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
     const data = await parseJsonBody(c, updateCruiseSchema)
-    const row = await cruisesService.updateCruise(c.get("db"), parsed.id, data)
+    const row = await cruisesService.updateCruise(c.get("db"), parsed.id, data, {
+      eventBus: c.get("eventBus"),
+    })
     if (!row) return c.json({ error: "not_found" }, 404)
     return c.json({ data: row })
   })
@@ -442,7 +448,9 @@ export const cruiseAdminRoutes = new Hono<Env>()
       )
     }
     if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
-    const row = await cruisesService.archiveCruise(c.get("db"), parsed.id)
+    const row = await cruisesService.archiveCruise(c.get("db"), parsed.id, {
+      eventBus: c.get("eventBus"),
+    })
     if (!row) return c.json({ error: "not_found" }, 404)
     return c.json({ data: row })
   })

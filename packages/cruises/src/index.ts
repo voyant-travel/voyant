@@ -52,11 +52,19 @@ export {
   type NewBookingCruiseDetail,
   type NewBookingGroupCruiseDetail,
 } from "./booking-extension.js"
+export {
+  CRUISE_CREATED_EVENT,
+  CRUISE_DELETED_EVENT,
+  CRUISE_UPDATED_EVENT,
+  type CruiseLifecycleEvent,
+  type CruiseLifecycleEventName,
+  emitCruiseLifecycleEvent,
+} from "./events.js"
 export type { CruiseAdminRoutes } from "./routes.js"
 export { cruiseAdminRoutes } from "./routes.js"
 export type { CruisePublicRoutes } from "./routes-public.js"
 export { cruisePublicRoutes } from "./routes-public.js"
-export type { EffectiveItineraryDay } from "./service.js"
+export type { CruiseMutationRuntime, EffectiveItineraryDay } from "./service.js"
 export { cruisesService } from "./service.js"
 export {
   type CreateCruiseBookingInput,

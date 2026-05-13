@@ -1,6 +1,13 @@
+import type { EventBus } from "@voyantjs/core"
 import { and, asc, count, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import {
+  CRUISE_CREATED_EVENT,
+  CRUISE_DELETED_EVENT,
+  CRUISE_UPDATED_EVENT,
+  emitCruiseLifecycleEvent,
+} from "./events.js"
 import {
   type CruiseCabin,
   type CruiseCabinCategory,
@@ -72,6 +79,10 @@ const setUpdated = { updatedAt: new Date() }
 
 function paginate(query: { limit: number; offset: number }) {
   return { limit: query.limit, offset: query.offset }
+}
+
+export interface CruiseMutationRuntime {
+  eventBus?: EventBus
 }
 
 /**
@@ -160,13 +171,18 @@ export const cruisesService = {
     return out
   },
 
-  async createCruise(db: PostgresJsDatabase, data: InsertCruise): Promise<Cruise> {
+  async createCruise(
+    db: PostgresJsDatabase,
+    data: InsertCruise,
+    runtime: CruiseMutationRuntime = {},
+  ): Promise<Cruise> {
     const [row] = await db
       .insert(cruises)
       .values(data as NewCruise)
       .returning()
     if (!row) throw new Error("Failed to create cruise")
     await reprojectIfPossible(db, row.id)
+    await emitCruiseLifecycleEvent(runtime.eventBus, CRUISE_CREATED_EVENT, { id: row.id })
     return row
   },
 
@@ -174,23 +190,34 @@ export const cruisesService = {
     db: PostgresJsDatabase,
     id: string,
     data: UpdateCruise,
+    runtime: CruiseMutationRuntime = {},
   ): Promise<Cruise | null> {
     const [row] = await db
       .update(cruises)
       .set({ ...data, ...setUpdated })
       .where(eq(cruises.id, id))
       .returning()
-    if (row) await reprojectIfPossible(db, row.id)
+    if (row) {
+      await reprojectIfPossible(db, row.id)
+      await emitCruiseLifecycleEvent(runtime.eventBus, CRUISE_UPDATED_EVENT, { id: row.id })
+    }
     return row ?? null
   },
 
-  async archiveCruise(db: PostgresJsDatabase, id: string): Promise<Cruise | null> {
+  async archiveCruise(
+    db: PostgresJsDatabase,
+    id: string,
+    runtime: CruiseMutationRuntime = {},
+  ): Promise<Cruise | null> {
     const [row] = await db
       .update(cruises)
       .set({ status: "archived", ...setUpdated })
       .where(eq(cruises.id, id))
       .returning()
-    if (row) await reprojectIfPossible(db, row.id)
+    if (row) {
+      await reprojectIfPossible(db, row.id)
+      await emitCruiseLifecycleEvent(runtime.eventBus, CRUISE_DELETED_EVENT, { id: row.id })
+    }
     return row ?? null
   },
 
