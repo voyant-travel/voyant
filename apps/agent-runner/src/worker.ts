@@ -13,6 +13,7 @@ interface Env {
   AGENT_RUNNER_DB?: D1Database
   AGENT_RUNNER_ENABLED?: string
   AGENT_RUNNER_HOLDER?: string
+  AGENT_RUNNER_LEASE_TTL_SECONDS?: string
   AGENT_RUNNER_MAX_DAILY_LEASES?: string
   AGENT_RUNNER_MAX_LEASE_TTL_SECONDS?: string
   AGENT_RUNNER_REPOSITORY?: string
@@ -68,6 +69,7 @@ function runnerConfigFromEnv(env: Env) {
     defaultAction: env.AGENT_RUNNER_ACTION,
     enabled: env.AGENT_RUNNER_ENABLED === "true",
     holder: env.AGENT_RUNNER_HOLDER,
+    leaseTtlSeconds: parsePositiveInteger(env.AGENT_RUNNER_LEASE_TTL_SECONDS),
     maxDailyLeases: parsePositiveInteger(env.AGENT_RUNNER_MAX_DAILY_LEASES),
     maxLeaseTtlSeconds: parsePositiveInteger(env.AGENT_RUNNER_MAX_LEASE_TTL_SECONDS),
     repository: env.AGENT_RUNNER_REPOSITORY,

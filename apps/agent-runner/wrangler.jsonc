@@ -1,8 +1,8 @@
 {
   // Reference Cloudflare Worker for the agent queue runner shell.
-  // This first deployment is intentionally non-executing: it exposes the
-  // deployable surface, auth, scheduled handler, and control-plane wiring before
-  // any remote GitHub or provider mutation is enabled.
+  // This deployment is intentionally lease-only: the Worker can reserve tightly
+  // scoped dispatch intents from the control plane, while command execution
+  // remains owned by trusted external executors.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "voyant-agent-runner",
   "main": "src/worker.ts",
@@ -10,10 +10,9 @@
   // Configure AGENT_RUNNER_TOKENS as a secret before exposing /api/*:
   // pnpm -C apps/agent-runner wrangler secret put AGENT_RUNNER_TOKENS
   // Configure AGENT_CONTROL_PLANE_TOKEN separately when the runner is allowed to
-  // call the control plane. Cron triggers should stay disabled until execution
-  // policy, queue budget, and provider credentials are configured.
-  // Optional: set AGENT_RUNNER_ALLOWED_ACTIONS and AGENT_RUNNER_ACTION to keep
-  // scheduled ticks constrained to one approved lifecycle action.
+  // call the control plane. Keep AGENT_RUNNER_ALLOWED_ACTIONS and
+  // AGENT_RUNNER_ACTION constrained to one approved lifecycle action while the
+  // runner is lease-only.
   // Optional: bind an R2 bucket as AGENT_RUNNER_TICKS to store the latest
   // supervisor tick status per repository. Set AGENT_RUNNER_TICK_KEY_PREFIX
   // when multiple environments share one bucket.
@@ -23,12 +22,16 @@
     "AGENT_CONTROL_PLANE_URL": "https://voyant-agent-control-plane.pixelmakers.workers.dev",
     "AGENT_RUNNER_ACTION": "sync-pr",
     "AGENT_RUNNER_ALLOWED_ACTIONS": "sync-pr",
-    "AGENT_RUNNER_ENABLED": "false",
+    "AGENT_RUNNER_ENABLED": "true",
     "AGENT_RUNNER_HOLDER": "runner:cloudflare",
-    "AGENT_RUNNER_MAX_DAILY_LEASES": "5",
-    "AGENT_RUNNER_MAX_LEASE_TTL_SECONDS": "900",
+    "AGENT_RUNNER_LEASE_TTL_SECONDS": "300",
+    "AGENT_RUNNER_MAX_DAILY_LEASES": "3",
+    "AGENT_RUNNER_MAX_LEASE_TTL_SECONDS": "300",
     "AGENT_RUNNER_REPOSITORY": "voyantjs/voyant",
     "AGENT_RUNNER_TICK_KEY_PREFIX": "prod"
+  },
+  "triggers": {
+    "crons": ["*/15 * * * *"]
   },
   "d1_databases": [
     {

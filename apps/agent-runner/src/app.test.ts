@@ -356,6 +356,61 @@ describe("agent runner app", () => {
       },
     ])
   })
+
+  it("uses the configured default lease TTL when a tick omits ttlSeconds", async () => {
+    const calls: Array<{ body: unknown; url: string }> = []
+    const app = createApp({
+      authTokens: ["token"],
+      config: {
+        allowedActions: ["sync-pr"],
+        controlPlaneConfigured: true,
+        controlPlaneToken: "control-token",
+        controlPlaneUrl: "https://control.example.com/",
+        defaultAction: "sync-pr",
+        enabled: true,
+        holder: "runner:cloudflare",
+        leaseTtlSeconds: 300,
+        maxLeaseTtlSeconds: 300,
+        repository: "voyantjs/voyant",
+      },
+      fetchImpl: async (url, init) => {
+        calls.push({ body: JSON.parse(String(init?.body)), url: String(url) })
+        return new Response(JSON.stringify({ reason: "idle" }), { status: 200 })
+      },
+    })
+
+    const response = await app.request("/api/supervisor/ticks", {
+      body: JSON.stringify({ dryRun: false }),
+      headers: {
+        authorization: "Bearer token",
+        "content-type": "application/json",
+      },
+      method: "POST",
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      result: {
+        leased: false,
+        reason: "idle",
+      },
+    })
+    expect(calls).toEqual([
+      {
+        body: {
+          filters: {
+            action: "sync-pr",
+          },
+          lease: {
+            holder: "runner:cloudflare",
+            ttlSeconds: 300,
+          },
+          repository: "voyantjs/voyant",
+        },
+        url: "https://control.example.com/api/dispatch-intents/latest",
+      },
+    ])
+  })
 })
 
 function inMemorySupervisorTickStore(records: SupervisorTickRecord[] = []): SupervisorTickStore {
