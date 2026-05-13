@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import {
+  parseSpritePool,
+  resolveSpriteTarget,
   spriteApiExecPlan,
   spriteApiRemoteWorkspaceAdapter,
   spriteCliRemoteWorkspaceAdapter,
@@ -79,6 +81,42 @@ describe("agent runner sprite workspace adapter", () => {
     ])
   })
 
+  it("maps pooled Sprite slot references to the backing Sprite name", () => {
+    const descriptor = parseWorkspaceReference("sandbox:sprite:voyant-agent-01-slot-2", {
+      repoRoot: "/repo",
+    })
+
+    assert.deepEqual(parseSpritePool("voyant-agent-01:2,voyant-agent-02:1"), [
+      {
+        id: "voyant-agent-01-slot-1",
+        slot: 1,
+        sprite: "voyant-agent-01",
+        workspaceReference: "sandbox:sprite:voyant-agent-01-slot-1",
+      },
+      {
+        id: "voyant-agent-01-slot-2",
+        slot: 2,
+        sprite: "voyant-agent-01",
+        workspaceReference: "sandbox:sprite:voyant-agent-01-slot-2",
+      },
+      {
+        id: "voyant-agent-02",
+        slot: 1,
+        sprite: "voyant-agent-02",
+        workspaceReference: "sandbox:sprite:voyant-agent-02",
+      },
+    ])
+    assert.deepEqual(
+      resolveSpriteTarget(descriptor, { env: { AGENT_SPRITE_POOL: "voyant-agent-01:2" } }),
+      {
+        id: "voyant-agent-01-slot-2",
+        pooled: true,
+        slot: 2,
+        sprite: "voyant-agent-01",
+      },
+    )
+  })
+
   it("inspects and executes through the Sprite API when a token is configured", async () => {
     const descriptor = parseWorkspaceReference("sandbox:sprite:task-579", { repoRoot: "/repo" })
     const calls = []
@@ -114,7 +152,9 @@ describe("agent runner sprite workspace adapter", () => {
       ready: true,
       reason: null,
       reference: "sandbox:sprite:task-579",
+      slot: null,
       sprite: { name: "task-579", status: "running" },
+      spriteName: "task-579",
     })
     assert.deepEqual(await adapter.exec({ args: ["test"], command: "pnpm" }), {
       command: "pnpm test",
@@ -172,11 +212,49 @@ describe("agent runner sprite workspace adapter", () => {
       },
     })
 
-    assert.deepEqual(await adapter.dispose(), { disposed: true, status: 204 })
+    assert.deepEqual(await adapter.dispose(), {
+      disposed: true,
+      spriteName: "task-579",
+      status: 204,
+    })
     assert.deepEqual(calls, [
       {
         method: "DELETE",
         url: "https://api.sprites.dev/v1/sprites/task-579",
+      },
+    ])
+  })
+
+  it("cleans pooled Sprite slots without deleting the backing Sprite", async () => {
+    const descriptor = parseWorkspaceReference("sandbox:sprite:voyant-agent-01-slot-1", {
+      repoRoot: "/repo",
+    })
+    const calls = []
+    const adapter = spriteApiRemoteWorkspaceAdapter(descriptor, {
+      env: { AGENT_SPRITE_POOL: "voyant-agent-01:2", SPRITES_TOKEN: "token" },
+      fetchImpl: async (url, init) => {
+        calls.push({ method: init.method, url: String(url) })
+        return jsonResponse({
+          exit_code: 0,
+          stderr: "",
+          stdout: "",
+        })
+      },
+    })
+
+    assert.deepEqual(await adapter.dispose(), {
+      disposed: true,
+      method: "workspace-directory",
+      pooled: true,
+      slot: 1,
+      spriteName: "voyant-agent-01",
+      status: 0,
+      workspaceRoot: "/home/sprite/voyant-workspaces/voyant-agent-01-slot-1",
+    })
+    assert.deepEqual(calls, [
+      {
+        method: "POST",
+        url: "https://api.sprites.dev/v1/sprites/voyant-agent-01/exec?cmd=rm&cmd=-rf&cmd=%2Fhome%2Fsprite%2Fvoyant-workspaces%2Fvoyant-agent-01-slot-1",
       },
     ])
   })

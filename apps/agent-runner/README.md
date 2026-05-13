@@ -93,14 +93,19 @@ The deployment uses three Cloudflare persistence surfaces:
   `migrations/0001_agent_runner_ledger.sql` before enabling Cron.
 - `AGENT_RUNNER_COORDINATOR`: Durable Object binding for run/repository
   coordination locks.
+- `AGENT_SPRITE_POOL`: optional comma-separated Sprite pool, for example
+  `voyant-agent-01:2,voyant-agent-02:2,voyant-agent-03:2`. Each `:<n>` creates
+  `n` logical slots on that Sprite. The runner leases one slot before asking
+  the control plane for `remote-bootstrap`; the control plane injects the
+  matching `--workspace sandbox:sprite:<slot>` value into the leased command.
 - `AGENT_CONTROL_PLANE_URL`: deployed control-plane URL.
 - `AGENT_CONTROL_PLANE_TOKEN`: bearer token for the control plane.
 
-Cron triggers should stay constrained to one low-risk lifecycle action until an
-external executor is attached. The production pilot uses `sync-pr`, a 300 second
-lease TTL, and a three-lease daily budget so stale lease-only reservations age
-out quickly. Keep provider execution outside this Worker unless a later design
-adds sandbox policy and task-scoped credentials.
+Cron triggers should stay constrained to one lifecycle action. For remote
+bootstrap, configure `AGENT_RUNNER_ACTION=remote-bootstrap`,
+`AGENT_RUNNER_ALLOWED_ACTIONS=remote-bootstrap`, and `AGENT_SPRITE_POOL`. The
+Worker only leases a dispatch intent and a Sprite slot; provider execution
+still happens in a trusted external executor with task-scoped credentials.
 
 ## Deployment Pilot
 

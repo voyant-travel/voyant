@@ -20,15 +20,16 @@
   // the placeholder database_id with the id created by `wrangler d1 create`.
   "vars": {
     "AGENT_CONTROL_PLANE_URL": "https://voyant-agent-control-plane.pixelmakers.workers.dev",
-    "AGENT_RUNNER_ACTION": "sync-pr",
-    "AGENT_RUNNER_ALLOWED_ACTIONS": "sync-pr",
+    "AGENT_RUNNER_ACTION": "remote-bootstrap",
+    "AGENT_RUNNER_ALLOWED_ACTIONS": "remote-bootstrap",
     "AGENT_RUNNER_ENABLED": "true",
     "AGENT_RUNNER_HOLDER": "runner:cloudflare",
-    "AGENT_RUNNER_LEASE_TTL_SECONDS": "300",
-    "AGENT_RUNNER_MAX_DAILY_LEASES": "3",
-    "AGENT_RUNNER_MAX_LEASE_TTL_SECONDS": "300",
+    "AGENT_RUNNER_LEASE_TTL_SECONDS": "900",
+    "AGENT_RUNNER_MAX_DAILY_LEASES": "6",
+    "AGENT_RUNNER_MAX_LEASE_TTL_SECONDS": "900",
     "AGENT_RUNNER_REPOSITORY": "voyantjs/voyant",
-    "AGENT_RUNNER_TICK_KEY_PREFIX": "prod"
+    "AGENT_RUNNER_TICK_KEY_PREFIX": "prod",
+    "AGENT_SPRITE_POOL": "voyant-agent-01:2,voyant-agent-02:2,voyant-agent-03:2"
   },
   "triggers": {
     "crons": ["*/15 * * * *"]
