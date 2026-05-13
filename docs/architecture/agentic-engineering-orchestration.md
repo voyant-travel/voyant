@@ -819,6 +819,16 @@ local CLI dependency and can own `inspect`, `exec`, and `dispose` through
 documented HTTP endpoints. Keep Sprite-specific details behind the adapter
 boundary; queue state should continue to use `sandbox:sprite:<id>`.
 
+For the first always-on pool, pre-create three Sprites named
+`voyant-agent-01`, `voyant-agent-02`, and `voyant-agent-03`, then configure the
+runner with `AGENT_SPRITE_POOL=voyant-agent-01:2,voyant-agent-02:2,voyant-agent-03:2`.
+The runner expands that into six logical slots, leases one slot through the
+Durable Object coordinator, and asks the control plane to turn the next ready
+item into a `remote-bootstrap` dispatch intent with the selected
+`--workspace sandbox:sprite:<slot>` value. Slot IDs map back to their backing
+Sprite inside the adapter, while repository paths remain slot-specific so two
+agents on one Sprite do not share a checkout.
+
 ```ts
 interface AgentWorkspace {
   id: string

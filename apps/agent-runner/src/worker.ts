@@ -1,5 +1,6 @@
 import { createApp, runPersistentSupervisorTick } from "./app.js"
 import { AgentRunnerCoordinator } from "./coordinator.js"
+import { parseSpritePoolConfig } from "./remote-workspace-pool.js"
 import { createD1AgentRunnerLedgerStore } from "./run-ledger-store.js"
 import { createR2SupervisorTickStore } from "./supervisor-tick-store.js"
 
@@ -17,6 +18,7 @@ interface Env {
   AGENT_RUNNER_MAX_DAILY_LEASES?: string
   AGENT_RUNNER_MAX_LEASE_TTL_SECONDS?: string
   AGENT_RUNNER_REPOSITORY?: string
+  AGENT_SPRITE_POOL?: string
   AGENT_RUNNER_TICK_KEY_PREFIX?: string
   AGENT_RUNNER_TICKS?: R2Bucket
   AGENT_RUNNER_TOKENS?: string
@@ -28,6 +30,7 @@ export default {
       authTokens: parseTokens(env.AGENT_RUNNER_TOKENS),
       config: runnerConfigFromEnv(env),
       coordinatorConfigured: Boolean(env.AGENT_RUNNER_COORDINATOR),
+      coordinatorService: coordinatorServiceFromEnv(env),
       runLedgerStore: runLedgerStoreFromEnv(env),
       supervisorTickStore: supervisorTickStoreFromEnv(env),
     })
@@ -37,6 +40,7 @@ export default {
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
     const tick = await runPersistentSupervisorTick({
       config: runnerConfigFromEnv(env),
+      coordinatorService: coordinatorServiceFromEnv(env),
       request: {
         dryRun: env.AGENT_RUNNER_ENABLED !== "true",
         reason: "cloudflare-cron",
@@ -72,8 +76,17 @@ function runnerConfigFromEnv(env: Env) {
     leaseTtlSeconds: parsePositiveInteger(env.AGENT_RUNNER_LEASE_TTL_SECONDS),
     maxDailyLeases: parsePositiveInteger(env.AGENT_RUNNER_MAX_DAILY_LEASES),
     maxLeaseTtlSeconds: parsePositiveInteger(env.AGENT_RUNNER_MAX_LEASE_TTL_SECONDS),
+    remoteWorkspacePool: parseSpritePoolConfig(env.AGENT_SPRITE_POOL),
     repository: env.AGENT_RUNNER_REPOSITORY,
   }
+}
+
+function coordinatorServiceFromEnv(env: Env) {
+  if (!env.AGENT_RUNNER_COORDINATOR) return undefined
+
+  return env.AGENT_RUNNER_COORDINATOR.get(
+    env.AGENT_RUNNER_COORDINATOR.idFromName("agent-runner-global"),
+  )
 }
 
 function supervisorTickStoreFromEnv(env: Env) {

@@ -263,6 +263,7 @@ function recommendation(item, { action, command, heartbeat = null, priority, rea
     priority,
     reason,
     state: item.fields["Agent State"] ?? null,
+    workspace: item.fields.Workspace ?? null,
   }
 }
 

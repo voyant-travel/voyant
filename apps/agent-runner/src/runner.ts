@@ -1,4 +1,10 @@
 import { z } from "zod"
+import {
+  acquireRemoteWorkspaceSlot,
+  type RemoteWorkspacePool,
+  type RemoteWorkspaceSlotLease,
+  releaseRemoteWorkspaceSlot,
+} from "./remote-workspace-pool.js"
 
 export const runnerDispatchActions = [
   "collect-ci",
@@ -24,6 +30,7 @@ export const runnerDefaultDispatchActions = runnerDispatchActions.filter(
 const runnerDispatchActionSet = new Set<string>(runnerDispatchActions)
 
 type ControlPlaneService = Pick<Fetcher, "fetch">
+type CoordinatorService = Pick<Fetcher, "fetch">
 
 export const supervisorTickRequestSchema = z
   .object({
@@ -55,6 +62,7 @@ export interface RunnerConfig {
   leaseTtlSeconds?: number
   maxDailyLeases?: number
   maxLeaseTtlSeconds?: number
+  remoteWorkspacePool?: RemoteWorkspacePool
   repository?: string
 }
 
@@ -81,6 +89,11 @@ export function buildRunnerCapabilities(config: RunnerConfig) {
       repository: config.repository ?? null,
     },
     policy: buildRunnerPolicy(config),
+    remoteWorkspacePool: {
+      configured: Boolean(config.remoteWorkspacePool?.configured),
+      provider: config.remoteWorkspacePool?.provider ?? null,
+      slots: config.remoteWorkspacePool?.slots.length ?? 0,
+    },
     scheduler: {
       cronCompatible: true,
       mode: "lease-only",
@@ -135,11 +148,13 @@ export function planSupervisorTick({
 
 export async function runSupervisorTick({
   config,
+  coordinatorService,
   fetchImpl = fetch,
   request = {},
   source,
 }: {
   config: RunnerConfig
+  coordinatorService?: CoordinatorService
   fetchImpl?: typeof fetch
   request?: SupervisorTickRequest
   source: "api" | "scheduled"
@@ -182,8 +197,26 @@ export async function runSupervisorTick({
     })
   }
 
+  const workspaceLease = await maybeAcquireRemoteWorkspaceSlot({
+    config,
+    coordinatorService,
+    request,
+  })
+  if (workspaceLease.blocked) {
+    return {
+      leased: false,
+      plan,
+      reason: workspaceLease.reason,
+      remoteWorkspacePool: workspaceLease.remoteWorkspacePool,
+    }
+  }
+
   const response = await requestControlPlane({
-    body: buildDispatchIntentRequest({ config, request }),
+    body: buildDispatchIntentRequest({
+      config,
+      remoteWorkspace: workspaceLease.lease?.slot.workspaceReference,
+      request,
+    }),
     config,
     fetchImpl,
     path: "/api/dispatch-intents/latest",
@@ -192,6 +225,11 @@ export async function runSupervisorTick({
   const body = parseJsonBody(bodyText)
 
   if (!response.ok) {
+    await releaseRemoteWorkspaceSlot({
+      coordinator: coordinatorService,
+      holder: request.holder ?? config.holder ?? "",
+      lease: workspaceLease.lease,
+    })
     return {
       controlPlane: {
         ...(body?.intent ? { activeIntent: body.intent } : {}),
@@ -201,7 +239,16 @@ export async function runSupervisorTick({
       leased: false,
       plan,
       reason: "control_plane_rejected",
+      ...(workspaceLease.lease ? { remoteWorkspaceLease: workspaceLease.lease } : {}),
     }
+  }
+
+  if (!body?.intent) {
+    await releaseRemoteWorkspaceSlot({
+      coordinator: coordinatorService,
+      holder: request.holder ?? config.holder ?? "",
+      lease: workspaceLease.lease,
+    })
   }
 
   return {
@@ -212,6 +259,58 @@ export async function runSupervisorTick({
     leased: Boolean(body?.intent),
     plan,
     reason: body?.reason ?? (body?.intent ? "leased" : "no_intent"),
+    ...(workspaceLease.lease ? { remoteWorkspaceLease: workspaceLease.lease } : {}),
+  }
+}
+
+async function maybeAcquireRemoteWorkspaceSlot({
+  config,
+  coordinatorService,
+  request,
+}: {
+  config: RunnerConfig
+  coordinatorService?: CoordinatorService
+  request: SupervisorTickRequest
+}): Promise<
+  | { blocked: false; lease?: RemoteWorkspaceSlotLease }
+  | {
+      blocked: true
+      reason: "remote_workspace_pool_full" | "remote_workspace_pool_not_configured"
+      remoteWorkspacePool: { configured: boolean; slots: number }
+    }
+> {
+  if (!usesRemoteWorkspacePool({ config, request })) {
+    return { blocked: false }
+  }
+
+  const holder = request.holder ?? config.holder
+  if (!holder) {
+    return { blocked: false }
+  }
+
+  const ttlSeconds = request.ttlSeconds ?? config.leaseTtlSeconds ?? 900
+  const acquired = await acquireRemoteWorkspaceSlot({
+    coordinator: coordinatorService,
+    holder,
+    pool: config.remoteWorkspacePool,
+    ttlSeconds,
+  })
+  if (acquired.acquired) {
+    return { blocked: false, lease: acquired.lease }
+  }
+
+  const remoteWorkspacePool = {
+    configured: Boolean(config.remoteWorkspacePool?.configured),
+    slots: config.remoteWorkspacePool?.slots.length ?? 0,
+  }
+
+  return {
+    blocked: true,
+    reason:
+      acquired.reason === "pool_full"
+        ? "remote_workspace_pool_full"
+        : "remote_workspace_pool_not_configured",
+    remoteWorkspacePool,
   }
 }
 
@@ -289,28 +388,32 @@ async function requestControlPlane({
 
 function buildDispatchPlanRequest({
   config,
+  remoteWorkspace,
   request,
 }: {
   config: RunnerConfig
+  remoteWorkspace?: string
   request: SupervisorTickRequest
 }) {
   const repository = request.repository ?? config.repository
   const action = request.action ?? config.defaultAction
+  const filterAction = remoteWorkspace && action === "remote-bootstrap" ? "start" : action
 
   return {
     repository,
-    ...(action || request.issue
+    ...(filterAction || request.issue
       ? {
           filters: {
-            ...(action ? { action } : {}),
+            ...(filterAction ? { action: filterAction } : {}),
             ...(request.issue ? { issueNumber: request.issue } : {}),
           },
         }
       : {}),
-    ...(request.eventLog || request.updateBody
+    ...(request.eventLog || request.updateBody || remoteWorkspace
       ? {
           options: {
             ...(request.eventLog ? { eventLog: request.eventLog } : {}),
+            ...(remoteWorkspace ? { remoteWorkspace } : {}),
             ...(request.updateBody ? { updateBody: true } : {}),
           },
         }
@@ -320,14 +423,17 @@ function buildDispatchPlanRequest({
 
 function buildDispatchIntentRequest({
   config,
+  remoteWorkspace,
   request,
 }: {
   config: RunnerConfig
+  remoteWorkspace?: string
   request: SupervisorTickRequest
 }) {
   const holder = request.holder ?? config.holder
   const repository = request.repository ?? config.repository
   const action = request.action ?? config.defaultAction
+  const filterAction = remoteWorkspace && action === "remote-bootstrap" ? "start" : action
   const ttlSeconds = request.ttlSeconds ?? config.leaseTtlSeconds
 
   return {
@@ -336,23 +442,35 @@ function buildDispatchIntentRequest({
       holder,
       ...(ttlSeconds ? { ttlSeconds } : {}),
     },
-    ...(action || request.issue
+    ...(filterAction || request.issue
       ? {
           filters: {
-            ...(action ? { action } : {}),
+            ...(filterAction ? { action: filterAction } : {}),
             ...(request.issue ? { issueNumber: request.issue } : {}),
           },
         }
       : {}),
-    ...(request.eventLog || request.updateBody
+    ...(request.eventLog || request.updateBody || remoteWorkspace
       ? {
           options: {
             ...(request.eventLog ? { eventLog: request.eventLog } : {}),
+            ...(remoteWorkspace ? { remoteWorkspace } : {}),
             ...(request.updateBody ? { updateBody: true } : {}),
           },
         }
       : {}),
   }
+}
+
+function usesRemoteWorkspacePool({
+  config,
+  request,
+}: {
+  config: RunnerConfig
+  request: SupervisorTickRequest
+}) {
+  if (!config.remoteWorkspacePool?.configured) return false
+  return (request.action ?? config.defaultAction) === "remote-bootstrap"
 }
 
 function buildRunnerPolicy(config: RunnerConfig) {

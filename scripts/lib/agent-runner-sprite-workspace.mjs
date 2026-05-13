@@ -15,6 +15,7 @@ export function spriteRemoteWorkspaceAdapter(descriptor, options = {}) {
 export function spriteApiRemoteWorkspaceAdapter(descriptor, options = {}) {
   const env = options.env ?? process.env
   const token = spritesApiToken({ env, token: options.token })
+  const target = resolveSpriteTarget(descriptor, { env, pool: options.pool })
   const apiUrl = normalizeSpritesApiUrl(
     options.apiUrl ?? env.SPRITES_API_URL ?? env.SPRITE_API_URL ?? defaultSpritesApiUrl,
   )
@@ -46,6 +47,7 @@ export function spriteApiRemoteWorkspaceAdapter(descriptor, options = {}) {
           ready: false,
           reason: "SPRITES_TOKEN or SPRITE_TOKEN is not configured",
           reference: this.reference,
+          spriteName: target.sprite,
         }
       }
 
@@ -53,7 +55,7 @@ export function spriteApiRemoteWorkspaceAdapter(descriptor, options = {}) {
         apiUrl,
         fetchImpl,
         method: "GET",
-        path: `/v1/sprites/${encodeURIComponent(this.id)}`,
+        path: `/v1/sprites/${encodeURIComponent(target.sprite)}`,
         token,
       })
 
@@ -66,6 +68,8 @@ export function spriteApiRemoteWorkspaceAdapter(descriptor, options = {}) {
         ready: response.ok,
         reason: response.ok ? null : spriteApiErrorReason(response),
         reference: this.reference,
+        spriteName: target.sprite,
+        slot: target.slot,
         sprite: response.body ?? null,
       }
     },
@@ -79,7 +83,7 @@ export function spriteApiRemoteWorkspaceAdapter(descriptor, options = {}) {
         apiUrl,
         fetchImpl,
         method: "POST",
-        path: `/v1/sprites/${encodeURIComponent(this.id)}/exec?${commandPlan.query.toString()}`,
+        path: `/v1/sprites/${encodeURIComponent(target.sprite)}/exec?${commandPlan.query.toString()}`,
         token,
       })
       const output = parseSpriteExecResponse(response)
@@ -97,11 +101,43 @@ export function spriteApiRemoteWorkspaceAdapter(descriptor, options = {}) {
         throw new Error("sprite API dispose requires SPRITES_TOKEN or SPRITE_TOKEN")
       }
 
+      if (target.pooled) {
+        const commandPlan = spriteApiExecPlan(
+          descriptor,
+          {
+            args: ["-rf", `/home/sprite/voyant-workspaces/${target.id}`],
+            command: "rm",
+          },
+          { env },
+        )
+        const response = await requestSpritesApi({
+          apiUrl,
+          fetchImpl,
+          method: "POST",
+          path: `/v1/sprites/${encodeURIComponent(target.sprite)}/exec?${commandPlan.query.toString()}`,
+          token,
+        })
+        if (!response.ok) {
+          throw new Error(spriteApiErrorReason(response))
+        }
+
+        const output = parseSpriteExecResponse(response)
+        return {
+          disposed: output.status === 0,
+          method: "workspace-directory",
+          pooled: true,
+          slot: target.slot,
+          spriteName: target.sprite,
+          status: output.status,
+          workspaceRoot: `/home/sprite/voyant-workspaces/${target.id}`,
+        }
+      }
+
       const response = await requestSpritesApi({
         apiUrl,
         fetchImpl,
         method: "DELETE",
-        path: `/v1/sprites/${encodeURIComponent(this.id)}`,
+        path: `/v1/sprites/${encodeURIComponent(target.sprite)}`,
         token,
       })
       if (!response.ok) {
@@ -111,6 +147,7 @@ export function spriteApiRemoteWorkspaceAdapter(descriptor, options = {}) {
       return {
         disposed: true,
         status: response.status,
+        spriteName: target.sprite,
       }
     },
   }
@@ -178,7 +215,8 @@ export function spriteCliRemoteWorkspaceAdapter(descriptor, options = {}) {
 
 export function spriteExecPlan(descriptor, command, { env = process.env } = {}) {
   const normalizedCommand = normalizeWorkspaceCommand(command)
-  const args = ["exec", "--sprite", descriptor.id]
+  const target = resolveSpriteTarget(descriptor, { env })
+  const args = ["exec", "--sprite", target.sprite]
   const org = normalizedCommand.org ?? env.SPRITE_ORG
   if (org) args.push("--org", org)
   if (normalizedCommand.cwd) args.push("--dir", normalizedCommand.cwd)
@@ -210,6 +248,51 @@ export function spriteApiExecPlan(_descriptor, command, { env = process.env } = 
     displayCommand: normalizedCommand.command.join(" "),
     env: { ...env, ...normalizedCommand.env },
     query,
+  }
+}
+
+export function parseSpritePool(value) {
+  return (value ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0)
+    .flatMap((entry) => {
+      const [rawSprite, rawCapacity] = entry.split(":")
+      const sprite = rawSprite?.trim()
+      if (!sprite || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(sprite)) return []
+
+      const parsedCapacity = Number(rawCapacity)
+      const capacity =
+        rawCapacity && Number.isInteger(parsedCapacity) && parsedCapacity > 0
+          ? Math.min(parsedCapacity, 10)
+          : 1
+
+      return Array.from({ length: capacity }, (_, index) => ({
+        id: capacity === 1 ? sprite : `${sprite}-slot-${index + 1}`,
+        slot: index + 1,
+        sprite,
+        workspaceReference: `sandbox:sprite:${capacity === 1 ? sprite : `${sprite}-slot-${index + 1}`}`,
+      }))
+    })
+}
+
+export function resolveSpriteTarget(descriptor, { env = process.env, pool } = {}) {
+  const slots = pool ?? parseSpritePool(env.AGENT_SPRITE_POOL ?? env.SPRITE_POOL)
+  const slot = slots.find((candidate) => candidate.id === descriptor.id)
+  if (slot) {
+    return {
+      id: descriptor.id,
+      pooled: true,
+      slot: slot.slot,
+      sprite: slot.sprite,
+    }
+  }
+
+  return {
+    id: descriptor.id,
+    pooled: false,
+    slot: null,
+    sprite: descriptor.id,
   }
 }
 
