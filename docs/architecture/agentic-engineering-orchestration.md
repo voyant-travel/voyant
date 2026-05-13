@@ -1379,8 +1379,8 @@ Verification:
   one dispatch intent from the control-plane app's latest stored queue snapshot,
   but it still does not execute lifecycle commands, mutate GitHub directly,
   create workspaces, or spend model budget. Command execution remains owned by
-  trusted runner processes until budget controls, sandbox policy, and
-  task-scoped provider credentials are wired into a later slice.
+  trusted runner processes until sandbox policy and task-scoped provider
+  credentials are wired into a later slice.
 - The runner app can persist the latest supervisor tick result per repository
   to R2 through the `AGENT_RUNNER_TICKS` binding and expose it at
   `GET /api/supervisor/ticks/latest` and recent records at
@@ -1399,13 +1399,18 @@ Verification:
 - The runner app enforces a local dispatch policy before calling the control
   plane. `AGENT_RUNNER_ALLOWED_ACTIONS` limits which lifecycle actions a
   deployed runner can lease, `AGENT_RUNNER_ACTION` supplies a default action
-  filter for Cron, and `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS` caps lease TTLs.
+  filter for Cron, `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS` caps lease TTLs, and
+  `AGENT_RUNNER_MAX_DAILY_LEASES` caps deployed API or Cron leases using the
+  persisted R2 lease-specific history.
   If the action allow-list is narrower than the full lifecycle set, the runner
   refuses unfiltered ticks so the control plane cannot choose a different
   queued action. The deployed runner can lease `repair-ci` and
   `remote-repair-ci` intents, but those actions are excluded from the default
   deployed allow-list and should only be enabled in environments where a
   trusted external command runner owns the configured CI repair command.
+  Daily lease budgets are opt-in but, when configured, real leases are refused
+  unless runner tick storage is configured so the budget is enforceable across
+  scheduled invocations.
 - Deployed control-plane and runner setup should be checked with
   `pnpm agent:queue:deployment-doctor` before enabling Cron. The command calls
   both capability endpoints, reads the runner supervisor status, verifies auth

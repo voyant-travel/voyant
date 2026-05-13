@@ -489,7 +489,11 @@ Deployed runner policy uses the same lifecycle vocabulary for lease-only
 supervisor ticks. CI repair actions are not part of the default deployed
 allow-list; include `repair-ci` or `remote-repair-ci` in
 `AGENT_RUNNER_ALLOWED_ACTIONS` only for environments where the trusted command
-runner has the matching `AGENT_CI_REPAIR_COMMAND` configuration.
+runner has the matching `AGENT_CI_REPAIR_COMMAND` configuration. Use
+`AGENT_RUNNER_MAX_DAILY_LEASES` with the `AGENT_RUNNER_TICKS` R2 binding before
+enabling Cron so API or scheduled ticks cannot lease more than the configured
+daily budget. If the budget is configured without persistent tick storage, real
+leases are refused.
 
 Use loop for a bounded supervisor pass:
 

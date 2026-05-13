@@ -164,6 +164,7 @@ export function summarizeRunnerPolicy(capabilities) {
       ciRepairEnabled: false,
       defaultAction: capabilities?.defaults?.action ?? null,
       detail: "policy: unknown",
+      maxDailyLeases: null,
       ok: true,
       requiresActionFilter: null,
     }
@@ -182,9 +183,11 @@ export function summarizeRunnerPolicy(capabilities) {
     ciRepairAllowedActions,
     ciRepairEnabled: ciRepairAllowedActions.length > 0,
     defaultAction,
+    maxDailyLeases: policy.maxDailyLeases ?? null,
     detail: [
       `allowed actions: ${allowedActions.length}`,
       `default action: ${defaultAction ?? "none"}`,
+      `daily lease budget: ${policy.maxDailyLeases ?? "none"}`,
       `requires action filter: ${String(policy.requiresActionFilter ?? "unknown")}`,
       `CI repair opt-in: ${ciRepairAllowedActions.length > 0 ? ciRepairAllowedActions.join(",") : "off"}`,
       defaultActionAllowed ? null : "default action is not allowed",

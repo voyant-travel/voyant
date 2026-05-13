@@ -1,5 +1,4 @@
-import { createApp, persistSupervisorTick } from "./app.js"
-import { runSupervisorTick } from "./runner.js"
+import { createApp, runPersistentSupervisorTick } from "./app.js"
 import { createR2SupervisorTickStore } from "./supervisor-tick-store.js"
 
 interface Env {
@@ -9,6 +8,7 @@ interface Env {
   AGENT_RUNNER_ALLOWED_ACTIONS?: string
   AGENT_RUNNER_ENABLED?: string
   AGENT_RUNNER_HOLDER?: string
+  AGENT_RUNNER_MAX_DAILY_LEASES?: string
   AGENT_RUNNER_MAX_LEASE_TTL_SECONDS?: string
   AGENT_RUNNER_REPOSITORY?: string
   AGENT_RUNNER_TICK_KEY_PREFIX?: string
@@ -27,22 +27,22 @@ export default {
   },
 
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
-    const recordedAt = new Date()
-    const result = await runSupervisorTick({
+    const tick = await runPersistentSupervisorTick({
       config: runnerConfigFromEnv(env),
       request: {
         dryRun: env.AGENT_RUNNER_ENABLED !== "true",
         reason: "cloudflare-cron",
       },
       source: "scheduled",
-    })
-    const storage = await persistSupervisorTick({
-      recordedAt,
-      repository: env.AGENT_RUNNER_REPOSITORY,
-      result,
       supervisorTickStore: supervisorTickStoreFromEnv(env),
     })
-    console.log(JSON.stringify({ service: "agent-runner", supervisorTick: result, storage }))
+    console.log(
+      JSON.stringify({
+        service: "agent-runner",
+        storage: tick.storage,
+        supervisorTick: tick.result,
+      }),
+    )
   },
 } satisfies ExportedHandler<Env>
 
@@ -55,6 +55,7 @@ function runnerConfigFromEnv(env: Env) {
     defaultAction: env.AGENT_RUNNER_ACTION,
     enabled: env.AGENT_RUNNER_ENABLED === "true",
     holder: env.AGENT_RUNNER_HOLDER,
+    maxDailyLeases: parsePositiveInteger(env.AGENT_RUNNER_MAX_DAILY_LEASES),
     maxLeaseTtlSeconds: parsePositiveInteger(env.AGENT_RUNNER_MAX_LEASE_TTL_SECONDS),
     repository: env.AGENT_RUNNER_REPOSITORY,
   }

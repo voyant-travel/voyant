@@ -192,6 +192,7 @@ function printRunnerPolicyDetails(policy) {
   console.log("Runner policy:")
   console.log(`  allowed actions: ${String(policy.allowedActionCount ?? "unknown")}`)
   console.log(`  default action: ${policy.defaultAction ?? "none"}`)
+  console.log(`  daily lease budget: ${policy.maxDailyLeases ?? "none"}`)
   console.log(`  requires action filter: ${String(policy.requiresActionFilter ?? "unknown")}`)
   console.log(
     `  CI repair opt-in: ${policy.ciRepairEnabled ? policy.ciRepairAllowedActions.join(", ") : "off"}`,

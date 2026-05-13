@@ -8,9 +8,20 @@ export const supervisorTickRecordSchema = z.object({
 
 export type SupervisorTickRecord = z.infer<typeof supervisorTickRecordSchema>
 
+export const supervisorLeaseRecordSchema = z.object({
+  id: z.string().trim().min(1),
+  leasedAt: z.string().datetime(),
+  repository: z.string().trim().min(1),
+  result: z.unknown().optional(),
+})
+
+export type SupervisorLeaseRecord = z.infer<typeof supervisorLeaseRecordSchema>
+
 export interface SupervisorTickStore {
   getLatest(repository: string): Promise<SupervisorTickRecord | null>
+  listLeases?(repository: string, options: { since: string }): Promise<SupervisorLeaseRecord[]>
   listRecent(repository: string, options?: { limit?: number }): Promise<SupervisorTickRecord[]>
+  putLease?(record: SupervisorLeaseRecord): Promise<SupervisorTickStoreWrite>
   putLatest(record: SupervisorTickRecord): Promise<SupervisorTickStoreWrite>
 }
 
@@ -96,6 +107,60 @@ export function createR2SupervisorTickStore({
       return records
     },
 
+    async listLeases(repository, { since }) {
+      if (!bucket.list) {
+        return []
+      }
+
+      const records: SupervisorLeaseRecord[] = []
+      const prefix = leaseHistoryPrefix({ keyPrefix, repository })
+      let cursor: string | undefined
+      let done = false
+
+      do {
+        const listed = await bucket.list({
+          cursor,
+          limit: 100,
+          prefix,
+        })
+        cursor = listed.cursor
+
+        for (const object of listed.objects) {
+          const stored = await bucket.get(object.key)
+          if (!stored) continue
+
+          const parsed = supervisorLeaseRecordSchema.safeParse(JSON.parse(await stored.text()))
+          if (!parsed.success) {
+            throw new Error(`stored supervisor lease is invalid for ${repository}`)
+          }
+          if (parsed.data.leasedAt < since) {
+            done = true
+            break
+          }
+          records.push(parsed.data)
+        }
+      } while (!done && cursor)
+
+      return records
+    },
+
+    async putLease(record) {
+      const key = leaseHistoryKey({
+        id: record.id,
+        keyPrefix,
+        leasedAt: record.leasedAt,
+        repository: record.repository,
+      })
+      const value = JSON.stringify(record)
+      await bucket.put(key, value, {
+        httpMetadata: {
+          contentType: "application/json",
+        },
+      })
+
+      return { key }
+    },
+
     async putLatest(record) {
       const key = latestTickKey({ keyPrefix, repository: record.repository })
       const historyKey = historyTickKey({
@@ -131,6 +196,13 @@ function historyTickPrefix({ keyPrefix, repository }: { keyPrefix: string; repos
   return normalizedPrefix ? `${normalizedPrefix}/${key}` : key
 }
 
+function leaseHistoryPrefix({ keyPrefix, repository }: { keyPrefix: string; repository: string }) {
+  const normalizedPrefix = keyPrefix.replace(/^\/+|\/+$/g, "")
+  const encodedRepository = encodeURIComponent(repository.trim().toLowerCase())
+  const key = `supervisor-leases/history/${encodedRepository}/`
+  return normalizedPrefix ? `${normalizedPrefix}/${key}` : key
+}
+
 function historyTickKey({
   keyPrefix,
   recordedAt,
@@ -145,6 +217,24 @@ function historyTickKey({
     ? String(Number.MAX_SAFE_INTEGER - timestamp).padStart(16, "0")
     : encodeURIComponent(recordedAt)
   return `${historyTickPrefix({ keyPrefix, repository })}${sortable}-${encodeURIComponent(recordedAt)}.json`
+}
+
+function leaseHistoryKey({
+  id,
+  keyPrefix,
+  leasedAt,
+  repository,
+}: {
+  id: string
+  keyPrefix: string
+  leasedAt: string
+  repository: string
+}) {
+  const timestamp = Date.parse(leasedAt)
+  const sortable = Number.isFinite(timestamp)
+    ? String(Number.MAX_SAFE_INTEGER - timestamp).padStart(16, "0")
+    : encodeURIComponent(leasedAt)
+  return `${leaseHistoryPrefix({ keyPrefix, repository })}${sortable}-${encodeURIComponent(leasedAt)}-${encodeURIComponent(id)}.json`
 }
 
 function boundedLimit(limit = 20) {
