@@ -1,5 +1,12 @@
 # @voyantjs/workflows-orchestrator
 
+## 0.38.1
+
+### Patch Changes
+
+- 9a345d1: Add Cloudflare `POST /api/runs/:id/resume` support for starting a new run from a failed parent run with a seeded journal. Resume now carries the metadata replay cursor with the seeded journal, and public trigger requests strip internal resume seed fields.
+  - @voyantjs/workflows@0.38.1
+
 ## 0.38.0
 
 ### Patch Changes
