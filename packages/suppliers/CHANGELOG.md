@@ -1,5 +1,15 @@
 # @voyantjs/suppliers
 
+## 0.38.1
+
+### Patch Changes
+
+- @voyantjs/core@0.38.1
+- @voyantjs/db@0.38.1
+- @voyantjs/facilities@0.38.1
+- @voyantjs/hono@0.38.1
+- @voyantjs/identity@0.38.1
+
 ## 0.38.0
 
 ### Patch Changes
