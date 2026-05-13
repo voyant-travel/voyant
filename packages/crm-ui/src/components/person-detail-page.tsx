@@ -154,10 +154,15 @@ export interface PersonCommercialContextTabSlot {
 export interface PersonDetailPageSlots {
   afterTopBar?: ReactNode
   sidebarEnd?: ReactNode
+  overviewContent?: ReactNode
   overviewEnd?: ReactNode
+  opportunitiesContent?: ReactNode
   opportunitiesEnd?: ReactNode
+  activitiesContent?: ReactNode
   activitiesEnd?: ReactNode
+  relationshipsContent?: ReactNode
   relationshipsEnd?: ReactNode
+  documentsContent?: ReactNode
   documentsEnd?: ReactNode
   bookingsTab?: PersonCommercialContextTabSlot
   invoicesTab?: PersonCommercialContextTabSlot
@@ -658,43 +663,63 @@ export function PersonMain({
           </CardHeader>
           <CardContent className="pt-4">
             <TabsContent value="overview" className="m-0">
-              <PersonOverviewPanel
-                person={person}
-                organization={organization}
-                travelSnapshot={travelSnapshot}
-                travelSnapshotPending={travelSnapshotPending}
-                onUpdateField={onUpdateField}
-              />
+              {slots?.overviewContent !== undefined ? (
+                slots.overviewContent
+              ) : (
+                <PersonOverviewPanel
+                  person={person}
+                  organization={organization}
+                  travelSnapshot={travelSnapshot}
+                  travelSnapshotPending={travelSnapshotPending}
+                  onUpdateField={onUpdateField}
+                />
+              )}
               {slots?.overviewEnd}
             </TabsContent>
             <TabsContent value="opportunities" className="m-0">
-              <PersonOpportunitiesPanel
-                opportunities={opportunities}
-                opportunitiesPending={opportunitiesPending}
-              />
+              {slots?.opportunitiesContent !== undefined ? (
+                slots.opportunitiesContent
+              ) : (
+                <PersonOpportunitiesPanel
+                  opportunities={opportunities}
+                  opportunitiesPending={opportunitiesPending}
+                />
+              )}
               {slots?.opportunitiesEnd}
             </TabsContent>
             <TabsContent value="activities" className="m-0">
-              <PersonActivitiesPanel
-                activities={activities}
-                activitiesPending={activitiesPending}
-              />
+              {slots?.activitiesContent !== undefined ? (
+                slots.activitiesContent
+              ) : (
+                <PersonActivitiesPanel
+                  activities={activities}
+                  activitiesPending={activitiesPending}
+                />
+              )}
               {slots?.activitiesEnd}
             </TabsContent>
             <TabsContent value="relationships" className="m-0">
-              <PersonRelationshipsPanel
-                personId={person.id}
-                relationships={relationships}
-                relationshipsPending={relationshipsPending}
-              />
+              {slots?.relationshipsContent !== undefined ? (
+                slots.relationshipsContent
+              ) : (
+                <PersonRelationshipsPanel
+                  personId={person.id}
+                  relationships={relationships}
+                  relationshipsPending={relationshipsPending}
+                />
+              )}
               {slots?.relationshipsEnd}
             </TabsContent>
             <TabsContent value="documents" className="m-0">
-              <PersonDocumentsPanel
-                documents={documents}
-                documentsPending={documentsPending}
-                primaryCount={primaryDocuments.length}
-              />
+              {slots?.documentsContent !== undefined ? (
+                slots.documentsContent
+              ) : (
+                <PersonDocumentsPanel
+                  documents={documents}
+                  documentsPending={documentsPending}
+                  primaryCount={primaryDocuments.length}
+                />
+              )}
               {slots?.documentsEnd}
             </TabsContent>
             {slots?.bookingsTab ? (

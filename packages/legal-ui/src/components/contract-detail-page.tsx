@@ -47,6 +47,14 @@ export interface ContractDetailPageProps {
   renderContractDialog?: (props: ContractDetailDialogRenderProps) => ReactNode
   renderReference?: (props: ContractReferenceRenderProps) => ReactNode
   getAttachmentDownloadHref?: (attachment: LegalContractAttachmentRecord) => string
+  slots?: ContractDetailPageSlots
+}
+
+export interface ContractDetailPageSlots {
+  detailsContent?: ReactNode
+  partiesContent?: ReactNode
+  signaturesContent?: ReactNode
+  documentsContent?: ReactNode
 }
 
 export type ContractReferenceKind =
@@ -76,6 +84,7 @@ export function ContractDetailPage({
   renderContractDialog,
   renderReference,
   getAttachmentDownloadHref,
+  slots,
 }: ContractDetailPageProps) {
   const queryClient = useQueryClient()
   const i18n = useLegalUiI18nOrDefault()
@@ -208,181 +217,197 @@ export function ContractDetailPage({
           <TabsTrigger value="documents">{f.sections.documents}</TabsTrigger>
         </TabsList>
         <TabsContent value="details" className="mt-4">
-          <ContractSection title={f.sections.details}>
-            <div className="grid gap-3 text-sm">
-              <DetailRow label={f.fields.language}>{contract.language}</DetailRow>
-              {contract.templateVersionId ? (
-                <DetailRow label={f.fields.templateVersion}>
-                  <span className="font-mono text-xs">{contract.templateVersionId}</span>
-                </DetailRow>
-              ) : null}
-              {contract.seriesId ? (
-                <DetailRow label={f.fields.series}>
-                  <span className="font-mono text-xs">{contract.seriesId}</span>
-                </DetailRow>
-              ) : null}
-              {contract.expiresAt ? (
-                <DetailRow label={f.fields.expires}>
-                  {i18n.formatDate(contract.expiresAt)}
-                </DetailRow>
-              ) : null}
-              <div className="mt-2 border-t pt-3">
-                <DetailRow label={f.fields.created}>
-                  {i18n.formatDate(contract.createdAt)}
-                </DetailRow>
-                <DetailRow label={f.fields.updated}>
-                  {i18n.formatDate(contract.updatedAt)}
-                </DetailRow>
+          {slots?.detailsContent !== undefined ? (
+            slots.detailsContent
+          ) : (
+            <ContractSection title={f.sections.details}>
+              <div className="grid gap-3 text-sm">
+                <DetailRow label={f.fields.language}>{contract.language}</DetailRow>
+                {contract.templateVersionId ? (
+                  <DetailRow label={f.fields.templateVersion}>
+                    <span className="font-mono text-xs">{contract.templateVersionId}</span>
+                  </DetailRow>
+                ) : null}
+                {contract.seriesId ? (
+                  <DetailRow label={f.fields.series}>
+                    <span className="font-mono text-xs">{contract.seriesId}</span>
+                  </DetailRow>
+                ) : null}
+                {contract.expiresAt ? (
+                  <DetailRow label={f.fields.expires}>
+                    {i18n.formatDate(contract.expiresAt)}
+                  </DetailRow>
+                ) : null}
+                <div className="mt-2 border-t pt-3">
+                  <DetailRow label={f.fields.created}>
+                    {i18n.formatDate(contract.createdAt)}
+                  </DetailRow>
+                  <DetailRow label={f.fields.updated}>
+                    {i18n.formatDate(contract.updatedAt)}
+                  </DetailRow>
+                </div>
               </div>
-            </div>
-          </ContractSection>
+            </ContractSection>
+          )}
         </TabsContent>
         <TabsContent value="parties" className="mt-4">
-          <ContractSection title={f.sections.parties}>
-            <div className="grid gap-3 text-sm">
-              {contract.personId ? (
-                <DetailRow label={f.fields.person}>
-                  {renderReferenceValue("person", contract.personId)}
-                </DetailRow>
-              ) : null}
-              {contract.organizationId ? (
-                <DetailRow label={f.fields.organization}>
-                  {renderReferenceValue("organization", contract.organizationId)}
-                </DetailRow>
-              ) : null}
-              {contract.supplierId ? (
-                <DetailRow label={f.fields.supplier}>
-                  {renderReferenceValue("supplier", contract.supplierId)}
-                </DetailRow>
-              ) : null}
-              {contract.channelId ? (
-                <DetailRow label={f.fields.channel}>
-                  {renderReferenceValue("channel", contract.channelId)}
-                </DetailRow>
-              ) : null}
-              {contract.bookingId ? (
-                <DetailRow label={f.fields.booking}>
-                  {renderReferenceValue("booking", contract.bookingId)}
-                </DetailRow>
-              ) : null}
-              {contract.orderId ? (
-                <DetailRow label={f.fields.order}>
-                  {renderReferenceValue("order", contract.orderId)}
-                </DetailRow>
-              ) : null}
-              {!contract.personId &&
-              !contract.organizationId &&
-              !contract.supplierId &&
-              !contract.channelId &&
-              !contract.bookingId &&
-              !contract.orderId ? (
-                <p className="text-muted-foreground">{f.empty.noParties}</p>
-              ) : null}
-            </div>
-          </ContractSection>
+          {slots?.partiesContent !== undefined ? (
+            slots.partiesContent
+          ) : (
+            <ContractSection title={f.sections.parties}>
+              <div className="grid gap-3 text-sm">
+                {contract.personId ? (
+                  <DetailRow label={f.fields.person}>
+                    {renderReferenceValue("person", contract.personId)}
+                  </DetailRow>
+                ) : null}
+                {contract.organizationId ? (
+                  <DetailRow label={f.fields.organization}>
+                    {renderReferenceValue("organization", contract.organizationId)}
+                  </DetailRow>
+                ) : null}
+                {contract.supplierId ? (
+                  <DetailRow label={f.fields.supplier}>
+                    {renderReferenceValue("supplier", contract.supplierId)}
+                  </DetailRow>
+                ) : null}
+                {contract.channelId ? (
+                  <DetailRow label={f.fields.channel}>
+                    {renderReferenceValue("channel", contract.channelId)}
+                  </DetailRow>
+                ) : null}
+                {contract.bookingId ? (
+                  <DetailRow label={f.fields.booking}>
+                    {renderReferenceValue("booking", contract.bookingId)}
+                  </DetailRow>
+                ) : null}
+                {contract.orderId ? (
+                  <DetailRow label={f.fields.order}>
+                    {renderReferenceValue("order", contract.orderId)}
+                  </DetailRow>
+                ) : null}
+                {!contract.personId &&
+                !contract.organizationId &&
+                !contract.supplierId &&
+                !contract.channelId &&
+                !contract.bookingId &&
+                !contract.orderId ? (
+                  <p className="text-muted-foreground">{f.empty.noParties}</p>
+                ) : null}
+              </div>
+            </ContractSection>
+          )}
         </TabsContent>
         <TabsContent value="signatures" className="mt-4">
-          <ContractSection
-            title={f.sections.signatures}
-            action={
-              canAddSignature ? (
-                <Button size="sm" onClick={() => setSignOpen(true)}>
-                  <Plus className="mr-2 size-4" aria-hidden="true" />
-                  {f.actions.addSignature}
-                </Button>
-              ) : null
-            }
-          >
-            {!signatures || signatures.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                {f.empty.noSignatures}
-              </p>
-            ) : (
-              <div className="rounded border bg-background">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{f.fields.name}</TableHead>
-                      <TableHead>{f.fields.email}</TableHead>
-                      <TableHead>{f.fields.role}</TableHead>
-                      <TableHead>{f.fields.method}</TableHead>
-                      <TableHead>{f.fields.signedAt}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {signatures.map((signature) => (
-                      <TableRow key={signature.id}>
-                        <TableCell>{signature.signerName}</TableCell>
-                        <TableCell>
-                          {signature.signerEmail ?? messages.common.noResultsDash}
-                        </TableCell>
-                        <TableCell>
-                          {signature.signerRole ?? messages.common.noResultsDash}
-                        </TableCell>
-                        <TableCell>{signature.method}</TableCell>
-                        <TableCell>{i18n.formatDateTime(signature.signedAt)}</TableCell>
+          {slots?.signaturesContent !== undefined ? (
+            slots.signaturesContent
+          ) : (
+            <ContractSection
+              title={f.sections.signatures}
+              action={
+                canAddSignature ? (
+                  <Button size="sm" onClick={() => setSignOpen(true)}>
+                    <Plus className="mr-2 size-4" aria-hidden="true" />
+                    {f.actions.addSignature}
+                  </Button>
+                ) : null
+              }
+            >
+              {!signatures || signatures.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  {f.empty.noSignatures}
+                </p>
+              ) : (
+                <div className="rounded border bg-background">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{f.fields.name}</TableHead>
+                        <TableHead>{f.fields.email}</TableHead>
+                        <TableHead>{f.fields.role}</TableHead>
+                        <TableHead>{f.fields.method}</TableHead>
+                        <TableHead>{f.fields.signedAt}</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </ContractSection>
+                    </TableHeader>
+                    <TableBody>
+                      {signatures.map((signature) => (
+                        <TableRow key={signature.id}>
+                          <TableCell>{signature.signerName}</TableCell>
+                          <TableCell>
+                            {signature.signerEmail ?? messages.common.noResultsDash}
+                          </TableCell>
+                          <TableCell>
+                            {signature.signerRole ?? messages.common.noResultsDash}
+                          </TableCell>
+                          <TableCell>{signature.method}</TableCell>
+                          <TableCell>{i18n.formatDateTime(signature.signedAt)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </ContractSection>
+          )}
         </TabsContent>
         <TabsContent value="documents" className="mt-4">
-          <ContractSection
-            title={f.sections.documents}
-            action={
-              <Button
-                size="sm"
-                onClick={() => {
-                  setEditingAttachment(undefined)
-                  setAttachOpen(true)
-                }}
-              >
-                <Plus className="mr-2 size-4" aria-hidden="true" />
-                {f.actions.addDocument}
-              </Button>
-            }
-          >
-            {!attachments || attachments.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                {f.empty.noAttachments}
-              </p>
-            ) : (
-              <div className="rounded border bg-background">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{f.fields.name}</TableHead>
-                      <TableHead>{f.fields.kind}</TableHead>
-                      <TableHead>{f.fields.mimeType}</TableHead>
-                      <TableHead>{f.fields.size}</TableHead>
-                      <TableHead className="w-16" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {attachments.map((attachment) => (
-                      <AttachmentRow
-                        key={attachment.id}
-                        attachment={attachment}
-                        downloadHref={getAttachmentDownloadHref?.(attachment)}
-                        onEdit={() => {
-                          setEditingAttachment(attachment)
-                          setAttachOpen(true)
-                        }}
-                        onDelete={() => {
-                          if (confirm(f.deleteAttachmentConfirm)) {
-                            removeAttachment.mutate({ contractId: id, id: attachment.id })
-                          }
-                        }}
-                      />
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </ContractSection>
+          {slots?.documentsContent !== undefined ? (
+            slots.documentsContent
+          ) : (
+            <ContractSection
+              title={f.sections.documents}
+              action={
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingAttachment(undefined)
+                    setAttachOpen(true)
+                  }}
+                >
+                  <Plus className="mr-2 size-4" aria-hidden="true" />
+                  {f.actions.addDocument}
+                </Button>
+              }
+            >
+              {!attachments || attachments.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  {f.empty.noAttachments}
+                </p>
+              ) : (
+                <div className="rounded border bg-background">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{f.fields.name}</TableHead>
+                        <TableHead>{f.fields.kind}</TableHead>
+                        <TableHead>{f.fields.mimeType}</TableHead>
+                        <TableHead>{f.fields.size}</TableHead>
+                        <TableHead className="w-16" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {attachments.map((attachment) => (
+                        <AttachmentRow
+                          key={attachment.id}
+                          attachment={attachment}
+                          downloadHref={getAttachmentDownloadHref?.(attachment)}
+                          onEdit={() => {
+                            setEditingAttachment(attachment)
+                            setAttachOpen(true)
+                          }}
+                          onDelete={() => {
+                            if (confirm(f.deleteAttachmentConfirm)) {
+                              removeAttachment.mutate({ contractId: id, id: attachment.id })
+                            }
+                          }}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </ContractSection>
+          )}
         </TabsContent>
       </Tabs>
 

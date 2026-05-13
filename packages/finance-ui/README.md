@@ -12,6 +12,14 @@ pnpm add @voyantjs/finance-ui @voyantjs/finance-react @voyantjs/ui @tanstack/rea
 
 All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
 
+## Detail Section Replacement Slots
+
+`InvoiceDetailPage` exposes `*Content` slots for replacing built-in list
+sections while keeping the surrounding detail page and append-only `after*`
+slots. Use `lineItemsContent`, `paymentsContent`, `creditNotesContent`,
+`attachmentsContent`, or `notesContent` when an app needs fully custom inline
+management controls for that section.
+
 ## Components
 
 - `InvoicesPage`, `InvoiceDetailPage`, and `PaymentsPage` publish

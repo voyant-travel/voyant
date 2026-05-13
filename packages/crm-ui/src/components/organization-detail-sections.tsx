@@ -103,9 +103,13 @@ export interface OrganizationCommercialContextTabSlot {
 export interface OrganizationDetailPageSlots {
   afterTopBar?: ReactNode
   sidebarEnd?: ReactNode
+  overviewContent?: ReactNode
   overviewEnd?: ReactNode
+  peopleContent?: ReactNode
   peopleEnd?: ReactNode
+  opportunitiesContent?: ReactNode
   opportunitiesEnd?: ReactNode
+  activitiesContent?: ReactNode
   activitiesEnd?: ReactNode
   bookingsTab?: OrganizationCommercialContextTabSlot
   invoicesTab?: OrganizationCommercialContextTabSlot
@@ -431,40 +435,48 @@ export function OrganizationMain({
           </CardHeader>
           <CardContent className="pt-4">
             <TabsContent value="overview" className="m-0">
-              <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="text-xs font-medium uppercase text-muted-foreground">
-                    {messages.organizationDetail.sections.created}
-                  </dt>
-                  <dd className="mt-0.5">{formatCrmDate(i18n, org.createdAt)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase text-muted-foreground">
-                    {messages.organizationDetail.sections.updated}
-                  </dt>
-                  <dd className="mt-0.5">{formatCrmRelative(i18n, org.updatedAt)}</dd>
-                </div>
-                {org.notes && (
-                  <div className="sm:col-span-2">
-                    <dt className="text-xs font-medium uppercase text-muted-foreground">
-                      {messages.organizationDetail.sections.notes}
-                    </dt>
-                    <dd className="mt-0.5 whitespace-pre-wrap">{org.notes}</dd>
-                  </div>
-                )}
-              </dl>
-              <Separator className="my-4" />
-              <InlineField
-                label={messages.organizationDetail.sections.notes}
-                kind="textarea"
-                value={org.notes}
-                onSave={(next) => onUpdateField({ notes: next })}
-              />
+              {slots?.overviewContent !== undefined ? (
+                slots.overviewContent
+              ) : (
+                <>
+                  <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+                    <div>
+                      <dt className="text-xs font-medium uppercase text-muted-foreground">
+                        {messages.organizationDetail.sections.created}
+                      </dt>
+                      <dd className="mt-0.5">{formatCrmDate(i18n, org.createdAt)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium uppercase text-muted-foreground">
+                        {messages.organizationDetail.sections.updated}
+                      </dt>
+                      <dd className="mt-0.5">{formatCrmRelative(i18n, org.updatedAt)}</dd>
+                    </div>
+                    {org.notes && (
+                      <div className="sm:col-span-2">
+                        <dt className="text-xs font-medium uppercase text-muted-foreground">
+                          {messages.organizationDetail.sections.notes}
+                        </dt>
+                        <dd className="mt-0.5 whitespace-pre-wrap">{org.notes}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <Separator className="my-4" />
+                  <InlineField
+                    label={messages.organizationDetail.sections.notes}
+                    kind="textarea"
+                    value={org.notes}
+                    onSave={(next) => onUpdateField({ notes: next })}
+                  />
+                </>
+              )}
               {slots?.overviewEnd}
             </TabsContent>
 
             <TabsContent value="people" className="m-0">
-              {peoplePending ? (
+              {slots?.peopleContent !== undefined ? (
+                slots.peopleContent
+              ) : peoplePending ? (
                 <div className="flex justify-center py-6">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
@@ -513,7 +525,9 @@ export function OrganizationMain({
             </TabsContent>
 
             <TabsContent value="opportunities" className="m-0">
-              {opportunitiesPending ? (
+              {slots?.opportunitiesContent !== undefined ? (
+                slots.opportunitiesContent
+              ) : opportunitiesPending ? (
                 <div className="flex justify-center py-6">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
@@ -559,7 +573,9 @@ export function OrganizationMain({
             </TabsContent>
 
             <TabsContent value="activities" className="m-0">
-              {activitiesPending ? (
+              {slots?.activitiesContent !== undefined ? (
+                slots.activitiesContent
+              ) : activitiesPending ? (
                 <div className="flex justify-center py-6">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
