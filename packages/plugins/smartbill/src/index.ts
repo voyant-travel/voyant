@@ -1,15 +1,29 @@
 export type {
+  RetrySmartbillInvoiceArtifactInput,
   SmartbillArtifactPersistenceOptions,
+  SmartbillArtifactPersistenceResult,
+  SmartbillArtifactPersistenceRuntime,
   SmartbillArtifactStorageContext,
   SmartbillDbResolver,
   SmartbillDocumentStorageResolver,
   SmartbillDocumentType,
+  SmartbillExternalRef,
   SmartbillStorageKeyPrefixResolver,
 } from "./artifacts.js"
+export { retrySmartbillInvoiceArtifact } from "./artifacts.js"
 export type { SmartbillClientApi, SmartbillClientOptions } from "./client.js"
 export { createSmartbillClient } from "./client.js"
-export type { SmartbillMappingOptions } from "./mapping.js"
-export { mapClient, mapLineItems, mapVoyantInvoiceToSmartbill } from "./mapping.js"
+export type {
+  SmartbillEventValue,
+  SmartbillMappingOptions,
+  SmartbillMaybePromise,
+} from "./mapping.js"
+export {
+  mapClient,
+  mapLineItems,
+  mapVoyantInvoiceToSmartbill,
+  mapVoyantInvoiceToSmartbillAsync,
+} from "./mapping.js"
 export type {
   SmartbillMockDocument,
   SmartbillMockDocumentKind,
@@ -25,6 +39,8 @@ export type {
 } from "./mock.js"
 export { createSmartbillMockServer } from "./mock.js"
 export type {
+  SmartbillErrorHandler,
+  SmartbillIdempotencyOptions,
   SmartbillLogger,
   SmartbillMapFn,
   SmartbillPluginOptions,
@@ -40,6 +56,7 @@ export type {
   SmartbillSettlementInvoice,
   SmartbillSettlementPollerContext,
   SmartbillSettlementPollerResult,
+  SmartbillSettlementSeriesContext,
 } from "./settlement.js"
 export { createSmartbillInvoiceSettlementPoller } from "./settlement.js"
 export type {

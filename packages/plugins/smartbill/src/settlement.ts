@@ -3,7 +3,11 @@ import { createSmartbillClient } from "./client.js"
 
 export interface SmartbillInvoiceSettlementPollerOptions extends SmartbillClientOptions {
   companyVatCode?: string
-  seriesName?: string
+  seriesName?:
+    | string
+    | ((
+        context: SmartbillSettlementSeriesContext,
+      ) => string | null | undefined | Promise<string | null | undefined>)
 }
 
 export interface SmartbillSettlementInvoice {
@@ -19,6 +23,10 @@ export interface SmartbillSettlementExternalRef {
 export interface SmartbillSettlementPollerContext {
   invoice: SmartbillSettlementInvoice
   externalRef: SmartbillSettlementExternalRef
+}
+
+export interface SmartbillSettlementSeriesContext extends SmartbillSettlementPollerContext {
+  metadata: Record<string, unknown> | null
 }
 
 export interface SmartbillSettlementPollerResult {
@@ -58,15 +66,17 @@ function resolveCompanyVatCode(
   )
 }
 
-function resolveSeriesName(
+async function resolveSeriesName(
   metadata: Record<string, unknown> | null,
   options: SmartbillInvoiceSettlementPollerOptions,
+  context: SmartbillSettlementPollerContext,
 ) {
+  const optionSeriesName =
+    typeof options.seriesName === "function"
+      ? await options.seriesName({ ...context, metadata })
+      : options.seriesName
   return (
-    coerceString(metadata?.seriesName) ??
-    coerceString(metadata?.series) ??
-    options.seriesName ??
-    null
+    coerceString(metadata?.seriesName) ?? coerceString(metadata?.series) ?? optionSeriesName ?? null
   )
 }
 
@@ -95,9 +105,10 @@ export function createSmartbillInvoiceSettlementPoller(
   const client = createSmartbillClient(options)
 
   return async ({ invoice, externalRef }) => {
+    const context = { invoice, externalRef }
     const metadata = coerceMetadata(externalRef.metadata)
     const companyVatCode = resolveCompanyVatCode(metadata, options)
-    const seriesName = resolveSeriesName(metadata, options)
+    const seriesName = await resolveSeriesName(metadata, options, context)
     const number = resolveInvoiceNumber(
       metadata,
       externalRef.externalNumber,

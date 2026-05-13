@@ -5,7 +5,10 @@ import type {
   SmartbillDocumentStorageResolver,
   SmartbillStorageKeyPrefixResolver,
 } from "./artifacts.js"
+import type { SmartbillMappingOptions } from "./mapping.js"
 import type {
+  SmartbillErrorHandler,
+  SmartbillIdempotencyOptions,
   SmartbillLogger,
   SmartbillMapFn,
   SmartbillPluginOptions,
@@ -15,6 +18,17 @@ import type { SmartbillFetch } from "./types.js"
 
 const optionalString = z.string().trim().min(1).optional()
 const optionalUrl = z.string().trim().url().optional()
+const requiredEventString = z.custom<SmartbillMappingOptions["seriesName"]>(
+  (value) => (typeof value === "string" && value.trim().length > 0) || typeof value === "function",
+  "Expected a non-empty string or event resolver function",
+)
+const optionalEventText = z.custom<SmartbillMappingOptions["mentions"]>(
+  (value) =>
+    value === undefined ||
+    (typeof value === "string" && value.trim().length > 0) ||
+    typeof value === "function",
+  "Expected a non-empty string or event resolver function",
+)
 
 const optionalFetch = z.custom<SmartbillFetch | undefined>(
   (value) => value === undefined || typeof value === "function",
@@ -35,6 +49,11 @@ const optionalLogger = z.custom<SmartbillLogger | undefined>(
 const optionalMapEvent = z.custom<SmartbillMapFn | undefined>(
   (value) => value === undefined || typeof value === "function",
   "Expected a mapEvent function",
+)
+
+const optionalOnError = z.custom<SmartbillErrorHandler | undefined>(
+  (value) => value === undefined || typeof value === "function",
+  "Expected an onError function",
 )
 
 const optionalDb = z.custom<SmartbillDbResolver | undefined>(
@@ -90,19 +109,34 @@ const optionalEvents = z.custom<SmartbillSyncEventNames | undefined>((value) => 
   )
 }, "Expected event names to be non-empty strings")
 
+const optionalIdempotency = z.custom<SmartbillIdempotencyOptions | undefined>((value) => {
+  if (value === undefined) return true
+  if (typeof value !== "object" || value === null) return false
+  const options = value as SmartbillIdempotencyOptions
+  return (
+    options.skipExistingExternalRef === undefined ||
+    typeof options.skipExistingExternalRef === "boolean"
+  )
+}, "Expected valid SmartBill idempotency options")
+
 export const smartbillPluginOptionsSchema = z.object({
   username: z.string().trim().min(1),
   apiToken: z.string().trim().min(1),
   companyVatCode: z.string().trim().min(1),
-  seriesName: z.string().trim().min(1),
+  seriesName: requiredEventString,
   apiUrl: optionalUrl,
   fetch: optionalFetch.optional(),
   language: optionalString,
   isTaxIncluded: z.boolean().optional(),
   art311SpecialRegime: z.boolean().optional(),
+  art311SpecialRegimeText: optionalString,
+  mentions: optionalEventText.optional(),
+  observations: optionalEventText.optional(),
   events: optionalEvents.optional(),
   mapEvent: optionalMapEvent.optional(),
   logger: optionalLogger.optional(),
+  idempotency: optionalIdempotency.optional(),
+  onError: optionalOnError.optional(),
   artifacts: optionalArtifacts.optional(),
   db: optionalDb.optional(),
   documentStorage: optionalDocumentStorage.optional(),

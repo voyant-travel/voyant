@@ -1,9 +1,11 @@
 import type { Plugin } from "@voyantjs/core"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { retrySmartbillInvoiceArtifact } from "../../src/artifacts.js"
 import { smartbillPlugin } from "../../src/plugin.js"
 import type { SmartbillFetch } from "../../src/types.js"
 
 const financeServiceMock = vi.hoisted(() => ({
+  listInvoiceExternalRefs: vi.fn(),
   registerInvoiceExternalRef: vi.fn(),
   listInvoiceAttachments: vi.fn(),
   createInvoiceRendition: vi.fn(),
@@ -95,6 +97,7 @@ function subscriberFor(plugin: Plugin, event: string) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  financeServiceMock.listInvoiceExternalRefs.mockResolvedValue([])
   financeServiceMock.registerInvoiceExternalRef.mockResolvedValue({ id: "iex_1" })
   financeServiceMock.listInvoiceAttachments.mockResolvedValue([])
   financeServiceMock.createInvoiceRendition.mockResolvedValue({ id: "invr_1" })
@@ -227,9 +230,170 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
 
     expect(fetchMock).toHaveBeenCalledOnce()
   })
+
+  it("supports event-specific default mapping hooks", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "1", series: "ONLINE" }),
+    )
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      seriesName: (event) => (event.channel === "online" ? "ONLINE" : "A"),
+      mentions: async (event) => `Invoice ${event.id}`,
+      observations: "Paid by card",
+      fetch: fetchMock,
+      logger: makeLogger(),
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_online",
+        channel: "online",
+        clientName: "Test SRL",
+        lineItems: [],
+      }),
+    )
+
+    const body = JSON.parse(fetchMock.mock.calls[0]![1].body ?? "{}")
+    expect(body.seriesName).toBe("ONLINE")
+    expect(body.mentions).toBe("Invoice inv_online")
+    expect(body.observations).toBe("Paid by card")
+  })
+
+  it("skips duplicate create calls when a non-error SmartBill ref already exists", async () => {
+    financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([
+      {
+        id: "iex_existing",
+        invoiceId: "inv_dup",
+        provider: "smartbill",
+        externalId: null,
+        externalNumber: "1",
+        externalUrl: null,
+        status: "issued",
+        syncError: null,
+        metadata: {
+          companyVatCode: "RO12345678",
+          seriesName: "A",
+          series: "A",
+          number: "1",
+          documentType: "invoice",
+        },
+      },
+    ])
+    const fetchMock = vi.fn<SmartbillFetch>()
+    const logger = makeLogger()
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      logger,
+      artifacts: { db: {} as never },
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(eventEnvelope({ id: "inv_dup", lineItems: [] }))
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining("already has SmartBill ref"),
+      expect.objectContaining({ id: "iex_existing" }),
+    )
+  })
+
+  it("records a SmartBill error external ref and calls onError when create fails", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () => textResponse(500, "boom"))
+    const onError = vi.fn()
+    const logger = makeLogger()
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      logger,
+      onError,
+      artifacts: { db: {} as never },
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(eventEnvelope({ id: "inv_fail_ref", lineItems: [] }))
+
+    expect(onError).toHaveBeenCalledOnce()
+    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_fail_ref",
+      expect.objectContaining({
+        provider: "smartbill",
+        status: "error",
+        syncError: expect.stringContaining("500"),
+      }),
+    )
+  })
 })
 
 describe("smartbillPlugin — invoice PDF artifacts", () => {
+  it("re-attaches a SmartBill PDF from an existing external ref", async () => {
+    const pdfBytes = new TextEncoder().encode("%PDF-1.7 smartbill retry")
+    const fetchMock = vi.fn<SmartbillFetch>(async () => bytesResponse(200, pdfBytes))
+    const upload = vi
+      .fn()
+      .mockResolvedValue({ key: "invoices/inv_retry/smartbill/invoice-A-1.pdf", url: "" })
+    const storage = {
+      name: "test-storage",
+      upload,
+      delete: vi.fn(),
+      signedUrl: vi.fn(),
+      get: vi.fn(),
+    }
+
+    const result = await retrySmartbillInvoiceArtifact({
+      runtime: {
+        db: {} as never,
+        documentStorage: storage,
+      },
+      client: {
+        createInvoice: vi.fn(),
+        createProforma: vi.fn(),
+        cancelInvoice: vi.fn(),
+        reverseInvoice: vi.fn(),
+        restoreInvoice: vi.fn(),
+        deleteInvoice: vi.fn(),
+        getPaymentStatus: vi.fn(),
+        listTaxes: vi.fn(),
+        listSeries: vi.fn(),
+        viewInvoicePdf: async () => ({
+          bytes: pdfBytes,
+          contentType: "application/pdf",
+        }),
+        viewPdf: vi.fn(),
+        viewEstimatePdf: vi.fn(),
+        listEstimateInvoices: vi.fn(),
+      },
+      externalRef: {
+        id: "iex_retry",
+        invoiceId: "inv_retry",
+        externalId: null,
+        externalNumber: "1",
+        externalUrl: null,
+        metadata: {
+          companyVatCode: "RO12345678",
+          seriesName: "A",
+          series: "A",
+          number: "1",
+        },
+      },
+      documentType: "invoice",
+    })
+
+    expect(result.status).toBe("persisted")
+    expect(upload).toHaveBeenCalledWith(
+      pdfBytes,
+      expect.objectContaining({ contentType: "application/pdf" }),
+    )
+    expect(financeServiceMock.createInvoiceAttachment).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_retry",
+      expect.objectContaining({ kind: "smartbill_pdf" }),
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it("registers the SmartBill ref and persists the generated invoice PDF when storage is configured", async () => {
     const pdfBytes = new TextEncoder().encode("%PDF-1.7 smartbill")
     const fetchMock = vi

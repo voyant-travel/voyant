@@ -128,4 +128,41 @@ describe("createSmartbillInvoiceSettlementPoller", () => {
     expect(fetchMock).toHaveBeenCalledOnce()
     expect(missingConfig.syncError).toContain("companyVatCode")
   })
+
+  it("supports option-level seriesName callbacks", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, {
+        ...okEnvelope,
+        paid: false,
+        invoiceTotalAmount: 10,
+        paidAmount: 0,
+        unpaidAmount: 10,
+      }),
+    )
+    const seriesName = vi.fn(async ({ invoice }) =>
+      invoice.invoiceNumber.startsWith("WEB") ? "WEB" : "SB",
+    )
+    const poller = createSmartbillInvoiceSettlementPoller({
+      username: "user@test.com",
+      apiToken: "token",
+      fetch: fetchMock,
+      companyVatCode: "RO12345678",
+      seriesName,
+    })
+
+    await poller({
+      db: null as never,
+      invoice: { invoiceNumber: "WEB-1" } as never,
+      externalRef: {
+        externalId: null,
+        externalNumber: "1001",
+        metadata: null,
+      } as never,
+      bindings: {},
+    })
+
+    expect(seriesName).toHaveBeenCalledOnce()
+    const [url] = fetchMock.mock.calls[0]!
+    expect(url).toContain("seriesname=WEB")
+  })
 })
