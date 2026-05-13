@@ -252,12 +252,22 @@ function humanReviewRecommendation(item, { heartbeat, repository }) {
   }
 
   if (pr) {
+    if (!heartbeat?.stale) {
+      return recommendation(item, {
+        action: "wait-human-review",
+        command: null,
+        heartbeat,
+        priority: 80,
+        reason: "linked PR is awaiting human review",
+      })
+    }
+
     return recommendation(item, {
       action: "sync-pr",
       command: commandWithIssue({ command: "sync-pr", issueNumber: item.issue.number, repository }),
       heartbeat,
       priority: 50,
-      reason: "linked PR should be synced back to the Project",
+      reason: "stale linked PR should be synced back to the Project",
     })
   }
 
