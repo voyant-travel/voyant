@@ -10,6 +10,8 @@ export const dispatchableActions = new Set([
   "remote-cleanup",
   "remote-open-pr",
   "remote-publish-evidence",
+  "remote-repair-ci",
+  "repair-ci",
   "start",
   "sync-pr",
 ])
@@ -41,7 +43,10 @@ export function selectDispatchRecommendation(recommendations, { action, issueNum
   }
 }
 
-export function dispatchCommandArgs(recommendation, { eventLog, repository, updateBody } = {}) {
+export function dispatchCommandArgs(
+  recommendation,
+  { ciRepairCommand, eventLog, repository, updateBody } = {},
+) {
   if (!dispatchableActions.has(recommendation.action)) {
     throw new Error(`action ${recommendation.action} is not dispatchable`)
   }
@@ -58,6 +63,13 @@ export function dispatchCommandArgs(recommendation, { eventLog, repository, upda
 
   if (eventLog) {
     commandArgs.push("--event-log", eventLog)
+  }
+
+  if (
+    ciRepairCommand &&
+    (recommendation.action === "repair-ci" || recommendation.action === "remote-repair-ci")
+  ) {
+    commandArgs.push("--ci-repair-command", ciRepairCommand)
   }
 
   if (updateBody && recommendation.action === "sync-pr") {

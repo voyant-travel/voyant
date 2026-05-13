@@ -8,6 +8,10 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  ciRepairCommandOptions,
+  ciRepairDispatchEnabled,
+} from "./lib/agent-runner-ci-repair-command.mjs"
+import {
   dispatchableActions,
   dispatchCommandArgs,
   runDispatchCommand,
@@ -39,6 +43,7 @@ maybePrintHelp(args, {
       `Only dispatch this action. Allowed: ${Array.from(dispatchableActions).join(", ")}.`,
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    ...ciRepairCommandOptions,
     ...eventLogOptions,
     ["--update-body", "When dispatching sync-pr, refresh the PR body from evidence."],
     ...repositoryOptions,
@@ -61,7 +66,11 @@ if (args.action && !dispatchableActions.has(args.action)) {
 
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const items = filterItemsByRepository(project.items, repository)
-const recommendations = recommendQueueActions(items, { maxAgeDays, repository })
+const recommendations = recommendQueueActions(items, {
+  ciRepairDispatchEnabled: ciRepairDispatchEnabled(args),
+  maxAgeDays,
+  repository,
+})
 let selection
 try {
   selection = selectDispatchRecommendation(recommendations, {
@@ -79,6 +88,7 @@ if (!recommendation) {
 }
 
 const commandArgs = dispatchCommandArgs(recommendation, {
+  ciRepairCommand: args.ciRepairCommand,
   eventLog: args.eventLog,
   repository,
   updateBody: Boolean(args.updateBody),

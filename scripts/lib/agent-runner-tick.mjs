@@ -3,6 +3,10 @@ import {
   requiresBrowserEvidence,
 } from "./agent-runner-browser-evidence.mjs"
 import { hasCiRepairEvidence } from "./agent-runner-ci.mjs"
+import {
+  localCiRepairRecommendationPlan,
+  remoteCiRepairCommandPlan,
+} from "./agent-runner-ci-repair-recommendation.mjs"
 import { evaluateHeartbeat } from "./agent-runner-output.mjs"
 import {
   isRemoteWorkspaceDescriptor,
@@ -11,18 +15,14 @@ import {
 
 const runnableStates = new Set(["Planning", "Changes Requested", "CI Repair"])
 const stalePreemptionStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
-const watchedStates = new Set([
-  "Planning",
-  "Running",
-  "Blocked",
-  "Human Review",
-  "Changes Requested",
-  "CI Repair",
-])
+const watchedStates = new Set([...stalePreemptionStates, "Blocked", "Human Review"])
 
-export function recommendQueueActions(items, { maxAgeDays, repository }) {
+export function recommendQueueActions(
+  items,
+  { ciRepairDispatchEnabled = false, maxAgeDays, repository },
+) {
   return items
-    .map((item) => recommendQueueAction(item, { maxAgeDays, repository }))
+    .map((item) => recommendQueueAction(item, { ciRepairDispatchEnabled, maxAgeDays, repository }))
     .filter((recommendation) => recommendation.action !== "ignore")
     .sort(
       (left, right) =>
@@ -30,7 +30,10 @@ export function recommendQueueActions(items, { maxAgeDays, repository }) {
     )
 }
 
-export function recommendQueueAction(item, { maxAgeDays, repository }) {
+export function recommendQueueAction(
+  item,
+  { ciRepairDispatchEnabled = false, maxAgeDays, repository },
+) {
   if (!item.issue) {
     return recommendation(item, {
       action: "ignore",
@@ -74,7 +77,11 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
     })
   }
 
-  const workspaceRecommendation = remoteWorkspaceRecommendation(item, { heartbeat, repository })
+  const workspaceRecommendation = remoteWorkspaceRecommendation(item, {
+    ciRepairDispatchEnabled,
+    heartbeat,
+    repository,
+  })
   if (workspaceRecommendation) {
     return workspaceRecommendation
   }
@@ -93,32 +100,19 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
     return browserRecommendation
   }
 
-  if (state === "CI Repair" && item.fields.PR && !hasCiRepairEvidence(item.fields.Evidence)) {
+  const ciRepairPlan = localCiRepairRecommendationPlan(item, { ciRepairDispatchEnabled })
+  if (ciRepairPlan) {
     return recommendation(item, {
-      action: "collect-ci",
+      action: ciRepairPlan.action,
       command: commandWithIssue({
-        command: "collect-ci",
+        command: ciRepairPlan.command,
+        extraArgs: ciRepairPlan.extraArgs,
         issueNumber: item.issue.number,
         repository,
       }),
       heartbeat,
-      priority: 28,
-      reason: "failing PR checks need a local CI repair packet",
-    })
-  }
-
-  if (state === "CI Repair" && hasCiRepairEvidence(item.fields.Evidence)) {
-    return recommendation(item, {
-      action: "run-command",
-      command: commandWithIssue({
-        command: "run-command",
-        extraArgs: ['--command "<ci-repair-command>"'],
-        issueNumber: item.issue.number,
-        repository,
-      }),
-      heartbeat,
-      priority: 30,
-      reason: "CI repair packet is ready for a narrow repair command",
+      priority: ciRepairPlan.priority,
+      reason: ciRepairPlan.reason,
     })
   }
 
@@ -202,7 +196,7 @@ export function recommendQueueAction(item, { maxAgeDays, repository }) {
   })
 }
 
-function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
+function remoteWorkspaceRecommendation(item, { ciRepairDispatchEnabled, heartbeat, repository }) {
   const workspace = item.fields.Workspace
   if (!workspace) return null
 
@@ -275,6 +269,25 @@ function remoteWorkspaceRecommendation(item, { heartbeat, repository }) {
 
   if (state === "CI Repair" && item.fields.PR && !hasCiRepairEvidence(item.fields.Evidence)) {
     return null
+  }
+
+  const ciRepairPlan = remoteCiRepairCommandPlan(item, {
+    ciRepairDispatchEnabled,
+    workspaceReference: descriptor.reference,
+  })
+  if (ciRepairPlan) {
+    return recommendation(item, {
+      action: ciRepairPlan.action,
+      command: commandWithIssue({
+        command: ciRepairPlan.command,
+        extraArgs: ciRepairPlan.extraArgs,
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: ciRepairPlan.priority,
+      reason: ciRepairPlan.reason,
+    })
   }
 
   if (["Planning", "Changes Requested", "CI Repair"].includes(state)) {

@@ -5,6 +5,7 @@ import path from "node:path"
 import { describe, it } from "node:test"
 
 import {
+  remoteCiRepairEvidencePlan,
   remoteCommandRunArtifactPlan,
   remoteCommandRunBrowserEvidenceBlockReason,
   remoteCommandRunEnvironment,
@@ -51,23 +52,36 @@ describe("agent runner remote execution helpers", () => {
 
   it("builds remote command environment without local workspace assumptions", () => {
     const descriptor = parseWorkspaceReference("sandbox:sprite:task-579", { repoRoot: "/repo" })
+    const item = workItem()
+    item.fields.Evidence =
+      ".agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md"
     const artifactPlan = remoteCommandRunArtifactPlan({
       descriptor,
-      item: workItem(),
+      item,
       remoteDir: "/workspace/voyant",
       workspaceReference: descriptor.reference,
+    })
+    const ciRepairEvidencePlan = remoteCiRepairEvidencePlan({
+      artifactPlan,
+      item,
+      repoRoot: "/repo",
     })
 
     assert.deepEqual(
       remoteCommandRunEnvironment({
         artifactPlan,
         branch: "task/579-test-agent-project-intake-workflow",
+        ciRepairEvidencePlan,
         descriptor,
-        item: workItem(),
+        item,
         repository: "voyantjs/voyant",
       }),
       {
         VOYANT_AGENT_BRANCH: "task/579-test-agent-project-intake-workflow",
+        VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH:
+          "/workspace/voyant/.agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+        VOYANT_AGENT_CI_REPAIR_EVIDENCE_REFERENCE:
+          ".agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
         VOYANT_AGENT_EVIDENCE_PATH:
           "/workspace/voyant/docs/agent-evidence/active/579-test-agent-project-intake-workflow.md",
         VOYANT_AGENT_EVIDENCE_REFERENCE:
@@ -88,6 +102,14 @@ describe("agent runner remote execution helpers", () => {
         VOYANT_AGENT_WORKSPACE_REFERENCE: "sandbox:sprite:task-579",
       },
     )
+    assert.deepEqual(ciRepairEvidencePlan, {
+      evidenceReference:
+        ".agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+      localEvidencePath:
+        "/repo/.agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+      remoteEvidenceFile:
+        "/workspace/voyant/.agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+    })
   })
 
   it("builds shell wrappers for logged execution and remote evidence writes", () => {

@@ -8,6 +8,10 @@ import {
   runGit,
 } from "./lib/agent-project-queue.mjs"
 import {
+  ciRepairCommandOptions,
+  ciRepairDispatchEnabled,
+} from "./lib/agent-runner-ci-repair-command.mjs"
+import {
   formatAgentRunnerEventSummary,
   readAgentRunnerEvents,
   resolveEventLogPath,
@@ -30,6 +34,7 @@ maybePrintHelp(args, {
     ["--json", "Print machine-readable JSON."],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
     ["--recent-events <number>", "Number of recent runner events to show. Defaults to 5."],
+    ...ciRepairCommandOptions,
     ...eventLogOptions,
     ...repositoryOptions,
     ...projectOptions,
@@ -48,7 +53,11 @@ if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
 
 const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const items = filterItemsByRepository(project.items, repository)
-const recommendations = recommendQueueActions(items, { maxAgeDays, repository })
+const recommendations = recommendQueueActions(items, {
+  ciRepairDispatchEnabled: ciRepairDispatchEnabled(args),
+  maxAgeDays,
+  repository,
+})
 const recentEvents = readRecentEvents()
 
 if (args.json) {

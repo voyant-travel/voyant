@@ -1,4 +1,5 @@
 import { fail, parseArgs, runGit } from "./lib/agent-project-queue.mjs"
+import { ciRepairCommandOptions } from "./lib/agent-runner-ci-repair-command.mjs"
 import {
   controlPlaneConfigFromArgs,
   submitTickSnapshot,
@@ -28,6 +29,7 @@ maybePrintHelp(args, {
       "Heartbeat staleness threshold when generating a snapshot. Defaults to 1.",
     ],
     ["--recent-events <number>", "Number of recent runner events to include. Defaults to 5."],
+    ...ciRepairCommandOptions,
     ...eventLogOptions,
     ...repositoryOptions,
     ...projectOptions,

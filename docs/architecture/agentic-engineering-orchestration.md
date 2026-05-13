@@ -1170,7 +1170,11 @@ without mutating queue state.
 `pnpm agent:queue:ci-repair-drill` exercises the CI repair state machine
 locally with synthetic PR status, proving the failing-check, repair-packet,
 command-environment, and green-PR sync transitions before intentionally spending
-CI minutes on a controlled failing PR.
+CI minutes on a controlled failing PR. Scheduled runners can now opt into
+automatic CI repair by setting `AGENT_CI_REPAIR_COMMAND` or passing
+`--ci-repair-command`; with that gate enabled, collected CI repair packets
+become dispatchable `repair-ci` or `remote-repair-ci` work while ordinary
+implementation commands remain explicit.
 
 Verification:
 

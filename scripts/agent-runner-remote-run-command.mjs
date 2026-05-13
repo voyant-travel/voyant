@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { updateProjectItemFields } from "./lib/agent-project-fields.mjs"
 import {
   currentRepositoryFromOrigin,
@@ -26,6 +27,7 @@ import {
   repositoryOptions,
 } from "./lib/agent-runner-help.mjs"
 import {
+  remoteCiRepairEvidencePlan,
   remoteCommandRunArtifactPlan,
   remoteCommandRunBrowserEvidenceBlockReason,
   remoteCommandRunEnvironment,
@@ -150,6 +152,27 @@ if (!adapter.capabilities.exec) {
   )
 }
 
+const ciRepairEvidencePlan = remoteCiRepairEvidencePlan({ artifactPlan, item, repoRoot })
+if (ciRepairEvidencePlan) {
+  const ciRepairEvidenceWriteResult = await runRemoteExec({
+    adapter,
+    args: [
+      "-lc",
+      remoteWriteFileShell({
+        content: readFileSync(ciRepairEvidencePlan.localEvidencePath, "utf8"),
+        file: ciRepairEvidencePlan.remoteEvidenceFile,
+      }),
+    ],
+    command: "bash",
+    cwd: artifactPlan.workspace,
+    httpPost: true,
+  })
+
+  if ((ciRepairEvidenceWriteResult.status ?? 1) !== 0) {
+    fail(ciRepairEvidenceWriteResult.stderr || "failed to write remote CI repair evidence packet")
+  }
+}
+
 const runningUpdate = {
   clear: ["Blocked By"],
   values: {
@@ -172,7 +195,14 @@ const commandResult = await runRemoteExec({
   args: ["-lc", remoteLoggedCommandShell({ command: args.command, logFile: artifactPlan.logFile })],
   command: "bash",
   cwd: artifactPlan.workspace,
-  env: remoteCommandRunEnvironment({ artifactPlan, branch, descriptor, item, repository }),
+  env: remoteCommandRunEnvironment({
+    artifactPlan,
+    branch,
+    ciRepairEvidencePlan,
+    descriptor,
+    item,
+    repository,
+  }),
   httpPost: true,
 })
 const stoppedAt = new Date()
