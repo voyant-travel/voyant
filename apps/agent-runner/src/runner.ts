@@ -10,10 +10,16 @@ export const runnerDispatchActions = [
   "remote-cleanup",
   "remote-open-pr",
   "remote-publish-evidence",
+  "remote-repair-ci",
+  "repair-ci",
   "start",
   "sync-pr",
 ] as const
 
+const runnerOptInDispatchActions = new Set<string>(["remote-repair-ci", "repair-ci"])
+export const runnerDefaultDispatchActions = runnerDispatchActions.filter(
+  (action) => !runnerOptInDispatchActions.has(action),
+)
 const runnerDispatchActionSet = new Set<string>(runnerDispatchActions)
 
 export const supervisorTickRequestSchema = z
@@ -320,9 +326,12 @@ function buildDispatchIntentRequest({
 }
 
 function buildRunnerPolicy(config: RunnerConfig) {
-  const allowedActions = normalizeAllowedActions(config.allowedActions)
+  const configuredAllowedActions = normalizeConfiguredAllowedActions(config.allowedActions)
+  const allowedActions = configuredAllowedActions ?? Array.from(runnerDefaultDispatchActions).sort()
   const maxLeaseTtlSeconds = normalizeMaxLeaseTtlSeconds(config.maxLeaseTtlSeconds)
-  const restrictsActions = runnerDispatchActions.some((action) => !allowedActions.includes(action))
+  const restrictsActions = configuredAllowedActions
+    ? runnerDispatchActions.some((action) => !allowedActions.includes(action))
+    : false
 
   return {
     allowedActions,
@@ -332,8 +341,10 @@ function buildRunnerPolicy(config: RunnerConfig) {
   }
 }
 
-function normalizeAllowedActions(allowedActions: string[] | undefined) {
-  const normalized = (allowedActions?.length ? allowedActions : Array.from(runnerDispatchActions))
+function normalizeConfiguredAllowedActions(allowedActions: string[] | undefined) {
+  if (!allowedActions?.length) return null
+
+  const normalized = allowedActions
     .map((action) => action.trim())
     .filter((action) => action.length > 0)
 

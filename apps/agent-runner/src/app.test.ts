@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { createApp } from "./app.js"
-import { runnerDispatchActions } from "./runner.js"
+import { runnerDefaultDispatchActions, runnerDispatchActions } from "./runner.js"
 import type { SupervisorTickRecord, SupervisorTickStore } from "./supervisor-tick-store.js"
 
 describe("agent runner app", () => {
@@ -85,7 +85,7 @@ describe("agent runner app", () => {
           iterations: 3,
           mode: "lease-only",
           policy: {
-            allowedActions: Array.from(runnerDispatchActions).sort(),
+            allowedActions: Array.from(runnerDefaultDispatchActions).sort(),
             defaultAction: null,
             maxLeaseTtlSeconds: 900,
             requiresActionFilter: false,

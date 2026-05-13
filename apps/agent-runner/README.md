@@ -45,9 +45,13 @@ provider commands, or spend model budget.
 - `AGENT_RUNNER_ENABLED`: must be `true` before scheduled ticks can lease
   dispatch intents.
 - `AGENT_RUNNER_ALLOWED_ACTIONS`: optional comma-separated lifecycle action
-  allow-list. Defaults to all runner-supported lifecycle actions.
+  allow-list. Defaults to runner-supported lifecycle actions except opt-in CI
+  repair actions.
 - `AGENT_RUNNER_ACTION`: optional default lifecycle action filter, useful when
   `AGENT_RUNNER_ALLOWED_ACTIONS` restricts Cron to one action such as `sync-pr`.
+  Add `repair-ci` or `remote-repair-ci` to `AGENT_RUNNER_ALLOWED_ACTIONS` only
+  when the runner environment also configures the corresponding supervised
+  repair command outside this Worker.
 - `AGENT_RUNNER_HOLDER`: default lease holder, for example `runner:cloudflare`.
 - `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS`: optional maximum lease TTL. Defaults to
   900 seconds and is clamped to 60..3600 seconds.

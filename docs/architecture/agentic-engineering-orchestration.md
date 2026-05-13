@@ -1397,7 +1397,10 @@ Verification:
   filter for Cron, and `AGENT_RUNNER_MAX_LEASE_TTL_SECONDS` caps lease TTLs.
   If the action allow-list is narrower than the full lifecycle set, the runner
   refuses unfiltered ticks so the control plane cannot choose a different
-  queued action.
+  queued action. The deployed runner can lease `repair-ci` and
+  `remote-repair-ci` intents, but those actions are excluded from the default
+  deployed allow-list and should only be enabled in environments where a
+  trusted external command runner owns the configured CI repair command.
 - Deployed control-plane and runner setup should be checked with
   `pnpm agent:queue:deployment-doctor` before enabling Cron. The command calls
   both capability endpoints, reads the runner supervisor status, verifies auth
