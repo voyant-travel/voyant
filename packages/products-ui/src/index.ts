@@ -46,6 +46,7 @@ export {
   type ProductOverviewCardProps,
 } from "./components/product-detail-page.js"
 export { ProductDialog, type ProductDialogProps } from "./components/product-dialog.js"
+export { ProductFacilityCombobox } from "./components/product-facility-combobox.js"
 export {
   ProductForm,
   type ProductFormMode,
@@ -85,6 +86,7 @@ export { ProductTagDialog, type ProductTagDialogProps } from "./components/produ
 export { ProductTagForm, type ProductTagFormProps } from "./components/product-tag-form.js"
 export { ProductTagList, type ProductTagListProps } from "./components/product-tag-list.js"
 export { ProductTagsPage, type ProductTagsPageProps } from "./components/product-tags-page.js"
+export { ProductTaxClassCombobox } from "./components/product-tax-class-combobox.js"
 export { ProductTypeCombobox } from "./components/product-type-combobox.js"
 export { ProductTypesPage, type ProductTypesPageProps } from "./components/product-types-page.js"
 export {

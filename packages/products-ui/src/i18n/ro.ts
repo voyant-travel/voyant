@@ -45,6 +45,16 @@ export const productsUiRo = {
       itinerary: "Itinerariu",
       other: "Altul",
     },
+    productCapacityModeLabels: {
+      free_sale: "Vanzare libera",
+      limited: "Limitat",
+      on_request: "La cerere",
+    },
+    productVisibilityLabels: {
+      public: "Public",
+      private: "Privat",
+      hidden: "Ascuns",
+    },
   },
   comboboxes: {
     product: {
@@ -58,6 +68,14 @@ export const productsUiRo = {
     productType: {
       placeholder: "Cauta tipuri de produs...",
       empty: "Nu au fost gasite tipuri de produs.",
+    },
+    facility: {
+      placeholder: "Cauta facilitati...",
+      empty: "Nu au fost gasite facilitati.",
+    },
+    taxClass: {
+      placeholder: "Cauta clase fiscale...",
+      empty: "Nu au fost gasite clase fiscale.",
     },
   },
   catalogCard: {
@@ -157,6 +175,13 @@ export const productsUiRo = {
       status: "Status",
       bookingMode: "Mod rezervare",
       productType: "Tip produs",
+      facility: "Facilitate",
+      taxClass: "Clasa fiscala",
+      visibility: "Vizibilitate",
+      capacityMode: "Mod capacitate",
+      timezone: "Fus orar",
+      pax: "Pax",
+      reservationTimeout: "Timeout rezervare",
       sellCurrency: "Moneda vanzare",
       sellAmount: "Pret vanzare",
       costAmount: "Cost",
@@ -166,12 +191,19 @@ export const productsUiRo = {
       description: "Prezentare scurta a produsului...",
       tagInput: "Scrie o eticheta si apasa Enter",
       productTypeSearch: "Cauta tipuri de produs...",
+      facilitySearch: "Cauta facilitati...",
+      taxClassSearch: "Cauta clase fiscale...",
+      timezone: "Europe/Bucharest",
+      pax: "2",
+      reservationTimeout: "20",
       currencySearch: "Cauta moneda...",
       amount: "0.00",
     },
     validation: {
       nameRequired: "Numele produsului este obligatoriu.",
       sellCurrencyInvalid: "Moneda de vanzare trebuie sa fie un cod ISO din 3 litere.",
+      paxInvalid: "Pax trebuie sa fie un numar intreg mai mare decat zero.",
+      reservationTimeoutInvalid: "Timeout-ul rezervarii trebuie sa fie un numar intreg de minute.",
       saveFailed: "Produsul nu a putut fi salvat.",
     },
     actions: {
