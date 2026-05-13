@@ -2,6 +2,8 @@ import type { ProductRecord } from "@voyantjs/products-react"
 
 export type ProductStatus = ProductRecord["status"]
 export type ProductBookingMode = ProductRecord["bookingMode"]
+export type ProductCapacityMode = ProductRecord["capacityMode"]
+export type ProductVisibility = ProductRecord["visibility"]
 
 export type ProductsUiMessages = {
   common: {
@@ -36,6 +38,8 @@ export type ProductsUiMessages = {
     }
     productStatusLabels: Record<ProductStatus, string>
     productBookingModeLabels: Record<ProductBookingMode, string>
+    productCapacityModeLabels: Record<ProductCapacityMode, string>
+    productVisibilityLabels: Record<ProductVisibility, string>
   }
   comboboxes: {
     product: {
@@ -47,6 +51,14 @@ export type ProductsUiMessages = {
       empty: string
     }
     productType: {
+      placeholder: string
+      empty: string
+    }
+    facility: {
+      placeholder: string
+      empty: string
+    }
+    taxClass: {
       placeholder: string
       empty: string
     }
@@ -148,6 +160,13 @@ export type ProductsUiMessages = {
       status: string
       bookingMode: string
       productType: string
+      facility: string
+      taxClass: string
+      visibility: string
+      capacityMode: string
+      timezone: string
+      pax: string
+      reservationTimeout: string
       sellCurrency: string
       sellAmount: string
       costAmount: string
@@ -157,12 +176,19 @@ export type ProductsUiMessages = {
       description: string
       tagInput: string
       productTypeSearch: string
+      facilitySearch: string
+      taxClassSearch: string
+      timezone: string
+      pax: string
+      reservationTimeout: string
       currencySearch: string
       amount: string
     }
     validation: {
       nameRequired: string
       sellCurrencyInvalid: string
+      paxInvalid: string
+      reservationTimeoutInvalid: string
       saveFailed: string
     }
     actions: {

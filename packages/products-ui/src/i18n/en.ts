@@ -45,6 +45,16 @@ export const productsUiEn = {
       itinerary: "Itinerary",
       other: "Other",
     },
+    productCapacityModeLabels: {
+      free_sale: "Free sale",
+      limited: "Limited",
+      on_request: "On request",
+    },
+    productVisibilityLabels: {
+      public: "Public",
+      private: "Private",
+      hidden: "Hidden",
+    },
   },
   comboboxes: {
     product: {
@@ -58,6 +68,14 @@ export const productsUiEn = {
     productType: {
       placeholder: "Search product types...",
       empty: "No product types found.",
+    },
+    facility: {
+      placeholder: "Search facilities...",
+      empty: "No facilities found.",
+    },
+    taxClass: {
+      placeholder: "Search tax classes...",
+      empty: "No tax classes found.",
     },
   },
   catalogCard: {
@@ -157,6 +175,13 @@ export const productsUiEn = {
       status: "Status",
       bookingMode: "Booking Mode",
       productType: "Product Type",
+      facility: "Facility",
+      taxClass: "Tax Class",
+      visibility: "Visibility",
+      capacityMode: "Capacity Mode",
+      timezone: "Timezone",
+      pax: "Pax",
+      reservationTimeout: "Reservation Timeout",
       sellCurrency: "Sell Currency",
       sellAmount: "Sell Amount",
       costAmount: "Cost Amount",
@@ -166,12 +191,19 @@ export const productsUiEn = {
       description: "Brief overview of the product...",
       tagInput: "Type a tag and press Enter",
       productTypeSearch: "Search product types...",
+      facilitySearch: "Search facilities...",
+      taxClassSearch: "Search tax classes...",
+      timezone: "Europe/Bucharest",
+      pax: "2",
+      reservationTimeout: "20",
       currencySearch: "Search currency...",
       amount: "0.00",
     },
     validation: {
       nameRequired: "Product name is required.",
       sellCurrencyInvalid: "Sell currency must be a 3-letter ISO code.",
+      paxInvalid: "Pax must be a whole number greater than zero.",
+      reservationTimeoutInvalid: "Reservation timeout must be a whole number of minutes.",
       saveFailed: "Failed to save product.",
     },
     actions: {

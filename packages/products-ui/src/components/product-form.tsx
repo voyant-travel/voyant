@@ -21,6 +21,8 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2, X } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/index.js"
+import { ProductFacilityCombobox } from "./product-facility-combobox.js"
+import { ProductTaxClassCombobox } from "./product-tax-class-combobox.js"
 import { ProductTypeCombobox } from "./product-type-combobox.js"
 
 export type ProductFormMode = { kind: "create" } | { kind: "edit"; product: ProductRecord }
@@ -36,10 +38,17 @@ interface FormState {
   description: string
   status: "draft" | "active" | "archived"
   bookingMode: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
+  capacityMode: ProductRecord["capacityMode"]
+  visibility: ProductRecord["visibility"]
+  timezone: string
+  facilityId: string
   productTypeId: string
+  taxClassId: string
   sellCurrency: string
   sellAmount: string
   costAmount: string
+  pax: string
+  reservationTimeoutMinutes: string
   tags: string[]
 }
 
@@ -51,10 +60,18 @@ function initialState(mode: ProductFormMode): FormState {
       description: product.description ?? "",
       status: product.status,
       bookingMode: product.bookingMode,
+      capacityMode: product.capacityMode,
+      visibility: product.visibility,
+      timezone: product.timezone ?? "",
+      facilityId: product.facilityId ?? "__none__",
       productTypeId: product.productTypeId ?? "__none__",
+      taxClassId: product.taxClassId ?? "__none__",
       sellCurrency: product.sellCurrency,
       sellAmount: product.sellAmountCents != null ? String(product.sellAmountCents / 100) : "",
       costAmount: product.costAmountCents != null ? String(product.costAmountCents / 100) : "",
+      pax: product.pax != null ? String(product.pax) : "",
+      reservationTimeoutMinutes:
+        product.reservationTimeoutMinutes != null ? String(product.reservationTimeoutMinutes) : "",
       tags: product.tags ?? [],
     }
   }
@@ -64,10 +81,17 @@ function initialState(mode: ProductFormMode): FormState {
     description: "",
     status: "draft",
     bookingMode: "itinerary",
+    capacityMode: "limited",
+    visibility: "private",
+    timezone: "",
+    facilityId: "__none__",
     productTypeId: "__none__",
+    taxClassId: "__none__",
     sellCurrency: "EUR", // i18n-literal-ok ISO default currency
     sellAmount: "",
     costAmount: "",
+    pax: "",
+    reservationTimeoutMinutes: "",
     tags: [],
   }
 }
@@ -80,16 +104,36 @@ function toAmountCents(value: string): number | null {
   return Math.round(parsed * 100)
 }
 
+function toIntegerOrNull(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const parsed = Number(trimmed)
+  if (!Number.isInteger(parsed) || parsed < 0) return null
+  return parsed
+}
+
+function toPositiveIntegerOrNull(value: string): number | null {
+  const parsed = toIntegerOrNull(value)
+  return parsed == null || parsed < 1 ? null : parsed
+}
+
 function toPayload(state: FormState): CreateProductInput {
   return {
     name: state.name.trim(),
     description: state.description.trim() || null,
     status: state.status,
     bookingMode: state.bookingMode,
+    capacityMode: state.capacityMode,
+    visibility: state.visibility,
+    timezone: state.timezone.trim() || null,
+    facilityId: state.facilityId === "__none__" ? null : state.facilityId,
     productTypeId: state.productTypeId === "__none__" ? null : state.productTypeId,
+    taxClassId: state.taxClassId === "__none__" ? null : state.taxClassId,
     sellCurrency: state.sellCurrency.trim().toUpperCase(),
     sellAmountCents: toAmountCents(state.sellAmount),
     costAmountCents: toAmountCents(state.costAmount),
+    pax: toPositiveIntegerOrNull(state.pax),
+    reservationTimeoutMinutes: toIntegerOrNull(state.reservationTimeoutMinutes),
     tags: state.tags,
   }
 }
@@ -125,6 +169,24 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
       ] as const,
     [messages],
   )
+  const capacityModes = React.useMemo(
+    () =>
+      [
+        { value: "free_sale", label: messages.common.productCapacityModeLabels.free_sale },
+        { value: "limited", label: messages.common.productCapacityModeLabels.limited },
+        { value: "on_request", label: messages.common.productCapacityModeLabels.on_request },
+      ] as const,
+    [messages],
+  )
+  const visibilityOptions = React.useMemo(
+    () =>
+      [
+        { value: "public", label: messages.common.productVisibilityLabels.public },
+        { value: "private", label: messages.common.productVisibilityLabels.private },
+        { value: "hidden", label: messages.common.productVisibilityLabels.hidden },
+      ] as const,
+    [messages],
+  )
 
   const field =
     <K extends keyof FormState>(key: K) =>
@@ -146,6 +208,19 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
       return
     }
 
+    if (state.pax.trim() && toPositiveIntegerOrNull(state.pax) == null) {
+      setError(productMessages.validation.paxInvalid)
+      return
+    }
+
+    if (
+      state.reservationTimeoutMinutes.trim() &&
+      toIntegerOrNull(state.reservationTimeoutMinutes) == null
+    ) {
+      setError(productMessages.validation.reservationTimeoutInvalid)
+      return
+    }
+
     const payload = toPayload(state)
 
     try {
@@ -160,7 +235,11 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
   }
 
   return (
-    <form data-slot="product-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form
+      data-slot="product-form"
+      onSubmit={handleSubmit}
+      className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1"
+    >
       <div className="grid grid-cols-1 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="product-name">{productMessages.fields.name}</Label>
@@ -266,6 +345,106 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               value={state.productTypeId === "__none__" ? null : state.productTypeId}
               onChange={(value) => field("productTypeId")(value ?? "__none__")}
               placeholder={productMessages.placeholders.productTypeSearch}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{productMessages.fields.facility}</Label>
+            <ProductFacilityCombobox
+              value={state.facilityId === "__none__" ? null : state.facilityId}
+              onChange={(value) => field("facilityId")(value ?? "__none__")}
+              placeholder={productMessages.placeholders.facilitySearch}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{productMessages.fields.taxClass}</Label>
+            <ProductTaxClassCombobox
+              value={state.taxClassId === "__none__" ? null : state.taxClassId}
+              onChange={(value) => field("taxClassId")(value ?? "__none__")}
+              placeholder={productMessages.placeholders.taxClassSearch}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{productMessages.fields.visibility}</Label>
+            <Select
+              items={visibilityOptions}
+              value={state.visibility}
+              onValueChange={(value) =>
+                value && field("visibility")(value as FormState["visibility"])
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {visibilityOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{productMessages.fields.capacityMode}</Label>
+            <Select
+              items={capacityModes}
+              value={state.capacityMode}
+              onValueChange={(value) =>
+                value && field("capacityMode")(value as FormState["capacityMode"])
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {capacityModes.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="product-timezone">{productMessages.fields.timezone}</Label>
+            <Input
+              id="product-timezone"
+              value={state.timezone}
+              onChange={(event) => field("timezone")(event.target.value)}
+              placeholder={productMessages.placeholders.timezone}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="product-pax">{productMessages.fields.pax}</Label>
+            <Input
+              id="product-pax"
+              type="number"
+              min="1"
+              step="1"
+              value={state.pax}
+              onChange={(event) => field("pax")(event.target.value)}
+              placeholder={productMessages.placeholders.pax}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="product-reservation-timeout">
+              {productMessages.fields.reservationTimeout}
+            </Label>
+            <Input
+              id="product-reservation-timeout"
+              type="number"
+              min="0"
+              step="1"
+              value={state.reservationTimeoutMinutes}
+              onChange={(event) => field("reservationTimeoutMinutes")(event.target.value)}
+              placeholder={productMessages.placeholders.reservationTimeout}
             />
           </div>
 
