@@ -8,6 +8,7 @@ import {
   remoteCiRepairCommandPlan,
 } from "./agent-runner-ci-repair-recommendation.mjs"
 import { evaluateHeartbeat } from "./agent-runner-output.mjs"
+import { hasReviewRepairEvidence } from "./agent-runner-review.mjs"
 import {
   isRemoteWorkspaceDescriptor,
   parseWorkspaceReference,
@@ -113,6 +114,21 @@ export function recommendQueueAction(
       heartbeat,
       priority: ciRepairPlan.priority,
       reason: ciRepairPlan.reason,
+    })
+  }
+
+  const reviewRepairPlan = reviewRepairRecommendationPlan(item)
+  if (reviewRepairPlan) {
+    return recommendation(item, {
+      action: reviewRepairPlan.action,
+      command: commandWithIssue({
+        command: reviewRepairPlan.command,
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: reviewRepairPlan.priority,
+      reason: reviewRepairPlan.reason,
     })
   }
 
@@ -269,6 +285,21 @@ function remoteWorkspaceRecommendation(item, { ciRepairDispatchEnabled, heartbea
 
   if (state === "CI Repair" && item.fields.PR && !hasCiRepairEvidence(item.fields.Evidence)) {
     return null
+  }
+
+  const reviewRepairPlan = reviewRepairRecommendationPlan(item)
+  if (reviewRepairPlan) {
+    return recommendation(item, {
+      action: reviewRepairPlan.action,
+      command: commandWithIssue({
+        command: reviewRepairPlan.command,
+        issueNumber: item.issue.number,
+        repository,
+      }),
+      heartbeat,
+      priority: reviewRepairPlan.priority,
+      reason: reviewRepairPlan.reason,
+    })
   }
 
   const ciRepairPlan = remoteCiRepairCommandPlan(item, {
@@ -454,6 +485,23 @@ function browserEvidenceRecommendation(item, { heartbeat, repository }) {
     priority: state === "Human Review" ? 54 : 35,
     reason: "UI-labeled work needs browser evidence before handoff",
   })
+}
+
+function reviewRepairRecommendationPlan(item) {
+  if (
+    item.fields["Agent State"] !== "Changes Requested" ||
+    !item.fields.PR ||
+    hasReviewRepairEvidence(item.fields.Evidence)
+  ) {
+    return null
+  }
+
+  return {
+    action: "collect-review",
+    command: "collect-review",
+    priority: 29,
+    reason: "requested PR changes need a local review repair packet",
+  }
 }
 
 function browserEvidenceCovered(evidence) {

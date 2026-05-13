@@ -319,6 +319,7 @@ describe("agent runner lifecycle helpers", () => {
       ".agent-worktrees/579-test-agent-project-intake-workflow",
     )
     assert.equal(env.VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH, undefined)
+    assert.equal(env.VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_PATH, undefined)
   })
 
   it("exposes CI repair packets to command-run environments", () => {
@@ -350,6 +351,39 @@ describe("agent runner lifecycle helpers", () => {
       env.VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH,
       path.resolve(
         "/repo/.agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+      ),
+    )
+  })
+
+  it("exposes review repair packets to command-run environments", () => {
+    const item = workItem({
+      fields: {
+        "Agent State": "Changes Requested",
+        Evidence:
+          ".agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
+      },
+    })
+    const artifactPlan = commandRunArtifactPlan({
+      item,
+      repoRoot: "/repo",
+      workspaceReference: item.dryRunPlan.workspace,
+    })
+
+    const env = commandRunEnvironment({
+      artifactPlan,
+      branch: item.dryRunPlan.branch,
+      item,
+      repository: "voyantjs/voyant",
+    })
+
+    assert.equal(
+      env.VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_REFERENCE,
+      ".agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
+    )
+    assert.equal(
+      env.VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_PATH,
+      path.resolve(
+        "/repo/.agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
       ),
     )
   })

@@ -11,6 +11,10 @@ import {
   browserEvidenceReviewMarkdown,
 } from "./agent-runner-browser-validation.mjs"
 import { ciRepairEvidenceEnvironment, resolveCiRepairEvidencePath } from "./agent-runner-ci.mjs"
+import {
+  resolveReviewRepairEvidencePath,
+  reviewRepairEvidenceEnvironment,
+} from "./agent-runner-review.mjs"
 import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 import {
   parseWorkspaceReference,
@@ -72,6 +76,10 @@ export function commandRunEnvironment({ artifactPlan, branch, item, repository }
   return {
     ...browserEvidenceEnvironment({ artifactPlan: browserPlan }),
     ...ciRepairEvidenceEnvironment({
+      evidenceReference: item.fields.Evidence,
+      repoRoot: artifactPlan.repoRoot,
+    }),
+    ...reviewRepairEvidenceEnvironment({
       evidenceReference: item.fields.Evidence,
       repoRoot: artifactPlan.repoRoot,
     }),
@@ -186,6 +194,10 @@ ${formatBrowserEvidenceRequirement({ artifactPlan, item, uiEvidence })}
 
 ${formatCiRepairEvidenceReference({ item, repoRoot: artifactPlan.repoRoot })}
 
+## Review Repair Evidence
+
+${formatReviewRepairEvidenceReference({ item, repoRoot: artifactPlan.repoRoot })}
+
 ## Residual Risks
 
 Review the command transcript and resulting diff before opening or merging a PR.
@@ -215,6 +227,17 @@ function formatCiRepairEvidenceReference({ item, repoRoot }) {
   }
 
   return `Repair packet: ${evidencePath}
+Reference: ${evidenceReference}`
+}
+
+function formatReviewRepairEvidenceReference({ item, repoRoot }) {
+  const evidenceReference = item.fields.Evidence
+  const evidencePath = resolveReviewRepairEvidencePath({ evidenceReference, repoRoot })
+  if (!evidencePath) {
+    return "Not applicable."
+  }
+
+  return `Review packet: ${evidencePath}
 Reference: ${evidenceReference}`
 }
 

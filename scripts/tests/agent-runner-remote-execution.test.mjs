@@ -11,6 +11,7 @@ import {
   remoteCommandRunEnvironment,
   remoteCommandRunFieldUpdate,
   remoteLoggedCommandShell,
+  remoteReviewRepairEvidencePlan,
   remoteWriteFileShell,
 } from "../lib/agent-runner-remote-execution.mjs"
 import { parseWorkspaceReference } from "../lib/agent-runner-workspace-contract.mjs"
@@ -109,6 +110,44 @@ describe("agent runner remote execution helpers", () => {
         "/repo/.agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
       remoteEvidenceFile:
         "/workspace/voyant/.agent-runs/579-test-agent-project-intake-workflow/ci-repair-2026-05-10T12-34-56-000Z.md",
+    })
+  })
+
+  it("maps local review repair packets into remote command environments", () => {
+    const descriptor = parseWorkspaceReference("sandbox:sprite:task-579", { repoRoot: "/repo" })
+    const item = workItem()
+    item.fields.Evidence =
+      ".agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md"
+    const artifactPlan = remoteCommandRunArtifactPlan({
+      descriptor,
+      item,
+      remoteDir: "/workspace/voyant",
+      workspaceReference: descriptor.reference,
+    })
+    const reviewRepairEvidencePlan = remoteReviewRepairEvidencePlan({
+      artifactPlan,
+      item,
+      repoRoot: "/repo",
+    })
+
+    assert.deepEqual(
+      remoteCommandRunEnvironment({
+        artifactPlan,
+        branch: "task/579-test-agent-project-intake-workflow",
+        descriptor,
+        item,
+        repository: "voyantjs/voyant",
+        reviewRepairEvidencePlan,
+      }).VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_PATH,
+      "/workspace/voyant/.agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
+    )
+    assert.deepEqual(reviewRepairEvidencePlan, {
+      evidenceReference:
+        ".agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
+      localEvidencePath:
+        "/repo/.agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
+      remoteEvidenceFile:
+        "/workspace/voyant/.agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
     })
   })
 

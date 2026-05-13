@@ -92,6 +92,47 @@ describe("agent runner tick helpers", () => {
       recommendQueueAction(
         workItem({
           fields: {
+            "Agent State": "Changes Requested",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ),
+      {
+        action: "collect-review",
+        command: "pnpm agent:queue:collect-review -- --issue 579 --repo voyantjs/other --yes",
+        heartbeat: {
+          reason: "Last Heartbeat is 0 days old",
+          stale: false,
+        },
+        issue: workItem().issue,
+        priority: 29,
+        reason: "requested PR changes need a local review repair packet",
+        state: "Changes Requested",
+      },
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
+            "Agent State": "Changes Requested",
+            Evidence:
+              ".agent-runs/579-test-agent-project-intake-workflow/review-repair-2026-05-10T12-34-56-000Z.md",
+            "Last Heartbeat": new Date().toISOString().slice(0, 10),
+            PR: "https://github.com/voyantjs/voyant/pull/626",
+          },
+        }),
+        { maxAgeDays: 1, repository: "voyantjs/other" },
+      ).action,
+      "run-command",
+    )
+
+    assert.deepEqual(
+      recommendQueueAction(
+        workItem({
+          fields: {
             "Agent State": "Human Review",
             "Last Heartbeat": new Date().toISOString().slice(0, 10),
             PR: "https://github.com/voyantjs/voyant/pull/626",

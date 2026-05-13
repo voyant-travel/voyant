@@ -376,7 +376,7 @@ pnpm agent:queue:tick
 
 Tick mode scans the same repository-scoped Project queue and prints ordered
 action recommendations such as `start`, `run-command`, `capture-browser`,
-`collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, `cleanup`, or
+`collect-review`, `collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, `cleanup`, or
 `inspect-stale`. It does not mutate GitHub, create worktrees, run commands,
 publish evidence, or
 open PRs. Pass `--json` when a process manager or future control plane needs
@@ -451,7 +451,11 @@ CI repair packet exists. When `AGENT_CI_REPAIR_COMMAND` or
 those wrappers forward to the supervised command runners and expose the packet
 through `VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH`. Without that maintainer-owned
 command, collected packets still recommend explicit `run-command` or
-`remote-run-command` placeholders. Ready items with `sandbox:<provider>:<id>`
+`remote-run-command` placeholders. `Changes Requested` items with linked PRs
+recommend `collect-review` until a local review repair packet exists; collected
+packets are exposed to the next local or remote supervised command through
+`VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_PATH`. Ready items with
+`sandbox:<provider>:<id>`
 workspaces recommend `remote-bootstrap` so dispatch can clone/fetch the
 repository and move the item to `Planning`. Remote workspace items in
 `Planning`, `Changes Requested`, or `CI Repair` recommend `remote-run-command`,
@@ -472,7 +476,7 @@ Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
 `start`, `remote-bootstrap`, `remote-publish-evidence`, `remote-open-pr`,
-`remote-cleanup`, `collect-ci`, `repair-ci`, `remote-repair-ci`,
+`remote-cleanup`, `collect-review`, `collect-ci`, `repair-ci`, `remote-repair-ci`,
 `publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it refuses
 `run-command`, `remote-run-command`, `capture-browser`, `inspect-stale`,
 blocked work, and wait states so normal implementation and browser execution
@@ -518,7 +522,7 @@ Claim mode checks the same execution gate, then updates GitHub Project fields:
 
 Successful mutating runner commands append local JSONL audit events to
 `.agent-runs/events.jsonl` by default. This includes `claim`, `start`,
-`heartbeat`, `run-command`, `capture-browser`, `collect-ci`,
+`heartbeat`, `run-command`, `capture-browser`, `collect-review`, `collect-ci`,
 `publish-evidence`, `open-pr`, `sync-pr`, `complete-pr`, `cleanup`, `release`,
 and their remote execution/evidence/PR/cleanup counterparts. Pass
 `--event-log <path>` when a supervisor needs a different local ledger path.
@@ -596,6 +600,20 @@ Requested changes or unresolved current review threads move it to
 passing non-draft PRs move it to `Merge Ready`. If the linked PR has already
 been merged by a maintainer, sync-pr marks the Project item `Done`. It updates
 `Status`, `PR`, `Last Heartbeat`, and `Blocked By`; it does not merge the PR.
+
+When a linked PR has requested changes or unresolved current review threads,
+collect local review repair context before running the fix:
+
+```bash
+pnpm agent:queue:collect-review -- --issue <number> --yes
+```
+
+Collect-review mode reads the linked PR review decision and current unresolved
+review threads, writes a local repair packet under ignored `.agent-runs/...`,
+updates `Evidence` to that local packet, and keeps the item in
+`Changes Requested`. The next supervised command receives the packet through
+`VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_PATH` and
+`VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_REFERENCE`.
 
 When a linked PR has failing checks, collect local CI repair context before
 running the fix:

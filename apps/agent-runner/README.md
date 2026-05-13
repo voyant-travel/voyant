@@ -48,7 +48,8 @@ provider commands, or spend model budget.
   allow-list. Defaults to runner-supported lifecycle actions except opt-in CI
   repair actions.
 - `AGENT_RUNNER_ACTION`: optional default lifecycle action filter, useful when
-  `AGENT_RUNNER_ALLOWED_ACTIONS` restricts Cron to one action such as `sync-pr`.
+  `AGENT_RUNNER_ALLOWED_ACTIONS` restricts Cron to one action such as `sync-pr`
+  or `collect-review`.
   Add `repair-ci` or `remote-repair-ci` to `AGENT_RUNNER_ALLOWED_ACTIONS` only
   when the runner environment also configures the corresponding supervised
   repair command outside this Worker.

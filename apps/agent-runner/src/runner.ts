@@ -2,6 +2,7 @@ import { z } from "zod"
 
 export const runnerDispatchActions = [
   "collect-ci",
+  "collect-review",
   "complete-pr",
   "cleanup",
   "open-pr",

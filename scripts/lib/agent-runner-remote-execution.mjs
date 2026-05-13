@@ -7,6 +7,7 @@ import {
   commandRunFieldUpdate,
 } from "./agent-runner-execution.mjs"
 import { defaultRemoteWorkspaceRepoDir } from "./agent-runner-remote-bootstrap.mjs"
+import { resolveReviewRepairEvidencePath } from "./agent-runner-review.mjs"
 import { workspaceDescriptorEnvironment } from "./agent-runner-workspace-contract.mjs"
 
 export function remoteCommandRunArtifactPlan({
@@ -51,9 +52,11 @@ export function remoteCommandRunEnvironment({
   descriptor,
   item,
   repository,
+  reviewRepairEvidencePlan,
 }) {
   return {
     ...remoteCiRepairEvidenceEnvironment(ciRepairEvidencePlan),
+    ...remoteReviewRepairEvidenceEnvironment(reviewRepairEvidencePlan),
     ...workspaceDescriptorEnvironment(descriptor),
     VOYANT_AGENT_BRANCH: branch,
     VOYANT_AGENT_EVIDENCE_PATH: artifactPlan.evidenceFile,
@@ -84,12 +87,35 @@ export function remoteCiRepairEvidencePlan({ artifactPlan, item, repoRoot }) {
   }
 }
 
+export function remoteReviewRepairEvidencePlan({ artifactPlan, item, repoRoot }) {
+  const localEvidencePath = resolveReviewRepairEvidencePath({
+    evidenceReference: item.fields.Evidence,
+    repoRoot,
+  })
+  if (!localEvidencePath) return null
+
+  return {
+    evidenceReference: item.fields.Evidence,
+    localEvidencePath,
+    remoteEvidenceFile: path.posix.join(artifactPlan.workspace, item.fields.Evidence),
+  }
+}
+
 function remoteCiRepairEvidenceEnvironment(plan) {
   if (!plan) return {}
 
   return {
     VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH: plan.remoteEvidenceFile,
     VOYANT_AGENT_CI_REPAIR_EVIDENCE_REFERENCE: plan.evidenceReference,
+  }
+}
+
+function remoteReviewRepairEvidenceEnvironment(plan) {
+  if (!plan) return {}
+
+  return {
+    VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_PATH: plan.remoteEvidenceFile,
+    VOYANT_AGENT_REVIEW_REPAIR_EVIDENCE_REFERENCE: plan.evidenceReference,
   }
 }
 

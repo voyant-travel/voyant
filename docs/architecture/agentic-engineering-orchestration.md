@@ -1167,6 +1167,11 @@ queue shape and recommendation counts before storage or automatic loops are
 introduced. The control plane also exposes a read-only active dispatch-intent
 lookup so supervisors can explain lease contention or expired active pointers
 without mutating queue state.
+Requested PR changes now get the same kind of local handoff packet as CI
+repair: `pnpm agent:queue:collect-review` records the current review decision
+and unresolved, non-outdated review threads under ignored `.agent-runs/...`,
+sets the item back to `Changes Requested`, and exposes the packet to the next
+local or remote supervised command through review-repair environment variables.
 `pnpm agent:queue:ci-repair-drill` exercises the CI repair state machine
 locally with synthetic PR status, proving the failing-check, repair-packet,
 command-environment, and green-PR sync transitions before intentionally spending

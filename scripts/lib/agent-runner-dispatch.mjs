@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process"
 
 export const dispatchableActions = new Set([
   "collect-ci",
+  "collect-review",
   "complete-pr",
   "cleanup",
   "open-pr",

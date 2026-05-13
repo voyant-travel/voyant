@@ -33,6 +33,7 @@ import {
   remoteCommandRunEnvironment,
   remoteCommandRunFieldUpdate,
   remoteLoggedCommandShell,
+  remoteReviewRepairEvidencePlan,
   remoteWriteFileShell,
 } from "./lib/agent-runner-remote-execution.mjs"
 import {
@@ -172,6 +173,29 @@ if (ciRepairEvidencePlan) {
     fail(ciRepairEvidenceWriteResult.stderr || "failed to write remote CI repair evidence packet")
   }
 }
+const reviewRepairEvidencePlan = remoteReviewRepairEvidencePlan({ artifactPlan, item, repoRoot })
+if (reviewRepairEvidencePlan) {
+  const reviewRepairEvidenceWriteResult = await runRemoteExec({
+    adapter,
+    args: [
+      "-lc",
+      remoteWriteFileShell({
+        content: readFileSync(reviewRepairEvidencePlan.localEvidencePath, "utf8"),
+        file: reviewRepairEvidencePlan.remoteEvidenceFile,
+      }),
+    ],
+    command: "bash",
+    cwd: artifactPlan.workspace,
+    httpPost: true,
+  })
+
+  if ((reviewRepairEvidenceWriteResult.status ?? 1) !== 0) {
+    fail(
+      reviewRepairEvidenceWriteResult.stderr ||
+        "failed to write remote review repair evidence packet",
+    )
+  }
+}
 
 const runningUpdate = {
   clear: ["Blocked By"],
@@ -202,6 +226,7 @@ const commandResult = await runRemoteExec({
     descriptor,
     item,
     repository,
+    reviewRepairEvidencePlan,
   }),
   httpPost: true,
 })
