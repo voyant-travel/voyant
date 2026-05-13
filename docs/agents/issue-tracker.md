@@ -141,7 +141,9 @@ Remote adapter config is intentionally explicit: pass
 trusted `.agents/remote-workspaces.mjs` config on the runner branch. The module
 should export `remoteWorkspaceAdapters` or a default adapter map keyed by
 provider name. Use `.agents/remote-workspaces.example.mjs` as the local template
-for enabling the CLI-backed Sprite adapter.
+for enabling the Sprite adapter. When `SPRITES_TOKEN` or `SPRITE_TOKEN` is set,
+the adapter uses the Sprites API. Without a token it falls back to the local
+`sprite` CLI for one-shot command execution.
 
 When a remote adapter declares command execution, maintainers can run a guarded
 one-shot command without updating Project state:
@@ -152,6 +154,8 @@ pnpm agent:queue:remote-exec -- --workspace sandbox:sprite:<id> --command "pwd" 
 
 This is an adapter validation tool, not the full implementation runner. It does
 not write evidence, open PRs, collect browser artifacts, or perform cleanup.
+Set `SPRITES_API_URL` only when testing against a non-default API endpoint; the
+default is `https://api.sprites.dev`.
 
 Use `remote-bootstrap` to clone or update the repository inside the remote
 workspace before running real commands:
