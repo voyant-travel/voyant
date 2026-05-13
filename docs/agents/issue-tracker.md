@@ -478,6 +478,11 @@ Successful dispatch attempts append local JSONL audit events to
 `.agent-runs/events.jsonl` by default; pass `--event-log <path>` when a
 supervisor needs a different local ledger path. The same path is passed to the
 nested lifecycle command so dispatch and lifecycle events stay in one ledger.
+Deployed runner policy uses the same lifecycle vocabulary for lease-only
+supervisor ticks. CI repair actions are not part of the default deployed
+allow-list; include `repair-ci` or `remote-repair-ci` in
+`AGENT_RUNNER_ALLOWED_ACTIONS` only for environments where the trusted command
+runner has the matching `AGENT_CI_REPAIR_COMMAND` configuration.
 
 Use loop for a bounded supervisor pass:
 
