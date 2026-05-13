@@ -1,5 +1,16 @@
 # @voyantjs/cruises
 
+## 0.41.0
+
+### Patch Changes
+
+- 20fd32e: Add cruise lifecycle events for local create, update, and delete/archive mutations so catalog and search subscribers can reindex cruise documents.
+  - @voyantjs/bookings@0.41.0
+  - @voyantjs/catalog@0.41.0
+  - @voyantjs/core@0.41.0
+  - @voyantjs/db@0.41.0
+  - @voyantjs/hono@0.41.0
+
 ## 0.40.1
 
 ### Patch Changes

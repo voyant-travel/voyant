@@ -1,5 +1,13 @@
 # @voyantjs/cruises-react
 
+## 0.41.0
+
+### Patch Changes
+
+- Updated dependencies [20fd32e]
+  - @voyantjs/cruises@0.41.0
+  - @voyantjs/react@0.41.0
+
 ## 0.40.1
 
 ### Patch Changes
