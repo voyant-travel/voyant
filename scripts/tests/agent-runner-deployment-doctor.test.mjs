@@ -8,6 +8,7 @@ import {
   runnerAppConfigFromArgs,
   summarizeControlPlaneCapabilities,
   summarizeRunnerAppCapabilities,
+  summarizeRunnerPolicy,
   summarizeRunnerSmokeTick,
   summarizeRunnerSupervisorStatus,
 } from "../lib/agent-runner-deployment-doctor.mjs"
@@ -210,16 +211,24 @@ describe("agent runner deployment doctor helpers", () => {
 
     assert.deepEqual(
       summarizeRunnerAppCapabilities({
+        defaults: {
+          action: null,
+        },
         execution: {
           enabled: false,
           mode: "disabled",
+        },
+        policy: {
+          allowedActions: ["cleanup", "sync-pr"],
+          requiresActionFilter: true,
         },
         supervisorTicks: {
           persistence: "latest",
         },
       }),
       {
-        detail: "execution: disabled; enabled: false; tick persistence: latest",
+        detail:
+          "execution: disabled; enabled: false; tick persistence: latest; allowed actions: 2; default action: none; requires action filter: true; CI repair opt-in: off",
         ok: true,
       },
     )
@@ -308,6 +317,74 @@ describe("agent runner deployment doctor helpers", () => {
         detail:
           "reason: control_plane_rejected; control plane status: 404; storage persisted: true",
         ok: false,
+      },
+    )
+  })
+
+  it("summarizes deployed runner policy and CI repair opt-in", () => {
+    assert.deepEqual(
+      summarizeRunnerPolicy({
+        defaults: {
+          action: "remote-repair-ci",
+        },
+        policy: {
+          allowedActions: ["remote-repair-ci", "sync-pr"],
+          requiresActionFilter: true,
+        },
+      }),
+      {
+        allowedActionCount: 2,
+        ciRepairAllowedActions: ["remote-repair-ci"],
+        ciRepairEnabled: true,
+        defaultAction: "remote-repair-ci",
+        detail:
+          "allowed actions: 2; default action: remote-repair-ci; requires action filter: true; CI repair opt-in: remote-repair-ci",
+        ok: true,
+        requiresActionFilter: true,
+      },
+    )
+
+    assert.deepEqual(
+      summarizeRunnerPolicy({
+        defaults: {
+          action: "repair-ci",
+        },
+        policy: {
+          allowedActions: ["sync-pr"],
+          requiresActionFilter: false,
+        },
+      }),
+      {
+        allowedActionCount: 1,
+        ciRepairAllowedActions: [],
+        ciRepairEnabled: false,
+        defaultAction: "repair-ci",
+        detail:
+          "allowed actions: 1; default action: repair-ci; requires action filter: false; CI repair opt-in: off; default action is not allowed",
+        ok: false,
+        requiresActionFilter: false,
+      },
+    )
+
+    assert.deepEqual(
+      summarizeRunnerPolicy({
+        defaults: {
+          action: "syn-pr",
+        },
+        policy: {
+          allowedActions: ["syn-pr"],
+          requiresActionFilter: true,
+        },
+      }),
+      {
+        allowedActionCount: 1,
+        ciRepairAllowedActions: [],
+        ciRepairEnabled: false,
+        defaultAction: "syn-pr",
+        detail:
+          "allowed actions: 1; default action: syn-pr; requires action filter: true; CI repair opt-in: off; default action is not dispatchable",
+        ok: false,
+        requiresActionFilter: true,
       },
     )
   })

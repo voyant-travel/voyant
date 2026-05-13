@@ -43,12 +43,23 @@ describe("agent runner deployed status helpers", () => {
     assert.equal(report.controlPlane.dispatchPlan.plan.issue.number, 579)
     assert.equal(report.controlPlane.activeDispatch.intent.id, "intent_579")
     assert.equal(report.runner.endpoint, "https://runner.example.com")
+    assert.deepEqual(report.runner.policy, {
+      allowedActionCount: 2,
+      ciRepairAllowedActions: [],
+      ciRepairEnabled: false,
+      defaultAction: "remote-bootstrap",
+      detail:
+        "allowed actions: 2; default action: remote-bootstrap; requires action filter: true; CI repair opt-in: off",
+      ok: true,
+      requiresActionFilter: true,
+    })
     assert.equal(report.runner.supervisorStatus.repository, "voyantjs/voyant")
     assert.deepEqual(
       report.checks.map((check) => [check.name, check.ok]),
       [
         ["runner app configuration", true],
         ["runner app capabilities", true],
+        ["runner app policy", true],
         ["runner app supervisor status", true],
         ["control plane configuration", true],
         ["control plane capabilities", true],
@@ -346,12 +357,18 @@ function responseForUrl(url) {
 
   if (url === "https://runner.example.com/api/capabilities") {
     return {
+      defaults: {
+        action: "remote-bootstrap",
+      },
       execution: {
         enabled: true,
         mode: "lease-only",
       },
-      defaults: {
-        action: "remote-bootstrap",
+      policy: {
+        allowedActions: ["remote-bootstrap", "sync-pr"],
+        defaultAction: "remote-bootstrap",
+        maxLeaseTtlSeconds: 900,
+        requiresActionFilter: true,
       },
       service: "agent-runner",
       supervisorTicks: {

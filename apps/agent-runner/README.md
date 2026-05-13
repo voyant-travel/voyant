@@ -89,8 +89,10 @@ The status command uses the same environment, checks the deployed control-plane
 and runner endpoints, and prints the latest plus recent control-plane queue
 snapshots, current read-only dispatch plan, and runner supervisor ticks. The
 dispatch plan uses the deployed runner's default action filter when one is
-configured. Add `--issue <number> --action <name>` to include the active
-dispatch pointer for one lifecycle action.
+configured. It also reports the deployed runner policy, including allowed
+action count, default action, whether an action filter is required, and whether
+CI repair actions are explicitly enabled. Add `--issue <number> --action
+<name>` to include the active dispatch pointer for one lifecycle action.
 Pass `--smoke-tick` after submitting at least one queue snapshot to validate
 that the deployed runner can call the control plane's read-only dispatch-plan
 path:

@@ -11,6 +11,7 @@ import {
   runnerAppConfigFromArgs,
   summarizeControlPlaneCapabilities,
   summarizeRunnerAppCapabilities,
+  summarizeRunnerPolicy,
   summarizeRunnerSupervisorStatus,
 } from "./agent-runner-deployment-doctor.mjs"
 
@@ -319,6 +320,12 @@ async function readRunnerStatus({ args, env, fetchImpl, limit, repository, repor
     report.checks.push({
       name: "runner app capabilities",
       ...summarizeRunnerAppCapabilities(capabilities),
+    })
+    report.runner.policy = summarizeRunnerPolicy(capabilities)
+    report.checks.push({
+      detail: report.runner.policy.detail,
+      name: "runner app policy",
+      ok: report.runner.policy.ok,
     })
   } catch (error) {
     report.checks.push({
