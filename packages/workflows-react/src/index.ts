@@ -10,8 +10,8 @@
 // cloud client; called directly in this package, the hooks throw.
 
 import type { RunStatus } from "@voyantjs/workflows"
+import type { VoyantError } from "@voyantjs/workflows/errors"
 import type { StreamEvent } from "@voyantjs/workflows/protocol"
-import type { VoyantError } from "@voyantjs/workflows-errors"
 
 export * from "./workflow-runs.js"
 

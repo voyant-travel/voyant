@@ -1,4 +1,4 @@
-// Internal runtime signal errors. Distinct from user-facing `@voyantjs/workflows-errors`:
+// Internal runtime signal errors. Distinct from user-facing `@voyantjs/workflows/errors`:
 // these are thrown inside the executor to unwind the workflow body on
 // waitpoint yield or run cancellation. They must not be caught by user
 // code (the executor re-throws if it observes one being swallowed).

@@ -112,9 +112,9 @@ instead of preserving temporary naming debt.
 | --- | --- |
 | `@voyant/workflows` | `@voyantjs/workflows` |
 | `@voyant/workflows-react` | `@voyantjs/workflows-react` |
-| `@voyant/config` | `@voyantjs/workflows-config` |
-| `@voyant/errors` | `@voyantjs/workflows-errors` |
-| `@voyant/bindings` | `@voyantjs/workflows-bindings` |
+| `@voyant/config` | `@voyantjs/workflows/config` |
+| `@voyant/errors` | `@voyantjs/workflows/errors` |
+| `@voyant/bindings` | `@voyantjs/workflows/bindings` |
 | `@voyant/orchestrator` | `@voyantjs/workflows-orchestrator` |
 | `@voyant/orchestrator-cloudflare` | `@voyantjs/workflows-orchestrator-cloudflare` |
 | `@voyant/orchestrator-node` | `@voyantjs/workflows-orchestrator-node` |

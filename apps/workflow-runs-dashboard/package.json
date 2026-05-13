@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@voyantjs/ui": "workspace:*",
-    "@voyantjs/workflow-runs-ui": "workspace:*",
+    "@voyantjs/workflows-ui": "workspace:*",
     "lucide-react": "^0.475.0"
   },
   "devDependencies": {

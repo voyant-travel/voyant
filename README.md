@@ -84,8 +84,9 @@ Step-based workflows with durable state, retries, and a shared wire protocol —
 - [`@voyantjs/workflows`](./packages/workflows) — authoring SDK
 - [`@voyantjs/workflows-orchestrator`](./packages/workflows-orchestrator) — reference orchestrator core
 - [`@voyantjs/workflows-orchestrator-cloudflare`](./packages/workflows-orchestrator-cloudflare) and [`@voyantjs/workflows-orchestrator-node`](./packages/workflows-orchestrator-node) — runtime adapters
-- [`@voyantjs/workflows-bindings`](./packages/workflows-bindings), [`@voyantjs/workflows-config`](./packages/workflows-config), [`@voyantjs/workflows-errors`](./packages/workflows-errors)
+- `@voyantjs/workflows/bindings`, `@voyantjs/workflows/config`, and `@voyantjs/workflows/errors` — SDK subpaths for runtime bindings, config, and typed errors
 - [`@voyantjs/workflows-react`](./packages/workflows-react) — UI hooks for run inspection
+- [`@voyantjs/workflows-ui`](./packages/workflows-ui) — importable workflow run admin UI
 
 Reference apps under [`apps/`](./apps) compose these into deployable shapes — `workflows-orchestrator-worker`, `workflows-tenant-worker`, `workflows-selfhost-cloudflare-worker`, `workflows-selfhost-node-server`, `workflows-node-step-container`, and `workflows-local-dashboard`.
 

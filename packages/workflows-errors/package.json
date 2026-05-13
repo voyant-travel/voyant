@@ -1,7 +1,8 @@
 {
   "name": "@voyantjs/workflows-errors",
   "version": "0.37.1",
-  "description": "Typed errors for Voyant Workflows (FatalError, RetryableError, TimeoutError, HookConflictError, QuotaExceededError, ValidationError).",
+  "private": true,
+  "description": "Deprecated workspace compatibility wrapper for @voyantjs/workflows/errors.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -15,33 +16,19 @@
       "import": "./src/index.ts"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "src",
-    "!**/*.test.*",
-    "!**/*.spec.*",
-    "NOTICE"
+    "src"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check-types": "tsc --noEmit",
     "dev": "tsc -w -p tsconfig.json"
   },
+  "dependencies": {
+    "@voyantjs/workflows": "workspace:*"
+  },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "typescript": "^5.9.2"
-  },
-  "publishConfig": {
-    "access": "public",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
-      }
-    },
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts"
   }
 }

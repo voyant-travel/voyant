@@ -1,7 +1,8 @@
 {
   "name": "@voyantjs/workflows-config",
   "version": "0.37.1",
-  "description": "Types and `defineConfig` helper for `voyant.config.ts`.",
+  "private": true,
+  "description": "Deprecated workspace compatibility wrapper for @voyantjs/workflows/config.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -11,29 +12,23 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "src",
-    "!**/*.test.*",
-    "!**/*.spec.*",
-    "NOTICE"
+    "src"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check-types": "tsc --noEmit",
     "dev": "tsc -w -p tsconfig.json"
   },
+  "dependencies": {
+    "@voyantjs/workflows": "workspace:*"
+  },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "typescript": "^5.9.2"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

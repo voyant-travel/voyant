@@ -17,8 +17,7 @@
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
-    "./components/workflow-run-detail-page": "./src/components/workflow-run-detail-page.ts",
-    "./components/workflow-runs-page": "./src/components/workflow-runs-page.ts"
+    "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -29,7 +28,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@voyantjs/workflow-runs-ui": "workspace:*"
+    "@voyantjs/i18n": "workspace:*",
+    "@voyantjs/workflows-react": "workspace:*"
   },
   "peerDependencies": {
     "@voyantjs/ui": "workspace:*",
@@ -40,6 +40,7 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/i18n": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "lucide-react": "^1.7.0",
@@ -50,6 +51,7 @@
   },
   "files": [
     "dist",
+    "src/components",
     "src/styles.css"
   ],
   "publishConfig": {
@@ -83,15 +85,10 @@
         "import": "./dist/i18n/ro.js",
         "default": "./dist/i18n/ro.js"
       },
-      "./components/workflow-run-detail-page": {
-        "types": "./dist/components/workflow-run-detail-page.d.ts",
-        "import": "./dist/components/workflow-run-detail-page.js",
-        "default": "./dist/components/workflow-run-detail-page.js"
-      },
-      "./components/workflow-runs-page": {
-        "types": "./dist/components/workflow-runs-page.d.ts",
-        "import": "./dist/components/workflow-runs-page.js",
-        "default": "./dist/components/workflow-runs-page.js"
+      "./components/*": {
+        "types": "./dist/components/*.d.ts",
+        "import": "./dist/components/*.js",
+        "default": "./dist/components/*.js"
       }
     },
     "main": "./dist/index.js",
