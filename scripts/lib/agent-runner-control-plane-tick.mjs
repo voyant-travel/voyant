@@ -7,6 +7,7 @@ import {
   loadAllEvaluatedProject,
   projectScanConfigFromArgs,
 } from "./agent-project-queue.mjs"
+import { ciRepairDispatchEnabled } from "./agent-runner-ci-repair-command.mjs"
 import { readAgentRunnerEvents, resolveEventLogPath } from "./agent-runner-events.mjs"
 import { recommendQueueActions } from "./agent-runner-tick.mjs"
 
@@ -36,7 +37,11 @@ export function generateControlPlaneTickSnapshot(args, { repoRoot }) {
       path: eventLogPath,
       recentEvents: readRecentEvents(eventLogPath, recentEventLimit),
     },
-    recommendations: recommendQueueActions(items, { maxAgeDays, repository }),
+    recommendations: recommendQueueActions(items, {
+      ciRepairDispatchEnabled: ciRepairDispatchEnabled(args),
+      maxAgeDays,
+      repository,
+    }),
   }
 }
 
@@ -51,6 +56,7 @@ export function readControlPlaneTickSnapshotInput(input) {
 
 export function buildLatestDispatchIntentRequest({
   action,
+  ciRepairCommand,
   eventLog,
   holder,
   issue,
@@ -75,9 +81,10 @@ export function buildLatestDispatchIntentRequest({
           },
         }
       : {}),
-    ...(eventLog || updateBody
+    ...(ciRepairCommand || eventLog || updateBody
       ? {
           options: {
+            ...(ciRepairCommand ? { ciRepairCommand } : {}),
             ...(eventLog ? { eventLog } : {}),
             ...(updateBody ? { updateBody: true } : {}),
           },

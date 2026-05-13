@@ -1,4 +1,5 @@
 import { currentRepositoryFromOrigin, fail, parseArgs, runGit } from "./lib/agent-project-queue.mjs"
+import { ciRepairCommandOptions } from "./lib/agent-runner-ci-repair-command.mjs"
 import {
   controlPlaneConfigFromArgs,
   finishDispatchIntent,
@@ -39,6 +40,7 @@ maybePrintHelp(args, {
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
     ["--recent-events <number>", "Number of recent runner events to include. Defaults to 5."],
+    ...ciRepairCommandOptions,
     ...eventLogOptions,
     ["--update-body", "When leasing sync-pr, include --update-body in the returned command."],
     ["--yes", "Required before leased commands are executed."],
@@ -86,6 +88,7 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
   const leaseResult = await requestLatestDispatchIntent({
     request: buildLatestDispatchIntentRequest({
       action: args.action,
+      ciRepairCommand: args.ciRepairCommand,
       eventLog: args.eventLog,
       holder,
       issue: args.issue,

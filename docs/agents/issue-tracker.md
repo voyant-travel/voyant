@@ -442,16 +442,22 @@ runner for deployed supervisor tick results. From the repository checkout, use
 `pnpm agent:queue:history -- --source control-plane` for queue snapshots or
 `pnpm agent:queue:history -- --source runner` for deployed runner ticks.
 `CI Repair` items with failing linked PRs recommend `collect-ci` until a local
-CI repair packet exists. Ready items with `sandbox:<provider>:<id>` workspaces
-recommend `remote-bootstrap` so dispatch can clone/fetch the repository and
-move the item to `Planning`. Remote workspace items in `Planning`,
-`Changes Requested`, or `CI Repair` recommend `remote-run-command`, but dispatch
-does not execute implementation commands automatically. Remote `Human Review`
-items with local evidence paths recommend `remote-publish-evidence`; after
-evidence is published, they recommend `remote-open-pr`. Later remote workspace
-states still recommend explicit wait or manual evidence steps. Terminal remote
-items recommend `remote-cleanup`. Malformed reserved `sandbox:` values recommend
-`inspect-workspace`.
+CI repair packet exists. When `AGENT_CI_REPAIR_COMMAND` or
+`--ci-repair-command` is configured, collected CI packets recommend
+`repair-ci` for local workspaces or `remote-repair-ci` for remote workspaces;
+those wrappers forward to the supervised command runners and expose the packet
+through `VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH`. Without that maintainer-owned
+command, collected packets still recommend explicit `run-command` or
+`remote-run-command` placeholders. Ready items with `sandbox:<provider>:<id>`
+workspaces recommend `remote-bootstrap` so dispatch can clone/fetch the
+repository and move the item to `Planning`. Remote workspace items in
+`Planning`, `Changes Requested`, or `CI Repair` recommend `remote-run-command`,
+but dispatch does not execute implementation commands automatically. Remote
+`Human Review` items with local evidence paths recommend
+`remote-publish-evidence`; after evidence is published, they recommend
+`remote-open-pr`. Later remote workspace states still recommend explicit wait
+or manual evidence steps. Terminal remote items recommend `remote-cleanup`.
+Malformed reserved `sandbox:` values recommend `inspect-workspace`.
 
 Use dispatch to execute one allow-listed tick recommendation:
 
@@ -463,10 +469,11 @@ Dispatch mode re-reads the Project, selects the highest-priority dispatchable
 recommendation, and runs one lifecycle command. It is dry-run by default. Pass
 `--issue <number>` or `--action <name>` to narrow selection. Dispatch can run
 `start`, `remote-bootstrap`, `remote-publish-evidence`, `remote-open-pr`,
-`remote-cleanup`, `collect-ci`, `publish-evidence`, `open-pr`, `sync-pr`, and
-`cleanup`; it refuses `run-command`, `remote-run-command`, `capture-browser`,
-`inspect-stale`, blocked work, and wait states so
-implementation and browser execution remain explicit.
+`remote-cleanup`, `collect-ci`, `repair-ci`, `remote-repair-ci`,
+`publish-evidence`, `open-pr`, `sync-pr`, and `cleanup`; it refuses
+`run-command`, `remote-run-command`, `capture-browser`, `inspect-stale`,
+blocked work, and wait states so normal implementation and browser execution
+remain explicit.
 Successful dispatch attempts append local JSONL audit events to
 `.agent-runs/events.jsonl` by default; pass `--event-log <path>` when a
 supervisor needs a different local ledger path. The same path is passed to the

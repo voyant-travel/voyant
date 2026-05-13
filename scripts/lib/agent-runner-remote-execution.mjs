@@ -1,6 +1,7 @@
 import path from "node:path"
 
 import { browserEvidenceMissingReason } from "./agent-runner-browser-evidence.mjs"
+import { resolveCiRepairEvidencePath } from "./agent-runner-ci.mjs"
 import {
   commandRunBrowserEvidenceBlockReason,
   commandRunFieldUpdate,
@@ -46,11 +47,13 @@ export function remoteCommandRunArtifactPlan({
 export function remoteCommandRunEnvironment({
   artifactPlan,
   branch,
+  ciRepairEvidencePlan,
   descriptor,
   item,
   repository,
 }) {
   return {
+    ...remoteCiRepairEvidenceEnvironment(ciRepairEvidencePlan),
     ...workspaceDescriptorEnvironment(descriptor),
     VOYANT_AGENT_BRANCH: branch,
     VOYANT_AGENT_EVIDENCE_PATH: artifactPlan.evidenceFile,
@@ -64,6 +67,29 @@ export function remoteCommandRunEnvironment({
     VOYANT_AGENT_REPOSITORY: repository,
     VOYANT_AGENT_VERIFICATION_LANE: item.dryRunPlan.verificationLane,
     VOYANT_AGENT_WORKSPACE: artifactPlan.workspace,
+  }
+}
+
+export function remoteCiRepairEvidencePlan({ artifactPlan, item, repoRoot }) {
+  const localEvidencePath = resolveCiRepairEvidencePath({
+    evidenceReference: item.fields.Evidence,
+    repoRoot,
+  })
+  if (!localEvidencePath) return null
+
+  return {
+    evidenceReference: item.fields.Evidence,
+    localEvidencePath,
+    remoteEvidenceFile: path.posix.join(artifactPlan.workspace, item.fields.Evidence),
+  }
+}
+
+function remoteCiRepairEvidenceEnvironment(plan) {
+  if (!plan) return {}
+
+  return {
+    VOYANT_AGENT_CI_REPAIR_EVIDENCE_PATH: plan.remoteEvidenceFile,
+    VOYANT_AGENT_CI_REPAIR_EVIDENCE_REFERENCE: plan.evidenceReference,
   }
 }
 

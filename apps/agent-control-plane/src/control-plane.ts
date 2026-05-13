@@ -10,6 +10,8 @@ export const dispatchableActions = [
   "remote-cleanup",
   "remote-open-pr",
   "remote-publish-evidence",
+  "remote-repair-ci",
+  "repair-ci",
   "start",
   "sync-pr",
 ] as const
@@ -53,6 +55,7 @@ const dispatchPlanFiltersSchema = z
 
 const dispatchPlanOptionsSchema = z
   .object({
+    ciRepairCommand: z.string().min(1).optional(),
     eventLog: z.string().min(1).optional(),
     updateBody: z.boolean().optional(),
   })
@@ -331,6 +334,7 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
       action,
       command: dispatchCommand({
         action,
+        ciRepairCommand: request.options?.ciRepairCommand,
         eventLog: request.options?.eventLog,
         issueNumber: recommendation.issue.number,
         repository: request.repository,
@@ -439,12 +443,14 @@ export function finishDispatchIntent({
 
 function dispatchCommand({
   action,
+  ciRepairCommand,
   eventLog,
   issueNumber,
   repository,
   updateBody,
 }: {
   action: DispatchPlan["action"]
+  ciRepairCommand?: string
   eventLog?: string
   issueNumber: number
   repository: string
@@ -463,6 +469,10 @@ function dispatchCommand({
 
   if (eventLog) {
     command.push("--event-log", eventLog)
+  }
+
+  if (ciRepairCommand && (action === "repair-ci" || action === "remote-repair-ci")) {
+    command.push("--ci-repair-command", ciRepairCommand)
   }
 
   if (updateBody && action === "sync-pr") {

@@ -100,6 +100,8 @@ describe("agent control plane", () => {
         "remote-cleanup",
         "remote-open-pr",
         "remote-publish-evidence",
+        "remote-repair-ci",
+        "repair-ci",
         "start",
         "sync-pr",
       ],
@@ -223,6 +225,41 @@ describe("agent control plane", () => {
         "--repo",
         "voyantjs/voyant",
         "--yes",
+      ],
+    })
+  })
+
+  it("plans configured CI repair wrappers", () => {
+    const repairRecommendation = {
+      action: "repair-ci",
+      reason: "CI repair packet is ready for automatic repair",
+      issue: {
+        number: 626,
+        title: "Repair failing checks",
+        url: "https://github.com/voyantjs/voyant/issues/626",
+        repository: "voyantjs/voyant",
+      },
+    }
+
+    expect(
+      selectDispatchPlan({
+        options: { ciRepairCommand: "pnpm verify:fast" },
+        recommendations: [repairRecommendation],
+        repository: "voyantjs/voyant",
+      }).plan,
+    ).toMatchObject({
+      action: "repair-ci",
+      command: [
+        "pnpm",
+        "agent:queue:repair-ci",
+        "--",
+        "--issue",
+        "626",
+        "--repo",
+        "voyantjs/voyant",
+        "--yes",
+        "--ci-repair-command",
+        "pnpm verify:fast",
       ],
     })
   })

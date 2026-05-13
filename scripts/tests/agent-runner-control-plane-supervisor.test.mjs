@@ -12,6 +12,7 @@ describe("agent runner control plane supervisor helpers", () => {
     assert.deepEqual(
       buildLatestDispatchIntentRequest({
         action: "sync-pr",
+        ciRepairCommand: "pnpm verify:fast",
         eventLog: ".agent-runs/supervisor.jsonl",
         holder: "supervisor:local",
         issue: "579",
@@ -29,6 +30,7 @@ describe("agent runner control plane supervisor helpers", () => {
           ttlSeconds: 600,
         },
         options: {
+          ciRepairCommand: "pnpm verify:fast",
           eventLog: ".agent-runs/supervisor.jsonl",
           updateBody: true,
         },
