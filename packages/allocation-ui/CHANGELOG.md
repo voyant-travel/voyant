@@ -1,5 +1,14 @@
 # @voyantjs/allocation-ui
 
+## 0.40.1
+
+### Patch Changes
+
+- 0809f47: Add SlotAllocationPage extension slots and extra tabs for consumer-owned financial summaries and pickup-point views.
+  - @voyantjs/availability-react@0.40.1
+  - @voyantjs/i18n@0.40.1
+  - @voyantjs/ui@0.40.1
+
 ## 0.40.0
 
 ### Patch Changes

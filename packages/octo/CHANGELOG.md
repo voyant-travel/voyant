@@ -1,5 +1,17 @@
 # @voyantjs/octo
 
+## 0.40.1
+
+### Patch Changes
+
+- @voyantjs/availability@0.40.1
+- @voyantjs/bookings@0.40.1
+- @voyantjs/core@0.40.1
+- @voyantjs/db@0.40.1
+- @voyantjs/hono@0.40.1
+- @voyantjs/products@0.40.1
+- @voyantjs/transactions@0.40.1
+
 ## 0.40.0
 
 ### Patch Changes
