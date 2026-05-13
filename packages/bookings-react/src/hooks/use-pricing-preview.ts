@@ -13,7 +13,7 @@ export interface UsePricingPreviewOptions extends PricingPreviewFilters {
 /**
  * Catalog-resolved pricing snapshot for a product + option (+ optional
  * catalog). Consumers match the returned `unitPrices` / `tiers` against their
- * passenger/unit selection to render a breakdown. The snapshot is the same
+ * traveler/unit selection to render a breakdown. The snapshot is the same
  * data the storefront session uses, so operator-side numbers stay in sync
  * with customer-facing ones.
  */

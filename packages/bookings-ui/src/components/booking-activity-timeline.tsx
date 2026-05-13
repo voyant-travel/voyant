@@ -54,7 +54,7 @@ const activityIcons: Record<string, LucideIcon> = {
   fulfillment_updated: FileText,
   redemption_recorded: FileText,
   supplier_update: RefreshCw,
-  passenger_update: UserPlus,
+  traveler_update: UserPlus,
   note_added: Pencil,
 }
 

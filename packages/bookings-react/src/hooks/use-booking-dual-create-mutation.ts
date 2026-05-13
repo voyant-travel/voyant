@@ -21,7 +21,7 @@ export interface DualCreateGroupInput {
   /**
    * option_unit the shared group occupies. The dual flow lives-or-dies on
    * matching this across both bookings — when set, both sub-bookings should
-   * target the same optionUnitId in their passengers/allocations.
+   * target the same optionUnitId in their travelers/allocations.
    */
   optionUnitId?: string | null
 }

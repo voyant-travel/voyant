@@ -7,7 +7,7 @@ export type RegistryBookingParticipantRole =
   | "other"
 
 export type RegistryBookingsMessages = {
-  passengerDialog: {
+  travelerDialog: {
     titles: {
       create: string
       edit: string
@@ -31,12 +31,12 @@ export type RegistryBookingsMessages = {
       lastNameRequired: string
     }
     actions: {
-      addPassenger: string
+      addTraveler: string
     }
   }
-  passengerList: {
+  travelerList: {
     title: string
-    addPassenger: string
+    addTraveler: string
     empty: string
     values: {
       emailUnavailable: string
@@ -51,10 +51,10 @@ export type RegistryBookingsMessages = {
       deleteConfirm: string
     }
   }
-  bookingItemParticipants: {
+  bookingItemTravelers: {
     title: string
     empty: string
-    selectPassengerPlaceholder: string
+    selectTravelerPlaceholder: string
     primaryBadge: string
     roleLabels: Record<RegistryBookingParticipantRole, string>
     actions: {

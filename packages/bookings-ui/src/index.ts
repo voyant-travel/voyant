@@ -78,14 +78,6 @@ export {
   type UploadedFile,
 } from "./components/file-dropzone.js"
 export {
-  type PassengerEntry,
-  type PassengerListValue,
-  type PassengerRole,
-  PassengersSection,
-  type PassengersSectionProps,
-  type RoomUnitOption,
-} from "./components/passengers-section.js"
-export {
   type PaymentScheduleMode,
   PaymentScheduleSection,
   type PaymentScheduleSectionProps,
@@ -133,6 +125,16 @@ export {
 } from "./components/supplier-status-list.js"
 export { TravelerDialog, type TravelerDialogProps } from "./components/traveler-dialog.js"
 export { TravelerList, type TravelerListProps } from "./components/traveler-list.js"
+export {
+  createBlankTraveler,
+  emptyTravelerListValue,
+  type RoomUnitOption,
+  type TravelerEntry,
+  type TravelerListValue,
+  type TravelerRole,
+  TravelersSection,
+  type TravelersSectionProps,
+} from "./components/travelers-section.js"
 export {
   type PickedVoucher,
   VoucherPickerSection,

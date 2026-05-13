@@ -225,7 +225,7 @@ export interface BookingJourneyProps {
    * - `previewUrl` — absolute URL of the public render endpoint.
    * - `resolveVariables` — maps the draft to the template's variable
    *   schema. The storefront supplies a default mapper that covers
-   *   passenger / billing / room / dates.
+   *   traveler / billing / room / dates.
    * - `marketingLabel` — when set, an additional opt-in checkbox is
    *   rendered in the dialog. Marketing consent is optional and is
    *   passed through `onContractAccepted` so the caller can decide

@@ -41,7 +41,7 @@ export const bookingActivityTypeEnum = pgEnum("booking_activity_type", [
   "fulfillment_updated",
   "redemption_recorded",
   "supplier_update",
-  "passenger_update",
+  "traveler_update",
   "note_added",
   // System-issued activity rows (e.g. payment-schedule
   // regeneration). Distinct from `note_added` so the UI can filter

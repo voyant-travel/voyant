@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "voyant-bookings-travelers-section",
+  "title": "Booking Travelers Section",
+  "description": "Multi-row traveler list for booking-create: name + email + role (lead / adult / child / infant) + optional room assignment, with add/remove. Parent creates CRM people + booking_travelers rows at submit time.",
+  "dependencies": ["lucide-react"],
+  "registryDependencies": ["button", "input", "label", "select"],
+  "files": [
+    {
+      "path": "registry/bookings/travelers-section.tsx",
+      "content": "export {\n  createBlankTraveler,\n  emptyTravelerListValue,\n  type RoomUnitOption,\n  type TravelerEntry,\n  type TravelerListValue,\n  type TravelerRole,\n  TravelersSection,\n  type TravelersSectionProps,\n} from \"@voyantjs/bookings-ui\"\n",
+      "type": "registry:component",
+      "target": "components/voyant/bookings/travelers-section.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

@@ -13,27 +13,27 @@ import {
 import { Trash2 } from "lucide-react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
-export type PassengerRole = "lead" | "adult" | "child" | "infant"
+export type TravelerRole = "lead" | "adult" | "child" | "infant"
 
-const ALL_ROLES: PassengerRole[] = ["lead", "adult", "child", "infant"]
+const ALL_ROLES: TravelerRole[] = ["lead", "adult", "child", "infant"]
 
-export interface PassengerEntry {
+export interface TravelerEntry {
   firstName: string
   lastName: string
   email: string
-  role: PassengerRole
-  /** option_unit_id the passenger is assigned to (matches RoomsStepper units). */
+  role: TravelerRole
+  /** option_unit_id the traveler is assigned to (matches RoomsStepper units). */
   roomUnitId: string | null
 }
 
-export interface PassengerListValue {
-  passengers: PassengerEntry[]
+export interface TravelerListValue {
+  travelers: TravelerEntry[]
 }
 
-export const emptyPassengerListValue: PassengerListValue = { passengers: [] }
+export const emptyTravelerListValue: TravelerListValue = { travelers: [] }
 
 /** Factory for a blank row — `role` defaults to `adult` unless the list is empty. */
-export function createBlankPassenger(role: PassengerRole = "adult"): PassengerEntry {
+export function createBlankTraveler(role: TravelerRole = "adult"): TravelerEntry {
   return { firstName: "", lastName: "", email: "", role, roomUnitId: null }
 }
 
@@ -41,24 +41,24 @@ export interface RoomUnitOption {
   unitId: string
   unitName: string
   /**
-   * How many more passengers can be assigned to this unit. Decremented by
+   * How many more travelers can be assigned to this unit. Decremented by
    * the parent based on the stepper's quantity × occupancy capacity minus
-   * passengers already assigned to that unit.
+   * travelers already assigned to that unit.
    */
   remainingCapacity: number
 }
 
-export interface PassengersSectionProps {
-  value: PassengerListValue
-  onChange: (value: PassengerListValue) => void
+export interface TravelersSectionProps {
+  value: TravelerListValue
+  onChange: (value: TravelerListValue) => void
   /**
    * Rooms the operator has selected (from RoomsStepperSection + occupancy).
-   * When provided, each passenger gets a room-assignment dropdown.
+   * When provided, each traveler gets a room-assignment dropdown.
    */
   roomUnits?: RoomUnitOption[]
   labels?: {
     heading?: string
-    addPassenger?: string
+    addTraveler?: string
     firstName?: string
     lastName?: string
     email?: string
@@ -77,7 +77,7 @@ export interface PassengersSectionProps {
 const NO_ROOM = "__unassigned__"
 
 /**
- * Passenger list for booking-create flows. Each row carries name + optional
+ * Traveler list for booking-create flows. Each row carries name + optional
  * email + role + optional room assignment. Inline-create only for now —
  * operators who want to pick an existing CRM person can do so from the
  * booking detail page afterwards, consistent with the lead-person picker's
@@ -89,37 +89,39 @@ const NO_ROOM = "__unassigned__"
  * 1. Creates a CRM person for each row that doesn't match an existing one
  *    (email match + name, or skip when the operator intentionally left
  *    email blank).
- * 2. Inserts a `booking_travelers` row per passenger with `participantType`
+ * 2. Inserts a `booking_travelers` row per traveler with `participantType`
  *    derived from the role (`lead` / `adult` → traveler; `child` / `infant`
  *    → traveler with travelerCategory set).
  * 3. Exactly one row should have `role: "lead"` — enforced at submit, not
  *    here. The UI lets the operator pick whichever layout they want, then
  *    the submit handler errors if the invariant isn't met.
  */
-export function PassengersSection({ value, onChange, roomUnits, labels }: PassengersSectionProps) {
+export function TravelersSection({ value, onChange, roomUnits, labels }: TravelersSectionProps) {
   const messages = useBookingsUiMessagesOrDefault()
-  const merged = { ...messages.passengersSection.labels, ...labels }
-  const roleLabels: Record<PassengerRole, string> = {
+  const merged = { ...messages.travelersSection.labels, ...labels }
+  const roleLabels: Record<TravelerRole, string> = {
     lead: merged.roleLead,
     adult: merged.roleAdult,
     child: merged.roleChild,
     infant: merged.roleInfant,
   }
 
-  const updateAt = (index: number, patch: Partial<PassengerEntry>) => {
-    const next = value.passengers.map((p, i) => (i === index ? { ...p, ...patch } : p))
-    onChange({ passengers: next })
+  const updateAt = (index: number, patch: Partial<TravelerEntry>) => {
+    const next = value.travelers.map((traveler, i) =>
+      i === index ? { ...traveler, ...patch } : traveler,
+    )
+    onChange({ travelers: next })
   }
 
   const removeAt = (index: number) => {
-    onChange({ passengers: value.passengers.filter((_, i) => i !== index) })
+    onChange({ travelers: value.travelers.filter((_, i) => i !== index) })
   }
 
   const addRow = () => {
-    // First passenger defaults to `lead` so the operator doesn't have to
+    // First traveler defaults to `lead` so the operator doesn't have to
     // remember to flip the role on the initial row.
-    const role: PassengerRole = value.passengers.length === 0 ? "lead" : "adult"
-    onChange({ passengers: [...value.passengers, createBlankPassenger(role)] })
+    const role: TravelerRole = value.travelers.length === 0 ? "lead" : "adult"
+    onChange({ travelers: [...value.travelers, createBlankTraveler(role)] })
   }
 
   return (
@@ -127,15 +129,15 @@ export function PassengersSection({ value, onChange, roomUnits, labels }: Passen
       <div className="flex items-center justify-between">
         <Label>{merged.heading}</Label>
         <Button type="button" size="sm" variant="ghost" onClick={addRow}>
-          {merged.addPassenger}
+          {merged.addTraveler}
         </Button>
       </div>
 
-      {value.passengers.length === 0 ? (
+      {value.travelers.length === 0 ? (
         <p className="text-xs text-muted-foreground">{merged.empty}</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {value.passengers.map((passenger, index) => (
+          {value.travelers.map((traveler, index) => (
             <div
               // biome-ignore lint/suspicious/noArrayIndexKey: row identity is positional
               key={index}
@@ -144,12 +146,12 @@ export function PassengersSection({ value, onChange, roomUnits, labels }: Passen
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   placeholder={merged.firstName}
-                  value={passenger.firstName}
+                  value={traveler.firstName}
                   onChange={(e) => updateAt(index, { firstName: e.target.value })}
                 />
                 <Input
                   placeholder={merged.lastName}
-                  value={passenger.lastName}
+                  value={traveler.lastName}
                   onChange={(e) => updateAt(index, { lastName: e.target.value })}
                 />
               </div>
@@ -157,7 +159,7 @@ export function PassengersSection({ value, onChange, roomUnits, labels }: Passen
               <Input
                 type="email"
                 placeholder={merged.email}
-                value={passenger.email}
+                value={traveler.email}
                 onChange={(e) => updateAt(index, { email: e.target.value })}
               />
 
@@ -165,10 +167,8 @@ export function PassengersSection({ value, onChange, roomUnits, labels }: Passen
                 <div className="flex flex-col gap-1">
                   <Label className="text-xs">{merged.role}</Label>
                   <Select
-                    value={passenger.role}
-                    onValueChange={(v) =>
-                      updateAt(index, { role: (v ?? "adult") as PassengerRole })
-                    }
+                    value={traveler.role}
+                    onValueChange={(v) => updateAt(index, { role: (v ?? "adult") as TravelerRole })}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -187,7 +187,7 @@ export function PassengersSection({ value, onChange, roomUnits, labels }: Passen
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs">{merged.room}</Label>
                     <Select
-                      value={passenger.roomUnitId ?? NO_ROOM}
+                      value={traveler.roomUnitId ?? NO_ROOM}
                       onValueChange={(v) =>
                         updateAt(index, { roomUnitId: v === NO_ROOM ? null : (v ?? null) })
                       }
@@ -202,10 +202,10 @@ export function PassengersSection({ value, onChange, roomUnits, labels }: Passen
                             key={unit.unitId}
                             value={unit.unitId}
                             // Only disable other rooms at-capacity — the room the
-                            // passenger is *already* in should stay selectable so
+                            // traveler is *already* in should stay selectable so
                             // re-renders don't strip the selection.
                             disabled={
-                              unit.remainingCapacity <= 0 && passenger.roomUnitId !== unit.unitId
+                              unit.remainingCapacity <= 0 && traveler.roomUnitId !== unit.unitId
                             }
                           >
                             {unit.unitName}

@@ -378,8 +378,6 @@ export const bookingTravelerSharingGroupsResponse = arrayEnvelope(
 export const bookingTravelersBySharingGroupResponse = arrayEnvelope(
   bookingTravelerSharingGroupMemberSchema,
 )
-export const bookingPassengersResponse = bookingTravelersResponse
-export const bookingItemParticipantsResponse = bookingItemTravelersResponse
 export const bookingSupplierStatusesResponse = arrayEnvelope(bookingSupplierStatusRecordSchema)
 export const bookingActivityResponse = arrayEnvelope(bookingActivityRecordSchema)
 export const bookingNotesResponse = arrayEnvelope(bookingNoteRecordSchema)
@@ -390,7 +388,7 @@ export const publicBookingSessionRepriceResponse = singleEnvelope(
 )
 
 // Pricing preview — the catalog-resolved snapshot the storefront engine uses
-// to compute totals. Consumers match it against their passenger/unit selection
+// to compute totals. Consumers match it against their traveler/unit selection
 // to render a breakdown; see @voyantjs/bookings/validation for the request.
 const pricingPreviewCatalogSchema = z.object({
   id: z.string(),

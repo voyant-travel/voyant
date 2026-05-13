@@ -33,13 +33,6 @@ import {
   useBookingsUiI18nOrDefault,
   useBookingsUiMessagesOrDefault,
 } from "../i18n/provider.js"
-
-import {
-  emptyPassengerListValue,
-  type PassengerListValue,
-  PassengersSection,
-  type RoomUnitOption,
-} from "./passengers-section.js"
 import {
   emptyPaymentScheduleValue,
   PaymentScheduleSection,
@@ -62,6 +55,12 @@ import {
   SharedRoomSection,
   type SharedRoomValue,
 } from "./shared-room-section.js"
+import {
+  emptyTravelerListValue,
+  type RoomUnitOption,
+  type TravelerListValue,
+  TravelersSection,
+} from "./travelers-section.js"
 import {
   emptyVoucherPickerValue,
   VoucherPickerSection,
@@ -142,22 +141,22 @@ function paymentScheduleToRows(
   return rows
 }
 
-function passengersToRows(value: PassengerListValue): QuickCreateTravelerInput[] {
-  return value.passengers.map((p) => ({
-    firstName: p.firstName.trim(),
-    lastName: p.lastName.trim(),
-    email: p.email.trim() || null,
+function travelersToRows(value: TravelerListValue): QuickCreateTravelerInput[] {
+  return value.travelers.map((traveler) => ({
+    firstName: traveler.firstName.trim(),
+    lastName: traveler.lastName.trim(),
+    email: traveler.email.trim() || null,
     participantType: "traveler",
     travelerCategory:
-      p.role === "child"
+      traveler.role === "child"
         ? "child"
-        : p.role === "infant"
+        : traveler.role === "infant"
           ? "infant"
-          : p.role === "adult"
+          : traveler.role === "adult"
             ? "adult"
             : null,
-    isPrimary: p.role === "lead",
-    roomUnitId: p.roomUnitId,
+    isPrimary: traveler.role === "lead",
+    roomUnitId: traveler.roomUnitId,
   }))
 }
 
@@ -180,7 +179,7 @@ export interface BookingCreateFormProps {
 
 /**
  * Operator booking-create dialog. Composes the booking-create picker
- * sections — product, departure, rooms, person, shared-room, passengers,
+ * sections — product, departure, rooms, person, shared-room, travelers,
  * price breakdown, voucher, payment schedule — and submits via the atomic
  * `POST /v1/bookings/quick-create` endpoint so partial failures can't
  * leave orphan state.
@@ -231,7 +230,7 @@ export function BookingCreateForm({
   const [rooms, setRooms] = React.useState<RoomsStepperValue>(emptyRoomsStepperValue)
   const [person, setPerson] = React.useState<PersonPickerValue>(emptyPersonPickerValue)
   const [sharedRoom, setSharedRoom] = React.useState<SharedRoomValue>(emptySharedRoomValue)
-  const [passengers, setPassengers] = React.useState<PassengerListValue>(emptyPassengerListValue)
+  const [travelers, setTravelers] = React.useState<TravelerListValue>(emptyTravelerListValue)
   const [voucher, setVoucher] = React.useState<VoucherPickerValue>(emptyVoucherPickerValue)
   const [pricing, setPricing] = React.useState<PriceBreakdownValue | null>(null)
   const [paymentSchedule, setPaymentSchedule] =
@@ -256,7 +255,7 @@ export function BookingCreateForm({
       setRooms(emptyRoomsStepperValue)
       setPerson(emptyPersonPickerValue)
       setSharedRoom(emptySharedRoomValue)
-      setPassengers(emptyPassengerListValue)
+      setTravelers(emptyTravelerListValue)
       setVoucher(emptyVoucherPickerValue)
       setPricing(null)
       setPaymentSchedule(emptyPaymentScheduleValue)
@@ -324,8 +323,8 @@ export function BookingCreateForm({
         const qty = rooms.quantities[unit.optionUnitId] ?? 0
         const occupancyMax = 1
         const seats = qty * occupancyMax
-        const assigned = passengers.passengers.filter(
-          (p) => p.roomUnitId === unit.optionUnitId,
+        const assigned = travelers.travelers.filter(
+          (traveler) => traveler.roomUnitId === unit.optionUnitId,
         ).length
         return {
           unitId: unit.optionUnitId,
@@ -333,7 +332,7 @@ export function BookingCreateForm({
           remainingCapacity: Math.max(0, seats - assigned),
         }
       })
-  }, [slotUnitAvailability.data, rooms.quantities, passengers.passengers])
+  }, [slotUnitAvailability.data, rooms.quantities, travelers.travelers])
 
   // Currency placeholder — used for voucher + payment schedule display.
   // Consumers hooking in real product data should override this by wrapping
@@ -391,7 +390,7 @@ export function BookingCreateForm({
         confirmedSellAmountCents,
       )
 
-      const travelers = passengersToRows(passengers)
+      const travelerRows = travelersToRows(travelers)
 
       const voucherRedemption: QuickCreateVoucherRedemptionInput | undefined =
         voucher.picked && voucher.picked.remainingAmountCents != null
@@ -428,7 +427,7 @@ export function BookingCreateForm({
         catalogSellAmountCents,
         confirmedSellAmountCents,
         priceOverrideReason: priceOverrideReason || null,
-        travelers: travelers.length > 0 ? travelers : undefined,
+        travelers: travelerRows.length > 0 ? travelerRows : undefined,
         paymentSchedules: paymentSchedules.length > 0 ? paymentSchedules : undefined,
         voucherRedemption,
         groupMembership,
@@ -556,22 +555,22 @@ export function BookingCreateForm({
         />
 
         {product.productId ? (
-          <PassengersSection
-            value={passengers}
-            onChange={setPassengers}
+          <TravelersSection
+            value={travelers}
+            onChange={setTravelers}
             roomUnits={roomUnitOptions.length > 0 ? roomUnitOptions : undefined}
             labels={{
-              heading: messages.bookingCreateDialog.labels.passengerHeading,
-              addPassenger: messages.bookingCreateDialog.labels.addPassenger,
-              role: messages.bookingCreateDialog.labels.passengerRole,
-              roleLead: messages.bookingCreateDialog.labels.passengerLead,
-              roleAdult: messages.bookingCreateDialog.labels.passengerAdult,
-              roleChild: messages.bookingCreateDialog.labels.passengerChild,
-              roleInfant: messages.bookingCreateDialog.labels.passengerInfant,
-              room: messages.bookingCreateDialog.labels.passengerRoom,
-              noRoom: messages.bookingCreateDialog.labels.passengerNoRoom,
-              remove: messages.bookingCreateDialog.labels.passengerRemove,
-              empty: messages.bookingCreateDialog.labels.passengerEmpty,
+              heading: messages.bookingCreateDialog.labels.travelerHeading,
+              addTraveler: messages.bookingCreateDialog.labels.addTraveler,
+              role: messages.bookingCreateDialog.labels.travelerRole,
+              roleLead: messages.bookingCreateDialog.labels.travelerLead,
+              roleAdult: messages.bookingCreateDialog.labels.travelerAdult,
+              roleChild: messages.bookingCreateDialog.labels.travelerChild,
+              roleInfant: messages.bookingCreateDialog.labels.travelerInfant,
+              room: messages.bookingCreateDialog.labels.travelerRoom,
+              noRoom: messages.bookingCreateDialog.labels.travelerNoRoom,
+              remove: messages.bookingCreateDialog.labels.travelerRemove,
+              empty: messages.bookingCreateDialog.labels.travelerEmpty,
             }}
           />
         ) : null}
