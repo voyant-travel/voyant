@@ -1,3 +1,5 @@
+import { dispatchableActions } from "./agent-runner-dispatch.mjs"
+
 export class RunnerAppRequestError extends Error {
   constructor({ body, endpoint, responseText, status }) {
     super(formatRunnerAppError({ body, endpoint, responseText, status }))
@@ -145,9 +147,53 @@ export function summarizeControlPlaneCapabilities(capabilities) {
 }
 
 export function summarizeRunnerAppCapabilities(capabilities) {
+  const policy = summarizeRunnerPolicy(capabilities)
+
   return {
-    ok: Boolean(capabilities?.execution),
-    detail: `execution: ${capabilities?.execution?.mode ?? "unknown"}; enabled: ${String(capabilities?.execution?.enabled ?? "unknown")}; tick persistence: ${capabilities?.supervisorTicks?.persistence ?? "unknown"}`,
+    ok: Boolean(capabilities?.execution) && policy.ok,
+    detail: `execution: ${capabilities?.execution?.mode ?? "unknown"}; enabled: ${String(capabilities?.execution?.enabled ?? "unknown")}; tick persistence: ${capabilities?.supervisorTicks?.persistence ?? "unknown"}; ${policy.detail}`,
+  }
+}
+
+export function summarizeRunnerPolicy(capabilities) {
+  const policy = capabilities?.policy
+  if (!policy) {
+    return {
+      allowedActionCount: null,
+      ciRepairAllowedActions: [],
+      ciRepairEnabled: false,
+      defaultAction: capabilities?.defaults?.action ?? null,
+      detail: "policy: unknown",
+      ok: true,
+      requiresActionFilter: null,
+    }
+  }
+
+  const allowedActions = Array.isArray(policy.allowedActions) ? policy.allowedActions : []
+  const defaultAction = capabilities?.defaults?.action ?? policy.defaultAction ?? null
+  const ciRepairAllowedActions = allowedActions
+    .filter((action) => action === "repair-ci" || action === "remote-repair-ci")
+    .sort()
+  const defaultActionAllowed = !defaultAction || allowedActions.includes(defaultAction)
+  const defaultActionDispatchable = !defaultAction || dispatchableActions.has(defaultAction)
+
+  return {
+    allowedActionCount: allowedActions.length,
+    ciRepairAllowedActions,
+    ciRepairEnabled: ciRepairAllowedActions.length > 0,
+    defaultAction,
+    detail: [
+      `allowed actions: ${allowedActions.length}`,
+      `default action: ${defaultAction ?? "none"}`,
+      `requires action filter: ${String(policy.requiresActionFilter ?? "unknown")}`,
+      `CI repair opt-in: ${ciRepairAllowedActions.length > 0 ? ciRepairAllowedActions.join(",") : "off"}`,
+      defaultActionAllowed ? null : "default action is not allowed",
+      defaultActionDispatchable ? null : "default action is not dispatchable",
+    ]
+      .filter(Boolean)
+      .join("; "),
+    ok: defaultActionAllowed && defaultActionDispatchable,
+    requiresActionFilter: policy.requiresActionFilter ?? null,
   }
 }
 

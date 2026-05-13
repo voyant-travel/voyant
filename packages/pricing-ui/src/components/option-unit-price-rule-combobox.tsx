@@ -25,6 +25,12 @@ type Props = {
 
 const PAGE_SIZE = 100
 
+function formatOptionUnitPriceRuleLabel(
+  item: Pick<OptionUnitPriceRuleRecord, "optionId" | "unitId">,
+) {
+  return `${item.optionId} / ${item.unitId}` // i18n-literal-ok: joins stable identifiers.
+}
+
 export function OptionUnitPriceRuleCombobox({ value, onChange, placeholder, disabled }: Props) {
   const messages = usePricingUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
@@ -34,7 +40,7 @@ export function OptionUnitPriceRuleCombobox({ value, onChange, placeholder, disa
   const items = React.useMemo(() => {
     const map = new Map<string, OptionUnitPriceRuleRecord>()
     for (const item of listQuery.data?.data ?? []) {
-      const searchableText = `${item.optionId} / ${item.unitId}`
+      const searchableText = formatOptionUnitPriceRuleLabel(item)
       if (!search || searchableText.toLowerCase().includes(search.toLowerCase())) {
         map.set(item.id, item)
       }
@@ -45,7 +51,7 @@ export function OptionUnitPriceRuleCombobox({ value, onChange, placeholder, disa
 
   const itemMap = React.useMemo(() => new Map(items.map((item) => [item.id, item])), [items])
   const selected = value ? itemMap.get(value) : undefined
-  const selectedLabel = selected ? `${selected.optionId} / ${selected.unitId}` : ""
+  const selectedLabel = selected ? formatOptionUnitPriceRuleLabel(selected) : ""
   const [inputValue, setInputValue] = React.useState(selectedLabel)
 
   React.useEffect(() => {
@@ -61,7 +67,7 @@ export function OptionUnitPriceRuleCombobox({ value, onChange, placeholder, disa
       disabled={disabled}
       itemToStringValue={(id) => {
         const item = itemMap.get(id as string)
-        return item ? `${item.optionId} / ${item.unitId}` : ""
+        return item ? formatOptionUnitPriceRuleLabel(item) : ""
       }}
       onInputValueChange={(next) => {
         setInputValue(next)
@@ -72,7 +78,7 @@ export function OptionUnitPriceRuleCombobox({ value, onChange, placeholder, disa
         const id = (next as string | null) ?? null
         onChange(id)
         const item = id ? itemMap.get(id) : undefined
-        setInputValue(item ? `${item.optionId} / ${item.unitId}` : "")
+        setInputValue(item ? formatOptionUnitPriceRuleLabel(item) : "")
       }}
     >
       <ComboboxInput

@@ -73,6 +73,7 @@ function printHumanSummary(report) {
   printControlPlaneSnapshotDetails(report.controlPlane?.recentTickSnapshots)
   printDispatchPlanDetails(report.controlPlane?.dispatchPlan)
   printActiveDispatchDetails(report.controlPlane?.activeDispatch)
+  printRunnerPolicyDetails(report.runner?.policy)
   printRunnerSupervisorDetails(report.runner?.supervisorStatus)
 }
 
@@ -182,6 +183,19 @@ function printRunnerSupervisorDetails(status) {
       `  - ${tick.recordedAt ?? "unknown"} ${tick.reason ?? "unknown"} leased=${String(tick.leased ?? "unknown")}${intent}`,
     )
   }
+}
+
+function printRunnerPolicyDetails(policy) {
+  if (!policy) return
+
+  console.log("")
+  console.log("Runner policy:")
+  console.log(`  allowed actions: ${String(policy.allowedActionCount ?? "unknown")}`)
+  console.log(`  default action: ${policy.defaultAction ?? "none"}`)
+  console.log(`  requires action filter: ${String(policy.requiresActionFilter ?? "unknown")}`)
+  console.log(
+    `  CI repair opt-in: ${policy.ciRepairEnabled ? policy.ciRepairAllowedActions.join(", ") : "off"}`,
+  )
 }
 
 function positiveIntegerArg(value, name, fallback) {
