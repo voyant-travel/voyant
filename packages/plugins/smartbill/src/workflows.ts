@@ -74,7 +74,10 @@ export interface SmartbillProformaConversionPollerOptions {
   companyVatCode?: string
   logger?: SmartbillWorkflowLogger
   listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
-  onConverted: (conversion: SmartbillProformaConversion) => void | Promise<void>
+  onConverted: (
+    proformaRef: SmartbillWorkflowExternalRef,
+    conversion: SmartbillProformaConversion,
+  ) => void | Promise<void>
   onError?: (error: SmartbillWorkflowError) => void | Promise<void>
 }
 
@@ -195,7 +198,7 @@ export function createSmartbillProformaConversionPoller(
             response,
             smartbillInvoice,
           }
-          await options.onConverted(conversion)
+          await options.onConverted(ref, conversion)
           options.logger?.info?.("[smartbill] proforma conversion detected", conversion)
           result.converted.push(conversion)
         }
@@ -375,6 +378,11 @@ async function defaultVerifyRemoteDocument(
 function paymentStatusToRemoteStatus(
   status: SmartbillStatusResponse,
 ): SmartbillRemoteDocumentStatus {
+  const providerStatus = `${status.message ?? ""} ${status.errorText ?? ""}`.toLowerCase()
+  if (providerStatus.includes("cancel")) return "cancelled"
+  if (providerStatus.includes("reverse")) return "reversed"
+  if (providerStatus.includes("void")) return "voided"
+  if (providerStatus.includes("delete")) return "deleted"
   if (status.paid) return "paid"
   if ((status.paidAmount ?? 0) > 0) return "partially_paid"
   return "unpaid"

@@ -81,7 +81,8 @@ describe("createSmartbillProformaConversionPoller", () => {
 
     expect(client.listEstimateInvoices).toHaveBeenCalledWith("RO12345678", "PF", "1")
     expect(onConverted).toHaveBeenCalledOnce()
-    expect(onConverted.mock.calls[0]![0]).toMatchObject({
+    expect(onConverted.mock.calls[0]![0]).toBe(ref)
+    expect(onConverted.mock.calls[0]![1]).toMatchObject({
       proformaRef: ref,
       invoiceSeriesName: "INV",
       invoiceNumber: "42",
@@ -206,6 +207,51 @@ describe("createSmartbillDriftReconciler", () => {
     expect(result.findings[0]).toMatchObject({
       type: "voided_remote",
       document: { seriesName: "INV", number: "7" },
+    })
+  })
+
+  it("reports voided remote invoices from default payment status messages", async () => {
+    const ref = smartbillRef({
+      metadata: {
+        companyVatCode: "RO12345678",
+        seriesName: "INV",
+        number: "8",
+        documentType: "invoice",
+      },
+      invoice: {
+        id: "inv_8",
+        invoiceNumber: "INV-8",
+        invoiceType: "invoice",
+        status: "sent",
+        currency: "RON",
+        totalCents: 10000,
+        paidCents: 0,
+        balanceDueCents: 10000,
+      },
+    })
+    const client = makeClient({
+      getPaymentStatus: vi.fn(async () => ({
+        status: "Ok",
+        message: "Invoice cancelled",
+        errorText: "",
+        paid: false,
+        invoiceTotalAmount: 100,
+        paidAmount: 0,
+        unpaidAmount: 100,
+        payments: [],
+      })),
+    })
+
+    const result = await createSmartbillDriftReconciler({
+      client,
+      listExternalRefs: async () => [ref],
+    })()
+
+    expect(client.getPaymentStatus).toHaveBeenCalledWith("RO12345678", "INV", "8")
+    expect(result.findings[0]).toMatchObject({
+      type: "voided_remote",
+      document: { seriesName: "INV", number: "8" },
+      remote: { status: "cancelled" },
     })
   })
 })

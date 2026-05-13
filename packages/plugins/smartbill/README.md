@@ -95,7 +95,7 @@ import {
 const pollProformas = createSmartbillProformaConversionPoller({
   db,
   client: smartbillClient,
-  onConverted: async (conversion) => {
+  onConverted: async (proformaRef, conversion) => {
     // Record a Voyant payment or emit a domain event in the host app.
     // The plugin reports the SmartBill invoice series/number and source
     // proforma ref, but leaves payment semantics to the consumer.
