@@ -58,11 +58,13 @@ export function parseSpritePoolConfig(value: string | undefined): RemoteWorkspac
 
 export async function acquireRemoteWorkspaceSlot({
   coordinator,
+  excludedWorkspaceReferences = new Set(),
   holder,
   pool,
   ttlSeconds,
 }: {
   coordinator?: CoordinatorService
+  excludedWorkspaceReferences?: ReadonlySet<string>
   holder: string
   pool?: RemoteWorkspacePool
   ttlSeconds: number
@@ -79,6 +81,8 @@ export async function acquireRemoteWorkspaceSlot({
   }
 
   for (const slot of pool.slots) {
+    if (excludedWorkspaceReferences.has(slot.workspaceReference)) continue
+
     const response = await coordinator.fetch(
       jsonRequest("https://agent-runner-coordinator.internal/locks/acquire", {
         holder,
