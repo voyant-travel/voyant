@@ -1,5 +1,18 @@
 # @voyantjs/legal-ui
 
+## 0.37.0
+
+### Patch Changes
+
+- 0689fcb: Add reusable person, organization, supplier, product, and pricing option comboboxes for operator-facing entity reference fields.
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/crm-react@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/legal-react@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

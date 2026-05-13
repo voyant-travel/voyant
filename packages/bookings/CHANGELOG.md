@@ -1,5 +1,19 @@
 # @voyantjs/bookings
 
+## 0.37.0
+
+### Minor Changes
+
+- 4c93561: Add supplier, product category, option, person, and organization filters to the bookings list API and UI.
+- dc29b79: Persist operator-confirmed booking totals from the create dialog and audit manual price overrides with a required reason.
+
+### Patch Changes
+
+- @voyantjs/core@0.37.0
+- @voyantjs/db@0.37.0
+- @voyantjs/hono@0.37.0
+- @voyantjs/utils@0.37.0
+
 ## 0.36.0
 
 ### Minor Changes

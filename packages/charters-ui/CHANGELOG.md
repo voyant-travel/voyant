@@ -1,5 +1,18 @@
 # @voyantjs/charters-ui
 
+## 0.37.0
+
+### Patch Changes
+
+- e5ce6a0: Route remaining shared UI literals through package i18n providers.
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/catalog-react@0.37.0
+  - @voyantjs/charters-react@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

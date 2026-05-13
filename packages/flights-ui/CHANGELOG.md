@@ -1,5 +1,23 @@
 # @voyantjs/flights-ui
 
+## 0.37.0
+
+### Patch Changes
+
+- 0c9b884: Route remaining reusable UI literals through package i18n providers and add the UI literal scan to the shared i18n CI check.
+- e5ce6a0: Route remaining shared UI literals through package i18n providers.
+- Updated dependencies [9fcfd44]
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/checkout-ui@0.37.0
+  - @voyantjs/crm-react@0.37.0
+  - @voyantjs/finance@0.37.0
+  - @voyantjs/flights@0.37.0
+  - @voyantjs/flights-react@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

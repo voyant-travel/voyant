@@ -1,5 +1,17 @@
 # @voyantjs/admin
 
+## 0.37.0
+
+### Patch Changes
+
+- 712a441: Add an operator admin page shell with breadcrumb, action, sidebar trigger, and padded content slots.
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/react@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

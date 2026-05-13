@@ -1,5 +1,12 @@
 # @voyantjs/i18n
 
+## 0.37.0
+
+### Patch Changes
+
+- dc29b79: Persist operator-confirmed booking totals from the create dialog and audit manual price overrides with a required reason.
+- f014fd2: Capture manual base-currency settlement amounts for cross-currency customer and supplier payments, and settle invoice balances from the base invoice amount.
+
 ## 0.36.0
 
 ## 0.35.0

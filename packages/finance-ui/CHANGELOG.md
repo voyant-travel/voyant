@@ -1,5 +1,33 @@
 # @voyantjs/finance-ui
 
+## 0.37.0
+
+### Minor Changes
+
+- 02287bf: Add a reusable booking combobox and use it in finance dialogs instead of raw booking ID inputs.
+- a48660e: Add invoice bulk selection and a confirmable mark-paid action with partial-failure feedback.
+
+### Patch Changes
+
+- 0689fcb: Add reusable person, organization, supplier, product, and pricing option comboboxes for operator-facing entity reference fields.
+- f014fd2: Capture manual base-currency settlement amounts for cross-currency customer and supplier payments, and settle invoice balances from the base invoice amount.
+- 0c9b884: Route remaining reusable UI literals through package i18n providers and add the UI literal scan to the shared i18n CI check.
+- Updated dependencies [eef2df0]
+- Updated dependencies [4c93561]
+- Updated dependencies [dc29b79]
+- Updated dependencies [02287bf]
+- Updated dependencies [0689fcb]
+- Updated dependencies [a48660e]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+- Updated dependencies [e5ce6a0]
+  - @voyantjs/bookings-ui@0.37.0
+  - @voyantjs/finance@0.37.0
+  - @voyantjs/finance-react@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/suppliers-ui@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes
