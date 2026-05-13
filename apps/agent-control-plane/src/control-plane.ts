@@ -1,4 +1,10 @@
 import { z } from "zod"
+import {
+  dispatchCommand,
+  effectiveDispatchAction,
+  remoteWorkspaceAlreadyAssigned,
+  repositoriesMatch,
+} from "./dispatch-planning.js"
 
 export const dispatchableActions = [
   "collect-ci",
@@ -38,6 +44,7 @@ const queueRecommendationSchema = z
     priority: z.number().finite().optional(),
     reason: z.string().min(1),
     state: z.string().nullable().optional(),
+    workspace: z.string().nullable().optional(),
   })
   .passthrough()
 
@@ -61,6 +68,7 @@ const dispatchPlanOptionsSchema = z
     eventLog: z.string().min(1).optional(),
     implementationCommand: z.string().trim().min(1).optional(),
     remoteImplementationCommand: z.string().trim().min(1).optional(),
+    remoteWorkspace: z.string().trim().min(1).optional(),
     updateBody: z.boolean().optional(),
   })
   .optional()
@@ -303,9 +311,19 @@ export function buildTickSnapshotRecord(
 export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanResult {
   const actionFilter = request.filters?.action
   if (actionFilter && !dispatchableActionSet.has(actionFilter)) {
+    return { plan: null, reason: `action ${actionFilter} is not dispatchable` }
+  }
+
+  if (
+    request.options?.remoteWorkspace &&
+    remoteWorkspaceAlreadyAssigned({
+      recommendations: request.recommendations,
+      workspace: request.options.remoteWorkspace,
+    })
+  ) {
     return {
       plan: null,
-      reason: `action ${actionFilter} is not dispatchable`,
+      reason: `remote workspace ${request.options.remoteWorkspace} is already assigned`,
     }
   }
 
@@ -322,7 +340,10 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
     }
     if (!repositoriesMatch(recommendation.issue.repository, request.repository)) continue
 
-    const action = recommendation.action
+    const action = effectiveDispatchAction({
+      recommendationAction: recommendation.action,
+      remoteWorkspace: request.options?.remoteWorkspace,
+    })
 
     const commandResult = dispatchCommand({
       action,
@@ -331,6 +352,7 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
       implementationCommand: request.options?.implementationCommand,
       issueNumber: recommendation.issue.number,
       remoteImplementationCommand: request.options?.remoteImplementationCommand,
+      remoteWorkspace: request.options?.remoteWorkspace,
       repository: request.repository,
       updateBody: request.options?.updateBody,
     })
@@ -451,101 +473,6 @@ export function finishDispatchIntent({
   }
 }
 
-function dispatchCommand({
-  action,
-  ciRepairCommand,
-  eventLog,
-  implementationCommand,
-  issueNumber,
-  remoteImplementationCommand,
-  repository,
-  updateBody,
-}: {
-  action: DispatchPlan["action"]
-  ciRepairCommand?: string
-  eventLog?: string
-  implementationCommand?: string
-  issueNumber: number
-  remoteImplementationCommand?: string
-  repository: string
-  updateBody?: boolean
-}) {
-  const commandOption = implementationCommandForAction({
-    action,
-    implementationCommand,
-    remoteImplementationCommand,
-  })
-  if (!commandOption.ok) {
-    return commandOption
-  }
-
-  const command = [
-    "pnpm",
-    `agent:queue:${action}`,
-    "--",
-    "--issue",
-    String(issueNumber),
-    "--repo",
-    repository,
-  ]
-
-  if (commandOption.command) {
-    command.push("--command", commandOption.command)
-  }
-
-  command.push("--yes")
-
-  if (eventLog) {
-    command.push("--event-log", eventLog)
-  }
-
-  if (ciRepairCommand && (action === "repair-ci" || action === "remote-repair-ci")) {
-    command.push("--ci-repair-command", ciRepairCommand)
-  }
-
-  if (updateBody && action === "sync-pr") {
-    command.push("--update-body")
-  }
-
-  return { ok: true as const, command }
-}
-
-function implementationCommandForAction({
-  action,
-  implementationCommand,
-  remoteImplementationCommand,
-}: {
-  action: DispatchPlan["action"]
-  implementationCommand?: string
-  remoteImplementationCommand?: string
-}) {
-  if (action === "run-command") {
-    if (!implementationCommand) {
-      return { ok: false as const, reason: "run-command requires implementation command" }
-    }
-
-    return { ok: true as const, command: implementationCommand }
-  }
-
-  if (action === "remote-run-command") {
-    const command = remoteImplementationCommand ?? implementationCommand
-    if (!command) {
-      return {
-        ok: false as const,
-        reason: "remote-run-command requires remote implementation command",
-      }
-    }
-
-    return { ok: true as const, command }
-  }
-
-  return { ok: true as const, command: null }
-}
-
 function isDispatchableAction(action: string): action is DispatchPlan["action"] {
   return dispatchableActionSet.has(action)
-}
-
-function repositoriesMatch(left: string, right: string) {
-  return left.trim().toLowerCase() === right.trim().toLowerCase()
 }

@@ -141,7 +141,16 @@ Remote adapter config is intentionally explicit: pass
 trusted `.agents/remote-workspaces.mjs` config on the runner branch. The module
 should export `remoteWorkspaceAdapters` or a default adapter map keyed by
 provider name. Use `.agents/remote-workspaces.example.mjs` as the local template
-for enabling the CLI-backed Sprite adapter.
+for enabling the Sprite adapter. When `SPRITES_TOKEN` or `SPRITE_TOKEN` is set,
+the adapter uses the Sprites API. Without a token it falls back to the local
+`sprite` CLI for one-shot command execution.
+For pooled Sprite capacity, set `AGENT_SPRITE_POOL` on the deployed runner, for
+example `voyant-agent-01:2,voyant-agent-02:2,voyant-agent-03:2`. The runner
+turns each entry into logical slot references such as
+`sandbox:sprite:voyant-agent-01-slot-1` and leases a Durable Object lock before
+asking the control plane to reserve `remote-bootstrap` work. The Sprite adapter
+maps those logical slot IDs back to the backing Sprite name while keeping each
+slot's repository directory separate.
 
 When a remote adapter declares command execution, maintainers can run a guarded
 one-shot command without updating Project state:
@@ -152,6 +161,8 @@ pnpm agent:queue:remote-exec -- --workspace sandbox:sprite:<id> --command "pwd" 
 
 This is an adapter validation tool, not the full implementation runner. It does
 not write evidence, open PRs, collect browser artifacts, or perform cleanup.
+Set `SPRITES_API_URL` only when testing against a non-default API endpoint; the
+default is `https://api.sprites.dev`.
 
 Use `remote-bootstrap` to clone or update the repository inside the remote
 workspace before running real commands:
@@ -494,6 +505,11 @@ runner has the matching `AGENT_CI_REPAIR_COMMAND` configuration. Use
 enabling Cron so API or scheduled ticks cannot lease more than the configured
 daily budget. If the budget is configured without persistent tick storage, real
 leases are refused.
+When `AGENT_RUNNER_ACTION=remote-bootstrap` and `AGENT_SPRITE_POOL` is set, the
+deployed runner acquires one Sprite slot, asks the control plane for the next
+ready item, and injects `--workspace sandbox:sprite:<slot>` into the leased
+remote-bootstrap command. If all slots are busy, the tick records
+`remote_workspace_pool_full` and does not lease work.
 
 Use loop for a bounded supervisor pass:
 

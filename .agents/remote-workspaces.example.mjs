@@ -1,5 +1,5 @@
-import { spriteCliRemoteWorkspaceAdapter } from "../scripts/lib/agent-runner-sprite-workspace.mjs"
+import { spriteRemoteWorkspaceAdapter } from "../scripts/lib/agent-runner-sprite-workspace.mjs"
 
 export const remoteWorkspaceAdapters = {
-  sprite: (workspace) => spriteCliRemoteWorkspaceAdapter(workspace),
+  sprite: (workspace) => spriteRemoteWorkspaceAdapter(workspace),
 }

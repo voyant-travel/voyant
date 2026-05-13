@@ -167,6 +167,38 @@ describe("agent control plane", () => {
     })
   })
 
+  it("turns ready items into remote bootstrap plans when a remote workspace is assigned", () => {
+    expect(
+      selectDispatchPlan({
+        filters: { action: "start" },
+        options: { remoteWorkspace: "sandbox:sprite:voyant-agent-01-slot-1" },
+        recommendations,
+        repository: "voyantjs/voyant",
+      }),
+    ).toEqual({
+      reason: "matched",
+      plan: {
+        action: "remote-bootstrap",
+        command: [
+          "pnpm",
+          "agent:queue:remote-bootstrap",
+          "--",
+          "--issue",
+          "579",
+          "--repo",
+          "voyantjs/voyant",
+          "--workspace",
+          "sandbox:sprite:voyant-agent-01-slot-1",
+          "--yes",
+        ],
+        issue: recommendations[1]?.issue,
+        reason: "maintainer-approved item is ready to claim",
+        repository: "voyantjs/voyant",
+        requiresMutation: true,
+      },
+    })
+  })
+
   it("applies issue, action, and repository filters", () => {
     expect(
       selectDispatchPlan({

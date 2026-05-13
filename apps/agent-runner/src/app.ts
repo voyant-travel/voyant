@@ -33,6 +33,7 @@ interface AppOptions {
   now?: () => Date
   runLedgerStore?: AgentRunnerLedgerStore
   coordinatorConfigured?: boolean
+  coordinatorService?: Pick<Fetcher, "fetch">
   supervisorTickStore?: SupervisorTickStore
 }
 
@@ -46,6 +47,7 @@ export function createApp({
   now = () => new Date(),
   runLedgerStore,
   coordinatorConfigured = false,
+  coordinatorService,
   supervisorTickStore,
 }: AppOptions = {}): Hono {
   const app = new Hono()
@@ -246,6 +248,7 @@ export function createApp({
     return c.json(
       await runPersistentSupervisorTick({
         config,
+        coordinatorService,
         fetchImpl,
         now,
         request: parsed.data,
@@ -297,6 +300,7 @@ export function createApp({
 
 export async function runPersistentSupervisorTick({
   config,
+  coordinatorService,
   fetchImpl = fetch,
   now = () => new Date(),
   request = {},
@@ -305,6 +309,7 @@ export async function runPersistentSupervisorTick({
   supervisorTickStore,
 }: {
   config: RunnerConfig
+  coordinatorService?: Pick<Fetcher, "fetch">
   fetchImpl?: typeof fetch
   now?: () => Date
   request?: SupervisorTickRequest
@@ -330,6 +335,7 @@ export async function runPersistentSupervisorTick({
       ? {
           ...(await runSupervisorTick({
             config,
+            coordinatorService,
             fetchImpl,
             request,
             source,
@@ -338,6 +344,7 @@ export async function runPersistentSupervisorTick({
         }
       : await runSupervisorTick({
           config,
+          coordinatorService,
           fetchImpl,
           request,
           source,
