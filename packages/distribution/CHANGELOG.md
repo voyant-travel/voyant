@@ -1,5 +1,20 @@
 # @voyantjs/distribution
 
+## 0.38.2
+
+### Patch Changes
+
+- @voyantjs/availability@0.38.2
+- @voyantjs/bookings@0.38.2
+- @voyantjs/catalog@0.38.2
+- @voyantjs/core@0.38.2
+- @voyantjs/db@0.38.2
+- @voyantjs/hono@0.38.2
+- @voyantjs/identity@0.38.2
+- @voyantjs/products@0.38.2
+- @voyantjs/suppliers@0.38.2
+- @voyantjs/workflows@0.38.2
+
 ## 0.38.1
 
 ### Patch Changes
