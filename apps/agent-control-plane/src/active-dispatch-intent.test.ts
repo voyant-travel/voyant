@@ -82,7 +82,7 @@ describe("active dispatch intent reads", () => {
     })
 
     const invalid = await app.request(
-      "/api/dispatch-intents/active?repository=voyantjs/voyant&issue=579&action=remote-run-command",
+      "/api/dispatch-intents/active?repository=voyantjs/voyant&issue=579&action=inspect-stale",
       {
         headers: { authorization: "Bearer secret" },
       },

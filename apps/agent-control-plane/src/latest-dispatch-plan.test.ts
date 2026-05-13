@@ -105,7 +105,7 @@ describe("latest dispatch planning", () => {
     })
   })
 
-  it("returns no plan when the stored snapshot has no matching dispatchable recommendation", async () => {
+  it("requires explicit implementation commands for stored implementation recommendations", async () => {
     const app = createApp({
       authTokens: ["secret"],
       tickSnapshotStore: inMemoryTickSnapshotStore([buildTickSnapshotRecord(tickSnapshot)]),
@@ -124,11 +124,45 @@ describe("latest dispatch planning", () => {
 
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toMatchObject({
-      reason: "action remote-run-command is not dispatchable",
+      reason: "remote-run-command requires remote implementation command",
       plan: null,
       source: {
         repository: "voyantjs/voyant",
         type: "latest_tick_snapshot",
+      },
+    })
+
+    const concrete = await app.request("/api/dispatch-plans/latest", {
+      method: "POST",
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
+      body: JSON.stringify({
+        filters: {
+          action: "remote-run-command",
+        },
+        options: {
+          remoteImplementationCommand: "agent-exec remote smoke",
+        },
+        repository: "voyantjs/voyant",
+      }),
+    })
+
+    expect(concrete.status).toBe(200)
+    await expect(concrete.json()).resolves.toMatchObject({
+      reason: "matched",
+      plan: {
+        action: "remote-run-command",
+        command: [
+          "pnpm",
+          "agent:queue:remote-run-command",
+          "--",
+          "--issue",
+          "580",
+          "--repo",
+          "voyantjs/voyant",
+          "--command",
+          "agent-exec remote smoke",
+          "--yes",
+        ],
       },
     })
   })

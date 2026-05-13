@@ -53,7 +53,14 @@ export function selectDispatchRecommendation(recommendations, { action, issueNum
 
 export function dispatchCommandArgs(
   recommendation,
-  { ciRepairCommand, eventLog, repository, updateBody } = {},
+  {
+    ciRepairCommand,
+    eventLog,
+    implementationCommand,
+    remoteImplementationCommand,
+    repository,
+    updateBody,
+  } = {},
 ) {
   if (!dispatchableActions.has(recommendation.action)) {
     throw new Error(`action ${recommendation.action} is not dispatchable`)
@@ -66,8 +73,17 @@ export function dispatchCommandArgs(
     String(recommendation.issue.number),
     "--repo",
     repository,
-    "--yes",
   ]
+
+  const command = implementationCommandForAction(recommendation.action, {
+    implementationCommand,
+    remoteImplementationCommand,
+  })
+  if (command) {
+    commandArgs.push("--command", command)
+  }
+
+  commandArgs.push("--yes")
 
   if (eventLog) {
     commandArgs.push("--event-log", eventLog)
@@ -85,6 +101,28 @@ export function dispatchCommandArgs(
   }
 
   return commandArgs
+}
+
+function implementationCommandForAction(
+  action,
+  { implementationCommand, remoteImplementationCommand } = {},
+) {
+  if (action === "run-command") {
+    if (!implementationCommand) {
+      throw new Error("run-command requires implementation command")
+    }
+    return implementationCommand
+  }
+
+  if (action === "remote-run-command") {
+    const command = remoteImplementationCommand ?? implementationCommand
+    if (!command) {
+      throw new Error("remote-run-command requires remote implementation command")
+    }
+    return command
+  }
+
+  return null
 }
 
 export function runDispatchCommand(commandArgs) {

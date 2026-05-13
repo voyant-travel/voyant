@@ -15,7 +15,9 @@ describe("agent runner control plane supervisor helpers", () => {
         ciRepairCommand: "pnpm verify:fast",
         eventLog: ".agent-runs/supervisor.jsonl",
         holder: "supervisor:local",
+        implementationCommand: "agent-exec smoke",
         issue: "579",
+        remoteImplementationCommand: "agent-exec remote smoke",
         repository: "voyantjs/voyant",
         ttlSeconds: "600",
         updateBody: true,
@@ -32,6 +34,8 @@ describe("agent runner control plane supervisor helpers", () => {
         options: {
           ciRepairCommand: "pnpm verify:fast",
           eventLog: ".agent-runs/supervisor.jsonl",
+          implementationCommand: "agent-exec smoke",
+          remoteImplementationCommand: "agent-exec remote smoke",
           updateBody: true,
         },
         repository: "voyantjs/voyant",

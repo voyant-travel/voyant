@@ -73,7 +73,7 @@ describe("tick snapshot storage", () => {
       acceptedAt: "2026-05-12T05:00:00.000Z",
       snapshot: tickSnapshot,
       summary: {
-        dispatchableRecommendationCount: 1,
+        dispatchableRecommendationCount: 2,
         firstDispatchableAction: "remote-bootstrap",
         firstDispatchableIssueNumber: 579,
         recentEventCount: 1,
@@ -109,7 +109,7 @@ describe("tick snapshot storage", () => {
         repository: "voyantjs/voyant",
       },
       summary: {
-        dispatchableRecommendationCount: 1,
+        dispatchableRecommendationCount: 2,
         recommendationCount: 2,
       },
     })
@@ -128,7 +128,7 @@ describe("tick snapshot storage", () => {
             repository: "voyantjs/voyant",
           },
           summary: {
-            dispatchableRecommendationCount: 1,
+            dispatchableRecommendationCount: 2,
             recommendationCount: 2,
           },
         },

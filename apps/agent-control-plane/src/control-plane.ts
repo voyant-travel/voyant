@@ -11,7 +11,9 @@ export const dispatchableActions = [
   "remote-open-pr",
   "remote-publish-evidence",
   "remote-repair-ci",
+  "remote-run-command",
   "repair-ci",
+  "run-command",
   "start",
   "sync-pr",
 ] as const
@@ -57,6 +59,8 @@ const dispatchPlanOptionsSchema = z
   .object({
     ciRepairCommand: z.string().min(1).optional(),
     eventLog: z.string().min(1).optional(),
+    implementationCommand: z.string().trim().min(1).optional(),
+    remoteImplementationCommand: z.string().trim().min(1).optional(),
     updateBody: z.boolean().optional(),
   })
   .optional()
@@ -305,47 +309,53 @@ export function selectDispatchPlan(request: DispatchPlanRequest): DispatchPlanRe
     }
   }
 
-  const recommendation = request.recommendations.find((candidate) => {
-    if (!isDispatchableAction(candidate.action)) return false
-    if (actionFilter && candidate.action !== actionFilter) return false
-    if (request.filters?.issueNumber && candidate.issue.number !== request.filters.issueNumber) {
-      return false
-    }
-    if (!repositoriesMatch(candidate.issue.repository, request.repository)) return false
-    return true
-  })
+  let blockedReason: string | null = null
 
-  if (!recommendation) {
-    return {
-      plan: null,
-      reason: "no dispatchable recommendation matched",
+  for (const recommendation of request.recommendations) {
+    if (!isDispatchableAction(recommendation.action)) continue
+    if (actionFilter && recommendation.action !== actionFilter) continue
+    if (
+      request.filters?.issueNumber &&
+      recommendation.issue.number !== request.filters.issueNumber
+    ) {
+      continue
     }
-  }
-  const action = recommendation.action
-  if (!isDispatchableAction(action)) {
+    if (!repositoriesMatch(recommendation.issue.repository, request.repository)) continue
+
+    const action = recommendation.action
+
+    const commandResult = dispatchCommand({
+      action,
+      ciRepairCommand: request.options?.ciRepairCommand,
+      eventLog: request.options?.eventLog,
+      implementationCommand: request.options?.implementationCommand,
+      issueNumber: recommendation.issue.number,
+      remoteImplementationCommand: request.options?.remoteImplementationCommand,
+      repository: request.repository,
+      updateBody: request.options?.updateBody,
+    })
+    if (!commandResult.ok) {
+      blockedReason ??= commandResult.reason
+      if (actionFilter) break
+      continue
+    }
+
     return {
-      plan: null,
-      reason: `action ${action} is not dispatchable`,
+      plan: {
+        action,
+        command: commandResult.command,
+        issue: recommendation.issue,
+        reason: recommendation.reason,
+        repository: request.repository,
+        requiresMutation: true,
+      },
+      reason: "matched",
     }
   }
 
   return {
-    plan: {
-      action,
-      command: dispatchCommand({
-        action,
-        ciRepairCommand: request.options?.ciRepairCommand,
-        eventLog: request.options?.eventLog,
-        issueNumber: recommendation.issue.number,
-        repository: request.repository,
-        updateBody: request.options?.updateBody,
-      }),
-      issue: recommendation.issue,
-      reason: recommendation.reason,
-      repository: request.repository,
-      requiresMutation: true,
-    },
-    reason: "matched",
+    plan: null,
+    reason: blockedReason ?? "no dispatchable recommendation matched",
   }
 }
 
@@ -445,17 +455,30 @@ function dispatchCommand({
   action,
   ciRepairCommand,
   eventLog,
+  implementationCommand,
   issueNumber,
+  remoteImplementationCommand,
   repository,
   updateBody,
 }: {
   action: DispatchPlan["action"]
   ciRepairCommand?: string
   eventLog?: string
+  implementationCommand?: string
   issueNumber: number
+  remoteImplementationCommand?: string
   repository: string
   updateBody?: boolean
 }) {
+  const commandOption = implementationCommandForAction({
+    action,
+    implementationCommand,
+    remoteImplementationCommand,
+  })
+  if (!commandOption.ok) {
+    return commandOption
+  }
+
   const command = [
     "pnpm",
     `agent:queue:${action}`,
@@ -464,8 +487,13 @@ function dispatchCommand({
     String(issueNumber),
     "--repo",
     repository,
-    "--yes",
   ]
+
+  if (commandOption.command) {
+    command.push("--command", commandOption.command)
+  }
+
+  command.push("--yes")
 
   if (eventLog) {
     command.push("--event-log", eventLog)
@@ -479,7 +507,39 @@ function dispatchCommand({
     command.push("--update-body")
   }
 
-  return command
+  return { ok: true as const, command }
+}
+
+function implementationCommandForAction({
+  action,
+  implementationCommand,
+  remoteImplementationCommand,
+}: {
+  action: DispatchPlan["action"]
+  implementationCommand?: string
+  remoteImplementationCommand?: string
+}) {
+  if (action === "run-command") {
+    if (!implementationCommand) {
+      return { ok: false as const, reason: "run-command requires implementation command" }
+    }
+
+    return { ok: true as const, command: implementationCommand }
+  }
+
+  if (action === "remote-run-command") {
+    const command = remoteImplementationCommand ?? implementationCommand
+    if (!command) {
+      return {
+        ok: false as const,
+        reason: "remote-run-command requires remote implementation command",
+      }
+    }
+
+    return { ok: true as const, command }
+  }
+
+  return { ok: true as const, command: null }
 }
 
 function isDispatchableAction(action: string): action is DispatchPlan["action"] {

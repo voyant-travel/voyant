@@ -29,6 +29,14 @@ maybePrintHelp(args, {
       "Heartbeat staleness threshold when generating a snapshot. Defaults to 1.",
     ],
     ["--recent-events <number>", "Number of recent runner events to include. Defaults to 5."],
+    [
+      "--implementation-command <shell>",
+      "Command used when generating local run-command recommendations.",
+    ],
+    [
+      "--remote-implementation-command <shell>",
+      "Command used when generating remote-run-command recommendations. Defaults to --implementation-command where supported.",
+    ],
     ...ciRepairCommandOptions,
     ...eventLogOptions,
     ...repositoryOptions,
