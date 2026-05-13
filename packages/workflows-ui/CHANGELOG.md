@@ -1,5 +1,23 @@
 # @voyantjs/workflows-ui
 
+## 0.38.0
+
+### Minor Changes
+
+- 885afc8: Consolidate the public workflows package surface around `@voyantjs/workflows`
+  subpaths and `@voyantjs/workflows-ui`.
+
+  Use `@voyantjs/workflows/errors`, `@voyantjs/workflows/config`, and
+  `@voyantjs/workflows/bindings` instead of the former one-file packages. Use
+  `@voyantjs/workflows-ui` instead of `@voyantjs/workflow-runs-ui`.
+
+### Patch Changes
+
+- Updated dependencies [885afc8]
+  - @voyantjs/i18n@0.38.0
+  - @voyantjs/ui@0.38.0
+  - @voyantjs/workflows-react@0.38.0
+
 ## 0.37.1
 
 ### Patch Changes
