@@ -1,5 +1,16 @@
 # @voyantjs/notifications
 
+## 0.37.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.37.1
+- @voyantjs/core@0.37.1
+- @voyantjs/db@0.37.1
+- @voyantjs/finance@0.37.1
+- @voyantjs/hono@0.37.1
+- @voyantjs/legal@0.37.1
+
 ## 0.37.0
 
 ### Patch Changes

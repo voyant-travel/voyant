@@ -1,5 +1,16 @@
 # @voyantjs/pricing-ui
 
+## 0.37.1
+
+### Patch Changes
+
+- e7f8735: Move the option unit price rule combobox identifier label behind an i18n-safe formatter.
+  - @voyantjs/i18n@0.37.1
+  - @voyantjs/pricing-react@0.37.1
+  - @voyantjs/products-react@0.37.1
+  - @voyantjs/ui@0.37.1
+  - @voyantjs/utils@0.37.1
+
 ## 0.37.0
 
 ### Patch Changes

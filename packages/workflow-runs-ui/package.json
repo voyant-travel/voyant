@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflow-runs-ui",
-  "version": "0.37.0",
+  "version": "0.37.1",
   "description": "Importable React admin UI for Voyant workflow run observability.",
   "license": "Apache-2.0",
   "repository": {
