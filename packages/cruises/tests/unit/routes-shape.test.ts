@@ -1,12 +1,16 @@
 import { mountTestApp } from "@voyantjs/voyant-test-utils/http"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import type { ExternalCruise, ExternalSailing } from "../../src/adapters/index.js"
 import { MockCruiseAdapter } from "../../src/adapters/mock.js"
 import { clearCruiseAdapters, registerCruiseAdapter } from "../../src/adapters/registry.js"
 import { cruiseAdminRoutes } from "../../src/routes.js"
+import { cruisesService } from "../../src/service.js"
 
-afterEach(() => clearCruiseAdapters())
+afterEach(() => {
+  clearCruiseAdapters()
+  vi.restoreAllMocks()
+})
 
 const seedCruise: ExternalCruise = {
   sourceRef: { externalId: "ext-cru-1" },
@@ -26,6 +30,51 @@ const seedSailing: ExternalSailing = {
   returnDate: "2026-06-22",
   salesStatus: "open",
 }
+
+describe("admin routes — static subresource ordering", () => {
+  const app = mountTestApp(cruiseAdminRoutes, { db: undefined })
+
+  it("routes GET /sailings to the sailings list handler instead of GET /:key", async () => {
+    const listSailings = vi.spyOn(cruisesService, "listSailings").mockResolvedValueOnce({
+      data: [],
+      total: 0,
+      limit: 25,
+      offset: 0,
+    })
+
+    const res = await app.request("/sailings?limit=25&offset=0")
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { data?: unknown[]; error?: string }
+    expect(body.error).not.toBe("invalid_key")
+    expect(body.data).toEqual([])
+    expect(listSailings).toHaveBeenCalledTimes(1)
+    expect(listSailings.mock.calls[0]?.[1]).toMatchObject({ limit: 25, offset: 0 })
+  })
+
+  it("keeps other one-segment static collections ahead of GET /:key", async () => {
+    vi.spyOn(cruisesService, "listShips").mockResolvedValueOnce({
+      data: [],
+      total: 0,
+      limit: 25,
+      offset: 0,
+    })
+    vi.spyOn(cruisesService, "listPrices").mockResolvedValueOnce({
+      data: [],
+      total: 0,
+      limit: 25,
+      offset: 0,
+    })
+
+    const shipsRes = await app.request("/ships?limit=25&offset=0")
+    const pricesRes = await app.request("/prices?limit=25&offset=0")
+
+    expect(shipsRes.status).toBe(200)
+    expect(pricesRes.status).toBe(200)
+    await expect(shipsRes.json()).resolves.toMatchObject({ data: [] })
+    await expect(pricesRes.json()).resolves.toMatchObject({ data: [] })
+  })
+})
 
 describe("admin routes — external key dispatch (no catalog registry configured)", () => {
   // Per the catalog-sourced-content migration, the /:key external
