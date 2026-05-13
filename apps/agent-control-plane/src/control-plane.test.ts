@@ -101,7 +101,9 @@ describe("agent control plane", () => {
         "remote-open-pr",
         "remote-publish-evidence",
         "remote-repair-ci",
+        "remote-run-command",
         "repair-ci",
+        "run-command",
         "start",
         "sync-pr",
       ],
@@ -119,7 +121,7 @@ describe("agent control plane", () => {
       accepted: true,
       snapshot: tickSnapshot,
       summary: {
-        dispatchableRecommendationCount: 1,
+        dispatchableRecommendationCount: 2,
         firstDispatchableAction: "remote-bootstrap",
         firstDispatchableIssueNumber: 579,
         recentEventCount: 1,
@@ -193,11 +195,11 @@ describe("agent control plane", () => {
       }),
     ).toEqual({
       plan: null,
-      reason: "action run-command is not dispatchable",
+      reason: "run-command requires implementation command",
     })
   })
 
-  it("selects CI evidence collection but not implementation execution", () => {
+  it("selects CI evidence collection and explicit implementation execution", () => {
     const ciRecommendation = {
       action: "collect-ci",
       reason: "failing PR checks need a local CI repair packet",
@@ -224,6 +226,63 @@ describe("agent control plane", () => {
         "626",
         "--repo",
         "voyantjs/voyant",
+        "--yes",
+      ],
+    })
+
+    expect(
+      selectDispatchPlan({
+        options: { implementationCommand: "agent-exec smoke" },
+        recommendations: [recommendations[0]!],
+        repository: "voyantjs/voyant",
+      }).plan,
+    ).toMatchObject({
+      action: "run-command",
+      command: [
+        "pnpm",
+        "agent:queue:run-command",
+        "--",
+        "--issue",
+        "581",
+        "--repo",
+        "voyantjs/voyant",
+        "--command",
+        "agent-exec smoke",
+        "--yes",
+      ],
+    })
+  })
+
+  it("plans explicit remote implementation commands", () => {
+    const remoteRecommendation = {
+      action: "remote-run-command",
+      reason: "remote implementation execution remains explicit",
+      issue: {
+        number: 629,
+        title: "Run remote implementation",
+        url: "https://github.com/voyantjs/voyant/issues/629",
+        repository: "voyantjs/voyant",
+      },
+    }
+
+    expect(
+      selectDispatchPlan({
+        options: { remoteImplementationCommand: "agent-exec remote smoke" },
+        recommendations: [remoteRecommendation],
+        repository: "voyantjs/voyant",
+      }).plan,
+    ).toMatchObject({
+      action: "remote-run-command",
+      command: [
+        "pnpm",
+        "agent:queue:remote-run-command",
+        "--",
+        "--issue",
+        "629",
+        "--repo",
+        "voyantjs/voyant",
+        "--command",
+        "agent-exec remote smoke",
         "--yes",
       ],
     })
@@ -400,7 +459,7 @@ describe("agent control plane", () => {
     expect(body).toMatchObject({
       accepted: true,
       summary: {
-        dispatchableRecommendationCount: 1,
+        dispatchableRecommendationCount: 2,
         firstDispatchableAction: "remote-bootstrap",
         recentEventCount: 1,
         recommendationCount: 2,

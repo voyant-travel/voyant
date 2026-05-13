@@ -65,7 +65,9 @@ export function buildLatestDispatchIntentRequest({
   ciRepairCommand,
   eventLog,
   holder,
+  implementationCommand,
   issue,
+  remoteImplementationCommand,
   repository,
   ttlSeconds,
   updateBody,
@@ -87,11 +89,17 @@ export function buildLatestDispatchIntentRequest({
           },
         }
       : {}),
-    ...(ciRepairCommand || eventLog || updateBody
+    ...(ciRepairCommand ||
+    eventLog ||
+    implementationCommand ||
+    remoteImplementationCommand ||
+    updateBody
       ? {
           options: {
             ...(ciRepairCommand ? { ciRepairCommand } : {}),
             ...(eventLog ? { eventLog } : {}),
+            ...(implementationCommand ? { implementationCommand } : {}),
+            ...(remoteImplementationCommand ? { remoteImplementationCommand } : {}),
             ...(updateBody ? { updateBody: true } : {}),
           },
         }

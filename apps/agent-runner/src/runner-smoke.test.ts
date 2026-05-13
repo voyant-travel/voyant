@@ -72,6 +72,67 @@ describe("agent runner smoke ticks", () => {
     expect(calls[0]?.headers.get("authorization")).toBe("Bearer control-token")
   })
 
+  it("uses the control-plane service binding when configured", async () => {
+    const calls: Array<{ body: unknown; headers: Headers; method: string; url: string }> = []
+    const result = await runSupervisorTick({
+      config: {
+        controlPlaneConfigured: true,
+        controlPlaneService: {
+          fetch: async (input) => {
+            const request = input instanceof Request ? input : new Request(input)
+            calls.push({
+              body: await request.json(),
+              headers: request.headers,
+              method: request.method,
+              url: request.url,
+            })
+            return new Response(
+              JSON.stringify({
+                plan: null,
+                reason: "no dispatchable recommendation matched",
+              }),
+              { status: 200 },
+            )
+          },
+        },
+        controlPlaneToken: "control-token",
+        controlPlaneUrl: "https://control.example.com/",
+        enabled: true,
+        holder: "runner:cloudflare",
+        repository: "voyantjs/voyant",
+      },
+      request: {
+        action: "sync-pr",
+        dryRun: true,
+        validateControlPlane: true,
+      },
+      source: "api",
+    })
+
+    expect(result).toMatchObject({
+      controlPlane: {
+        status: 200,
+      },
+      dispatchPlan: null,
+      leased: false,
+      reason: "dry_run",
+    })
+    expect(calls).toEqual([
+      {
+        body: {
+          filters: {
+            action: "sync-pr",
+          },
+          repository: "voyantjs/voyant",
+        },
+        headers: expect.any(Headers),
+        method: "POST",
+        url: "https://agent-control-plane.internal/api/dispatch-plans/latest",
+      },
+    ])
+    expect(calls[0]?.headers.get("authorization")).toBe("Bearer control-token")
+  })
+
   it("surfaces read-only control-plane smoke failures", async () => {
     const result = await runSupervisorTick({
       config: {

@@ -20,6 +20,11 @@ maybePrintHelp(args, {
       `Only plan this action. Allowed: ${Array.from(dispatchableActions).join(", ")}.`,
     ],
     ...eventLogOptions,
+    ["--implementation-command <shell>", "Command used when planning local run-command items."],
+    [
+      "--remote-implementation-command <shell>",
+      "Command used when planning remote-run-command items. Defaults to --implementation-command.",
+    ],
     ["--update-body", "When planning sync-pr, include --update-body in the returned command."],
     ["--json", "Print machine-readable JSON."],
     ...repositoryOptions,
@@ -44,10 +49,22 @@ const request = {
         },
       }
     : {}),
-  ...(args.eventLog || args.updateBody
+  ...(args.eventLog ||
+  args.implementationCommand ||
+  args.remoteImplementationCommand ||
+  args.updateBody
     ? {
         options: {
           ...(args.eventLog ? { eventLog: args.eventLog } : {}),
+          ...(args.implementationCommand
+            ? { implementationCommand: args.implementationCommand }
+            : {}),
+          ...(args.remoteImplementationCommand || args.implementationCommand
+            ? {
+                remoteImplementationCommand:
+                  args.remoteImplementationCommand ?? args.implementationCommand,
+              }
+            : {}),
           ...(args.updateBody ? { updateBody: true } : {}),
         },
       }

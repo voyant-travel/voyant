@@ -19,12 +19,35 @@
   // when multiple environments share one bucket.
   // Bind AGENT_RUNNER_DB to the D1 run ledger before enabling Cron. Replace
   // the placeholder database_id with the id created by `wrangler d1 create`.
+  "vars": {
+    "AGENT_CONTROL_PLANE_URL": "https://voyant-agent-control-plane.pixelmakers.workers.dev",
+    "AGENT_RUNNER_ACTION": "sync-pr",
+    "AGENT_RUNNER_ALLOWED_ACTIONS": "sync-pr",
+    "AGENT_RUNNER_ENABLED": "false",
+    "AGENT_RUNNER_HOLDER": "runner:cloudflare",
+    "AGENT_RUNNER_MAX_DAILY_LEASES": "5",
+    "AGENT_RUNNER_MAX_LEASE_TTL_SECONDS": "900",
+    "AGENT_RUNNER_REPOSITORY": "voyantjs/voyant",
+    "AGENT_RUNNER_TICK_KEY_PREFIX": "prod"
+  },
   "d1_databases": [
     {
       "binding": "AGENT_RUNNER_DB",
       "database_name": "voyant-agent-runner",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "9dfdb83f-8bc3-4ad9-953a-b8051eb3ffed",
       "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "AGENT_RUNNER_TICKS",
+      "bucket_name": "voyant-agent-runner"
+    }
+  ],
+  "services": [
+    {
+      "binding": "AGENT_CONTROL_PLANE",
+      "service": "voyant-agent-control-plane"
     }
   ],
   "durable_objects": {

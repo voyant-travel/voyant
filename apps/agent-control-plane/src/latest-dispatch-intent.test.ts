@@ -142,10 +142,10 @@ describe("latest dispatch intents", () => {
     })
   })
 
-  it("does not create an intent when no dispatchable plan matches", async () => {
+  it("requires explicit implementation commands before leasing implementation intents", async () => {
     const app = createApp({
       authTokens: ["secret"],
-      createDispatchIntentId: () => "unused",
+      createDispatchIntentId: () => "intent_580",
       dispatchIntentStore: inMemoryDispatchIntentStore(),
       tickSnapshotStore: inMemoryTickSnapshotStore([buildTickSnapshotRecord(tickSnapshot)]),
     })
@@ -167,11 +167,51 @@ describe("latest dispatch intents", () => {
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toMatchObject({
       intent: null,
-      reason: "action remote-run-command is not dispatchable",
+      reason: "remote-run-command requires remote implementation command",
       source: {
         repository: "voyantjs/voyant",
         type: "latest_tick_snapshot",
       },
+    })
+
+    const concrete = await app.request("/api/dispatch-intents/latest", {
+      method: "POST",
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
+      body: JSON.stringify({
+        filters: {
+          action: "remote-run-command",
+        },
+        lease: {
+          holder: "supervisor:test",
+        },
+        options: {
+          remoteImplementationCommand: "agent-exec remote smoke",
+        },
+        repository: "voyantjs/voyant",
+      }),
+    })
+
+    expect(concrete.status).toBe(201)
+    await expect(concrete.json()).resolves.toMatchObject({
+      intent: {
+        id: "intent_580",
+        plan: {
+          action: "remote-run-command",
+          command: [
+            "pnpm",
+            "agent:queue:remote-run-command",
+            "--",
+            "--issue",
+            "580",
+            "--repo",
+            "voyantjs/voyant",
+            "--command",
+            "agent-exec remote smoke",
+            "--yes",
+          ],
+        },
+      },
+      reason: "leased",
     })
   })
 

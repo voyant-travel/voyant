@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { selectDispatchRecommendation } from "../lib/agent-runner-dispatch.mjs"
+import { dispatchCommandArgs, selectDispatchRecommendation } from "../lib/agent-runner-dispatch.mjs"
 import { recommendQueueAction } from "../lib/agent-runner-tick.mjs"
 import { workItem } from "./agent-fixtures.mjs"
 
@@ -29,6 +29,23 @@ describe("agent runner dispatch executor selection", () => {
       implementation.command,
       'pnpm agent:queue:run-command -- --issue 579 --repo voyantjs/other --command "pnpm verify:fast" --yes',
     )
+    assert.deepEqual(
+      dispatchCommandArgs(implementation, {
+        implementationCommand: "pnpm verify:fast",
+        repository: "voyantjs/other",
+      }),
+      [
+        "agent:queue:run-command",
+        "--",
+        "--issue",
+        "579",
+        "--repo",
+        "voyantjs/other",
+        "--command",
+        "pnpm verify:fast",
+        "--yes",
+      ],
+    )
 
     const remote = recommendQueueAction(
       workItem({
@@ -46,5 +63,22 @@ describe("agent runner dispatch executor selection", () => {
     )
 
     assert.equal(selectDispatchRecommendation([remote]).recommendation.action, "remote-run-command")
+    assert.deepEqual(
+      dispatchCommandArgs(remote, {
+        implementationCommand: "pnpm verify:fast",
+        repository: "voyantjs/other",
+      }),
+      [
+        "agent:queue:remote-run-command",
+        "--",
+        "--issue",
+        "579",
+        "--repo",
+        "voyantjs/other",
+        "--command",
+        "pnpm verify:fast",
+        "--yes",
+      ],
+    )
   })
 })

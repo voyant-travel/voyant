@@ -23,6 +23,8 @@ export const runnerDefaultDispatchActions = runnerDispatchActions.filter(
 )
 const runnerDispatchActionSet = new Set<string>(runnerDispatchActions)
 
+type ControlPlaneService = Pick<Fetcher, "fetch">
+
 export const supervisorTickRequestSchema = z
   .object({
     action: z.string().trim().min(1).optional(),
@@ -44,6 +46,7 @@ export type SupervisorTickRequest = z.infer<typeof supervisorTickRequestSchema>
 export interface RunnerConfig {
   allowedActions?: string[]
   controlPlaneConfigured: boolean
+  controlPlaneService?: ControlPlaneService
   controlPlaneToken?: string
   controlPlaneUrl?: string
   defaultAction?: string
@@ -66,6 +69,7 @@ export function buildRunnerCapabilities(config: RunnerConfig) {
     },
     controlPlane: {
       configured: config.controlPlaneConfigured,
+      serviceBinding: Boolean(config.controlPlaneService),
       tokenConfigured: Boolean(config.controlPlaneToken),
       url: config.controlPlaneUrl ?? null,
     },
@@ -153,7 +157,7 @@ export async function runSupervisorTick({
     }
   }
 
-  if (!config.controlPlaneToken || !config.controlPlaneUrl) {
+  if (!config.controlPlaneToken || (!config.controlPlaneService && !config.controlPlaneUrl)) {
     return {
       leased: false,
       plan: {
@@ -174,17 +178,12 @@ export async function runSupervisorTick({
     })
   }
 
-  const response = await fetchImpl(
-    `${normalizeControlPlaneUrl(config.controlPlaneUrl)}/api/dispatch-intents/latest`,
-    {
-      body: JSON.stringify(buildDispatchIntentRequest({ config, request })),
-      headers: {
-        authorization: `Bearer ${config.controlPlaneToken}`,
-        "content-type": "application/json",
-      },
-      method: "POST",
-    },
-  )
+  const response = await requestControlPlane({
+    body: buildDispatchIntentRequest({ config, request }),
+    config,
+    fetchImpl,
+    path: "/api/dispatch-intents/latest",
+  })
   const bodyText = await response.text()
   const body = parseJsonBody(bodyText)
 
@@ -223,17 +222,12 @@ async function validateControlPlaneDispatchPlan({
   plan: ReturnType<typeof planSupervisorTick>
   request: SupervisorTickRequest
 }) {
-  const response = await fetchImpl(
-    `${normalizeControlPlaneUrl(config.controlPlaneUrl ?? "")}/api/dispatch-plans/latest`,
-    {
-      body: JSON.stringify(buildDispatchPlanRequest({ config, request })),
-      headers: {
-        authorization: `Bearer ${config.controlPlaneToken}`,
-        "content-type": "application/json",
-      },
-      method: "POST",
-    },
-  )
+  const response = await requestControlPlane({
+    body: buildDispatchPlanRequest({ config, request }),
+    config,
+    fetchImpl,
+    path: "/api/dispatch-plans/latest",
+  })
   const bodyText = await response.text()
   const body = parseJsonBody(bodyText)
 
@@ -258,6 +252,35 @@ async function validateControlPlaneDispatchPlan({
     plan,
     reason: "dry_run",
   }
+}
+
+async function requestControlPlane({
+  body,
+  config,
+  fetchImpl,
+  path,
+}: {
+  body: unknown
+  config: RunnerConfig
+  fetchImpl: typeof fetch
+  path: string
+}) {
+  const init = {
+    body: JSON.stringify(body),
+    headers: {
+      authorization: `Bearer ${config.controlPlaneToken}`,
+      "content-type": "application/json",
+    },
+    method: "POST",
+  }
+
+  if (config.controlPlaneService) {
+    return await config.controlPlaneService.fetch(
+      new Request(`https://agent-control-plane.internal${path}`, init),
+    )
+  }
+
+  return await fetchImpl(`${normalizeControlPlaneUrl(config.controlPlaneUrl ?? "")}${path}`, init)
 }
 
 function buildDispatchPlanRequest({

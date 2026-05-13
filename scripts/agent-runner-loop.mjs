@@ -46,6 +46,11 @@ maybePrintHelp(args, {
       `Only dispatch this action. Allowed: ${Array.from(dispatchableActions).join(", ")}.`,
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    ["--implementation-command <shell>", "Command used when dispatching local run-command items."],
+    [
+      "--remote-implementation-command <shell>",
+      "Command used when dispatching remote-run-command items. Defaults to --implementation-command.",
+    ],
     ...ciRepairCommandOptions,
     ...eventLogOptions,
     ["--update-body", "When dispatching sync-pr, refresh the PR body from evidence."],
@@ -85,6 +90,8 @@ for (let iteration = 1; iteration <= loopOptions.iterations; iteration += 1) {
   const commandArgs = dispatchCommandArgs(recommendation, {
     ciRepairCommand: args.ciRepairCommand,
     eventLog: args.eventLog,
+    implementationCommand: args.implementationCommand,
+    remoteImplementationCommand: args.remoteImplementationCommand ?? args.implementationCommand,
     repository,
     updateBody: Boolean(args.updateBody),
   })
@@ -134,7 +141,9 @@ function selectLoopRecommendation() {
   const items = filterItemsByRepository(project.items, repository)
   const recommendations = recommendQueueActions(items, {
     ciRepairDispatchEnabled: ciRepairDispatchEnabled(args),
+    implementationCommand: args.implementationCommand,
     maxAgeDays,
+    remoteImplementationCommand: args.remoteImplementationCommand ?? args.implementationCommand,
     repository,
   })
   let selection
