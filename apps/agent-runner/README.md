@@ -138,10 +138,16 @@ pnpm agent:queue:executor -- \
   --iterations 10 \
   --sleep-seconds 60 \
   --event-log .agent-runs/executor.jsonl \
-  --implementation-command "pnpm verify:fast" \
+  --implementation-command 'codex exec --sandbox danger-full-access --skip-git-repo-check "<agent prompt>"' \
   --release-expired-intents \
   --yes
 ```
+
+The dedicated executor host is the sandbox boundary for implementation work.
+Use `codex exec --sandbox danger-full-access` on trusted server runners so
+Codex can run the package manager, tests, browser tooling, and repository
+scripts without the local bubblewrap sandbox blocking normal shell execution.
+Do not use this mode for shared or untrusted runner hosts.
 
 Use narrower action filters and command templates in production. Without a
 concrete implementation command or browser dev-server command, implementation
