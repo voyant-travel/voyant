@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 
 import { fail, runCommand, runGit } from "./agent-project-queue.mjs"
+import { actionableReviewDetails, reviewRepairBlocker } from "./agent-runner-review.mjs"
 import { localWorkspaceReferencePlan } from "./agent-runner-workspace.mjs"
 
 export const openPullRequestStates = new Set(["Human Review", "CI Repair", "Changes Requested"])
@@ -232,7 +233,7 @@ export function evaluatePullRequestCompletion(pr) {
 
 export function evaluatePullRequestGate(pr) {
   const checks = summarizeChecks(pr.statusCheckRollup ?? [])
-  const reviewThreads = unresolvedReviewThreads(pr.reviewThreads)
+  const reviewDetails = actionableReviewDetails(pr)
 
   if (pr.state === "MERGED") {
     return {
@@ -256,16 +257,16 @@ export function evaluatePullRequestGate(pr) {
   if (pr.reviewDecision === "CHANGES_REQUESTED") {
     return {
       agentState: "Changes Requested",
-      blockedBy: "PR changes requested",
+      blockedBy: reviewRepairBlocker(reviewDetails),
       mergeReady: false,
       reason: "review changes requested",
     }
   }
 
-  if (reviewThreads.length > 0) {
+  if (reviewDetails.threads.length > 0) {
     return {
       agentState: "Changes Requested",
-      blockedBy: `Unresolved PR review threads: ${String(reviewThreads.length)}`,
+      blockedBy: reviewRepairBlocker(reviewDetails),
       mergeReady: false,
       reason: "unresolved review threads",
     }
@@ -419,11 +420,6 @@ function summarizeReviewThreadNodes(nodes) {
     unresolved,
     unresolvedCount: unresolved.length,
   }
-}
-
-function unresolvedReviewThreads(reviewThreads) {
-  if (Array.isArray(reviewThreads?.unresolved)) return reviewThreads.unresolved
-  return []
 }
 
 function reviewThreadsQuery() {

@@ -69,6 +69,7 @@
     "agent:queue:repair-ci": "node scripts/agent-runner-repair-ci.mjs",
     "agent:queue:capture-browser": "node scripts/agent-runner-capture-browser.mjs",
     "agent:queue:collect-ci": "node scripts/agent-runner-collect-ci.mjs",
+    "agent:queue:collect-review": "node scripts/agent-runner-collect-review.mjs",
     "agent:queue:ci-repair-drill": "node scripts/agent-runner-ci-repair-drill.mjs",
     "agent:queue:claim": "node scripts/agent-runner-claim.mjs",
     "agent:queue:heartbeat": "node scripts/agent-runner-heartbeat.mjs",

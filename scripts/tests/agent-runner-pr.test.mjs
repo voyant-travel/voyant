@@ -204,7 +204,8 @@ describe("agent runner PR helpers", () => {
       }),
       {
         agentState: "Changes Requested",
-        blockedBy: "Unresolved PR review threads: 1",
+        blockedBy:
+          "Unresolved PR review threads: 1 (scripts/lib/agent-runner-pr.mjs:42: Please fix this before merge.)",
         mergeReady: false,
         reason: "unresolved review threads",
       },
