@@ -97,7 +97,11 @@ describe("agent runner control plane supervisor helpers", () => {
         .map((line) => JSON.parse(line))
       assert.deepEqual(
         events.map((event) => event.type),
-        ["dispatch-intent.started", "dispatch-intent.finished"],
+        [
+          "dispatch-intent.quality_gate_passed",
+          "dispatch-intent.started",
+          "dispatch-intent.finished",
+        ],
       )
     } finally {
       rmSync(tmp, { force: true, recursive: true })
@@ -138,14 +142,52 @@ describe("agent runner control plane supervisor helpers", () => {
         .map((line) => JSON.parse(line))
       assert.deepEqual(
         events.map((event) => event.type),
-        ["dispatch-intent.started", "dispatch-intent.finish_failed"],
+        [
+          "dispatch-intent.quality_gate_passed",
+          "dispatch-intent.started",
+          "dispatch-intent.finish_failed",
+        ],
       )
-      assert.equal(events[1].status, 0)
-      assert.equal(events[1].terminalStatus, "completed")
-      assert.equal(events[1].error, "control plane unavailable")
+      assert.equal(events[2].status, 0)
+      assert.equal(events[2].terminalStatus, "completed")
+      assert.equal(events[2].error, "control plane unavailable")
     } finally {
       rmSync(tmp, { force: true, recursive: true })
     }
+  })
+
+  it("fails leased dispatch intents before execution when quality gates fail", async () => {
+    const finishCalls = []
+    const result = await runLeasedDispatchIntent({
+      config: {
+        token: "tok",
+        url: "https://control.example.com",
+      },
+      finishDispatchIntent: async (call) => {
+        finishCalls.push(call)
+        return {
+          intent: {
+            ...placeholderDispatchIntent(),
+            status: "failed",
+          },
+        }
+      },
+      holder: "supervisor:local",
+      intent: placeholderDispatchIntent(),
+      log: () => {},
+      repository: "voyantjs/voyant",
+      requestLatestDispatchIntentResult: {
+        intent: placeholderDispatchIntent(),
+        reason: "leased",
+      },
+      runDispatchIntentCommandImpl: () => {
+        throw new Error("command should not run")
+      },
+    })
+
+    assert.equal(result.status, 1)
+    assert.equal(result.terminalStatus, "failed")
+    assert.match(finishCalls[0].request.reason, /executor quality gate failed/)
   })
 })
 
@@ -178,5 +220,27 @@ function dispatchIntent() {
       requiresMutation: true,
     },
     status: "leased",
+  }
+}
+
+function placeholderDispatchIntent() {
+  return {
+    ...dispatchIntent(),
+    plan: {
+      ...dispatchIntent().plan,
+      action: "run-command",
+      command: [
+        "pnpm",
+        "agent:queue:run-command",
+        "--",
+        "--issue",
+        "579",
+        "--repo",
+        "voyantjs/voyant",
+        "--command",
+        "<implementation-command>",
+        "--yes",
+      ],
+    },
   }
 }

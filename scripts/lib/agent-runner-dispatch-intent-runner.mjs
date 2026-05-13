@@ -1,5 +1,9 @@
 import { dispatchIntentCommandArgs, runDispatchIntentCommand } from "./agent-runner-dispatch.mjs"
 import { issueEventDetails, tryAppendAgentRunnerEvent } from "./agent-runner-events.mjs"
+import {
+  evaluateExecutorQualityGate,
+  executorQualityGateFailure,
+} from "./agent-runner-executor-policy.mjs"
 
 export async function runLeasedDispatchIntent({
   config,
@@ -20,6 +24,16 @@ export async function runLeasedDispatchIntent({
   try {
     commandArgs = dispatchIntentCommandArgs(intent)
     printIntent({ commandArgs, controlPlaneUrl: config.url, intent, log })
+    const qualityGate = evaluateExecutorQualityGate(intent, { eventLogPath })
+    appendExecutorQualityGateEvent({
+      eventLogPath,
+      intent,
+      qualityGate,
+      repository,
+    })
+    if (!qualityGate.ok) {
+      throw new Error(executorQualityGateFailure(qualityGate))
+    }
     tryAppendAgentRunnerEvent({
       eventLogPath,
       event: {
@@ -63,16 +77,13 @@ export async function runLeasedDispatchIntent({
     })
     throw error
   }
-  tryAppendAgentRunnerEvent({
+  appendDispatchIntentFinishedEvent({
     eventLogPath,
-    event: {
-      type: "dispatch-intent.finished",
-      intent: intentEventDetails(finishResult.intent),
-      issue: issueEventDetails(intent.plan),
-      repository,
-      status,
-      terminalStatus,
-    },
+    finishResult,
+    intent,
+    repository,
+    status,
+    terminalStatus,
   })
 
   return {
@@ -81,6 +92,24 @@ export async function runLeasedDispatchIntent({
     status,
     terminalStatus,
   }
+}
+
+function appendExecutorQualityGateEvent({ eventLogPath, intent, qualityGate, repository }) {
+  if (!eventLogPath) return
+
+  tryAppendAgentRunnerEvent({
+    eventLogPath,
+    event: {
+      type: qualityGate.ok
+        ? "dispatch-intent.quality_gate_passed"
+        : "dispatch-intent.quality_gate_failed",
+      intent: intentEventDetails(intent),
+      issue: issueEventDetails(intent.plan),
+      repository,
+      reasons: qualityGate.reasons,
+      warnings: qualityGate.warnings,
+    },
+  })
 }
 
 function appendDispatchIntentFinishFailureEvent({
@@ -97,6 +126,29 @@ function appendDispatchIntentFinishFailureEvent({
       type: "dispatch-intent.finish_failed",
       error,
       intent: intentEventDetails(intent),
+      issue: issueEventDetails(intent.plan),
+      repository,
+      status,
+      terminalStatus,
+    },
+  })
+}
+
+function appendDispatchIntentFinishedEvent({
+  eventLogPath,
+  finishResult,
+  intent,
+  repository,
+  status,
+  terminalStatus,
+}) {
+  if (!eventLogPath) return
+
+  tryAppendAgentRunnerEvent({
+    eventLogPath,
+    event: {
+      type: "dispatch-intent.finished",
+      intent: intentEventDetails(finishResult.intent),
       issue: issueEventDetails(intent.plan),
       repository,
       status,

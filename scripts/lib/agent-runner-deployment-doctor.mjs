@@ -96,6 +96,28 @@ export async function requestRecentRunnerSupervisorTicks({
   })
 }
 
+export async function requestRecentRunnerSupervisorLeases({
+  fetchImpl = fetch,
+  limit,
+  repository,
+  since,
+  token,
+  url,
+}) {
+  const query = new URLSearchParams({
+    repository,
+    ...(limit ? { limit: String(limit) } : {}),
+    ...(since ? { since } : {}),
+  })
+  return requestRunnerAppJson({
+    endpoint: "recent supervisor leases",
+    fetchImpl,
+    path: `/api/supervisor/leases/recent?${query.toString()}`,
+    token,
+    url,
+  })
+}
+
 async function requestRunnerAppJson({
   endpoint,
   fetchImpl = fetch,
@@ -148,10 +170,13 @@ export function summarizeControlPlaneCapabilities(capabilities) {
 
 export function summarizeRunnerAppCapabilities(capabilities) {
   const policy = summarizeRunnerPolicy(capabilities)
+  const leaseHistory = capabilities?.supervisorTicks?.leaseBudgetHistory
+  const runLedger = capabilities?.runLedger?.persistence ?? "unknown"
+  const coordinator = capabilities?.coordinator?.mode ?? "unknown"
 
   return {
     ok: Boolean(capabilities?.execution) && policy.ok,
-    detail: `execution: ${capabilities?.execution?.mode ?? "unknown"}; enabled: ${String(capabilities?.execution?.enabled ?? "unknown")}; tick persistence: ${capabilities?.supervisorTicks?.persistence ?? "unknown"}; ${policy.detail}`,
+    detail: `execution: ${capabilities?.execution?.mode ?? "unknown"}; enabled: ${String(capabilities?.execution?.enabled ?? "unknown")}; tick persistence: ${capabilities?.supervisorTicks?.persistence ?? "unknown"}; lease history: ${String(leaseHistory ?? "unknown")}; run ledger: ${runLedger}; coordinator: ${coordinator}; ${policy.detail}`,
   }
 }
 
@@ -214,13 +239,20 @@ export function summarizeRunnerSmokeTick(response) {
 
 export function summarizeRunnerSupervisorStatus(status) {
   const persistence = status?.supervisorTicks?.storage?.persistence ?? "unknown"
+  const leasePersistence = status?.supervisorLeases?.storage?.persistence ?? "unknown"
+  const runLedgerPersistence = status?.runLedger?.storage?.persistence ?? "unknown"
+  const runLedgerRunCount = status?.runLedger?.status?.recentRunCount ?? "unknown"
+  const runLedgerLeaseCount = status?.runLedger?.status?.recentLeaseCount ?? "unknown"
   const latestReason = status?.supervisorTicks?.latest?.result?.reason ?? "none"
   const recentCount = Array.isArray(status?.supervisorTicks?.recent)
     ? status.supervisorTicks.recent.length
     : "unknown"
+  const recentLeaseCount = Array.isArray(status?.supervisorLeases?.recent)
+    ? status.supervisorLeases.recent.length
+    : "unknown"
   return {
     ok: status?.service === "agent-runner" && Boolean(status?.capabilities?.execution),
-    detail: `repository: ${status?.repository ?? "unknown"}; tick persistence: ${persistence}; latest: ${latestReason}; recent: ${String(recentCount)}`,
+    detail: `repository: ${status?.repository ?? "unknown"}; tick persistence: ${persistence}; lease persistence: ${leasePersistence}; run ledger: ${runLedgerPersistence}; ledger runs: ${String(runLedgerRunCount)}; ledger leases: ${String(runLedgerLeaseCount)}; latest: ${latestReason}; recent: ${String(recentCount)}; recent leases: ${String(recentLeaseCount)}`,
   }
 }
 

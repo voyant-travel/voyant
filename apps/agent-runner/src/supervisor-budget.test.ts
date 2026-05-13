@@ -212,11 +212,14 @@ function inMemorySupervisorTickStore({
     async listRecent(repository) {
       return recent.filter((record) => record.repository.toLowerCase() === repository.toLowerCase())
     },
-    async listLeases(repository, { since }) {
-      return leaseHistory.filter(
-        (record) =>
-          record.repository.toLowerCase() === repository.toLowerCase() && record.leasedAt >= since,
-      )
+    async listLeases(repository, options = {}) {
+      return leaseHistory
+        .filter(
+          (record) =>
+            record.repository.toLowerCase() === repository.toLowerCase() &&
+            (!options.since || record.leasedAt >= options.since),
+        )
+        .slice(0, options.limit)
     },
     async putLease(record) {
       leaseHistory.unshift(record)

@@ -65,6 +65,27 @@ export function recentRunnerSupervisorTicks(status) {
   return recent.map(summarizeRunnerTick)
 }
 
+export function recentRunnerSupervisorLeases(status) {
+  const recent = status?.supervisorLeases?.recent
+  if (!Array.isArray(recent)) return []
+
+  return recent.map(summarizeRunnerLease)
+}
+
+export function recentRunnerLedgerRuns(status) {
+  const recent = status?.runLedger?.recentRuns
+  if (!Array.isArray(recent)) return []
+
+  return recent.map(summarizeRunnerLedgerRun)
+}
+
+export function recentRunnerLedgerLeases(status) {
+  const recent = status?.runLedger?.recentLeases
+  if (!Array.isArray(recent)) return []
+
+  return recent.map(summarizeRunnerLedgerLease)
+}
+
 export function latestControlPlaneTickSnapshot(snapshotHistory) {
   const latest = snapshotHistory?.records?.[0]
   if (!latest) return null
@@ -367,6 +388,42 @@ function summarizeRunnerTick(record) {
     leased: result.leased ?? null,
     reason: result.reason ?? null,
     recordedAt: record.recordedAt ?? null,
+  }
+}
+
+function summarizeRunnerLease(record) {
+  const result = record.result ?? {}
+  const intent = result.intent ?? result.activeIntent
+
+  return {
+    id: record.id ?? null,
+    intentId: intent?.id ?? null,
+    leasedAt: record.leasedAt ?? null,
+    reason: result.reason ?? null,
+  }
+}
+
+function summarizeRunnerLedgerRun(record) {
+  return {
+    action: record.action ?? null,
+    id: record.id ?? null,
+    issueNumber: record.issueNumber ?? null,
+    lastHeartbeatAt: record.lastHeartbeatAt ?? null,
+    status: record.status ?? null,
+    updatedAt: record.updatedAt ?? null,
+  }
+}
+
+function summarizeRunnerLedgerLease(record) {
+  return {
+    action: record.action ?? null,
+    holder: record.holder ?? null,
+    id: record.id ?? null,
+    intentId: record.intentId ?? null,
+    issueNumber: record.issueNumber ?? null,
+    leasedAt: record.leasedAt ?? null,
+    reason: record.reason ?? null,
+    status: record.status ?? null,
   }
 }
 

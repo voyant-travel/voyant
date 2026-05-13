@@ -5,9 +5,7 @@ import {
   buildDeployedStatusReport,
   dispatchPlanRequestForDeployedRunner,
   latestControlPlaneTickSnapshot,
-  latestRunnerSupervisorTick,
   recentControlPlaneTickSnapshots,
-  recentRunnerSupervisorTicks,
   summarizeActiveDispatchIntent,
   summarizeDispatchPlan,
 } from "../lib/agent-runner-deployed-status.mjs"
@@ -43,6 +41,7 @@ describe("agent runner deployed status helpers", () => {
     assert.equal(report.controlPlane.dispatchPlan.plan.issue.number, 579)
     assert.equal(report.controlPlane.activeDispatch.intent.id, "intent_579")
     assert.equal(report.runner.endpoint, "https://runner.example.com")
+    assert.equal(report.runner.supervisorStatus.supervisorLeases.recent.length, 1)
     assert.deepEqual(report.runner.policy, {
       allowedActionCount: 2,
       ciRepairAllowedActions: [],
@@ -263,42 +262,6 @@ describe("agent runner deployed status helpers", () => {
       },
     )
   })
-
-  it("summarizes latest and recent runner supervisor ticks", () => {
-    const status = {
-      supervisorTicks: {
-        latest: runnerTick({
-          id: "tick_latest",
-          intentId: "intent_579",
-          reason: "leased_dispatch_intent",
-        }),
-        recent: [
-          runnerTick({
-            id: "tick_recent",
-            leased: false,
-            reason: "no_dispatch_plan",
-          }),
-        ],
-      },
-    }
-
-    assert.deepEqual(latestRunnerSupervisorTick(status), {
-      id: "tick_latest",
-      intentId: "intent_579",
-      leased: true,
-      reason: "leased_dispatch_intent",
-      recordedAt: "2026-05-12T12:00:00.000Z",
-    })
-    assert.deepEqual(recentRunnerSupervisorTicks(status), [
-      {
-        id: "tick_recent",
-        intentId: null,
-        leased: false,
-        reason: "no_dispatch_plan",
-        recordedAt: "2026-05-12T12:00:00.000Z",
-      },
-    ])
-  })
 })
 
 function responseForUrl(url) {
@@ -372,8 +335,15 @@ function responseForUrl(url) {
         maxLeaseTtlSeconds: 900,
         requiresActionFilter: true,
       },
+      coordinator: {
+        mode: "durable-object",
+      },
+      runLedger: {
+        persistence: "d1",
+      },
       service: "agent-runner",
       supervisorTicks: {
+        leaseBudgetHistory: true,
         persistence: "latest",
       },
     }
@@ -390,6 +360,38 @@ function responseForUrl(url) {
         },
       },
       repository: "voyantjs/voyant",
+      runLedger: {
+        recentLeases: [
+          {
+            action: "remote-bootstrap",
+            holder: "runner:cloudflare",
+            id: "lease_579",
+            intentId: "intent_579",
+            issueNumber: 579,
+            leasedAt: "2026-05-12T12:00:00.000Z",
+            reason: "leased",
+            status: "leased",
+          },
+        ],
+        recentRuns: [
+          {
+            action: "remote-bootstrap",
+            id: "intent_579",
+            issueNumber: 579,
+            lastHeartbeatAt: "2026-05-12T12:00:00.000Z",
+            status: "leased",
+            updatedAt: "2026-05-12T12:00:00.000Z",
+          },
+        ],
+        status: {
+          recentLeaseCount: 1,
+          recentRunCount: 1,
+        },
+        storage: {
+          configured: true,
+          persistence: "d1",
+        },
+      },
       service: "agent-runner",
       supervisorTicks: {
         latest: runnerTick({ id: "tick_latest" }),
@@ -397,6 +399,24 @@ function responseForUrl(url) {
         storage: {
           configured: true,
           persistence: "latest",
+        },
+      },
+      supervisorLeases: {
+        recent: [
+          {
+            id: "lease_579",
+            leasedAt: "2026-05-12T12:00:00.000Z",
+            result: {
+              intent: {
+                id: "intent_579",
+              },
+              reason: "leased",
+            },
+          },
+        ],
+        storage: {
+          configured: true,
+          persistence: "history",
         },
       },
     }

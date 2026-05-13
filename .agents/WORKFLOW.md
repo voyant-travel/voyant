@@ -71,6 +71,31 @@ printed evidence value, or document the maintainer-approved exception.
 The runner should reject handoff when evidence is missing or verification failed
 without an accepted reason.
 
+## 24/7 Executor Gates
+
+The always-on executor may lease and run only concrete lifecycle commands from
+the control plane. Human-facing placeholder commands are not leaseable.
+
+Required executor inputs:
+
+- `--implementation-command` before leasing `run-command`.
+- `--remote-implementation-command` before leasing `remote-run-command`; if it
+  is omitted, the executor may use `--implementation-command` as the shared
+  implementation command.
+- `--browser-dev-server-command` before leasing `capture-browser`.
+- `--remote-browser-dev-server-command` and `--remote-browser-port` before
+  leasing `remote-capture-browser`.
+
+Every leased command is checked again immediately before execution. The executor
+must refuse commands that still contain placeholders, lack required command
+inputs, or include blocked destructive git patterns. Use
+`--release-expired-intents` only for executor loops that are allowed to release
+expired active leases and retry once.
+
+Run 24/7 in bounded loops: set an iteration limit, sleep interval, holder,
+event log, action allow-list, and daily deployed lease budget. Do not enable
+unbounded execution or automatic merge.
+
 ## Quality Rules
 
 - Keep routes thin: parse input, resolve services, call domain workflows, and

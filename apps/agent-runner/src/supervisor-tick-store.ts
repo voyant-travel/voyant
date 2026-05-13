@@ -19,7 +19,10 @@ export type SupervisorLeaseRecord = z.infer<typeof supervisorLeaseRecordSchema>
 
 export interface SupervisorTickStore {
   getLatest(repository: string): Promise<SupervisorTickRecord | null>
-  listLeases?(repository: string, options: { since: string }): Promise<SupervisorLeaseRecord[]>
+  listLeases?(
+    repository: string,
+    options?: { limit?: number; since?: string },
+  ): Promise<SupervisorLeaseRecord[]>
   listRecent(repository: string, options?: { limit?: number }): Promise<SupervisorTickRecord[]>
   putLease?(record: SupervisorLeaseRecord): Promise<SupervisorTickStoreWrite>
   putLatest(record: SupervisorTickRecord): Promise<SupervisorTickStoreWrite>
@@ -107,12 +110,14 @@ export function createR2SupervisorTickStore({
       return records
     },
 
-    async listLeases(repository, { since }) {
+    async listLeases(repository, options = {}) {
       if (!bucket.list) {
         return []
       }
 
       const records: SupervisorLeaseRecord[] = []
+      const limit =
+        options.limit === undefined ? Number.POSITIVE_INFINITY : boundedLimit(options.limit)
       const prefix = leaseHistoryPrefix({ keyPrefix, repository })
       let cursor: string | undefined
       let done = false
@@ -133,11 +138,15 @@ export function createR2SupervisorTickStore({
           if (!parsed.success) {
             throw new Error(`stored supervisor lease is invalid for ${repository}`)
           }
-          if (parsed.data.leasedAt < since) {
+          if (options.since && parsed.data.leasedAt < options.since) {
             done = true
             break
           }
           records.push(parsed.data)
+          if (records.length >= limit) {
+            done = true
+            break
+          }
         }
       } while (!done && cursor)
 

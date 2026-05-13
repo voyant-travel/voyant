@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import {
+  requestRecentRunnerSupervisorLeases,
   requestRunnerAppCapabilities,
   requestRunnerAppSupervisorStatus,
   requestRunnerAppSupervisorTick,
@@ -51,6 +52,7 @@ describe("agent runner deployment doctor helpers", () => {
             },
             service: "agent-runner",
             supervisorTicks: {
+              leaseBudgetHistory: true,
               persistence: "latest",
             },
           }),
@@ -153,6 +155,13 @@ describe("agent runner deployment doctor helpers", () => {
                 persistence: "latest",
               },
             },
+            supervisorLeases: {
+              recent: [{ id: "lease_579", leasedAt: "2026-05-12T12:00:00.000Z" }],
+              storage: {
+                configured: true,
+                persistence: "history",
+              },
+            },
           }),
           { status: 200 },
         )
@@ -167,6 +176,40 @@ describe("agent runner deployment doctor helpers", () => {
     assert.equal(
       calls[0].url,
       "https://runner.example.com/api/supervisor/status?repository=voyantjs%2Fvoyant&limit=5",
+    )
+    assert.equal(calls[0].init.method, "GET")
+    assert.equal(calls[0].init.headers.authorization, "Bearer tok")
+  })
+
+  it("reads recent deployed runner supervisor leases", async () => {
+    const calls = []
+    const response = await requestRecentRunnerSupervisorLeases({
+      fetchImpl: async (url, init) => {
+        calls.push({ init, url })
+        return new Response(
+          JSON.stringify({
+            records: [
+              {
+                id: "lease_579",
+                leasedAt: "2026-05-12T12:00:00.000Z",
+              },
+            ],
+            repository: "voyantjs/voyant",
+          }),
+          { status: 200 },
+        )
+      },
+      limit: 5,
+      repository: "voyantjs/voyant",
+      since: "2026-05-11T12:00:00.000Z",
+      token: "tok",
+      url: "https://runner.example.com/",
+    })
+
+    assert.equal(response.records[0].id, "lease_579")
+    assert.equal(
+      calls[0].url,
+      "https://runner.example.com/api/supervisor/leases/recent?repository=voyantjs%2Fvoyant&limit=5&since=2026-05-11T12%3A00%3A00.000Z",
     )
     assert.equal(calls[0].init.method, "GET")
     assert.equal(calls[0].init.headers.authorization, "Bearer tok")
@@ -222,13 +265,20 @@ describe("agent runner deployment doctor helpers", () => {
           allowedActions: ["cleanup", "sync-pr"],
           requiresActionFilter: true,
         },
+        coordinator: {
+          mode: "durable-object",
+        },
+        runLedger: {
+          persistence: "d1",
+        },
         supervisorTicks: {
+          leaseBudgetHistory: true,
           persistence: "latest",
         },
       }),
       {
         detail:
-          "execution: disabled; enabled: false; tick persistence: latest; allowed actions: 2; default action: none; daily lease budget: none; requires action filter: true; CI repair opt-in: off",
+          "execution: disabled; enabled: false; tick persistence: latest; lease history: true; run ledger: d1; coordinator: durable-object; allowed actions: 2; default action: none; daily lease budget: none; requires action filter: true; CI repair opt-in: off",
         ok: true,
       },
     )
@@ -259,6 +309,15 @@ describe("agent runner deployment doctor helpers", () => {
           },
         },
         repository: "voyantjs/voyant",
+        runLedger: {
+          status: {
+            recentLeaseCount: 1,
+            recentRunCount: 2,
+          },
+          storage: {
+            persistence: "d1",
+          },
+        },
         service: "agent-runner",
         supervisorTicks: {
           latest: {
@@ -271,9 +330,16 @@ describe("agent runner deployment doctor helpers", () => {
             persistence: "latest",
           },
         },
+        supervisorLeases: {
+          recent: [{ id: "lease_579" }],
+          storage: {
+            persistence: "history",
+          },
+        },
       }),
       {
-        detail: "repository: voyantjs/voyant; tick persistence: latest; latest: dry_run; recent: 1",
+        detail:
+          "repository: voyantjs/voyant; tick persistence: latest; lease persistence: history; run ledger: d1; ledger runs: 2; ledger leases: 1; latest: dry_run; recent: 1; recent leases: 1",
         ok: true,
       },
     )

@@ -1,4 +1,6 @@
 import { createApp, runPersistentSupervisorTick } from "./app.js"
+import { AgentRunnerCoordinator } from "./coordinator.js"
+import { createD1AgentRunnerLedgerStore } from "./run-ledger-store.js"
 import { createR2SupervisorTickStore } from "./supervisor-tick-store.js"
 
 interface Env {
@@ -6,6 +8,8 @@ interface Env {
   AGENT_CONTROL_PLANE_URL?: string
   AGENT_RUNNER_ACTION?: string
   AGENT_RUNNER_ALLOWED_ACTIONS?: string
+  AGENT_RUNNER_COORDINATOR?: DurableObjectNamespace
+  AGENT_RUNNER_DB?: D1Database
   AGENT_RUNNER_ENABLED?: string
   AGENT_RUNNER_HOLDER?: string
   AGENT_RUNNER_MAX_DAILY_LEASES?: string
@@ -21,6 +25,8 @@ export default {
     const app = createApp({
       authTokens: parseTokens(env.AGENT_RUNNER_TOKENS),
       config: runnerConfigFromEnv(env),
+      coordinatorConfigured: Boolean(env.AGENT_RUNNER_COORDINATOR),
+      runLedgerStore: runLedgerStoreFromEnv(env),
       supervisorTickStore: supervisorTickStoreFromEnv(env),
     })
     return await app.fetch(request)
@@ -33,6 +39,7 @@ export default {
         dryRun: env.AGENT_RUNNER_ENABLED !== "true",
         reason: "cloudflare-cron",
       },
+      runLedgerStore: runLedgerStoreFromEnv(env),
       source: "scheduled",
       supervisorTickStore: supervisorTickStoreFromEnv(env),
     })
@@ -45,6 +52,8 @@ export default {
     )
   },
 } satisfies ExportedHandler<Env>
+
+export { AgentRunnerCoordinator }
 
 function runnerConfigFromEnv(env: Env) {
   return {
@@ -66,6 +75,14 @@ function supervisorTickStoreFromEnv(env: Env) {
     ? createR2SupervisorTickStore({
         bucket: env.AGENT_RUNNER_TICKS,
         keyPrefix: env.AGENT_RUNNER_TICK_KEY_PREFIX,
+      })
+    : undefined
+}
+
+function runLedgerStoreFromEnv(env: Env) {
+  return env.AGENT_RUNNER_DB
+    ? createD1AgentRunnerLedgerStore({
+        database: env.AGENT_RUNNER_DB,
       })
     : undefined
 }
