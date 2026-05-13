@@ -31,6 +31,18 @@
       "types": "./src/auth/index.ts",
       "import": "./src/auth/index.ts"
     },
+    "./bindings": {
+      "types": "./src/bindings.ts",
+      "import": "./src/bindings.ts"
+    },
+    "./config": {
+      "types": "./src/config.ts",
+      "import": "./src/config.ts"
+    },
+    "./errors": {
+      "types": "./src/errors.ts",
+      "import": "./src/errors.ts"
+    },
     "./rate-limit": {
       "types": "./src/rate-limit/index.ts",
       "import": "./src/rate-limit/index.ts"
@@ -67,7 +79,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@voyantjs/workflows-errors": "workspace:*",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -106,6 +117,18 @@
       "./auth": {
         "types": "./dist/auth/index.d.ts",
         "import": "./dist/auth/index.js"
+      },
+      "./bindings": {
+        "types": "./dist/bindings.d.ts",
+        "import": "./dist/bindings.js"
+      },
+      "./config": {
+        "types": "./dist/config.d.ts",
+        "import": "./dist/config.js"
+      },
+      "./errors": {
+        "types": "./dist/errors.d.ts",
+        "import": "./dist/errors.js"
       },
       "./rate-limit": {
         "types": "./dist/rate-limit/index.d.ts",

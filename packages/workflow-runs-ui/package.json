@@ -1,7 +1,8 @@
 {
   "name": "@voyantjs/workflow-runs-ui",
   "version": "0.37.1",
-  "description": "Importable React admin UI for Voyant workflow run observability.",
+  "private": true,
+  "description": "Deprecated workspace compatibility wrapper for @voyantjs/workflows-ui.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -17,7 +18,7 @@
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
-    "./components/*": "./src/components/*.tsx"
+    "./components/*": "./src/components/*.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -28,8 +29,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:*",
-    "@voyantjs/workflows-react": "workspace:*"
+    "@voyantjs/workflows-ui": "workspace:*"
   },
   "peerDependencies": {
     "@voyantjs/ui": "workspace:*",
@@ -40,7 +40,6 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/i18n": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "lucide-react": "^1.7.0",
@@ -50,48 +49,6 @@
     "vitest": "^4.1.2"
   },
   "files": [
-    "dist",
-    "src/components",
-    "src/styles.css"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js",
-        "default": "./dist/index.js"
-      },
-      "./client": {
-        "types": "./dist/client.d.ts",
-        "import": "./dist/client.js",
-        "default": "./dist/client.js"
-      },
-      "./styles.css": {
-        "default": "./src/styles.css"
-      },
-      "./i18n": {
-        "types": "./dist/i18n/index.d.ts",
-        "import": "./dist/i18n/index.js",
-        "default": "./dist/i18n/index.js"
-      },
-      "./i18n/en": {
-        "types": "./dist/i18n/en.d.ts",
-        "import": "./dist/i18n/en.js",
-        "default": "./dist/i18n/en.js"
-      },
-      "./i18n/ro": {
-        "types": "./dist/i18n/ro.d.ts",
-        "import": "./dist/i18n/ro.js",
-        "default": "./dist/i18n/ro.js"
-      },
-      "./components/*": {
-        "types": "./dist/components/*.d.ts",
-        "import": "./dist/components/*.js",
-        "default": "./dist/components/*.js"
-      }
-    },
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts"
-  }
+    "src"
+  ]
 }

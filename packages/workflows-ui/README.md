@@ -28,6 +28,5 @@ apps can wire deep links by controlling the selected run id:
 />
 ```
 
-This package is the public workflows-facing import path. The implementation is
-shared with `@voyantjs/workflow-runs-ui` so existing consumers can migrate
-incrementally.
+This package is the public workflows-facing import path. Older
+`@voyantjs/workflow-runs-ui` imports should migrate here.

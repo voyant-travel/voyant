@@ -673,9 +673,9 @@ importers:
       '@voyantjs/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@voyantjs/workflow-runs-ui':
+      '@voyantjs/workflows-ui':
         specifier: workspace:*
-        version: link:../../packages/workflow-runs-ui
+        version: link:../../packages/workflows-ui
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.2.4)
@@ -5215,12 +5215,9 @@ importers:
 
   packages/workflow-runs-ui:
     dependencies:
-      '@voyantjs/i18n':
+      '@voyantjs/workflows-ui':
         specifier: workspace:*
-        version: link:../i18n
-      '@voyantjs/workflows-react':
-        specifier: workspace:*
-        version: link:../workflows-react
+        version: link:../workflows-ui
     devDependencies:
       '@types/react':
         specifier: ^19.2.14
@@ -5252,9 +5249,6 @@ importers:
 
   packages/workflows:
     dependencies:
-      '@voyantjs/workflows-errors':
-        specifier: workspace:*
-        version: link:../workflows-errors
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -5273,6 +5267,10 @@ importers:
         version: 3.2.4(@types/node@20.19.39)(jiti@2.6.1)(jsdom@29.0.1(@noble/hashes@2.0.1))(lightningcss@1.32.0)(msw@2.12.14(@types/node@20.19.39)(typescript@5.9.3))(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
 
   packages/workflows-bindings:
+    dependencies:
+      '@voyantjs/workflows':
+        specifier: workspace:*
+        version: link:../workflows
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260426.1
@@ -5310,6 +5308,10 @@ importers:
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@20.19.39)(typescript@5.9.3))(vite@8.0.10(@types/node@20.19.39)(esbuild@0.28.0)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/workflows-config:
+    dependencies:
+      '@voyantjs/workflows':
+        specifier: workspace:*
+        version: link:../workflows
     devDependencies:
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
@@ -5319,6 +5321,10 @@ importers:
         version: 5.9.3
 
   packages/workflows-errors:
+    dependencies:
+      '@voyantjs/workflows':
+        specifier: workspace:*
+        version: link:../workflows
     devDependencies:
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
@@ -5419,9 +5425,6 @@ importers:
       '@voyantjs/workflows':
         specifier: workspace:*
         version: link:../workflows
-      '@voyantjs/workflows-errors':
-        specifier: workspace:*
-        version: link:../workflows-errors
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.96.2
@@ -5450,9 +5453,12 @@ importers:
 
   packages/workflows-ui:
     dependencies:
-      '@voyantjs/workflow-runs-ui':
+      '@voyantjs/i18n':
         specifier: workspace:*
-        version: link:../workflow-runs-ui
+        version: link:../i18n
+      '@voyantjs/workflows-react':
+        specifier: workspace:*
+        version: link:../workflows-react
     devDependencies:
       '@types/react':
         specifier: ^19.2.14

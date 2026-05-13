@@ -35,6 +35,12 @@ export const sendBookingReminders = workflow({
   `X-Voyant-Dispatch-Auth` header. Wires into the orchestrator's
   `sign` hook and the handler's `verifyRequest` hook with a shared
   secret.
+- `@voyantjs/workflows/bindings` — runtime binding types and `env`
+  shim for workflow code that reads platform bindings.
+- `@voyantjs/workflows/config` — `defineConfig` and `voyant.config.ts`
+  types.
+- `@voyantjs/workflows/errors` — typed user/runtime errors
+  (`FatalError`, `RetryableError`, `TimeoutError`, and related classes).
 - `@voyantjs/workflows/protocol` — wire-protocol types shared with the
   orchestrator.
 
@@ -43,4 +49,3 @@ export const sendBookingReminders = workflow({
 - [`docs/sdk-surface.md`](../../docs/sdk-surface.md) — locked API surface.
 - [`docs/design.md`](../../docs/design.md) — architecture and rationale.
 - [`docs/runtime-protocol.md`](../../docs/runtime-protocol.md) — wire protocol.
-

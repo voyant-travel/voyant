@@ -7,7 +7,7 @@
   "type": "module",
   "main": "./dist/server.js",
   "scripts": {
-    "build:deps": "pnpm -C ../.. --filter @voyantjs/workflows-errors build && pnpm -C ../.. --filter @voyantjs/workflows build && pnpm -C ../.. --filter @voyantjs/workflows-orchestrator build && pnpm -C ../.. --filter @voyantjs/workflows-orchestrator-node build",
+    "build:deps": "pnpm -C ../.. --filter @voyantjs/workflows build && pnpm -C ../.. --filter @voyantjs/workflows-orchestrator build && pnpm -C ../.. --filter @voyantjs/workflows-orchestrator-node build",
     "build": "pnpm --filter @voyantjs/workflows-selfhost-node-server build:deps && tsc -p tsconfig.json",
     "bundle:example": "pnpm -C ../.. --filter @voyantjs/cli build && node ../../packages/cli/bin/voyant.mjs workflows build --file ./examples/basic-workflows.ts --out ./dist --platform node",
     "check-types": "pnpm --filter @voyantjs/workflows-selfhost-node-server build:deps && tsc --noEmit",

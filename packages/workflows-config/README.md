@@ -1,4 +1,6 @@
-# @voyantjs/workflows-config
+# @voyantjs/workflows/config
+
+Deprecated workspace compatibility wrapper. Use `@voyantjs/workflows/config`.
 
 Types and `defineConfig` helper for `voyant.config.ts` at the root of a
 Voyant Cloud project.
@@ -8,7 +10,7 @@ See [`docs/sdk-surface.md`](../../docs/sdk-surface.md) §10 and
 
 ```ts
 // voyant.config.ts
-import { defineConfig } from "@voyantjs/workflows-config";
+import { defineConfig } from "@voyantjs/workflows/config";
 
 export default defineConfig({
   projectId: "prj_01HQZ...",

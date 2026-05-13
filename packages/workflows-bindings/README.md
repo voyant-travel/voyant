@@ -1,4 +1,6 @@
-# @voyantjs/workflows-bindings
+# @voyantjs/workflows/bindings
+
+Deprecated workspace compatibility wrapper. Use `@voyantjs/workflows/bindings`.
 
 Runtime binding shim for KV, R2, D1, Queues. Identical surface on both
 Voyant Workflows runtimes:
@@ -11,7 +13,7 @@ See [`docs/sdk-surface.md`](../../docs/sdk-surface.md) §9 and
 [`docs/design.md`](../../docs/design.md) §5.2.
 
 ```ts
-import { env } from "@voyantjs/workflows-bindings";
+import { env } from "@voyantjs/workflows/bindings";
 
 const row = await env.CUSTOMERS_DB.prepare("SELECT * FROM customers WHERE id = ?")
   .bind(id)

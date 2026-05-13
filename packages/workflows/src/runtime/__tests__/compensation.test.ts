@@ -1,4 +1,4 @@
-import { FatalError } from "@voyantjs/workflows-errors"
+import { FatalError } from "@voyantjs/workflows/errors"
 import { beforeEach, describe, expect, it } from "vitest"
 import { runWorkflowForTest } from "../../testing/index.js"
 import { __resetRegistry, workflow } from "../../workflow.js"

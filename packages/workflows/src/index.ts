@@ -4,6 +4,7 @@
 //   docs/sdk-surface.md §2–§8
 //   docs/design.md §3–§4
 
+export * from "./conditions.js"
 export {
   FatalError,
   HookConflictError,
@@ -11,8 +12,7 @@ export {
   RetryableError,
   TimeoutError,
   ValidationError,
-} from "@voyantjs/workflows-errors"
-export * from "./conditions.js"
+} from "./errors.js"
 export * from "./trigger.js"
 export * from "./types.js"
 export * from "./workflow.js"

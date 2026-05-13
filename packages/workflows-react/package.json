@@ -34,7 +34,6 @@
   },
   "dependencies": {
     "@voyantjs/react": "workspace:*",
-    "@voyantjs/workflows-errors": "workspace:*",
     "@voyantjs/workflows": "workspace:*"
   },
   "peerDependencies": {

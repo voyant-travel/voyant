@@ -104,15 +104,13 @@
       "@voyantjs/storage",
       "@voyantjs/workflow-runs",
       "@voyantjs/workflows",
-      "@voyantjs/workflows-bindings",
       "@voyantjs/workflows-cloud-adapter",
-      "@voyantjs/workflows-config",
-      "@voyantjs/workflows-errors",
       "@voyantjs/workflows-node-step-container",
       "@voyantjs/workflows-orchestrator",
       "@voyantjs/workflows-orchestrator-cloudflare",
       "@voyantjs/workflows-orchestrator-node",
-      "@voyantjs/workflows-react"
+      "@voyantjs/workflows-react",
+      "@voyantjs/workflows-ui"
     ]
   ],
   "linked": [],

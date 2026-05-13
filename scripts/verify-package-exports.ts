@@ -10,6 +10,7 @@ interface ExportCheck {
 
 interface PackageJson {
   name?: string
+  private?: boolean
   exports?: Record<string, unknown>
   files?: string[]
   publishConfig?: {
@@ -440,6 +441,10 @@ function getCssHelperPackageDirs(): string[] {
 
       const packageJson = readPackageJson(packageDir)
       const packageName = packageJson.name ?? ""
+
+      if (packageJson.private) {
+        return false
+      }
 
       return (
         packageName === "@voyantjs/admin" ||
