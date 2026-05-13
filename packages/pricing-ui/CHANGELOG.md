@@ -1,5 +1,19 @@
 # @voyantjs/pricing-ui
 
+## 0.37.0
+
+### Patch Changes
+
+- 0689fcb: Add reusable person, organization, supplier, product, and pricing option comboboxes for operator-facing entity reference fields.
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/pricing-react@0.37.0
+  - @voyantjs/products-react@0.37.0
+  - @voyantjs/ui@0.37.0
+  - @voyantjs/utils@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

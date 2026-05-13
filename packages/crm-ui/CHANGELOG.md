@@ -1,5 +1,22 @@
 # @voyantjs/crm-ui
 
+## 0.37.0
+
+### Minor Changes
+
+- c71df12: Add optional commercial-context tab slots to CRM person and organization detail pages for bookings, invoices, payments, and contracts.
+- 0689fcb: Add reusable person, organization, supplier, product, and pricing option comboboxes for operator-facing entity reference fields.
+
+### Patch Changes
+
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/crm-react@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/ui@0.37.0
+  - @voyantjs/utils@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

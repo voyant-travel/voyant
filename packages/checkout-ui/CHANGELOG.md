@@ -1,5 +1,24 @@
 # @voyantjs/checkout-ui
 
+## 0.37.0
+
+### Minor Changes
+
+- 9fcfd44: Add provider-backed English and Romanian i18n surfaces for auth and checkout UI components.
+
+### Patch Changes
+
+- Updated dependencies [dc29b79]
+- Updated dependencies [a48660e]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/checkout@0.37.0
+  - @voyantjs/checkout-react@0.37.0
+  - @voyantjs/finance@0.37.0
+  - @voyantjs/finance-react@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

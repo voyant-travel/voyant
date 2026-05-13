@@ -1,5 +1,19 @@
 # @voyantjs/finance-react
 
+## 0.37.0
+
+### Minor Changes
+
+- a48660e: Add invoice bulk selection and a confirmable mark-paid action with partial-failure feedback.
+
+### Patch Changes
+
+- f014fd2: Capture manual base-currency settlement amounts for cross-currency customer and supplier payments, and settle invoice balances from the base invoice amount.
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+  - @voyantjs/finance@0.37.0
+  - @voyantjs/react@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

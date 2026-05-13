@@ -1,5 +1,17 @@
 # @voyantjs/ui
 
+## 0.37.0
+
+### Patch Changes
+
+- 0c9b884: Route remaining reusable UI literals through package i18n providers and add the UI literal scan to the shared i18n CI check.
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/notifications@0.37.0
+  - @voyantjs/notifications-react@0.37.0
+  - @voyantjs/utils@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

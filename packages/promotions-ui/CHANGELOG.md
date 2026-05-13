@@ -1,5 +1,20 @@
 # @voyantjs/promotions-ui
 
+## 0.37.0
+
+### Minor Changes
+
+- 32451b0: Add package-level i18n support for promotions UI pages and route promotion page/dialog copy through localized messages.
+
+### Patch Changes
+
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/promotions-react@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

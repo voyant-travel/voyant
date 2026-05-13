@@ -1,5 +1,22 @@
 # @voyantjs/storefront-sdk
 
+## 0.37.0
+
+### Minor Changes
+
+- 4d4658e: Add a first-class `bookingEngine` facade for custom storefront booking flows.
+  The facade wraps public booking-session and checkout operations with
+  flow-oriented methods, returns canonical engine snapshots, and exposes
+  structured booking-engine error metadata.
+
+### Patch Changes
+
+- Updated dependencies [4c93561]
+- Updated dependencies [dc29b79]
+  - @voyantjs/bookings@0.37.0
+  - @voyantjs/checkout@0.37.0
+  - @voyantjs/storefront@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

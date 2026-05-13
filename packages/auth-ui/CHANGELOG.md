@@ -1,5 +1,39 @@
 # @voyantjs/auth-ui
 
+## 0.37.0
+
+### Minor Changes
+
+- 208792f: Add shared organization invitation acceptance hooks and a router-agnostic accept-invitation page.
+- 5c0cd16: Add shared account self-service profile helpers, account mutation hooks, and reusable account page/forms.
+- 9fcfd44: Add provider-backed English and Romanian i18n surfaces for auth and checkout UI components.
+- 7bf14d8: Add shared email verification helpers and a router-agnostic VerifyEmailPage for Better Auth token and email OTP flows.
+- 5686880: Add the shared account profile update contract, React mutation helper, and card-less onboarding profile completion page.
+- 9ec9d4d: Add reusable password reset hooks and shared forgot/reset password auth UI pages.
+- 36d145f: Add a reusable email/password sign-in hook and shared auth-ui sign-in page.
+- 2b0b492: Add a reusable email/password sign-up hook and shared auth-ui sign-up page, with
+  app-owned submission support for invitation-token registration.
+
+### Patch Changes
+
+- 0c9b884: Route remaining reusable UI literals through package i18n providers and add the UI literal scan to the shared i18n CI check.
+- Updated dependencies [712a441]
+- Updated dependencies [208792f]
+- Updated dependencies [5c0cd16]
+- Updated dependencies [7bf14d8]
+- Updated dependencies [5686880]
+- Updated dependencies [9ec9d4d]
+- Updated dependencies [36d145f]
+- Updated dependencies [2b0b492]
+- Updated dependencies [dc29b79]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/admin@0.37.0
+  - @voyantjs/auth-react@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/types@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

@@ -1,5 +1,31 @@
 # @voyantjs/products-ui
 
+## 0.37.0
+
+### Minor Changes
+
+- 0689fcb: Add reusable person, organization, supplier, product, and pricing option comboboxes for operator-facing entity reference fields.
+
+### Patch Changes
+
+- 0c9b884: Route remaining reusable UI literals through package i18n providers and add the UI literal scan to the shared i18n CI check.
+- e5ce6a0: Route remaining shared UI literals through package i18n providers.
+- Updated dependencies [dc29b79]
+- Updated dependencies [02287bf]
+- Updated dependencies [0689fcb]
+- Updated dependencies [a48660e]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+  - @voyantjs/availability-react@0.37.0
+  - @voyantjs/catalog-react@0.37.0
+  - @voyantjs/finance@0.37.0
+  - @voyantjs/finance-ui@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/pricing-react@0.37.0
+  - @voyantjs/products-react@0.37.0
+  - @voyantjs/suppliers-react@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

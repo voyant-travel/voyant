@@ -1,5 +1,30 @@
 # @voyantjs/identity-ui
 
+## 0.37.0
+
+### Minor Changes
+
+- 0689fcb: Add reusable person, organization, supplier, product, and pricing option comboboxes for operator-facing entity reference fields.
+
+### Patch Changes
+
+- Updated dependencies [eef2df0]
+- Updated dependencies [4c93561]
+- Updated dependencies [dc29b79]
+- Updated dependencies [c71df12]
+- Updated dependencies [02287bf]
+- Updated dependencies [0689fcb]
+- Updated dependencies [f014fd2]
+- Updated dependencies [0c9b884]
+- Updated dependencies [e5ce6a0]
+  - @voyantjs/bookings-ui@0.37.0
+  - @voyantjs/crm-ui@0.37.0
+  - @voyantjs/i18n@0.37.0
+  - @voyantjs/identity-react@0.37.0
+  - @voyantjs/products-ui@0.37.0
+  - @voyantjs/suppliers-ui@0.37.0
+  - @voyantjs/ui@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

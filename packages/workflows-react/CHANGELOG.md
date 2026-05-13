@@ -1,5 +1,17 @@
 # @voyantjs/workflows-react
 
+## 0.37.0
+
+### Minor Changes
+
+- edd4a60: Add workflow-run admin query hooks and share the workflow-runs UI client/types through the React package.
+
+### Patch Changes
+
+- @voyantjs/react@0.37.0
+- @voyantjs/workflows@0.37.0
+- @voyantjs/workflows-errors@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

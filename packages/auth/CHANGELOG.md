@@ -1,5 +1,17 @@
 # @voyantjs/auth
 
+## 0.37.0
+
+### Minor Changes
+
+- 5c0cd16: Add shared account self-service profile helpers, account mutation hooks, and reusable account page/forms.
+- 5686880: Add the shared account profile update contract, React mutation helper, and card-less onboarding profile completion page.
+
+### Patch Changes
+
+- @voyantjs/db@0.37.0
+- @voyantjs/utils@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes

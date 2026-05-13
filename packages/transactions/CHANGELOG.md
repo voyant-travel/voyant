@@ -1,5 +1,14 @@
 # @voyantjs/transactions
 
+## 0.37.0
+
+### Patch Changes
+
+- @voyantjs/core@0.37.0
+- @voyantjs/db@0.37.0
+- @voyantjs/hono@0.37.0
+- @voyantjs/utils@0.37.0
+
 ## 0.36.0
 
 ### Patch Changes
