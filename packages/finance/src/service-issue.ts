@@ -33,16 +33,16 @@ export interface InvoiceIssuedEvent {
   currency: string
   /** Linkage when this invoice replaced a proforma. */
   convertedFromInvoiceId?: string | null
-  clientName: string
-  clientEmail: string | null
-  clientPhone: string | null
-  clientAddress: string | null
-  clientCity: string | null
-  clientCounty: string | null
-  clientCountry: string | null
-  clientVatCode: string | null
-  clientRegCom: string | null
-  lineItems: InvoiceIssuedLineItem[]
+  clientName?: string
+  clientEmail?: string | null
+  clientPhone?: string | null
+  clientAddress?: string | null
+  clientCity?: string | null
+  clientCounty?: string | null
+  clientCountry?: string | null
+  clientVatCode?: string | null
+  clientRegCom?: string | null
+  lineItems?: InvoiceIssuedLineItem[]
   bookingNumber?: string | null
   issueDate?: string
   dueDate?: string
