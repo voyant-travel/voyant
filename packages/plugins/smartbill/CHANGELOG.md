@@ -1,5 +1,17 @@
 # @voyantjs/plugin-smartbill
 
+## 0.41.0
+
+### Minor Changes
+
+- 6d38bd0: Add SmartBill proforma conversion polling and drift reconciliation workflow factories.
+
+### Patch Changes
+
+- @voyantjs/core@0.41.0
+- @voyantjs/finance@0.41.0
+- @voyantjs/storage@0.41.0
+
 ## 0.40.1
 
 ### Patch Changes
