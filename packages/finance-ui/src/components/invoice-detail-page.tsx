@@ -51,10 +51,15 @@ import { InvoiceDialog } from "./invoice-dialog.js"
 export interface InvoiceDetailPageSlots {
   afterHeader?: ReactNode
   afterSummary?: ReactNode
+  lineItemsContent?: ReactNode
   afterLineItems?: ReactNode
+  paymentsContent?: ReactNode
   afterPayments?: ReactNode
+  creditNotesContent?: ReactNode
   afterCreditNotes?: ReactNode
+  attachmentsContent?: ReactNode
   afterAttachments?: ReactNode
+  notesContent?: ReactNode
   afterNotes?: ReactNode
   dialogs?: ReactNode
 }
@@ -169,64 +174,84 @@ export function InvoiceDetailPage({
       </div>
       {slots?.afterSummary}
 
-      <InvoiceLineItemsCard
-        invoice={invoice}
-        lineItems={lineItems}
-        pending={lineItemsQuery.isPending}
-        deletePending={removeLineItem.isPending}
-        onCreate={onLineItemCreate}
-        onEdit={onLineItemEdit}
-        onDelete={async (lineItemId) => {
-          await removeLineItem.mutateAsync(lineItemId)
-        }}
-      />
+      {slots?.lineItemsContent !== undefined ? (
+        slots.lineItemsContent
+      ) : (
+        <InvoiceLineItemsCard
+          invoice={invoice}
+          lineItems={lineItems}
+          pending={lineItemsQuery.isPending}
+          deletePending={removeLineItem.isPending}
+          onCreate={onLineItemCreate}
+          onEdit={onLineItemEdit}
+          onDelete={async (lineItemId) => {
+            await removeLineItem.mutateAsync(lineItemId)
+          }}
+        />
+      )}
       {slots?.afterLineItems}
 
-      <InvoicePaymentsCard
-        invoice={invoice}
-        payments={payments}
-        pending={paymentsQuery.isPending}
-        onCreate={onPaymentCreate}
-      />
+      {slots?.paymentsContent !== undefined ? (
+        slots.paymentsContent
+      ) : (
+        <InvoicePaymentsCard
+          invoice={invoice}
+          payments={payments}
+          pending={paymentsQuery.isPending}
+          onCreate={onPaymentCreate}
+        />
+      )}
       {slots?.afterPayments}
 
-      <InvoiceCreditNotesCard
-        invoice={invoice}
-        creditNotes={creditNotes}
-        pending={creditNotesQuery.isPending}
-        onCreate={onCreditNoteCreate}
-      />
+      {slots?.creditNotesContent !== undefined ? (
+        slots.creditNotesContent
+      ) : (
+        <InvoiceCreditNotesCard
+          invoice={invoice}
+          creditNotes={creditNotes}
+          pending={creditNotesQuery.isPending}
+          onCreate={onCreditNoteCreate}
+        />
+      )}
       {slots?.afterCreditNotes}
 
-      <InvoiceAttachmentsCard
-        invoice={invoice}
-        attachments={attachments}
-        pending={attachmentsQuery.isPending}
-        deletePending={removeAttachment.isPending}
-        getDownloadHref={
-          getAttachmentDownloadHref ??
-          ((attachment) => `/v1/finance/invoice-attachments/${attachment.id}/download`)
-        }
-        onCreate={() => {
-          setEditingAttachment(undefined)
-          setAttachmentOpen(true)
-        }}
-        onEdit={(attachment) => {
-          setEditingAttachment(attachment)
-          setAttachmentOpen(true)
-        }}
-        onDelete={async (attachmentId) => {
-          await removeAttachment.mutateAsync(attachmentId)
-        }}
-      />
+      {slots?.attachmentsContent !== undefined ? (
+        slots.attachmentsContent
+      ) : (
+        <InvoiceAttachmentsCard
+          invoice={invoice}
+          attachments={attachments}
+          pending={attachmentsQuery.isPending}
+          deletePending={removeAttachment.isPending}
+          getDownloadHref={
+            getAttachmentDownloadHref ??
+            ((attachment) => `/v1/finance/invoice-attachments/${attachment.id}/download`)
+          }
+          onCreate={() => {
+            setEditingAttachment(undefined)
+            setAttachmentOpen(true)
+          }}
+          onEdit={(attachment) => {
+            setEditingAttachment(attachment)
+            setAttachmentOpen(true)
+          }}
+          onDelete={async (attachmentId) => {
+            await removeAttachment.mutateAsync(attachmentId)
+          }}
+        />
+      )}
       {slots?.afterAttachments}
 
-      <InvoiceNotesCard
-        notes={notes}
-        pending={notesQuery.isPending}
-        addPending={addNote.isPending}
-        onCreate={() => setNoteOpen(true)}
-      />
+      {slots?.notesContent !== undefined ? (
+        slots.notesContent
+      ) : (
+        <InvoiceNotesCard
+          notes={notes}
+          pending={notesQuery.isPending}
+          addPending={addNote.isPending}
+          onCreate={() => setNoteOpen(true)}
+        />
+      )}
       {slots?.afterNotes}
 
       <InvoiceDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />

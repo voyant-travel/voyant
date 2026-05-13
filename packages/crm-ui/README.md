@@ -62,6 +62,27 @@ standard place to mount those relationships.
 />
 ```
 
+### Detail Tab Replacement Slots
+
+Detail pages also expose `*Content` slots for replacing built-in tab panels while
+keeping the default tabs, counts, layout, and append-only `*End` slots. Use these
+when an app needs inline CRUD controls without rendering a second panel below the
+read-only default.
+
+```tsx
+<PersonDetailPage
+  id={personId}
+  slots={{
+    activitiesContent: <EditableActivitiesPanel personId={personId} />,
+  }}
+/>
+```
+
+`PersonDetailPage` supports `overviewContent`, `opportunitiesContent`,
+`activitiesContent`, `relationshipsContent`, and `documentsContent`.
+`OrganizationDetailPage` supports `overviewContent`, `peopleContent`,
+`opportunitiesContent`, and `activitiesContent`.
+
 ## I18n
 
 Components render English by default. To localize them, wrap your UI in
