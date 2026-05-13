@@ -4,12 +4,14 @@ export type RegistryIdentityMessages = {
     description: string
     fields: {
       entityType: string
-      entityId: string
+      entity: string
+      customEntityType: string
     }
     placeholders: {
       entityType: string
-      entityId: string
+      entity: string
     }
+    entityTypeLabels: Record<"person" | "organization" | "supplier" | "booking" | "product", string>
     emptyScope: string
     tabs: {
       contactPoints: string

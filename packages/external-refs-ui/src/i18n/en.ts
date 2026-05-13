@@ -14,13 +14,21 @@ export const externalRefsUiEn: ExternalRefsUiMessages = {
       "IDs from third-party systems linked to Voyant entities. Enter the entity type and ID below to manage its external references.",
     fields: {
       entityType: "Entity type",
-      entityId: "Entity ID",
+      entity: "Entity",
+      customEntityType: "Other entity type",
     },
     placeholders: {
       entityType: "person, booking, product...",
-      entityId: "pers_... / book_... / prod_...",
+      entity: "Paste a reference for custom entity types",
     },
-    emptyScope: "Enter an entity type and ID above to browse its external references.",
+    entityTypeLabels: {
+      person: "Person",
+      organization: "Organization",
+      supplier: "Supplier",
+      booking: "Booking",
+      product: "Product",
+    },
+    emptyScope: "Choose an entity above to browse its external references.",
   },
   externalRefsTab: {
     description: "Links between this entity and IDs in external systems.",

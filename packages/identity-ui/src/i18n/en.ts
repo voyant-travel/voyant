@@ -44,13 +44,21 @@ export const identityUiEn = {
     description: "Manage contact points, addresses and named contacts attached to any entity.",
     fields: {
       entityType: "Entity type",
-      entityId: "Entity ID",
+      entity: "Entity",
+      customEntityType: "Other entity type",
     },
     placeholders: {
       entityType: "person, organization, supplier...",
-      entityId: "pers_... / org_... / supp_...",
+      entity: "Paste a reference for custom entity types",
     },
-    emptyScope: "Enter an entity type and ID above to browse its identity records.",
+    entityTypeLabels: {
+      person: "Person",
+      organization: "Organization",
+      supplier: "Supplier",
+      booking: "Booking",
+      product: "Product",
+    },
+    emptyScope: "Choose an entity above to browse its identity records.",
     tabs: {
       contactPoints: "Contact Points",
       addresses: "Addresses",

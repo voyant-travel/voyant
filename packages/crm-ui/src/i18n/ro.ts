@@ -177,6 +177,18 @@ export const crmUiRo = {
     title: "Organizatii",
     description: "Companii, agentii, furnizori si relatii de cont.",
   },
+  entityComboboxes: {
+    person: {
+      placeholder: "Cauta persoane...",
+      empty: "Nu s-au gasit persoane.",
+      loading: "Se incarca persoanele...",
+    },
+    organization: {
+      placeholder: "Cauta organizatii...",
+      empty: "Nu s-au gasit organizatii.",
+      loading: "Se incarca organizatiile...",
+    },
+  },
   createActivityDialog: {
     title: "Activitate noua",
     description: "Inregistreaza un apel, email, intalnire sau sarcina.",
@@ -186,11 +198,11 @@ export const crmUiRo = {
       status: "Status",
       description: "Descriere",
       linkTo: "Leaga de",
-      entityId: "ID entitate",
+      entityId: "Entitate",
     },
     placeholders: {
       subject: "Apel de descoperire cu Acme",
-      entityId: "pers_...",
+      entityId: "Cauta sau insereaza o referinta",
     },
     validation: {
       subjectRequired: "Subiectul este obligatoriu",

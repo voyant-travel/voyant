@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import { Input, Label } from "@voyantjs/ui/components"
+import { EntityRefPicker } from "@voyantjs/identity-ui"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { IdCard } from "lucide-react"
 import { AddressesTab } from "./addresses-tab"
@@ -17,6 +17,17 @@ type Props = {
 export function IdentityPage({ entityType, entityId, tab = "contact-points" }: Props) {
   const navigate = useNavigate({ from: "/identity/" })
   const scopeReady = entityType.trim().length > 0 && entityId.trim().length > 0
+  const updateScope = (next: { entityType: string; entityId: string }) => {
+    void navigate({
+      to: ".",
+      replace: true,
+      search: (prev) => ({
+        ...prev,
+        entityType: next.entityType || undefined,
+        entityId: next.entityId || undefined,
+      }),
+    })
+  }
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -26,47 +37,33 @@ export function IdentityPage({ entityType, entityId, tab = "contact-points" }: P
       </div>
 
       <p className="max-w-2xl text-sm text-muted-foreground">
-        Manage contact points, addresses and named contacts attached to any entity.
+        Manage contact points, addresses and named contacts attached to a selected entity.
       </p>
 
-      <div className="grid max-w-2xl grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label>Entity type</Label>
-          <Input
-            value={entityType}
-            onChange={(event) => {
-              const value = event.target.value
-              void navigate({
-                to: ".",
-                replace: true,
-                search: (prev) => ({ ...prev, entityType: value || undefined }),
-              })
-            }}
-            placeholder="person, organization, supplier..."
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Entity ID</Label>
-          <Input
-            value={entityId}
-            onChange={(event) => {
-              const value = event.target.value
-              void navigate({
-                to: ".",
-                replace: true,
-                search: (prev) => ({ ...prev, entityId: value || undefined }),
-              })
-            }}
-            placeholder="pers_... / org_... / supp_..."
-            className="font-mono text-xs"
-          />
-        </div>
-      </div>
+      <EntityRefPicker
+        entityType={entityType}
+        entityId={entityId}
+        onChange={updateScope}
+        messages={{
+          entityTypeLabel: "Entity type",
+          entityLabel: "Entity",
+          customEntityTypeLabel: "Custom",
+          typePlaceholder: "Choose a type",
+          entityPlaceholder: "Search or paste a reference",
+          entityTypeLabels: {
+            person: "Person",
+            organization: "Organization",
+            supplier: "Supplier",
+            booking: "Booking",
+            product: "Product",
+          },
+        }}
+      />
 
       {!scopeReady ? (
         <div className="rounded-md border border-dashed p-12 text-center">
           <p className="text-sm text-muted-foreground">
-            Enter an entity type and ID above to browse its identity records.
+            Choose an entity above to browse its identity records.
           </p>
         </div>
       ) : (

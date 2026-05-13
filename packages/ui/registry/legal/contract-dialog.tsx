@@ -22,6 +22,7 @@ import {
   Textarea,
 } from "@/components/ui"
 import { DateTimePicker } from "@/components/ui/date-time-picker"
+import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
 
 import { useRegistryLegalMessagesOrDefault } from "./i18n/provider"
@@ -39,6 +40,28 @@ type FormValues = {
   expiresAt?: string
   variables?: string
   metadata?: string
+}
+
+type PersonRef = {
+  id: string
+  displayName?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+}
+type OrganizationRef = {
+  id: string
+  name: string
+  website?: string | null
+  industry?: string | null
+}
+type SupplierRef = { id: string; name: string; city?: string | null; country?: string | null }
+type ChannelRef = { id: string; name: string; kind?: string | null; status?: string | null }
+
+function personLabel(person: PersonRef) {
+  if (person.displayName) return person.displayName
+  const fullName = [person.firstName, person.lastName].filter(Boolean).join(" ")
+  return fullName || person.email || person.id
 }
 
 type ContractDialogProps = {
@@ -136,6 +159,13 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
     onSuccess()
   }
 
+  const setReferenceField = (
+    field: "personId" | "organizationId" | "supplierId" | "channelId",
+    value: string | null,
+  ) => {
+    form.setValue(field, value ?? "", { shouldDirty: true, shouldValidate: true })
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
@@ -212,15 +242,30 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.contractDialog.fields.personId}</Label>
-                <Input
-                  {...form.register("personId")}
+                <EntityCombobox<PersonRef>
+                  value={form.watch("personId") || null}
+                  onChange={(id) => setReferenceField("personId", id)}
+                  endpoint="/v1/crm/people"
+                  detailEndpoint="/v1/crm/people/:id"
+                  queryKey={["legal", "contracts", "people"]}
+                  getLabel={personLabel}
+                  getSecondary={(person) => person.email ?? undefined}
                   placeholder={messages.contractDialog.placeholders.optional}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.contractDialog.fields.organizationId}</Label>
-                <Input
-                  {...form.register("organizationId")}
+                <EntityCombobox<OrganizationRef>
+                  value={form.watch("organizationId") || null}
+                  onChange={(id) => setReferenceField("organizationId", id)}
+                  endpoint="/v1/crm/organizations"
+                  detailEndpoint="/v1/crm/organizations/:id"
+                  queryKey={["legal", "contracts", "organizations"]}
+                  getLabel={(organization) => organization.name}
+                  getSecondary={(organization) =>
+                    [organization.website, organization.industry].filter(Boolean).join(" · ") ||
+                    undefined
+                  }
                   placeholder={messages.contractDialog.placeholders.optional}
                 />
               </div>
@@ -229,15 +274,31 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.contractDialog.fields.supplierId}</Label>
-                <Input
-                  {...form.register("supplierId")}
+                <EntityCombobox<SupplierRef>
+                  value={form.watch("supplierId") || null}
+                  onChange={(id) => setReferenceField("supplierId", id)}
+                  endpoint="/v1/suppliers"
+                  detailEndpoint="/v1/suppliers/:id"
+                  queryKey={["legal", "contracts", "suppliers"]}
+                  getLabel={(supplier) => supplier.name}
+                  getSecondary={(supplier) =>
+                    [supplier.city, supplier.country].filter(Boolean).join(" · ") || undefined
+                  }
                   placeholder={messages.contractDialog.placeholders.optional}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.contractDialog.fields.channelId}</Label>
-                <Input
-                  {...form.register("channelId")}
+                <EntityCombobox<ChannelRef>
+                  value={form.watch("channelId") || null}
+                  onChange={(id) => setReferenceField("channelId", id)}
+                  endpoint="/v1/distribution/channels"
+                  detailEndpoint="/v1/distribution/channels/:id"
+                  queryKey={["legal", "contracts", "channels"]}
+                  getLabel={(channel) => channel.name}
+                  getSecondary={(channel) =>
+                    [channel.kind, channel.status].filter(Boolean).join(" · ") || undefined
+                  }
                   placeholder={messages.contractDialog.placeholders.optional}
                 />
               </div>

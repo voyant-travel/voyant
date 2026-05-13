@@ -23,6 +23,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const assignmentFormSchema = z.object({
@@ -42,6 +43,17 @@ type FormValues = z.input<typeof assignmentFormSchema>
 type FormOutput = z.output<typeof assignmentFormSchema>
 
 export type AssignmentData = LegalPolicyAssignmentRecord
+
+type ProductRef = { id: string; name: string; status?: string | null; bookingMode?: string | null }
+type ChannelRef = { id: string; name: string; kind?: string | null; status?: string | null }
+type SupplierRef = { id: string; name: string; city?: string | null; country?: string | null }
+type MarketRef = { id: string; name: string; code?: string | null; defaultCurrency?: string | null }
+type OrganizationRef = {
+  id: string
+  name: string
+  website?: string | null
+  industry?: string | null
+}
 
 type PolicyAssignmentDialogProps = {
   open: boolean
@@ -128,6 +140,12 @@ export function PolicyAssignmentDialog({
   }
 
   const watchedScope = form.watch("scope")
+  const setReferenceField = (
+    field: "productId" | "channelId" | "supplierId" | "marketId" | "organizationId",
+    value: string | null,
+  ) => {
+    form.setValue(field, value ?? "", { shouldDirty: true, shouldValidate: true })
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -143,7 +161,17 @@ export function PolicyAssignmentDialog({
                 <Select
                   items={SCOPES}
                   value={form.watch("scope")}
-                  onValueChange={(v) => form.setValue("scope", v as FormValues["scope"])}
+                  onValueChange={(v) => {
+                    form.setValue("scope", v as FormValues["scope"], {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                    form.setValue("productId", "")
+                    form.setValue("channelId", "")
+                    form.setValue("supplierId", "")
+                    form.setValue("marketId", "")
+                    form.setValue("organizationId", "")
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -165,32 +193,88 @@ export function PolicyAssignmentDialog({
 
             {watchedScope === "product" && (
               <div className="flex flex-col gap-2">
-                <Label>Product ID</Label>
-                <Input {...form.register("productId")} placeholder="Product TypeID" />
+                <Label>Product</Label>
+                <EntityCombobox<ProductRef>
+                  value={form.watch("productId") || null}
+                  onChange={(id) => setReferenceField("productId", id)}
+                  endpoint="/v1/products"
+                  detailEndpoint="/v1/products/:id"
+                  queryKey={["legal", "policy-assignment", "products"]}
+                  getLabel={(product) => product.name}
+                  getSecondary={(product) =>
+                    [product.status, product.bookingMode].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search products"
+                />
               </div>
             )}
             {watchedScope === "channel" && (
               <div className="flex flex-col gap-2">
-                <Label>Channel ID</Label>
-                <Input {...form.register("channelId")} placeholder="Channel TypeID" />
+                <Label>Channel</Label>
+                <EntityCombobox<ChannelRef>
+                  value={form.watch("channelId") || null}
+                  onChange={(id) => setReferenceField("channelId", id)}
+                  endpoint="/v1/distribution/channels"
+                  detailEndpoint="/v1/distribution/channels/:id"
+                  queryKey={["legal", "policy-assignment", "channels"]}
+                  getLabel={(channel) => channel.name}
+                  getSecondary={(channel) =>
+                    [channel.kind, channel.status].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search channels"
+                />
               </div>
             )}
             {watchedScope === "supplier" && (
               <div className="flex flex-col gap-2">
-                <Label>Supplier ID</Label>
-                <Input {...form.register("supplierId")} placeholder="Supplier TypeID" />
+                <Label>Supplier</Label>
+                <EntityCombobox<SupplierRef>
+                  value={form.watch("supplierId") || null}
+                  onChange={(id) => setReferenceField("supplierId", id)}
+                  endpoint="/v1/suppliers"
+                  detailEndpoint="/v1/suppliers/:id"
+                  queryKey={["legal", "policy-assignment", "suppliers"]}
+                  getLabel={(supplier) => supplier.name}
+                  getSecondary={(supplier) =>
+                    [supplier.city, supplier.country].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search suppliers"
+                />
               </div>
             )}
             {watchedScope === "market" && (
               <div className="flex flex-col gap-2">
-                <Label>Market ID</Label>
-                <Input {...form.register("marketId")} placeholder="Market TypeID" />
+                <Label>Market</Label>
+                <EntityCombobox<MarketRef>
+                  value={form.watch("marketId") || null}
+                  onChange={(id) => setReferenceField("marketId", id)}
+                  endpoint="/v1/markets/markets"
+                  detailEndpoint="/v1/markets/markets/:id"
+                  queryKey={["legal", "policy-assignment", "markets"]}
+                  getLabel={(market) => market.name}
+                  getSecondary={(market) =>
+                    [market.code, market.defaultCurrency].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search markets"
+                />
               </div>
             )}
             {watchedScope === "organization" && (
               <div className="flex flex-col gap-2">
-                <Label>Organization ID</Label>
-                <Input {...form.register("organizationId")} placeholder="Organization TypeID" />
+                <Label>Organization</Label>
+                <EntityCombobox<OrganizationRef>
+                  value={form.watch("organizationId") || null}
+                  onChange={(id) => setReferenceField("organizationId", id)}
+                  endpoint="/v1/crm/organizations"
+                  detailEndpoint="/v1/crm/organizations/:id"
+                  queryKey={["legal", "policy-assignment", "organizations"]}
+                  getLabel={(organization) => organization.name}
+                  getSecondary={(organization) =>
+                    [organization.website, organization.industry].filter(Boolean).join(" / ") ||
+                    undefined
+                  }
+                  placeholder="Search organizations"
+                />
               </div>
             )}
 

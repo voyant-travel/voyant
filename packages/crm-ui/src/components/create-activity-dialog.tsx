@@ -22,6 +22,8 @@ import { useState } from "react"
 
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { crmActivityStatuses, crmActivityTypes, crmEntityTypes } from "../i18n/messages.js"
+import { OrganizationCombobox } from "./organization-combobox.js"
+import { PersonCombobox } from "./person-combobox.js"
 
 type Props = {
   open: boolean
@@ -94,6 +96,20 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
     value,
     label: messages.common.entityTypeLabels[value],
   }))
+  const entityPicker =
+    entityType === "person" ? (
+      <PersonCombobox value={entityId || null} onChange={(next) => setEntityId(next ?? "")} />
+    ) : entityType === "organization" ? (
+      <OrganizationCombobox value={entityId || null} onChange={(next) => setEntityId(next ?? "")} />
+    ) : (
+      <Input
+        id="act-entity"
+        value={entityId}
+        onChange={(event) => setEntityId(event.target.value)}
+        disabled={entityType === "none"}
+        placeholder={messages.createActivityDialog.placeholders.entityId}
+      />
+    )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -176,7 +192,10 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
               </span>
               <Select
                 value={entityType}
-                onValueChange={(value) => setEntityType(value ?? "none")}
+                onValueChange={(value) => {
+                  setEntityType(value ?? "none")
+                  setEntityId("")
+                }}
                 items={entityTypeOptions}
               >
                 <SelectTrigger className="w-full">
@@ -195,13 +214,7 @@ export function CreateActivityDialog({ open, onOpenChange }: Props) {
               <label className="text-xs font-medium text-muted-foreground" htmlFor="act-entity">
                 {messages.createActivityDialog.fields.entityId}
               </label>
-              <Input
-                id="act-entity"
-                value={entityId}
-                onChange={(event) => setEntityId(event.target.value)}
-                disabled={entityType === "none"}
-                placeholder={messages.createActivityDialog.placeholders.entityId}
-              />
+              {entityPicker}
             </div>
           </div>
           {error ? <p className="text-xs text-destructive">{error}</p> : null}

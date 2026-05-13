@@ -38,6 +38,10 @@ export type ProductsUiMessages = {
     productBookingModeLabels: Record<ProductBookingMode, string>
   }
   comboboxes: {
+    product: {
+      placeholder: string
+      empty: string
+    }
     productCategory: {
       placeholder: string
       empty: string

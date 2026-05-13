@@ -490,7 +490,7 @@ export const financeUiRo = {
     title: "Inregistreaza Plata Furnizorului",
     fields: {
       bookingId: "Rezervare",
-      supplierId: "ID Furnizor (optional)",
+      supplierId: "Furnizor (optional)",
       amountCents: "Suma",
       currency: "Moneda",
       paymentDate: "Data Platii",
@@ -501,7 +501,7 @@ export const financeUiRo = {
     },
     placeholders: {
       bookingId: "Cauta dupa numar, client sau produs",
-      supplierId: "supp_...",
+      supplierId: "Cauta furnizori...",
       paymentDate: "Selecteaza data platii",
       referenceNumber: "TXN-12345",
       notes: "Note plata...",

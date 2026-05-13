@@ -160,6 +160,18 @@ export type CrmUiMessages = {
     title: string
     description: string
   }
+  entityComboboxes: {
+    person: {
+      placeholder: string
+      empty: string
+      loading: string
+    }
+    organization: {
+      placeholder: string
+      empty: string
+      loading: string
+    }
+  }
   createActivityDialog: {
     title: string
     description: string

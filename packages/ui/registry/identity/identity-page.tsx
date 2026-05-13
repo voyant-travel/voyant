@@ -1,9 +1,9 @@
 "use client"
 
 import { useNavigate } from "@tanstack/react-router"
+import { EntityRefPicker } from "@voyantjs/identity-ui"
 import { IdCard } from "lucide-react"
 
-import { Input, Label } from "@/components/ui"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AddressesTab } from "./addresses-tab"
 import { ContactPointsTab } from "./contact-points-tab"
@@ -32,39 +32,29 @@ export function IdentityPage({ entityType, entityId, tab = "contact-points" }: I
 
       <p className="max-w-2xl text-sm text-muted-foreground">{pageMessages.description}</p>
 
-      <div className="grid max-w-2xl grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label>{pageMessages.fields.entityType}</Label>
-          <Input
-            value={entityType}
-            onChange={(event) => {
-              const value = event.target.value
-              void navigate({
-                to: ".",
-                replace: true,
-                search: (prev) => ({ ...prev, entityType: value || undefined }),
-              })
-            }}
-            placeholder={pageMessages.placeholders.entityType}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>{pageMessages.fields.entityId}</Label>
-          <Input
-            value={entityId}
-            onChange={(event) => {
-              const value = event.target.value
-              void navigate({
-                to: ".",
-                replace: true,
-                search: (prev) => ({ ...prev, entityId: value || undefined }),
-              })
-            }}
-            placeholder={pageMessages.placeholders.entityId}
-            className="font-mono text-xs"
-          />
-        </div>
-      </div>
+      <EntityRefPicker
+        entityType={entityType}
+        entityId={entityId}
+        onChange={(scope) => {
+          void navigate({
+            to: ".",
+            replace: true,
+            search: (prev) => ({
+              ...prev,
+              entityType: scope.entityType || undefined,
+              entityId: scope.entityId || undefined,
+            }),
+          })
+        }}
+        messages={{
+          entityTypeLabel: pageMessages.fields.entityType,
+          entityLabel: pageMessages.fields.entity,
+          customEntityTypeLabel: pageMessages.fields.customEntityType,
+          typePlaceholder: pageMessages.placeholders.entityType,
+          entityPlaceholder: pageMessages.placeholders.entity,
+          entityTypeLabels: pageMessages.entityTypeLabels,
+        }}
+      />
 
       {!scopeReady ? (
         <div className="rounded-md border border-dashed p-12 text-center">

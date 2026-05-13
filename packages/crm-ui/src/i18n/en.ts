@@ -177,6 +177,18 @@ export const crmUiEn = {
     title: "Organizations",
     description: "Companies, agencies, suppliers, and account relationships.",
   },
+  entityComboboxes: {
+    person: {
+      placeholder: "Search people...",
+      empty: "No people found.",
+      loading: "Loading people...",
+    },
+    organization: {
+      placeholder: "Search organizations...",
+      empty: "No organizations found.",
+      loading: "Loading organizations...",
+    },
+  },
   createActivityDialog: {
     title: "New activity",
     description: "Log a call, email, meeting, or task.",
@@ -186,11 +198,11 @@ export const crmUiEn = {
       status: "Status",
       description: "Description",
       linkTo: "Link to",
-      entityId: "Entity ID",
+      entityId: "Entity",
     },
     placeholders: {
       subject: "Discovery call with Acme",
-      entityId: "pers_...",
+      entityId: "Search or paste a reference",
     },
     validation: {
       subjectRequired: "Subject is required",

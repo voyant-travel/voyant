@@ -339,29 +339,16 @@ export function ProductDayServiceForm({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-supplier-service">
-            {messages.productDayServiceForm.fields.supplierServiceId}
-          </Label>
-          <Input
-            id="product-day-service-supplier-service"
-            value={state.supplierServiceId}
-            onChange={(event) => field("supplierServiceId")(event.target.value)}
-            placeholder={messages.productDayServiceForm.placeholders.supplierServiceId}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="product-day-service-sort-order">
-            {messages.productDayServiceForm.fields.sortOrder}
-          </Label>
-          <Input
-            id="product-day-service-sort-order"
-            type="number"
-            value={state.sortOrder}
-            onChange={(event) => field("sortOrder")(event.target.value)}
-          />
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="product-day-service-sort-order">
+          {messages.productDayServiceForm.fields.sortOrder}
+        </Label>
+        <Input
+          id="product-day-service-sort-order"
+          type="number"
+          value={state.sortOrder}
+          onChange={(event) => field("sortOrder")(event.target.value)}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

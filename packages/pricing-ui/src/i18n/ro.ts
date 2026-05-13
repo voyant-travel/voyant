@@ -98,6 +98,15 @@ export const pricingUiRo = {
       empty: "Nu au fost gasite optiuni de produs.",
       missingParent: "Selecteaza mai intai un produs.",
     },
+    optionUnit: {
+      placeholder: "Selecteaza unitatea optiunii...",
+      empty: "Nu au fost gasite unitati de optiune.",
+      missingParent: "Selecteaza mai intai o optiune.",
+    },
+    optionUnitPriceRule: {
+      placeholder: "Selecteaza regula de pret pe unitate...",
+      empty: "Nu au fost gasite reguli de pret pe unitate.",
+    },
   },
   pricingCategoriesPage: {
     title: "Categorii de tarifare",
@@ -330,7 +339,7 @@ export const pricingUiRo = {
   locationPriceRuleDialog: {
     fields: {
       optionPriceRule: "Regula de pret pentru optiune",
-      optionId: "ID optiune",
+      optionId: "Optiune",
       facilityId: "ID facilitate (optional)",
       pickupPointId: "ID punct preluare",
       dropoffName: "Nume dropoff",
@@ -343,13 +352,13 @@ export const pricingUiRo = {
       notes: "Note",
     },
     placeholders: {
-      optionId: "popt_…",
+      optionId: "Selecteaza optiunea...",
       facilityId: "fac_…",
       pickupPointId: "ppnt_…",
     },
     validation: {
       optionPriceRuleRequired: "Regula de pret pentru optiune este obligatorie",
-      optionIdRequired: "ID-ul optiunii este obligatoriu",
+      optionIdRequired: "Optiunea este obligatorie",
       pickupPointIdRequired: "Punctul de preluare este obligatoriu",
       dropoffNameRequired: "Numele dropoff este obligatoriu",
     },
@@ -391,7 +400,7 @@ export const pricingUiRo = {
     },
     fields: {
       optionPriceRule: "Regula de pret pentru optiune",
-      optionId: "ID optiune",
+      optionId: "Optiune",
       startTimeId: "ID ora start",
       ruleMode: "Mod regula",
       adjustmentType: "Tip ajustare",
@@ -402,13 +411,13 @@ export const pricingUiRo = {
       notes: "Note",
     },
     placeholders: {
-      optionId: "popt_…",
+      optionId: "Selecteaza optiunea...",
       startTimeId: "pst_…",
       select: "Selecteaza...",
     },
     validation: {
       optionPriceRuleRequired: "Regula de pret pentru optiune este obligatorie",
-      optionIdRequired: "ID-ul optiunii este obligatoriu",
+      optionIdRequired: "Optiunea este obligatorie",
       startTimeIdRequired: "ID-ul orei de start este obligatoriu",
     },
     actions: {
@@ -422,8 +431,8 @@ export const pricingUiRo = {
     },
     fields: {
       optionPriceRule: "Regula de pret pentru optiune",
-      optionId: "ID optiune",
-      unitId: "ID unitate",
+      option: "Optiune",
+      unit: "Unitate",
       pricingCategory: "Categorie de pret (optional)",
       pricingMode: "Mod tarifare",
       sellAmount: "Pret vanzare",
@@ -435,14 +444,12 @@ export const pricingUiRo = {
       notes: "Note",
     },
     placeholders: {
-      optionId: "popt_…",
-      unitId: "punit_…",
       pricingCategory: "Cauta categorii de pret...",
     },
     validation: {
       optionPriceRuleRequired: "Regula de pret pentru optiune este obligatorie",
-      optionIdRequired: "ID-ul optiunii este obligatoriu",
-      unitIdRequired: "ID-ul unitatii este obligatoriu",
+      optionRequired: "Optiunea este obligatorie",
+      unitRequired: "Unitatea este obligatorie",
     },
     actions: {
       create: "Adauga regula",
@@ -454,7 +461,7 @@ export const pricingUiRo = {
       edit: "Editeaza tier-ul de unitate",
     },
     fields: {
-      optionUnitPriceRuleId: "ID regula de pret pe unitate",
+      optionUnitPriceRule: "Regula de pret pe unitate",
       minQuantity: "Cantitate minima",
       maxQuantity: "Cantitate maxima",
       sellAmount: "Pret vanzare",
@@ -463,10 +470,10 @@ export const pricingUiRo = {
       active: "Activ",
     },
     placeholders: {
-      optionUnitPriceRuleId: "oupr_…",
+      optionUnitPriceRule: "Selecteaza regula de pret pe unitate...",
     },
     validation: {
-      optionUnitPriceRuleIdRequired: "Regula de pret pe unitate este obligatorie",
+      optionUnitPriceRuleRequired: "Regula de pret pe unitate este obligatorie",
       minQuantityMin: "Cantitatea minima trebuie sa fie cel putin 1",
     },
     actions: {

@@ -106,6 +106,11 @@ export const suppliersUiEn = {
       updated: "Updated",
     },
   },
+  supplierCombobox: {
+    placeholder: "Search suppliers...",
+    empty: "No suppliers found.",
+    loading: "Loading suppliers...",
+  },
   dialogs: {
     supplier: {
       newTitle: "New supplier",

@@ -20,12 +20,13 @@ import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
+import { OptionUnitPriceRuleCombobox } from "./option-unit-price-rule-combobox.js"
 
 function createFormSchema(messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
   return z.object({
     optionUnitPriceRuleId: z
       .string()
-      .min(1, messages.optionUnitTierDialog.validation.optionUnitPriceRuleIdRequired),
+      .min(1, messages.optionUnitTierDialog.validation.optionUnitPriceRuleRequired),
     minQuantity: z.coerce
       .number()
       .int()
@@ -131,10 +132,16 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>{messages.optionUnitTierDialog.fields.optionUnitPriceRuleId}</Label>
-              <Input
-                {...form.register("optionUnitPriceRuleId")}
-                placeholder={messages.optionUnitTierDialog.placeholders.optionUnitPriceRuleId}
+              <Label>{messages.optionUnitTierDialog.fields.optionUnitPriceRule}</Label>
+              <OptionUnitPriceRuleCombobox
+                value={form.watch("optionUnitPriceRuleId")}
+                onChange={(value) =>
+                  form.setValue("optionUnitPriceRuleId", value ?? "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                placeholder={messages.optionUnitTierDialog.placeholders.optionUnitPriceRule}
                 disabled={isEditing}
               />
               {form.formState.errors.optionUnitPriceRuleId ? (

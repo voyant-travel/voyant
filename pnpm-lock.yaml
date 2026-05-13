@@ -2479,9 +2479,21 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/bookings-ui':
+        specifier: workspace:*
+        version: link:../bookings-ui
+      '@voyantjs/crm-ui':
+        specifier: workspace:*
+        version: link:../crm-ui
       '@voyantjs/external-refs-react':
         specifier: workspace:*
         version: link:../external-refs-react
+      '@voyantjs/products-ui':
+        specifier: workspace:*
+        version: link:../products-ui
+      '@voyantjs/suppliers-ui':
+        specifier: workspace:*
+        version: link:../suppliers-ui
       '@voyantjs/ui':
         specifier: workspace:*
         version: link:../ui
@@ -2842,6 +2854,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../finance-react
+      '@voyantjs/suppliers-ui':
+        specifier: workspace:*
+        version: link:../suppliers-ui
       '@voyantjs/ui':
         specifier: workspace:*
         version: link:../ui
@@ -3337,9 +3352,21 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/bookings-ui':
+        specifier: workspace:*
+        version: link:../bookings-ui
+      '@voyantjs/crm-ui':
+        specifier: workspace:*
+        version: link:../crm-ui
       '@voyantjs/identity-react':
         specifier: workspace:*
         version: link:../identity-react
+      '@voyantjs/products-ui':
+        specifier: workspace:*
+        version: link:../products-ui
+      '@voyantjs/suppliers-ui':
+        specifier: workspace:*
+        version: link:../suppliers-ui
       '@voyantjs/ui':
         specifier: workspace:*
         version: link:../ui

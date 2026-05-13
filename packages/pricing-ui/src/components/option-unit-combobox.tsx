@@ -1,8 +1,4 @@
-import {
-  type ProductOptionRecord,
-  useProductOption,
-  useProductOptions,
-} from "@voyantjs/products-react"
+import { type OptionUnitRecord, useOptionUnit, useOptionUnits } from "@voyantjs/products-react"
 import {
   Combobox,
   ComboboxCollection,
@@ -17,35 +13,35 @@ import * as React from "react"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 
 type Props = {
-  productId?: string | null
+  optionId?: string | null
   value: string | null | undefined
   onChange: (value: string | null) => void
   placeholder?: string
   disabled?: boolean
-  requireProduct?: boolean
+  requireOption?: boolean
 }
 
 const PAGE_SIZE = 100
 
-export function ProductOptionCombobox({
-  productId,
+export function OptionUnitCombobox({
+  optionId,
   value,
   onChange,
   placeholder,
   disabled,
-  requireProduct = true,
+  requireOption = true,
 }: Props) {
   const messages = usePricingUiMessagesOrDefault()
   const [search, setSearch] = React.useState("")
-  const listQuery = useProductOptions({
-    productId: productId || undefined,
+  const listQuery = useOptionUnits({
+    optionId: optionId || undefined,
     limit: PAGE_SIZE,
-    enabled: !requireProduct || !!productId,
+    enabled: !requireOption || !!optionId,
   })
-  const selectedQuery = useProductOption(value, { enabled: !!value })
+  const selectedQuery = useOptionUnit(value ?? undefined, { enabled: !!value })
 
   const items = React.useMemo(() => {
-    const map = new Map<string, ProductOptionRecord>()
+    const map = new Map<string, OptionUnitRecord>()
     for (const item of listQuery.data?.data ?? []) {
       if (!search || item.name.toLowerCase().includes(search.toLowerCase())) map.set(item.id, item)
     }
@@ -68,7 +64,7 @@ export function ProductOptionCombobox({
       value={value ?? null}
       inputValue={inputValue}
       autoHighlight
-      disabled={disabled || (requireProduct && !productId)}
+      disabled={disabled || (requireOption && !optionId)}
       itemToStringValue={(id) => itemMap.get(id as string)?.name ?? ""}
       onInputValueChange={(next) => {
         setInputValue(next)
@@ -82,16 +78,16 @@ export function ProductOptionCombobox({
       }}
     >
       <ComboboxInput
-        placeholder={placeholder ?? messages.comboboxes.productOption.placeholder}
+        placeholder={placeholder ?? messages.comboboxes.optionUnit.placeholder}
         showClear={!!value}
       />
       <ComboboxContent>
         <ComboboxEmpty>
           {listQuery.isPending || selectedQuery.isPending
             ? messages.common.loading
-            : productId || !requireProduct
-              ? messages.comboboxes.productOption.empty
-              : messages.comboboxes.productOption.missingParent}
+            : optionId || !requireOption
+              ? messages.comboboxes.optionUnit.empty
+              : messages.comboboxes.optionUnit.missingParent}
         </ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
@@ -102,9 +98,9 @@ export function ProductOptionCombobox({
                 <ComboboxItem key={item.id} value={item.id}>
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate font-medium">{item.name}</span>
-                    {item.code ? (
-                      <span className="truncate text-xs text-muted-foreground">{item.code}</span>
-                    ) : null}
+                    <span className="truncate text-xs text-muted-foreground">
+                      {[item.code, item.unitType].filter(Boolean).join(" / ")}
+                    </span>
                   </div>
                 </ComboboxItem>
               )

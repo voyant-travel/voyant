@@ -106,6 +106,11 @@ export const suppliersUiRo = {
       updated: "Actualizat",
     },
   },
+  supplierCombobox: {
+    placeholder: "Cauta furnizori...",
+    empty: "Nu s-au gasit furnizori.",
+    loading: "Se incarca furnizorii...",
+  },
   dialogs: {
     supplier: {
       newTitle: "Furnizor nou",

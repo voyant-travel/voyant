@@ -3,6 +3,7 @@ export {
   ContactPointDialog,
   type ContactPointDialogProps,
 } from "./components/contact-point-dialog.js"
+export { EntityRefPicker, type EntityRefPickerProps } from "./components/entity-ref-picker.js"
 export {
   AddressesTab,
   ContactPointsTab,

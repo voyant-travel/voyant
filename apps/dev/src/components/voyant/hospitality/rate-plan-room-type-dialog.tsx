@@ -20,6 +20,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { EntityCombobox } from "@/components/ui/entity-combobox"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const formSchema = z.object({
@@ -36,6 +37,20 @@ type FormValues = z.input<typeof formSchema>
 type FormOutput = z.output<typeof formSchema>
 
 export type RatePlanRoomTypeData = RatePlanRoomTypeRecord
+
+type ProductRef = { id: string; name: string; status?: string | null; bookingMode?: string | null }
+type ProductOptionRef = {
+  id: string
+  name: string
+  code?: string | null
+  status?: string | null
+}
+type OptionUnitRef = {
+  id: string
+  name: string
+  code?: string | null
+  unitType?: string | null
+}
 
 type Props = {
   open: boolean
@@ -105,6 +120,8 @@ export function RatePlanRoomTypeDialog({ open, onOpenChange, propertyId, link, o
   }
 
   const isSubmitting = form.formState.isSubmitting || create.isPending || update.isPending
+  const selectedProductId = form.watch("productId") || null
+  const selectedOptionId = form.watch("optionId") || null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,16 +165,83 @@ export function RatePlanRoomTypeDialog({ open, onOpenChange, propertyId, link, o
 
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label>Product ID</Label>
-                <Input {...form.register("productId")} placeholder="prod_…" />
+                <Label>Product</Label>
+                <EntityCombobox<ProductRef>
+                  value={selectedProductId}
+                  onChange={(id) => {
+                    form.setValue("productId", id ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                    form.setValue("optionId", "")
+                    form.setValue("unitId", "")
+                  }}
+                  endpoint="/v1/products"
+                  detailEndpoint="/v1/products/:id"
+                  queryKey={["hospitality", "rate-plan-room-types", "products"]}
+                  getLabel={(product) => product.name}
+                  getSecondary={(product) =>
+                    [product.status, product.bookingMode].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search products"
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Option ID</Label>
-                <Input {...form.register("optionId")} placeholder="opt_…" />
+                <Label>Option</Label>
+                <EntityCombobox<ProductOptionRef>
+                  value={selectedOptionId}
+                  onChange={(id) => {
+                    form.setValue("optionId", id ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                    form.setValue("unitId", "")
+                  }}
+                  endpoint={`/v1/products/options?productId=${encodeURIComponent(
+                    selectedProductId ?? "",
+                  )}`}
+                  detailEndpoint="/v1/products/options/:id"
+                  queryKey={[
+                    "hospitality",
+                    "rate-plan-room-types",
+                    "product-options",
+                    selectedProductId,
+                  ]}
+                  getLabel={(option) => option.name}
+                  getSecondary={(option) =>
+                    [option.code, option.status].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search options"
+                  disabled={!selectedProductId}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Unit ID</Label>
-                <Input {...form.register("unitId")} placeholder="unit_…" />
+                <Label>Unit</Label>
+                <EntityCombobox<OptionUnitRef>
+                  value={form.watch("unitId") || null}
+                  onChange={(id) =>
+                    form.setValue("unitId", id ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  endpoint={`/v1/products/units?optionId=${encodeURIComponent(
+                    selectedOptionId ?? "",
+                  )}`}
+                  detailEndpoint="/v1/products/units/:id"
+                  queryKey={[
+                    "hospitality",
+                    "rate-plan-room-types",
+                    "option-units",
+                    selectedOptionId,
+                  ]}
+                  getLabel={(unit) => unit.name}
+                  getSecondary={(unit) =>
+                    [unit.code, unit.unitType].filter(Boolean).join(" / ") || undefined
+                  }
+                  placeholder="Search units"
+                  disabled={!selectedOptionId}
+                />
               </div>
             </div>
 

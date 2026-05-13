@@ -98,6 +98,15 @@ export const pricingUiEn = {
       empty: "No product options found.",
       missingParent: "Select a product first.",
     },
+    optionUnit: {
+      placeholder: "Select option unit...",
+      empty: "No option units found.",
+      missingParent: "Select an option first.",
+    },
+    optionUnitPriceRule: {
+      placeholder: "Select option unit price rule...",
+      empty: "No option unit price rules found.",
+    },
   },
   pricingCategoriesPage: {
     title: "Pricing Categories",
@@ -328,7 +337,7 @@ export const pricingUiEn = {
   locationPriceRuleDialog: {
     fields: {
       optionPriceRule: "Option price rule",
-      optionId: "Option ID",
+      optionId: "Option",
       facilityId: "Facility ID (optional)",
       pickupPointId: "Pickup point ID",
       dropoffName: "Dropoff name",
@@ -341,13 +350,13 @@ export const pricingUiEn = {
       notes: "Notes",
     },
     placeholders: {
-      optionId: "popt_…",
+      optionId: "Select option...",
       facilityId: "fac_…",
       pickupPointId: "ppnt_…",
     },
     validation: {
       optionPriceRuleRequired: "Option price rule is required",
-      optionIdRequired: "Option ID is required",
+      optionIdRequired: "Option is required",
       pickupPointIdRequired: "Pickup point is required",
       dropoffNameRequired: "Dropoff name is required",
     },
@@ -389,7 +398,7 @@ export const pricingUiEn = {
     },
     fields: {
       optionPriceRule: "Option price rule",
-      optionId: "Option ID",
+      optionId: "Option",
       startTimeId: "Start time ID",
       ruleMode: "Rule mode",
       adjustmentType: "Adjustment type",
@@ -400,13 +409,13 @@ export const pricingUiEn = {
       notes: "Notes",
     },
     placeholders: {
-      optionId: "popt_…",
+      optionId: "Select option...",
       startTimeId: "pst_…",
       select: "Select...",
     },
     validation: {
       optionPriceRuleRequired: "Option price rule is required",
-      optionIdRequired: "Option ID is required",
+      optionIdRequired: "Option is required",
       startTimeIdRequired: "Start time ID is required",
     },
     actions: {
@@ -420,8 +429,8 @@ export const pricingUiEn = {
     },
     fields: {
       optionPriceRule: "Option price rule",
-      optionId: "Option ID",
-      unitId: "Unit ID",
+      option: "Option",
+      unit: "Unit",
       pricingCategory: "Pricing category (optional)",
       pricingMode: "Pricing mode",
       sellAmount: "Sell amount",
@@ -433,14 +442,12 @@ export const pricingUiEn = {
       notes: "Notes",
     },
     placeholders: {
-      optionId: "popt_…",
-      unitId: "punit_…",
       pricingCategory: "Search pricing categories...",
     },
     validation: {
       optionPriceRuleRequired: "Option price rule is required",
-      optionIdRequired: "Option ID is required",
-      unitIdRequired: "Unit ID is required",
+      optionRequired: "Option is required",
+      unitRequired: "Unit is required",
     },
     actions: {
       create: "Add rule",
@@ -452,7 +459,7 @@ export const pricingUiEn = {
       edit: "Edit unit tier",
     },
     fields: {
-      optionUnitPriceRuleId: "Option unit price rule ID",
+      optionUnitPriceRule: "Option unit price rule",
       minQuantity: "Min quantity",
       maxQuantity: "Max quantity",
       sellAmount: "Sell amount",
@@ -461,10 +468,10 @@ export const pricingUiEn = {
       active: "Active",
     },
     placeholders: {
-      optionUnitPriceRuleId: "oupr_…",
+      optionUnitPriceRule: "Select option unit price rule...",
     },
     validation: {
-      optionUnitPriceRuleIdRequired: "Option unit price rule is required",
+      optionUnitPriceRuleRequired: "Option unit price rule is required",
       minQuantityMin: "Min quantity must be at least 1",
     },
     actions: {

@@ -31,7 +31,9 @@ import { z } from "zod/v4"
 import type { UnitPricingMode } from "../i18n/messages.js"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import { OptionPriceRuleCombobox } from "./option-price-rule-combobox.js"
+import { OptionUnitCombobox } from "./option-unit-combobox.js"
 import { PricingCategoryCombobox } from "./pricing-category-combobox.js"
+import { ProductOptionCombobox } from "./product-option-combobox.js"
 
 const PRICING_MODES = [
   "per_unit",
@@ -48,8 +50,8 @@ function createFormSchema(messages: ReturnType<typeof usePricingUiMessagesOrDefa
     optionPriceRuleId: z
       .string()
       .min(1, messages.optionUnitPriceRuleDialog.validation.optionPriceRuleRequired),
-    optionId: z.string().min(1, messages.optionUnitPriceRuleDialog.validation.optionIdRequired),
-    unitId: z.string().min(1, messages.optionUnitPriceRuleDialog.validation.unitIdRequired),
+    optionId: z.string().min(1, messages.optionUnitPriceRuleDialog.validation.optionRequired),
+    unitId: z.string().min(1, messages.optionUnitPriceRuleDialog.validation.unitRequired),
     pricingCategoryId: z.string().optional().nullable(),
     pricingMode: z.enum(PRICING_MODES),
     sellAmount: z.coerce.number().min(0).optional().or(z.literal("")).nullable(),
@@ -148,6 +150,7 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
   }
 
   const isSubmitting = create.isPending || update.isPending
+  const selectedOptionId = form.watch("optionId")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -182,17 +185,30 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>{messages.optionUnitPriceRuleDialog.fields.optionId}</Label>
-                <Input
-                  {...form.register("optionId")}
-                  placeholder={messages.optionUnitPriceRuleDialog.placeholders.optionId}
+                <Label>{messages.optionUnitPriceRuleDialog.fields.option}</Label>
+                <ProductOptionCombobox
+                  value={selectedOptionId}
+                  onChange={(value) => {
+                    form.setValue("optionId", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                    form.setValue("unitId", "", { shouldDirty: true, shouldValidate: true })
+                  }}
+                  requireProduct={false}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>{messages.optionUnitPriceRuleDialog.fields.unitId}</Label>
-                <Input
-                  {...form.register("unitId")}
-                  placeholder={messages.optionUnitPriceRuleDialog.placeholders.unitId}
+                <Label>{messages.optionUnitPriceRuleDialog.fields.unit}</Label>
+                <OptionUnitCombobox
+                  optionId={selectedOptionId}
+                  value={form.watch("unitId")}
+                  onChange={(value) =>
+                    form.setValue("unitId", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
               </div>
             </div>

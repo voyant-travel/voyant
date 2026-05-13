@@ -12,7 +12,7 @@ import {
   useNamedContactMutation,
   useNamedContacts,
 } from "@voyantjs/identity-react"
-import { Badge, Button, Input, Label } from "@voyantjs/ui/components"
+import { Badge, Button } from "@voyantjs/ui/components"
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { IdCard, Pencil, Plus, Star, Trash2 } from "lucide-react"
@@ -21,6 +21,7 @@ import { useMemo, useState } from "react"
 import { useIdentityUiMessagesOrDefault } from "../i18n/index.js"
 import { AddressDialog } from "./address-dialog.js"
 import { ContactPointDialog } from "./contact-point-dialog.js"
+import { EntityRefPicker } from "./entity-ref-picker.js"
 import { NamedContactDialog } from "./named-contact-dialog.js"
 
 const PAGE_SIZE = 25
@@ -74,25 +75,19 @@ export function IdentityPage({
 
       <p className="max-w-2xl text-sm text-muted-foreground">{pageMessages.description}</p>
 
-      <div className="grid max-w-2xl grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label>{pageMessages.fields.entityType}</Label>
-          <Input
-            value={activeEntityType}
-            onChange={(event) => updateScope({ entityType: event.target.value })}
-            placeholder={pageMessages.placeholders.entityType}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>{pageMessages.fields.entityId}</Label>
-          <Input
-            value={activeEntityId}
-            onChange={(event) => updateScope({ entityId: event.target.value })}
-            placeholder={pageMessages.placeholders.entityId}
-            className="font-mono text-xs"
-          />
-        </div>
-      </div>
+      <EntityRefPicker
+        entityType={activeEntityType}
+        entityId={activeEntityId}
+        onChange={updateScope}
+        messages={{
+          entityTypeLabel: pageMessages.fields.entityType,
+          entityLabel: pageMessages.fields.entity,
+          customEntityTypeLabel: pageMessages.fields.customEntityType,
+          typePlaceholder: pageMessages.placeholders.entityType,
+          entityPlaceholder: pageMessages.placeholders.entity,
+          entityTypeLabels: pageMessages.entityTypeLabels,
+        }}
+      />
 
       {!scopeReady ? (
         <div className="rounded-md border border-dashed p-12 text-center">
