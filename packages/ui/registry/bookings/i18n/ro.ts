@@ -1,10 +1,10 @@
 import type { RegistryBookingsMessages } from "./messages"
 
 export const registryBookingsRo: RegistryBookingsMessages = {
-  passengerDialog: {
+  travelerDialog: {
     titles: {
-      create: "Adauga pasager",
-      edit: "Editeaza pasagerul",
+      create: "Adauga calator",
+      edit: "Editeaza calatorul",
     },
     fields: {
       firstName: "Prenume",
@@ -25,13 +25,13 @@ export const registryBookingsRo: RegistryBookingsMessages = {
       lastNameRequired: "Numele este obligatoriu",
     },
     actions: {
-      addPassenger: "Adauga pasager",
+      addTraveler: "Adauga calator",
     },
   },
-  passengerList: {
-    title: "Pasageri",
-    addPassenger: "Adauga pasager",
-    empty: "Nu exista pasageri inca.",
+  travelerList: {
+    title: "Calatori",
+    addTraveler: "Adauga calator",
+    empty: "Nu exista calatori inca.",
     values: {
       emailUnavailable: "-",
       phoneUnavailable: "-",
@@ -42,13 +42,13 @@ export const registryBookingsRo: RegistryBookingsMessages = {
       phone: "Telefon",
     },
     actions: {
-      deleteConfirm: "Stergi acest pasager?",
+      deleteConfirm: "Stergi acest calator?",
     },
   },
-  bookingItemParticipants: {
-    title: "Participanti alocati",
-    empty: "Nu exista participanti alocati acestui articol.",
-    selectPassengerPlaceholder: "Selecteaza pasagerul...",
+  bookingItemTravelers: {
+    title: "Calatori alocati",
+    empty: "Nu exista calatori alocati acestui articol.",
+    selectTravelerPlaceholder: "Selecteaza calatorul...",
     primaryBadge: "Principal",
     roleLabels: {
       traveler: "Calator",
@@ -60,7 +60,7 @@ export const registryBookingsRo: RegistryBookingsMessages = {
     },
     actions: {
       assign: "Aloca",
-      removeConfirm: "Elimini acest participant din articol?",
+      removeConfirm: "Elimini acest calator din articol?",
     },
   },
 }

@@ -336,10 +336,10 @@ export type BookingsUiMessages = {
       organizationNone: string
     }
   }
-  passengersSection: {
+  travelersSection: {
     labels: {
       heading: string
-      addPassenger: string
+      addTraveler: string
       firstName: string
       lastName: string
       email: string
@@ -938,17 +938,17 @@ export type BookingsUiMessages = {
       createNewPerson: string
       selectExistingPerson: string
       organizationNone: string
-      addPassenger: string
-      passengerHeading: string
-      passengerRole: string
-      passengerLead: string
-      passengerAdult: string
-      passengerChild: string
-      passengerInfant: string
-      passengerRoom: string
-      passengerNoRoom: string
-      passengerRemove: string
-      passengerEmpty: string
+      addTraveler: string
+      travelerHeading: string
+      travelerRole: string
+      travelerLead: string
+      travelerAdult: string
+      travelerChild: string
+      travelerInfant: string
+      travelerRoom: string
+      travelerNoRoom: string
+      travelerRemove: string
+      travelerEmpty: string
       roomsHeading: string
       roomsNoSlot: string
       roomsNoUnits: string

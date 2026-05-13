@@ -3769,8 +3769,8 @@ export const bookingsService = {
     await db.insert(bookingActivityLog).values({
       bookingId,
       actorId: userId ?? "system",
-      activityType: "passenger_update",
-      description: `Participant ${data.firstName} ${data.lastName} added`,
+      activityType: "traveler_update",
+      description: `Traveler ${data.firstName} ${data.lastName} added`,
       metadata: { travelerId: row.id, participantType: data.participantType },
     })
 

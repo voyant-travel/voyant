@@ -19,8 +19,8 @@ export interface QuickCreateTravelerInput {
   preferredLanguage?: string | null
   specialRequests?: string | null
   /**
-   * option_unit_id of the room the passenger is assigned to. Round-trips
-   * from the UI PassengersSection even though the server currently doesn't
+   * option_unit_id of the room the traveler is assigned to. Round-trips
+   * from the UI TravelersSection even though the server currently doesn't
    * persist it — the follow-up that adds a traveler→room link will pick it
    * up without the client changing.
    */

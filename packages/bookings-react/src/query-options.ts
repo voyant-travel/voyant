@@ -208,10 +208,6 @@ export function getTravelerRevealQueryOptions(
   })
 }
 
-export const getPassengersQueryOptions = getTravelersQueryOptions
-
-export const getBookingItemParticipantsQueryOptions = getBookingItemTravelersQueryOptions
-
 export function getSupplierStatusesQueryOptions(
   client: FetchWithValidationOptions,
   bookingId: string | null | undefined,

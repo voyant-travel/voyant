@@ -1,10 +1,10 @@
 import type { RegistryBookingsMessages } from "./messages"
 
 export const registryBookingsEn: RegistryBookingsMessages = {
-  passengerDialog: {
+  travelerDialog: {
     titles: {
-      create: "Add passenger",
-      edit: "Edit passenger",
+      create: "Add traveler",
+      edit: "Edit traveler",
     },
     fields: {
       firstName: "First name",
@@ -25,13 +25,13 @@ export const registryBookingsEn: RegistryBookingsMessages = {
       lastNameRequired: "Last name is required",
     },
     actions: {
-      addPassenger: "Add passenger",
+      addTraveler: "Add traveler",
     },
   },
-  passengerList: {
-    title: "Passengers",
-    addPassenger: "Add passenger",
-    empty: "No passengers yet.",
+  travelerList: {
+    title: "Travelers",
+    addTraveler: "Add traveler",
+    empty: "No travelers yet.",
     values: {
       emailUnavailable: "-",
       phoneUnavailable: "-",
@@ -42,13 +42,13 @@ export const registryBookingsEn: RegistryBookingsMessages = {
       phone: "Phone",
     },
     actions: {
-      deleteConfirm: "Delete this passenger?",
+      deleteConfirm: "Delete this traveler?",
     },
   },
-  bookingItemParticipants: {
-    title: "Assigned participants",
-    empty: "No participants assigned to this item.",
-    selectPassengerPlaceholder: "Select passenger...",
+  bookingItemTravelers: {
+    title: "Assigned travelers",
+    empty: "No travelers assigned to this item.",
+    selectTravelerPlaceholder: "Select traveler...",
     primaryBadge: "Primary",
     roleLabels: {
       traveler: "Traveler",
@@ -60,7 +60,7 @@ export const registryBookingsEn: RegistryBookingsMessages = {
     },
     actions: {
       assign: "Assign",
-      removeConfirm: "Remove this participant from the item?",
+      removeConfirm: "Remove this traveler from the item?",
     },
   },
 }

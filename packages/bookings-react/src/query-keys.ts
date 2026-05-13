@@ -58,15 +58,11 @@ export const bookingsQueryKeys = {
   items: (bookingId: string) => [...bookingsQueryKeys.booking(bookingId), "items"] as const,
   itemTravelers: (bookingId: string, itemId: string) =>
     [...bookingsQueryKeys.items(bookingId), itemId, "travelers"] as const,
-  itemParticipants: (bookingId: string, itemId: string) =>
-    [...bookingsQueryKeys.items(bookingId), itemId, "participants"] as const,
   travelers: (bookingId: string) => [...bookingsQueryKeys.booking(bookingId), "travelers"] as const,
   sharingGroupsForSlot: (slotId: string) =>
     [...bookingsQueryKeys.all, "sharing-groups", "slot", slotId] as const,
   travelersBySharingGroup: (slotId: string, groupId: string) =>
     [...bookingsQueryKeys.sharingGroupsForSlot(slotId), groupId, "travelers"] as const,
-  passengers: (bookingId: string) =>
-    [...bookingsQueryKeys.booking(bookingId), "passengers"] as const,
   documents: (bookingId: string) => [...bookingsQueryKeys.booking(bookingId), "documents"] as const,
   supplierStatuses: (bookingId: string) =>
     [...bookingsQueryKeys.booking(bookingId), "supplier-statuses"] as const,
