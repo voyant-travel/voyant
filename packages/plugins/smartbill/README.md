@@ -79,6 +79,46 @@ Use `retrySmartbillInvoiceArtifact({ runtime, client, externalRef, documentType
 })` to re-download and re-attach a SmartBill PDF from an existing external ref
 without issuing a new document.
 
+## Workflow Factories
+
+The package also ships scheduler-agnostic workflow factories for recurring
+SmartBill maintenance. They return async functions that can be called from
+`@voyantjs/workflows`, a Cloudflare cron handler, Trigger.dev, Hatchet, or any
+other job runner.
+
+```typescript
+import {
+  createSmartbillDriftReconciler,
+  createSmartbillProformaConversionPoller,
+} from "@voyantjs/plugin-smartbill"
+
+const pollProformas = createSmartbillProformaConversionPoller({
+  db,
+  client: smartbillClient,
+  onConverted: async (conversion) => {
+    // Record a Voyant payment or emit a domain event in the host app.
+    // The plugin reports the SmartBill invoice series/number and source
+    // proforma ref, but leaves payment semantics to the consumer.
+  },
+})
+
+const reconcileSmartbill = createSmartbillDriftReconciler({
+  db,
+  client: smartbillClient,
+  listRemoteDocuments: async () => remoteSmartbillInventory,
+  onFinding: async (finding) => {
+    // Log, alert, or open an operator ticket.
+  },
+})
+```
+
+`createSmartbillProformaConversionPoller` scans SmartBill proforma external refs
+and calls `client.listEstimateInvoices(...)` to detect SmartBill-created final
+invoices. `createSmartbillDriftReconciler` verifies known SmartBill refs by
+default and can compare a caller-provided remote inventory for `missing_local`
+findings. The reconciler only reports drift; it does not delete, void, or create
+finance records.
+
 ## Exports
 
 | Entry | Description |
@@ -87,6 +127,7 @@ without issuing a new document.
 | `./plugin` | `smartbillPlugin(options)` — packaged adapter/subscriber bundle |
 | `./client` | `createSmartbillClient` — `createInvoice`, `cancelInvoice`, `viewPdf`, `getPaymentStatus`, etc. |
 | `./mock` | `createSmartbillMockServer` — stateful local SmartBill-compatible mock for tests |
+| `./workflows` | Proforma conversion polling and drift reconciliation factories |
 | `./types` | SmartBill adapter and bundle types |
 
 ## Local SmartBill Mock

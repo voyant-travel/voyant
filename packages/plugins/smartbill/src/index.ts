@@ -74,3 +74,26 @@ export type {
   SmartbillTaxesResponse,
   VoyantInvoiceEvent,
 } from "./types.js"
+export type {
+  SmartbillDriftFinding,
+  SmartbillDriftFindingType,
+  SmartbillDriftReconciler,
+  SmartbillDriftReconcilerOptions,
+  SmartbillDriftReconcilerResult,
+  SmartbillProformaConversion,
+  SmartbillProformaConversionPoller,
+  SmartbillProformaConversionPollerOptions,
+  SmartbillProformaConversionPollerResult,
+  SmartbillReferenceParts,
+  SmartbillRemoteDocument,
+  SmartbillRemoteDocumentStatus,
+  SmartbillWorkflowDocumentType,
+  SmartbillWorkflowError,
+  SmartbillWorkflowExternalRef,
+  SmartbillWorkflowInvoice,
+  SmartbillWorkflowLogger,
+} from "./workflows.js"
+export {
+  createSmartbillDriftReconciler,
+  createSmartbillProformaConversionPoller,
+} from "./workflows.js"
