@@ -163,7 +163,7 @@ function resolveMappingOptionsSync(
 ): ResolvedMappingOptions {
   return {
     companyVatCode: options.companyVatCode,
-    seriesName: resolveEventValueSync(event, options.seriesName, "seriesName"),
+    seriesName: resolveRequiredEventValueSync(event, options.seriesName, "seriesName"),
     language: options.language,
     isTaxIncluded: options.isTaxIncluded,
     art311SpecialRegime: options.art311SpecialRegime,
@@ -183,7 +183,7 @@ async function resolveMappingOptions(
 ): Promise<ResolvedMappingOptions> {
   return {
     companyVatCode: options.companyVatCode,
-    seriesName: await resolveEventValue(event, options.seriesName),
+    seriesName: await resolveRequiredEventValue(event, options.seriesName, "seriesName"),
     language: options.language,
     isTaxIncluded: options.isTaxIncluded,
     art311SpecialRegime: options.art311SpecialRegime,
@@ -212,6 +212,18 @@ function resolveEventValueSync<T>(
   return resolved
 }
 
+function resolveRequiredEventValueSync<T>(
+  event: VoyantInvoiceEvent,
+  value: SmartbillEventValue<T>,
+  field: string,
+): T {
+  const resolved = resolveEventValueSync(event, value, field)
+  if (resolved === undefined || resolved === null) {
+    throw new Error(`SmartBill mapping option "${field}" is required`)
+  }
+  return resolved
+}
+
 async function resolveEventValue<T>(
   event: VoyantInvoiceEvent,
   value: SmartbillEventValue<T> | undefined,
@@ -219,6 +231,18 @@ async function resolveEventValue<T>(
   return typeof value === "function"
     ? await (value as (event: VoyantInvoiceEvent) => SmartbillMaybePromise<T>)(event)
     : value
+}
+
+async function resolveRequiredEventValue<T>(
+  event: VoyantInvoiceEvent,
+  value: SmartbillEventValue<T>,
+  field: string,
+): Promise<T> {
+  const resolved = await resolveEventValue(event, value)
+  if (resolved === undefined || resolved === null) {
+    throw new Error(`SmartBill mapping option "${field}" is required`)
+  }
+  return resolved
 }
 
 function isPromiseLike<T>(value: T | Promise<T> | undefined): value is Promise<T> {
