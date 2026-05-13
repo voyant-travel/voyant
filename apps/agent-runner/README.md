@@ -76,6 +76,9 @@ The deployment uses three Cloudflare persistence surfaces:
   when the runner environment also configures the corresponding supervised
   repair command outside this Worker.
 - `AGENT_RUNNER_HOLDER`: default lease holder, for example `runner:cloudflare`.
+- `AGENT_RUNNER_LEASE_TTL_SECONDS`: optional default lease TTL used when a
+  supervisor tick does not provide `ttlSeconds`. Keep this short for Cron
+  because the Worker is lease-only and command execution remains external.
 - `AGENT_RUNNER_MAX_DAILY_LEASES`: optional daily lease budget for deployed
   API and Cron ticks. Requires `AGENT_RUNNER_TICKS`; real leases are refused if
   the budget is configured without persistent tick storage. The value is
@@ -93,11 +96,11 @@ The deployment uses three Cloudflare persistence surfaces:
 - `AGENT_CONTROL_PLANE_URL`: deployed control-plane URL.
 - `AGENT_CONTROL_PLANE_TOKEN`: bearer token for the control plane.
 
-Cron triggers should stay disabled until queue snapshots, control-plane dispatch
-intent storage, R2 tick storage, D1 ledger storage, Durable Object coordination,
-and an explicit daily lease budget are configured. Keep provider execution
-outside this Worker unless a later design adds sandbox policy and task-scoped
-credentials.
+Cron triggers should stay constrained to one low-risk lifecycle action until an
+external executor is attached. The production pilot uses `sync-pr`, a 300 second
+lease TTL, and a three-lease daily budget so stale lease-only reservations age
+out quickly. Keep provider execution outside this Worker unless a later design
+adds sandbox policy and task-scoped credentials.
 
 ## Deployment Pilot
 
@@ -118,8 +121,8 @@ pnpm -C apps/agent-runner wrangler secret put AGENT_CONTROL_PLANE_TOKEN
 ```
 
 Deploy with `AGENT_RUNNER_ENABLED=false` first. Run deployment doctor and
-deployed status checks. Only then set a narrow action allow-list, a daily lease
-budget, and enable Cron.
+deployed status checks. Only then set a narrow action allow-list, a short lease
+TTL, a daily lease budget, and enable Cron.
 
 Run command execution from a trusted external executor, not inside the Worker.
 For a bounded always-on loop:

@@ -52,6 +52,7 @@ export interface RunnerConfig {
   defaultAction?: string
   enabled: boolean
   holder?: string
+  leaseTtlSeconds?: number
   maxDailyLeases?: number
   maxLeaseTtlSeconds?: number
   repository?: string
@@ -76,6 +77,7 @@ export function buildRunnerCapabilities(config: RunnerConfig) {
     defaults: {
       action: config.defaultAction ?? null,
       holder: config.holder ?? null,
+      leaseTtlSeconds: config.leaseTtlSeconds ?? null,
       repository: config.repository ?? null,
     },
     policy: buildRunnerPolicy(config),
@@ -101,6 +103,7 @@ export function planSupervisorTick({
   const iterations = request.iterations ?? 1
   const policy = buildRunnerPolicy(config)
   const action = request.action ?? config.defaultAction
+  const ttlSeconds = request.ttlSeconds ?? config.leaseTtlSeconds
 
   const blockers = [
     config.enabled ? null : "runner execution is disabled",
@@ -108,7 +111,7 @@ export function planSupervisorTick({
     holder ? null : "holder is not configured",
     repository ? null : "repository is not configured",
     actionPolicyBlocker({ action, policy }),
-    ttlPolicyBlocker({ policy, ttlSeconds: request.ttlSeconds }),
+    ttlPolicyBlocker({ policy, ttlSeconds }),
   ].filter((blocker): blocker is string => Boolean(blocker))
 
   return {
@@ -119,6 +122,7 @@ export function planSupervisorTick({
       holder,
       iterations,
       repository,
+      ttlSeconds,
     }),
     dryRun: request.dryRun ?? true,
     iterations,
@@ -324,12 +328,13 @@ function buildDispatchIntentRequest({
   const holder = request.holder ?? config.holder
   const repository = request.repository ?? config.repository
   const action = request.action ?? config.defaultAction
+  const ttlSeconds = request.ttlSeconds ?? config.leaseTtlSeconds
 
   return {
     repository,
     lease: {
       holder,
-      ...(request.ttlSeconds ? { ttlSeconds: request.ttlSeconds } : {}),
+      ...(ttlSeconds ? { ttlSeconds } : {}),
     },
     ...(action || request.issue
       ? {
@@ -429,11 +434,13 @@ function buildLocalEquivalentCommand({
   holder,
   iterations,
   repository,
+  ttlSeconds,
 }: {
   controlPlaneUrl?: string
   holder?: string
   iterations: number
   repository?: string
+  ttlSeconds?: number
 }) {
   const command = ["pnpm", "agent:queue:control-plane-loop", "--"]
   if (repository) {
@@ -443,6 +450,9 @@ function buildLocalEquivalentCommand({
     command.push("--holder", holder)
   }
   command.push("--iterations", String(iterations), "--yes")
+  if (ttlSeconds) {
+    command.push("--ttl-seconds", String(ttlSeconds))
+  }
   if (controlPlaneUrl) {
     command.push("--control-plane-url", controlPlaneUrl)
   }
