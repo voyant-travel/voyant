@@ -153,6 +153,7 @@ export const productsUiRo = {
       deleteConfirm: 'Stergi produsul "{name}"?',
       deleteItineraryConfirm: 'Stergi itinerarul "{name}"?',
       deleteDayConfirm: 'Stergi ziua "{dayNumber}"?',
+      deleteServiceConfirm: 'Stergi serviciul "{name}"?',
       deleteFailed: "Produsul nu a putut fi sters.",
       minutes: "{count} min",
     },
@@ -511,6 +512,16 @@ export const productsUiRo = {
     actions: {
       addService: "Adauga serviciu",
       saveService: "Salveaza serviciul",
+    },
+  },
+  productDayServiceDialog: {
+    titles: {
+      create: "Adauga serviciu",
+      edit: "Editeaza serviciu",
+    },
+    descriptions: {
+      create: "Adauga un serviciu operational pentru aceasta zi de itinerar.",
+      edit: "Actualizeaza serviciul operational pentru aceasta zi de itinerar.",
     },
   },
   productItineraryDayRow: {

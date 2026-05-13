@@ -25,6 +25,10 @@ export {
   type ProductDayMediaTrayProps,
 } from "./components/product-day-media-tray.js"
 export {
+  ProductDayServiceDialog,
+  type ProductDayServiceDialogProps,
+} from "./components/product-day-service-dialog.js"
+export {
   ProductDayServiceForm,
   type ProductDayServiceFormHelpers,
   type ProductDayServiceFormProps,

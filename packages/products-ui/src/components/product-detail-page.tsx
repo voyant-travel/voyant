@@ -7,6 +7,7 @@ import {
   type ProductRecord,
   useProduct,
   useProductDayMutation,
+  useProductDayServiceMutation,
   useProductItineraries,
   useProductItineraryDays,
   useProductItineraryMutation,
@@ -34,6 +35,8 @@ import * as React from "react"
 
 import { useProductsUiI18nOrDefault, useProductsUiMessagesOrDefault } from "../i18n/provider.js"
 import { ProductDayDialog } from "./product-day-dialog.js"
+import { ProductDayServiceDialog } from "./product-day-service-dialog.js"
+import type { ProductDayServiceFormProps } from "./product-day-service-form.js"
 import { ProductDialog } from "./product-dialog.js"
 import {
   ProductItineraryDayRow,
@@ -69,6 +72,8 @@ export interface ProductDetailPageProps {
   renderOptionDetails?: ProductOptionsSectionProps["renderOptionDetails"]
   renderItineraryDayDetails?: (context: ProductItineraryDayRowRenderContext) => React.ReactNode
   renderItineraryServiceActions?: (service: ProductDayServiceRecord) => React.ReactNode
+  renderSupplierServiceField?: ProductDayServiceFormProps["renderSupplierServiceField"]
+  onSupplierServiceSelected?: ProductDayServiceFormProps["onSupplierServiceSelected"]
   slots?: ProductDetailPageSlots
 }
 
@@ -82,6 +87,8 @@ export function ProductDetailPage({
   renderOptionDetails,
   renderItineraryDayDetails,
   renderItineraryServiceActions,
+  renderSupplierServiceField,
+  onSupplierServiceSelected,
   slots,
 }: ProductDetailPageProps) {
   const messages = useProductsUiMessagesOrDefault()
@@ -159,6 +166,8 @@ export function ProductDetailPage({
             productId={product.id}
             renderDayDetails={renderItineraryDayDetails}
             renderServiceActions={renderItineraryServiceActions}
+            renderSupplierServiceField={renderSupplierServiceField}
+            onSupplierServiceSelected={onSupplierServiceSelected}
           />
           {slots?.itineraryEnd}
 
@@ -393,6 +402,8 @@ export interface ProductItinerarySectionProps {
   description?: string
   renderDayDetails?: (context: ProductItineraryDayRowRenderContext) => React.ReactNode
   renderServiceActions?: (service: ProductDayServiceRecord) => React.ReactNode
+  renderSupplierServiceField?: ProductDayServiceFormProps["renderSupplierServiceField"]
+  onSupplierServiceSelected?: ProductDayServiceFormProps["onSupplierServiceSelected"]
   className?: string
 }
 
@@ -402,6 +413,8 @@ export function ProductItinerarySection({
   description,
   renderDayDetails,
   renderServiceActions,
+  renderSupplierServiceField,
+  onSupplierServiceSelected,
   className,
 }: ProductItinerarySectionProps) {
   const messages = useProductsUiMessagesOrDefault()
@@ -423,12 +436,16 @@ export function ProductItinerarySection({
   )
   const itineraryMutation = useProductItineraryMutation()
   const dayMutation = useProductDayMutation()
+  const serviceMutation = useProductDayServiceMutation()
   const [itineraryDialogOpen, setItineraryDialogOpen] = React.useState(false)
   const [editingItinerary, setEditingItinerary] = React.useState<ProductItineraryRecord | null>(
     null,
   )
   const [dayDialogOpen, setDayDialogOpen] = React.useState(false)
   const [editingDay, setEditingDay] = React.useState<ProductDayRecord | null>(null)
+  const [serviceDialogOpen, setServiceDialogOpen] = React.useState(false)
+  const [serviceDayId, setServiceDayId] = React.useState<string | null>(null)
+  const [editingService, setEditingService] = React.useState<ProductDayServiceRecord | null>(null)
   const [expandedDayId, setExpandedDayId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
@@ -586,6 +603,32 @@ export function ProductItinerarySection({
                       itineraryId: day.itineraryId,
                     })
                   }}
+                  onAddService={() => {
+                    setServiceDayId(day.id)
+                    setEditingService(null)
+                    setExpandedDayId(day.id)
+                    setServiceDialogOpen(true)
+                  }}
+                  onEditService={(service) => {
+                    setServiceDayId(day.id)
+                    setEditingService(service)
+                    setExpandedDayId(day.id)
+                    setServiceDialogOpen(true)
+                  }}
+                  onDeleteService={(service) => {
+                    if (
+                      !confirm(
+                        pageMessages.states.deleteServiceConfirm.replace("{name}", service.name),
+                      )
+                    ) {
+                      return
+                    }
+                    void serviceMutation.remove.mutateAsync({
+                      productId,
+                      dayId: day.id,
+                      serviceId: service.id,
+                    })
+                  }}
                   renderDayDetails={renderDayDetails}
                   renderServiceActions={renderServiceActions}
                 />
@@ -615,6 +658,23 @@ export function ProductItinerarySection({
             setExpandedDayId(day.id)
             setEditingDay(null)
           }}
+        />
+      ) : null}
+      {serviceDayId ? (
+        <ProductDayServiceDialog
+          open={serviceDialogOpen}
+          onOpenChange={(open) => {
+            setServiceDialogOpen(open)
+            if (!open) {
+              setEditingService(null)
+            }
+          }}
+          productId={productId}
+          dayId={serviceDayId}
+          service={editingService ?? undefined}
+          renderSupplierServiceField={renderSupplierServiceField}
+          onSupplierServiceSelected={onSupplierServiceSelected}
+          onSuccess={() => setEditingService(null)}
         />
       ) : null}
     </Card>

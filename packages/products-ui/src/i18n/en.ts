@@ -153,6 +153,7 @@ export const productsUiEn = {
       deleteConfirm: 'Delete product "{name}"?',
       deleteItineraryConfirm: 'Delete itinerary "{name}"?',
       deleteDayConfirm: 'Delete day "{dayNumber}"?',
+      deleteServiceConfirm: 'Delete service "{name}"?',
       deleteFailed: "Failed to delete product.",
       minutes: "{count} min",
     },
@@ -510,6 +511,16 @@ export const productsUiEn = {
     actions: {
       addService: "Add service",
       saveService: "Save service",
+    },
+  },
+  productDayServiceDialog: {
+    titles: {
+      create: "Add service",
+      edit: "Edit service",
+    },
+    descriptions: {
+      create: "Add an operational service to this itinerary day.",
+      edit: "Update the operational service for this itinerary day.",
     },
   },
   productItineraryDayRow: {
