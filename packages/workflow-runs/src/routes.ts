@@ -3,6 +3,7 @@
  *
  *   GET  /v1/admin/workflow-runs          → list (filter by workflow / status / tag)
  *   GET  /v1/admin/workflow-runs/:id      → run + ordered steps
+ *   POST /v1/admin/workflows/:name/runs   → trigger registered workflow by name
  *   POST /v1/admin/workflow-runs/:id/rerun  → fresh run with the recorded input
  *   POST /v1/admin/workflow-runs/:id/resume → re-run starting at the failed step
  *
@@ -14,6 +15,7 @@
  * endpoints return 501 with a clear error.
  */
 
+import { handleApiError, parseJsonBody } from "@voyantjs/hono"
 import type { Hono } from "hono"
 import { z } from "zod"
 
@@ -33,6 +35,32 @@ const rerunBodySchema = z.object({
   /** Required when runner.idempotency === "unsafe". */
   confirm: z.boolean().optional(),
 })
+
+const triggerWorkflowBodySchema = z
+  .object({
+    input: z.unknown().optional(),
+    idempotencyKey: z.string().trim().min(1).max(255).optional(),
+    correlationId: z.string().trim().min(1).max(255).optional(),
+    tags: z.array(z.string().trim().min(1).max(128)).max(50).optional(),
+  })
+  .strict()
+
+function hasWorkflowTriggerScope(scopes: unknown): boolean {
+  if (!Array.isArray(scopes) || !scopes.every((scope) => typeof scope === "string")) {
+    return false
+  }
+
+  return scopes.some((scope) => {
+    const normalized = scope.trim().toLowerCase()
+    return (
+      normalized === "*" ||
+      normalized === "*:*" ||
+      normalized === "*:trigger" ||
+      normalized === "workflows:*" ||
+      normalized === "workflows:trigger"
+    )
+  })
+}
 
 export interface MountWorkflowRunsAdminRoutesOptions {
   /**
@@ -95,6 +123,66 @@ export function mountWorkflowRunsAdminRoutes(
           error: "get_failed",
           detail: err instanceof Error ? err.message : String(err),
         },
+        500,
+      )
+    }
+  })
+
+  hono.post("/v1/admin/workflows/:name/runs", async (c) => {
+    if (!opts.runners) {
+      return c.json(
+        { error: "trigger_not_configured", detail: "no WorkflowRunnerRegistry mounted" },
+        501,
+      )
+    }
+
+    let body: z.infer<typeof triggerWorkflowBodySchema>
+    try {
+      body = await parseJsonBody(c, triggerWorkflowBodySchema)
+    } catch (err) {
+      return handleApiError(err, c)
+    }
+
+    const workflowName = c.req.param("name")
+    const runner = opts.runners.get(workflowName)
+    if (!runner) {
+      return c.json(
+        {
+          error: "runner_not_registered",
+          detail: `No runner registered for workflow "${workflowName}"`,
+        },
+        404,
+      )
+    }
+    if (!runner.trigger) {
+      return c.json(
+        {
+          error: "trigger_not_supported",
+          detail: `Workflow "${runner.name}" does not expose admin trigger support.`,
+        },
+        501,
+      )
+    }
+
+    const auth = c as { get(name: string): unknown }
+    if (auth.get("callerType") === "api_key" && !hasWorkflowTriggerScope(auth.get("scopes"))) {
+      return c.json({ error: "Forbidden: API key missing workflows:trigger permission" }, 403)
+    }
+
+    const userId = opts.resolveUserId?.(c) ?? null
+    try {
+      const input = Object.hasOwn(body, "input") ? body.input : {}
+      const { runId } = await runner.trigger(input, {
+        triggeredByUserId: userId,
+        correlationId: body.correlationId ?? null,
+        tags: body.tags ?? [],
+        idempotencyKey: body.idempotencyKey ?? null,
+      })
+      return c.json({ data: { runId, workflowName: runner.name, status: "queued" } }, 202)
+    } catch (err) {
+      console.error("[workflow-runs] trigger failed", err)
+      return c.json(
+        { error: "trigger_failed", detail: err instanceof Error ? err.message : String(err) },
         500,
       )
     }

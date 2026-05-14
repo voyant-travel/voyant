@@ -29,6 +29,7 @@ export {
   type WorkflowResumeContext,
   type WorkflowRunner,
   WorkflowRunnerRegistry,
+  type WorkflowTriggerContext,
 } from "./runner.js"
 export {
   type NewWorkflowRun,

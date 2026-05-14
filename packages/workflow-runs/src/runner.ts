@@ -49,6 +49,17 @@ export interface WorkflowResumeContext extends WorkflowRerunContext {
   seedResults: Record<string, unknown>
 }
 
+export interface WorkflowTriggerContext {
+  /** User or API key actor that triggered the workflow, when available. */
+  triggeredByUserId: string | null
+  /** Optional correlation id supplied by the caller. */
+  correlationId: string | null
+  /** Tags supplied by the caller for observability and filtering. */
+  tags: ReadonlyArray<string>
+  /** Optional caller-supplied idempotency key forwarded to the runner. */
+  idempotencyKey: string | null
+}
+
 export interface WorkflowRunner {
   /** Workflow name — must match `workflow_runs.workflow_name`. */
   name: string
@@ -59,6 +70,12 @@ export interface WorkflowRunner {
   idempotency: WorkflowIdempotency
   /** Human-friendly label shown in the rerun confirm dialog. */
   description?: string
+  /**
+   * Trigger the workflow by name from an admin/internal route. Runners that
+   * expose this method are intentionally triggerable; missing methods keep
+   * rerun/resume-only workflows closed to arbitrary dispatch.
+   */
+  trigger?(input: unknown, ctx: WorkflowTriggerContext): Promise<{ runId: string }>
   /**
    * Run the workflow fresh with the recorded input. Returns the new
    * run's id (the recorder's `runId`).
