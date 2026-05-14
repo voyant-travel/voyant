@@ -129,6 +129,8 @@ export const legalUiEn = {
     deleteAttachmentConfirm: "Delete this document?",
     actions: {
       issue: "Issue",
+      send: "Send",
+      execute: "Execute",
       void: "Void",
       addSignature: "Add Signature",
       addAttachment: "Add Attachment",

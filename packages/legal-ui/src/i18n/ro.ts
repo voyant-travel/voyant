@@ -129,6 +129,8 @@ export const legalUiRo = {
     deleteAttachmentConfirm: "Stergi acest document?",
     actions: {
       issue: "Emite",
+      send: "Trimite",
+      execute: "Executa",
       void: "Anuleaza",
       addSignature: "Adauga semnatura",
       addAttachment: "Adauga atasament",

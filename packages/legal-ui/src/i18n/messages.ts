@@ -141,6 +141,8 @@ export type LegalUiMessages = {
     deleteAttachmentConfirm: string
     actions: {
       issue: string
+      send: string
+      execute: string
       void: string
       addSignature: string
       addAttachment: string
