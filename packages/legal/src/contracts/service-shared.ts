@@ -10,6 +10,7 @@ import type { z } from "zod"
 import { contractNumberSeries, contracts } from "./schema.js"
 import type {
   contractListQuerySchema,
+  contractTemplateDefaultQuerySchema,
   contractTemplateListQuerySchema,
   insertContractAttachmentSchema,
   insertContractNumberSeriesSchema,
@@ -26,6 +27,7 @@ import type {
 
 export type ContractListQuery = z.infer<typeof contractListQuerySchema>
 export type ContractTemplateListQuery = z.infer<typeof contractTemplateListQuerySchema>
+export type ContractTemplateDefaultQuery = z.infer<typeof contractTemplateDefaultQuerySchema>
 export type CreateContractTemplateInput = z.infer<typeof insertContractTemplateSchema>
 export type UpdateContractTemplateInput = z.infer<typeof updateContractTemplateSchema>
 export type CreateContractTemplateVersionInput = z.infer<typeof insertContractTemplateVersionSchema>

@@ -67,6 +67,8 @@ export const contractTemplates = pgTable(
     body: text("body").notNull(),
     variableSchema: jsonb("variable_schema"),
     currentVersionId: typeIdRef("current_version_id"),
+    channelId: typeIdRef("channel_id"),
+    isDefault: boolean("is_default").notNull().default(false),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -74,7 +76,15 @@ export const contractTemplates = pgTable(
   (table) => [
     index("idx_contract_templates_scope").on(table.scope),
     index("idx_contract_templates_language").on(table.language),
+    index("idx_contract_templates_channel").on(table.channelId),
     index("idx_contract_templates_active").on(table.active),
+    index("idx_contract_templates_default_selector").on(
+      table.scope,
+      table.channelId,
+      table.language,
+      table.isDefault,
+      table.active,
+    ),
     index("idx_contract_templates_scope_updated").on(table.scope, table.updatedAt),
     index("idx_contract_templates_language_updated").on(table.language, table.updatedAt),
     index("idx_contract_templates_active_updated").on(table.active, table.updatedAt),
@@ -84,6 +94,12 @@ export const contractTemplates = pgTable(
       table.updatedAt,
     ),
     uniqueIndex("uq_contract_templates_slug").on(table.slug),
+    uniqueIndex("uidx_contract_templates_default_global")
+      .on(table.scope, table.language)
+      .where(sql`${table.isDefault} = true AND ${table.channelId} IS NULL`),
+    uniqueIndex("uidx_contract_templates_default_channel")
+      .on(table.scope, table.channelId, table.language)
+      .where(sql`${table.isDefault} = true AND ${table.channelId} IS NOT NULL`),
   ],
 )
 

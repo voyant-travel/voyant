@@ -85,6 +85,13 @@
       "when": 1778582674000,
       "tag": "0011_storefront_verification_challenges",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778778986000,
+      "tag": "0015_default_contract_templates",
+      "breakpoints": true
     }
   ]
 }

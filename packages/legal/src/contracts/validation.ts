@@ -50,6 +50,8 @@ const contractTemplateCoreSchema = z.object({
   description: z.string().max(2000).optional().nullable(),
   body: contractTemplateBodySchema,
   variableSchema: z.record(z.string(), z.unknown()).optional().nullable(),
+  channelId: z.string().optional().nullable(),
+  isDefault: z.boolean().default(false),
   active: z.boolean().default(true),
 })
 
@@ -59,12 +61,14 @@ export const updateContractTemplateSchema = contractTemplateCoreSchema.partial()
 export const contractTemplateListQuerySchema = paginationSchema.extend({
   scope: contractScopeSchema.optional(),
   language: z.string().optional(),
+  channelId: z.string().optional(),
   active: z.coerce.boolean().optional(),
   search: z.string().optional(),
 })
 
 export const contractTemplateDefaultQuerySchema = z.object({
   scope: contractScopeSchema.default("customer"),
+  channelId: z.string().optional(),
   language: z.string().min(2).max(10).optional(),
   fallbackLanguages: z
     .string()

@@ -113,6 +113,102 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     expect((await adminRes.json()).data.slug).toBe("customer-en")
   })
 
+  it("selects explicit channel defaults before global defaults", async () => {
+    await db.insert(contractTemplates).values([
+      {
+        name: "Global Customer RO",
+        slug: "global-customer-ro",
+        scope: "customer",
+        language: "ro",
+        body: "Global RO",
+        isDefault: true,
+        active: true,
+      },
+      {
+        name: "Web Customer RO",
+        slug: "web-customer-ro",
+        scope: "customer",
+        language: "ro",
+        channelId: "channel_web",
+        body: "Web RO",
+        isDefault: true,
+        active: true,
+      },
+      {
+        name: "Inactive Web Customer EN",
+        slug: "inactive-web-customer-en",
+        scope: "customer",
+        language: "en",
+        channelId: "channel_web",
+        body: "Inactive Web EN",
+        isDefault: true,
+        active: false,
+      },
+      {
+        name: "Global Customer EN",
+        slug: "global-customer-en",
+        scope: "customer",
+        language: "en",
+        body: "Global EN",
+        isDefault: true,
+        active: true,
+      },
+    ])
+
+    const channelRes = await publicApp.request(
+      "/templates/default?scope=customer&channelId=channel_web&language=ro&fallbackLanguages=en",
+    )
+    expect(channelRes.status).toBe(200)
+    expect((await channelRes.json()).data.slug).toBe("web-customer-ro")
+
+    const globalRes = await publicApp.request(
+      "/templates/default?scope=customer&language=ro&fallbackLanguages=en",
+    )
+    expect(globalRes.status).toBe(200)
+    expect((await globalRes.json()).data.slug).toBe("global-customer-ro")
+
+    const fallbackRes = await publicApp.request(
+      "/templates/default?scope=customer&channelId=channel_web&language=de&fallbackLanguages=en",
+    )
+    expect(fallbackRes.status).toBe(200)
+    expect((await fallbackRes.json()).data.slug).toBe("global-customer-en")
+  })
+
+  it("enforces one default template per scope, channel, and language", async () => {
+    await db.insert(contractTemplates).values({
+      name: "Default Customer EN",
+      slug: "default-customer-en",
+      scope: "customer",
+      language: "en",
+      body: "Default EN",
+      isDefault: true,
+      active: true,
+    })
+
+    await expect(
+      db.insert(contractTemplates).values({
+        name: "Duplicate Default Customer EN",
+        slug: "duplicate-default-customer-en",
+        scope: "customer",
+        language: "en",
+        body: "Duplicate default EN",
+        isDefault: true,
+        active: true,
+      }),
+    ).rejects.toThrow()
+
+    await db.insert(contractTemplates).values({
+      name: "Channel Default Customer EN",
+      slug: "channel-default-customer-en",
+      scope: "customer",
+      language: "en",
+      channelId: "channel_partner",
+      body: "Channel default EN",
+      isDefault: true,
+      active: true,
+    })
+  })
+
   it("renders a public preview from an active template", async () => {
     const [template] = await db
       .insert(contractTemplates)

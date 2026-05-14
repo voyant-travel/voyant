@@ -93,6 +93,8 @@ export const legalContractAttachmentSingleResponse = singleEnvelope(
 export const legalContractTemplateRecordSchema = insertContractTemplateSchema.extend({
   id: z.string(),
   description: z.string().nullable(),
+  channelId: z.string().nullable().optional(),
+  isDefault: z.boolean(),
   variableSchema: z.record(z.string(), z.unknown()).nullable().optional(),
   currentVersionId: z.string().nullable().optional(),
   createdAt: z.string(),

@@ -103,6 +103,7 @@ export {
   contractScopeSchema,
   contractSignatureMethodSchema,
   contractStatusSchema,
+  contractTemplateDefaultQuerySchema,
   contractTemplateListQuerySchema,
   generateContractDocumentInputSchema,
   generatedContractDocumentAttachmentSchema,
