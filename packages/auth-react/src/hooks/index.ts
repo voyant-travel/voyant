@@ -55,6 +55,8 @@ export {
   type CreateServiceApiKeyInput,
   type DeleteApiTokenInput,
   type DeleteServiceApiKeyInput,
+  type RotateApiTokenInput,
+  type RotateServiceApiKeyInput,
   type UpdateApiTokenInput,
   type UpdateServiceApiKeyInput,
   useApiTokenMutation,

@@ -339,8 +339,9 @@ async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
   try {
     const betterAuth = buildBetterAuth(c.env, db)
     return (
-      (await handleApiTokenManagementRequest(c.req.raw, betterAuth)) ??
-      c.json({ error: "Not found" }, 404)
+      (await handleApiTokenManagementRequest(c.req.raw, betterAuth, {
+        db,
+      })) ?? c.json({ error: "Not found" }, 404)
     )
   } finally {
     c.executionCtx.waitUntil(dispose())
@@ -349,6 +350,7 @@ async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
 
 auth.all("/auth/api-tokens", handleApiTokensFacade)
 auth.all("/auth/api-tokens/:keyId", handleApiTokensFacade)
+auth.all("/auth/api-tokens/:keyId/rotate", handleApiTokensFacade)
 
 /**
  * Catch-all: delegate to Better Auth handler.

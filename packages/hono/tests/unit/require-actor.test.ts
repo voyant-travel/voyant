@@ -133,6 +133,22 @@ describe("requireActor", () => {
     expect(body.error).toMatch(/required permission/)
   })
 
+  it("applies API key permissions to the route resource prefix only", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["products:read"])
+    })
+    app.use("*", requireActor("staff"))
+    app.get("/v1/admin/products/:id/media", (c) => c.json({ ok: true }))
+    app.get("/v1/admin/bookings/:id", (c) => c.json({ ok: true }))
+
+    const products = await app.request("/v1/admin/products/prod_1/media")
+    const bookings = await app.request("/v1/admin/bookings/book_1")
+
+    expect(products.status).toBe(200)
+    expect(bookings.status).toBe(403)
+  })
+
   it("allows workflow trigger and webhook relay API key permissions on POST routes", async () => {
     const app = makeApp((c) => {
       c.set("callerType", "api_key")

@@ -199,8 +199,8 @@ export const authUiRo: AuthUiMessages = {
     description:
       "Creeaza tokenuri API cu permisiuni pentru automatizari, integrari si sisteme terte.",
     createdToken: {
-      title: "Token nou",
-      description: "Acest token este afisat o singura data. Salveaza-l inainte sa pleci.",
+      title: "Secret token",
+      description: "Acest secret de token este afisat o singura data. Salveaza-l inainte sa pleci.",
       copy: "Copiaza",
     },
     create: {
@@ -234,6 +234,9 @@ export const authUiRo: AuthUiMessages = {
       metadata: "Creat {created} · Expira {expires} · Ultima utilizare {lastUsed}",
       disable: "Dezactiveaza",
       enable: "Activeaza",
+      rotate: "Roteste",
+      rotateConfirm: "Rotesti secretul acestui token? Secretul curent nu va mai functiona.",
+      rotateFailed: "Tokenul API nu a putut fi rotit.",
       delete: "Sterge",
     },
     permissions: {

@@ -17,6 +17,7 @@ export interface VoyantAuthContext {
   actor?: Actor
   scopes?: string[] | null
   isInternalRequest?: boolean
+  apiTokenId?: string
   apiKeyId?: string
   email?: string | null
 }

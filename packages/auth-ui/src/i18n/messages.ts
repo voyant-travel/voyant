@@ -260,6 +260,9 @@ export type AuthUiMessages = {
       metadata: string
       disable: string
       enable: string
+      rotate: string
+      rotateConfirm: string
+      rotateFailed: string
       delete: string
     }
     permissions: {

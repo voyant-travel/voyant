@@ -15,6 +15,11 @@ import type { BetterAuthPlugin } from "better-auth/types"
 import { sql } from "drizzle-orm"
 
 import {
+  type ApiTokenRotationOptions,
+  type ApiTokenRotationStore,
+  rotateApiTokenSecret,
+} from "./api-token-rotation.js"
+import {
   type CurrentUser,
   type UpdateCurrentUserProfileInput,
   updateCurrentUserProfile,
@@ -38,7 +43,7 @@ export type BetterAuthApiTokenManagement = {
   api: BetterAuthApiKeyApi
 }
 
-export interface HandleApiTokenManagementRequestOptions {
+export interface HandleApiTokenManagementRequestOptions extends ApiTokenRotationOptions {
   /**
    * Auth route mount path. Voyant operator APIs mount Better Auth under
    * `/auth`, which makes the facade routes `/auth/api-tokens`.
@@ -91,6 +96,8 @@ const API_TOKEN_UPDATE_FIELDS = [
   "metadata",
   "permissions",
 ] as const
+
+export type { ApiTokenRotationStore }
 
 export function getAuthSecret(): string {
   const secret = process.env.BETTER_AUTH_SECRET || process.env.SESSION_CLAIMS_SECRET || ""
@@ -250,15 +257,7 @@ async function requireAccountProfileSession(auth: BetterAuthApiTokenManagement, 
   return session
 }
 
-/**
- * Handles Voyant's stable account-profile update facade:
- *
- * - `PATCH /auth/me`
- *
- * Apps can mount this before falling through to `auth.handler(request)` for
- * the rest of Better Auth. The route updates only the current session user's
- * non-sensitive `user_profiles` fields.
- */
+/** Handles Voyant's stable `PATCH /auth/me` account-profile facade. */
 export async function handleAccountProfileRequest(
   request: Request,
   auth: { api: unknown },
@@ -291,21 +290,8 @@ export async function handleAccountProfileRequest(
 }
 
 /**
- * Handles Voyant's stable API-token management facade:
- *
- * - `GET /auth/api-tokens`
- * - `POST /auth/api-tokens`
- * - `POST /auth/api-tokens/:keyId`
- * - `DELETE /auth/api-tokens/:keyId`
- *
- * Better Auth's API Key plugin exposes canonical routes under
- * `/auth/api-key/*`, but its HTTP client rejects server-only fields such as
- * `permissions`, `remaining`, and `enabled`. Voyant's management UI needs
- * those fields, so this facade calls the Better Auth server API and attaches
- * the signed-in user's id where required.
- *
- * Returns `null` when the request is outside the facade path, allowing callers
- * to fall through to `auth.handler(request)` for the rest of Better Auth.
+ * Handles Voyant's stable `/auth/api-tokens` management facade, including
+ * create, list, update, delete, and secret rotation.
  */
 export async function handleApiTokenManagementRequest(
   request: Request,
@@ -316,6 +302,7 @@ export async function handleApiTokenManagementRequest(
   if (path === null) return null
 
   const api = auth.api as BetterAuthApiKeyApi
+  const rotateMatch = path.match(/^\/api-tokens\/([^/]+)\/rotate$/)
   const keyMatch = path.match(/^\/api-tokens\/([^/]+)$/)
 
   try {
@@ -341,6 +328,32 @@ export async function handleApiTokenManagementRequest(
       }
 
       return methodNotAllowed(["GET", "POST"])
+    }
+
+    if (rotateMatch?.[1]) {
+      if (request.method !== "POST") return methodNotAllowed(["POST"])
+
+      const keyId = decodeURIComponent(rotateMatch[1])
+      const body = await readOptionalJson(request)
+      const session = await requireApiTokenSession({ api }, request.headers)
+      const result = await rotateApiTokenSecret({
+        keyId,
+        body,
+        userId: session.user.id,
+        options,
+        authorize: async ({ configId, enabled, keyId, userId }) => {
+          await api.updateApiKey({
+            body: {
+              ...(configId ? { configId } : {}),
+              keyId,
+              enabled,
+              userId,
+            },
+          })
+        },
+      })
+
+      return jsonResponse(result)
     }
 
     if (keyMatch?.[1]) {

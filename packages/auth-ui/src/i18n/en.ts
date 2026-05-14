@@ -198,8 +198,8 @@ export const authUiEn: AuthUiMessages = {
     description:
       "Create permissioned API tokens for automation, integrations, and third-party systems.",
     createdToken: {
-      title: "New token",
-      description: "This token is shown once. Store it before leaving.",
+      title: "Token secret",
+      description: "This token secret is shown once. Store it before leaving.",
       copy: "Copy",
     },
     create: {
@@ -233,6 +233,9 @@ export const authUiEn: AuthUiMessages = {
       metadata: "Created {created} · Expires {expires} · Last used {lastUsed}",
       disable: "Disable",
       enable: "Enable",
+      rotate: "Rotate",
+      rotateConfirm: "Rotate this token secret? The current secret will stop working.",
+      rotateFailed: "Could not rotate API token.",
       delete: "Delete",
     },
     permissions: {

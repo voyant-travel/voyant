@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  type ApiTokenRotationStore,
   type BetterAuthApiTokenManagement,
   handleApiTokenManagementRequest,
 } from "../../src/server.js"
@@ -29,6 +30,49 @@ function createAuthMock(): BetterAuthApiTokenManagement {
 async function responseJson(response: Response | null): Promise<unknown> {
   expect(response).not.toBeNull()
   return response?.json()
+}
+
+async function sha256Base64Url(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input)
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+  let binary = ""
+  for (const byte of new Uint8Array(hashBuffer)) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+}
+
+function createRotationStore() {
+  const row = {
+    id: "key_123",
+    configId: "default",
+    name: "CMS sync",
+    start: "voy_ol",
+    prefix: "voy_",
+    referenceId: "user_123",
+    enabled: true,
+    rateLimitEnabled: false,
+    rateLimitTimeWindow: null,
+    rateLimitMax: null,
+    requestCount: 12,
+    remaining: null,
+    lastRequest: new Date("2026-05-11T00:00:00.000Z"),
+    createdAt: new Date("2026-05-10T00:00:00.000Z"),
+    updatedAt: new Date("2026-05-11T00:00:00.000Z"),
+    expiresAt: null,
+    permissions: JSON.stringify({ products: ["read"] }),
+    metadata: JSON.stringify({ owner: "integrations" }),
+  }
+  const store: ApiTokenRotationStore = {
+    getApiToken: vi.fn(async () => row as never),
+    rotateApiTokenSecret: vi.fn(async (_keyId, rotation) => ({
+      ...row,
+      start: rotation.start,
+      updatedAt: rotation.updatedAt,
+      metadata: rotation.metadata,
+    })),
+  }
+  return { row, store }
 }
 
 describe("handleApiTokenManagementRequest", () => {
@@ -141,6 +185,72 @@ describe("handleApiTokenManagementRequest", () => {
       body: { configId: "default", keyId: "key_123" },
       headers: expect.any(Headers),
     })
+  })
+
+  it("rotates API tokens while preserving id, permissions, usage metadata, and audit history", async () => {
+    const auth = createAuthMock()
+    const { store } = createRotationStore()
+    const oldHash = await sha256Base64Url("voy_oldsecret")
+
+    const response = await handleApiTokenManagementRequest(
+      new Request("https://example.com/auth/api-tokens/key_123/rotate", {
+        method: "POST",
+      }),
+      auth,
+      {
+        rotationStore: store,
+        generateApiTokenSecret: () => "voy_newsecret",
+      },
+    )
+
+    expect(response?.status).toBe(200)
+    expect(auth.api.updateApiKey).toHaveBeenCalledWith({
+      body: {
+        keyId: "key_123",
+        enabled: true,
+        userId: "user_123",
+      },
+    })
+    expect(store.rotateApiTokenSecret).toHaveBeenCalledWith(
+      "key_123",
+      expect.objectContaining({
+        keyHash: await sha256Base64Url("voy_newsecret"),
+        start: "voy_ne",
+      }),
+    )
+    expect(store.rotateApiTokenSecret).not.toHaveBeenCalledWith(
+      "key_123",
+      expect.objectContaining({ keyHash: oldHash }),
+    )
+
+    const body = (await responseJson(response)) as {
+      id: string
+      key: string
+      requestCount: number
+      permissions: Record<string, string[]>
+      metadata: { voyant?: { apiToken?: { previousStarts?: string[]; rotationCount?: number } } }
+    }
+    expect(body).toMatchObject({
+      id: "key_123",
+      key: "voy_newsecret",
+      requestCount: 12,
+      permissions: { products: ["read"] },
+    })
+    expect(body.metadata.voyant?.apiToken?.rotationCount).toBe(1)
+    expect(body.metadata.voyant?.apiToken?.previousStarts).toContain("voy_ol")
+  })
+
+  it("requires POST for API token rotation", async () => {
+    const auth = createAuthMock()
+    const response = await handleApiTokenManagementRequest(
+      new Request("https://example.com/auth/api-tokens/key_123/rotate", { method: "GET" }),
+      auth,
+      { rotationStore: createRotationStore().store },
+    )
+
+    expect(response?.status).toBe(405)
+    expect(response?.headers.get("Allow")).toBe("POST")
+    expect(auth.api.updateApiKey).not.toHaveBeenCalled()
   })
 
   it("normalizes missing sessions to 401 responses", async () => {
