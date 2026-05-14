@@ -1,5 +1,6 @@
+import { checkoutCapabilityCookie } from "@voyantjs/bookings/checkout-capability"
 import type { EventBus } from "@voyantjs/core"
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { idempotencyKey, parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
@@ -8,6 +9,10 @@ import {
   type StorefrontRequestContext,
   type StorefrontServiceOptions,
 } from "./service.js"
+import {
+  bootstrapStorefrontBookingSession,
+  type StorefrontBookingBootstrapOptions,
+} from "./service-booking-bootstrap.js"
 import {
   type StorefrontLeadIntakeInput,
   type StorefrontNewsletterSubscribeInput,
@@ -21,6 +26,7 @@ import {
   storefrontProductExtensionsQuerySchema,
   storefrontPromotionalOfferListQuerySchema,
 } from "./validation.js"
+import { storefrontBookingSessionBootstrapInputSchema } from "./validation-booking-bootstrap.js"
 import { storefrontTransportEligibilityInputSchema } from "./validation-transport-eligibility.js"
 
 type Env = {
@@ -30,10 +36,14 @@ type Env = {
   }
 }
 
-export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions) {
+export interface StorefrontPublicRouteOptions extends StorefrontServiceOptions {
+  bookingBootstrap?: StorefrontBookingBootstrapOptions
+}
+
+export function createStorefrontPublicRoutes(options?: StorefrontPublicRouteOptions) {
   const storefrontService = createStorefrontService(options)
 
-  function getRequestContext(c: Context<Env>): StorefrontRequestContext {
+  function getRequestContext(c: Context): StorefrontRequestContext {
     return {
       db: c.get("db" as never) as StorefrontRequestContext["db"],
       eventBus: c.get("eventBus" as never) as StorefrontRequestContext["eventBus"],
@@ -99,6 +109,60 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         202,
       )
     })
+    .post(
+      "/bookings/sessions/bootstrap",
+      idempotencyKey({ scope: "POST /v1/public/bookings/sessions/bootstrap" }),
+      async (c) => {
+        const context = getRequestContext(c) as ReturnType<typeof getRequestContext> & {
+          db: NonNullable<ReturnType<typeof getRequestContext>["db"]>
+        }
+        const result = await bootstrapStorefrontBookingSession(
+          {
+            context,
+            body: await parseJsonBody(c, storefrontBookingSessionBootstrapInputSchema),
+          },
+          options?.bookingBootstrap,
+        )
+
+        switch (result.status) {
+          case "ok":
+            c.header(
+              "Set-Cookie",
+              checkoutCapabilityCookie(
+                result.checkoutCapability.token,
+                result.checkoutCapability.expiresAt,
+              ),
+              { append: true },
+            )
+            return c.json({ data: result.data }, 201)
+          case "departure_not_found":
+            return c.json({ error: "Storefront departure not found" }, 404)
+          case "slot_not_found":
+            return c.json({ error: "Availability slot not found" }, 404)
+          case "slot_mismatch":
+            return c.json({ error: "Booking session does not match the requested slot" }, 409)
+          case "quote_expired":
+            return c.json({ error: "Storefront quote has expired" }, 409)
+          case "invalid_selection":
+            return c.json({ error: "Booking session contains an invalid item selection" }, 400)
+          case "pricing_unavailable":
+            return c.json(
+              { error: "Pricing is not available for the selected booking session items" },
+              409,
+            )
+          case "quantity_change_requires_reallocation":
+            return c.json(
+              { error: "Changing quantity for held items requires a fresh reservation" },
+              409,
+            )
+          case "session_conflict":
+            return c.json(
+              { error: "Unable to bootstrap booking session", reason: result.reason },
+              409,
+            )
+        }
+      },
+    )
     .get("/departures/:departureId", async (c) => {
       const departure = await storefrontService.getDeparture(
         c.get("db" as never),

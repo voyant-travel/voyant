@@ -42,12 +42,19 @@ import {
 } from "./lib/storage"
 import { mountCatalogMcpRoutes, mountCatalogSearchRoutes } from "./mcp"
 
+function requireCloudflareBindings(bindings: unknown): CloudflareBindings {
+  if (!bindings || typeof bindings !== "object") {
+    throw new Error("Cloudflare bindings are required")
+  }
+  return bindings as CloudflareBindings
+}
+
 const notificationsHonoModule = createNotificationsHonoModule({
   resolveProviders: resolveNotificationProviders,
   resolveDocumentAttachmentResolver: (bindings) => async (document) => {
     if (document.storageKey) {
       const path = await resolveDocumentDownloadUrl(
-        bindings as unknown as CloudflareBindings,
+        requireCloudflareBindings(bindings),
         document.storageKey,
       )
       if (path) {
@@ -74,18 +81,17 @@ const checkoutHonoModule = createCheckoutHonoModule({
 })
 const customerPortalHonoModule = createCustomerPortalHonoModule({
   resolveDocumentDownloadUrl: (bindings, storageKey) =>
-    resolveDocumentDownloadUrl(bindings as CloudflareBindings, storageKey),
+    resolveDocumentDownloadUrl(requireCloudflareBindings(bindings), storageKey),
 })
 
 const financeModule = createFinanceHonoModule({
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
-    resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
+    resolveDocumentDownloadUrl(requireCloudflareBindings(bindings), storageKey),
 })
 const legalModule = createLegalHonoModule({
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
-    resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
-  resolveDocumentStorage: (bindings) =>
-    createDocumentStorage(bindings as unknown as CloudflareBindings),
+    resolveDocumentDownloadUrl(requireCloudflareBindings(bindings), storageKey),
+  resolveDocumentStorage: (bindings) => createDocumentStorage(requireCloudflareBindings(bindings)),
 })
 
 const crmHonoModule = createCrmHonoModule()
@@ -105,6 +111,7 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/storefront-verification",
     "/v1/public/checkout",
     "/v1/public/invitations",
+    "/v1/public/bookings",
     "/v1/public/leads",
     "/v1/public/newsletter",
   ],

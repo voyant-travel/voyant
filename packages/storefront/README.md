@@ -3,6 +3,46 @@
 Public storefront routes and service helpers for checkout-adjacent product, departure,
 offer, and eligibility flows.
 
+## Booking Session Bootstrap
+
+Storefronts can bootstrap checkout with a single customer-safe public call:
+
+- `POST /bookings/sessions/bootstrap`
+
+When mounted through `createStorefrontHonoModule`, the route is available at
+`/v1/public/bookings/sessions/bootstrap`.
+
+The request creates a native public booking session from the supplied session
+draft, validates the departure/slot and quote expiry, optionally reprices the
+room/unit selection, and returns:
+
+- the booking session plus checkout capability
+- the original quote and current repricing delta
+- the availability snapshot used for the reservation
+- the payment plan schedules and due dates
+- the response currency
+
+Host apps can provide the payment-policy resolver used for computed schedules:
+
+```ts
+import { createStorefrontHonoModule } from "@voyantjs/storefront"
+
+createStorefrontHonoModule({
+  bookingBootstrap: {
+    async resolvePaymentPolicy({ session }) {
+      return {
+        source: "operator_default",
+        policy: await resolvePublicPaymentPolicyForSession(session),
+      }
+    },
+  },
+})
+```
+
+If finance has already persisted booking payment schedules, those schedules are
+returned. Otherwise the route computes a customer-facing schedule from the
+resolved policy, falling back to the finance no-deposit policy.
+
 ## Public Intake
 
 Storefront can accept public CRM intake at the public root:

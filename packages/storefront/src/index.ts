@@ -6,7 +6,7 @@ import { createStorefrontPublicRoutes } from "./routes-public.js"
 
 export type { StorefrontAdminRoutes } from "./routes-admin.js"
 export { createStorefrontAdminRoutes } from "./routes-admin.js"
-export type { StorefrontPublicRoutes } from "./routes-public.js"
+export type { StorefrontPublicRouteOptions, StorefrontPublicRoutes } from "./routes-public.js"
 export { createStorefrontPublicRoutes } from "./routes-public.js"
 export type {
   StorefrontOfferResolvers,
@@ -18,6 +18,10 @@ export {
   mergeStorefrontSettingsPatch,
   resolveStorefrontSettings,
 } from "./service.js"
+export type {
+  StorefrontBookingBootstrapOptions,
+  StorefrontBookingBootstrapPaymentPolicy,
+} from "./service-booking-bootstrap.js"
 export type {
   StorefrontIntakeGuard,
   StorefrontIntakeGuardDecision,
@@ -107,6 +111,20 @@ export {
   storefrontSupportLinkInputSchema,
   storefrontSupportLinkSchema,
 } from "./validation.js"
+export type {
+  StorefrontBookingSessionBootstrapInput,
+  StorefrontBookingSessionBootstrapResult,
+} from "./validation-booking-bootstrap.js"
+export {
+  storefrontBookingSessionAvailabilitySnapshotSchema,
+  storefrontBookingSessionBootstrapInputSchema,
+  storefrontBookingSessionBootstrapQuoteSchema,
+  storefrontBookingSessionBootstrapResponseSchema,
+  storefrontBookingSessionBootstrapResultSchema,
+  storefrontBookingSessionPaymentPlanSchema,
+  storefrontBookingSessionPaymentScheduleSchema,
+  storefrontBookingSessionRepricingSnapshotSchema,
+} from "./validation-booking-bootstrap.js"
 export type {
   StorefrontTransportEligibilityInput,
   StorefrontTransportEligibilityIssue,
