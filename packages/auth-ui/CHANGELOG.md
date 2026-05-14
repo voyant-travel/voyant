@@ -1,5 +1,19 @@
 # @voyantjs/auth-ui
 
+## 0.48.0
+
+### Minor Changes
+
+- 98e69be: Add `OrganizationMembersPage` with member role management, pending invitation actions, a matching skeleton, docs, and package exports.
+
+### Patch Changes
+
+- @voyantjs/admin@0.48.0
+- @voyantjs/auth-react@0.48.0
+- @voyantjs/i18n@0.48.0
+- @voyantjs/types@0.48.0
+- @voyantjs/ui@0.48.0
+
 ## 0.47.0
 
 ### Patch Changes
