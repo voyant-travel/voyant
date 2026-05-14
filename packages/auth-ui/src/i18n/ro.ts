@@ -79,6 +79,73 @@ export const authUiRo: AuthUiMessages = {
       error: "Parola nu a putut fi actualizata.",
     },
   },
+  organizationMembersPage: {
+    title: "Membrii organizatiei",
+    description:
+      "Gestioneaza accesul echipei, rolurile si invitatiile in asteptare pentru organizatia activa.",
+    loading: "Se incarca membrii organizatiei",
+    loadFailed: "Membrii sau invitatiile organizatiei nu au putut fi incarcate.",
+    noActiveOrganization: "Selecteaza o organizatie pentru a gestiona membrii.",
+    invite: {
+      title: "Invita membru",
+      description: "Trimite o invitatie prin fluxul configurat pentru organizatie.",
+      emailLabel: "Email",
+      emailPlaceholder: "coleg@example.com",
+      roleLabel: "Rol",
+      submit: "Invita",
+      submitting: "Se invita",
+      errors: {
+        emailRequired: "Emailul este obligatoriu.",
+        failed: "Invitatia nu a putut fi trimisa.",
+      },
+    },
+    members: {
+      title: "Membri",
+      description: "Verifica membrii organizatiei si atribuie rolurile acceptate.",
+      memberColumn: "Membru",
+      roleColumn: "Rol",
+      joinedColumn: "Adaugat",
+      actionsColumn: "Actiuni",
+      empty: "Nu a fost gasit niciun membru pentru aceasta organizatie.",
+      actions: {
+        updateRoleAriaLabel: (name) => `Actualizeaza rolul pentru ${name}`,
+        remove: "Elimina",
+        removeAriaLabel: (name) => `Elimina ${name}`,
+        removeConfirm: (name) => `Elimini ${name} din aceasta organizatie?`,
+      },
+      errors: {
+        updateRoleFailed: "Rolul membrului nu a putut fi actualizat.",
+        removeFailed: "Membrul nu a putut fi eliminat.",
+      },
+    },
+    invitations: {
+      title: "Invitatii in asteptare",
+      description: "Urmareste invitatiile neacceptate si retrimite-le sau anuleaza-le.",
+      emailColumn: "Email",
+      roleColumn: "Rol",
+      expiresColumn: "Expira",
+      actionsColumn: "Actiuni",
+      empty: "Nu exista invitatii in asteptare.",
+      actions: {
+        resend: "Retrimite",
+        resendAriaLabel: (email) => `Retrimite invitatia catre ${email}`,
+        cancel: "Anuleaza",
+        cancelAriaLabel: (email) => `Anuleaza invitatia catre ${email}`,
+      },
+      errors: {
+        resendFailed: "Invitatia nu a putut fi retrimisa.",
+        cancelFailed: "Invitatia nu a putut fi anulata.",
+      },
+    },
+    roles: {
+      owner: "Proprietar",
+      admin: "Administrator",
+      member: "Membru",
+    },
+    date: {
+      unknown: "Necunoscut",
+    },
+  },
   forgotPasswordPage: {
     title: "Parola uitata",
     description: "Introdu emailul si iti vom trimite un link de resetare.",

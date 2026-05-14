@@ -93,6 +93,89 @@ export type PartialAccountPageMessages = Partial<
   password?: Partial<AccountChangePasswordFormMessages>
 }
 
+export interface OrganizationMembersPageMessages {
+  title: string
+  description: string
+  loading: string
+  loadFailed: string
+  noActiveOrganization: string
+  invite: {
+    title: string
+    description: string
+    emailLabel: string
+    emailPlaceholder: string
+    roleLabel: string
+    submit: string
+    submitting: string
+    errors: {
+      emailRequired: string
+      failed: string
+    }
+  }
+  members: {
+    title: string
+    description: string
+    memberColumn: string
+    roleColumn: string
+    joinedColumn: string
+    actionsColumn: string
+    empty: string
+    actions: {
+      updateRoleAriaLabel: (name: string) => string
+      remove: string
+      removeAriaLabel: (name: string) => string
+      removeConfirm: (name: string) => string
+    }
+    errors: {
+      updateRoleFailed: string
+      removeFailed: string
+    }
+  }
+  invitations: {
+    title: string
+    description: string
+    emailColumn: string
+    roleColumn: string
+    expiresColumn: string
+    actionsColumn: string
+    empty: string
+    actions: {
+      resend: string
+      resendAriaLabel: (email: string) => string
+      cancel: string
+      cancelAriaLabel: (email: string) => string
+    }
+    errors: {
+      resendFailed: string
+      cancelFailed: string
+    }
+  }
+  roles: Record<string, string>
+  date: {
+    unknown: string
+  }
+}
+
+export type PartialOrganizationMembersPageMessages = Partial<
+  Omit<OrganizationMembersPageMessages, "invite" | "members" | "invitations" | "roles" | "date">
+> & {
+  invite?: Partial<Omit<OrganizationMembersPageMessages["invite"], "errors">> & {
+    errors?: Partial<OrganizationMembersPageMessages["invite"]["errors"]>
+  }
+  members?: Partial<Omit<OrganizationMembersPageMessages["members"], "actions" | "errors">> & {
+    actions?: Partial<OrganizationMembersPageMessages["members"]["actions"]>
+    errors?: Partial<OrganizationMembersPageMessages["members"]["errors"]>
+  }
+  invitations?: Partial<
+    Omit<OrganizationMembersPageMessages["invitations"], "actions" | "errors">
+  > & {
+    actions?: Partial<OrganizationMembersPageMessages["invitations"]["actions"]>
+    errors?: Partial<OrganizationMembersPageMessages["invitations"]["errors"]>
+  }
+  roles?: Partial<OrganizationMembersPageMessages["roles"]>
+  date?: Partial<OrganizationMembersPageMessages["date"]>
+}
+
 export interface ForgotPasswordPageMessages {
   title: string
   description: string
@@ -216,6 +299,7 @@ export type AuthUiMessages = {
   acceptInvitationPage: AcceptInvitationPageMessages
   accountPage: AccountPageMessages
   forgotPasswordPage: ForgotPasswordPageMessages
+  organizationMembersPage: OrganizationMembersPageMessages
   onboardingPage: OnboardingPageMessages
   resetPasswordPage: ResetPasswordPageMessages
   signInPage: SignInPageMessages
