@@ -1,4 +1,4 @@
-import { __resetRegistry } from "@voyantjs/workflows"
+import { __resetRegistry, workflow } from "@voyantjs/workflows"
 import type { ServiceResolver } from "@voyantjs/workflows/driver"
 import { createInMemoryDriver } from "@voyantjs/workflows-orchestrator"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -137,6 +137,39 @@ describe("recordedWorkflow persistence", () => {
     })
     expect(recorded?.error).toMatchObject({
       message: "pdf rendering failed",
+    })
+  })
+
+  test("keeps a single running record across waitpoint replay", async () => {
+    const db = createMemoryWorkflowRunsDb()
+    const child = workflow<{ value: number }, number>({
+      id: uniqueId("recorded-child"),
+      async run(input) {
+        return input.value + 1
+      },
+    })
+    const workflowId = uniqueId("recorded-waitpoint")
+    const wf = recordedWorkflow<{ value: number }, { value: number }>({
+      id: workflowId,
+      async run(input, ctx) {
+        const value = await ctx.invoke(child, input)
+        return { value }
+      },
+    })
+    const driver = makeDriver(makeResolver({ db }))
+
+    const run = await driver.trigger(wf, { value: 41 })
+
+    expect(run.status).toBe("completed")
+    const runs = await workflowRunsService.listRuns(db, { workflowName: workflowId })
+    expect(runs.total).toBe(1)
+    expect(runs.data[0]).toMatchObject({
+      workflowName: workflowId,
+      correlationId: run.id,
+      status: "succeeded",
+      input: { value: 41 },
+      result: { value: 42 },
+      error: null,
     })
   })
 })

@@ -14,6 +14,7 @@ import {
 
 type MaybePromise<T> = T | Promise<T>
 type JsonRecord = Record<string, unknown>
+const WAITPOINT_PENDING = Symbol.for("voyant.workflows.waitpointPending")
 
 export interface RecordedWorkflowRunContext<TInput> {
   input: TInput
@@ -87,6 +88,7 @@ export function recordedWorkflow<TInput = unknown, TOutput = unknown>(
         await completeRecording(recorder, options, config, input, ctx, output)
         return output
       } catch (err) {
+        if (isWaitpointPending(err)) throw err
         await failRecording(recorder, err)
         throw err
       }
@@ -124,7 +126,7 @@ async function startRecording<TInput, TOutput>(
       ),
       resumeFromStep: await resolveValue(options.resumeFromStep, args, null),
     }
-    return await beginWorkflowRun(db, beginInput)
+    return await beginWorkflowRun(db, beginInput, { reuseRunningRun: ctx.invocationCount > 1 })
   } catch {
     return null
   }
@@ -241,6 +243,14 @@ function isPlainRecord(value: unknown): value is JsonRecord {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return false
   const proto = Object.getPrototypeOf(value)
   return proto === Object.prototype || proto === null
+}
+
+function isWaitpointPending(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    (err as { [WAITPOINT_PENDING]?: true })[WAITPOINT_PENDING] === true
+  )
 }
 
 function dedupe(values: readonly string[]): string[] {

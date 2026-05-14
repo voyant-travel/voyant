@@ -25,7 +25,7 @@
  * outages never break the underlying business operation.
  */
 
-import { eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -83,7 +83,13 @@ export interface WorkflowRunRecorder {
 export async function beginWorkflowRun(
   db: PostgresJsDatabase,
   input: BeginWorkflowRunInput,
+  options: { reuseRunningRun?: boolean } = {},
 ): Promise<WorkflowRunRecorder> {
+  if (options.reuseRunningRun && input.correlationId) {
+    const existingRunId = await findRunningWorkflowRun(db, input)
+    if (existingRunId) return workflowRunRecorder(db, existingRunId)
+  }
+
   const insert: NewWorkflowRun = {
     workflowName: input.workflowName,
     trigger: input.trigger ?? "manual",
@@ -109,6 +115,36 @@ export async function beginWorkflowRun(
 
   if (!runId) return noopRecorder()
 
+  return workflowRunRecorder(db, runId)
+}
+
+async function findRunningWorkflowRun(
+  db: PostgresJsDatabase,
+  input: BeginWorkflowRunInput,
+): Promise<string | null> {
+  const correlationId = input.correlationId
+  if (!correlationId) return null
+
+  try {
+    const [row] = await db
+      .select({ id: workflowRuns.id })
+      .from(workflowRuns)
+      .where(
+        and(
+          eq(workflowRuns.workflowName, input.workflowName),
+          eq(workflowRuns.correlationId, correlationId),
+          eq(workflowRuns.status, "running"),
+        ),
+      )
+      .orderBy(desc(workflowRuns.startedAt))
+      .limit(1)
+    return row?.id ?? null
+  } catch {
+    return null
+  }
+}
+
+function workflowRunRecorder(db: PostgresJsDatabase, runId: string): WorkflowRunRecorder {
   const stepStarts = new Map<string, { stepId: string; sequence: number; startedAt: number }>()
   let nextSequence = 1
 
