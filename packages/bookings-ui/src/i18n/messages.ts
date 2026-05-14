@@ -64,6 +64,14 @@ export type BookingsUiMessages = {
     billingAddress: string
     documentsSlotEmpty: string
   }
+  bookingWorkspacePage: {
+    description: string
+    loadingTitle: string
+    notFoundTitle: string
+    notFoundDescription: string
+    tabs: Record<"booking" | "finance" | "legal" | "travelers" | "activity", string>
+    empty: Record<"finance" | "legal" | "travelers" | "activity", string>
+  }
   travelerDialog: {
     titles: {
       create: string

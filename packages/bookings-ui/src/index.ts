@@ -71,6 +71,18 @@ export {
   BookingPaymentsSummary,
   type BookingPaymentsSummaryProps,
 } from "./components/booking-payments-summary.js"
+export {
+  type BookingWorkspaceBulkActionContext,
+  type BookingWorkspaceNavigationItem,
+  BookingWorkspacePage,
+  type BookingWorkspacePageProps,
+  type BookingWorkspacePageSlots,
+  type BookingWorkspaceSection,
+  BookingWorkspaceShell,
+  type BookingWorkspaceShellProps,
+  type BookingWorkspaceSlotContext,
+  useBookingWorkspaceBulkActions,
+} from "./components/booking-workspace-page.js"
 export { BookingsPage, type BookingsPageProps } from "./components/bookings-page.js"
 export {
   FileDropzone,

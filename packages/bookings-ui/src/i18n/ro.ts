@@ -70,6 +70,25 @@ export const bookingsUiRo = {
     billingAddress: "Adresa",
     documentsSlotEmpty: "Furnizeaza un slot de documente pentru rezervare.",
   },
+  bookingWorkspacePage: {
+    description: "Coordoneaza rezervarea, financiarul, legalul, calatorii si activitatea.",
+    loadingTitle: "Spatiu de lucru rezervare",
+    notFoundTitle: "Spatiu de lucru rezervare",
+    notFoundDescription: "Spatiul de lucru nu a gasit aceasta rezervare.",
+    tabs: {
+      booking: "Rezervare",
+      finance: "Financiar",
+      legal: "Legal",
+      travelers: "Calatori",
+      activity: "Activitate",
+    },
+    empty: {
+      finance: "Furnizeaza un slot financiar pentru facturi, statusuri de plata sau incasari.",
+      legal: "Furnizeaza un slot legal pentru contracte, declaratii sau sarcini de conformitate.",
+      travelers: "Furnizeaza extensii pentru editari in masa si verificari operationale.",
+      activity: "Furnizeaza un slot de activitate pentru cronologie sau audit.",
+    },
+  },
   travelerDialog: {
     titles: {
       create: "Adauga calator",
