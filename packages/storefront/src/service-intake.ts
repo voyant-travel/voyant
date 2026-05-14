@@ -140,6 +140,23 @@ function newsletterDoubleOptInFromSignal(
   return newsletter.doubleOptIn === "requested" ? "requested" : "not_configured"
 }
 
+function newsletterSignalMetadata(input: {
+  email: string
+  doubleOptIn: "not_configured" | "requested"
+  body: StorefrontNewsletterSubscribeInput
+}) {
+  return {
+    intake: { surface: "storefront", type: "newsletter" },
+    newsletter: { email: input.email, doubleOptIn: input.doubleOptIn },
+    payload: input.body.payload,
+    consent: input.body.consent,
+    source: {
+      url: input.body.sourceUrl ?? null,
+      locale: input.body.locale ?? null,
+    },
+  }
+}
+
 export async function createStorefrontLeadSignal(input: {
   body: StorefrontLeadIntakeInput
   context: StorefrontRequestContext
@@ -241,7 +258,7 @@ export async function subscribeStorefrontNewsletter(input: {
   if (!person) throw new Error("Failed to create CRM person for newsletter subscription")
 
   const doubleOptIn = input.requestDoubleOptIn ? "requested" : "not_configured"
-  const signal = await crmService.createCustomerSignal(db, {
+  let signal = await crmService.createCustomerSignal(db, {
     personId: person.id,
     kind: "notify",
     source: input.body.source,
@@ -250,27 +267,39 @@ export async function subscribeStorefrontNewsletter(input: {
     notes: "Newsletter subscription",
     tags: input.body.tags,
     sourceSubmissionId,
-    metadata: {
-      intake: { surface: "storefront", type: "newsletter" },
-      newsletter: { email, doubleOptIn },
-      payload: input.body.payload,
-      consent: input.body.consent,
-      source: {
-        url: input.body.sourceUrl ?? null,
-        locale: input.body.locale ?? null,
-      },
-    },
+    metadata: newsletterSignalMetadata({
+      email,
+      doubleOptIn: "not_configured",
+      body: input.body,
+    }),
   })
   if (!signal) throw new Error("Failed to create CRM customer signal for newsletter subscription")
 
-  await input.requestDoubleOptIn?.({
-    email,
-    personId: person.id,
-    signalId: signal.id,
-    sourceSubmissionId,
-    body: input.body,
-    context: input.context,
-  })
+  if (input.requestDoubleOptIn) {
+    try {
+      await input.requestDoubleOptIn({
+        email,
+        personId: person.id,
+        signalId: signal.id,
+        sourceSubmissionId,
+        body: input.body,
+        context: input.context,
+      })
+    } catch (error) {
+      await crmService.deleteCustomerSignal(db, signal.id).catch(() => null)
+      await crmService.deletePerson(db, person.id).catch(() => null)
+      throw error
+    }
+
+    signal =
+      (await crmService.updateCustomerSignal(db, signal.id, {
+        metadata: newsletterSignalMetadata({
+          email,
+          doubleOptIn,
+          body: input.body,
+        }),
+      })) ?? signal
+  }
 
   await emitCustomerSignalCreated(
     input.context.eventBus,
