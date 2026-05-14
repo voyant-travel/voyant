@@ -1,3 +1,4 @@
+import type { EventBus } from "@voyantjs/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -8,12 +9,20 @@ import {
   listStorefrontProductDepartures,
   previewStorefrontDeparturePrice,
 } from "./service-departures.js"
+import {
+  createStorefrontLeadSignal,
+  type StorefrontIntakeGuard,
+  type StorefrontIntakeOptions,
+  subscribeStorefrontNewsletter,
+} from "./service-intake.js"
 import { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
 import {
   type StorefrontDepartureListQuery,
   type StorefrontDeparturePricePreviewInput,
   type StorefrontFormField,
   type StorefrontFormFieldInput,
+  type StorefrontLeadIntakeInput,
+  type StorefrontNewsletterSubscribeInput,
   type StorefrontOfferApplyInput,
   type StorefrontOfferMutationResult,
   type StorefrontOfferRedeemInput,
@@ -57,10 +66,12 @@ export interface StorefrontServiceOptions {
   ) =>
     | Promise<StorefrontTransportEligibilityRuleInput[]>
     | StorefrontTransportEligibilityRuleInput[]
+  intake?: StorefrontIntakeOptions
 }
 
 export interface StorefrontRequestContext {
   db?: PostgresJsDatabase
+  eventBus?: EventBus
   env?: unknown
   context?: unknown
 }
@@ -184,6 +195,22 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
     )
   }
 
+  async function checkIntakeGuard(
+    input:
+      | {
+          kind: "lead"
+          body: StorefrontLeadIntakeInput
+          context: StorefrontRequestContext
+        }
+      | {
+          kind: "newsletter"
+          body: StorefrontNewsletterSubscribeInput
+          context: StorefrontRequestContext
+        },
+  ) {
+    return options?.intake?.guard?.(input)
+  }
+
   return {
     getSettings(): StorefrontSettings {
       return settings
@@ -302,5 +329,20 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
         )) ?? null
       )
     },
+    checkIntakeGuard,
+    createLead(input: { body: StorefrontLeadIntakeInput; context: StorefrontRequestContext }) {
+      return createStorefrontLeadSignal(input)
+    },
+    subscribeNewsletter(input: {
+      body: StorefrontNewsletterSubscribeInput
+      context: StorefrontRequestContext
+    }) {
+      return subscribeStorefrontNewsletter({
+        ...input,
+        requestDoubleOptIn: options?.intake?.requestNewsletterDoubleOptIn,
+      })
+    },
   }
 }
+
+export type { StorefrontIntakeGuard, StorefrontIntakeOptions }

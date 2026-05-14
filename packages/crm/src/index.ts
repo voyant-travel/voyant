@@ -1,6 +1,6 @@
 import type { LinkableDefinition, Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
-
+import { CUSTOMER_SIGNAL_CREATED_EVENT, emitCustomerSignalCreated } from "./events.js"
 import {
   buildCrmRouteRuntime,
   CRM_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -61,6 +61,7 @@ export function createCrmHonoModule(options: CrmHonoModuleOptions = {}): HonoMod
 export const crmHonoModule: HonoModule = createCrmHonoModule()
 
 export { crmBookingExtension } from "./booking-extension.js"
+export type { CustomerSignalCreatedEvent, CustomerSignalCreatedIntake } from "./events.js"
 export type {
   CrmRouteRuntime,
   CrmRouteRuntimeOptions,
@@ -232,4 +233,4 @@ export {
   updateStageSchema,
   upsertCustomFieldValueSchema,
 } from "./validation.js"
-export { crmService }
+export { CUSTOMER_SIGNAL_CREATED_EVENT, crmService, emitCustomerSignalCreated }

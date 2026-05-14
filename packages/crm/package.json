@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./events": "./src/events.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes/index.ts",
@@ -42,6 +43,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./events": {
+        "types": "./dist/events.d.ts",
+        "import": "./dist/events.js",
+        "default": "./dist/events.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",

@@ -32,12 +32,28 @@ const app = createApp({
 - **Notes** — person (`pnot`), organization (`onot`)
 - **Communication log** (`clog`)
 - **Segments** + **segment members** (`seg`, `segm`)
+- **Customer signals** (`csg`) — inquiry, wishlist, notify, request-offer, and referral signals used by admin CRM and public storefront intake
+
+## Events
+
+`customer.signal.created` is emitted when public storefront intake accepts a
+lead or newsletter subscription. Subscribe to it from app code to send
+operator notifications:
+
+```ts
+eventBus.subscribe("customer.signal.created", async ({ data }) => {
+  if (data.intake?.surface === "storefront") {
+    await notifySalesTeam(data.id)
+  }
+})
+```
 
 ## Exports
 
 | Entry | Description |
 | --- | --- |
 | `.` | Module export + public types |
+| `./events` | CRM event names, payload types, and emit helpers |
 | `./schema` | Drizzle tables + linkable definitions |
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes for admin/public surfaces |

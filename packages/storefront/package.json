@@ -21,6 +21,7 @@
   "dependencies": {
     "@voyantjs/availability": "workspace:*",
     "@voyantjs/core": "workspace:*",
+    "@voyantjs/crm": "workspace:*",
     "@voyantjs/extras": "workspace:*",
     "@voyantjs/hono": "workspace:*",
     "@voyantjs/pricing": "workspace:*",

@@ -1,3 +1,4 @@
+import type { EventBus } from "@voyantjs/core"
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
@@ -8,8 +9,12 @@ import {
   type StorefrontServiceOptions,
 } from "./service.js"
 import {
+  type StorefrontLeadIntakeInput,
+  type StorefrontNewsletterSubscribeInput,
   storefrontDepartureListQuerySchema,
   storefrontDeparturePricePreviewInputSchema,
+  storefrontLeadIntakeInputSchema,
+  storefrontNewsletterSubscribeInputSchema,
   storefrontOfferApplyInputSchema,
   storefrontOfferRedeemInputSchema,
   storefrontProductAvailabilitySummaryQuerySchema,
@@ -21,6 +26,7 @@ import { storefrontTransportEligibilityInputSchema } from "./validation-transpor
 type Env = {
   Variables: {
     db: unknown
+    eventBus?: EventBus
   }
 }
 
@@ -30,14 +36,68 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
   function getRequestContext(c: Context<Env>): StorefrontRequestContext {
     return {
       db: c.get("db" as never) as StorefrontRequestContext["db"],
+      eventBus: c.get("eventBus" as never) as StorefrontRequestContext["eventBus"],
       env: c.env,
       context: c,
     } satisfies StorefrontRequestContext
   }
 
+  async function runIntakeGuard(
+    input:
+      | {
+          kind: "lead"
+          body: StorefrontLeadIntakeInput
+          context: StorefrontRequestContext
+        }
+      | {
+          kind: "newsletter"
+          body: StorefrontNewsletterSubscribeInput
+          context: StorefrontRequestContext
+        },
+  ) {
+    const decision = await storefrontService.checkIntakeGuard(input)
+    if (!decision || decision.allowed) return null
+    return {
+      status: decision.status ?? 403,
+      error: decision.error ?? "Storefront intake rejected",
+    }
+  }
+
   return new Hono<Env>()
     .get("/settings", async (c) => {
       return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) })
+    })
+    .post("/leads", async (c) => {
+      const context = getRequestContext(c)
+      const body = await parseJsonBody(c, storefrontLeadIntakeInputSchema)
+      const rejected = await runIntakeGuard({ kind: "lead", body, context })
+      if (rejected) return c.json({ error: rejected.error }, rejected.status)
+
+      return c.json(
+        {
+          data: await storefrontService.createLead({
+            body,
+            context,
+          }),
+        },
+        201,
+      )
+    })
+    .post("/newsletter/subscribe", async (c) => {
+      const context = getRequestContext(c)
+      const body = await parseJsonBody(c, storefrontNewsletterSubscribeInputSchema)
+      const rejected = await runIntakeGuard({ kind: "newsletter", body, context })
+      if (rejected) return c.json({ error: rejected.error }, rejected.status)
+
+      return c.json(
+        {
+          data: await storefrontService.subscribeNewsletter({
+            body,
+            context,
+          }),
+        },
+        202,
+      )
     })
     .get("/departures/:departureId", async (c) => {
       const departure = await storefrontService.getDeparture(
