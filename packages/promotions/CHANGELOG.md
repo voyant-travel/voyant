@@ -1,5 +1,23 @@
 # @voyantjs/promotions
 
+## 0.43.0
+
+### Minor Changes
+
+- e9241a7: Add public storefront offer apply/redeem contracts, React mutation helpers, and promotions-backed resolver support for customer-facing manual and code-gated offer flows.
+
+### Patch Changes
+
+- Updated dependencies [d07215e]
+- Updated dependencies [e9241a7]
+  - @voyantjs/catalog@0.43.0
+  - @voyantjs/core@0.43.0
+  - @voyantjs/db@0.43.0
+  - @voyantjs/hono@0.43.0
+  - @voyantjs/products@0.43.0
+  - @voyantjs/storefront@0.43.0
+  - @voyantjs/workflows@0.43.0
+
 ## 0.42.0
 
 ### Patch Changes
