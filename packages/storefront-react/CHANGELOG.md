@@ -1,5 +1,13 @@
 # @voyantjs/storefront-react
 
+## 0.45.0
+
+### Patch Changes
+
+- Updated dependencies [ed25837]
+  - @voyantjs/react@0.45.0
+  - @voyantjs/storefront@0.45.0
+
 ## 0.44.0
 
 ### Patch Changes
