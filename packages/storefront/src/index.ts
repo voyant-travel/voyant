@@ -18,6 +18,7 @@ export {
   mergeStorefrontSettingsPatch,
   resolveStorefrontSettings,
 } from "./service.js"
+export type { StorefrontBookingSessionBootstrapOptions } from "./service-booking-session-bootstrap.js"
 export type {
   StorefrontIntakeGuard,
   StorefrontIntakeGuardDecision,
@@ -30,6 +31,8 @@ export type {
   StorefrontAppliedOffer,
   StorefrontBankTransfer,
   StorefrontBankTransferInput,
+  StorefrontBookingSessionBootstrap,
+  StorefrontBookingSessionBootstrapInput,
   StorefrontCurrencyDisplay,
   StorefrontDepartureListQuery,
   StorefrontFormField,
@@ -60,6 +63,12 @@ export {
   storefrontAppliedOfferSchema,
   storefrontBankTransferInputSchema,
   storefrontBankTransferSchema,
+  storefrontBookingSessionAvailabilitySnapshotSchema,
+  storefrontBookingSessionBootstrapInputSchema,
+  storefrontBookingSessionBootstrapSchema,
+  storefrontBookingSessionPaymentPlanSchema,
+  storefrontBookingSessionQuoteSchema,
+  storefrontBookingSessionRepricingSnapshotSchema,
   storefrontCurrencyDisplaySchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,

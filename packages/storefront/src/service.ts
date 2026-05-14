@@ -2,6 +2,10 @@ import type { EventBus } from "@voyantjs/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
+  bootstrapStorefrontBookingSession,
+  type StorefrontBookingSessionBootstrapOptions,
+} from "./service-booking-session-bootstrap.js"
+import {
   getStorefrontDeparture,
   getStorefrontDepartureItinerary,
   getStorefrontProductAvailabilitySummary,
@@ -17,6 +21,7 @@ import {
 } from "./service-intake.js"
 import { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
 import {
+  type StorefrontBookingSessionBootstrapInput,
   type StorefrontDepartureListQuery,
   type StorefrontDeparturePricePreviewInput,
   type StorefrontFormField,
@@ -75,6 +80,7 @@ export interface StorefrontServiceOptions {
     | Promise<StorefrontTransportEligibilityRuleInput[]>
     | StorefrontTransportEligibilityRuleInput[]
   intake?: StorefrontIntakeOptions
+  bookingSessionBootstrap?: StorefrontBookingSessionBootstrapOptions
 }
 
 export interface StorefrontRequestContext {
@@ -418,6 +424,18 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
         travelers: body.travelers,
         rules,
       })
+    },
+    async bootstrapBookingSession(
+      context: StorefrontRequestContext & { db: PostgresJsDatabase },
+      input: StorefrontBookingSessionBootstrapInput,
+      userId?: string,
+    ) {
+      return bootstrapStorefrontBookingSession(
+        context,
+        input,
+        options?.bookingSessionBootstrap,
+        userId,
+      )
     },
     async listApplicableOffers(input: {
       productId: string

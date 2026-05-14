@@ -21,9 +21,11 @@
   },
   "dependencies": {
     "@voyantjs/availability": "workspace:*",
+    "@voyantjs/bookings": "workspace:*",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/crm": "workspace:*",
     "@voyantjs/extras": "workspace:*",
+    "@voyantjs/finance": "workspace:*",
     "@voyantjs/hono": "workspace:*",
     "@voyantjs/pricing": "workspace:*",
     "@voyantjs/products": "workspace:*",

@@ -101,6 +101,7 @@ The public route family behind the facade remains:
 
 | Flow step | SDK method | Public route |
 | --- | --- | --- |
+| Reserve + bootstrap checkout state | `bookingEngine.bootstrapSession` | `POST /v1/public/bookings/sessions/bootstrap` |
 | Reserve capacity | `bookingEngine.reserve` | `POST /v1/public/bookings/sessions` |
 | Resume session | `bookingEngine.getSnapshot` | `GET /v1/public/bookings/sessions/:sessionId` |
 | Update travelers/session data | `bookingEngine.updateTravelers`, `bookingEngine.updateSession` | `PATCH /v1/public/bookings/sessions/:sessionId` |
@@ -111,6 +112,25 @@ The public route family behind the facade remains:
 | Finalize booking | `bookingEngine.confirm` | `POST /v1/public/bookings/sessions/:sessionId/confirm` |
 | Expire abandoned hold | `bookingEngine.expire` | `POST /v1/public/bookings/sessions/:sessionId/expire` |
 | Success summary | `bookingEngine.getOverview` | `GET /v1/public/bookings/overview` |
+
+`POST /v1/public/bookings/sessions/bootstrap` is the composite storefront
+bootstrap contract for custom checkout UIs that need one round-trip after a
+customer selects a departure. The request carries:
+
+- `departureId` and `slotId`, both resolved against the public availability
+  slot used for the reservation
+- `quote`, the storefront's original customer-visible total and currency
+- `session`, the same public booking-session creation payload accepted by
+  `POST /v1/public/bookings/sessions`
+- optional `catalogId` when the storefront is quoting against a specific public
+  price catalog
+
+The response returns a customer-safe object with `session` including
+`session.checkoutCapability`, `paymentPlan`, persisted `paymentSchedule`,
+`repricing` with the original quote, current total, delta, and stale flag, the
+post-reservation `availability` snapshot, selected `allocation`, and `currency`.
+The route rejects stale or expired quotes before creating the session, and it
+does not expose admin notes, provider internals, or mutable payment config.
 
 ## Errors
 

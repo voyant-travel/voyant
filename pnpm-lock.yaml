@@ -4657,6 +4657,9 @@ importers:
       '@voyantjs/availability':
         specifier: workspace:*
         version: link:../availability
+      '@voyantjs/bookings':
+        specifier: workspace:*
+        version: link:../bookings
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -4666,6 +4669,9 @@ importers:
       '@voyantjs/extras':
         specifier: workspace:*
         version: link:../extras
+      '@voyantjs/finance':
+        specifier: workspace:*
+        version: link:../finance
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
