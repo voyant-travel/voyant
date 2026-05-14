@@ -431,7 +431,7 @@ const storefrontOfferTargetInputSchema = z.object({
   bookingId: z.string().trim().min(1).optional().nullable(),
   sessionId: z.string().trim().min(1).optional().nullable(),
   locale: z.string().trim().min(2).optional(),
-  pax: z.coerce.number().int().min(0).optional(),
+  pax: z.coerce.number().int().min(1),
   audience: storefrontOfferAudienceSchema.default("customer"),
   market: z.string().trim().min(1).default("default"),
   basePriceCents: z.coerce.number().int().min(0),

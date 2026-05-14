@@ -598,6 +598,8 @@ The public HTTP routes live under the public capability namespace, not an extra 
 
 Both parse JSON through `parseJsonBody(...)`, return customer-safe status/reason codes, echo booking/session identifiers when provided, and include price-impact plus conflict metadata. They do not replace finance voucher validation and they do not create payment captures. Booking-level redemption audit rows are still written from confirmed quotes by the `booking.confirmed` subscriber.
 
+Offer mutation requests require the caller to provide `pax` explicitly. The resolver does not infer traveler counts from booking/session IDs; omitting `pax` would make the evaluator treat minimum-traveler conditions as catalog-plane conditional offers instead of checkout exclusions.
+
 ## 9. Reindex + event surface
 
 Mirrors the `availability.slot.changed` precedent (PR3 of #493 + the lifecycle work in #510 / #512), with one addition that pricing didn't need: a **boundary scheduler** for time-driven transitions.

@@ -359,6 +359,7 @@ describe("createStorefrontPublicRoutes", () => {
               productId: "prod_123",
               basePriceCents: 10000,
               currency: "USD",
+              pax: 2,
               audience: "customer",
               market: "default",
             })
@@ -425,6 +426,7 @@ describe("createStorefrontPublicRoutes", () => {
         bookingId: "book_123",
         basePriceCents: 10000,
         currency: "usd",
+        pax: 2,
       }),
       headers: { "content-type": "application/json" },
     })
@@ -472,6 +474,7 @@ describe("createStorefrontPublicRoutes", () => {
         sessionId: "sess_123",
         basePriceCents: 10000,
         currency: "EUR",
+        pax: 2,
       }),
       headers: { "content-type": "application/json" },
     })
@@ -495,6 +498,7 @@ describe("createStorefrontPublicRoutes", () => {
         productId: "prod_123",
         basePriceCents: 10000,
         currency: "USD",
+        pax: 2,
       }),
       headers: { "content-type": "application/json" },
     })
