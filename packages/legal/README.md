@@ -25,11 +25,30 @@ const app = createApp({
 ### Contracts
 
 - **Contracts** (`cont`) — legal document instances with status lifecycle
-- **Contract templates** (`ctpl`) — reusable templates with variable schemas
+- **Contract templates** (`ctpl`) — reusable templates with variable schemas,
+  optional channel scope, and explicit storefront defaults
 - **Contract template versions** (`ctpv`) — immutable version snapshots
 - **Contract signatures** (`ctsi`) — signing records (who/when/method/ip)
 - **Contract number series** (`ctns`) — series definitions with auto-increment
 - **Contract attachments** (`ctat`) — rendered PDFs and appendices
+
+## Default Storefront Contract Templates
+
+Contract templates can be marked with `isDefault: true`. At most one default
+template can exist for a given `(scope, channelId, language)` selector. A
+default with `channelId: null` is the global fallback for that scope/language;
+a channel-specific default wins when callers pass `channelId`.
+
+Storefronts can resolve the active customer-safe template through:
+
+- `GET /v1/public/legal/contracts/templates/default`
+- `GET /v1/admin/legal/contracts/templates/default`
+
+Supported query parameters are `scope` (defaults to `customer`), `channelId`,
+`language`, and comma-separated `fallbackLanguages`. Selection checks requested
+and fallback languages in order, prefers channel-specific defaults over global
+defaults, ignores inactive templates, and falls back to the newest active
+matching template only when no explicit default exists for that selector.
 
 ### Policies
 

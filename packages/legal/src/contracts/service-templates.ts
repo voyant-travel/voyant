@@ -1,8 +1,9 @@
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
+import { and, desc, eq, ilike, isNull, ne, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { contractTemplates, contractTemplateVersions } from "./schema.js"
 import {
+  type ContractTemplateDefaultQuery,
   type ContractTemplateListQuery,
   type CreateContractTemplateInput,
   type CreateContractTemplateVersionInput,
@@ -13,11 +14,41 @@ import {
   validateContractTemplateBody,
 } from "./service-shared.js"
 
+type ContractTemplateRow = typeof contractTemplates.$inferSelect
+
+function normalizeLanguage(value: string | undefined | null) {
+  const normalized = value?.trim().toLowerCase()
+  return normalized || null
+}
+
+function buildLanguageFallbackOrder(query: ContractTemplateDefaultQuery) {
+  return [query.language, ...(query.fallbackLanguages ?? [])]
+    .map(normalizeLanguage)
+    .filter(
+      (value, index, values): value is string => Boolean(value) && values.indexOf(value) === index,
+    )
+}
+
+function pickBestDefaultTemplate(
+  rows: ContractTemplateRow[],
+  channelId: string | undefined,
+): ContractTemplateRow | null {
+  const channelDefault = channelId
+    ? rows.find((row) => row.isDefault && row.channelId === channelId)
+    : null
+  const globalDefault = rows.find((row) => row.isDefault && row.channelId === null)
+  const channelFallback = channelId ? rows.find((row) => row.channelId === channelId) : null
+  const globalFallback = rows.find((row) => row.channelId === null)
+
+  return channelDefault ?? globalDefault ?? channelFallback ?? globalFallback ?? null
+}
+
 export const contractTemplatesService = {
   async listTemplates(db: PostgresJsDatabase, query: ContractTemplateListQuery) {
     const conditions = []
     if (query.scope) conditions.push(eq(contractTemplates.scope, query.scope))
     if (query.language) conditions.push(eq(contractTemplates.language, query.language))
+    if (query.channelId) conditions.push(eq(contractTemplates.channelId, query.channelId))
     if (query.active !== undefined) conditions.push(eq(contractTemplates.active, query.active))
     if (query.search) {
       const term = `%${query.search}%`
@@ -63,46 +94,73 @@ export const contractTemplatesService = {
       .limit(1)
     return row ?? null
   },
-  async getDefaultTemplate(
-    db: PostgresJsDatabase,
-    query: {
-      scope: "customer" | "supplier" | "partner" | "channel" | "other"
-      language?: string
-      fallbackLanguages?: string[]
-    },
-  ) {
+  async getDefaultTemplate(db: PostgresJsDatabase, query: ContractTemplateDefaultQuery) {
+    const channelId = query.channelId?.trim() || undefined
+    const channelConditions = channelId
+      ? or(eq(contractTemplates.channelId, channelId), isNull(contractTemplates.channelId))
+      : isNull(contractTemplates.channelId)
+
     const rows = await db
       .select()
       .from(contractTemplates)
-      .where(and(eq(contractTemplates.scope, query.scope), eq(contractTemplates.active, true)))
-      .orderBy(desc(contractTemplates.updatedAt))
+      .where(
+        and(
+          eq(contractTemplates.scope, query.scope),
+          eq(contractTemplates.active, true),
+          channelConditions,
+        ),
+      )
+      .orderBy(
+        desc(contractTemplates.updatedAt),
+        desc(contractTemplates.createdAt),
+        desc(contractTemplates.id),
+      )
 
     if (rows.length === 0) {
       return null
     }
 
-    const preferredLanguages = [
-      query.language?.trim().toLowerCase(),
-      ...(query.fallbackLanguages ?? []).map((value) => value.trim().toLowerCase()),
-    ].filter(
-      (value, index, values): value is string => Boolean(value) && values.indexOf(value) === index,
-    )
+    const preferredLanguages = buildLanguageFallbackOrder(query)
 
     if (preferredLanguages.length === 0) {
-      return rows[0] ?? null
+      return pickBestDefaultTemplate(rows, channelId)
     }
 
     for (const language of preferredLanguages) {
-      const match = rows.find((row) => row.language.trim().toLowerCase() === language)
+      const match = pickBestDefaultTemplate(
+        rows.filter((row) => row.language.trim().toLowerCase() === language),
+        channelId,
+      )
       if (match) {
         return match
       }
     }
 
-    return rows[0] ?? null
+    return pickBestDefaultTemplate(rows, channelId)
   },
   async createTemplate(db: PostgresJsDatabase, data: CreateContractTemplateInput) {
     validateContractTemplateBody(data.body)
+    if (data.isDefault) {
+      const [existingDefault] = await db
+        .select({ id: contractTemplates.id })
+        .from(contractTemplates)
+        .where(
+          and(
+            eq(contractTemplates.scope, data.scope),
+            eq(contractTemplates.language, data.language),
+            data.channelId
+              ? eq(contractTemplates.channelId, data.channelId)
+              : isNull(contractTemplates.channelId),
+            eq(contractTemplates.isDefault, true),
+          ),
+        )
+        .limit(1)
+      if (existingDefault) {
+        throw new Error(
+          "A default contract template already exists for this scope/channel/language",
+        )
+      }
+    }
     const [row] = await db.insert(contractTemplates).values(data).returning()
     return row ?? null
   },
@@ -139,6 +197,30 @@ export const contractTemplatesService = {
 
       const changedBody =
         typeof data.body === "string" && data.body !== existing.body ? data.body : null
+      const nextTemplate = { ...existing, ...data }
+
+      if (nextTemplate.isDefault) {
+        const [existingDefault] = await tx
+          .select({ id: contractTemplates.id })
+          .from(contractTemplates)
+          .where(
+            and(
+              eq(contractTemplates.scope, nextTemplate.scope),
+              eq(contractTemplates.language, nextTemplate.language),
+              nextTemplate.channelId
+                ? eq(contractTemplates.channelId, nextTemplate.channelId)
+                : isNull(contractTemplates.channelId),
+              eq(contractTemplates.isDefault, true),
+              ne(contractTemplates.id, id),
+            ),
+          )
+          .limit(1)
+        if (existingDefault) {
+          throw new Error(
+            "A default contract template already exists for this scope/channel/language",
+          )
+        }
+      }
 
       let nextCurrentVersionId = existing.currentVersionId
       if (changedBody !== null) {

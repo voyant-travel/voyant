@@ -14,6 +14,7 @@ export interface LegalContractTemplatesListFilters {
   search?: string | undefined
   scope?: string | undefined
   language?: string | undefined
+  channelId?: string | undefined
   active?: boolean | undefined
   limit?: number | undefined
   offset?: number | undefined
