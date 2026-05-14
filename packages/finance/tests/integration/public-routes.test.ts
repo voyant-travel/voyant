@@ -370,6 +370,70 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       invoiceId: invoice.id,
       invoiceNumber: "PF-REF-1001",
     })
+
+    const bookingScopedRes = await app.request(
+      `/bookings/${booking.id}/documents/by-reference?reference=PAY-REF-1001`,
+      {
+        headers: await capabilityHeaders(booking.id),
+      },
+    )
+
+    expect(bookingScopedRes.status).toBe(200)
+    expect((await bookingScopedRes.json()).data).toMatchObject({
+      bookingId: booking.id,
+      invoiceId: invoice.id,
+      invoiceNumber: "PF-REF-1001",
+      documentStatus: "ready",
+    })
+  })
+
+  it("rejects booking-scoped finance document lookup without matching access", async () => {
+    const booking = await seedBooking()
+    const otherBooking = await seedBooking()
+    const invoice = await seedInvoice(booking.id, {
+      invoiceNumber: "PF-SCOPED-1001",
+      invoiceType: "proforma",
+    })
+    const otherInvoice = await seedInvoice(otherBooking.id, {
+      invoiceNumber: "PF-SCOPED-2002",
+      invoiceType: "proforma",
+    })
+
+    await db.insert(invoiceRenditions).values([
+      {
+        invoiceId: invoice.id,
+        format: "pdf",
+        status: "ready",
+        metadata: { url: "https://example.com/scoped-1001.pdf" },
+      },
+      {
+        invoiceId: otherInvoice.id,
+        format: "pdf",
+        status: "ready",
+        metadata: { url: "https://example.com/scoped-2002.pdf" },
+      },
+    ])
+
+    const missingCapabilityRes = await app.request(
+      `/bookings/${booking.id}/documents/by-reference?reference=PF-SCOPED-1001`,
+    )
+    expect(missingCapabilityRes.status).toBe(401)
+
+    const mismatchedCapabilityRes = await app.request(
+      `/bookings/${booking.id}/documents/by-reference?reference=PF-SCOPED-1001`,
+      {
+        headers: await capabilityHeaders(otherBooking.id),
+      },
+    )
+    expect(mismatchedCapabilityRes.status).toBe(401)
+
+    const mismatchedReferenceRes = await app.request(
+      `/bookings/${booking.id}/documents/by-reference?reference=PF-SCOPED-2002`,
+      {
+        headers: await capabilityHeaders(booking.id),
+      },
+    )
+    expect(mismatchedReferenceRes.status).toBe(404)
   })
 
   it("lists booking-scoped public finance payments with invoice context", async () => {

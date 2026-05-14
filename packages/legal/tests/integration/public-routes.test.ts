@@ -1,4 +1,5 @@
 import { createEventBus } from "@voyantjs/core"
+import type { StorageProvider, StorageUploadBody } from "@voyantjs/storage"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -25,6 +26,7 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
   let db: PostgresJsDatabase
   let generatedNames: string[]
   let documentEvents: Array<Record<string, unknown>>
+  let uploadedObjects: Array<{ key: string; size: number; contentType: string | null }>
 
   beforeAll(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
@@ -41,10 +43,33 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     eventBus.subscribe("contract.document.generated", (event) => {
       documentEvents.push(event as Record<string, unknown>)
     })
+    uploadedObjects = []
+    const documentStorage: StorageProvider = {
+      name: "legal-test-storage",
+      async upload(body: StorageUploadBody, options = {}) {
+        const key = options.key ?? `contracts/test/${uploadedObjects.length + 1}`
+        const size =
+          body instanceof Blob
+            ? body.size
+            : body instanceof Uint8Array
+              ? body.byteLength
+              : body.byteLength
+        uploadedObjects.push({ key, size, contentType: options.contentType ?? null })
+        return { key, url: `https://cdn.example.com/${key}` }
+      },
+      async delete() {},
+      async signedUrl(key: string) {
+        return `https://signed.example.com/${key}`
+      },
+      async get() {
+        return null
+      },
+    }
     adminApp.route(
       "/",
       createContractsAdminRoutes({
         eventBus,
+        documentStorage,
         resolveDocumentDownloadUrl: (_bindings, storageKey) =>
           `https://signed.example.com/${storageKey}`,
         documentGenerator: async ({ contract }) => {
@@ -78,6 +103,7 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     await cleanupTestDb(db)
     generatedNames = []
     documentEvents = []
+    uploadedObjects = []
   })
 
   it("selects the default active template using language fallback order", async () => {
@@ -235,6 +261,20 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     expect((await res.json()).data).toEqual({
       rendered: "Salut Ana Popescu",
     })
+
+    const stableAliasRes = await publicApp.request(`/templates/${template.id}/render-preview`, {
+      method: "POST",
+      ...json({
+        variables: {
+          customer: { firstName: "Mara", lastName: "Ionescu" },
+        },
+      }),
+    })
+
+    expect(stableAliasRes.status).toBe(200)
+    expect((await stableAliasRes.json()).data).toEqual({
+      rendered: "Salut Mara Ionescu",
+    })
   })
 
   it("generates and regenerates a canonical contract document attachment", async () => {
@@ -296,7 +336,7 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     expect(issuedContract?.status).toBe("issued")
     expect(issuedContract?.renderedBody).toBe("Salut Ana")
 
-    const secondRes = await adminApp.request(`/${contract.id}/regenerate-document`, {
+    const secondRes = await adminApp.request(`/${contract.id}/regenerate-pdf`, {
       method: "POST",
       ...json({}),
     })
@@ -349,5 +389,61 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     expect(downloadRes.headers.get("location")).toBe(
       `https://signed.example.com/${latestAttachment?.storageKey}`,
     )
+  })
+
+  it("attaches an uploaded stored document to a contract", async () => {
+    const [contract] = await db
+      .insert(contracts)
+      .values({
+        title: "Uploaded contract",
+        scope: "customer",
+        status: "issued",
+      })
+      .returning()
+
+    const form = new FormData()
+    form.set("name", "Signed contract.pdf")
+    form.set("kind", "signed_contract")
+    form.set("file", new File(["signed body"], "signed.pdf", { type: "application/pdf" }))
+
+    const res = await adminApp.request(`/${contract.id}/attach-document`, {
+      method: "POST",
+      body: form,
+    })
+
+    expect(res.status).toBe(201)
+    const body = await res.json()
+    expect(body.data).toMatchObject({
+      contractId: contract.id,
+      kind: "signed_contract",
+      name: "Signed contract.pdf",
+      mimeType: "application/pdf",
+      fileSize: 11,
+      checksum: expect.stringMatching(/^sha256:/),
+    })
+    expect(body.data.storageKey).toContain(`contracts/${contract.id}/attachments/`)
+    expect(uploadedObjects).toEqual([
+      expect.objectContaining({
+        key: body.data.storageKey,
+        size: 11,
+        contentType: "application/pdf",
+      }),
+    ])
+  })
+
+  it("does not upload a stored document for a missing contract", async () => {
+    const form = new FormData()
+    form.set("name", "Missing contract.pdf")
+    form.set("kind", "signed_contract")
+    form.set("file", new File(["signed body"], "missing.pdf", { type: "application/pdf" }))
+
+    const res = await adminApp.request("/00000000-0000-0000-0000-000000000000/attach-document", {
+      method: "POST",
+      body: form,
+    })
+
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: "Contract not found" })
+    expect(uploadedObjects).toEqual([])
   })
 })

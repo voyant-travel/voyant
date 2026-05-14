@@ -59,6 +59,20 @@ The event does not include rendered document bodies or signed download URLs.
 Subscriber failures do not roll back the rendition write; use a durable job or
 workflow when a downstream reaction needs retries.
 
+## Customer-Safe Document Lookup
+
+Public finance routes include booking-scoped document lookup for customer
+portal and checkout surfaces:
+
+- `GET /v1/public/finance/bookings/:bookingId/documents`
+- `GET /v1/public/finance/bookings/:bookingId/documents/by-reference?reference=...`
+- `GET /v1/public/finance/documents/by-reference?reference=...`
+
+Booking-scoped routes require a checkout capability for the requested booking.
+The by-reference variant resolves invoice numbers and payment reference numbers
+only inside that booking, so a valid capability for one booking cannot retrieve
+documents from another booking.
+
 ## Exports
 
 | Entry | Description |

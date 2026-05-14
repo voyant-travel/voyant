@@ -245,6 +245,57 @@ export const publicFinanceService = {
     }
   },
 
+  async getBookingDocumentByReference(
+    db: PostgresJsDatabase,
+    bookingId: string,
+    reference: string,
+    runtime: PublicFinanceRuntimeOptions = {},
+  ): Promise<PublicFinanceDocumentLookup | null> {
+    const [invoiceMatch, paymentMatch] = await Promise.all([
+      db
+        .select()
+        .from(invoices)
+        .where(and(eq(invoices.bookingId, bookingId), eq(invoices.invoiceNumber, reference)))
+        .orderBy(desc(invoices.createdAt))
+        .limit(1),
+      db
+        .select({
+          invoiceId: payments.invoiceId,
+        })
+        .from(payments)
+        .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
+        .where(and(eq(invoices.bookingId, bookingId), eq(payments.referenceNumber, reference)))
+        .orderBy(desc(payments.createdAt))
+        .limit(1),
+    ])
+
+    const invoiceId = invoiceMatch[0]?.id ?? paymentMatch[0]?.invoiceId ?? null
+    if (!invoiceId) {
+      return null
+    }
+
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.bookingId, bookingId)))
+      .limit(1)
+
+    if (!invoice?.bookingId) {
+      return null
+    }
+
+    const renditions = await db
+      .select()
+      .from(invoiceRenditions)
+      .where(eq(invoiceRenditions.invoiceId, invoice.id))
+      .orderBy(desc(invoiceRenditions.createdAt))
+
+    return {
+      bookingId: invoice.bookingId,
+      ...(await mapInvoiceDocument(invoice, renditions, runtime)),
+    }
+  },
+
   async getBookingPaymentOptions(
     db: PostgresJsDatabase,
     bookingId: string,
