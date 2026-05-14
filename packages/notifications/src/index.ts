@@ -11,6 +11,13 @@ import {
 } from "./routes.js"
 import { notificationsModule } from "./schema.js"
 import { createNotificationService } from "./service.js"
+import {
+  BOOKING_FULLY_PAID_EVENT,
+  type BookingDocumentBundleLifecycleOptions,
+  type BookingFullyPaidEvent,
+  bookingDocumentBundleLifecycleService,
+  type RunBookingDocumentBundleLifecycleInput,
+} from "./service-booking-document-lifecycle.js"
 import { bookingDocumentNotificationsService } from "./service-booking-documents.js"
 import {
   bookingIsPaidInFullForNotification,
@@ -73,6 +80,28 @@ export {
   previewNotificationTemplate,
   renderNotificationTemplate,
 } from "./service.js"
+export type {
+  BookingDocumentBundleLifecycleContext,
+  BookingDocumentBundleLifecycleDocumentType,
+  BookingDocumentBundleLifecycleEnsureDocuments,
+  BookingDocumentBundleLifecycleEvent,
+  BookingDocumentBundleLifecycleOptions,
+  BookingDocumentBundleLifecyclePolicy,
+  BookingDocumentBundleLifecyclePolicyResult,
+  BookingDocumentBundleLifecycleResolveBrochures,
+  BookingDocumentBundleLifecycleResult,
+  BookingDocumentBundleLifecycleStageOptions,
+  BookingDocumentBundleLifecycleStep,
+  BookingDocumentBundleLifecycleTrigger,
+  BookingDocumentBundleNotificationPolicy,
+  BookingFullyPaidEvent,
+} from "./service-booking-document-lifecycle.js"
+export {
+  BOOKING_FULLY_PAID_EVENT,
+  bookingDocumentBundleLifecycleService,
+  createDefaultBookingDocumentBundlePolicy,
+  resolveBookingDocumentBundleLifecycleContext,
+} from "./service-booking-document-lifecycle.js"
 export type {
   BookingDocumentAttachmentResolver,
   BookingDocumentsSentEvent,
@@ -178,6 +207,22 @@ export interface CreateNotificationsHonoModuleOptions extends NotificationsRoute
    */
   resolveDb?: (bindings: Record<string, unknown>) => AnyDrizzleDb
   autoConfirmAndDispatch?: NotificationsAutoConfirmAndDispatchOptions
+  /**
+   * First-class booking lifecycle hook for composing customer document
+   * bundles after confirmation and fully-paid transitions. Host apps can
+   * plug legal/finance/brochure generators and override notification policy
+   * without replacing the upstream event wiring.
+   */
+  documentBundleLifecycle?: BookingDocumentBundleLifecycleOptions
+}
+
+function logDocumentBundleLifecycleFailure(
+  input: RunBookingDocumentBundleLifecycleInput,
+  message: string,
+) {
+  console.error(
+    `[notifications] document-bundle lifecycle failed for ${input.trigger} booking ${input.event.bookingId}: ${message}`,
+  )
 }
 
 export function createNotificationsHonoModule(
@@ -234,6 +279,96 @@ export function createNotificationsHonoModule(
               const message = error instanceof Error ? error.message : String(error)
               console.error(
                 `[notifications] auto-dispatch failed for booking ${event.data.bookingId}: ${message}`,
+              )
+            }
+          },
+        )
+      }
+
+      if (options?.documentBundleLifecycle?.enabled && options.resolveDb) {
+        const resolveDb = options.resolveDb
+        const lifecycleOptions = options.documentBundleLifecycle
+        const runtime = buildNotificationsRouteRuntime(bindings as Record<string, unknown>, options)
+        const dispatcher = createNotificationService(runtime.providers)
+
+        const runLifecycle = async (input: RunBookingDocumentBundleLifecycleInput) => {
+          try {
+            const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
+            const result = await bookingDocumentBundleLifecycleService.run(
+              db,
+              dispatcher,
+              input,
+              lifecycleOptions,
+              { attachmentResolver: runtime.documentAttachmentResolver, eventBus },
+            )
+            if (result.status === "failed") {
+              logDocumentBundleLifecycleFailure(input, result.error)
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error)
+            logDocumentBundleLifecycleFailure(input, message)
+          }
+        }
+
+        eventBus.subscribe(
+          "booking.confirmed",
+          async (event: {
+            data: { bookingId: string; bookingNumber: string; actorId: string | null }
+          }) => {
+            await runLifecycle({ trigger: "booking.confirmed", event: event.data })
+          },
+        )
+
+        eventBus.subscribe(
+          BOOKING_FULLY_PAID_EVENT,
+          async (event: { data: BookingFullyPaidEvent }) => {
+            await runLifecycle({ trigger: BOOKING_FULLY_PAID_EVENT, event: event.data })
+          },
+        )
+
+        eventBus.subscribe(
+          "payment.completed",
+          async (event: {
+            data: {
+              paymentSessionId: string
+              bookingId?: string | null
+              orderId?: string | null
+              invoiceId?: string | null
+              amountCents: number
+              currency: string
+              provider: string
+            }
+          }) => {
+            if (!event.data.bookingId) {
+              return
+            }
+
+            try {
+              const db = resolveDb(bindings as Record<string, unknown>) as PostgresJsDatabase
+              const isPaidInFull = await bookingIsPaidInFullForNotification(
+                db,
+                event.data.bookingId,
+              )
+              if (!isPaidInFull) {
+                return
+              }
+
+              await eventBus.emit(
+                BOOKING_FULLY_PAID_EVENT,
+                {
+                  bookingId: event.data.bookingId,
+                  paymentSessionId: event.data.paymentSessionId,
+                  invoiceId: event.data.invoiceId ?? null,
+                  amountCents: event.data.amountCents,
+                  currency: event.data.currency,
+                  provider: event.data.provider,
+                } satisfies BookingFullyPaidEvent,
+                { category: "domain", source: "subscriber" },
+              )
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error)
+              console.error(
+                `[notifications] booking.fully-paid dispatch failed for booking ${event.data.bookingId}: ${message}`,
               )
             }
           },
