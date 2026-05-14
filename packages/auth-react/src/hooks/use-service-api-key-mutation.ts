@@ -37,6 +37,13 @@ export interface UpdateServiceApiKeyInput {
 
 export type UpdateApiTokenInput = UpdateServiceApiKeyInput
 
+export interface RotateServiceApiKeyInput {
+  keyId: string
+  configId?: string
+}
+
+export type RotateApiTokenInput = RotateServiceApiKeyInput
+
 export interface DeleteServiceApiKeyInput {
   keyId: string
   configId?: string
@@ -96,6 +103,20 @@ export function useServiceApiKeyMutation() {
     onSuccess: () => invalidateApiKeyQueries(queryClient),
   })
 
+  const rotate = useMutation({
+    mutationFn: async (input: RotateServiceApiKeyInput) =>
+      fetchWithValidation(
+        `/auth/api-tokens/${encodeURIComponent(input.keyId)}/rotate`,
+        serviceApiKeyWithSecretSchema,
+        { baseUrl, fetcher },
+        {
+          method: "POST",
+          body: JSON.stringify({ configId: input.configId }),
+        },
+      ),
+    onSuccess: () => invalidateApiKeyQueries(queryClient),
+  })
+
   const remove = useMutation({
     mutationFn: async (input: DeleteServiceApiKeyInput) =>
       fetchWithValidation(
@@ -107,7 +128,7 @@ export function useServiceApiKeyMutation() {
     onSuccess: () => invalidateApiKeyQueries(queryClient),
   })
 
-  return { create, update, remove }
+  return { create, update, rotate, remove }
 }
 
 export const useApiTokenMutation = useServiceApiKeyMutation

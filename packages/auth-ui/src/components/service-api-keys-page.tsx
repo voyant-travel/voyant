@@ -131,7 +131,7 @@ export function ServiceApiKeysPage({
   const [selectedPermissions, setSelectedPermissions] = useState<ApiKeyPermissions>({
     ...API_KEY_PERMISSION_PRESETS["catalog-read"].permissions,
   })
-  const [createdKey, setCreatedKey] = useState<ApiTokenWithSecret | null>(null)
+  const [issuedKey, setIssuedKey] = useState<ApiTokenWithSecret | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const selectedDescription = useMemo(
@@ -150,7 +150,7 @@ export function ServiceApiKeysPage({
   const handleCreate = async (event: FormEvent) => {
     event.preventDefault()
     setError(null)
-    setCreatedKey(null)
+    setIssuedKey(null)
 
     if (!name.trim()) {
       setError(messages.create.errors.nameRequired)
@@ -168,7 +168,7 @@ export function ServiceApiKeysPage({
         permissions: selectedPermissions,
         expiresIn: expiresInSeconds(expirationDays),
       })
-      setCreatedKey(result)
+      setIssuedKey(result)
       setName("")
     } catch (err) {
       setError(err instanceof Error ? err.message : messages.create.errors.createFailed)
@@ -182,7 +182,7 @@ export function ServiceApiKeysPage({
         <p className="text-sm text-muted-foreground">{pageDescription}</p>
       </div>
 
-      {createdKey && (
+      {issuedKey && (
         <Card className="border-primary/30 bg-primary/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -192,13 +192,13 @@ export function ServiceApiKeysPage({
             <CardDescription>{messages.createdToken.description}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row">
-            <Input value={createdKey.key} readOnly className="font-mono text-xs" />
+            <Input value={issuedKey.key} readOnly className="font-mono text-xs" />
             <Button
               type="button"
               variant="outline"
-              onClick={() => void clipboard.copy(createdKey.id, createdKey.key)}
+              onClick={() => void clipboard.copy(issuedKey.id, issuedKey.key)}
             >
-              {clipboard.copied === createdKey.id ? (
+              {clipboard.copied === issuedKey.id ? (
                 <Check className="mr-2 h-4 w-4" />
               ) : (
                 <Copy className="mr-2 h-4 w-4" />
@@ -344,7 +344,12 @@ export function ServiceApiKeysPage({
       ) : keys.data?.apiKeys.length ? (
         <div className="space-y-3">
           {keys.data.apiKeys.map((key) => (
-            <ServiceApiKeyRow key={key.id} apiKey={key} />
+            <ServiceApiKeyRow
+              key={key.id}
+              apiKey={key}
+              onError={setError}
+              onSecretIssued={setIssuedKey}
+            />
           ))}
         </div>
       ) : (
@@ -360,11 +365,33 @@ export function ServiceApiKeysPage({
 
 export const ApiTokensPage = ServiceApiKeysPage
 
-function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
+function ServiceApiKeyRow({
+  apiKey,
+  onError,
+  onSecretIssued,
+}: {
+  apiKey: ApiToken
+  onError: (error: string | null) => void
+  onSecretIssued: (apiKey: ApiTokenWithSecret) => void
+}) {
   const i18n = useAuthUiI18nOrDefault()
   const messages = i18n.messages.serviceApiKeysPage
   const mutations = useApiTokenMutation()
   const enabled = apiKey.enabled !== false
+  const rotateToken = async () => {
+    if (!window.confirm(messages.list.rotateConfirm)) return
+    onError(null)
+
+    try {
+      const result = await mutations.rotate.mutateAsync({
+        keyId: apiKey.id,
+        configId: apiKey.configId,
+      })
+      onSecretIssued(result)
+    } catch (err) {
+      onError(err instanceof Error ? err.message : messages.list.rotateFailed)
+    }
+  }
 
   return (
     <Card>
@@ -408,6 +435,20 @@ function ServiceApiKeyRow({ apiKey }: { apiKey: ApiToken }) {
           >
             {enabled ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" />}
             {enabled ? messages.list.disable : messages.list.enable}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={mutations.rotate.isPending}
+            onClick={() => void rotateToken()}
+          >
+            {mutations.rotate.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {messages.list.rotate}
           </Button>
           <Button
             type="button"

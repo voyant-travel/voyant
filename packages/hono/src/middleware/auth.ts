@@ -29,6 +29,7 @@ function applyAuthContext(
   if (auth.actor) c.set("actor", auth.actor)
   if (auth.scopes !== undefined) c.set("scopes", auth.scopes)
   if (auth.isInternalRequest !== undefined) c.set("isInternalRequest", auth.isInternalRequest)
+  if (auth.apiTokenId) c.set("apiTokenId", auth.apiTokenId)
   if (auth.apiKeyId) c.set("apiKeyId", auth.apiKeyId)
 }
 
@@ -133,6 +134,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
           organizationId: row.referenceId,
           scopes,
           callerType: "api_key",
+          apiTokenId: row.id,
           apiKeyId: row.id,
           // Core-owned API keys (`voy_` prefix) are server-to-server credentials
           // issued to operator staff. The actor stays explicit here so that

@@ -75,6 +75,45 @@ describe("requirePermission", () => {
     expect(hasPermission).toHaveBeenCalledTimes(1)
   })
 
+  it("passes API token audit metadata to custom permission checkers", async () => {
+    const hasPermission = vi.fn().mockResolvedValue(true)
+
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set("userId", "user_123")
+      c.set("actor", "staff")
+      c.set("callerType", "api_key")
+      c.set("apiTokenId", "key_123")
+      c.set("apiKeyId", "key_123")
+      c.set("scopes", [])
+      await next()
+    })
+    app.use(
+      "*",
+      requirePermission(() => ({}) as never, "crm", "write", {
+        auth: { hasPermission },
+      }),
+    )
+    app.get("/secure", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure"),
+      {},
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(hasPermission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        auth: expect.objectContaining({
+          apiTokenId: "key_123",
+          apiKeyId: "key_123",
+          scopes: [],
+        }),
+      }),
+    )
+  })
+
   it("returns 401 when userId is set but actor is not (upstream wiring bug)", async () => {
     // `requirePermission` runs after `requireActor`. If actor is missing here,
     // it means the auth pipeline silently let an unresolved request through —

@@ -80,6 +80,7 @@ export function requirePermission<TBindings extends VoyantBindings>(
           callerType: c.get("callerType"),
           scopes,
           isInternalRequest: c.get("isInternalRequest"),
+          apiTokenId: c.get("apiTokenId"),
           apiKeyId: c.get("apiKeyId"),
         },
         permission,

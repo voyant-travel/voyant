@@ -95,6 +95,11 @@ Examples:
 Session callers still use the normal actor checks. Internal requests still
 bypass the actor guard through `isInternalRequest`.
 
+When a `voy_` token authenticates, the auth middleware also sets
+`callerType: "api_key"`, `apiTokenId`, the legacy alias `apiKeyId`, and
+`scopes` on the request context. Audit-log consumers should record
+`apiTokenId` instead of the raw bearer secret.
+
 ## Creating Tokens
 
 Use the operator template's Settings -> API Tokens screen, or call Voyant's
@@ -122,3 +127,20 @@ automation secret store, then use it as:
 ```http
 Authorization: Bearer voy_...
 ```
+
+## Rotating Tokens
+
+Operators can rotate a token secret without replacing the token record:
+
+```ts
+await fetch("/auth/api-tokens/key_123/rotate", {
+  method: "POST",
+})
+```
+
+Rotation returns a new one-time `key` value, preserves the existing token id,
+name, permissions, usage counters, and expiration, and updates the stored hash
+so the previous secret stops authenticating immediately. The facade appends
+non-secret rotation metadata under `metadata.voyant.apiToken`, including the
+last rotation timestamp and previous displayed starts. Do not log the returned
+secret after handing it to the operator.
