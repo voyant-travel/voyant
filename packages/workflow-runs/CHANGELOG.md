@@ -1,5 +1,16 @@
 # @voyantjs/workflow-runs
 
+## 0.41.2
+
+### Patch Changes
+
+- 54c7a5e: Add `recordedWorkflow`, a first-class helper that records `@voyantjs/workflows`
+  executions into the workflow runs observability tables on success and failure.
+  - @voyantjs/core@0.41.2
+  - @voyantjs/db@0.41.2
+  - @voyantjs/hono@0.41.2
+  - @voyantjs/workflows@0.41.2
+
 ## 0.41.1
 
 ### Patch Changes
