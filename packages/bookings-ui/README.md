@@ -18,11 +18,35 @@ that spacing when a shell owns the page chrome.
 
 ## Components
 
-- `BookingsPage`, `BookingDetailPage`
+- `BookingsPage`, `BookingDetailPage`, `BookingWorkspacePage`
 - `BookingList`, `BookingDialog`, `BookingCreateDialog`, `BookingCancellationDialog`, `StatusChangeDialog`
 - `TravelerList`, `TravelerDialog`, `BookingItemList`, `BookingGroupSection`
 - `BookingPaymentsSummary`, `BookingPaymentScheduleList`, `BookingGuaranteeList`
 - `SupplierStatusList`, `BookingActivityTimeline`, `BookingNotes`
+
+`BookingWorkspacePage` wraps the existing `BookingDetailPage` in a reusable
+operator workspace shell. It publishes cross-module navigation for booking,
+finance, legal, travelers, and activity work while keeping module-specific
+surfaces app-owned through typed slots:
+
+```tsx
+<BookingWorkspacePage
+  id={bookingId}
+  slots={{
+    actionBar: ({ booking }) => <button type="button">Assign {booking.bookingNumber}</button>,
+    financeSidebar: ({ bookingId }) => <FinanceStatusCard bookingId={bookingId} />,
+    legalTab: ({ bookingId }) => <ContractChecklist bookingId={bookingId} />,
+    travelersTabExtensions: ({ bulkActions }) => (
+      <BatchTravelerTools selectedTravelerIds={bulkActions.selectedTravelerIds} />
+    ),
+    activityTab: ({ bookingId }) => <OperatorTimeline bookingId={bookingId} />,
+  }}
+/>
+```
+
+Slot render functions receive the booking, active workspace section, section
+setter, and bulk-action state for traveler and finance selections. Use
+`bookingDetailSlots` to pass slots through to the mounted `BookingDetailPage`.
 
 ## I18n
 

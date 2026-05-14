@@ -71,6 +71,25 @@ export const bookingsUiEn = {
     billingAddress: "Address",
     documentsSlotEmpty: "Provide a documents slot to render booking documents.",
   },
+  bookingWorkspacePage: {
+    description: "Coordinate booking, finance, legal, traveler, and activity work.",
+    loadingTitle: "Booking workspace",
+    notFoundTitle: "Booking workspace",
+    notFoundDescription: "The booking workspace could not find this booking.",
+    tabs: {
+      booking: "Booking",
+      finance: "Finance",
+      legal: "Legal",
+      travelers: "Travelers",
+      activity: "Activity",
+    },
+    empty: {
+      finance: "Provide a finance tab slot to render invoices, payment status, or collections.",
+      legal: "Provide a legal tab slot to render contracts, waivers, or compliance tasks.",
+      travelers: "Provide traveler tab extensions for batch edits and operational checks.",
+      activity: "Provide an activity tab slot to render the operator timeline or audit trail.",
+    },
+  },
   travelerDialog: {
     titles: {
       create: "Add traveler",
