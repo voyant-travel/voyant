@@ -47,8 +47,13 @@ export const notificationReminderStageCadenceIntervalSchema = z.object({
   whenDaysUntilDueLT: z.coerce.number().int().optional().nullable(),
   repeatEveryDays: z.coerce.number().int().min(1).max(365),
 })
-export const notificationDocumentTypeSchema = z.enum(["contract", "invoice", "proforma"])
-export const notificationDocumentSourceSchema = z.enum(["legal", "finance"])
+export const notificationDocumentTypeSchema = z.enum([
+  "contract",
+  "invoice",
+  "proforma",
+  "brochure",
+])
+export const notificationDocumentSourceSchema = z.enum(["legal", "finance", "products"])
 export const notificationAttachmentSchema = z
   .object({
     filename: z.string().min(1).max(500),
