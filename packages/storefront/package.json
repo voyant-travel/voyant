@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./public-routes": "./src/routes-public.ts",
     "./service": "./src/service.ts",
+    "./transport-eligibility": "./src/transport-eligibility.ts",
     "./validation": "./src/validation.ts"
   },
   "scripts": {
@@ -55,6 +56,11 @@
         "types": "./dist/service.d.ts",
         "import": "./dist/service.js",
         "default": "./dist/service.js"
+      },
+      "./transport-eligibility": {
+        "types": "./dist/transport-eligibility.d.ts",
+        "import": "./dist/transport-eligibility.js",
+        "default": "./dist/transport-eligibility.js"
       },
       "./validation": {
         "types": "./dist/validation.d.ts",
