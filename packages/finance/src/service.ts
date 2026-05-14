@@ -415,6 +415,31 @@ export interface PaymentCompletedEvent {
   provider: string | null
 }
 
+export interface BindInvoiceRenditionInput {
+  templateId?: string | null
+  format: (typeof invoiceRenditions.$inferSelect)["format"]
+  storageKey?: string | null
+  contentType: string
+  fileSize?: number | null
+  checksum?: string | null
+  language?: string | null
+  generatedAt?: string | null
+  metadata?: Record<string, unknown> | null
+  replaceExisting?: boolean
+}
+
+export interface InvoiceRenderedEvent {
+  invoiceId: string
+  invoiceStatus: (typeof invoices.$inferSelect)["status"]
+  invoiceType: (typeof invoices.$inferSelect)["invoiceType"]
+  renditionId: string
+  format: (typeof invoiceRenditions.$inferSelect)["format"]
+  storageKey: string | null
+  contentType: string
+  byteSize: number | null
+  contentHash: string | null
+}
+
 export function buildBookingPaymentSchedulePaidEvent(
   schedule: typeof bookingPaymentSchedules.$inferSelect,
   session: typeof paymentSessions.$inferSelect,
@@ -2923,6 +2948,88 @@ export const financeService = {
       .where(eq(invoiceRenditions.id, id))
       .returning()
     return row ?? null
+  },
+
+  async bindInvoiceRendition(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: BindInvoiceRenditionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const result = await db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .select({
+          id: invoices.id,
+          status: invoices.status,
+          invoiceType: invoices.invoiceType,
+        })
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1)
+
+      if (!invoice) return { status: "not_found" as const }
+
+      if (data.replaceExisting) {
+        await tx
+          .update(invoiceRenditions)
+          .set({ status: "stale", updatedAt: new Date() })
+          .where(
+            and(
+              eq(invoiceRenditions.invoiceId, invoiceId),
+              eq(invoiceRenditions.format, data.format),
+              ne(invoiceRenditions.status, "stale"),
+            ),
+          )
+      }
+
+      const [rendition] = await tx
+        .insert(invoiceRenditions)
+        .values({
+          invoiceId,
+          templateId: data.templateId ?? null,
+          format: data.format,
+          status: "ready",
+          storageKey: data.storageKey?.trim() || null,
+          fileSize: data.fileSize ?? null,
+          checksum: data.checksum ?? null,
+          language: data.language ?? null,
+          generatedAt: toTimestamp(data.generatedAt),
+          metadata: {
+            ...(data.metadata ?? {}),
+            contentType: data.contentType,
+          },
+        })
+        .returning()
+
+      if (!rendition) return { status: "not_found" as const }
+
+      return { status: "bound" as const, invoice, rendition }
+    })
+
+    if (result.status !== "bound") {
+      return result
+    }
+
+    await runtime.eventBus?.emit(
+      "invoice.rendered",
+      {
+        invoiceId: result.invoice.id,
+        invoiceStatus: result.invoice.status,
+        invoiceType: result.invoice.invoiceType,
+        renditionId: result.rendition.id,
+        format: result.rendition.format,
+        storageKey: result.rendition.storageKey,
+        contentType: data.contentType,
+        byteSize: result.rendition.fileSize,
+        contentHash: result.rendition.checksum,
+      } satisfies InvoiceRenderedEvent,
+      {
+        category: "internal",
+        source: "service",
+      },
+    )
+
+    return result
   },
 
   async deleteInvoiceRendition(db: PostgresJsDatabase, id: string) {
