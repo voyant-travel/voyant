@@ -1,5 +1,22 @@
 # @voyantjs/legal
 
+## 0.47.0
+
+### Minor Changes
+
+- 65408c6: Add stable legal document operation routes for contract template previews, stored document attachment, and PDF regeneration, plus booking-scoped customer-safe finance document lookup by reference.
+
+### Patch Changes
+
+- @voyantjs/bookings@0.47.0
+- @voyantjs/core@0.47.0
+- @voyantjs/crm@0.47.0
+- @voyantjs/db@0.47.0
+- @voyantjs/hono@0.47.0
+- @voyantjs/storage@0.47.0
+- @voyantjs/suppliers@0.47.0
+- @voyantjs/utils@0.47.0
+
 ## 0.46.0
 
 ### Minor Changes
