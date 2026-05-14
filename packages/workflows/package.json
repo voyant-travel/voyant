@@ -13,51 +13,63 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     },
     "./testing": {
       "types": "./src/testing/index.ts",
-      "import": "./src/testing/index.ts"
+      "import": "./src/testing/index.ts",
+      "default": "./src/testing/index.ts"
     },
     "./protocol": {
       "types": "./src/protocol/index.ts",
-      "import": "./src/protocol/index.ts"
+      "import": "./src/protocol/index.ts",
+      "default": "./src/protocol/index.ts"
     },
     "./handler": {
       "types": "./src/handler/index.ts",
-      "import": "./src/handler/index.ts"
+      "import": "./src/handler/index.ts",
+      "default": "./src/handler/index.ts"
     },
     "./auth": {
       "types": "./src/auth/index.ts",
-      "import": "./src/auth/index.ts"
+      "import": "./src/auth/index.ts",
+      "default": "./src/auth/index.ts"
     },
     "./bindings": {
       "types": "./src/bindings.ts",
-      "import": "./src/bindings.ts"
+      "import": "./src/bindings.ts",
+      "default": "./src/bindings.ts"
     },
     "./config": {
       "types": "./src/config.ts",
-      "import": "./src/config.ts"
+      "import": "./src/config.ts",
+      "default": "./src/config.ts"
     },
     "./errors": {
       "types": "./src/errors.ts",
-      "import": "./src/errors.ts"
+      "import": "./src/errors.ts",
+      "default": "./src/errors.ts"
     },
     "./rate-limit": {
       "types": "./src/rate-limit/index.ts",
-      "import": "./src/rate-limit/index.ts"
+      "import": "./src/rate-limit/index.ts",
+      "default": "./src/rate-limit/index.ts"
     },
     "./driver": {
       "types": "./src/driver.ts",
-      "import": "./src/driver.ts"
+      "import": "./src/driver.ts",
+      "default": "./src/driver.ts"
     },
     "./events": {
       "types": "./src/events/index.ts",
-      "import": "./src/events/index.ts"
+      "import": "./src/events/index.ts",
+      "default": "./src/events/index.ts"
     },
     "./http-ingest": {
       "types": "./src/http-ingest.ts",
-      "import": "./src/http-ingest.ts"
+      "import": "./src/http-ingest.ts",
+      "default": "./src/http-ingest.ts"
     }
   },
   "main": "./dist/index.js",
@@ -76,6 +88,7 @@
     "check-types": "tsc --noEmit",
     "dev": "tsc -w -p tsconfig.json",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -100,51 +113,63 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
       },
       "./testing": {
         "types": "./dist/testing/index.d.ts",
-        "import": "./dist/testing/index.js"
+        "import": "./dist/testing/index.js",
+        "default": "./dist/testing/index.js"
       },
       "./protocol": {
         "types": "./dist/protocol/index.d.ts",
-        "import": "./dist/protocol/index.js"
+        "import": "./dist/protocol/index.js",
+        "default": "./dist/protocol/index.js"
       },
       "./handler": {
         "types": "./dist/handler/index.d.ts",
-        "import": "./dist/handler/index.js"
+        "import": "./dist/handler/index.js",
+        "default": "./dist/handler/index.js"
       },
       "./auth": {
         "types": "./dist/auth/index.d.ts",
-        "import": "./dist/auth/index.js"
+        "import": "./dist/auth/index.js",
+        "default": "./dist/auth/index.js"
       },
       "./bindings": {
         "types": "./dist/bindings.d.ts",
-        "import": "./dist/bindings.js"
+        "import": "./dist/bindings.js",
+        "default": "./dist/bindings.js"
       },
       "./config": {
         "types": "./dist/config.d.ts",
-        "import": "./dist/config.js"
+        "import": "./dist/config.js",
+        "default": "./dist/config.js"
       },
       "./errors": {
         "types": "./dist/errors.d.ts",
-        "import": "./dist/errors.js"
+        "import": "./dist/errors.js",
+        "default": "./dist/errors.js"
       },
       "./rate-limit": {
         "types": "./dist/rate-limit/index.d.ts",
-        "import": "./dist/rate-limit/index.js"
+        "import": "./dist/rate-limit/index.js",
+        "default": "./dist/rate-limit/index.js"
       },
       "./driver": {
         "types": "./dist/driver.d.ts",
-        "import": "./dist/driver.js"
+        "import": "./dist/driver.js",
+        "default": "./dist/driver.js"
       },
       "./events": {
         "types": "./dist/events/index.d.ts",
-        "import": "./dist/events/index.js"
+        "import": "./dist/events/index.js",
+        "default": "./dist/events/index.js"
       },
       "./http-ingest": {
         "types": "./dist/http-ingest.d.ts",
-        "import": "./dist/http-ingest.js"
+        "import": "./dist/http-ingest.js",
+        "default": "./dist/http-ingest.js"
       }
     },
     "main": "./dist/index.js",
