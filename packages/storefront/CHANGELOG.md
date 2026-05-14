@@ -1,5 +1,21 @@
 # @voyantjs/storefront
 
+## 0.45.0
+
+### Minor Changes
+
+- ed25837: Add resolver-backed transport eligibility schemas and public departure eligibility routes for passport and document rules.
+
+### Patch Changes
+
+- @voyantjs/availability@0.45.0
+- @voyantjs/core@0.45.0
+- @voyantjs/extras@0.45.0
+- @voyantjs/hono@0.45.0
+- @voyantjs/pricing@0.45.0
+- @voyantjs/products@0.45.0
+- @voyantjs/sellability@0.45.0
+
 ## 0.44.0
 
 ### Patch Changes
