@@ -1,5 +1,20 @@
 # @voyantjs/finance
 
+## 0.42.0
+
+### Minor Changes
+
+- 786945f: Add `financeService.bindInvoiceRendition` for transactional ready-rendition binding and emit the metadata-only `invoice.rendered` event after successful invoice document rendition completion.
+
+### Patch Changes
+
+- @voyantjs/bookings@0.42.0
+- @voyantjs/core@0.42.0
+- @voyantjs/db@0.42.0
+- @voyantjs/hono@0.42.0
+- @voyantjs/storage@0.42.0
+- @voyantjs/utils@0.42.0
+
 ## 0.41.3
 
 ### Patch Changes
