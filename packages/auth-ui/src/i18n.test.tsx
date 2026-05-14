@@ -15,6 +15,7 @@ describe("auth-ui i18n", () => {
 
     expect(messages.serviceApiKeysPage.title).toBe("Tokenuri API")
     expect(messages.serviceApiKeysPage.create.submit).toBe("Creeaza token")
+    expect(messages.organizationMembersPage.title).toBe("Membrii organizatiei")
   })
 
   it("applies overrides", () => {
@@ -28,12 +29,18 @@ describe("auth-ui i18n", () => {
                 refresh: "Actualizeaza",
               },
             },
+            organizationMembersPage: {
+              invitations: {
+                empty: "Nicio invitatie",
+              },
+            },
           },
         },
       },
     })
 
     expect(messages.serviceApiKeysPage.list.refresh).toBe("Actualizeaza")
+    expect(messages.organizationMembersPage.invitations.empty).toBe("Nicio invitatie")
   })
 
   it("falls back to english outside a provider", () => {

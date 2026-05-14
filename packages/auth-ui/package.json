@@ -12,6 +12,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./account": "./src/components/account-page.tsx",
+    "./organization-members": "./src/components/organization-members-page.tsx",
     "./styles.css": "./src/styles.css",
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
@@ -74,6 +75,11 @@
         "types": "./dist/components/account-page.d.ts",
         "import": "./dist/components/account-page.js",
         "default": "./dist/components/account-page.js"
+      },
+      "./organization-members": {
+        "types": "./dist/components/organization-members-page.d.ts",
+        "import": "./dist/components/organization-members-page.js",
+        "default": "./dist/components/organization-members-page.js"
       },
       "./styles.css": {
         "default": "./src/styles.css"

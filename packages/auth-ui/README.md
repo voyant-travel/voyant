@@ -53,6 +53,29 @@ import {
 `AccountChangePasswordForm`, `AccountChangeEmailForm`, and `AccountPage` use the
 Better Auth password and Email OTP endpoints mounted under `/auth`.
 
+## Organization members
+
+`OrganizationMembersPage` renders the reusable organization staff management
+surface with invitation, role assignment, pending invitation resend/cancel, and
+member removal controls. It uses the organization member and invitation hooks
+from `@voyantjs/auth-react`; server permissions still determine whether each
+mutation succeeds.
+
+```tsx
+import { OrganizationMembersPage } from "@voyantjs/auth-ui/organization-members"
+
+<OrganizationMembersPage
+  availableRoles={[
+    { value: "owner", label: "Owner" },
+    { value: "admin", label: "Admin" },
+    { value: "member", label: "Member" },
+  ]}
+/>
+```
+
+Pass `organizationId` when the route manages a specific organization. Otherwise
+the page uses the active organization from `useCurrentWorkspace()`.
+
 ## Sign-in
 
 `SignInPage` provides the shared email/password sign-in surface. It uses
