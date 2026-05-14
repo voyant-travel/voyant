@@ -33,6 +33,7 @@ import {
   type StorefrontPromotionalOffer,
   type StorefrontSettings,
   type StorefrontSettingsInput,
+  type StorefrontSettingsPatchInput,
   storefrontSettingsInputSchema,
   storefrontSettingsSchema,
 } from "./validation.js"
@@ -47,6 +48,13 @@ export interface StorefrontServiceOptions {
   resolveSettings?: (
     context: StorefrontRequestContext,
   ) => Promise<StorefrontSettingsInput> | StorefrontSettingsInput
+  updateSettings?: (
+    input: StorefrontSettings,
+    context: StorefrontRequestContext,
+  ) =>
+    | Promise<StorefrontSettingsInput | StorefrontSettings>
+    | StorefrontSettingsInput
+    | StorefrontSettings
   offers?: StorefrontOfferResolvers
   resolveOffers?: (
     context: StorefrontRequestContext,
@@ -133,22 +141,58 @@ function normalizePaymentMethod(method: StorefrontPaymentMethodInput): Storefron
   }
 }
 
+function normalizePaymentSchedule(
+  schedule: NonNullable<NonNullable<StorefrontSettingsInput["payment"]>["defaultSchedule"]> | null,
+) {
+  if (!schedule) return null
+
+  return {
+    depositPercent: schedule.depositPercent ?? null,
+    balanceDueDaysBeforeDeparture: schedule.balanceDueDaysBeforeDeparture ?? null,
+  }
+}
+
+function normalizeBankTransfer(
+  bankTransfer: NonNullable<NonNullable<StorefrontSettingsInput["payment"]>["bankTransfer"]> | null,
+) {
+  if (!bankTransfer) return null
+
+  return {
+    accountHolder: bankTransfer.accountHolder ?? null,
+    bankName: bankTransfer.bankName ?? null,
+    iban: bankTransfer.iban ?? null,
+    bic: bankTransfer.bic ?? null,
+    paymentReference: bankTransfer.paymentReference ?? null,
+    instructions: bankTransfer.instructions ?? null,
+  }
+}
+
 export function resolveStorefrontSettings(input?: StorefrontSettingsInput): StorefrontSettings {
   const parsed = storefrontSettingsInputSchema.parse(input ?? {})
 
   return storefrontSettingsSchema.parse({
     branding: {
       logoUrl: parsed.branding?.logoUrl ?? null,
+      faviconUrl: parsed.branding?.faviconUrl ?? null,
+      brandMarkUrl: parsed.branding?.brandMarkUrl ?? null,
+      primaryColor: parsed.branding?.primaryColor ?? null,
+      accentColor: parsed.branding?.accentColor ?? null,
       supportedLanguages: parsed.branding?.supportedLanguages ?? [],
     },
     support: {
       email: parsed.support?.email ?? null,
       phone: parsed.support?.phone ?? null,
+      links: parsed.support?.links ?? [],
     },
     legal: {
       termsUrl: parsed.legal?.termsUrl ?? null,
       privacyUrl: parsed.legal?.privacyUrl ?? null,
+      cancellationUrl: parsed.legal?.cancellationUrl ?? null,
       defaultContractTemplateId: parsed.legal?.defaultContractTemplateId ?? null,
+    },
+    localization: {
+      defaultLocale: parsed.localization?.defaultLocale ?? null,
+      currencyDisplay: parsed.localization?.currencyDisplay ?? "code",
     },
     forms: {
       billing: {
@@ -161,7 +205,47 @@ export function resolveStorefrontSettings(input?: StorefrontSettingsInput): Stor
     payment: {
       defaultMethod: parsed.payment?.defaultMethod ?? null,
       methods: (parsed.payment?.methods ?? []).map(normalizePaymentMethod),
+      defaultSchedule: normalizePaymentSchedule(parsed.payment?.defaultSchedule ?? null),
+      bankTransfer: normalizeBankTransfer(parsed.payment?.bankTransfer ?? null),
     },
+  })
+}
+
+export function mergeStorefrontSettingsPatch(
+  current: StorefrontSettings,
+  patch: StorefrontSettingsPatchInput,
+): StorefrontSettings {
+  return resolveStorefrontSettings({
+    branding: patch.branding ? { ...current.branding, ...patch.branding } : current.branding,
+    support: patch.support ? { ...current.support, ...patch.support } : current.support,
+    legal: patch.legal ? { ...current.legal, ...patch.legal } : current.legal,
+    localization: patch.localization
+      ? { ...current.localization, ...patch.localization }
+      : current.localization,
+    forms: patch.forms
+      ? {
+          billing: patch.forms.billing
+            ? { ...current.forms.billing, ...patch.forms.billing }
+            : current.forms.billing,
+          travelers: patch.forms.travelers
+            ? { ...current.forms.travelers, ...patch.forms.travelers }
+            : current.forms.travelers,
+        }
+      : current.forms,
+    payment: patch.payment
+      ? {
+          ...current.payment,
+          ...patch.payment,
+          defaultSchedule:
+            patch.payment.defaultSchedule === undefined
+              ? current.payment.defaultSchedule
+              : patch.payment.defaultSchedule,
+          bankTransfer:
+            patch.payment.bankTransfer === undefined
+              ? current.payment.bankTransfer
+              : patch.payment.bankTransfer,
+        }
+      : current.payment,
   })
 }
 
@@ -174,6 +258,19 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
     }
 
     return resolveStorefrontSettings(await options.resolveSettings(context))
+  }
+
+  async function updateSettings(
+    patch: StorefrontSettingsPatchInput,
+    context: StorefrontRequestContext = {},
+  ) {
+    if (!options?.updateSettings) {
+      return null
+    }
+
+    const current = await resolveSettings(context)
+    const next = mergeStorefrontSettingsPatch(current, patch)
+    return resolveStorefrontSettings(await options.updateSettings(next, context))
   }
 
   async function resolveOffers(context: StorefrontRequestContext = {}) {
@@ -216,6 +313,7 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
       return settings
     },
     resolveSettings,
+    updateSettings,
     getDeparture(db: PostgresJsDatabase, departureId: string) {
       return getStorefrontDeparture(db, departureId)
     },

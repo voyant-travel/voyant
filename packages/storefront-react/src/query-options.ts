@@ -4,6 +4,7 @@ import { queryOptions } from "@tanstack/react-query"
 
 import type { FetchWithValidationOptions } from "./client.js"
 import {
+  getAdminStorefrontSettings,
   getStorefrontDeparture,
   getStorefrontDepartureItinerary,
   getStorefrontOfferBySlug,
@@ -23,6 +24,13 @@ export function getStorefrontSettingsQueryOptions(client: FetchWithValidationOpt
   return queryOptions({
     queryKey: storefrontQueryKeys.settings(),
     queryFn: () => getStorefrontSettings(client),
+  })
+}
+
+export function getAdminStorefrontSettingsQueryOptions(client: FetchWithValidationOptions) {
+  return queryOptions({
+    queryKey: storefrontQueryKeys.adminSettings(),
+    queryFn: () => getAdminStorefrontSettings(client),
   })
 }
 

@@ -14,6 +14,7 @@ export const storefrontQueryKeys = {
   all: ["voyant", "storefront"] as const,
 
   settings: () => [...storefrontQueryKeys.all, "settings"] as const,
+  adminSettings: () => [...storefrontQueryKeys.all, "admin", "settings"] as const,
   departures: () => [...storefrontQueryKeys.all, "departures"] as const,
   departure: (departureId: string) =>
     [...storefrontQueryKeys.departures(), "detail", departureId] as const,

@@ -1,8 +1,11 @@
 import type { Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 
+import { createStorefrontAdminRoutes } from "./routes-admin.js"
 import { createStorefrontPublicRoutes } from "./routes-public.js"
 
+export type { StorefrontAdminRoutes } from "./routes-admin.js"
+export { createStorefrontAdminRoutes } from "./routes-admin.js"
 export type { StorefrontPublicRoutes } from "./routes-public.js"
 export { createStorefrontPublicRoutes } from "./routes-public.js"
 export type {
@@ -10,7 +13,11 @@ export type {
   StorefrontRequestContext,
   StorefrontServiceOptions,
 } from "./service.js"
-export { createStorefrontService, resolveStorefrontSettings } from "./service.js"
+export {
+  createStorefrontService,
+  mergeStorefrontSettingsPatch,
+  resolveStorefrontSettings,
+} from "./service.js"
 export type {
   StorefrontIntakeGuard,
   StorefrontIntakeGuardDecision,
@@ -21,6 +28,9 @@ export { CUSTOMER_SIGNAL_CREATED_EVENT } from "./service-intake.js"
 export { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
 export type {
   StorefrontAppliedOffer,
+  StorefrontBankTransfer,
+  StorefrontBankTransferInput,
+  StorefrontCurrencyDisplay,
   StorefrontDepartureListQuery,
   StorefrontFormField,
   StorefrontFormFieldInput,
@@ -36,13 +46,21 @@ export type {
   StorefrontPaymentMethod,
   StorefrontPaymentMethodCode,
   StorefrontPaymentMethodInput,
+  StorefrontPaymentSchedule,
+  StorefrontPaymentScheduleInput,
   StorefrontProductAvailabilitySummaryQuery,
   StorefrontPromotionalOffer,
   StorefrontSettings,
   StorefrontSettingsInput,
+  StorefrontSettingsPatchInput,
+  StorefrontSupportLink,
+  StorefrontSupportLinkInput,
 } from "./validation.js"
 export {
   storefrontAppliedOfferSchema,
+  storefrontBankTransferInputSchema,
+  storefrontBankTransferSchema,
+  storefrontCurrencyDisplaySchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -70,6 +88,8 @@ export {
   storefrontPaymentMethodCodeSchema,
   storefrontPaymentMethodInputSchema,
   storefrontPaymentMethodSchema,
+  storefrontPaymentScheduleInputSchema,
+  storefrontPaymentScheduleSchema,
   storefrontProductAvailabilitySlotSchema,
   storefrontProductAvailabilityStateSchema,
   storefrontProductAvailabilitySummaryQuerySchema,
@@ -82,7 +102,10 @@ export {
   storefrontPromotionalOfferResponseSchema,
   storefrontPromotionalOfferSchema,
   storefrontSettingsInputSchema,
+  storefrontSettingsPatchSchema,
   storefrontSettingsSchema,
+  storefrontSupportLinkInputSchema,
+  storefrontSupportLinkSchema,
 } from "./validation.js"
 export type {
   StorefrontTransportEligibilityInput,
@@ -114,6 +137,7 @@ export function createStorefrontHonoModule(
 ): HonoModule {
   return {
     module: storefrontModule,
+    adminRoutes: createStorefrontAdminRoutes(options),
     publicPath: "/",
     publicRoutes: createStorefrontPublicRoutes(options),
   }

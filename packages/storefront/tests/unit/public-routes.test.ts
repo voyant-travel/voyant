@@ -66,16 +66,26 @@ describe("createStorefrontPublicRoutes", () => {
       data: {
         branding: {
           logoUrl: "https://cdn.example.com/logo.svg",
+          faviconUrl: null,
+          brandMarkUrl: null,
+          primaryColor: null,
+          accentColor: null,
           supportedLanguages: ["ro", "en"],
         },
         support: {
           email: "help@example.com",
           phone: "+40 723 123 456",
+          links: [],
         },
         legal: {
           termsUrl: "https://example.com/terms",
           privacyUrl: "https://example.com/privacy",
+          cancellationUrl: null,
           defaultContractTemplateId: "tmpl_123",
+        },
+        localization: {
+          defaultLocale: null,
+          currencyDisplay: "code",
         },
         forms: {
           billing: {
@@ -109,6 +119,8 @@ describe("createStorefrontPublicRoutes", () => {
         },
         payment: {
           defaultMethod: "card",
+          defaultSchedule: null,
+          bankTransfer: null,
           methods: [
             {
               code: "card",
@@ -138,16 +150,26 @@ describe("createStorefrontPublicRoutes", () => {
       data: {
         branding: {
           logoUrl: null,
+          faviconUrl: null,
+          brandMarkUrl: null,
+          primaryColor: null,
+          accentColor: null,
           supportedLanguages: [],
         },
         support: {
           email: null,
           phone: null,
+          links: [],
         },
         legal: {
           termsUrl: null,
           privacyUrl: null,
+          cancellationUrl: null,
           defaultContractTemplateId: null,
+        },
+        localization: {
+          defaultLocale: null,
+          currencyDisplay: "code",
         },
         forms: {
           billing: { fields: [] },
@@ -156,6 +178,8 @@ describe("createStorefrontPublicRoutes", () => {
         payment: {
           defaultMethod: null,
           methods: [],
+          defaultSchedule: null,
+          bankTransfer: null,
         },
       },
     })
