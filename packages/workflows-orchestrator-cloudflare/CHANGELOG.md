@@ -1,5 +1,12 @@
 # @voyantjs/workflows-orchestrator-cloudflare
 
+## 0.48.0
+
+### Patch Changes
+
+- @voyantjs/workflows@0.48.0
+- @voyantjs/workflows-orchestrator@0.48.0
+
 ## 0.47.0
 
 ### Patch Changes

@@ -1,5 +1,23 @@
 # @voyantjs/storefront
 
+## 0.48.0
+
+### Minor Changes
+
+- 9132fcf: Add public storefront lead and newsletter intake backed by CRM customer signals, including host-owned spam guard hooks, newsletter double-opt-in callback wiring, and a documented `customer.signal.created` event.
+
+### Patch Changes
+
+- Updated dependencies [9132fcf]
+  - @voyantjs/availability@0.48.0
+  - @voyantjs/core@0.48.0
+  - @voyantjs/crm@0.48.0
+  - @voyantjs/extras@0.48.0
+  - @voyantjs/hono@0.48.0
+  - @voyantjs/pricing@0.48.0
+  - @voyantjs/products@0.48.0
+  - @voyantjs/sellability@0.48.0
+
 ## 0.47.0
 
 ### Patch Changes
