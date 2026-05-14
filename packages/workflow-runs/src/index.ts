@@ -46,3 +46,9 @@ export {
   type ListWorkflowRunsResult,
   workflowRunsService,
 } from "./service.js"
+export {
+  type RecordedWorkflowOptions,
+  type RecordedWorkflowResultContext,
+  type RecordedWorkflowRunContext,
+  recordedWorkflow,
+} from "./workflows.js"

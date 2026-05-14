@@ -72,3 +72,51 @@ mountWorkflowRunsAdminRoutes(hono, {
 ```
 
 For self-hosted workflow services, keep runner registration close to the code that mounts the workflow service. The registry should dispatch to your external workflow server instead of importing worker-only runtime code into the admin API process. The resume path sends `ctx.resumeFromStep` plus `ctx.seedResults`; the self-host server starts a new run, pre-populates the journal with the seeded step outputs, and executes from the failed step onward.
+
+## Record `@voyantjs/workflows` executions
+
+Use `recordedWorkflow` as a drop-in replacement for `workflow(...)` when a
+workflow should appear in the workflow runs admin UI. The helper records start,
+success, and failure rows in `workflow_runs` without repeating recorder
+boilerplate in every workflow body.
+
+```ts
+import { recordedWorkflow } from "@voyantjs/workflow-runs"
+
+export const generatePdfWorkflow = recordedWorkflow({
+  id: "products.generate-pdf",
+  tags: ["products"],
+  async run(input, ctx) {
+    const renderer = ctx.services.resolve("products:pdf-renderer")
+    return renderer.generate(input)
+  },
+})
+```
+
+By default, `recordedWorkflow` resolves a Drizzle database from
+`ctx.services.resolve("db")`. It records the workflow id, trigger, run id as the
+correlation id, configured/runtime tags, input, result, parent run id for child
+workflow triggers, and errors. Recording is best-effort: database or serializer
+failures do not fail the workflow execution.
+
+You can customize the database service key or payload serializers:
+
+```ts
+export const syncCatalogWorkflow = recordedWorkflow(
+  {
+    id: "catalog.sync",
+    async run(input, ctx) {
+      return ctx.services.resolve("catalog:sync").run(input)
+    },
+  },
+  {
+    dbServiceName: "postgres",
+    input: ({ input }) => ({ catalogId: input.catalogId }),
+    result: ({ output }) => ({ changed: output.changed }),
+  },
+)
+```
+
+This helper only records observability data. Rerun and resume support still uses
+`WorkflowRunnerRegistry` registration so apps can choose which workflows are
+safe to dispatch from the admin UI.
