@@ -16,6 +16,7 @@ import {
   storefrontProductExtensionsQuerySchema,
   storefrontPromotionalOfferListQuerySchema,
 } from "./validation.js"
+import { storefrontTransportEligibilityInputSchema } from "./validation-transport-eligibility.js"
 
 type Env = {
   Variables: {
@@ -67,6 +68,25 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       return preview
         ? c.json({ data: preview })
         : c.json({ error: "Storefront departure not found" }, 404)
+    })
+    .post("/departures/:departureId/eligibility", async (c) => {
+      return c.json({
+        data: await storefrontService.checkDepartureTransportEligibility({
+          departureId: c.req.param("departureId"),
+          body: await parseJsonBody(c, storefrontTransportEligibilityInputSchema),
+          context: getRequestContext(c),
+        }),
+      })
+    })
+    .post("/products/:productId/departures/:departureId/eligibility", async (c) => {
+      return c.json({
+        data: await storefrontService.checkDepartureTransportEligibility({
+          departureId: c.req.param("departureId"),
+          productId: c.req.param("productId"),
+          body: await parseJsonBody(c, storefrontTransportEligibilityInputSchema),
+          context: getRequestContext(c),
+        }),
+      })
     })
     .get("/products/:productId/extensions", async (c) => {
       const query = await parseQuery(c, storefrontProductExtensionsQuerySchema)

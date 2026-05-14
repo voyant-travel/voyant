@@ -11,6 +11,7 @@ export type {
   StorefrontServiceOptions,
 } from "./service.js"
 export { createStorefrontService, resolveStorefrontSettings } from "./service.js"
+export { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
 export type {
   StorefrontAppliedOffer,
   StorefrontDepartureListQuery,
@@ -64,6 +65,26 @@ export {
   storefrontSettingsInputSchema,
   storefrontSettingsSchema,
 } from "./validation.js"
+export type {
+  StorefrontTransportEligibilityInput,
+  StorefrontTransportEligibilityIssue,
+  StorefrontTransportEligibilityResult,
+  StorefrontTransportEligibilityRule,
+  StorefrontTransportEligibilityRuleInput,
+} from "./validation-transport-eligibility.js"
+export {
+  storefrontRequiredDocumentTypeSchema,
+  storefrontTransportEligibilityDocumentInputSchema,
+  storefrontTransportEligibilityInputSchema,
+  storefrontTransportEligibilityIssueCodeSchema,
+  storefrontTransportEligibilityIssueSchema,
+  storefrontTransportEligibilityResultSchema,
+  storefrontTransportEligibilityRuleSchema,
+  storefrontTransportEligibilitySeveritySchema,
+  storefrontTransportEligibilityTravelerInputSchema,
+  storefrontTransportEligibilityTravelerResultSchema,
+  storefrontTravelDocumentTypeSchema,
+} from "./validation-transport-eligibility.js"
 
 export const storefrontModule: Module = {
   name: "storefront",

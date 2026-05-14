@@ -8,6 +8,7 @@ import {
   listStorefrontProductDepartures,
   previewStorefrontDeparturePrice,
 } from "./service-departures.js"
+import { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
 import {
   type StorefrontDepartureListQuery,
   type StorefrontDeparturePricePreviewInput,
@@ -26,6 +27,11 @@ import {
   storefrontSettingsInputSchema,
   storefrontSettingsSchema,
 } from "./validation.js"
+import type {
+  StorefrontTransportEligibilityInput,
+  StorefrontTransportEligibilityResult,
+  StorefrontTransportEligibilityRuleInput,
+} from "./validation-transport-eligibility.js"
 
 export interface StorefrontServiceOptions {
   settings?: StorefrontSettingsInput
@@ -40,6 +46,17 @@ export interface StorefrontServiceOptions {
     | StorefrontOfferResolvers
     | null
     | undefined
+  transportEligibilityRules?: StorefrontTransportEligibilityRuleInput[]
+  resolveTransportEligibilityRules?: (
+    input: {
+      departureId: string
+      productId?: string | null
+      travelStartsOn?: string | null
+      travelEndsOn?: string | null
+    } & StorefrontRequestContext,
+  ) =>
+    | Promise<StorefrontTransportEligibilityRuleInput[]>
+    | StorefrontTransportEligibilityRuleInput[]
 }
 
 export interface StorefrontRequestContext {
@@ -152,6 +169,21 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
     return (await options?.resolveOffers?.(context)) ?? options?.offers
   }
 
+  async function resolveTransportEligibilityRules(
+    input: {
+      departureId: string
+      productId?: string | null
+      travelStartsOn?: string | null
+      travelEndsOn?: string | null
+    } & StorefrontRequestContext,
+  ) {
+    return (
+      (await options?.resolveTransportEligibilityRules?.(input)) ??
+      options?.transportEligibilityRules ??
+      []
+    )
+  }
+
   return {
     getSettings(): StorefrontSettings {
       return settings
@@ -189,6 +221,39 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
       input: { departureId: string; productId: string },
     ) {
       return getStorefrontDepartureItinerary(db, input)
+    },
+    async checkDepartureTransportEligibility(input: {
+      departureId: string
+      productId?: string | null
+      body: StorefrontTransportEligibilityInput
+      context?: StorefrontRequestContext
+    }): Promise<StorefrontTransportEligibilityResult> {
+      const { context, body, departureId } = input
+      const needsDeparture =
+        context?.db && (!input.productId || !body.travelStartsOn || !body.travelEndsOn)
+      const departure =
+        needsDeparture && context?.db ? await getStorefrontDeparture(context.db, departureId) : null
+      const productId = input.productId ?? departure?.productId ?? null
+      const travelStartsOn =
+        body.travelStartsOn ?? departure?.dateLocal ?? departure?.startAt?.slice(0, 10) ?? null
+      const travelEndsOn =
+        body.travelEndsOn ?? departure?.endAt?.slice(0, 10) ?? departure?.dateLocal ?? null
+      const rules = await resolveTransportEligibilityRules({
+        ...(context ?? {}),
+        departureId,
+        productId,
+        travelStartsOn,
+        travelEndsOn,
+      })
+
+      return evaluateStorefrontTransportEligibility({
+        departureId,
+        productId,
+        travelStartsOn,
+        travelEndsOn,
+        travelers: body.travelers,
+        rules,
+      })
     },
     async listApplicableOffers(input: {
       productId: string
