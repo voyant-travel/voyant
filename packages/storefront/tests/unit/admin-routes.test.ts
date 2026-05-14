@@ -197,6 +197,55 @@ describe("createStorefrontAdminRoutes", () => {
     ])
   })
 
+  it("preserves omitted nested payment schedule and bank-transfer values", async () => {
+    let settings: StorefrontSettingsInput = {
+      payment: {
+        defaultSchedule: { depositPercent: 20, balanceDueDaysBeforeDeparture: 30 },
+        bankTransfer: {
+          accountHolder: "Example Operator",
+          bankName: "Old Bank",
+          iban: "RO49AAAA1B31007593840000",
+          bic: "EXAMPLER",
+          paymentReference: "Booking ID",
+          instructions: "Transfer before balance due date.",
+        },
+      },
+    }
+    const app = createTestApp({
+      resolveSettings: () => settings,
+      updateSettings: (next) => {
+        settings = next
+        return next
+      },
+    })
+
+    const res = await app.request("/settings", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        payment: {
+          defaultSchedule: { depositPercent: 35 },
+          bankTransfer: { bankName: "New Bank" },
+        },
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.data.payment.defaultSchedule).toEqual({
+      depositPercent: 35,
+      balanceDueDaysBeforeDeparture: 30,
+    })
+    expect(body.data.payment.bankTransfer).toEqual({
+      accountHolder: "Example Operator",
+      bankName: "New Bank",
+      iban: "RO49AAAA1B31007593840000",
+      bic: "EXAMPLER",
+      paymentReference: "Booking ID",
+      instructions: "Transfer before balance due date.",
+    })
+  })
+
   it("rejects invalid URLs, colors, locales, and payment metadata", async () => {
     const app = createTestApp({
       updateSettings: (next) => next,

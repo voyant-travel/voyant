@@ -167,6 +167,42 @@ function normalizeBankTransfer(
   }
 }
 
+function mergePaymentSchedule(
+  current: StorefrontSettings["payment"]["defaultSchedule"],
+  patch: NonNullable<
+    NonNullable<StorefrontSettingsPatchInput["payment"]>["defaultSchedule"]
+  > | null,
+) {
+  if (patch === null) return null
+
+  return {
+    ...(current ?? {
+      depositPercent: null,
+      balanceDueDaysBeforeDeparture: null,
+    }),
+    ...patch,
+  }
+}
+
+function mergeBankTransfer(
+  current: StorefrontSettings["payment"]["bankTransfer"],
+  patch: NonNullable<NonNullable<StorefrontSettingsPatchInput["payment"]>["bankTransfer"]> | null,
+) {
+  if (patch === null) return null
+
+  return {
+    ...(current ?? {
+      accountHolder: null,
+      bankName: null,
+      iban: null,
+      bic: null,
+      paymentReference: null,
+      instructions: null,
+    }),
+    ...patch,
+  }
+}
+
 export function resolveStorefrontSettings(input?: StorefrontSettingsInput): StorefrontSettings {
   const parsed = storefrontSettingsInputSchema.parse(input ?? {})
 
@@ -239,11 +275,14 @@ export function mergeStorefrontSettingsPatch(
           defaultSchedule:
             patch.payment.defaultSchedule === undefined
               ? current.payment.defaultSchedule
-              : patch.payment.defaultSchedule,
+              : mergePaymentSchedule(
+                  current.payment.defaultSchedule,
+                  patch.payment.defaultSchedule,
+                ),
           bankTransfer:
             patch.payment.bankTransfer === undefined
               ? current.payment.bankTransfer
-              : patch.payment.bankTransfer,
+              : mergeBankTransfer(current.payment.bankTransfer, patch.payment.bankTransfer),
         }
       : current.payment,
   })
