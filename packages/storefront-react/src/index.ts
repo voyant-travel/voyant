@@ -8,6 +8,7 @@ export {
 export * from "./hooks/index.js"
 export {
   applyStorefrontOffer,
+  getAdminStorefrontSettings,
   getStorefrontDeparture,
   getStorefrontDepartureItinerary,
   getStorefrontOfferBySlug,
@@ -17,6 +18,7 @@ export {
   listStorefrontProductOffers,
   previewStorefrontDeparturePrice,
   redeemStorefrontOffer,
+  updateAdminStorefrontSettings,
 } from "./operations.js"
 export {
   useVoyantStorefrontContext,
@@ -26,6 +28,7 @@ export {
 } from "./provider.js"
 export { storefrontQueryKeys } from "./query-keys.js"
 export {
+  getAdminStorefrontSettingsQueryOptions,
   getStorefrontDepartureItineraryQueryOptions,
   getStorefrontDepartureQueryOptions,
   getStorefrontOfferQueryOptions,

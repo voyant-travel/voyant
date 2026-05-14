@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./admin-routes": "./src/routes-admin.ts",
     "./public-routes": "./src/routes-public.ts",
     "./service": "./src/service.ts",
     "./transport-eligibility": "./src/transport-eligibility.ts",
@@ -47,6 +48,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./admin-routes": {
+        "types": "./dist/routes-admin.d.ts",
+        "import": "./dist/routes-admin.js",
+        "default": "./dist/routes-admin.js"
       },
       "./public-routes": {
         "types": "./dist/routes-public.d.ts",

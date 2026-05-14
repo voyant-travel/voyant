@@ -8,6 +8,7 @@ import {
   type StorefrontOfferRedeemInput,
   type StorefrontProductExtensionsQuery,
   type StorefrontPromotionalOfferListQuery,
+  type StorefrontSettingsPatchInput,
   storefrontDepartureItineraryResponseSchema,
   storefrontDepartureListResponseSchema,
   storefrontDeparturePricePreviewInputSchema,
@@ -19,11 +20,34 @@ import {
   storefrontProductExtensionsResponseSchema,
   storefrontPromotionalOfferListResponseSchema,
   storefrontPromotionalOfferResponseSchema,
+  storefrontSettingsPatchSchema,
   storefrontSettingsResponseSchema,
 } from "./schemas.js"
 
 export function getStorefrontSettings(client: FetchWithValidationOptions) {
   return fetchWithValidation("/v1/public/settings", storefrontSettingsResponseSchema, client)
+}
+
+export function getAdminStorefrontSettings(client: FetchWithValidationOptions) {
+  return fetchWithValidation(
+    "/v1/admin/storefront/settings",
+    storefrontSettingsResponseSchema,
+    client,
+  )
+}
+
+export function updateAdminStorefrontSettings(
+  client: FetchWithValidationOptions,
+  input: StorefrontSettingsPatchInput,
+) {
+  const parsed = storefrontSettingsPatchSchema.parse(input)
+
+  return fetchWithValidation(
+    "/v1/admin/storefront/settings",
+    storefrontSettingsResponseSchema,
+    client,
+    { method: "PATCH", body: JSON.stringify(parsed) },
+  )
 }
 
 export function getStorefrontDeparture(client: FetchWithValidationOptions, departureId: string) {

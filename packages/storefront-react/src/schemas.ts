@@ -13,6 +13,8 @@ import {
   storefrontProductExtensionsResponseSchema,
   storefrontPromotionalOfferListQuerySchema,
   storefrontPromotionalOfferSchema,
+  storefrontSettingsInputSchema,
+  storefrontSettingsPatchSchema,
   storefrontSettingsSchema,
 } from "@voyantjs/storefront"
 import { z } from "zod"
@@ -35,6 +37,8 @@ export {
   storefrontProductExtensionsResponseSchema,
   storefrontPromotionalOfferListQuerySchema,
   storefrontPromotionalOfferSchema,
+  storefrontSettingsInputSchema,
+  storefrontSettingsPatchSchema,
   storefrontSettingsSchema,
 }
 
@@ -54,6 +58,8 @@ export const storefrontPromotionalOfferResponseSchema = singleEnvelope(
 )
 
 export type StorefrontSettingsRecord = z.infer<typeof storefrontSettingsSchema>
+export type StorefrontSettingsInput = z.input<typeof storefrontSettingsInputSchema>
+export type StorefrontSettingsPatchInput = z.input<typeof storefrontSettingsPatchSchema>
 export type StorefrontDepartureRecord = z.infer<typeof storefrontDepartureSchema>
 export type StorefrontDepartureListQuery = z.input<typeof storefrontDepartureListQuerySchema>
 export type StorefrontDeparturePricePreviewInput = z.input<
