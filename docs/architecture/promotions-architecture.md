@@ -67,7 +67,7 @@ Splitting them produces two near-duplicate evaluators that drift. They ship toge
 
 Not a sub-path of `packages/pricing`. Pricing rules answer *what is the configured price right now for this option, in this catalog, on this date* — they're per-option rate tables (per #493 PR4). Promotions answer *what discount applies on top of that price for this slice*. The two have different lifecycles, different operator UIs, different audit trails (redemption tracking is a promotions concern only), and different reindex triggers. Co-locating them in `pricing` would obscure both.
 
-`packages/promotions` follows the same shape as the recently-shipped vertical packages: `schema.ts`, `service.ts`, `routes.ts`, `validation.ts`, `events.ts`. It depends on `@voyantjs/products` (for the contract type imports + scope-by-product link) and on `@voyantjs/markets` (for scope-by-market). Catalog plane wiring lives in `packages/promotions/src/service-catalog-plane-promotions.ts` (matching the `service-catalog-plane-departures` precedent in `@voyantjs/availability`). Storefront integration ships an explicit `createPromotionsStorefrontResolvers(db)` factory that consumers wire into the storefront service's resolver-hook fields.
+`packages/promotions` follows the same shape as the recently-shipped vertical packages: `schema.ts`, `service.ts`, `routes.ts`, `validation.ts`, `events.ts`. It depends on `@voyantjs/products` (for the contract type imports + scope-by-product link) and on `@voyantjs/markets` (for scope-by-market). Catalog plane wiring lives in `packages/promotions/src/service-catalog-plane-promotions.ts` (matching the `service-catalog-plane-departures` precedent in `@voyantjs/availability`). Storefront integration ships an explicit `createPromotionsStorefrontResolvers()` factory that consumers wire into the storefront service's resolver-hook fields; the resolver reads the request-scoped db supplied by `@voyantjs/storefront`.
 
 ### 3.2. Scope is a typed discriminated union, not a list of foreign keys
 
@@ -110,6 +110,8 @@ An offer either auto-applies (no `code` column value) or is code-gated (`code` i
 A single offer row cannot be both auto-applied and code-gated. The marketing pattern "advertise the discount AND require a code" is modelled as **two separate offers** — one auto-applied (drives the badge), one code-gated (drives the redemption when the customer types the code). Both flow through the evaluator together at checkout (the algorithm in §5.2 does NOT exclude auto offers when a code is supplied), so stacking semantics (§3.3) decide whether they compose. Operators typically share a name across the pair for clarity but the system treats them as independent rows.
 
 Code uniqueness is enforced at the offer-table level: a partial unique index `(lower(code)) WHERE code IS NOT NULL AND active = true` catches double-use across active offers. Archived offers (`active = false`) free up their code for reuse. Code matching is case-insensitive (stored lowercase, compared lowercase); the customer's typed casing is preserved on the redemption row for audit.
+
+Customer-facing manual application follows the same conflict policy as quote-time pricing. `POST /v1/public/offers/:slug/apply` only applies non-code offers; code-gated offers must go through `POST /v1/public/offers/redeem`. When a manually applied or code-gated offer collides with auto-applied offers, all eligible candidates enter the evaluator together. The best non-stackable discount wins by default. Stackable offers compose only when the selected path is entirely stackable. Public responses return conflict metadata (`best_discount_wins` or `stackable_compose`) instead of exposing internal rule details.
 
 ### 3.5. Redemption tracking is per-booking, not per-customer or per-line-item
 
@@ -572,13 +574,15 @@ Both the catalog-bridge `captureSnapshotGraph` subscriber AND the promotions red
 
 ## 8. Storefront integration
 
-The existing placeholder hooks in `packages/storefront/src/service.ts` (`listApplicableOffers`, `getOfferBySlug`) get a real implementation in `packages/promotions/src/service-storefront.ts`:
+The existing placeholder hooks in `packages/storefront/src/service.ts` (`listApplicableOffers`, `getOfferBySlug`) get a real implementation in `packages/promotions/src/service-storefront.ts`. The same resolver surface owns customer-facing mutations:
 
 ```ts
-export function createPromotionsStorefrontResolvers(getDb: () => AnyDrizzleDb): StorefrontOfferResolvers {
+export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers {
   return {
     listApplicableOffers: async ({ productId, departureId, locale }) => { ... },
     getOfferBySlug: async ({ slug, locale }) => { ... },
+    applyOffer: async ({ slug, body }) => { ... },
+    redeemOffer: async ({ body }) => { ... },
   }
 }
 ```
@@ -586,6 +590,15 @@ export function createPromotionsStorefrontResolvers(getDb: () => AnyDrizzleDb): 
 Templates wire this in their storefront service composition. The `StorefrontPromotionalOffer` DTO shape stays as-is (it already covers what the new schema produces); the resolver just implements the previously-empty hooks.
 
 The `applicableProductIds` and `applicableDepartureIds` array fields on the DTO are populated from `promotional_offer_products` (and a future `promotional_offer_departures` table — not v1; v1 returns empty `applicableDepartureIds` for any departure-scoped use case, since v1 doesn't model departure-scoped offers).
+
+The public HTTP routes live under the public capability namespace, not an extra storefront namespace:
+
+- `POST /v1/public/offers/:slug/apply`
+- `POST /v1/public/offers/redeem`
+
+Both parse JSON through `parseJsonBody(...)`, return customer-safe status/reason codes, echo booking/session identifiers when provided, and include price-impact plus conflict metadata. They do not replace finance voucher validation and they do not create payment captures. Booking-level redemption audit rows are still written from confirmed quotes by the `booking.confirmed` subscriber.
+
+Offer mutation requests require the caller to provide `pax` explicitly. The resolver does not infer traveler counts from booking/session IDs; omitting `pax` would make the evaluator treat minimum-traveler conditions as catalog-plane conditional offers instead of checkout exclusions.
 
 ## 9. Reindex + event surface
 
@@ -747,7 +760,7 @@ Recorded here as the rationale trail. The two larger architectural threads have 
 - `packages/promotions/src/service-booking-confirmed.ts`: `createBookingConfirmedRedemptionSubscriber(env)` subscriber factory + `recordPromotionRedemptionsForBooking(db, bookingId)` core logic (idempotent upsert per §4.3).
 - Operator template wires the evaluator into `quoteEntity` deps and registers the subscriber on the event bus alongside the existing `captureSnapshotGraph` subscriber.
 - Storefront DTO mapping (`packages/storefront/src/validation.ts:392`) verified to remain compatible — likely no changes.
-- `packages/promotions/src/service-storefront.ts`: `createPromotionsStorefrontResolvers(db)` factory.
+- `packages/promotions/src/service-storefront.ts`: `createPromotionsStorefrontResolvers()` factory.
 - Operator template wires the resolver into its storefront service composition. **No new public routes** — the storefront already exposes `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug` (`packages/storefront/src/routes-public.ts:99-120`); the resolver implementation makes those previously-empty endpoints functional.
 - Integration tests: end-to-end quote with valid code → discount applied; quote with invalid code → error; commit creates redemption row; snapshot round-trip preserves `appliedOffers`.
 

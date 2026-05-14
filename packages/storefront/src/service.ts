@@ -13,6 +13,9 @@ import {
   type StorefrontDeparturePricePreviewInput,
   type StorefrontFormField,
   type StorefrontFormFieldInput,
+  type StorefrontOfferApplyInput,
+  type StorefrontOfferMutationResult,
+  type StorefrontOfferRedeemInput,
   type StorefrontPaymentMethod,
   type StorefrontPaymentMethodCode,
   type StorefrontPaymentMethodInput,
@@ -59,6 +62,17 @@ export interface StorefrontOfferResolvers {
       locale?: string
     } & StorefrontRequestContext,
   ) => Promise<StorefrontPromotionalOffer | null> | StorefrontPromotionalOffer | null
+  applyOffer?: (
+    input: {
+      slug: string
+      body: StorefrontOfferApplyInput
+    } & StorefrontRequestContext,
+  ) => Promise<StorefrontOfferMutationResult> | StorefrontOfferMutationResult
+  redeemOffer?: (
+    input: {
+      body: StorefrontOfferRedeemInput
+    } & StorefrontRequestContext,
+  ) => Promise<StorefrontOfferMutationResult> | StorefrontOfferMutationResult
 }
 
 const defaultPaymentLabels: Record<StorefrontPaymentMethodCode, string> = {
@@ -197,6 +211,29 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
       return (
         (await resolveOffers(context)?.then((resolvers) =>
           resolvers?.getOfferBySlug?.({ ...offerInput, ...(context ?? {}) }),
+        )) ?? null
+      )
+    },
+    async applyOffer(input: {
+      slug: string
+      body: StorefrontOfferApplyInput
+      context?: StorefrontRequestContext
+    }): Promise<StorefrontOfferMutationResult | null> {
+      const { context, ...offerInput } = input
+      return (
+        (await resolveOffers(context)?.then((resolvers) =>
+          resolvers?.applyOffer?.({ ...offerInput, ...(context ?? {}) }),
+        )) ?? null
+      )
+    },
+    async redeemOffer(input: {
+      body: StorefrontOfferRedeemInput
+      context?: StorefrontRequestContext
+    }): Promise<StorefrontOfferMutationResult | null> {
+      const { context, ...offerInput } = input
+      return (
+        (await resolveOffers(context)?.then((resolvers) =>
+          resolvers?.redeemOffer?.({ ...offerInput, ...(context ?? {}) }),
         )) ?? null
       )
     },

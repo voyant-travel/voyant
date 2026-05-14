@@ -4,6 +4,8 @@ import { type FetchWithValidationOptions, fetchWithValidation, withQueryParams }
 import {
   type StorefrontDepartureListQuery,
   type StorefrontDeparturePricePreviewInput,
+  type StorefrontOfferApplyInput,
+  type StorefrontOfferRedeemInput,
   type StorefrontProductExtensionsQuery,
   type StorefrontPromotionalOfferListQuery,
   storefrontDepartureItineraryResponseSchema,
@@ -11,6 +13,9 @@ import {
   storefrontDeparturePricePreviewInputSchema,
   storefrontDeparturePricePreviewResponseSchema,
   storefrontDepartureResponseSchema,
+  storefrontOfferApplyInputSchema,
+  storefrontOfferMutationResponseSchema,
+  storefrontOfferRedeemInputSchema,
   storefrontProductExtensionsResponseSchema,
   storefrontPromotionalOfferListResponseSchema,
   storefrontPromotionalOfferResponseSchema,
@@ -101,5 +106,37 @@ export function getStorefrontOfferBySlug(
     withQueryParams(`/v1/public/offers/${slug}`, query),
     storefrontPromotionalOfferResponseSchema,
     client,
+  )
+}
+
+export function applyStorefrontOffer(
+  client: FetchWithValidationOptions,
+  slug: string,
+  input: StorefrontOfferApplyInput,
+) {
+  const parsed = storefrontOfferApplyInputSchema.parse(input)
+
+  return fetchWithValidation(
+    `/v1/public/offers/${slug}/apply`,
+    storefrontOfferMutationResponseSchema,
+    client,
+    { method: "POST", body: JSON.stringify(parsed) },
+  )
+}
+
+export function redeemStorefrontOffer(
+  client: FetchWithValidationOptions,
+  input: StorefrontOfferRedeemInput,
+) {
+  const parsed = storefrontOfferRedeemInputSchema.parse(input)
+
+  return fetchWithValidation(
+    "/v1/public/offers/redeem",
+    storefrontOfferMutationResponseSchema,
+    client,
+    {
+      method: "POST",
+      body: JSON.stringify(parsed),
+    },
   )
 }

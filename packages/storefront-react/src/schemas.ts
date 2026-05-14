@@ -5,6 +5,10 @@ import {
   storefrontDeparturePricePreviewInputSchema,
   storefrontDeparturePricePreviewSchema,
   storefrontDepartureSchema,
+  storefrontOfferApplyInputSchema,
+  storefrontOfferMutationResponseSchema,
+  storefrontOfferMutationResultSchema,
+  storefrontOfferRedeemInputSchema,
   storefrontProductExtensionsQuerySchema,
   storefrontProductExtensionsResponseSchema,
   storefrontPromotionalOfferListQuerySchema,
@@ -23,6 +27,10 @@ export {
   storefrontDeparturePricePreviewInputSchema,
   storefrontDeparturePricePreviewSchema,
   storefrontDepartureSchema,
+  storefrontOfferApplyInputSchema,
+  storefrontOfferMutationResponseSchema,
+  storefrontOfferMutationResultSchema,
+  storefrontOfferRedeemInputSchema,
   storefrontProductExtensionsQuerySchema,
   storefrontProductExtensionsResponseSchema,
   storefrontPromotionalOfferListQuerySchema,
@@ -62,3 +70,6 @@ export type StorefrontPromotionalOfferListQuery = z.input<
   typeof storefrontPromotionalOfferListQuerySchema
 >
 export type StorefrontPromotionalOfferRecord = z.infer<typeof storefrontPromotionalOfferSchema>
+export type StorefrontOfferApplyInput = z.input<typeof storefrontOfferApplyInputSchema>
+export type StorefrontOfferRedeemInput = z.input<typeof storefrontOfferRedeemInputSchema>
+export type StorefrontOfferMutationRecord = z.infer<typeof storefrontOfferMutationResultSchema>

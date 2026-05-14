@@ -7,6 +7,7 @@ export {
 } from "./client.js"
 export * from "./hooks/index.js"
 export {
+  applyStorefrontOffer,
   getStorefrontDeparture,
   getStorefrontDepartureItinerary,
   getStorefrontOfferBySlug,
@@ -15,6 +16,7 @@ export {
   listStorefrontProductExtensions,
   listStorefrontProductOffers,
   previewStorefrontDeparturePrice,
+  redeemStorefrontOffer,
 } from "./operations.js"
 export {
   useVoyantStorefrontContext,

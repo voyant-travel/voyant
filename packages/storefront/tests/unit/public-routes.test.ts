@@ -347,4 +347,162 @@ describe("createStorefrontPublicRoutes", () => {
     expect(res.status).toBe(200)
     expect((await res.json()).data[0].id).toBe("offer_context")
   })
+
+  it("applies a storefront offer through the injected resolver", async () => {
+    const app = new Hono().route(
+      "/",
+      createStorefrontPublicRoutes({
+        offers: {
+          applyOffer({ slug, body }) {
+            expect(slug).toBe("early-booking")
+            expect(body).toMatchObject({
+              productId: "prod_123",
+              basePriceCents: 10000,
+              currency: "USD",
+              pax: 2,
+              audience: "customer",
+              market: "default",
+            })
+
+            return {
+              status: "applied",
+              reason: null,
+              offer: {
+                id: "offer_1",
+                name: "Early booking",
+                slug: "early-booking",
+                description: null,
+                discountType: "percentage",
+                discountValue: "15",
+                currency: null,
+                applicableProductIds: ["prod_123"],
+                applicableDepartureIds: [],
+                validFrom: null,
+                validTo: null,
+                minTravelers: null,
+                imageMobileUrl: null,
+                imageDesktopUrl: null,
+                stackable: false,
+                createdAt: "2026-04-01T00:00:00.000Z",
+                updatedAt: "2026-04-01T00:00:00.000Z",
+              },
+              target: {
+                bookingId: "book_123",
+                sessionId: null,
+                productId: "prod_123",
+                departureId: null,
+              },
+              pricing: {
+                basePriceCents: 10000,
+                currency: "USD",
+                discountAppliedCents: 1500,
+                discountedPriceCents: 8500,
+              },
+              appliedOffers: [
+                {
+                  offerId: "offer_1",
+                  offerName: "Early booking",
+                  discountAppliedCents: 1500,
+                  discountedPriceCents: 8500,
+                  currency: "USD",
+                  discountKind: "percentage",
+                  discountPercent: 15,
+                  discountAmountCents: null,
+                  appliedCode: null,
+                  stackable: false,
+                },
+              ],
+              conflict: null,
+            }
+          },
+        },
+      }),
+    )
+
+    const res = await app.request("/offers/early-booking/apply", {
+      method: "POST",
+      body: JSON.stringify({
+        productId: "prod_123",
+        bookingId: "book_123",
+        basePriceCents: 10000,
+        currency: "usd",
+        pax: 2,
+      }),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(res.status).toBe(200)
+    expect((await res.json()).data.pricing.discountedPriceCents).toBe(8500)
+  })
+
+  it("redeems a code-based storefront offer through the injected resolver", async () => {
+    const app = new Hono().route(
+      "/",
+      createStorefrontPublicRoutes({
+        offers: {
+          redeemOffer({ body }) {
+            expect(body.code).toBe("SPRING25")
+            return {
+              status: "invalid",
+              reason: "code_expired",
+              offer: null,
+              target: {
+                bookingId: null,
+                sessionId: "sess_123",
+                productId: "prod_123",
+                departureId: null,
+              },
+              pricing: {
+                basePriceCents: 10000,
+                currency: "EUR",
+                discountAppliedCents: 0,
+                discountedPriceCents: 10000,
+              },
+              appliedOffers: [],
+              conflict: null,
+            }
+          },
+        },
+      }),
+    )
+
+    const res = await app.request("/offers/redeem", {
+      method: "POST",
+      body: JSON.stringify({
+        code: "SPRING25",
+        productId: "prod_123",
+        sessionId: "sess_123",
+        basePriceCents: 10000,
+        currency: "EUR",
+        pax: 2,
+      }),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({
+      data: {
+        status: "invalid",
+        reason: "code_expired",
+      },
+    })
+  })
+
+  it("returns 501 when offer mutation resolvers are not configured", async () => {
+    const app = new Hono().route("/", createStorefrontPublicRoutes())
+
+    const res = await app.request("/offers/redeem", {
+      method: "POST",
+      body: JSON.stringify({
+        code: "SPRING25",
+        productId: "prod_123",
+        basePriceCents: 10000,
+        currency: "USD",
+        pax: 2,
+      }),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(res.status).toBe(501)
+  })
 })

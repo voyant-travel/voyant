@@ -29,6 +29,10 @@
 
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import type {
+  StorefrontAppliedOffer,
+  StorefrontOfferApplyInput,
+  StorefrontOfferMutationResult,
+  StorefrontOfferRedeemInput,
   StorefrontOfferResolvers,
   StorefrontPromotionalOffer,
   StorefrontRequestContext,
@@ -36,6 +40,11 @@ import type {
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm"
 
 import { type PromotionalOffer, promotionalOfferProducts, promotionalOffers } from "./schema.js"
+import {
+  type CodeStatus,
+  createDrizzleOfferDataSource,
+  evaluateOffersForProduct,
+} from "./service-evaluator.js"
 import type { PromotionalOfferScope } from "./validation.js"
 
 export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers {
@@ -94,16 +103,48 @@ export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers 
       const db = resolveDb(input)
       if (!db) return null
 
-      const rows = await db
-        .select()
-        .from(promotionalOffers)
-        .where(and(eq(promotionalOffers.slug, input.slug), eq(promotionalOffers.active, true)))
-        .limit(1)
-      const offer = rows[0]
+      const offer = await findActiveOfferBySlug(db, input.slug)
       if (!offer) return null
 
       const links = await loadApplicableProductIds(db, [offer.id])
       return toStorefrontDto(offer, links.get(offer.id) ?? [])
+    },
+
+    async applyOffer(input) {
+      const db = resolveDb(input)
+      if (!db) return notConfiguredResult(input.body)
+
+      const offer = await findActiveOfferBySlug(db, input.slug)
+      if (!offer) {
+        return emptyResult(input.body, "invalid", "offer_not_found", null)
+      }
+
+      if (offer.code != null) {
+        return emptyResult(input.body, "invalid", "code_required", await dtoForOffer(db, offer))
+      }
+
+      const validity = currentValidityStatus(offer, new Date())
+      if (validity !== null) {
+        return emptyResult(input.body, "invalid", validity, await dtoForOffer(db, offer))
+      }
+
+      return evaluateStorefrontMutation(db, input.body, {
+        manualOffer: offer,
+        code: undefined,
+        offer: await dtoForOffer(db, offer),
+      })
+    },
+
+    async redeemOffer(input) {
+      const db = resolveDb(input)
+      if (!db) return notConfiguredResult(input.body)
+
+      const offer = await findActiveOfferByCode(db, input.body.code)
+      return evaluateStorefrontMutation(db, input.body, {
+        manualOffer: offer,
+        code: input.body.code,
+        offer: offer ? await dtoForOffer(db, offer) : null,
+      })
     },
   }
 }
@@ -186,4 +227,199 @@ function toStorefrontDto(
   }
 }
 
-export const __test__ = { matchesProduct, toStorefrontDto }
+async function findActiveOfferBySlug(
+  db: AnyDrizzleDb,
+  slug: string,
+): Promise<PromotionalOffer | null> {
+  const rows = await db
+    .select()
+    .from(promotionalOffers)
+    .where(and(eq(promotionalOffers.slug, slug), eq(promotionalOffers.active, true)))
+    .limit(1)
+  return rows[0] ?? null
+}
+
+async function findActiveOfferByCode(
+  db: AnyDrizzleDb,
+  code: string,
+): Promise<PromotionalOffer | null> {
+  const rows = await db
+    .select()
+    .from(promotionalOffers)
+    .where(and(eq(promotionalOffers.active, true), eq(promotionalOffers.code, code.toLowerCase())))
+    .limit(1)
+  return rows[0] ?? null
+}
+
+async function dtoForOffer(
+  db: AnyDrizzleDb,
+  offer: PromotionalOffer,
+): Promise<StorefrontPromotionalOffer> {
+  const links = await loadApplicableProductIds(db, [offer.id])
+  return toStorefrontDto(offer, links.get(offer.id) ?? [])
+}
+
+function currentValidityStatus(
+  offer: PromotionalOffer,
+  now: Date,
+): "offer_expired" | "offer_not_yet_valid" | null {
+  if (offer.validUntil != null && offer.validUntil < now) return "offer_expired"
+  if (offer.validFrom != null && offer.validFrom > now) return "offer_not_yet_valid"
+  return null
+}
+
+type MutationBody = StorefrontOfferApplyInput | StorefrontOfferRedeemInput
+
+function emptyResult(
+  input: MutationBody,
+  status: StorefrontOfferMutationResult["status"],
+  reason: NonNullable<StorefrontOfferMutationResult["reason"]>,
+  offer: StorefrontPromotionalOffer | null,
+): StorefrontOfferMutationResult {
+  return {
+    status,
+    reason,
+    offer,
+    target: targetFromInput(input),
+    pricing: {
+      basePriceCents: input.basePriceCents,
+      currency: input.currency,
+      discountAppliedCents: 0,
+      discountedPriceCents: input.basePriceCents,
+    },
+    appliedOffers: [],
+    conflict: null,
+  }
+}
+
+function notConfiguredResult(input: MutationBody): StorefrontOfferMutationResult {
+  return emptyResult(input, "invalid", "offer_not_found", null)
+}
+
+async function evaluateStorefrontMutation(
+  db: AnyDrizzleDb,
+  input: MutationBody,
+  options: {
+    manualOffer: PromotionalOffer | null
+    code?: string
+    offer: StorefrontPromotionalOffer | null
+  },
+): Promise<StorefrontOfferMutationResult> {
+  const evaluation = await evaluateOffersForProduct(createDrizzleOfferDataSource(db), {
+    productId: input.productId,
+    slice: {
+      audience: input.audience,
+      market: input.market,
+    },
+    pax: input.pax,
+    code: options.code,
+    basePriceCents: input.basePriceCents,
+    baseCurrency: input.currency,
+  })
+
+  const codeReason = codeStatusToReason(evaluation.codeStatus)
+  if (codeReason != null) {
+    return emptyResult(input, "invalid", codeReason, options.offer)
+  }
+
+  const appliedOffers = evaluation.applied.map(toStorefrontAppliedOffer)
+  const manualOfferId = options.manualOffer?.id ?? null
+  const selectedOfferIds = appliedOffers.map((offer) => offer.offerId)
+  const manualSelected = manualOfferId ? selectedOfferIds.includes(manualOfferId) : false
+  const autoAppliedOfferIds = appliedOffers
+    .filter((offer) => offer.appliedCode == null && offer.offerId !== manualOfferId)
+    .map((offer) => offer.offerId)
+  const conflict = manualOfferId
+    ? buildConflict({
+        autoAppliedOfferIds,
+        manualOfferId,
+        selectedOfferIds,
+        manualSelected,
+      })
+    : null
+
+  if (evaluation.total.discountAppliedCents <= 0) {
+    return {
+      ...emptyResult(input, "not_applicable", "no_discount", options.offer),
+      conflict,
+    }
+  }
+
+  const status = manualOfferId && !manualSelected ? "conflict" : "applied"
+
+  return {
+    status,
+    reason: status === "conflict" ? "conflict" : null,
+    offer: options.offer,
+    target: targetFromInput(input),
+    pricing: {
+      basePriceCents: input.basePriceCents,
+      currency: input.currency,
+      discountAppliedCents: evaluation.total.discountAppliedCents,
+      discountedPriceCents: evaluation.total.discountedPriceCents,
+    },
+    appliedOffers,
+    conflict,
+  }
+}
+
+function codeStatusToReason(
+  status: CodeStatus,
+): NonNullable<StorefrontOfferMutationResult["reason"]> | null {
+  if (status == null || status.kind === "code_valid") return null
+  if (status.kind === "code_not_applicable") return status.reason
+  return status.kind
+}
+
+function toStorefrontAppliedOffer(offer: StorefrontAppliedOffer): StorefrontAppliedOffer {
+  return {
+    offerId: offer.offerId,
+    offerName: offer.offerName,
+    discountAppliedCents: offer.discountAppliedCents,
+    discountedPriceCents: offer.discountedPriceCents,
+    currency: offer.currency,
+    discountKind: offer.discountKind,
+    discountPercent: offer.discountPercent,
+    discountAmountCents: offer.discountAmountCents,
+    appliedCode: offer.appliedCode,
+    stackable: offer.stackable,
+  }
+}
+
+function targetFromInput(input: MutationBody): StorefrontOfferMutationResult["target"] {
+  return {
+    bookingId: input.bookingId ?? null,
+    sessionId: input.sessionId ?? null,
+    productId: input.productId,
+    departureId: input.departureId ?? null,
+  }
+}
+
+function buildConflict(input: {
+  autoAppliedOfferIds: string[]
+  manualOfferId: string | null
+  selectedOfferIds: string[]
+  manualSelected: boolean
+}): StorefrontOfferMutationResult["conflict"] {
+  if (input.autoAppliedOfferIds.length === 0 && input.manualSelected) return null
+
+  const policy = input.manualSelected ? "stackable_compose" : "best_discount_wins"
+  return {
+    policy,
+    autoAppliedOfferIds: input.autoAppliedOfferIds,
+    manualOfferId: input.manualOfferId,
+    selectedOfferIds: input.selectedOfferIds,
+    message:
+      policy === "stackable_compose"
+        ? "The manually applied offer composes with selected auto-applied offers because every selected offer is stackable."
+        : "The best discount wins when a manually applied or code offer competes with non-stackable auto-applied offers.",
+  }
+}
+
+export const __test__ = {
+  buildConflict,
+  codeStatusToReason,
+  currentValidityStatus,
+  matchesProduct,
+  toStorefrontDto,
+}
