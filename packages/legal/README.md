@@ -50,6 +50,24 @@ and fallback languages in order, prefers channel-specific defaults over global
 defaults, ignores inactive templates, and falls back to the newest active
 matching template only when no explicit default exists for that selector.
 
+## Contract Document Operations
+
+The contracts route surface exposes stable operations for storefront previews
+and stored document handling:
+
+- `POST /v1/public/legal/contracts/templates/:id/render-preview`
+- `POST /v1/public/legal/contracts/templates/by-slug/:slug/render-preview`
+- `POST /v1/admin/legal/contracts/templates/:id/render-preview`
+- `POST /v1/admin/legal/contracts/:id/attach-document`
+- `POST /v1/admin/legal/contracts/:id/regenerate-pdf`
+
+Preview routes accept `{ variables }` and return only the rendered text. Public
+preview routes require the template to be active. `attach-document` expects a
+multipart `file` field plus optional `name` and `kind`, uploads through the
+configured `documentStorage`, and persists a contract attachment. `regenerate-pdf`
+uses the configured contract document generator and replaces the canonical
+generated document artifact.
+
 ### Policies
 
 - **Policies** (`pol`) — policy definitions by kind (cancellation, payment, T&C, etc.)

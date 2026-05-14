@@ -171,6 +171,115 @@ async function parseAttachmentUploadRequest(c: Context<Env>) {
   return { form, file }
 }
 
+async function renderAdminTemplatePreview(c: Context<Env>) {
+  const id = c.req.param("id")
+  if (!id) return c.json({ error: "Template not found" }, 404)
+  const input = await parseJsonBody(c, renderTemplateInputSchema)
+  const template = await contractsService.getTemplateById(c.get("db"), id)
+  if (!template) return c.json({ error: "Template not found" }, 404)
+  const body = input.body ?? template.body
+  return renderPreviewResponse(c, { ...input, body })
+}
+
+async function renderPublicTemplatePreview(c: Context<Env>) {
+  const id = c.req.param("id")
+  if (!id) return c.json({ error: "Template not found" }, 404)
+  const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
+  const template = await contractsService.getTemplateById(c.get("db"), id)
+  if (!template?.active) return c.json({ error: "Template not found" }, 404)
+  return renderPreviewResponse(c, {
+    variables: input.variables,
+    body: template.body,
+  })
+}
+
+async function renderPublicTemplatePreviewBySlug(c: Context<Env>) {
+  const slug = c.req.param("slug")
+  if (!slug) return c.json({ error: "Template not found" }, 404)
+  const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
+  const template = await contractsService.findTemplateBySlug(c.get("db"), slug)
+  if (!template?.active) return c.json({ error: "Template not found" }, 404)
+  return renderPreviewResponse(
+    c,
+    {
+      variables: input.variables,
+      body: template.body,
+    },
+    {
+      template: {
+        id: template.id,
+        slug: template.slug,
+        name: template.name,
+        language: template.language,
+        scope: template.scope,
+      },
+    },
+  )
+}
+
+async function uploadContractAttachment(
+  c: Context<Env>,
+  options: ContractsRouteOptions,
+  contractId: string,
+) {
+  const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+  const storage = runtime.documentStorage
+  if (!storage) {
+    return c.json({ error: "Contract document storage is not configured" }, 501)
+  }
+
+  const contract = await contractsService.getContractById(c.get("db"), contractId)
+  if (!contract) return c.json({ error: "Contract not found" }, 404)
+
+  const parsed = await parseAttachmentUploadRequest(c)
+  if ("error" in parsed) return parsed.error
+
+  const row = await contractsService.createAttachment(
+    c.get("db"),
+    contractId,
+    await buildUploadedAttachmentInput({
+      storage,
+      contractId,
+      form: parsed.form,
+      file: parsed.file,
+    }),
+  )
+  if (!row) return c.json({ error: "Contract not found" }, 404)
+  return c.json({ data: row }, 201)
+}
+
+async function regenerateContractDocument(
+  c: Context<Env>,
+  options: ContractsRouteOptions,
+  contractId: string,
+) {
+  const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+  const generator = runtime.documentGenerator
+  if (!generator) {
+    return c.json({ error: "Contract document generator is not configured" }, 501)
+  }
+
+  const result = await contractsService.regenerateContractDocument(
+    c.get("db"),
+    contractId,
+    await parseOptionalJsonBody(c, generateContractDocumentInputSchema),
+    { generator, bindings: c.env, eventBus: runtime.eventBus },
+  )
+
+  if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
+  if (result.status === "not_draft") {
+    return c.json({ error: "Only draft contracts can be auto-issued for document generation" }, 409)
+  }
+  if (result.status === "render_unavailable") {
+    return c.json({ error: "Contract has no renderable body or template version" }, 409)
+  }
+  if (result.status === "generator_failed") {
+    return c.json({ error: "Contract document generation failed" }, 502)
+  }
+
+  return c.json({ data: result })
+}
+
 export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) {
   return new Hono<Env>()
     .get("/templates", async (c) => {
@@ -209,13 +318,8 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       if (!row) return c.json({ error: "Template not found" }, 404)
       return c.json({ success: true })
     })
-    .post("/templates/:id/preview", async (c) => {
-      const input = await parseJsonBody(c, renderTemplateInputSchema)
-      const template = await contractsService.getTemplateById(c.get("db"), c.req.param("id"))
-      if (!template) return c.json({ error: "Template not found" }, 404)
-      const body = input.body ?? template.body
-      return renderPreviewResponse(c, { ...input, body })
-    })
+    .post("/templates/:id/preview", renderAdminTemplatePreview)
+    .post("/templates/:id/render-preview", renderAdminTemplatePreview)
     .get("/templates/:id/versions", async (c) => {
       const rows = await contractsService.listTemplateVersions(c.get("db"), c.req.param("id"))
       return c.json({ data: rows })
@@ -375,34 +479,10 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       return c.json({ data: result }, 201)
     })
     .post("/:id/regenerate-document", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const generator = runtime.documentGenerator
-      if (!generator) {
-        return c.json({ error: "Contract document generator is not configured" }, 501)
-      }
-
-      const result = await contractsService.regenerateContractDocument(
-        c.get("db"),
-        c.req.param("id"),
-        await parseOptionalJsonBody(c, generateContractDocumentInputSchema),
-        { generator, bindings: c.env, eventBus: runtime.eventBus },
-      )
-
-      if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_draft") {
-        return c.json(
-          { error: "Only draft contracts can be auto-issued for document generation" },
-          409,
-        )
-      }
-      if (result.status === "render_unavailable") {
-        return c.json({ error: "Contract has no renderable body or template version" }, 409)
-      }
-      if (result.status === "generator_failed") {
-        return c.json({ error: "Contract document generation failed" }, 502)
-      }
-
-      return c.json({ data: result })
+      return regenerateContractDocument(c, options, c.req.param("id"))
+    })
+    .post("/:id/regenerate-pdf", async (c) => {
+      return regenerateContractDocument(c, options, c.req.param("id"))
     })
     .get("/:id/signatures", async (c) => {
       const rows = await contractsService.listSignatures(c.get("db"), c.req.param("id"))
@@ -422,27 +502,10 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       return c.json({ data: row }, 201)
     })
     .post("/:id/attachments/upload", async (c) => {
-      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const storage = runtime.documentStorage
-      if (!storage) {
-        return c.json({ error: "Contract document storage is not configured" }, 501)
-      }
-
-      const parsed = await parseAttachmentUploadRequest(c)
-      if ("error" in parsed) return parsed.error
-
-      const row = await contractsService.createAttachment(
-        c.get("db"),
-        c.req.param("id"),
-        await buildUploadedAttachmentInput({
-          storage,
-          contractId: c.req.param("id"),
-          form: parsed.form,
-          file: parsed.file,
-        }),
-      )
-      if (!row) return c.json({ error: "Contract not found" }, 404)
-      return c.json({ data: row }, 201)
+      return uploadContractAttachment(c, options, c.req.param("id"))
+    })
+    .post("/:id/attach-document", async (c) => {
+      return uploadContractAttachment(c, options, c.req.param("id"))
     })
     .patch("/attachments/:attachmentId", async (c) => {
       const row = await contractsService.updateAttachment(
@@ -533,42 +596,16 @@ export function createContractsPublicRoutes() {
         if (!row) return c.json({ error: "Template not found" }, 404)
         return c.json({ data: row })
       })
-      .post("/templates/:id/preview", async (c) => {
-        const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
-        const template = await contractsService.getTemplateById(c.get("db"), c.req.param("id"))
-        if (!template?.active) return c.json({ error: "Template not found" }, 404)
-        return renderPreviewResponse(c, {
-          variables: input.variables,
-          body: template.body,
-        })
-      })
+      .post("/templates/:id/preview", renderPublicTemplatePreview)
+      .post("/templates/:id/render-preview", renderPublicTemplatePreview)
       /**
        * Slug-based variant — storefronts wire products to a contract
        * template via slug at config time, not id, so they can render the
        * preview in the booking journey before any contract row exists.
        * The dialog at /shop/book/... POSTs here with the draft variables.
        */
-      .post("/templates/by-slug/:slug/preview", async (c) => {
-        const input = await parseJsonBody(c, publicRenderTemplatePreviewInputSchema)
-        const template = await contractsService.findTemplateBySlug(c.get("db"), c.req.param("slug"))
-        if (!template?.active) return c.json({ error: "Template not found" }, 404)
-        return renderPreviewResponse(
-          c,
-          {
-            variables: input.variables,
-            body: template.body,
-          },
-          {
-            template: {
-              id: template.id,
-              slug: template.slug,
-              name: template.name,
-              language: template.language,
-              scope: template.scope,
-            },
-          },
-        )
-      })
+      .post("/templates/by-slug/:slug/preview", renderPublicTemplatePreviewBySlug)
+      .post("/templates/by-slug/:slug/render-preview", renderPublicTemplatePreviewBySlug)
       .get("/:id", async (c) => {
         const row = await contractsService.getContractById(c.get("db"), c.req.param("id"))
         if (!row) return c.json({ error: "Contract not found" }, 404)

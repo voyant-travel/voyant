@@ -110,6 +110,20 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
 
       return documents ? c.json({ data: documents }) : notFound(c, "Booking documents not found")
     })
+    .get("/bookings/:bookingId/documents/by-reference", async (c) => {
+      await requireBookingCheckoutCapability(c, c.req.param("bookingId"), "payment:read")
+
+      const document = await publicFinanceService.getBookingDocumentByReference(
+        c.get("db"),
+        c.req.param("bookingId"),
+        parseQuery(c, publicFinanceDocumentLookupQuerySchema).reference,
+        {
+          resolveDocumentDownloadUrl: (storageKey) => resolveDocumentDownloadUrl(c.env, storageKey),
+        },
+      )
+
+      return document ? c.json({ data: document }) : notFound(c, "Finance document not found")
+    })
     .get("/bookings/:bookingId/payments", async (c) => {
       await requireBookingCheckoutCapability(c, c.req.param("bookingId"), "payment:read")
 
