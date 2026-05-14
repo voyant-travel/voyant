@@ -4,7 +4,7 @@ import type { StorageProvider } from "@voyantjs/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { Hono } from "hono"
-
+import type { ContractLifecycleHook } from "./lifecycle.js"
 import {
   buildContractsRouteRuntime,
   CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -57,6 +57,10 @@ export interface ContractsRouteOptions {
   resolveDocumentStorage?: (bindings: Record<string, unknown>) => StorageProvider | null | undefined
   eventBus?: EventBus
   resolveEventBus?: (bindings: Record<string, unknown>) => EventBus | undefined
+  lifecycleHooks?: readonly ContractLifecycleHook[]
+  resolveLifecycleHooks?: (
+    bindings: Record<string, unknown>,
+  ) => readonly ContractLifecycleHook[] | undefined
 }
 
 function getRuntime(
@@ -263,7 +267,12 @@ async function regenerateContractDocument(
     c.get("db"),
     contractId,
     await parseOptionalJsonBody(c, generateContractDocumentInputSchema),
-    { generator, bindings: c.env, eventBus: runtime.eventBus },
+    {
+      generator,
+      bindings: c.env,
+      eventBus: runtime.eventBus,
+      lifecycleHooks: runtime.lifecycleHooks,
+    },
   )
 
   if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
@@ -402,7 +411,8 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       return c.json({ success: true })
     })
     .post("/:id/issue", async (c) => {
-      const result = await contractsService.issueContract(c.get("db"), c.req.param("id"))
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.issueContract(c.get("db"), c.req.param("id"), runtime)
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
       if (result.status === "not_draft") {
         return c.json({ error: "Only draft contracts can be issued" }, 409)
@@ -410,7 +420,8 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       return c.json({ data: result.contract })
     })
     .post("/:id/send", async (c) => {
-      const result = await contractsService.sendContract(c.get("db"), c.req.param("id"))
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.sendContract(c.get("db"), c.req.param("id"), runtime)
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
       if (result.status === "not_issued") {
         return c.json({ error: "Only issued/sent contracts can be sent" }, 409)
@@ -418,8 +429,14 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       return c.json({ data: result.contract })
     })
     .post("/:id/sign", async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
       const input = await parseJsonBody(c, insertContractSignatureSchema)
-      const result = await contractsService.signContract(c.get("db"), c.req.param("id"), input)
+      const result = await contractsService.signContract(
+        c.get("db"),
+        c.req.param("id"),
+        input,
+        runtime,
+      )
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
       if (result.status === "not_signable") {
         return c.json({ error: "Contract is not in a signable state" }, 409)
@@ -427,7 +444,8 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       return c.json({ data: { contract: result.contract, signature: result.signature } })
     })
     .post("/:id/execute", async (c) => {
-      const result = await contractsService.executeContract(c.get("db"), c.req.param("id"))
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.executeContract(c.get("db"), c.req.param("id"), runtime)
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
       if (result.status === "not_signed") {
         return c.json({ error: "Only signed contracts can be executed" }, 409)
@@ -435,7 +453,8 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       return c.json({ data: result.contract })
     })
     .post("/:id/void", async (c) => {
-      const result = await contractsService.voidContract(c.get("db"), c.req.param("id"))
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const result = await contractsService.voidContract(c.get("db"), c.req.param("id"), runtime)
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
       if (result.status === "already_void") {
         return c.json({ error: "Contract is already void" }, 409)
@@ -459,7 +478,12 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
         c.get("db"),
         c.req.param("id"),
         await parseOptionalJsonBody(c, generateContractDocumentInputSchema),
-        { generator, bindings: c.env, eventBus: runtime.eventBus },
+        {
+          generator,
+          bindings: c.env,
+          eventBus: runtime.eventBus,
+          lifecycleHooks: runtime.lifecycleHooks,
+        },
       )
 
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
@@ -587,7 +611,7 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
 
 export const contractsAdminRoutes = createContractsAdminRoutes()
 
-export function createContractsPublicRoutes() {
+export function createContractsPublicRoutes(options: ContractsRouteOptions = {}) {
   return (
     new Hono<Env>()
       .get("/templates/default", async (c) => {
@@ -613,8 +637,14 @@ export function createContractsPublicRoutes() {
         return c.json({ data: publicContract })
       })
       .post("/:id/sign", async (c) => {
+        const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
         const input = await parseJsonBody(c, insertContractSignatureSchema)
-        const result = await contractsService.signContract(c.get("db"), c.req.param("id"), input)
+        const result = await contractsService.signContract(
+          c.get("db"),
+          c.req.param("id"),
+          input,
+          runtime,
+        )
         if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
         if (result.status === "not_signable") {
           return c.json({ error: "Contract is not in a signable state" }, 409)

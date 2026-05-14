@@ -26,4 +26,17 @@ describe("createLegalHonoModule", () => {
     expect(runtime?.documentGenerator).toBe(generator)
     expect(runtime?.eventBus).toBe(eventBus)
   })
+
+  it("uses the module event bus when no route event bus is configured", () => {
+    const eventBus = createEventBus()
+    const container = createContainer()
+
+    const module = createLegalHonoModule().module
+
+    module.bootstrap?.({ bindings: {}, container, eventBus })
+
+    const runtime = container.resolve(CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY)
+
+    expect(runtime?.eventBus).toBe(eventBus)
+  })
 })

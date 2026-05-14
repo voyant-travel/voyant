@@ -56,16 +56,16 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
     .route("/policies", policiesAdminRoutes)
 
   const legalPublicRoutes = new Hono()
-    .route("/contracts", createContractsPublicRoutes())
+    .route("/contracts", createContractsPublicRoutes(options))
     .route("/policies", policiesPublicRoutes)
 
   const module: Module = {
     ...legalModule,
     bootstrap: ({ bindings, container, eventBus }) => {
-      container.register(
-        CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY,
-        buildContractsRouteRuntime(bindings as Record<string, unknown>, options),
-      )
+      const bindingsRecord = bindings as Record<string, unknown>
+      const contractsRuntime = buildContractsRouteRuntime(bindingsRecord, options)
+      contractsRuntime.eventBus ??= eventBus
+      container.register(CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY, contractsRuntime)
 
       // Auto-generate wiring — opt-in. Mirrors the notifications
       // autoConfirmAndDispatch subscriber pattern. Both fire on the same
@@ -76,8 +76,7 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
       const auto = options.autoGenerateContractOnConfirmed
       if (auto?.enabled && options.resolveDb) {
         const resolveDb = options.resolveDb
-        const runtime = buildContractsRouteRuntime(bindings as Record<string, unknown>, options)
-        if (!runtime.documentGenerator) {
+        if (!contractsRuntime.documentGenerator) {
           // Mis-configuration — don't silently drop contracts. Log and
           // skip; the template operator will notice on the first confirm.
           console.error(
@@ -85,7 +84,7 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
           )
           return
         }
-        const generator = runtime.documentGenerator
+        const generator = contractsRuntime.documentGenerator
 
         eventBus.subscribe(
           "booking.confirmed",
@@ -100,7 +99,8 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
               const result = await autoGenerateContractForBooking(db, event.data, auto, {
                 generator,
                 eventBus,
-                bindings: bindings as Record<string, unknown>,
+                lifecycleHooks: contractsRuntime.lifecycleHooks,
+                bindings: bindingsRecord,
               })
               if (result.status !== "ok") {
                 console.error(

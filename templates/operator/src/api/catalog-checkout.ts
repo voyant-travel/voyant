@@ -1581,6 +1581,7 @@ async function persistAcceptanceDraftContract(
 async function persistAcceptanceSignature(
   db: PostgresJsDatabase,
   contractId: string,
+  eventBus?: EventBus,
 ): Promise<void> {
   const { contractsService } = await import("@voyantjs/legal/contracts")
   const { contracts: contractsTable } = await import("@voyantjs/legal/contracts")
@@ -1603,10 +1604,19 @@ async function persistAcceptanceSignature(
   const acceptance = readContractAcceptance(contract.metadata, booking.internalNotes)
   if (!acceptance) return
 
-  // Already signed? `signContract` requires status ∈ {issued, sent};
-  // idempotency comes from listSignatures.
+  // Already signed? Idempotency comes from listSignatures.
   const existing = await contractsService.listSignatures(db, contractId)
   if (existing.length > 0) return
+
+  if (contract.status === "issued") {
+    const sent = await contractsService.sendContract(db, contractId, { eventBus })
+    if (sent.status !== "sent") {
+      console.warn(
+        `[catalog-checkout] could not send contract before acceptance signature for ${contractId}: ${sent.status}`,
+      )
+      return
+    }
+  }
 
   // Prefer the booking's contact name when available so the signer
   // line on the contract reads as the human, not the booking ref.
@@ -1618,21 +1628,26 @@ async function persistAcceptanceSignature(
     contactName ||
     `Storefront customer${booking.bookingNumber ? ` (${booking.bookingNumber})` : ""}`
 
-  const result = await contractsService.signContract(db, contractId, {
-    signerName,
-    signerEmail: booking.contactEmail ?? null,
-    method: "electronic" as const,
-    ipAddress: acceptance.clientIp ? acceptance.clientIp.slice(0, 64) : null,
-    userAgent: acceptance.userAgent ? acceptance.userAgent.slice(0, 500) : null,
-    metadata: {
-      source: "storefront-checkout",
-      templateId: acceptance.templateId,
-      templateSlug: acceptance.templateSlug,
-      acceptedAt: acceptance.acceptedAt,
-      acceptedMarketing: acceptance.acceptedMarketing,
-      renderedHtmlLength: acceptance.renderedHtmlLength,
-    },
-  } as never)
+  const result = await contractsService.signContract(
+    db,
+    contractId,
+    {
+      signerName,
+      signerEmail: booking.contactEmail ?? null,
+      method: "electronic" as const,
+      ipAddress: acceptance.clientIp ? acceptance.clientIp.slice(0, 64) : null,
+      userAgent: acceptance.userAgent ? acceptance.userAgent.slice(0, 500) : null,
+      metadata: {
+        source: "storefront-checkout",
+        templateId: acceptance.templateId,
+        templateSlug: acceptance.templateSlug,
+        acceptedAt: acceptance.acceptedAt,
+        acceptedMarketing: acceptance.acceptedMarketing,
+        renderedHtmlLength: acceptance.renderedHtmlLength,
+      },
+    } as never,
+    { eventBus },
+  )
 
   if (result.status !== "signed") {
     console.warn(
@@ -2022,7 +2037,7 @@ export function createCatalogCheckoutBundle(opts: {
           try {
             await withDbFromEnv(env, async (rawDb) => {
               const db = rawDb as unknown as PostgresJsDatabase
-              await persistAcceptanceSignature(db, data.contractId)
+              await persistAcceptanceSignature(db, data.contractId, eventBus)
             })
           } catch (err) {
             console.error("[catalog-checkout] persistAcceptanceSignature failed", err)

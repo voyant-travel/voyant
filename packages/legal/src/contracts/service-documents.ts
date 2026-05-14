@@ -3,7 +3,7 @@ import type { StorageProvider, StorageUploadBody } from "@voyantjs/storage"
 import { renderPdfDocument } from "@voyantjs/utils/pdf-renderer"
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import type { ContractLifecycleHook } from "./lifecycle.js"
 import { contractAttachments, contracts, contractTemplateVersions } from "./schema.js"
 import { contractRecordsService } from "./service-contracts.js"
 import type { CreateContractAttachmentInput } from "./service-shared.js"
@@ -38,6 +38,7 @@ export interface ContractDocumentRuntimeOptions {
   bindings?: Record<string, unknown>
   generator: ContractDocumentGenerator
   eventBus?: EventBus
+  lifecycleHooks?: readonly ContractLifecycleHook[]
 }
 
 export interface StorageBackedContractDocumentUpload {
@@ -260,6 +261,7 @@ async function ensureRenderedContract(
   db: PostgresJsDatabase,
   contractId: string,
   issueIfDraft: boolean,
+  runtime?: Pick<ContractDocumentRuntimeOptions, "eventBus" | "lifecycleHooks">,
 ): Promise<EnsureRenderedContractResult> {
   let contract = await contractRecordsService.getContractById(db, contractId)
   if (!contract) {
@@ -269,7 +271,7 @@ async function ensureRenderedContract(
   if (contract.status === "draft" && issueIfDraft) {
     let issued: Awaited<ReturnType<typeof contractRecordsService.issueContract>>
     try {
-      issued = await contractRecordsService.issueContract(db, contractId)
+      issued = await contractRecordsService.issueContract(db, contractId, runtime)
     } catch (error) {
       if (isContractTemplateSyntaxError(error)) {
         return { status: "render_unavailable" as const, contract, templateVersion: null }
@@ -338,7 +340,7 @@ export const contractDocumentsService = {
     | { status: "not_found" | "not_draft" | "render_unavailable" | "generator_failed" }
     | ({ status: "generated" } & GeneratedContractDocumentRecord)
   > {
-    const prepared = await ensureRenderedContract(db, contractId, input.issueIfDraft)
+    const prepared = await ensureRenderedContract(db, contractId, input.issueIfDraft, runtime)
 
     if (prepared.status === "not_found") {
       return { status: "not_found" }

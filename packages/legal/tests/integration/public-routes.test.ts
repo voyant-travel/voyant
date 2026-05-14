@@ -27,6 +27,7 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
   let generatedNames: string[]
   let documentEvents: Array<Record<string, unknown>>
   let uploadedObjects: Array<{ key: string; size: number; contentType: string | null }>
+  let lifecycleEvents: Array<Record<string, unknown>>
 
   beforeAll(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
@@ -64,6 +65,18 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
       async get() {
         return null
       },
+    }
+    lifecycleEvents = []
+    for (const eventName of [
+      "contract.issued",
+      "contract.sent",
+      "contract.signed",
+      "contract.executed",
+      "contract.voided",
+    ]) {
+      eventBus.subscribe(eventName, (event) => {
+        lifecycleEvents.push(event as Record<string, unknown>)
+      })
     }
     adminApp.route(
       "/",
@@ -104,6 +117,7 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     generatedNames = []
     documentEvents = []
     uploadedObjects = []
+    lifecycleEvents = []
   })
 
   it("selects the default active template using language fallback order", async () => {
@@ -445,5 +459,83 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     expect(res.status).toBe(404)
     expect(await res.json()).toEqual({ error: "Contract not found" })
     expect(uploadedObjects).toEqual([])
+  })
+
+  it("validates contract lifecycle transitions, records history, and emits safe events", async () => {
+    const createRes = await adminApp.request("/", {
+      method: "POST",
+      ...json({
+        title: "Lifecycle contract",
+        scope: "customer",
+      }),
+    })
+    expect(createRes.status).toBe(201)
+    const created = (await createRes.json()).data
+    expect(created.stageHistory).toEqual([
+      expect.objectContaining({
+        stage: "draft",
+        previousStage: null,
+        transition: "created",
+      }),
+    ])
+
+    const prematureSign = await adminApp.request(`/${created.id}/sign`, {
+      method: "POST",
+      ...json({
+        signerName: "Ada Lovelace",
+        method: "manual",
+      }),
+    })
+    expect(prematureSign.status).toBe(409)
+
+    const issueRes = await adminApp.request(`/${created.id}/issue`, { method: "POST" })
+    expect(issueRes.status).toBe(200)
+
+    const sendRes = await adminApp.request(`/${created.id}/send`, { method: "POST" })
+    expect(sendRes.status).toBe(200)
+
+    const signRes = await adminApp.request(`/${created.id}/sign`, {
+      method: "POST",
+      ...json({
+        signerName: "Ada Lovelace",
+        method: "manual",
+      }),
+    })
+    expect(signRes.status).toBe(200)
+
+    const executeRes = await adminApp.request(`/${created.id}/execute`, { method: "POST" })
+    expect(executeRes.status).toBe(200)
+
+    const voidRes = await adminApp.request(`/${created.id}/void`, { method: "POST" })
+    expect(voidRes.status).toBe(200)
+    const finalContract = (await voidRes.json()).data
+
+    expect(finalContract.status).toBe("void")
+    expect(finalContract.stageHistory.map((entry: { stage: string }) => entry.stage)).toEqual([
+      "draft",
+      "issued",
+      "sent",
+      "signed",
+      "executed",
+      "void",
+    ])
+    expect(lifecycleEvents.map((event) => event.name)).toEqual([
+      "contract.issued",
+      "contract.sent",
+      "contract.signed",
+      "contract.executed",
+      "contract.voided",
+    ])
+    expect(lifecycleEvents[0]?.metadata).toEqual({
+      category: "domain",
+      source: "service",
+    })
+    expect(lifecycleEvents[0]?.data).toEqual(
+      expect.not.objectContaining({
+        renderedBody: expect.anything(),
+        variables: expect.anything(),
+        metadata: expect.anything(),
+      }),
+    )
   })
 })

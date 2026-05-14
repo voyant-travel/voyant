@@ -1,7 +1,14 @@
 import { people, personDirectoryView } from "@voyantjs/crm/schema"
 import { and, desc, eq, getTableColumns, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import {
+  appendContractStageHistory,
+  buildContractLifecycleEvent,
+  type ContractLifecycleRuntimeOptions,
+  checkContractLifecycleTransition,
+  createContractStageHistoryEntry,
+  emitContractLifecycleEvent,
+} from "./lifecycle.js"
 import {
   contractAttachments,
   contractSignatures,
@@ -78,18 +85,27 @@ export const contractRecordsService = {
     return row ?? null
   },
   async createContract(db: PostgresJsDatabase, data: CreateContractInput) {
+    const now = new Date()
+    const stage = data.status ?? "draft"
     const [row] = await db
       .insert(contracts)
-      .values({ ...data, expiresAt: toTimestamp(data.expiresAt) })
+      .values({
+        ...data,
+        stageHistory: [createContractStageHistoryEntry(stage, { enteredAt: now })],
+        expiresAt: toTimestamp(data.expiresAt),
+      })
       .returning()
     return row ?? null
   },
   async updateContract(db: PostgresJsDatabase, id: string, data: UpdateContractInput) {
+    const { status: _status, ...update } = data as UpdateContractInput & {
+      status?: never
+    }
     const [row] = await db
       .update(contracts)
       .set({
-        ...data,
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+        ...update,
+        expiresAt: update.expiresAt === undefined ? undefined : toTimestamp(update.expiresAt),
         updatedAt: new Date(),
       })
       .where(eq(contracts.id, id))
@@ -107,8 +123,12 @@ export const contractRecordsService = {
     await db.delete(contracts).where(eq(contracts.id, id))
     return { status: "deleted" as const }
   },
-  async issueContract(db: PostgresJsDatabase, contractId: string) {
-    return db.transaction(async (tx) => {
+  async issueContract(
+    db: PostgresJsDatabase,
+    contractId: string,
+    runtime?: ContractLifecycleRuntimeOptions,
+  ) {
+    const result = await db.transaction(async (tx) => {
       const [contract] = await tx
         .select()
         .from(contracts)
@@ -116,7 +136,8 @@ export const contractRecordsService = {
         .for("update")
         .limit(1)
       if (!contract) return { status: "not_found" as const }
-      if (contract.status !== "draft") return { status: "not_draft" as const }
+      const transition = checkContractLifecycleTransition(contract.status, "issued")
+      if (!transition.ok) return { status: transition.reason }
       let renderedBody = contract.renderedBody
       let renderedBodyFormat = contract.renderedBodyFormat
       if (contract.templateVersionId) {
@@ -136,51 +157,124 @@ export const contractRecordsService = {
         const allocated = await allocateContractNumber(tx as PostgresJsDatabase, contract.seriesId)
         if (allocated) contractNumber = allocated.number
       }
+      const now = new Date()
+      const stageHistory = appendContractStageHistory(
+        contract.stageHistory,
+        createContractStageHistoryEntry("issued", {
+          previousStage: contract.status,
+          transition: "issued",
+          enteredAt: now,
+        }),
+      )
       const [updated] = await tx
         .update(contracts)
         .set({
           status: "issued",
-          issuedAt: new Date(),
+          stageHistory,
+          issuedAt: now,
           renderedBody,
           renderedBodyFormat,
           contractNumber,
-          updatedAt: new Date(),
+          updatedAt: now,
         })
         .where(eq(contracts.id, contractId))
         .returning()
-      return { status: "issued" as const, contract: updated ?? null }
+      return {
+        status: "issued" as const,
+        contract: updated ?? null,
+        event:
+          updated && buildContractLifecycleEvent(updated, contract.status, "issued", "issued", now),
+      }
     })
+    if (result.status === "issued" && result.event) {
+      await emitContractLifecycleEvent(runtime, result.event)
+    }
+    return result
   },
-  async sendContract(db: PostgresJsDatabase, contractId: string) {
-    const [contract] = await db
-      .select({ id: contracts.id, status: contracts.status })
-      .from(contracts)
-      .where(eq(contracts.id, contractId))
-      .limit(1)
-    if (!contract) return { status: "not_found" as const }
-    if (contract.status !== "issued" && contract.status !== "sent")
-      return { status: "not_issued" as const }
-    const [updated] = await db
-      .update(contracts)
-      .set({ status: "sent", sentAt: new Date(), updatedAt: new Date() })
-      .where(eq(contracts.id, contractId))
-      .returning()
-    return { status: "sent" as const, contract: updated ?? null }
+  async sendContract(
+    db: PostgresJsDatabase,
+    contractId: string,
+    runtime?: ContractLifecycleRuntimeOptions,
+  ) {
+    const result = await db.transaction(async (tx) => {
+      const [contract] = await tx
+        .select()
+        .from(contracts)
+        .where(eq(contracts.id, contractId))
+        .for("update")
+        .limit(1)
+      if (!contract) return { status: "not_found" as const }
+      const transition = checkContractLifecycleTransition(contract.status, "sent")
+      if (!transition.ok) return { status: transition.reason }
+      if (contract.status === "sent") {
+        return { status: "sent" as const, contract, event: null }
+      }
+      const now = new Date()
+      const stageHistory = appendContractStageHistory(
+        contract.stageHistory,
+        createContractStageHistoryEntry("sent", {
+          previousStage: contract.status,
+          transition: "sent",
+          enteredAt: now,
+        }),
+      )
+      const [updated] = await tx
+        .update(contracts)
+        .set({ status: "sent", stageHistory, sentAt: now, updatedAt: now })
+        .where(eq(contracts.id, contractId))
+        .returning()
+      return {
+        status: "sent" as const,
+        contract: updated ?? null,
+        event:
+          updated && buildContractLifecycleEvent(updated, contract.status, "sent", "sent", now),
+      }
+    })
+    if (result.status === "sent" && result.event) {
+      await emitContractLifecycleEvent(runtime, result.event)
+    }
+    return result
   },
-  async voidContract(db: PostgresJsDatabase, contractId: string) {
-    const [contract] = await db
-      .select({ id: contracts.id, status: contracts.status })
-      .from(contracts)
-      .where(eq(contracts.id, contractId))
-      .limit(1)
-    if (!contract) return { status: "not_found" as const }
-    if (contract.status === "void") return { status: "already_void" as const }
-    const [updated] = await db
-      .update(contracts)
-      .set({ status: "void", voidedAt: new Date(), updatedAt: new Date() })
-      .where(eq(contracts.id, contractId))
-      .returning()
-    return { status: "voided" as const, contract: updated ?? null }
+  async voidContract(
+    db: PostgresJsDatabase,
+    contractId: string,
+    runtime?: ContractLifecycleRuntimeOptions,
+  ) {
+    const result = await db.transaction(async (tx) => {
+      const [contract] = await tx
+        .select()
+        .from(contracts)
+        .where(eq(contracts.id, contractId))
+        .for("update")
+        .limit(1)
+      if (!contract) return { status: "not_found" as const }
+      const transition = checkContractLifecycleTransition(contract.status, "voided")
+      if (!transition.ok) return { status: transition.reason }
+      const now = new Date()
+      const stageHistory = appendContractStageHistory(
+        contract.stageHistory,
+        createContractStageHistoryEntry("void", {
+          previousStage: contract.status,
+          transition: "voided",
+          enteredAt: now,
+        }),
+      )
+      const [updated] = await tx
+        .update(contracts)
+        .set({ status: "void", stageHistory, voidedAt: now, updatedAt: now })
+        .where(eq(contracts.id, contractId))
+        .returning()
+      return {
+        status: "voided" as const,
+        contract: updated ?? null,
+        event:
+          updated && buildContractLifecycleEvent(updated, contract.status, "void", "voided", now),
+      }
+    })
+    if (result.status === "voided" && result.event) {
+      await emitContractLifecycleEvent(runtime, result.event)
+    }
+    return result
   },
   listSignatures(db: PostgresJsDatabase, contractId: string) {
     return db
@@ -193,42 +287,90 @@ export const contractRecordsService = {
     db: PostgresJsDatabase,
     contractId: string,
     data: CreateContractSignatureInput,
+    runtime?: ContractLifecycleRuntimeOptions,
   ) {
-    return db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const [contract] = await tx
         .select()
         .from(contracts)
         .where(eq(contracts.id, contractId))
+        .for("update")
         .limit(1)
       if (!contract) return { status: "not_found" as const }
-      if (contract.status !== "issued" && contract.status !== "sent")
-        return { status: "not_signable" as const }
+      const transition = checkContractLifecycleTransition(contract.status, "signed")
+      if (!transition.ok) return { status: "not_signable" as const }
       const [signature] = await tx
         .insert(contractSignatures)
         .values({ ...data, contractId })
         .returning()
+      const now = new Date()
+      const stageHistory = appendContractStageHistory(
+        contract.stageHistory,
+        createContractStageHistoryEntry("signed", {
+          previousStage: contract.status,
+          transition: "signed",
+          enteredAt: now,
+        }),
+      )
       const [updated] = await tx
         .update(contracts)
-        .set({ status: "signed", updatedAt: new Date() })
+        .set({ status: "signed", stageHistory, updatedAt: now })
         .where(eq(contracts.id, contractId))
         .returning()
-      return { status: "signed" as const, contract: updated ?? null, signature: signature ?? null }
+      return {
+        status: "signed" as const,
+        contract: updated ?? null,
+        signature: signature ?? null,
+        event:
+          updated && buildContractLifecycleEvent(updated, contract.status, "signed", "signed", now),
+      }
     })
+    if (result.status === "signed" && result.event) {
+      await emitContractLifecycleEvent(runtime, result.event)
+    }
+    return result
   },
-  async executeContract(db: PostgresJsDatabase, contractId: string) {
-    const [contract] = await db
-      .select({ id: contracts.id, status: contracts.status })
-      .from(contracts)
-      .where(eq(contracts.id, contractId))
-      .limit(1)
-    if (!contract) return { status: "not_found" as const }
-    if (contract.status !== "signed") return { status: "not_signed" as const }
-    const [updated] = await db
-      .update(contracts)
-      .set({ status: "executed", executedAt: new Date(), updatedAt: new Date() })
-      .where(eq(contracts.id, contractId))
-      .returning()
-    return { status: "executed" as const, contract: updated ?? null }
+  async executeContract(
+    db: PostgresJsDatabase,
+    contractId: string,
+    runtime?: ContractLifecycleRuntimeOptions,
+  ) {
+    const result = await db.transaction(async (tx) => {
+      const [contract] = await tx
+        .select()
+        .from(contracts)
+        .where(eq(contracts.id, contractId))
+        .for("update")
+        .limit(1)
+      if (!contract) return { status: "not_found" as const }
+      const transition = checkContractLifecycleTransition(contract.status, "executed")
+      if (!transition.ok) return { status: transition.reason }
+      const now = new Date()
+      const stageHistory = appendContractStageHistory(
+        contract.stageHistory,
+        createContractStageHistoryEntry("executed", {
+          previousStage: contract.status,
+          transition: "executed",
+          enteredAt: now,
+        }),
+      )
+      const [updated] = await tx
+        .update(contracts)
+        .set({ status: "executed", stageHistory, executedAt: now, updatedAt: now })
+        .where(eq(contracts.id, contractId))
+        .returning()
+      return {
+        status: "executed" as const,
+        contract: updated ?? null,
+        event:
+          updated &&
+          buildContractLifecycleEvent(updated, contract.status, "executed", "executed", now),
+      }
+    })
+    if (result.status === "executed" && result.event) {
+      await emitContractLifecycleEvent(runtime, result.event)
+    }
+    return result
   },
   listAttachments(db: PostgresJsDatabase, contractId: string) {
     return db

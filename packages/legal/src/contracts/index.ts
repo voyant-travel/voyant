@@ -28,10 +28,28 @@ export const contractsLinkable = {
 }
 
 export type {
+  ContractLifecycleEvent,
+  ContractLifecycleHook,
+  ContractLifecycleRuntimeOptions,
+  ContractLifecycleStage,
+  ContractLifecycleTransition,
+} from "./lifecycle.js"
+export {
+  appendContractStageHistory,
+  buildContractLifecycleEvent,
+  CONTRACT_LIFECYCLE_EVENT_NAMES,
+  CONTRACT_LIFECYCLE_STAGES,
+  checkContractLifecycleTransition,
+  createContractStageHistoryEntry,
+  emitContractLifecycleEvent,
+} from "./lifecycle.js"
+export type {
   Contract,
   ContractAttachment,
   ContractNumberSeries,
   ContractSignature,
+  ContractStageHistoryEntry,
+  ContractStatus,
   ContractTemplate,
   ContractTemplateVersion,
   NewContract,
@@ -45,6 +63,7 @@ export {
   contractAttachments,
   contractNumberSeries,
   contractSignatures,
+  contractStatusValues,
   contracts,
   contractTemplates,
   contractTemplateVersions,
@@ -102,6 +121,7 @@ export {
   contractNumberResetStrategySchema,
   contractScopeSchema,
   contractSignatureMethodSchema,
+  contractStageHistoryEntrySchema,
   contractStatusSchema,
   contractTemplateDefaultQuerySchema,
   contractTemplateListQuerySchema,

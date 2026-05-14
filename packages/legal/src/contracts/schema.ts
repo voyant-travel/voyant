@@ -24,7 +24,7 @@ export const contractScopeEnum = pgEnum("contract_scope", [
   "other",
 ])
 
-export const contractStatusEnum = pgEnum("contract_status", [
+export const contractStatusValues = [
   "draft",
   "issued",
   "sent",
@@ -32,7 +32,19 @@ export const contractStatusEnum = pgEnum("contract_status", [
   "executed",
   "expired",
   "void",
-])
+] as const
+
+export const contractStatusEnum = pgEnum("contract_status", contractStatusValues)
+
+export type ContractStatus = (typeof contractStatusValues)[number]
+
+export interface ContractStageHistoryEntry {
+  stage: ContractStatus
+  previousStage: ContractStatus | null
+  transition: "created" | "issued" | "sent" | "signed" | "executed" | "voided"
+  enteredAt: string
+  actorId?: string | null
+}
 
 export const contractSignatureMethodEnum = pgEnum("contract_signature_method", [
   "manual",
@@ -176,6 +188,10 @@ export const contracts = pgTable(
     contractNumber: text("contract_number").unique(),
     scope: contractScopeEnum("scope").notNull(),
     status: contractStatusEnum("status").notNull().default("draft"),
+    stageHistory: jsonb("stage_history")
+      .$type<ContractStageHistoryEntry[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     title: text("title").notNull(),
 
     templateVersionId: typeIdRef("template_version_id").references(
