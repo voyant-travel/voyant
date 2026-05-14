@@ -29,7 +29,7 @@ export function WorkflowsRoute() {
 
 ## Mount the admin routes
 
-`mountWorkflowRunsAdminRoutes` adds the workflow-run list, detail, rerun, and resume endpoints under `/v1/admin/workflow-runs`.
+`mountWorkflowRunsAdminRoutes` adds the workflow-run list, detail, rerun, and resume endpoints under `/v1/admin/workflow-runs`, plus an explicit trigger endpoint at `POST /v1/admin/workflows/:name/runs`.
 
 ```ts
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyantjs/workflow-runs"
@@ -45,6 +45,15 @@ workflowRunnerRegistry.register({
   idempotency: "unsafe",
   description:
     "Confirms the booking and issues the final invoice. Use Resume to retry from a failed step.",
+  trigger: async (input, ctx) => {
+    const saved = await workflowServer.trigger({
+      workflowId: "checkout-finalize",
+      input,
+      tags: ctx.tags,
+      triggeredByUserId: ctx.triggeredByUserId,
+    })
+    return { runId: saved.id }
+  },
   rerun: async (input, ctx) => {
     const saved = await workflowServer.trigger({
       workflowId: "checkout-finalize",
@@ -69,6 +78,32 @@ workflowRunnerRegistry.register({
 mountWorkflowRunsAdminRoutes(hono, {
   runners: workflowRunnerRegistry,
 })
+```
+
+Triggerable workflows must opt in by implementing `trigger(...)` on their registered runner. This keeps rerun/resume-only workflows closed to arbitrary admin dispatch while still allowing operators, cron jobs, queues, and API keys with `workflows:trigger` permission to call:
+
+```http
+POST /v1/admin/workflows/checkout-finalize/runs
+Content-Type: application/json
+
+{
+  "input": { "bookingId": "bk_123" },
+  "idempotencyKey": "checkout-finalize:bk_123",
+  "correlationId": "bk_123",
+  "tags": ["source:admin"]
+}
+```
+
+The route returns `202 Accepted` with the queued run id:
+
+```json
+{
+  "data": {
+    "runId": "wfrn_...",
+    "workflowName": "checkout-finalize",
+    "status": "queued"
+  }
+}
 ```
 
 For self-hosted workflow services, keep runner registration close to the code that mounts the workflow service. The registry should dispatch to your external workflow server instead of importing worker-only runtime code into the admin API process. The resume path sends `ctx.resumeFromStep` plus `ctx.seedResults`; the self-host server starts a new run, pre-populates the journal with the seeded step outputs, and executes from the failed step onward.
@@ -117,6 +152,6 @@ export const syncCatalogWorkflow = recordedWorkflow(
 )
 ```
 
-This helper only records observability data. Rerun and resume support still uses
-`WorkflowRunnerRegistry` registration so apps can choose which workflows are
-safe to dispatch from the admin UI.
+This helper only records observability data. Trigger, rerun, and resume support
+still uses `WorkflowRunnerRegistry` registration so apps can choose which
+workflows are safe to dispatch from the admin UI.
