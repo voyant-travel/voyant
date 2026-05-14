@@ -17,6 +17,7 @@ import type { GenerateInvoiceDocumentInput } from "./validation.js"
 export interface GeneratedInvoiceRenditionArtifact {
   format?: "html" | "pdf" | "xml" | "json"
   storageKey?: string | null
+  contentType?: string | null
   fileSize?: number | null
   checksum?: string | null
   language?: string | null
@@ -211,6 +212,7 @@ export function createStorageBackedInvoiceDocumentGenerator(
     return {
       format,
       storageKey: uploaded.key,
+      contentType: defaultInvoiceDocumentMimeType(format),
       fileSize: getBodySize(upload.body),
       language: upload.language ?? context.language,
       metadata: {
@@ -318,36 +320,32 @@ export const financeDocumentsService = {
       return { status: "generator_failed" }
     }
 
-    if (input.replaceExisting) {
-      const existing = await financeService.listInvoiceRenditions(db, invoiceId)
-      for (const rendition of existing) {
-        if (
-          rendition.format === (artifact.format ?? prepared.targetFormat) &&
-          rendition.status !== "stale"
-        ) {
-          await financeService.updateInvoiceRendition(db, rendition.id, { status: "stale" })
-        }
-      }
-    }
-
-    const rendition = await financeService.createInvoiceRendition(db, invoiceId, {
-      templateId: prepared.template?.id ?? null,
-      format: artifact.format ?? prepared.targetFormat,
-      status: "ready",
-      storageKey: artifact.storageKey ?? null,
-      fileSize: artifact.fileSize ?? null,
-      checksum: artifact.checksum ?? null,
-      language: artifact.language ?? prepared.language ?? null,
-      generatedAt: new Date().toISOString(),
-      metadata: {
-        ...(artifact.metadata ?? {}),
-        renderedBodyFormat: prepared.renderedBodyFormat,
+    const format = artifact.format ?? prepared.targetFormat
+    const bindResult = await financeService.bindInvoiceRendition(
+      db,
+      invoiceId,
+      {
+        templateId: prepared.template?.id ?? null,
+        format,
+        storageKey: artifact.storageKey?.trim() || null,
+        contentType: artifact.contentType ?? defaultInvoiceDocumentMimeType(format),
+        fileSize: artifact.fileSize ?? null,
+        checksum: artifact.checksum ?? null,
+        language: artifact.language ?? prepared.language ?? null,
+        generatedAt: new Date().toISOString(),
+        metadata: {
+          ...(artifact.metadata ?? {}),
+          renderedBodyFormat: prepared.renderedBodyFormat,
+        },
+        replaceExisting: input.replaceExisting,
       },
-    })
+      { eventBus: runtime.eventBus },
+    )
 
-    if (!rendition) {
+    if (bindResult.status !== "bound") {
       return { status: "not_found" }
     }
+    const { rendition } = bindResult
 
     await runtime.eventBus?.emit(
       "invoice.document.generated",

@@ -11,6 +11,7 @@ import {
   invoices,
   invoiceTemplates,
 } from "../../src/schema.js"
+import { financeService } from "../../src/service.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -24,6 +25,8 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
   let db: PostgresJsDatabase
   let generatedKeys: string[]
   let documentEvents: Array<Record<string, unknown>>
+  let renderedEvents: Array<Record<string, unknown>>
+  let failNextGeneration: boolean
 
   beforeAll(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
@@ -37,8 +40,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     })
     const eventBus = createEventBus()
     documentEvents = []
+    renderedEvents = []
     eventBus.subscribe("invoice.document.generated", (event) => {
       documentEvents.push(event as Record<string, unknown>)
+    })
+    eventBus.subscribe("invoice.rendered", (event) => {
+      renderedEvents.push(event as Record<string, unknown>)
     })
     app.route(
       "/",
@@ -47,11 +54,15 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
         resolveDocumentDownloadUrl: (_bindings, storageKey) =>
           `https://signed.example.com/${storageKey}`,
         invoiceDocumentGenerator: async ({ invoice }) => {
+          if (failNextGeneration) {
+            throw new Error("generation failed")
+          }
           const storageKey = `invoices/${invoice.id}/rendition-${generatedKeys.length + 1}.pdf`
           generatedKeys.push(storageKey)
           return {
             format: "pdf",
             storageKey,
+            contentType: "application/pdf",
             fileSize: 2048,
             checksum: `sha-${generatedKeys.length}`,
             metadata: {
@@ -69,6 +80,8 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     await cleanupTestDb(db)
     generatedKeys = []
     documentEvents = []
+    renderedEvents = []
+    failNextGeneration = false
   })
 
   it("generates and then regenerates a ready invoice rendition", async () => {
@@ -150,6 +163,40 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     expect(renditions).toHaveLength(2)
     expect(renditions.filter((entry) => entry.status === "ready")).toHaveLength(1)
     expect(renditions.filter((entry) => entry.status === "stale")).toHaveLength(1)
+    expect(renderedEvents).toEqual([
+      expect.objectContaining({
+        name: "invoice.rendered",
+        metadata: {
+          category: "internal",
+          source: "service",
+        },
+        data: expect.objectContaining({
+          invoiceId: invoice.id,
+          invoiceType: "invoice",
+          format: "pdf",
+          storageKey: expect.stringContaining("rendition-1.pdf"),
+          contentType: "application/pdf",
+          byteSize: 2048,
+          contentHash: "sha-1",
+        }),
+      }),
+      expect.objectContaining({
+        name: "invoice.rendered",
+        metadata: {
+          category: "internal",
+          source: "service",
+        },
+        data: expect.objectContaining({
+          invoiceId: invoice.id,
+          invoiceType: "invoice",
+          format: "pdf",
+          storageKey: expect.stringContaining("rendition-2.pdf"),
+          contentType: "application/pdf",
+          byteSize: 2048,
+          contentHash: "sha-2",
+        }),
+      }),
+    ])
     expect(documentEvents).toEqual([
       expect.objectContaining({
         name: "invoice.document.generated",
@@ -187,5 +234,180 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     expect(downloadRes.headers.get("location")).toBe(
       `https://signed.example.com/${readyRendition?.storageKey}`,
     )
+  })
+
+  it("binds a ready rendition artifact and emits invoice.rendered", async () => {
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: "INV-BIND-1",
+        invoiceType: "invoice",
+        status: "sent",
+        currency: "EUR",
+        issueDate: "2026-05-01",
+        dueDate: "2026-05-05",
+        subtotalCents: 5000,
+        taxCents: 0,
+        totalCents: 5000,
+        paidCents: 0,
+        balanceDueCents: 5000,
+      })
+      .returning()
+
+    const eventBus = createEventBus()
+    const events: Array<Record<string, unknown>> = []
+    eventBus.subscribe("invoice.rendered", (event) => {
+      events.push(event as Record<string, unknown>)
+    })
+
+    const result = await financeService.bindInvoiceRendition(
+      db,
+      invoice.id,
+      {
+        format: "pdf",
+        storageKey: `invoices/${invoice.id}/rendition.pdf`,
+        contentType: "application/pdf",
+        fileSize: 1234,
+        checksum: "sha256:abc",
+        language: "ro",
+        metadata: { source: "unit-test" },
+      },
+      { eventBus },
+    )
+
+    expect(result.status).toBe("bound")
+    if (result.status !== "bound") return
+    expect(result.rendition).toEqual(
+      expect.objectContaining({
+        invoiceId: invoice.id,
+        status: "ready",
+        storageKey: `invoices/${invoice.id}/rendition.pdf`,
+        fileSize: 1234,
+        checksum: "sha256:abc",
+        language: "ro",
+        metadata: {
+          source: "unit-test",
+          contentType: "application/pdf",
+        },
+      }),
+    )
+    expect(events).toEqual([
+      expect.objectContaining({
+        name: "invoice.rendered",
+        metadata: {
+          category: "internal",
+          source: "service",
+        },
+        data: {
+          invoiceId: invoice.id,
+          invoiceStatus: "sent",
+          invoiceType: "invoice",
+          renditionId: result.rendition.id,
+          format: "pdf",
+          storageKey: `invoices/${invoice.id}/rendition.pdf`,
+          contentType: "application/pdf",
+          byteSize: 1234,
+          contentHash: "sha256:abc",
+        },
+      }),
+    ])
+  })
+
+  it("does not emit rendition completion events when generation fails", async () => {
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: "INV-FAIL-1",
+        invoiceType: "invoice",
+        status: "sent",
+        currency: "EUR",
+        issueDate: "2026-05-01",
+        dueDate: "2026-05-05",
+        subtotalCents: 5000,
+        taxCents: 0,
+        totalCents: 5000,
+        paidCents: 0,
+        balanceDueCents: 5000,
+      })
+      .returning()
+
+    failNextGeneration = true
+    const res = await app.request(`/invoices/${invoice.id}/generate-document`, {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(res.status).toBe(502)
+    expect(documentEvents).toEqual([])
+    expect(renderedEvents).toEqual([])
+
+    const renditions = await db
+      .select()
+      .from(invoiceRenditions)
+      .where(eq(invoiceRenditions.invoiceId, invoice.id))
+    expect(renditions).toEqual([])
+  })
+
+  it("preserves ready URL-only rendition artifacts", async () => {
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: "INV-URL-1",
+        invoiceType: "invoice",
+        status: "sent",
+        currency: "EUR",
+        issueDate: "2026-05-01",
+        dueDate: "2026-05-05",
+        subtotalCents: 5000,
+        taxCents: 0,
+        totalCents: 5000,
+        paidCents: 0,
+        balanceDueCents: 5000,
+      })
+      .returning()
+
+    const eventBus = createEventBus()
+    const events: Array<Record<string, unknown>> = []
+    eventBus.subscribe("invoice.rendered", (event) => {
+      events.push(event as Record<string, unknown>)
+    })
+
+    const result = await financeService.bindInvoiceRendition(
+      db,
+      invoice.id,
+      {
+        format: "pdf",
+        storageKey: null,
+        contentType: "application/pdf",
+        fileSize: 1234,
+        checksum: "sha256:url-only",
+        metadata: {
+          url: "https://files.example.com/invoices/url-only.pdf",
+        },
+      },
+      { eventBus },
+    )
+
+    expect(result.status).toBe("bound")
+    if (result.status !== "bound") return
+    expect(result.rendition.storageKey).toBeNull()
+    expect(result.rendition.status).toBe("ready")
+    expect(result.rendition.metadata).toEqual({
+      url: "https://files.example.com/invoices/url-only.pdf",
+      contentType: "application/pdf",
+    })
+    expect(events).toEqual([
+      expect.objectContaining({
+        name: "invoice.rendered",
+        data: expect.objectContaining({
+          invoiceId: invoice.id,
+          renditionId: result.rendition.id,
+          storageKey: null,
+          contentType: "application/pdf",
+          byteSize: 1234,
+          contentHash: "sha256:url-only",
+        }),
+      }),
+    ])
   })
 })

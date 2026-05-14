@@ -33,6 +33,32 @@ const app = createApp({
 - **Tax regimes** (`txrg`)
 - **Invoice external refs** (`iner`)
 
+## Invoice Rendition Events
+
+Use `financeService.bindInvoiceRendition(db, invoiceId, artifact, { eventBus })`
+when a rendered invoice artifact has already been stored and should be bound to
+the invoice as the ready rendition. The helper creates the `invoice_renditions`
+row with `status: "ready"` inside a transaction, optionally marks previous
+renditions of the same format as `stale` when `replaceExisting` is true, and
+then emits `invoice.rendered` after the transaction commits.
+
+`invoice.rendered` is an internal service event. Subscribers receive metadata
+only:
+
+- `invoiceId`
+- `invoiceStatus`
+- `invoiceType`
+- `renditionId`
+- `format`
+- `storageKey`
+- `contentType`
+- `byteSize`
+- `contentHash`
+
+The event does not include rendered document bodies or signed download URLs.
+Subscriber failures do not roll back the rendition write; use a durable job or
+workflow when a downstream reaction needs retries.
+
 ## Exports
 
 | Entry | Description |
