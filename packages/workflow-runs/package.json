@@ -9,7 +9,8 @@
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./routes": "./src/routes.ts",
-    "./recorder": "./src/recorder.ts"
+    "./recorder": "./src/recorder.ts",
+    "./workflows": "./src/workflows.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -23,12 +24,14 @@
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",
+    "@voyantjs/workflows": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/workflows-orchestrator": "workspace:*",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -64,6 +67,11 @@
         "types": "./dist/recorder.d.ts",
         "import": "./dist/recorder.js",
         "default": "./dist/recorder.js"
+      },
+      "./workflows": {
+        "types": "./dist/workflows.d.ts",
+        "import": "./dist/workflows.js",
+        "default": "./dist/workflows.js"
       }
     }
   },
