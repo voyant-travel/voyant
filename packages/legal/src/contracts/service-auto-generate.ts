@@ -1,6 +1,7 @@
 import { bookingsService } from "@voyantjs/bookings"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import type { ContractLifecycleHook } from "./lifecycle.js"
 import { contractRecordsService } from "./service-contracts.js"
 import type { ContractDocumentGenerator } from "./service-documents.js"
 import { contractDocumentsService } from "./service-documents.js"
@@ -380,6 +381,7 @@ export interface AutoGenerateContractOptions {
 export interface AutoGenerateContractRuntime {
   generator: ContractDocumentGenerator
   eventBus?: import("@voyantjs/core").EventBus
+  lifecycleHooks?: readonly ContractLifecycleHook[]
   /**
    * Runtime bindings forwarded into `resolveVariables` so consumers
    * can read deploy-specific env vars (e.g. `DOCUMENTS_BASE_URL`)
@@ -832,6 +834,7 @@ export async function autoGenerateContractForBooking(
     {
       generator: runtime.generator,
       eventBus: runtime.eventBus,
+      lifecycleHooks: runtime.lifecycleHooks,
     },
   )
 

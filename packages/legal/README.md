@@ -68,6 +68,21 @@ configured `documentStorage`, and persists a contract attachment. `regenerate-pd
 uses the configured contract document generator and replaces the canonical
 generated document artifact.
 
+## Contract Lifecycle
+
+Contract lifecycle transitions are enforced by the contract service:
+
+```text
+draft -> issued -> sent -> signed -> executed
+```
+
+Contracts may be voided from any non-void stage. Each service transition appends
+to `stageHistory` and emits a domain event when an event bus is configured:
+`contract.issued`, `contract.sent`, `contract.signed`, `contract.executed`, or
+`contract.voided`. Event payloads are intentionally minimal: contract IDs,
+relationship IDs, stage names, and timestamps only; rendered bodies, variables,
+metadata, and signature details stay out of the event payload.
+
 ### Policies
 
 - **Policies** (`pol`) — policy definitions by kind (cancellation, payment, T&C, etc.)

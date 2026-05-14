@@ -1,4 +1,5 @@
 import {
+  contractStageHistoryEntrySchema,
   insertContractAttachmentSchema,
   insertContractNumberSeriesSchema,
   insertContractSchema,
@@ -31,6 +32,7 @@ export const successEnvelope = z.object({ success: z.boolean() })
 export const legalContractRecordSchema = insertContractSchema.extend({
   id: z.string(),
   contractNumber: z.string().nullable(),
+  stageHistory: z.array(contractStageHistoryEntrySchema),
   templateVersionId: z.string().nullable(),
   seriesId: z.string().nullable(),
   personId: z.string().nullable(),

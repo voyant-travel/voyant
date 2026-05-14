@@ -19,7 +19,16 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { ArrowLeft, ExternalLink, FileText, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ExternalLink,
+  FileText,
+  Pencil,
+  Plus,
+  Send,
+  Trash2,
+} from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
 
@@ -90,7 +99,7 @@ export function ContractDetailPage({
   const i18n = useLegalUiI18nOrDefault()
   const messages = useLegalUiMessagesOrDefault()
   const f = messages.contractDetailPage
-  const { remove, issue, voidContract } = useLegalContractMutation()
+  const { remove, issue, send, execute, voidContract } = useLegalContractMutation()
   const { remove: removeAttachment } = useLegalContractAttachmentMutation()
 
   const [editOpen, setEditOpen] = useState(false)
@@ -132,7 +141,7 @@ export function ContractDetailPage({
   }
 
   const status = contract.status
-  const canAddSignature = status === "issued" || status === "sent" || status === "signed"
+  const canAddSignature = status === "sent" || status === "signed"
   const renderReferenceValue = (kind: ContractReferenceKind, referenceId: string) =>
     renderReference?.({ kind, id: referenceId, contract }) ?? (
       <span className="font-mono text-xs">{referenceId}</span>
@@ -169,6 +178,18 @@ export function ContractDetailPage({
           {status === "draft" ? (
             <Button size="sm" onClick={() => issue.mutate(id)} disabled={issue.isPending}>
               {f.actions.issue}
+            </Button>
+          ) : null}
+          {status === "issued" ? (
+            <Button size="sm" onClick={() => send.mutate(id)} disabled={send.isPending}>
+              <Send className="mr-2 size-4" aria-hidden="true" />
+              {f.actions.send}
+            </Button>
+          ) : null}
+          {status === "signed" ? (
+            <Button size="sm" onClick={() => execute.mutate(id)} disabled={execute.isPending}>
+              <CheckCircle2 className="mr-2 size-4" aria-hidden="true" />
+              {f.actions.execute}
             </Button>
           ) : null}
           {status !== "void" ? (

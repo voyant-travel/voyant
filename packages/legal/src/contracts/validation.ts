@@ -13,6 +13,14 @@ export const contractStatusSchema = z.enum([
   "void",
 ])
 
+export const contractStageHistoryEntrySchema = z.object({
+  stage: contractStatusSchema,
+  previousStage: contractStatusSchema.nullable(),
+  transition: z.enum(["created", "issued", "sent", "signed", "executed", "voided"]),
+  enteredAt: z.string(),
+  actorId: z.string().nullable().optional(),
+})
+
 export const contractSignatureMethodSchema = z.enum(["manual", "electronic", "docusign", "other"])
 
 export const contractNumberResetStrategySchema = z.enum(["never", "annual", "monthly"])
@@ -128,7 +136,12 @@ const contractCoreSchema = z.object({
 })
 
 export const insertContractSchema = contractCoreSchema
-export const updateContractSchema = contractCoreSchema.partial()
+export const updateContractSchema = contractCoreSchema
+  .omit({ status: true, language: true })
+  .extend({
+    language: z.string().min(2).max(10).optional(),
+  })
+  .partial()
 
 export const contractListQuerySchema = paginationSchema.extend({
   scope: contractScopeSchema.optional(),
