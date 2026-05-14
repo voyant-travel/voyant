@@ -10,6 +10,8 @@ import {
 import {
   storefrontDepartureListQuerySchema,
   storefrontDeparturePricePreviewInputSchema,
+  storefrontOfferApplyInputSchema,
+  storefrontOfferRedeemInputSchema,
   storefrontProductAvailabilitySummaryQuerySchema,
   storefrontProductExtensionsQuerySchema,
   storefrontPromotionalOfferListQuerySchema,
@@ -117,6 +119,27 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       })
 
       return offer ? c.json({ data: offer }) : c.json({ error: "Storefront offer not found" }, 404)
+    })
+    .post("/offers/:slug/apply", async (c) => {
+      const result = await storefrontService.applyOffer({
+        slug: c.req.param("slug"),
+        body: await parseJsonBody(c, storefrontOfferApplyInputSchema),
+        context: getRequestContext(c),
+      })
+
+      return result
+        ? c.json({ data: result })
+        : c.json({ error: "Storefront offer application is not configured" }, 501)
+    })
+    .post("/offers/redeem", async (c) => {
+      const result = await storefrontService.redeemOffer({
+        body: await parseJsonBody(c, storefrontOfferRedeemInputSchema),
+        context: getRequestContext(c),
+      })
+
+      return result
+        ? c.json({ data: result })
+        : c.json({ error: "Storefront offer redemption is not configured" }, 501)
     })
 }
 

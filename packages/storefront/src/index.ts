@@ -12,9 +12,13 @@ export type {
 } from "./service.js"
 export { createStorefrontService, resolveStorefrontSettings } from "./service.js"
 export type {
+  StorefrontAppliedOffer,
   StorefrontDepartureListQuery,
   StorefrontFormField,
   StorefrontFormFieldInput,
+  StorefrontOfferApplyInput,
+  StorefrontOfferMutationResult,
+  StorefrontOfferRedeemInput,
   StorefrontPaymentMethod,
   StorefrontPaymentMethodCode,
   StorefrontPaymentMethodInput,
@@ -24,6 +28,7 @@ export type {
   StorefrontSettingsInput,
 } from "./validation.js"
 export {
+  storefrontAppliedOfferSchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -34,6 +39,14 @@ export {
   storefrontFormFieldOptionSchema,
   storefrontFormFieldSchema,
   storefrontFormFieldTypeSchema,
+  storefrontOfferApplyInputSchema,
+  storefrontOfferAudienceSchema,
+  storefrontOfferConflictSchema,
+  storefrontOfferMutationReasonSchema,
+  storefrontOfferMutationResponseSchema,
+  storefrontOfferMutationResultSchema,
+  storefrontOfferMutationStatusSchema,
+  storefrontOfferRedeemInputSchema,
   storefrontPaymentMethodCodeSchema,
   storefrontPaymentMethodInputSchema,
   storefrontPaymentMethodSchema,
