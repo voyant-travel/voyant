@@ -1,5 +1,11 @@
 # @voyantjs/workflows
 
+## 0.41.3
+
+### Patch Changes
+
+- 2c3bd2e: Add default export conditions to the published workflows subpaths so tooling that uses default/CJS-style resolution can load `@voyantjs/workflows/events`.
+
 ## 0.41.2
 
 ## 0.41.1
