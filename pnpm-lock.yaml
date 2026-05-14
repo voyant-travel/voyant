@@ -4660,6 +4660,9 @@ importers:
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
+      '@voyantjs/crm':
+        specifier: workspace:*
+        version: link:../crm
       '@voyantjs/extras':
         specifier: workspace:*
         version: link:../extras

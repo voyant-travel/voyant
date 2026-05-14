@@ -105,6 +105,8 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/storefront-verification",
     "/v1/public/checkout",
     "/v1/public/invitations",
+    "/v1/public/leads",
+    "/v1/public/newsletter",
   ],
   modules: [
     crmHonoModule,

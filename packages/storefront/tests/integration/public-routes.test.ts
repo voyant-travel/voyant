@@ -1,4 +1,6 @@
 import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
+import { createEventBus } from "@voyantjs/core"
+import { customerSignals } from "@voyantjs/crm/schema"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { productExtras } from "@voyantjs/extras/schema"
 import {
@@ -17,8 +19,9 @@ import {
   productOptions,
   products,
 } from "@voyantjs/products/schema"
+import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
 
@@ -37,6 +40,184 @@ const app = new Hono()
 describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
   beforeEach(async () => {
     await cleanupTestDb(db)
+  })
+
+  it("creates a CRM customer signal for public lead intake", async () => {
+    const eventBus = createEventBus()
+    const events: unknown[] = []
+    eventBus.subscribe("customer.signal.created", (event) => {
+      events.push(event)
+    })
+    const intakeApp = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        await next()
+      })
+      .route("/", createStorefrontPublicRoutes())
+
+    const res = await intakeApp.request("/leads", {
+      method: "POST",
+      body: JSON.stringify({
+        kind: "request_offer",
+        source: "form",
+        contact: {
+          name: "Ana Popescu",
+          email: "ana@example.com",
+          phone: "+40723123456",
+        },
+        productId: "prod_public_intake",
+        optionUnitId: "ount_public_intake",
+        notes: "Interested in a private trip.",
+        sourceSubmissionId: "lead_form_123",
+        payload: {
+          travelers: 4,
+          month: "August",
+        },
+        consent: {
+          gdpr: true,
+          marketing: true,
+          scope: "lead-follow-up",
+          acceptedAt: "2026-05-14T10:00:00.000Z",
+        },
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+    })
+
+    expect(res.status).toBe(201)
+    const body = await res.json()
+    expect(body.data).toMatchObject({
+      kind: "request_offer",
+      source: "form",
+      status: "new",
+      duplicate: false,
+    })
+
+    const [signal] = await db
+      .select()
+      .from(customerSignals)
+      .where(eq(customerSignals.id, body.data.id))
+      .limit(1)
+
+    expect(signal).toMatchObject({
+      personId: body.data.personId,
+      productId: "prod_public_intake",
+      optionUnitId: "ount_public_intake",
+      kind: "request_offer",
+      source: "form",
+      sourceSubmissionId: "lead_form_123",
+    })
+    expect(signal.metadata).toMatchObject({
+      intake: { surface: "storefront", type: "lead" },
+      payload: { travelers: 4, month: "August" },
+      consent: { gdpr: true, marketing: true, scope: "lead-follow-up" },
+    })
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchObject({
+      name: "customer.signal.created",
+      data: {
+        id: body.data.id,
+        personId: body.data.personId,
+        intake: { surface: "storefront", type: "lead" },
+      },
+      metadata: { category: "domain", source: "route" },
+    })
+  })
+
+  it("records newsletter subscriptions idempotently and requests double opt-in once", async () => {
+    const requestNewsletterDoubleOptIn = vi.fn()
+    const eventBus = createEventBus()
+    const events: unknown[] = []
+    eventBus.subscribe("customer.signal.created", (event) => {
+      events.push(event)
+    })
+    const intakeApp = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        await next()
+      })
+      .route(
+        "/",
+        createStorefrontPublicRoutes({
+          intake: { requestNewsletterDoubleOptIn },
+        }),
+      )
+
+    const payload = {
+      email: "NEWS@example.com",
+      name: "Newsletter Reader",
+      sourceSubmissionId: "newsletter_homepage_news@example.com",
+      payload: {
+        campaign: "homepage",
+      },
+      consent: {
+        newsletter: true,
+        gdpr: true,
+        scope: "newsletter",
+      },
+    }
+
+    const first = await intakeApp.request("/newsletter/subscribe", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "content-type": "application/json" },
+    })
+    const second = await intakeApp.request("/newsletter/subscribe", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(first.status).toBe(202)
+    expect(second.status).toBe(202)
+    const firstBody = await first.json()
+    const secondBody = await second.json()
+    expect(firstBody.data).toMatchObject({
+      kind: "notify",
+      duplicate: false,
+      doubleOptIn: "requested",
+    })
+    expect(secondBody.data).toMatchObject({
+      id: firstBody.data.id,
+      duplicate: true,
+      doubleOptIn: "requested",
+    })
+    expect(requestNewsletterDoubleOptIn).toHaveBeenCalledTimes(1)
+    expect(requestNewsletterDoubleOptIn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "news@example.com",
+        signalId: firstBody.data.id,
+        sourceSubmissionId: "newsletter_homepage_news@example.com",
+      }),
+    )
+
+    const rows = await db
+      .select()
+      .from(customerSignals)
+      .where(
+        and(
+          eq(customerSignals.kind, "notify"),
+          eq(customerSignals.sourceSubmissionId, "newsletter_homepage_news@example.com"),
+        ),
+      )
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.metadata).toMatchObject({
+      intake: { surface: "storefront", type: "newsletter" },
+      newsletter: { email: "news@example.com", doubleOptIn: "requested" },
+      payload: { campaign: "homepage" },
+      consent: { newsletter: true, gdpr: true, scope: "newsletter" },
+    })
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchObject({
+      data: {
+        id: firstBody.data.id,
+        intake: { surface: "storefront", type: "newsletter", doubleOptIn: "requested" },
+      },
+    })
   })
 
   it("returns public departures for a product", async () => {

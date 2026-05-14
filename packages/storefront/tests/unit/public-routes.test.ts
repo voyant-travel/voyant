@@ -1,5 +1,5 @@
 import { Hono } from "hono"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
 
@@ -159,6 +159,46 @@ describe("createStorefrontPublicRoutes", () => {
         },
       },
     })
+  })
+
+  it("lets host apps reject public intake through the guard hook", async () => {
+    const guard = vi.fn(() => ({
+      allowed: false,
+      status: 429 as const,
+      error: "Captcha required",
+    }))
+    const app = new Hono().route(
+      "/",
+      createStorefrontPublicRoutes({
+        intake: { guard },
+      }),
+    )
+
+    const res = await app.request("/leads", {
+      method: "POST",
+      body: JSON.stringify({
+        contact: {
+          email: "ana@example.com",
+        },
+        consent: {
+          gdpr: true,
+        },
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+    })
+
+    expect(res.status).toBe(429)
+    expect(await res.json()).toEqual({ error: "Captcha required" })
+    expect(guard).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "lead",
+        body: expect.objectContaining({
+          contact: expect.objectContaining({ email: "ana@example.com" }),
+        }),
+      }),
+    )
   })
 
   it("resolves storefront settings from request context", async () => {

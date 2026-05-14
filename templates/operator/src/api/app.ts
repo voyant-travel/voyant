@@ -769,6 +769,10 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/products",
     "/v1/public/cruises",
     "/v1/public/hospitality",
+    // Storefront public CRM intake. Host deployments can wire captcha /
+    // rate-limit checks through the storefront intake guard.
+    "/v1/public/leads",
+    "/v1/public/newsletter",
     // Storefront contract preview — the booking journey resolves the
     // active customer-scope template and renders its preview HTML
     // before the customer accepts. Both the slug-resolution lookup

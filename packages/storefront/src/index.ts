@@ -11,12 +11,25 @@ export type {
   StorefrontServiceOptions,
 } from "./service.js"
 export { createStorefrontService, resolveStorefrontSettings } from "./service.js"
+export type {
+  StorefrontIntakeGuard,
+  StorefrontIntakeGuardDecision,
+  StorefrontIntakeOptions,
+  StorefrontNewsletterDoubleOptInHook,
+} from "./service-intake.js"
+export { CUSTOMER_SIGNAL_CREATED_EVENT } from "./service-intake.js"
 export { evaluateStorefrontTransportEligibility } from "./service-transport-eligibility.js"
 export type {
   StorefrontAppliedOffer,
   StorefrontDepartureListQuery,
   StorefrontFormField,
   StorefrontFormFieldInput,
+  StorefrontIntakeConsent,
+  StorefrontIntakeResponse,
+  StorefrontLeadContact,
+  StorefrontLeadIntakeInput,
+  StorefrontNewsletterSubscribeInput,
+  StorefrontNewsletterSubscribeResponse,
   StorefrontOfferApplyInput,
   StorefrontOfferMutationResult,
   StorefrontOfferRedeemInput,
@@ -40,6 +53,12 @@ export {
   storefrontFormFieldOptionSchema,
   storefrontFormFieldSchema,
   storefrontFormFieldTypeSchema,
+  storefrontIntakeConsentSchema,
+  storefrontIntakeResponseSchema,
+  storefrontLeadContactSchema,
+  storefrontLeadIntakeInputSchema,
+  storefrontNewsletterSubscribeInputSchema,
+  storefrontNewsletterSubscribeResponseSchema,
   storefrontOfferApplyInputSchema,
   storefrontOfferAudienceSchema,
   storefrontOfferConflictSchema,

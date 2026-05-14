@@ -3,6 +3,45 @@
 Public storefront routes and service helpers for checkout-adjacent product, departure,
 offer, and eligibility flows.
 
+## Public Intake
+
+Storefront can accept public CRM intake at the public root:
+
+- `POST /leads`
+- `POST /newsletter/subscribe`
+
+When mounted through `createStorefrontHonoModule`, these become
+`/v1/public/leads` and `/v1/public/newsletter/subscribe`.
+
+Both routes create a CRM person and a CRM customer signal. Lead intake accepts
+the CRM signal `kind`, `source`, product/option references, bounded payload
+metadata, and consent metadata. Newsletter intake records a `notify` signal and
+uses `sourceSubmissionId` for idempotency; when omitted, the email address is
+used to derive a stable newsletter submission key.
+
+```ts
+import { createStorefrontHonoModule } from "@voyantjs/storefront"
+
+createStorefrontHonoModule({
+  intake: {
+    guard({ body, context }) {
+      // Install host-owned rate-limit, captcha, signature, or abuse checks.
+      if (!isCaptchaValid(body, context)) {
+        return { allowed: false, status: 429, error: "Captcha required" }
+      }
+    },
+    async requestNewsletterDoubleOptIn({ email, signalId }) {
+      await sendDoubleOptInEmail(email, { signalId })
+    },
+  },
+})
+```
+
+Accepted intake emits `customer.signal.created` on the app event bus with
+`metadata.category: "domain"` and an `intake` payload describing whether the
+signal came from `lead` or `newsletter` intake. Notification adapters can
+subscribe to that event to send CRM email, Slack, or other operator alerts.
+
 ## Transport Eligibility
 
 Storefronts can check whether traveler document facts satisfy departure-level
