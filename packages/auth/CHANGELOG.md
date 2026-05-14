@@ -1,5 +1,16 @@
 # @voyantjs/auth
 
+## 0.43.0
+
+### Minor Changes
+
+- d07215e: Add first-class API token rotation and audit-facing token context. The auth facade now supports `POST /auth/api-tokens/:keyId/rotate`, the React hooks and UI expose rotation, and Hono request context includes `apiTokenId` for downstream audit log writers.
+
+### Patch Changes
+
+- @voyantjs/db@0.43.0
+- @voyantjs/utils@0.43.0
+
 ## 0.42.0
 
 ### Patch Changes

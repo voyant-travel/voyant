@@ -1,5 +1,19 @@
 # @voyantjs/workflow-runs
 
+## 0.43.0
+
+### Minor Changes
+
+- 9457156: Add an admin workflow trigger-by-name route at `POST /v1/admin/workflows/:name/runs` backed by explicitly triggerable `WorkflowRunnerRegistry` entries.
+
+### Patch Changes
+
+- Updated dependencies [d07215e]
+  - @voyantjs/core@0.43.0
+  - @voyantjs/db@0.43.0
+  - @voyantjs/hono@0.43.0
+  - @voyantjs/workflows@0.43.0
+
 ## 0.42.0
 
 ### Patch Changes
