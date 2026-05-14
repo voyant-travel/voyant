@@ -1,5 +1,12 @@
 # @voyantjs/facilities-react
 
+## 0.46.0
+
+### Patch Changes
+
+- @voyantjs/facilities@0.46.0
+- @voyantjs/react@0.46.0
+
 ## 0.45.0
 
 ### Patch Changes

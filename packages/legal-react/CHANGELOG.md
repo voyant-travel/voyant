@@ -1,5 +1,17 @@
 # @voyantjs/legal-react
 
+## 0.46.0
+
+### Minor Changes
+
+- 72b99b2: Add explicit default storefront contract templates with optional channel scoping and selector fallback support.
+
+### Patch Changes
+
+- Updated dependencies [72b99b2]
+  - @voyantjs/legal@0.46.0
+  - @voyantjs/react@0.46.0
+
 ## 0.45.0
 
 ### Patch Changes

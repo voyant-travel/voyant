@@ -1,5 +1,15 @@
 # @voyantjs/crm
 
+## 0.46.0
+
+### Patch Changes
+
+- @voyantjs/core@0.46.0
+- @voyantjs/db@0.46.0
+- @voyantjs/hono@0.46.0
+- @voyantjs/identity@0.46.0
+- @voyantjs/utils@0.46.0
+
 ## 0.45.0
 
 ### Patch Changes

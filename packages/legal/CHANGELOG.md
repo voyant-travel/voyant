@@ -1,5 +1,22 @@
 # @voyantjs/legal
 
+## 0.46.0
+
+### Minor Changes
+
+- 72b99b2: Add explicit default storefront contract templates with optional channel scoping and selector fallback support.
+
+### Patch Changes
+
+- @voyantjs/bookings@0.46.0
+- @voyantjs/core@0.46.0
+- @voyantjs/crm@0.46.0
+- @voyantjs/db@0.46.0
+- @voyantjs/hono@0.46.0
+- @voyantjs/storage@0.46.0
+- @voyantjs/suppliers@0.46.0
+- @voyantjs/utils@0.46.0
+
 ## 0.45.0
 
 ### Patch Changes
