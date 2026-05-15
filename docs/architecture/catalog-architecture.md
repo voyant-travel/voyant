@@ -60,7 +60,7 @@ The two layers connect at two clean seams:
 - **Booking-time immutability.** A booking captures a frozen, self-contained view of what was sold — even if the upstream source mutates or disappears later.
 - **Source-extensibility through a public adapter contract.** Adding a new source — a GDS, a new direct API, a new bedbank, a wholesaler's own integration, a cruise line's direct feed, an operator's hand-rolled connector — is an adapter that emits into the catalog plane against a documented, stable contract. The contract is intended as a public extension point: any third party (Voyant Connect, a wholesaler's engineering team, an operator, a system integrator) can build an adapter and plug it in without changes to bookings, finance, CRM, or the catalog plane itself. No source is privileged; Voyant Connect is one adapter among many that satisfy the same contract.
 - **Near-real-time cross-deployment freshness via webhooks.** When Operator A's catalog mutates (price, availability, edits, bookings reducing inventory), Agency B reselling A's inventory learns within seconds — not via polling. The catalog plane defines the event taxonomy and visibility-filtered payloads (§5.8); Voyant's existing webhook subscription / delivery infrastructure handles transport. Same mechanism serves third-party CMS sync, partner storefront updates, and any other external consumer.
-- **A foundation that supports first-class semantic search and AI agent access in Phase 2.** Phase 1 ships keyword and hybrid-keyword search via the indexer; vector support flags on the `IndexerAdapter` capabilities reserve the seam for Phase 2 without contract churn. Phase 2 — designed in [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) — adds embeddings, the `EmbeddingProvider` contract, per-audience embedding pools with isolation guarantees, and the MCP server. Phase 1 is complete and useful as keyword search without any of Phase 2 landing.
+- **A foundation that supports first-class semantic search and AI agent access in Phase 2.** Phase 1 ships keyword and hybrid-keyword search via the indexer; vector support flags on the `IndexerAdapter` capabilities reserve the seam for Phase 2 without contract churn. Phase 2 — designed in [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) — adds embeddings, the `EmbeddingProvider` contract, per-audience embedding pools with isolation guarantees, and the `@voyantjs/catalog-mcp` tool package. Phase 1 is complete and useful as keyword search without any of Phase 2 landing.
 - **Coordinated adoption across all existing verticals in Phase 1, with explicit per-vertical participation scope.** The catalog plane and adoption by every existing vertical (`products`, `cruises`, `hospitality`, `charters`, `extras`) ship together. Each vertical's intended-for-Phase-1 participation is fully live at release; there is no transitional period where a vertical's intended scope is partially delivered. **`extras` is a deliberate bounded exception**: it adopts the snapshot and provenance shapes only, with full overlay / indexer participation explicitly deferred per §3.3.1. That is its intended Phase 1 scope, not a transitional gap. The architecture accepts varied participation depths across verticals; what it rules out is shipping with a vertical's intended scope half-implemented.
 
 ### Non-goals (for v1)
@@ -132,11 +132,11 @@ packages/extras        booking add-ons: optional line items layered on a booked 
                        (not independently sellable; see §3.3.1 for adoption nuance)
 ```
 
-Verticals that may be added later if real cases demand them:
+Additional verticals / operational packages:
 
 - **Composite tour-package module** — for TUI-style flight + hotel + transfer bundles. Today, multi-component sellables are modeled either inside `products` or via cross-module links. A dedicated composite module would appear if reseller scenarios make package-level pricing, cancellation, and snapshot semantics non-trivial.
-- **`packages/flights`** — partial-adoption vertical for live-API flight search and booking. Borrows voyant-cloud's `FlightConnectorAdapter` contract verbatim. Participates in the catalog plane only for booking snapshots, provenance, webhook events, and source disconnection — explicitly opts out of search index, overlays, embeddings, and drift detection. Designed in [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) (Phase 3).
-- **`packages/transfers-only`** — analogous live-API vertical for ground transfers; relevant only if Voyant expands beyond tour-operator / DMC / expedition-operator positioning into OTA / agency surfaces.
+- **`packages/flights`** — partial-adoption vertical for live-API flight search and booking. Borrows voyant-cloud's `FlightConnectorAdapter` contract shape. Participates in the catalog plane only for booking snapshots, provenance, webhook events, and source disconnection — explicitly opts out of search index, overlays, embeddings, and drift detection. Designed in [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) (Phase 3).
+- **`packages/ground`** — operational ground-transport module for operators, vehicles, drivers, dispatch, execution, assignments, positions, shifts, and related workflows. It is not the same as a catalog-projected transfer-only vertical; a sellable transfer/search surface is still a separate design question if Voyant needs OTA-style transfer composition.
 
 The shared catalog package:
 
@@ -156,7 +156,11 @@ packages/catalog       shared cross-cutting infrastructure:
                          consumed by the existing webhook delivery pipeline (§5.8)
 ```
 
-Phase 2 (RAG, see `catalog-rag-architecture.md`) lands as a sibling package `packages/catalog-rag` carrying `src/embeddings/`, `src/pipeline/`, `src/search/semantic.ts`, and `src/mcp/`. Phase 3 (Flights, see `catalog-flights-architecture.md`) lands as `packages/flights`. Neither modifies `packages/catalog`.
+Phase 2 (RAG, see `catalog-rag-architecture.md`) lives in sibling packages:
+`packages/catalog-rag` carries embeddings and semantic/federated search, while
+`packages/catalog-mcp` carries transport-agnostic MCP tool definitions and the
+catalog tool registry. Phase 3 (Flights, see `catalog-flights-architecture.md`)
+lives as `packages/flights`. None of these modifies `packages/catalog`.
 
 Vertical packages depend on `packages/catalog` for the contract types and the shared infrastructure interfaces. `packages/catalog` does not depend on any vertical module — it knows nothing about cruises, hospitality, or charters specifically.
 
@@ -782,7 +786,10 @@ This division mirrors the rule from [`cross-module-indexing-and-projection-polic
 
 ### 5.9. Semantic search, embeddings, and AI agent access (RAG) — Phase 2
 
-Semantic search, vector embeddings, AI agent access patterns, and the MCP server are designed in detail in [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) and ship in **Phase 2** of the catalog plane.
+Semantic search, vector embeddings, AI agent access patterns, and the MCP tool
+package are designed in detail in
+[`catalog-rag-architecture.md`](./catalog-rag-architecture.md) and ship in
+**Phase 2** of the catalog plane.
 
 What stays in this Phase 1 doc:
 
@@ -792,12 +799,12 @@ What stays in this Phase 1 doc:
 What lives in `catalog-rag-architecture.md` (Phase 2):
 
 - The architectural commitment that AI agents query via API / MCP, never direct DB.
-- The `EmbeddingProvider` contract and default OpenAI / Voyage AI / local providers.
+- The `EmbeddingProvider` contract and current OpenAI / Gemini providers.
 - Async embedding generation pipeline.
 - Per-audience embedding pools and isolation guarantees.
 - Embedding model versioning and re-embedding tooling.
 - The `/v1/{admin,public}/{vertical}/search?mode=semantic|hybrid|keyword` API mode parameter.
-- The MCP server scaffolding.
+- The separate `@voyantjs/catalog-mcp` package's tool definitions and registry.
 
 Phase 2 builds on top of Phase 1 without changing the field-policy contract, the overlay store, the snapshot graph, or the source-adapter contract. Phase 1 is complete and useful as keyword + hybrid-keyword search without any of Phase 2 landing.
 

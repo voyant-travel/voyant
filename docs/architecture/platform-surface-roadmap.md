@@ -31,6 +31,10 @@ For canonical notification delivery and provider-resolution rules, see
 For shared authentication, identity, and actor-context rules, see
 [Voyant Auth And Identity Architecture](./auth-identity-architecture.md).
 
+For actor attribution, capability checks, approval gates, action history, and
+domain-level reversal before broad AI automation, see
+[Action Ledger, Roles, And Reversibility](./action-ledger-roles-and-reversibility.md).
+
 For the shared admin runtime, extension surface, and localization model, see
 [Voyant Admin Architecture](./admin-architecture.md).
 

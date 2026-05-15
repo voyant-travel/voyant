@@ -16,6 +16,12 @@ composition module that turns customer intent into a priced, holdable,
 checkout-ready itinerary. AI agents, staff quote builders, storefront wizards,
 and partner APIs can all call that same module.
 
+Implementation status: `@voyantjs/travel-composer` does **not** exist yet.
+This is the active planning reference for that package. The surrounding
+building blocks listed below exist in varying depth; the composer work should
+reuse them rather than introduce parallel planning, quoting, holding, checkout,
+or AI-tool infrastructure.
+
 ## 1. Current foundation
 
 Voyant already has many of the required primitives:
@@ -23,15 +29,41 @@ Voyant already has many of the required primitives:
 - **Catalog plane** for normalized discovery across operated and sourced
   inventory, with resolved views, provenance, overlays, search, and booking
   snapshots.
-- **Catalog RAG and MCP scaffolding** for AI-safe access to search, resolved
-  entities, alternatives, live availability, and live quote paths.
-- **Flights vertical** shape for live-API flight search, repricing, booking,
-  order lookup, and cancellation.
-- **Booking Sessions** for public hold/reserve flows.
-- **Checkout** for collection plans and payment-session/bootstrap flows.
-- **Workflows** for durable orchestration, retries, and compensation.
+- **Catalog booking engine** in `@voyantjs/catalog/booking-engine` for
+  per-line `quoteEntity`, `bookEntity`, `cancelEntity`, `catalog_quotes`,
+  `booking_drafts`, `BookingDraftShape`, owned-handler dispatch, and
+  snapshot capture.
+- **Pre-booking holds** through `booking_drafts` plus `availability_holds` for
+  owned product slots. The operator template ships a scheduled draft reaper
+  that releases expired holds and deletes abandoned drafts.
+- **Catalog RAG** in `@voyantjs/catalog-rag` for embedding providers,
+  semantic/hybrid search orchestration, model-version helpers, and
+  cross-audience federated search.
+- **Catalog MCP** in `@voyantjs/catalog-mcp` for AI-safe catalog tools:
+  `search_catalog`, `get_entity`, `suggest_alternatives`,
+  `check_availability`, and `get_quote`.
+- **Flights vertical** in `@voyantjs/flights` for live-API flight contracts,
+  multi-connection fan-out, itinerary fingerprinting, booking snapshots, and
+  reference-data provider contracts. Public/admin route mounting remains a
+  template concern.
+- **Ground transport** in `@voyantjs/ground` for operators, vehicles,
+  drivers, dispatch, execution, assignments, positions, shifts, and related
+  operational records.
+- **Booking Sessions** for public booking-session flows and scoped checkout
+  capabilities, including storefront bootstrap paths.
+- **Checkout** for collection plans, bank-transfer/card initiation, and
+  booking-session-backed collection bootstrap.
+- **Operator storefront checkout wiring** for `POST
+  /v1/public/catalog/checkout/start`, including card, bank transfer, inquiry,
+  and hold intents. This is currently template-owned glue, not a reusable
+  composer API.
+- **Workflows** for durable orchestration, retries, compensation, and the
+  booking-engine checkout-finalize flow.
 - **Storefront/public contracts** that separate customer-facing routes from
   admin CRUD semantics.
+- **React/runtime layers** such as `catalog-react`, `storefront-react`,
+  `checkout-react`, and source-installed UI packages that keep public flows
+  reusable without owning the final storefront shell.
 
 The missing piece is not more CRUD around those modules. The missing piece is a
 first-class **composition layer** between catalog discovery and the commercial
@@ -90,6 +122,8 @@ The composer owns the pre-commitment itinerary composition lifecycle:
 It does not own:
 
 - catalog indexing or semantic search
+- catalog MCP discovery tools
+- single-line booking journey state
 - vertical-specific pricing topology
 - payment-provider integration
 - final storefront brand/UI shell
@@ -131,8 +165,15 @@ One proposed component of an Itinerary Draft. It may reference:
 
 - a CatalogEntry
 - a vertical-specific live offer, such as a flight offer
+- a catalog booking-engine `booking_drafts` row and/or `catalog_quotes` row for
+  a single bookable line
 - a freeform placeholder needing staff action
 - an informational/non-sellable activity
+
+Do not overload the booking engine's `booking_drafts` table with the whole
+multi-line itinerary. A booking draft is a per-line, resumable booking-journey
+primitive. An Itinerary Draft is the multi-line composition envelope that can
+point at zero or more booking drafts.
 
 ### Priced Draft
 
@@ -143,6 +184,11 @@ timestamps, warnings, unavailable items, or alternatives.
 
 A Draft whose selected items have been held or booked upstream and converted
 into Voyant's Booking Session / Booking / Order structures as appropriate.
+
+A Reserved Draft may resolve to one Booking with many items, multiple Bookings
+under a booking group, or a future package-level transactional record. The
+composer must keep that grouping decision behind its service interface until a
+formal `PackageOffer` / composite package vertical exists.
 
 ### Experience Session
 
@@ -179,7 +225,26 @@ Each vertical keeps its own truth:
 
 The composer coordinates verticals. It does not flatten them.
 
-### 5.3. Commercial ladder
+### 5.3. Catalog booking engine and booking drafts
+
+The single-line booking journey and catalog booking engine now provide the
+leaf primitives the composer should reuse:
+
+- `BookingDraftShape` describes one bookable line's required steps, traveler
+  fields, payment intents, accommodation sub-steps, and add-ons.
+- `booking_drafts` stores one resumable pre-booking-row draft for that line.
+- `catalog_quotes` stores short-lived live pricing for that line.
+- `quoteEntity` and `bookEntity` dispatch to the correct owned handler or
+  source adapter and capture booking snapshots.
+
+The composer should hold N Draft Items and call those primitives per item. It
+should not create a second single-line booking engine, and it should not force
+the booking journey to understand a whole custom itinerary.
+
+Current caveat: `booking_drafts.current_quote_id` is one-to-one. The composer
+must store quote references per Draft Item, not on the Itinerary Draft root.
+
+### 5.4. Commercial ladder
 
 Voyant's ladder remains:
 
@@ -198,17 +263,22 @@ the cross-vertical transactional artifact. If package-level cancellation,
 terms, pricing, margin, and snapshot semantics become non-trivial, a dedicated
 composite package vertical likely earns its keep.
 
-### 5.4. Booking Sessions
+### 5.5. Booking Sessions
 
-Booking Sessions already support public hold/reserve flows, but they are too
-late and too item-concrete to be the full AI planning state. The composer should
-create or update Booking Sessions only after a Draft has been priced and the
-customer asks to reserve/buy.
+Booking Sessions support public customer checkout state after a booking row
+exists, protected by a scoped checkout capability. The storefront also exposes
+booking-session bootstrap helpers for customer-facing product departures.
 
-### 5.5. Checkout
+They are too late and too item-concrete to be the full AI planning state. The
+composer should create or update Booking Sessions only after a Draft has been
+priced and the customer asks to reserve/buy, or when handing a single Draft Item
+to the existing booking journey.
+
+### 5.6. Checkout
 
 Checkout remains provider-agnostic. The composer should call checkout once it
-has a booking-backed or session-backed target and a clear collection intent:
+has a booking-backed or booking-session-backed target and a clear collection
+intent, using the existing collection primitives:
 
 - deposit
 - full amount
@@ -217,7 +287,11 @@ has a booking-backed or session-backed target and a clear collection intent:
 - bank transfer
 - card
 
-### 5.6. Workflows
+The relevant code surface is `previewCheckoutCollection`,
+`initiateCheckoutCollection`, and `bootstrapCheckoutCollection`; the composer
+should not mint arbitrary payment amounts in a public flow.
+
+### 5.7. Workflows
 
 Cross-vertical reserve/buy is a saga. Use workflows for:
 
@@ -230,10 +304,24 @@ Cross-vertical reserve/buy is a saga. Use workflows for:
 - starting checkout
 - sending notifications
 
+Do not put cross-item compensation in a prompt, route handler, or React hook.
+The reserve/buy path needs an explicit workflow/service boundary with durable
+step recording, because partial upstream holds are normal in multi-vertical
+travel composition.
+
 ## 6. AI tool surface
 
-The existing MCP catalog tools are necessary but not sufficient. AI Travel
-Experiences need composition tools on top.
+The existing MCP catalog tools are necessary but not sufficient.
+
+Already shipped catalog tools:
+
+- `search_catalog`
+- `get_entity`
+- `suggest_alternatives`
+- `check_availability`
+- `get_quote`
+
+AI Travel Experiences need composition tools on top of those catalog tools.
 
 Candidate tools:
 
@@ -289,7 +377,8 @@ Framework-owned:
 
 - public contracts for experience sessions and drafts
 - React hooks for composer state
-- MCP/tool definitions
+- MCP/tool definitions for composer operations, layered above
+  `@voyantjs/catalog-mcp`
 - workflow helpers
 - default policy implementation
 - source-installed UI blocks for chat, itinerary cards, alternative selection,
@@ -337,7 +426,9 @@ itinerary_drafts
   total_amount_cents
   pricing_status
   reserved_booking_id
+  reserved_booking_group_id
   checkout_session_id
+  checkout_collection_id
   created_at
   updated_at
 
@@ -356,6 +447,12 @@ itinerary_draft_items
   item_kind
   vertical
   entity_id
+  booking_draft_id
+  quote_id
+  booking_id
+  booking_item_id
+  hold_token
+  hold_expires_at
   source_offer_id
   source_snapshot_id
   title
@@ -378,8 +475,13 @@ experience_tool_events
 ```
 
 Do not commit to this schema prematurely. The important decision is the seam:
-planning state is separate from Booking Session state until the customer asks
-to reserve or buy.
+multi-line planning state is separate from per-line `booking_drafts` and from
+Booking Session state until the customer asks to reserve or buy.
+
+Avoid making the root draft depend on exactly one Booking. Multi-line
+composition may need one Booking with many items, several Bookings under a
+group, or a later `PackageOffer`/package vertical. The schema should preserve
+line-level commit references and an optional aggregate reference.
 
 ## 10. Reserve / buy workflow
 
@@ -387,20 +489,24 @@ High-level reserve flow:
 
 1. Load selected Itinerary Draft.
 2. Validate required customer and traveler information.
-3. Reprice every selected item through its vertical or source adapter.
-4. Check availability for every selected item.
-5. Apply policy gates: budget, terms, expiry, PII, unsupported items.
-6. Place holds/bookings in dependency order.
-7. On partial failure, release successful holds and return alternatives.
-8. Create or update Booking Session / Booking / Order structures.
-9. Capture catalog snapshots for committed items.
-10. Return checkout-ready target and hold expiry summary.
+3. For every selected Draft Item, create/update a per-line booking draft where
+   the catalog booking journey applies.
+4. Reprice every selected item through `quoteEntity`, the relevant
+   vertical/source adapter, or flight repricing.
+5. Check availability for every selected item.
+6. Apply policy gates: budget, terms, expiry, PII, unsupported items.
+7. Place holds/bookings in dependency order.
+8. On partial failure, release successful holds and return alternatives.
+9. Create or update Booking Session / Booking / Order structures.
+10. Capture catalog snapshots for committed items.
+11. Return checkout-ready target and hold expiry summary.
 
 High-level buy flow:
 
 1. Run reserve flow or reuse an unexpired Reserved Draft.
 2. Compute collection plan.
-3. Start checkout bootstrap.
+3. Start checkout collection bootstrap/initiation against the booking or
+   booking session.
 4. Return provider redirect / payment session / bank transfer instructions.
 5. Continue fulfillment through existing booking, finance, legal, and
    notification workflows.
@@ -420,20 +526,54 @@ High-level buy flow:
 5. **Public vs admin AI tools.** Customer agents need strict customer-audience
    access. Staff agents may federate across audience pools and see operational
    fields.
-6. **Flights in public surface.** The current flight routes are admin-oriented
-   in the operator template. AI storefront use needs public-safe search, price,
+6. **Flights in public surface.** The `@voyantjs/flights` package now provides
+   contracts, fan-out, snapshots, and reference-data providers, but AI
+   storefront use still needs public-safe route mounting for search, price,
    reserve, and order-status surfaces.
 7. **Manual placeholders.** Real operators often need "we will confirm this
    hotel manually." The composer should support placeholders without pretending
    they are live inventory.
+8. **Ground transport boundary.** `@voyantjs/ground` is an operational module.
+   The composer still needs a sellable transfer/search surface before it can
+   treat ground services like normal Draft Items.
+9. **Hold-release primitive for sourced drafts.** The draft reaper can release
+   owned holds through owned handlers. Sourced adapters currently expose
+   `cancel`, not a hold-only release primitive, so sourced soft-hold cleanup
+   needs a SourceAdapter contract addition before broad multi-source reserve
+   flows are safe.
+10. **Aggregate commit shape.** Decide whether MVP reserve produces one Booking
+    with many Booking Items, several Bookings in a booking group, or a narrower
+    package-level artifact. The composer interface can hide this, but checkout,
+    documents, cancellation, and support UI need a consistent target.
+11. **Template-owned checkout extraction.** `POST
+    /v1/public/catalog/checkout/start` exists in the operator template. The
+    composer should not depend on template-local code long term; extract the
+    reusable parts into framework-owned services before shipping a generic
+    composer package.
 
 ## 12. MVP slices
 
+### Slice 0: settle reusable boundaries
+
+- Confirm the MVP aggregate commit shape: one Booking, booking group, or a
+  minimal package artifact.
+- Extract reusable checkout-start behavior from the operator template if the
+  composer needs to call it outside that template.
+- Add or design a SourceAdapter hold-release primitive for sourced soft holds.
+- Decide whether flight public routes are in scope for the first composer
+  demo, or explicitly exclude flights from the first vertical set.
+- Decide whether ground services enter as manual placeholders, product-linked
+  transfers, or a new sellable transfer surface.
+
 ### Slice 1: make AI access complete for discovery
 
-- Wire catalog MCP `resolveEntity`, `checkAvailability`, and `getQuote` for all
-  adopted verticals, not only products/extras.
-- Add customer-safe public MCP or tool-call routes for storefront agents.
+- Use the existing catalog MCP tools (`search_catalog`, `get_entity`,
+  `suggest_alternatives`, `check_availability`, `get_quote`) as the discovery
+  base.
+- Add customer-safe public MCP or tool-call routes for storefront agents where
+  templates need hosted agent access.
+- Fill adapter-backed availability/quote coverage for adopted verticals rather
+  than leaving tools wired only to products/extras.
 - Ensure semantic search downgrades cleanly when embeddings are not configured.
 
 ### Slice 2: introduce Itinerary Drafts
@@ -443,11 +583,14 @@ High-level buy flow:
 - Support create/revise/read draft operations.
 - Store structured intent and constraints.
 - Keep all mutation deterministic and service-validated.
+- Keep Itinerary Draft state separate from catalog booking-engine
+  `booking_drafts`; store per-line references instead of merging the concepts.
 
 ### Slice 3: price a draft
 
 - Add `priceDraft`.
-- Resolve live prices and availability per vertical.
+- Resolve live prices and availability per vertical, using `quoteEntity` where
+  available and the flight adapter repricing path for flights.
 - Return warnings, expiries, unavailable items, and alternatives.
 - Add tests for stale price, unavailable item, and partial quote failure.
 
@@ -457,11 +600,14 @@ High-level buy flow:
 - Create Booking Session / Booking records only at this point.
 - Implement compensation for partial hold failure.
 - Capture snapshots and preserve source provenance.
+- Cover owned-hold release, sourced-hold release, quote expiry, and one-line
+  success / one-line failure in tests.
 
 ### Slice 5: checkout handoff
 
 - Add `startCheckout`.
-- Support deposit/full/exact-amount collection through existing checkout.
+- Support deposit/full/exact-amount collection through existing checkout
+  collection primitives.
 - Provide UI-ready output for "Reserve now" and "Buy now".
 
 ### Slice 6: ship a reference storefront block
@@ -491,4 +637,3 @@ Customer intent
 The same composer should also support non-AI callers. If a staff quote builder
 or conventional storefront wizard can use the same module, the seam is in the
 right place.
-
