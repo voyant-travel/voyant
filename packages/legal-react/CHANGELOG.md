@@ -1,5 +1,14 @@
 # @voyantjs/legal-react
 
+## 0.50.0
+
+### Patch Changes
+
+- 140d0ad: Add an opinionated contract lifecycle with stage history, transition validation, and domain events for issue/send/sign/execute/void transitions.
+- Updated dependencies [140d0ad]
+  - @voyantjs/legal@0.50.0
+  - @voyantjs/react@0.50.0
+
 ## 0.49.0
 
 ### Patch Changes

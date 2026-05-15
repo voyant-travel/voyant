@@ -1,5 +1,17 @@
 # @voyantjs/storefront-sdk
 
+## 0.50.0
+
+### Patch Changes
+
+- 875c76e: Extend the public departure price preview response with allocation, unit/room, extras, offer impact, and final totals blocks while preserving the existing simple quote fields.
+- Updated dependencies [bf5747e]
+- Updated dependencies [875c76e]
+- Updated dependencies [2ca0537]
+  - @voyantjs/bookings@0.50.0
+  - @voyantjs/checkout@0.50.0
+  - @voyantjs/storefront@0.50.0
+
 ## 0.49.0
 
 ### Patch Changes
