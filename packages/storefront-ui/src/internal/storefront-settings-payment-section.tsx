@@ -68,6 +68,20 @@ export function PaymentSection({ form, setField }: { form: FormState; setField: 
               </select>
             </Field>
             <Field>
+              <FieldLabel htmlFor="storefront-payment-structure">Payment structure</FieldLabel>
+              <select
+                id="storefront-payment-structure"
+                className="h-9 rounded-md border bg-background px-3 text-sm"
+                value={form.paymentStructure}
+                onChange={(event) =>
+                  setField("paymentStructure", event.target.value as FormState["paymentStructure"])
+                }
+              >
+                <option value="full">Full payment</option>
+                <option value="split">Deposit + balance</option>
+              </select>
+            </Field>
+            <Field>
               <FieldLabel htmlFor="storefront-deposit-percent">Deposit percent</FieldLabel>
               <Input
                 id="storefront-deposit-percent"
@@ -93,6 +107,22 @@ export function PaymentSection({ form, setField }: { form: FormState; setField: 
           <FieldSet>
             <FieldLegend>Bank transfer details</FieldLegend>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="storefront-bank-provider">Provider</FieldLabel>
+                <Input
+                  id="storefront-bank-provider"
+                  value={form.bankProvider}
+                  onChange={(event) => setField("bankProvider", event.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="storefront-bank-currency">Currency</FieldLabel>
+                <Input
+                  id="storefront-bank-currency"
+                  value={form.bankCurrency}
+                  onChange={(event) => setField("bankCurrency", event.target.value)}
+                />
+              </Field>
               <Field>
                 <FieldLabel htmlFor="storefront-account-holder">Account holder</FieldLabel>
                 <Input
@@ -123,6 +153,16 @@ export function PaymentSection({ form, setField }: { form: FormState; setField: 
                   id="storefront-bic"
                   value={form.bic}
                   onChange={(event) => setField("bic", event.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="storefront-bank-due-days">Due days</FieldLabel>
+                <Input
+                  id="storefront-bank-due-days"
+                  type="number"
+                  min={0}
+                  value={form.bankTransferDueDays}
+                  onChange={(event) => setField("bankTransferDueDays", event.target.value)}
                 />
               </Field>
             </div>

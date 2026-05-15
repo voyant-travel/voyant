@@ -33,6 +33,8 @@ import {
   publicUpsertBookingSessionStateSchema,
   type StorefrontDepartureListQuery,
   type StorefrontDeparturePricePreviewInput,
+  type StorefrontLeadIntakeInput,
+  type StorefrontNewsletterSubscribeInput,
   type StorefrontProductAvailabilitySummaryQuery,
   type StorefrontProductExtensionsQuery,
   type StorefrontPromotionalOfferListQuery,
@@ -42,6 +44,10 @@ import {
   storefrontDeparturePricePreviewInputSchema,
   storefrontDeparturePricePreviewResponseSchema,
   storefrontDepartureResponseSchema,
+  storefrontIntakeResponseEnvelopeSchema,
+  storefrontLeadIntakeInputSchema,
+  storefrontNewsletterSubscribeInputSchema,
+  storefrontNewsletterSubscribeResponseEnvelopeSchema,
   storefrontProductAvailabilitySummaryQuerySchema,
   storefrontProductAvailabilitySummaryResponseSchema,
   storefrontProductExtensionsQuerySchema,
@@ -60,6 +66,34 @@ export function getStorefrontSettings(client: ResolvedClientOptions) {
     "/v1/public/settings",
     storefrontSettingsResponseSchema,
     client,
+  ).then((response) => response.data)
+}
+
+export function createStorefrontLead(
+  client: ResolvedClientOptions,
+  input: StorefrontLeadIntakeInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = storefrontLeadIntakeInputSchema.parse(input)
+  return storefrontFetchWithValidation(
+    "/v1/public/leads",
+    storefrontIntakeResponseEnvelopeSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
+  ).then((response) => response.data)
+}
+
+export function subscribeStorefrontNewsletter(
+  client: ResolvedClientOptions,
+  input: StorefrontNewsletterSubscribeInput,
+  options?: StorefrontRequestOptions,
+) {
+  const parsed = storefrontNewsletterSubscribeInputSchema.parse(input)
+  return storefrontFetchWithValidation(
+    "/v1/public/newsletter/subscribe",
+    storefrontNewsletterSubscribeResponseEnvelopeSchema,
+    client,
+    { method: "POST", headers: requestHeaders(options), body: JSON.stringify(parsed) },
   ).then((response) => response.data)
 }
 

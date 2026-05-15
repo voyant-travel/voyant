@@ -158,12 +158,81 @@ function normalizePaymentSchedule(
   }
 }
 
+function scheduleEntriesFromDefaultSchedule(
+  schedule: ReturnType<typeof normalizePaymentSchedule>,
+): StorefrontSettings["payment"]["schedule"] {
+  if (!schedule?.depositPercent || schedule.depositPercent >= 100) {
+    return []
+  }
+
+  const remainderPercent = 100 - schedule.depositPercent
+  return [
+    {
+      percent: schedule.depositPercent,
+      dueInDays: 0,
+      dueCondition: "after_booking",
+    },
+    {
+      percent: remainderPercent,
+      dueInDays: schedule.balanceDueDaysBeforeDeparture ?? 0,
+      dueCondition: "before_departure",
+    },
+  ]
+}
+
+function normalizePaymentScheduleEntries(
+  schedule: NonNullable<NonNullable<StorefrontSettingsInput["payment"]>["schedule"]> | undefined,
+  defaultSchedule: ReturnType<typeof normalizePaymentSchedule>,
+): StorefrontSettings["payment"]["schedule"] {
+  if (schedule) return schedule
+  return scheduleEntriesFromDefaultSchedule(defaultSchedule)
+}
+
+function normalizePaymentStructure(
+  structure: NonNullable<StorefrontSettingsInput["payment"]>["structure"] | undefined,
+  schedule: StorefrontSettings["payment"]["schedule"],
+  defaultSchedule: ReturnType<typeof normalizePaymentSchedule>,
+): StorefrontSettings["payment"]["structure"] {
+  if (structure) return structure
+  if (schedule.length > 0) return "split"
+  return defaultSchedule?.depositPercent && defaultSchedule.depositPercent > 0 ? "split" : "full"
+}
+
+function normalizeBankTransferAccount(
+  account: NonNullable<NonNullable<StorefrontSettingsInput["payment"]>["bankTransfer"]>["account"],
+  bankTransfer: NonNullable<NonNullable<StorefrontSettingsInput["payment"]>["bankTransfer"]>,
+) {
+  const resolved =
+    account ??
+    (bankTransfer.iban && bankTransfer.accountHolder && bankTransfer.bankName
+      ? {
+          provider: null,
+          currency: null,
+          iban: bankTransfer.iban,
+          beneficiary: bankTransfer.accountHolder,
+          bank: bankTransfer.bankName,
+        }
+      : null)
+
+  if (!resolved) return null
+
+  return {
+    provider: resolved.provider ?? null,
+    currency: resolved.currency ?? null,
+    iban: resolved.iban,
+    beneficiary: resolved.beneficiary,
+    bank: resolved.bank,
+  }
+}
+
 function normalizeBankTransfer(
   bankTransfer: NonNullable<NonNullable<StorefrontSettingsInput["payment"]>["bankTransfer"]> | null,
 ) {
   if (!bankTransfer) return null
 
   return {
+    dueDays: bankTransfer.dueDays ?? null,
+    account: normalizeBankTransferAccount(bankTransfer.account, bankTransfer),
     accountHolder: bankTransfer.accountHolder ?? null,
     bankName: bankTransfer.bankName ?? null,
     iban: bankTransfer.iban ?? null,
@@ -196,8 +265,10 @@ function mergeBankTransfer(
 ) {
   if (patch === null) return null
 
-  return {
+  const merged = {
     ...(current ?? {
+      dueDays: null,
+      account: null,
       accountHolder: null,
       bankName: null,
       iban: null,
@@ -207,10 +278,23 @@ function mergeBankTransfer(
     }),
     ...patch,
   }
+  const shouldRefreshAccountFromLegacyFields =
+    patch.account === undefined &&
+    ("accountHolder" in patch || "bankName" in patch || "iban" in patch)
+
+  return {
+    ...merged,
+    account: normalizeBankTransferAccount(
+      shouldRefreshAccountFromLegacyFields ? null : merged.account,
+      merged,
+    ),
+  }
 }
 
 export function resolveStorefrontSettings(input?: StorefrontSettingsInput): StorefrontSettings {
   const parsed = storefrontSettingsInputSchema.parse(input ?? {})
+  const defaultSchedule = normalizePaymentSchedule(parsed.payment?.defaultSchedule ?? null)
+  const schedule = normalizePaymentScheduleEntries(parsed.payment?.schedule, defaultSchedule)
 
   return storefrontSettingsSchema.parse({
     branding: {
@@ -247,7 +331,9 @@ export function resolveStorefrontSettings(input?: StorefrontSettingsInput): Stor
     payment: {
       defaultMethod: parsed.payment?.defaultMethod ?? null,
       methods: (parsed.payment?.methods ?? []).map(normalizePaymentMethod),
-      defaultSchedule: normalizePaymentSchedule(parsed.payment?.defaultSchedule ?? null),
+      structure: normalizePaymentStructure(parsed.payment?.structure, schedule, defaultSchedule),
+      schedule,
+      defaultSchedule,
       bankTransfer: normalizeBankTransfer(parsed.payment?.bankTransfer ?? null),
     },
   })

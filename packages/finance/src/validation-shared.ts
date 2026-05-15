@@ -143,8 +143,54 @@ export const voucherSourceTypeSchema = z.enum([
 ])
 
 export const financeAggregatesQuerySchema = z.object({
+  range: z
+    .enum(["this_month", "last_month", "year_to_date", "all_time", "custom"])
+    .default("all_time"),
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
+  currency: z
+    .preprocess(
+      (value) =>
+        typeof value === "string"
+          ? value
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : value,
+      z.array(z.string().trim().min(1)).optional(),
+    )
+    .optional(),
+  invoiceType: z
+    .preprocess(
+      (value) =>
+        typeof value === "string"
+          ? value
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : value,
+      z.array(z.enum(["invoice", "proforma"])).optional(),
+    )
+    .optional(),
+  status: z
+    .preprocess(
+      (value) =>
+        typeof value === "string"
+          ? value
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : value,
+      z
+        .array(z.union([invoiceStatusSchema, z.literal("issued")]))
+        .transform((values) =>
+          values.flatMap((value) =>
+            value === "issued" ? (["sent", "partially_paid"] as const) : [value],
+          ),
+        )
+        .optional(),
+    )
+    .optional(),
   /**
    * Cap on the top-N outstanding-invoice rows returned alongside the
    * outstanding-by-currency aggregate. The dashboard surfaces 5 rows

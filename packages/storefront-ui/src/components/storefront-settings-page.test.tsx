@@ -34,6 +34,8 @@ const emptySettings = {
   payment: {
     defaultMethod: null,
     methods: [],
+    structure: "full",
+    schedule: [],
     defaultSchedule: null,
     bankTransfer: null,
   },

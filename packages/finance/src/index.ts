@@ -213,6 +213,10 @@ export type {
 } from "./service.js"
 export { financeService, renderInvoiceBody } from "./service.js"
 export type {
+  FinanceAggregateOutstandingInvoice,
+  FinanceAggregates,
+} from "./service-aggregates.js"
+export type {
   BookingDualCreatedEvent,
   DualCreateBookingInput,
   DualCreateBookingOutcome,
@@ -285,6 +289,7 @@ export {
   createPaymentSessionFromScheduleSchema,
   expirePaymentSessionSchema,
   failPaymentSessionSchema,
+  financeAggregatesQuerySchema,
   generatedInvoiceDocumentResultSchema,
   generateInvoiceDocumentInputSchema,
   insertBookingGuaranteeSchema,

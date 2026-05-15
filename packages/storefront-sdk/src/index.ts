@@ -23,6 +23,7 @@ import {
   bootstrapCheckoutCollection,
   confirmPublicBookingSession,
   createPublicBookingSession,
+  createStorefrontLead,
   expirePublicBookingSession,
   getPublicBookingOverview,
   getPublicBookingSession,
@@ -39,6 +40,7 @@ import {
   previewCheckoutCollection,
   previewStorefrontDeparturePrice,
   repricePublicBookingSession,
+  subscribeStorefrontNewsletter,
   updatePublicBookingSession,
   updatePublicBookingSessionState,
 } from "./operations.js"
@@ -83,6 +85,14 @@ export function createVoyantStorefrontClient(options: VoyantStorefrontClientOpti
   return {
     storefront: {
       getSettings: () => getStorefrontSettings(client),
+      createLead: (
+        input: Parameters<typeof createStorefrontLead>[1],
+        requestOptions?: Parameters<typeof createStorefrontLead>[2],
+      ) => createStorefrontLead(client, input, requestOptions),
+      subscribeNewsletter: (
+        input: Parameters<typeof subscribeStorefrontNewsletter>[1],
+        requestOptions?: Parameters<typeof subscribeStorefrontNewsletter>[2],
+      ) => subscribeStorefrontNewsletter(client, input, requestOptions),
       getDeparture: (departureId: string) => getStorefrontDeparture(client, departureId),
       listProductDepartures: (
         productId: string,
