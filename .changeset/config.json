@@ -4,6 +4,7 @@
   "commit": false,
   "fixed": [
     [
+      "@voyantjs/action-ledger",
       "@voyantjs/admin",
       "@voyantjs/auth",
       "@voyantjs/auth-react",

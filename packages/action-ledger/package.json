@@ -1,0 +1,72 @@
+{
+  "name": "@voyantjs/action-ledger",
+  "version": "0.50.2",
+  "description": "Action ledger schema, append-only write helpers, and idempotency primitives for Voyant control surfaces.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./service": "./src/service.ts",
+    "./fingerprint": "./src/fingerprint.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/ tests/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@voyantjs/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
+      },
+      "./fingerprint": {
+        "types": "./dist/fingerprint.d.ts",
+        "import": "./dist/fingerprint.js",
+        "default": "./dist/fingerprint.js"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/action-ledger"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
+  }
+}
