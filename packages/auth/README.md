@@ -23,6 +23,14 @@ const auth = createBetterAuth({
   db,
   secret: env.AUTH_SECRET,
   trustedOrigins: ["https://example.com"],
+  user: {
+    additionalFields: {
+      surfaces: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
 })
 
 const profileResponse = await handleAccountProfileRequest(request, auth, { db })
@@ -36,6 +44,11 @@ return auth.handler(request)
 
 Auth provider wiring is template-owned — core Voyant packages only depend on
 the normalized `{ userId, actor }` contract, not on Better Auth specifically.
+
+`createBetterAuth` forwards Better Auth's `user` options, including
+`user.additionalFields`, while preserving Voyant's default change-email support.
+When using additional user fields with the Drizzle adapter, the consuming app is
+responsible for adding matching columns and migrations to the auth user table.
 
 The package also exposes a narrow shared-secret bearer-token helper surface via
 `@voyantjs/utils/session-claims` for runtime-local verification. That helper is

@@ -8,7 +8,7 @@ import {
   authVerification,
   userProfilesTable,
 } from "@voyantjs/db/schema/iam"
-import { betterAuth } from "better-auth"
+import { type BetterAuthOptions, betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { emailOTP } from "better-auth/plugins"
 import type { BetterAuthPlugin } from "better-auth/types"
@@ -433,13 +433,40 @@ function expandTrustedOrigins(origins: string[], baseURL: string): string[] {
   return Array.from(new Set([...origins, ...LOCAL_WILDCARDS]))
 }
 
-export interface CreateBetterAuthOptions {
+type DefinedBetterAuthUserOptions<UserOptions extends BetterAuthOptions["user"]> =
+  UserOptions extends undefined ? Record<PropertyKey, never> : NonNullable<UserOptions>
+
+type ResolvedBetterAuthChangeEmail<UserOptions extends BetterAuthOptions["user"]> =
+  DefinedBetterAuthUserOptions<UserOptions> extends { changeEmail?: infer ChangeEmail }
+    ? ChangeEmail extends { enabled: infer Enabled }
+      ? Omit<ChangeEmail, "enabled"> & { enabled: Enabled }
+      : NonNullable<ChangeEmail> & { enabled: true }
+    : { enabled: true }
+
+type ResolvedBetterAuthUserOptions<UserOptions extends BetterAuthOptions["user"]> = Omit<
+  DefinedBetterAuthUserOptions<UserOptions>,
+  "changeEmail"
+> & {
+  changeEmail: ResolvedBetterAuthChangeEmail<UserOptions>
+}
+
+type ResolvedCreateBetterAuthOptions<UserOptions extends BetterAuthOptions["user"]> = Omit<
+  BetterAuthOptions,
+  "user"
+> & {
+  user: ResolvedBetterAuthUserOptions<UserOptions>
+}
+
+export interface CreateBetterAuthOptions<
+  UserOptions extends BetterAuthOptions["user"] = BetterAuthOptions["user"],
+> {
   db?: ReturnType<typeof getDb>
   secret?: string
   baseURL?: string
   basePath?: string
   trustedOrigins?: string[]
   plugins?: BetterAuthPlugin[]
+  user?: UserOptions
   /** Called when a user requests a password reset. If not provided, logs to console. */
   sendResetPassword?: (data: {
     user: { email: string; name: string }
@@ -456,7 +483,9 @@ export interface CreateBetterAuthOptions {
  * Accepts optional overrides for db, secret, baseURL, trustedOrigins.
  * Does NOT depend on Next.js — safe to use in Hono workers, TanStack Start, etc.
  */
-export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
+export function createBetterAuth<const UserOptions extends BetterAuthOptions["user"] = undefined>(
+  options: CreateBetterAuthOptions<UserOptions> = {},
+) {
   const db = options.db ?? getDb("edge")
   const secret = options.secret ?? getAuthSecret()
   const baseURL =
@@ -471,7 +500,7 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
   )
   const extraPlugins = options.plugins ?? []
 
-  return betterAuth({
+  const authOptions = {
     appName: "Voyant",
     baseURL,
     ...(options.basePath ? { basePath: options.basePath } : {}),
@@ -506,10 +535,12 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
       autoSignInAfterVerification: true,
     },
     user: {
+      ...options.user,
       changeEmail: {
         enabled: true,
+        ...options.user?.changeEmail,
       },
-    },
+    } as ResolvedBetterAuthUserOptions<UserOptions>,
     socialProviders: {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -586,5 +617,7 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
     advanced: {
       useSecureCookies: process.env.NODE_ENV === "production",
     },
-  })
+  } as ResolvedCreateBetterAuthOptions<UserOptions>
+
+  return betterAuth<ResolvedCreateBetterAuthOptions<UserOptions>>(authOptions)
 }
