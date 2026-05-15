@@ -306,6 +306,16 @@ export const storefrontDeparturePricePreviewInputSchema = z.object({
       }),
     )
     .default([]),
+  offers: z
+    .array(
+      z.object({
+        slug: z.string().trim().min(1).max(120),
+      }),
+    )
+    .default([]),
+  offerCode: z.string().trim().min(1).max(80).optional().nullable(),
+  locale: languageTagSchema.optional(),
+  market: z.string().trim().min(1).default("default"),
 })
 
 export const storefrontDeparturePriceLineItemSchema = z.object({
@@ -313,6 +323,113 @@ export const storefrontDeparturePriceLineItemSchema = z.object({
   total: z.number(),
   quantity: z.number().int().min(1),
   unitPrice: z.number(),
+})
+
+export const storefrontDeparturePriceSlotSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  optionId: z.string().nullable(),
+  dateLocal: z.string().nullable(),
+  startAt: z.string().nullable(),
+  endAt: z.string().nullable(),
+  timezone: z.string(),
+  status: storefrontDepartureStatusSchema,
+  availabilityState: storefrontProductAvailabilityStateSchema,
+  capacity: z.number().int().nullable(),
+  remaining: z.number().int().nullable(),
+  pastCutoff: z.boolean(),
+  tooEarly: z.boolean(),
+})
+
+export const storefrontDeparturePricePaxSchema = z.object({
+  adults: z.number().int().min(0),
+  children: z.number().int().min(0),
+  infants: z.number().int().min(0),
+  total: z.number().int().min(1),
+})
+
+export const storefrontDeparturePriceUnitRowSchema = z.object({
+  unitId: z.string().nullable(),
+  requestRef: z.string().nullable(),
+  name: z.string(),
+  unitType: z.string().nullable(),
+  quantity: z.number().int().min(1),
+  pricingMode: z.string().nullable(),
+  unitPrice: z.number(),
+  total: z.number(),
+  currencyCode: z.string(),
+  tierId: z.string().nullable(),
+})
+
+export const storefrontDeparturePriceRoomRowSchema = z.object({
+  unitId: z.string(),
+  name: z.string(),
+  occupancy: z.number().int().min(1),
+  quantity: z.number().int().min(1),
+  pax: z.number().int().min(1),
+  pricingMode: z.string().nullable(),
+  unitPrice: z.number(),
+  total: z.number(),
+  currencyCode: z.string(),
+  tierId: z.string().nullable(),
+})
+
+export const storefrontDeparturePriceAllocationSchema = z.object({
+  slot: storefrontDeparturePriceSlotSchema,
+  pax: storefrontDeparturePricePaxSchema,
+  requestedUnits: z.array(storefrontDeparturePriceUnitRowSchema),
+  rooms: z.array(storefrontDeparturePriceRoomRowSchema),
+})
+
+export const storefrontDeparturePriceExtraImpactSchema = z.object({
+  extraId: z.string(),
+  name: z.string(),
+  required: z.boolean(),
+  selectable: z.boolean(),
+  selected: z.boolean(),
+  pricingMode: z.lazy(() => extraPricingModeSchema),
+  quantity: z.number().int().min(0),
+  unitPrice: z.number(),
+  total: z.number(),
+  currencyCode: z.string(),
+})
+
+export const storefrontDeparturePriceOfferImpactSchema = z.object({
+  offer: z.lazy(() => storefrontPromotionalOfferSchema),
+  status: z.enum(["applied", "not_applicable", "conflict"]),
+  reason: z.enum(["min_pax", "currency", "no_discount", "conflict"]).nullable(),
+  selected: z.boolean(),
+  discountAppliedCents: z.number().int(),
+  discountedPriceCents: z.number().int(),
+})
+
+export const storefrontDeparturePriceRequestedOfferSchema = z.object({
+  kind: z.enum(["slug", "code"]),
+  value: z.string(),
+  result: z.lazy(() => storefrontOfferMutationResultSchema).nullable(),
+})
+
+export const storefrontDeparturePriceOffersSchema = z.object({
+  available: z.array(storefrontDeparturePriceOfferImpactSchema),
+  requested: z.array(storefrontDeparturePriceRequestedOfferSchema),
+  applied: z.array(z.lazy(() => storefrontAppliedOfferSchema)),
+  conflict: z.lazy(() => storefrontOfferConflictSchema).nullable(),
+  discountTotal: z.number(),
+  discountTotalCents: z.number().int(),
+  totalAfterDiscount: z.number(),
+  currencyCode: z.string(),
+})
+
+export const storefrontDeparturePriceTotalsSchema = z.object({
+  currencyCode: z.string(),
+  base: z.number(),
+  extras: z.number(),
+  subtotal: z.number(),
+  discount: z.number(),
+  tax: z.number(),
+  total: z.number(),
+  perPerson: z.number(),
+  perBooking: z.number(),
 })
 
 export const storefrontDeparturePricePreviewSchema = z.object({
@@ -325,6 +442,12 @@ export const storefrontDeparturePricePreviewSchema = z.object({
   total: z.number(),
   notes: z.string().nullable(),
   lineItems: z.array(storefrontDeparturePriceLineItemSchema),
+  allocation: storefrontDeparturePriceAllocationSchema,
+  units: z.array(storefrontDeparturePriceUnitRowSchema),
+  rooms: z.array(storefrontDeparturePriceRoomRowSchema),
+  extras: z.array(storefrontDeparturePriceExtraImpactSchema),
+  offers: storefrontDeparturePriceOffersSchema,
+  totals: storefrontDeparturePriceTotalsSchema,
 })
 
 export const storefrontBookingSessionQuoteSchema = z.object({
@@ -590,6 +713,7 @@ export type StorefrontProductAvailabilitySummaryQuery = z.infer<
 export type StorefrontDeparturePricePreviewInput = z.infer<
   typeof storefrontDeparturePricePreviewInputSchema
 >
+export type StorefrontDeparturePricePreview = z.infer<typeof storefrontDeparturePricePreviewSchema>
 export type StorefrontBookingSessionBootstrapInput = z.infer<
   typeof storefrontBookingSessionBootstrapInputSchema
 >

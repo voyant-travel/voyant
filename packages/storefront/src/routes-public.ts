@@ -179,6 +179,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         c.get("db" as never),
         c.req.param("departureId"),
         await parseJsonBody(c, storefrontDeparturePricePreviewInputSchema),
+        getRequestContext(c),
       )
 
       return preview

@@ -3,6 +3,42 @@
 Public storefront routes and service helpers for checkout-adjacent product, departure,
 offer, and eligibility flows.
 
+## Composite Price Preview
+
+`POST /departures/:departureId/price` preserves the original quote fields
+(`basePrice`, `taxAmount`, `total`, `notes`, and `lineItems`) and now also
+returns the context needed to render a checkout price card in one request:
+
+- `allocation` describes the resolved public departure slot, capacity state,
+  requested traveler mix, requested units, and selected rooms.
+- `units` and `rooms` expose customer-facing pricing rows for per-person,
+  per-unit, or room-based products.
+- `extras` lists active product extensions with selection/applicability,
+  quantity, unit price, and price impact.
+- `offers` lists applicable public offers, selected/applied discounts,
+  requested manual offer/code results, and conflict policy.
+- `totals` carries base, extras, subtotal, discount, tax, final total,
+  per-person, and per-booking amounts in the selected currency.
+
+Request bodies remain compatible with simple price preview calls:
+
+```json
+{
+  "pax": { "adults": 2, "children": 0, "infants": 0 },
+  "rooms": [{ "unitId": "ount_room", "occupancy": 2, "quantity": 1 }],
+  "extras": [{ "extraId": "pext_transfer", "quantity": 1 }],
+  "offers": [{ "slug": "early-booking" }],
+  "offerCode": "SPRING25",
+  "locale": "en",
+  "market": "default"
+}
+```
+
+Offer resolution is optional and host-owned. Wire the storefront module with
+`offers` or `resolveOffers` resolvers to populate offer applicability and manual
+offer/code impacts. Without resolvers, the route still returns allocation,
+units, rooms, extras, and final totals with an empty `offers` block.
+
 ## Public Intake
 
 Storefront can accept public CRM intake at the public root:

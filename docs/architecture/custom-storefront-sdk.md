@@ -132,6 +132,28 @@ post-reservation `availability` snapshot, selected `allocation`, and `currency`.
 The route rejects stale or expired quotes before creating the session, and it
 does not expose admin notes, provider internals, or mutable payment config.
 
+## Price Preview Contract
+
+Custom storefronts should use `previewStorefrontDeparturePrice(...)` for the
+checkout price card instead of stitching separate departure, availability,
+extension, and offer reads together. The operation calls
+`POST /v1/public/departures/:departureId/price` and returns:
+
+- legacy quote fields for existing consumers: `basePrice`, `taxAmount`,
+  `total`, `notes`, and `lineItems`
+- `allocation` with the resolved public slot and requested pax/unit/room
+  context
+- `units`, `rooms`, and `extras` rows with currency, quantity, unit price, and
+  total impact
+- `offers` with applicable public offers, selected discounts, requested
+  manual offer/code results, and conflict policy
+- `totals` with base, extras, subtotal, discount, tax, final total, per-person,
+  and per-booking amounts
+
+Offer data is populated only when the host app wires storefront offer resolvers.
+The SDK treats the composite response as the stable public contract and does not
+read module tables directly.
+
 ## Errors
 
 `VoyantStorefrontApiError` exposes `normalizedError` when a public route returns

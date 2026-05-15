@@ -1,3 +1,4 @@
+import { handleApiError } from "@voyantjs/hono"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
@@ -5,6 +6,25 @@ import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
 import { storefrontBookingSessionBootstrapInputSchema } from "../../src/validation.js"
 
 describe("createStorefrontPublicRoutes", () => {
+  it("rejects malformed composite price-preview selections with public-route errors", async () => {
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.route("/", createStorefrontPublicRoutes())
+
+    const res = await app.request("/departures/dep_123/price", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        rooms: [{ unitId: "", occupancy: 1, quantity: 1 }],
+        extras: [{ extraId: "", quantity: 1 }],
+        offers: [{ slug: "" }],
+      }),
+    })
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toMatchObject({ code: "invalid_request" })
+  })
+
   it("returns normalized storefront settings", async () => {
     const app = new Hono().route(
       "/",

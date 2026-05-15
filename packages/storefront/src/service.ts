@@ -373,8 +373,25 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
       db: PostgresJsDatabase,
       departureId: string,
       input: StorefrontDeparturePricePreviewInput,
+      context: StorefrontRequestContext = {},
     ) {
-      return previewStorefrontDeparturePrice(db, departureId, input)
+      const offerContext = { ...context, db: context.db ?? db }
+      return previewStorefrontDeparturePrice(db, departureId, input, {
+        listApplicableOffers: async (offerInput) => {
+          const offers = await resolveOffers(offerContext)?.then((resolvers) =>
+            resolvers?.listApplicableOffers?.({ ...offerInput, ...offerContext }),
+          )
+          return offers ?? []
+        },
+        applyOffer: async (offerInput) =>
+          (await resolveOffers(offerContext)?.then((resolvers) =>
+            resolvers?.applyOffer?.({ ...offerInput, ...offerContext }),
+          )) ?? null,
+        redeemOffer: async (offerInput) =>
+          (await resolveOffers(offerContext)?.then((resolvers) =>
+            resolvers?.redeemOffer?.({ ...offerInput, ...offerContext }),
+          )) ?? null,
+      })
     },
     getProductExtensions(db: PostgresJsDatabase, productId: string, optionId?: string) {
       return getStorefrontProductExtensions(db, productId, optionId)
