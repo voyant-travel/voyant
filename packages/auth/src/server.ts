@@ -13,6 +13,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { emailOTP } from "better-auth/plugins"
 import type { BetterAuthPlugin } from "better-auth/types"
 import { sql } from "drizzle-orm"
+import type { AnyPgTable } from "drizzle-orm/pg-core"
 
 import {
   type ApiTokenRotationOptions,
@@ -450,22 +451,38 @@ type ResolvedBetterAuthUserOptions<UserOptions extends BetterAuthOptions["user"]
   changeEmail: ResolvedBetterAuthChangeEmail<UserOptions>
 }
 
-type ResolvedCreateBetterAuthOptions<UserOptions extends BetterAuthOptions["user"]> = Omit<
-  BetterAuthOptions,
-  "user"
-> & {
+type VoyantBetterAuthPlugins = [ReturnType<typeof apiKey>, ReturnType<typeof emailOTP>]
+
+type ResolvedBetterAuthPlugins<Plugins extends BetterAuthPlugin[] | undefined> =
+  Plugins extends BetterAuthPlugin[]
+    ? [...VoyantBetterAuthPlugins, ...Plugins]
+    : VoyantBetterAuthPlugins
+
+type ResolvedCreateBetterAuthOptions<
+  UserOptions extends BetterAuthOptions["user"],
+  Plugins extends BetterAuthPlugin[] | undefined,
+> = Omit<BetterAuthOptions, "plugins" | "user"> & {
+  plugins: ResolvedBetterAuthPlugins<Plugins>
   user: ResolvedBetterAuthUserOptions<UserOptions>
 }
 
+export type BetterAuthDrizzleSchema = Record<string, AnyPgTable>
+
 export interface CreateBetterAuthOptions<
   UserOptions extends BetterAuthOptions["user"] = BetterAuthOptions["user"],
+  Plugins extends BetterAuthPlugin[] | undefined = BetterAuthPlugin[] | undefined,
 > {
   db?: ReturnType<typeof getDb>
   secret?: string
   baseURL?: string
   basePath?: string
   trustedOrigins?: string[]
-  plugins?: BetterAuthPlugin[]
+  /**
+   * Additional Drizzle tables for Better Auth plugins. The consuming app owns
+   * matching migrations for every table passed here.
+   */
+  extraSchema?: BetterAuthDrizzleSchema
+  plugins?: Plugins
   user?: UserOptions
   /** Called when a user requests a password reset. If not provided, logs to console. */
   sendResetPassword?: (data: {
@@ -483,9 +500,10 @@ export interface CreateBetterAuthOptions<
  * Accepts optional overrides for db, secret, baseURL, trustedOrigins.
  * Does NOT depend on Next.js — safe to use in Hono workers, TanStack Start, etc.
  */
-export function createBetterAuth<const UserOptions extends BetterAuthOptions["user"] = undefined>(
-  options: CreateBetterAuthOptions<UserOptions> = {},
-) {
+export function createBetterAuth<
+  const UserOptions extends BetterAuthOptions["user"] = undefined,
+  const Plugins extends BetterAuthPlugin[] | undefined = undefined,
+>(options: CreateBetterAuthOptions<UserOptions, Plugins> = {}) {
   const db = options.db ?? getDb("edge")
   const secret = options.secret ?? getAuthSecret()
   const baseURL =
@@ -499,6 +517,14 @@ export function createBetterAuth<const UserOptions extends BetterAuthOptions["us
     baseURL,
   )
   const extraPlugins = options.plugins ?? []
+  const schema = {
+    user: authUser,
+    session: authSession,
+    account: authAccount,
+    verification: authVerification,
+    apikey: apikeyTable,
+    ...(options.extraSchema ?? {}),
+  } satisfies BetterAuthDrizzleSchema
 
   const authOptions = {
     appName: "Voyant",
@@ -507,13 +533,7 @@ export function createBetterAuth<const UserOptions extends BetterAuthOptions["us
     secret,
     database: drizzleAdapter(db, {
       provider: "pg",
-      schema: {
-        user: authUser,
-        session: authSession,
-        account: authAccount,
-        verification: authVerification,
-        apikey: apikeyTable,
-      },
+      schema,
     }),
     emailAndPassword: {
       enabled: true,
@@ -573,7 +593,7 @@ export function createBetterAuth<const UserOptions extends BetterAuthOptions["us
         },
       }),
       ...extraPlugins,
-    ],
+    ] as ResolvedBetterAuthPlugins<Plugins>,
     databaseHooks: {
       user: {
         create: {
@@ -617,7 +637,7 @@ export function createBetterAuth<const UserOptions extends BetterAuthOptions["us
     advanced: {
       useSecureCookies: process.env.NODE_ENV === "production",
     },
-  } as ResolvedCreateBetterAuthOptions<UserOptions>
+  } as ResolvedCreateBetterAuthOptions<UserOptions, Plugins>
 
-  return betterAuth<ResolvedCreateBetterAuthOptions<UserOptions>>(authOptions)
+  return betterAuth<ResolvedCreateBetterAuthOptions<UserOptions, Plugins>>(authOptions)
 }
