@@ -1,5 +1,23 @@
 # @voyantjs/bookings-ui
 
+## 0.50.3
+
+### Patch Changes
+
+- f6e051e: Allow BookingWorkspacePage consumers to replace the default booking tab content with a typed bookingTab slot.
+  - @voyantjs/availability-react@0.50.3
+  - @voyantjs/bookings-react@0.50.3
+  - @voyantjs/catalog@0.50.3
+  - @voyantjs/catalog-react@0.50.3
+  - @voyantjs/crm-react@0.50.3
+  - @voyantjs/crm-ui@0.50.3
+  - @voyantjs/finance-react@0.50.3
+  - @voyantjs/i18n@0.50.3
+  - @voyantjs/legal-react@0.50.3
+  - @voyantjs/products-react@0.50.3
+  - @voyantjs/suppliers-react@0.50.3
+  - @voyantjs/ui@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

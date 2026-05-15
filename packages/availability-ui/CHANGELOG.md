@@ -1,5 +1,13 @@
 # @voyantjs/availability-ui
 
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.3
+- @voyantjs/i18n@0.50.3
+- @voyantjs/ui@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes
