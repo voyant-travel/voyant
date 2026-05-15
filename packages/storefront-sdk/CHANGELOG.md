@@ -1,5 +1,15 @@
 # @voyantjs/storefront-sdk
 
+## 0.50.1
+
+### Patch Changes
+
+- 7b768c5: Add storefront intake SDK helpers, expand storefront payment settings with split schedules and bank-transfer account metadata, and extend finance admin aggregates with dashboard counts, totals, and filters.
+- Updated dependencies [7b768c5]
+  - @voyantjs/bookings@0.50.1
+  - @voyantjs/checkout@0.50.1
+  - @voyantjs/storefront@0.50.1
+
 ## 0.50.0
 
 ### Patch Changes

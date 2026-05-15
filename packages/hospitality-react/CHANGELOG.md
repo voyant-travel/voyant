@@ -1,5 +1,12 @@
 # @voyantjs/hospitality-react
 
+## 0.50.1
+
+### Patch Changes
+
+- @voyantjs/hospitality@0.50.1
+- @voyantjs/react@0.50.1
+
 ## 0.50.0
 
 ### Patch Changes
