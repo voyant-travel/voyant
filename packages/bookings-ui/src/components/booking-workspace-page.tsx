@@ -54,6 +54,7 @@ export interface BookingWorkspacePageSlots {
   legalSidebar?: (context: BookingWorkspaceSlotContext) => ReactNode
   travelersSidebar?: (context: BookingWorkspaceSlotContext) => ReactNode
   activitySidebar?: (context: BookingWorkspaceSlotContext) => ReactNode
+  bookingTab?: (context: BookingWorkspaceSlotContext) => ReactNode
   financeTab?: (context: BookingWorkspaceSlotContext) => ReactNode
   legalTab?: (context: BookingWorkspaceSlotContext) => ReactNode
   travelersTabExtensions?: (context: BookingWorkspaceSlotContext) => ReactNode
@@ -234,16 +235,20 @@ export function BookingWorkspaceShell({
           >
             <div className="min-w-0">
               <TabsContent value="booking" className="mt-0">
-                <BookingDetailPage
-                  id={bookingId}
-                  className="p-0"
-                  locale={locale}
-                  onBack={onBack}
-                  onPersonOpen={onPersonOpen}
-                  onOrganizationOpen={onOrganizationOpen}
-                  onCollectPayment={onCollectPayment}
-                  slots={bookingDetailSlots}
-                />
+                {slots?.bookingTab ? (
+                  slots.bookingTab(context)
+                ) : (
+                  <BookingDetailPage
+                    id={bookingId}
+                    className="p-0"
+                    locale={locale}
+                    onBack={onBack}
+                    onPersonOpen={onPersonOpen}
+                    onOrganizationOpen={onOrganizationOpen}
+                    onCollectPayment={onCollectPayment}
+                    slots={bookingDetailSlots}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="finance" className="mt-0">

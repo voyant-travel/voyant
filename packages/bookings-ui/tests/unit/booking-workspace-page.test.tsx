@@ -56,6 +56,25 @@ describe("BookingWorkspaceShell", () => {
     expect(html).toContain("Activity")
   })
 
+  it("allows consumers to replace the booking tab content", () => {
+    const html = renderToStaticMarkup(
+      <BookingWorkspaceShell
+        id={booking.id}
+        booking={booking}
+        slots={{
+          bookingTab: ({ bookingId, booking }) => (
+            <section>
+              Overview only {booking.bookingNumber} for {bookingId}
+            </section>
+          ),
+        }}
+      />,
+    )
+
+    expect(html).toContain("Overview only BK-123 for booking_123")
+    expect(html).not.toContain("Booking detail booking_123")
+  })
+
   it("renders typed workspace slots with bulk-action context", () => {
     const html = renderToStaticMarkup(
       <BookingWorkspaceShell
