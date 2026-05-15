@@ -99,4 +99,32 @@ describe("createBetterAuth", () => {
       }),
     )
   })
+
+  it("merges extra Better Auth plugin tables into the Drizzle adapter schema", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const jwksTable = { name: "jwks" }
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      extraSchema: {
+        jwks: jwksTable,
+      } as never,
+    })
+
+    const [, adapterConfig] = drizzleAdapterMock.mock.calls[0] as [
+      unknown,
+      { schema: Record<string, unknown> },
+    ]
+
+    expect(adapterConfig.schema).toMatchObject({
+      user: { name: "user" },
+      session: { name: "session" },
+      account: { name: "account" },
+      verification: { name: "verification" },
+      apikey: { name: "apikey" },
+      jwks: jwksTable,
+    })
+  })
 })

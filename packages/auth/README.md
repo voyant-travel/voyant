@@ -50,6 +50,29 @@ the normalized `{ userId, actor }` contract, not on Better Auth specifically.
 When using additional user fields with the Drizzle adapter, the consuming app is
 responsible for adding matching columns and migrations to the auth user table.
 
+Better Auth server plugins that define their own tables must pass those Drizzle
+tables through `extraSchema` so the shared Drizzle adapter can resolve them:
+
+```typescript
+import { createBetterAuth } from "@voyantjs/auth/server"
+import { authInvitation, authMember, authOrganization } from "@voyantjs/db/schema/iam"
+import { organization } from "better-auth/plugins"
+
+const auth = createBetterAuth({
+  db,
+  plugins: [organization()],
+  extraSchema: {
+    organization: authOrganization,
+    member: authMember,
+    invitation: authInvitation,
+  },
+})
+```
+
+The app that mounts the plugin owns the plugin migrations. `extraSchema` only
+connects existing Drizzle table definitions to Better Auth; it does not create
+or run migrations.
+
 The package also exposes a narrow shared-secret bearer-token helper surface via
 `@voyantjs/utils/session-claims` for runtime-local verification. That helper is
 not a replacement for Better Auth session cookies and does not imply a
