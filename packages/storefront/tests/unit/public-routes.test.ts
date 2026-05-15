@@ -2,6 +2,7 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
+import { storefrontBookingSessionBootstrapInputSchema } from "../../src/validation.js"
 
 describe("createStorefrontPublicRoutes", () => {
   it("returns normalized storefront settings", async () => {
@@ -568,5 +569,42 @@ describe("createStorefrontPublicRoutes", () => {
     })
 
     expect(res.status).toBe(501)
+  })
+
+  it("rejects booking-session bootstrap requests without a session payload", () => {
+    const result = storefrontBookingSessionBootstrapInputSchema.safeParse({
+      departureId: "slot_123",
+      slotId: "slot_123",
+      quote: {
+        currencyCode: "EUR",
+        totalSellAmountCents: 50000,
+      },
+    })
+
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects booking-session bootstrap requests whose items do not reference the slot", () => {
+    const result = storefrontBookingSessionBootstrapInputSchema.safeParse({
+      departureId: "slot_123",
+      slotId: "slot_123",
+      quote: {
+        currencyCode: "EUR",
+        totalSellAmountCents: 50000,
+      },
+      session: {
+        sellCurrency: "EUR",
+        items: [
+          {
+            title: "Room",
+            availabilitySlotId: "slot_other",
+            quantity: 1,
+            productId: "prod_123",
+          },
+        ],
+      },
+    })
+
+    expect(result.success).toBe(false)
   })
 })

@@ -1,5 +1,15 @@
-import type { EventBus } from "@voyantjs/core"
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import {
+  checkoutCapabilityActions,
+  checkoutCapabilityCookie,
+  issueCheckoutCapability,
+} from "@voyantjs/bookings/checkout-capability"
+import {
+  idempotencyKey,
+  parseJsonBody,
+  parseQuery,
+  type VoyantBindings,
+  type VoyantVariables,
+} from "@voyantjs/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
@@ -11,6 +21,7 @@ import {
 import {
   type StorefrontLeadIntakeInput,
   type StorefrontNewsletterSubscribeInput,
+  storefrontBookingSessionBootstrapInputSchema,
   storefrontDepartureListQuerySchema,
   storefrontDeparturePricePreviewInputSchema,
   storefrontLeadIntakeInputSchema,
@@ -24,9 +35,54 @@ import {
 import { storefrontTransportEligibilityInputSchema } from "./validation-transport-eligibility.js"
 
 type Env = {
+  Bindings: VoyantBindings
   Variables: {
-    db: unknown
-    eventBus?: EventBus
+    userId?: string
+  } & VoyantVariables
+}
+
+function getRuntimeEnv(c: Context) {
+  const processEnv =
+    (
+      globalThis as typeof globalThis & {
+        process?: { env?: Record<string, string | undefined> }
+      }
+    ).process?.env ?? {}
+
+  return {
+    ...processEnv,
+    ...(c.env ?? {}),
+  }
+}
+
+function sessionConflictError(status: string) {
+  switch (status) {
+    case "insufficient_capacity":
+      return "Insufficient slot capacity"
+    case "slot_unavailable":
+      return "Availability slot is not bookable"
+    case "pricing_unavailable":
+      return "Pricing is not available for the selected booking session items"
+    case "stale_quote":
+      return "Booking session quote is stale"
+    case "invalid_slot":
+      return "Booking session slot does not match the requested departure"
+    default:
+      return "Unable to bootstrap booking session"
+  }
+}
+
+function attachCheckoutCapability<T extends { sessionId: string }>(
+  session: T,
+  issued: Awaited<ReturnType<typeof issueCheckoutCapability>>,
+) {
+  return {
+    ...session,
+    checkoutCapability: {
+      token: issued.token,
+      expiresAt: issued.expiresAt.toISOString(),
+      actions: [...checkoutCapabilityActions],
+    },
   }
 }
 
@@ -129,6 +185,61 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         ? c.json({ data: preview })
         : c.json({ error: "Storefront departure not found" }, 404)
     })
+    .post(
+      "/bookings/sessions/bootstrap",
+      idempotencyKey({ scope: "POST /v1/public/bookings/sessions/bootstrap" }),
+      async (c) => {
+        const result = await storefrontService.bootstrapBookingSession(
+          getRequestContext(c) as StorefrontRequestContext & {
+            db: NonNullable<StorefrontRequestContext["db"]>
+          },
+          await parseJsonBody(c, storefrontBookingSessionBootstrapInputSchema),
+          c.get("userId" as never),
+        )
+
+        if (result.status === "departure_not_found") {
+          return c.json({ error: "Storefront departure not found" }, 404)
+        }
+
+        if (result.status === "slot_not_found") {
+          return c.json({ error: "Availability slot not found" }, 404)
+        }
+
+        if (result.status !== "ok") {
+          return c.json(
+            {
+              error: sessionConflictError(result.status),
+              ...(result.status === "stale_quote" && "repricing" in result
+                ? { data: { repricing: result.repricing } }
+                : {}),
+            },
+            result.status === "invalid_slot" ? 400 : 409,
+          )
+        }
+        if (!("bootstrap" in result)) {
+          return c.json({ error: "Unable to bootstrap booking session" }, 409)
+        }
+
+        const { bootstrap } = result
+        const capability = await issueCheckoutCapability(
+          bootstrap.session.sessionId,
+          getRuntimeEnv(c),
+        )
+        c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt), {
+          append: true,
+        })
+
+        return c.json(
+          {
+            data: {
+              ...bootstrap,
+              session: attachCheckoutCapability(bootstrap.session, capability),
+            },
+          },
+          201,
+        )
+      },
+    )
     .post("/departures/:departureId/eligibility", async (c) => {
       return c.json({
         data: await storefrontService.checkDepartureTransportEligibility({

@@ -1,10 +1,17 @@
 import { availabilitySlotStatusSchema } from "@voyantjs/availability/validation"
 import {
+  publicBookingSessionAllocationSchema,
+  publicBookingSessionRepriceSummarySchema,
+  publicBookingSessionSchema,
+  publicCreateBookingSessionSchema,
+} from "@voyantjs/bookings/public-validation"
+import {
   customerSignalKindSchema,
   customerSignalSourceSchema,
   customerSignalStatusSchema,
 } from "@voyantjs/crm/validation"
 import { extraPricingModeSchema } from "@voyantjs/extras/validation"
+import { publicBookingPaymentScheduleSchema } from "@voyantjs/finance/public-validation"
 import { z } from "zod"
 
 import { languageTagSchema } from "./validation-settings.js"
@@ -320,6 +327,70 @@ export const storefrontDeparturePricePreviewSchema = z.object({
   lineItems: z.array(storefrontDeparturePriceLineItemSchema),
 })
 
+export const storefrontBookingSessionQuoteSchema = z.object({
+  currencyCode: z.string().trim().min(3).max(3),
+  totalSellAmountCents: z.number().int().min(0),
+  quotedAt: z.string().datetime().optional().nullable(),
+  expiresAt: z.string().datetime().optional().nullable(),
+})
+
+export const storefrontBookingSessionBootstrapInputSchema = z
+  .object({
+    departureId: z.string().trim().min(1),
+    slotId: z.string().trim().min(1),
+    catalogId: z.string().trim().min(1).optional(),
+    quote: storefrontBookingSessionQuoteSchema,
+    session: publicCreateBookingSessionSchema,
+  })
+  .superRefine((value, ctx) => {
+    if (!value.session.items.some((item) => item.availabilitySlotId === value.slotId)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["session", "items"],
+        message: "At least one session item must reference slotId",
+      })
+    }
+  })
+
+export const storefrontBookingSessionPaymentPlanSchema = z.object({
+  source: z.literal("storefront_default"),
+  depositKind: z.enum(["none", "percent", "fixed_cents"]),
+  depositPercent: z.number().nullable(),
+  depositAmountCents: z.number().int().nullable(),
+  requiresFullPayment: z.boolean(),
+})
+
+export const storefrontBookingSessionAvailabilitySnapshotSchema = z.object({
+  departureId: z.string(),
+  slotId: z.string(),
+  productId: z.string(),
+  optionId: z.string().nullable(),
+  dateLocal: z.string().nullable(),
+  startsAt: z.string().nullable(),
+  endsAt: z.string().nullable(),
+  timezone: z.string(),
+  status: storefrontDepartureStatusSchema,
+  capacity: z.number().int().nullable(),
+  remaining: z.number().int().nullable(),
+})
+
+export const storefrontBookingSessionRepricingSnapshotSchema = z.object({
+  originalQuote: storefrontBookingSessionQuoteSchema,
+  current: publicBookingSessionRepriceSummarySchema,
+  deltaAmountCents: z.number().int(),
+  staleQuote: z.boolean(),
+})
+
+export const storefrontBookingSessionBootstrapSchema = z.object({
+  session: publicBookingSessionSchema,
+  paymentPlan: storefrontBookingSessionPaymentPlanSchema,
+  paymentSchedule: z.array(publicBookingPaymentScheduleSchema),
+  repricing: storefrontBookingSessionRepricingSnapshotSchema,
+  availability: storefrontBookingSessionAvailabilitySnapshotSchema,
+  allocation: z.array(publicBookingSessionAllocationSchema),
+  currency: z.string(),
+})
+
 export const storefrontProductExtensionsQuerySchema = z.object({
   optionId: z.string().optional(),
 })
@@ -518,6 +589,12 @@ export type StorefrontProductAvailabilitySummaryQuery = z.infer<
 >
 export type StorefrontDeparturePricePreviewInput = z.infer<
   typeof storefrontDeparturePricePreviewInputSchema
+>
+export type StorefrontBookingSessionBootstrapInput = z.infer<
+  typeof storefrontBookingSessionBootstrapInputSchema
+>
+export type StorefrontBookingSessionBootstrap = z.infer<
+  typeof storefrontBookingSessionBootstrapSchema
 >
 export type StorefrontPromotionalOffer = z.infer<typeof storefrontPromotionalOfferSchema>
 export type StorefrontOfferApplyInput = z.infer<typeof storefrontOfferApplyInputSchema>
