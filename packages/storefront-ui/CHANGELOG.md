@@ -1,5 +1,12 @@
 # @voyantjs/storefront-ui
 
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/storefront-react@0.50.4
+- @voyantjs/ui@0.50.4
+
 ## 0.50.3
 
 ### Patch Changes

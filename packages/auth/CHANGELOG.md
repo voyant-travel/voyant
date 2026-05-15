@@ -1,5 +1,13 @@
 # @voyantjs/auth
 
+## 0.50.4
+
+### Patch Changes
+
+- d1f7559: Forward Better Auth `user` options from `createBetterAuth`, including `user.additionalFields`, while preserving Voyant's default change-email support.
+  - @voyantjs/db@0.50.4
+  - @voyantjs/utils@0.50.4
+
 ## 0.50.3
 
 ### Patch Changes
