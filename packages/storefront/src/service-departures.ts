@@ -22,9 +22,12 @@ import { and, asc, count, desc, eq, gte, inArray, lte, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type {
+  StorefrontAppliedOffer,
   StorefrontDepartureListQuery,
   StorefrontDeparturePricePreviewInput,
+  StorefrontOfferMutationResult,
   StorefrontProductAvailabilitySummaryQuery,
+  StorefrontPromotionalOffer,
 } from "./validation.js"
 
 type SlotRow = {
@@ -110,6 +113,40 @@ type PricingContext = {
   }>
 }
 
+export interface StorefrontDeparturePricePreviewOfferResolvers {
+  listApplicableOffers?: (input: {
+    productId: string
+    departureId?: string
+    locale?: string
+  }) => Promise<StorefrontPromotionalOffer[]> | StorefrontPromotionalOffer[]
+  applyOffer?: (input: {
+    slug: string
+    body: {
+      productId: string
+      departureId?: string | null
+      pax: number
+      audience: "customer"
+      market: string
+      basePriceCents: number
+      currency: string
+      locale?: string
+    }
+  }) => Promise<StorefrontOfferMutationResult | null> | StorefrontOfferMutationResult | null
+  redeemOffer?: (input: {
+    body: {
+      code: string
+      productId: string
+      departureId?: string | null
+      pax: number
+      audience: "customer"
+      market: string
+      basePriceCents: number
+      currency: string
+      locale?: string
+    }
+  }) => Promise<StorefrontOfferMutationResult | null> | StorefrontOfferMutationResult | null
+}
+
 function normalizeIso(value: Date | string | null | undefined) {
   if (!value) {
     return null
@@ -143,8 +180,33 @@ function centsToAmount(cents: number | null | undefined) {
   return Number((cents / 100).toFixed(2))
 }
 
+function amountToCents(amount: number) {
+  return Math.round(amount * 100)
+}
+
 function getPreferredCurrency(context: PricingContext) {
   return context.catalog?.currencyCode ?? context.product?.sellCurrency ?? "EUR"
+}
+
+function selectUnitTier(
+  unitRule: PricingContext["unitRules"][number] | undefined,
+  tiers: PricingContext["tiers"],
+  quantity: number,
+) {
+  if (!unitRule) {
+    return null
+  }
+
+  return (
+    tiers
+      .filter(
+        (row) =>
+          row.optionUnitPriceRuleId === unitRule.id &&
+          quantity >= row.minQuantity &&
+          (row.maxQuantity == null || quantity <= row.maxQuantity),
+      )
+      .sort((a, b) => a.sortOrder - b.sortOrder)[0] ?? null
+  )
 }
 
 function selectTierAmount(
@@ -156,14 +218,7 @@ function selectTierAmount(
     return null
   }
 
-  const tier = tiers
-    .filter(
-      (row) =>
-        row.optionUnitPriceRuleId === unitRule.id &&
-        quantity >= row.minQuantity &&
-        (row.maxQuantity == null || quantity <= row.maxQuantity),
-    )
-    .sort((a, b) => a.sortOrder - b.sortOrder)[0]
+  const tier = selectUnitTier(unitRule, tiers, quantity)
 
   return tier?.sellAmountCents ?? unitRule.sellAmountCents ?? null
 }
@@ -750,6 +805,136 @@ function computeFallbackLineItems(args: {
   }
 }
 
+function buildRequestedUnitRows(args: {
+  context: PricingContext
+  requestedUnits: Array<{ unitId?: string; requestRef?: string; quantity: number }>
+}) {
+  const currencyCode = getPreferredCurrency(args.context)
+
+  return args.requestedUnits.map((request) => {
+    const unit = request.unitId ? args.context.units.find((row) => row.id === request.unitId) : null
+    const unitRule = request.unitId
+      ? args.context.unitRules.find((row) => row.unitId === request.unitId)
+      : args.context.unitRules[0]
+    const tier = selectUnitTier(unitRule, args.context.tiers, request.quantity)
+    const unitAmount = centsToAmount(tier?.sellAmountCents ?? unitRule?.sellAmountCents) ?? 0
+    const total = Number((unitAmount * Math.max(1, request.quantity)).toFixed(2))
+
+    return {
+      unitId: request.unitId ?? null,
+      requestRef: request.requestRef ?? request.unitId ?? null,
+      name: unit?.name ?? args.context.option?.name ?? "Traveler",
+      unitType: unit?.unitType ?? null,
+      quantity: Math.max(1, request.quantity),
+      pricingMode: unitRule?.pricingMode ?? null,
+      unitPrice: unitAmount,
+      total,
+      currencyCode,
+      tierId: tier?.id ?? null,
+    }
+  })
+}
+
+function buildRoomRows(args: {
+  context: PricingContext
+  rooms: Array<{ unitId: string; occupancy: number; quantity: number }>
+}) {
+  const currencyCode = getPreferredCurrency(args.context)
+
+  return args.rooms.map((room) => {
+    const unit = args.context.units.find((row) => row.id === room.unitId)
+    const unitRule = args.context.unitRules.find((row) => row.unitId === room.unitId)
+    const pax = Math.max(1, room.occupancy * room.quantity)
+    const quantity = unitRule?.pricingMode === "per_person" ? pax : Math.max(1, room.quantity)
+    const tier = selectUnitTier(unitRule, args.context.tiers, pax)
+    const unitAmount = centsToAmount(tier?.sellAmountCents ?? unitRule?.sellAmountCents) ?? 0
+    const total = Number((unitAmount * quantity).toFixed(2))
+
+    return {
+      unitId: room.unitId,
+      name: unit?.name ?? room.unitId,
+      occupancy: room.occupancy,
+      quantity: room.quantity,
+      pax,
+      pricingMode: unitRule?.pricingMode ?? null,
+      unitPrice: unitAmount,
+      total,
+      currencyCode,
+      tierId: tier?.id ?? null,
+    }
+  })
+}
+
+async function buildExtraImpacts(args: {
+  db: PostgresJsDatabase
+  productId: string
+  context: PricingContext
+  paxTotal: number
+  extras: Array<{ extraId: string; quantity: number }>
+}) {
+  const selectedQuantityByExtraId = new Map(
+    args.extras.map((extra) => [extra.extraId, extra.quantity] as const),
+  )
+  const extras = await args.db
+    .select({
+      id: productExtras.id,
+      name: productExtras.name,
+      selectionType: productExtras.selectionType,
+      pricingMode: productExtras.pricingMode,
+      pricedPerPerson: productExtras.pricedPerPerson,
+      defaultQuantity: productExtras.defaultQuantity,
+      minQuantity: productExtras.minQuantity,
+    })
+    .from(productExtras)
+    .where(and(eq(productExtras.productId, args.productId), eq(productExtras.active, true)))
+    .orderBy(asc(productExtras.sortOrder), asc(productExtras.name))
+
+  const ruleByExtraId = new Map(
+    args.context.extraRules
+      .filter((rule) => rule.productExtraId)
+      .map((rule) => [rule.productExtraId as string, rule] as const),
+  )
+
+  return extras.map((extra) => {
+    const rule = ruleByExtraId.get(extra.id)
+    const selectedQuantity = selectedQuantityByExtraId.get(extra.id)
+    const required = extra.selectionType === "required"
+    const selected = selectedQuantity != null || required
+    const pricingMode =
+      rule?.pricingMode ?? (extra.pricedPerPerson ? "per_person" : extra.pricingMode)
+    const unitAmount = centsToAmount(rule?.sellAmountCents) ?? 0
+    const chargeable =
+      pricingMode === "included" ||
+      pricingMode === "free" ||
+      pricingMode === "unavailable" ||
+      pricingMode === "on_request"
+        ? false
+        : selected
+
+    const baseQuantity = selected
+      ? (selectedQuantity ?? extra.defaultQuantity ?? extra.minQuantity ?? 1)
+      : 0
+    const quantity =
+      chargeable && pricingMode === "per_person"
+        ? Math.max(1, args.paxTotal * Math.max(1, baseQuantity))
+        : Math.max(0, baseQuantity)
+    const total = chargeable ? Number((unitAmount * quantity).toFixed(2)) : 0
+
+    return {
+      extraId: extra.id,
+      name: extra.name,
+      required,
+      selectable: extra.selectionType !== "unavailable",
+      selected,
+      pricingMode,
+      quantity,
+      unitPrice: unitAmount,
+      total,
+      currencyCode: getPreferredCurrency(args.context),
+    }
+  })
+}
+
 async function applyExtraLineItems(args: {
   db: PostgresJsDatabase
   productId: string
@@ -759,76 +944,262 @@ async function applyExtraLineItems(args: {
   lineItems: Array<{ name: string; total: number; quantity: number; unitPrice: number }>
   total: number
 }) {
-  if (args.extras.length === 0) {
-    return { lineItems: args.lineItems, total: args.total }
-  }
-
-  const extras = await args.db
-    .select({
-      id: productExtras.id,
-      name: productExtras.name,
-      pricingMode: productExtras.pricingMode,
-      pricedPerPerson: productExtras.pricedPerPerson,
-    })
-    .from(productExtras)
-    .where(
-      and(
-        eq(productExtras.productId, args.productId),
-        eq(productExtras.active, true),
-        inArray(
-          productExtras.id,
-          args.extras.map((extra) => extra.extraId),
-        ),
-      ),
-    )
-
-  const ruleByExtraId = new Map(
-    args.context.extraRules
-      .filter((rule) => rule.productExtraId)
-      .map((rule) => [rule.productExtraId as string, rule] as const),
-  )
-
-  let total = args.total
-  const lineItems = [...args.lineItems]
-
-  for (const extraSelection of args.extras) {
-    const extra = extras.find((row) => row.id === extraSelection.extraId)
-    if (!extra) {
-      continue
-    }
-
-    const rule = ruleByExtraId.get(extraSelection.extraId)
-    const pricingMode =
-      rule?.pricingMode ?? (extra.pricedPerPerson ? "per_person" : extra.pricingMode)
-    const unitAmount = centsToAmount(rule?.sellAmountCents) ?? 0
-
-    if (
-      pricingMode === "included" ||
-      pricingMode === "free" ||
-      pricingMode === "unavailable" ||
-      pricingMode === "on_request"
-    ) {
-      continue
-    }
-
-    const quantity =
-      pricingMode === "per_person"
-        ? Math.max(1, args.paxTotal * Math.max(1, extraSelection.quantity))
-        : Math.max(1, extraSelection.quantity)
-
-    const totalAmount = Number((unitAmount * quantity).toFixed(2))
-    total += totalAmount
-    lineItems.push({
+  const impacts = await buildExtraImpacts(args)
+  const selectedImpacts = impacts.filter((extra) => extra.selected && extra.total > 0)
+  const lineItems = [
+    ...args.lineItems,
+    ...selectedImpacts.map((extra) => ({
       name: extra.name,
-      total: totalAmount,
-      quantity,
-      unitPrice: unitAmount,
-    })
-  }
+      total: extra.total,
+      quantity: Math.max(1, extra.quantity),
+      unitPrice: extra.unitPrice,
+    })),
+  ]
+  const total = selectedImpacts.reduce((sum, extra) => sum + extra.total, args.total)
 
   return {
     lineItems,
     total: Number(total.toFixed(2)),
+    impacts,
+  }
+}
+
+function computeOfferDiscountCents(
+  offer: StorefrontPromotionalOffer,
+  basePriceCents: number,
+): number {
+  if (basePriceCents <= 0) return 0
+  if (offer.discountType === "percentage") {
+    const percent = Number(offer.discountValue)
+    return Number.isFinite(percent) ? Math.round((basePriceCents * percent) / 100) : 0
+  }
+
+  const discountCents = Number.parseInt(offer.discountValue, 10)
+  return Number.isFinite(discountCents) ? Math.min(discountCents, basePriceCents) : 0
+}
+
+function buildAppliedOfferFromDto(input: {
+  offer: StorefrontPromotionalOffer
+  discountAppliedCents: number
+  basePriceCents: number
+  currencyCode: string
+}): StorefrontAppliedOffer {
+  const discountPercent =
+    input.offer.discountType === "percentage" ? Number(input.offer.discountValue) : null
+  const discountAmountCents =
+    input.offer.discountType === "fixed_amount"
+      ? Number.parseInt(input.offer.discountValue, 10)
+      : null
+
+  return {
+    offerId: input.offer.id,
+    offerName: input.offer.name,
+    discountAppliedCents: input.discountAppliedCents,
+    discountedPriceCents: Math.max(0, input.basePriceCents - input.discountAppliedCents),
+    currency: input.currencyCode,
+    discountKind: input.offer.discountType,
+    discountPercent: Number.isFinite(discountPercent) ? discountPercent : null,
+    discountAmountCents: Number.isFinite(discountAmountCents) ? discountAmountCents : null,
+    appliedCode: null,
+    stackable: input.offer.stackable,
+  }
+}
+
+function evaluateAvailableOfferImpacts(input: {
+  offers: StorefrontPromotionalOffer[]
+  basePriceCents: number
+  currencyCode: string
+  paxTotal: number
+}) {
+  const candidates = input.offers.map((offer) => {
+    const standaloneDiscount = computeOfferDiscountCents(offer, input.basePriceCents)
+    const reason =
+      offer.minTravelers != null && input.paxTotal < offer.minTravelers
+        ? "min_pax"
+        : offer.discountType === "fixed_amount" && offer.currency !== input.currencyCode
+          ? "currency"
+          : standaloneDiscount <= 0
+            ? "no_discount"
+            : null
+
+    return { offer, standaloneDiscount, reason }
+  })
+
+  const applicable = candidates.filter((candidate) => candidate.reason == null)
+  const stackable = applicable
+    .filter((candidate) => candidate.offer.stackable)
+    .sort((a, b) => (a.offer.id < b.offer.id ? -1 : a.offer.id > b.offer.id ? 1 : 0))
+  const nonStackable = applicable.filter((candidate) => !candidate.offer.stackable)
+
+  let bestNonStackable: (typeof nonStackable)[number] | null = null
+  for (const candidate of nonStackable) {
+    if (
+      bestNonStackable == null ||
+      candidate.standaloneDiscount > bestNonStackable.standaloneDiscount
+    ) {
+      bestNonStackable = candidate
+    }
+  }
+
+  let runningBase = input.basePriceCents
+  const selectedStackable = stackable
+    .map((candidate) => {
+      const discount = computeOfferDiscountCents(candidate.offer, runningBase)
+      runningBase = Math.max(0, runningBase - discount)
+      return { ...candidate, selectedDiscount: discount }
+    })
+    .filter((candidate) => candidate.selectedDiscount > 0)
+  const stackableDiscount = input.basePriceCents - runningBase
+
+  const selected =
+    bestNonStackable && bestNonStackable.standaloneDiscount >= stackableDiscount
+      ? [{ ...bestNonStackable, selectedDiscount: bestNonStackable.standaloneDiscount }]
+      : selectedStackable
+
+  const selectedByOfferId = new Map(selected.map((candidate) => [candidate.offer.id, candidate]))
+  const applied = selected.map((candidate) =>
+    buildAppliedOfferFromDto({
+      offer: candidate.offer,
+      discountAppliedCents: candidate.selectedDiscount,
+      basePriceCents: input.basePriceCents,
+      currencyCode: input.currencyCode,
+    }),
+  )
+  const discountTotalCents = applied.reduce((sum, offer) => sum + offer.discountAppliedCents, 0)
+  const eligibleButNotSelected = applicable.filter(
+    (candidate) => !selectedByOfferId.has(candidate.offer.id),
+  )
+  const conflict =
+    eligibleButNotSelected.length > 0
+      ? {
+          policy: selected.every((candidate) => candidate.offer.stackable)
+            ? "stackable_compose"
+            : "best_discount_wins",
+          autoAppliedOfferIds: selected
+            .filter((candidate) => candidate.offer.slug == null)
+            .map((candidate) => candidate.offer.id),
+          manualOfferId: null,
+          selectedOfferIds: selected.map((candidate) => candidate.offer.id),
+          message: selected.every((candidate) => candidate.offer.stackable)
+            ? "Stackable offers compose when they beat the best standalone discount."
+            : "The best discount wins when non-stackable offers compete.",
+        }
+      : null
+
+  return {
+    available: candidates.map((candidate) => {
+      const selectedCandidate = selectedByOfferId.get(candidate.offer.id)
+      const selectedDiscount = selectedCandidate?.selectedDiscount ?? 0
+      const conflictReason =
+        candidate.reason == null && !selectedCandidate && selected.length > 0 ? "conflict" : null
+      const discountAppliedCents =
+        selectedCandidate?.selectedDiscount ?? candidate.standaloneDiscount
+
+      return {
+        offer: candidate.offer,
+        status: selectedCandidate ? "applied" : conflictReason ? "conflict" : "not_applicable",
+        reason: candidate.reason ?? conflictReason,
+        selected: Boolean(selectedCandidate),
+        discountAppliedCents,
+        discountedPriceCents: Math.max(
+          0,
+          input.basePriceCents -
+            (selectedCandidate ? selectedDiscount : candidate.standaloneDiscount),
+        ),
+      }
+    }),
+    applied,
+    conflict,
+    discountTotalCents,
+  }
+}
+
+async function buildOfferPreview(input: {
+  resolvers?: StorefrontDeparturePricePreviewOfferResolvers
+  productId: string
+  departureId: string
+  basePriceCents: number
+  currencyCode: string
+  paxTotal: number
+  requestedOffers: Array<{ slug: string }>
+  offerCode?: string | null
+  locale?: string
+  market: string
+}) {
+  const availableOffers =
+    (await input.resolvers?.listApplicableOffers?.({
+      productId: input.productId,
+      departureId: input.departureId,
+      locale: input.locale,
+    })) ?? []
+  const autoPreview = evaluateAvailableOfferImpacts({
+    offers: availableOffers,
+    basePriceCents: input.basePriceCents,
+    currencyCode: input.currencyCode,
+    paxTotal: input.paxTotal,
+  })
+  const target = {
+    productId: input.productId,
+    departureId: input.departureId,
+    pax: input.paxTotal,
+    audience: "customer" as const,
+    market: input.market,
+    basePriceCents: input.basePriceCents,
+    currency: input.currencyCode,
+    ...(input.locale ? { locale: input.locale } : {}),
+  }
+  const requested = []
+
+  for (const offer of input.requestedOffers) {
+    requested.push({
+      kind: "slug" as const,
+      value: offer.slug,
+      result:
+        (await input.resolvers?.applyOffer?.({
+          slug: offer.slug,
+          body: target,
+        })) ?? null,
+    })
+  }
+
+  if (input.offerCode) {
+    requested.push({
+      kind: "code" as const,
+      value: input.offerCode,
+      result:
+        (await input.resolvers?.redeemOffer?.({
+          body: { ...target, code: input.offerCode },
+        })) ?? null,
+    })
+  }
+
+  const bestRequested = requested
+    .map((entry) => entry.result)
+    .filter((result): result is StorefrontOfferMutationResult => Boolean(result))
+    .filter((result) => result.status === "applied" || result.status === "conflict")
+    .sort((a, b) => b.pricing.discountAppliedCents - a.pricing.discountAppliedCents)[0]
+  const applied =
+    bestRequested && bestRequested.pricing.discountAppliedCents > autoPreview.discountTotalCents
+      ? bestRequested.appliedOffers
+      : autoPreview.applied
+  const conflict =
+    bestRequested && bestRequested.pricing.discountAppliedCents > autoPreview.discountTotalCents
+      ? bestRequested.conflict
+      : autoPreview.conflict
+  const discountTotalCents =
+    bestRequested && bestRequested.pricing.discountAppliedCents > autoPreview.discountTotalCents
+      ? bestRequested.pricing.discountAppliedCents
+      : autoPreview.discountTotalCents
+
+  return {
+    available: autoPreview.available,
+    requested,
+    applied,
+    conflict,
+    discountTotal: centsToAmount(discountTotalCents) ?? 0,
+    discountTotalCents,
+    totalAfterDiscount: centsToAmount(Math.max(0, input.basePriceCents - discountTotalCents)) ?? 0,
+    currencyCode: input.currencyCode,
   }
 }
 
@@ -1086,6 +1457,7 @@ export async function previewStorefrontDeparturePrice(
   db: PostgresJsDatabase,
   departureId: string,
   input: StorefrontDeparturePricePreviewInput,
+  offerResolvers?: StorefrontDeparturePricePreviewOfferResolvers,
 ) {
   const [slot] = await listSlots(db, { slotId: departureId, limit: 1 })
   if (!slot) {
@@ -1168,17 +1540,88 @@ export async function previewStorefrontDeparturePrice(
     lineItems: seeded.lineItems,
     total: seeded.total,
   })
+  const unitRows =
+    rooms.length > 0
+      ? []
+      : buildRequestedUnitRows({
+          context,
+          requestedUnits,
+        })
+  const roomRows = buildRoomRows({ context, rooms })
+  const paxTotal = Math.max(1, adults + children + infants)
+  const subtotal = withExtras.total
+  const offers = await buildOfferPreview({
+    resolvers: offerResolvers,
+    productId: slot.productId,
+    departureId: slot.id,
+    basePriceCents: amountToCents(subtotal),
+    currencyCode: seeded.currencyCode,
+    paxTotal,
+    requestedOffers: input.offers,
+    offerCode: input.offerCode,
+    locale: input.locale,
+    market: input.market,
+  })
+  const total = offers.totalAfterDiscount
+  const extrasTotal = withExtras.impacts.reduce((sum, extra) => sum + extra.total, 0)
+  const basePrice = Number((subtotal - extrasTotal).toFixed(2))
 
   return {
     departureId: slot.id,
     productId: slot.productId,
     optionId: slot.optionId,
     currencyCode: seeded.currencyCode,
-    basePrice: seeded.lineItems[0]?.total ?? 0,
+    basePrice,
     taxAmount: 0,
-    total: withExtras.total,
+    total,
     notes: seeded.notes,
     lineItems: withExtras.lineItems,
+    allocation: {
+      slot: {
+        id: slot.id,
+        productId: slot.productId,
+        optionId: slot.optionId,
+        dateLocal: normalizeLocalDate(slot.dateLocal),
+        startAt: normalizeIso(slot.startsAt),
+        endAt: normalizeIso(slot.endsAt),
+        timezone: slot.timezone,
+        status: buildDepartureStatus(slot, context),
+        availabilityState: buildAvailabilityState({
+          status: buildDepartureStatus(slot, context),
+          remaining: slot.remainingPax ?? slot.remainingResources ?? null,
+          capacity: slot.unlimited ? null : (slot.initialPax ?? slot.remainingPax ?? null),
+          pastCutoff: slot.pastCutoff,
+          tooEarly: slot.tooEarly,
+        }),
+        capacity: slot.unlimited ? null : (slot.initialPax ?? slot.remainingPax ?? null),
+        remaining: slot.remainingPax ?? slot.remainingResources ?? null,
+        pastCutoff: slot.pastCutoff,
+        tooEarly: slot.tooEarly,
+      },
+      pax: {
+        adults,
+        children,
+        infants,
+        total: paxTotal,
+      },
+      requestedUnits: unitRows,
+      rooms: roomRows,
+    },
+    units: unitRows,
+    rooms: roomRows,
+    extras: withExtras.impacts,
+    offers,
+    totals: {
+      currencyCode: seeded.currencyCode,
+      base: basePrice,
+      extras: Number(extrasTotal.toFixed(2)),
+      subtotal,
+      discount: offers.discountTotal,
+      tax: 0,
+      total,
+      perPerson: Number((total / paxTotal).toFixed(2)),
+      perBooking: total,
+    },
   }
 }
 

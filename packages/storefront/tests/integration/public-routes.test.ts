@@ -545,7 +545,46 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       })
       .returning()
 
-    const res = await app.request(`/departures/${slot.id}/price`, {
+    const previewApp = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db" as never, db)
+        await next()
+      })
+      .route(
+        "/",
+        createStorefrontPublicRoutes({
+          offers: {
+            listApplicableOffers({ productId, departureId }) {
+              expect(productId).toBe(product.id)
+              expect(departureId).toBe(slot.id)
+
+              return [
+                {
+                  id: "offer_early_10",
+                  name: "Early booking",
+                  slug: "early-booking",
+                  description: "Save on early bookings.",
+                  discountType: "percentage",
+                  discountValue: "10",
+                  currency: null,
+                  applicableProductIds: [product.id],
+                  applicableDepartureIds: [slot.id],
+                  validFrom: null,
+                  validTo: null,
+                  minTravelers: 2,
+                  imageMobileUrl: null,
+                  imageDesktopUrl: null,
+                  stackable: false,
+                  createdAt: "2026-04-01T00:00:00.000Z",
+                  updatedAt: "2026-04-01T00:00:00.000Z",
+                },
+              ]
+            },
+          },
+        }),
+      )
+
+    const res = await previewApp.request(`/departures/${slot.id}/price`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -555,7 +594,8 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
     })
 
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
+    const body = await res.json()
+    expect(body).toMatchObject({
       data: {
         departureId: slot.id,
         productId: product.id,
@@ -563,7 +603,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
         currencyCode: "EUR",
         basePrice: 600,
         taxAmount: 0,
-        total: 615,
+        total: 553.5,
         notes: null,
         lineItems: [
           {
@@ -579,6 +619,120 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
             unitPrice: 15,
           },
         ],
+        allocation: {
+          slot: {
+            id: slot.id,
+            productId: product.id,
+            optionId: option.id,
+            dateLocal: "2026-06-15",
+            startAt: "2026-06-15T08:00:00.000Z",
+            endAt: "2026-06-15T10:00:00.000Z",
+            timezone: "Europe/Bucharest",
+            status: "open",
+            availabilityState: "available",
+            capacity: 10,
+            remaining: 10,
+            pastCutoff: false,
+            tooEarly: false,
+          },
+          pax: {
+            adults: 2,
+            children: 0,
+            infants: 0,
+            total: 2,
+          },
+          requestedUnits: [
+            {
+              unitId: adultUnit.id,
+              requestRef: adultUnit.id,
+              name: "Adult",
+              unitType: "person",
+              quantity: 2,
+              pricingMode: "per_unit",
+              unitPrice: 300,
+              total: 600,
+              currencyCode: "EUR",
+              tierId: null,
+            },
+          ],
+          rooms: [],
+        },
+        units: [
+          {
+            unitId: adultUnit.id,
+            requestRef: adultUnit.id,
+            name: "Adult",
+            unitType: "person",
+            quantity: 2,
+            pricingMode: "per_unit",
+            unitPrice: 300,
+            total: 600,
+            currencyCode: "EUR",
+            tierId: null,
+          },
+        ],
+        rooms: [],
+        extras: [
+          {
+            extraId: extra.id,
+            name: "Airport transfer",
+            required: false,
+            selectable: true,
+            selected: true,
+            pricingMode: "per_booking",
+            quantity: 1,
+            unitPrice: 15,
+            total: 15,
+            currencyCode: "EUR",
+          },
+        ],
+        offers: {
+          available: [
+            {
+              offer: {
+                id: "offer_early_10",
+                name: "Early booking",
+                slug: "early-booking",
+              },
+              status: "applied",
+              reason: null,
+              selected: true,
+              discountAppliedCents: 6150,
+              discountedPriceCents: 55350,
+            },
+          ],
+          requested: [],
+          applied: [
+            {
+              offerId: "offer_early_10",
+              offerName: "Early booking",
+              discountAppliedCents: 6150,
+              discountedPriceCents: 55350,
+              currency: "EUR",
+              discountKind: "percentage",
+              discountPercent: 10,
+              discountAmountCents: null,
+              appliedCode: null,
+              stackable: false,
+            },
+          ],
+          conflict: null,
+          discountTotal: 61.5,
+          discountTotalCents: 6150,
+          totalAfterDiscount: 553.5,
+          currencyCode: "EUR",
+        },
+        totals: {
+          currencyCode: "EUR",
+          base: 600,
+          extras: 15,
+          subtotal: 615,
+          discount: 61.5,
+          tax: 0,
+          total: 553.5,
+          perPerson: 276.75,
+          perBooking: 553.5,
+        },
       },
     })
   })
