@@ -29,8 +29,12 @@ export type FormState = {
   currencyDisplay: StorefrontSettingsRecord["localization"]["currencyDisplay"]
   defaultMethod: PaymentMethodCode | "none"
   enabledMethods: Record<PaymentMethodCode, boolean>
+  paymentStructure: StorefrontSettingsRecord["payment"]["structure"]
   depositPercent: string
   balanceDueDaysBeforeDeparture: string
+  bankTransferDueDays: string
+  bankProvider: string
+  bankCurrency: string
   accountHolder: string
   bankName: string
   iban: string
@@ -76,8 +80,12 @@ export const emptyForm: FormState = {
     voucher: false,
     invoice: false,
   },
+  paymentStructure: "full",
   depositPercent: "",
   balanceDueDaysBeforeDeparture: "",
+  bankTransferDueDays: "",
+  bankProvider: "",
+  bankCurrency: "",
   accountHolder: "",
   bankName: "",
   iban: "",
@@ -135,12 +143,20 @@ export function toFormState(settings?: StorefrontSettingsRecord): FormState {
         settings.payment.methods.some((stored) => stored.code === method.code && stored.enabled),
       ]),
     ) as FormState["enabledMethods"],
+    paymentStructure: settings.payment.structure,
     depositPercent: settings.payment.defaultSchedule?.depositPercent?.toString() ?? "",
     balanceDueDaysBeforeDeparture:
       settings.payment.defaultSchedule?.balanceDueDaysBeforeDeparture?.toString() ?? "",
-    accountHolder: settings.payment.bankTransfer?.accountHolder ?? "",
-    bankName: settings.payment.bankTransfer?.bankName ?? "",
-    iban: settings.payment.bankTransfer?.iban ?? "",
+    bankTransferDueDays: settings.payment.bankTransfer?.dueDays?.toString() ?? "",
+    bankProvider: settings.payment.bankTransfer?.account?.provider ?? "",
+    bankCurrency: settings.payment.bankTransfer?.account?.currency ?? "",
+    accountHolder:
+      settings.payment.bankTransfer?.account?.beneficiary ??
+      settings.payment.bankTransfer?.accountHolder ??
+      "",
+    bankName:
+      settings.payment.bankTransfer?.account?.bank ?? settings.payment.bankTransfer?.bankName ?? "",
+    iban: settings.payment.bankTransfer?.account?.iban ?? settings.payment.bankTransfer?.iban ?? "",
     bic: settings.payment.bankTransfer?.bic ?? "",
     paymentReference: settings.payment.bankTransfer?.paymentReference ?? "",
     bankInstructions: settings.payment.bankTransfer?.instructions ?? "",
@@ -175,6 +191,11 @@ export function validateForm(form: FormState) {
     : null
   if (balanceDue !== null && (!Number.isInteger(balanceDue) || balanceDue < 0)) {
     return "Balance due days must be a whole number greater than or equal to 0."
+  }
+
+  const bankDueDays = form.bankTransferDueDays ? Number(form.bankTransferDueDays) : null
+  if (bankDueDays !== null && (!Number.isInteger(bankDueDays) || bankDueDays < 0)) {
+    return "Bank transfer due days must be a whole number greater than or equal to 0."
   }
 
   if (form.defaultMethod !== "none" && !form.enabledMethods[form.defaultMethod]) {
@@ -221,6 +242,24 @@ export function toPayload(form: FormState): StorefrontSettingsPatchInput {
       methods: paymentMethods
         .filter((method) => form.enabledMethods[method.code])
         .map((method) => ({ code: method.code })),
+      structure: form.paymentStructure,
+      schedule:
+        form.paymentStructure === "split" && form.depositPercent
+          ? [
+              {
+                percent: Number(form.depositPercent),
+                dueInDays: 0,
+                dueCondition: "after_booking",
+              },
+              {
+                percent: 100 - Number(form.depositPercent),
+                dueInDays: form.balanceDueDaysBeforeDeparture
+                  ? Number(form.balanceDueDaysBeforeDeparture)
+                  : 0,
+                dueCondition: "before_departure",
+              },
+            ]
+          : [],
       defaultSchedule:
         form.depositPercent || form.balanceDueDaysBeforeDeparture
           ? {
@@ -231,6 +270,9 @@ export function toPayload(form: FormState): StorefrontSettingsPatchInput {
             }
           : null,
       bankTransfer:
+        form.bankTransferDueDays ||
+        form.bankProvider ||
+        form.bankCurrency ||
         form.accountHolder ||
         form.bankName ||
         form.iban ||
@@ -238,6 +280,17 @@ export function toPayload(form: FormState): StorefrontSettingsPatchInput {
         form.paymentReference ||
         form.bankInstructions
           ? {
+              dueDays: form.bankTransferDueDays ? Number(form.bankTransferDueDays) : null,
+              account:
+                form.iban && form.accountHolder && form.bankName
+                  ? {
+                      provider: optional(form.bankProvider),
+                      currency: optional(form.bankCurrency),
+                      iban: form.iban.trim(),
+                      beneficiary: form.accountHolder.trim(),
+                      bank: form.bankName.trim(),
+                    }
+                  : null,
               accountHolder: optional(form.accountHolder),
               bankName: optional(form.bankName),
               iban: optional(form.iban),

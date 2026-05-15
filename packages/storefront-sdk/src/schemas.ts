@@ -36,6 +36,10 @@ import {
   storefrontDeparturePriceTotalsSchema,
   storefrontDeparturePriceUnitRowSchema,
   storefrontDepartureSchema,
+  storefrontIntakeResponseSchema,
+  storefrontLeadIntakeInputSchema,
+  storefrontNewsletterSubscribeInputSchema,
+  storefrontNewsletterSubscribeResponseSchema,
   storefrontProductAvailabilitySummaryQuerySchema,
   storefrontProductAvailabilitySummaryResponseSchema,
   storefrontProductExtensionsQuerySchema,
@@ -85,6 +89,10 @@ export {
   storefrontDeparturePriceTotalsSchema,
   storefrontDeparturePriceUnitRowSchema,
   storefrontDepartureSchema,
+  storefrontIntakeResponseSchema,
+  storefrontLeadIntakeInputSchema,
+  storefrontNewsletterSubscribeInputSchema,
+  storefrontNewsletterSubscribeResponseSchema,
   storefrontProductAvailabilitySummaryQuerySchema,
   storefrontProductAvailabilitySummaryResponseSchema,
   storefrontProductExtensionsQuerySchema,
@@ -96,6 +104,12 @@ export {
 
 export const storefrontSettingsResponseSchema =
   storefrontSingleEnvelopeSchema(storefrontSettingsSchema)
+export const storefrontIntakeResponseEnvelopeSchema = storefrontSingleEnvelopeSchema(
+  storefrontIntakeResponseSchema,
+)
+export const storefrontNewsletterSubscribeResponseEnvelopeSchema = storefrontSingleEnvelopeSchema(
+  storefrontNewsletterSubscribeResponseSchema,
+)
 export const storefrontDepartureResponseSchema =
   storefrontSingleEnvelopeSchema(storefrontDepartureSchema)
 export const storefrontDeparturePricePreviewResponseSchema = storefrontSingleEnvelopeSchema(
@@ -135,6 +149,14 @@ export const bootstrappedCheckoutCollectionResponseSchema = storefrontSingleEnve
 )
 
 export type StorefrontSettingsRecord = z.infer<typeof storefrontSettingsSchema>
+export type StorefrontLeadIntakeInput = z.input<typeof storefrontLeadIntakeInputSchema>
+export type StorefrontNewsletterSubscribeInput = z.input<
+  typeof storefrontNewsletterSubscribeInputSchema
+>
+export type StorefrontIntakeRecord = z.infer<typeof storefrontIntakeResponseSchema>
+export type StorefrontNewsletterSubscribeRecord = z.infer<
+  typeof storefrontNewsletterSubscribeResponseSchema
+>
 export type StorefrontDepartureRecord = z.infer<typeof storefrontDepartureSchema>
 export type StorefrontDepartureListQuery = z.input<typeof storefrontDepartureListQuerySchema>
 export type StorefrontDeparturePricePreviewInput = z.input<

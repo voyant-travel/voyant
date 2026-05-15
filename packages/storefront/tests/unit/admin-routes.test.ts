@@ -40,11 +40,24 @@ describe("createStorefrontAdminRoutes", () => {
         },
         payment: {
           defaultMethod: "bank_transfer",
+          structure: "split",
+          schedule: [
+            { percent: 30, dueInDays: 0, dueCondition: "after_booking" },
+            { percent: 70, dueInDays: 45, dueCondition: "before_departure" },
+          ],
           defaultSchedule: {
             depositPercent: 30,
             balanceDueDaysBeforeDeparture: 45,
           },
           bankTransfer: {
+            dueDays: 7,
+            account: {
+              provider: "bank",
+              currency: "RON",
+              iban: "RO49AAAA1B31007593840000",
+              beneficiary: "Voyant Travel LLC",
+              bank: "Example Bank",
+            },
             accountHolder: "Voyant Travel LLC",
             bankName: "Example Bank",
             iban: "RO49AAAA1B31007593840000",
@@ -91,11 +104,24 @@ describe("createStorefrontAdminRoutes", () => {
         },
         payment: {
           defaultMethod: "bank_transfer",
+          structure: "split",
+          schedule: [
+            { percent: 30, dueInDays: 0, dueCondition: "after_booking" },
+            { percent: 70, dueInDays: 45, dueCondition: "before_departure" },
+          ],
           defaultSchedule: {
             depositPercent: 30,
             balanceDueDaysBeforeDeparture: 45,
           },
           bankTransfer: {
+            dueDays: 7,
+            account: {
+              provider: "bank",
+              currency: "RON",
+              iban: "RO49AAAA1B31007593840000",
+              beneficiary: "Voyant Travel LLC",
+              bank: "Example Bank",
+            },
             accountHolder: "Voyant Travel LLC",
             bankName: "Example Bank",
             iban: "RO49AAAA1B31007593840000",
@@ -160,11 +186,24 @@ describe("createStorefrontAdminRoutes", () => {
         },
         payment: {
           defaultMethod: "bank_transfer",
+          structure: "split",
+          schedule: [
+            { percent: 35, dueInDays: 0, dueCondition: "after_booking" },
+            { percent: 65, dueInDays: 60, dueCondition: "before_departure" },
+          ],
           defaultSchedule: {
             depositPercent: 35,
             balanceDueDaysBeforeDeparture: 60,
           },
           bankTransfer: {
+            dueDays: 7,
+            account: {
+              provider: "bank",
+              currency: "RON",
+              iban: "RO49AAAA1B31007593840000",
+              beneficiary: "Example Operator",
+              bank: "Example Bank",
+            },
             accountHolder: "Example Operator",
             bankName: "Example Bank",
             iban: "RO49AAAA1B31007593840000",
@@ -191,6 +230,11 @@ describe("createStorefrontAdminRoutes", () => {
       depositPercent: 35,
       balanceDueDaysBeforeDeparture: 60,
     })
+    expect(body.data.payment.structure).toBe("split")
+    expect(body.data.payment.schedule).toEqual([
+      { percent: 35, dueInDays: 0, dueCondition: "after_booking" },
+      { percent: 65, dueInDays: 60, dueCondition: "before_departure" },
+    ])
     expect(body.data.payment.methods).toEqual([
       { code: "card", label: "Card", description: null, enabled: false },
       { code: "bank_transfer", label: "Bank transfer", description: null, enabled: true },
@@ -202,6 +246,7 @@ describe("createStorefrontAdminRoutes", () => {
       payment: {
         defaultSchedule: { depositPercent: 20, balanceDueDaysBeforeDeparture: 30 },
         bankTransfer: {
+          dueDays: 7,
           accountHolder: "Example Operator",
           bankName: "Old Bank",
           iban: "RO49AAAA1B31007593840000",
@@ -237,6 +282,14 @@ describe("createStorefrontAdminRoutes", () => {
       balanceDueDaysBeforeDeparture: 30,
     })
     expect(body.data.payment.bankTransfer).toEqual({
+      dueDays: 7,
+      account: {
+        provider: null,
+        currency: null,
+        iban: "RO49AAAA1B31007593840000",
+        beneficiary: "Example Operator",
+        bank: "New Bank",
+      },
       accountHolder: "Example Operator",
       bankName: "New Bank",
       iban: "RO49AAAA1B31007593840000",

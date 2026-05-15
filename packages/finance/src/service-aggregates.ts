@@ -1,9 +1,11 @@
 import { and, asc, inArray, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { invoices } from "./schema.js"
+import { invoices, paymentSessions, payments } from "./schema.js"
 
 type InvoiceStatus = (typeof invoices.$inferSelect)["status"]
+type InvoiceType = Extract<(typeof invoices.$inferSelect)["invoiceType"], "invoice" | "proforma">
+type PaymentSessionStatus = (typeof paymentSessions.$inferSelect)["status"]
 
 const ALL_INVOICE_STATUSES: readonly InvoiceStatus[] = [
   "draft",
@@ -32,6 +34,18 @@ export interface FinanceAggregateOutstandingInvoice {
 export interface FinanceAggregates {
   total: number
   countsByStatus: Array<{ status: InvoiceStatus; count: number }>
+  counts: {
+    invoices: { issued: number; paid: number; void: number; overdue: number }
+    proformas: { issued: number; converted: number; void: number }
+    paymentSessions: { pending: number; paid: number; failed: number }
+  }
+  totals: Array<{
+    currency: string
+    invoiced: number
+    collected: number
+    outstanding: number
+    refunded: number
+  }>
   /** Issued total (total_cents) grouped by UTC yearMonth + currency. Void excluded. */
   monthlyRevenue: Array<{ yearMonth: string; currency: string; totalCents: number }>
   /** Invoice count per UTC yearMonth, all statuses in range. */
@@ -59,16 +73,29 @@ export interface FinanceAggregates {
 
 export async function getFinanceAggregates(
   db: PostgresJsDatabase,
-  options: { from?: string; to?: string; outstandingTopLimit?: number } = {},
+  options: {
+    range?: "this_month" | "last_month" | "year_to_date" | "all_time" | "custom"
+    from?: string
+    to?: string
+    currency?: string[]
+    invoiceType?: InvoiceType[]
+    status?: InvoiceStatus[]
+    outstandingTopLimit?: number
+  } = {},
 ): Promise<FinanceAggregates> {
   const outstandingTopLimit = Math.max(0, Math.min(options.outstandingTopLimit ?? 5, 20))
-  const fromDate = options.from ? new Date(options.from) : undefined
-  const toDate = options.to ? new Date(options.to) : undefined
+  const { fromDate, toDate } = resolveAggregateRange(options)
 
   const rangeConditions = []
   if (fromDate) rangeConditions.push(sql`${invoices.createdAt} >= ${fromDate.toISOString()}`)
   if (toDate) rangeConditions.push(sql`${invoices.createdAt} < ${toDate.toISOString()}`)
-  const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
+  const invoiceConditions = [...rangeConditions]
+  if (options.currency?.length) invoiceConditions.push(inArray(invoices.currency, options.currency))
+  if (options.invoiceType?.length) {
+    invoiceConditions.push(inArray(invoices.invoiceType, options.invoiceType))
+  }
+  if (options.status?.length) invoiceConditions.push(inArray(invoices.status, options.status))
+  const rangeWhere = invoiceConditions.length ? and(...invoiceConditions) : undefined
 
   const [totalRow] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -105,9 +132,65 @@ export async function getFinanceAggregates(
       totalCents: sql<number>`coalesce(sum(${invoices.totalCents}), 0)::bigint`,
     })
     .from(invoices)
-    .where(and(...(rangeConditions.length ? rangeConditions : []), ne(invoices.status, "void")))
+    .where(and(...invoiceConditions, ne(invoices.status, "void")))
     .groupBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`, invoices.currency)
     .orderBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`, invoices.currency)
+
+  const invoiceSummaryRows = await db
+    .select({
+      invoiceType: invoices.invoiceType,
+      status: invoices.status,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(invoices)
+    .where(rangeWhere)
+    .groupBy(invoices.invoiceType, invoices.status)
+
+  const invoiceTotalsRows = await db
+    .select({
+      currency: invoices.currency,
+      invoiced: sql<number>`coalesce(sum(case when ${invoices.status} != 'void' then ${invoices.totalCents} else 0 end), 0)::bigint`,
+      outstanding: sql<number>`coalesce(sum(case when ${invoices.status} not in ('paid', 'void') then ${invoices.balanceDueCents} else 0 end), 0)::bigint`,
+    })
+    .from(invoices)
+    .where(rangeWhere)
+    .groupBy(invoices.currency)
+    .orderBy(invoices.currency)
+
+  const paymentConditions = []
+  if (fromDate) paymentConditions.push(sql`${payments.paymentDate} >= ${dateOnly(fromDate)}`)
+  if (toDate) paymentConditions.push(sql`${payments.paymentDate} < ${dateOnly(toDate)}`)
+  if (options.currency?.length) paymentConditions.push(inArray(payments.currency, options.currency))
+  const paymentWhere = paymentConditions.length ? and(...paymentConditions) : undefined
+
+  const paymentTotalsRows = await db
+    .select({
+      currency: payments.currency,
+      collected: sql<number>`coalesce(sum(case when ${payments.status} = 'completed' then ${payments.amountCents} else 0 end), 0)::bigint`,
+      refunded: sql<number>`coalesce(sum(case when ${payments.status} = 'refunded' then ${payments.amountCents} else 0 end), 0)::bigint`,
+    })
+    .from(payments)
+    .where(paymentWhere)
+    .groupBy(payments.currency)
+    .orderBy(payments.currency)
+
+  const sessionConditions = []
+  if (fromDate)
+    sessionConditions.push(sql`${paymentSessions.createdAt} >= ${fromDate.toISOString()}`)
+  if (toDate) sessionConditions.push(sql`${paymentSessions.createdAt} < ${toDate.toISOString()}`)
+  if (options.currency?.length) {
+    sessionConditions.push(inArray(paymentSessions.currency, options.currency))
+  }
+  const sessionWhere = sessionConditions.length ? and(...sessionConditions) : undefined
+
+  const paymentSessionRows = await db
+    .select({
+      status: paymentSessions.status,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(paymentSessions)
+    .where(sessionWhere)
+    .groupBy(paymentSessions.status)
 
   // Outstanding + overdue always look at the whole book (not the date range),
   // since "what are we owed right now" is a point-in-time question — bounding
@@ -187,6 +270,8 @@ export async function getFinanceAggregates(
       status,
       count: countsByStatusMap.get(status) ?? 0,
     })),
+    counts: financeCounts(invoiceSummaryRows, paymentSessionRows),
+    totals: financeTotals(invoiceTotalsRows, paymentTotalsRows),
     monthlyRevenue: monthlyRevenueRows.map((row) => ({
       yearMonth: row.yearMonth,
       currency: row.currency,
@@ -218,4 +303,104 @@ export async function getFinanceAggregates(
       dueDate: row.dueDate ?? null,
     })),
   }
+}
+
+function resolveAggregateRange(options: {
+  range?: "this_month" | "last_month" | "year_to_date" | "all_time" | "custom"
+  from?: string
+  to?: string
+}) {
+  if (options.from || options.to || options.range === "custom") {
+    return {
+      fromDate: options.from ? new Date(options.from) : undefined,
+      toDate: options.to ? new Date(options.to) : undefined,
+    }
+  }
+
+  const now = new Date()
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+
+  if (options.range === "this_month") {
+    return {
+      fromDate: new Date(Date.UTC(year, month, 1)),
+      toDate: new Date(Date.UTC(year, month + 1, 1)),
+    }
+  }
+
+  if (options.range === "last_month") {
+    return {
+      fromDate: new Date(Date.UTC(year, month - 1, 1)),
+      toDate: new Date(Date.UTC(year, month, 1)),
+    }
+  }
+
+  if (options.range === "year_to_date") {
+    return {
+      fromDate: new Date(Date.UTC(year, 0, 1)),
+      toDate: undefined,
+    }
+  }
+
+  return { fromDate: undefined, toDate: undefined }
+}
+
+function dateOnly(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function financeCounts(
+  invoiceRows: Array<{ invoiceType: string; status: InvoiceStatus; count: number }>,
+  paymentSessionRows: Array<{ status: PaymentSessionStatus; count: number }>,
+) {
+  const invoiceCount = (invoiceType: InvoiceType, statuses: InvoiceStatus[]) =>
+    invoiceRows
+      .filter((row) => row.invoiceType === invoiceType && statuses.includes(row.status))
+      .reduce((sum, row) => sum + row.count, 0)
+  const sessionCount = (statuses: PaymentSessionStatus[]) =>
+    paymentSessionRows
+      .filter((row) => statuses.includes(row.status))
+      .reduce((sum, row) => sum + row.count, 0)
+
+  return {
+    invoices: {
+      issued: invoiceCount("invoice", ["sent", "partially_paid", "overdue"]),
+      paid: invoiceCount("invoice", ["paid"]),
+      void: invoiceCount("invoice", ["void"]),
+      overdue: invoiceCount("invoice", ["overdue"]),
+    },
+    proformas: {
+      issued: invoiceCount("proforma", ["sent", "partially_paid", "overdue", "paid"]),
+      converted: invoiceCount("proforma", ["paid"]),
+      void: invoiceCount("proforma", ["void"]),
+    },
+    paymentSessions: {
+      pending: sessionCount(["pending", "requires_redirect", "processing", "authorized"]),
+      paid: sessionCount(["paid"]),
+      failed: sessionCount(["failed", "cancelled", "expired"]),
+    },
+  }
+}
+
+function financeTotals(
+  invoiceRows: Array<{ currency: string; invoiced: number; outstanding: number }>,
+  paymentRows: Array<{ currency: string; collected: number; refunded: number }>,
+) {
+  const currencies = new Set([
+    ...invoiceRows.map((row) => row.currency),
+    ...paymentRows.map((row) => row.currency),
+  ])
+
+  return [...currencies].sort().map((currency) => {
+    const invoice = invoiceRows.find((row) => row.currency === currency)
+    const payment = paymentRows.find((row) => row.currency === currency)
+
+    return {
+      currency,
+      invoiced: Number(invoice?.invoiced ?? 0),
+      collected: Number(payment?.collected ?? 0),
+      outstanding: Number(invoice?.outstanding ?? 0),
+      refunded: Number(payment?.refunded ?? 0),
+    }
+  })
 }

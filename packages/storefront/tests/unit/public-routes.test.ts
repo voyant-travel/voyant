@@ -140,6 +140,8 @@ describe("createStorefrontPublicRoutes", () => {
         },
         payment: {
           defaultMethod: "card",
+          structure: "full",
+          schedule: [],
           defaultSchedule: null,
           bankTransfer: null,
           methods: [
@@ -199,6 +201,8 @@ describe("createStorefrontPublicRoutes", () => {
         payment: {
           defaultMethod: null,
           methods: [],
+          structure: "full",
+          schedule: [],
           defaultSchedule: null,
           bankTransfer: null,
         },
