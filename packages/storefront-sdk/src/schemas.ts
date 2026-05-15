@@ -5,6 +5,7 @@ import {
   publicBookingSessionRepriceResultSchema,
   publicBookingSessionSchema,
   publicBookingSessionStateSchema,
+  publicCheckoutCapabilitySchema,
   publicCreateBookingSessionSchema,
   publicRepriceBookingSessionSchema,
   publicUpdateBookingSessionSchema,
@@ -19,6 +20,8 @@ import {
   previewCheckoutCollectionSchema,
 } from "@voyantjs/checkout/validation"
 import {
+  storefrontBookingSessionBootstrapInputSchema,
+  storefrontBookingSessionBootstrapSchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -68,10 +71,13 @@ export {
   publicBookingSessionRepriceResultSchema,
   publicBookingSessionSchema,
   publicBookingSessionStateSchema,
+  publicCheckoutCapabilitySchema,
   publicCreateBookingSessionSchema,
   publicRepriceBookingSessionSchema,
   publicUpdateBookingSessionSchema,
   publicUpsertBookingSessionStateSchema,
+  storefrontBookingSessionBootstrapInputSchema,
+  storefrontBookingSessionBootstrapSchema,
   storefrontDepartureItinerarySchema,
   storefrontDepartureListQuerySchema,
   storefrontDepartureListResponseSchema,
@@ -137,6 +143,14 @@ export const publicBookingSessionRepriceResponseSchema = storefrontSingleEnvelop
 export const publicBookingOverviewResponseSchema = storefrontSingleEnvelopeSchema(
   publicBookingOverviewSchema,
 )
+export const bootstrappedBookingSessionSchema = storefrontBookingSessionBootstrapSchema.extend({
+  session: publicBookingSessionSchema.extend({
+    checkoutCapability: publicCheckoutCapabilitySchema,
+  }),
+})
+export const bootstrappedBookingSessionResponseSchema = storefrontSingleEnvelopeSchema(
+  bootstrappedBookingSessionSchema,
+)
 
 export const checkoutCollectionPlanResponseSchema = storefrontSingleEnvelopeSchema(
   checkoutCollectionPlanSchema,
@@ -193,6 +207,11 @@ export type PublicBookingSessionRepriceResultRecord = z.infer<
   typeof publicBookingSessionRepriceResultSchema
 >
 export type PublicBookingOverviewRecord = z.infer<typeof publicBookingOverviewSchema>
+export type StorefrontBookingSessionBootstrapInput = z.input<
+  typeof storefrontBookingSessionBootstrapInputSchema
+>
+export type StorefrontBookingSessionBootstrap = z.infer<typeof bootstrappedBookingSessionSchema>
+export type StorefrontBookingSessionBootstrapRecord = StorefrontBookingSessionBootstrap
 
 export type PreviewCheckoutCollectionInput = z.input<typeof previewCheckoutCollectionSchema>
 export type InitiateCheckoutCollectionInput = z.input<typeof initiateCheckoutCollectionSchema>
