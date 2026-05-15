@@ -3,8 +3,13 @@ import {
   checkoutCapabilityCookie,
   issueCheckoutCapability,
 } from "@voyantjs/bookings/checkout-capability"
-import type { EventBus } from "@voyantjs/core"
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import {
+  idempotencyKey,
+  parseJsonBody,
+  parseQuery,
+  type VoyantBindings,
+  type VoyantVariables,
+} from "@voyantjs/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
@@ -30,11 +35,10 @@ import {
 import { storefrontTransportEligibilityInputSchema } from "./validation-transport-eligibility.js"
 
 type Env = {
+  Bindings: VoyantBindings
   Variables: {
-    db: unknown
-    eventBus?: EventBus
     userId?: string
-  }
+  } & VoyantVariables
 }
 
 function getRuntimeEnv(c: Context) {
@@ -181,57 +185,61 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         ? c.json({ data: preview })
         : c.json({ error: "Storefront departure not found" }, 404)
     })
-    .post("/bookings/sessions/bootstrap", async (c) => {
-      const result = await storefrontService.bootstrapBookingSession(
-        getRequestContext(c) as StorefrontRequestContext & {
-          db: NonNullable<StorefrontRequestContext["db"]>
-        },
-        await parseJsonBody(c, storefrontBookingSessionBootstrapInputSchema),
-        c.get("userId" as never),
-      )
+    .post(
+      "/bookings/sessions/bootstrap",
+      idempotencyKey({ scope: "POST /v1/public/bookings/sessions/bootstrap" }),
+      async (c) => {
+        const result = await storefrontService.bootstrapBookingSession(
+          getRequestContext(c) as StorefrontRequestContext & {
+            db: NonNullable<StorefrontRequestContext["db"]>
+          },
+          await parseJsonBody(c, storefrontBookingSessionBootstrapInputSchema),
+          c.get("userId" as never),
+        )
 
-      if (result.status === "departure_not_found") {
-        return c.json({ error: "Storefront departure not found" }, 404)
-      }
+        if (result.status === "departure_not_found") {
+          return c.json({ error: "Storefront departure not found" }, 404)
+        }
 
-      if (result.status === "slot_not_found") {
-        return c.json({ error: "Availability slot not found" }, 404)
-      }
+        if (result.status === "slot_not_found") {
+          return c.json({ error: "Availability slot not found" }, 404)
+        }
 
-      if (result.status !== "ok") {
+        if (result.status !== "ok") {
+          return c.json(
+            {
+              error: sessionConflictError(result.status),
+              ...(result.status === "stale_quote" && "repricing" in result
+                ? { data: { repricing: result.repricing } }
+                : {}),
+            },
+            result.status === "invalid_slot" ? 400 : 409,
+          )
+        }
+        if (!("bootstrap" in result)) {
+          return c.json({ error: "Unable to bootstrap booking session" }, 409)
+        }
+
+        const { bootstrap } = result
+        const capability = await issueCheckoutCapability(
+          bootstrap.session.sessionId,
+          getRuntimeEnv(c),
+        )
+        c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt), {
+          append: true,
+        })
+
         return c.json(
           {
-            error: sessionConflictError(result.status),
-            ...(result.status === "stale_quote" && "repricing" in result
-              ? { data: { repricing: result.repricing } }
-              : {}),
+            data: {
+              ...bootstrap,
+              session: attachCheckoutCapability(bootstrap.session, capability),
+            },
           },
-          result.status === "invalid_slot" ? 400 : 409,
+          201,
         )
-      }
-      if (!("bootstrap" in result)) {
-        return c.json({ error: "Unable to bootstrap booking session" }, 409)
-      }
-
-      const { bootstrap } = result
-      const capability = await issueCheckoutCapability(
-        bootstrap.session.sessionId,
-        getRuntimeEnv(c),
-      )
-      c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt), {
-        append: true,
-      })
-
-      return c.json(
-        {
-          data: {
-            ...bootstrap,
-            session: attachCheckoutCapability(bootstrap.session, capability),
-          },
-        },
-        201,
-      )
-    })
+      },
+    )
     .post("/departures/:departureId/eligibility", async (c) => {
       return c.json({
         data: await storefrontService.checkDepartureTransportEligibility({

@@ -112,6 +112,10 @@ async function resolveAvailabilitySlot(db: PostgresJsDatabase, slotId: string) {
 async function previewBootstrapPricing(
   db: PostgresJsDatabase,
   input: StorefrontBookingSessionBootstrapInput,
+  slot: {
+    productId: string
+    optionId: string | null
+  },
 ) {
   const pricedItems: Array<{
     inputIndex: number
@@ -133,13 +137,15 @@ async function previewBootstrapPricing(
   let resolvedCurrency = input.session.sellCurrency
 
   for (const [index, item] of input.session.items.entries()) {
-    if (!item.productId) {
+    const productId = item.productId ?? slot.productId
+    const optionId = item.optionId ?? slot.optionId ?? undefined
+    if (!productId) {
       return { status: "pricing_unavailable" as const }
     }
 
-    const snapshot = await resolveSessionPricingSnapshot(db, item.productId, {
+    const snapshot = await resolveSessionPricingSnapshot(db, productId, {
       catalogId: input.catalogId,
-      optionId: item.optionId ?? undefined,
+      optionId,
     })
 
     if (!snapshot) {
@@ -150,9 +156,7 @@ async function previewBootstrapPricing(
     resolvedCurrency = snapshot.catalog.currencyCode ?? input.session.sellCurrency
 
     const option =
-      snapshot.options.find((candidate) => candidate.id === item.optionId) ??
-      snapshot.options[0] ??
-      null
+      snapshot.options.find((candidate) => candidate.id === optionId) ?? snapshot.options[0] ?? null
     if (!option) {
       return { status: "pricing_unavailable" as const }
     }
@@ -223,7 +227,7 @@ async function previewBootstrapPricing(
       inputIndex: index,
       itemId: `input:${index}`,
       title: item.title,
-      productId: item.productId ?? null,
+      productId,
       optionId: option.id,
       optionUnitId: selectedUnitId,
       optionUnitName: unitPrice?.unitName ?? null,
@@ -312,7 +316,10 @@ export async function bootstrapStorefrontBookingSession(
     return { status: "invalid_slot" as const }
   }
 
-  const preview = await previewBootstrapPricing(context.db, input)
+  const preview = await previewBootstrapPricing(context.db, input, {
+    productId: slot.productId,
+    optionId: slot.optionId ?? null,
+  })
   if (preview.status !== "ok") {
     return preview
   }
@@ -343,6 +350,7 @@ export async function bootstrapStorefrontBookingSession(
         return {
           ...item,
           sellCurrency: preview.pricing.currencyCode,
+          productId: pricedItem?.productId ?? item.productId,
           optionId: pricedItem?.optionId ?? item.optionId,
           optionUnitId: pricedItem?.optionUnitId ?? item.optionUnitId,
           pricingCategoryId: pricedItem?.pricingCategoryId ?? item.pricingCategoryId,

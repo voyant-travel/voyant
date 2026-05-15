@@ -58,7 +58,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
     await closeTestDb()
   })
 
-  async function seedDeparture() {
+  async function seedDeparture(options: { competingDefaultOption?: boolean } = {}) {
     const [product] = await db
       .insert(products)
       .values({
@@ -76,7 +76,8 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
         productId: product.id,
         name: "Main departure",
         status: "active",
-        isDefault: true,
+        isDefault: !options.competingDefaultOption,
+        sortOrder: options.competingDefaultOption ? 10 : 0,
       })
       .returning()
 
@@ -103,6 +104,54 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
         active: true,
       })
       .returning()
+
+    if (options.competingDefaultOption) {
+      const [defaultOption] = await db
+        .insert(productOptions)
+        .values({
+          productId: product.id,
+          name: "Default but unselected departure",
+          status: "active",
+          isDefault: true,
+          sortOrder: 0,
+        })
+        .returning()
+
+      const [defaultUnit] = await db
+        .insert(optionUnits)
+        .values({
+          optionId: defaultOption.id,
+          name: "Default cabin",
+          unitType: "room",
+          occupancyMin: 2,
+          occupancyMax: 2,
+          isHidden: false,
+        })
+        .returning()
+
+      const [defaultRule] = await db
+        .insert(optionPriceRules)
+        .values({
+          productId: product.id,
+          optionId: defaultOption.id,
+          priceCatalogId: catalog.id,
+          name: "Default room rate",
+          pricingMode: "per_booking",
+          baseSellAmountCents: 40000,
+          isDefault: true,
+          active: true,
+        })
+        .returning()
+
+      await db.insert(optionUnitPriceRules).values({
+        optionPriceRuleId: defaultRule.id,
+        optionId: defaultOption.id,
+        unitId: defaultUnit.id,
+        pricingMode: "per_booking",
+        sellAmountCents: 40000,
+        active: true,
+      })
+    }
 
     const [rule] = await db
       .insert(optionPriceRules)
@@ -268,6 +317,68 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
       .from(bookingPaymentSchedules)
       .where(eq(bookingPaymentSchedules.bookingId, body.data.session.sessionId))
     expect(schedules).toHaveLength(2)
+  })
+
+  it("replays duplicate bootstrap requests with the same idempotency key", async () => {
+    const seed = await seedDeparture()
+    const payload = bootstrapPayload(seed)
+    const headers = {
+      "Content-Type": "application/json",
+      "Idempotency-Key": "bootstrap-idempotency-1",
+    }
+
+    const first = await app.request("/bookings/sessions/bootstrap", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    })
+    expect(first.status).toBe(201)
+    const firstBody = await first.json()
+
+    const replay = await app.request("/bookings/sessions/bootstrap", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    })
+    expect(replay.status).toBe(201)
+    expect(replay.headers.get("Idempotency-Replayed")).toBe("true")
+    const replayBody = await replay.json()
+    expect(replayBody.data.session.sessionId).toBe(firstBody.data.session.sessionId)
+
+    const schedules = await db
+      .select()
+      .from(bookingPaymentSchedules)
+      .where(eq(bookingPaymentSchedules.bookingId, firstBody.data.session.sessionId))
+    expect(schedules).toHaveLength(2)
+
+    const [slot] = await db
+      .select()
+      .from(availabilitySlots)
+      .where(eq(availabilitySlots.id, seed.slot.id))
+      .limit(1)
+    expect(slot?.remainingPax).toBe(9)
+  })
+
+  it("prices omitted item option ids against the selected slot option", async () => {
+    const seed = await seedDeparture({ competingDefaultOption: true })
+    const payload = bootstrapPayload(seed)
+    delete payload.session.items[0]?.optionId
+
+    const res = await app.request("/bookings/sessions/bootstrap", {
+      method: "POST",
+      ...json(payload),
+    })
+
+    expect(res.status).toBe(201)
+    const body = await res.json()
+    expect(body.data.repricing.current.totalSellAmountCents).toBe(50000)
+    expect(body.data.session.items[0]).toEqual(
+      expect.objectContaining({
+        productId: seed.product.id,
+        optionId: seed.option.id,
+        optionUnitId: seed.unit.id,
+      }),
+    )
   })
 
   it("rejects missing session input", async () => {
