@@ -1,5 +1,12 @@
 # @voyantjs/auth
 
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/db@0.50.3
+- @voyantjs/utils@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes
