@@ -34,6 +34,7 @@ surfaces app-owned through typed slots:
   id={bookingId}
   slots={{
     actionBar: ({ booking }) => <button type="button">Assign {booking.bookingNumber}</button>,
+    bookingTab: ({ booking }) => <BookingOverviewPanel booking={booking} />,
     financeSidebar: ({ bookingId }) => <FinanceStatusCard bookingId={bookingId} />,
     legalTab: ({ bookingId }) => <ContractChecklist bookingId={bookingId} />,
     travelersTabExtensions: ({ bulkActions }) => (
@@ -46,7 +47,10 @@ surfaces app-owned through typed slots:
 
 Slot render functions receive the booking, active workspace section, section
 setter, and bulk-action state for traveler and finance selections. Use
-`bookingDetailSlots` to pass slots through to the mounted `BookingDetailPage`.
+`bookingTab` when an app wants to use top-level finance, legal, traveler, or
+activity tabs without nesting the default `BookingDetailPage` tabs. When
+`bookingTab` is omitted, the workspace keeps mounting `BookingDetailPage`; use
+`bookingDetailSlots` to pass slots through to that default detail page.
 
 ## I18n
 
