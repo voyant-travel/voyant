@@ -23,6 +23,7 @@ import { and, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { exchangeRates, fxRateSets } from "../../../markets/src/schema.js"
 import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
@@ -531,6 +532,21 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       active: true,
     })
 
+    const [fxRateSet] = await db
+      .insert(fxRateSets)
+      .values({
+        baseCurrency: "EUR",
+        effectiveAt: new Date("2026-04-01T00:00:00.000Z"),
+      })
+      .returning()
+
+    await db.insert(exchangeRates).values({
+      fxRateSetId: fxRateSet.id,
+      baseCurrency: "EUR",
+      quoteCurrency: "USD",
+      rateDecimal: "2",
+    })
+
     const [slot] = await db
       .insert(availabilitySlots)
       .values({
@@ -588,6 +604,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
+        currencyCode: "USD",
         pax: { adults: 2, children: 0, infants: 0 },
         extras: [{ extraId: extra.id, quantity: 1 }],
       }),
@@ -600,23 +617,23 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
         departureId: slot.id,
         productId: product.id,
         optionId: option.id,
-        currencyCode: "EUR",
-        basePrice: 600,
+        currencyCode: "USD",
+        basePrice: 1200,
         taxAmount: 0,
-        total: 553.5,
+        total: 1107,
         notes: null,
         lineItems: [
           {
             name: "Standard · Adult",
-            total: 600,
+            total: 1200,
             quantity: 2,
-            unitPrice: 300,
+            unitPrice: 600,
           },
           {
             name: "Airport transfer",
-            total: 15,
+            total: 30,
             quantity: 1,
-            unitPrice: 15,
+            unitPrice: 30,
           },
         ],
         allocation: {
@@ -649,9 +666,9 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
               unitType: "person",
               quantity: 2,
               pricingMode: "per_unit",
-              unitPrice: 300,
-              total: 600,
-              currencyCode: "EUR",
+              unitPrice: 600,
+              total: 1200,
+              currencyCode: "USD",
               tierId: null,
             },
           ],
@@ -665,9 +682,9 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
             unitType: "person",
             quantity: 2,
             pricingMode: "per_unit",
-            unitPrice: 300,
-            total: 600,
-            currencyCode: "EUR",
+            unitPrice: 600,
+            total: 1200,
+            currencyCode: "USD",
             tierId: null,
           },
         ],
@@ -681,9 +698,9 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
             selected: true,
             pricingMode: "per_booking",
             quantity: 1,
-            unitPrice: 15,
-            total: 15,
-            currencyCode: "EUR",
+            unitPrice: 30,
+            total: 30,
+            currencyCode: "USD",
           },
         ],
         offers: {
@@ -697,8 +714,8 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
               status: "applied",
               reason: null,
               selected: true,
-              discountAppliedCents: 6150,
-              discountedPriceCents: 55350,
+              discountAppliedCents: 12300,
+              discountedPriceCents: 110700,
             },
           ],
           requested: [],
@@ -706,9 +723,9 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
             {
               offerId: "offer_early_10",
               offerName: "Early booking",
-              discountAppliedCents: 6150,
-              discountedPriceCents: 55350,
-              currency: "EUR",
+              discountAppliedCents: 12300,
+              discountedPriceCents: 110700,
+              currency: "USD",
               discountKind: "percentage",
               discountPercent: 10,
               discountAmountCents: null,
@@ -717,21 +734,207 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
             },
           ],
           conflict: null,
-          discountTotal: 61.5,
-          discountTotalCents: 6150,
-          totalAfterDiscount: 553.5,
-          currencyCode: "EUR",
+          discountTotal: 123,
+          discountTotalCents: 12300,
+          totalAfterDiscount: 1107,
+          currencyCode: "USD",
         },
         totals: {
-          currencyCode: "EUR",
-          base: 600,
-          extras: 15,
-          subtotal: 615,
-          discount: 61.5,
+          currencyCode: "USD",
+          base: 1200,
+          extras: 30,
+          subtotal: 1230,
+          discount: 123,
           tax: 0,
-          total: 553.5,
-          perPerson: 276.75,
-          perBooking: 553.5,
+          total: 1107,
+          perPerson: 553.5,
+          perBooking: 1107,
+        },
+      },
+    })
+  })
+
+  it("uses room occupancy for price-preview offer pax and per-person totals", async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: "Room package",
+        status: "active",
+        activated: true,
+        visibility: "public",
+        sellCurrency: "EUR",
+      })
+      .returning()
+
+    const [option] = await db
+      .insert(productOptions)
+      .values({
+        productId: product.id,
+        name: "Double room",
+        status: "active",
+        isDefault: true,
+      })
+      .returning()
+
+    await db.insert(productItineraries).values({
+      productId: product.id,
+      name: "Main itinerary",
+      isDefault: true,
+    })
+
+    const [roomUnit] = await db
+      .insert(optionUnits)
+      .values({
+        optionId: option.id,
+        name: "Double",
+        unitType: "room",
+        occupancyMin: 1,
+        occupancyMax: 2,
+        isHidden: false,
+      })
+      .returning()
+
+    const [catalog] = await db
+      .insert(priceCatalogs)
+      .values({
+        code: "PUBLIC-ROOM-EUR",
+        name: "Public Room EUR",
+        currencyCode: "EUR",
+        catalogType: "public",
+        isDefault: true,
+        active: true,
+      })
+      .returning()
+
+    const [rule] = await db
+      .insert(optionPriceRules)
+      .values({
+        productId: product.id,
+        optionId: option.id,
+        priceCatalogId: catalog.id,
+        name: "Room rate",
+        pricingMode: "per_person",
+        isDefault: true,
+        active: true,
+      })
+      .returning()
+
+    await db.insert(optionUnitPriceRules).values({
+      optionPriceRuleId: rule.id,
+      optionId: option.id,
+      unitId: roomUnit.id,
+      pricingMode: "per_person",
+      sellAmountCents: 10000,
+      active: true,
+    })
+
+    const [slot] = await db
+      .insert(availabilitySlots)
+      .values({
+        productId: product.id,
+        optionId: option.id,
+        dateLocal: "2026-07-20",
+        startsAt: new Date("2026-07-20T10:00:00.000Z"),
+        endsAt: new Date("2026-07-20T12:00:00.000Z"),
+        timezone: "Europe/Bucharest",
+        status: "open",
+        remainingPax: 4,
+      })
+      .returning()
+
+    const previewApp = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db" as never, db)
+        await next()
+      })
+      .route(
+        "/",
+        createStorefrontPublicRoutes({
+          offers: {
+            listApplicableOffers({ productId, departureId }) {
+              expect(productId).toBe(product.id)
+              expect(departureId).toBe(slot.id)
+
+              return [
+                {
+                  id: "offer_room_10",
+                  name: "Room offer",
+                  slug: "room-offer",
+                  description: null,
+                  discountType: "percentage",
+                  discountValue: "10",
+                  currency: null,
+                  applicableProductIds: [product.id],
+                  applicableDepartureIds: [slot.id],
+                  validFrom: null,
+                  validTo: null,
+                  minTravelers: 2,
+                  imageMobileUrl: null,
+                  imageDesktopUrl: null,
+                  stackable: false,
+                  createdAt: "2026-04-01T00:00:00.000Z",
+                  updatedAt: "2026-04-01T00:00:00.000Z",
+                },
+              ]
+            },
+          },
+        }),
+      )
+
+    const res = await previewApp.request(`/departures/${slot.id}/price`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        rooms: [{ unitId: roomUnit.id, occupancy: 2, quantity: 1 }],
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({
+      data: {
+        basePrice: 200,
+        total: 180,
+        allocation: {
+          pax: {
+            total: 2,
+          },
+          rooms: [
+            {
+              unitId: roomUnit.id,
+              pax: 2,
+              unitPrice: 100,
+              total: 200,
+              currencyCode: "EUR",
+            },
+          ],
+        },
+        rooms: [
+          {
+            unitId: roomUnit.id,
+            pax: 2,
+            unitPrice: 100,
+            total: 200,
+            currencyCode: "EUR",
+          },
+        ],
+        offers: {
+          available: [
+            {
+              status: "applied",
+              reason: null,
+              discountAppliedCents: 2000,
+              discountedPriceCents: 18000,
+            },
+          ],
+          discountTotal: 20,
+          totalAfterDiscount: 180,
+        },
+        totals: {
+          subtotal: 200,
+          discount: 20,
+          total: 180,
+          perPerson: 90,
+          perBooking: 180,
         },
       },
     })

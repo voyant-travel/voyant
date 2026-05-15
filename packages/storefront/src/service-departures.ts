@@ -113,6 +113,19 @@ type PricingContext = {
   }>
 }
 
+type ResolvedPricingComponent = {
+  kind: string
+  title: string
+  quantity: number
+  pricingMode: string
+  sellAmountCents: number
+  unitId: string | null
+  unitName: string | null
+  unitType: string | null
+  requestRef: string | null
+  tierId: string | null
+}
+
 export interface StorefrontDeparturePricePreviewOfferResolvers {
   listApplicableOffers?: (input: {
     productId: string
@@ -182,6 +195,18 @@ function centsToAmount(cents: number | null | undefined) {
 
 function amountToCents(amount: number) {
   return Math.round(amount * 100)
+}
+
+function convertCents(cents: number | null | undefined, rate: number | null | undefined) {
+  if (cents == null) {
+    return null
+  }
+
+  return rate == null ? cents : Math.round(cents * rate)
+}
+
+function convertedAmount(cents: number | null | undefined, rate: number | null | undefined) {
+  return centsToAmount(convertCents(cents, rate))
 }
 
 function getPreferredCurrency(context: PricingContext) {
@@ -805,50 +830,100 @@ function computeFallbackLineItems(args: {
   }
 }
 
+function buildResolvedLineItems(
+  components: ResolvedPricingComponent[],
+  conversionRate?: number | null,
+) {
+  return components.map((component) => {
+    const total = convertedAmount(component.sellAmountCents, conversionRate) ?? 0
+    const quantity = Math.max(1, component.quantity)
+
+    return {
+      name: component.title,
+      total,
+      quantity,
+      unitPrice: Number((total / quantity).toFixed(2)),
+    }
+  })
+}
+
 function buildRequestedUnitRows(args: {
   context: PricingContext
   requestedUnits: Array<{ unitId?: string; requestRef?: string; quantity: number }>
+  components: ResolvedPricingComponent[]
+  currencyCode: string
+  conversionRate?: number | null
 }) {
-  const currencyCode = getPreferredCurrency(args.context)
-
   return args.requestedUnits.map((request) => {
     const unit = request.unitId ? args.context.units.find((row) => row.id === request.unitId) : null
     const unitRule = request.unitId
       ? args.context.unitRules.find((row) => row.unitId === request.unitId)
       : args.context.unitRules[0]
     const tier = selectUnitTier(unitRule, args.context.tiers, request.quantity)
-    const unitAmount = centsToAmount(tier?.sellAmountCents ?? unitRule?.sellAmountCents) ?? 0
-    const total = Number((unitAmount * Math.max(1, request.quantity)).toFixed(2))
+    const component =
+      args.components.find(
+        (row) => row.kind === "unit" && request.requestRef && row.requestRef === request.requestRef,
+      ) ??
+      args.components.find(
+        (row) => row.kind === "unit" && request.unitId && row.unitId === request.unitId,
+      )
+    const quantity = Math.max(1, request.quantity)
+    const total =
+      component != null
+        ? (convertedAmount(component.sellAmountCents, args.conversionRate) ?? 0)
+        : Number(
+            (
+              (convertedAmount(
+                tier?.sellAmountCents ?? unitRule?.sellAmountCents,
+                args.conversionRate,
+              ) ?? 0) * quantity
+            ).toFixed(2),
+          )
+    const unitAmount = Number((total / quantity).toFixed(2))
 
     return {
       unitId: request.unitId ?? null,
       requestRef: request.requestRef ?? request.unitId ?? null,
       name: unit?.name ?? args.context.option?.name ?? "Traveler",
       unitType: unit?.unitType ?? null,
-      quantity: Math.max(1, request.quantity),
-      pricingMode: unitRule?.pricingMode ?? null,
+      quantity,
+      pricingMode: component?.pricingMode ?? unitRule?.pricingMode ?? null,
       unitPrice: unitAmount,
       total,
-      currencyCode,
-      tierId: tier?.id ?? null,
+      currencyCode: args.currencyCode,
+      tierId: component?.tierId ?? tier?.id ?? null,
     }
   })
 }
 
 function buildRoomRows(args: {
   context: PricingContext
-  rooms: Array<{ unitId: string; occupancy: number; quantity: number }>
+  rooms: Array<{ unitId: string; requestRef: string; occupancy: number; quantity: number }>
+  components: ResolvedPricingComponent[]
+  currencyCode: string
+  conversionRate?: number | null
 }) {
-  const currencyCode = getPreferredCurrency(args.context)
-
   return args.rooms.map((room) => {
     const unit = args.context.units.find((row) => row.id === room.unitId)
     const unitRule = args.context.unitRules.find((row) => row.unitId === room.unitId)
     const pax = Math.max(1, room.occupancy * room.quantity)
     const quantity = unitRule?.pricingMode === "per_person" ? pax : Math.max(1, room.quantity)
     const tier = selectUnitTier(unitRule, args.context.tiers, pax)
-    const unitAmount = centsToAmount(tier?.sellAmountCents ?? unitRule?.sellAmountCents) ?? 0
-    const total = Number((unitAmount * quantity).toFixed(2))
+    const component =
+      args.components.find((row) => row.kind === "unit" && row.requestRef === room.requestRef) ??
+      args.components.find((row) => row.kind === "unit" && row.unitId === room.unitId)
+    const total =
+      component != null
+        ? (convertedAmount(component.sellAmountCents, args.conversionRate) ?? 0)
+        : Number(
+            (
+              (convertedAmount(
+                tier?.sellAmountCents ?? unitRule?.sellAmountCents,
+                args.conversionRate,
+              ) ?? 0) * quantity
+            ).toFixed(2),
+          )
+    const unitAmount = Number((total / quantity).toFixed(2))
 
     return {
       unitId: room.unitId,
@@ -856,11 +931,11 @@ function buildRoomRows(args: {
       occupancy: room.occupancy,
       quantity: room.quantity,
       pax,
-      pricingMode: unitRule?.pricingMode ?? null,
+      pricingMode: component?.pricingMode ?? unitRule?.pricingMode ?? null,
       unitPrice: unitAmount,
       total,
-      currencyCode,
-      tierId: tier?.id ?? null,
+      currencyCode: args.currencyCode,
+      tierId: component?.tierId ?? tier?.id ?? null,
     }
   })
 }
@@ -871,6 +946,8 @@ async function buildExtraImpacts(args: {
   context: PricingContext
   paxTotal: number
   extras: Array<{ extraId: string; quantity: number }>
+  currencyCode: string
+  conversionRate?: number | null
 }) {
   const selectedQuantityByExtraId = new Map(
     args.extras.map((extra) => [extra.extraId, extra.quantity] as const),
@@ -902,7 +979,7 @@ async function buildExtraImpacts(args: {
     const selected = selectedQuantity != null || required
     const pricingMode =
       rule?.pricingMode ?? (extra.pricedPerPerson ? "per_person" : extra.pricingMode)
-    const unitAmount = centsToAmount(rule?.sellAmountCents) ?? 0
+    const unitAmount = convertedAmount(rule?.sellAmountCents, args.conversionRate) ?? 0
     const chargeable =
       pricingMode === "included" ||
       pricingMode === "free" ||
@@ -930,7 +1007,7 @@ async function buildExtraImpacts(args: {
       quantity,
       unitPrice: unitAmount,
       total,
-      currencyCode: getPreferredCurrency(args.context),
+      currencyCode: args.currencyCode,
     }
   })
 }
@@ -941,6 +1018,8 @@ async function applyExtraLineItems(args: {
   context: PricingContext
   paxTotal: number
   extras: Array<{ extraId: string; quantity: number }>
+  currencyCode: string
+  conversionRate?: number | null
   lineItems: Array<{ name: string; total: number; quantity: number; unitPrice: number }>
   total: number
 }) {
@@ -1468,8 +1547,9 @@ export async function previewStorefrontDeparturePrice(
   const adults = Math.max(0, input.pax?.adults ?? 1)
   const children = Math.max(0, input.pax?.children ?? 0)
   const infants = Math.max(0, input.pax?.infants ?? 0)
-  const rooms = input.rooms.map((room) => ({
+  const rooms = input.rooms.map((room, index) => ({
     unitId: room.unitId,
+    requestRef: `${room.unitId}:${index}`,
     occupancy: room.occupancy,
     quantity: room.quantity,
   }))
@@ -1482,7 +1562,7 @@ export async function previewStorefrontDeparturePrice(
     rooms.length > 0
       ? rooms.map((room) => ({
           unitId: room.unitId,
-          requestRef: room.unitId,
+          requestRef: room.requestRef,
           quantity: Math.max(1, room.occupancy * room.quantity),
         }))
       : buildTravelerRequestedUnits({
@@ -1506,18 +1586,14 @@ export async function previewStorefrontDeparturePrice(
       (row) => row.slot.id === departureId && (!slot.optionId || row.option.id === slot.optionId),
     ) ?? resolved.data[0]
 
+  const conversionRate =
+    candidate?.pricing.fx?.rateDecimal != null ? Number(candidate.pricing.fx.rateDecimal) : null
+  const components = candidate ? (candidate.pricing.components as ResolvedPricingComponent[]) : []
   const seeded = candidate
     ? {
         currencyCode: candidate.pricing.currencyCode,
         total: Number((candidate.pricing.sellAmountCents / 100).toFixed(2)),
-        lineItems: candidate.pricing.components.map((component) => ({
-          name: component.title,
-          total: Number((component.sellAmountCents / 100).toFixed(2)),
-          quantity: Math.max(1, component.quantity),
-          unitPrice: Number(
-            (component.sellAmountCents / 100 / Math.max(1, component.quantity)).toFixed(2),
-          ),
-        })),
+        lineItems: buildResolvedLineItems(components, conversionRate),
         notes: candidate.sellability.onRequest ? "on_request" : null,
       }
     : {
@@ -1530,13 +1606,21 @@ export async function previewStorefrontDeparturePrice(
         }),
         notes: null,
       }
+  const roomPaxTotal = rooms.reduce(
+    (sum, room) => sum + Math.max(1, room.occupancy * room.quantity),
+    0,
+  )
+  const travelerPaxTotal = Math.max(1, adults + children + infants)
+  const paxTotal = rooms.length > 0 ? Math.max(1, roomPaxTotal) : travelerPaxTotal
 
   const withExtras = await applyExtraLineItems({
     db,
     productId: slot.productId,
     context,
-    paxTotal: Math.max(1, adults + children + infants),
+    paxTotal,
     extras,
+    currencyCode: seeded.currencyCode,
+    conversionRate,
     lineItems: seeded.lineItems,
     total: seeded.total,
   })
@@ -1546,9 +1630,17 @@ export async function previewStorefrontDeparturePrice(
       : buildRequestedUnitRows({
           context,
           requestedUnits,
+          components,
+          currencyCode: seeded.currencyCode,
+          conversionRate,
         })
-  const roomRows = buildRoomRows({ context, rooms })
-  const paxTotal = Math.max(1, adults + children + infants)
+  const roomRows = buildRoomRows({
+    context,
+    rooms,
+    components,
+    currencyCode: seeded.currencyCode,
+    conversionRate,
+  })
   const subtotal = withExtras.total
   const offers = await buildOfferPreview({
     resolvers: offerResolvers,
