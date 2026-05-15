@@ -20,6 +20,7 @@ import {
   deriveBookingEngineState,
 } from "./engine-state.js"
 import {
+  bootstrapBookingSession,
   bootstrapCheckoutCollection,
   confirmPublicBookingSession,
   createPublicBookingSession,
@@ -121,6 +122,10 @@ export function createVoyantStorefrontClient(options: VoyantStorefrontClientOpti
         getStorefrontOfferBySlug(client, slug, query),
     },
     booking: {
+      bootstrapSession: (
+        input: Parameters<typeof bootstrapBookingSession>[1],
+        requestOptions?: Parameters<typeof bootstrapBookingSession>[2],
+      ) => bootstrapBookingSession(client, input, requestOptions),
       createSession: (
         input: Parameters<typeof createPublicBookingSession>[1],
         requestOptions?: Parameters<typeof createPublicBookingSession>[2],

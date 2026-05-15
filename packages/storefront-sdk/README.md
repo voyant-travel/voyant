@@ -29,6 +29,15 @@ const session = await voyant.booking.createSession({
 const state = voyant.booking.deriveState(session)
 ```
 
+Use `voyant.booking.bootstrapSession(...)` or the lower-level
+`bootstrapBookingSession(...)` operation when the storefront has a selected
+departure slot and quote and needs the native combined bootstrap payload:
+session, availability, repricing, payment plan/schedule, allocation, and the
+checkout capability attached at `session.checkoutCapability`. Use
+`voyant.booking.createSession(...)` / `createPublicBookingSession(...)` only
+when the UI intentionally wants to reserve a bare public booking session and
+orchestrate pricing, availability, and payment setup separately.
+
 For custom booking engines, prefer the `bookingEngine` facade. It keeps the
 route-shaped public booking and checkout calls behind flow-oriented methods and
 returns a canonical engine snapshot alongside session reads and mutations.
