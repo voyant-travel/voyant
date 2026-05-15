@@ -1,5 +1,14 @@
 # @voyantjs/storefront-sdk
 
+## 0.50.2
+
+### Patch Changes
+
+- e3630e4: Expose `bootstrapBookingSession` and `booking.bootstrapSession(...)` for the native storefront booking-session bootstrap route.
+  - @voyantjs/bookings@0.50.2
+  - @voyantjs/checkout@0.50.2
+  - @voyantjs/storefront@0.50.2
+
 ## 0.50.1
 
 ### Patch Changes

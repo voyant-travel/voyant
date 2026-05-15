@@ -1,5 +1,12 @@
 # @voyantjs/charters-react
 
+## 0.50.2
+
+### Patch Changes
+
+- @voyantjs/charters@0.50.2
+- @voyantjs/react@0.50.2
+
 ## 0.50.1
 
 ### Patch Changes
