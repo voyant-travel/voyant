@@ -1,5 +1,13 @@
 # @voyantjs/auth
 
+## 0.50.5
+
+### Patch Changes
+
+- c2b36ce: Allow Better Auth plugin Drizzle tables to be passed through createBetterAuth.
+  - @voyantjs/db@0.50.5
+  - @voyantjs/utils@0.50.5
+
 ## 0.50.4
 
 ### Patch Changes

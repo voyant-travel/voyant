@@ -1,5 +1,22 @@
 # @voyantjs/bookings-ui
 
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.5
+- @voyantjs/bookings-react@0.50.5
+- @voyantjs/catalog@0.50.5
+- @voyantjs/catalog-react@0.50.5
+- @voyantjs/crm-react@0.50.5
+- @voyantjs/crm-ui@0.50.5
+- @voyantjs/finance-react@0.50.5
+- @voyantjs/i18n@0.50.5
+- @voyantjs/legal-react@0.50.5
+- @voyantjs/products-react@0.50.5
+- @voyantjs/suppliers-react@0.50.5
+- @voyantjs/ui@0.50.5
+
 ## 0.50.4
 
 ### Patch Changes
