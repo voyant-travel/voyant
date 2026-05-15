@@ -1,5 +1,31 @@
 # @voyantjs/storefront
 
+## 0.50.0
+
+### Minor Changes
+
+- bf5747e: Add a public storefront booking-session bootstrap contract at
+  `POST /v1/public/bookings/sessions/bootstrap`. The route validates the selected
+  departure/slot and original quote, creates the public booking session, applies a
+  finance payment schedule, and returns customer-safe session, repricing,
+  availability, allocation, payment plan, due schedule, and checkout capability
+  state in one response.
+- 875c76e: Extend the public departure price preview response with allocation, unit/room, extras, offer impact, and final totals blocks while preserving the existing simple quote fields.
+- 2ca0537: Add first-class admin storefront settings routes, React hooks, and an operator settings page for branding, support, legal, localization, payment defaults, and bank transfer display details.
+
+### Patch Changes
+
+- @voyantjs/availability@0.50.0
+- @voyantjs/bookings@0.50.0
+- @voyantjs/core@0.50.0
+- @voyantjs/crm@0.50.0
+- @voyantjs/extras@0.50.0
+- @voyantjs/finance@0.50.0
+- @voyantjs/hono@0.50.0
+- @voyantjs/pricing@0.50.0
+- @voyantjs/products@0.50.0
+- @voyantjs/sellability@0.50.0
+
 ## 0.49.0
 
 ### Patch Changes

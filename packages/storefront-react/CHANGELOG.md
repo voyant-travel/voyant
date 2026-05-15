@@ -1,5 +1,20 @@
 # @voyantjs/storefront-react
 
+## 0.50.0
+
+### Minor Changes
+
+- 2ca0537: Add first-class admin storefront settings routes, React hooks, and an operator settings page for branding, support, legal, localization, payment defaults, and bank transfer display details.
+
+### Patch Changes
+
+- 875c76e: Extend the public departure price preview response with allocation, unit/room, extras, offer impact, and final totals blocks while preserving the existing simple quote fields.
+- Updated dependencies [bf5747e]
+- Updated dependencies [875c76e]
+- Updated dependencies [2ca0537]
+  - @voyantjs/react@0.50.0
+  - @voyantjs/storefront@0.50.0
+
 ## 0.49.0
 
 ### Patch Changes
