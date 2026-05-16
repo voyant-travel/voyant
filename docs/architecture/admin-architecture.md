@@ -62,6 +62,12 @@ Rule:
 admin shell. Do not make `/auth/workspace/*` or `/auth/organization/*` part of
 first-party shell bootstrap.
 
+For Voyant Cloud-provisioned deployments, `/auth/me` is still backed by a local
+Better Auth session. The browser reaches that local session through the
+Voyant Cloud broker flow, but the admin shell should not need to know WorkOS or
+platform organization ids. Cloud mode changes the sign-in path, not the
+provider-neutral current-user contract consumed by the admin runtime.
+
 ## Extension Surface
 
 ### 4. Make admin extension points explicit

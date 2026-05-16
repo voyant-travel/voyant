@@ -245,8 +245,20 @@ Implemented in `issue-933-cloud-auth-broker`:
 - Template env docs now include the Cloud-injected broker settings:
   `VOYANT_CLOUD_ADMIN_AUTH_START_URL`, `VOYANT_CLOUD_DEPLOYMENT_ID`,
   `VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL`, `VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL`,
+  `VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL`,
   `VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE`, `VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN`,
   `VOYANT_CLOUD_APP_ID`, and `VOYANT_CLOUD_ENVIRONMENT`.
+- Cloud-mode session and API-token revalidation are now wired. Browser-session
+  sensitive operations can call `revalidateVoyantCloudAdminAuthSession(...)`.
+  Raw `voy_` API-token requests pass through the Hono `validateApiKey` auth
+  integration hook, and the operator/DMC templates revalidate the mirrored
+  token owner through Voyant Cloud before accepting the key.
+- Consumer compatibility is covered at the auth-factory boundary:
+  `createBetterAuth` preserves `user.additionalFields`, merges `extraSchema`
+  into the Drizzle adapter schema, and appends consumer plugins such as
+  `jwt()` after Voyant's required API-key and email-OTP plugins. In Cloud mode
+  those Better Auth plugin endpoints remain local Better Auth endpoints, not
+  Cloud endpoints.
 
 ### Broker Flow
 
@@ -696,12 +708,12 @@ but keep using local admin API tokens.
 
 Decision:
 
-- API token verification in Cloud mode must check Cloud membership state for the
+- API token verification in Cloud mode checks Cloud membership state for the
   token owner at the same revalidation cadence used for sessions, or use a
   cached membership status that is invalidated on revalidation failure.
-- When a Cloud-auth session revalidation fails for a user, disable or revoke all
-  personal API key rows owned by that local user unless the key is explicitly
-  marked deployment/system-owned.
+- When Cloud revalidation fails for a mirrored user, disable all personal API
+  key rows owned by that local user. Deployment/system-owned keys need a
+  separate schema marker before they can bypass this behavior.
 - The API token facade should expose revocation reason/audit metadata where the
   current schema supports it; otherwise add a follow-up schema migration.
 - Acceptance tests must cover API token denial after Cloud membership
