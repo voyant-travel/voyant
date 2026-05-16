@@ -214,6 +214,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@voyantjs/action-ledger':
+        specifier: workspace:*
+        version: link:../../packages/action-ledger
       '@voyantjs/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -5599,6 +5602,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@voyantjs/action-ledger':
+        specifier: workspace:*
+        version: link:../../packages/action-ledger
       '@voyantjs/admin':
         specifier: workspace:*
         version: link:../../packages/admin
@@ -5951,6 +5957,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.7.2
         version: 3.22.4
+      '@voyantjs/action-ledger':
+        specifier: workspace:*
+        version: link:../../packages/action-ledger
       '@voyantjs/admin':
         specifier: workspace:*
         version: link:../../packages/admin

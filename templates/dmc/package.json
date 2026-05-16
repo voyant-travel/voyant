@@ -29,6 +29,7 @@
     "@tanstack/react-router": "^1.168.10",
     "@tanstack/react-start": "^1.167.16",
     "@tanstack/react-table": "^8.21.3",
+    "@voyantjs/action-ledger": "workspace:*",
     "@voyantjs/admin": "workspace:*",
     "@voyantjs/auth": "workspace:*",
     "@voyantjs/availability": "workspace:*",

@@ -50,6 +50,13 @@
       "when": 1778779788000,
       "tag": "0008_contract_lifecycle_history",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778906146000,
+      "tag": "0009_action_ledger",
+      "breakpoints": true
     }
   ]
 }

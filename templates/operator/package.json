@@ -37,6 +37,7 @@
     "@tiptap/pm": "^3.7.2",
     "@tiptap/react": "^3.7.2",
     "@tiptap/starter-kit": "^3.7.2",
+    "@voyantjs/action-ledger": "workspace:*",
     "@voyantjs/admin": "workspace:*",
     "@voyantjs/auth": "workspace:*",
     "@voyantjs/auth-ui": "workspace:*",
