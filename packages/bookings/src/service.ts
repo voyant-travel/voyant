@@ -12,6 +12,7 @@ import {
   lte,
   ne,
   or,
+  type SQL,
   sql,
 } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -98,6 +99,20 @@ import type {
   updateTravelerSchema,
   updateTravelerWithTravelDetailsSchema,
 } from "./validation.js"
+
+/**
+ * Emit `ARRAY[$1, $2, …]::text[]` instead of the naive
+ * `${jsArray}::text[]` form. drizzle's `sql` template spreads JS
+ * arrays into a row constructor (`($1, $2)`) which Postgres refuses
+ * to cast to `text[]` — see issue #952.
+ */
+function sqlTextArray(values: readonly string[]): SQL {
+  if (values.length === 0) return sql`ARRAY[]::text[]`
+  return sql`ARRAY[${sql.join(
+    values.map((value) => sql`${value}`),
+    sql.raw(", "),
+  )}]::text[]`
+}
 
 type BookingListQuery = z.infer<typeof bookingListQuerySchema>
 type ConvertProductInput = z.infer<typeof convertProductSchema>
@@ -1259,7 +1274,7 @@ async function loadResourceCapacityViolations(
   const resources = await db.execute(sql`
     SELECT id, kind, capacity, slot_id
     FROM allocation_resources
-    WHERE id = ANY(${resourceIds}::text[])
+    WHERE id = ANY(${sqlTextArray(resourceIds)})
     FOR UPDATE
   `)
   const resourceList = resources as unknown as Array<{

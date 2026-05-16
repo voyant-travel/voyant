@@ -23,6 +23,19 @@ import {
 } from "./service-allocation.js"
 import type { allocationAutomationSchema, upsertResourceTemplateSchema } from "./validation.js"
 
+/**
+ * Emit `ARRAY[$1, $2, …]::text[]` so Postgres doesn't try to cast a
+ * tuple to `text[]`. See `sqlTextArray` in service-allocation.ts and
+ * issue #952.
+ */
+function sqlTextArray(values: readonly string[]): SQL {
+  if (values.length === 0) return sql`ARRAY[]::text[]`
+  return sql`ARRAY[${sql.join(
+    values.map((value) => sql`${value}`),
+    sql.raw(", "),
+  )}]::text[]`
+}
+
 export type UpsertResourceTemplateInput = z.infer<typeof upsertResourceTemplateSchema>
 export type AllocationAutomationInput = z.infer<typeof allocationAutomationSchema>
 
@@ -86,7 +99,7 @@ export async function listProductOptionResourceTemplates(
     sql`
       SELECT id, product_option_id, kind, ref_type, ref_id, capacity, name_pattern, layout, default_count, flags, created_at, updated_at
       FROM product_option_resource_templates
-      WHERE product_option_id = ANY(${optionIds}::text[])
+      WHERE product_option_id = ANY(${sqlTextArray(optionIds)})
       ORDER BY kind, created_at
     `,
   )
@@ -359,7 +372,7 @@ export async function autoAllocateSlotResources(
         SELECT
           row.traveler_id,
           jsonb_build_object(${kind}::text, row.resource_id::text)
-        FROM unnest(${travelerIds}::text[], ${resourceIds}::text[]) AS row(traveler_id, resource_id)
+        FROM unnest(${sqlTextArray(travelerIds)}, ${sqlTextArray(resourceIds)}) AS row(traveler_id, resource_id)
         ON CONFLICT (traveler_id) DO UPDATE SET
           allocations =
             COALESCE(booking_traveler_travel_details.allocations, '{}'::jsonb)

@@ -304,7 +304,7 @@ export async function getSlotsResourceAvailability(
           AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
           AND ba.status IN ('held', 'confirmed', 'fulfilled')
       ) usage ON true
-      WHERE ar.slot_id = ANY(${uniqueIds}::text[])
+      WHERE ar.slot_id = ANY(${sqlTextArray(uniqueIds)})
       ORDER BY ar.slot_id, ar.kind, ar.sort_order, ar.created_at
     `,
   )
@@ -399,7 +399,7 @@ export async function validateSlotAllocationCapacity(
     sql`
       SELECT id, kind, capacity, slot_id
       FROM allocation_resources
-      WHERE slot_id = ${slotId} AND id = ANY(${resourceIds}::text[])
+      WHERE slot_id = ${slotId} AND id = ANY(${sqlTextArray(resourceIds)})
       FOR UPDATE
     `,
   )
@@ -444,7 +444,7 @@ export async function validateSlotAllocationCapacity(
           AND ba.availability_slot_id = ${slotId}
           AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
           AND ba.status IN ('held', 'confirmed', 'fulfilled')
-          AND btd.traveler_id <> ALL(${travelerIdsArr}::text[])
+          AND btd.traveler_id <> ALL(${sqlTextArray(travelerIdsArr)})
       `,
     )
     const existingAssigned = existingRows[0]?.count ?? 0
@@ -722,7 +722,7 @@ export async function pairSharingGroup(
   await db.execute(sql`
     INSERT INTO booking_traveler_travel_details (traveler_id, sharing_group_id)
     SELECT id, ${sharingGroupId}
-    FROM unnest(${input.travelerIds}::text[]) AS u(id)
+    FROM unnest(${sqlTextArray(input.travelerIds)}) AS u(id)
     ON CONFLICT (traveler_id) DO UPDATE SET
       sharing_group_id = EXCLUDED.sharing_group_id,
       updated_at = now()
@@ -980,7 +980,7 @@ async function loadSharingGroupLabelMap(
       label: sharingGroupLabels.label,
     })
     .from(sharingGroupLabels)
-    .where(sql`${sharingGroupLabels.groupId} = ANY(${uniqueIds}::text[])`)
+    .where(sql`${sharingGroupLabels.groupId} = ANY(${sqlTextArray(uniqueIds)})`)
 
   return Object.fromEntries(rows.map((row) => [row.groupId, row.label]))
 }
@@ -988,6 +988,21 @@ async function loadSharingGroupLabelMap(
 async function executeRows<T>(db: SqlExecutor, query: SQL): Promise<T[]> {
   const rows = await db.execute(query)
   return Array.isArray(rows) ? (rows as T[]) : []
+}
+
+/**
+ * Emit a Postgres `ARRAY[$1, $2, …]::text[]` literal instead of the
+ * naive `${jsArray}::text[]` form. drizzle's `sql` template spreads
+ * JS arrays into a row constructor (`($1, $2)`) which Postgres
+ * refuses to cast to `text[]` — see issue #952. Empty input returns
+ * `ARRAY[]::text[]` which Postgres accepts.
+ */
+function sqlTextArray(values: readonly string[]): SQL {
+  if (values.length === 0) return sql`ARRAY[]::text[]`
+  return sql`ARRAY[${sql.join(
+    values.map((value) => sql`${value}`),
+    sql.raw(", "),
+  )}]::text[]`
 }
 
 function serializeSlot(slot: {
@@ -1085,7 +1100,7 @@ async function loadSlotTravelerRows(
       (btd.dietary_encrypted IS NOT NULL) AS has_dietary_requirements
     FROM booking_travelers bt
     LEFT JOIN booking_traveler_travel_details btd ON btd.traveler_id = bt.id
-    WHERE bt.booking_id = ANY(${bookingIds}::text[])
+    WHERE bt.booking_id = ANY(${sqlTextArray(bookingIds)})
     ORDER BY bt.booking_id, bt.is_primary DESC, bt.created_at
   `,
   )
