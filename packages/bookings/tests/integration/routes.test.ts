@@ -1502,6 +1502,122 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(entries).toHaveLength(1)
     })
 
+    it("rejects booking execution while approval is still pending", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const requestApproval = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-pending-execute",
+        },
+        body: JSON.stringify({ note: "Pending cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+
+      const execute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Action-Approval-Id": approvalId,
+        },
+        body: JSON.stringify({ note: "Pending cancellation" }),
+      })
+
+      expect(execute.status).toBe(409)
+      await expect(execute.json()).resolves.toMatchObject({
+        error: "Action approval is not approved",
+        approvalId,
+        status: "pending",
+      })
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+      const entries = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+      expect(entries).toHaveLength(1)
+    })
+
+    it("rejects approved booking execution from a different agent principal", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const requestingAgentApp = new Hono()
+      requestingAgentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      requestingAgentApp.route("/", bookingRoutes)
+
+      const executingAgentApp = new Hono()
+      executingAgentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel-other")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      executingAgentApp.route("/", bookingRoutes)
+
+      const requestApproval = await requestingAgentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-principal-mismatch",
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+
+      await approveActionApproval(db, approvalId)
+
+      const execute = await executingAgentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Action-Approval-Id": approvalId,
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+
+      expect(execute.status).toBe(403)
+      await expect(execute.json()).resolves.toMatchObject({
+        error: "Action approval belongs to a different principal",
+      })
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+      const entries = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+      expect(entries.filter((entry) => entry.status === "succeeded")).toHaveLength(0)
+    })
+
     it("rejects reused override approval idempotency keys with different command input", async () => {
       const booking = await seedBooking({ status: "confirmed" })
 
