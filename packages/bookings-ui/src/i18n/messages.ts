@@ -381,6 +381,9 @@ export type BookingsUiMessages = {
       secondInstallment: string
       preset5050: string
       unpaidHint: string
+      totalDue: string
+      scheduledTotal: string
+      remaining: string
       alreadyPaid: string
       paymentDate: string
       paymentMethod: string
@@ -390,6 +393,7 @@ export type BookingsUiMessages = {
   roomsStepperSection: {
     labels: {
       heading: string
+      noOption: string
       noSlot: string
       noUnits: string
       remaining: string
@@ -974,6 +978,7 @@ export type BookingsUiMessages = {
       createPersonSheetTitle: string
       addBillingPersonAsTraveler: string
       roomsHeading: string
+      roomsNoOption: string
       roomsNoSlot: string
       roomsNoUnits: string
       roomsRemaining: string
@@ -1003,6 +1008,9 @@ export type BookingsUiMessages = {
       paymentSecondInstallment: string
       paymentPreset5050: string
       paymentUnpaidHint: string
+      paymentTotalDue: string
+      paymentScheduledTotal: string
+      paymentRemaining: string
       paymentAlreadyPaid: string
       paymentDate: string
       paymentMethod: string

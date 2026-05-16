@@ -89,7 +89,12 @@ export function ProductPickerSection({
     () => new Map(products.map((product) => [product.id, product])),
     [products],
   )
-  const selectedProductLabel = value.productId ? (productMap.get(value.productId)?.name ?? "") : ""
+  const resolveProductLabel = React.useCallback(
+    (productId: string) =>
+      productMap.get(productId)?.name ?? cachedProductsRef.current.get(productId)?.name ?? "",
+    [productMap],
+  )
+  const selectedProductLabel = value.productId ? resolveProductLabel(value.productId) : ""
   const [productInputValue, setProductInputValue] = React.useState(selectedProductLabel)
 
   React.useEffect(() => {
@@ -117,7 +122,8 @@ export function ProductPickerSection({
             autoHighlight
             disabled={!enabled}
             filter={(id, query) => productMatchesPickerSearch(productMap.get(id as string), query)}
-            itemToStringValue={(id) => productMap.get(id as string)?.name ?? ""}
+            itemToStringLabel={(id) => resolveProductLabel(id as string) || (id as string)}
+            itemToStringValue={(id) => id as string}
             onInputValueChange={(next) => {
               setProductInputValue(next)
               setProductSearch(next)
@@ -126,7 +132,7 @@ export function ProductPickerSection({
             onValueChange={(next) => {
               const productId = (next as string | null) ?? ""
               onChange({ productId, optionId: null })
-              setProductInputValue(productId ? (productMap.get(productId)?.name ?? "") : "")
+              setProductInputValue(productId ? resolveProductLabel(productId) : "")
             }}
           >
             <ComboboxInput

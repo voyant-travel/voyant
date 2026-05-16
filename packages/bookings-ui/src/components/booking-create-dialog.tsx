@@ -322,12 +322,12 @@ export function BookingCreateForm({
     }
   }, [enabled, defaultProductId])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only resets when product/option changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: booking-create intentionally resets transient departure state only when product id changes; option changes are reconciled against the selected departure below.
   React.useEffect(() => {
     setSlotId(null)
     setRooms(emptyRoomsStepperValue)
     setSharedRoom(emptySharedRoomValue)
-  }, [product.productId, product.optionId])
+  }, [product.productId])
 
   const [slotsFromIso, setSlotsFromIso] = React.useState(() => new Date().toISOString())
   React.useEffect(() => {
@@ -341,12 +341,37 @@ export function BookingCreateForm({
     limit: 100,
     enabled: enabled && Boolean(product.productId),
   })
-  const slots = React.useMemo(() => {
+  const allOpenSlots = React.useMemo(() => {
     return getBookableDepartureSlots(slotsData?.data ?? [], {
+      nowIso: slotsFromIso,
+      optionId: null,
+    })
+  }, [slotsData?.data, slotsFromIso])
+  const slots = React.useMemo(() => {
+    const optionSlots = getBookableDepartureSlots(slotsData?.data ?? [], {
       nowIso: slotsFromIso,
       optionId: product.optionId,
     })
-  }, [slotsData?.data, slotsFromIso, product.optionId])
+    return optionSlots.length > 0 ? optionSlots : allOpenSlots
+  }, [slotsData?.data, slotsFromIso, product.optionId, allOpenSlots])
+  const setSelectedSlot = React.useCallback(
+    (nextSlotId: string | null) => {
+      const selectedSlot = nextSlotId ? allOpenSlots.find((slot) => slot.id === nextSlotId) : null
+      if (selectedSlot?.optionId && selectedSlot.optionId !== product.optionId) {
+        setProduct((prev) => ({ ...prev, optionId: selectedSlot.optionId }))
+      }
+      setSlotId(nextSlotId)
+    },
+    [allOpenSlots, product.optionId],
+  )
+  React.useEffect(() => {
+    setRooms(emptyRoomsStepperValue)
+    if (!slotId || !product.optionId) return
+    const selectedSlot = allOpenSlots.find((slot) => slot.id === slotId)
+    if (selectedSlot?.optionId && selectedSlot.optionId !== product.optionId) {
+      setSlotId(null)
+    }
+  }, [allOpenSlots, product.optionId, slotId])
 
   const formatSlotLabel = React.useCallback(
     (slot: (typeof slots)[number]) => {
@@ -552,7 +577,7 @@ export function BookingCreateForm({
             <Label>{messages.bookingCreateDialog.fields.departure}</Label>
             <Select
               value={slotId ?? "__none__"}
-              onValueChange={(v) => setSlotId(v === "__none__" ? null : (v ?? null))}
+              onValueChange={(v) => setSelectedSlot(v === "__none__" ? null : (v ?? null))}
             >
               <SelectTrigger>
                 <SelectValue placeholder={messages.bookingCreateDialog.placeholders.departure} />
@@ -577,14 +602,16 @@ export function BookingCreateForm({
           </div>
         ) : null}
 
-        {slotId ? (
+        {product.optionId ? (
           <RoomsStepperSection
             value={rooms}
             onChange={setRooms}
-            slotId={slotId}
+            slotId={slotId ?? undefined}
+            optionId={product.optionId}
             enabled={enabled}
             labels={{
               heading: messages.bookingCreateDialog.labels.roomsHeading,
+              noOption: messages.bookingCreateDialog.labels.roomsNoOption,
               noSlot: messages.bookingCreateDialog.labels.roomsNoSlot,
               noUnits: messages.bookingCreateDialog.labels.roomsNoUnits,
               remaining: messages.bookingCreateDialog.labels.roomsRemaining,
@@ -705,6 +732,9 @@ export function BookingCreateForm({
             secondInstallment: messages.bookingCreateDialog.labels.paymentSecondInstallment,
             preset5050: messages.bookingCreateDialog.labels.paymentPreset5050,
             unpaidHint: messages.bookingCreateDialog.labels.paymentUnpaidHint,
+            totalDue: messages.bookingCreateDialog.labels.paymentTotalDue,
+            scheduledTotal: messages.bookingCreateDialog.labels.paymentScheduledTotal,
+            remaining: messages.bookingCreateDialog.labels.paymentRemaining,
             alreadyPaid: messages.bookingCreateDialog.labels.paymentAlreadyPaid,
             paymentDate: messages.bookingCreateDialog.labels.paymentDate,
             paymentMethod: messages.bookingCreateDialog.labels.paymentMethod,

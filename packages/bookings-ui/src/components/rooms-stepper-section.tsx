@@ -1,6 +1,7 @@
 "use client"
 
 import { useSlotUnitAvailability } from "@voyantjs/availability-react"
+import { useOptionUnits } from "@voyantjs/products-react"
 import { Button, Label } from "@voyantjs/ui/components"
 import { Minus, Plus } from "lucide-react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -16,14 +17,19 @@ export interface RoomsStepperSectionProps {
   value: RoomsStepperValue
   onChange: (value: RoomsStepperValue) => void
   /**
-   * Departure the operator picked. Section renders nothing until a slot is
-   * chosen — per-unit availability is a property of the slot, not the
-   * product, so there's nothing to show before then.
+   * Departure the operator picked. Departure-specific availability wins
+   * when present; otherwise the section falls back to option-level units.
    */
   slotId?: string
+  /**
+   * Product option whose units should be shown before a departure is picked.
+   * Departure-specific availability wins when `slotId` is present.
+   */
+  optionId?: string | null
   enabled?: boolean
   labels?: {
     heading?: string
+    noOption?: string
     noSlot?: string
     noUnits?: string
     remaining?: string
@@ -33,9 +39,9 @@ export interface RoomsStepperSectionProps {
 
 /**
  * Rooms / per-unit stepper for booking-create flows. Drives
- * `GET /v1/availability/slots/:id/unit-availability` from #235 so the
- * operator sees authoritative "3 doubles available" numbers instead of
- * client-side math against a sampled booking list.
+ * `GET /v1/availability/slots/:id/unit-availability` from #235 when a
+ * departure is selected, and option-level units before departure selection,
+ * so operators can still build "2 double rooms and 1 single" drafts.
  *
  * The section only tracks **intent** (how many of each unit the operator
  * wants to book). Actual hold/reservation happens when the parent submits
@@ -55,24 +61,40 @@ export function RoomsStepperSection({
   value,
   onChange,
   slotId,
+  optionId,
   enabled = true,
   labels,
 }: RoomsStepperSectionProps) {
   const messages = useBookingsUiMessagesOrDefault()
   const merged = { ...messages.roomsStepperSection.labels, ...labels }
   const availability = useSlotUnitAvailability({ slotId, enabled: enabled && Boolean(slotId) })
-  const units = availability.data?.data ?? []
+  const optionUnits = useOptionUnits({
+    optionId: optionId ?? undefined,
+    limit: 100,
+    enabled: enabled && !slotId && Boolean(optionId),
+  })
+  const units = slotId
+    ? (availability.data?.data ?? [])
+    : (optionUnits.data?.data ?? []).map((unit) => ({
+        optionUnitId: unit.id,
+        unitName: unit.name,
+        occupancyMax: unit.occupancyMax,
+        initial: null,
+        reserved: 0,
+        remaining: unit.maxQuantity ?? null,
+      }))
 
-  if (!slotId) {
+  if (!slotId && !optionId) {
     return (
       <div className="flex flex-col gap-2 rounded-md border p-3">
         <Label>{merged.heading}</Label>
-        <p className="text-xs text-muted-foreground">{merged.noSlot}</p>
+        <p className="text-xs text-muted-foreground">{merged.noOption}</p>
       </div>
     )
   }
 
-  if (availability.isSuccess && units.length === 0) {
+  const loaded = slotId ? availability.isSuccess : optionUnits.isSuccess
+  if (loaded && units.length === 0) {
     return (
       <div className="flex flex-col gap-2 rounded-md border p-3">
         <Label>{merged.heading}</Label>
