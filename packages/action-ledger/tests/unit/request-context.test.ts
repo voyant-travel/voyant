@@ -2,6 +2,7 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
+  ACTION_LEDGER_APPROVAL_ID_HEADER,
   buildActionLedgerApprovalDecisionInput,
   buildActionLedgerApprovalRequestInput,
   buildActionLedgerApprovedExecutionFields,
@@ -118,6 +119,10 @@ describe("mapActionLedgerRequestContext", () => {
 })
 
 describe("action ledger route entry builders", () => {
+  test("exports the approved execution header contract", () => {
+    expect(ACTION_LEDGER_APPROVAL_ID_HEADER).toBe("action-approval-id")
+  })
+
   test("builds sensitive-read entries from request context", () => {
     const entry = buildActionLedgerSensitiveReadEntryInput({
       context: {

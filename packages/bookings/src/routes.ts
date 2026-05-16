@@ -1,10 +1,12 @@
 import {
+  ACTION_LEDGER_APPROVAL_ID_HEADER,
   type ActionLedgerCapabilityAccessResult,
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
   actionLedgerService,
   appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
+  type BuildActionLedgerApprovedExecutionFieldsInput,
   buildActionLedgerApprovedExecutionFields,
   buildIdempotencyFingerprint,
   evaluateActionLedgerApprovalRequirement,
@@ -99,13 +101,8 @@ const BOOKING_PII_READ_ACTION_VERSION = "v1"
 const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
 const BOOKING_STATUS_APPROVAL_POLICY = "bookings-status-approval-v1"
-const ACTION_APPROVAL_ID_HEADER = "action-approval-id"
 
-type ApprovedBookingStatusAction = {
-  requestedActionId: string
-  approvalId: string
-  idempotencyFingerprint: string
-}
+type ApprovedBookingStatusAction = BuildActionLedgerApprovedExecutionFieldsInput
 
 const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
   "firstName",
@@ -375,7 +372,7 @@ async function resolveApprovedBookingStatusAction(
     }
   | null
 > {
-  const approvalId = c.req.header(ACTION_APPROVAL_ID_HEADER)
+  const approvalId = c.req.header(ACTION_LEDGER_APPROVAL_ID_HEADER)
   if (!approvalId) return null
 
   const executionFingerprint = await buildIdempotencyFingerprint({

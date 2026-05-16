@@ -28,6 +28,7 @@ export {
   sha256,
 } from "./fingerprint.js"
 export {
+  ACTION_LEDGER_APPROVAL_ID_HEADER,
   type ActionLedgerActorFields,
   type ActionLedgerApprovedExecutionFields,
   type ActionLedgerRequestContextValues,

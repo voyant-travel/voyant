@@ -10,6 +10,8 @@ import type {
 } from "./service.js"
 import { actionLedgerService } from "./service.js"
 
+export const ACTION_LEDGER_APPROVAL_ID_HEADER = "action-approval-id"
+
 export interface ActionLedgerRequestContextValues {
   userId?: string | null
   agentId?: string | null
