@@ -1227,6 +1227,51 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(latestBooking?.status).toBe("confirmed")
     })
 
+    it("rejects reused approval idempotency keys with different command input", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const first = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-conflict",
+        },
+        body: JSON.stringify({ note: "First reason" }),
+      })
+      expect(first.status).toBe(202)
+      const firstBody = await first.json()
+
+      const conflict = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-conflict",
+        },
+        body: JSON.stringify({ note: "Different reason" }),
+      })
+
+      expect(conflict.status).toBe(409)
+      await expect(conflict.json()).resolves.toMatchObject({
+        error: "Action ledger idempotency key was reused with a different fingerprint",
+        existingActionId: firstBody.data.requestedAction.id,
+      })
+
+      const approvals = await db.select().from(actionApprovals)
+      expect(approvals).toHaveLength(1)
+    })
+
     it("emits booking.confirmed with id + number + actor after confirm", async () => {
       const slot = await seedSlot()
       const reserveRes = await app.request("/reserve", {

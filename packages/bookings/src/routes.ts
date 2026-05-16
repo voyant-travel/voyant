@@ -1,8 +1,10 @@
 import {
   type ActionLedgerCapabilityAccessResult,
+  ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
+  buildIdempotencyFingerprint,
   evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
   requestActionLedgerApproval,
@@ -173,6 +175,7 @@ async function authorizeBookingStatusMutation(
   c: Context<Env>,
   input: BookingStatusCapabilityRoute & {
     bookingId: string
+    commandInput?: unknown
   },
 ) {
   const capability = BOOKING_STATUS_CAPABILITIES[input.key]
@@ -192,7 +195,28 @@ async function authorizeBookingStatusMutation(
     })
 
     if (approvalRequirement.required) {
-      const result = await requestActionLedgerApproval(c.get("db"), {
+      const idempotencyScope = c.req.header("idempotency-key")
+        ? `${input.routeOrToolName}:${input.bookingId}`
+        : null
+      const idempotencyKey = c.req.header("idempotency-key") ?? null
+      const idempotencyFingerprint = idempotencyKey
+        ? await buildIdempotencyFingerprint({
+            actionName: input.actionName,
+            actionVersion: capability.version,
+            targetType: "booking",
+            targetId: input.bookingId,
+            commandInput: input.commandInput ?? null,
+            policyInputs: {
+              approvalPolicy: approvalRequirement.approvalPolicy,
+              capabilityId: access.capabilityId,
+              capabilityVersion: access.capabilityVersion,
+              evaluatedRisk: approvalRequirement.evaluatedRisk,
+              reasonCode: approvalRequirement.reasonCode,
+            },
+          })
+        : null
+
+      const requestInput = {
         context: getActionLedgerRequestContext(c),
         actionName: input.actionName,
         actionVersion: capability.version,
@@ -204,10 +228,9 @@ async function authorizeBookingStatusMutation(
         capabilityId: access.capabilityId,
         capabilityVersion: access.capabilityVersion,
         authorizationSource: access.authorizationSource,
-        idempotencyScope: c.req.header("idempotency-key")
-          ? `${input.routeOrToolName}:${input.bookingId}`
-          : null,
-        idempotencyKey: c.req.header("idempotency-key") ?? null,
+        idempotencyScope,
+        idempotencyKey,
+        idempotencyFingerprint,
         mutationDetail: {
           summary: `Booking status ${capability.action} awaiting approval: ${approvalRequirement.reasonCode}`,
           reversalKind: "none",
@@ -218,7 +241,26 @@ async function authorizeBookingStatusMutation(
           riskSnapshot: approvalRequirement.evaluatedRisk,
           reasonCode: approvalRequirement.reasonCode,
         },
-      })
+      } as const
+
+      let result: Awaited<ReturnType<typeof requestActionLedgerApproval>>
+      try {
+        result = await requestActionLedgerApproval(c.get("db"), requestInput)
+      } catch (error) {
+        if (error instanceof ActionLedgerIdempotencyConflictError) {
+          return {
+            allowed: false as const,
+            response: c.json(
+              {
+                error: error.message,
+                existingActionId: error.existingActionId,
+              },
+              409,
+            ),
+          }
+        }
+        throw error
+      }
 
       return {
         allowed: false as const,
@@ -983,6 +1025,7 @@ export const bookingRoutes = new Hono<Env>()
       actionName: "booking.status.cancel",
       routeOrToolName: "bookings.cancel",
       bookingId,
+      commandInput: data,
     })
     if (!auth.allowed) return auth.response
 
