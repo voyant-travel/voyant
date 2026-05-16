@@ -974,10 +974,16 @@ export const financeRoutes = new Hono<Env>()
 
   // POST /invoices/:id/credit-notes — Create credit note
   .post("/invoices/:id/credit-notes", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.createCreditNote(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, insertCreditNoteSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.credit_note.route",
+      },
     )
 
     if (!row) {

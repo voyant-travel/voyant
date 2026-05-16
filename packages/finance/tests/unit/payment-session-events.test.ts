@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildBookingPaymentSchedulePaidEvent,
+  buildCreditNoteCreationActionLedgerInput,
   buildPaymentCompletedEvent,
   buildPaymentSessionCompletionActionLedgerInput,
   buildRecordPaymentActionLedgerInput,
@@ -153,6 +154,49 @@ describe("payment session events", () => {
         commandInputRef: "invoice:inv_123:payment",
         commandResultRef: "payment:pay_123",
         summary: "Payment pay_123 recorded for invoice inv_123",
+        reversalKind: "none",
+      },
+    })
+    expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds booking-targeted action ledger input for credit note creation", async () => {
+    const ledgerInput = await buildCreditNoteCreationActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          bookingId: "book_123",
+        } as never,
+        creditNote: {
+          id: "cn_123",
+          creditNoteNumber: "CN-2026-001",
+          amountCents: 10000,
+          currency: "USD",
+          status: "issued",
+          reason: "Customer refund",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.credit_note.create",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.credit_note.create",
+      authorizationSource: "finance.credit_note.route",
+      idempotencyScope: "finance.invoice:inv_123:credit_note",
+      idempotencyKey: "CN-2026-001",
+      mutationDetail: {
+        commandInputRef: "invoice:inv_123:credit_note",
+        commandResultRef: "credit_note:cn_123",
+        summary: "Credit note CN-2026-001 created for invoice inv_123",
         reversalKind: "none",
       },
     })

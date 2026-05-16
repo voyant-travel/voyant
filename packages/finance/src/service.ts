@@ -426,6 +426,7 @@ export interface PaymentCompletedEvent {
 type PaymentSessionRecord = typeof paymentSessions.$inferSelect
 type InvoiceRecord = typeof invoices.$inferSelect
 type PaymentRecord = typeof payments.$inferSelect
+type CreditNoteRecord = typeof creditNotes.$inferSelect
 type CompletePaymentSessionLedgerInput = {
   session: PaymentSessionRecord
   status: CompletePaymentSessionInput["status"]
@@ -434,6 +435,10 @@ type CompletePaymentSessionLedgerInput = {
 type RecordPaymentLedgerInput = {
   invoice: InvoiceRecord
   payment: PaymentRecord
+}
+type CreateCreditNoteLedgerInput = {
+  invoice: InvoiceRecord
+  creditNote: CreditNoteRecord
 }
 
 export async function buildPaymentSessionCompletionActionLedgerInput(
@@ -556,6 +561,53 @@ export async function buildRecordPaymentActionLedgerInput(
 function getInvoiceLedgerTarget(invoice: InvoiceRecord) {
   if (invoice.bookingId) return { type: "booking", id: invoice.bookingId }
   return { type: "invoice", id: invoice.id }
+}
+
+export async function buildCreditNoteCreationActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: CreateCreditNoteLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const target = getInvoiceLedgerTarget(input.invoice)
+  const idempotencyKey = input.creditNote.creditNoteNumber
+
+  return {
+    context,
+    actionName: "finance.credit_note.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.credit_note.create",
+    authorizationSource: options.authorizationSource ?? "finance.credit_note.route",
+    idempotencyScope: `finance.invoice:${input.invoice.id}:credit_note`,
+    idempotencyKey,
+    idempotencyFingerprint: await buildIdempotencyFingerprint({
+      actionName: "finance.credit_note.create",
+      actionVersion: "v1",
+      targetType: target.type,
+      targetId: target.id,
+      commandInput: {
+        invoiceId: input.invoice.id,
+        creditNoteId: input.creditNote.id,
+        creditNoteNumber: input.creditNote.creditNoteNumber,
+        amountCents: input.creditNote.amountCents,
+        currency: input.creditNote.currency,
+        status: input.creditNote.status,
+        reason: input.creditNote.reason,
+      },
+    }),
+    mutationDetail: {
+      commandInputRef: `invoice:${input.invoice.id}:credit_note`,
+      commandResultRef: `credit_note:${input.creditNote.id}`,
+      summary: `Credit note ${input.creditNote.creditNoteNumber} created for invoice ${input.invoice.id}`,
+      reversalKind: "none",
+    },
+  }
 }
 
 export interface BindInvoiceRenditionInput {
@@ -2752,23 +2804,42 @@ export const financeService = {
       .orderBy(desc(creditNotes.createdAt))
   },
 
-  async createCreditNote(db: PostgresJsDatabase, invoiceId: string, data: CreateCreditNoteInput) {
-    const [invoice] = await db
-      .select({ id: invoices.id })
-      .from(invoices)
-      .where(eq(invoices.id, invoiceId))
-      .limit(1)
+  async createCreditNote(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: CreateCreditNoteInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
 
     if (!invoice) {
       return null
     }
 
-    const [row] = await db
-      .insert(creditNotes)
-      .values({ ...data, invoiceId })
-      .returning()
+    return db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(creditNotes)
+        .values({ ...data, invoiceId })
+        .returning()
 
-    return row
+      if (row && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildCreditNoteCreationActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              invoice,
+              creditNote: row,
+            },
+            {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            },
+          ),
+        )
+      }
+
+      return row
+    })
   },
 
   async updateCreditNote(
