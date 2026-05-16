@@ -1,4 +1,8 @@
-import { actionLedgerEntries, actionSensitiveReadDetails } from "@voyantjs/action-ledger/schema"
+import {
+  actionLedgerEntries,
+  actionMutationDetails,
+  actionSensitiveReadDetails,
+} from "@voyantjs/action-ledger/schema"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -63,6 +67,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     const { generateEnvKmsKey } = await import("@voyantjs/utils")
     db = createTestDb()
     await cleanupTestDb(db)
+    await ensureProductReferenceTables()
     await db.execute(sql`
       DO $$
       BEGIN
@@ -168,6 +173,19 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       END $$;
     `)
     await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_reversal_kind AS ENUM (
+          'none',
+          'revert',
+          'compensate',
+          'domain_command'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS action_ledger_entries (
         id text PRIMARY KEY NOT NULL,
         occurred_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -215,6 +233,22 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         decision_policy text
       )
     `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS action_mutation_details (
+        action_id text PRIMARY KEY NOT NULL REFERENCES action_ledger_entries(id) ON DELETE CASCADE,
+        command_input_ref text,
+        command_result_ref text,
+        summary text,
+        reversal_kind action_ledger_reversal_kind DEFAULT 'none' NOT NULL,
+        reversal_command_id text,
+        reversal_command_version text,
+        reversal_args_ref text,
+        reversal_state_projection text,
+        reversal_outcome_projection text,
+        reverses_action_id text,
+        reversed_by_action_id_projection text
+      )
+    `)
 
     process.env.KMS_PROVIDER = "env"
     process.env.KMS_ENV_KEY = generateEnvKmsKey()
@@ -236,6 +270,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
   beforeEach(async () => {
     const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
     await cleanupTestDb(db)
+    await ensureProductReferenceTables()
   })
 
   afterAll(async () => {
@@ -266,6 +301,28 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       }),
     })
     return (await res.json()).data
+  }
+
+  async function ensureProductReferenceTables() {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS products (
+        id text PRIMARY KEY,
+        name text NOT NULL,
+        status text NOT NULL DEFAULT 'active',
+        description text,
+        visibility text NOT NULL DEFAULT 'public',
+        activated boolean NOT NULL DEFAULT true,
+        reservation_timeout_minutes integer,
+        sell_currency text NOT NULL DEFAULT 'EUR',
+        sell_amount_cents integer,
+        cost_amount_cents integer,
+        margin_percent integer,
+        supplier_id text,
+        start_date date,
+        end_date date,
+        pax integer
+      )
+    `)
   }
 
   async function seedSlot(overrides: Record<string, unknown> = {}) {
@@ -918,6 +975,39 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
 
       expect(res.status).toBe(200)
       expect((await res.json()).data.status).toBe("confirmed")
+
+      const [entry] = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+
+      expect(entry).toBeDefined()
+      if (!entry) {
+        throw new Error("Expected action ledger entry for booking confirmation")
+      }
+      expect(entry).toMatchObject({
+        actionName: "booking.status.confirm",
+        actionKind: "update",
+        status: "succeeded",
+        evaluatedRisk: "medium",
+        principalType: "user",
+        principalId: "test-user-id",
+        targetType: "booking",
+        targetId: booking.id,
+        routeOrToolName: "bookings.confirm",
+        capabilityId: "bookings:status:confirm",
+        authorizationSource: "bookings.status.route",
+      })
+
+      const [detail] = await db
+        .select()
+        .from(actionMutationDetails)
+        .where(eq(actionMutationDetails.actionId, entry.id))
+
+      expect(detail).toMatchObject({
+        summary: "Booking status changed from on_hold to confirmed",
+        reversalKind: "none",
+      })
     })
 
     it("emits booking.confirmed with id + number + actor after confirm", async () => {

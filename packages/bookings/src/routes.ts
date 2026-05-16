@@ -644,7 +644,7 @@ export const bookingRoutes = new Hono<Env>()
       c.req.param("id"),
       await parseJsonBody(c, confirmBookingSchema),
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
     )
 
     if (result.status === "not_found") {
@@ -701,7 +701,11 @@ export const bookingRoutes = new Hono<Env>()
       c.req.param("id"),
       await parseJsonBody(c, expireBookingSchema),
       c.get("userId"),
-      { eventBus: c.get("eventBus"), cause: "route" },
+      {
+        eventBus: c.get("eventBus"),
+        cause: "route",
+        actionLedgerContext: getActionLedgerRequestContext(c),
+      },
     )
 
     if (result.status === "not_found") {
@@ -738,7 +742,7 @@ export const bookingRoutes = new Hono<Env>()
       c.req.param("id"),
       await parseJsonBody(c, cancelBookingSchema),
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
     )
 
     if (result.status === "not_found") {
@@ -763,7 +767,7 @@ export const bookingRoutes = new Hono<Env>()
       c.req.param("id"),
       await parseJsonBody(c, startBookingSchema),
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
     )
 
     if (result.status === "not_found") {
@@ -788,7 +792,7 @@ export const bookingRoutes = new Hono<Env>()
       c.req.param("id"),
       await parseJsonBody(c, completeBookingSchema),
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
     )
 
     if (result.status === "not_found") {
@@ -816,7 +820,7 @@ export const bookingRoutes = new Hono<Env>()
       c.req.param("id"),
       await parseJsonBody(c, overrideBookingStatusSchema),
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
     )
 
     if (result.status === "not_found") {
