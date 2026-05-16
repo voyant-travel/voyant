@@ -594,6 +594,32 @@ describe("actionLedgerAdminRoutes", () => {
     })
   })
 
+  test("rejects non-terminal approval decision statuses", () => {
+    expect(
+      __test__.decideActionApprovalBodySchema.safeParse({
+        status: "pending",
+        decidedByPrincipalId: "usr_decider",
+        decisionAction: {
+          actionName: "action_approval.pending",
+          principalType: "user",
+          principalId: "usr_decider",
+        },
+      }).success,
+    ).toBe(false)
+
+    expect(
+      __test__.decideActionApprovalBodySchema.safeParse({
+        status: "rejected",
+        decidedByPrincipalId: "usr_decider",
+        decisionAction: {
+          actionName: "action_approval.reject",
+          principalType: "user",
+          principalId: "usr_decider",
+        },
+      }).success,
+    ).toBe(false)
+  })
+
   test("returns not found when deciding a missing approval", async () => {
     vi.spyOn(actionLedgerService, "decideApproval").mockResolvedValue(null)
 

@@ -428,18 +428,18 @@ describe("approval request-context helpers", () => {
         actor: "staff",
       },
       id: "alap_1",
-      status: "rejected",
-      actionName: "booking.cancel.reject",
+      status: "denied",
+      actionName: "booking.cancel.deny",
     })
 
     expect(decideApprovalSpy).toHaveBeenCalledWith(
       {},
       expect.objectContaining({
         id: "alap_1",
-        status: "rejected",
+        status: "denied",
         decidedByPrincipalId: "usr_manager",
         decisionAction: expect.objectContaining({
-          actionName: "booking.cancel.reject",
+          actionName: "booking.cancel.deny",
           principalId: "usr_manager",
         }),
       }),
