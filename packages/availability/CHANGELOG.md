@@ -1,5 +1,13 @@
 # @voyantjs/availability
 
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/core@0.51.0
+- @voyantjs/db@0.51.0
+- @voyantjs/hono@0.51.0
+
 ## 0.50.8
 
 ### Patch Changes
