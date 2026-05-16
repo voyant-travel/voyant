@@ -936,12 +936,21 @@ importers:
 
   packages/action-ledger:
     dependencies:
+      '@voyantjs/core':
+        specifier: workspace:*
+        version: link:../core
       '@voyantjs/db':
         specifier: workspace:*
         version: link:../db
+      '@voyantjs/hono':
+        specifier: workspace:*
+        version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.15)(pg@8.20.0)(postgres@3.4.8)
+      hono:
+        specifier: ^4.12.10
+        version: 4.12.10
       zod:
         specifier: ^4.3.6
         version: 4.3.6

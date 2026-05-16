@@ -9,7 +9,8 @@
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./fingerprint": "./src/fingerprint.ts",
-    "./request-context": "./src/request-context.ts"
+    "./request-context": "./src/request-context.ts",
+    "./routes": "./src/routes.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -20,8 +21,11 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
+    "@voyantjs/hono": "workspace:*",
     "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -61,6 +65,11 @@
         "types": "./dist/request-context.d.ts",
         "import": "./dist/request-context.js",
         "default": "./dist/request-context.js"
+      },
+      "./routes": {
+        "types": "./dist/routes.d.ts",
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
       }
     }
   },

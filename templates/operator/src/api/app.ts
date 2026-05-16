@@ -1,3 +1,4 @@
+import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
 import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
@@ -797,6 +798,7 @@ export const app = createApp<CloudflareBindings>({
     "/v1/finance/providers/netopia/callback",
   ],
   modules: [
+    actionLedgerHonoModule,
     crmHonoModule,
     availabilityHonoModule,
     identityHonoModule,
