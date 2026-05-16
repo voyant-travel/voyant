@@ -127,4 +127,32 @@ describe("createBetterAuth", () => {
       jwks: jwksTable,
     })
   })
+
+  it("preserves consumer plugins alongside Voyant's required auth plugins", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const jwtPlugin = { id: "jwt" }
+    const customPlugin = { id: "custom", schema: { customTable: { name: "customTable" } } }
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      plugins: [jwtPlugin, customPlugin] as never,
+      extraSchema: {
+        jwks: { name: "jwks" },
+        customTable: { name: "customTable" },
+      } as never,
+    })
+
+    expect(betterAuthMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        plugins: [
+          expect.objectContaining({ id: "apiKey" }),
+          expect.objectContaining({ id: "emailOTP" }),
+          jwtPlugin,
+          customPlugin,
+        ],
+      }),
+    )
+  })
 })

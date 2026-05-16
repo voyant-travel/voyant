@@ -99,6 +99,13 @@
       "when": 1778779788000,
       "tag": "0016_contract_lifecycle_history",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1778918400000,
+      "tag": "0017_cloud_auth_links",
+      "breakpoints": true
     }
   ]
 }

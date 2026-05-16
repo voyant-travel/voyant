@@ -6,7 +6,6 @@ import {
   authSession,
   authUser,
   authVerification,
-  userProfilesTable,
 } from "@voyantjs/db/schema/iam"
 import { type BetterAuthOptions, betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
@@ -22,6 +21,8 @@ import {
 } from "./api-token-rotation.js"
 import {
   type CurrentUser,
+  isFirstAuthUser,
+  provisionCurrentUserProfile,
   type UpdateCurrentUserProfileInput,
   updateCurrentUserProfile,
 } from "./workspace.js"
@@ -610,26 +611,15 @@ export function createBetterAuth<
             }
           },
           after: async (user) => {
-            const nameParts = user.name?.split(" ") ?? []
-            const firstName = nameParts[0] ?? null
-            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null
-
             // Single-tenant bootstrap: the very first user to register becomes
             // the super-admin. Runs atomically after the `user` row is
             // inserted, so a simple COUNT(*) = 1 check identifies them.
-            const [countRow] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-            const isFirstUser = (countRow?.count ?? 0) === 1
-
-            await db
-              .insert(userProfilesTable)
-              .values({
-                id: user.id,
-                firstName,
-                lastName,
-                avatarUrl: user.image ?? null,
-                isSuperAdmin: isFirstUser,
-              })
-              .onConflictDoNothing()
+            await provisionCurrentUserProfile(db, {
+              userId: user.id,
+              name: user.name,
+              image: user.image,
+              isSuperAdmin: await isFirstAuthUser(db),
+            })
           },
         },
       },

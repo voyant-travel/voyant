@@ -15,14 +15,18 @@ import { useState } from "react"
 import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { authClient } from "@/lib/auth"
-import { getCurrentUser } from "@/lib/current-user"
+import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
 
 export const Route = createFileRoute("/(auth)/reset-password")({
-  loader: async () => {
-    const user = await getCurrentUser()
+  loader: async ({ location }) => {
+    const [user, bootstrap] = await Promise.all([getCurrentUser(), getBootstrapStatus()])
 
     if (user) {
       throw redirect({ to: "/" })
+    }
+
+    if (bootstrap.authMode === "voyant-cloud") {
+      throw redirect({ href: cloudAuthStartHref(location.href) })
     }
 
     return null

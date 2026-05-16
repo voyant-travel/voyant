@@ -15,7 +15,18 @@ export type CurrentUser = {
   profilePictureUrl?: string | null
 }
 
-export type BootstrapStatus = { hasUsers: boolean }
+export type AuthMode = "local" | "voyant-cloud"
+export type BootstrapStatus = { hasUsers: boolean; authMode?: AuthMode }
+
+export function cloudAuthStartHref(next?: string): string {
+  const params = new URLSearchParams()
+  if (next) {
+    params.set("next", next)
+  }
+
+  const query = params.toString()
+  return `/api/auth/cloud/start${query ? `?${query}` : ""}`
+}
 
 const withRequest = createMiddleware({ type: "request" }).server(({ next, request }) => {
   return next({ context: { request } })
