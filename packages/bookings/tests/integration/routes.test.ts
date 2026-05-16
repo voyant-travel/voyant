@@ -1,4 +1,5 @@
 import {
+  ACTION_LEDGER_APPROVAL_ID_HEADER,
   actionApprovals,
   actionLedgerEntries,
   actionLedgerService,
@@ -1395,7 +1396,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Action-Approval-Id": approvalId,
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
         },
         body: JSON.stringify({ note: "Approved cancellation" }),
       })
@@ -1436,7 +1437,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Action-Approval-Id": approvalId,
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
         },
         body: JSON.stringify({ note: "Approved cancellation" }),
       })
@@ -1482,7 +1483,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Action-Approval-Id": approvalId,
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
         },
         body: JSON.stringify({ note: "Different cancellation" }),
       })
@@ -1533,7 +1534,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Action-Approval-Id": approvalId,
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
         },
         body: JSON.stringify({ note: "Pending cancellation" }),
       })
@@ -1599,7 +1600,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Action-Approval-Id": approvalId,
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
         },
         body: JSON.stringify({ note: "Approved cancellation" }),
       })
