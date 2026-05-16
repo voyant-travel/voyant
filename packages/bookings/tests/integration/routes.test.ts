@@ -1227,6 +1227,43 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(latestBooking?.status).toBe("confirmed")
     })
 
+    it("rejects approval-required booking status requests without idempotency keys", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const res = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ note: "Agent proposed cancellation" }),
+      })
+
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toMatchObject({
+        error: "Approval-required booking status actions require an Idempotency-Key",
+      })
+
+      const entries = await db.select().from(actionLedgerEntries)
+      const approvals = await db.select().from(actionApprovals)
+      expect(entries).toHaveLength(0)
+      expect(approvals).toHaveLength(0)
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+    })
+
     it("rejects reused approval idempotency keys with different command input", async () => {
       const booking = await seedBooking({ status: "confirmed" })
 
