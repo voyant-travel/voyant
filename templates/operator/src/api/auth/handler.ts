@@ -270,6 +270,28 @@ export async function resolveAuthRequest(
       return null
     }
 
+    if (isVoyantCloudAuthMode(env)) {
+      const revalidateConfig = getCloudAuthRevalidateConfig(env)
+      if (!revalidateConfig) {
+        return null
+      }
+
+      try {
+        const revalidation = await revalidateVoyantCloudAdminAuthSession({
+          db: db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"],
+          sessionId: session.session.id,
+          config: revalidateConfig,
+        })
+
+        if (!revalidation.ok) {
+          return null
+        }
+      } catch (error) {
+        console.error("[auth/session] Cloud revalidation failed:", error)
+        return null
+      }
+    }
+
     return {
       userId: session.user.id,
       sessionId: session.session.id,
