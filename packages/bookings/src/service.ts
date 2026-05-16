@@ -21,6 +21,7 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
+import { BOOKING_STATUS_CAPABILITIES } from "./action-ledger-capabilities.js"
 import { availabilitySlotsRef } from "./availability-ref.js"
 import { exchangeRatesRef } from "./markets-ref.js"
 import {
@@ -2967,7 +2968,7 @@ export const bookingsService = {
         await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
           actionName: "booking.status.confirm",
           routeOrToolName: "bookings.confirm",
-          capabilityId: "bookings:status:confirm",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.confirm.id,
           bookingId: id,
           fromStatus: booking.status,
           toStatus: "confirmed",
@@ -3126,7 +3127,7 @@ export const bookingsService = {
         await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
           actionName: "booking.status.expire",
           routeOrToolName: "bookings.expire",
-          capabilityId: "bookings:status:expire",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.expire.id,
           bookingId: id,
           fromStatus: booking.status,
           toStatus: "expired",
@@ -3493,7 +3494,7 @@ export const bookingsService = {
         await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
           actionName: "booking.status.cancel",
           routeOrToolName: "bookings.cancel",
-          capabilityId: "bookings:status:cancel",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.cancel.id,
           bookingId: id,
           fromStatus: booking.status,
           toStatus: "cancelled",
@@ -3581,7 +3582,7 @@ export const bookingsService = {
         await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
           actionName: "booking.status.start",
           routeOrToolName: "bookings.start",
-          capabilityId: "bookings:status:start",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.start.id,
           bookingId: id,
           fromStatus: booking.status,
           toStatus: "in_progress",
@@ -3678,7 +3679,7 @@ export const bookingsService = {
         await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
           actionName: "booking.status.complete",
           routeOrToolName: "bookings.complete",
-          capabilityId: "bookings:status:complete",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.complete.id,
           bookingId: id,
           fromStatus: booking.status,
           toStatus: "completed",
@@ -3773,7 +3774,7 @@ export const bookingsService = {
         await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
           actionName: "booking.status.override",
           routeOrToolName: "bookings.override-status",
-          capabilityId: "bookings:status:override",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.override.id,
           bookingId: id,
           fromStatus: booking.status,
           toStatus: data.status,

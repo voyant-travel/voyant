@@ -10,6 +10,7 @@
     "./tasks": "./src/tasks/index.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
+    "./action-ledger-capabilities": "./src/action-ledger-capabilities.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
     "./checkout-capability": "./src/checkout-capability.ts",
@@ -74,6 +75,11 @@
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
+      },
+      "./action-ledger-capabilities": {
+        "types": "./dist/action-ledger-capabilities.d.ts",
+        "import": "./dist/action-ledger-capabilities.js",
+        "default": "./dist/action-ledger-capabilities.js"
       },
       "./public-routes": {
         "types": "./dist/routes-public.d.ts",

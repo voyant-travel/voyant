@@ -1,4 +1,18 @@
 export {
+  type ActionLedgerCapabilityApprovalPolicy,
+  type ActionLedgerCapabilityDefinition,
+  type ActionLedgerCapabilityLedgerPolicy,
+  type ActionLedgerCapabilityRegistry,
+  ActionLedgerCapabilityRegistryError,
+  type ActionLedgerCapabilityRisk,
+  actionLedgerCapabilityApprovalPolicyValues,
+  actionLedgerCapabilityKey,
+  actionLedgerCapabilityLedgerPolicyValues,
+  createActionLedgerCapabilityRegistry,
+  evaluateActionLedgerCapabilityRisk,
+  getActionLedgerCapability,
+} from "./capability.js"
+export {
   buildIdempotencyFingerprint,
   canonicalize,
   canonicalJson,

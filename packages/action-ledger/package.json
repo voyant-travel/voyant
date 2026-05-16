@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./capability": "./src/capability.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./fingerprint": "./src/fingerprint.ts",
@@ -45,6 +46,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./capability": {
+        "types": "./dist/capability.d.ts",
+        "import": "./dist/capability.js",
+        "default": "./dist/capability.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",

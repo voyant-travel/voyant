@@ -14,6 +14,7 @@ import {
 } from "@voyantjs/hono"
 import { type Context, Hono } from "hono"
 
+import { BOOKING_PII_READ_CAPABILITY } from "./action-ledger-capabilities.js"
 import { createBookingPiiService } from "./pii.js"
 import {
   redactBookingContact,
@@ -84,7 +85,6 @@ const BOOKING_PII_READ_ACTION_NAME = "booking.pii.read"
 const BOOKING_PII_READ_ACTION_VERSION = "v1"
 const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
-const BOOKING_PII_READ_CAPABILITY_ID = "bookings-pii:read"
 const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
   "firstName",
   "lastName",
@@ -144,7 +144,8 @@ async function logBookingPiiReadActionLedger(
     targetType: "booking_traveler",
     targetId: input.travelerId,
     routeOrToolName: input.routeOrToolName,
-    capabilityId: BOOKING_PII_READ_CAPABILITY_ID,
+    capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+    capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
     authorizationSource: BOOKING_PII_AUTHORIZATION_SOURCE,
     reasonCode: input.reason,
     disclosedFieldSet: input.status === "succeeded" ? (input.disclosedFieldSet ?? []) : [],

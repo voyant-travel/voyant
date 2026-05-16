@@ -9,6 +9,12 @@ import {
 import { bookingRoutes } from "./routes.js"
 import { publicBookingRoutes } from "./routes-public.js"
 
+export {
+  BOOKING_ACTION_LEDGER_CAPABILITIES,
+  BOOKING_PII_READ_CAPABILITY,
+  BOOKING_STATUS_CAPABILITIES,
+  bookingActionLedgerCapabilityRegistry,
+} from "./action-ledger-capabilities.js"
 export { bookingsSupplierExtension } from "./extensions/suppliers.js"
 export {
   type BookingPiiAuditEvent,
