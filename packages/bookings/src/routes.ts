@@ -103,6 +103,9 @@ const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
 const BOOKING_STATUS_APPROVAL_POLICY = "bookings-status-approval-v1"
 
 type ApprovedBookingStatusAction = BuildActionLedgerApprovedExecutionFieldsInput
+type TravelerTravelDetails = Awaited<
+  ReturnType<ReturnType<typeof createBookingPiiService>["getTravelerTravelDetails"]>
+>
 
 const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
   "firstName",
@@ -1415,39 +1418,36 @@ export const bookingRoutes = new Hono<Env>()
       return c.json({ error: "Traveler not found" }, 404)
     }
 
+    let travelDetails: TravelerTravelDetails
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      const travelDetails = await pii.getTravelerTravelDetails(
-        c.get("db"),
-        traveler.id,
-        c.get("userId"),
-      )
-
-      await logBookingPiiAccess(c, {
-        bookingId,
-        travelerId,
-        action: "read",
-        outcome: "allowed",
-        reason: "traveler_reveal",
-      })
-
-      await logBookingPiiReadActionLedger(c, {
-        travelerId,
-        status: "succeeded",
-        reason: "traveler_reveal",
-        routeOrToolName: "bookings.travelers.reveal",
-        disclosedFieldSet: travelDetails
-          ? [...TRAVELER_IDENTITY_DISCLOSED_FIELDS, ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS]
-          : TRAVELER_IDENTITY_DISCLOSED_FIELDS,
-        disclosureSummary: "Traveler identity reveal",
-        authorizationSource: auth.access?.authorizationSource,
-        evaluatedRisk: auth.access?.evaluatedRisk,
-      })
-
-      return c.json({ data: { ...traveler, travelDetails } })
+      travelDetails = await pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
     } catch (error) {
       return handleKmsConfigError(c, error)
     }
+
+    await logBookingPiiAccess(c, {
+      bookingId,
+      travelerId,
+      action: "read",
+      outcome: "allowed",
+      reason: "traveler_reveal",
+    })
+
+    await logBookingPiiReadActionLedger(c, {
+      travelerId,
+      status: "succeeded",
+      reason: "traveler_reveal",
+      routeOrToolName: "bookings.travelers.reveal",
+      disclosedFieldSet: travelDetails
+        ? [...TRAVELER_IDENTITY_DISCLOSED_FIELDS, ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS]
+        : TRAVELER_IDENTITY_DISCLOSED_FIELDS,
+      disclosureSummary: "Traveler identity reveal",
+      authorizationSource: auth.access?.authorizationSource,
+      evaluatedRisk: auth.access?.evaluatedRisk,
+    })
+
+    return c.json({ data: { ...traveler, travelDetails } })
   })
 
   .get("/:id/travelers/:travelerId/travel-details", async (c) => {
@@ -1486,45 +1486,46 @@ export const bookingRoutes = new Hono<Env>()
       return c.json({ error: "Traveler not found" }, 404)
     }
 
+    let details: TravelerTravelDetails
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      const details = await pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
-
-      if (!details) {
-        await logBookingPiiAccess(c, {
-          bookingId: traveler.bookingId,
-          travelerId: traveler.id,
-          action: "read",
-          outcome: "denied",
-          reason: "travel_details_not_found",
-        })
-        await logBookingPiiReadActionLedger(c, {
-          travelerId: traveler.id,
-          status: "denied",
-          reason: "travel_details_not_found",
-          routeOrToolName: "bookings.travelers.travel-details",
-          disclosureSummary: "Booking traveler travel details not found",
-          authorizationSource: auth.access?.authorizationSource,
-          evaluatedRisk: auth.access?.evaluatedRisk,
-        })
-        return c.json({ error: "Traveler travel details not found" }, 404)
-      }
-
-      await logBookingPiiReadActionLedger(c, {
-        travelerId: traveler.id,
-        status: "succeeded",
-        reason: "travel_details_reveal",
-        routeOrToolName: "bookings.travelers.travel-details",
-        disclosedFieldSet: TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
-        disclosureSummary: "Traveler travel details reveal",
-        authorizationSource: auth.access?.authorizationSource,
-        evaluatedRisk: auth.access?.evaluatedRisk,
-      })
-
-      return c.json({ data: details })
+      details = await pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
     } catch (error) {
       return handleKmsConfigError(c, error)
     }
+
+    if (!details) {
+      await logBookingPiiAccess(c, {
+        bookingId: traveler.bookingId,
+        travelerId: traveler.id,
+        action: "read",
+        outcome: "denied",
+        reason: "travel_details_not_found",
+      })
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: traveler.id,
+        status: "denied",
+        reason: "travel_details_not_found",
+        routeOrToolName: "bookings.travelers.travel-details",
+        disclosureSummary: "Booking traveler travel details not found",
+        authorizationSource: auth.access?.authorizationSource,
+        evaluatedRisk: auth.access?.evaluatedRisk,
+      })
+      return c.json({ error: "Traveler travel details not found" }, 404)
+    }
+
+    await logBookingPiiReadActionLedger(c, {
+      travelerId: traveler.id,
+      status: "succeeded",
+      reason: "travel_details_reveal",
+      routeOrToolName: "bookings.travelers.travel-details",
+      disclosedFieldSet: TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
+      disclosureSummary: "Traveler travel details reveal",
+      authorizationSource: auth.access?.authorizationSource,
+      evaluatedRisk: auth.access?.evaluatedRisk,
+    })
+
+    return c.json({ data: details })
   })
 
   .post("/:id/travelers", async (c) => {
