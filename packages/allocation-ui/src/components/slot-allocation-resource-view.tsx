@@ -1,8 +1,28 @@
 "use client"
 
 import type { AllocationManifestTraveler, AllocationResource } from "@voyantjs/availability-react"
-import { Badge, Button, Input, Label } from "@voyantjs/ui/components"
-import { Armchair, Bed, Pencil, Trash2, Users } from "lucide-react"
+import {
+  Badge,
+  Button,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  Input,
+  Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@voyantjs/ui/components"
+import { Bed, Pencil, Plus, Trash2, UserMinus, Users, X } from "lucide-react"
 import { type FormEvent, type ReactNode, useEffect, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
@@ -10,9 +30,8 @@ import {
   type AllocationOccupants,
   groupResourcesBySubType,
   kindLabel,
-  VEHICLE_SEAT_KIND,
 } from "./slot-allocation-model.js"
-import { DropColumn, ResourceFlagBadges, TravelerTile } from "./slot-allocation-shared.js"
+import { AllocationColumn, TravelerTile } from "./slot-allocation-shared.js"
 
 export interface EditResourceInput {
   label: string | null
@@ -25,7 +44,8 @@ export function ResourceColumnsView({
   travelers,
   occupants,
   sharingGroupLabels,
-  onDropTraveler,
+  onAssignTraveler,
+  onUnassignTraveler,
   onRemoveResource,
   onEditResource,
   renderTravelerActions,
@@ -35,35 +55,40 @@ export function ResourceColumnsView({
   travelers: AllocationManifestTraveler[]
   occupants: AllocationOccupants
   sharingGroupLabels: Record<string, string>
-  onDropTraveler: (travelerId: string, resourceId: string | null) => void
+  /** Assign a single unallocated traveler to a specific resource. */
+  onAssignTraveler: (travelerId: string, resourceId: string) => void
+  /** Remove a single traveler from their current resource. */
+  onUnassignTraveler: (travelerId: string) => void
   onRemoveResource: (resourceId: string) => void
   onEditResource?: (resourceId: string, input: EditResourceInput) => Promise<void> | void
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
-
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(18rem,22rem)_1fr]">
-      <DropColumn
+      <AllocationColumn
         id="unallocated"
         icon={<Users className="size-4" aria-hidden="true" />}
         title={messages.unallocated}
         description={messages.unallocatedDescription}
         count={occupants.unallocated.length}
         capacity={travelers.length}
-        onDropTraveler={(travelerId) => onDropTraveler(travelerId, null)}
       >
-        {occupants.unallocated.map((traveler) => (
-          <TravelerTile
-            key={traveler.id}
-            traveler={traveler}
-            sharingGroupLabel={
-              traveler.sharingGroupId ? sharingGroupLabels[traveler.sharingGroupId] : null
-            }
-            renderActions={renderTravelerActions}
-          />
-        ))}
-      </DropColumn>
+        {occupants.unallocated.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{messages.unallocatedEmpty}</p>
+        ) : (
+          occupants.unallocated.map((traveler) => (
+            <TravelerTile
+              key={traveler.id}
+              traveler={traveler}
+              sharingGroupLabel={
+                traveler.sharingGroupId ? sharingGroupLabels[traveler.sharingGroupId] : null
+              }
+              renderActions={renderTravelerActions}
+            />
+          ))
+        )}
+      </AllocationColumn>
 
       <div className="flex min-w-0 flex-col gap-6">
         {resources.length === 0 ? (
@@ -72,7 +97,7 @@ export function ResourceColumnsView({
           </div>
         ) : (
           groupResourcesBySubType(resources).map((group) => (
-            <section key={group.key} aria-label={group.label} className="flex flex-col gap-3">
+            <section key={group.key} aria-label={group.label} className="flex flex-col gap-2">
               <header className="flex items-baseline justify-between gap-2 border-b pb-1">
                 <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
                   {group.label}
@@ -81,25 +106,17 @@ export function ResourceColumnsView({
                   {group.count} · {messages.capacity.toLowerCase()} {group.capacity}
                 </span>
               </header>
-              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                {group.resources.map((resource) => (
-                  <AllocationResourceColumn
-                    key={resource.id}
-                    kind={kind}
-                    resource={resource}
-                    occupants={occupants.byResource.get(resource.id) ?? []}
-                    sharingGroupLabels={sharingGroupLabels}
-                    onDropTraveler={(travelerId) => onDropTraveler(travelerId, resource.id)}
-                    onRemoveResource={() => onRemoveResource(resource.id)}
-                    onEditResource={
-                      onEditResource
-                        ? (input) => Promise.resolve(onEditResource(resource.id, input))
-                        : undefined
-                    }
-                    renderTravelerActions={renderTravelerActions}
-                  />
-                ))}
-              </div>
+              <ResourceGroupTable
+                kind={kind}
+                resources={group.resources}
+                occupants={occupants}
+                unallocated={occupants.unallocated}
+                sharingGroupLabels={sharingGroupLabels}
+                onAssignTraveler={onAssignTraveler}
+                onUnassignTraveler={onUnassignTraveler}
+                onRemoveResource={onRemoveResource}
+                onEditResource={onEditResource}
+              />
             </section>
           ))
         )}
@@ -108,84 +125,169 @@ export function ResourceColumnsView({
   )
 }
 
-function AllocationResourceColumn({
+function ResourceGroupTable({
   kind,
-  resource,
+  resources,
   occupants,
-  onDropTraveler,
+  unallocated,
+  sharingGroupLabels,
+  onAssignTraveler,
+  onUnassignTraveler,
   onRemoveResource,
   onEditResource,
+}: {
+  kind: string
+  resources: AllocationResource[]
+  occupants: AllocationOccupants
+  unallocated: AllocationManifestTraveler[]
+  sharingGroupLabels: Record<string, string>
+  onAssignTraveler: (travelerId: string, resourceId: string) => void
+  onUnassignTraveler: (travelerId: string) => void
+  onRemoveResource: (resourceId: string) => void
+  onEditResource?: (resourceId: string, input: EditResourceInput) => Promise<void> | void
+}) {
+  const messages = useAllocationUiMessagesOrDefault()
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/40">
+            <TableHead className="w-48">{messages.resourceLabel}</TableHead>
+            <TableHead className="w-20 text-center">{messages.capacity}</TableHead>
+            <TableHead>{messages.travelers}</TableHead>
+            <TableHead className="w-40 text-right">&nbsp;</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {resources.map((resource) => {
+            const seated = occupants.byResource.get(resource.id) ?? []
+            const isEditing = editingId === resource.id
+            const isFull = seated.length >= resource.capacity
+            return (
+              <ResourceRow
+                key={resource.id}
+                kind={kind}
+                resource={resource}
+                seated={seated}
+                unallocated={unallocated}
+                sharingGroupLabels={sharingGroupLabels}
+                isEditing={isEditing}
+                isFull={isFull}
+                canEdit={Boolean(onEditResource)}
+                onBeginEdit={() => setEditingId(resource.id)}
+                onCancelEdit={() => setEditingId(null)}
+                onSaveEdit={async (input) => {
+                  await Promise.resolve(onEditResource?.(resource.id, input))
+                  setEditingId(null)
+                }}
+                onAssignTraveler={(travelerId) => onAssignTraveler(travelerId, resource.id)}
+                onUnassignTraveler={onUnassignTraveler}
+                onRemoveResource={() => onRemoveResource(resource.id)}
+              />
+            )
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
+function ResourceRow({
+  kind,
+  resource,
+  seated,
+  unallocated,
   sharingGroupLabels,
-  renderTravelerActions,
+  isEditing,
+  isFull,
+  canEdit,
+  onBeginEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onAssignTraveler,
+  onUnassignTraveler,
+  onRemoveResource,
 }: {
   kind: string
   resource: AllocationResource
-  occupants: AllocationManifestTraveler[]
-  onDropTraveler: (travelerId: string) => void
-  onRemoveResource: () => void
-  onEditResource?: (input: EditResourceInput) => Promise<void>
+  seated: AllocationManifestTraveler[]
+  unallocated: AllocationManifestTraveler[]
   sharingGroupLabels: Record<string, string>
-  renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
+  isEditing: boolean
+  isFull: boolean
+  canEdit: boolean
+  onBeginEdit: () => void
+  onCancelEdit: () => void
+  onSaveEdit: (input: EditResourceInput) => Promise<void>
+  onAssignTraveler: (travelerId: string) => void
+  onUnassignTraveler: (travelerId: string) => void
+  onRemoveResource: () => void
 }) {
   const messages = useAllocationUiMessagesOrDefault()
-  const [editing, setEditing] = useState(false)
-  const [label, setLabel] = useState(resource.label ?? "")
-  const [capacity, setCapacity] = useState(resource.capacity)
-  const [saving, setSaving] = useState(false)
+  const overCapacity = seated.length > resource.capacity
 
-  useEffect(() => {
-    if (!editing) {
-      setLabel(resource.label ?? "")
-      setCapacity(resource.capacity)
-    }
-  }, [editing, resource.label, resource.capacity])
-
-  const full = occupants.length >= resource.capacity
-  const canEdit = Boolean(onEditResource)
-  // Operator can't shrink the bucket below the number of travelers
-  // already sitting in it — the API rejects that anyway, but failing
-  // in the form is friendlier than a toast after the round-trip.
-  const minCapacity = Math.max(1, occupants.length)
-
-  async function submitEdit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!onEditResource) return
-    const trimmed = label.trim()
-    const nextCapacity = Math.max(minCapacity, Math.floor(capacity) || minCapacity)
-    setSaving(true)
-    try {
-      await onEditResource({
-        label: trimmed.length === 0 ? null : trimmed,
-        capacity: nextCapacity,
-      })
-      setEditing(false)
-    } finally {
-      setSaving(false)
-    }
+  if (isEditing && canEdit) {
+    return (
+      <TableRow className="bg-muted/30">
+        <TableCell colSpan={4} className="whitespace-normal">
+          <ResourceEditForm
+            kind={kind}
+            resource={resource}
+            minCapacity={Math.max(1, seated.length)}
+            onCancel={onCancelEdit}
+            onSave={onSaveEdit}
+          />
+        </TableCell>
+      </TableRow>
+    )
   }
 
   return (
-    <DropColumn
-      id={`allocation-resource:${resource.id}`}
-      icon={
-        kind === VEHICLE_SEAT_KIND ? <Armchair className="size-4" /> : <Bed className="size-4" />
-      }
-      title={resource.label ?? kindLabel(kind, messages)}
-      description={`${messages.capacity}: ${occupants.length}/${resource.capacity}`}
-      count={occupants.length}
-      capacity={resource.capacity}
-      disabled={full || editing}
-      onDropTraveler={onDropTraveler}
-      action={
-        <div className="flex items-center gap-1">
+    <TableRow>
+      <TableCell className="font-medium">
+        <span className="inline-flex items-center gap-2">
+          <Bed className="size-4 text-muted-foreground" aria-hidden="true" />
+          {resource.label ?? kindLabel(kind, messages)}
+        </span>
+      </TableCell>
+      <TableCell className="text-center">
+        <Badge variant={overCapacity ? "destructive" : "outline"}>
+          {seated.length}/{resource.capacity}
+        </Badge>
+      </TableCell>
+      <TableCell className="whitespace-normal py-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {seated.map((traveler) => (
+            <TravelerChip
+              key={traveler.id}
+              traveler={traveler}
+              sharingGroupLabel={
+                traveler.sharingGroupId
+                  ? (sharingGroupLabels[traveler.sharingGroupId] ?? null)
+                  : null
+              }
+              onUnassign={() => onUnassignTraveler(traveler.id)}
+            />
+          ))}
+          {!isFull ? (
+            <AssignTravelerPopover
+              unallocated={unallocated}
+              onSelect={(travelerId) => onAssignTraveler(travelerId)}
+            />
+          ) : null}
+        </div>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="inline-flex items-center justify-end gap-1">
           {canEdit ? (
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => setEditing((value) => !value)}
+              onClick={onBeginEdit}
               aria-label={messages.editResource}
-              aria-pressed={editing}
             >
               <Pencil className="size-4" aria-hidden="true" />
             </Button>
@@ -200,74 +302,173 @@ function AllocationResourceColumn({
             <Trash2 className="size-4" aria-hidden="true" />
           </Button>
         </div>
-      }
+      </TableCell>
+    </TableRow>
+  )
+}
+
+function TravelerChip({
+  traveler,
+  sharingGroupLabel,
+  onUnassign,
+}: {
+  traveler: AllocationManifestTraveler
+  sharingGroupLabel: string | null
+  onUnassign: () => void
+}) {
+  const messages = useAllocationUiMessagesOrDefault()
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2 py-0.5 text-xs">
+      <span className="truncate font-medium" title={sharingGroupLabel ?? undefined}>
+        {traveler.fullName}
+      </span>
+      <span className="text-muted-foreground">{traveler.bookingNumber}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-4 rounded-full"
+        onClick={onUnassign}
+        aria-label={`${messages.remove}: ${traveler.fullName}`}
+      >
+        <X className="size-3" aria-hidden="true" />
+      </Button>
+    </span>
+  )
+}
+
+function AssignTravelerPopover({
+  unallocated,
+  onSelect,
+}: {
+  unallocated: AllocationManifestTraveler[]
+  onSelect: (travelerId: string) => void
+}) {
+  const messages = useAllocationUiMessagesOrDefault()
+  const [open, setOpen] = useState(false)
+  const disabled = unallocated.length === 0
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs"
+            disabled={disabled}
+            aria-label={messages.assignTraveler}
+            title={disabled ? messages.assignTravelerEmpty : messages.assignTraveler}
+          >
+            <Plus className="size-3.5" aria-hidden="true" />
+            {messages.assignTraveler}
+          </Button>
+        }
+      />
+      <PopoverContent className="w-72 p-0" align="start">
+        <Command>
+          <CommandInput placeholder={messages.assignTravelerSearch} />
+          <CommandList>
+            <CommandEmpty>{messages.assignTravelerEmpty}</CommandEmpty>
+            <CommandGroup>
+              {unallocated.map((traveler) => (
+                <CommandItem
+                  key={traveler.id}
+                  value={`${traveler.fullName} ${traveler.bookingNumber}`}
+                  onSelect={() => {
+                    onSelect(traveler.id)
+                    setOpen(false)
+                  }}
+                >
+                  <UserMinus className="mr-2 size-4 text-muted-foreground" aria-hidden="true" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{traveler.fullName}</span>
+                    <span className="text-xs text-muted-foreground">{traveler.bookingNumber}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function ResourceEditForm({
+  kind,
+  resource,
+  minCapacity,
+  onCancel,
+  onSave,
+}: {
+  kind: string
+  resource: AllocationResource
+  minCapacity: number
+  onCancel: () => void
+  onSave: (input: EditResourceInput) => Promise<void>
+}) {
+  const messages = useAllocationUiMessagesOrDefault()
+  const [label, setLabel] = useState(resource.label ?? "")
+  const [capacity, setCapacity] = useState(resource.capacity)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setLabel(resource.label ?? "")
+    setCapacity(resource.capacity)
+  }, [resource.label, resource.capacity])
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const trimmed = label.trim()
+    const nextCapacity = Math.max(minCapacity, Math.floor(capacity) || minCapacity)
+    setSaving(true)
+    try {
+      await onSave({
+        label: trimmed.length === 0 ? null : trimmed,
+        capacity: nextCapacity,
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form
+      className="grid gap-2 sm:grid-cols-[1fr_8rem_auto_auto] sm:items-end"
+      onSubmit={submit}
+      aria-label={messages.editResource}
     >
-      {editing && canEdit ? (
-        <form
-          className="grid gap-2 rounded-md border bg-muted/40 p-2"
-          onSubmit={submitEdit}
-          aria-label={messages.editResource}
-        >
-          <div className="grid gap-1">
-            <Label htmlFor={`edit-${resource.id}-label`} className="text-xs">
-              {messages.resourceLabel}
-            </Label>
-            <Input
-              id={`edit-${resource.id}-label`}
-              value={label}
-              onChange={(event) => setLabel(event.target.value)}
-              placeholder={kindLabel(kind, messages)}
-            />
-          </div>
-          <div className="grid gap-1">
-            <Label htmlFor={`edit-${resource.id}-capacity`} className="text-xs">
-              {messages.resourceCapacity}
-            </Label>
-            <Input
-              id={`edit-${resource.id}-capacity`}
-              type="number"
-              min={minCapacity}
-              value={capacity}
-              onChange={(event) => setCapacity(Number(event.target.value) || minCapacity)}
-            />
-          </div>
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditing(false)}
-              disabled={saving}
-            >
-              {messages.cancel}
-            </Button>
-            <Button type="submit" size="sm" disabled={saving}>
-              {messages.saveResource}
-            </Button>
-          </div>
-        </form>
-      ) : null}
-      <ResourceFlagBadges resource={resource} />
-      {full ? (
-        <Badge variant="secondary" className="w-fit">
-          {messages.overCapacity}
-        </Badge>
-      ) : null}
-      {occupants.map((traveler) => (
-        <TravelerTile
-          key={traveler.id}
-          traveler={traveler}
-          sharingGroupLabel={
-            traveler.sharingGroupId ? sharingGroupLabels[traveler.sharingGroupId] : null
-          }
-          renderActions={renderTravelerActions}
+      <div className="grid gap-1">
+        <Label htmlFor={`edit-${resource.id}-label`} className="text-xs">
+          {messages.resourceLabel}
+        </Label>
+        <Input
+          id={`edit-${resource.id}-label`}
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          placeholder={kindLabel(kind, messages)}
         />
-      ))}
-      {!full && !editing ? (
-        <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-          {messages.dropHere}
-        </div>
-      ) : null}
-    </DropColumn>
+      </div>
+      <div className="grid gap-1">
+        <Label htmlFor={`edit-${resource.id}-capacity`} className="text-xs">
+          {messages.resourceCapacity}
+        </Label>
+        <Input
+          id={`edit-${resource.id}-capacity`}
+          type="number"
+          min={minCapacity}
+          value={capacity}
+          onChange={(event) => setCapacity(Number(event.target.value) || minCapacity)}
+        />
+      </div>
+      <Button type="submit" size="sm" disabled={saving}>
+        {messages.saveResource}
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
+        {messages.cancel}
+      </Button>
+    </form>
   )
 }

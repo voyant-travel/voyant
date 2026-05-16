@@ -242,6 +242,18 @@ export const adminAvailabilityMessages = {
           generatedSlotsTitle: "Generated Slots",
           generatedSlotsEmpty: "No slots currently use this start time.",
         },
+        tabs: {
+          allocation: "Allocation",
+          pickup: "Pickup",
+          closeouts: "Closeouts",
+          activity: "Activity",
+          meta: "Meta",
+          allocationUnwired: "Allocation manager not wired in this template.",
+          activityEmpty: "No activity recorded for this slot yet.",
+          activityAuditTitle: "Audit log",
+          metaIdentifiersTitle: "Identifiers",
+          metaLifecycleTitle: "Lifecycle",
+        },
       },
       dialogs: {
         slot: {
@@ -607,6 +619,18 @@ export const adminAvailabilityMessages = {
           sortOrderLabel: "Ordine sortare",
           generatedSlotsTitle: "Sloturi generate",
           generatedSlotsEmpty: "Niciun slot nu foloseste momentan aceasta ora de plecare.",
+        },
+        tabs: {
+          allocation: "Alocare",
+          pickup: "Pickup",
+          closeouts: "Closeout-uri",
+          activity: "Activitate",
+          meta: "Meta",
+          allocationUnwired: "Managerul de alocare nu este conectat in acest template.",
+          activityEmpty: "Nu exista activitate inregistrata pentru acest slot.",
+          activityAuditTitle: "Jurnal de audit",
+          metaIdentifiersTitle: "Identificatori",
+          metaLifecycleTitle: "Ciclu de viata",
         },
       },
       dialogs: {

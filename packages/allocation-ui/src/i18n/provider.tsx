@@ -40,6 +40,10 @@ export type AllocationUiMessages = Record<string, unknown> & {
   cancel: string
   unallocated: string
   unallocatedDescription: string
+  unallocatedEmpty: string
+  assignTraveler: string
+  assignTravelerSearch: string
+  assignTravelerEmpty: string
   rooms: string
   resources: string
   vehicleSeats: string
@@ -125,6 +129,10 @@ export const allocationUiEn = {
   cancel: "Cancel",
   unallocated: "Unallocated",
   unallocatedDescription: "Travelers not assigned to this resource kind.",
+  unallocatedEmpty: "Everyone has been assigned.",
+  assignTraveler: "Assign",
+  assignTravelerSearch: "Search traveler...",
+  assignTravelerEmpty: "No unallocated travelers.",
   rooms: "Rooms",
   resources: "Resources",
   vehicleSeats: "Vehicle seats",
@@ -210,6 +218,10 @@ export const allocationUiRo = {
   cancel: "Anuleaza",
   unallocated: "Nealocati",
   unallocatedDescription: "Calatori fara acest tip de resursa alocat.",
+  unallocatedEmpty: "Toti calatorii sunt alocati.",
+  assignTraveler: "Aloca",
+  assignTravelerSearch: "Cauta calator...",
+  assignTravelerEmpty: "Nu exista calatori nealocati.",
   rooms: "Camere",
   resources: "Resurse",
   vehicleSeats: "Locuri vehicul",

@@ -5580,6 +5580,9 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:*
         version: link:../../packages/admin
+      '@voyantjs/allocation-ui':
+        specifier: workspace:*
+        version: link:../../packages/allocation-ui
       '@voyantjs/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -5589,6 +5592,9 @@ importers:
       '@voyantjs/availability-react':
         specifier: workspace:*
         version: link:../../packages/availability-react
+      '@voyantjs/availability-ui':
+        specifier: workspace:*
+        version: link:../../packages/availability-ui
       '@voyantjs/booking-requirements':
         specifier: workspace:*
         version: link:../../packages/booking-requirements

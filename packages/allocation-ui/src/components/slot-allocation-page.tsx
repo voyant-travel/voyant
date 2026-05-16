@@ -80,6 +80,13 @@ export interface SlotAllocationPageProps {
   renderBefore?: (context: SlotAllocationPageRenderContext) => ReactNode
   renderAfter?: (context: SlotAllocationPageRenderContext) => ReactNode
   extraTabs?: SlotAllocationPageExtraTab[]
+  /**
+   * Drop the top-level page header (title + back arrow). The host is
+   * expected to render its own. Capacity badges + the actions cluster
+   * stay as an inline toolbar above the kind tabs so the body is
+   * still self-sufficient when embedded.
+   */
+  embed?: boolean
 }
 
 export function SlotAllocationPage({
@@ -92,6 +99,7 @@ export function SlotAllocationPage({
   renderBefore,
   renderAfter,
   extraTabs = [],
+  embed = false,
 }: SlotAllocationPageProps) {
   const messages = useAllocationUiMessagesOrDefault()
   const availabilityClient = useVoyantAvailabilityContext()
@@ -224,31 +232,6 @@ export function SlotAllocationPage({
     }
   }
 
-  async function swapOrAssignSeat(travelerId: string, resourceId: string) {
-    const traveler = occupants.byTravelerId.get(travelerId)
-    if (!traveler) return
-
-    const currentResourceId = traveler.allocations[activeKind] ?? null
-    if (currentResourceId === resourceId) return
-
-    setError(null)
-    try {
-      const targetOccupant = (occupants.byResource.get(resourceId) ?? []).find(
-        (occupant) => occupant.id !== travelerId,
-      )
-      if (targetOccupant) {
-        await assignMutation.mutateAsync({
-          travelerId: targetOccupant.id,
-          kind: activeKind,
-          resourceId: currentResourceId,
-        })
-      }
-      await assignMutation.mutateAsync({ travelerId, kind: activeKind, resourceId })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : messages.allocationFailed)
-    }
-  }
-
   async function createResource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
@@ -331,86 +314,97 @@ export function SlotAllocationPage({
     allocationKinds,
   }
 
+  const summaryLine = (
+    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+      <span>
+        {data.summary.travelerCount} {messages.travelers}
+      </span>
+      {selectedExtraTab ? null : (
+        <span>
+          {resources.length} {kindLabel(activeKind, messages).toLowerCase()}
+        </span>
+      )}
+      {selectedExtraTab ? null : (
+        <CapacitySummaryBadges summary={capacitySummary} messages={messages} kind={activeKind} />
+      )}
+    </div>
+  )
+
+  const actionsCluster = (
+    <div className="flex flex-wrap items-center gap-2">
+      {selectedExtraTab ? null : renderExtraActions?.({ slotId, kind: activeKind })}
+      <Button variant="outline" onClick={() => downloadExport("passengers")}>
+        <Download data-icon="inline-start" aria-hidden="true" />
+        {messages.exportPassengers}
+      </Button>
+      <Button variant="outline" onClick={() => downloadExport("rooming-list")}>
+        <Download data-icon="inline-start" aria-hidden="true" />
+        {messages.exportRooming}
+      </Button>
+      {selectedExtraTab ? null : resources.length === 0 ? (
+        <Button
+          variant="outline"
+          onClick={() => void generateResources()}
+          disabled={automationMutation.autoMaterialize.isPending}
+        >
+          <Sparkles data-icon="inline-start" aria-hidden="true" />
+          {automationMutation.autoMaterialize.isPending
+            ? messages.generatingResources
+            : messages.generateResources}
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          onClick={() => void autoAllocate()}
+          disabled={automationMutation.autoAllocate.isPending}
+        >
+          <Wand2 data-icon="inline-start" aria-hidden="true" />
+          {automationMutation.autoAllocate.isPending
+            ? messages.autoAllocating
+            : messages.autoAllocate}
+        </Button>
+      )}
+      {!selectedExtraTab && canManuallyAddResource ? (
+        <Button
+          variant="outline"
+          onClick={() => {
+            setResourceCapacity(defaultCapacityFor(activeKind))
+            setAddingResource((value) => !value)
+          }}
+        >
+          <Plus data-icon="inline-start" aria-hidden="true" />
+          {messages.addResource}
+        </Button>
+      ) : null}
+    </div>
+  )
+
   return (
-    <div className={cn("flex flex-col gap-4 p-6", className)}>
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-start gap-3">
-          {onBack ? (
-            <Button variant="ghost" size="icon" onClick={onBack} aria-label={messages.back}>
-              <ArrowLeft data-icon aria-hidden="true" />
-            </Button>
-          ) : null}
-          <div>
-            <h1 className="text-2xl font-semibold">{messages.pageTitle}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span>
-                {data.summary.travelerCount} {messages.travelers}
-              </span>
-              {selectedExtraTab ? null : (
-                <span>
-                  {resources.length} {kindLabel(activeKind, messages).toLowerCase()}
-                </span>
-              )}
-              {selectedExtraTab ? null : (
-                <CapacitySummaryBadges
-                  summary={capacitySummary}
-                  messages={messages}
-                  kind={activeKind}
-                />
-              )}
-            </div>
-          </div>
+    <div className={cn("flex flex-col gap-4", embed ? null : "p-6", className)}>
+      {embed ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {summaryLine}
+          {actionsCluster}
         </div>
-        <div className="flex flex-col gap-3 md:items-end">
-          {renderHeaderEnd?.(context)}
-          <div className="flex flex-wrap items-center gap-2">
-            {selectedExtraTab ? null : renderExtraActions?.({ slotId, kind: activeKind })}
-            <Button variant="outline" onClick={() => downloadExport("passengers")}>
-              <Download data-icon="inline-start" aria-hidden="true" />
-              {messages.exportPassengers}
-            </Button>
-            <Button variant="outline" onClick={() => downloadExport("rooming-list")}>
-              <Download data-icon="inline-start" aria-hidden="true" />
-              {messages.exportRooming}
-            </Button>
-            {selectedExtraTab ? null : resources.length === 0 ? (
-              <Button
-                variant="outline"
-                onClick={() => void generateResources()}
-                disabled={automationMutation.autoMaterialize.isPending}
-              >
-                <Sparkles data-icon="inline-start" aria-hidden="true" />
-                {automationMutation.autoMaterialize.isPending
-                  ? messages.generatingResources
-                  : messages.generateResources}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={() => void autoAllocate()}
-                disabled={automationMutation.autoAllocate.isPending}
-              >
-                <Wand2 data-icon="inline-start" aria-hidden="true" />
-                {automationMutation.autoAllocate.isPending
-                  ? messages.autoAllocating
-                  : messages.autoAllocate}
-              </Button>
-            )}
-            {!selectedExtraTab && canManuallyAddResource ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setResourceCapacity(defaultCapacityFor(activeKind))
-                  setAddingResource((value) => !value)
-                }}
-              >
-                <Plus data-icon="inline-start" aria-hidden="true" />
-                {messages.addResource}
+      ) : (
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start gap-3">
+            {onBack ? (
+              <Button variant="ghost" size="icon" onClick={onBack} aria-label={messages.back}>
+                <ArrowLeft data-icon aria-hidden="true" />
               </Button>
             ) : null}
+            <div>
+              <h1 className="text-2xl font-semibold">{messages.pageTitle}</h1>
+              <div className="mt-1">{summaryLine}</div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 md:items-end">
+            {renderHeaderEnd?.(context)}
+            {actionsCluster}
           </div>
         </div>
-      </div>
+      )}
 
       {renderBefore?.(context)}
 
@@ -514,8 +508,8 @@ export function SlotAllocationPage({
               vehicles={parentResources}
               occupants={occupants}
               sharingGroupLabels={data.sharingGroupLabels}
-              onDropTraveler={(travelerId, resourceId) =>
-                void swapOrAssignSeat(travelerId, resourceId)
+              onAssignTraveler={(travelerId, resourceId) =>
+                void assignTraveler(travelerId, resourceId)
               }
               onUnassignTraveler={(travelerId) => void assignTraveler(travelerId, null)}
               renderTravelerActions={renderTravelerActions}
@@ -527,9 +521,10 @@ export function SlotAllocationPage({
               travelers={travelers}
               occupants={occupants}
               sharingGroupLabels={data.sharingGroupLabels}
-              onDropTraveler={(travelerId, resourceId) =>
+              onAssignTraveler={(travelerId, resourceId) =>
                 void assignTraveler(travelerId, resourceId)
               }
+              onUnassignTraveler={(travelerId) => void assignTraveler(travelerId, null)}
               onRemoveResource={(resourceId) =>
                 void resourceMutation.remove.mutateAsync(resourceId)
               }
