@@ -284,6 +284,47 @@ export interface GetActionApprovalResult {
   requestedAction: GetActionLedgerEntryResult | null
 }
 
+export type ValidateApprovedActionFailureReason =
+  | "not_found"
+  | "not_approved"
+  | "expired"
+  | "mismatched_action"
+  | "already_executed"
+  | "missing_fingerprint"
+  | "fingerprint_mismatch"
+  | "principal_mismatch"
+
+export interface ValidateApprovedActionInput {
+  approvalId: string
+  actionName: string
+  actionVersion: string
+  targetType: string
+  targetId: string
+  routeOrToolName?: string | null
+  principalType?: ActionLedgerEntry["principalType"] | null
+  principalId?: string | null
+  idempotencyFingerprint?: string | null
+  executionActionKind?: ActionLedgerEntry["actionKind"]
+  executionStatus?: ActionLedgerEntry["status"]
+  now?: Date | string | null
+}
+
+export type ValidateApprovedActionResult =
+  | {
+      ok: true
+      approval: ActionApproval
+      requestedAction: ActionLedgerEntry
+      idempotencyFingerprint: string
+    }
+  | {
+      ok: false
+      reason: ValidateApprovedActionFailureReason
+      approval?: ActionApproval
+      requestedAction?: ActionLedgerEntry
+      status?: ActionApproval["status"]
+      existingActionId?: string
+    }
+
 export interface GetActionDelegationResult {
   delegation: ActionDelegation
 }
@@ -527,6 +568,114 @@ export const actionLedgerService = {
     return {
       approval,
       requestedAction: await actionLedgerService.getEntry(db, approval.requestedActionId),
+    }
+  },
+
+  async validateApprovedAction(
+    db: AnyDrizzleDb,
+    input: ValidateApprovedActionInput,
+  ): Promise<ValidateApprovedActionResult> {
+    const result = await actionLedgerService.getApproval(db, input.approvalId)
+    if (!result) {
+      return { ok: false, reason: "not_found" }
+    }
+
+    if (result.approval.status !== "approved") {
+      return {
+        ok: false,
+        reason: "not_approved",
+        approval: result.approval,
+        status: result.approval.status,
+      }
+    }
+
+    const now = input.now ? parseCursorDate(input.now) : new Date()
+    if (result.approval.expiresAt && result.approval.expiresAt < now) {
+      return {
+        ok: false,
+        reason: "expired",
+        approval: result.approval,
+      }
+    }
+
+    const requestedAction = result.requestedAction?.entry
+    if (
+      !requestedAction ||
+      requestedAction.actionName !== input.actionName ||
+      requestedAction.actionVersion !== input.actionVersion ||
+      requestedAction.targetType !== input.targetType ||
+      requestedAction.targetId !== input.targetId ||
+      requestedAction.routeOrToolName !== (input.routeOrToolName ?? null) ||
+      requestedAction.approvalId !== result.approval.id
+    ) {
+      return {
+        ok: false,
+        reason: "mismatched_action",
+        approval: result.approval,
+        requestedAction: requestedAction ?? undefined,
+      }
+    }
+
+    const existingExecution = await actionLedgerService.listEntries(db, {
+      actionName: input.actionName,
+      actionKind: input.executionActionKind,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      causationActionId: requestedAction.id,
+      approvalId: result.approval.id,
+      status: input.executionStatus ?? "succeeded",
+      limit: 1,
+    })
+    if (existingExecution.entries.length > 0) {
+      return {
+        ok: false,
+        reason: "already_executed",
+        approval: result.approval,
+        requestedAction,
+        existingActionId: existingExecution.entries[0]?.id,
+      }
+    }
+
+    if (!requestedAction.idempotencyFingerprint) {
+      return {
+        ok: false,
+        reason: "missing_fingerprint",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (
+      input.idempotencyFingerprint &&
+      input.idempotencyFingerprint !== requestedAction.idempotencyFingerprint
+    ) {
+      return {
+        ok: false,
+        reason: "fingerprint_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (
+      input.principalType &&
+      input.principalId &&
+      (requestedAction.principalType !== input.principalType ||
+        requestedAction.principalId !== input.principalId)
+    ) {
+      return {
+        ok: false,
+        reason: "principal_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    return {
+      ok: true,
+      approval: result.approval,
+      requestedAction,
+      idempotencyFingerprint: requestedAction.idempotencyFingerprint,
     }
   },
 

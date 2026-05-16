@@ -130,4 +130,7 @@ export {
   type MarkActionLedgerRelayOutboxSucceededInput,
   type RequestActionApprovalInput,
   type RequestActionApprovalResult,
+  type ValidateApprovedActionFailureReason,
+  type ValidateApprovedActionInput,
+  type ValidateApprovedActionResult,
 } from "./service.js"

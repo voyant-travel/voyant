@@ -377,100 +377,6 @@ async function resolveApprovedBookingStatusAction(
   const approvalId = c.req.header(ACTION_APPROVAL_ID_HEADER)
   if (!approvalId) return null
 
-  const result = await actionLedgerService.getApproval(c.get("db"), approvalId)
-  if (!result) {
-    return {
-      allowed: false,
-      response: c.json({ error: "Action approval not found" }, 404),
-    }
-  }
-
-  if (result.approval.status !== "approved") {
-    return {
-      allowed: false,
-      response: c.json(
-        {
-          error: "Action approval is not approved",
-          approvalId: result.approval.id,
-          status: result.approval.status,
-        },
-        409,
-      ),
-    }
-  }
-
-  if (result.approval.expiresAt && result.approval.expiresAt < new Date()) {
-    return {
-      allowed: false,
-      response: c.json(
-        {
-          error: "Action approval has expired",
-          approvalId: result.approval.id,
-        },
-        409,
-      ),
-    }
-  }
-
-  const requestedAction = result.requestedAction?.entry
-  if (
-    !requestedAction ||
-    requestedAction.actionName !== input.actionName ||
-    requestedAction.actionVersion !== BOOKING_STATUS_CAPABILITIES[input.key].version ||
-    requestedAction.targetType !== "booking" ||
-    requestedAction.targetId !== input.bookingId ||
-    requestedAction.routeOrToolName !== input.routeOrToolName ||
-    requestedAction.approvalId !== result.approval.id
-  ) {
-    return {
-      allowed: false,
-      response: c.json(
-        {
-          error: "Action approval does not match this booking status action",
-          approvalId: result.approval.id,
-        },
-        409,
-      ),
-    }
-  }
-
-  const existingExecution = await actionLedgerService.listEntries(c.get("db"), {
-    actionName: input.actionName,
-    actionKind: "update",
-    targetType: "booking",
-    targetId: input.bookingId,
-    causationActionId: requestedAction.id,
-    approvalId: result.approval.id,
-    status: "succeeded",
-    limit: 1,
-  })
-  if (existingExecution.entries.length > 0) {
-    return {
-      allowed: false,
-      response: c.json(
-        {
-          error: "Action approval has already been executed",
-          approvalId: result.approval.id,
-          existingActionId: existingExecution.entries[0]?.id,
-        },
-        409,
-      ),
-    }
-  }
-
-  if (!requestedAction.idempotencyFingerprint) {
-    return {
-      allowed: false,
-      response: c.json(
-        {
-          error: "Action approval is missing an approved command fingerprint",
-          approvalId: result.approval.id,
-        },
-        409,
-      ),
-    }
-  }
-
   const executionFingerprint = await buildIdempotencyFingerprint({
     actionName: input.actionName,
     actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
@@ -485,37 +391,100 @@ async function resolveApprovedBookingStatusAction(
       reasonCode: approvalRequirement.reasonCode,
     },
   })
-  if (executionFingerprint !== requestedAction.idempotencyFingerprint) {
-    return {
-      allowed: false,
-      response: c.json(
-        {
-          error: "Action approval command input does not match the approved request",
-          approvalId: result.approval.id,
-        },
-        409,
-      ),
-    }
-  }
 
   const actorFields = mapActionLedgerRequestContext(getActionLedgerRequestContext(c))
-  if (
-    requestedAction.principalType !== actorFields.principalType ||
-    requestedAction.principalId !== actorFields.principalId
-  ) {
+  const validation = await actionLedgerService.validateApprovedAction(c.get("db"), {
+    approvalId,
+    actionName: input.actionName,
+    actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
+    targetType: "booking",
+    targetId: input.bookingId,
+    routeOrToolName: input.routeOrToolName,
+    principalType: actorFields.principalType,
+    principalId: actorFields.principalId,
+    idempotencyFingerprint: executionFingerprint,
+    executionActionKind: "update",
+    executionStatus: "succeeded",
+  })
+  if (!validation.ok) {
     return {
       allowed: false,
-      response: c.json({ error: "Action approval belongs to a different principal" }, 403),
+      response: actionApprovalValidationResponse(c, validation),
     }
   }
 
   return {
     allowed: true,
     action: {
-      requestedActionId: requestedAction.id,
-      approvalId: result.approval.id,
-      idempotencyFingerprint: requestedAction.idempotencyFingerprint,
+      requestedActionId: validation.requestedAction.id,
+      approvalId: validation.approval.id,
+      idempotencyFingerprint: validation.idempotencyFingerprint,
     },
+  }
+}
+
+function actionApprovalValidationResponse(
+  c: Context<Env>,
+  validation: Exclude<
+    Awaited<ReturnType<typeof actionLedgerService.validateApprovedAction>>,
+    { ok: true }
+  >,
+) {
+  switch (validation.reason) {
+    case "not_found":
+      return c.json({ error: "Action approval not found" }, 404)
+    case "not_approved":
+      return c.json(
+        {
+          error: "Action approval is not approved",
+          approvalId: validation.approval?.id,
+          status: validation.status,
+        },
+        409,
+      )
+    case "expired":
+      return c.json(
+        {
+          error: "Action approval has expired",
+          approvalId: validation.approval?.id,
+        },
+        409,
+      )
+    case "mismatched_action":
+      return c.json(
+        {
+          error: "Action approval does not match this booking status action",
+          approvalId: validation.approval?.id,
+        },
+        409,
+      )
+    case "already_executed":
+      return c.json(
+        {
+          error: "Action approval has already been executed",
+          approvalId: validation.approval?.id,
+          existingActionId: validation.existingActionId,
+        },
+        409,
+      )
+    case "missing_fingerprint":
+      return c.json(
+        {
+          error: "Action approval is missing an approved command fingerprint",
+          approvalId: validation.approval?.id,
+        },
+        409,
+      )
+    case "fingerprint_mismatch":
+      return c.json(
+        {
+          error: "Action approval command input does not match the approved request",
+          approvalId: validation.approval?.id,
+        },
+        409,
+      )
+    case "principal_mismatch":
+      return c.json({ error: "Action approval belongs to a different principal" }, 403)
   }
 }
 

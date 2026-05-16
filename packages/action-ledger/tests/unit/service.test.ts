@@ -980,6 +980,155 @@ describe("actionLedgerService approval lifecycle", () => {
   })
 })
 
+describe("actionLedgerService.validateApprovedAction", () => {
+  test("accepts an approved requested action for the same principal and fingerprint", async () => {
+    const requestedAction = makeEntry({
+      id: "alge_requested",
+      actionName: "booking.status.cancel",
+      actionVersion: "v1",
+      actionKind: "update",
+      status: "awaiting_approval",
+      principalType: "agent",
+      principalId: "agent_1",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings.cancel",
+      approvalId: "appr_1",
+      idempotencyFingerprint: "sha256:approved",
+    })
+    const approval = makeApproval({
+      id: "appr_1",
+      requestedActionId: requestedAction.id,
+      status: "approved",
+    })
+    const { db, calls } = makeValidateApprovedActionDb({
+      approval,
+      entry: requestedAction,
+    })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+        principalType: "agent",
+        principalId: "agent_1",
+        idempotencyFingerprint: "sha256:approved",
+        executionActionKind: "update",
+        now: baseDate,
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      approval,
+      requestedAction,
+      idempotencyFingerprint: "sha256:approved",
+    })
+    expect(calls).toEqual([
+      "action_approvals",
+      "action_ledger_entries",
+      "action_mutation_details",
+      "action_sensitive_read_details",
+      "action_ledger_payloads",
+      "action_ledger_outbox",
+      "action_ledger_entries:list",
+    ])
+  })
+
+  test("rejects an approved action that was already executed", async () => {
+    const requestedAction = makeEntry({
+      id: "alge_requested",
+      actionName: "booking.status.cancel",
+      actionVersion: "v1",
+      actionKind: "update",
+      status: "awaiting_approval",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings.cancel",
+      approvalId: "appr_1",
+      idempotencyFingerprint: "sha256:approved",
+    })
+    const approval = makeApproval({
+      id: "appr_1",
+      requestedActionId: requestedAction.id,
+      status: "approved",
+    })
+    const execution = makeEntry({
+      id: "alge_execution",
+      actionName: "booking.status.cancel",
+      actionKind: "update",
+      status: "succeeded",
+      targetType: "booking",
+      targetId: "book_1",
+      causationActionId: requestedAction.id,
+      approvalId: approval.id,
+    })
+    const { db } = makeValidateApprovedActionDb({
+      approval,
+      entry: requestedAction,
+      existingExecutions: [execution],
+    })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+        now: baseDate,
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "already_executed",
+      existingActionId: execution.id,
+    })
+  })
+
+  test("rejects an approved action when the command fingerprint changes", async () => {
+    const requestedAction = makeEntry({
+      id: "alge_requested",
+      actionName: "booking.status.cancel",
+      actionVersion: "v1",
+      actionKind: "update",
+      status: "awaiting_approval",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings.cancel",
+      approvalId: "appr_1",
+      idempotencyFingerprint: "sha256:approved",
+    })
+    const approval = makeApproval({
+      id: "appr_1",
+      requestedActionId: requestedAction.id,
+      status: "approved",
+    })
+    const { db } = makeValidateApprovedActionDb({
+      approval,
+      entry: requestedAction,
+    })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+        idempotencyFingerprint: "sha256:changed",
+        now: baseDate,
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "fingerprint_mismatch",
+    })
+  })
+})
+
 function makeMutationDetail(overrides: Partial<ActionMutationDetail> = {}): ActionMutationDetail {
   return {
     actionId: "alge_1",
@@ -1170,6 +1319,84 @@ function makeGetApprovalDb(input: {
       selectIndex += 1
       return {
         from() {
+          return {
+            where() {
+              if (index >= 4) {
+                calls.push(callLabels[index] ?? `select_${index}`)
+                return Promise.resolve(selectRows[index] ?? [])
+              }
+
+              return {
+                limit() {
+                  calls.push(callLabels[index] ?? `select_${index}`)
+                  return Promise.resolve(selectRows[index] ?? [])
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return { db, calls }
+}
+
+function makeValidateApprovedActionDb(input: {
+  approval?: ActionApproval
+  entry?: ActionLedgerEntry
+  mutationDetail?: ActionMutationDetail
+  sensitiveReadDetail?: ActionSensitiveReadDetail
+  payloads?: ActionLedgerPayload[]
+  relayOutbox?: ActionLedgerRelayOutbox[]
+  existingExecutions?: ActionLedgerEntry[]
+}) {
+  const calls: string[] = []
+  const selectRows = [
+    input.approval ? [input.approval] : [],
+    input.entry ? [input.entry] : [],
+    input.mutationDetail ? [input.mutationDetail] : [],
+    input.sensitiveReadDetail ? [input.sensitiveReadDetail] : [],
+    input.payloads ?? [],
+    input.relayOutbox ?? [],
+  ]
+  const callLabels = [
+    "action_approvals",
+    "action_ledger_entries",
+    "action_mutation_details",
+    "action_sensitive_read_details",
+    "action_ledger_payloads",
+    "action_ledger_outbox",
+  ]
+  let selectIndex = 0
+
+  const listQuery = {
+    where() {
+      return listQuery
+    },
+    orderBy() {
+      return listQuery
+    },
+    limit() {
+      calls.push("action_ledger_entries:list")
+      return Promise.resolve(input.existingExecutions ?? [])
+    },
+  }
+
+  const db = {
+    select() {
+      const index = selectIndex
+      selectIndex += 1
+      return {
+        from() {
+          if (index >= selectRows.length) {
+            return {
+              $dynamic() {
+                return listQuery
+              },
+            }
+          }
+
           return {
             where() {
               if (index >= 4) {
