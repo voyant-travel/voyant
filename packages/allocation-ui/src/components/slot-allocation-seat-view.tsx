@@ -1,9 +1,26 @@
 "use client"
 
 import type { AllocationManifestTraveler, AllocationResource } from "@voyantjs/availability-react"
-import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from "@voyantjs/ui/components"
-import { Armchair, Crown, Users } from "lucide-react"
-import { type DragEvent, type ReactNode, useState } from "react"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@voyantjs/ui/components"
+import { Armchair, Crown, Users, X } from "lucide-react"
+import { type ReactNode, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
 import {
@@ -12,14 +29,14 @@ import {
   seatName,
   seatRows,
 } from "./slot-allocation-model.js"
-import { DropColumn, SeatPositionBadge, TravelerTile } from "./slot-allocation-shared.js"
+import { AllocationColumn, SeatPositionBadge, TravelerTile } from "./slot-allocation-shared.js"
 
 export function VehicleSeatsView({
   seats,
   vehicles,
   occupants,
   sharingGroupLabels,
-  onDropTraveler,
+  onAssignTraveler,
   onUnassignTraveler,
   renderTravelerActions,
 }: {
@@ -27,7 +44,9 @@ export function VehicleSeatsView({
   vehicles: AllocationResource[]
   occupants: AllocationOccupants
   sharingGroupLabels: Record<string, string>
-  onDropTraveler: (travelerId: string, resourceId: string) => void
+  /** Assign an unallocated traveler to a specific seat resource. */
+  onAssignTraveler: (travelerId: string, resourceId: string) => void
+  /** Remove a traveler from their current seat (no resource id required). */
   onUnassignTraveler: (travelerId: string) => void
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
@@ -36,26 +55,29 @@ export function VehicleSeatsView({
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(18rem,22rem)_1fr]">
-      <DropColumn
+      <AllocationColumn
         id="unallocated"
         icon={<Users className="size-4" aria-hidden="true" />}
         title={messages.unallocated}
         description={messages.unallocatedDescription}
         count={occupants.unallocated.length}
         capacity={occupants.byTravelerId.size}
-        onDropTraveler={onUnassignTraveler}
       >
-        {occupants.unallocated.map((traveler) => (
-          <TravelerTile
-            key={traveler.id}
-            traveler={traveler}
-            sharingGroupLabel={
-              traveler.sharingGroupId ? sharingGroupLabels[traveler.sharingGroupId] : null
-            }
-            renderActions={renderTravelerActions}
-          />
-        ))}
-      </DropColumn>
+        {occupants.unallocated.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{messages.unallocatedEmpty}</p>
+        ) : (
+          occupants.unallocated.map((traveler) => (
+            <TravelerTile
+              key={traveler.id}
+              traveler={traveler}
+              sharingGroupLabel={
+                traveler.sharingGroupId ? sharingGroupLabels[traveler.sharingGroupId] : null
+              }
+              renderActions={renderTravelerActions}
+            />
+          ))
+        )}
+      </AllocationColumn>
 
       <div className="grid min-w-0 gap-4">
         {seats.length === 0 ? (
@@ -97,12 +119,14 @@ export function VehicleSeatsView({
                             seat={seat}
                             occupant={seatOccupants[0] ?? null}
                             overflow={seatOccupants.length > 1}
+                            unallocated={occupants.unallocated}
                             sharingGroupLabel={
                               seatOccupants[0]?.sharingGroupId
                                 ? sharingGroupLabels[seatOccupants[0].sharingGroupId]
                                 : null
                             }
-                            onDropTraveler={(travelerId) => onDropTraveler(travelerId, seat.id)}
+                            onAssignTraveler={(travelerId) => onAssignTraveler(travelerId, seat.id)}
+                            onUnassignTraveler={onUnassignTraveler}
                           />
                         )
                       })}
@@ -122,48 +146,33 @@ function VehicleSeatCell({
   seat,
   occupant,
   overflow,
+  unallocated,
   sharingGroupLabel,
-  onDropTraveler,
+  onAssignTraveler,
+  onUnassignTraveler,
 }: {
   seat: AllocationResource
   occupant: AllocationManifestTraveler | null
   overflow: boolean
+  unallocated: AllocationManifestTraveler[]
   sharingGroupLabel?: string | null
-  onDropTraveler: (travelerId: string) => void
+  onAssignTraveler: (travelerId: string) => void
+  onUnassignTraveler: (travelerId: string) => void
 }) {
   const messages = useAllocationUiMessagesOrDefault()
-  const [over, setOver] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const cellClasses = cn(
+    "flex min-h-24 flex-col rounded-md border bg-background p-2 text-left text-xs",
+    overflow ? "border-destructive bg-destructive/5" /* i18n-literal-ok CSS class token */ : null,
+  )
 
-  function onDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault()
-    setOver(false)
-    const travelerId = event.dataTransfer.getData("text/plain")
-    if (travelerId) onDropTraveler(travelerId)
-  }
-
-  return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: issue #696; this cell is a drag-and-drop target, not a button or table cell.
-    <div
-      id={`seat:${seat.id}`}
-      className={cn(
-        "min-h-24 rounded-md border bg-background p-2 text-left text-xs transition-colors",
-        over ? "border-primary bg-primary/5" /* i18n-literal-ok CSS class token */ : null,
-        overflow
-          ? "border-destructive bg-destructive/5" /* i18n-literal-ok CSS class token */
-          : null,
-      )}
-      onDragOver={(event) => {
-        event.preventDefault()
-        setOver(true)
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={onDrop}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="font-medium">{seat.label ?? seatName(seat, messages)}</span>
-        <SeatPositionBadge seat={seat} />
-      </div>
-      {occupant ? (
+  if (occupant) {
+    return (
+      <div id={`seat:${seat.id}`} className={cellClasses}>
+        <div className="flex items-start justify-between gap-2">
+          <span className="font-medium">{seat.label ?? seatName(seat, messages)}</span>
+          <SeatPositionBadge seat={seat} />
+        </div>
         <div className="mt-2 min-w-0">
           <div className="flex items-center gap-1">
             {occupant.isLeadTraveler ? (
@@ -180,11 +189,70 @@ function VehicleSeatCell({
             ) : null}
           </div>
         </div>
-      ) : (
-        <div className="mt-3 rounded border border-dashed p-2 text-muted-foreground">
-          {messages.dropHere}
-        </div>
-      )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-auto h-6 self-end px-1 text-xs"
+          onClick={() => onUnassignTraveler(occupant.id)}
+          aria-label={`${messages.remove}: ${occupant.fullName}`}
+        >
+          <X className="size-3" aria-hidden="true" />
+        </Button>
+      </div>
+    )
+  }
+
+  const disabled = unallocated.length === 0
+  return (
+    <div id={`seat:${seat.id}`} className={cellClasses}>
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-medium">{seat.label ?? seatName(seat, messages)}</span>
+        <SeatPositionBadge seat={seat} />
+      </div>
+      <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-auto h-7 w-full justify-center rounded border border-dashed text-muted-foreground"
+              disabled={disabled}
+              aria-label={messages.assignTraveler}
+            >
+              {disabled ? messages.assignTravelerEmpty : messages.assignTraveler}
+            </Button>
+          }
+        />
+        <PopoverContent className="w-72 p-0" align="start">
+          <Command>
+            <CommandInput placeholder={messages.assignTravelerSearch} />
+            <CommandList>
+              <CommandEmpty>{messages.assignTravelerEmpty}</CommandEmpty>
+              <CommandGroup>
+                {unallocated.map((traveler) => (
+                  <CommandItem
+                    key={traveler.id}
+                    value={`${traveler.fullName} ${traveler.bookingNumber}`}
+                    onSelect={() => {
+                      onAssignTraveler(traveler.id)
+                      setPickerOpen(false)
+                    }}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{traveler.fullName}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {traveler.bookingNumber}
+                      </span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }
