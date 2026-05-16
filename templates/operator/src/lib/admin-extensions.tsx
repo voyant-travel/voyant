@@ -3,7 +3,7 @@ import {
   createAdminExtensionRegistry,
   defineAdminExtension,
 } from "@voyantjs/admin"
-import { ShieldCheck, Tag } from "lucide-react"
+import { ScrollText, ShieldCheck, Tag } from "lucide-react"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.
@@ -54,10 +54,23 @@ const actionLedgerExtension = defineAdminExtension({
       order: 60,
       items: [
         {
-          id: "action-ledger-approvals",
-          title: "Action approvals",
-          url: "/action-ledger/approvals",
-          icon: ShieldCheck,
+          id: "action-ledger",
+          title: "Action ledger",
+          url: "/action-ledger",
+          icon: ScrollText,
+          items: [
+            {
+              id: "action-ledger-entries",
+              title: "Entries",
+              url: "/action-ledger",
+            },
+            {
+              id: "action-ledger-approvals",
+              title: "Approvals",
+              url: "/action-ledger/approvals",
+              icon: ShieldCheck,
+            },
+          ],
         },
       ],
     },

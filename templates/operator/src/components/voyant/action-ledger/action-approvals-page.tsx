@@ -56,7 +56,7 @@ export function ActionApprovalsPage() {
     onSuccess: async (_result, variables) => {
       toast.success(variables.status === "approved" ? "Approval accepted" : "Approval denied")
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.actionLedger.approvals("pending"),
+        queryKey: queryKeys.actionLedger.all,
       })
       const requestedAction = variables.approval.requestedAction
       if (requestedAction?.targetType === "booking") {
