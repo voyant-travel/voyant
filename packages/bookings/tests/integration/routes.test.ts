@@ -1,9 +1,11 @@
 import {
   actionApprovals,
   actionLedgerEntries,
+  actionLedgerService,
   actionMutationDetails,
   actionSensitiveReadDetails,
-} from "@voyantjs/action-ledger/schema"
+} from "@voyantjs/action-ledger"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -1387,14 +1389,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       const approvalId = requestApprovalBody.data.approval.id
       const requestedActionId = requestApprovalBody.data.requestedAction.id
 
-      await db
-        .update(actionApprovals)
-        .set({
-          status: "approved",
-          decidedByPrincipalId: "manager-1",
-          decidedAt: new Date(),
-        })
-        .where(eq(actionApprovals.id, approvalId))
+      await approveActionApproval(db, approvalId)
 
       const execute = await agentApp.request(`/${booking.id}/cancel`, {
         method: "POST",
@@ -1481,14 +1476,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       const requestApprovalBody = await requestApproval.json()
       const approvalId = requestApprovalBody.data.approval.id
 
-      await db
-        .update(actionApprovals)
-        .set({
-          status: "approved",
-          decidedByPrincipalId: "manager-1",
-          decidedAt: new Date(),
-        })
-        .where(eq(actionApprovals.id, approvalId))
+      await approveActionApproval(db, approvalId)
 
       const execute = await agentApp.request(`/${booking.id}/cancel`, {
         method: "POST",
@@ -2961,3 +2949,22 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     })
   })
 })
+
+async function approveActionApproval(db: AnyDrizzleDb, approvalId: string) {
+  const result = await actionLedgerService.decideApproval(db, {
+    id: approvalId,
+    status: "approved",
+    decidedByPrincipalId: "manager-1",
+    decisionAction: {
+      actionName: "booking.status.approval.decide",
+      actionVersion: "v1",
+      principalType: "user",
+      principalId: "manager-1",
+      internalRequest: false,
+      routeOrToolName: "bookings.approvals.decide",
+    },
+  })
+
+  expect(result?.approval.status).toBe("approved")
+  return result
+}
