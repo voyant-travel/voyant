@@ -802,7 +802,11 @@ export const financeRoutes = new Hono<Env>()
           totalSellAmountCents: item.totalSellAmountCents,
         })),
       },
-      { eventBus: runtime?.eventBus },
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
+      },
     )
 
     return c.json({ data: row }, 201)

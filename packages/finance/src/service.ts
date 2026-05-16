@@ -436,6 +436,9 @@ type RecordPaymentLedgerInput = {
   invoice: InvoiceRecord
   payment: PaymentRecord
 }
+type InvoiceIssuedLedgerInput = {
+  invoice: InvoiceRecord
+}
 type CreateCreditNoteLedgerInput = {
   invoice: InvoiceRecord
   creditNote: CreditNoteRecord
@@ -561,6 +564,55 @@ export async function buildRecordPaymentActionLedgerInput(
 function getInvoiceLedgerTarget(invoice: InvoiceRecord) {
   if (invoice.bookingId) return { type: "booking", id: invoice.bookingId }
   return { type: "invoice", id: invoice.id }
+}
+
+export async function buildInvoiceIssuedActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: InvoiceIssuedLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const target = getInvoiceLedgerTarget(input.invoice)
+  const invoiceTypeLabel = input.invoice.invoiceType === "proforma" ? "Proforma" : "Invoice"
+
+  return {
+    context,
+    actionName: "finance.invoice.issue_from_booking",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.invoice.issue_from_booking",
+    authorizationSource: options.authorizationSource ?? "finance.invoice.from_booking.route",
+    idempotencyScope: `finance.booking:${input.invoice.bookingId}:invoice_issue`,
+    idempotencyKey: input.invoice.invoiceNumber,
+    idempotencyFingerprint: await buildIdempotencyFingerprint({
+      actionName: "finance.invoice.issue_from_booking",
+      actionVersion: "v1",
+      targetType: target.type,
+      targetId: target.id,
+      commandInput: {
+        invoiceId: input.invoice.id,
+        invoiceNumber: input.invoice.invoiceNumber,
+        invoiceType: input.invoice.invoiceType,
+        bookingId: input.invoice.bookingId,
+        totalCents: input.invoice.totalCents,
+        currency: input.invoice.currency,
+        status: input.invoice.status,
+        issueDate: input.invoice.issueDate,
+        dueDate: input.invoice.dueDate,
+      },
+    }),
+    mutationDetail: {
+      commandInputRef: `booking:${input.invoice.bookingId}:invoice_issue`,
+      commandResultRef: `invoice:${input.invoice.id}`,
+      summary: `${invoiceTypeLabel} ${input.invoice.invoiceNumber} issued for booking ${input.invoice.bookingId}`,
+      reversalKind: "none",
+    },
+  }
 }
 
 export async function buildCreditNoteCreationActionLedgerInput(
