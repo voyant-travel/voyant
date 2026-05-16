@@ -1,10 +1,14 @@
 export type {
   CloudAdminAssertion,
   CloudAdminAuthExchangeConfig,
+  CloudAdminAuthRevalidateConfig,
+  CloudAdminAuthRevalidationResult,
   ExchangeCloudAdminAuthCodeInput,
+  RevalidateCloudAdminAuthAccessInput,
 } from "./cloud-broker/assertion.js"
 export {
   exchangeCloudAdminAuthCode,
+  revalidateCloudAdminAuthAccess,
   VOYANT_CLOUD_ADMIN_ASSERTION_ISSUER,
   verifyCloudAdminAssertion,
 } from "./cloud-broker/assertion.js"

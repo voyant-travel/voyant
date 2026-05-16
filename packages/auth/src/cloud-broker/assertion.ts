@@ -38,12 +38,30 @@ export type CloudAdminAuthExchangeConfig = {
   assertionIssuer?: typeof VOYANT_CLOUD_ADMIN_ASSERTION_ISSUER
 }
 
+export type CloudAdminAuthRevalidateConfig = {
+  revalidateUrl: string
+  deploymentId: string
+  clientToken: string
+}
+
 export type ExchangeCloudAdminAuthCodeInput = {
   code: string
   state: CloudAdminAuthState
   config: CloudAdminAuthExchangeConfig
   fetch?: typeof fetch
   now?: Date
+}
+
+export type RevalidateCloudAdminAuthAccessInput = {
+  workosUserId: string
+  config: CloudAdminAuthRevalidateConfig
+  fetch?: typeof fetch
+}
+
+export type CloudAdminAuthRevalidationResult = {
+  ok: boolean
+  status: "active" | "revoked"
+  reason?: string
 }
 
 type JwsHeader = {
@@ -104,6 +122,46 @@ export async function exchangeCloudAdminAuthCode({
   })
 }
 
+export async function revalidateCloudAdminAuthAccess({
+  workosUserId,
+  config,
+  fetch: fetchFn = fetch,
+}: RevalidateCloudAdminAuthAccessInput): Promise<CloudAdminAuthRevalidationResult> {
+  validateRevalidateConfig(config)
+
+  const response = await fetchFn(config.revalidateUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.clientToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      deploymentId: config.deploymentId,
+      workosUserId,
+    }),
+  })
+
+  const body = (await response.json().catch(() => null)) as unknown
+
+  if (!response.ok && response.status !== 403) {
+    throw new Error(`Voyant Cloud auth revalidation failed with HTTP ${response.status}`)
+  }
+
+  if (
+    !isRecord(body) ||
+    typeof body.ok !== "boolean" ||
+    (body.status !== "active" && body.status !== "revoked")
+  ) {
+    throw new Error("Voyant Cloud auth revalidation response is invalid")
+  }
+
+  return {
+    ok: body.ok,
+    status: body.status,
+    reason: optionalString(body.reason) ?? undefined,
+  }
+}
+
 export async function verifyCloudAdminAssertion(
   assertion: string,
   options: {
@@ -162,6 +220,17 @@ function validateExchangeConfig(config: CloudAdminAuthExchangeConfig): void {
   }
   if (!config.assertionAudience.trim()) {
     throw new Error("Voyant Cloud auth exchange requires assertionAudience")
+  }
+}
+
+function validateRevalidateConfig(config: CloudAdminAuthRevalidateConfig): void {
+  normalizeAbsoluteUrl(config.revalidateUrl, "revalidateUrl")
+
+  if (!config.deploymentId.trim()) {
+    throw new Error("Voyant Cloud auth revalidation requires deploymentId")
+  }
+  if (!config.clientToken.trim()) {
+    throw new Error("Voyant Cloud auth revalidation requires clientToken")
   }
 }
 

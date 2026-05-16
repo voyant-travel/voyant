@@ -1,7 +1,11 @@
 import type { getDb } from "@voyantjs/db"
 import type { BetterAuthPlugin } from "better-auth/types"
 
-import type { CloudAdminAssertion, CloudAdminAuthExchangeConfig } from "./cloud-broker.js"
+import type {
+  CloudAdminAssertion,
+  CloudAdminAuthExchangeConfig,
+  CloudAdminAuthRevalidateConfig,
+} from "./cloud-broker.js"
 
 export type CloudAdminProvisionedUser = {
   id: string
@@ -40,3 +44,27 @@ export interface VoyantCloudAdminAuthPluginOptions {
 export declare function createVoyantCloudAdminAuthPlugin(
   options: VoyantCloudAdminAuthPluginOptions,
 ): BetterAuthPlugin
+
+export type VoyantCloudAdminSessionRevalidationInput = {
+  db: ReturnType<typeof getDb>
+  sessionId: string
+  config: CloudAdminAuthRevalidateConfig
+  fetch?: typeof fetch
+  now?: Date
+  revalidateAfterSeconds?: number
+}
+
+export type VoyantCloudAdminSessionRevalidationResult =
+  | {
+      ok: true
+      status: "active" | "cached"
+    }
+  | {
+      ok: false
+      status: "revoked"
+      reason?: string
+    }
+
+export declare function revalidateVoyantCloudAdminAuthSession(
+  input: VoyantCloudAdminSessionRevalidationInput,
+): Promise<VoyantCloudAdminSessionRevalidationResult>

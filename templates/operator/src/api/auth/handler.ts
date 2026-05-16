@@ -7,7 +7,10 @@
  * Also provides /auth/status (user provisioning) and /auth/me (user info).
  */
 
-import { createVoyantCloudAdminAuthPlugin } from "@voyantjs/auth/cloud-admin-session"
+import {
+  createVoyantCloudAdminAuthPlugin,
+  revalidateVoyantCloudAdminAuthSession,
+} from "@voyantjs/auth/cloud-admin-session"
 import {
   buildClearCloudAdminAuthStateCookie,
   createCloudAdminAuthStart,
@@ -159,13 +162,26 @@ function getCloudAuthExchangeConfig(env: CloudflareBindings) {
   }
 }
 
+function getCloudAuthRevalidateConfig(env: CloudflareBindings) {
+  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+  const revalidateUrl = env.VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?.trim()
+  const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
+  if (!deploymentId || !revalidateUrl || !clientToken) return null
+
+  return {
+    revalidateUrl,
+    deploymentId,
+    clientToken,
+  }
+}
+
 function isLocalRequest(request: Request): boolean {
   const hostname = new URL(request.url).hostname
   return hostname === "127.0.0.1" || hostname === "localhost"
 }
 
 function useBrowserEvidenceAuthFallback(env: CloudflareBindings, request: Request): boolean {
-  const bindings = env as Record<string, string | undefined>
+  const bindings = env as unknown as Record<string, string | undefined>
   return bindings.VOYANT_OPERATOR_BROWSER_EVIDENCE === "1" && isLocalRequest(request)
 }
 /**
@@ -181,7 +197,7 @@ function useBrowserEvidenceAuthFallback(env: CloudflareBindings, request: Reques
  * cached either.
  */
 function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEnvForApp>["db"]) {
-  const cloud = tryGetVoyantCloudClient(env as Record<string, unknown>)
+  const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
   const emailReplyTo = resolveEmailReplyTo(env)
   const cloudAuthExchange = isVoyantCloudAuthMode(env) ? getCloudAuthExchangeConfig(env) : null
@@ -409,16 +425,41 @@ auth.get("/auth/bootstrap-status", async (c) => {
 })
 
 async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
-  if (isVoyantCloudAuthMode(c.env)) {
-    return c.json(
-      { error: "Cloud-mode API token management requires membership revalidation" },
-      501,
-    )
-  }
-
   const { db, dispose } = dbFromEnvForApp(c.env)
   try {
     const betterAuth = buildBetterAuth(c.env, db)
+    const cloudAuthDb = db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"]
+
+    if (isVoyantCloudAuthMode(c.env)) {
+      const revalidateConfig = getCloudAuthRevalidateConfig(c.env)
+      if (!revalidateConfig) {
+        return c.json(
+          { error: "Cloud-mode API token management requires membership revalidation" },
+          501,
+        )
+      }
+
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) {
+        return c.json({ error: "Unauthorized" }, 401)
+      }
+
+      try {
+        const revalidation = await revalidateVoyantCloudAdminAuthSession({
+          db: cloudAuthDb,
+          sessionId: session.session.id,
+          config: revalidateConfig,
+        })
+
+        if (!revalidation.ok) {
+          return c.json({ error: "Voyant Cloud access revoked" }, 403)
+        }
+      } catch (error) {
+        console.error("[auth/api-tokens] Cloud revalidation failed:", error)
+        return c.json({ error: "Voyant Cloud access could not be revalidated" }, 503)
+      }
+    }
+
     return (
       (await handleApiTokenManagementRequest(c.req.raw, betterAuth, {
         db,

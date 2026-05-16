@@ -167,11 +167,11 @@ function getCloudAuthExchangeConfig(env: CloudflareBindings) {
  * cached either.
  */
 function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEnvForApp>["db"]) {
-  const cloud = tryGetVoyantCloudClient(env as Record<string, unknown>)
+  const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
   const cloudAuthExchange = isVoyantCloudAuthMode(env) ? getCloudAuthExchangeConfig(env) : null
-  const authDb = db as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"]
-  const cloudAuthDb = db as Parameters<typeof createVoyantCloudAdminAuthPlugin>[0]["db"]
+  const authDb = db as unknown as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"]
+  const cloudAuthDb = db as unknown as Parameters<typeof createVoyantCloudAdminAuthPlugin>[0]["db"]
 
   return createBetterAuth({
     // `db` is a `NeonDatabase` (neon-serverless WebSocket); the
@@ -345,7 +345,7 @@ auth.get("/auth/status", async (c) => {
     const userId = session.user.id
 
     const status = await ensureCurrentUserProfile(
-      db as Parameters<typeof ensureCurrentUserProfile>[0],
+      db as unknown as Parameters<typeof ensureCurrentUserProfile>[0],
       userId,
     )
     if (!status.userExists && status.authenticated) {

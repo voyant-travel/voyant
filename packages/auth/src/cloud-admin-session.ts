@@ -1,5 +1,6 @@
 import type { getDb } from "@voyantjs/db"
 import {
+  apikeyTable,
   authAccount,
   authUser,
   cloudAuthSessionLinks,
@@ -13,7 +14,9 @@ import { and, eq } from "drizzle-orm"
 import {
   type CloudAdminAssertion,
   type CloudAdminAuthExchangeConfig,
+  type CloudAdminAuthRevalidateConfig,
   exchangeCloudAdminAuthCode,
+  revalidateCloudAdminAuthAccess,
   verifyCloudAdminAuthCallback,
 } from "./cloud-broker.js"
 import { isFirstAuthUser, provisionCurrentUserProfile } from "./workspace.js"
@@ -26,6 +29,26 @@ export interface VoyantCloudAdminAuthPluginOptions {
   revalidateAfterSeconds?: number
   onUserProvisioning?: CloudAdminUserProvisioningHandler
 }
+
+export type VoyantCloudAdminSessionRevalidationInput = {
+  db: ReturnType<typeof getDb>
+  sessionId: string
+  config: CloudAdminAuthRevalidateConfig
+  fetch?: typeof fetch
+  now?: Date
+  revalidateAfterSeconds?: number
+}
+
+export type VoyantCloudAdminSessionRevalidationResult =
+  | {
+      ok: true
+      status: "active" | "cached"
+    }
+  | {
+      ok: false
+      status: "revoked"
+      reason?: string
+    }
 
 const VOYANT_CLOUD_PROVIDER_ID = "voyant-cloud"
 const DEFAULT_CLOUD_SESSION_REVALIDATE_AFTER_SECONDS = 15 * 60
@@ -127,6 +150,57 @@ export function createVoyantCloudAdminAuthPlugin(
         },
       ),
     },
+  }
+}
+
+export async function revalidateVoyantCloudAdminAuthSession({
+  db,
+  sessionId,
+  config,
+  fetch,
+  now = new Date(),
+  revalidateAfterSeconds = DEFAULT_CLOUD_SESSION_REVALIDATE_AFTER_SECONDS,
+}: VoyantCloudAdminSessionRevalidationInput): Promise<VoyantCloudAdminSessionRevalidationResult> {
+  const [sessionLink] = await db
+    .select()
+    .from(cloudAuthSessionLinks)
+    .where(eq(cloudAuthSessionLinks.sessionId, sessionId))
+    .limit(1)
+
+  if (!sessionLink || sessionLink.revokedAt) {
+    return { ok: false, status: "revoked", reason: "missing_or_revoked_session" }
+  }
+
+  if (sessionLink.revalidateAfter > now) {
+    return { ok: true, status: "cached" }
+  }
+
+  const revalidation = await revalidateCloudAdminAuthAccess({
+    workosUserId: sessionLink.providerAccountId,
+    config,
+    ...(fetch ? { fetch } : {}),
+  })
+
+  if (revalidation.ok) {
+    await markCloudAuthSessionRevalidated(db, {
+      sessionId: sessionLink.sessionId,
+      userId: sessionLink.userId,
+      now,
+      revalidateAfterSeconds,
+    })
+    return { ok: true, status: "active" }
+  }
+
+  await revokeCloudAuthUserAccess(db, {
+    sessionId: sessionLink.sessionId,
+    userId: sessionLink.userId,
+    now,
+  })
+
+  return {
+    ok: false,
+    status: "revoked",
+    reason: revalidation.reason,
   }
 }
 
@@ -360,6 +434,71 @@ async function upsertVoyantCloudSessionLink(
     revokedAt: null,
     updatedAt: now,
   })
+}
+
+async function markCloudAuthSessionRevalidated(
+  db: ReturnType<typeof getDb>,
+  input: {
+    sessionId: string
+    userId: string
+    now: Date
+    revalidateAfterSeconds: number
+  },
+): Promise<void> {
+  const revalidateAfter = new Date(input.now.getTime() + input.revalidateAfterSeconds * 1000)
+  await Promise.all([
+    db
+      .update(cloudAuthSessionLinks)
+      .set({
+        lastRevalidatedAt: input.now,
+        revalidateAfter,
+        revokedAt: null,
+        updatedAt: input.now,
+      })
+      .where(eq(cloudAuthSessionLinks.sessionId, input.sessionId)),
+    db
+      .update(cloudAuthUserLinks)
+      .set({
+        lastRevalidatedAt: input.now,
+        revokedAt: null,
+        updatedAt: input.now,
+      })
+      .where(eq(cloudAuthUserLinks.userId, input.userId)),
+  ])
+}
+
+async function revokeCloudAuthUserAccess(
+  db: ReturnType<typeof getDb>,
+  input: {
+    sessionId: string
+    userId: string
+    now: Date
+  },
+): Promise<void> {
+  await Promise.all([
+    db
+      .update(cloudAuthSessionLinks)
+      .set({
+        revokedAt: input.now,
+        updatedAt: input.now,
+      })
+      .where(eq(cloudAuthSessionLinks.sessionId, input.sessionId)),
+    db
+      .update(cloudAuthUserLinks)
+      .set({
+        revokedAt: input.now,
+        lastRevalidatedAt: input.now,
+        updatedAt: input.now,
+      })
+      .where(eq(cloudAuthUserLinks.userId, input.userId)),
+    db
+      .update(apikeyTable)
+      .set({
+        enabled: false,
+        updatedAt: input.now,
+      })
+      .where(eq(apikeyTable.referenceId, input.userId)),
+  ])
 }
 
 function cloudAssertionDisplayName(assertion: CloudAdminAssertion): string {

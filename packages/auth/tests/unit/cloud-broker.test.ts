@@ -4,6 +4,7 @@ import {
   createCloudAdminAuthStart,
   exchangeCloudAdminAuthCode,
   normalizeCloudAdminAuthNext,
+  revalidateCloudAdminAuthAccess,
   VOYANT_CLOUD_ADMIN_ASSERTION_ISSUER,
   VOYANT_CLOUD_ADMIN_AUTH_STATE_COOKIE,
   verifyCloudAdminAuthCallback,
@@ -113,6 +114,57 @@ describe("cloud broker auth state", () => {
         now: new Date("2026-05-16T00:02:00.000Z"),
       }),
     ).resolves.toMatchObject({ ok: false, error: "expired_state" })
+  })
+})
+
+describe("revalidateCloudAdminAuthAccess", () => {
+  it("posts deployment credentials and WorkOS user id to Cloud", async () => {
+    const fetchCalls: Array<{ url: string; init?: RequestInit }> = []
+    const fetch = async (url: string | URL | Request, init?: RequestInit) => {
+      fetchCalls.push({ url: url.toString(), init })
+      return Response.json({ ok: true, status: "active" })
+    }
+
+    const result = await revalidateCloudAdminAuthAccess({
+      workosUserId: "user_workos_123",
+      fetch: fetch as typeof globalThis.fetch,
+      config: {
+        revalidateUrl: "https://api.voyantjs.com/cloud/v1/admin-auth/revalidate",
+        deploymentId: "dep_123",
+        clientToken: "client_token_123",
+      },
+    })
+
+    expect(result).toEqual({ ok: true, status: "active" })
+    expect(fetchCalls[0]?.init?.headers).toMatchObject({
+      Authorization: "Bearer client_token_123",
+      "Content-Type": "application/json",
+    })
+    expect(JSON.parse(String(fetchCalls[0]?.init?.body))).toEqual({
+      deploymentId: "dep_123",
+      workosUserId: "user_workos_123",
+    })
+  })
+
+  it("returns revoked responses from Cloud", async () => {
+    const fetch = async () =>
+      Response.json({ ok: false, status: "revoked", reason: "no_membership" }, { status: 403 })
+
+    await expect(
+      revalidateCloudAdminAuthAccess({
+        workosUserId: "user_workos_123",
+        fetch: fetch as typeof globalThis.fetch,
+        config: {
+          revalidateUrl: "https://api.voyantjs.com/cloud/v1/admin-auth/revalidate",
+          deploymentId: "dep_123",
+          clientToken: "client_token_123",
+        },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      status: "revoked",
+      reason: "no_membership",
+    })
   })
 })
 
