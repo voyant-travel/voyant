@@ -1272,6 +1272,56 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(approvals).toHaveLength(1)
     })
 
+    it("replays identical agent booking approval requests", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const request = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-replay",
+        },
+        body: JSON.stringify({ note: "Same reason" }),
+      }
+
+      const first = await agentApp.request(`/${booking.id}/cancel`, request)
+      expect(first.status).toBe(202)
+      const firstBody = await first.json()
+      expect(firstBody.data.replayed).toBe(false)
+
+      const replay = await agentApp.request(`/${booking.id}/cancel`, request)
+      expect(replay.status).toBe(202)
+      const replayBody = await replay.json()
+      expect(replayBody.data).toMatchObject({
+        replayed: true,
+        requestedAction: {
+          id: firstBody.data.requestedAction.id,
+          status: "awaiting_approval",
+        },
+        approval: {
+          id: firstBody.data.approval.id,
+          status: "pending",
+        },
+      })
+
+      const entries = await db.select().from(actionLedgerEntries)
+      const approvals = await db.select().from(actionApprovals)
+      expect(entries).toHaveLength(1)
+      expect(approvals).toHaveLength(1)
+    })
+
     it("emits booking.confirmed with id + number + actor after confirm", async () => {
       const slot = await seedSlot()
       const reserveRes = await app.request("/reserve", {
