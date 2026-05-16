@@ -5,6 +5,9 @@ import {
   buildCreditNoteCreationActionLedgerInput,
   buildInvoiceDeleteActionLedgerInput,
   buildInvoiceIssuedActionLedgerInput,
+  buildInvoiceLineItemCreateActionLedgerInput,
+  buildInvoiceLineItemDeleteActionLedgerInput,
+  buildInvoiceLineItemUpdateActionLedgerInput,
   buildInvoiceUpdateActionLedgerInput,
   buildPaymentCompletedEvent,
   buildPaymentSessionCompletionActionLedgerInput,
@@ -319,6 +322,133 @@ describe("payment session events", () => {
         commandInputRef: "invoice:inv_123:delete",
         commandResultRef: null,
         summary: "Draft invoice INV-2026-001 deleted",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds booking-targeted action ledger input for invoice line item creation", () => {
+    const ledgerInput = buildInvoiceLineItemCreateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          invoiceNumber: "INV-2026-001",
+          bookingId: "book_123",
+        } as never,
+        lineItem: {
+          id: "ili_123",
+          invoiceId: "inv_123",
+          description: "Private tour",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.invoice_line_item.create",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.invoice_line_item.create",
+      authorizationSource: "finance.invoice_line_item.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "invoice:inv_123:line_item",
+        commandResultRef: "invoice_line_item:ili_123",
+        summary: "Line item ili_123 added to invoice INV-2026-001",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds booking-targeted action ledger input for invoice line item updates", () => {
+    const ledgerInput = buildInvoiceLineItemUpdateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          invoiceNumber: "INV-2026-001",
+          bookingId: "book_123",
+        } as never,
+        lineItem: {
+          id: "ili_123",
+          invoiceId: "inv_123",
+          description: "Private tour",
+        } as never,
+        changes: {
+          description: "Private city tour",
+          totalCents: 12000,
+        },
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.invoice_line_item.update",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.invoice_line_item.update",
+      authorizationSource: "finance.invoice_line_item.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "invoice_line_item:ili_123:update",
+        commandResultRef: "invoice_line_item:ili_123",
+        summary: "Line item ili_123 updated (description, totalCents)",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds booking-targeted action ledger input for invoice line item deletion", () => {
+    const ledgerInput = buildInvoiceLineItemDeleteActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          invoiceNumber: "INV-2026-001",
+          bookingId: "book_123",
+        } as never,
+        lineItem: {
+          id: "ili_123",
+          invoiceId: "inv_123",
+          description: "Private tour",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.invoice_line_item.delete",
+      actionKind: "delete",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.invoice_line_item.delete",
+      authorizationSource: "finance.invoice_line_item.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "invoice_line_item:ili_123:delete",
+        commandResultRef: null,
+        summary: "Line item ili_123 deleted from invoice INV-2026-001",
         reversalKind: "none",
       },
     })

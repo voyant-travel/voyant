@@ -446,6 +446,12 @@ type InvoiceUpdateLedgerInput = {
 type InvoiceDeleteLedgerInput = {
   invoice: InvoiceRecord
 }
+type InvoiceLineItemRecord = typeof invoiceLineItems.$inferSelect
+type InvoiceLineItemMutationLedgerInput = {
+  invoice: InvoiceRecord
+  lineItem: InvoiceLineItemRecord
+  changes?: UpdateInvoiceLineItemInput
+}
 type CreateCreditNoteLedgerInput = {
   invoice: InvoiceRecord
   creditNote: CreditNoteRecord
@@ -683,6 +689,104 @@ export function buildInvoiceDeleteActionLedgerInput(
       commandInputRef: `invoice:${input.invoice.id}:delete`,
       commandResultRef: null,
       summary: `Draft invoice ${input.invoice.invoiceNumber} deleted`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildInvoiceLineItemCreateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: InvoiceLineItemMutationLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+
+  return {
+    context,
+    actionName: "finance.invoice_line_item.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.invoice_line_item.create",
+    authorizationSource: options.authorizationSource ?? "finance.invoice_line_item.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `invoice:${input.invoice.id}:line_item`,
+      commandResultRef: `invoice_line_item:${input.lineItem.id}`,
+      summary: `Line item ${input.lineItem.id} added to invoice ${input.invoice.invoiceNumber}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildInvoiceLineItemUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: InvoiceLineItemMutationLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+  const changedFields = Object.keys(input.changes ?? {}).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.invoice_line_item.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.invoice_line_item.update",
+    authorizationSource: options.authorizationSource ?? "finance.invoice_line_item.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `invoice_line_item:${input.lineItem.id}:update`,
+      commandResultRef: `invoice_line_item:${input.lineItem.id}`,
+      summary: `Line item ${input.lineItem.id} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildInvoiceLineItemDeleteActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: InvoiceLineItemMutationLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+
+  return {
+    context,
+    actionName: "finance.invoice_line_item.delete",
+    actionVersion: "v1",
+    actionKind: "delete",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.invoice_line_item.delete",
+    authorizationSource: options.authorizationSource ?? "finance.invoice_line_item.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `invoice_line_item:${input.lineItem.id}:delete`,
+      commandResultRef: null,
+      summary: `Line item ${input.lineItem.id} deleted from invoice ${input.invoice.invoiceNumber}`,
       reversalKind: "none",
     },
   }
@@ -2633,46 +2737,146 @@ export const financeService = {
     db: PostgresJsDatabase,
     invoiceId: string,
     data: CreateInvoiceLineItemInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [invoice] = await db
-      .select({ id: invoices.id })
-      .from(invoices)
-      .where(eq(invoices.id, invoiceId))
-      .limit(1)
+    const createLineItem = async (writer: PostgresJsDatabase) => {
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1)
 
-    if (!invoice) {
-      return null
+      if (!invoice) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(invoiceLineItems)
+        .values({ ...data, invoiceId })
+        .returning()
+
+      return row ? { invoice, lineItem: row } : null
     }
 
-    const [row] = await db
-      .insert(invoiceLineItems)
-      .values({ ...data, invoiceId })
-      .returning()
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const created = await createLineItem(tx)
 
-    return row
+        if (created) {
+          await appendActionLedgerMutation(
+            tx,
+            buildInvoiceLineItemCreateActionLedgerInput(actionLedgerContext, created, {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            }),
+          )
+        }
+
+        return created
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await createLineItem(db))?.lineItem ?? null
   },
 
   async updateInvoiceLineItem(
     db: PostgresJsDatabase,
     lineId: string,
     data: UpdateInvoiceLineItemInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(invoiceLineItems)
-      .set(data)
-      .where(eq(invoiceLineItems.id, lineId))
-      .returning()
+    const updateLineItem = async (writer: PostgresJsDatabase) => {
+      const [row] = await writer
+        .update(invoiceLineItems)
+        .set(data)
+        .where(eq(invoiceLineItems.id, lineId))
+        .returning()
 
-    return row ?? null
+      if (!row) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, row.invoiceId))
+        .limit(1)
+
+      return invoice ? { invoice, lineItem: row } : null
+    }
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const updated = await updateLineItem(tx)
+
+        if (updated) {
+          await appendActionLedgerMutation(
+            tx,
+            buildInvoiceLineItemUpdateActionLedgerInput(
+              actionLedgerContext,
+              { ...updated, changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await updateLineItem(db))?.lineItem ?? null
   },
 
-  async deleteInvoiceLineItem(db: PostgresJsDatabase, lineId: string) {
-    const [row] = await db
-      .delete(invoiceLineItems)
-      .where(eq(invoiceLineItems.id, lineId))
-      .returning({ id: invoiceLineItems.id })
+  async deleteInvoiceLineItem(
+    db: PostgresJsDatabase,
+    lineId: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const deleteLineItem = async (writer: PostgresJsDatabase) => {
+      const [row] = await writer
+        .delete(invoiceLineItems)
+        .where(eq(invoiceLineItems.id, lineId))
+        .returning()
 
-    return row ?? null
+      if (!row) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, row.invoiceId))
+        .limit(1)
+
+      return invoice ? { invoice, lineItem: row } : null
+    }
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const deleted = await deleteLineItem(tx)
+
+        if (deleted) {
+          await appendActionLedgerMutation(
+            tx,
+            buildInvoiceLineItemDeleteActionLedgerInput(actionLedgerContext, deleted, {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            }),
+          )
+        }
+
+        return deleted
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await deleteLineItem(db))?.lineItem ?? null
   },
 
   listPayments(db: PostgresJsDatabase, invoiceId: string) {

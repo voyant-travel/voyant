@@ -896,10 +896,16 @@ export const financeRoutes = new Hono<Env>()
 
   // POST /invoices/:id/line-items — Add line item
   .post("/invoices/:id/line-items", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.createInvoiceLineItem(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, insertInvoiceLineItemSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.invoice_line_item.route",
+      },
     )
 
     if (!row) {
@@ -911,10 +917,16 @@ export const financeRoutes = new Hono<Env>()
 
   // PATCH /invoices/:id/line-items/:lineId — Update line item
   .patch("/invoices/:id/line-items/:lineId", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updateInvoiceLineItem(
       c.get("db"),
       c.req.param("lineId"),
       await parseJsonBody(c, updateInvoiceLineItemSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.invoice_line_item.route",
+      },
     )
 
     if (!row) {
@@ -926,7 +938,12 @@ export const financeRoutes = new Hono<Env>()
 
   // DELETE /invoices/:id/line-items/:lineId — Delete line item
   .delete("/invoices/:id/line-items/:lineId", async (c) => {
-    const row = await financeService.deleteInvoiceLineItem(c.get("db"), c.req.param("lineId"))
+    const runtime = getFinanceRouteRuntime(c)
+    const row = await financeService.deleteInvoiceLineItem(c.get("db"), c.req.param("lineId"), {
+      eventBus: runtime?.eventBus,
+      actionLedgerContext: getActionLedgerRequestContext(c),
+      actionLedgerAuthorizationSource: "finance.invoice_line_item.route",
+    })
 
     if (!row) {
       return c.json({ error: "Line item not found" }, 404)
