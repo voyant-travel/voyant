@@ -467,6 +467,14 @@ type CreditNoteLineItemCreateLedgerInput = {
   creditNote: CreditNoteRecord
   lineItem: CreditNoteLineItemRecord
 }
+type SupplierPaymentRecord = typeof supplierPayments.$inferSelect
+type SupplierPaymentCreateLedgerInput = {
+  payment: SupplierPaymentRecord
+}
+type SupplierPaymentUpdateLedgerInput = {
+  payment: SupplierPaymentRecord
+  changes: UpdateSupplierPaymentInput
+}
 
 export async function buildPaymentSessionCompletionActionLedgerInput(
   context: ActionLedgerRequestContextValues,
@@ -911,6 +919,91 @@ export function buildCreditNoteLineItemCreateActionLedgerInput(
       commandInputRef: `credit_note:${input.creditNote.id}:line_item`,
       commandResultRef: `credit_note_line_item:${input.lineItem.id}`,
       summary: `Line item ${input.lineItem.id} added to credit note ${input.creditNote.creditNoteNumber}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export async function buildSupplierPaymentCreateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: SupplierPaymentCreateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const idempotencyKey = input.payment.referenceNumber
+
+  return {
+    context,
+    actionName: "finance.supplier_payment.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: "booking",
+    targetId: input.payment.bookingId,
+    routeOrToolName: "finance.supplier_payment.create",
+    authorizationSource: options.authorizationSource ?? "finance.supplier_payment.route",
+    idempotencyScope: idempotencyKey
+      ? `finance.booking:${input.payment.bookingId}:supplier_payment`
+      : null,
+    idempotencyKey,
+    idempotencyFingerprint: idempotencyKey
+      ? await buildIdempotencyFingerprint({
+          actionName: "finance.supplier_payment.create",
+          actionVersion: "v1",
+          targetType: "booking",
+          targetId: input.payment.bookingId,
+          commandInput: {
+            supplierPaymentId: input.payment.id,
+            bookingId: input.payment.bookingId,
+            supplierId: input.payment.supplierId,
+            amountCents: input.payment.amountCents,
+            currency: input.payment.currency,
+            paymentMethod: input.payment.paymentMethod,
+            paymentDate: input.payment.paymentDate,
+            referenceNumber: input.payment.referenceNumber,
+            status: input.payment.status,
+          },
+        })
+      : null,
+    mutationDetail: {
+      commandInputRef: `booking:${input.payment.bookingId}:supplier_payment`,
+      commandResultRef: `supplier_payment:${input.payment.id}`,
+      summary: `Supplier payment ${input.payment.id} recorded for booking ${input.payment.bookingId}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildSupplierPaymentUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: SupplierPaymentUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.supplier_payment.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: "booking",
+    targetId: input.payment.bookingId,
+    routeOrToolName: "finance.supplier_payment.update",
+    authorizationSource: options.authorizationSource ?? "finance.supplier_payment.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `supplier_payment:${input.payment.id}:update`,
+      commandResultRef: `supplier_payment:${input.payment.id}`,
+      summary: `Supplier payment ${input.payment.id} updated (${changeSummary})`,
       reversalKind: "none",
     },
   }
@@ -2487,11 +2580,40 @@ export const financeService = {
     }
   },
 
-  async createSupplierPayment(db: PostgresJsDatabase, data: CreateSupplierPaymentInput) {
-    const [row] = await db
-      .insert(supplierPayments)
-      .values({ ...data, paymentInstrumentId: data.paymentInstrumentId ?? null })
-      .returning()
+  async createSupplierPayment(
+    db: PostgresJsDatabase,
+    data: CreateSupplierPaymentInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const createPayment = (writer: PostgresJsDatabase) =>
+      writer
+        .insert(supplierPayments)
+        .values({ ...data, paymentInstrumentId: data.paymentInstrumentId ?? null })
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createPayment(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildSupplierPaymentCreateActionLedgerInput(
+              actionLedgerContext,
+              { payment: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
+      })
+
+      return row
+    }
+
+    const [row] = await createPayment(db)
     return row
   },
 
@@ -2499,13 +2621,38 @@ export const financeService = {
     db: PostgresJsDatabase,
     id: string,
     data: UpdateSupplierPaymentInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(supplierPayments)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(supplierPayments.id, id))
-      .returning()
+    const updatePayment = (writer: PostgresJsDatabase) =>
+      writer
+        .update(supplierPayments)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(supplierPayments.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updatePayment(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildSupplierPaymentUpdateActionLedgerInput(
+              actionLedgerContext,
+              { payment: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updatePayment(db)
     return row ?? null
   },
 

@@ -14,6 +14,8 @@ import {
   buildPaymentCompletedEvent,
   buildPaymentSessionCompletionActionLedgerInput,
   buildRecordPaymentActionLedgerInput,
+  buildSupplierPaymentCreateActionLedgerInput,
+  buildSupplierPaymentUpdateActionLedgerInput,
 } from "../../src/service.js"
 
 describe("payment session events", () => {
@@ -166,6 +168,87 @@ describe("payment session events", () => {
       },
     })
     expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds booking-targeted action ledger input for supplier payment creation", async () => {
+    const ledgerInput = await buildSupplierPaymentCreateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        payment: {
+          id: "spay_123",
+          bookingId: "book_123",
+          supplierId: "sup_123",
+          amountCents: 25000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2026-05-16",
+          referenceNumber: "supplier-ref-123",
+          status: "completed",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.supplier_payment.create",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.supplier_payment.create",
+      authorizationSource: "finance.supplier_payment.route",
+      idempotencyScope: "finance.booking:book_123:supplier_payment",
+      idempotencyKey: "supplier-ref-123",
+      mutationDetail: {
+        commandInputRef: "booking:book_123:supplier_payment",
+        commandResultRef: "supplier_payment:spay_123",
+        summary: "Supplier payment spay_123 recorded for booking book_123",
+        reversalKind: "none",
+      },
+    })
+    expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds booking-targeted action ledger input for supplier payment updates", () => {
+    const ledgerInput = buildSupplierPaymentUpdateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        payment: {
+          id: "spay_123",
+          bookingId: "book_123",
+        } as never,
+        changes: {
+          notes: "Settled by bank transfer",
+          status: "completed",
+        },
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.supplier_payment.update",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.supplier_payment.update",
+      authorizationSource: "finance.supplier_payment.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "supplier_payment:spay_123:update",
+        commandResultRef: "supplier_payment:spay_123",
+        summary: "Supplier payment spay_123 updated (notes, status)",
+        reversalKind: "none",
+      },
+    })
   })
 
   it("builds booking-targeted action ledger input for credit note creation", async () => {

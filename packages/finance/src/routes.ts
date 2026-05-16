@@ -693,11 +693,17 @@ export const financeRoutes = new Hono<Env>()
 
   // POST /supplier-payments — Record supplier payment
   .post("/supplier-payments", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     return c.json(
       {
         data: await financeService.createSupplierPayment(
           c.get("db"),
           await parseJsonBody(c, insertSupplierPaymentSchema),
+          {
+            eventBus: runtime?.eventBus,
+            actionLedgerContext: getActionLedgerRequestContext(c),
+            actionLedgerAuthorizationSource: "finance.supplier_payment.route",
+          },
         ),
       },
       201,
@@ -706,10 +712,16 @@ export const financeRoutes = new Hono<Env>()
 
   // PATCH /supplier-payments/:id — Update supplier payment
   .patch("/supplier-payments/:id", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updateSupplierPayment(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updateSupplierPaymentSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.supplier_payment.route",
+      },
     )
 
     if (!row) {
