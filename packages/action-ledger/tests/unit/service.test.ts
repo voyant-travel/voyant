@@ -9,10 +9,13 @@ import type {
   ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
+  NewActionApproval,
   NewActionLedgerEntry,
 } from "../../src/schema.js"
+import { actionApprovals, actionLedgerEntries } from "../../src/schema.js"
 import {
   __test__,
+  ActionApprovalDecisionConflictError,
   ActionLedgerIdempotencyConflictError,
   type AppendActionLedgerEntryInput,
   actionLedgerService,
@@ -799,6 +802,184 @@ describe("actionLedgerService.appendEntry", () => {
   })
 })
 
+describe("actionLedgerService approval lifecycle", () => {
+  test("creates an awaiting-approval requested action with a linked pending approval", async () => {
+    const { db, entries, approvals, transactionCalls } = makeApprovalLifecycleDb()
+
+    const result = await actionLedgerService.requestApproval(db, {
+      requestedAction: {
+        actionName: "booking.cancel",
+        actionVersion: "v1",
+        actionKind: "update",
+        evaluatedRisk: "high",
+        principalType: "user",
+        principalId: "usr_requester",
+        internalRequest: false,
+        targetType: "booking",
+        targetId: "book_1",
+      },
+      approval: {
+        assignedToPrincipalId: "usr_approver",
+        policyName: "booking-cancel-approval",
+        policyVersion: "v1",
+        targetSnapshotRef: "blob://action-ledger/book_1/cancel-target",
+        reasonCode: "paid_booking_cancel",
+        expiresAt: "2026-05-15T12:00:00.000Z",
+      },
+    })
+
+    expect(transactionCalls).toHaveLength(1)
+    expect(entries).toHaveLength(1)
+    expect(approvals).toHaveLength(1)
+    expect(result.replayed).toBe(false)
+    expect(result.requestedAction).toMatchObject({
+      id: "alge_1",
+      actionName: "booking.cancel",
+      status: "awaiting_approval",
+      approvalId: result.approval.id,
+      principalId: "usr_requester",
+      evaluatedRisk: "high",
+    })
+    expect(result.approval).toMatchObject({
+      requestedActionId: "alge_1",
+      status: "pending",
+      requestedByPrincipalId: "usr_requester",
+      assignedToPrincipalId: "usr_approver",
+      policyName: "booking-cancel-approval",
+      policyVersion: "v1",
+      targetSnapshotRef: "blob://action-ledger/book_1/cancel-target",
+      riskSnapshot: "high",
+      reasonCode: "paid_booking_cancel",
+      expiresAt: new Date("2026-05-15T12:00:00.000Z"),
+    })
+  })
+
+  test("returns an existing approval when an idempotent approval request is replayed", async () => {
+    const existingEntry = makeEntry({
+      id: "alge_existing",
+      actionName: "booking.cancel",
+      actionKind: "update",
+      status: "awaiting_approval",
+      targetType: "booking",
+      targetId: "book_1",
+      idempotencyScope: "booking",
+      idempotencyKey: "idem_1",
+      idempotencyFingerprint: "sha256:first",
+    })
+    const existingApproval = makeApproval({
+      id: "appr_existing",
+      requestedActionId: existingEntry.id,
+    })
+    const { db, entries, approvals } = makeApprovalLifecycleDb({
+      entries: [existingEntry],
+      approvals: [existingApproval],
+    })
+
+    const result = await actionLedgerService.requestApproval(db, {
+      requestedAction: {
+        actionName: "booking.cancel",
+        actionVersion: "v1",
+        actionKind: "update",
+        evaluatedRisk: "high",
+        principalType: "user",
+        principalId: "usr_requester",
+        internalRequest: false,
+        targetType: "booking",
+        targetId: "book_1",
+        idempotencyScope: "booking",
+        idempotencyKey: "idem_1",
+        idempotencyFingerprint: "sha256:first",
+      },
+      approval: {
+        policyName: "booking-cancel-approval",
+        policyVersion: "v1",
+      },
+    })
+
+    expect(result).toEqual({
+      requestedAction: existingEntry,
+      approval: existingApproval,
+      replayed: true,
+    })
+    expect(entries).toHaveLength(1)
+    expect(approvals).toHaveLength(1)
+  })
+
+  test("decides a pending approval and appends a decision action", async () => {
+    const decidedAt = new Date("2026-05-15T12:30:00.000Z")
+    const pendingApproval = makeApproval({
+      id: "appr_pending",
+      requestedActionId: "alge_requested",
+      status: "pending",
+    })
+    const { db, entries, approvals } = makeApprovalLifecycleDb({
+      approvals: [pendingApproval],
+    })
+
+    const result = await actionLedgerService.decideApproval(db, {
+      id: pendingApproval.id,
+      status: "approved",
+      decidedByPrincipalId: "usr_decider",
+      decidedAt,
+      decisionAction: {
+        actionName: "action_approval.approve",
+        actionVersion: "v1",
+        principalType: "user",
+        principalId: "usr_decider",
+        internalRequest: false,
+      },
+    })
+
+    expect(result?.approval).toMatchObject({
+      id: pendingApproval.id,
+      status: "approved",
+      decidedByPrincipalId: "usr_decider",
+      decidedAt,
+    })
+    expect(approvals[0]).toMatchObject({
+      status: "approved",
+      decidedByPrincipalId: "usr_decider",
+    })
+    expect(entries).toHaveLength(1)
+    expect(result?.decisionAction).toMatchObject({
+      actionName: "action_approval.approve",
+      actionKind: "approve",
+      status: "approved",
+      evaluatedRisk: "high",
+      principalId: "usr_decider",
+      targetType: "action_approval",
+      targetId: pendingApproval.id,
+      causationActionId: pendingApproval.requestedActionId,
+      approvalId: pendingApproval.id,
+    })
+  })
+
+  test("throws a decision conflict when an approval is no longer pending", async () => {
+    const { db } = makeApprovalLifecycleDb({
+      approvals: [makeApproval({ id: "appr_done", status: "approved" })],
+    })
+
+    await expect(
+      actionLedgerService.decideApproval(db, {
+        id: "appr_done",
+        status: "denied",
+        decidedByPrincipalId: "usr_decider",
+        decisionAction: {
+          actionName: "action_approval.deny",
+          actionVersion: "v1",
+          principalType: "user",
+          principalId: "usr_decider",
+          internalRequest: false,
+        },
+      }),
+    ).rejects.toMatchObject({
+      name: ActionApprovalDecisionConflictError.name,
+      approvalId: "appr_done",
+      currentStatus: "approved",
+    })
+  })
+})
+
 function makeMutationDetail(overrides: Partial<ActionMutationDetail> = {}): ActionMutationDetail {
   return {
     actionId: "alge_1",
@@ -1229,6 +1410,160 @@ function makeRelayOutboxUpdateDb(row: ActionLedgerRelayOutbox | null) {
   } as AnyDrizzleDb
 
   return { db, patches }
+}
+
+function makeApprovalLifecycleDb(
+  input: { entries?: ActionLedgerEntry[]; approvals?: ActionApproval[] } = {},
+) {
+  const entries = [...(input.entries ?? [])]
+  const approvals = [...(input.approvals ?? [])]
+  const insertedMutationDetails: unknown[] = []
+  const insertedPayloads: unknown[] = []
+  const insertedRelayOutbox: unknown[] = []
+  const insertedSensitiveReadDetails: unknown[] = []
+  const transactionCalls: string[] = []
+
+  const db = {
+    transaction<T>(callback: (tx: AnyDrizzleDb) => Promise<T>) {
+      transactionCalls.push("transaction")
+      return callback(db as AnyDrizzleDb)
+    },
+    select() {
+      return {
+        from(table: unknown) {
+          return {
+            where() {
+              return {
+                limit() {
+                  if (table === actionApprovals) {
+                    return Promise.resolve(approvals.slice(0, 1))
+                  }
+                  if (table === actionLedgerEntries) {
+                    return Promise.resolve(entries.slice(0, 1))
+                  }
+                  return Promise.resolve([])
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+    insert(table: unknown) {
+      return {
+        values(values: NewActionLedgerEntry | NewActionApproval | Record<string, unknown>[]) {
+          if (Array.isArray(values)) {
+            insertedPayloads.push(...values)
+            return {}
+          }
+
+          if ("payloadKind" in values) {
+            insertedPayloads.push(values)
+            return {}
+          }
+
+          if ("relayStatus" in values) {
+            insertedRelayOutbox.push(values)
+            return {}
+          }
+
+          if ("reasonCode" in values && table !== actionApprovals) {
+            insertedSensitiveReadDetails.push(values)
+            return {}
+          }
+
+          if ("summary" in values || "reversalKind" in values) {
+            insertedMutationDetails.push(values)
+            return {}
+          }
+
+          return {
+            returning() {
+              if (table === actionApprovals) {
+                const approvalValues = values as NewActionApproval
+                const approval = makeApproval({
+                  ...approvalValues,
+                  id: approvalValues.id ?? `appr_${approvals.length + 1}`,
+                  decidedAt: approvalValues.decidedAt ?? null,
+                  decidedByPrincipalId: approvalValues.decidedByPrincipalId ?? null,
+                  delegatedFromPrincipalId: approvalValues.delegatedFromPrincipalId ?? null,
+                  assignedToPrincipalId: approvalValues.assignedToPrincipalId ?? null,
+                  targetSnapshotRef: approvalValues.targetSnapshotRef ?? null,
+                  reasonCode: approvalValues.reasonCode ?? null,
+                  expiresAt: approvalValues.expiresAt ?? null,
+                  createdAt: approvalValues.createdAt ?? baseDate,
+                })
+                approvals.push(approval)
+                return Promise.resolve([approval])
+              }
+
+              const entryValues = values as NewActionLedgerEntry
+              const entry = makeEntry({
+                ...entryValues,
+                id: `alge_${entries.length + 1}`,
+                occurredAt: entryValues.occurredAt ?? baseDate,
+                createdAt: entryValues.createdAt ?? baseDate,
+                actorType: entryValues.actorType ?? null,
+                principalSubtype: entryValues.principalSubtype ?? null,
+                sessionId: entryValues.sessionId ?? null,
+                apiTokenId: entryValues.apiTokenId ?? null,
+                delegatedByPrincipalType: entryValues.delegatedByPrincipalType ?? null,
+                delegatedByPrincipalId: entryValues.delegatedByPrincipalId ?? null,
+                delegationId: entryValues.delegationId ?? null,
+                callerType: entryValues.callerType ?? null,
+                organizationId: entryValues.organizationId ?? null,
+                routeOrToolName: entryValues.routeOrToolName ?? null,
+                workflowRunId: entryValues.workflowRunId ?? null,
+                workflowStepId: entryValues.workflowStepId ?? null,
+                correlationId: entryValues.correlationId ?? null,
+                causationActionId: entryValues.causationActionId ?? null,
+                idempotencyScope: entryValues.idempotencyScope ?? null,
+                idempotencyKey: entryValues.idempotencyKey ?? null,
+                idempotencyFingerprint: entryValues.idempotencyFingerprint ?? null,
+                capabilityId: entryValues.capabilityId ?? null,
+                capabilityVersion: entryValues.capabilityVersion ?? null,
+                authorizationSource: entryValues.authorizationSource ?? null,
+                approvalId: entryValues.approvalId ?? null,
+                amendsActionId: entryValues.amendsActionId ?? null,
+              })
+              entries.push(entry)
+              return Promise.resolve([entry])
+            },
+          }
+        },
+      }
+    },
+    update(table: unknown) {
+      return {
+        set(values: Partial<ActionApproval>) {
+          return {
+            where() {
+              return {
+                returning() {
+                  if (table !== actionApprovals) return Promise.resolve([])
+                  const approval = approvals.find((row) => row.status === "pending")
+                  if (!approval) return Promise.resolve([])
+                  Object.assign(approval, values)
+                  return Promise.resolve([approval])
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return {
+    db,
+    entries,
+    approvals,
+    insertedMutationDetails,
+    insertedPayloads,
+    insertedRelayOutbox,
+    insertedSensitiveReadDetails,
+    transactionCalls,
+  }
 }
 
 function makeAppendDb() {

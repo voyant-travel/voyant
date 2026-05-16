@@ -90,6 +90,7 @@ export {
   type NewActionSensitiveReadDetail,
 } from "./schema.js"
 export {
+  ActionApprovalDecisionConflictError,
   type ActionApprovalListCursor,
   type ActionDelegationListCursor,
   ActionLedgerIdempotencyConflictError,
@@ -100,6 +101,8 @@ export {
   actionLedgerService,
   type ClaimActionLedgerRelayOutboxInput,
   type ClaimActionLedgerRelayOutboxResult,
+  type DecideActionApprovalInput,
+  type DecideActionApprovalResult,
   type GetActionApprovalResult,
   type GetActionDelegationResult,
   type GetActionLedgerEntryResult,
@@ -113,4 +116,6 @@ export {
   type ListActionLedgerRelayOutboxResult,
   type MarkActionLedgerRelayOutboxFailedInput,
   type MarkActionLedgerRelayOutboxSucceededInput,
+  type RequestActionApprovalInput,
+  type RequestActionApprovalResult,
 } from "./service.js"

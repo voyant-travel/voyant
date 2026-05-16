@@ -1,4 +1,4 @@
-import type { AnyDrizzleDb } from "@voyantjs/db"
+import { type AnyDrizzleDb, newId } from "@voyantjs/db"
 import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm"
 
 import {
@@ -16,6 +16,7 @@ import {
   actionLedgerRelayOutbox,
   actionMutationDetails,
   actionSensitiveReadDetails,
+  type NewActionApproval,
   type NewActionLedgerEntry,
   type NewActionLedgerPayload,
   type NewActionMutationDetail,
@@ -35,6 +36,18 @@ export class ActionLedgerIdempotencyConflictError extends Error {
   }
 }
 
+export class ActionApprovalDecisionConflictError extends Error {
+  readonly approvalId: string
+  readonly currentStatus: ActionApproval["status"]
+
+  constructor(approvalId: string, currentStatus: ActionApproval["status"]) {
+    super(`Action approval ${approvalId} is already ${currentStatus}`)
+    this.name = "ActionApprovalDecisionConflictError"
+    this.approvalId = approvalId
+    this.currentStatus = currentStatus
+  }
+}
+
 export interface AppendActionLedgerEntryInput
   extends Omit<NewActionLedgerEntry, "id" | "createdAt" | "occurredAt"> {
   occurredAt?: Date
@@ -47,6 +60,57 @@ export interface AppendActionLedgerEntryInput
 export interface AppendActionLedgerEntryResult {
   entry: ActionLedgerEntry
   replayed: boolean
+}
+
+export interface RequestActionApprovalInput {
+  requestedAction: Omit<AppendActionLedgerEntryInput, "approvalId" | "status">
+  approval: {
+    requestedByPrincipalId?: string | null
+    assignedToPrincipalId?: string | null
+    delegatedFromPrincipalId?: string | null
+    policyName: string
+    policyVersion: string
+    targetSnapshotRef?: string | null
+    riskSnapshot?: ActionApproval["riskSnapshot"] | null
+    reasonCode?: string | null
+    expiresAt?: Date | string | null
+  }
+}
+
+export interface RequestActionApprovalResult {
+  requestedAction: ActionLedgerEntry
+  approval: ActionApproval
+  replayed: boolean
+}
+
+type ApprovalDecisionStatus = Exclude<ActionApproval["status"], "pending">
+
+export interface DecideActionApprovalInput {
+  id: string
+  status: ApprovalDecisionStatus
+  decidedByPrincipalId: string
+  decidedAt?: Date | string | null
+  decisionAction: Omit<
+    AppendActionLedgerEntryInput,
+    | "actionKind"
+    | "approvalId"
+    | "causationActionId"
+    | "evaluatedRisk"
+    | "status"
+    | "targetId"
+    | "targetType"
+  > &
+    Partial<
+      Pick<
+        AppendActionLedgerEntryInput,
+        "actionKind" | "evaluatedRisk" | "status" | "targetId" | "targetType"
+      >
+    >
+}
+
+export interface DecideActionApprovalResult {
+  approval: ActionApproval
+  decisionAction: ActionLedgerEntry
 }
 
 export interface ActionLedgerListCursor {
@@ -245,6 +309,106 @@ export const actionLedgerService = {
       }
       throw error
     }
+  },
+
+  async requestApproval(
+    db: AnyDrizzleDb,
+    input: RequestActionApprovalInput,
+  ): Promise<RequestActionApprovalResult> {
+    return withOptionalTransaction(db, async (tx) => {
+      const approvalId = newId("action_approvals")
+      const requestedActionResult = await actionLedgerService.appendEntry(tx, {
+        ...input.requestedAction,
+        status: "awaiting_approval",
+        approvalId,
+      })
+      const existingApproval = await findApprovalForRequestedAction(
+        tx,
+        requestedActionResult.entry.id,
+      )
+      if (existingApproval) {
+        return {
+          requestedAction: requestedActionResult.entry,
+          approval: existingApproval,
+          replayed: requestedActionResult.replayed,
+        }
+      }
+
+      const [approval] = await tx
+        .insert(actionApprovals)
+        .values({
+          id: approvalId,
+          requestedActionId: requestedActionResult.entry.id,
+          status: "pending",
+          requestedByPrincipalId:
+            input.approval.requestedByPrincipalId ?? requestedActionResult.entry.principalId,
+          assignedToPrincipalId: input.approval.assignedToPrincipalId ?? null,
+          delegatedFromPrincipalId: input.approval.delegatedFromPrincipalId ?? null,
+          policyName: input.approval.policyName,
+          policyVersion: input.approval.policyVersion,
+          targetSnapshotRef: input.approval.targetSnapshotRef ?? null,
+          riskSnapshot: input.approval.riskSnapshot ?? requestedActionResult.entry.evaluatedRisk,
+          reasonCode: input.approval.reasonCode ?? null,
+          expiresAt: input.approval.expiresAt ? parseCursorDate(input.approval.expiresAt) : null,
+        } satisfies NewActionApproval)
+        .returning()
+
+      if (!approval) {
+        throw new Error("Action approval insert did not return an approval")
+      }
+
+      return {
+        requestedAction: requestedActionResult.entry,
+        approval,
+        replayed: requestedActionResult.replayed,
+      }
+    })
+  },
+
+  async decideApproval(
+    db: AnyDrizzleDb,
+    input: DecideActionApprovalInput,
+  ): Promise<DecideActionApprovalResult | null> {
+    return withOptionalTransaction(db, async (tx) => {
+      const approval = await findApprovalById(tx, input.id)
+      if (!approval) return null
+      if (approval.status !== "pending") {
+        throw new ActionApprovalDecisionConflictError(approval.id, approval.status)
+      }
+
+      const decidedAt = input.decidedAt ? parseCursorDate(input.decidedAt) : new Date()
+      const [updatedApproval] = await tx
+        .update(actionApprovals)
+        .set({
+          status: input.status,
+          decidedByPrincipalId: input.decidedByPrincipalId,
+          decidedAt,
+        })
+        .where(and(eq(actionApprovals.id, input.id), eq(actionApprovals.status, "pending")))
+        .returning()
+
+      if (!updatedApproval) {
+        const current = await findApprovalById(tx, input.id)
+        if (!current) return null
+        throw new ActionApprovalDecisionConflictError(current.id, current.status)
+      }
+
+      const decisionAction = await actionLedgerService.appendEntry(tx, {
+        ...input.decisionAction,
+        actionKind: input.status === "approved" ? "approve" : "reject",
+        status: input.status,
+        evaluatedRisk: input.decisionAction.evaluatedRisk ?? updatedApproval.riskSnapshot,
+        targetType: input.decisionAction.targetType ?? "action_approval",
+        targetId: input.decisionAction.targetId ?? updatedApproval.id,
+        causationActionId: updatedApproval.requestedActionId,
+        approvalId: updatedApproval.id,
+      })
+
+      return {
+        approval: updatedApproval,
+        decisionAction: decisionAction.entry,
+      }
+    })
   },
 
   async listEntries(
@@ -523,6 +687,21 @@ type ActionLedgerRelayOutboxSqlRow = {
   processed_at: Date | string | null
 }
 
+type TransactionalDrizzleDb = AnyDrizzleDb & {
+  transaction?: <T>(callback: (tx: AnyDrizzleDb) => Promise<T>) => Promise<T>
+}
+
+function withOptionalTransaction<T>(
+  db: AnyDrizzleDb,
+  callback: (tx: AnyDrizzleDb) => Promise<T>,
+): Promise<T> {
+  const maybeTransactional = db as TransactionalDrizzleDb
+  if (typeof maybeTransactional.transaction === "function") {
+    return maybeTransactional.transaction((tx) => callback(tx))
+  }
+  return callback(db)
+}
+
 function actionLedgerRelayOutboxFromSqlRow(
   row: ActionLedgerRelayOutboxSqlRow,
 ): ActionLedgerRelayOutbox {
@@ -614,6 +793,29 @@ async function findExistingIdempotentEntry(
     .limit(1)
 
   return existing ?? null
+}
+
+async function findApprovalForRequestedAction(
+  db: AnyDrizzleDb,
+  requestedActionId: string,
+): Promise<ActionApproval | null> {
+  const [approval] = await db
+    .select()
+    .from(actionApprovals)
+    .where(eq(actionApprovals.requestedActionId, requestedActionId))
+    .limit(1)
+
+  return approval ?? null
+}
+
+async function findApprovalById(db: AnyDrizzleDb, id: string): Promise<ActionApproval | null> {
+  const [approval] = await db
+    .select()
+    .from(actionApprovals)
+    .where(eq(actionApprovals.id, id))
+    .limit(1)
+
+  return approval ?? null
 }
 
 function assertSameFingerprint(entry: ActionLedgerEntry, fingerprint: string | null): void {
