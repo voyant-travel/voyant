@@ -305,7 +305,7 @@ export interface ValidateApprovedActionInput {
   routeOrToolName?: string | null
   principalType?: ActionLedgerEntry["principalType"] | null
   principalId?: string | null
-  idempotencyFingerprint?: string | null
+  idempotencyFingerprint: string
   executionActionKind?: ActionLedgerEntry["actionKind"]
   executionStatus?: ActionLedgerEntry["status"]
   now?: Date | string | null
@@ -654,10 +654,7 @@ export const actionLedgerService = {
       }
     }
 
-    if (
-      input.idempotencyFingerprint &&
-      input.idempotencyFingerprint !== requestedAction.idempotencyFingerprint
-    ) {
+    if (input.idempotencyFingerprint !== requestedAction.idempotencyFingerprint) {
       return {
         ok: false,
         reason: "fingerprint_mismatch",

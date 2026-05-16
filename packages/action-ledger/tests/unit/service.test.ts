@@ -992,6 +992,7 @@ describe("actionLedgerService.validateApprovedAction", () => {
         targetType: "booking",
         targetId: "book_1",
         routeOrToolName: "bookings.cancel",
+        idempotencyFingerprint: "sha256:approved",
       }),
     ).resolves.toEqual({
       ok: false,
@@ -1014,6 +1015,7 @@ describe("actionLedgerService.validateApprovedAction", () => {
         targetType: "booking",
         targetId: "book_1",
         routeOrToolName: "bookings.cancel",
+        idempotencyFingerprint: "sha256:approved",
       }),
     ).resolves.toMatchObject({
       ok: false,
@@ -1039,6 +1041,7 @@ describe("actionLedgerService.validateApprovedAction", () => {
         targetType: "booking",
         targetId: "book_1",
         routeOrToolName: "bookings.cancel",
+        idempotencyFingerprint: "sha256:approved",
         now: baseDate,
       }),
     ).resolves.toMatchObject({
@@ -1148,6 +1151,7 @@ describe("actionLedgerService.validateApprovedAction", () => {
         targetType: "booking",
         targetId: "book_1",
         routeOrToolName: "bookings.cancel",
+        idempotencyFingerprint: "sha256:approved",
         now: baseDate,
       }),
     ).resolves.toMatchObject({
@@ -1188,6 +1192,7 @@ describe("actionLedgerService.validateApprovedAction", () => {
         targetType: "booking",
         targetId: "book_1",
         routeOrToolName: "bookings.cancel",
+        idempotencyFingerprint: "sha256:approved",
         now: baseDate,
       }),
     ).resolves.toMatchObject({
@@ -1315,6 +1320,7 @@ describe("actionLedgerService.validateApprovedAction", () => {
         targetType: "booking",
         targetId: "book_1",
         routeOrToolName: "bookings.cancel",
+        idempotencyFingerprint: "sha256:approved",
         now: baseDate,
       }),
     ).resolves.toMatchObject({
