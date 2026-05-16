@@ -1,13 +1,18 @@
 "use client"
 
 import type { AllocationManifestTraveler, AllocationResource } from "@voyantjs/availability-react"
-import { Badge, Button } from "@voyantjs/ui/components"
-import { Armchair, Bed, Trash2, Users } from "lucide-react"
-import type { ReactNode } from "react"
+import { Badge, Button, Input, Label } from "@voyantjs/ui/components"
+import { Armchair, Bed, Pencil, Trash2, Users } from "lucide-react"
+import { type FormEvent, type ReactNode, useEffect, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
 import { type AllocationOccupants, kindLabel, VEHICLE_SEAT_KIND } from "./slot-allocation-model.js"
 import { DropColumn, ResourceFlagBadges, TravelerTile } from "./slot-allocation-shared.js"
+
+export interface EditResourceInput {
+  label: string | null
+  capacity: number
+}
 
 export function ResourceColumnsView({
   kind,
@@ -17,6 +22,7 @@ export function ResourceColumnsView({
   sharingGroupLabels,
   onDropTraveler,
   onRemoveResource,
+  onEditResource,
   renderTravelerActions,
 }: {
   kind: string
@@ -26,6 +32,7 @@ export function ResourceColumnsView({
   sharingGroupLabels: Record<string, string>
   onDropTraveler: (travelerId: string, resourceId: string | null) => void
   onRemoveResource: (resourceId: string) => void
+  onEditResource?: (resourceId: string, input: EditResourceInput) => Promise<void> | void
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
@@ -68,6 +75,11 @@ export function ResourceColumnsView({
               sharingGroupLabels={sharingGroupLabels}
               onDropTraveler={(travelerId) => onDropTraveler(travelerId, resource.id)}
               onRemoveResource={() => onRemoveResource(resource.id)}
+              onEditResource={
+                onEditResource
+                  ? (input) => Promise.resolve(onEditResource(resource.id, input))
+                  : undefined
+              }
               renderTravelerActions={renderTravelerActions}
             />
           ))
@@ -83,6 +95,7 @@ function AllocationResourceColumn({
   occupants,
   onDropTraveler,
   onRemoveResource,
+  onEditResource,
   sharingGroupLabels,
   renderTravelerActions,
 }: {
@@ -91,11 +104,46 @@ function AllocationResourceColumn({
   occupants: AllocationManifestTraveler[]
   onDropTraveler: (travelerId: string) => void
   onRemoveResource: () => void
+  onEditResource?: (input: EditResourceInput) => Promise<void>
   sharingGroupLabels: Record<string, string>
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
+  const [editing, setEditing] = useState(false)
+  const [label, setLabel] = useState(resource.label ?? "")
+  const [capacity, setCapacity] = useState(resource.capacity)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!editing) {
+      setLabel(resource.label ?? "")
+      setCapacity(resource.capacity)
+    }
+  }, [editing, resource.label, resource.capacity])
+
   const full = occupants.length >= resource.capacity
+  const canEdit = Boolean(onEditResource)
+  // Operator can't shrink the bucket below the number of travelers
+  // already sitting in it — the API rejects that anyway, but failing
+  // in the form is friendlier than a toast after the round-trip.
+  const minCapacity = Math.max(1, occupants.length)
+
+  async function submitEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!onEditResource) return
+    const trimmed = label.trim()
+    const nextCapacity = Math.max(minCapacity, Math.floor(capacity) || minCapacity)
+    setSaving(true)
+    try {
+      await onEditResource({
+        label: trimmed.length === 0 ? null : trimmed,
+        capacity: nextCapacity,
+      })
+      setEditing(false)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <DropColumn
@@ -107,14 +155,79 @@ function AllocationResourceColumn({
       description={`${messages.capacity}: ${occupants.length}/${resource.capacity}`}
       count={occupants.length}
       capacity={resource.capacity}
-      disabled={full}
+      disabled={full || editing}
       onDropTraveler={onDropTraveler}
       action={
-        <Button type="button" variant="ghost" size="icon" onClick={onRemoveResource}>
-          <Trash2 className="size-4" aria-hidden="true" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {canEdit ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setEditing((value) => !value)}
+              aria-label={messages.editResource}
+              aria-pressed={editing}
+            >
+              <Pencil className="size-4" aria-hidden="true" />
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onRemoveResource}
+            aria-label={messages.remove}
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
+          </Button>
+        </div>
       }
     >
+      {editing && canEdit ? (
+        <form
+          className="grid gap-2 rounded-md border bg-muted/40 p-2"
+          onSubmit={submitEdit}
+          aria-label={messages.editResource}
+        >
+          <div className="grid gap-1">
+            <Label htmlFor={`edit-${resource.id}-label`} className="text-xs">
+              {messages.resourceLabel}
+            </Label>
+            <Input
+              id={`edit-${resource.id}-label`}
+              value={label}
+              onChange={(event) => setLabel(event.target.value)}
+              placeholder={kindLabel(kind, messages)}
+            />
+          </div>
+          <div className="grid gap-1">
+            <Label htmlFor={`edit-${resource.id}-capacity`} className="text-xs">
+              {messages.resourceCapacity}
+            </Label>
+            <Input
+              id={`edit-${resource.id}-capacity`}
+              type="number"
+              min={minCapacity}
+              value={capacity}
+              onChange={(event) => setCapacity(Number(event.target.value) || minCapacity)}
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditing(false)}
+              disabled={saving}
+            >
+              {messages.cancel}
+            </Button>
+            <Button type="submit" size="sm" disabled={saving}>
+              {messages.saveResource}
+            </Button>
+          </div>
+        </form>
+      ) : null}
       <ResourceFlagBadges resource={resource} />
       {full ? (
         <Badge variant="secondary" className="w-fit">
@@ -131,7 +244,7 @@ function AllocationResourceColumn({
           renderActions={renderTravelerActions}
         />
       ))}
-      {!full ? (
+      {!full && !editing ? (
         <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
           {messages.dropHere}
         </div>

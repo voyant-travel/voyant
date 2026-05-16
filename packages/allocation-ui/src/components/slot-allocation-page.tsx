@@ -194,6 +194,19 @@ export function SlotAllocationPage({
     }
   }
 
+  async function editResource(
+    resourceId: string,
+    input: { label: string | null; capacity: number },
+  ) {
+    setError(null)
+    try {
+      await resourceMutation.update.mutateAsync({ resourceId, input })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : messages.updateResourceFailed)
+      throw err
+    }
+  }
+
   async function generateResources() {
     setError(null)
     try {
@@ -426,6 +439,7 @@ export function SlotAllocationPage({
               onRemoveResource={(resourceId) =>
                 void resourceMutation.remove.mutateAsync(resourceId)
               }
+              onEditResource={editResource}
               renderTravelerActions={renderTravelerActions}
             />
           )}

@@ -34,6 +34,9 @@ export type AllocationUiMessages = Record<string, unknown> & {
   resourceLabel: string
   resourceCapacity: string
   createResource: string
+  editResource: string
+  saveResource: string
+  updateResourceFailed: string
   cancel: string
   unallocated: string
   unallocatedDescription: string
@@ -109,6 +112,9 @@ export const allocationUiEn = {
   resourceLabel: "Resource label",
   resourceCapacity: "Capacity",
   createResource: "Create resource",
+  editResource: "Edit resource",
+  saveResource: "Save",
+  updateResourceFailed: "Could not update resource.",
   cancel: "Cancel",
   unallocated: "Unallocated",
   unallocatedDescription: "Travelers not assigned to this resource kind.",
@@ -184,6 +190,9 @@ export const allocationUiRo = {
   resourceLabel: "Eticheta resursa",
   resourceCapacity: "Capacitate",
   createResource: "Creeaza resursa",
+  editResource: "Editeaza resursa",
+  saveResource: "Salveaza",
+  updateResourceFailed: "Resursa nu a putut fi actualizata.",
   cancel: "Anuleaza",
   unallocated: "Nealocati",
   unallocatedDescription: "Calatori fara acest tip de resursa alocat.",
