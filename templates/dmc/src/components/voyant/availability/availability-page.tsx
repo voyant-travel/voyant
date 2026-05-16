@@ -44,11 +44,55 @@ import {
   AvailabilityPickupPointsTab,
 } from "./availability-tabs-secondary"
 
-export function AvailabilityPage() {
+export type AvailabilityPageTab = "slots" | "rules" | "start-times" | "closeouts" | "pickup-points"
+
+export interface AvailabilityPageProps {
+  /**
+   * Product filter id. Pass `null` (or omit) for "all". When supplied
+   * with `onProductFilterChange`, becomes a fully controlled prop —
+   * the page reflects URL changes without remounting.
+   */
+  productId?: string | null
+  /** Active tab. Defaults to `"slots"` when omitted. */
+  tab?: AvailabilityPageTab
+  /** Fires when the product filter changes. */
+  onProductFilterChange?: (productId: string | null) => void
+  /** Fires when the active tab changes. */
+  onTabChange?: (tab: AvailabilityPageTab) => void
+}
+
+export function AvailabilityPage({
+  productId: controlledProductId,
+  tab: controlledTab,
+  onProductFilterChange,
+  onTabChange,
+}: AvailabilityPageProps = {}) {
   const messages = useAdminMessages()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
-  const [productFilter, setProductFilter] = useState("all")
+  // Filter + tab state can either be controlled by the host (URL-
+  // backed routes) or owned internally for standalone mounts. Codex
+  // flagged that a useState seed-from-prop pattern goes stale when
+  // the URL changes without unmounting — keeping a single source of
+  // truth per render avoids that drift.
+  const [internalProductFilter, setInternalProductFilter] = useState<string>(
+    controlledProductId ?? "all",
+  )
+  const [internalTab, setInternalTab] = useState<AvailabilityPageTab>(controlledTab ?? "slots")
+  const isProductFilterControlled = onProductFilterChange != null
+  const isTabControlled = onTabChange != null
+  const productFilter = isProductFilterControlled
+    ? (controlledProductId ?? "all")
+    : internalProductFilter
+  const activeTab = isTabControlled ? (controlledTab ?? "slots") : internalTab
+  const setProductFilter = (next: string) => {
+    if (!isProductFilterControlled) setInternalProductFilter(next)
+    onProductFilterChange?.(next === "all" ? null : next)
+  }
+  const setActiveTab = (next: AvailabilityPageTab) => {
+    if (!isTabControlled) setInternalTab(next)
+    onTabChange?.(next)
+  }
   const [bulkActionTarget, setBulkActionTarget] = useState<string | null>(null)
   const [ruleSelection, setRuleSelection] = useState<RowSelectionState>({})
   const [startTimeSelection, setStartTimeSelection] = useState<RowSelectionState>({})
@@ -311,6 +355,7 @@ export function AvailabilityPage() {
             onClearFilters={() => {
               setSearch("")
               setProductFilter("all")
+              setActiveTab("slots")
             }}
             onOpenSlot={(slotId) =>
               void navigate({ to: "/availability/$id", params: { id: slotId } })
@@ -320,7 +365,10 @@ export function AvailabilityPage() {
             }
           />
 
-          <Tabs defaultValue="slots">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as AvailabilityPageTab)}
+          >
             <TabsList variant="line">
               <TabsTrigger value="slots">{messages.availability.tabSlots}</TabsTrigger>
               <TabsTrigger value="rules">{messages.availability.tabRules}</TabsTrigger>
