@@ -28,6 +28,10 @@
       "types": "./src/backend.ts",
       "default": "./src/backend.ts"
     },
+    "./cloud-broker": {
+      "types": "./src/cloud-broker.ts",
+      "default": "./src/cloud-broker.ts"
+    },
     "./workspace": {
       "types": "./src/workspace.ts",
       "default": "./src/workspace.ts"
@@ -61,6 +65,11 @@
         "types": "./dist/backend.d.ts",
         "import": "./dist/backend.js",
         "default": "./dist/backend.js"
+      },
+      "./cloud-broker": {
+        "types": "./dist/cloud-broker.d.ts",
+        "import": "./dist/cloud-broker.js",
+        "default": "./dist/cloud-broker.js"
       },
       "./workspace": {
         "types": "./dist/workspace.d.ts",

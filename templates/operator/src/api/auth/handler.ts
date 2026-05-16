@@ -7,6 +7,10 @@
  * Also provides /auth/status (user provisioning) and /auth/me (user info).
  */
 
+import {
+  createCloudAdminAuthStart,
+  verifyCloudAdminAuthCallback,
+} from "@voyantjs/auth/cloud-broker"
 import { createBetterAuth, handleApiTokenManagementRequest } from "@voyantjs/auth/server"
 import { ensureCurrentUserProfile } from "@voyantjs/auth/workspace"
 import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
@@ -103,6 +107,38 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
     return `${parsed.protocol}//${parsed.host}`
   } catch {
     return appUrl
+  }
+}
+
+function getPublicApiBaseUrl(env: CloudflareBindings): string {
+  const candidate = env.API_BASE_URL?.trim() || env.APP_URL?.trim() || `${getAppUrl(env)}/api`
+  const normalized = normalizeUrl(candidate)
+
+  try {
+    const parsed = new URL(normalized)
+    if (parsed.pathname === "/" || parsed.pathname === "") {
+      parsed.pathname = "/api"
+      return normalizeUrl(parsed.toString())
+    }
+  } catch {
+    return normalized
+  }
+
+  return normalized
+}
+
+function getCloudAuthStartConfig(env: CloudflareBindings) {
+  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+  const cloudAuthStartUrl = env.VOYANT_CLOUD_ADMIN_AUTH_START_URL?.trim()
+  if (!deploymentId || !cloudAuthStartUrl) return null
+
+  return {
+    cloudAuthStartUrl,
+    deploymentId,
+    adminCallbackUrl: `${getPublicApiBaseUrl(env)}/auth/cloud/callback`,
+    cookieSecret: env.SESSION_CLAIMS_SECRET,
+    appId: env.VOYANT_CLOUD_APP_ID?.trim() || undefined,
+    environment: env.VOYANT_CLOUD_ENVIRONMENT?.trim() || undefined,
   }
 }
 
@@ -369,7 +405,28 @@ auth.get("/auth/cloud/start", async (c) => {
     return c.json({ error: "Not found" }, 404)
   }
 
-  return cloudAuthNotConfiguredResponse(c)
+  const config = getCloudAuthStartConfig(c.env)
+  if (!config) {
+    return cloudAuthNotConfiguredResponse(c)
+  }
+
+  try {
+    const start = await createCloudAdminAuthStart({
+      requestUrl: c.req.url,
+      next: c.req.query("next"),
+      config,
+    })
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: start.redirectUrl,
+        "Set-Cookie": start.setCookie,
+      },
+    })
+  } catch (error) {
+    console.error("[auth/cloud/start] Error:", error)
+    return c.json({ error: "Voyant Cloud auth broker is misconfigured" }, 500)
+  }
 })
 
 auth.get("/auth/cloud/callback", async (c) => {
@@ -377,7 +434,32 @@ auth.get("/auth/cloud/callback", async (c) => {
     return c.json({ error: "Not found" }, 404)
   }
 
-  return cloudAuthNotConfiguredResponse(c)
+  const result = await verifyCloudAdminAuthCallback({
+    requestUrl: c.req.url,
+    cookieHeader: c.req.header("cookie"),
+    cookieSecret: c.env.SESSION_CLAIMS_SECRET,
+  })
+
+  if (!result.ok) {
+    const status = result.error === "cloud_error" ? 401 : 400
+    return c.json(
+      {
+        error: result.error,
+        ...(result.cloudError ? { cloudError: result.cloudError } : {}),
+      },
+      status,
+      { "Set-Cookie": result.clearCookie },
+    )
+  }
+
+  return c.json(
+    {
+      error: "Voyant Cloud auth exchange is not configured yet",
+      deploymentId: result.state.deploymentId,
+    },
+    501,
+    { "Set-Cookie": result.clearCookie },
+  )
 })
 
 auth.all("/auth/api-tokens", handleApiTokensFacade)

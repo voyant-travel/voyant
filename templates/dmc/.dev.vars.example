@@ -16,6 +16,11 @@ INTERNAL_API_KEY="<generate with: openssl rand -hex 32>"
 # Cloud deployments set this to "voyant-cloud"; in that mode local sign-in,
 # sign-up, password reset, invites, and local OAuth are blocked server-side.
 # VOYANT_ADMIN_AUTH_MODE="local"
+# Cloud mode broker settings are injected by Voyant Cloud deployments.
+# VOYANT_CLOUD_ADMIN_AUTH_START_URL="https://dash.voyantcloud.com/admin-auth/start"
+# VOYANT_CLOUD_DEPLOYMENT_ID="dep_..."
+# VOYANT_CLOUD_APP_ID="app_..."
+# VOYANT_CLOUD_ENVIRONMENT="production"
 
 # CORS / URLs
 API_BASE_URL="http://localhost:3100/api"

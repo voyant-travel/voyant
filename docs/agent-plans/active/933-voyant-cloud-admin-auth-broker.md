@@ -200,6 +200,20 @@ Implemented in `issue-933-cloud-auth-broker`:
   accounts. Operator and DMC migrations create those tables/indexes so future
   exchange/revalidate code has a typed place to store WorkOS/platform linkage
   without leaking it through Better Auth's session response.
+- `@voyantjs/auth/cloud-broker` now centralizes the admin-owned browser state
+  for the broker redirect. It creates a signed, HttpOnly, short-lived state
+  cookie, generates state/nonce values, normalizes the post-login `next`
+  destination to same-origin paths, builds the Voyant Cloud dashboard
+  `/admin-auth/start` redirect, and verifies callback state before any exchange
+  code may run.
+- Operator and DMC `/auth/cloud/start` now perform the real broker redirect
+  when `VOYANT_CLOUD_ADMIN_AUTH_START_URL` and `VOYANT_CLOUD_DEPLOYMENT_ID` are
+  configured. `/auth/cloud/callback` validates state and clears the state cookie,
+  then still returns `501` because signed assertion exchange and Better
+  Auth-backed local session issuance are intentionally not implemented yet.
+- Template env docs now include the Cloud-injected broker settings:
+  `VOYANT_CLOUD_ADMIN_AUTH_START_URL`, `VOYANT_CLOUD_DEPLOYMENT_ID`,
+  `VOYANT_CLOUD_APP_ID`, and `VOYANT_CLOUD_ENVIRONMENT`.
 
 ### Broker Flow
 
