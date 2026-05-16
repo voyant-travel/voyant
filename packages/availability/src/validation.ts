@@ -164,6 +164,7 @@ export const upsertResourceTemplateSchema = z.object({
   refType: z.string().trim().min(1).nullable().optional(),
   refId: z.string().trim().min(1).nullable().optional(),
   layout: z.string().trim().min(1).nullable().optional(),
+  defaultCount: z.number().int().min(0).nullable().optional(),
   flags: allocationResourceFlagsSchema.default({}),
 })
 

@@ -1,3 +1,8 @@
+import {
+  getSlotResourceAvailability,
+  getSlotsResourceAvailability,
+  type SlotResourceAvailability,
+} from "@voyantjs/availability"
 import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
 import { productExtras } from "@voyantjs/extras/schema"
 import {
@@ -1287,9 +1292,11 @@ async function buildDeparture(
   slot: SlotRow,
   defaultItineraryByProduct: Map<string, string>,
   meetingPointByProduct?: Map<string, string>,
+  resourceAvailability?: SlotResourceAvailability[],
 ) {
   const context = await resolvePricingContext(db, slot.productId, slot.optionId)
   const itineraryId = slot.itineraryId ?? defaultItineraryByProduct.get(slot.productId) ?? null
+  const resources = resourceAvailability ?? []
 
   return {
     id: slot.id,
@@ -1316,6 +1323,34 @@ async function buildDeparture(
     nights: slot.nights,
     days: slot.days,
     ratePlans: buildRatePlans(context),
+    resourceManifest: buildResourceManifest(resources),
+  }
+}
+
+function buildResourceManifest(resources: SlotResourceAvailability[]) {
+  if (resources.length === 0) return null
+  const totals = new Map<string, { capacity: number; assigned: number; available: number }>()
+  for (const resource of resources) {
+    const bucket = totals.get(resource.kind) ?? { capacity: 0, assigned: 0, available: 0 }
+    bucket.capacity += resource.capacity
+    bucket.assigned += resource.assigned
+    bucket.available += resource.available
+    totals.set(resource.kind, bucket)
+  }
+  return {
+    kinds: [...totals.entries()].map(([kind, totals]) => ({ kind, ...totals })),
+    resources: resources.map((resource) => ({
+      id: resource.id,
+      kind: resource.kind,
+      label: resource.label,
+      refType: resource.refType,
+      refId: resource.refId,
+      capacity: resource.capacity,
+      assigned: resource.assigned,
+      available: resource.available,
+      parentId: resource.parentId,
+      flags: resource.flags,
+    })),
   }
 }
 
@@ -1325,12 +1360,20 @@ export async function getStorefrontDeparture(db: PostgresJsDatabase, departureId
     return null
   }
 
-  const [meetingPointByProduct, defaultItineraryByProduct] = await Promise.all([
-    listMeetingPointsByProductIds(db, [slot.productId]),
-    listDefaultItineraryIdsByProductIds(db, [slot.productId]),
-  ])
+  const [meetingPointByProduct, defaultItineraryByProduct, resourceAvailability] =
+    await Promise.all([
+      listMeetingPointsByProductIds(db, [slot.productId]),
+      listDefaultItineraryIdsByProductIds(db, [slot.productId]),
+      getSlotsResourceAvailability(db, [slot.id]),
+    ])
 
-  return buildDeparture(db, slot, defaultItineraryByProduct, meetingPointByProduct)
+  return buildDeparture(
+    db,
+    slot,
+    defaultItineraryByProduct,
+    meetingPointByProduct,
+    resourceAvailability.get(slot.id) ?? [],
+  )
 }
 
 export async function listStorefrontProductDepartures(
@@ -1353,12 +1396,25 @@ export async function listStorefrontProductDepartures(
     }),
     countSlots(db, filters),
   ])
-  const [meetingPointByProduct, defaultItineraryByProduct] = await Promise.all([
-    listMeetingPointsByProductIds(db, [productId]),
-    listDefaultItineraryIdsByProductIds(db, [productId]),
-  ])
+  const [meetingPointByProduct, defaultItineraryByProduct, resourceAvailability] =
+    await Promise.all([
+      listMeetingPointsByProductIds(db, [productId]),
+      listDefaultItineraryIdsByProductIds(db, [productId]),
+      getSlotsResourceAvailability(
+        db,
+        slots.map((slot) => slot.id),
+      ),
+    ])
   const data = await Promise.all(
-    slots.map((slot) => buildDeparture(db, slot, defaultItineraryByProduct, meetingPointByProduct)),
+    slots.map((slot) =>
+      buildDeparture(
+        db,
+        slot,
+        defaultItineraryByProduct,
+        meetingPointByProduct,
+        resourceAvailability.get(slot.id) ?? [],
+      ),
+    ),
   )
 
   return {
@@ -1657,6 +1713,8 @@ export async function previewStorefrontDeparturePrice(
   const total = offers.totalAfterDiscount
   const extrasTotal = withExtras.impacts.reduce((sum, extra) => sum + extra.total, 0)
   const basePrice = Number((subtotal - extrasTotal).toFixed(2))
+  const slotResources = await getSlotResourceAvailability(db, slot.id)
+  const resourceManifest = buildResourceManifest(slotResources)
 
   return {
     departureId: slot.id,
@@ -1689,6 +1747,7 @@ export async function previewStorefrontDeparturePrice(
         remaining: slot.remainingPax ?? slot.remainingResources ?? null,
         pastCutoff: slot.pastCutoff,
         tooEarly: slot.tooEarly,
+        resourceManifest,
       },
       pax: {
         adults,

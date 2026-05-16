@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { expandRRule } from "./rrule.js"
 import { availabilityRules, availabilitySlots } from "./schema.js"
+import { materializeSlotResourcesFromTemplateDefaults } from "./service-allocation-automation.js"
 
 export type GenerateAvailabilitySlotsOptions = {
   /** If provided, only generate slots for this rule. Otherwise, process all active rules. */
@@ -15,12 +16,20 @@ export type GenerateAvailabilitySlotsOptions = {
   perRuleLimit?: number
   /** Override "now" for deterministic generation. Defaults to new Date(). */
   now?: Date
+  /**
+   * Auto-seed `allocation_resources` for each freshly-created slot from
+   * its option's `product_option_resource_templates.default_count`.
+   * Templates without `default_count` are still skipped — those need
+   * pax-aware materialisation via the admin route. Defaults to true.
+   */
+  materializeResources?: boolean
 }
 
 export type GenerateAvailabilitySlotsResult = {
   rulesProcessed: number
   slotsCreated: number
   slotsSkipped: number
+  resourcesMaterialized: number
 }
 
 /**
@@ -38,6 +47,7 @@ export async function generateAvailabilitySlots(
   const defaultStartTime = options.defaultStartTime ?? "09:00"
   const perRuleLimit = options.perRuleLimit ?? 1000
   const now = options.now ?? new Date()
+  const shouldMaterializeResources = options.materializeResources !== false
 
   const from = new Date(now)
   from.setUTCHours(0, 0, 0, 0)
@@ -54,6 +64,7 @@ export async function generateAvailabilitySlots(
 
   let slotsCreated = 0
   let slotsSkipped = 0
+  let resourcesMaterialized = 0
 
   for (const rule of rules) {
     const dates = expandRRule(rule.recurrenceRule, from, to, perRuleLimit)
@@ -101,13 +112,25 @@ export async function generateAvailabilitySlots(
       }
     })
 
-    await db.insert(availabilitySlots).values(rows)
-    slotsCreated += rows.length
+    const inserted = await db
+      .insert(availabilitySlots)
+      .values(rows)
+      .returning({ id: availabilitySlots.id, optionId: availabilitySlots.optionId })
+    slotsCreated += inserted.length
+
+    if (shouldMaterializeResources && rule.optionId) {
+      for (const created of inserted) {
+        if (!created.optionId) continue
+        const result = await materializeSlotResourcesFromTemplateDefaults(db, created.id)
+        resourcesMaterialized += result.created
+      }
+    }
   }
 
   return {
     rulesProcessed: rules.length,
     slotsCreated,
     slotsSkipped,
+    resourcesMaterialized,
   }
 }
