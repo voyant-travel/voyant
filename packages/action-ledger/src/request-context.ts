@@ -117,6 +117,7 @@ interface CommonActionLedgerRouteInput {
   capabilityVersion?: string | null
   authorizationSource?: string | null
   causationActionId?: string | null
+  approvalId?: string | null
   idempotencyScope?: string | null
   idempotencyKey?: string | null
   idempotencyFingerprint?: string | null
@@ -246,6 +247,7 @@ export function buildActionLedgerSensitiveReadEntryInput(
     capabilityVersion: input.capabilityVersion ?? null,
     authorizationSource: input.authorizationSource ?? null,
     causationActionId: input.causationActionId ?? null,
+    approvalId: input.approvalId ?? null,
     idempotencyScope: input.idempotencyScope ?? null,
     idempotencyKey: input.idempotencyKey ?? null,
     idempotencyFingerprint: input.idempotencyFingerprint ?? null,
@@ -300,6 +302,7 @@ export function buildActionLedgerMutationEntryInput(
     capabilityVersion: input.capabilityVersion ?? null,
     authorizationSource: input.authorizationSource ?? null,
     causationActionId: input.causationActionId ?? null,
+    approvalId: input.approvalId ?? null,
     idempotencyScope: input.idempotencyScope ?? null,
     idempotencyKey: input.idempotencyKey ?? null,
     idempotencyFingerprint: input.idempotencyFingerprint ?? null,

@@ -168,6 +168,8 @@ describe("action ledger route entry builders", () => {
       actionKind: "update",
       targetType: "booking",
       targetId: "book_1",
+      causationActionId: "alact_requested_1",
+      approvalId: "alap_1",
       payloads: [
         {
           payloadKind: "command_input",
@@ -194,6 +196,8 @@ describe("action ledger route entry builders", () => {
       principalId: "usr_1",
       targetType: "booking",
       targetId: "book_1",
+      causationActionId: "alact_requested_1",
+      approvalId: "alap_1",
       payloads: [
         {
           payloadKind: "command_input",
