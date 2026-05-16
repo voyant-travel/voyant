@@ -6,6 +6,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { allocationResources, availabilitySlots } from "../../src/schema.js"
 import {
+  getSlotAllocationManifest,
   getSlotResourceAvailability,
   validateSlotAllocationCapacity,
 } from "../../src/service-allocation.js"
@@ -152,5 +153,50 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
     ])
     expect(violations).toHaveLength(1)
     expect(violations[0]?.kind).toBe("vehicle_seat")
+  })
+
+  // Regression for #952 — when a slot had 2+ bookings, the manifest
+  // query crashed with `cannot cast type record to text[]` because
+  // drizzle's `sql` template spreads JS arrays into a tuple, not a
+  // text[] literal. The `sqlTextArray` helper emits `ARRAY[$1, $2,
+  // …]::text[]` instead. Single-booking slots happened to work
+  // because `(($1)::text[])` evaluates as the lone value.
+  it("loads the manifest for a slot with multiple bookings without a record-cast crash", async () => {
+    const dblId = await seedResource({ kind: "room", capacity: 4, label: "DBL 1" })
+    await seedBookingWithTraveler({
+      travelerId: newId("booking_travelers"),
+      allocations: { room: dblId },
+    })
+    await seedBookingWithTraveler({
+      travelerId: newId("booking_travelers"),
+      allocations: { room: dblId },
+    })
+    await seedBookingWithTraveler({
+      travelerId: newId("booking_travelers"),
+    })
+
+    const manifest = await getSlotAllocationManifest(db, slotId)
+    expect(manifest).not.toBeNull()
+    expect(manifest?.bookings).toHaveLength(3)
+    expect(manifest?.summary.travelerCount).toBe(3)
+  })
+
+  it("validates allocations across multiple resources without a record-cast crash", async () => {
+    const dblId = await seedResource({ kind: "room", capacity: 2, label: "DBL 1" })
+    const twnId = await seedResource({ kind: "room", capacity: 2, label: "TWN 1" })
+    await seedBookingWithTraveler({
+      travelerId: newId("booking_travelers"),
+      allocations: { room: dblId },
+    })
+    await seedBookingWithTraveler({
+      travelerId: newId("booking_travelers"),
+      allocations: { room: twnId },
+    })
+
+    const violations = await validateSlotAllocationCapacity(db, slotId, [
+      { travelerId: newId("booking_travelers"), kind: "room", resourceId: dblId },
+      { travelerId: newId("booking_travelers"), kind: "room", resourceId: twnId },
+    ])
+    expect(violations).toEqual([])
   })
 })
