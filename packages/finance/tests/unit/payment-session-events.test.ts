@@ -4,6 +4,7 @@ import {
   buildBookingPaymentSchedulePaidEvent,
   buildPaymentCompletedEvent,
   buildPaymentSessionCompletionActionLedgerInput,
+  buildRecordPaymentActionLedgerInput,
 } from "../../src/service.js"
 
 describe("payment session events", () => {
@@ -107,6 +108,51 @@ describe("payment session events", () => {
         commandInputRef: "payment_session:psess_123:complete",
         commandResultRef: "payment:pay_123",
         summary: "Payment session psess_123 completed as paid",
+        reversalKind: "none",
+      },
+    })
+    expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds booking-targeted action ledger input for manual payment records", async () => {
+    const ledgerInput = await buildRecordPaymentActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          bookingId: "book_123",
+        } as never,
+        payment: {
+          id: "pay_123",
+          amountCents: 25000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2026-05-16",
+          referenceNumber: "bank-ref-123",
+          paymentAuthorizationId: null,
+          paymentCaptureId: null,
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment.record",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.payment.record",
+      authorizationSource: "finance.payment.route",
+      idempotencyScope: "finance.invoice:inv_123:payment",
+      idempotencyKey: "bank-ref-123",
+      mutationDetail: {
+        commandInputRef: "invoice:inv_123:payment",
+        commandResultRef: "payment:pay_123",
+        summary: "Payment pay_123 recorded for invoice inv_123",
         reversalKind: "none",
       },
     })

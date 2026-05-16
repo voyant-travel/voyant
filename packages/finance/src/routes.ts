@@ -932,10 +932,16 @@ export const financeRoutes = new Hono<Env>()
   // POST /invoices/:id/payments — Record payment (transaction)
   .post("/invoices/:id/payments", async (c) => {
     try {
+      const runtime = getFinanceRouteRuntime(c)
       const row = await financeService.createPayment(
         c.get("db"),
         c.req.param("id"),
         await parseJsonBody(c, insertPaymentSchema),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.payment.route",
+        },
       )
 
       if (!row) {

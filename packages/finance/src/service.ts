@@ -424,10 +424,16 @@ export interface PaymentCompletedEvent {
 }
 
 type PaymentSessionRecord = typeof paymentSessions.$inferSelect
+type InvoiceRecord = typeof invoices.$inferSelect
+type PaymentRecord = typeof payments.$inferSelect
 type CompletePaymentSessionLedgerInput = {
   session: PaymentSessionRecord
   status: CompletePaymentSessionInput["status"]
   paymentId: string | null
+}
+type RecordPaymentLedgerInput = {
+  invoice: InvoiceRecord
+  payment: PaymentRecord
 }
 
 export async function buildPaymentSessionCompletionActionLedgerInput(
@@ -489,6 +495,67 @@ function getPaymentSessionCompletionLedgerTarget(session: PaymentSessionRecord) 
   if (session.invoiceId) return { type: "invoice", id: session.invoiceId }
   if (session.orderId) return { type: "order", id: session.orderId }
   return { type: "payment_session", id: session.id }
+}
+
+export async function buildRecordPaymentActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: RecordPaymentLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const target = getInvoiceLedgerTarget(input.invoice)
+  const idempotencyKey =
+    input.payment.referenceNumber ??
+    input.payment.paymentCaptureId ??
+    input.payment.paymentAuthorizationId ??
+    null
+  const idempotencyFingerprint = idempotencyKey
+    ? await buildIdempotencyFingerprint({
+        actionName: "finance.payment.record",
+        actionVersion: "v1",
+        targetType: target.type,
+        targetId: target.id,
+        commandInput: {
+          invoiceId: input.invoice.id,
+          paymentId: input.payment.id,
+          amountCents: input.payment.amountCents,
+          currency: input.payment.currency,
+          paymentMethod: input.payment.paymentMethod,
+          paymentDate: input.payment.paymentDate,
+          referenceNumber: input.payment.referenceNumber,
+          paymentAuthorizationId: input.payment.paymentAuthorizationId,
+          paymentCaptureId: input.payment.paymentCaptureId,
+        },
+      })
+    : null
+
+  return {
+    context,
+    actionName: "finance.payment.record",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment.record",
+    authorizationSource: options.authorizationSource ?? "finance.payment.route",
+    idempotencyScope: idempotencyKey ? `finance.invoice:${input.invoice.id}:payment` : null,
+    idempotencyKey,
+    idempotencyFingerprint,
+    mutationDetail: {
+      commandInputRef: `invoice:${input.invoice.id}:payment`,
+      commandResultRef: `payment:${input.payment.id}`,
+      summary: `Payment ${input.payment.id} recorded for invoice ${input.invoice.id}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+function getInvoiceLedgerTarget(invoice: InvoiceRecord) {
+  if (invoice.bookingId) return { type: "booking", id: invoice.bookingId }
+  return { type: "invoice", id: invoice.id }
 }
 
 export interface BindInvoiceRenditionInput {
@@ -2611,7 +2678,12 @@ export const financeService = {
     return row ? mapRawPayment(row) : null
   },
 
-  async createPayment(db: PostgresJsDatabase, invoiceId: string, data: CreatePaymentInput) {
+  async createPayment(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: CreatePaymentInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
 
     if (!invoice) {
@@ -2651,6 +2723,22 @@ export const financeService = {
         .update(invoices)
         .set({ paidCents, balanceDueCents, status: newStatus, updatedAt: new Date() })
         .where(eq(invoices.id, invoiceId))
+
+      if (payment && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildRecordPaymentActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              invoice,
+              payment,
+            },
+            {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            },
+          ),
+        )
+      }
 
       return payment
     })
