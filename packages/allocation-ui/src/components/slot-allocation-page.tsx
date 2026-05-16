@@ -1,7 +1,9 @@
 "use client"
 
+import { useQuery } from "@tanstack/react-query"
 import {
   type AllocationManifestTraveler,
+  getSlotQueryOptions,
   type SlotAllocationManifest,
   useAllocationAutomationMutation,
   useAllocationResourceMutation,
@@ -9,9 +11,29 @@ import {
   useProductResourceTemplates,
   useSlotAllocation,
   useSlotAllocationAuditLog,
+  useVoyantAvailabilityContext,
 } from "@voyantjs/availability-react"
-import { Button, cn, Input, Label, Tabs, TabsList, TabsTrigger } from "@voyantjs/ui/components"
-import { Armchair, ArrowLeft, Bed, Download, Plus, Sparkles, Users, Wand2 } from "lucide-react"
+import {
+  Badge,
+  Button,
+  cn,
+  Input,
+  Label,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from "@voyantjs/ui/components"
+import {
+  AlertTriangle,
+  Armchair,
+  ArrowLeft,
+  Bed,
+  Download,
+  Plus,
+  Sparkles,
+  Users,
+  Wand2,
+} from "lucide-react"
 import { type FormEvent, type ReactNode, useMemo, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
@@ -22,7 +44,9 @@ import {
   kindLabel,
   PARENT_ONLY_KINDS,
   parentKindFor,
+  type ResourceCapacitySummary,
   ROOM_KIND,
+  summarizeResourceCapacity,
   VEHICLE_SEAT_KIND,
 } from "./slot-allocation-model.js"
 import { ResourceColumnsView } from "./slot-allocation-resource-view.js"
@@ -70,7 +94,10 @@ export function SlotAllocationPage({
   extraTabs = [],
 }: SlotAllocationPageProps) {
   const messages = useAllocationUiMessagesOrDefault()
+  const availabilityClient = useVoyantAvailabilityContext()
   const allocation = useSlotAllocation({ slotId })
+  const slotRowQuery = useQuery(getSlotQueryOptions(availabilityClient, slotId))
+  const slotRow = slotRowQuery.data?.data
   const auditLog = useSlotAllocationAuditLog({ slotId })
   const resourceMutation = useAllocationResourceMutation(slotId)
   const assignMutation = useAssignTravelerAllocationMutation(slotId)
@@ -136,6 +163,51 @@ export function SlotAllocationPage({
     () => buildValidationIssues({ travelers, resources, occupants, kind: activeKind, messages }),
     [travelers, resources, occupants, activeKind, messages],
   )
+  const capacitySummary = useMemo<ResourceCapacitySummary>(
+    () =>
+      summarizeResourceCapacity({
+        resources,
+        slotInitialPax: slotRow?.initialPax ?? null,
+        slotRemainingPax: slotRow?.remainingPax ?? null,
+        unlimited: slotRow?.unlimited ?? false,
+      }),
+    [resources, slotRow?.initialPax, slotRow?.remainingPax, slotRow?.unlimited],
+  )
+  const projectedSummary = useMemo<ResourceCapacitySummary | null>(() => {
+    if (!addingResource) return null
+    const capacityNumber = Number.isFinite(resourceCapacity) ? Math.max(0, resourceCapacity) : 0
+    return summarizeResourceCapacity({
+      resources: [
+        ...resources,
+        {
+          id: "__projected__",
+          slotId,
+          kind: activeKind,
+          label: null,
+          refType: null,
+          refId: null,
+          capacity: capacityNumber,
+          flags: {},
+          parentId: null,
+          sortOrder: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      slotInitialPax: slotRow?.initialPax ?? null,
+      slotRemainingPax: slotRow?.remainingPax ?? null,
+      unlimited: slotRow?.unlimited ?? false,
+    })
+  }, [
+    addingResource,
+    resourceCapacity,
+    resources,
+    slotId,
+    activeKind,
+    slotRow?.initialPax,
+    slotRow?.remainingPax,
+    slotRow?.unlimited,
+  ])
 
   function downloadExport(kind: "passengers" | "rooming-list") {
     globalThis.location.assign(
@@ -279,6 +351,13 @@ export function SlotAllocationPage({
                   {resources.length} {kindLabel(activeKind, messages).toLowerCase()}
                 </span>
               )}
+              {selectedExtraTab ? null : (
+                <CapacitySummaryBadges
+                  summary={capacitySummary}
+                  messages={messages}
+                  kind={activeKind}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -367,45 +446,60 @@ export function SlotAllocationPage({
           ) : null}
 
           {addingResource && canManuallyAddResource ? (
-            <form
-              className="grid gap-3 rounded-md border bg-muted/30 p-3 sm:grid-cols-[1fr_8rem_auto_auto]"
-              onSubmit={createResource}
-            >
-              <div className="grid gap-1">
-                <Label htmlFor="allocation-resource-label">{messages.resourceLabel}</Label>
-                <Input
-                  id="allocation-resource-label"
-                  value={resourceLabel}
-                  onChange={(event) => setResourceLabel(event.target.value)}
-                  placeholder={activeKind === ROOM_KIND ? "102" : kindLabel(activeKind, messages)}
-                />
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="allocation-resource-capacity">{messages.resourceCapacity}</Label>
-                <Input
-                  id="allocation-resource-capacity"
-                  type="number"
-                  min={1}
-                  value={resourceCapacity}
-                  onChange={(event) => setResourceCapacity(Number(event.target.value) || 1)}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="self-end"
-                disabled={resourceMutation.create.isPending}
+            <div className="flex flex-col gap-2">
+              <form
+                className="grid gap-3 rounded-md border bg-muted/30 p-3 sm:grid-cols-[1fr_8rem_auto_auto]"
+                onSubmit={createResource}
               >
-                {messages.createResource}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="self-end"
-                onClick={() => setAddingResource(false)}
-              >
-                {messages.cancel}
-              </Button>
-            </form>
+                <div className="grid gap-1">
+                  <Label htmlFor="allocation-resource-label">{messages.resourceLabel}</Label>
+                  <Input
+                    id="allocation-resource-label"
+                    value={resourceLabel}
+                    onChange={(event) => setResourceLabel(event.target.value)}
+                    placeholder={activeKind === ROOM_KIND ? "102" : kindLabel(activeKind, messages)}
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="allocation-resource-capacity">{messages.resourceCapacity}</Label>
+                  <Input
+                    id="allocation-resource-capacity"
+                    type="number"
+                    min={1}
+                    value={resourceCapacity}
+                    onChange={(event) => setResourceCapacity(Number(event.target.value) || 1)}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="self-end"
+                  disabled={resourceMutation.create.isPending}
+                >
+                  {messages.createResource}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="self-end"
+                  onClick={() => setAddingResource(false)}
+                >
+                  {messages.cancel}
+                </Button>
+              </form>
+              {projectedSummary?.status === "over" && projectedSummary.delta != null ? (
+                <div
+                  className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100"
+                  role="status"
+                >
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <span>
+                    {messages.overCapacityWarning} {projectedSummary.resourceCapacity}/
+                    {projectedSummary.slotPax ?? "?"} ({messages.resourceCapacityOver}:{" "}
+                    {projectedSummary.delta})
+                  </span>
+                </div>
+              ) : null}
+            </div>
           ) : null}
 
           <ValidationSummary
@@ -450,5 +544,56 @@ export function SlotAllocationPage({
 
       <AuditLogCard entries={auditLog.data?.data ?? []} />
     </div>
+  )
+}
+
+function CapacitySummaryBadges({
+  summary,
+  messages,
+  kind,
+}: {
+  summary: ResourceCapacitySummary
+  messages: ReturnType<typeof useAllocationUiMessagesOrDefault>
+  kind: string
+}) {
+  if (summary.resourceCount === 0 && summary.slotPax == null) return null
+
+  const slotLabel =
+    summary.slotPax == null
+      ? messages.slotCapacityUnlimited
+      : `${summary.slotRemainingPax ?? 0}/${summary.slotPax}`
+  const resourceLabel =
+    summary.slotPax == null
+      ? String(summary.resourceCapacity)
+      : `${summary.resourceCapacity}/${summary.slotPax}`
+
+  const deltaVariant =
+    summary.status === "over"
+      ? "destructive"
+      : summary.status === "exact"
+        ? "default"
+        : summary.status === "fits"
+          ? "secondary"
+          : "outline"
+  const deltaLabel =
+    summary.status === "over"
+      ? `${messages.resourceCapacityOver}: ${summary.delta ?? 0}`
+      : summary.status === "exact"
+        ? messages.resourceCapacityExact
+        : summary.status === "fits"
+          ? messages.resourceCapacityFits
+          : null
+
+  return (
+    <span className="contents" data-kind={kind} title={kindLabel(kind, messages)}>
+      <Badge variant="outline" className="gap-1">
+        <Users className="size-3" aria-hidden="true" />
+        {messages.slotCapacityLabel}: {slotLabel}
+      </Badge>
+      <Badge variant="outline" className="gap-1">
+        {messages.resourceCapacityLabel}: {resourceLabel}
+      </Badge>
+      {deltaLabel ? <Badge variant={deltaVariant}>{deltaLabel}</Badge> : null}
+    </span>
   )
 }

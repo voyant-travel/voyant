@@ -178,6 +178,96 @@ export function kindLabel(kind: string, messages: AllocationUiMessages) {
   return titleCaseKind(kind)
 }
 
+/**
+ * Group resources for display by a "sub-type" — `refId` when present,
+ * otherwise the leading alphabetic token of `label` ("DBL" from
+ * "DBL 1"), otherwise a single "other" bucket. Lets the operator scan
+ * all DBLs together instead of an alphabetic interleave of mixed
+ * sub-types. Each group also exposes the count and the total person-
+ * capacity so the header summary stays consistent with the grid.
+ */
+export interface ResourceSubTypeGroup {
+  key: string
+  label: string
+  resources: AllocationResource[]
+  count: number
+  capacity: number
+}
+
+export function groupResourcesBySubType(resources: AllocationResource[]): ResourceSubTypeGroup[] {
+  const buckets = new Map<string, { key: string; label: string; resources: AllocationResource[] }>()
+  for (const resource of resources) {
+    const { key, label } = resourceSubTypeKey(resource)
+    const bucket = buckets.get(key) ?? { key, label, resources: [] }
+    bucket.resources.push(resource)
+    buckets.set(key, bucket)
+  }
+  return Array.from(buckets.values())
+    .map((bucket) => ({
+      key: bucket.key,
+      label: bucket.label,
+      resources: bucket.resources,
+      count: bucket.resources.length,
+      capacity: bucket.resources.reduce((sum, resource) => sum + resource.capacity, 0),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label) || a.key.localeCompare(b.key))
+}
+
+function resourceSubTypeKey(resource: AllocationResource): { key: string; label: string } {
+  if (resource.refId) return { key: `ref:${resource.refId}`, label: resource.refId }
+  const label = (resource.label ?? "").trim()
+  if (label.length > 0) {
+    const prefix = label.match(/^[A-Za-z]+/)?.[0]
+    if (prefix) return { key: `prefix:${prefix.toUpperCase()}`, label: prefix.toUpperCase() }
+  }
+  return { key: "other", label: "Other" }
+}
+
+export interface ResourceCapacitySummary {
+  resourceCount: number
+  resourceCapacity: number
+  slotPax: number | null
+  slotRemainingPax: number | null
+  delta: number | null
+  status: "fits" | "exact" | "over" | "unbounded"
+}
+
+/**
+ * Roll up slot pax vs. resource person-capacity into a single summary
+ * the header can render as a coloured pill. `slotPax` is the slot's
+ * `initialPax` when finite; if the slot is `unlimited` or has no
+ * initial pax we treat it as unbounded and the operator only sees the
+ * total resource capacity without a delta.
+ */
+export function summarizeResourceCapacity(input: {
+  resources: AllocationResource[]
+  slotInitialPax: number | null | undefined
+  slotRemainingPax: number | null | undefined
+  unlimited: boolean
+}): ResourceCapacitySummary {
+  const resourceCapacity = input.resources.reduce((sum, resource) => sum + resource.capacity, 0)
+  const slotPax = input.unlimited ? null : (input.slotInitialPax ?? null)
+  if (slotPax == null) {
+    return {
+      resourceCount: input.resources.length,
+      resourceCapacity,
+      slotPax: null,
+      slotRemainingPax: input.unlimited ? null : (input.slotRemainingPax ?? null),
+      delta: null,
+      status: "unbounded",
+    }
+  }
+  const delta = resourceCapacity - slotPax
+  return {
+    resourceCount: input.resources.length,
+    resourceCapacity,
+    slotPax,
+    slotRemainingPax: input.slotRemainingPax ?? null,
+    delta,
+    status: delta > 0 ? "over" : delta === 0 ? "exact" : "fits",
+  }
+}
+
 export function flagString(value: unknown) {
   return typeof value === "string" ? value : null
 }

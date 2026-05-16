@@ -57,6 +57,13 @@ export type AllocationUiMessages = Record<string, unknown> & {
   remove: string
   overCapacity: string
   dropHere: string
+  slotCapacityLabel: string
+  slotCapacityUnlimited: string
+  resourceCapacityLabel: string
+  resourceCapacityFits: string
+  resourceCapacityExact: string
+  resourceCapacityOver: string
+  overCapacityWarning: string
   noRooms: string
   noResources: string
   noSeats: string
@@ -135,6 +142,13 @@ export const allocationUiEn = {
   remove: "Remove",
   overCapacity: "Resource is full",
   dropHere: "Drop traveler here",
+  slotCapacityLabel: "Slot pax",
+  slotCapacityUnlimited: "Unlimited",
+  resourceCapacityLabel: "Resource capacity",
+  resourceCapacityFits: "fits in slot",
+  resourceCapacityExact: "matches slot",
+  resourceCapacityOver: "over slot cap",
+  overCapacityWarning: "Resource capacity exceeds the slot's pax cap.",
   noRooms: "No rooms have been added for this slot.",
   noResources: "No resources have been added for this slot.",
   noSeats: "No vehicle seats have been generated for this slot.",
@@ -213,6 +227,13 @@ export const allocationUiRo = {
   remove: "Scoate",
   overCapacity: "Resursa este plina",
   dropHere: "Trage calatorul aici",
+  slotCapacityLabel: "Pax slot",
+  slotCapacityUnlimited: "Nelimitat",
+  resourceCapacityLabel: "Capacitate resurse",
+  resourceCapacityFits: "incape in slot",
+  resourceCapacityExact: "egal cu slotul",
+  resourceCapacityOver: "depaseste slotul",
+  overCapacityWarning: "Capacitatea resurselor depaseste limita de pax a slotului.",
   noRooms: "Nu exista camere adaugate pentru acest slot.",
   noResources: "Nu exista resurse adaugate pentru acest slot.",
   noSeats: "Nu exista locuri generate pentru acest slot.",

@@ -6,7 +6,12 @@ import { Armchair, Bed, Pencil, Trash2, Users } from "lucide-react"
 import { type FormEvent, type ReactNode, useEffect, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
-import { type AllocationOccupants, kindLabel, VEHICLE_SEAT_KIND } from "./slot-allocation-model.js"
+import {
+  type AllocationOccupants,
+  groupResourcesBySubType,
+  kindLabel,
+  VEHICLE_SEAT_KIND,
+} from "./slot-allocation-model.js"
 import { DropColumn, ResourceFlagBadges, TravelerTile } from "./slot-allocation-shared.js"
 
 export interface EditResourceInput {
@@ -60,28 +65,42 @@ export function ResourceColumnsView({
         ))}
       </DropColumn>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      <div className="flex min-w-0 flex-col gap-6">
         {resources.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
             {messages.noResources}
           </div>
         ) : (
-          resources.map((resource) => (
-            <AllocationResourceColumn
-              key={resource.id}
-              kind={kind}
-              resource={resource}
-              occupants={occupants.byResource.get(resource.id) ?? []}
-              sharingGroupLabels={sharingGroupLabels}
-              onDropTraveler={(travelerId) => onDropTraveler(travelerId, resource.id)}
-              onRemoveResource={() => onRemoveResource(resource.id)}
-              onEditResource={
-                onEditResource
-                  ? (input) => Promise.resolve(onEditResource(resource.id, input))
-                  : undefined
-              }
-              renderTravelerActions={renderTravelerActions}
-            />
+          groupResourcesBySubType(resources).map((group) => (
+            <section key={group.key} aria-label={group.label} className="flex flex-col gap-3">
+              <header className="flex items-baseline justify-between gap-2 border-b pb-1">
+                <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+                  {group.label}
+                </h3>
+                <span className="text-xs text-muted-foreground">
+                  {group.count} · {messages.capacity.toLowerCase()} {group.capacity}
+                </span>
+              </header>
+              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                {group.resources.map((resource) => (
+                  <AllocationResourceColumn
+                    key={resource.id}
+                    kind={kind}
+                    resource={resource}
+                    occupants={occupants.byResource.get(resource.id) ?? []}
+                    sharingGroupLabels={sharingGroupLabels}
+                    onDropTraveler={(travelerId) => onDropTraveler(travelerId, resource.id)}
+                    onRemoveResource={() => onRemoveResource(resource.id)}
+                    onEditResource={
+                      onEditResource
+                        ? (input) => Promise.resolve(onEditResource(resource.id, input))
+                        : undefined
+                    }
+                    renderTravelerActions={renderTravelerActions}
+                  />
+                ))}
+              </div>
+            </section>
           ))
         )}
       </div>

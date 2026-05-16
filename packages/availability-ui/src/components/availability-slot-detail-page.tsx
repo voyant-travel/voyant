@@ -181,6 +181,17 @@ export function AvailabilitySlotDetailPage({
     else onBack?.()
   }
 
+  const productName = productQuery.data?.data.name ?? null
+  const dateRangeLabel = formatSlotDateRange(slot, i18n.formatDateTime)
+  const nightsLabel = computeSlotNightsLabel(slot)
+  const titleText = productName
+    ? `${productName} — ${dateRangeLabel}${nightsLabel ? ` · ${nightsLabel}` : ""}`
+    : dateRangeLabel
+
+  const showPickups = (slotPickupsQuery.data?.data.length ?? 0) > 0
+  const showAssignments = (assignmentsQuery.data?.data.length ?? 0) > 0
+  const showCloseouts = (closeoutsQuery.data?.data.length ?? 0) > 0
+
   return (
     <div className={cn("flex flex-col gap-6 p-6", className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -196,14 +207,21 @@ export function AvailabilitySlotDetailPage({
             </Button>
           ) : null}
           <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {slot.dateLocal} · {formatDateTime(slot.startsAt)}
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight">{titleText}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <Badge variant={slotStatusVariant[slot.status]}>
                 {getSlotStatusLabel(slot.status, messages)}
               </Badge>
               <Badge variant="outline">{slot.timezone}</Badge>
+              {slot.unlimited ? (
+                <Badge variant="outline">{detailMessages.slot.unlimitedLabel}</Badge>
+              ) : null}
+              {slot.pastCutoff ? (
+                <Badge variant="secondary">{detailMessages.slot.pastCutoffLabel}</Badge>
+              ) : null}
+              {slot.tooEarly ? (
+                <Badge variant="secondary">{detailMessages.slot.tooEarlyLabel}</Badge>
+              ) : null}
             </div>
           </div>
         </div>
@@ -232,35 +250,40 @@ export function AvailabilitySlotDetailPage({
           </CardHeader>
           <CardContent className="flex flex-col gap-3 text-sm">
             <DetailLine label={messages.productLabel}>
-              {productQuery.data?.data.name ?? slot.productId}
-            </DetailLine>
-            <DetailLine label={detailMessages.slot.ruleLabel}>
-              {slot.availabilityRuleId ?? noValue}
-            </DetailLine>
-            <DetailLine label={detailMessages.slot.startTimeIdLabel}>
-              {slot.startTimeId && onOpenStartTime ? (
+              {slot.productId && onOpenProduct ? (
                 <Button
                   variant="link"
                   className="h-auto p-0"
-                  onClick={() => onOpenStartTime(slot.startTimeId ?? "")}
+                  onClick={() => onOpenProduct(slot.productId)}
                 >
-                  {slot.startTimeId}
+                  {productName ?? slot.productId}
                 </Button>
               ) : (
-                (slot.startTimeId ?? noValue)
+                (productName ?? slot.productId ?? noValue)
               )}
             </DetailLine>
+            {slot.availabilityRuleId ? (
+              <DetailLine label={detailMessages.slot.ruleLabel}>
+                {slot.availabilityRuleId}
+              </DetailLine>
+            ) : null}
+            {slot.startTimeId ? (
+              <DetailLine label={detailMessages.slot.startTimeIdLabel}>
+                {onOpenStartTime ? (
+                  <Button
+                    variant="link"
+                    className="h-auto p-0"
+                    onClick={() => onOpenStartTime(slot.startTimeId ?? "")}
+                  >
+                    {slot.startTimeId}
+                  </Button>
+                ) : (
+                  slot.startTimeId
+                )}
+              </DetailLine>
+            ) : null}
             <DetailLine label={detailMessages.slot.endsAtLabel}>
-              {formatDateTime(slot.endsAt)}
-            </DetailLine>
-            <DetailLine label={detailMessages.slot.unlimitedLabel}>
-              {slot.unlimited ? detailMessages.yes : detailMessages.no}
-            </DetailLine>
-            <DetailLine label={detailMessages.slot.pastCutoffLabel}>
-              {slot.pastCutoff ? detailMessages.yes : detailMessages.no}
-            </DetailLine>
-            <DetailLine label={detailMessages.slot.tooEarlyLabel}>
-              {slot.tooEarly ? detailMessages.yes : detailMessages.no}
+              {slot.endsAt ? formatDateTime(slot.endsAt) : noValue}
             </DetailLine>
           </CardContent>
         </Card>
@@ -276,15 +299,21 @@ export function AvailabilitySlotDetailPage({
             <DetailLine label={messages.remainingPaxLabel}>
               {slot.remainingPax ?? noValue}
             </DetailLine>
-            <DetailLine label={detailMessages.slot.initialPickupsLabel}>
-              {slot.initialPickups ?? noValue}
-            </DetailLine>
-            <DetailLine label={detailMessages.slot.remainingPickupsLabel}>
-              {slot.remainingPickups ?? noValue}
-            </DetailLine>
-            <DetailLine label={detailMessages.slot.remainingResourcesLabel}>
-              {slot.remainingResources ?? noValue}
-            </DetailLine>
+            {slot.initialPickups != null ? (
+              <DetailLine label={detailMessages.slot.initialPickupsLabel}>
+                {slot.initialPickups}
+              </DetailLine>
+            ) : null}
+            {slot.remainingPickups != null ? (
+              <DetailLine label={detailMessages.slot.remainingPickupsLabel}>
+                {slot.remainingPickups}
+              </DetailLine>
+            ) : null}
+            {slot.remainingResources != null ? (
+              <DetailLine label={detailMessages.slot.remainingResourcesLabel}>
+                {slot.remainingResources}
+              </DetailLine>
+            ) : null}
             <DetailLine label={detailMessages.createdLabel}>
               {i18n.formatDateTime(slot.createdAt)}
             </DetailLine>
@@ -304,16 +333,14 @@ export function AvailabilitySlotDetailPage({
         </Card>
       ) : null}
 
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-2">
-          <Truck className="size-4" aria-hidden="true" />
-          <CardTitle>{detailMessages.slot.pickupCapacityTitle}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm">
-          {(slotPickupsQuery.data?.data.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground">{detailMessages.slot.pickupCapacityEmpty}</p>
-          ) : (
-            slotPickupsQuery.data?.data.map((pickup) => {
+      {showPickups ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <Truck className="size-4" aria-hidden="true" />
+            <CardTitle>{detailMessages.slot.pickupCapacityTitle}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 text-sm">
+            {slotPickupsQuery.data?.data.map((pickup) => {
               const point = pickupPointById.get(pickup.pickupPointId)
 
               return (
@@ -328,21 +355,19 @@ export function AvailabilitySlotDetailPage({
                   </div>
                 </div>
               )
-            })
-          )}
-        </CardContent>
-      </Card>
+            })}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-2">
-          <Wrench className="size-4" aria-hidden="true" />
-          <CardTitle>{detailMessages.slot.resourceAssignmentsTitle}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm">
-          {(assignmentsQuery.data?.data.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground">{detailMessages.slot.resourceAssignmentsEmpty}</p>
-          ) : (
-            assignmentsQuery.data?.data.map((assignment) => (
+      {showAssignments ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <Wrench className="size-4" aria-hidden="true" />
+            <CardTitle>{detailMessages.slot.resourceAssignmentsTitle}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 text-sm">
+            {assignmentsQuery.data?.data.map((assignment) => (
               <div key={assignment.id} className="rounded-md border p-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="capitalize">
@@ -368,21 +393,19 @@ export function AvailabilitySlotDetailPage({
                   <div className="mt-2 whitespace-pre-wrap">{assignment.notes}</div>
                 ) : null}
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-2">
-          <CalendarDays className="size-4" aria-hidden="true" />
-          <CardTitle>{detailMessages.slot.relatedCloseoutsTitle}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm">
-          {(closeoutsQuery.data?.data.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground">{detailMessages.slot.relatedCloseoutsEmpty}</p>
-          ) : (
-            closeoutsQuery.data?.data.map((closeout) => (
+      {showCloseouts ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2">
+            <CalendarDays className="size-4" aria-hidden="true" />
+            <CardTitle>{detailMessages.slot.relatedCloseoutsTitle}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 text-sm">
+            {closeoutsQuery.data?.data.map((closeout) => (
               <div key={closeout.id} className="rounded-md border p-3">
                 <div className="font-medium">{closeout.dateLocal}</div>
                 <div className="text-muted-foreground">
@@ -392,12 +415,47 @@ export function AvailabilitySlotDetailPage({
                   <div className="mt-2 whitespace-pre-wrap">{closeout.reason}</div>
                 ) : null}
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   )
+}
+
+function formatSlotDateRange(
+  slot: { dateLocal: string; startsAt: string; endsAt: string | null },
+  formatDateTime: (value: string) => string,
+): string {
+  if (!slot.endsAt) return `${slot.dateLocal} · ${formatDateTime(slot.startsAt)}`
+  const startLocal = slot.dateLocal
+  const endLocal = isoDateOf(slot.endsAt)
+  if (!endLocal || startLocal === endLocal) {
+    return `${slot.dateLocal} · ${formatDateTime(slot.startsAt)}`
+  }
+  return `${startLocal} → ${endLocal}`
+}
+
+function computeSlotNightsLabel(slot: {
+  nights: number | null
+  days: number | null
+}): string | null {
+  if (slot.nights && slot.nights > 0) {
+    return slot.nights === 1 ? "1 night" : `${slot.nights} nights`
+  }
+  if (slot.days && slot.days > 0) {
+    return slot.days === 1 ? "1 day" : `${slot.days} days`
+  }
+  return null
+}
+
+function isoDateOf(value: string): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value.length >= 10 ? value.slice(0, 10) : null
+  }
+  return date.toISOString().slice(0, 10)
 }
 
 function DetailLine({ label, children }: { label: string; children: ReactNode }) {
