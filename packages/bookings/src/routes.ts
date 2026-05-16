@@ -2,11 +2,13 @@ import {
   type ActionLedgerCapabilityAccessResult,
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
+  actionLedgerService,
   appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
   buildIdempotencyFingerprint,
   evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
+  mapActionLedgerRequestContext,
   requestActionLedgerApproval,
 } from "@voyantjs/action-ledger"
 import {
@@ -96,6 +98,13 @@ const BOOKING_PII_READ_ACTION_VERSION = "v1"
 const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
 const BOOKING_STATUS_APPROVAL_POLICY = "bookings-status-approval-v1"
+const ACTION_APPROVAL_ID_HEADER = "action-approval-id"
+
+type ApprovedBookingStatusAction = {
+  requestedActionId: string
+  approvalId: string
+}
+
 const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
   "firstName",
   "lastName",
@@ -195,10 +204,31 @@ async function authorizeBookingStatusMutation(
     })
 
     if (approvalRequirement.required) {
-      const idempotencyScope = c.req.header("idempotency-key")
-        ? `${input.routeOrToolName}:${input.bookingId}`
-        : null
+      const approvedAction = await resolveApprovedBookingStatusAction(
+        c,
+        input,
+        access,
+        approvalRequirement,
+      )
+      if (approvedAction) {
+        if (!approvedAction.allowed) return approvedAction
+        return { allowed: true as const, access, approvedAction: approvedAction.action }
+      }
+
       const idempotencyKey = c.req.header("idempotency-key") ?? null
+      if (!idempotencyKey) {
+        return {
+          allowed: false as const,
+          response: c.json(
+            {
+              error: "Approval-required booking status actions require an Idempotency-Key",
+            },
+            400,
+          ),
+        }
+      }
+
+      const idempotencyScope = `${input.routeOrToolName}:${input.bookingId}`
       const idempotencyFingerprint = idempotencyKey
         ? await buildIdempotencyFingerprint({
             actionName: input.actionName,
@@ -321,6 +351,185 @@ async function authorizeBookingStatusMutation(
   return {
     allowed: false as const,
     response: handleApiError(new ForbiddenApiError(), c),
+  }
+}
+
+async function resolveApprovedBookingStatusAction(
+  c: Context<Env>,
+  input: BookingStatusCapabilityRoute & {
+    bookingId: string
+    commandInput?: unknown
+  },
+  access: ActionLedgerCapabilityAccessResult,
+  approvalRequirement: ReturnType<typeof evaluateActionLedgerApprovalRequirement>,
+): Promise<
+  | {
+      allowed: true
+      action: ApprovedBookingStatusAction
+    }
+  | {
+      allowed: false
+      response: Response
+    }
+  | null
+> {
+  const approvalId = c.req.header(ACTION_APPROVAL_ID_HEADER)
+  if (!approvalId) return null
+
+  const result = await actionLedgerService.getApproval(c.get("db"), approvalId)
+  if (!result) {
+    return {
+      allowed: false,
+      response: c.json({ error: "Action approval not found" }, 404),
+    }
+  }
+
+  if (result.approval.status !== "approved") {
+    return {
+      allowed: false,
+      response: c.json(
+        {
+          error: "Action approval is not approved",
+          approvalId: result.approval.id,
+          status: result.approval.status,
+        },
+        409,
+      ),
+    }
+  }
+
+  if (result.approval.expiresAt && result.approval.expiresAt < new Date()) {
+    return {
+      allowed: false,
+      response: c.json(
+        {
+          error: "Action approval has expired",
+          approvalId: result.approval.id,
+        },
+        409,
+      ),
+    }
+  }
+
+  const requestedAction = result.requestedAction?.entry
+  if (
+    !requestedAction ||
+    requestedAction.actionName !== input.actionName ||
+    requestedAction.actionVersion !== BOOKING_STATUS_CAPABILITIES[input.key].version ||
+    requestedAction.targetType !== "booking" ||
+    requestedAction.targetId !== input.bookingId ||
+    requestedAction.routeOrToolName !== input.routeOrToolName ||
+    requestedAction.approvalId !== result.approval.id
+  ) {
+    return {
+      allowed: false,
+      response: c.json(
+        {
+          error: "Action approval does not match this booking status action",
+          approvalId: result.approval.id,
+        },
+        409,
+      ),
+    }
+  }
+
+  const existingExecution = await actionLedgerService.listEntries(c.get("db"), {
+    actionName: input.actionName,
+    actionKind: "update",
+    targetType: "booking",
+    targetId: input.bookingId,
+    causationActionId: requestedAction.id,
+    approvalId: result.approval.id,
+    status: "succeeded",
+    limit: 1,
+  })
+  if (existingExecution.entries.length > 0) {
+    return {
+      allowed: false,
+      response: c.json(
+        {
+          error: "Action approval has already been executed",
+          approvalId: result.approval.id,
+          existingActionId: existingExecution.entries[0]?.id,
+        },
+        409,
+      ),
+    }
+  }
+
+  if (!requestedAction.idempotencyFingerprint) {
+    return {
+      allowed: false,
+      response: c.json(
+        {
+          error: "Action approval is missing an approved command fingerprint",
+          approvalId: result.approval.id,
+        },
+        409,
+      ),
+    }
+  }
+
+  const executionFingerprint = await buildIdempotencyFingerprint({
+    actionName: input.actionName,
+    actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
+    targetType: "booking",
+    targetId: input.bookingId,
+    commandInput: input.commandInput ?? null,
+    policyInputs: {
+      approvalPolicy: approvalRequirement.approvalPolicy,
+      capabilityId: access.capabilityId,
+      capabilityVersion: access.capabilityVersion,
+      evaluatedRisk: approvalRequirement.evaluatedRisk,
+      reasonCode: approvalRequirement.reasonCode,
+    },
+  })
+  if (executionFingerprint !== requestedAction.idempotencyFingerprint) {
+    return {
+      allowed: false,
+      response: c.json(
+        {
+          error: "Action approval command input does not match the approved request",
+          approvalId: result.approval.id,
+        },
+        409,
+      ),
+    }
+  }
+
+  const actorFields = mapActionLedgerRequestContext(getActionLedgerRequestContext(c))
+  if (
+    requestedAction.principalType !== actorFields.principalType ||
+    requestedAction.principalId !== actorFields.principalId
+  ) {
+    return {
+      allowed: false,
+      response: c.json({ error: "Action approval belongs to a different principal" }, 403),
+    }
+  }
+
+  return {
+    allowed: true,
+    action: {
+      requestedActionId: requestedAction.id,
+      approvalId: result.approval.id,
+    },
+  }
+}
+
+function bookingStatusMutationRuntime(
+  c: Context<Env>,
+  auth: {
+    access: ActionLedgerCapabilityAccessResult
+    approvedAction?: ApprovedBookingStatusAction
+  },
+) {
+  return {
+    eventBus: c.get("eventBus"),
+    actionLedgerContext: getActionLedgerRequestContext(c),
+    actionLedgerAuthorizationSource: auth.access.authorizationSource,
+    actionLedgerCausationActionId: auth.approvedAction?.requestedActionId ?? null,
+    actionLedgerApprovalId: auth.approvedAction?.approvalId ?? null,
   }
 }
 
@@ -910,11 +1119,7 @@ export const bookingRoutes = new Hono<Env>()
       bookingId,
       data,
       c.get("userId"),
-      {
-        eventBus: c.get("eventBus"),
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: auth.access.authorizationSource,
-      },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -982,10 +1187,8 @@ export const bookingRoutes = new Hono<Env>()
       data,
       c.get("userId"),
       {
-        eventBus: c.get("eventBus"),
+        ...bookingStatusMutationRuntime(c, auth),
         cause: "route",
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: auth.access.authorizationSource,
       },
     )
 
@@ -1034,11 +1237,7 @@ export const bookingRoutes = new Hono<Env>()
       bookingId,
       data,
       c.get("userId"),
-      {
-        eventBus: c.get("eventBus"),
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: auth.access.authorizationSource,
-      },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -1073,11 +1272,7 @@ export const bookingRoutes = new Hono<Env>()
       bookingId,
       data,
       c.get("userId"),
-      {
-        eventBus: c.get("eventBus"),
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: auth.access.authorizationSource,
-      },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -1112,11 +1307,7 @@ export const bookingRoutes = new Hono<Env>()
       bookingId,
       data,
       c.get("userId"),
-      {
-        eventBus: c.get("eventBus"),
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: auth.access.authorizationSource,
-      },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -1155,11 +1346,7 @@ export const bookingRoutes = new Hono<Env>()
       bookingId,
       data,
       c.get("userId"),
-      {
-        eventBus: c.get("eventBus"),
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: auth.access.authorizationSource,
-      },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {

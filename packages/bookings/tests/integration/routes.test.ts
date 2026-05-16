@@ -1322,6 +1322,159 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(approvals).toHaveLength(1)
     })
 
+    it("executes approved agent booking cancel requests and links ledger entries", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const requestApproval = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-execute",
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+      const requestedActionId = requestApprovalBody.data.requestedAction.id
+
+      await db
+        .update(actionApprovals)
+        .set({
+          status: "approved",
+          decidedByPrincipalId: "manager-1",
+          decidedAt: new Date(),
+        })
+        .where(eq(actionApprovals.id, approvalId))
+
+      const execute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Action-Approval-Id": approvalId,
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+
+      expect(execute.status).toBe(200)
+      await expect(execute.json()).resolves.toMatchObject({
+        data: {
+          id: booking.id,
+          status: "cancelled",
+        },
+      })
+
+      const entries = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+      const requestedAction = entries.find((entry) => entry.id === requestedActionId)
+      const executedAction = entries.find(
+        (entry) => entry.actionName === "booking.status.cancel" && entry.status === "succeeded",
+      )
+
+      expect(requestedAction).toMatchObject({
+        actionName: "booking.status.cancel",
+        status: "awaiting_approval",
+      })
+      expect(executedAction).toMatchObject({
+        actionName: "booking.status.cancel",
+        status: "succeeded",
+        causationActionId: requestedActionId,
+        approvalId,
+        principalType: "agent",
+        principalId: "agent-booking-cancel",
+      })
+
+      const secondExecute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Action-Approval-Id": approvalId,
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+
+      expect(secondExecute.status).toBe(409)
+      await expect(secondExecute.json()).resolves.toMatchObject({
+        error: "Action approval has already been executed",
+        approvalId,
+        existingActionId: executedAction?.id,
+      })
+    })
+
+    it("rejects approved booking execution when the command input changed", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const requestApproval = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-command-mismatch",
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+
+      await db
+        .update(actionApprovals)
+        .set({
+          status: "approved",
+          decidedByPrincipalId: "manager-1",
+          decidedAt: new Date(),
+        })
+        .where(eq(actionApprovals.id, approvalId))
+
+      const execute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Action-Approval-Id": approvalId,
+        },
+        body: JSON.stringify({ note: "Different cancellation" }),
+      })
+
+      expect(execute.status).toBe(409)
+      await expect(execute.json()).resolves.toMatchObject({
+        error: "Action approval command input does not match the approved request",
+        approvalId,
+      })
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+      const entries = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+      expect(entries).toHaveLength(1)
+    })
+
     it("rejects reused override approval idempotency keys with different command input", async () => {
       const booking = await seedBooking({ status: "confirmed" })
 
