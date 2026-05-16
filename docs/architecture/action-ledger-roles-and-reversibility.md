@@ -524,6 +524,20 @@ Lifecycle requirements:
 - Execution must re-evaluate target state and policy. If the booking, amount,
   customer-visible impact, or policy has changed materially, the old approval
   cannot be consumed without a new approval.
+- Approval-required mutation requests must include an idempotency key. The
+  requested ledger entry stores a deterministic fingerprint over the action
+  identity, target, command input, capability, risk, approval policy, and reason
+  code. Reusing the same key with a different fingerprint is a conflict.
+- Approved execution consumes the approval by referencing the approval id and
+  the original requested action. For HTTP route integrations, the proving
+  contract is the `Action-Approval-Id` request header. Execution must validate
+  that the approval is approved, unexpired, linked to a requested action with
+  the expected action kind/status, owned by the current principal, and still
+  fingerprint-equivalent to the approved command.
+- Approved execution entries must set `causation_action_id` to the requested
+  action id and `approval_id` to the approval id. A retry or duplicate execution
+  must be rejected once a succeeded execution exists for that causation and
+  approval pair.
 
 Delivery requirements:
 
