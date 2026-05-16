@@ -80,9 +80,6 @@ export function SlotAllocationPage({
   const [resourceLabel, setResourceLabel] = useState("")
   const [resourceCapacity, setResourceCapacity] = useState(2)
   const [error, setError] = useState<string | null>(null)
-  const hasPageExtensions = Boolean(
-    renderHeaderEnd || renderBefore || renderAfter || extraTabs.length,
-  )
 
   const data = allocation.data?.data
   const templates = useProductResourceTemplates({
@@ -221,7 +218,14 @@ export function SlotAllocationPage({
     )
   }
 
-  if (!data || (travelers.length === 0 && !hasPageExtensions)) {
+  // Only short-circuit when we genuinely have no data to render
+  // against. The page intentionally renders even when both resources
+  // and travelers are empty so operators can seed the per-departure
+  // resource block before any bookings exist — setting up the room
+  // block before selling is the canonical flow. The per-kind resource
+  // view handles its own empty state (and the "Add resource" /
+  // "Generate resources" affordances stay reachable).
+  if (!data) {
     return (
       <div className={cn("flex flex-col items-center justify-center gap-3 p-8", className)}>
         <Users className="size-6 text-muted-foreground" aria-hidden="true" />
