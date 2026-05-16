@@ -29,12 +29,18 @@ export {
   type ActionLedgerRequestMappingOptions,
   appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
+  type BuildActionLedgerApprovalDecisionInput,
+  type BuildActionLedgerApprovalRequestInput,
   type BuildActionLedgerMutationInput,
   type BuildActionLedgerSensitiveReadInput,
+  buildActionLedgerApprovalDecisionInput,
+  buildActionLedgerApprovalRequestInput,
   buildActionLedgerMutationEntryInput,
   buildActionLedgerSensitiveReadEntryInput,
+  decideActionLedgerApproval,
   ledgerSensitiveRead,
   mapActionLedgerRequestContext,
+  requestActionLedgerApproval,
 } from "./request-context.js"
 export {
   type ActionApprovalDecisionResponse,

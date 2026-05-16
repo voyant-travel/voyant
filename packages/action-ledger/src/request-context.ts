@@ -1,6 +1,13 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import type { ActionLedgerEntry, NewActionMutationDetail } from "./schema.js"
-import type { AppendActionLedgerEntryInput, AppendActionLedgerEntryResult } from "./service.js"
+import type { ActionApproval, ActionLedgerEntry, NewActionMutationDetail } from "./schema.js"
+import type {
+  AppendActionLedgerEntryInput,
+  AppendActionLedgerEntryResult,
+  DecideActionApprovalInput,
+  DecideActionApprovalResult,
+  RequestActionApprovalInput,
+  RequestActionApprovalResult,
+} from "./service.js"
 import { actionLedgerService } from "./service.js"
 
 export interface ActionLedgerRequestContextValues {
@@ -51,6 +58,47 @@ export interface BuildActionLedgerMutationInput
   actionKind: Extract<ActionLedgerEntry["actionKind"], "create" | "update" | "delete" | "execute">
   status?: ActionLedgerEntry["status"]
   mutationDetail?: Omit<NewActionMutationDetail, "actionId">
+}
+
+export interface BuildActionLedgerApprovalRequestInput
+  extends Omit<BuildActionLedgerMutationInput, "status"> {
+  approval: {
+    requestedByPrincipalId?: string | null
+    assignedToPrincipalId?: string | null
+    delegatedFromPrincipalId?: string | null
+    policyName: string
+    policyVersion: string
+    targetSnapshotRef?: string | null
+    riskSnapshot?: ActionApproval["riskSnapshot"] | null
+    reasonCode?: string | null
+    expiresAt?: Date | string | null
+  }
+}
+
+export interface BuildActionLedgerApprovalDecisionInput extends ActionLedgerRequestMappingOptions {
+  context: ActionLedgerRequestContextValues
+  id: string
+  status: Exclude<ActionApproval["status"], "pending">
+  decidedByPrincipalId?: string | null
+  decidedAt?: Date | string | null
+  actionName: string
+  actionVersion?: string
+  evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
+  targetType?: string
+  targetId?: string
+  routeOrToolName?: string | null
+  capabilityId?: string | null
+  capabilityVersion?: string | null
+  authorizationSource?: string | null
+  idempotencyScope?: string | null
+  idempotencyKey?: string | null
+  idempotencyFingerprint?: string | null
+  payloads?: AppendActionLedgerEntryInput["payloads"]
+  enqueueRelay?: AppendActionLedgerEntryInput["enqueueRelay"]
+  organizationId?: string | null
+  workflowRunId?: string | null
+  workflowStepId?: string | null
+  correlationId?: string | null
 }
 
 interface CommonActionLedgerRouteInput {
@@ -225,6 +273,79 @@ export async function appendActionLedgerMutation(
   input: BuildActionLedgerMutationInput,
 ): Promise<AppendActionLedgerEntryResult> {
   return actionLedgerService.appendEntry(db, buildActionLedgerMutationEntryInput(input))
+}
+
+export function buildActionLedgerApprovalRequestInput(
+  input: BuildActionLedgerApprovalRequestInput,
+): RequestActionApprovalInput {
+  const {
+    status: _status,
+    approvalId: _approvalId,
+    ...requestedAction
+  } = buildActionLedgerMutationEntryInput(input)
+
+  return {
+    requestedAction,
+    approval: {
+      requestedByPrincipalId: input.approval.requestedByPrincipalId ?? requestedAction.principalId,
+      assignedToPrincipalId: input.approval.assignedToPrincipalId ?? null,
+      delegatedFromPrincipalId: input.approval.delegatedFromPrincipalId ?? null,
+      policyName: input.approval.policyName,
+      policyVersion: input.approval.policyVersion,
+      targetSnapshotRef: input.approval.targetSnapshotRef ?? null,
+      riskSnapshot: input.approval.riskSnapshot ?? requestedAction.evaluatedRisk,
+      reasonCode: input.approval.reasonCode ?? null,
+      expiresAt: input.approval.expiresAt ?? null,
+    },
+  }
+}
+
+export async function requestActionLedgerApproval(
+  db: AnyDrizzleDb,
+  input: BuildActionLedgerApprovalRequestInput,
+): Promise<RequestActionApprovalResult> {
+  return actionLedgerService.requestApproval(db, buildActionLedgerApprovalRequestInput(input))
+}
+
+export function buildActionLedgerApprovalDecisionInput(
+  input: BuildActionLedgerApprovalDecisionInput,
+): DecideActionApprovalInput {
+  const actorFields = mapActionLedgerRequestContext(input.context, input)
+
+  return {
+    id: input.id,
+    status: input.status,
+    decidedByPrincipalId: input.decidedByPrincipalId ?? actorFields.principalId,
+    decidedAt: input.decidedAt ?? null,
+    decisionAction: {
+      ...actorFields,
+      actionName: input.actionName,
+      actionVersion: input.actionVersion ?? "v1",
+      evaluatedRisk: input.evaluatedRisk,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      routeOrToolName: input.routeOrToolName ?? null,
+      capabilityId: input.capabilityId ?? null,
+      capabilityVersion: input.capabilityVersion ?? null,
+      authorizationSource: input.authorizationSource ?? null,
+      idempotencyScope: input.idempotencyScope ?? null,
+      idempotencyKey: input.idempotencyKey ?? null,
+      idempotencyFingerprint: input.idempotencyFingerprint ?? null,
+      payloads: input.payloads,
+      enqueueRelay: input.enqueueRelay,
+      organizationId: input.organizationId ?? actorFields.organizationId,
+      workflowRunId: input.workflowRunId ?? actorFields.workflowRunId,
+      workflowStepId: input.workflowStepId ?? actorFields.workflowStepId,
+      correlationId: input.correlationId ?? actorFields.correlationId,
+    },
+  }
+}
+
+export async function decideActionLedgerApproval(
+  db: AnyDrizzleDb,
+  input: BuildActionLedgerApprovalDecisionInput,
+): Promise<DecideActionApprovalResult | null> {
+  return actionLedgerService.decideApproval(db, buildActionLedgerApprovalDecisionInput(input))
 }
 
 function normalizeNullableString(value: string | null | undefined): string | null {

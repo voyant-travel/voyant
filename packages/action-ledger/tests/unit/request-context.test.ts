@@ -2,10 +2,14 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
+  buildActionLedgerApprovalDecisionInput,
+  buildActionLedgerApprovalRequestInput,
   buildActionLedgerMutationEntryInput,
   buildActionLedgerSensitiveReadEntryInput,
+  decideActionLedgerApproval,
   ledgerSensitiveRead,
   mapActionLedgerRequestContext,
+  requestActionLedgerApproval,
 } from "../../src/request-context.js"
 import { actionLedgerService } from "../../src/service.js"
 
@@ -164,6 +168,107 @@ describe("action ledger route entry builders", () => {
       },
     })
   })
+
+  test("builds approval requests from mutation request context", () => {
+    const request = buildActionLedgerApprovalRequestInput({
+      context: {
+        userId: "usr_1",
+        sessionId: "sess_1",
+        callerType: "session",
+        actor: "staff",
+      },
+      actionName: "booking.cancel",
+      actionKind: "update",
+      evaluatedRisk: "critical",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings.cancel",
+      authorizationSource: "capability_registry",
+      idempotencyScope: "booking:book_1",
+      idempotencyKey: "cancel-request-1",
+      mutationDetail: {
+        summary: "Booking cancellation requested",
+        reversalKind: "domain_command",
+        reversalCommandId: "booking.reopen",
+        reversalCommandVersion: "v1",
+      },
+      approval: {
+        assignedToPrincipalId: "usr_manager",
+        policyName: "booking-cancel-approval",
+        policyVersion: "v1",
+        targetSnapshotRef: "blob://snapshots/book_1",
+        reasonCode: "high_value_booking",
+      },
+    })
+
+    expect(request).toMatchObject({
+      requestedAction: {
+        actionName: "booking.cancel",
+        actionKind: "update",
+        evaluatedRisk: "critical",
+        principalType: "user",
+        principalId: "usr_1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+        authorizationSource: "capability_registry",
+        idempotencyScope: "booking:book_1",
+        idempotencyKey: "cancel-request-1",
+        mutationDetail: {
+          summary: "Booking cancellation requested",
+          reversalKind: "domain_command",
+        },
+      },
+      approval: {
+        requestedByPrincipalId: "usr_1",
+        assignedToPrincipalId: "usr_manager",
+        policyName: "booking-cancel-approval",
+        policyVersion: "v1",
+        targetSnapshotRef: "blob://snapshots/book_1",
+        riskSnapshot: "critical",
+        reasonCode: "high_value_booking",
+      },
+    })
+    expect(request.requestedAction).not.toHaveProperty("status")
+    expect(request.requestedAction).not.toHaveProperty("approvalId")
+  })
+
+  test("builds approval decisions from request context", () => {
+    const decision = buildActionLedgerApprovalDecisionInput({
+      context: {
+        userId: "usr_manager",
+        callerType: "session",
+        actor: "staff",
+        organizationId: "org_1",
+        correlationId: "corr_1",
+      },
+      id: "alap_1",
+      status: "approved",
+      actionName: "booking.cancel.approve",
+      routeOrToolName: "approvals.decide",
+      idempotencyScope: "approval:alap_1",
+      idempotencyKey: "approve-1",
+    })
+
+    expect(decision).toMatchObject({
+      id: "alap_1",
+      status: "approved",
+      decidedByPrincipalId: "usr_manager",
+      decidedAt: null,
+      decisionAction: {
+        actorType: "staff",
+        principalType: "user",
+        principalId: "usr_manager",
+        actionName: "booking.cancel.approve",
+        actionVersion: "v1",
+        routeOrToolName: "approvals.decide",
+        idempotencyScope: "approval:alap_1",
+        idempotencyKey: "approve-1",
+        organizationId: "org_1",
+        correlationId: "corr_1",
+      },
+    })
+  })
 })
 
 describe("ledgerSensitiveRead", () => {
@@ -200,5 +305,77 @@ describe("ledgerSensitiveRead", () => {
     expect(result).toBe("secret")
     expect(events).toEqual(["read", "append", "resolved"])
     expect(appendSpy).toHaveBeenCalledOnce()
+  })
+})
+
+describe("approval request-context helpers", () => {
+  test("requests approval with the built request input", async () => {
+    const requestApprovalSpy = vi
+      .spyOn(actionLedgerService, "requestApproval")
+      .mockResolvedValue({ requestedAction: {} as never, approval: {} as never, replayed: false })
+
+    await requestActionLedgerApproval({} as AnyDrizzleDb, {
+      context: {
+        userId: "usr_1",
+        callerType: "session",
+        actor: "staff",
+      },
+      actionName: "booking.cancel",
+      actionKind: "update",
+      targetType: "booking",
+      targetId: "book_1",
+      approval: {
+        policyName: "booking-cancel-approval",
+        policyVersion: "v1",
+      },
+    })
+
+    expect(requestApprovalSpy).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        requestedAction: expect.objectContaining({
+          actionName: "booking.cancel",
+          actionKind: "update",
+          principalId: "usr_1",
+          targetType: "booking",
+          targetId: "book_1",
+        }),
+        approval: expect.objectContaining({
+          requestedByPrincipalId: "usr_1",
+          policyName: "booking-cancel-approval",
+          policyVersion: "v1",
+        }),
+      }),
+    )
+  })
+
+  test("decides approval with the built decision input", async () => {
+    const decideApprovalSpy = vi
+      .spyOn(actionLedgerService, "decideApproval")
+      .mockResolvedValue({ approval: {} as never, decisionAction: {} as never })
+
+    await decideActionLedgerApproval({} as AnyDrizzleDb, {
+      context: {
+        userId: "usr_manager",
+        callerType: "session",
+        actor: "staff",
+      },
+      id: "alap_1",
+      status: "rejected",
+      actionName: "booking.cancel.reject",
+    })
+
+    expect(decideApprovalSpy).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        id: "alap_1",
+        status: "rejected",
+        decidedByPrincipalId: "usr_manager",
+        decisionAction: expect.objectContaining({
+          actionName: "booking.cancel.reject",
+          principalId: "usr_manager",
+        }),
+      }),
+    )
   })
 })
