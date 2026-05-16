@@ -208,19 +208,34 @@ Implemented in `issue-933-cloud-auth-broker`:
   code may run.
 - Operator and DMC `/auth/cloud/start` now perform the real broker redirect
   when `VOYANT_CLOUD_ADMIN_AUTH_START_URL` and `VOYANT_CLOUD_DEPLOYMENT_ID` are
-  configured. `/auth/cloud/callback` validates state and clears the state cookie,
-  then still returns `501` because signed assertion exchange and Better
-  Auth-backed local session issuance are intentionally not implemented yet.
+  configured.
 - `@voyantjs/auth/cloud-broker` also includes the server-to-server exchange
   client and RS256/JWKS assertion verifier. Admin callbacks can now post the
   one-time code plus nonce/callback binding to Cloud, authenticate with a
   deployment client token, verify the returned assertion issuer/audience/
-  deployment/nonce/expiry, and still stop before local session issuance.
+  deployment/nonce/expiry, and pass the verified assertion to local
+  provisioning.
 - Operator and DMC callbacks call the exchange path when
   `VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL`, `VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL`,
-  and `VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN` are present. They continue to
-  return `501` after a valid assertion until the Better Auth-backed session
-  issuance helper is implemented.
+  and `VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN` are present.
+- `@voyantjs/auth/cloud-admin-session` now exposes
+  `createVoyantCloudAdminAuthPlugin`, a Better Auth-backed
+  `/auth/cloud/callback` endpoint. It validates callback state, exchanges the
+  one-time Cloud code, verifies the signed assertion,
+  upserts a local Better Auth mirror user/account, stores Cloud user/session
+  linkage in the side tables, creates a Better Auth session through
+  `internalAdapter.createSession`, sets the Better Auth session cookie via
+  Better Auth's cookie helper, clears the broker state cookie, and redirects to
+  the normalized post-login path.
+- Cloud mirror provisioning uses generated local `auth.user.id` values and maps
+  WorkOS users through `providerId="voyant-cloud"` with
+  `accountId=<workos user id>`. If an existing local user has the same email,
+  the Cloud account is linked to that user so deployments can move to Cloud auth
+  without changing the local JWT subject for that account.
+- The callback route no longer hand-rolls Better Auth session rows or cookie
+  attributes in Hono. Operator and DMC delegate Cloud callbacks to the Better
+  Auth plugin endpoint when exchange settings are configured, and still fail
+  closed with `501` when exchange settings are missing.
 - Template env docs now include the Cloud-injected broker settings:
   `VOYANT_CLOUD_ADMIN_AUTH_START_URL`, `VOYANT_CLOUD_DEPLOYMENT_ID`,
   `VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL`, `VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL`,

@@ -7,10 +7,10 @@
  * Also provides /auth/status (user provisioning) and /auth/me (user info).
  */
 
+import { createVoyantCloudAdminAuthPlugin } from "@voyantjs/auth/cloud-admin-session"
 import {
+  buildClearCloudAdminAuthStateCookie,
   createCloudAdminAuthStart,
-  exchangeCloudAdminAuthCode,
-  verifyCloudAdminAuthCallback,
 } from "@voyantjs/auth/cloud-broker"
 import { createBetterAuth } from "@voyantjs/auth/server"
 import { ensureCurrentUserProfile } from "@voyantjs/auth/workspace"
@@ -167,8 +167,11 @@ function getCloudAuthExchangeConfig(env: CloudflareBindings) {
  * cached either.
  */
 function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEnvForApp>["db"]) {
-  const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
+  const cloud = tryGetVoyantCloudClient(env as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
+  const cloudAuthExchange = isVoyantCloudAuthMode(env) ? getCloudAuthExchangeConfig(env) : null
+  const authDb = db as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"]
+  const cloudAuthDb = db as Parameters<typeof createVoyantCloudAdminAuthPlugin>[0]["db"]
 
   return createBetterAuth({
     // `db` is a `NeonDatabase` (neon-serverless WebSocket); the
@@ -177,11 +180,20 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
     // PgDatabase surface is identical across flavors at runtime, so
     // the cast is structurally safe — better-auth's drizzleAdapter
     // works on any PgDatabase. See #500 for context.
-    db: db as unknown as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"],
+    db: authDb,
     secret: env.SESSION_CLAIMS_SECRET,
     baseURL: getAuthBaseUrl(env),
     basePath: "/auth",
     trustedOrigins: getTrustedOrigins(env),
+    plugins: cloudAuthExchange
+      ? [
+          createVoyantCloudAdminAuthPlugin({
+            db: cloudAuthDb,
+            cookieSecret: env.SESSION_CLAIMS_SECRET,
+            exchange: cloudAuthExchange,
+          }),
+        ]
+      : undefined,
     sendResetPassword: async ({ user, url }) => {
       if (!cloud) {
         console.info(`[auth] reset-password (no VOYANT_CLOUD_API_KEY) → ${user.email}: ${url}`)
@@ -333,7 +345,7 @@ auth.get("/auth/status", async (c) => {
     const userId = session.user.id
 
     const status = await ensureCurrentUserProfile(
-      db as unknown as Parameters<typeof ensureCurrentUserProfile>[0],
+      db as Parameters<typeof ensureCurrentUserProfile>[0],
       userId,
     )
     if (!status.userExists && status.authenticated) {
@@ -401,50 +413,26 @@ auth.get("/auth/cloud/callback", async (c) => {
     return c.json({ error: "Not found" }, 404)
   }
 
-  const result = await verifyCloudAdminAuthCallback({
-    requestUrl: c.req.url,
-    cookieHeader: c.req.header("cookie"),
-    cookieSecret: c.env.SESSION_CLAIMS_SECRET,
-  })
-
-  if (!result.ok) {
-    const status = result.error === "cloud_error" ? 401 : 400
-    return c.json(
-      {
-        error: result.error,
-        ...(result.cloudError ? { cloudError: result.cloudError } : {}),
-      },
-      status,
-      { "Set-Cookie": result.clearCookie },
-    )
-  }
-
   const exchangeConfig = getCloudAuthExchangeConfig(c.env)
   if (!exchangeConfig) {
+    const url = new URL(c.req.url)
     return c.json({ error: "Voyant Cloud auth exchange is not configured yet" }, 501, {
-      "Set-Cookie": result.clearCookie,
+      "Set-Cookie": buildClearCloudAdminAuthStateCookie(
+        url.protocol === "https:",
+        url.pathname.replace(/\/callback$/, "") || "/auth/cloud",
+      ),
     })
   }
 
+  const { db, dispose } = dbFromEnvForApp(c.env)
   try {
-    const assertion = await exchangeCloudAdminAuthCode({
-      code: result.code,
-      state: result.state,
-      config: exchangeConfig,
-    })
-    return c.json(
-      {
-        error: "Voyant Cloud auth session issuance is not configured yet",
-        deploymentId: assertion.deploymentId,
-      },
-      501,
-      { "Set-Cookie": result.clearCookie },
-    )
+    const betterAuth = buildBetterAuth(c.env, db)
+    return await betterAuth.handler(c.req.raw)
   } catch (error) {
-    console.error("[auth/cloud/callback] Exchange error:", error)
-    return c.json({ error: "Voyant Cloud auth exchange failed" }, 401, {
-      "Set-Cookie": result.clearCookie,
-    })
+    console.error("[auth/cloud/callback] Error:", error)
+    return c.json({ error: "Voyant Cloud auth callback failed" }, 500)
+  } finally {
+    c.executionCtx.waitUntil(dispose())
   }
 })
 

@@ -32,6 +32,10 @@
       "types": "./src/cloud-broker.ts",
       "default": "./src/cloud-broker.ts"
     },
+    "./cloud-admin-session": {
+      "types": "./src/cloud-admin-session-public.ts",
+      "default": "./src/cloud-admin-session.ts"
+    },
     "./workspace": {
       "types": "./src/workspace.ts",
       "default": "./src/workspace.ts"
@@ -70,6 +74,11 @@
         "types": "./dist/cloud-broker.d.ts",
         "import": "./dist/cloud-broker.js",
         "default": "./dist/cloud-broker.js"
+      },
+      "./cloud-admin-session": {
+        "types": "./dist/cloud-admin-session-public.d.ts",
+        "import": "./dist/cloud-admin-session.js",
+        "default": "./dist/cloud-admin-session.js"
       },
       "./workspace": {
         "types": "./dist/workspace.d.ts",
