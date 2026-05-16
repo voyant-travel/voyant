@@ -13,7 +13,7 @@ import {
 } from "@voyantjs/ui/components"
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export type PaymentScheduleMode = "unpaid" | "full" | "advance" | "split"
 
@@ -97,6 +97,9 @@ export interface PaymentScheduleSectionProps {
     secondInstallment?: string
     preset5050?: string
     unpaidHint?: string
+    totalDue?: string
+    scheduledTotal?: string
+    remaining?: string
     alreadyPaid?: string
     paymentDate?: string
     paymentMethod?: string
@@ -132,6 +135,7 @@ export function PaymentScheduleSection({
   labels,
 }: PaymentScheduleSectionProps) {
   const messages = useBookingsUiMessagesOrDefault()
+  const { formatCurrency, formatNumber } = useBookingsUiI18nOrDefault()
   const merged = { ...messages.paymentScheduleSection.labels, ...labels }
   const set = (patch: Partial<PaymentScheduleValue>) => onChange({ ...value, ...patch })
 
@@ -151,6 +155,26 @@ export function PaymentScheduleSection({
       splitFirstAmountCents: half,
       splitSecondAmountCents: totalAmountCents - half,
     })
+  }
+
+  const total = typeof totalAmountCents === "number" ? totalAmountCents : null
+  const scheduledTotal =
+    value.mode === "unpaid"
+      ? 0
+      : value.mode === "full"
+        ? (total ?? 0)
+        : value.mode === "advance"
+          ? (value.advanceAmountCents ?? 0)
+          : (value.splitFirstAmountCents ?? 0) + (value.splitSecondAmountCents ?? 0)
+  const remaining = total === null ? null : Math.max(0, total - scheduledTotal)
+  const formatAmount = (cents: number | null) => {
+    if (cents === null) return "-"
+    return currency
+      ? formatCurrency(cents / 100, currency)
+      : formatNumber(cents / 100, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
   }
 
   const paymentMethodLabels = messages.bookingPaymentsSummary.paymentMethodLabels
@@ -223,6 +247,21 @@ export function PaymentScheduleSection({
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3">
       <Label>{merged.heading}</Label>
+
+      <div className="grid gap-2 rounded-md bg-muted/40 p-2 text-xs sm:grid-cols-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">{merged.totalDue}</span>
+          <span className="font-medium tabular-nums">{formatAmount(total)}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">{merged.scheduledTotal}</span>
+          <span className="font-medium tabular-nums">{formatAmount(scheduledTotal)}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">{merged.remaining}</span>
+          <span className="font-medium tabular-nums">{formatAmount(remaining)}</span>
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         {modes.map((mode) => (
