@@ -5,6 +5,7 @@ import {
   actionLedgerService,
   appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
+  buildActionLedgerApprovedExecutionFields,
   buildIdempotencyFingerprint,
   evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
@@ -497,17 +498,19 @@ function bookingStatusMutationRuntime(
     approvedAction?: ApprovedBookingStatusAction
   },
 ) {
+  const approvedExecution = auth.approvedAction
+    ? buildActionLedgerApprovedExecutionFields(auth.approvedAction)
+    : null
+
   return {
     eventBus: c.get("eventBus"),
     actionLedgerContext: getActionLedgerRequestContext(c),
     actionLedgerAuthorizationSource: auth.access.authorizationSource,
-    actionLedgerCausationActionId: auth.approvedAction?.requestedActionId ?? null,
-    actionLedgerApprovalId: auth.approvedAction?.approvalId ?? null,
-    actionLedgerIdempotencyScope: auth.approvedAction
-      ? `${auth.approvedAction.approvalId}:execution`
-      : null,
-    actionLedgerIdempotencyKey: auth.approvedAction?.approvalId ?? null,
-    actionLedgerIdempotencyFingerprint: auth.approvedAction?.idempotencyFingerprint ?? null,
+    actionLedgerCausationActionId: approvedExecution?.causationActionId ?? null,
+    actionLedgerApprovalId: approvedExecution?.approvalId ?? null,
+    actionLedgerIdempotencyScope: approvedExecution?.idempotencyScope ?? null,
+    actionLedgerIdempotencyKey: approvedExecution?.idempotencyKey ?? null,
+    actionLedgerIdempotencyFingerprint: approvedExecution?.idempotencyFingerprint ?? null,
   }
 }
 

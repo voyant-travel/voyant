@@ -105,6 +105,20 @@ export interface BuildActionLedgerApprovalDecisionInput extends ActionLedgerRequ
   correlationId?: string | null
 }
 
+export interface BuildActionLedgerApprovedExecutionFieldsInput {
+  requestedActionId: string
+  approvalId: string
+  idempotencyFingerprint: string
+}
+
+export interface ActionLedgerApprovedExecutionFields {
+  causationActionId: string
+  approvalId: string
+  idempotencyScope: string
+  idempotencyKey: string
+  idempotencyFingerprint: string
+}
+
 interface CommonActionLedgerRouteInput {
   context: ActionLedgerRequestContextValues
   actionName: string
@@ -394,6 +408,18 @@ export async function decideActionLedgerApproval(
   input: BuildActionLedgerApprovalDecisionInput,
 ): Promise<DecideActionApprovalResult | null> {
   return actionLedgerService.decideApproval(db, buildActionLedgerApprovalDecisionInput(input))
+}
+
+export function buildActionLedgerApprovedExecutionFields(
+  input: BuildActionLedgerApprovedExecutionFieldsInput,
+): ActionLedgerApprovedExecutionFields {
+  return {
+    causationActionId: input.requestedActionId,
+    approvalId: input.approvalId,
+    idempotencyScope: `${input.approvalId}:execution`,
+    idempotencyKey: input.approvalId,
+    idempotencyFingerprint: input.idempotencyFingerprint,
+  }
 }
 
 function normalizeNullableString(value: string | null | undefined): string | null {

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 import {
   buildActionLedgerApprovalDecisionInput,
   buildActionLedgerApprovalRequestInput,
+  buildActionLedgerApprovedExecutionFields,
   buildActionLedgerMutationEntryInput,
   buildActionLedgerSensitiveReadEntryInput,
   decideActionLedgerApproval,
@@ -312,6 +313,22 @@ describe("action ledger route entry builders", () => {
         organizationId: "org_1",
         correlationId: "corr_1",
       },
+    })
+  })
+
+  test("builds approved execution ledger fields", () => {
+    expect(
+      buildActionLedgerApprovedExecutionFields({
+        requestedActionId: "alge_requested_1",
+        approvalId: "alap_1",
+        idempotencyFingerprint: "sha256:approved",
+      }),
+    ).toEqual({
+      causationActionId: "alge_requested_1",
+      approvalId: "alap_1",
+      idempotencyScope: "alap_1:execution",
+      idempotencyKey: "alap_1",
+      idempotencyFingerprint: "sha256:approved",
     })
   })
 })
