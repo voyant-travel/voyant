@@ -22,6 +22,8 @@ export {
   getActionLedgerCapability,
 } from "./capability.js"
 export {
+  type BuildActionApprovalCommandFingerprintInput,
+  buildActionApprovalCommandFingerprint,
   buildIdempotencyFingerprint,
   canonicalize,
   canonicalJson,

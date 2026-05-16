@@ -32,6 +32,38 @@ export async function buildIdempotencyFingerprint(input: {
   return `sha256:${await sha256(input)}`
 }
 
+export interface BuildActionApprovalCommandFingerprintInput {
+  actionName: string
+  actionVersion: string
+  targetType: string
+  targetId: string
+  commandInput?: unknown
+  approvalPolicy: string | null
+  capabilityId: string | null
+  capabilityVersion: string | null
+  evaluatedRisk: string | null
+  reasonCode: string | null
+}
+
+export async function buildActionApprovalCommandFingerprint(
+  input: BuildActionApprovalCommandFingerprintInput,
+): Promise<string> {
+  return buildIdempotencyFingerprint({
+    actionName: input.actionName,
+    actionVersion: input.actionVersion,
+    targetType: input.targetType,
+    targetId: input.targetId,
+    commandInput: input.commandInput ?? null,
+    policyInputs: {
+      approvalPolicy: input.approvalPolicy,
+      capabilityId: input.capabilityId,
+      capabilityVersion: input.capabilityVersion,
+      evaluatedRisk: input.evaluatedRisk,
+      reasonCode: input.reasonCode,
+    },
+  })
+}
+
 function getCrypto(): Crypto {
   const crypto = (globalThis as { crypto?: Crypto }).crypto
   if (!crypto?.subtle) {

@@ -7,8 +7,8 @@ import {
   appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
   type BuildActionLedgerApprovedExecutionFieldsInput,
+  buildActionApprovalCommandFingerprint,
   buildActionLedgerApprovedExecutionFields,
-  buildIdempotencyFingerprint,
   evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
   mapActionLedgerRequestContext,
@@ -228,22 +228,11 @@ async function authorizeBookingStatusMutation(
       }
 
       const idempotencyScope = `${input.routeOrToolName}:${input.bookingId}`
-      const idempotencyFingerprint = idempotencyKey
-        ? await buildIdempotencyFingerprint({
-            actionName: input.actionName,
-            actionVersion: capability.version,
-            targetType: "booking",
-            targetId: input.bookingId,
-            commandInput: input.commandInput ?? null,
-            policyInputs: {
-              approvalPolicy: approvalRequirement.approvalPolicy,
-              capabilityId: access.capabilityId,
-              capabilityVersion: access.capabilityVersion,
-              evaluatedRisk: approvalRequirement.evaluatedRisk,
-              reasonCode: approvalRequirement.reasonCode,
-            },
-          })
-        : null
+      const idempotencyFingerprint = await buildBookingStatusApprovalFingerprint(
+        input,
+        access,
+        approvalRequirement,
+      )
 
       const requestInput = {
         context: getActionLedgerRequestContext(c),
@@ -375,20 +364,11 @@ async function resolveApprovedBookingStatusAction(
   const approvalId = c.req.header(ACTION_LEDGER_APPROVAL_ID_HEADER)
   if (!approvalId) return null
 
-  const executionFingerprint = await buildIdempotencyFingerprint({
-    actionName: input.actionName,
-    actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
-    targetType: "booking",
-    targetId: input.bookingId,
-    commandInput: input.commandInput ?? null,
-    policyInputs: {
-      approvalPolicy: approvalRequirement.approvalPolicy,
-      capabilityId: access.capabilityId,
-      capabilityVersion: access.capabilityVersion,
-      evaluatedRisk: approvalRequirement.evaluatedRisk,
-      reasonCode: approvalRequirement.reasonCode,
-    },
-  })
+  const executionFingerprint = await buildBookingStatusApprovalFingerprint(
+    input,
+    access,
+    approvalRequirement,
+  )
 
   const actorFields = mapActionLedgerRequestContext(getActionLedgerRequestContext(c))
   const validation = await actionLedgerService.validateApprovedAction(c.get("db"), {
@@ -421,6 +401,28 @@ async function resolveApprovedBookingStatusAction(
       idempotencyFingerprint: validation.idempotencyFingerprint,
     },
   }
+}
+
+function buildBookingStatusApprovalFingerprint(
+  input: BookingStatusCapabilityRoute & {
+    bookingId: string
+    commandInput?: unknown
+  },
+  access: ActionLedgerCapabilityAccessResult,
+  approvalRequirement: ReturnType<typeof evaluateActionLedgerApprovalRequirement>,
+) {
+  return buildActionApprovalCommandFingerprint({
+    actionName: input.actionName,
+    actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
+    targetType: "booking",
+    targetId: input.bookingId,
+    commandInput: input.commandInput ?? null,
+    approvalPolicy: approvalRequirement.approvalPolicy,
+    capabilityId: access.capabilityId,
+    capabilityVersion: access.capabilityVersion,
+    evaluatedRisk: approvalRequirement.evaluatedRisk,
+    reasonCode: approvalRequirement.reasonCode,
+  })
 }
 
 function actionApprovalValidationResponse(
