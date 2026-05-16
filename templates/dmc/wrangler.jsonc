@@ -14,6 +14,7 @@
       "vars": {
         "APP_URL": "http://localhost:3100/api",
         "DASH_BASE_URL": "http://localhost:3100",
+        "VOYANT_ADMIN_AUTH_MODE": "local",
         "KMS_PROVIDER": "local",
         "GCP_PROJECT_ID": "voyant-469614",
         "GCP_KMS_KEYRING": "secrets-eu",
@@ -46,6 +47,7 @@
       "vars": {
         "APP_URL": "https://voyant.pixelmakers.com/api",
         "DASH_BASE_URL": "https://voyant.pixelmakers.com",
+        "VOYANT_ADMIN_AUTH_MODE": "local",
         "KMS_PROVIDER": "gcp",
         "GCP_PROJECT_ID": "voyant-469614",
         "GCP_KMS_KEYRING": "secrets-eu",

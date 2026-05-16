@@ -166,9 +166,9 @@ environment/config values without removing Cloud-specific code by hand.
 
 Implemented in `issue-933-cloud-auth-broker`:
 
-- `templates/operator` now has `VOYANT_ADMIN_AUTH_MODE`, defaulting to `local`
-  in `wrangler.jsonc` so localhost and self-hosted development keep the current
-  Better Auth behavior.
+- `templates/operator` and `templates/dmc` now have
+  `VOYANT_ADMIN_AUTH_MODE`, defaulting to `local` in template config so
+  localhost and self-hosted development keep the current Better Auth behavior.
 - Operator auth routes now fail closed in `voyant-cloud` mode:
   - `GET /auth/bootstrap-status` returns `hasUsers: true` and does not route a
     Cloud deployment into local bootstrap sign-up.
@@ -187,6 +187,9 @@ Implemented in `issue-933-cloud-auth-broker`:
   forgot-password, reset-password, and accept-invitation loaders redirect to
   `/api/auth/cloud/start` instead of rendering local forms when
   `authMode: "voyant-cloud"` comes back from bootstrap status.
+- DMC now has the same Cloud-mode route boundary and local auth screen
+  redirects as operator. It does not expose an API-token facade today, so the
+  API-token revalidation work applies to operator first.
 - `@voyantjs/auth/workspace` now exposes shared profile provisioning helpers.
   Local Better Auth sign-up hooks and the operator `/auth/status` fallback use
   the same profile creation path. Future Cloud mirror provisioning should call

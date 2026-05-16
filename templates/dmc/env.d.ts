@@ -14,6 +14,10 @@ interface CloudflareBindings {
   BETTER_AUTH_SECRET: string
   DATABASE_URL: string
 
+  // Admin auth mode. Localhost/self-hosted deployments use local Better Auth
+  // flows. Voyant Cloud deployments use Cloud as the exclusive identity broker.
+  VOYANT_ADMIN_AUTH_MODE?: "local" | "voyant-cloud"
+
   // Voyant Cloud (canonical email/sms/verify/vault provider)
   VOYANT_CLOUD_API_KEY: string
   VOYANT_CLOUD_API_URL?: string

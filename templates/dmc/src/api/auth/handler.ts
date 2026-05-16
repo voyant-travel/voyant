@@ -8,19 +8,59 @@
  */
 
 import { createBetterAuth } from "@voyantjs/auth/server"
+import { ensureCurrentUserProfile } from "@voyantjs/auth/workspace"
 import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
 import type { VoyantDb, VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
-import { Hono } from "hono"
+import { type Context, Hono } from "hono"
 
 import { dbFromEnvForApp } from "../lib/db"
 
 // Type ctx so `c.get("db")` resolves to the parent app's middleware-
 // set `VoyantDb` (the per-request Pool the `dbFromEnvForApp` factory
 // installed). Without this, the sub-app sees `unknown` for context vars.
-const auth = new Hono<{ Bindings: CloudflareBindings; Variables: { db: VoyantDb } }>()
+type AuthHonoEnv = { Bindings: CloudflareBindings; Variables: { db: VoyantDb } }
+type DmcAuthMode = "local" | "voyant-cloud"
+
+const auth = new Hono<AuthHonoEnv>()
 const DEFAULT_APP_URL = "http://localhost:3100"
+const CLOUD_BETTER_AUTH_ALLOWLIST = new Set([
+  "/auth/get-session",
+  "/auth/jwks",
+  "/auth/session",
+  "/auth/sign-out",
+  "/auth/token",
+])
+
+function resolveDmcAuthMode(env: CloudflareBindings): DmcAuthMode {
+  const mode = env.VOYANT_ADMIN_AUTH_MODE?.trim() || "local"
+
+  if (mode === "local" || mode === "voyant-cloud") {
+    return mode
+  }
+
+  console.error(`[auth] Invalid VOYANT_ADMIN_AUTH_MODE="${mode}". Failing closed as voyant-cloud.`)
+  return "voyant-cloud"
+}
+
+function isVoyantCloudAuthMode(env: CloudflareBindings): boolean {
+  return resolveDmcAuthMode(env) === "voyant-cloud"
+}
+
+function isCloudAllowedBetterAuthRoute(request: Request): boolean {
+  const url = new URL(request.url)
+  const pathname = url.pathname.replace(/\/+$/, "") || "/"
+  return CLOUD_BETTER_AUTH_ALLOWLIST.has(pathname)
+}
+
+function localAuthDisabledResponse(c: Context<AuthHonoEnv>) {
+  return c.json({ error: "Local auth routes are disabled in Voyant Cloud auth mode" }, 404)
+}
+
+function cloudAuthNotConfiguredResponse(c: Context<AuthHonoEnv>) {
+  return c.json({ error: "Voyant Cloud auth broker is not configured yet" }, 501)
+}
 
 function normalizeUrl(url: string): string {
   return url.trim().replace(/\/$/, "")
@@ -239,49 +279,16 @@ auth.get("/auth/status", async (c) => {
 
     const userId = session.user.id
 
-    try {
-      const [existingProfile] = await db
-        .select({ id: userProfilesTable.id })
-        .from(userProfilesTable)
-        .where(eq(userProfilesTable.id, userId))
-        .limit(1)
-
-      if (existingProfile) {
-        return c.json({ userExists: true, authenticated: true })
-      }
-
-      // Profile doesn't exist yet — create from BA user data
-      const [baUser] = await db
-        .select({ name: authUser.name, email: authUser.email, image: authUser.image })
-        .from(authUser)
-        .where(eq(authUser.id, userId))
-        .limit(1)
-
-      if (!baUser?.email) {
-        return c.json(
-          { userExists: false, authenticated: true, reason: `No email found for user ${userId}.` },
-          400,
-        )
-      }
-
-      const nameParts = baUser.name?.split(" ") ?? []
-      const firstName = nameParts[0] ?? null
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null
-
-      await db
-        .insert(userProfilesTable)
-        .values({ id: userId, firstName, lastName, avatarUrl: baUser.image ?? null })
-        .onConflictDoNothing()
-
-      return c.json({ userExists: true, authenticated: true })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      console.error("[auth/status] Error:", message)
-      return c.json(
-        { userExists: false, authenticated: true, reason: `Provisioning error: ${message}` },
-        500,
-      )
+    const status = await ensureCurrentUserProfile(
+      db as unknown as Parameters<typeof ensureCurrentUserProfile>[0],
+      userId,
+    )
+    if (!status.userExists && status.authenticated) {
+      console.error("[auth/status] Error:", status.reason)
+      return c.json(status, 500)
     }
+
+    return c.json(status)
   } finally {
     c.executionCtx.waitUntil(dispose())
   }
@@ -292,15 +299,35 @@ auth.get("/auth/status", async (c) => {
  * Public endpoint — reveals whether any user exists.
  */
 auth.get("/auth/bootstrap-status", async (c) => {
+  if (isVoyantCloudAuthMode(c.env)) {
+    return c.json({ hasUsers: true, authMode: "voyant-cloud" })
+  }
+
   // See `/auth/me` above — auth sub-app runs before the request `db`
   // middleware, so own the Pool here.
   const { db, dispose } = dbFromEnvForApp(c.env)
   try {
     const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-    return c.json({ hasUsers: (row?.count ?? 0) > 0 })
+    return c.json({ hasUsers: (row?.count ?? 0) > 0, authMode: "local" })
   } finally {
     c.executionCtx.waitUntil(dispose())
   }
+})
+
+auth.get("/auth/cloud/start", async (c) => {
+  if (!isVoyantCloudAuthMode(c.env)) {
+    return c.json({ error: "Not found" }, 404)
+  }
+
+  return cloudAuthNotConfiguredResponse(c)
+})
+
+auth.get("/auth/cloud/callback", async (c) => {
+  if (!isVoyantCloudAuthMode(c.env)) {
+    return c.json({ error: "Not found" }, 404)
+  }
+
+  return cloudAuthNotConfiguredResponse(c)
 })
 
 /**
@@ -308,6 +335,10 @@ auth.get("/auth/bootstrap-status", async (c) => {
  * Sign-up is gated server-side by a `user.create.before` hook in @voyantjs/auth.
  */
 auth.all("/auth/*", async (c) => {
+  if (isVoyantCloudAuthMode(c.env) && !isCloudAllowedBetterAuthRoute(c.req.raw)) {
+    return localAuthDisabledResponse(c)
+  }
+
   const { db, dispose } = dbFromEnvForApp(c.env)
   try {
     const betterAuth = buildBetterAuth(c.env, db)

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { formatMessage } from "@voyantjs/admin"
 import {
   Button,
@@ -17,6 +17,7 @@ import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { authClient } from "@/lib/auth"
+import { cloudAuthStartHref, getBootstrapStatus } from "@/lib/current-user"
 
 type InviteStatus =
   | { valid: true; email: string; expiresAt: string }
@@ -26,6 +27,15 @@ export const Route = createFileRoute("/(auth)/accept-invite")({
   validateSearch: z.object({
     token: z.string().min(1),
   }),
+  loader: async ({ location }) => {
+    const bootstrap = await getBootstrapStatus()
+
+    if (bootstrap.authMode === "voyant-cloud") {
+      throw redirect({ href: cloudAuthStartHref(location.href) })
+    }
+
+    return null
+  },
   component: AcceptInvitePage,
 })
 
