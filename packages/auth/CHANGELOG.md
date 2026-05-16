@@ -1,5 +1,17 @@
 # @voyantjs/auth
 
+## 0.52.0
+
+### Minor Changes
+
+- 1468e12: Add an `onUserProvisioning` hook to the Voyant Cloud admin session plugin for Cloud-mode mirror side effects.
+- 1468e12: Add the Voyant Cloud admin session plugin subpath for Better Auth-backed Cloud broker callbacks.
+
+### Patch Changes
+
+- @voyantjs/db@0.52.0
+- @voyantjs/utils@0.52.0
+
 ## 0.51.1
 
 ### Patch Changes
