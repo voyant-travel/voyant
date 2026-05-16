@@ -864,6 +864,7 @@ describe("actionLedgerService approval lifecycle", () => {
       status: "awaiting_approval",
       targetType: "booking",
       targetId: "book_1",
+      approvalId: "appr_existing",
       idempotencyScope: "booking",
       idempotencyKey: "idem_1",
       idempotencyFingerprint: "sha256:first",
@@ -905,6 +906,56 @@ describe("actionLedgerService approval lifecycle", () => {
     })
     expect(entries).toHaveLength(1)
     expect(approvals).toHaveLength(1)
+  })
+
+  test("uses the replayed requested action approval id when recovering a missing approval", async () => {
+    const existingEntry = makeEntry({
+      id: "alge_existing",
+      actionName: "booking.cancel",
+      actionKind: "update",
+      status: "awaiting_approval",
+      targetType: "booking",
+      targetId: "book_1",
+      approvalId: "appr_recovered",
+      idempotencyScope: "booking",
+      idempotencyKey: "idem_1",
+      idempotencyFingerprint: "sha256:first",
+    })
+    const { db, entries, approvals } = makeApprovalLifecycleDb({
+      entries: [existingEntry],
+    })
+
+    const result = await actionLedgerService.requestApproval(db, {
+      requestedAction: {
+        actionName: "booking.cancel",
+        actionVersion: "v1",
+        actionKind: "update",
+        evaluatedRisk: "high",
+        principalType: "user",
+        principalId: "usr_requester",
+        internalRequest: false,
+        targetType: "booking",
+        targetId: "book_1",
+        idempotencyScope: "booking",
+        idempotencyKey: "idem_1",
+        idempotencyFingerprint: "sha256:first",
+      },
+      approval: {
+        policyName: "booking-cancel-approval",
+        policyVersion: "v1",
+      },
+    })
+
+    expect(result.replayed).toBe(true)
+    expect(result.requestedAction).toBe(existingEntry)
+    expect(result.approval).toMatchObject({
+      id: "appr_recovered",
+      requestedActionId: existingEntry.id,
+      status: "pending",
+    })
+    expect(entries).toHaveLength(1)
+    expect(approvals).toHaveLength(1)
+    expect(approvals[0]?.id).toBe(existingEntry.approvalId)
   })
 
   test("decides a pending approval and appends a decision action", async () => {

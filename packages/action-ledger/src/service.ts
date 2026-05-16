@@ -385,6 +385,9 @@ export const actionLedgerService = {
         status: "awaiting_approval",
         approvalId,
       })
+      if (!requestedActionResult.entry.approvalId) {
+        throw new Error("Action approval requested action is missing its approval id")
+      }
       const existingApproval = await findApprovalForRequestedAction(
         tx,
         requestedActionResult.entry.id,
@@ -400,7 +403,7 @@ export const actionLedgerService = {
       const [approval] = await tx
         .insert(actionApprovals)
         .values({
-          id: approvalId,
+          id: requestedActionResult.entry.approvalId,
           requestedActionId: requestedActionResult.entry.id,
           status: "pending",
           requestedByPrincipalId:
