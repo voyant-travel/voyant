@@ -29,8 +29,12 @@ export type Env = {
     db: PostgresJsDatabase
     eventBus?: EventBus
     userId?: string
+    sessionId?: string
+    organizationId?: string | null
     actor?: "staff" | "customer" | "partner" | "supplier"
     callerType?: "session" | "api_key" | "internal"
+    apiTokenId?: string
+    apiKeyId?: string
     scopes?: string[] | null
     isInternalRequest?: boolean
     authorizeBookingPii?: (args: {

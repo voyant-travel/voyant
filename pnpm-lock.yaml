@@ -1387,6 +1387,9 @@ importers:
 
   packages/bookings:
     dependencies:
+      '@voyantjs/action-ledger':
+        specifier: workspace:*
+        version: link:../action-ledger
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core

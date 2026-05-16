@@ -5,6 +5,19 @@ export {
   sha256,
 } from "./fingerprint.js"
 export {
+  type ActionLedgerActorFields,
+  type ActionLedgerRequestContextValues,
+  type ActionLedgerRequestMappingOptions,
+  appendActionLedgerMutation,
+  appendActionLedgerSensitiveRead,
+  type BuildActionLedgerMutationInput,
+  type BuildActionLedgerSensitiveReadInput,
+  buildActionLedgerMutationEntryInput,
+  buildActionLedgerSensitiveReadEntryInput,
+  ledgerSensitiveRead,
+  mapActionLedgerRequestContext,
+} from "./request-context.js"
+export {
   type ActionApproval,
   type ActionDelegation,
   type ActionLedgerEntry,
@@ -39,7 +52,10 @@ export {
 } from "./schema.js"
 export {
   ActionLedgerIdempotencyConflictError,
+  type ActionLedgerListCursor,
   type AppendActionLedgerEntryInput,
   type AppendActionLedgerEntryResult,
   actionLedgerService,
+  type ListActionLedgerEntriesInput,
+  type ListActionLedgerEntriesResult,
 } from "./service.js"

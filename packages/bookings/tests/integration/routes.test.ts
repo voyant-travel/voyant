@@ -1,7 +1,7 @@
+import { actionLedgerEntries, actionSensitiveReadDetails } from "@voyantjs/action-ledger/schema"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
-
 import { availabilitySlotsRef } from "../../src/availability-ref.js"
 import {
   bookingItemProductDetailsRef,
@@ -106,6 +106,115 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     await db.execute(
       sql`CREATE INDEX IF NOT EXISTS idx_booking_pii_access_log_created_at ON booking_pii_access_log (created_at)`,
     )
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_action_kind AS ENUM (
+          'read',
+          'create',
+          'update',
+          'delete',
+          'execute',
+          'approve',
+          'reject',
+          'reverse',
+          'compensate',
+          'duplicate'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_status AS ENUM (
+          'requested',
+          'awaiting_approval',
+          'approved',
+          'denied',
+          'succeeded',
+          'failed',
+          'reversed',
+          'compensated',
+          'expired',
+          'cancelled',
+          'superseded'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_risk AS ENUM ('low', 'medium', 'high', 'critical');
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_principal_type AS ENUM (
+          'user',
+          'api_key',
+          'agent',
+          'workflow',
+          'system'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS action_ledger_entries (
+        id text PRIMARY KEY NOT NULL,
+        occurred_at timestamp with time zone DEFAULT now() NOT NULL,
+        action_name text NOT NULL,
+        action_version text NOT NULL,
+        action_kind action_ledger_action_kind NOT NULL,
+        status action_ledger_status NOT NULL,
+        evaluated_risk action_ledger_risk NOT NULL,
+        actor_type text,
+        principal_type action_ledger_principal_type NOT NULL,
+        principal_id text NOT NULL,
+        principal_subtype text,
+        session_id text,
+        api_token_id text,
+        internal_request boolean DEFAULT false NOT NULL,
+        delegated_by_principal_type action_ledger_principal_type,
+        delegated_by_principal_id text,
+        delegation_id text,
+        caller_type text,
+        organization_id text,
+        route_or_tool_name text,
+        workflow_run_id text,
+        workflow_step_id text,
+        correlation_id text,
+        causation_action_id text,
+        idempotency_scope text,
+        idempotency_key text,
+        idempotency_fingerprint text,
+        target_type text NOT NULL,
+        target_id text NOT NULL,
+        capability_id text,
+        capability_version text,
+        authorization_source text,
+        approval_id text,
+        amends_action_id text,
+        created_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS action_sensitive_read_details (
+        action_id text PRIMARY KEY NOT NULL REFERENCES action_ledger_entries(id) ON DELETE CASCADE,
+        reason_code text,
+        disclosed_field_set jsonb,
+        disclosure_summary text,
+        decision_policy text
+      )
+    `)
 
     process.env.KMS_PROVIDER = "env"
     process.env.KMS_ENV_KEY = generateEnvKmsKey()
@@ -1650,6 +1759,14 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         ...json({ passportNumber: "AUDIT-1" }),
       })
 
+      const readRes = await app.request(
+        `/${booking.id}/travelers/${participant.id}/travel-details`,
+        {
+          method: "GET",
+        },
+      )
+      expect(readRes.status).toBe(200)
+
       const rows = await db
         .select()
         .from(bookingPiiAccessLog)
@@ -1665,6 +1782,32 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         rows.some(
           (row: { action: string; outcome: string }) =>
             row.action === "read" && row.outcome === "allowed",
+        ),
+      ).toBe(true)
+
+      const ledgerRows = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, participant.id))
+      const sensitiveReadRows = await db.select().from(actionSensitiveReadDetails)
+
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.pii.read" &&
+            row.actionKind === "read" &&
+            row.status === "succeeded" &&
+            row.principalType === "user" &&
+            row.principalId === "test-user-id" &&
+            row.targetType === "booking_traveler",
+        ),
+      ).toBe(true)
+      expect(
+        sensitiveReadRows.some(
+          (row) =>
+            row.reasonCode === "travel_details_reveal" &&
+            row.decisionPolicy === "bookings-pii-scope-or-staff-v1" &&
+            row.disclosedFieldSet?.includes("passportNumber"),
         ),
       ).toBe(true)
     })
@@ -1718,6 +1861,23 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
             row.actorId === "test-customer-id",
         ),
       ).toBe(true)
+
+      const ledgerRows = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, participant.id))
+      const sensitiveReadRows = await db.select().from(actionSensitiveReadDetails)
+
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.pii.read" &&
+            row.status === "denied" &&
+            row.principalType === "user" &&
+            row.principalId === "test-customer-id",
+        ),
+      ).toBe(true)
+      expect(sensitiveReadRows.some((row) => row.reasonCode === "insufficient_scope")).toBe(true)
     })
   })
 

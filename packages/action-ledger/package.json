@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
-    "./fingerprint": "./src/fingerprint.ts"
+    "./fingerprint": "./src/fingerprint.ts",
+    "./request-context": "./src/request-context.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -55,6 +56,11 @@
         "types": "./dist/fingerprint.d.ts",
         "import": "./dist/fingerprint.js",
         "default": "./dist/fingerprint.js"
+      },
+      "./request-context": {
+        "types": "./dist/request-context.d.ts",
+        "import": "./dist/request-context.js",
+        "default": "./dist/request-context.js"
       }
     }
   },

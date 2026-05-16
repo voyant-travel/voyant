@@ -1,4 +1,8 @@
 import {
+  type ActionLedgerRequestContextValues,
+  appendActionLedgerSensitiveRead,
+} from "@voyantjs/action-ledger"
+import {
   ForbiddenApiError,
   handleApiError,
   idempotencyKey,
@@ -76,6 +80,79 @@ function hasPiiScope(scopes: string[] | null | undefined, action: "read" | "upda
   )
 }
 
+const BOOKING_PII_READ_ACTION_NAME = "booking.pii.read"
+const BOOKING_PII_READ_ACTION_VERSION = "v1"
+const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
+const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
+const BOOKING_PII_READ_CAPABILITY_ID = "bookings-pii:read"
+const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "specialRequests",
+  "notes",
+]
+const TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS = [
+  "nationality",
+  "passportNumber",
+  "passportExpiry",
+  "passportIssuingCountry",
+  "passportIssuingAuthority",
+  "passportPersonDocumentId",
+  "dateOfBirth",
+  "dietaryRequirements",
+  "accessibilityNeeds",
+  "isLeadTraveler",
+  "sharingGroupId",
+  "roomTypeId",
+  "bedPreference",
+  "allocations",
+]
+
+function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
+
+async function logBookingPiiReadActionLedger(
+  c: Context<Env>,
+  input: {
+    travelerId: string
+    status: "succeeded" | "denied" | "failed"
+    reason: string
+    routeOrToolName: string
+    disclosedFieldSet?: string[] | null
+    disclosureSummary?: string | null
+    decisionPolicy?: string | null
+  },
+) {
+  await appendActionLedgerSensitiveRead(c.get("db"), {
+    context: getActionLedgerRequestContext(c),
+    actionName: BOOKING_PII_READ_ACTION_NAME,
+    actionVersion: BOOKING_PII_READ_ACTION_VERSION,
+    status: input.status,
+    evaluatedRisk: "high",
+    targetType: "booking_traveler",
+    targetId: input.travelerId,
+    routeOrToolName: input.routeOrToolName,
+    capabilityId: BOOKING_PII_READ_CAPABILITY_ID,
+    authorizationSource: BOOKING_PII_AUTHORIZATION_SOURCE,
+    reasonCode: input.reason,
+    disclosedFieldSet: input.status === "succeeded" ? (input.disclosedFieldSet ?? []) : [],
+    disclosureSummary: input.disclosureSummary ?? null,
+    decisionPolicy: input.decisionPolicy ?? BOOKING_PII_DECISION_POLICY,
+  })
+}
+
 async function logBookingPiiAccess(
   c: Context<Env>,
   input: {
@@ -122,6 +199,15 @@ async function authorizeBookingPiiAccess(
       outcome: "denied",
       reason: "missing_user",
     })
+    if (input.action === "read") {
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: input.travelerId,
+        status: "denied",
+        reason: "missing_user",
+        routeOrToolName: "bookings.pii.authorize",
+        disclosureSummary: "Booking PII read denied before reveal",
+      })
+    }
     return {
       allowed: false as const,
       response: handleApiError(new UnauthorizedApiError(), c),
@@ -146,6 +232,16 @@ async function authorizeBookingPiiAccess(
         outcome: "denied",
         reason: "custom_policy_denied",
       })
+      if (input.action === "read") {
+        await logBookingPiiReadActionLedger(c, {
+          travelerId: input.travelerId,
+          status: "denied",
+          reason: "custom_policy_denied",
+          routeOrToolName: "bookings.pii.authorize",
+          disclosureSummary: "Booking PII read denied before reveal",
+          decisionPolicy: "custom",
+        })
+      }
       return {
         allowed: false as const,
         response: handleApiError(new ForbiddenApiError(), c),
@@ -166,6 +262,15 @@ async function authorizeBookingPiiAccess(
       reason: "insufficient_scope",
       metadata: { actor: actor ?? null },
     })
+    if (input.action === "read") {
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: input.travelerId,
+        status: "denied",
+        reason: "insufficient_scope",
+        routeOrToolName: "bookings.pii.authorize",
+        disclosureSummary: "Booking PII read denied before reveal",
+      })
+    }
     return {
       allowed: false as const,
       response: handleApiError(new ForbiddenApiError(), c),
@@ -785,6 +890,13 @@ export const bookingRoutes = new Hono<Env>()
         outcome: "denied",
         reason: "traveler_not_found",
       })
+      await logBookingPiiReadActionLedger(c, {
+        travelerId,
+        status: "denied",
+        reason: "traveler_not_found",
+        routeOrToolName: "bookings.travelers.reveal",
+        disclosureSummary: "Booking PII read denied before reveal",
+      })
       return c.json({ error: "Traveler not found" }, 404)
     }
 
@@ -802,6 +914,17 @@ export const bookingRoutes = new Hono<Env>()
         action: "read",
         outcome: "allowed",
         reason: "traveler_reveal",
+      })
+
+      await logBookingPiiReadActionLedger(c, {
+        travelerId,
+        status: "succeeded",
+        reason: "traveler_reveal",
+        routeOrToolName: "bookings.travelers.reveal",
+        disclosedFieldSet: travelDetails
+          ? [...TRAVELER_IDENTITY_DISCLOSED_FIELDS, ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS]
+          : TRAVELER_IDENTITY_DISCLOSED_FIELDS,
+        disclosureSummary: "Traveler identity reveal",
       })
 
       return c.json({ data: { ...traveler, travelDetails } })
@@ -834,6 +957,13 @@ export const bookingRoutes = new Hono<Env>()
         outcome: "denied",
         reason: "participant_not_found",
       })
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: c.req.param("travelerId"),
+        status: "denied",
+        reason: "participant_not_found",
+        routeOrToolName: "bookings.travelers.travel-details",
+        disclosureSummary: "Booking PII read denied before reveal",
+      })
       return c.json({ error: "Traveler not found" }, 404)
     }
 
@@ -849,8 +979,24 @@ export const bookingRoutes = new Hono<Env>()
           outcome: "denied",
           reason: "travel_details_not_found",
         })
+        await logBookingPiiReadActionLedger(c, {
+          travelerId: traveler.id,
+          status: "denied",
+          reason: "travel_details_not_found",
+          routeOrToolName: "bookings.travelers.travel-details",
+          disclosureSummary: "Booking traveler travel details not found",
+        })
         return c.json({ error: "Traveler travel details not found" }, 404)
       }
+
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: traveler.id,
+        status: "succeeded",
+        reason: "travel_details_reveal",
+        routeOrToolName: "bookings.travelers.travel-details",
+        disclosedFieldSet: TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
+        disclosureSummary: "Traveler travel details reveal",
+      })
 
       return c.json({ data: details })
     } catch (error) {
