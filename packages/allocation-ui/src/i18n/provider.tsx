@@ -76,7 +76,7 @@ export type AllocationUiMessages = Record<string, unknown> & {
 export const allocationUiEn = {
   pageTitle: "Allocation",
   loading: "Loading allocation...",
-  empty: "No travelers on this departure yet.",
+  empty: "Allocation data unavailable for this departure.",
   back: "Back",
   addRoom: "Add room",
   addResource: "Add resource",
@@ -151,7 +151,7 @@ export const allocationUiEn = {
 export const allocationUiRo = {
   pageTitle: "Alocare",
   loading: "Se incarca alocarea...",
-  empty: "Nu exista calatori pe aceasta plecare.",
+  empty: "Datele de alocare nu sunt disponibile pentru aceasta plecare.",
   back: "Inapoi",
   addRoom: "Adauga camera",
   addResource: "Adauga resursa",
