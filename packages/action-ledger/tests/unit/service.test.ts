@@ -3,6 +3,8 @@ import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, test } from "vitest"
 import type {
   ActionLedgerEntry,
+  ActionLedgerPayload,
+  ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
   NewActionLedgerEntry,
@@ -161,17 +163,29 @@ describe("actionLedgerService.getEntry", () => {
     })
     const mutationDetail = makeMutationDetail({ actionId: entry.id })
     const sensitiveReadDetail = makeSensitiveReadDetail({ actionId: entry.id })
-    const { db, calls } = makeGetEntryDb({ entry, mutationDetail, sensitiveReadDetail })
+    const payload = makePayload({ actionId: entry.id })
+    const relayOutbox = makeRelayOutbox({ actionId: entry.id })
+    const { db, calls } = makeGetEntryDb({
+      entry,
+      mutationDetail,
+      sensitiveReadDetail,
+      payloads: [payload],
+      relayOutbox: [relayOutbox],
+    })
 
     await expect(actionLedgerService.getEntry(db, entry.id)).resolves.toEqual({
       entry,
       mutationDetail,
       sensitiveReadDetail,
+      payloads: [payload],
+      relayOutbox: [relayOutbox],
     })
     expect(calls).toEqual([
       "action_ledger_entries",
       "action_mutation_details",
       "action_sensitive_read_details",
+      "action_ledger_payloads",
+      "action_ledger_outbox",
     ])
   })
 
@@ -247,21 +261,61 @@ function makeSensitiveReadDetail(
   }
 }
 
+function makePayload(overrides: Partial<ActionLedgerPayload> = {}): ActionLedgerPayload {
+  return {
+    id: "alpa_1",
+    actionId: "alge_1",
+    payloadKind: "command_input",
+    schemaTag: "booking.status.confirm:v1",
+    redactionStatus: "none",
+    retentionPolicy: "audit-default",
+    storageRef: "blob://action-ledger/alge_1/input",
+    hash: "sha256:payload",
+    createdAt: baseDate,
+    expiresAt: null,
+    ...overrides,
+  }
+}
+
+function makeRelayOutbox(
+  overrides: Partial<ActionLedgerRelayOutbox> = {},
+): ActionLedgerRelayOutbox {
+  return {
+    id: "alro_1",
+    actionId: "alge_1",
+    organizationId: "org_1",
+    relayStatus: "pending",
+    payloadRef: "blob://action-ledger/alge_1",
+    attemptCount: 0,
+    nextRetryAt: null,
+    lastError: null,
+    createdAt: baseDate,
+    processedAt: null,
+    ...overrides,
+  }
+}
+
 function makeGetEntryDb(input: {
   entry?: ActionLedgerEntry
   mutationDetail?: ActionMutationDetail
   sensitiveReadDetail?: ActionSensitiveReadDetail
+  payloads?: ActionLedgerPayload[]
+  relayOutbox?: ActionLedgerRelayOutbox[]
 }) {
   const calls: string[] = []
   const selectRows = [
     input.entry ? [input.entry] : [],
     input.mutationDetail ? [input.mutationDetail] : [],
     input.sensitiveReadDetail ? [input.sensitiveReadDetail] : [],
+    input.payloads ?? [],
+    input.relayOutbox ?? [],
   ]
   const callLabels = [
     "action_ledger_entries",
     "action_mutation_details",
     "action_sensitive_read_details",
+    "action_ledger_payloads",
+    "action_ledger_outbox",
   ]
   let selectIndex = 0
 
@@ -273,6 +327,11 @@ function makeGetEntryDb(input: {
         from() {
           return {
             where() {
+              if (index >= 3) {
+                calls.push(callLabels[index] ?? `select_${index}`)
+                return Promise.resolve(selectRows[index] ?? [])
+              }
+
               return {
                 limit() {
                   calls.push(callLabels[index] ?? `select_${index}`)

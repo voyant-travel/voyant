@@ -5,6 +5,8 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 import { __test__, actionLedgerAdminRoutes } from "../../src/routes.js"
 import type {
   ActionLedgerEntry,
+  ActionLedgerPayload,
+  ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
 } from "../../src/schema.js"
@@ -80,6 +82,40 @@ function makeSensitiveReadDetail(
     disclosedFieldSet: ["passportNumber"],
     disclosureSummary: "Travel document details disclosed",
     decisionPolicy: "bookings-pii-scope-or-staff-v1",
+    ...overrides,
+  }
+}
+
+function makePayload(overrides: Partial<ActionLedgerPayload> = {}): ActionLedgerPayload {
+  return {
+    id: "alpa_1",
+    actionId: "alge_1",
+    payloadKind: "command_input",
+    schemaTag: "booking.status.confirm:v1",
+    redactionStatus: "none",
+    retentionPolicy: "audit-default",
+    storageRef: "blob://action-ledger/alge_1/input",
+    hash: "sha256:payload",
+    createdAt: baseDate,
+    expiresAt: new Date("2026-06-15T10:00:00.000Z"),
+    ...overrides,
+  }
+}
+
+function makeRelayOutbox(
+  overrides: Partial<ActionLedgerRelayOutbox> = {},
+): ActionLedgerRelayOutbox {
+  return {
+    id: "alro_1",
+    actionId: "alge_1",
+    organizationId: "org_1",
+    relayStatus: "pending",
+    payloadRef: "blob://action-ledger/alge_1",
+    attemptCount: 0,
+    nextRetryAt: new Date("2026-05-15T10:05:00.000Z"),
+    lastError: null,
+    createdAt: baseDate,
+    processedAt: null,
     ...overrides,
   }
 }
@@ -177,6 +213,8 @@ describe("actionLedgerAdminRoutes", () => {
       }),
       mutationDetail: makeMutationDetail(),
       sensitiveReadDetail: makeSensitiveReadDetail(),
+      payloads: [makePayload()],
+      relayOutbox: [makeRelayOutbox()],
     })
 
     const app = makeApp(db)
@@ -199,6 +237,23 @@ describe("actionLedgerAdminRoutes", () => {
           reasonCode: "travel_details_reveal",
           disclosedFieldSet: ["passportNumber"],
         },
+        payloads: [
+          {
+            id: "alpa_1",
+            createdAt: "2026-05-15T10:00:00.000Z",
+            expiresAt: "2026-06-15T10:00:00.000Z",
+            storageRef: "blob://action-ledger/alge_1/input",
+          },
+        ],
+        relayOutbox: [
+          {
+            id: "alro_1",
+            relayStatus: "pending",
+            createdAt: "2026-05-15T10:00:00.000Z",
+            nextRetryAt: "2026-05-15T10:05:00.000Z",
+            processedAt: null,
+          },
+        ],
       },
     })
   })

@@ -3,9 +3,12 @@ import { and, desc, eq, inArray, lt, or, type SQL } from "drizzle-orm"
 
 import {
   type ActionLedgerEntry,
+  type ActionLedgerPayload,
+  type ActionLedgerRelayOutbox,
   type ActionMutationDetail,
   type ActionSensitiveReadDetail,
   actionLedgerEntries,
+  actionLedgerPayloads,
   actionLedgerRelayOutbox,
   actionMutationDetails,
   actionSensitiveReadDetails,
@@ -72,6 +75,8 @@ export interface GetActionLedgerEntryResult {
   entry: ActionLedgerEntry
   mutationDetail: ActionMutationDetail | null
   sensitiveReadDetail: ActionSensitiveReadDetail | null
+  payloads: ActionLedgerPayload[]
+  relayOutbox: ActionLedgerRelayOutbox[]
 }
 
 export const actionLedgerService = {
@@ -132,7 +137,7 @@ export const actionLedgerService = {
 
     if (!entry) return null
 
-    const [[mutationDetail], [sensitiveReadDetail]] = await Promise.all([
+    const [[mutationDetail], [sensitiveReadDetail], payloads, relayOutbox] = await Promise.all([
       db
         .select()
         .from(actionMutationDetails)
@@ -143,12 +148,16 @@ export const actionLedgerService = {
         .from(actionSensitiveReadDetails)
         .where(eq(actionSensitiveReadDetails.actionId, id))
         .limit(1),
+      db.select().from(actionLedgerPayloads).where(eq(actionLedgerPayloads.actionId, id)),
+      db.select().from(actionLedgerRelayOutbox).where(eq(actionLedgerRelayOutbox.actionId, id)),
     ])
 
     return {
       entry,
       mutationDetail: mutationDetail ?? null,
       sensitiveReadDetail: sensitiveReadDetail ?? null,
+      payloads,
+      relayOutbox,
     }
   },
 }

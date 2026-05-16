@@ -7,6 +7,8 @@ import { z } from "zod"
 
 import type {
   ActionLedgerEntry,
+  ActionLedgerPayload,
+  ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
 } from "./schema.js"
@@ -105,10 +107,26 @@ export interface ActionLedgerListResponse {
 export type ActionLedgerEntryDetailResponse = ActionLedgerEntryResponse & {
   mutationDetail: ActionMutationDetail | null
   sensitiveReadDetail: ActionSensitiveReadDetail | null
+  payloads: ActionLedgerPayloadResponse[]
+  relayOutbox: ActionLedgerRelayOutboxResponse[]
 }
 
 export interface ActionLedgerGetResponse {
   data: ActionLedgerEntryDetailResponse
+}
+
+export type ActionLedgerPayloadResponse = Omit<ActionLedgerPayload, "createdAt" | "expiresAt"> & {
+  createdAt: string
+  expiresAt: string | null
+}
+
+export type ActionLedgerRelayOutboxResponse = Omit<
+  ActionLedgerRelayOutbox,
+  "createdAt" | "nextRetryAt" | "processedAt"
+> & {
+  createdAt: string
+  nextRetryAt: string | null
+  processedAt: string | null
 }
 
 function serializeDate(value: Date | string): string {
@@ -119,11 +137,35 @@ function serializeDate(value: Date | string): string {
   return date.toISOString()
 }
 
+function serializeNullableDate(value: Date | string | null): string | null {
+  if (value === null) return null
+  return serializeDate(value)
+}
+
 function serializeActionLedgerEntry(entry: ActionLedgerEntry): ActionLedgerEntryResponse {
   return {
     ...entry,
     occurredAt: serializeDate(entry.occurredAt),
     createdAt: serializeDate(entry.createdAt),
+  }
+}
+
+function serializeActionLedgerPayload(payload: ActionLedgerPayload): ActionLedgerPayloadResponse {
+  return {
+    ...payload,
+    createdAt: serializeDate(payload.createdAt),
+    expiresAt: serializeNullableDate(payload.expiresAt),
+  }
+}
+
+function serializeActionLedgerRelayOutbox(
+  row: ActionLedgerRelayOutbox,
+): ActionLedgerRelayOutboxResponse {
+  return {
+    ...row,
+    createdAt: serializeDate(row.createdAt),
+    nextRetryAt: serializeNullableDate(row.nextRetryAt),
+    processedAt: serializeNullableDate(row.processedAt),
   }
 }
 
@@ -134,6 +176,8 @@ function serializeActionLedgerEntryDetail(
     ...serializeActionLedgerEntry(result.entry),
     mutationDetail: result.mutationDetail,
     sensitiveReadDetail: result.sensitiveReadDetail,
+    payloads: result.payloads.map(serializeActionLedgerPayload),
+    relayOutbox: result.relayOutbox.map(serializeActionLedgerRelayOutbox),
   }
 }
 

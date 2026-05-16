@@ -23,6 +23,8 @@ export {
   type ActionLedgerEntryResponse,
   type ActionLedgerGetResponse,
   type ActionLedgerListResponse,
+  type ActionLedgerPayloadResponse,
+  type ActionLedgerRelayOutboxResponse,
   actionLedgerAdminRoutes,
   actionLedgerHonoModule,
   actionLedgerModule,
