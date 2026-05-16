@@ -12,6 +12,10 @@ DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
 BETTER_AUTH_SECRET="<generate with: openssl rand -base64 32>"
 SESSION_CLAIMS_SECRET="<generate with: openssl rand -base64 32>"
 INTERNAL_API_KEY="<generate with: openssl rand -hex 32>"
+# Local dev and self-hosted deployments use Better Auth local flows. Voyant
+# Cloud deployments set this to "voyant-cloud"; in that mode local sign-in,
+# sign-up, password reset, invites, and local OAuth are blocked server-side.
+# VOYANT_ADMIN_AUTH_MODE="local"
 
 # CORS / URLs
 API_BASE_URL="http://localhost:3100/api"
