@@ -198,6 +198,54 @@ describe("actionLedgerService.getEntry", () => {
 })
 
 describe("actionLedgerService.appendEntry", () => {
+  test("inserts payload references and relay markers with the action id", async () => {
+    const { db, insertedPayloads, insertedRelayOutbox } = makeAppendDb()
+
+    const result = await actionLedgerService.appendEntry(db, {
+      actionName: "booking.cancel",
+      actionVersion: "v1",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      principalType: "user",
+      principalId: "usr_1",
+      internalRequest: false,
+      organizationId: "org_1",
+      targetType: "booking",
+      targetId: "book_1",
+      payloads: [
+        {
+          payloadKind: "command_input",
+          schemaTag: "booking.cancel:v1",
+          retentionPolicy: "audit-default",
+          storageRef: "blob://action-ledger/book_1/cancel-input",
+          hash: "sha256:payload",
+        },
+      ],
+      enqueueRelay: { payloadRef: "blob://action-ledger/book_1" },
+    })
+
+    expect(result.replayed).toBe(false)
+    expect(insertedPayloads).toEqual([
+      expect.objectContaining({
+        actionId: result.entry.id,
+        payloadKind: "command_input",
+        schemaTag: "booking.cancel:v1",
+        retentionPolicy: "audit-default",
+        storageRef: "blob://action-ledger/book_1/cancel-input",
+        hash: "sha256:payload",
+      }),
+    ])
+    expect(insertedRelayOutbox).toEqual([
+      expect.objectContaining({
+        actionId: result.entry.id,
+        organizationId: "org_1",
+        payloadRef: "blob://action-ledger/book_1",
+        relayStatus: "pending",
+      }),
+    ])
+  })
+
   test("throws a conflict when an idempotency key is replayed with a different fingerprint", async () => {
     const { db } = makeAppendDb()
     const input: AppendActionLedgerEntryInput = {
@@ -386,6 +434,10 @@ function makeListDb(rows: ActionLedgerEntry[]) {
 
 function makeAppendDb() {
   const entries: ActionLedgerEntry[] = []
+  const insertedMutationDetails: unknown[] = []
+  const insertedPayloads: unknown[] = []
+  const insertedRelayOutbox: unknown[] = []
+  const insertedSensitiveReadDetails: unknown[] = []
   const db = {
     select() {
       return {
@@ -404,36 +456,62 @@ function makeAppendDb() {
     },
     insert() {
       return {
-        values(values: NewActionLedgerEntry) {
+        values(values: NewActionLedgerEntry | Record<string, unknown> | Record<string, unknown>[]) {
+          if (Array.isArray(values)) {
+            insertedPayloads.push(...values)
+            return {}
+          }
+
+          if ("payloadKind" in values) {
+            insertedPayloads.push(values)
+            return {}
+          }
+
+          if ("relayStatus" in values) {
+            insertedRelayOutbox.push(values)
+            return {}
+          }
+
+          if ("reasonCode" in values || "disclosedFieldSet" in values) {
+            insertedSensitiveReadDetails.push(values)
+            return {}
+          }
+
+          if ("summary" in values || "reversalKind" in values) {
+            insertedMutationDetails.push(values)
+            return {}
+          }
+
           return {
             returning() {
+              const entryValues = values as NewActionLedgerEntry
               const entry = makeEntry({
-                ...values,
+                ...entryValues,
                 id: `alge_${entries.length + 1}`,
-                occurredAt: values.occurredAt ?? baseDate,
-                createdAt: values.createdAt ?? baseDate,
-                actorType: values.actorType ?? null,
-                principalSubtype: values.principalSubtype ?? null,
-                sessionId: values.sessionId ?? null,
-                apiTokenId: values.apiTokenId ?? null,
-                delegatedByPrincipalType: values.delegatedByPrincipalType ?? null,
-                delegatedByPrincipalId: values.delegatedByPrincipalId ?? null,
-                delegationId: values.delegationId ?? null,
-                callerType: values.callerType ?? null,
-                organizationId: values.organizationId ?? null,
-                routeOrToolName: values.routeOrToolName ?? null,
-                workflowRunId: values.workflowRunId ?? null,
-                workflowStepId: values.workflowStepId ?? null,
-                correlationId: values.correlationId ?? null,
-                causationActionId: values.causationActionId ?? null,
-                idempotencyScope: values.idempotencyScope ?? null,
-                idempotencyKey: values.idempotencyKey ?? null,
-                idempotencyFingerprint: values.idempotencyFingerprint ?? null,
-                capabilityId: values.capabilityId ?? null,
-                capabilityVersion: values.capabilityVersion ?? null,
-                authorizationSource: values.authorizationSource ?? null,
-                approvalId: values.approvalId ?? null,
-                amendsActionId: values.amendsActionId ?? null,
+                occurredAt: entryValues.occurredAt ?? baseDate,
+                createdAt: entryValues.createdAt ?? baseDate,
+                actorType: entryValues.actorType ?? null,
+                principalSubtype: entryValues.principalSubtype ?? null,
+                sessionId: entryValues.sessionId ?? null,
+                apiTokenId: entryValues.apiTokenId ?? null,
+                delegatedByPrincipalType: entryValues.delegatedByPrincipalType ?? null,
+                delegatedByPrincipalId: entryValues.delegatedByPrincipalId ?? null,
+                delegationId: entryValues.delegationId ?? null,
+                callerType: entryValues.callerType ?? null,
+                organizationId: entryValues.organizationId ?? null,
+                routeOrToolName: entryValues.routeOrToolName ?? null,
+                workflowRunId: entryValues.workflowRunId ?? null,
+                workflowStepId: entryValues.workflowStepId ?? null,
+                correlationId: entryValues.correlationId ?? null,
+                causationActionId: entryValues.causationActionId ?? null,
+                idempotencyScope: entryValues.idempotencyScope ?? null,
+                idempotencyKey: entryValues.idempotencyKey ?? null,
+                idempotencyFingerprint: entryValues.idempotencyFingerprint ?? null,
+                capabilityId: entryValues.capabilityId ?? null,
+                capabilityVersion: entryValues.capabilityVersion ?? null,
+                authorizationSource: entryValues.authorizationSource ?? null,
+                approvalId: entryValues.approvalId ?? null,
+                amendsActionId: entryValues.amendsActionId ?? null,
               })
               entries.push(entry)
               return Promise.resolve([entry])
@@ -444,5 +522,12 @@ function makeAppendDb() {
     },
   } as AnyDrizzleDb
 
-  return { db, entries }
+  return {
+    db,
+    entries,
+    insertedMutationDetails,
+    insertedPayloads,
+    insertedRelayOutbox,
+    insertedSensitiveReadDetails,
+  }
 }

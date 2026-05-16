@@ -116,6 +116,15 @@ describe("action ledger route entry builders", () => {
       actionKind: "update",
       targetType: "booking",
       targetId: "book_1",
+      payloads: [
+        {
+          payloadKind: "command_input",
+          schemaTag: "booking.cancel:v1",
+          retentionPolicy: "audit-default",
+          storageRef: "blob://action-ledger/book_1/cancel-input",
+        },
+      ],
+      enqueueRelay: { payloadRef: "blob://action-ledger/book_1" },
       mutationDetail: {
         summary: "Booking cancelled",
         reversalKind: "domain_command",
@@ -133,6 +142,15 @@ describe("action ledger route entry builders", () => {
       principalId: "usr_1",
       targetType: "booking",
       targetId: "book_1",
+      payloads: [
+        {
+          payloadKind: "command_input",
+          schemaTag: "booking.cancel:v1",
+          retentionPolicy: "audit-default",
+          storageRef: "blob://action-ledger/book_1/cancel-input",
+        },
+      ],
+      enqueueRelay: { payloadRef: "blob://action-ledger/book_1" },
       mutationDetail: {
         summary: "Booking cancelled",
         reversalKind: "domain_command",

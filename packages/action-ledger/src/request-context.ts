@@ -68,6 +68,8 @@ interface CommonActionLedgerRouteInput {
   idempotencyScope?: string | null
   idempotencyKey?: string | null
   idempotencyFingerprint?: string | null
+  payloads?: AppendActionLedgerEntryInput["payloads"]
+  enqueueRelay?: AppendActionLedgerEntryInput["enqueueRelay"]
   organizationId?: string | null
   workflowRunId?: string | null
   workflowStepId?: string | null
@@ -154,6 +156,8 @@ export function buildActionLedgerSensitiveReadEntryInput(
     idempotencyScope: input.idempotencyScope ?? null,
     idempotencyKey: input.idempotencyKey ?? null,
     idempotencyFingerprint: input.idempotencyFingerprint ?? null,
+    payloads: input.payloads,
+    enqueueRelay: input.enqueueRelay,
     organizationId: input.organizationId ?? actorFields.organizationId,
     workflowRunId: input.workflowRunId ?? actorFields.workflowRunId,
     workflowStepId: input.workflowStepId ?? actorFields.workflowStepId,
@@ -206,6 +210,8 @@ export function buildActionLedgerMutationEntryInput(
     idempotencyScope: input.idempotencyScope ?? null,
     idempotencyKey: input.idempotencyKey ?? null,
     idempotencyFingerprint: input.idempotencyFingerprint ?? null,
+    payloads: input.payloads,
+    enqueueRelay: input.enqueueRelay,
     organizationId: input.organizationId ?? actorFields.organizationId,
     workflowRunId: input.workflowRunId ?? actorFields.workflowRunId,
     workflowStepId: input.workflowStepId ?? actorFields.workflowStepId,

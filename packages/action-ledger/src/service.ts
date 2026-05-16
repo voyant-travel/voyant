@@ -13,6 +13,7 @@ import {
   actionMutationDetails,
   actionSensitiveReadDetails,
   type NewActionLedgerEntry,
+  type NewActionLedgerPayload,
   type NewActionMutationDetail,
   type NewActionSensitiveReadDetail,
 } from "./schema.js"
@@ -35,6 +36,7 @@ export interface AppendActionLedgerEntryInput
   occurredAt?: Date
   mutationDetail?: Omit<NewActionMutationDetail, "actionId">
   sensitiveReadDetail?: Omit<NewActionSensitiveReadDetail, "actionId">
+  payloads?: Omit<NewActionLedgerPayload, "id" | "actionId">[]
   enqueueRelay?: boolean | { payloadRef?: string | null }
 }
 
@@ -166,10 +168,11 @@ async function insertEntry(
   db: AnyDrizzleDb,
   input: AppendActionLedgerEntryInput,
 ): Promise<AppendActionLedgerEntryResult> {
+  const { enqueueRelay, mutationDetail, payloads, sensitiveReadDetail, ...entryInput } = input
   const [entry] = await db
     .insert(actionLedgerEntries)
     .values({
-      ...input,
+      ...entryInput,
       occurredAt: input.occurredAt,
     })
     .returning()
@@ -178,22 +181,31 @@ async function insertEntry(
     throw new Error("Action ledger insert did not return an entry")
   }
 
-  if (input.mutationDetail) {
+  if (mutationDetail) {
     await db.insert(actionMutationDetails).values({
       actionId: entry.id,
-      ...input.mutationDetail,
+      ...mutationDetail,
     })
   }
 
-  if (input.sensitiveReadDetail) {
+  if (sensitiveReadDetail) {
     await db.insert(actionSensitiveReadDetails).values({
       actionId: entry.id,
-      ...input.sensitiveReadDetail,
+      ...sensitiveReadDetail,
     })
   }
 
-  if (input.enqueueRelay) {
-    const payloadRef = typeof input.enqueueRelay === "object" ? input.enqueueRelay.payloadRef : null
+  if (payloads && payloads.length > 0) {
+    await db.insert(actionLedgerPayloads).values(
+      payloads.map((payload) => ({
+        actionId: entry.id,
+        ...payload,
+      })),
+    )
+  }
+
+  if (enqueueRelay) {
+    const payloadRef = typeof enqueueRelay === "object" ? enqueueRelay.payloadRef : null
     await db.insert(actionLedgerRelayOutbox).values({
       actionId: entry.id,
       organizationId: entry.organizationId,
