@@ -48,6 +48,17 @@ const actionLedgerRelayStatusValues = [
   "failed",
   "dead_letter",
 ] as const
+const actionLedgerReversalKindValues = ["none", "revert", "compensate", "domain_command"] as const
+const actionLedgerReversalStateValues = [
+  "not_reversible",
+  "available",
+  "requested",
+  "running",
+  "completed",
+  "failed",
+  "expired",
+] as const
+const actionLedgerReversalOutcomeValues = ["full", "partial", "failed"] as const
 
 type NonEmptyEnumValues = readonly [string, ...string[]]
 
@@ -88,6 +99,13 @@ const actionLedgerEntryListQuerySchema = z
     idempotencyKey: z.string().trim().min(1).optional(),
     evaluatedRisk: commaSeparatedEnumList(actionLedgerRiskValues),
     status: commaSeparatedEnumList(actionLedgerStatusValues),
+    reversalKind: commaSeparatedEnumList(actionLedgerReversalKindValues),
+    reversalState: commaSeparatedEnumList(actionLedgerReversalStateValues),
+    reversalOutcome: commaSeparatedEnumList(actionLedgerReversalOutcomeValues),
+    reversesActionId: z.string().trim().min(1).optional(),
+    reversedByActionId: z.string().trim().min(1).optional(),
+    sensitiveReasonCode: z.string().trim().min(1).optional(),
+    decisionPolicy: z.string().trim().min(1).optional(),
     occurredAtFrom: z.string().datetime().optional(),
     occurredAtTo: z.string().datetime().optional(),
     cursorOccurredAt: z.string().datetime().optional(),

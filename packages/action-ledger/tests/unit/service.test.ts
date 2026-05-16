@@ -169,6 +169,43 @@ describe("actionLedgerService.listEntries", () => {
     ])
   })
 
+  test("composes mutation and sensitive-read profile filters", () => {
+    const predicate = __test__.buildActionLedgerEntriesPredicate({
+      reversalKind: ["domain_command", "compensate"],
+      reversalState: ["available", "requested"],
+      reversalOutcome: "partial",
+      reversesActionId: "alge_original",
+      reversedByActionId: "alge_reversal",
+      sensitiveReasonCode: "travel_details_reveal",
+      decisionPolicy: "bookings-pii-scope-or-staff-v1",
+    })
+
+    expect(predicate).toBeDefined()
+    const query = new PgDialect().sqlToQuery(predicate!)
+
+    expect(query.sql).toContain("EXISTS")
+    expect(query.sql).toContain('"action_mutation_details"')
+    expect(query.sql).toContain('"action_sensitive_read_details"')
+    expect(query.sql).toContain('"action_mutation_details"."reversal_kind" in ($1, $2)')
+    expect(query.sql).toContain('"action_mutation_details"."reversal_state_projection" in ($3, $4)')
+    expect(query.sql).toContain('"action_mutation_details"."reversal_outcome_projection" = $5')
+    expect(query.sql).toContain('"action_mutation_details"."reverses_action_id" = $6')
+    expect(query.sql).toContain('"action_mutation_details"."reversed_by_action_id_projection" = $7')
+    expect(query.sql).toContain('"action_sensitive_read_details"."reason_code" = $8')
+    expect(query.sql).toContain('"action_sensitive_read_details"."decision_policy" = $9')
+    expect(query.params).toEqual([
+      "domain_command",
+      "compensate",
+      "available",
+      "requested",
+      "partial",
+      "alge_original",
+      "alge_reversal",
+      "travel_details_reveal",
+      "bookings-pii-scope-or-staff-v1",
+    ])
+  })
+
   test("composes occurred_at time-window filters", () => {
     const predicate = __test__.buildActionLedgerEntriesPredicate({
       occurredAtFrom: "2026-05-15T09:00:00.000Z",

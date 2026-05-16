@@ -81,6 +81,17 @@ export interface ListActionLedgerEntriesInput {
   idempotencyKey?: string | null
   evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"] | ActionLedgerEntry["evaluatedRisk"][]
   status?: ActionLedgerEntry["status"] | ActionLedgerEntry["status"][]
+  reversalKind?: ActionMutationDetail["reversalKind"] | ActionMutationDetail["reversalKind"][]
+  reversalState?:
+    | NonNullable<ActionMutationDetail["reversalStateProjection"]>
+    | NonNullable<ActionMutationDetail["reversalStateProjection"]>[]
+  reversalOutcome?:
+    | NonNullable<ActionMutationDetail["reversalOutcomeProjection"]>
+    | NonNullable<ActionMutationDetail["reversalOutcomeProjection"]>[]
+  reversesActionId?: string | null
+  reversedByActionId?: string | null
+  sensitiveReasonCode?: string | null
+  decisionPolicy?: string | null
   occurredAtFrom?: Date | string | null
   occurredAtTo?: Date | string | null
   cursor?: ActionLedgerListCursor | null
@@ -521,6 +532,45 @@ function statusCondition(
   return eq(actionLedgerEntries.status, value)
 }
 
+function reversalKindCondition(
+  value: ActionMutationDetail["reversalKind"] | ActionMutationDetail["reversalKind"][] | undefined,
+): SQL | undefined {
+  if (value === undefined) return undefined
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined
+    return inArray(actionMutationDetails.reversalKind, value)
+  }
+  return eq(actionMutationDetails.reversalKind, value)
+}
+
+function reversalStateCondition(
+  value:
+    | NonNullable<ActionMutationDetail["reversalStateProjection"]>
+    | NonNullable<ActionMutationDetail["reversalStateProjection"]>[]
+    | undefined,
+): SQL | undefined {
+  if (value === undefined) return undefined
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined
+    return inArray(actionMutationDetails.reversalStateProjection, value)
+  }
+  return eq(actionMutationDetails.reversalStateProjection, value)
+}
+
+function reversalOutcomeCondition(
+  value:
+    | NonNullable<ActionMutationDetail["reversalOutcomeProjection"]>
+    | NonNullable<ActionMutationDetail["reversalOutcomeProjection"]>[]
+    | undefined,
+): SQL | undefined {
+  if (value === undefined) return undefined
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined
+    return inArray(actionMutationDetails.reversalOutcomeProjection, value)
+  }
+  return eq(actionMutationDetails.reversalOutcomeProjection, value)
+}
+
 function relayStatusCondition(
   value:
     | ActionLedgerRelayOutbox["relayStatus"]
@@ -533,6 +583,24 @@ function relayStatusCondition(
     return inArray(actionLedgerRelayOutbox.relayStatus, value)
   }
   return eq(actionLedgerRelayOutbox.relayStatus, value)
+}
+
+function mutationDetailExists(condition: SQL): SQL {
+  return sql`EXISTS (
+    SELECT 1
+    FROM ${actionMutationDetails}
+    WHERE ${actionMutationDetails.actionId} = ${actionLedgerEntries.id}
+      AND ${condition}
+  )`
+}
+
+function sensitiveReadDetailExists(condition: SQL): SQL {
+  return sql`EXISTS (
+    SELECT 1
+    FROM ${actionSensitiveReadDetails}
+    WHERE ${actionSensitiveReadDetails.actionId} = ${actionLedgerEntries.id}
+      AND ${condition}
+  )`
 }
 
 function buildCursorCondition(cursor: ActionLedgerListCursor): SQL {
@@ -652,6 +720,48 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
 
   const entryStatusCondition = statusCondition(input.status)
   if (entryStatusCondition) conditions.push(entryStatusCondition)
+
+  const entryReversalKindCondition = reversalKindCondition(input.reversalKind)
+  if (entryReversalKindCondition) {
+    conditions.push(mutationDetailExists(entryReversalKindCondition))
+  }
+
+  const entryReversalStateCondition = reversalStateCondition(input.reversalState)
+  if (entryReversalStateCondition) {
+    conditions.push(mutationDetailExists(entryReversalStateCondition))
+  }
+
+  const entryReversalOutcomeCondition = reversalOutcomeCondition(input.reversalOutcome)
+  if (entryReversalOutcomeCondition) {
+    conditions.push(mutationDetailExists(entryReversalOutcomeCondition))
+  }
+
+  if (input.reversesActionId) {
+    conditions.push(
+      mutationDetailExists(eq(actionMutationDetails.reversesActionId, input.reversesActionId)),
+    )
+  }
+  if (input.reversedByActionId) {
+    conditions.push(
+      mutationDetailExists(
+        eq(actionMutationDetails.reversedByActionIdProjection, input.reversedByActionId),
+      ),
+    )
+  }
+  if (input.sensitiveReasonCode) {
+    conditions.push(
+      sensitiveReadDetailExists(
+        eq(actionSensitiveReadDetails.reasonCode, input.sensitiveReasonCode),
+      ),
+    )
+  }
+  if (input.decisionPolicy) {
+    conditions.push(
+      sensitiveReadDetailExists(
+        eq(actionSensitiveReadDetails.decisionPolicy, input.decisionPolicy),
+      ),
+    )
+  }
 
   if (input.occurredAtFrom) {
     conditions.push(gte(actionLedgerEntries.occurredAt, parseCursorDate(input.occurredAtFrom)))
