@@ -856,6 +856,32 @@ function sortBookingActionLedgerEntries(entries: ActionLedgerEntry[]) {
   })
 }
 
+function buildBookingActionLedgerPage({
+  bookingEntries,
+  travelerEntries,
+  limit,
+}: {
+  bookingEntries: ActionLedgerEntry[]
+  travelerEntries: ActionLedgerEntry[]
+  limit: number
+}) {
+  const entriesById = new Map<string, ActionLedgerEntry>()
+  for (const entry of bookingEntries) {
+    entriesById.set(entry.id, entry)
+  }
+  for (const entry of travelerEntries) {
+    entriesById.set(entry.id, entry)
+  }
+
+  const sortedEntries = sortBookingActionLedgerEntries([...entriesById.values()])
+  const entries = sortedEntries.slice(0, limit)
+  const lastEntry = entries.at(-1)
+  const nextCursor =
+    sortedEntries.length > limit && lastEntry ? toBookingActionLedgerCursor(lastEntry) : null
+
+  return { entries, nextCursor }
+}
+
 async function listBookingActionLedger(c: Context<Env>) {
   const bookingId = c.req.param("id")
   if (!bookingId) {
@@ -899,30 +925,21 @@ async function listBookingActionLedger(c: Context<Env>) {
       : Promise.resolve({ entries: [], nextCursor: null }),
   ])
 
-  const entriesById = new Map<string, ActionLedgerEntry>()
-  for (const entry of bookingEntriesResult.entries) {
-    entriesById.set(entry.id, entry)
-  }
-  for (const entry of travelerEntriesResult.entries) {
-    entriesById.set(entry.id, entry)
-  }
-  const sortedEntries = sortBookingActionLedgerEntries([...entriesById.values()])
-  const pageEntries = sortedEntries.slice(0, limit)
-  const lastPageEntry = pageEntries.at(-1)
-  const nextCursor =
-    sortedEntries.length > limit && lastPageEntry
-      ? toBookingActionLedgerCursor(lastPageEntry)
-      : null
+  const page = buildBookingActionLedgerPage({
+    bookingEntries: bookingEntriesResult.entries,
+    travelerEntries: travelerEntriesResult.entries,
+    limit,
+  })
 
   return c.json({
-    data: pageEntries.map(serializeBookingActionLedgerEntry),
+    data: page.entries.map(serializeBookingActionLedgerEntry),
     travelers: visibleTravelers.map((traveler) => ({
       id: traveler.id,
       firstName: traveler.firstName,
       lastName: traveler.lastName,
     })),
     pageInfo: {
-      nextCursor,
+      nextCursor: page.nextCursor,
     },
   } satisfies BookingActionLedgerListResponse)
 }
@@ -2182,3 +2199,8 @@ export const bookingRoutes = new Hono<Env>()
 
 export type BookingRoutes = typeof bookingRoutes
 export type PublicBookingRoutes = typeof publicBookingRoutes
+
+export const __test__ = {
+  bookingActionLedgerQuerySchema,
+  buildBookingActionLedgerPage,
+}
