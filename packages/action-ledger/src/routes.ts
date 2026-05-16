@@ -124,6 +124,10 @@ const actionLedgerRelayOutboxListQuerySchema = z
     organizationId: z.string().trim().min(1).optional(),
     relayStatus: commaSeparatedEnumList(actionLedgerRelayStatusValues),
     dueBefore: z.string().datetime().optional(),
+    createdAtFrom: z.string().datetime().optional(),
+    createdAtTo: z.string().datetime().optional(),
+    processedAtFrom: z.string().datetime().optional(),
+    processedAtTo: z.string().datetime().optional(),
     cursorCreatedAt: z.string().datetime().optional(),
     cursorId: z.string().trim().min(1).optional(),
     limit: z.coerce.number().int().min(1).max(200).optional(),
@@ -137,17 +141,32 @@ const actionLedgerRelayOutboxListQuerySchema = z
       message: "cursorCreatedAt and cursorId must be provided together",
     })
   })
-  .transform(({ cursorCreatedAt, cursorId, dueBefore, ...query }) => ({
-    ...query,
-    dueBefore: dueBefore ? new Date(dueBefore) : undefined,
-    cursor:
-      cursorCreatedAt && cursorId
-        ? {
-            createdAt: cursorCreatedAt,
-            id: cursorId,
-          }
-        : undefined,
-  }))
+  .transform(
+    ({
+      cursorCreatedAt,
+      cursorId,
+      dueBefore,
+      createdAtFrom,
+      createdAtTo,
+      processedAtFrom,
+      processedAtTo,
+      ...query
+    }) => ({
+      ...query,
+      dueBefore: dueBefore ? new Date(dueBefore) : undefined,
+      createdAtFrom: createdAtFrom ? new Date(createdAtFrom) : undefined,
+      createdAtTo: createdAtTo ? new Date(createdAtTo) : undefined,
+      processedAtFrom: processedAtFrom ? new Date(processedAtFrom) : undefined,
+      processedAtTo: processedAtTo ? new Date(processedAtTo) : undefined,
+      cursor:
+        cursorCreatedAt && cursorId
+          ? {
+              createdAt: cursorCreatedAt,
+              id: cursorId,
+            }
+          : undefined,
+    }),
+  )
 
 type ActionLedgerRelayOutboxListQuery = z.infer<typeof actionLedgerRelayOutboxListQuerySchema>
 

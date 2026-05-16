@@ -228,7 +228,7 @@ describe("actionLedgerAdminRoutes", () => {
 
     const app = makeApp(db)
     const response = await app.request(
-      "/relay-outbox?actionId=alge_1&organizationId=org_1&relayStatus=pending,failed&dueBefore=2026-05-15T10%3A05%3A00.000Z&cursorCreatedAt=2026-05-15T10%3A00%3A00.000Z&cursorId=alro_cursor&limit=25",
+      "/relay-outbox?actionId=alge_1&organizationId=org_1&relayStatus=pending,failed&dueBefore=2026-05-15T10%3A05%3A00.000Z&createdAtFrom=2026-05-15T09%3A00%3A00.000Z&createdAtTo=2026-05-15T10%3A00%3A00.000Z&processedAtFrom=2026-05-15T10%3A15%3A00.000Z&processedAtTo=2026-05-15T10%3A30%3A00.000Z&cursorCreatedAt=2026-05-15T10%3A00%3A00.000Z&cursorId=alro_cursor&limit=25",
     )
 
     expect(spy).toHaveBeenCalledWith(db, {
@@ -236,6 +236,10 @@ describe("actionLedgerAdminRoutes", () => {
       organizationId: "org_1",
       relayStatus: ["pending", "failed"],
       dueBefore: new Date("2026-05-15T10:05:00.000Z"),
+      createdAtFrom: new Date("2026-05-15T09:00:00.000Z"),
+      createdAtTo: new Date("2026-05-15T10:00:00.000Z"),
+      processedAtFrom: new Date("2026-05-15T10:15:00.000Z"),
+      processedAtTo: new Date("2026-05-15T10:30:00.000Z"),
       cursor: {
         createdAt: "2026-05-15T10:00:00.000Z",
         id: "alro_cursor",

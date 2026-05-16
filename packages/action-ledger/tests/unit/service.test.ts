@@ -240,6 +240,29 @@ describe("actionLedgerService.listRelayOutbox", () => {
     ])
   })
 
+  test("composes relay outbox created and processed time-window filters", () => {
+    const predicate = __test__.buildActionLedgerRelayOutboxPredicate({
+      createdAtFrom: "2026-05-15T09:00:00.000Z",
+      createdAtTo: "2026-05-15T10:00:00.000Z",
+      processedAtFrom: "2026-05-15T10:15:00.000Z",
+      processedAtTo: "2026-05-15T10:30:00.000Z",
+    })
+
+    expect(predicate).toBeDefined()
+    const query = new PgDialect().sqlToQuery(predicate!)
+
+    expect(query.sql).toContain('"action_ledger_outbox"."created_at" >= $1')
+    expect(query.sql).toContain('"action_ledger_outbox"."created_at" <= $2')
+    expect(query.sql).toContain('"action_ledger_outbox"."processed_at" >= $3')
+    expect(query.sql).toContain('"action_ledger_outbox"."processed_at" <= $4')
+    expect(query.params).toEqual([
+      "2026-05-15T09:00:00.000Z",
+      "2026-05-15T10:00:00.000Z",
+      "2026-05-15T10:15:00.000Z",
+      "2026-05-15T10:30:00.000Z",
+    ])
+  })
+
   test("overfetches by one and returns the last visible relay row as the next cursor", async () => {
     const rows = [
       makeRelayOutbox({ id: "alro_3", createdAt: new Date("2026-05-15T10:03:00.000Z") }),

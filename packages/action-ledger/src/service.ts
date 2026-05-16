@@ -97,6 +97,10 @@ export interface ListActionLedgerRelayOutboxInput {
   organizationId?: string | null
   relayStatus?: ActionLedgerRelayOutbox["relayStatus"] | ActionLedgerRelayOutbox["relayStatus"][]
   dueBefore?: Date | string | null
+  createdAtFrom?: Date | string | null
+  createdAtTo?: Date | string | null
+  processedAtFrom?: Date | string | null
+  processedAtTo?: Date | string | null
   cursor?: ActionLedgerRelayOutboxListCursor | null
   limit?: number
 }
@@ -566,6 +570,21 @@ function buildActionLedgerRelayOutboxPredicate(
 
   if (input.dueBefore) {
     conditions.push(lte(actionLedgerRelayOutbox.nextRetryAt, parseCursorDate(input.dueBefore)))
+  }
+
+  if (input.createdAtFrom) {
+    conditions.push(gte(actionLedgerRelayOutbox.createdAt, parseCursorDate(input.createdAtFrom)))
+  }
+  if (input.createdAtTo) {
+    conditions.push(lte(actionLedgerRelayOutbox.createdAt, parseCursorDate(input.createdAtTo)))
+  }
+  if (input.processedAtFrom) {
+    conditions.push(
+      gte(actionLedgerRelayOutbox.processedAt, parseCursorDate(input.processedAtFrom)),
+    )
+  }
+  if (input.processedAtTo) {
+    conditions.push(lte(actionLedgerRelayOutbox.processedAt, parseCursorDate(input.processedAtTo)))
   }
 
   if (input.cursor) {
