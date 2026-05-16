@@ -1,5 +1,24 @@
 # @voyantjs/bookings-ui
 
+## 0.50.6
+
+### Patch Changes
+
+- c14f0a8: Fix the booking-create flow: scrollable dialog content with reachable actions, normalized product search, future departure lookup, shared-room clearing, explicit item lines, selectable traveler people including the payer, already-paid schedule rows, and booking-create naming throughout the API/registry surface.
+- Updated dependencies [c14f0a8]
+  - @voyantjs/availability-react@0.50.6
+  - @voyantjs/bookings-react@0.50.6
+  - @voyantjs/catalog@0.50.6
+  - @voyantjs/catalog-react@0.50.6
+  - @voyantjs/crm-react@0.50.6
+  - @voyantjs/crm-ui@0.50.6
+  - @voyantjs/finance-react@0.50.6
+  - @voyantjs/i18n@0.50.6
+  - @voyantjs/legal-react@0.50.6
+  - @voyantjs/products-react@0.50.6
+  - @voyantjs/suppliers-react@0.50.6
+  - @voyantjs/ui@0.50.6
+
 ## 0.50.5
 
 ### Patch Changes
