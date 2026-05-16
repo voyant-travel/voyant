@@ -3,6 +3,7 @@ import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, test } from "vitest"
 import type {
   ActionApproval,
+  ActionDelegation,
   ActionLedgerEntry,
   ActionLedgerPayload,
   ActionLedgerRelayOutbox,
@@ -417,6 +418,89 @@ describe("actionLedgerService.listApprovals", () => {
   })
 })
 
+describe("actionLedgerService.listDelegations", () => {
+  test("composes delegation principal, scope, time-window, and cursor filters", () => {
+    const predicate = __test__.buildActionDelegationsPredicate({
+      rootPrincipalType: "user",
+      rootPrincipalId: "usr_root",
+      parentPrincipalType: "agent",
+      parentPrincipalId: "agent_parent",
+      childPrincipalType: "workflow",
+      childPrincipalId: "wf_child",
+      grantSource: "travel.agent.run",
+      capabilityScopeRef: "capability://bookings/status",
+      budgetScopeRef: "budget://travel-agent/run-1",
+      expiresAtFrom: "2026-05-15T11:00:00.000Z",
+      expiresAtTo: "2026-05-15T12:00:00.000Z",
+      createdAtFrom: "2026-05-15T09:00:00.000Z",
+      createdAtTo: "2026-05-15T10:00:00.000Z",
+      cursor: {
+        createdAt: "2026-05-15T10:00:00.000Z",
+        id: "adel_cursor",
+      },
+    })
+
+    expect(predicate).toBeDefined()
+    const query = new PgDialect().sqlToQuery(predicate!)
+
+    expect(query.sql).toContain('"action_delegations"."root_principal_type" = $1')
+    expect(query.sql).toContain('"action_delegations"."root_principal_id" = $2')
+    expect(query.sql).toContain('"action_delegations"."parent_principal_type" = $3')
+    expect(query.sql).toContain('"action_delegations"."parent_principal_id" = $4')
+    expect(query.sql).toContain('"action_delegations"."child_principal_type" = $5')
+    expect(query.sql).toContain('"action_delegations"."child_principal_id" = $6')
+    expect(query.sql).toContain('"action_delegations"."grant_source" = $7')
+    expect(query.sql).toContain('"action_delegations"."capability_scope_ref" = $8')
+    expect(query.sql).toContain('"action_delegations"."budget_scope_ref" = $9')
+    expect(query.sql).toContain('"action_delegations"."expires_at" >= $10')
+    expect(query.sql).toContain('"action_delegations"."expires_at" <= $11')
+    expect(query.sql).toContain('"action_delegations"."created_at" >= $12')
+    expect(query.sql).toContain('"action_delegations"."created_at" <= $13')
+    expect(query.sql).toContain('"action_delegations"."created_at" < $14')
+    expect(query.sql).toContain('"action_delegations"."created_at" = $15')
+    expect(query.sql).toContain('"action_delegations"."id" < $16')
+    expect(query.params).toEqual([
+      "user",
+      "usr_root",
+      "agent",
+      "agent_parent",
+      "workflow",
+      "wf_child",
+      "travel.agent.run",
+      "capability://bookings/status",
+      "budget://travel-agent/run-1",
+      "2026-05-15T11:00:00.000Z",
+      "2026-05-15T12:00:00.000Z",
+      "2026-05-15T09:00:00.000Z",
+      "2026-05-15T10:00:00.000Z",
+      "2026-05-15T10:00:00.000Z",
+      "2026-05-15T10:00:00.000Z",
+      "adel_cursor",
+    ])
+  })
+
+  test("overfetches by one and returns the last visible delegation as the next cursor", async () => {
+    const rows = [
+      makeDelegation({ id: "adel_3", createdAt: new Date("2026-05-15T10:03:00.000Z") }),
+      makeDelegation({ id: "adel_2", createdAt: new Date("2026-05-15T10:02:00.000Z") }),
+      makeDelegation({ id: "adel_1", createdAt: new Date("2026-05-15T10:01:00.000Z") }),
+    ]
+    const { db, calls } = makeDelegationListDb(rows)
+
+    const result = await actionLedgerService.listDelegations(db, { limit: 2 })
+
+    expect(result.delegations.map((delegation) => delegation.id)).toEqual(["adel_3", "adel_2"])
+    expect(result.nextCursor).toEqual({
+      createdAt: "2026-05-15T10:02:00.000Z",
+      id: "adel_2",
+    })
+    expect(calls).toEqual([
+      { phase: "orderBy", argCount: 2 },
+      { phase: "limit", value: 3 },
+    ])
+  })
+})
+
 describe("actionLedgerService relay outbox lifecycle", () => {
   test("claims due relay outbox rows and maps SQL result rows", async () => {
     const claimed = makeRelayOutbox({
@@ -732,6 +816,24 @@ function makeApproval(overrides: Partial<ActionApproval> = {}): ActionApproval {
   }
 }
 
+function makeDelegation(overrides: Partial<ActionDelegation> = {}): ActionDelegation {
+  return {
+    id: "adel_1",
+    rootPrincipalType: "user",
+    rootPrincipalId: "usr_root",
+    parentPrincipalType: "user",
+    parentPrincipalId: "usr_root",
+    childPrincipalType: "agent",
+    childPrincipalId: "agent_child",
+    grantSource: "travel.agent.run",
+    capabilityScopeRef: "capability://bookings/status",
+    budgetScopeRef: "budget://travel-agent/run-1",
+    expiresAt: new Date("2026-05-15T12:00:00.000Z"),
+    createdAt: baseDate,
+    ...overrides,
+  }
+}
+
 function makeGetEntryDb(input: {
   entry?: ActionLedgerEntry
   mutationDetail?: ActionMutationDetail
@@ -858,6 +960,42 @@ function makeRelayOutboxListDb(rows: ActionLedgerRelayOutbox[]) {
 }
 
 function makeApprovalListDb(rows: ActionApproval[]) {
+  const calls: Array<{ phase: string; argCount?: number; value?: number }> = []
+  let limit = rows.length
+  const query = {
+    where() {
+      calls.push({ phase: "where" })
+      return query
+    },
+    orderBy(...args: unknown[]) {
+      calls.push({ phase: "orderBy", argCount: args.length })
+      return query
+    },
+    limit(value: number) {
+      calls.push({ phase: "limit", value })
+      limit = value
+      return Promise.resolve(rows.slice(0, limit))
+    },
+  }
+
+  const db = {
+    select() {
+      return {
+        from() {
+          return {
+            $dynamic() {
+              return query
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return { db, calls }
+}
+
+function makeDelegationListDb(rows: ActionDelegation[]) {
   const calls: Array<{ phase: string; argCount?: number; value?: number }> = []
   let limit = rows.length
   const query = {

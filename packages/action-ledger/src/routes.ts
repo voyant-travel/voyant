@@ -7,6 +7,7 @@ import { z } from "zod"
 
 import type {
   ActionApproval,
+  ActionDelegation,
   ActionLedgerEntry,
   ActionLedgerPayload,
   ActionLedgerRelayOutbox,
@@ -259,6 +260,61 @@ const actionApprovalListQuerySchema = z
 
 type ActionApprovalListQuery = z.infer<typeof actionApprovalListQuerySchema>
 
+const actionDelegationListQuerySchema = z
+  .object({
+    rootPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
+    rootPrincipalId: z.string().trim().min(1).optional(),
+    parentPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
+    parentPrincipalId: z.string().trim().min(1).optional(),
+    childPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
+    childPrincipalId: z.string().trim().min(1).optional(),
+    grantSource: z.string().trim().min(1).optional(),
+    capabilityScopeRef: z.string().trim().min(1).optional(),
+    budgetScopeRef: z.string().trim().min(1).optional(),
+    expiresAtFrom: z.string().datetime().optional(),
+    expiresAtTo: z.string().datetime().optional(),
+    createdAtFrom: z.string().datetime().optional(),
+    createdAtTo: z.string().datetime().optional(),
+    cursorCreatedAt: z.string().datetime().optional(),
+    cursorId: z.string().trim().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(200).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (Boolean(value.cursorCreatedAt) === Boolean(value.cursorId)) return
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: value.cursorCreatedAt ? ["cursorId"] : ["cursorCreatedAt"],
+      message: "cursorCreatedAt and cursorId must be provided together",
+    })
+  })
+  .transform(
+    ({
+      cursorCreatedAt,
+      cursorId,
+      expiresAtFrom,
+      expiresAtTo,
+      createdAtFrom,
+      createdAtTo,
+      ...query
+    }) => ({
+      ...query,
+      expiresAtFrom: expiresAtFrom ? new Date(expiresAtFrom) : undefined,
+      expiresAtTo: expiresAtTo ? new Date(expiresAtTo) : undefined,
+      createdAtFrom: createdAtFrom ? new Date(createdAtFrom) : undefined,
+      createdAtTo: createdAtTo ? new Date(createdAtTo) : undefined,
+      cursor:
+        cursorCreatedAt && cursorId
+          ? {
+              createdAt: cursorCreatedAt,
+              id: cursorId,
+            }
+          : undefined,
+    }),
+  )
+
+type ActionDelegationListQuery = z.infer<typeof actionDelegationListQuerySchema>
+
 type Env = {
   Variables: {
     db: AnyDrizzleDb
@@ -311,6 +367,16 @@ export interface ActionApprovalListResponse {
   }
 }
 
+export interface ActionDelegationListResponse {
+  data: ActionDelegationResponse[]
+  pageInfo: {
+    nextCursor: {
+      createdAt: string
+      id: string
+    } | null
+  }
+}
+
 export type ActionLedgerPayloadResponse = Omit<ActionLedgerPayload, "createdAt" | "expiresAt"> & {
   createdAt: string
   expiresAt: string | null
@@ -331,6 +397,11 @@ export type ActionApprovalResponse = Omit<
 > & {
   createdAt: string
   decidedAt: string | null
+  expiresAt: string | null
+}
+
+export type ActionDelegationResponse = Omit<ActionDelegation, "createdAt" | "expiresAt"> & {
+  createdAt: string
   expiresAt: string | null
 }
 
@@ -379,6 +450,14 @@ function serializeActionApproval(row: ActionApproval): ActionApprovalResponse {
     ...row,
     createdAt: serializeDate(row.createdAt),
     decidedAt: serializeNullableDate(row.decidedAt),
+    expiresAt: serializeNullableDate(row.expiresAt),
+  }
+}
+
+function serializeActionDelegation(row: ActionDelegation): ActionDelegationResponse {
+  return {
+    ...row,
+    createdAt: serializeDate(row.createdAt),
     expiresAt: serializeNullableDate(row.expiresAt),
   }
 }
@@ -434,6 +513,18 @@ async function listActionApprovals(c: Context<Env>) {
   } satisfies ActionApprovalListResponse)
 }
 
+async function listActionDelegations(c: Context<Env>) {
+  const query: ActionDelegationListQuery = parseQuery(c, actionDelegationListQuerySchema)
+  const result = await actionLedgerService.listDelegations(c.get("db"), query)
+
+  return c.json({
+    data: result.delegations.map(serializeActionDelegation),
+    pageInfo: {
+      nextCursor: result.nextCursor,
+    },
+  } satisfies ActionDelegationListResponse)
+}
+
 async function getActionLedgerEntry(c: Context<Env>) {
   const id = c.req.param("id")
   if (!id) {
@@ -455,6 +546,7 @@ export const actionLedgerAdminRoutes = new Hono<Env>()
   .get("/", listActionLedgerEntries)
   .get("/entries", listActionLedgerEntries)
   .get("/approvals", listActionApprovals)
+  .get("/delegations", listActionDelegations)
   .get("/relay-outbox", listActionLedgerRelayOutbox)
   .get("/entries/:id", getActionLedgerEntry)
 
@@ -472,8 +564,10 @@ export const actionLedgerHonoModule: HonoModule = {
 export const __test__ = {
   actionLedgerEntryListQuerySchema,
   actionApprovalListQuerySchema,
+  actionDelegationListQuerySchema,
   actionLedgerRelayOutboxListQuerySchema,
   serializeActionApproval,
+  serializeActionDelegation,
   serializeActionLedgerEntry,
   serializeActionLedgerEntryDetail,
 }

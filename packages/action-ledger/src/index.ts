@@ -39,6 +39,8 @@ export {
 export {
   type ActionApprovalListResponse,
   type ActionApprovalResponse,
+  type ActionDelegationListResponse,
+  type ActionDelegationResponse,
   type ActionLedgerAdminRoutes,
   type ActionLedgerEntryDetailResponse,
   type ActionLedgerEntryResponse,
@@ -86,6 +88,7 @@ export {
 } from "./schema.js"
 export {
   type ActionApprovalListCursor,
+  type ActionDelegationListCursor,
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerListCursor,
   type ActionLedgerRelayOutboxListCursor,
@@ -97,6 +100,8 @@ export {
   type GetActionLedgerEntryResult,
   type ListActionApprovalsInput,
   type ListActionApprovalsResult,
+  type ListActionDelegationsInput,
+  type ListActionDelegationsResult,
   type ListActionLedgerEntriesInput,
   type ListActionLedgerEntriesResult,
   type ListActionLedgerRelayOutboxInput,

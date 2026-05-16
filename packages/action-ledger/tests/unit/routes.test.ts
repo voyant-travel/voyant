@@ -5,6 +5,7 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 import { __test__, actionLedgerAdminRoutes } from "../../src/routes.js"
 import type {
   ActionApproval,
+  ActionDelegation,
   ActionLedgerEntry,
   ActionLedgerPayload,
   ActionLedgerRelayOutbox,
@@ -137,6 +138,24 @@ function makeApproval(overrides: Partial<ActionApproval> = {}): ActionApproval {
     reasonCode: "paid_booking_cancel",
     expiresAt: new Date("2026-05-15T12:00:00.000Z"),
     decidedAt: null,
+    createdAt: baseDate,
+    ...overrides,
+  }
+}
+
+function makeDelegation(overrides: Partial<ActionDelegation> = {}): ActionDelegation {
+  return {
+    id: "adel_1",
+    rootPrincipalType: "user",
+    rootPrincipalId: "usr_root",
+    parentPrincipalType: "user",
+    parentPrincipalId: "usr_root",
+    childPrincipalType: "agent",
+    childPrincipalId: "agent_child",
+    grantSource: "travel.agent.run",
+    capabilityScopeRef: "capability://bookings/status",
+    budgetScopeRef: "budget://travel-agent/run-1",
+    expiresAt: new Date("2026-05-15T12:00:00.000Z"),
     createdAt: baseDate,
     ...overrides,
   }
@@ -365,6 +384,72 @@ describe("actionLedgerAdminRoutes", () => {
 
   test("rejects approval cursor halves", () => {
     const parsed = __test__.actionApprovalListQuerySchema.safeParse({
+      cursorCreatedAt: "2026-05-15T10:00:00.000Z",
+    })
+
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.path).toEqual(["cursorId"])
+  })
+
+  test("lists delegations with principal and scope filters plus cursor pagination", async () => {
+    const db = {} as AnyDrizzleDb
+    const spy = vi.spyOn(actionLedgerService, "listDelegations").mockResolvedValue({
+      delegations: [makeDelegation()],
+      nextCursor: {
+        createdAt: "2026-05-15T10:00:00.000Z",
+        id: "adel_1",
+      },
+    })
+
+    const app = makeApp(db)
+    const response = await app.request(
+      "/delegations?rootPrincipalType=user&rootPrincipalId=usr_root&parentPrincipalType=user&parentPrincipalId=usr_root&childPrincipalType=agent&childPrincipalId=agent_child&grantSource=travel.agent.run&capabilityScopeRef=capability%3A%2F%2Fbookings%2Fstatus&budgetScopeRef=budget%3A%2F%2Ftravel-agent%2Frun-1&expiresAtFrom=2026-05-15T11%3A00%3A00.000Z&expiresAtTo=2026-05-15T12%3A00%3A00.000Z&createdAtFrom=2026-05-15T09%3A00%3A00.000Z&createdAtTo=2026-05-15T10%3A00%3A00.000Z&cursorCreatedAt=2026-05-15T10%3A00%3A00.000Z&cursorId=adel_cursor&limit=25",
+    )
+
+    expect(spy).toHaveBeenCalledWith(db, {
+      rootPrincipalType: "user",
+      rootPrincipalId: "usr_root",
+      parentPrincipalType: "user",
+      parentPrincipalId: "usr_root",
+      childPrincipalType: "agent",
+      childPrincipalId: "agent_child",
+      grantSource: "travel.agent.run",
+      capabilityScopeRef: "capability://bookings/status",
+      budgetScopeRef: "budget://travel-agent/run-1",
+      expiresAtFrom: new Date("2026-05-15T11:00:00.000Z"),
+      expiresAtTo: new Date("2026-05-15T12:00:00.000Z"),
+      createdAtFrom: new Date("2026-05-15T09:00:00.000Z"),
+      createdAtTo: new Date("2026-05-15T10:00:00.000Z"),
+      cursor: {
+        createdAt: "2026-05-15T10:00:00.000Z",
+        id: "adel_cursor",
+      },
+      limit: 25,
+    })
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      data: [
+        {
+          id: "adel_1",
+          rootPrincipalType: "user",
+          rootPrincipalId: "usr_root",
+          childPrincipalType: "agent",
+          childPrincipalId: "agent_child",
+          expiresAt: "2026-05-15T12:00:00.000Z",
+          createdAt: "2026-05-15T10:00:00.000Z",
+        },
+      ],
+      pageInfo: {
+        nextCursor: {
+          createdAt: "2026-05-15T10:00:00.000Z",
+          id: "adel_1",
+        },
+      },
+    })
+  })
+
+  test("rejects delegation cursor halves", () => {
+    const parsed = __test__.actionDelegationListQuerySchema.safeParse({
       cursorCreatedAt: "2026-05-15T10:00:00.000Z",
     })
 

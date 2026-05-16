@@ -3,12 +3,14 @@ import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle
 
 import {
   type ActionApproval,
+  type ActionDelegation,
   type ActionLedgerEntry,
   type ActionLedgerPayload,
   type ActionLedgerRelayOutbox,
   type ActionMutationDetail,
   type ActionSensitiveReadDetail,
   actionApprovals,
+  actionDelegations,
   actionLedgerEntries,
   actionLedgerPayloads,
   actionLedgerRelayOutbox,
@@ -58,6 +60,11 @@ export interface ActionLedgerRelayOutboxListCursor {
 }
 
 export interface ActionApprovalListCursor {
+  createdAt: string
+  id: string
+}
+
+export interface ActionDelegationListCursor {
   createdAt: string
   id: string
 }
@@ -152,6 +159,29 @@ export interface ListActionApprovalsInput {
 export interface ListActionApprovalsResult {
   approvals: ActionApproval[]
   nextCursor: ActionApprovalListCursor | null
+}
+
+export interface ListActionDelegationsInput {
+  rootPrincipalType?: ActionDelegation["rootPrincipalType"]
+  rootPrincipalId?: string | null
+  parentPrincipalType?: ActionDelegation["parentPrincipalType"]
+  parentPrincipalId?: string | null
+  childPrincipalType?: ActionDelegation["childPrincipalType"]
+  childPrincipalId?: string | null
+  grantSource?: string | null
+  capabilityScopeRef?: string | null
+  budgetScopeRef?: string | null
+  expiresAtFrom?: Date | string | null
+  expiresAtTo?: Date | string | null
+  createdAtFrom?: Date | string | null
+  createdAtTo?: Date | string | null
+  cursor?: ActionDelegationListCursor | null
+  limit?: number
+}
+
+export interface ListActionDelegationsResult {
+  delegations: ActionDelegation[]
+  nextCursor: ActionDelegationListCursor | null
 }
 
 export interface ClaimActionLedgerRelayOutboxInput {
@@ -282,6 +312,32 @@ export const actionLedgerService = {
       nextCursor:
         rows.length > limit && approvals.length > 0
           ? toActionApprovalListCursor(approvals[approvals.length - 1]!)
+          : null,
+    }
+  },
+
+  async listDelegations(
+    db: AnyDrizzleDb,
+    input: ListActionDelegationsInput = {},
+  ): Promise<ListActionDelegationsResult> {
+    const limit = normalizeListLimit(input.limit)
+    const predicate = buildActionDelegationsPredicate(input)
+
+    let query = db.select().from(actionDelegations).$dynamic()
+    if (predicate) {
+      query = query.where(predicate)
+    }
+
+    const rows = await query
+      .orderBy(desc(actionDelegations.createdAt), desc(actionDelegations.id))
+      .limit(limit + 1)
+
+    const delegations = rows.slice(0, limit)
+    return {
+      delegations,
+      nextCursor:
+        rows.length > limit && delegations.length > 0
+          ? toActionDelegationListCursor(delegations[delegations.length - 1]!)
           : null,
     }
   },
@@ -560,6 +616,13 @@ function toActionApprovalListCursor(row: Pick<ActionApproval, "createdAt" | "id"
   }
 }
 
+function toActionDelegationListCursor(row: Pick<ActionDelegation, "createdAt" | "id">) {
+  return {
+    createdAt: serializeCursorDate(row.createdAt),
+    id: row.id,
+  }
+}
+
 function serializeCursorDate(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) {
@@ -719,6 +782,67 @@ function buildApprovalCursorCondition(cursor: ActionApprovalListCursor): SQL {
   )
 
   return or(lt(actionApprovals.createdAt, createdAt), tieBreaker) as SQL
+}
+
+function buildDelegationCursorCondition(cursor: ActionDelegationListCursor): SQL {
+  const createdAt = parseCursorDate(cursor.createdAt)
+  const tieBreaker = and(
+    eq(actionDelegations.createdAt, createdAt),
+    lt(actionDelegations.id, cursor.id),
+  )
+
+  return or(lt(actionDelegations.createdAt, createdAt), tieBreaker) as SQL
+}
+
+function buildActionDelegationsPredicate(input: ListActionDelegationsInput): SQL | undefined {
+  const conditions: SQL[] = []
+
+  if (input.rootPrincipalType) {
+    conditions.push(eq(actionDelegations.rootPrincipalType, input.rootPrincipalType))
+  }
+  if (input.rootPrincipalId) {
+    conditions.push(eq(actionDelegations.rootPrincipalId, input.rootPrincipalId))
+  }
+  if (input.parentPrincipalType) {
+    conditions.push(eq(actionDelegations.parentPrincipalType, input.parentPrincipalType))
+  }
+  if (input.parentPrincipalId) {
+    conditions.push(eq(actionDelegations.parentPrincipalId, input.parentPrincipalId))
+  }
+  if (input.childPrincipalType) {
+    conditions.push(eq(actionDelegations.childPrincipalType, input.childPrincipalType))
+  }
+  if (input.childPrincipalId) {
+    conditions.push(eq(actionDelegations.childPrincipalId, input.childPrincipalId))
+  }
+  if (input.grantSource) conditions.push(eq(actionDelegations.grantSource, input.grantSource))
+  if (input.capabilityScopeRef) {
+    conditions.push(eq(actionDelegations.capabilityScopeRef, input.capabilityScopeRef))
+  }
+  if (input.budgetScopeRef) {
+    conditions.push(eq(actionDelegations.budgetScopeRef, input.budgetScopeRef))
+  }
+
+  if (input.expiresAtFrom) {
+    conditions.push(gte(actionDelegations.expiresAt, parseCursorDate(input.expiresAtFrom)))
+  }
+  if (input.expiresAtTo) {
+    conditions.push(lte(actionDelegations.expiresAt, parseCursorDate(input.expiresAtTo)))
+  }
+  if (input.createdAtFrom) {
+    conditions.push(gte(actionDelegations.createdAt, parseCursorDate(input.createdAtFrom)))
+  }
+  if (input.createdAtTo) {
+    conditions.push(lte(actionDelegations.createdAt, parseCursorDate(input.createdAtTo)))
+  }
+
+  if (input.cursor) {
+    conditions.push(buildDelegationCursorCondition(input.cursor))
+  }
+
+  if (conditions.length === 0) return undefined
+  if (conditions.length === 1) return conditions[0]
+  return and(...conditions)
 }
 
 function buildActionApprovalsPredicate(input: ListActionApprovalsInput): SQL | undefined {
@@ -937,10 +1061,12 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
 
 export const __test__ = {
   buildActionApprovalsPredicate,
+  buildActionDelegationsPredicate,
   buildActionLedgerEntriesPredicate,
   buildActionLedgerRelayOutboxPredicate,
   normalizeListLimit,
   toActionApprovalListCursor,
+  toActionDelegationListCursor,
   toActionLedgerListCursor,
   toActionLedgerRelayOutboxListCursor,
 }
