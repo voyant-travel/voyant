@@ -188,6 +188,7 @@ export interface ConvertProductData {
   }>
   units: Array<{
     id: string
+    optionId: string
     name: string
     description: string | null
     unitType: string | null
@@ -643,6 +644,32 @@ async function getConvertProductData(
     return null
   }
 
+  const itemLines = data.itemLines ?? []
+  const requestedLineOptionIds = [
+    ...new Set(
+      itemLines
+        .map((line) => line.optionId ?? null)
+        .filter((optionId): optionId is string => optionId !== null),
+    ),
+  ]
+  const requestedUnitIds = [...new Set(itemLines.map((line) => line.optionUnitId))]
+  let lineOptions: ProductOptionReference[] = []
+  if (requestedLineOptionIds.length > 0) {
+    lineOptions = await db
+      .select()
+      .from(productOptionsRef)
+      .where(
+        and(
+          eq(productOptionsRef.productId, product.id),
+          inArray(productOptionsRef.id, requestedLineOptionIds),
+        ),
+      )
+
+    if (lineOptions.length !== requestedLineOptionIds.length) {
+      return null
+    }
+  }
+
   let option: ProductOptionReference | null = null
   if (data.optionId) {
     const [selectedOption] = await db
@@ -658,6 +685,10 @@ async function getConvertProductData(
     }
 
     option = selectedOption
+  } else if (requestedLineOptionIds.length === 1) {
+    option = lineOptions[0] ?? null
+  } else if (requestedLineOptionIds.length > 1) {
+    option = null
   } else {
     const [defaultOption] = await db
       .select()
@@ -705,14 +736,28 @@ async function getConvertProductData(
         .orderBy(asc(productDayServicesRef.sortOrder), asc(productDayServicesRef.id))
     : []
 
-  const units: OptionUnitReference[] =
-    option === null
-      ? []
-      : await db
-          .select()
-          .from(optionUnitsRef)
-          .where(eq(optionUnitsRef.optionId, option.id))
-          .orderBy(asc(optionUnitsRef.sortOrder), asc(optionUnitsRef.createdAt))
+  let units: OptionUnitReference[] = []
+  if (requestedUnitIds.length > 0) {
+    const unitRows = await db
+      .select({ unit: optionUnitsRef })
+      .from(optionUnitsRef)
+      .innerJoin(productOptionsRef, eq(optionUnitsRef.optionId, productOptionsRef.id))
+      .where(
+        and(
+          eq(productOptionsRef.productId, product.id),
+          inArray(optionUnitsRef.id, requestedUnitIds),
+        ),
+      )
+      .orderBy(asc(optionUnitsRef.sortOrder), asc(optionUnitsRef.createdAt))
+
+    units = unitRows.map((row) => row.unit)
+  } else if (option !== null) {
+    units = await db
+      .select()
+      .from(optionUnitsRef)
+      .where(eq(optionUnitsRef.optionId, option.id))
+      .orderBy(asc(optionUnitsRef.sortOrder), asc(optionUnitsRef.createdAt))
+  }
 
   let slot: ConvertProductData["slot"] = null
   if (data.slotId) {
@@ -732,6 +777,12 @@ async function getConvertProductData(
     }
 
     if (option && selectedSlot.optionId && selectedSlot.optionId !== option.id) {
+      return null
+    }
+    if (
+      selectedSlot.optionId &&
+      requestedLineOptionIds.some((optionId) => optionId !== selectedSlot.optionId)
+    ) {
       return null
     }
 
@@ -762,6 +813,7 @@ async function getConvertProductData(
     dayServices,
     units: units.map((unit) => ({
       id: unit.id,
+      optionId: unit.optionId,
       name: unit.name,
       description: unit.description,
       unitType: unit.unitType,
@@ -2199,6 +2251,8 @@ export const bookingsService = {
         ?.map((line) => {
           const unit = unitById.get(line.optionUnitId)
           if (!unit) return null
+          if (line.optionId && line.optionId !== unit.optionId) return null
+          if (data.optionId && data.optionId !== unit.optionId) return null
           return { line, unit }
         })
         .filter((entry): entry is NonNullable<typeof entry> => entry !== null) ?? []
@@ -2281,7 +2335,7 @@ export const bookingsService = {
               unitCostAmountCents: null,
               totalCostAmountCents: null,
               productId: product.id,
-              optionId: option?.id ?? null,
+              optionId: unit.optionId,
               optionUnitId: unit.id,
               ...slotFields,
             }

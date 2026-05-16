@@ -116,6 +116,8 @@ export function PersonPickerSection({
 }: PersonPickerSectionProps) {
   const [personSearch, setPersonSearch] = React.useState("")
   const [orgSearch, setOrgSearch] = React.useState("")
+  const cachedPeopleRef = React.useRef(new Map<string, PersonRecord>())
+  const cachedOrgsRef = React.useRef(new Map<string, OrganizationRecord>())
   const [personInputValue, setPersonInputValue] = React.useState("")
   const [orgInputValue, setOrgInputValue] = React.useState("")
   const [personSheetOpen, setPersonSheetOpen] = React.useState(false)
@@ -133,9 +135,10 @@ export function PersonPickerSection({
     enabled: enabled && billingTarget === "person" && Boolean(value.personId),
   })
   const people = React.useMemo(() => {
-    const map = new Map<string, PersonRecord>()
+    const map = new Map(cachedPeopleRef.current)
     for (const person of peopleData?.data ?? []) map.set(person.id, person)
     if (selectedPersonQuery.data) map.set(selectedPersonQuery.data.id, selectedPersonQuery.data)
+    cachedPeopleRef.current = map
     return Array.from(map.values())
   }, [peopleData?.data, selectedPersonQuery.data])
   const peopleMap = React.useMemo(
@@ -152,18 +155,27 @@ export function PersonPickerSection({
     enabled: enabled && billingTarget === "organization" && Boolean(value.organizationId),
   })
   const orgs = React.useMemo(() => {
-    const map = new Map<string, OrganizationRecord>()
+    const map = new Map(cachedOrgsRef.current)
     for (const org of orgsData?.data ?? []) map.set(org.id, org)
     if (selectedOrgQuery.data) map.set(selectedOrgQuery.data.id, selectedOrgQuery.data)
+    cachedOrgsRef.current = map
     return Array.from(map.values())
   }, [orgsData?.data, selectedOrgQuery.data])
   const orgsMap = React.useMemo(() => new Map(orgs.map((org) => [org.id, org])), [orgs])
 
   const setPerson = (patch: Partial<PersonPickerValue>) => onChange({ ...value, ...patch })
-  const selectedPersonLabel = value.personId ? formatPerson(peopleMap.get(value.personId)) : ""
-  const selectedOrgLabel = value.organizationId
-    ? (orgsMap.get(value.organizationId)?.name ?? "")
-    : ""
+  const resolvePersonLabel = React.useCallback(
+    (personId: string) =>
+      formatPerson(peopleMap.get(personId) ?? cachedPeopleRef.current.get(personId)),
+    [peopleMap],
+  )
+  const resolveOrgLabel = React.useCallback(
+    (organizationId: string) =>
+      orgsMap.get(organizationId)?.name ?? cachedOrgsRef.current.get(organizationId)?.name ?? "",
+    [orgsMap],
+  )
+  const selectedPersonLabel = value.personId ? resolvePersonLabel(value.personId) : ""
+  const selectedOrgLabel = value.organizationId ? resolveOrgLabel(value.organizationId) : ""
 
   React.useEffect(() => {
     if (selectedPersonLabel) setPersonInputValue(selectedPersonLabel)
@@ -223,7 +235,8 @@ export function PersonPickerSection({
             inputValue={personInputValue}
             autoHighlight
             disabled={!enabled}
-            itemToStringValue={(id) => formatPerson(peopleMap.get(id as string))}
+            itemToStringLabel={(id) => resolvePersonLabel(id as string) || (id as string)}
+            itemToStringValue={(id) => id as string}
             onInputValueChange={(next) => {
               setPersonInputValue(next)
               setPersonSearch(next)
@@ -232,7 +245,7 @@ export function PersonPickerSection({
             onValueChange={(next) => {
               const personId = (next as string | null) ?? ""
               setPerson({ personId })
-              setPersonInputValue(personId ? formatPerson(peopleMap.get(personId)) : "")
+              setPersonInputValue(personId ? resolvePersonLabel(personId) : "")
             }}
           >
             <ComboboxInput
@@ -288,7 +301,8 @@ export function PersonPickerSection({
             inputValue={orgInputValue}
             autoHighlight
             disabled={!enabled}
-            itemToStringValue={(id) => orgsMap.get(id as string)?.name ?? ""}
+            itemToStringLabel={(id) => resolveOrgLabel(id as string) || (id as string)}
+            itemToStringValue={(id) => id as string}
             onInputValueChange={(next) => {
               setOrgInputValue(next)
               setOrgSearch(next)
@@ -297,7 +311,7 @@ export function PersonPickerSection({
             onValueChange={(next) => {
               const organizationId = (next as string | null) ?? null
               setPerson({ organizationId })
-              setOrgInputValue(organizationId ? (orgsMap.get(organizationId)?.name ?? "") : "")
+              setOrgInputValue(organizationId ? resolveOrgLabel(organizationId) : "")
             }}
           >
             <ComboboxInput

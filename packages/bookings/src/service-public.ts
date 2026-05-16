@@ -519,21 +519,24 @@ function buildUnitWarnings(
 export async function resolveSessionPricingSnapshot(
   db: PostgresJsDatabase,
   productId: string,
-  input: { catalogId?: string | undefined; optionId?: string | undefined },
+  input: {
+    catalogId?: string | undefined
+    optionId?: string | undefined
+    /** Public/session flows require storefront-visible products. Admin previews can price active internal products. */
+    requirePublicProduct?: boolean | undefined
+  },
 ) {
+  const productConditions = [eq(productsRef.id, productId), eq(productsRef.status, "active")]
+  if (input.requirePublicProduct ?? true) {
+    productConditions.push(eq(productsRef.activated, true), eq(productsRef.visibility, "public"))
+  }
+
   const [product] = await db
     .select({
       id: productsRef.id,
     })
     .from(productsRef)
-    .where(
-      and(
-        eq(productsRef.id, productId),
-        eq(productsRef.status, "active"),
-        eq(productsRef.activated, true),
-        eq(productsRef.visibility, "public"),
-      ),
-    )
+    .where(and(...productConditions))
     .limit(1)
 
   if (!product) {

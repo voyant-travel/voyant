@@ -44,6 +44,7 @@ export interface BookingCreateDocumentGenerationInput {
 }
 
 export interface BookingCreateItemLineInput {
+  optionId?: string | null
   optionUnitId: string
   quantity: number
   title?: string | null

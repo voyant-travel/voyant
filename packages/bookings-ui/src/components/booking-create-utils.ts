@@ -11,6 +11,7 @@ export interface DepartureSlotSearchRecord {
 }
 
 export interface BookingCreateUnitLineRecord {
+  optionId: string | null
   optionUnitId: string
   unitName: string
 }
@@ -73,6 +74,7 @@ export function itemLinesToRows(
   units: BookingCreateUnitLineRecord[],
   pricing: BookingCreatePricingRecord | null,
 ): BookingCreateItemLineInput[] {
+  const unitsById = new Map(units.map((unit) => [unit.optionUnitId, unit]))
   const unitNames = new Map(units.map((unit) => [unit.optionUnitId, unit.unitName]))
   const pricedLines = new Map((pricing?.lines ?? []).map((line) => [line.unitId, line]))
   const selectedLines = Object.entries(quantities).filter(([, quantity]) => quantity > 0)
@@ -104,6 +106,7 @@ export function itemLinesToRows(
       pricedLine?.unitAmountCents ??
       (totalSellAmountCents != null ? Math.floor(totalSellAmountCents / quantity) : null)
     return {
+      optionId: unitsById.get(optionUnitId)?.optionId ?? null,
       optionUnitId,
       quantity,
       title: pricedLine?.label ?? unitNames.get(optionUnitId) ?? null,

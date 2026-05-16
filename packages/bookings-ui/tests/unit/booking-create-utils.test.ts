@@ -94,8 +94,8 @@ describe("booking create helpers", () => {
         optu_single: 1,
       },
       [
-        { optionUnitId: "optu_double", unitName: "Double room" },
-        { optionUnitId: "optu_single", unitName: "Single room" },
+        { optionId: null, optionUnitId: "optu_double", unitName: "Double room" },
+        { optionId: null, optionUnitId: "optu_single", unitName: "Single room" },
       ],
       {
         confirmedAmountCents: 10_001,
@@ -105,6 +105,7 @@ describe("booking create helpers", () => {
 
     expect(result).toEqual([
       {
+        optionId: null,
         optionUnitId: "optu_double",
         quantity: 2,
         title: "Double room",
@@ -112,12 +113,48 @@ describe("booking create helpers", () => {
         totalSellAmountCents: 6667,
       },
       {
+        optionId: null,
         optionUnitId: "optu_single",
         quantity: 1,
         title: "Single room",
         unitSellAmountCents: 3334,
         totalSellAmountCents: 3334,
       },
+    ])
+  })
+
+  it("preserves option ids on selected room unit lines", () => {
+    const result = itemLinesToRows(
+      {
+        optu_double: 2,
+        optu_single: 1,
+      },
+      [
+        { optionId: "opto_dbl", optionUnitId: "optu_double", unitName: "DBL" },
+        { optionId: "opto_sgl", optionUnitId: "optu_single", unitName: "SGL" },
+      ],
+      {
+        confirmedAmountCents: 459_700,
+        lines: [
+          {
+            unitId: "optu_double",
+            label: "DBL",
+            unitAmountCents: 139_900,
+            totalAmountCents: 279_800,
+          },
+          {
+            unitId: "optu_single",
+            label: "SGL",
+            unitAmountCents: 179_900,
+            totalAmountCents: 179_900,
+          },
+        ],
+      },
+    )
+
+    expect(result.map((line) => [line.optionId, line.optionUnitId, line.quantity])).toEqual([
+      ["opto_dbl", "optu_double", 2],
+      ["opto_sgl", "optu_single", 1],
     ])
   })
 

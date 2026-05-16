@@ -1,6 +1,7 @@
 "use client"
 
 import { usePricingPreview } from "@voyantjs/bookings-react"
+import { useProduct } from "@voyantjs/products-react"
 import { Button, Label, Textarea } from "@voyantjs/ui/components"
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import * as React from "react"
@@ -37,6 +38,8 @@ export interface PriceBreakdownSectionProps {
   optionId?: string | null
   /** Quantity per option_unit id, typically from RoomsStepperSection. */
   unitQuantities: Record<string, number>
+  /** Display labels keyed by option_unit id. */
+  unitLabels?: Record<string, string>
   /**
    * Force a specific catalog. Defaults to the public catalog the storefront
    * uses — matches what a customer would see.
@@ -99,6 +102,7 @@ export function PriceBreakdownSection({
   productId,
   optionId,
   unitQuantities,
+  unitLabels,
   catalogId,
   labels,
   onChange,
@@ -112,18 +116,21 @@ export function PriceBreakdownSection({
     catalogId: catalogId ?? null,
     enabled: Boolean(productId),
   })
+  const productQuery = useProduct(productId, { enabled: Boolean(productId) })
   const quantitiesKey = React.useMemo(() => JSON.stringify(unitQuantities), [unitQuantities])
   const [manualAmountCents, setManualAmountCents] = React.useState<number | null>(null)
   const [overrideReason, setOverrideReason] = React.useState("")
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset manual confirmation when the priced selection changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: #935 reset manual confirmation when the priced selection changes
   React.useEffect(() => {
     setManualAmountCents(null)
     setOverrideReason("")
   }, [productId, optionId, catalogId, quantitiesKey])
 
   const snapshot = preview.data?.data
-  const currency = snapshot?.catalog.currencyCode ?? null
+  const fallbackProduct = productQuery.data
+  const fallbackUnitAmountCents = fallbackProduct?.sellAmountCents ?? null
+  const currency = snapshot?.catalog.currencyCode ?? fallbackProduct?.sellCurrency ?? null
   const formatAmount = React.useCallback(
     (cents: number) =>
       currency
@@ -140,7 +147,26 @@ export function PriceBreakdownSection({
     let runningTotal = 0
     let anyOnRequest = false
 
-    if (!snapshot) return { lines: out, total: null as number | null }
+    if (!snapshot) {
+      if (fallbackUnitAmountCents === null) return { lines: out, total: null as number | null }
+
+      for (const [unitId, quantity] of Object.entries(unitQuantities)) {
+        if (quantity <= 0) continue
+        const lineTotal = fallbackUnitAmountCents * quantity
+        out.push({
+          unitId,
+          label: unitLabels?.[unitId] ?? fallbackProduct?.name ?? unitId,
+          quantity,
+          unitAmountCents: fallbackUnitAmountCents,
+          totalAmountCents: lineTotal,
+          tierLabel: null,
+          isGroupRate: false,
+        })
+        runningTotal += lineTotal
+      }
+
+      return { lines: out, total: runningTotal }
+    }
 
     // Pick the default price rule for the resolved option (snapshot already
     // filters options by the caller's optionId; rules keep isDefault-first
@@ -167,7 +193,7 @@ export function PriceBreakdownSection({
         // operator knows they need to quote manually.
         out.push({
           unitId,
-          label: unitId,
+          label: unitLabels?.[unitId] ?? unitId,
           quantity,
           unitAmountCents: null,
           totalAmountCents: null,
@@ -178,7 +204,7 @@ export function PriceBreakdownSection({
         continue
       }
 
-      const label = up.unitName || unitId
+      const label = unitLabels?.[unitId] ?? up.unitName ?? unitId
 
       if (up.pricingMode === "on_request") {
         out.push({
@@ -239,7 +265,15 @@ export function PriceBreakdownSection({
     }
 
     return { lines: out, total: anyOnRequest ? null : runningTotal }
-  }, [snapshot, unitQuantities, merged.onRequest, merged.groupRate])
+  }, [
+    snapshot,
+    fallbackProduct?.name,
+    fallbackUnitAmountCents,
+    unitQuantities,
+    unitLabels,
+    merged.onRequest,
+    merged.groupRate,
+  ])
 
   const confirmedAmountCents = manualAmountCents ?? total
   const isManualOverride =
@@ -309,7 +343,7 @@ export function PriceBreakdownSection({
 
   // Empty states
   if (!productId) return null
-  if (preview.isError || (preview.isSuccess && !snapshot)) {
+  if ((preview.isError || (preview.isSuccess && !snapshot)) && fallbackUnitAmountCents === null) {
     return (
       <div className="flex flex-col gap-2 rounded-md border p-3">
         <Label>{merged.heading}</Label>

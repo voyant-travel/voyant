@@ -183,6 +183,7 @@ export const convertProductSchema = z
     itemLines: z
       .array(
         z.object({
+          optionId: z.string().min(1).optional().nullable(),
           optionUnitId: z.string().min(1),
           quantity: z.number().int().min(1),
           title: z.string().min(1).max(255).optional().nullable(),

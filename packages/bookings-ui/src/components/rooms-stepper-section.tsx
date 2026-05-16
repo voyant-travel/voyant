@@ -1,9 +1,17 @@
 "use client"
 
+import { useQueries } from "@tanstack/react-query"
 import { useSlotUnitAvailability } from "@voyantjs/availability-react"
-import { useOptionUnits } from "@voyantjs/products-react"
+import {
+  getOptionUnitsQueryOptions,
+  type OptionUnitRecord,
+  type ProductOptionRecord,
+  useProductOptions,
+  useVoyantProductsContext,
+} from "@voyantjs/products-react"
 import { Button, Label } from "@voyantjs/ui/components"
 import { Minus, Plus } from "lucide-react"
+import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 /** Quantity per option_unit id; omitted ids are treated as 0. */
@@ -13,9 +21,21 @@ export interface RoomsStepperValue {
 
 export const emptyRoomsStepperValue: RoomsStepperValue = { quantities: {} }
 
+export interface RoomsStepperUnit {
+  optionId: string | null
+  optionUnitId: string
+  unitName: string
+  occupancyMax: number | null
+  initial: number | null
+  reserved: number
+  remaining: number | null
+}
+
 export interface RoomsStepperSectionProps {
   value: RoomsStepperValue
   onChange: (value: RoomsStepperValue) => void
+  /** Product whose options become selectable room quantity rows. */
+  productId?: string
   /**
    * Departure the operator picked. Departure-specific availability wins
    * when present; otherwise the section falls back to option-level units.
@@ -27,6 +47,7 @@ export interface RoomsStepperSectionProps {
    */
   optionId?: string | null
   enabled?: boolean
+  onUnitsChange?: (units: RoomsStepperUnit[]) => void
   labels?: {
     heading?: string
     noOption?: string
@@ -40,8 +61,8 @@ export interface RoomsStepperSectionProps {
 /**
  * Rooms / per-unit stepper for booking-create flows. Drives
  * `GET /v1/availability/slots/:id/unit-availability` from #235 when a
- * departure is selected, and option-level units before departure selection,
- * so operators can still build "2 double rooms and 1 single" drafts.
+ * departure is selected, and product option-level units before departure
+ * selection, so operators can build "2 double rooms and 1 single" drafts.
  *
  * The section only tracks **intent** (how many of each unit the operator
  * wants to book). Actual hold/reservation happens when the parent submits
@@ -60,31 +81,63 @@ export interface RoomsStepperSectionProps {
 export function RoomsStepperSection({
   value,
   onChange,
+  productId,
   slotId,
   optionId,
   enabled = true,
+  onUnitsChange,
   labels,
 }: RoomsStepperSectionProps) {
+  const productsClient = useVoyantProductsContext()
   const messages = useBookingsUiMessagesOrDefault()
   const merged = { ...messages.roomsStepperSection.labels, ...labels }
   const availability = useSlotUnitAvailability({ slotId, enabled: enabled && Boolean(slotId) })
-  const optionUnits = useOptionUnits({
-    optionId: optionId ?? undefined,
-    limit: 100,
-    enabled: enabled && !slotId && Boolean(optionId),
-  })
-  const units = slotId
-    ? (availability.data?.data ?? [])
-    : (optionUnits.data?.data ?? []).map((unit) => ({
-        optionUnitId: unit.id,
-        unitName: unit.name,
-        occupancyMax: unit.occupancyMax,
-        initial: null,
-        reserved: 0,
-        remaining: unit.maxQuantity ?? null,
-      }))
 
-  if (!slotId && !optionId) {
+  const optionsQuery = useProductOptions({
+    productId,
+    status: "active",
+    limit: 100,
+    enabled: enabled && !slotId && Boolean(productId),
+  })
+  const productOptions = React.useMemo(() => {
+    const options = optionsQuery.data?.data ?? []
+    if (!optionId) return options
+    const selected = options.find((option) => option.id === optionId)
+    const rest = options.filter((option) => option.id !== optionId)
+    return selected ? [selected, ...rest] : options
+  }, [optionsQuery.data?.data, optionId])
+  const optionUnitQueries = useQueries({
+    queries: productOptions.map((option) => ({
+      ...getOptionUnitsQueryOptions(productsClient, {
+        optionId: option.id,
+        limit: 100,
+      }),
+      enabled: enabled && !slotId && Boolean(productId),
+    })),
+  })
+  const optionUnitRows = React.useMemo(() => {
+    const rows: RoomsStepperUnit[] = []
+    productOptions.forEach((option, index) => {
+      const units = optionUnitQueries[index]?.data?.data ?? []
+      rows.push(...units.map((unit) => optionUnitToStepperUnit(option, unit, units.length)))
+    })
+    return rows
+  }, [productOptions, optionUnitQueries])
+  const availabilityUnitRows = React.useMemo(
+    () =>
+      (availability.data?.data ?? []).map((unit) => ({
+        ...unit,
+        optionId: optionId ?? null,
+      })),
+    [availability.data?.data, optionId],
+  )
+  const units = slotId ? availabilityUnitRows : optionUnitRows
+
+  React.useEffect(() => {
+    onUnitsChange?.(units)
+  }, [onUnitsChange, units])
+
+  if (!slotId && !productId && !optionId) {
     return (
       <div className="flex flex-col gap-2 rounded-md border p-3">
         <Label>{merged.heading}</Label>
@@ -93,7 +146,9 @@ export function RoomsStepperSection({
     )
   }
 
-  const loaded = slotId ? availability.isSuccess : optionUnits.isSuccess
+  const loaded = slotId
+    ? availability.isSuccess
+    : optionsQuery.isSuccess && optionUnitQueries.every((query) => query.isSuccess)
   if (loaded && units.length === 0) {
     return (
       <div className="flex flex-col gap-2 rounded-md border p-3">
@@ -163,4 +218,20 @@ export function RoomsStepperSection({
       </div>
     </div>
   )
+}
+
+function optionUnitToStepperUnit(
+  option: ProductOptionRecord,
+  unit: OptionUnitRecord,
+  unitCount: number,
+): RoomsStepperUnit {
+  return {
+    optionId: option.id,
+    optionUnitId: unit.id,
+    unitName: unitCount === 1 ? option.name : `${option.name} - ${unit.name}`,
+    occupancyMax: unit.occupancyMax,
+    initial: null,
+    reserved: 0,
+    remaining: unit.maxQuantity ?? null,
+  }
 }
