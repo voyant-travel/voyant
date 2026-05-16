@@ -1,5 +1,14 @@
 # @voyantjs/resources-ui
 
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [deaacb3]
+  - @voyantjs/i18n@0.51.1
+  - @voyantjs/resources-react@0.51.1
+  - @voyantjs/ui@0.51.1
+
 ## 0.51.0
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @voyantjs/legal-ui
 
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [deaacb3]
+  - @voyantjs/crm-react@0.51.1
+  - @voyantjs/i18n@0.51.1
+  - @voyantjs/legal-react@0.51.1
+  - @voyantjs/ui@0.51.1
+
 ## 0.51.0
 
 ### Patch Changes
