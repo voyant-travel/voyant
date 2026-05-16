@@ -1,6 +1,8 @@
 import {
+  type ActionLedgerCapabilityAccessResult,
   type ActionLedgerRequestContextValues,
   appendActionLedgerSensitiveRead,
+  evaluateActionLedgerCapabilityAccess,
 } from "@voyantjs/action-ledger"
 import {
   ForbiddenApiError,
@@ -133,6 +135,8 @@ async function logBookingPiiReadActionLedger(
     disclosedFieldSet?: string[] | null
     disclosureSummary?: string | null
     decisionPolicy?: string | null
+    authorizationSource?: string | null
+    evaluatedRisk?: ActionLedgerCapabilityAccessResult["evaluatedRisk"] | null
   },
 ) {
   await appendActionLedgerSensitiveRead(c.get("db"), {
@@ -140,13 +144,13 @@ async function logBookingPiiReadActionLedger(
     actionName: BOOKING_PII_READ_ACTION_NAME,
     actionVersion: BOOKING_PII_READ_ACTION_VERSION,
     status: input.status,
-    evaluatedRisk: "high",
+    evaluatedRisk: input.evaluatedRisk ?? "high",
     targetType: "booking_traveler",
     targetId: input.travelerId,
     routeOrToolName: input.routeOrToolName,
     capabilityId: BOOKING_PII_READ_CAPABILITY.id,
     capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
-    authorizationSource: BOOKING_PII_AUTHORIZATION_SOURCE,
+    authorizationSource: input.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
     reasonCode: input.reason,
     disclosedFieldSet: input.status === "succeeded" ? (input.disclosedFieldSet ?? []) : [],
     disclosureSummary: input.disclosureSummary ?? null,
@@ -190,7 +194,7 @@ async function authorizeBookingPiiAccess(
   },
 ) {
   if (c.get("isInternalRequest")) {
-    return { allowed: true as const }
+    return { allowed: true as const, access: undefined }
   }
 
   const userId = c.get("userId")
@@ -249,11 +253,51 @@ async function authorizeBookingPiiAccess(
       }
     }
 
-    return { allowed: true as const }
+    return { allowed: true as const, access: undefined }
   }
 
   const actor = c.get("actor")
   const scopes = c.get("scopes")
+
+  if (input.action === "read") {
+    const access = evaluateActionLedgerCapabilityAccess({
+      definition: BOOKING_PII_READ_CAPABILITY,
+      actor,
+      callerType: c.get("callerType"),
+      scopes,
+      isInternalRequest: c.get("isInternalRequest"),
+    })
+
+    if (!access.allowed) {
+      await logBookingPiiAccess(c, {
+        ...input,
+        outcome: "denied",
+        reason: access.reason,
+        metadata: {
+          actor: actor ?? null,
+          authorizationSource: access.authorizationSource,
+          capabilityId: access.capabilityId,
+          capabilityVersion: access.capabilityVersion,
+        },
+      })
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: input.travelerId,
+        status: "denied",
+        reason: access.reason,
+        routeOrToolName: "bookings.pii.authorize",
+        disclosureSummary: "Booking PII read denied before reveal",
+        authorizationSource: access.authorizationSource,
+        evaluatedRisk: access.evaluatedRisk,
+      })
+      return {
+        allowed: false as const,
+        response: handleApiError(new ForbiddenApiError(), c),
+      }
+    }
+
+    return { allowed: true as const, access }
+  }
+
   const allowed = hasPiiScope(scopes, input.action) || actor === "staff"
 
   if (!allowed) {
@@ -263,22 +307,13 @@ async function authorizeBookingPiiAccess(
       reason: "insufficient_scope",
       metadata: { actor: actor ?? null },
     })
-    if (input.action === "read") {
-      await logBookingPiiReadActionLedger(c, {
-        travelerId: input.travelerId,
-        status: "denied",
-        reason: "insufficient_scope",
-        routeOrToolName: "bookings.pii.authorize",
-        disclosureSummary: "Booking PII read denied before reveal",
-      })
-    }
     return {
       allowed: false as const,
       response: handleApiError(new ForbiddenApiError(), c),
     }
   }
 
-  return { allowed: true as const }
+  return { allowed: true as const, access: undefined }
 }
 
 function handleKmsConfigError(c: Context<Env>, error: unknown) {
@@ -901,6 +936,8 @@ export const bookingRoutes = new Hono<Env>()
         reason: "traveler_not_found",
         routeOrToolName: "bookings.travelers.reveal",
         disclosureSummary: "Booking PII read denied before reveal",
+        authorizationSource: auth.access?.authorizationSource,
+        evaluatedRisk: auth.access?.evaluatedRisk,
       })
       return c.json({ error: "Traveler not found" }, 404)
     }
@@ -930,6 +967,8 @@ export const bookingRoutes = new Hono<Env>()
           ? [...TRAVELER_IDENTITY_DISCLOSED_FIELDS, ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS]
           : TRAVELER_IDENTITY_DISCLOSED_FIELDS,
         disclosureSummary: "Traveler identity reveal",
+        authorizationSource: auth.access?.authorizationSource,
+        evaluatedRisk: auth.access?.evaluatedRisk,
       })
 
       return c.json({ data: { ...traveler, travelDetails } })
@@ -968,6 +1007,8 @@ export const bookingRoutes = new Hono<Env>()
         reason: "participant_not_found",
         routeOrToolName: "bookings.travelers.travel-details",
         disclosureSummary: "Booking PII read denied before reveal",
+        authorizationSource: auth.access?.authorizationSource,
+        evaluatedRisk: auth.access?.evaluatedRisk,
       })
       return c.json({ error: "Traveler not found" }, 404)
     }
@@ -990,6 +1031,8 @@ export const bookingRoutes = new Hono<Env>()
           reason: "travel_details_not_found",
           routeOrToolName: "bookings.travelers.travel-details",
           disclosureSummary: "Booking traveler travel details not found",
+          authorizationSource: auth.access?.authorizationSource,
+          evaluatedRisk: auth.access?.evaluatedRisk,
         })
         return c.json({ error: "Traveler travel details not found" }, 404)
       }
@@ -1001,6 +1044,8 @@ export const bookingRoutes = new Hono<Env>()
         routeOrToolName: "bookings.travelers.travel-details",
         disclosedFieldSet: TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
         disclosureSummary: "Traveler travel details reveal",
+        authorizationSource: auth.access?.authorizationSource,
+        evaluatedRisk: auth.access?.evaluatedRisk,
       })
 
       return c.json({ data: details })

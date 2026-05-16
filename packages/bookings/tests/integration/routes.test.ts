@@ -1889,7 +1889,8 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
             row.status === "succeeded" &&
             row.principalType === "user" &&
             row.principalId === "test-user-id" &&
-            row.targetType === "booking_traveler",
+            row.targetType === "booking_traveler" &&
+            row.authorizationSource === "actor_context",
         ),
       ).toBe(true)
       expect(
@@ -1898,6 +1899,55 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
             row.reasonCode === "travel_details_reveal" &&
             row.decisionPolicy === "bookings-pii-scope-or-staff-v1" &&
             row.disclosedFieldSet?.includes("passportNumber"),
+        ),
+      ).toBe(true)
+    })
+
+    it("allows scoped non-staff pii reads through the action ledger capability guard", async () => {
+      const booking = await seedBooking()
+      const createRes = await app.request(`/${booking.id}/travelers`, {
+        method: "POST",
+        ...json({ firstName: "Scoped", lastName: "Reader" }),
+      })
+      const { data: participant } = await createRes.json()
+
+      await app.request(`/${booking.id}/travelers/${participant.id}/travel-details`, {
+        method: "PATCH",
+        ...json({ passportNumber: "SCOPED-1" }),
+      })
+
+      const scopedApp = new Hono()
+      scopedApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("userId" as never, "scoped-customer-id")
+        c.set("actor" as never, "customer")
+        c.set("callerType" as never, "api_key")
+        c.set("scopes" as never, ["bookings-pii:read"])
+        await next()
+      })
+      scopedApp.route("/", bookingRoutes)
+
+      const res = await scopedApp.request(
+        `/${booking.id}/travelers/${participant.id}/travel-details`,
+        {
+          method: "GET",
+        },
+      )
+
+      expect(res.status).toBe(200)
+
+      const ledgerRows = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, participant.id))
+
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.pii.read" &&
+            row.status === "succeeded" &&
+            row.principalId === "scoped-customer-id" &&
+            row.authorizationSource === "scope",
         ),
       ).toBe(true)
     })
@@ -1947,7 +1997,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
           }) =>
             row.action === "read" &&
             row.outcome === "denied" &&
-            row.reason === "insufficient_scope" &&
+            row.reason === "actor_not_allowed" &&
             row.actorId === "test-customer-id",
         ),
       ).toBe(true)
@@ -1964,10 +2014,11 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
             row.actionName === "booking.pii.read" &&
             row.status === "denied" &&
             row.principalType === "user" &&
-            row.principalId === "test-customer-id",
+            row.principalId === "test-customer-id" &&
+            row.authorizationSource === "actor_context",
         ),
       ).toBe(true)
-      expect(sensitiveReadRows.some((row) => row.reasonCode === "insufficient_scope")).toBe(true)
+      expect(sensitiveReadRows.some((row) => row.reasonCode === "actor_not_allowed")).toBe(true)
     })
   })
 
