@@ -397,6 +397,8 @@ async function resolveApprovedBookingStatusAction(
     approvalId,
     actionName: input.actionName,
     actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
+    requestedActionKind: "update",
+    requestedActionStatus: "awaiting_approval",
     targetType: "booking",
     targetId: input.bookingId,
     routeOrToolName: input.routeOrToolName,

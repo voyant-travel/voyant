@@ -1011,6 +1011,8 @@ describe("actionLedgerService.validateApprovedAction", () => {
         approvalId: approval.id,
         actionName: "booking.status.cancel",
         actionVersion: "v1",
+        requestedActionKind: "update",
+        requestedActionStatus: "awaiting_approval",
         targetType: "booking",
         targetId: "book_1",
         routeOrToolName: "bookings.cancel",
@@ -1125,6 +1127,47 @@ describe("actionLedgerService.validateApprovedAction", () => {
     ).resolves.toMatchObject({
       ok: false,
       reason: "fingerprint_mismatch",
+    })
+  })
+
+  test("rejects an approval whose requested action kind or status does not match", async () => {
+    const requestedAction = makeEntry({
+      id: "alge_requested",
+      actionName: "booking.status.cancel",
+      actionVersion: "v1",
+      actionKind: "read",
+      status: "succeeded",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings.cancel",
+      approvalId: "appr_1",
+      idempotencyFingerprint: "sha256:approved",
+    })
+    const approval = makeApproval({
+      id: "appr_1",
+      requestedActionId: requestedAction.id,
+      status: "approved",
+    })
+    const { db } = makeValidateApprovedActionDb({
+      approval,
+      entry: requestedAction,
+    })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        requestedActionKind: "update",
+        requestedActionStatus: "awaiting_approval",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+        now: baseDate,
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "mismatched_action",
     })
   })
 })

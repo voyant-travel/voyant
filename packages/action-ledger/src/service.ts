@@ -298,6 +298,8 @@ export interface ValidateApprovedActionInput {
   approvalId: string
   actionName: string
   actionVersion: string
+  requestedActionKind?: ActionLedgerEntry["actionKind"] | null
+  requestedActionStatus?: ActionLedgerEntry["status"] | ActionLedgerEntry["status"][] | null
   targetType: string
   targetId: string
   routeOrToolName?: string | null
@@ -603,6 +605,13 @@ export const actionLedgerService = {
       !requestedAction ||
       requestedAction.actionName !== input.actionName ||
       requestedAction.actionVersion !== input.actionVersion ||
+      (input.requestedActionKind && requestedAction.actionKind !== input.requestedActionKind) ||
+      (input.requestedActionStatus &&
+        !(
+          Array.isArray(input.requestedActionStatus)
+            ? input.requestedActionStatus
+            : [input.requestedActionStatus]
+        ).includes(requestedAction.status)) ||
       requestedAction.targetType !== input.targetType ||
       requestedAction.targetId !== input.targetId ||
       requestedAction.routeOrToolName !== (input.routeOrToolName ?? null) ||
