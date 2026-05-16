@@ -501,6 +501,75 @@ describe("actionLedgerService.listDelegations", () => {
   })
 })
 
+describe("actionLedgerService approval and delegation details", () => {
+  test("returns an approval with its requested action details", async () => {
+    const approval = makeApproval({
+      id: "appr_detail",
+      requestedActionId: "alge_requested",
+    })
+    const entry = makeEntry({
+      id: approval.requestedActionId,
+      status: "awaiting_approval",
+      approvalId: approval.id,
+    })
+    const mutationDetail = makeMutationDetail({ actionId: entry.id })
+    const sensitiveReadDetail = makeSensitiveReadDetail({ actionId: entry.id })
+    const payload = makePayload({ actionId: entry.id })
+    const relayOutbox = makeRelayOutbox({ actionId: entry.id })
+    const { db, calls } = makeGetApprovalDb({
+      approval,
+      entry,
+      mutationDetail,
+      sensitiveReadDetail,
+      payloads: [payload],
+      relayOutbox: [relayOutbox],
+    })
+
+    await expect(actionLedgerService.getApproval(db, approval.id)).resolves.toEqual({
+      approval,
+      requestedAction: {
+        entry,
+        mutationDetail,
+        sensitiveReadDetail,
+        payloads: [payload],
+        relayOutbox: [relayOutbox],
+      },
+    })
+    expect(calls).toEqual([
+      "action_approvals",
+      "action_ledger_entries",
+      "action_mutation_details",
+      "action_sensitive_read_details",
+      "action_ledger_payloads",
+      "action_ledger_outbox",
+    ])
+  })
+
+  test("returns null when an approval is missing", async () => {
+    const { db, calls } = makeGetApprovalDb({})
+
+    await expect(actionLedgerService.getApproval(db, "appr_missing")).resolves.toBeNull()
+    expect(calls).toEqual(["action_approvals"])
+  })
+
+  test("returns one delegation", async () => {
+    const delegation = makeDelegation({ id: "adel_detail" })
+    const { db, calls } = makeGetDelegationDb(delegation)
+
+    await expect(actionLedgerService.getDelegation(db, delegation.id)).resolves.toEqual({
+      delegation,
+    })
+    expect(calls).toEqual(["action_delegations"])
+  })
+
+  test("returns null when a delegation is missing", async () => {
+    const { db, calls } = makeGetDelegationDb(null)
+
+    await expect(actionLedgerService.getDelegation(db, "adel_missing")).resolves.toBeNull()
+    expect(calls).toEqual(["action_delegations"])
+  })
+})
+
 describe("actionLedgerService relay outbox lifecycle", () => {
   test("claims due relay outbox rows and maps SQL result rows", async () => {
     const claimed = makeRelayOutbox({
@@ -875,6 +944,86 @@ function makeGetEntryDb(input: {
                 limit() {
                   calls.push(callLabels[index] ?? `select_${index}`)
                   return Promise.resolve(selectRows[index] ?? [])
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return { db, calls }
+}
+
+function makeGetApprovalDb(input: {
+  approval?: ActionApproval
+  entry?: ActionLedgerEntry
+  mutationDetail?: ActionMutationDetail
+  sensitiveReadDetail?: ActionSensitiveReadDetail
+  payloads?: ActionLedgerPayload[]
+  relayOutbox?: ActionLedgerRelayOutbox[]
+}) {
+  const calls: string[] = []
+  const selectRows = [
+    input.approval ? [input.approval] : [],
+    input.entry ? [input.entry] : [],
+    input.mutationDetail ? [input.mutationDetail] : [],
+    input.sensitiveReadDetail ? [input.sensitiveReadDetail] : [],
+    input.payloads ?? [],
+    input.relayOutbox ?? [],
+  ]
+  const callLabels = [
+    "action_approvals",
+    "action_ledger_entries",
+    "action_mutation_details",
+    "action_sensitive_read_details",
+    "action_ledger_payloads",
+    "action_ledger_outbox",
+  ]
+  let selectIndex = 0
+
+  const db = {
+    select() {
+      const index = selectIndex
+      selectIndex += 1
+      return {
+        from() {
+          return {
+            where() {
+              if (index >= 4) {
+                calls.push(callLabels[index] ?? `select_${index}`)
+                return Promise.resolve(selectRows[index] ?? [])
+              }
+
+              return {
+                limit() {
+                  calls.push(callLabels[index] ?? `select_${index}`)
+                  return Promise.resolve(selectRows[index] ?? [])
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return { db, calls }
+}
+
+function makeGetDelegationDb(row: ActionDelegation | null) {
+  const calls: string[] = []
+  const db = {
+    select() {
+      return {
+        from() {
+          return {
+            where() {
+              return {
+                limit() {
+                  calls.push("action_delegations")
+                  return Promise.resolve(row ? [row] : [])
                 },
               }
             },

@@ -215,6 +215,15 @@ export interface GetActionLedgerEntryResult {
   relayOutbox: ActionLedgerRelayOutbox[]
 }
 
+export interface GetActionApprovalResult {
+  approval: ActionApproval
+  requestedAction: GetActionLedgerEntryResult | null
+}
+
+export interface GetActionDelegationResult {
+  delegation: ActionDelegation
+}
+
 export const actionLedgerService = {
   async appendEntry(
     db: AnyDrizzleDb,
@@ -340,6 +349,32 @@ export const actionLedgerService = {
           ? toActionDelegationListCursor(delegations[delegations.length - 1]!)
           : null,
     }
+  },
+
+  async getApproval(db: AnyDrizzleDb, id: string): Promise<GetActionApprovalResult | null> {
+    const [approval] = await db
+      .select()
+      .from(actionApprovals)
+      .where(eq(actionApprovals.id, id))
+      .limit(1)
+
+    if (!approval) return null
+
+    return {
+      approval,
+      requestedAction: await actionLedgerService.getEntry(db, approval.requestedActionId),
+    }
+  },
+
+  async getDelegation(db: AnyDrizzleDb, id: string): Promise<GetActionDelegationResult | null> {
+    const [delegation] = await db
+      .select()
+      .from(actionDelegations)
+      .where(eq(actionDelegations.id, id))
+      .limit(1)
+
+    if (!delegation) return null
+    return { delegation }
   },
 
   async claimRelayOutbox(

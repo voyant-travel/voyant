@@ -457,6 +457,110 @@ describe("actionLedgerAdminRoutes", () => {
     expect(parsed.error?.issues[0]?.path).toEqual(["cursorId"])
   })
 
+  test("gets one approval with requested action details", async () => {
+    const approval = makeApproval({
+      id: "appr_detail",
+      requestedActionId: "alge_requested",
+    })
+    const db = {} as AnyDrizzleDb
+    const spy = vi.spyOn(actionLedgerService, "getApproval").mockResolvedValue({
+      approval,
+      requestedAction: {
+        entry: makeEntry({
+          id: approval.requestedActionId,
+          status: "awaiting_approval",
+          approvalId: approval.id,
+        }),
+        mutationDetail: makeMutationDetail({ actionId: approval.requestedActionId }),
+        sensitiveReadDetail: null,
+        payloads: [makePayload({ actionId: approval.requestedActionId })],
+        relayOutbox: [makeRelayOutbox({ actionId: approval.requestedActionId })],
+      },
+    })
+
+    const app = makeApp(db)
+    const response = await app.request("/approvals/appr_detail")
+
+    expect(spy).toHaveBeenCalledWith(db, "appr_detail")
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        id: "appr_detail",
+        requestedActionId: "alge_requested",
+        createdAt: "2026-05-15T10:00:00.000Z",
+        requestedAction: {
+          id: "alge_requested",
+          status: "awaiting_approval",
+          approvalId: "appr_detail",
+          occurredAt: "2026-05-15T10:00:00.000Z",
+          createdAt: "2026-05-15T10:00:00.000Z",
+          mutationDetail: {
+            actionId: "alge_requested",
+          },
+          sensitiveReadDetail: null,
+          payloads: [
+            {
+              actionId: "alge_requested",
+              createdAt: "2026-05-15T10:00:00.000Z",
+            },
+          ],
+          relayOutbox: [
+            {
+              actionId: "alge_requested",
+              createdAt: "2026-05-15T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    })
+  })
+
+  test("returns 404 when an approval is missing", async () => {
+    vi.spyOn(actionLedgerService, "getApproval").mockResolvedValue(null)
+
+    const app = makeApp({} as AnyDrizzleDb)
+    const response = await app.request("/approvals/appr_missing")
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: "Action approval not found",
+    })
+  })
+
+  test("gets one delegation", async () => {
+    const db = {} as AnyDrizzleDb
+    const spy = vi.spyOn(actionLedgerService, "getDelegation").mockResolvedValue({
+      delegation: makeDelegation({ id: "adel_detail" }),
+    })
+
+    const app = makeApp(db)
+    const response = await app.request("/delegations/adel_detail")
+
+    expect(spy).toHaveBeenCalledWith(db, "adel_detail")
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        id: "adel_detail",
+        rootPrincipalType: "user",
+        childPrincipalType: "agent",
+        expiresAt: "2026-05-15T12:00:00.000Z",
+        createdAt: "2026-05-15T10:00:00.000Z",
+      },
+    })
+  })
+
+  test("returns 404 when a delegation is missing", async () => {
+    vi.spyOn(actionLedgerService, "getDelegation").mockResolvedValue(null)
+
+    const app = makeApp({} as AnyDrizzleDb)
+    const response = await app.request("/delegations/adel_missing")
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: "Action delegation not found",
+    })
+  })
+
   test("gets one entry with profile details", async () => {
     const db = {} as AnyDrizzleDb
     const spy = vi.spyOn(actionLedgerService, "getEntry").mockResolvedValue({

@@ -14,7 +14,12 @@ import type {
   ActionMutationDetail,
   ActionSensitiveReadDetail,
 } from "./schema.js"
-import { actionLedgerService, type GetActionLedgerEntryResult } from "./service.js"
+import {
+  actionLedgerService,
+  type GetActionApprovalResult,
+  type GetActionDelegationResult,
+  type GetActionLedgerEntryResult,
+} from "./service.js"
 
 const actionLedgerActionKindValues = [
   "read",
@@ -367,6 +372,10 @@ export interface ActionApprovalListResponse {
   }
 }
 
+export interface ActionApprovalGetResponse {
+  data: ActionApprovalDetailResponse
+}
+
 export interface ActionDelegationListResponse {
   data: ActionDelegationResponse[]
   pageInfo: {
@@ -375,6 +384,10 @@ export interface ActionDelegationListResponse {
       id: string
     } | null
   }
+}
+
+export interface ActionDelegationGetResponse {
+  data: ActionDelegationResponse
 }
 
 export type ActionLedgerPayloadResponse = Omit<ActionLedgerPayload, "createdAt" | "expiresAt"> & {
@@ -398,6 +411,10 @@ export type ActionApprovalResponse = Omit<
   createdAt: string
   decidedAt: string | null
   expiresAt: string | null
+}
+
+export type ActionApprovalDetailResponse = ActionApprovalResponse & {
+  requestedAction: ActionLedgerEntryDetailResponse | null
 }
 
 export type ActionDelegationResponse = Omit<ActionDelegation, "createdAt" | "expiresAt"> & {
@@ -454,12 +471,29 @@ function serializeActionApproval(row: ActionApproval): ActionApprovalResponse {
   }
 }
 
+function serializeActionApprovalDetail(
+  result: GetActionApprovalResult,
+): ActionApprovalDetailResponse {
+  return {
+    ...serializeActionApproval(result.approval),
+    requestedAction: result.requestedAction
+      ? serializeActionLedgerEntryDetail(result.requestedAction)
+      : null,
+  }
+}
+
 function serializeActionDelegation(row: ActionDelegation): ActionDelegationResponse {
   return {
     ...row,
     createdAt: serializeDate(row.createdAt),
     expiresAt: serializeNullableDate(row.expiresAt),
   }
+}
+
+function serializeActionDelegationDetail(
+  result: GetActionDelegationResult,
+): ActionDelegationResponse {
+  return serializeActionDelegation(result.delegation)
 }
 
 function serializeActionLedgerEntryDetail(
@@ -525,6 +559,40 @@ async function listActionDelegations(c: Context<Env>) {
   } satisfies ActionDelegationListResponse)
 }
 
+async function getActionApproval(c: Context<Env>) {
+  const id = c.req.param("id")
+  if (!id) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  const result = await actionLedgerService.getApproval(c.get("db"), id)
+
+  if (!result) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  return c.json({
+    data: serializeActionApprovalDetail(result),
+  } satisfies ActionApprovalGetResponse)
+}
+
+async function getActionDelegation(c: Context<Env>) {
+  const id = c.req.param("id")
+  if (!id) {
+    return c.json({ error: "Action delegation not found" }, 404)
+  }
+
+  const result = await actionLedgerService.getDelegation(c.get("db"), id)
+
+  if (!result) {
+    return c.json({ error: "Action delegation not found" }, 404)
+  }
+
+  return c.json({
+    data: serializeActionDelegationDetail(result),
+  } satisfies ActionDelegationGetResponse)
+}
+
 async function getActionLedgerEntry(c: Context<Env>) {
   const id = c.req.param("id")
   if (!id) {
@@ -546,7 +614,9 @@ export const actionLedgerAdminRoutes = new Hono<Env>()
   .get("/", listActionLedgerEntries)
   .get("/entries", listActionLedgerEntries)
   .get("/approvals", listActionApprovals)
+  .get("/approvals/:id", getActionApproval)
   .get("/delegations", listActionDelegations)
+  .get("/delegations/:id", getActionDelegation)
   .get("/relay-outbox", listActionLedgerRelayOutbox)
   .get("/entries/:id", getActionLedgerEntry)
 
@@ -567,6 +637,7 @@ export const __test__ = {
   actionDelegationListQuerySchema,
   actionLedgerRelayOutboxListQuerySchema,
   serializeActionApproval,
+  serializeActionApprovalDetail,
   serializeActionDelegation,
   serializeActionLedgerEntry,
   serializeActionLedgerEntryDetail,
