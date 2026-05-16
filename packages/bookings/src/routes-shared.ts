@@ -29,10 +29,15 @@ export type Env = {
     db: PostgresJsDatabase
     eventBus?: EventBus
     userId?: string
+    agentId?: string
+    workflowPrincipalId?: string
+    principalSubtype?: string
     sessionId?: string
     organizationId?: string | null
-    actor?: "staff" | "customer" | "partner" | "supplier"
-    callerType?: "session" | "api_key" | "internal"
+    workflowRunId?: string | null
+    workflowStepId?: string | null
+    actor?: "staff" | "customer" | "partner" | "supplier" | "agent" | "system"
+    callerType?: "session" | "api_key" | "internal" | "agent" | "workflow"
     apiTokenId?: string
     apiKeyId?: string
     scopes?: string[] | null
@@ -40,8 +45,8 @@ export type Env = {
     authorizeBookingPii?: (args: {
       db: PostgresJsDatabase
       userId?: string
-      actor?: "staff" | "customer" | "partner" | "supplier"
-      callerType?: "session" | "api_key" | "internal"
+      actor?: "staff" | "customer" | "partner" | "supplier" | "agent" | "system"
+      callerType?: "session" | "api_key" | "internal" | "agent" | "workflow"
       scopes?: string[] | null
       isInternalRequest?: boolean
       bookingId: string

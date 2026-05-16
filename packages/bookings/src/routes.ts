@@ -3,7 +3,9 @@ import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
+  evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
+  requestActionLedgerApproval,
 } from "@voyantjs/action-ledger"
 import {
   ForbiddenApiError,
@@ -91,6 +93,7 @@ const BOOKING_PII_READ_ACTION_NAME = "booking.pii.read"
 const BOOKING_PII_READ_ACTION_VERSION = "v1"
 const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
+const BOOKING_STATUS_APPROVAL_POLICY = "bookings-status-approval-v1"
 const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
   "firstName",
   "lastName",
@@ -119,12 +122,17 @@ const TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS = [
 function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {
   return {
     userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
     sessionId: c.get("sessionId") ?? null,
     apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
     callerType: c.get("callerType") ?? null,
     actor: c.get("actor") ?? null,
     isInternalRequest: c.get("isInternalRequest") ?? false,
     organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
     correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
   }
 }
@@ -177,6 +185,75 @@ async function authorizeBookingStatusMutation(
   })
 
   if (access.allowed) {
+    const approvalRequirement = evaluateActionLedgerApprovalRequirement({
+      access,
+      conditionalApprovalRequired: requiresBookingStatusApproval(c, input.key),
+      reasonCode: bookingStatusApprovalReason(c, input.key),
+    })
+
+    if (approvalRequirement.required) {
+      const result = await requestActionLedgerApproval(c.get("db"), {
+        context: getActionLedgerRequestContext(c),
+        actionName: input.actionName,
+        actionVersion: capability.version,
+        actionKind: "update",
+        evaluatedRisk: approvalRequirement.evaluatedRisk,
+        targetType: "booking",
+        targetId: input.bookingId,
+        routeOrToolName: input.routeOrToolName,
+        capabilityId: access.capabilityId,
+        capabilityVersion: access.capabilityVersion,
+        authorizationSource: access.authorizationSource,
+        idempotencyScope: c.req.header("idempotency-key")
+          ? `${input.routeOrToolName}:${input.bookingId}`
+          : null,
+        idempotencyKey: c.req.header("idempotency-key") ?? null,
+        mutationDetail: {
+          summary: `Booking status ${capability.action} awaiting approval: ${approvalRequirement.reasonCode}`,
+          reversalKind: "none",
+        },
+        approval: {
+          policyName: BOOKING_STATUS_APPROVAL_POLICY,
+          policyVersion: capability.version,
+          riskSnapshot: approvalRequirement.evaluatedRisk,
+          reasonCode: approvalRequirement.reasonCode,
+        },
+      })
+
+      return {
+        allowed: false as const,
+        response: c.json(
+          {
+            data: {
+              approvalRequired: true,
+              requestedAction: {
+                id: result.requestedAction.id,
+                status: result.requestedAction.status,
+                actionName: result.requestedAction.actionName,
+                targetType: result.requestedAction.targetType,
+                targetId: result.requestedAction.targetId,
+              },
+              approval: {
+                id: result.approval.id,
+                status: result.approval.status,
+                requestedActionId: result.approval.requestedActionId,
+                requestedByPrincipalId: result.approval.requestedByPrincipalId,
+                assignedToPrincipalId: result.approval.assignedToPrincipalId,
+                policyName: result.approval.policyName,
+                policyVersion: result.approval.policyVersion,
+                riskSnapshot: result.approval.riskSnapshot,
+                reasonCode: result.approval.reasonCode,
+                expiresAt: result.approval.expiresAt,
+                createdAt: result.approval.createdAt,
+              },
+              replayed: result.replayed,
+            },
+          },
+          202,
+        ),
+      }
+    }
+
     return { allowed: true as const, access }
   }
 
@@ -203,6 +280,27 @@ async function authorizeBookingStatusMutation(
     allowed: false as const,
     response: handleApiError(new ForbiddenApiError(), c),
   }
+}
+
+function requiresBookingStatusApproval(c: Context<Env>, key: BookingStatusCapabilityRoute["key"]) {
+  const capability = BOOKING_STATUS_CAPABILITIES[key]
+  if (capability.approvalPolicy !== "conditional") return false
+  return (
+    c.get("callerType") === "agent" ||
+    c.get("callerType") === "workflow" ||
+    Boolean(c.get("agentId")) ||
+    Boolean(c.get("workflowPrincipalId"))
+  )
+}
+
+function bookingStatusApprovalReason(c: Context<Env>, key: BookingStatusCapabilityRoute["key"]) {
+  if (c.get("callerType") === "agent" || c.get("agentId")) {
+    return `${key}_requested_by_agent`
+  }
+  if (c.get("callerType") === "workflow" || c.get("workflowPrincipalId")) {
+    return `${key}_requested_by_workflow`
+  }
+  return null
 }
 
 async function logBookingPiiReadActionLedger(

@@ -1,4 +1,5 @@
 import {
+  actionApprovals,
   actionLedgerEntries,
   actionMutationDetails,
   actionSensitiveReadDetails,
@@ -29,6 +30,7 @@ import {
   bookingStaffAssignments,
   bookingTravelers,
 } from "../../src/schema.js"
+import { bookingsService } from "../../src/service.js"
 import {
   bookingTransactionDetailsRef,
   offerItemParticipantsRef,
@@ -186,6 +188,21 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       END $$;
     `)
     await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_approval_status AS ENUM (
+          'pending',
+          'approved',
+          'denied',
+          'expired',
+          'cancelled',
+          'superseded'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS action_ledger_entries (
         id text PRIMARY KEY NOT NULL,
         occurred_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -249,6 +266,34 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         reversed_by_action_id_projection text
       )
     `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS action_approvals (
+        id text PRIMARY KEY NOT NULL,
+        requested_action_id text NOT NULL REFERENCES action_ledger_entries(id) ON DELETE CASCADE,
+        status action_ledger_approval_status DEFAULT 'pending' NOT NULL,
+        requested_by_principal_id text NOT NULL,
+        assigned_to_principal_id text,
+        decided_by_principal_id text,
+        delegated_from_principal_id text,
+        policy_name text NOT NULL,
+        policy_version text NOT NULL,
+        target_snapshot_ref text,
+        risk_snapshot action_ledger_risk NOT NULL,
+        reason_code text,
+        expires_at timestamp with time zone,
+        decided_at timestamp with time zone,
+        created_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS idx_action_approvals_requested_action ON action_approvals (requested_action_id)`,
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS idx_action_approvals_status_expires ON action_approvals (status, expires_at)`,
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS idx_action_approvals_assignee ON action_approvals (assigned_to_principal_id, created_at)`,
+    )
 
     process.env.KMS_PROVIDER = "env"
     process.env.KMS_ENV_KEY = generateEnvKmsKey()
@@ -1101,6 +1146,85 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         summary: "Booking status cancel denied: actor_not_allowed",
         reversalKind: "none",
       })
+    })
+
+    it("turns agent booking cancel requests into pending action approvals", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const res = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-request-1",
+        },
+        body: JSON.stringify({ note: "Agent proposed cancellation" }),
+      })
+
+      expect(res.status).toBe(202)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        approvalRequired: true,
+        requestedAction: {
+          status: "awaiting_approval",
+          actionName: "booking.status.cancel",
+          targetType: "booking",
+          targetId: booking.id,
+        },
+        approval: {
+          status: "pending",
+          requestedByPrincipalId: "agent-booking-cancel",
+          policyName: "bookings-status-approval-v1",
+          policyVersion: "v1",
+          riskSnapshot: "high",
+          reasonCode: "cancel_requested_by_agent",
+        },
+        replayed: false,
+      })
+
+      const [entry] = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+
+      expect(entry).toMatchObject({
+        actionName: "booking.status.cancel",
+        actionKind: "update",
+        status: "awaiting_approval",
+        evaluatedRisk: "high",
+        principalType: "agent",
+        principalId: "agent-booking-cancel",
+        callerType: "agent",
+        capabilityId: "bookings:status:cancel",
+        authorizationSource: "scope",
+      })
+
+      const [approval] = await db
+        .select()
+        .from(actionApprovals)
+        .where(eq(actionApprovals.requestedActionId, entry.id))
+
+      expect(approval).toMatchObject({
+        id: entry.approvalId,
+        status: "pending",
+        requestedByPrincipalId: "agent-booking-cancel",
+        policyName: "bookings-status-approval-v1",
+        reasonCode: "cancel_requested_by_agent",
+      })
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
     })
 
     it("emits booking.confirmed with id + number + actor after confirm", async () => {
