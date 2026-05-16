@@ -68,3 +68,27 @@ export type VoyantCloudAdminSessionRevalidationResult =
 export declare function revalidateVoyantCloudAdminAuthSession(
   input: VoyantCloudAdminSessionRevalidationInput,
 ): Promise<VoyantCloudAdminSessionRevalidationResult>
+
+export type VoyantCloudAdminUserRevalidationInput = {
+  db: ReturnType<typeof getDb>
+  userId: string
+  config: CloudAdminAuthRevalidateConfig
+  fetch?: typeof fetch
+  now?: Date
+  revalidateAfterSeconds?: number
+}
+
+export type VoyantCloudAdminUserRevalidationResult =
+  | {
+      ok: true
+      status: "active" | "cached"
+    }
+  | {
+      ok: false
+      status: "revoked"
+      reason?: string
+    }
+
+export declare function revalidateVoyantCloudAdminAuthUser(
+  input: VoyantCloudAdminUserRevalidationInput,
+): Promise<VoyantCloudAdminUserRevalidationResult>

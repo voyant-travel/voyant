@@ -101,6 +101,20 @@ export function requireAuth<TBindings extends VoyantBindings>(
           return c.json({ error: "API key usage limit exceeded" }, 429)
         }
 
+        if (opts?.auth?.validateApiKey) {
+          const isValid = await opts.auth.validateApiKey({
+            request: c.req.raw,
+            env: c.env,
+            db,
+            ctx: c.executionCtx,
+            apiKey: row,
+          })
+
+          if (!isValid) {
+            return c.json({ error: "Invalid API key" }, 401)
+          }
+        }
+
         if (row.remaining !== null) {
           c.executionCtx.waitUntil?.(
             db

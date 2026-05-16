@@ -50,6 +50,26 @@ export type VoyantCloudAdminSessionRevalidationResult =
       reason?: string
     }
 
+export type VoyantCloudAdminUserRevalidationInput = {
+  db: ReturnType<typeof getDb>
+  userId: string
+  config: CloudAdminAuthRevalidateConfig
+  fetch?: typeof fetch
+  now?: Date
+  revalidateAfterSeconds?: number
+}
+
+export type VoyantCloudAdminUserRevalidationResult =
+  | {
+      ok: true
+      status: "active" | "cached"
+    }
+  | {
+      ok: false
+      status: "revoked"
+      reason?: string
+    }
+
 const VOYANT_CLOUD_PROVIDER_ID = "voyant-cloud"
 const DEFAULT_CLOUD_SESSION_REVALIDATE_AFTER_SECONDS = 15 * 60
 
@@ -194,6 +214,57 @@ export async function revalidateVoyantCloudAdminAuthSession({
   await revokeCloudAuthUserAccess(db, {
     sessionId: sessionLink.sessionId,
     userId: sessionLink.userId,
+    now,
+  })
+
+  return {
+    ok: false,
+    status: "revoked",
+    reason: revalidation.reason,
+  }
+}
+
+export async function revalidateVoyantCloudAdminAuthUser({
+  db,
+  userId,
+  config,
+  fetch,
+  now = new Date(),
+  revalidateAfterSeconds = DEFAULT_CLOUD_SESSION_REVALIDATE_AFTER_SECONDS,
+}: VoyantCloudAdminUserRevalidationInput): Promise<VoyantCloudAdminUserRevalidationResult> {
+  const [userLink] = await db
+    .select()
+    .from(cloudAuthUserLinks)
+    .where(eq(cloudAuthUserLinks.userId, userId))
+    .limit(1)
+
+  if (!userLink || userLink.revokedAt) {
+    return { ok: false, status: "revoked", reason: "missing_or_revoked_user" }
+  }
+
+  const nextRevalidationAt = userLink.lastRevalidatedAt
+    ? new Date(userLink.lastRevalidatedAt.getTime() + revalidateAfterSeconds * 1000)
+    : null
+  if (nextRevalidationAt && nextRevalidationAt > now) {
+    return { ok: true, status: "cached" }
+  }
+
+  const revalidation = await revalidateCloudAdminAuthAccess({
+    workosUserId: userLink.providerAccountId,
+    config,
+    ...(fetch ? { fetch } : {}),
+  })
+
+  if (revalidation.ok) {
+    await markCloudAuthUserRevalidated(db, {
+      userId: userLink.userId,
+      now,
+    })
+    return { ok: true, status: "active" }
+  }
+
+  await revokeCloudAuthUserAccess(db, {
+    userId: userLink.userId,
     now,
   })
 
@@ -470,19 +541,12 @@ async function markCloudAuthSessionRevalidated(
 async function revokeCloudAuthUserAccess(
   db: ReturnType<typeof getDb>,
   input: {
-    sessionId: string
+    sessionId?: string
     userId: string
     now: Date
   },
 ): Promise<void> {
-  await Promise.all([
-    db
-      .update(cloudAuthSessionLinks)
-      .set({
-        revokedAt: input.now,
-        updatedAt: input.now,
-      })
-      .where(eq(cloudAuthSessionLinks.sessionId, input.sessionId)),
+  const updates: Array<Promise<unknown>> = [
     db
       .update(cloudAuthUserLinks)
       .set({
@@ -498,7 +562,38 @@ async function revokeCloudAuthUserAccess(
         updatedAt: input.now,
       })
       .where(eq(apikeyTable.referenceId, input.userId)),
-  ])
+  ]
+
+  if (input.sessionId) {
+    updates.push(
+      db
+        .update(cloudAuthSessionLinks)
+        .set({
+          revokedAt: input.now,
+          updatedAt: input.now,
+        })
+        .where(eq(cloudAuthSessionLinks.sessionId, input.sessionId)),
+    )
+  }
+
+  await Promise.all(updates)
+}
+
+async function markCloudAuthUserRevalidated(
+  db: ReturnType<typeof getDb>,
+  input: {
+    userId: string
+    now: Date
+  },
+): Promise<void> {
+  await db
+    .update(cloudAuthUserLinks)
+    .set({
+      lastRevalidatedAt: input.now,
+      revokedAt: null,
+      updatedAt: input.now,
+    })
+    .where(eq(cloudAuthUserLinks.userId, input.userId))
 }
 
 function cloudAssertionDisplayName(assertion: CloudAdminAssertion): string {

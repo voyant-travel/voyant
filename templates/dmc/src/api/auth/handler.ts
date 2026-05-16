@@ -7,7 +7,10 @@
  * Also provides /auth/status (user provisioning) and /auth/me (user info).
  */
 
-import { createVoyantCloudAdminAuthPlugin } from "@voyantjs/auth/cloud-admin-session"
+import {
+  createVoyantCloudAdminAuthPlugin,
+  revalidateVoyantCloudAdminAuthUser,
+} from "@voyantjs/auth/cloud-admin-session"
 import {
   buildClearCloudAdminAuthStateCookie,
   createCloudAdminAuthStart,
@@ -15,7 +18,7 @@ import {
 import { createBetterAuth } from "@voyantjs/auth/server"
 import { ensureCurrentUserProfile } from "@voyantjs/auth/workspace"
 import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
-import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
+import { authUser, type SelectApikey, userProfilesTable } from "@voyantjs/db/schema/iam"
 import type { VoyantDb, VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
@@ -154,6 +157,19 @@ function getCloudAuthExchangeConfig(env: CloudflareBindings) {
   }
 }
 
+function getCloudAuthRevalidateConfig(env: CloudflareBindings) {
+  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+  const revalidateUrl = env.VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?.trim()
+  const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
+  if (!deploymentId || !revalidateUrl || !clientToken) return null
+
+  return {
+    revalidateUrl,
+    deploymentId,
+    clientToken,
+  }
+}
+
 /**
  * Build a Better Auth instance backed by a caller-provided drizzle
  * client. The caller owns the Pool lifecycle (open before, dispose
@@ -261,6 +277,29 @@ export async function hasAuthPermission(
 ): Promise<boolean> {
   const auth = await resolveAuthRequest(request, env)
   return auth !== null
+}
+
+export async function validateApiTokenAccess(
+  env: CloudflareBindings,
+  db: VoyantDb,
+  apiKey: SelectApikey,
+): Promise<boolean> {
+  if (!isVoyantCloudAuthMode(env)) return true
+
+  const revalidateConfig = getCloudAuthRevalidateConfig(env)
+  if (!revalidateConfig) return false
+
+  try {
+    const revalidation = await revalidateVoyantCloudAdminAuthUser({
+      db: db as unknown as Parameters<typeof revalidateVoyantCloudAdminAuthUser>[0]["db"],
+      userId: apiKey.referenceId,
+      config: revalidateConfig,
+    })
+    return revalidation.ok
+  } catch (error) {
+    console.error("[auth/api-token] Cloud revalidation failed:", error)
+    return false
+  }
 }
 
 /**

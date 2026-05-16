@@ -62,7 +62,11 @@ import { createProductBrochurePrinter } from "../lib/brochure-printer"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
 import { tryGetCloudClient } from "../lib/voyant-cloud"
-import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
+import authHandler, {
+  hasAuthPermission,
+  resolveAuthRequest,
+  validateApiTokenAccess,
+} from "./auth/handler"
 import {
   bookingScheduleBundle,
   mountBookingPaymentScheduleRoutes,
@@ -848,6 +852,7 @@ export const app = createApp<CloudflareBindings>({
     }),
     resolve: async ({ request, env }) => resolveAuthRequest(request, env),
     hasPermission: async ({ request, env }) => hasAuthPermission(request, env),
+    validateApiKey: async ({ env, db, apiKey }) => validateApiTokenAccess(env, db, apiKey),
   },
   additionalRoutes: (hono) => {
     // Admin-issued invitation flow (single-tenant sign-up is otherwise gated
