@@ -1,5 +1,15 @@
 # @voyantjs/bookings
 
+## 0.50.8
+
+### Patch Changes
+
+- f35014f: Fix admin booking create pricing and room-option selection after the initial create-flow patch. The admin flow now resolves active internal products for pricing preview, keeps selected combobox labels readable, lists product options as independent room/unit rows, and shows accurate pricing-preview fallback copy.
+  - @voyantjs/core@0.50.8
+  - @voyantjs/db@0.50.8
+  - @voyantjs/hono@0.50.8
+  - @voyantjs/utils@0.50.8
+
 ## 0.50.7
 
 ### Patch Changes
