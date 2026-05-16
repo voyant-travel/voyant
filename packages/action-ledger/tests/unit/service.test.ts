@@ -60,18 +60,31 @@ function makeEntry(overrides: Partial<ActionLedgerEntry> = {}): ActionLedgerEntr
 }
 
 describe("actionLedgerService.listEntries", () => {
-  test("composes actor, token, target, workflow, correlation, risk, and status filters", () => {
+  test("composes action, actor, target, workflow, control, risk, and status filters", () => {
     const predicate = __test__.buildActionLedgerEntriesPredicate({
+      actionName: "booking.status.confirm",
+      actionKind: "update",
       actorType: "staff",
       principalType: "user",
       principalId: "usr_1",
       apiTokenId: "key_1",
       sessionId: "sess_1",
-      targetType: "booking_traveler",
-      targetId: "bkpt_1",
+      callerType: "session",
+      organizationId: "org_1",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings.confirm",
       workflowRunId: "wf_run_1",
       workflowStepId: "wf_step_1",
       correlationId: "corr_1",
+      causationActionId: "alge_parent",
+      capabilityId: "bookings:status:confirm",
+      capabilityVersion: "v1",
+      authorizationSource: "bookings.status.route",
+      approvalId: "appr_1",
+      amendsActionId: "alge_prior",
+      idempotencyScope: "booking",
+      idempotencyKey: "idem_1",
       evaluatedRisk: ["high", "critical"],
       status: ["succeeded", "denied"],
     })
@@ -79,29 +92,55 @@ describe("actionLedgerService.listEntries", () => {
     expect(predicate).toBeDefined()
     const query = new PgDialect().sqlToQuery(predicate!)
 
-    expect(query.sql).toContain('"action_ledger_entries"."actor_type" = $1')
-    expect(query.sql).toContain('"action_ledger_entries"."principal_type" = $2')
-    expect(query.sql).toContain('"action_ledger_entries"."principal_id" = $3')
-    expect(query.sql).toContain('"action_ledger_entries"."api_token_id" = $4')
-    expect(query.sql).toContain('"action_ledger_entries"."session_id" = $5')
-    expect(query.sql).toContain('"action_ledger_entries"."target_type" = $6')
-    expect(query.sql).toContain('"action_ledger_entries"."target_id" = $7')
-    expect(query.sql).toContain('"action_ledger_entries"."workflow_run_id" = $8')
-    expect(query.sql).toContain('"action_ledger_entries"."workflow_step_id" = $9')
-    expect(query.sql).toContain('"action_ledger_entries"."correlation_id" = $10')
-    expect(query.sql).toContain('"action_ledger_entries"."evaluated_risk" in ($11, $12)')
-    expect(query.sql).toContain('"action_ledger_entries"."status" in ($13, $14)')
+    expect(query.sql).toContain('"action_ledger_entries"."action_name" = $1')
+    expect(query.sql).toContain('"action_ledger_entries"."action_kind" = $2')
+    expect(query.sql).toContain('"action_ledger_entries"."actor_type" = $3')
+    expect(query.sql).toContain('"action_ledger_entries"."principal_type" = $4')
+    expect(query.sql).toContain('"action_ledger_entries"."principal_id" = $5')
+    expect(query.sql).toContain('"action_ledger_entries"."api_token_id" = $6')
+    expect(query.sql).toContain('"action_ledger_entries"."session_id" = $7')
+    expect(query.sql).toContain('"action_ledger_entries"."caller_type" = $8')
+    expect(query.sql).toContain('"action_ledger_entries"."organization_id" = $9')
+    expect(query.sql).toContain('"action_ledger_entries"."target_type" = $10')
+    expect(query.sql).toContain('"action_ledger_entries"."target_id" = $11')
+    expect(query.sql).toContain('"action_ledger_entries"."route_or_tool_name" = $12')
+    expect(query.sql).toContain('"action_ledger_entries"."workflow_run_id" = $13')
+    expect(query.sql).toContain('"action_ledger_entries"."workflow_step_id" = $14')
+    expect(query.sql).toContain('"action_ledger_entries"."correlation_id" = $15')
+    expect(query.sql).toContain('"action_ledger_entries"."causation_action_id" = $16')
+    expect(query.sql).toContain('"action_ledger_entries"."capability_id" = $17')
+    expect(query.sql).toContain('"action_ledger_entries"."capability_version" = $18')
+    expect(query.sql).toContain('"action_ledger_entries"."authorization_source" = $19')
+    expect(query.sql).toContain('"action_ledger_entries"."approval_id" = $20')
+    expect(query.sql).toContain('"action_ledger_entries"."amends_action_id" = $21')
+    expect(query.sql).toContain('"action_ledger_entries"."idempotency_scope" = $22')
+    expect(query.sql).toContain('"action_ledger_entries"."idempotency_key" = $23')
+    expect(query.sql).toContain('"action_ledger_entries"."evaluated_risk" in ($24, $25)')
+    expect(query.sql).toContain('"action_ledger_entries"."status" in ($26, $27)')
     expect(query.params).toEqual([
+      "booking.status.confirm",
+      "update",
       "staff",
       "user",
       "usr_1",
       "key_1",
       "sess_1",
-      "booking_traveler",
-      "bkpt_1",
+      "session",
+      "org_1",
+      "booking",
+      "book_1",
+      "bookings.confirm",
       "wf_run_1",
       "wf_step_1",
       "corr_1",
+      "alge_parent",
+      "bookings:status:confirm",
+      "v1",
+      "bookings.status.route",
+      "appr_1",
+      "alge_prior",
+      "booking",
+      "idem_1",
       "high",
       "critical",
       "succeeded",

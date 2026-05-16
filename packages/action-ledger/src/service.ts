@@ -51,17 +51,29 @@ export interface ActionLedgerListCursor {
 }
 
 export interface ListActionLedgerEntriesInput {
+  actionName?: string | null
+  actionKind?: ActionLedgerEntry["actionKind"]
   actorType?: string | null
   principalType?: ActionLedgerEntry["principalType"]
   principalId?: string | null
   apiTokenId?: string | null
   sessionId?: string | null
+  callerType?: string | null
+  organizationId?: string | null
   targetType?: string | null
   targetId?: string | null
+  routeOrToolName?: string | null
   workflowRunId?: string | null
   workflowStepId?: string | null
   correlationId?: string | null
   causationActionId?: string | null
+  capabilityId?: string | null
+  capabilityVersion?: string | null
+  authorizationSource?: string | null
+  approvalId?: string | null
+  amendsActionId?: string | null
+  idempotencyScope?: string | null
+  idempotencyKey?: string | null
   evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"] | ActionLedgerEntry["evaluatedRisk"][]
   status?: ActionLedgerEntry["status"] | ActionLedgerEntry["status"][]
   cursor?: ActionLedgerListCursor | null
@@ -310,6 +322,8 @@ function buildCursorCondition(cursor: ActionLedgerListCursor): SQL {
 function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput): SQL | undefined {
   const conditions: SQL[] = []
 
+  if (input.actionName) conditions.push(eq(actionLedgerEntries.actionName, input.actionName))
+  if (input.actionKind) conditions.push(eq(actionLedgerEntries.actionKind, input.actionKind))
   if (input.actorType) conditions.push(eq(actionLedgerEntries.actorType, input.actorType))
   if (input.principalType) {
     conditions.push(eq(actionLedgerEntries.principalType, input.principalType))
@@ -317,8 +331,15 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
   if (input.principalId) conditions.push(eq(actionLedgerEntries.principalId, input.principalId))
   if (input.apiTokenId) conditions.push(eq(actionLedgerEntries.apiTokenId, input.apiTokenId))
   if (input.sessionId) conditions.push(eq(actionLedgerEntries.sessionId, input.sessionId))
+  if (input.callerType) conditions.push(eq(actionLedgerEntries.callerType, input.callerType))
+  if (input.organizationId) {
+    conditions.push(eq(actionLedgerEntries.organizationId, input.organizationId))
+  }
   if (input.targetType) conditions.push(eq(actionLedgerEntries.targetType, input.targetType))
   if (input.targetId) conditions.push(eq(actionLedgerEntries.targetId, input.targetId))
+  if (input.routeOrToolName) {
+    conditions.push(eq(actionLedgerEntries.routeOrToolName, input.routeOrToolName))
+  }
   if (input.workflowRunId) {
     conditions.push(eq(actionLedgerEntries.workflowRunId, input.workflowRunId))
   }
@@ -330,6 +351,23 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
   }
   if (input.causationActionId) {
     conditions.push(eq(actionLedgerEntries.causationActionId, input.causationActionId))
+  }
+  if (input.capabilityId) conditions.push(eq(actionLedgerEntries.capabilityId, input.capabilityId))
+  if (input.capabilityVersion) {
+    conditions.push(eq(actionLedgerEntries.capabilityVersion, input.capabilityVersion))
+  }
+  if (input.authorizationSource) {
+    conditions.push(eq(actionLedgerEntries.authorizationSource, input.authorizationSource))
+  }
+  if (input.approvalId) conditions.push(eq(actionLedgerEntries.approvalId, input.approvalId))
+  if (input.amendsActionId) {
+    conditions.push(eq(actionLedgerEntries.amendsActionId, input.amendsActionId))
+  }
+  if (input.idempotencyScope) {
+    conditions.push(eq(actionLedgerEntries.idempotencyScope, input.idempotencyScope))
+  }
+  if (input.idempotencyKey) {
+    conditions.push(eq(actionLedgerEntries.idempotencyKey, input.idempotencyKey))
   }
 
   const evaluatedRiskCondition = riskCondition(input.evaluatedRisk)

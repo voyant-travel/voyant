@@ -14,6 +14,18 @@ import type {
 } from "./schema.js"
 import { actionLedgerService, type GetActionLedgerEntryResult } from "./service.js"
 
+const actionLedgerActionKindValues = [
+  "read",
+  "create",
+  "update",
+  "delete",
+  "execute",
+  "approve",
+  "reject",
+  "reverse",
+  "compensate",
+  "duplicate",
+] as const
 const actionLedgerPrincipalTypeValues = ["user", "api_key", "agent", "workflow", "system"] as const
 const actionLedgerRiskValues = ["low", "medium", "high", "critical"] as const
 const actionLedgerStatusValues = [
@@ -44,17 +56,29 @@ function commaSeparatedEnumList<const TValues extends NonEmptyEnumValues>(values
 
 const actionLedgerEntryListQuerySchema = z
   .object({
+    actionName: z.string().trim().min(1).optional(),
+    actionKind: z.enum(actionLedgerActionKindValues).optional(),
     actorType: z.string().trim().min(1).optional(),
     principalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
     principalId: z.string().trim().min(1).optional(),
     apiTokenId: z.string().trim().min(1).optional(),
     sessionId: z.string().trim().min(1).optional(),
+    callerType: z.string().trim().min(1).optional(),
+    organizationId: z.string().trim().min(1).optional(),
     targetType: z.string().trim().min(1).optional(),
     targetId: z.string().trim().min(1).optional(),
+    routeOrToolName: z.string().trim().min(1).optional(),
     workflowRunId: z.string().trim().min(1).optional(),
     workflowStepId: z.string().trim().min(1).optional(),
     correlationId: z.string().trim().min(1).optional(),
     causationActionId: z.string().trim().min(1).optional(),
+    capabilityId: z.string().trim().min(1).optional(),
+    capabilityVersion: z.string().trim().min(1).optional(),
+    authorizationSource: z.string().trim().min(1).optional(),
+    approvalId: z.string().trim().min(1).optional(),
+    amendsActionId: z.string().trim().min(1).optional(),
+    idempotencyScope: z.string().trim().min(1).optional(),
+    idempotencyKey: z.string().trim().min(1).optional(),
     evaluatedRisk: commaSeparatedEnumList(actionLedgerRiskValues),
     status: commaSeparatedEnumList(actionLedgerStatusValues),
     cursorOccurredAt: z.string().datetime().optional(),
