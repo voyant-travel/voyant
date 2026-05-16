@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.51.1
+
+### Patch Changes
+
+- deaacb3: Add a `manageAvailabilityAction` message under `products.products` (en + ro) used by the dmc product detail page's new "Manage availability" button (which deep-links into `/availability?productId=…`).
+
 ## 0.51.0
 
 ### Patch Changes
