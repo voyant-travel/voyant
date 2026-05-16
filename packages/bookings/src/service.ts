@@ -1211,6 +1211,126 @@ async function adjustSlotCapacity(
   }
 }
 
+/**
+ * Per-resource capacity check used when a traveler is being assigned
+ * to one or more allocation_resources via `travelDetails.allocations`.
+ *
+ * The slot-level pax check (`adjustSlotCapacity`) only enforces total
+ * pax against `availability_slots.remaining_pax` — it cannot tell
+ * that a request fits in the slot's room total but oversells the DBL
+ * bucket. This helper walks each requested (kind, resourceId) pair,
+ * loads the resource, and counts other travelers already assigned to
+ * it across live bookings on the same slot. If the new traveler would
+ * push that count above the resource's `capacity`, we throw
+ * `resource_capacity_exhausted` citing the offending resource so
+ * the caller can surface a useful error to the client.
+ *
+ * Implemented with raw SQL because @voyantjs/bookings deliberately
+ * has no runtime dep on @voyantjs/availability (see the module-
+ * decoupling notes in CLAUDE.md / MEMORY.md). The schema is stable —
+ * `allocation_resources` and `booking_traveler_travel_details.allocations`
+ * are migration-frozen.
+ */
+export interface BookingResourceCapacityViolation {
+  slotId: string
+  resourceId: string
+  kind: string
+  capacity: number
+  existingAssigned: number
+}
+
+async function loadResourceCapacityViolations(
+  db: PostgresJsDatabase,
+  travelerId: string,
+  allocations: Record<string, string>,
+): Promise<BookingResourceCapacityViolation[]> {
+  const entries = Object.entries(allocations ?? {}).filter(
+    ([kind, resourceId]) => kind && resourceId,
+  )
+  if (entries.length === 0) return []
+
+  const resourceIds = entries.map(([, resourceId]) => resourceId)
+  const resources = await db.execute(sql`
+    SELECT id, kind, capacity, slot_id
+    FROM allocation_resources
+    WHERE id = ANY(${resourceIds}::text[])
+  `)
+  const resourceList = resources as unknown as Array<{
+    id: string
+    kind: string
+    capacity: number
+    slot_id: string
+  }>
+
+  const resourceById = new Map(resourceList.map((row) => [row.id, row]))
+  const violations: BookingResourceCapacityViolation[] = []
+
+  for (const [kind, resourceId] of entries) {
+    const resource = resourceById.get(resourceId)
+    if (!resource) {
+      violations.push({
+        slotId: "",
+        resourceId,
+        kind,
+        capacity: 0,
+        existingAssigned: 0,
+      })
+      continue
+    }
+    if (resource.kind !== kind) {
+      violations.push({
+        slotId: resource.slot_id,
+        resourceId,
+        kind,
+        capacity: resource.capacity,
+        existingAssigned: 0,
+      })
+      continue
+    }
+
+    const counts = await db.execute(sql`
+      SELECT COUNT(DISTINCT btd.traveler_id)::int AS count
+      FROM booking_traveler_travel_details btd
+      JOIN booking_travelers bt ON bt.id = btd.traveler_id
+      JOIN booking_allocations ba ON ba.booking_id = bt.booking_id
+      JOIN bookings b ON b.id = bt.booking_id
+      WHERE btd.allocations ->> ${kind} = ${resourceId}
+        AND ba.availability_slot_id = ${resource.slot_id}
+        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+        AND ba.status IN ('held', 'confirmed', 'fulfilled')
+        AND btd.traveler_id <> ${travelerId}
+    `)
+    const existingAssigned = (counts as unknown as Array<{ count: number | null }>)[0]?.count ?? 0
+    if (existingAssigned + 1 > resource.capacity) {
+      violations.push({
+        slotId: resource.slot_id,
+        resourceId,
+        kind,
+        capacity: resource.capacity,
+        existingAssigned,
+      })
+    }
+  }
+  return violations
+}
+
+async function assertResourceCapacityForAllocations(
+  db: PostgresJsDatabase,
+  travelerId: string,
+  allocations: Record<string, string> | undefined | null,
+): Promise<void> {
+  if (!allocations) return
+  const violations = await loadResourceCapacityViolations(db, travelerId, allocations)
+  if (violations.length > 0) {
+    throw new BookingServiceError(
+      "resource_capacity_exhausted",
+      `Allocation resource over capacity: ${violations
+        .map((v) => `${v.kind}=${v.resourceId} (cap ${v.capacity}, assigned ${v.existingAssigned})`)
+        .join(", ")}`,
+    )
+  }
+}
+
 async function releaseAllocationCapacity(
   db: PostgresJsDatabase,
   allocation: Pick<
@@ -3944,6 +4064,8 @@ export const bookingsService = {
       travelDetailInput = applyTravelDetailSnapshot(travelDetailInput, snapshot)
     }
 
+    await assertResourceCapacityForAllocations(db, traveler.id, travelDetailInput.allocations)
+
     const travelDetails = await opts.pii.upsertTravelerTravelDetails(
       db,
       traveler.id,
@@ -3986,10 +4108,13 @@ export const bookingsService = {
       return null
     }
 
+    const travelDetailInput = pickTravelDetailFields(data)
+    await assertResourceCapacityForAllocations(db, traveler.id, travelDetailInput.allocations)
+
     const travelDetails = await opts.pii.upsertTravelerTravelDetails(
       db,
       traveler.id,
-      pickTravelDetailFields(data),
+      travelDetailInput,
       opts.actorId,
     )
 

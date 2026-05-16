@@ -39,6 +39,7 @@ export interface ResourceTemplate {
   capacity: number
   namePattern: string
   layout: string | null
+  defaultCount: number | null
   flags: Record<string, unknown>
   createdAt: string
   updatedAt: string
@@ -83,7 +84,7 @@ export async function listProductOptionResourceTemplates(
   const templateRows = await executeRows<ResourceTemplateRow>(
     db,
     sql`
-      SELECT id, product_option_id, kind, ref_type, ref_id, capacity, name_pattern, layout, flags, created_at, updated_at
+      SELECT id, product_option_id, kind, ref_type, ref_id, capacity, name_pattern, layout, default_count, flags, created_at, updated_at
       FROM product_option_resource_templates
       WHERE product_option_id = ANY(${optionIds}::text[])
       ORDER BY kind, created_at
@@ -128,6 +129,7 @@ export async function upsertProductOptionResourceTemplate(
       capacity: input.capacity,
       namePattern: input.namePattern,
       layout: input.layout ?? null,
+      defaultCount: input.defaultCount ?? null,
       flags: input.flags ?? {},
     })
     .onConflictDoUpdate({
@@ -138,6 +140,7 @@ export async function upsertProductOptionResourceTemplate(
         capacity: input.capacity,
         namePattern: input.namePattern,
         layout: input.layout ?? null,
+        defaultCount: input.defaultCount ?? null,
         flags: input.flags ?? {},
         updatedAt: new Date(),
       },
@@ -154,6 +157,7 @@ export async function upsertProductOptionResourceTemplate(
     capacity: row.capacity,
     namePattern: row.namePattern,
     layout: row.layout,
+    defaultCount: row.defaultCount,
     flags: row.flags,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -375,6 +379,100 @@ export async function autoAllocateSlotResources(
   return { kind, assigned: plan.assignments.length, skipped: plan.skipped }
 }
 
+export interface MaterializeSlotResourcesFromTemplatesOptions {
+  /**
+   * Restrict materialisation to a single template kind. When omitted,
+   * all templates with a non-null `defaultCount` for the slot's option
+   * are seeded.
+   */
+  kind?: string
+  /**
+   * Skip templates whose `kind` already has resources for the slot.
+   * Defaults to true so the helper is safe to call repeatedly during
+   * slot generation.
+   */
+  skipExisting?: boolean
+}
+
+/**
+ * Auto-seed `allocation_resources` for a freshly-published slot from
+ * its option's `product_option_resource_templates` rows that declare a
+ * `default_count`. Distinct from `autoMaterializeAllocationResources`,
+ * which derives counts from existing bookings. Templates without
+ * `default_count` are skipped — operators handle those via the admin
+ * materialise route once pax is known.
+ *
+ * Vehicle-seat layouts are out of scope here; use the existing
+ * `autoMaterializeAllocationResources` path for those once the slot
+ * has bookings (it knows pax-per-option).
+ */
+export async function materializeSlotResourcesFromTemplateDefaults(
+  db: PostgresJsDatabase,
+  slotId: string,
+  opts: MaterializeSlotResourcesFromTemplatesOptions = {},
+): Promise<{ created: number; resources: AllocationResource[] }> {
+  const [slot] = await db
+    .select({ id: availabilitySlots.id, optionId: availabilitySlots.optionId })
+    .from(availabilitySlots)
+    .where(eq(availabilitySlots.id, slotId))
+    .limit(1)
+  if (!slot?.optionId) return { created: 0, resources: [] }
+
+  const templateConditions = [eq(productOptionResourceTemplates.productOptionId, slot.optionId)]
+  if (opts.kind) {
+    templateConditions.push(eq(productOptionResourceTemplates.kind, opts.kind))
+  }
+
+  const templates = await db
+    .select()
+    .from(productOptionResourceTemplates)
+    .where(and(...templateConditions))
+    .orderBy(productOptionResourceTemplates.kind, productOptionResourceTemplates.createdAt)
+
+  if (templates.length === 0) return { created: 0, resources: [] }
+
+  const skipExisting = opts.skipExisting !== false
+  const existing = skipExisting
+    ? await executeRows<{ kind: string }>(
+        db,
+        sql`SELECT DISTINCT kind FROM allocation_resources WHERE slot_id = ${slotId}`,
+      )
+    : []
+  const existingKinds = new Set(existing.map((row) => row.kind))
+
+  const resources: AllocationResource[] = []
+  let sequence = 0
+
+  for (const template of templates) {
+    if (template.defaultCount == null || template.defaultCount <= 0) continue
+    if (template.kind === "vehicle_seat") continue
+    if (skipExisting && existingKinds.has(template.kind)) continue
+
+    for (let index = 0; index < template.defaultCount; index++) {
+      sequence += 1
+      const [row] = await db
+        .insert(allocationResources)
+        .values({
+          slotId,
+          kind: template.kind,
+          refType: template.refType,
+          refId: template.refId,
+          label: renderNamePattern(template.namePattern, {
+            sequence: String(sequence),
+            index: String(index + 1),
+          }),
+          capacity: template.capacity,
+          flags: { ...(template.flags ?? {}), templateOptionId: template.productOptionId },
+          sortOrder: sequence,
+        })
+        .returning()
+      if (row) resources.push(row)
+    }
+  }
+
+  return { created: resources.length, resources }
+}
+
 async function materializeVehicleSeatGroup(
   db: PostgresJsDatabase,
   slotId: string,
@@ -460,6 +558,7 @@ function toResourceTemplate(row: ResourceTemplateRow): ResourceTemplate {
     capacity: row.capacity,
     namePattern: row.name_pattern,
     layout: row.layout,
+    defaultCount: row.default_count ?? null,
     flags: row.flags ?? {},
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
@@ -566,6 +665,7 @@ interface ResourceTemplateRow {
   capacity: number
   name_pattern: string
   layout: string | null
+  default_count: number | null
   flags: Record<string, unknown>
   created_at: string | Date
   updated_at: string | Date

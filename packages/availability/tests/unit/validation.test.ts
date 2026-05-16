@@ -24,6 +24,7 @@ import {
   pickupTimingModeSchema,
   updateAllocationResourceSchema,
   updateTravelerSharingGroupSchema,
+  upsertResourceTemplateSchema,
 } from "../../src/validation.js"
 
 describe("Enum schemas", () => {
@@ -120,6 +121,24 @@ describe("Allocation schema", () => {
         travelerIds: ["traveler_a", "traveler_b"],
       }),
     ).toEqual({ travelerIds: ["traveler_a", "traveler_b"] })
+  })
+
+  it("accepts resource templates with default_count for slot-publish auto-seed", () => {
+    const result = upsertResourceTemplateSchema.parse({
+      capacity: 2,
+      namePattern: "DBL {sequence}",
+      defaultCount: 20,
+    })
+    expect(result.defaultCount).toBe(20)
+    expect(result.capacity).toBe(2)
+  })
+
+  it("treats omitted default_count as undefined (manual seeding only)", () => {
+    const result = upsertResourceTemplateSchema.parse({
+      capacity: 2,
+      namePattern: "TPL {sequence}",
+    })
+    expect(result.defaultCount).toBeUndefined()
   })
 })
 

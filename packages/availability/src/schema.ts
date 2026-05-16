@@ -226,6 +226,14 @@ export const productOptionResourceTemplates = pgTable(
     capacity: integer("capacity").notNull(),
     namePattern: text("name_pattern").notNull(),
     layout: text("layout"),
+    /**
+     * How many resources to instantiate per slot when auto-materialising
+     * from this template (e.g. "5 SGL, 20 DBL"). Null skips the
+     * template during slot-publish auto-seed — admins must seed those
+     * resources manually or via `autoMaterializeAllocationResources`
+     * once bookings exist.
+     */
+    defaultCount: integer("default_count"),
     flags: jsonb("flags").$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
