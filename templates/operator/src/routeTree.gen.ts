@@ -62,6 +62,7 @@ import { Route as WorkspaceNotificationsPreviewRouteImport } from './routes/_wor
 import { Route as WorkspaceNotificationsDeliveriesRouteImport } from './routes/_workspace/notifications/deliveries'
 import { Route as WorkspaceBookingsIdRouteImport } from './routes/_workspace/bookings/$id'
 import { Route as WorkspaceAvailabilityIdRouteImport } from './routes/_workspace/availability/$id'
+import { Route as WorkspaceActionLedgerApprovalsRouteImport } from './routes/_workspace/action-ledger/approvals'
 import { Route as WorkspaceNotificationsTemplatesIndexRouteImport } from './routes/_workspace/notifications/templates/index'
 import { Route as WorkspaceNotificationsReminderRulesIndexRouteImport } from './routes/_workspace/notifications/reminder-rules/index'
 import { Route as WorkspaceLegalTemplatesIndexRouteImport } from './routes/_workspace/legal/templates/index'
@@ -368,6 +369,12 @@ const WorkspaceAvailabilityIdRoute = WorkspaceAvailabilityIdRouteImport.update({
   path: '/availability/$id',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
+const WorkspaceActionLedgerApprovalsRoute =
+  WorkspaceActionLedgerApprovalsRouteImport.update({
+    id: '/action-ledger/approvals',
+    path: '/action-ledger/approvals',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceNotificationsTemplatesIndexRoute =
   WorkspaceNotificationsTemplatesIndexRouteImport.update({
     id: '/notifications/templates/',
@@ -543,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
+  '/action-ledger/approvals': typeof WorkspaceActionLedgerApprovalsRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
@@ -620,6 +628,7 @@ export interface FileRoutesByTo {
   '/flights': typeof WorkspaceFlightsRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/': typeof WorkspaceIndexRoute
+  '/action-ledger/approvals': typeof WorkspaceActionLedgerApprovalsRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
@@ -702,6 +711,7 @@ export interface FileRoutesById {
   '/_workspace/flights': typeof WorkspaceFlightsRoute
   '/pay_/$sessionId': typeof PaySessionIdRoute
   '/_workspace/': typeof WorkspaceIndexRoute
+  '/_workspace/action-ledger/approvals': typeof WorkspaceActionLedgerApprovalsRoute
   '/_workspace/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/_workspace/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/_workspace/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
@@ -782,6 +792,7 @@ export interface FileRouteTypes {
     | '/channel-sync'
     | '/flights'
     | '/pay/$sessionId'
+    | '/action-ledger/approvals'
     | '/availability/$id'
     | '/bookings/$id'
     | '/notifications/deliveries'
@@ -859,6 +870,7 @@ export interface FileRouteTypes {
     | '/flights'
     | '/pay/$sessionId'
     | '/'
+    | '/action-ledger/approvals'
     | '/availability/$id'
     | '/bookings/$id'
     | '/notifications/deliveries'
@@ -940,6 +952,7 @@ export interface FileRouteTypes {
     | '/_workspace/flights'
     | '/pay_/$sessionId'
     | '/_workspace/'
+    | '/_workspace/action-ledger/approvals'
     | '/_workspace/availability/$id'
     | '/_workspace/bookings/$id'
     | '/_workspace/notifications/deliveries'
@@ -1382,6 +1395,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAvailabilityIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/action-ledger/approvals': {
+      id: '/_workspace/action-ledger/approvals'
+      path: '/action-ledger/approvals'
+      fullPath: '/action-ledger/approvals'
+      preLoaderRoute: typeof WorkspaceActionLedgerApprovalsRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/notifications/templates/': {
       id: '/_workspace/notifications/templates/'
       path: '/notifications/templates'
@@ -1654,6 +1674,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceChannelSyncRoute: typeof WorkspaceChannelSyncRoute
   WorkspaceFlightsRoute: typeof WorkspaceFlightsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  WorkspaceActionLedgerApprovalsRoute: typeof WorkspaceActionLedgerApprovalsRoute
   WorkspaceAvailabilityIdRoute: typeof WorkspaceAvailabilityIdRoute
   WorkspaceBookingsIdRoute: typeof WorkspaceBookingsIdRoute
   WorkspaceNotificationsDeliveriesRoute: typeof WorkspaceNotificationsDeliveriesRoute
@@ -1709,6 +1730,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceChannelSyncRoute: WorkspaceChannelSyncRoute,
   WorkspaceFlightsRoute: WorkspaceFlightsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
+  WorkspaceActionLedgerApprovalsRoute: WorkspaceActionLedgerApprovalsRoute,
   WorkspaceAvailabilityIdRoute: WorkspaceAvailabilityIdRoute,
   WorkspaceBookingsIdRoute: WorkspaceBookingsIdRoute,
   WorkspaceNotificationsDeliveriesRoute: WorkspaceNotificationsDeliveriesRoute,

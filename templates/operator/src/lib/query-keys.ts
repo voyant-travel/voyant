@@ -35,6 +35,11 @@ export const queryKeys = {
     notes: (id: string) => [...queryKeys.bookings.all, id, "notes"] as const,
     documents: (id: string) => [...queryKeys.bookings.all, id, "documents"] as const,
   },
+  actionLedger: {
+    all: ["actionLedger"] as const,
+    approvals: (status?: string) =>
+      [...queryKeys.actionLedger.all, "approvals", { status }] as const,
+  },
   inviteTokens: {
     all: ["inviteTokens"] as const,
     list: (operatorId: string) => ["inviteTokens", operatorId, "list"] as const,
