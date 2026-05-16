@@ -70,9 +70,13 @@ export {
   type AppendActionLedgerEntryInput,
   type AppendActionLedgerEntryResult,
   actionLedgerService,
+  type ClaimActionLedgerRelayOutboxInput,
+  type ClaimActionLedgerRelayOutboxResult,
   type GetActionLedgerEntryResult,
   type ListActionLedgerEntriesInput,
   type ListActionLedgerEntriesResult,
   type ListActionLedgerRelayOutboxInput,
   type ListActionLedgerRelayOutboxResult,
+  type MarkActionLedgerRelayOutboxFailedInput,
+  type MarkActionLedgerRelayOutboxSucceededInput,
 } from "./service.js"

@@ -1,5 +1,5 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { and, desc, eq, gte, inArray, lt, lte, or, type SQL } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm"
 
 import {
   type ActionLedgerEntry,
@@ -106,6 +106,29 @@ export interface ListActionLedgerRelayOutboxResult {
   nextCursor: ActionLedgerRelayOutboxListCursor | null
 }
 
+export interface ClaimActionLedgerRelayOutboxInput {
+  organizationId?: string | null
+  dueAt?: Date | string | null
+  limit?: number
+}
+
+export interface ClaimActionLedgerRelayOutboxResult {
+  rows: ActionLedgerRelayOutbox[]
+}
+
+export interface MarkActionLedgerRelayOutboxSucceededInput {
+  id: string
+  processedAt?: Date | string | null
+}
+
+export interface MarkActionLedgerRelayOutboxFailedInput {
+  id: string
+  lastError: string
+  nextRetryAt?: Date | string | null
+  deadLetter?: boolean
+  processedAt?: Date | string | null
+}
+
 export interface GetActionLedgerEntryResult {
   entry: ActionLedgerEntry
   mutationDetail: ActionMutationDetail | null
@@ -189,6 +212,105 @@ export const actionLedgerService = {
     }
   },
 
+  async claimRelayOutbox(
+    db: AnyDrizzleDb,
+    input: ClaimActionLedgerRelayOutboxInput = {},
+  ): Promise<ClaimActionLedgerRelayOutboxResult> {
+    const limit = normalizeListLimit(input.limit)
+    const dueAt = input.dueAt ? parseCursorDate(input.dueAt) : new Date()
+    const organizationId = input.organizationId ?? null
+    const result = await db.execute<ActionLedgerRelayOutboxSqlRow>(sql`
+      WITH due AS (
+        SELECT id
+        FROM action_ledger_outbox
+        WHERE relay_status IN ('pending', 'failed')
+          AND (${organizationId}::text IS NULL OR organization_id = ${organizationId})
+          AND (next_retry_at IS NULL OR next_retry_at <= ${dueAt})
+        ORDER BY created_at ASC, id ASC
+        LIMIT ${limit}
+        FOR UPDATE SKIP LOCKED
+      )
+      UPDATE action_ledger_outbox AS outbox
+      SET relay_status = 'processing',
+          attempt_count = outbox.attempt_count + 1,
+          last_error = NULL,
+          processed_at = NULL
+      FROM due
+      WHERE outbox.id = due.id
+      RETURNING
+        outbox.id,
+        outbox.action_id,
+        outbox.organization_id,
+        outbox.relay_status,
+        outbox.payload_ref,
+        outbox.attempt_count,
+        outbox.next_retry_at,
+        outbox.last_error,
+        outbox.created_at,
+        outbox.processed_at
+    `)
+
+    const rows = ("rows" in result ? result.rows : result) as ActionLedgerRelayOutboxSqlRow[]
+    return {
+      rows: rows.map(actionLedgerRelayOutboxFromSqlRow),
+    }
+  },
+
+  async markRelayOutboxSucceeded(
+    db: AnyDrizzleDb,
+    input: MarkActionLedgerRelayOutboxSucceededInput,
+  ): Promise<ActionLedgerRelayOutbox | null> {
+    const [row] = await db
+      .update(actionLedgerRelayOutbox)
+      .set({
+        relayStatus: "succeeded",
+        nextRetryAt: null,
+        lastError: null,
+        processedAt: input.processedAt ? parseCursorDate(input.processedAt) : new Date(),
+      })
+      .where(
+        and(
+          eq(actionLedgerRelayOutbox.id, input.id),
+          eq(actionLedgerRelayOutbox.relayStatus, "processing"),
+        ),
+      )
+      .returning()
+
+    return row ?? null
+  },
+
+  async markRelayOutboxFailed(
+    db: AnyDrizzleDb,
+    input: MarkActionLedgerRelayOutboxFailedInput,
+  ): Promise<ActionLedgerRelayOutbox | null> {
+    const deadLetter = input.deadLetter ?? false
+    const [row] = await db
+      .update(actionLedgerRelayOutbox)
+      .set({
+        relayStatus: deadLetter ? "dead_letter" : "failed",
+        nextRetryAt: deadLetter
+          ? null
+          : input.nextRetryAt
+            ? parseCursorDate(input.nextRetryAt)
+            : null,
+        lastError: input.lastError,
+        processedAt: deadLetter
+          ? input.processedAt
+            ? parseCursorDate(input.processedAt)
+            : new Date()
+          : null,
+      })
+      .where(
+        and(
+          eq(actionLedgerRelayOutbox.id, input.id),
+          eq(actionLedgerRelayOutbox.relayStatus, "processing"),
+        ),
+      )
+      .returning()
+
+    return row ?? null
+  },
+
   async getEntry(db: AnyDrizzleDb, id: string): Promise<GetActionLedgerEntryResult | null> {
     const [entry] = await db
       .select()
@@ -221,6 +343,36 @@ export const actionLedgerService = {
       relayOutbox,
     }
   },
+}
+
+type ActionLedgerRelayOutboxSqlRow = {
+  id: string
+  action_id: string
+  organization_id: string | null
+  relay_status: ActionLedgerRelayOutbox["relayStatus"]
+  payload_ref: string | null
+  attempt_count: number | string
+  next_retry_at: Date | string | null
+  last_error: string | null
+  created_at: Date | string
+  processed_at: Date | string | null
+}
+
+function actionLedgerRelayOutboxFromSqlRow(
+  row: ActionLedgerRelayOutboxSqlRow,
+): ActionLedgerRelayOutbox {
+  return {
+    id: row.id,
+    actionId: row.action_id,
+    organizationId: row.organization_id,
+    relayStatus: row.relay_status,
+    payloadRef: row.payload_ref,
+    attemptCount: Number(row.attempt_count),
+    nextRetryAt: row.next_retry_at ? parseCursorDate(row.next_retry_at) : null,
+    lastError: row.last_error,
+    createdAt: parseCursorDate(row.created_at),
+    processedAt: row.processed_at ? parseCursorDate(row.processed_at) : null,
+  }
 }
 
 async function insertEntry(

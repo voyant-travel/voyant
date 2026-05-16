@@ -262,6 +262,109 @@ describe("actionLedgerService.listRelayOutbox", () => {
   })
 })
 
+describe("actionLedgerService relay outbox lifecycle", () => {
+  test("claims due relay outbox rows and maps SQL result rows", async () => {
+    const claimed = makeRelayOutbox({
+      relayStatus: "processing",
+      attemptCount: 1,
+      nextRetryAt: new Date("2026-05-15T10:05:00.000Z"),
+      lastError: null,
+      processedAt: null,
+    })
+    const { db, queries } = makeRelayOutboxClaimDb([claimed])
+
+    const result = await actionLedgerService.claimRelayOutbox(db, {
+      organizationId: "org_1",
+      dueAt: "2026-05-15T10:10:00.000Z",
+      limit: 10,
+    })
+
+    expect(result.rows).toEqual([claimed])
+    expect(queries).toHaveLength(1)
+  })
+
+  test("marks processing relay outbox rows as succeeded", async () => {
+    const processedAt = new Date("2026-05-15T10:15:00.000Z")
+    const row = makeRelayOutbox({
+      relayStatus: "succeeded",
+      nextRetryAt: null,
+      lastError: null,
+      processedAt,
+    })
+    const { db, patches } = makeRelayOutboxUpdateDb(row)
+
+    await expect(
+      actionLedgerService.markRelayOutboxSucceeded(db, {
+        id: row.id,
+        processedAt,
+      }),
+    ).resolves.toEqual(row)
+    expect(patches).toEqual([
+      {
+        relayStatus: "succeeded",
+        nextRetryAt: null,
+        lastError: null,
+        processedAt,
+      },
+    ])
+  })
+
+  test("marks processing relay outbox rows as retryable failures", async () => {
+    const nextRetryAt = new Date("2026-05-15T10:20:00.000Z")
+    const row = makeRelayOutbox({
+      relayStatus: "failed",
+      nextRetryAt,
+      lastError: "Relay destination returned 503",
+      processedAt: null,
+    })
+    const { db, patches } = makeRelayOutboxUpdateDb(row)
+
+    await expect(
+      actionLedgerService.markRelayOutboxFailed(db, {
+        id: row.id,
+        lastError: "Relay destination returned 503",
+        nextRetryAt,
+      }),
+    ).resolves.toEqual(row)
+    expect(patches).toEqual([
+      {
+        relayStatus: "failed",
+        nextRetryAt,
+        lastError: "Relay destination returned 503",
+        processedAt: null,
+      },
+    ])
+  })
+
+  test("marks processing relay outbox rows as dead-lettered", async () => {
+    const processedAt = new Date("2026-05-15T10:25:00.000Z")
+    const row = makeRelayOutbox({
+      relayStatus: "dead_letter",
+      nextRetryAt: null,
+      lastError: "Relay destination rejected payload",
+      processedAt,
+    })
+    const { db, patches } = makeRelayOutboxUpdateDb(row)
+
+    await expect(
+      actionLedgerService.markRelayOutboxFailed(db, {
+        id: row.id,
+        lastError: "Relay destination rejected payload",
+        deadLetter: true,
+        processedAt,
+      }),
+    ).resolves.toEqual(row)
+    expect(patches).toEqual([
+      {
+        relayStatus: "dead_letter",
+        nextRetryAt: null,
+        lastError: "Relay destination rejected payload",
+        processedAt,
+      },
+    ])
+  })
+})
+
 describe("actionLedgerService.getEntry", () => {
   test("returns an entry with mutation and sensitive-read details", async () => {
     const entry = makeEntry({
@@ -576,6 +679,57 @@ function makeRelayOutboxListDb(rows: ActionLedgerRelayOutbox[]) {
   } as AnyDrizzleDb
 
   return { db, calls }
+}
+
+function makeRelayOutboxSqlRow(row: ActionLedgerRelayOutbox) {
+  return {
+    id: row.id,
+    action_id: row.actionId,
+    organization_id: row.organizationId,
+    relay_status: row.relayStatus,
+    payload_ref: row.payloadRef,
+    attempt_count: row.attemptCount,
+    next_retry_at: row.nextRetryAt,
+    last_error: row.lastError,
+    created_at: row.createdAt,
+    processed_at: row.processedAt,
+  }
+}
+
+function makeRelayOutboxClaimDb(rows: ActionLedgerRelayOutbox[]) {
+  const queries: unknown[] = []
+  const db = {
+    execute(query: unknown) {
+      queries.push(query)
+      return Promise.resolve({ rows: rows.map(makeRelayOutboxSqlRow) })
+    },
+  } as AnyDrizzleDb
+
+  return { db, queries }
+}
+
+function makeRelayOutboxUpdateDb(row: ActionLedgerRelayOutbox | null) {
+  const patches: unknown[] = []
+  const db = {
+    update() {
+      return {
+        set(values: unknown) {
+          patches.push(values)
+          return {
+            where() {
+              return {
+                returning() {
+                  return Promise.resolve(row ? [row] : [])
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return { db, patches }
 }
 
 function makeAppendDb() {
