@@ -42,6 +42,8 @@ export interface ProductPickerSectionProps {
   enabled?: boolean
   /** When true, hide the product picker and fix the productId (e.g., launched from a product page). */
   lockProduct?: boolean
+  /** When false, product options are selected downstream as quantities instead of a single global choice. */
+  showOptionPicker?: boolean
   labels?: {
     product?: string
     productSearchPlaceholder?: string
@@ -61,6 +63,7 @@ export function ProductPickerSection({
   onChange,
   enabled = true,
   lockProduct = false,
+  showOptionPicker = true,
   labels,
 }: ProductPickerSectionProps) {
   const [productSearch, setProductSearch] = React.useState("")
@@ -104,7 +107,7 @@ export function ProductPickerSection({
   const { data: optionsData } = useProductOptions({
     productId: value.productId || undefined,
     limit: 50,
-    enabled: enabled && Boolean(value.productId),
+    enabled: enabled && showOptionPicker && Boolean(value.productId),
   })
   const options = optionsData?.data ?? []
 
@@ -167,7 +170,7 @@ export function ProductPickerSection({
         </div>
       )}
 
-      {value.productId && options.length > 0 && (
+      {showOptionPicker && value.productId && options.length > 0 && (
         <div className="flex flex-col gap-2">
           <Label>{merged.option}</Label>
           <Select

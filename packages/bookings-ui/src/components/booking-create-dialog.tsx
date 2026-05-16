@@ -55,6 +55,7 @@ import { ProductPickerSection, type ProductPickerValue } from "./product-picker-
 import {
   emptyRoomsStepperValue,
   RoomsStepperSection,
+  type RoomsStepperUnit,
   type RoomsStepperValue,
 } from "./rooms-stepper-section.js"
 import {
@@ -207,6 +208,21 @@ function travelersToRows(value: TravelerListValue): BookingCreateTravelerInput[]
   }))
 }
 
+function sameRoomUnits(left: RoomsStepperUnit[], right: RoomsStepperUnit[]): boolean {
+  if (left.length !== right.length) return false
+  return left.every((unit, index) => {
+    const other = right[index]
+    return (
+      other !== undefined &&
+      unit.optionId === other.optionId &&
+      unit.optionUnitId === other.optionUnitId &&
+      unit.unitName === other.unitName &&
+      unit.occupancyMax === other.occupancyMax &&
+      unit.remaining === other.remaining
+    )
+  })
+}
+
 export interface BookingCreateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -275,6 +291,7 @@ export function BookingCreateForm({
   })
   const [slotId, setSlotId] = React.useState<string | null>(null)
   const [rooms, setRooms] = React.useState<RoomsStepperValue>(emptyRoomsStepperValue)
+  const [roomUnits, setRoomUnits] = React.useState<RoomsStepperUnit[]>([])
   const [person, setPerson] = React.useState<PersonPickerValue>(emptyPersonPickerValue)
   const [sharedRoom, setSharedRoom] = React.useState<SharedRoomValue>(emptySharedRoomValue)
   const [travelers, setTravelers] = React.useState<TravelerListValue>(emptyTravelerListValue)
@@ -302,6 +319,7 @@ export function BookingCreateForm({
       setProduct({ productId: defaultProductId ?? "", optionId: null })
       setSlotId(null)
       setRooms(emptyRoomsStepperValue)
+      setRoomUnits([])
       setPerson(emptyPersonPickerValue)
       setSharedRoom(emptySharedRoomValue)
       setTravelers(emptyTravelerListValue)
@@ -326,6 +344,7 @@ export function BookingCreateForm({
   React.useEffect(() => {
     setSlotId(null)
     setRooms(emptyRoomsStepperValue)
+    setRoomUnits([])
     setSharedRoom(emptySharedRoomValue)
   }, [product.productId])
 
@@ -366,6 +385,7 @@ export function BookingCreateForm({
   )
   React.useEffect(() => {
     setRooms(emptyRoomsStepperValue)
+    setRoomUnits([])
     if (!slotId || !product.optionId) return
     const selectedSlot = allOpenSlots.find((slot) => slot.id === slotId)
     if (selectedSlot?.optionId && selectedSlot.optionId !== product.optionId) {
@@ -393,14 +413,17 @@ export function BookingCreateForm({
     slotId: slotId ?? undefined,
     enabled: enabled && Boolean(slotId),
   })
+  const handleRoomUnitsChange = React.useCallback((units: RoomsStepperUnit[]) => {
+    setRoomUnits((prev) => (sameRoomUnits(prev, units) ? prev : units))
+  }, [])
   const roomUnitOptions: RoomUnitOption[] = React.useMemo(() => {
-    const units = slotUnitAvailability.data?.data ?? []
+    const units = roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? [])
     if (units.length === 0) return []
     return units
       .filter((unit) => (rooms.quantities[unit.optionUnitId] ?? 0) > 0)
       .map((unit) => {
         const qty = rooms.quantities[unit.optionUnitId] ?? 0
-        const occupancyMax = 1
+        const occupancyMax = Math.max(1, unit.occupancyMax ?? 1)
         const seats = qty * occupancyMax
         const assigned = travelers.travelers.filter(
           (traveler) => traveler.roomUnitId === unit.optionUnitId,
@@ -411,7 +434,7 @@ export function BookingCreateForm({
           remainingCapacity: Math.max(0, seats - assigned),
         }
       })
-  }, [slotUnitAvailability.data, rooms.quantities, travelers.travelers])
+  }, [roomUnits, slotUnitAvailability.data, rooms.quantities, travelers.travelers])
 
   // Currency placeholder — used for voucher + payment schedule display.
   // Consumers hooking in real product data should override this by wrapping
@@ -419,6 +442,10 @@ export function BookingCreateForm({
   const currency = messages.bookingCreateDialog.labels.currency
   const pricingCurrency = pricing?.currency ?? currency
   const pricingTotalAmountCents = pricing?.confirmedAmountCents ?? undefined
+  const roomUnitLabels = React.useMemo(
+    () => Object.fromEntries(roomUnits.map((unit) => [unit.optionUnitId, unit.unitName])),
+    [roomUnits],
+  )
 
   const createBookingMutation = useBookingCreateMutation()
   const statusMutation = useBookingStatusByIdMutation()
@@ -470,7 +497,12 @@ export function BookingCreateForm({
       )
       const itemLines = itemLinesToRows(
         rooms.quantities,
-        slotUnitAvailability.data?.data ?? [],
+        roomUnits.length > 0
+          ? roomUnits
+          : (slotUnitAvailability.data?.data ?? []).map((unit) => ({
+              ...unit,
+              optionId: product.optionId,
+            })),
         pricing,
       )
 
@@ -570,6 +602,7 @@ export function BookingCreateForm({
           labels={{
             optionNone: messages.bookingCreateDialog.labels.noSpecificOption,
           }}
+          showOptionPicker={false}
         />
 
         {product.productId ? (
@@ -602,13 +635,15 @@ export function BookingCreateForm({
           </div>
         ) : null}
 
-        {product.optionId ? (
+        {product.productId ? (
           <RoomsStepperSection
             value={rooms}
             onChange={setRooms}
+            productId={product.productId}
             slotId={slotId ?? undefined}
             optionId={product.optionId}
             enabled={enabled}
+            onUnitsChange={handleRoomUnitsChange}
             labels={{
               heading: messages.bookingCreateDialog.labels.roomsHeading,
               noOption: messages.bookingCreateDialog.labels.roomsNoOption,
@@ -681,6 +716,7 @@ export function BookingCreateForm({
             productId={product.productId}
             optionId={product.optionId}
             unitQuantities={rooms.quantities}
+            unitLabels={roomUnitLabels}
             labels={{
               heading: messages.bookingCreateDialog.labels.breakdownHeading,
               total: messages.bookingCreateDialog.labels.breakdownTotal,

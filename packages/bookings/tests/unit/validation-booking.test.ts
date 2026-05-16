@@ -259,6 +259,7 @@ describe("Convert product schema", () => {
       bookingNumber: "BK-001",
       itemLines: [
         {
+          optionId: "opto_dbl",
           optionUnitId: "opun_dbl",
           quantity: 2,
           title: "Double room",
@@ -266,6 +267,7 @@ describe("Convert product schema", () => {
           totalSellAmountCents: 20000,
         },
         {
+          optionId: "opto_sgl",
           optionUnitId: "opun_sgl",
           quantity: 1,
           title: "Single room",
@@ -274,6 +276,7 @@ describe("Convert product schema", () => {
     })
 
     expect(result.itemLines).toHaveLength(2)
+    expect(result.itemLines?.[0]?.optionId).toBe("opto_dbl")
     expect(result.itemLines?.[0]?.quantity).toBe(2)
   })
 
