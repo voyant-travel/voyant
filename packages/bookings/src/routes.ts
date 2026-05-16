@@ -1,6 +1,7 @@
 import {
   type ActionLedgerCapabilityAccessResult,
   type ActionLedgerRequestContextValues,
+  appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
   evaluateActionLedgerCapabilityAccess,
 } from "@voyantjs/action-ledger"
@@ -16,7 +17,10 @@ import {
 } from "@voyantjs/hono"
 import { type Context, Hono } from "hono"
 
-import { BOOKING_PII_READ_CAPABILITY } from "./action-ledger-capabilities.js"
+import {
+  BOOKING_PII_READ_CAPABILITY,
+  BOOKING_STATUS_CAPABILITIES,
+} from "./action-ledger-capabilities.js"
 import { createBookingPiiService } from "./pii.js"
 import {
   redactBookingContact,
@@ -122,6 +126,82 @@ function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestCont
     isInternalRequest: c.get("isInternalRequest") ?? false,
     organizationId: c.get("organizationId") ?? null,
     correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
+
+type BookingStatusCapabilityRoute =
+  | {
+      key: "confirm"
+      actionName: "booking.status.confirm"
+      routeOrToolName: "bookings.confirm"
+    }
+  | {
+      key: "expire"
+      actionName: "booking.status.expire"
+      routeOrToolName: "bookings.expire"
+    }
+  | {
+      key: "cancel"
+      actionName: "booking.status.cancel"
+      routeOrToolName: "bookings.cancel"
+    }
+  | {
+      key: "start"
+      actionName: "booking.status.start"
+      routeOrToolName: "bookings.start"
+    }
+  | {
+      key: "complete"
+      actionName: "booking.status.complete"
+      routeOrToolName: "bookings.complete"
+    }
+  | {
+      key: "override"
+      actionName: "booking.status.override"
+      routeOrToolName: "bookings.override-status"
+    }
+
+async function authorizeBookingStatusMutation(
+  c: Context<Env>,
+  input: BookingStatusCapabilityRoute & {
+    bookingId: string
+  },
+) {
+  const capability = BOOKING_STATUS_CAPABILITIES[input.key]
+  const access = evaluateActionLedgerCapabilityAccess({
+    definition: capability,
+    actor: c.get("actor"),
+    callerType: c.get("callerType"),
+    scopes: c.get("scopes"),
+    isInternalRequest: c.get("isInternalRequest"),
+  })
+
+  if (access.allowed) {
+    return { allowed: true as const, access }
+  }
+
+  await appendActionLedgerMutation(c.get("db"), {
+    context: getActionLedgerRequestContext(c),
+    actionName: input.actionName,
+    actionVersion: capability.version,
+    actionKind: "update",
+    status: "denied",
+    evaluatedRisk: access.evaluatedRisk,
+    targetType: "booking",
+    targetId: input.bookingId,
+    routeOrToolName: input.routeOrToolName,
+    capabilityId: access.capabilityId,
+    capabilityVersion: access.capabilityVersion,
+    authorizationSource: access.authorizationSource,
+    mutationDetail: {
+      summary: `Booking status ${capability.action} denied: ${access.reason}`,
+      reversalKind: "none",
+    },
+  })
+
+  return {
+    allowed: false as const,
+    response: handleApiError(new ForbiddenApiError(), c),
   }
 }
 
@@ -675,12 +755,26 @@ export const bookingRoutes = new Hono<Env>()
 
   // 8. POST /:id/confirm — Confirm an on-hold booking
   .post("/:id/confirm", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, confirmBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "confirm",
+      actionName: "booking.status.confirm",
+      routeOrToolName: "bookings.confirm",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.confirmBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, confirmBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
+      {
+        eventBus: c.get("eventBus"),
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: auth.access.authorizationSource,
+      },
     )
 
     if (result.status === "not_found") {
@@ -732,15 +826,26 @@ export const bookingRoutes = new Hono<Env>()
 
   // 10. POST /:id/expire — Expire an on-hold booking
   .post("/:id/expire", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, expireBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "expire",
+      actionName: "booking.status.expire",
+      routeOrToolName: "bookings.expire",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.expireBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, expireBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
       {
         eventBus: c.get("eventBus"),
         cause: "route",
         actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: auth.access.authorizationSource,
       },
     )
 
@@ -773,12 +878,26 @@ export const bookingRoutes = new Hono<Env>()
 
   // 11. POST /:id/cancel — Cancel a booking and release allocations
   .post("/:id/cancel", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, cancelBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "cancel",
+      actionName: "booking.status.cancel",
+      routeOrToolName: "bookings.cancel",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.cancelBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, cancelBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
+      {
+        eventBus: c.get("eventBus"),
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: auth.access.authorizationSource,
+      },
     )
 
     if (result.status === "not_found") {
@@ -798,12 +917,26 @@ export const bookingRoutes = new Hono<Env>()
 
   // 11a. POST /:id/start — Mark a confirmed booking as in-progress
   .post("/:id/start", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, startBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "start",
+      actionName: "booking.status.start",
+      routeOrToolName: "bookings.start",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.startBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, startBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
+      {
+        eventBus: c.get("eventBus"),
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: auth.access.authorizationSource,
+      },
     )
 
     if (result.status === "not_found") {
@@ -823,12 +956,26 @@ export const bookingRoutes = new Hono<Env>()
 
   // 11b. POST /:id/complete — Mark an in-progress booking as completed
   .post("/:id/complete", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, completeBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "complete",
+      actionName: "booking.status.complete",
+      routeOrToolName: "bookings.complete",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.completeBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, completeBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
+      {
+        eventBus: c.get("eventBus"),
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: auth.access.authorizationSource,
+      },
     )
 
     if (result.status === "not_found") {
@@ -851,12 +998,26 @@ export const bookingRoutes = new Hono<Env>()
   // allocations, or fulfillments. Always emits booking.status_overridden for
   // audit. Requires a non-empty `reason`.
   .post("/:id/override-status", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, overrideBookingStatusSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "override",
+      actionName: "booking.status.override",
+      routeOrToolName: "bookings.override-status",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.overrideBookingStatus(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, overrideBookingStatusSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus"), actionLedgerContext: getActionLedgerRequestContext(c) },
+      {
+        eventBus: c.get("eventBus"),
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: auth.access.authorizationSource,
+      },
     )
 
     if (result.status === "not_found") {

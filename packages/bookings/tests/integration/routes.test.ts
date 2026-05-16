@@ -996,7 +996,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         targetId: booking.id,
         routeOrToolName: "bookings.confirm",
         capabilityId: "bookings:status:confirm",
-        authorizationSource: "bookings.status.route",
+        authorizationSource: "actor_context",
       })
 
       const [detail] = await db
@@ -1006,6 +1006,99 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
 
       expect(detail).toMatchObject({
         summary: "Booking status changed from on_hold to confirmed",
+        reversalKind: "none",
+      })
+    })
+
+    it("allows scoped non-staff booking status mutations through the capability guard", async () => {
+      const slot = await seedSlot()
+      const reserveRes = await app.request("/reserve", {
+        method: "POST",
+        ...json({
+          bookingNumber: nextBookingNumber(),
+          sellCurrency: "USD",
+          items: [{ title: "Adult ticket", availabilitySlotId: slot.id, quantity: 1 }],
+        }),
+      })
+      const { data: booking } = await reserveRes.json()
+
+      const scopedApp = new Hono()
+      scopedApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("userId" as never, "scoped-status-user-id")
+        c.set("apiTokenId" as never, "api-token-bookings-write")
+        c.set("actor" as never, "customer")
+        c.set("callerType" as never, "api_key")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      scopedApp.route("/", bookingRoutes)
+
+      const res = await scopedApp.request(`/${booking.id}/confirm`, {
+        method: "POST",
+        ...json({}),
+      })
+
+      expect(res.status).toBe(200)
+
+      const [entry] = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+
+      expect(entry).toMatchObject({
+        actionName: "booking.status.confirm",
+        status: "succeeded",
+        principalType: "api_key",
+        principalId: "api-token-bookings-write",
+        capabilityId: "bookings:status:confirm",
+        authorizationSource: "scope",
+      })
+    })
+
+    it("forbids non-staff booking status mutations without a grant and ledgers the denial", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const restrictedApp = new Hono()
+      restrictedApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("userId" as never, "status-customer-id")
+        c.set("actor" as never, "customer")
+        await next()
+      })
+      restrictedApp.route("/", bookingRoutes)
+
+      const res = await restrictedApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        ...json({ note: "Not allowed" }),
+      })
+
+      expect(res.status).toBe(403)
+
+      const [entry] = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+
+      expect(entry).toMatchObject({
+        actionName: "booking.status.cancel",
+        actionKind: "update",
+        status: "denied",
+        evaluatedRisk: "high",
+        principalType: "user",
+        principalId: "status-customer-id",
+        capabilityId: "bookings:status:cancel",
+        authorizationSource: "actor_context",
+      })
+
+      const [detail] = await db
+        .select()
+        .from(actionMutationDetails)
+        .where(eq(actionMutationDetails.actionId, entry.id))
+
+      expect(detail).toMatchObject({
+        summary: "Booking status cancel denied: actor_not_allowed",
         reversalKind: "none",
       })
     })

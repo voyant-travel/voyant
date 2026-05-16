@@ -213,6 +213,7 @@ type OptionUnitReference = typeof optionUnitsRef.$inferSelect
 export interface BookingServiceRuntime {
   eventBus?: EventBus
   actionLedgerContext?: ActionLedgerRequestContextValues
+  actionLedgerAuthorizationSource?: string | null
   expirePaymentSessionsForBooking?: (
     db: PostgresJsDatabase,
     bookingId: string,
@@ -254,7 +255,7 @@ async function appendBookingStatusMutationLedger(
     routeOrToolName: input.routeOrToolName,
     capabilityId: input.capabilityId,
     capabilityVersion: "v1",
-    authorizationSource: "bookings.status.route",
+    authorizationSource: runtime.actionLedgerAuthorizationSource ?? "bookings.status.route",
     mutationDetail: {
       summary: `Booking status changed from ${input.fromStatus} to ${input.toStatus}`,
       reversalKind: "none",
