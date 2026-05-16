@@ -1,10 +1,17 @@
-import { describe, expect, test } from "vitest"
+import type { AnyDrizzleDb } from "@voyantjs/db"
+import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
   buildActionLedgerMutationEntryInput,
   buildActionLedgerSensitiveReadEntryInput,
+  ledgerSensitiveRead,
   mapActionLedgerRequestContext,
 } from "../../src/request-context.js"
+import { actionLedgerService } from "../../src/service.js"
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe("mapActionLedgerRequestContext", () => {
   test("maps a staff session to a user principal", () => {
@@ -156,5 +163,42 @@ describe("action ledger route entry builders", () => {
         reversalKind: "domain_command",
       },
     })
+  })
+})
+
+describe("ledgerSensitiveRead", () => {
+  test("appends the sensitive-read ledger entry before resolving the read value", async () => {
+    const events: string[] = []
+    const appendSpy = vi.spyOn(actionLedgerService, "appendEntry").mockImplementation(async () => {
+      events.push("append")
+      return { entry: {} as never, replayed: false }
+    })
+
+    const result = await ledgerSensitiveRead(
+      {} as AnyDrizzleDb,
+      {
+        context: {
+          userId: "usr_1",
+          callerType: "session",
+          actor: "staff",
+        },
+        actionName: "booking.pii.read",
+        targetType: "booking_traveler",
+        targetId: "bkpt_1",
+        routeOrToolName: "bookings.travel-details",
+        reasonCode: "travel_details_reveal",
+      },
+      async () => {
+        events.push("read")
+        return "secret"
+      },
+    ).then((value) => {
+      events.push("resolved")
+      return value
+    })
+
+    expect(result).toBe("secret")
+    expect(events).toEqual(["read", "append", "resolved"])
+    expect(appendSpy).toHaveBeenCalledOnce()
   })
 })
