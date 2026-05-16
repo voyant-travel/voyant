@@ -1,5 +1,17 @@
 # @voyantjs/hospitality
 
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/bookings@0.50.6
+  - @voyantjs/catalog@0.50.6
+  - @voyantjs/core@0.50.6
+  - @voyantjs/db@0.50.6
+  - @voyantjs/facilities@0.50.6
+  - @voyantjs/hono@0.50.6
+
 ## 0.50.5
 
 ### Patch Changes

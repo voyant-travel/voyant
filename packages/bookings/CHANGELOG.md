@@ -1,5 +1,15 @@
 # @voyantjs/bookings
 
+## 0.50.6
+
+### Patch Changes
+
+- c14f0a8: Fix the booking-create flow: scrollable dialog content with reachable actions, normalized product search, future departure lookup, shared-room clearing, explicit item lines, selectable traveler people including the payer, already-paid schedule rows, and booking-create naming throughout the API/registry surface.
+  - @voyantjs/core@0.50.6
+  - @voyantjs/db@0.50.6
+  - @voyantjs/hono@0.50.6
+  - @voyantjs/utils@0.50.6
+
 ## 0.50.5
 
 ### Patch Changes
