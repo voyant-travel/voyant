@@ -39,6 +39,7 @@ export const queryKeys = {
     all: ["actionLedger"] as const,
     entries: (filtersKey?: string) =>
       [...queryKeys.actionLedger.all, "entries", filtersKey ?? ""] as const,
+    entry: (id: string) => [...queryKeys.actionLedger.all, "entry", id] as const,
     approvals: (status?: string) =>
       [...queryKeys.actionLedger.all, "approvals", { status }] as const,
   },

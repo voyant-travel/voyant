@@ -24,11 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { ExternalLink, RefreshCw, ScrollText, Search, X } from "lucide-react"
+import { ExternalLink, Eye, RefreshCw, ScrollText, Search, X } from "lucide-react"
 import { type FormEvent, type ReactNode, useMemo, useState } from "react"
 
 import { api } from "@/lib/api-client"
 import { queryKeys } from "@/lib/query-keys"
+import { ActionLedgerEntrySheet } from "./action-ledger-entry-sheet"
 
 type LedgerBadgeVariant = "default" | "secondary" | "outline" | "destructive"
 type ActionLedgerCursor = NonNullable<ActionLedgerListResponse["pageInfo"]["nextCursor"]>
@@ -81,6 +82,7 @@ export function ActionLedgerPage() {
   const { resolvedLocale } = useLocale()
   const [draftFilters, setDraftFilters] = useState<ActionLedgerFilters>(EMPTY_FILTERS)
   const [filters, setFilters] = useState<ActionLedgerFilters>(EMPTY_FILTERS)
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
   const filterCacheKey = useMemo(() => getActionLedgerFilterCacheKey(filters), [filters])
 
   const ledgerQuery = useInfiniteQuery({
@@ -286,11 +288,17 @@ export function ActionLedgerPage() {
                       <TableHead>Workflow</TableHead>
                       <TableHead>Risk</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="w-12" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {entries.map((entry) => (
-                      <LedgerRow key={entry.id} entry={entry} locale={resolvedLocale} />
+                      <LedgerRow
+                        key={entry.id}
+                        entry={entry}
+                        locale={resolvedLocale}
+                        onSelect={setSelectedEntryId}
+                      />
                     ))}
                   </TableBody>
                 </Table>
@@ -312,6 +320,14 @@ export function ActionLedgerPage() {
           )}
         </CardContent>
       </Card>
+      <ActionLedgerEntrySheet
+        open={Boolean(selectedEntryId)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEntryId(null)
+        }}
+        entryId={selectedEntryId}
+        locale={resolvedLocale}
+      />
     </div>
   )
 }
@@ -325,7 +341,15 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
   )
 }
 
-function LedgerRow({ entry, locale }: { entry: ActionLedgerEntryResponse; locale: string }) {
+function LedgerRow({
+  entry,
+  locale,
+  onSelect,
+}: {
+  entry: ActionLedgerEntryResponse
+  locale: string
+  onSelect: (id: string) => void
+}) {
   return (
     <TableRow>
       <TableCell className="whitespace-nowrap text-muted-foreground text-xs">
@@ -372,6 +396,18 @@ function LedgerRow({ entry, locale }: { entry: ActionLedgerEntryResponse; locale
       </TableCell>
       <TableCell>
         <Badge variant={STATUS_VARIANT[entry.status] ?? "outline"}>{entry.status}</Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label={`View ${entry.id}`}
+          onClick={() => onSelect(entry.id)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
       </TableCell>
     </TableRow>
   )
