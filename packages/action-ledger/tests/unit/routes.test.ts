@@ -594,6 +594,32 @@ describe("actionLedgerAdminRoutes", () => {
     })
   })
 
+  test("returns not found when deciding a missing approval", async () => {
+    vi.spyOn(actionLedgerService, "decideApproval").mockResolvedValue(null)
+
+    const app = makeApp({} as AnyDrizzleDb)
+    const response = await app.request("/approvals/appr_missing/decide", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        status: "approved",
+        decidedByPrincipalId: "usr_decider",
+        decisionAction: {
+          actionName: "action_approval.approve",
+          actionVersion: "v1",
+          principalType: "user",
+          principalId: "usr_decider",
+          internalRequest: false,
+        },
+      }),
+    })
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: "Action approval not found",
+    })
+  })
+
   test("lists delegations with principal and scope filters plus cursor pagination", async () => {
     const db = {} as AnyDrizzleDb
     const spy = vi.spyOn(actionLedgerService, "listDelegations").mockResolvedValue({
