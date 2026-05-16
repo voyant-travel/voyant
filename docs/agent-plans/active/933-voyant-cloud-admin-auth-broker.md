@@ -227,6 +227,12 @@ Implemented in `issue-933-cloud-auth-broker`:
   `internalAdapter.createSession`, sets the Better Auth session cookie via
   Better Auth's cookie helper, clears the broker state cookie, and redirects to
   the normalized post-login path.
+- The Cloud admin session plugin exposes `onUserProvisioning`, a trusted
+  Cloud-mode provisioning seam that runs after the local mirror user/profile
+  and Cloud linkage rows exist. Consumers that need Cloud-mode side effects or
+  custom user/profile fields should use this callback instead of relying on
+  Better Auth `databaseHooks.user.create.*`, which do not fire for the direct
+  mirror path.
 - Cloud mirror provisioning uses generated local `auth.user.id` values and maps
   WorkOS users through `providerId="voyant-cloud"` with
   `accountId=<workos user id>`. If an existing local user has the same email,

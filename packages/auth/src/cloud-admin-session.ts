@@ -24,6 +24,7 @@ export interface VoyantCloudAdminAuthPluginOptions {
   exchange: CloudAdminAuthExchangeConfig
   fetch?: typeof fetch
   revalidateAfterSeconds?: number
+  onUserProvisioning?: CloudAdminUserProvisioningHandler
 }
 
 const VOYANT_CLOUD_PROVIDER_ID = "voyant-cloud"
@@ -49,6 +50,23 @@ type BetterAuthSessionForCookie = {
   ipAddress?: string | null
   userAgent?: string | null
 }
+
+export type CloudAdminProvisionedUser = BetterAuthUserForCookie
+
+export type CloudAdminUserProvisioningInput = {
+  db: ReturnType<typeof getDb>
+  assertion: CloudAdminAssertion
+  user: CloudAdminProvisionedUser
+  isNewUser: boolean
+  provider: {
+    providerId: typeof VOYANT_CLOUD_PROVIDER_ID
+    providerAccountId: string
+  }
+}
+
+export type CloudAdminUserProvisioningHandler = (
+  input: CloudAdminUserProvisioningInput,
+) => Promise<void> | void
 
 export function createVoyantCloudAdminAuthPlugin(
   options: VoyantCloudAdminAuthPluginOptions,
@@ -91,7 +109,9 @@ export function createVoyantCloudAdminAuthPlugin(
             return ctx.json({ error: "Voyant Cloud auth exchange failed" }, { status: 401 })
           }
 
-          const user = await upsertVoyantCloudMirrorUser(options.db, assertion)
+          const user = await upsertVoyantCloudMirrorUser(options.db, assertion, {
+            onUserProvisioning: options.onUserProvisioning,
+          })
           const session = (await ctx.context.internalAdapter.createSession(
             user.id,
           )) as BetterAuthSessionForCookie
@@ -113,11 +133,15 @@ export function createVoyantCloudAdminAuthPlugin(
 async function upsertVoyantCloudMirrorUser(
   db: ReturnType<typeof getDb>,
   assertion: CloudAdminAssertion,
+  options: {
+    onUserProvisioning?: CloudAdminUserProvisioningHandler
+  } = {},
 ): Promise<BetterAuthUserForCookie> {
   const now = new Date()
   const providerAccountId = assertion.workosUserId
   const displayName = cloudAssertionDisplayName(assertion)
   const existingUser = await findCloudMirrorUser(db, providerAccountId, assertion.email)
+  const isNewUser = !existingUser
   const userId = existingUser?.id ?? crypto.randomUUID()
 
   if (existingUser) {
@@ -188,7 +212,7 @@ async function upsertVoyantCloudMirrorUser(
     throw new Error("Voyant Cloud auth mirror user was not provisioned")
   }
 
-  return {
+  const provisionedUser = {
     id: user.id,
     name: user.name,
     email: user.email,
@@ -197,6 +221,19 @@ async function upsertVoyantCloudMirrorUser(
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   }
+
+  await options.onUserProvisioning?.({
+    db,
+    assertion,
+    user: provisionedUser,
+    isNewUser,
+    provider: {
+      providerId: VOYANT_CLOUD_PROVIDER_ID,
+      providerAccountId,
+    },
+  })
+
+  return provisionedUser
 }
 
 async function findCloudMirrorUser(

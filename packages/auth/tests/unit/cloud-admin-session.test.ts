@@ -14,6 +14,10 @@ describe("createVoyantCloudAdminAuthPlugin", () => {
         assertionJwksUrl: "https://api.voyantjs.com/.well-known/admin-auth/jwks.json",
         assertionAudience: "dep_123",
       },
+      onUserProvisioning: ({ isNewUser, provider }) => {
+        expect(isNewUser).toEqual(expect.any(Boolean))
+        expect(provider.providerId).toBe("voyant-cloud")
+      },
     })
 
     expect(plugin.id).toBe("voyant-cloud-admin-auth")
