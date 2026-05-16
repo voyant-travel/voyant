@@ -1,6 +1,8 @@
 import {
   ACTION_LEDGER_APPROVAL_ID_HEADER,
   type ActionLedgerCapabilityAccessResult,
+  type ActionLedgerEntry,
+  type ActionLedgerEntryResponse,
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
   actionLedgerService,
@@ -26,6 +28,7 @@ import {
   UnauthorizedApiError,
 } from "@voyantjs/hono"
 import { type Context, Hono } from "hono"
+import { z } from "zod"
 
 import {
   BOOKING_PII_READ_CAPABILITY,
@@ -132,6 +135,24 @@ const TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS = [
   "bedPreference",
   "allocations",
 ]
+
+const bookingActionLedgerQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+})
+
+interface BookingActionLedgerTravelerTarget {
+  id: string
+  firstName: string | null
+  lastName: string | null
+}
+
+export interface BookingActionLedgerListResponse {
+  data: ActionLedgerEntryResponse[]
+  travelers: BookingActionLedgerTravelerTarget[]
+  pageInfo: {
+    nextCursor: null
+  }
+}
 
 function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {
   return {
@@ -779,6 +800,96 @@ async function createAuditedBookingPiiService(c: Context<Env>, bookingId: string
   })
 }
 
+function serializeBookingActionLedgerDate(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Booking action ledger timestamp must be a valid date")
+  }
+  return date.toISOString()
+}
+
+function serializeBookingActionLedgerEntry(entry: ActionLedgerEntry): ActionLedgerEntryResponse {
+  return {
+    ...entry,
+    occurredAt: serializeBookingActionLedgerDate(entry.occurredAt),
+    createdAt: serializeBookingActionLedgerDate(entry.createdAt),
+  }
+}
+
+function sortBookingActionLedgerEntries(entries: ActionLedgerEntry[]) {
+  return [...entries].sort((a, b) => {
+    const occurredAtDelta = new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+    if (occurredAtDelta !== 0) return occurredAtDelta
+    return b.id.localeCompare(a.id)
+  })
+}
+
+async function listBookingActionLedger(c: Context<Env>) {
+  const bookingId = c.req.param("id")
+  if (!bookingId) {
+    return c.json({ error: "Booking not found" }, 404)
+  }
+
+  const query = parseQuery(c, bookingActionLedgerQuerySchema)
+  const limit = query.limit ?? 50
+
+  const booking = await bookingsService.getBookingById(c.get("db"), bookingId)
+  if (!booking) {
+    return c.json({ error: "Booking not found" }, 404)
+  }
+
+  const travelers = await bookingsService.listTravelers(c.get("db"), bookingId)
+  const reveal = shouldRevealBookingPii({
+    actor: c.get("actor"),
+    scopes: c.get("scopes"),
+    callerType: c.get("callerType"),
+    isInternalRequest: c.get("isInternalRequest"),
+  })
+  const visibleTravelers = reveal ? travelers : travelers.map((row) => redactTravelerIdentity(row))
+
+  const [bookingEntriesResult, travelerEntriesResults] = await Promise.all([
+    actionLedgerService.listEntries(c.get("db"), {
+      targetType: "booking",
+      targetId: bookingId,
+      limit,
+    }),
+    Promise.all(
+      travelers.map((traveler) =>
+        actionLedgerService.listEntries(c.get("db"), {
+          targetType: "booking_traveler",
+          targetId: traveler.id,
+          actionName: BOOKING_PII_READ_ACTION_NAME,
+          limit,
+        }),
+      ),
+    ),
+  ])
+
+  const entriesById = new Map<string, ActionLedgerEntry>()
+  for (const entry of bookingEntriesResult.entries) {
+    entriesById.set(entry.id, entry)
+  }
+  for (const result of travelerEntriesResults) {
+    for (const entry of result.entries) {
+      entriesById.set(entry.id, entry)
+    }
+  }
+
+  return c.json({
+    data: sortBookingActionLedgerEntries([...entriesById.values()])
+      .slice(0, limit)
+      .map(serializeBookingActionLedgerEntry),
+    travelers: visibleTravelers.map((traveler) => ({
+      id: traveler.id,
+      firstName: traveler.firstName,
+      lastName: traveler.lastName,
+    })),
+    pageInfo: {
+      nextCursor: null,
+    },
+  } satisfies BookingActionLedgerListResponse)
+}
+
 // ==========================================================================
 // Bookings — method-chained for Hono RPC type inference
 // ==========================================================================
@@ -896,6 +1007,9 @@ export const bookingRoutes = new Hono<Env>()
     })
     return c.json({ data: reveal ? row : redactBookingContact(row) })
   })
+
+  // 2b. GET /:id/action-ledger — Booking-scoped action timeline
+  .get("/:id/action-ledger", listBookingActionLedger)
 
   // 3. POST /reserve — Reserve inventory and create on-hold booking
   .post("/reserve", idempotencyKey({ scope: "POST /v1/admin/bookings/reserve" }), async (c) => {

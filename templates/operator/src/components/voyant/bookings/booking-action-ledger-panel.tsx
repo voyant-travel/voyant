@@ -1,9 +1,9 @@
 "use client"
 
-import { useQueries, useQuery } from "@tanstack/react-query"
-import type { ActionLedgerEntryResponse, ActionLedgerListResponse } from "@voyantjs/action-ledger"
+import { useQuery } from "@tanstack/react-query"
+import type { ActionLedgerEntryResponse } from "@voyantjs/action-ledger"
 import { useLocale } from "@voyantjs/admin"
-import { type BookingTravelerRecord, useTravelers } from "@voyantjs/bookings-react"
+import type { BookingActionLedgerListResponse } from "@voyantjs/bookings"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { ScrollText } from "lucide-react"
@@ -16,6 +16,7 @@ export interface BookingActionLedgerPanelProps {
 }
 
 type LedgerBadgeVariant = "default" | "secondary" | "outline" | "destructive"
+type BookingActionLedgerTraveler = BookingActionLedgerListResponse["travelers"][number]
 
 const STATUS_VARIANT: Partial<Record<ActionLedgerEntryResponse["status"], LedgerBadgeVariant>> = {
   succeeded: "default",
@@ -42,58 +43,17 @@ const RISK_VARIANT: Partial<
 
 export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanelProps) {
   const { resolvedLocale } = useLocale()
-  const travelersQuery = useTravelers(bookingId)
-  const travelers = travelersQuery.data?.data ?? []
+  const actionLedgerQuery = useQuery({
+    queryKey: queryKeys.bookings.actionLedger(bookingId),
+    queryFn: () => getBookingActionLedger(bookingId),
+  })
+
+  const entries = actionLedgerQuery.data?.data ?? []
+  const travelers = actionLedgerQuery.data?.travelers ?? []
   const travelersById = useMemo(
     () => new Map(travelers.map((traveler) => [traveler.id, traveler])),
     [travelers],
   )
-
-  const bookingEntriesQuery = useQuery({
-    queryKey: queryKeys.bookings.actionLedger(bookingId),
-    queryFn: () =>
-      listActionLedgerEntries({
-        targetType: "booking",
-        targetId: bookingId,
-        limit: "50",
-      }),
-  })
-
-  const travelerEntryQueries = useQueries({
-    queries: travelers.map((traveler) => ({
-      queryKey: queryKeys.bookings.travelerActionLedger(bookingId, traveler.id),
-      queryFn: () =>
-        listActionLedgerEntries({
-          targetType: "booking_traveler",
-          targetId: traveler.id,
-          actionName: "booking.pii.read",
-          limit: "10",
-        }),
-      enabled: travelers.length > 0,
-    })),
-  })
-
-  const entries = useMemo(() => {
-    const byId = new Map<string, ActionLedgerEntryResponse>()
-
-    for (const entry of bookingEntriesQuery.data?.data ?? []) {
-      byId.set(entry.id, entry)
-    }
-    for (const query of travelerEntryQueries) {
-      for (const entry of query.data?.data ?? []) {
-        byId.set(entry.id, entry)
-      }
-    }
-
-    return [...byId.values()].sort(
-      (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
-    )
-  }, [bookingEntriesQuery.data, travelerEntryQueries])
-
-  const isLoading =
-    travelersQuery.isLoading ||
-    bookingEntriesQuery.isLoading ||
-    travelerEntryQueries.some((query) => query.isLoading)
 
   return (
     <Card>
@@ -109,7 +69,7 @@ export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanel
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {isLoading ? (
+        {actionLedgerQuery.isLoading ? (
           <p className="px-6 py-6 text-center text-muted-foreground text-sm">
             Loading action ledger…
           </p>
@@ -154,7 +114,7 @@ function LedgerRow({
   locale,
 }: {
   entry: ActionLedgerEntryResponse
-  traveler: BookingTravelerRecord | null
+  traveler: BookingActionLedgerTraveler | null
   locale: string
 }) {
   return (
@@ -190,11 +150,10 @@ function LedgerRow({
   )
 }
 
-async function listActionLedgerEntries(
-  params: Record<string, string>,
-): Promise<ActionLedgerListResponse> {
-  const search = new URLSearchParams(params)
-  return api.get<ActionLedgerListResponse>(`/v1/admin/action-ledger/entries?${search}`)
+async function getBookingActionLedger(bookingId: string): Promise<BookingActionLedgerListResponse> {
+  return api.get<BookingActionLedgerListResponse>(
+    `/v1/admin/bookings/${bookingId}/action-ledger?limit=50`,
+  )
 }
 
 function formatDateTime(value: string, locale: string) {
@@ -208,7 +167,10 @@ function formatActionName(value: string) {
   return value.replaceAll(".", " / ").replaceAll("_", " ")
 }
 
-function formatTarget(entry: ActionLedgerEntryResponse, traveler: BookingTravelerRecord | null) {
+function formatTarget(
+  entry: ActionLedgerEntryResponse,
+  traveler: BookingActionLedgerTraveler | null,
+) {
   if (traveler) {
     return [traveler.firstName, traveler.lastName].filter(Boolean).join(" ") || "Traveler"
   }

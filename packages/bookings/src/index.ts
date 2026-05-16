@@ -115,7 +115,7 @@ export {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
   buildBookingRouteRuntime,
 } from "./route-runtime.js"
-export type { BookingRoutes } from "./routes.js"
+export type { BookingActionLedgerListResponse, BookingRoutes } from "./routes.js"
 export type { PublicBookingRoutes } from "./routes-public.js"
 export { publicBookingRoutes } from "./routes-public.js"
 export type {
