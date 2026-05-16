@@ -1,6 +1,6 @@
 import type { Module } from "@voyantjs/core"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { HonoModule } from "@voyantjs/hono/module"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
@@ -15,6 +15,7 @@ import type {
   ActionSensitiveReadDetail,
 } from "./schema.js"
 import {
+  ActionApprovalDecisionConflictError,
   actionLedgerService,
   type GetActionApprovalResult,
   type GetActionDelegationResult,
@@ -265,6 +266,122 @@ const actionApprovalListQuerySchema = z
 
 type ActionApprovalListQuery = z.infer<typeof actionApprovalListQuerySchema>
 
+const nullableTrimmedString = z
+  .string()
+  .trim()
+  .min(1)
+  .optional()
+  .transform((value) => value ?? null)
+
+const actionLedgerApprovalRequestedActionBodySchema = z.object({
+  actionName: z.string().trim().min(1),
+  actionVersion: z.string().trim().min(1).default("v1"),
+  actionKind: z.enum(actionLedgerActionKindValues),
+  evaluatedRisk: z.enum(actionLedgerRiskValues),
+  actorType: nullableTrimmedString,
+  principalType: z.enum(actionLedgerPrincipalTypeValues),
+  principalId: z.string().trim().min(1),
+  principalSubtype: nullableTrimmedString,
+  sessionId: nullableTrimmedString,
+  apiTokenId: nullableTrimmedString,
+  internalRequest: z.boolean().default(false),
+  delegatedByPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
+  delegatedByPrincipalId: nullableTrimmedString,
+  delegationId: nullableTrimmedString,
+  callerType: nullableTrimmedString,
+  organizationId: nullableTrimmedString,
+  routeOrToolName: nullableTrimmedString,
+  workflowRunId: nullableTrimmedString,
+  workflowStepId: nullableTrimmedString,
+  correlationId: nullableTrimmedString,
+  causationActionId: nullableTrimmedString,
+  idempotencyScope: nullableTrimmedString,
+  idempotencyKey: nullableTrimmedString,
+  idempotencyFingerprint: nullableTrimmedString,
+  targetType: z.string().trim().min(1),
+  targetId: z.string().trim().min(1),
+  capabilityId: nullableTrimmedString,
+  capabilityVersion: nullableTrimmedString,
+  authorizationSource: nullableTrimmedString,
+  amendsActionId: nullableTrimmedString,
+})
+
+const requestActionApprovalBodySchema = z
+  .object({
+    requestedAction: actionLedgerApprovalRequestedActionBodySchema,
+    approval: z.object({
+      requestedByPrincipalId: nullableTrimmedString,
+      assignedToPrincipalId: nullableTrimmedString,
+      delegatedFromPrincipalId: nullableTrimmedString,
+      policyName: z.string().trim().min(1),
+      policyVersion: z.string().trim().min(1),
+      targetSnapshotRef: nullableTrimmedString,
+      riskSnapshot: z.enum(actionLedgerRiskValues).optional(),
+      reasonCode: nullableTrimmedString,
+      expiresAt: z.string().datetime().optional(),
+    }),
+  })
+  .transform(({ approval, ...body }) => ({
+    ...body,
+    approval: {
+      ...approval,
+      riskSnapshot: approval.riskSnapshot ?? null,
+      expiresAt: approval.expiresAt ? new Date(approval.expiresAt) : null,
+    },
+  }))
+
+type RequestActionApprovalBody = z.infer<typeof requestActionApprovalBodySchema>
+
+const actionLedgerApprovalDecisionStatusValues = [
+  "approved",
+  "denied",
+  "expired",
+  "cancelled",
+  "superseded",
+] as const
+
+const actionLedgerApprovalDecisionActionBodySchema = z.object({
+  actionName: z.string().trim().min(1),
+  actionVersion: z.string().trim().min(1).default("v1"),
+  actorType: nullableTrimmedString,
+  principalType: z.enum(actionLedgerPrincipalTypeValues),
+  principalId: z.string().trim().min(1),
+  principalSubtype: nullableTrimmedString,
+  sessionId: nullableTrimmedString,
+  apiTokenId: nullableTrimmedString,
+  internalRequest: z.boolean().default(false),
+  delegatedByPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
+  delegatedByPrincipalId: nullableTrimmedString,
+  delegationId: nullableTrimmedString,
+  callerType: nullableTrimmedString,
+  organizationId: nullableTrimmedString,
+  routeOrToolName: nullableTrimmedString,
+  workflowRunId: nullableTrimmedString,
+  workflowStepId: nullableTrimmedString,
+  correlationId: nullableTrimmedString,
+  idempotencyScope: nullableTrimmedString,
+  idempotencyKey: nullableTrimmedString,
+  idempotencyFingerprint: nullableTrimmedString,
+  capabilityId: nullableTrimmedString,
+  capabilityVersion: nullableTrimmedString,
+  authorizationSource: nullableTrimmedString,
+  amendsActionId: nullableTrimmedString,
+})
+
+const decideActionApprovalBodySchema = z
+  .object({
+    status: z.enum(actionLedgerApprovalDecisionStatusValues),
+    decidedByPrincipalId: z.string().trim().min(1),
+    decidedAt: z.string().datetime().optional(),
+    decisionAction: actionLedgerApprovalDecisionActionBodySchema,
+  })
+  .transform(({ decidedAt, ...body }) => ({
+    ...body,
+    decidedAt: decidedAt ? new Date(decidedAt) : undefined,
+  }))
+
+type DecideActionApprovalBody = z.infer<typeof decideActionApprovalBodySchema>
+
 const actionDelegationListQuerySchema = z
   .object({
     rootPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
@@ -374,6 +491,21 @@ export interface ActionApprovalListResponse {
 
 export interface ActionApprovalGetResponse {
   data: ActionApprovalDetailResponse
+}
+
+export interface ActionApprovalRequestResponse {
+  data: {
+    requestedAction: ActionLedgerEntryResponse
+    approval: ActionApprovalResponse
+    replayed: boolean
+  }
+}
+
+export interface ActionApprovalDecisionResponse {
+  data: {
+    approval: ActionApprovalResponse
+    decisionAction: ActionLedgerEntryResponse
+  }
 }
 
 export interface ActionDelegationListResponse {
@@ -559,6 +691,61 @@ async function listActionDelegations(c: Context<Env>) {
   } satisfies ActionDelegationListResponse)
 }
 
+async function requestActionApproval(c: Context<Env>) {
+  const body: RequestActionApprovalBody = await parseJsonBody(c, requestActionApprovalBodySchema)
+  const result = await actionLedgerService.requestApproval(c.get("db"), body)
+
+  return c.json(
+    {
+      data: {
+        requestedAction: serializeActionLedgerEntry(result.requestedAction),
+        approval: serializeActionApproval(result.approval),
+        replayed: result.replayed,
+      },
+    } satisfies ActionApprovalRequestResponse,
+    201,
+  )
+}
+
+async function decideActionApproval(c: Context<Env>) {
+  const id = c.req.param("id")
+  if (!id) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  const body: DecideActionApprovalBody = await parseJsonBody(c, decideActionApprovalBodySchema)
+
+  try {
+    const result = await actionLedgerService.decideApproval(c.get("db"), {
+      id,
+      ...body,
+    })
+
+    if (!result) {
+      return c.json({ error: "Action approval not found" }, 404)
+    }
+
+    return c.json({
+      data: {
+        approval: serializeActionApproval(result.approval),
+        decisionAction: serializeActionLedgerEntry(result.decisionAction),
+      },
+    } satisfies ActionApprovalDecisionResponse)
+  } catch (error) {
+    if (error instanceof ActionApprovalDecisionConflictError) {
+      return c.json(
+        {
+          error: error.message,
+          approvalId: error.approvalId,
+          currentStatus: error.currentStatus,
+        },
+        409,
+      )
+    }
+    throw error
+  }
+}
+
 async function getActionApproval(c: Context<Env>) {
   const id = c.req.param("id")
   if (!id) {
@@ -614,7 +801,9 @@ export const actionLedgerAdminRoutes = new Hono<Env>()
   .get("/", listActionLedgerEntries)
   .get("/entries", listActionLedgerEntries)
   .get("/approvals", listActionApprovals)
+  .post("/approvals/request", requestActionApproval)
   .get("/approvals/:id", getActionApproval)
+  .post("/approvals/:id/decide", decideActionApproval)
   .get("/delegations", listActionDelegations)
   .get("/delegations/:id", getActionDelegation)
   .get("/relay-outbox", listActionLedgerRelayOutbox)
@@ -634,6 +823,8 @@ export const actionLedgerHonoModule: HonoModule = {
 export const __test__ = {
   actionLedgerEntryListQuerySchema,
   actionApprovalListQuerySchema,
+  decideActionApprovalBodySchema,
+  requestActionApprovalBodySchema,
   actionDelegationListQuerySchema,
   actionLedgerRelayOutboxListQuerySchema,
   serializeActionApproval,

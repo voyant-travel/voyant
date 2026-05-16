@@ -37,9 +37,11 @@ export {
   mapActionLedgerRequestContext,
 } from "./request-context.js"
 export {
+  type ActionApprovalDecisionResponse,
   type ActionApprovalDetailResponse,
   type ActionApprovalGetResponse,
   type ActionApprovalListResponse,
+  type ActionApprovalRequestResponse,
   type ActionApprovalResponse,
   type ActionDelegationGetResponse,
   type ActionDelegationListResponse,
