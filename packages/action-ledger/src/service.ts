@@ -2,11 +2,13 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm"
 
 import {
+  type ActionApproval,
   type ActionLedgerEntry,
   type ActionLedgerPayload,
   type ActionLedgerRelayOutbox,
   type ActionMutationDetail,
   type ActionSensitiveReadDetail,
+  actionApprovals,
   actionLedgerEntries,
   actionLedgerPayloads,
   actionLedgerRelayOutbox,
@@ -51,6 +53,11 @@ export interface ActionLedgerListCursor {
 }
 
 export interface ActionLedgerRelayOutboxListCursor {
+  createdAt: string
+  id: string
+}
+
+export interface ActionApprovalListCursor {
   createdAt: string
   id: string
 }
@@ -119,6 +126,32 @@ export interface ListActionLedgerRelayOutboxInput {
 export interface ListActionLedgerRelayOutboxResult {
   rows: ActionLedgerRelayOutbox[]
   nextCursor: ActionLedgerRelayOutboxListCursor | null
+}
+
+export interface ListActionApprovalsInput {
+  requestedActionId?: string | null
+  status?: ActionApproval["status"] | ActionApproval["status"][]
+  requestedByPrincipalId?: string | null
+  assignedToPrincipalId?: string | null
+  decidedByPrincipalId?: string | null
+  delegatedFromPrincipalId?: string | null
+  policyName?: string | null
+  policyVersion?: string | null
+  riskSnapshot?: ActionApproval["riskSnapshot"] | ActionApproval["riskSnapshot"][]
+  reasonCode?: string | null
+  expiresAtFrom?: Date | string | null
+  expiresAtTo?: Date | string | null
+  decidedAtFrom?: Date | string | null
+  decidedAtTo?: Date | string | null
+  createdAtFrom?: Date | string | null
+  createdAtTo?: Date | string | null
+  cursor?: ActionApprovalListCursor | null
+  limit?: number
+}
+
+export interface ListActionApprovalsResult {
+  approvals: ActionApproval[]
+  nextCursor: ActionApprovalListCursor | null
 }
 
 export interface ClaimActionLedgerRelayOutboxInput {
@@ -223,6 +256,32 @@ export const actionLedgerService = {
       nextCursor:
         rows.length > limit && visibleRows.length > 0
           ? toActionLedgerRelayOutboxListCursor(visibleRows[visibleRows.length - 1]!)
+          : null,
+    }
+  },
+
+  async listApprovals(
+    db: AnyDrizzleDb,
+    input: ListActionApprovalsInput = {},
+  ): Promise<ListActionApprovalsResult> {
+    const limit = normalizeListLimit(input.limit)
+    const predicate = buildActionApprovalsPredicate(input)
+
+    let query = db.select().from(actionApprovals).$dynamic()
+    if (predicate) {
+      query = query.where(predicate)
+    }
+
+    const rows = await query
+      .orderBy(desc(actionApprovals.createdAt), desc(actionApprovals.id))
+      .limit(limit + 1)
+
+    const approvals = rows.slice(0, limit)
+    return {
+      approvals,
+      nextCursor:
+        rows.length > limit && approvals.length > 0
+          ? toActionApprovalListCursor(approvals[approvals.length - 1]!)
           : null,
     }
   },
@@ -494,6 +553,13 @@ function toActionLedgerRelayOutboxListCursor(
   }
 }
 
+function toActionApprovalListCursor(row: Pick<ActionApproval, "createdAt" | "id">) {
+  return {
+    createdAt: serializeCursorDate(row.createdAt),
+    id: row.id,
+  }
+}
+
 function serializeCursorDate(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) {
@@ -530,6 +596,28 @@ function statusCondition(
     return inArray(actionLedgerEntries.status, value)
   }
   return eq(actionLedgerEntries.status, value)
+}
+
+function approvalStatusCondition(
+  value: ActionApproval["status"] | ActionApproval["status"][] | undefined,
+): SQL | undefined {
+  if (value === undefined) return undefined
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined
+    return inArray(actionApprovals.status, value)
+  }
+  return eq(actionApprovals.status, value)
+}
+
+function approvalRiskCondition(
+  value: ActionApproval["riskSnapshot"] | ActionApproval["riskSnapshot"][] | undefined,
+): SQL | undefined {
+  if (value === undefined) return undefined
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined
+    return inArray(actionApprovals.riskSnapshot, value)
+  }
+  return eq(actionApprovals.riskSnapshot, value)
 }
 
 function reversalKindCondition(
@@ -621,6 +709,74 @@ function buildRelayOutboxCursorCondition(cursor: ActionLedgerRelayOutboxListCurs
   )
 
   return or(lt(actionLedgerRelayOutbox.createdAt, createdAt), tieBreaker) as SQL
+}
+
+function buildApprovalCursorCondition(cursor: ActionApprovalListCursor): SQL {
+  const createdAt = parseCursorDate(cursor.createdAt)
+  const tieBreaker = and(
+    eq(actionApprovals.createdAt, createdAt),
+    lt(actionApprovals.id, cursor.id),
+  )
+
+  return or(lt(actionApprovals.createdAt, createdAt), tieBreaker) as SQL
+}
+
+function buildActionApprovalsPredicate(input: ListActionApprovalsInput): SQL | undefined {
+  const conditions: SQL[] = []
+
+  if (input.requestedActionId) {
+    conditions.push(eq(actionApprovals.requestedActionId, input.requestedActionId))
+  }
+
+  const entryStatusCondition = approvalStatusCondition(input.status)
+  if (entryStatusCondition) conditions.push(entryStatusCondition)
+
+  if (input.requestedByPrincipalId) {
+    conditions.push(eq(actionApprovals.requestedByPrincipalId, input.requestedByPrincipalId))
+  }
+  if (input.assignedToPrincipalId) {
+    conditions.push(eq(actionApprovals.assignedToPrincipalId, input.assignedToPrincipalId))
+  }
+  if (input.decidedByPrincipalId) {
+    conditions.push(eq(actionApprovals.decidedByPrincipalId, input.decidedByPrincipalId))
+  }
+  if (input.delegatedFromPrincipalId) {
+    conditions.push(eq(actionApprovals.delegatedFromPrincipalId, input.delegatedFromPrincipalId))
+  }
+  if (input.policyName) conditions.push(eq(actionApprovals.policyName, input.policyName))
+  if (input.policyVersion) conditions.push(eq(actionApprovals.policyVersion, input.policyVersion))
+
+  const riskSnapshotCondition = approvalRiskCondition(input.riskSnapshot)
+  if (riskSnapshotCondition) conditions.push(riskSnapshotCondition)
+
+  if (input.reasonCode) conditions.push(eq(actionApprovals.reasonCode, input.reasonCode))
+
+  if (input.expiresAtFrom) {
+    conditions.push(gte(actionApprovals.expiresAt, parseCursorDate(input.expiresAtFrom)))
+  }
+  if (input.expiresAtTo) {
+    conditions.push(lte(actionApprovals.expiresAt, parseCursorDate(input.expiresAtTo)))
+  }
+  if (input.decidedAtFrom) {
+    conditions.push(gte(actionApprovals.decidedAt, parseCursorDate(input.decidedAtFrom)))
+  }
+  if (input.decidedAtTo) {
+    conditions.push(lte(actionApprovals.decidedAt, parseCursorDate(input.decidedAtTo)))
+  }
+  if (input.createdAtFrom) {
+    conditions.push(gte(actionApprovals.createdAt, parseCursorDate(input.createdAtFrom)))
+  }
+  if (input.createdAtTo) {
+    conditions.push(lte(actionApprovals.createdAt, parseCursorDate(input.createdAtTo)))
+  }
+
+  if (input.cursor) {
+    conditions.push(buildApprovalCursorCondition(input.cursor))
+  }
+
+  if (conditions.length === 0) return undefined
+  if (conditions.length === 1) return conditions[0]
+  return and(...conditions)
 }
 
 function buildActionLedgerRelayOutboxPredicate(
@@ -780,9 +936,11 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
 }
 
 export const __test__ = {
+  buildActionApprovalsPredicate,
   buildActionLedgerEntriesPredicate,
   buildActionLedgerRelayOutboxPredicate,
   normalizeListLimit,
+  toActionApprovalListCursor,
   toActionLedgerListCursor,
   toActionLedgerRelayOutboxListCursor,
 }

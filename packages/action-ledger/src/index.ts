@@ -37,6 +37,8 @@ export {
   mapActionLedgerRequestContext,
 } from "./request-context.js"
 export {
+  type ActionApprovalListResponse,
+  type ActionApprovalResponse,
   type ActionLedgerAdminRoutes,
   type ActionLedgerEntryDetailResponse,
   type ActionLedgerEntryResponse,
@@ -83,6 +85,7 @@ export {
   type NewActionSensitiveReadDetail,
 } from "./schema.js"
 export {
+  type ActionApprovalListCursor,
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerListCursor,
   type ActionLedgerRelayOutboxListCursor,
@@ -92,6 +95,8 @@ export {
   type ClaimActionLedgerRelayOutboxInput,
   type ClaimActionLedgerRelayOutboxResult,
   type GetActionLedgerEntryResult,
+  type ListActionApprovalsInput,
+  type ListActionApprovalsResult,
   type ListActionLedgerEntriesInput,
   type ListActionLedgerEntriesResult,
   type ListActionLedgerRelayOutboxInput,

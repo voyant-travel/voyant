@@ -4,6 +4,7 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 
 import { __test__, actionLedgerAdminRoutes } from "../../src/routes.js"
 import type {
+  ActionApproval,
   ActionLedgerEntry,
   ActionLedgerPayload,
   ActionLedgerRelayOutbox,
@@ -116,6 +117,27 @@ function makeRelayOutbox(
     lastError: null,
     createdAt: baseDate,
     processedAt: null,
+    ...overrides,
+  }
+}
+
+function makeApproval(overrides: Partial<ActionApproval> = {}): ActionApproval {
+  return {
+    id: "appr_1",
+    requestedActionId: "alge_requested",
+    status: "pending",
+    requestedByPrincipalId: "usr_requester",
+    assignedToPrincipalId: "usr_approver",
+    decidedByPrincipalId: null,
+    delegatedFromPrincipalId: null,
+    policyName: "booking-cancel-approval",
+    policyVersion: "v1",
+    targetSnapshotRef: "blob://action-ledger/alge_requested/target",
+    riskSnapshot: "high",
+    reasonCode: "paid_booking_cancel",
+    expiresAt: new Date("2026-05-15T12:00:00.000Z"),
+    decidedAt: null,
+    createdAt: baseDate,
     ...overrides,
   }
 }
@@ -275,6 +297,74 @@ describe("actionLedgerAdminRoutes", () => {
 
   test("rejects relay outbox cursor halves", () => {
     const parsed = __test__.actionLedgerRelayOutboxListQuerySchema.safeParse({
+      cursorCreatedAt: "2026-05-15T10:00:00.000Z",
+    })
+
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.path).toEqual(["cursorId"])
+  })
+
+  test("lists approvals with inbox filters and cursor pagination", async () => {
+    const db = {} as AnyDrizzleDb
+    const spy = vi.spyOn(actionLedgerService, "listApprovals").mockResolvedValue({
+      approvals: [makeApproval()],
+      nextCursor: {
+        createdAt: "2026-05-15T10:00:00.000Z",
+        id: "appr_1",
+      },
+    })
+
+    const app = makeApp(db)
+    const response = await app.request(
+      "/approvals?requestedActionId=alge_requested&status=pending,expired&requestedByPrincipalId=usr_requester&assignedToPrincipalId=usr_approver&decidedByPrincipalId=usr_decider&delegatedFromPrincipalId=usr_delegate&policyName=booking-cancel-approval&policyVersion=v1&riskSnapshot=high,critical&reasonCode=paid_booking_cancel&expiresAtFrom=2026-05-15T11%3A00%3A00.000Z&expiresAtTo=2026-05-15T12%3A00%3A00.000Z&decidedAtFrom=2026-05-15T12%3A15%3A00.000Z&decidedAtTo=2026-05-15T12%3A30%3A00.000Z&createdAtFrom=2026-05-15T09%3A00%3A00.000Z&createdAtTo=2026-05-15T10%3A00%3A00.000Z&cursorCreatedAt=2026-05-15T10%3A00%3A00.000Z&cursorId=appr_cursor&limit=25",
+    )
+
+    expect(spy).toHaveBeenCalledWith(db, {
+      requestedActionId: "alge_requested",
+      status: ["pending", "expired"],
+      requestedByPrincipalId: "usr_requester",
+      assignedToPrincipalId: "usr_approver",
+      decidedByPrincipalId: "usr_decider",
+      delegatedFromPrincipalId: "usr_delegate",
+      policyName: "booking-cancel-approval",
+      policyVersion: "v1",
+      riskSnapshot: ["high", "critical"],
+      reasonCode: "paid_booking_cancel",
+      expiresAtFrom: new Date("2026-05-15T11:00:00.000Z"),
+      expiresAtTo: new Date("2026-05-15T12:00:00.000Z"),
+      decidedAtFrom: new Date("2026-05-15T12:15:00.000Z"),
+      decidedAtTo: new Date("2026-05-15T12:30:00.000Z"),
+      createdAtFrom: new Date("2026-05-15T09:00:00.000Z"),
+      createdAtTo: new Date("2026-05-15T10:00:00.000Z"),
+      cursor: {
+        createdAt: "2026-05-15T10:00:00.000Z",
+        id: "appr_cursor",
+      },
+      limit: 25,
+    })
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      data: [
+        {
+          id: "appr_1",
+          requestedActionId: "alge_requested",
+          status: "pending",
+          expiresAt: "2026-05-15T12:00:00.000Z",
+          decidedAt: null,
+          createdAt: "2026-05-15T10:00:00.000Z",
+        },
+      ],
+      pageInfo: {
+        nextCursor: {
+          createdAt: "2026-05-15T10:00:00.000Z",
+          id: "appr_1",
+        },
+      },
+    })
+  })
+
+  test("rejects approval cursor halves", () => {
+    const parsed = __test__.actionApprovalListQuerySchema.safeParse({
       cursorCreatedAt: "2026-05-15T10:00:00.000Z",
     })
 

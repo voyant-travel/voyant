@@ -2,6 +2,7 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, test } from "vitest"
 import type {
+  ActionApproval,
   ActionLedgerEntry,
   ActionLedgerPayload,
   ActionLedgerRelayOutbox,
@@ -322,6 +323,100 @@ describe("actionLedgerService.listRelayOutbox", () => {
   })
 })
 
+describe("actionLedgerService.listApprovals", () => {
+  test("composes approval inbox filters and cursor pagination", () => {
+    const predicate = __test__.buildActionApprovalsPredicate({
+      requestedActionId: "alge_requested",
+      status: ["pending", "expired"],
+      requestedByPrincipalId: "usr_requester",
+      assignedToPrincipalId: "usr_approver",
+      decidedByPrincipalId: "usr_decider",
+      delegatedFromPrincipalId: "usr_delegate",
+      policyName: "booking-cancel-approval",
+      policyVersion: "v1",
+      riskSnapshot: ["high", "critical"],
+      reasonCode: "paid_booking_cancel",
+      expiresAtFrom: "2026-05-15T11:00:00.000Z",
+      expiresAtTo: "2026-05-15T12:00:00.000Z",
+      decidedAtFrom: "2026-05-15T12:15:00.000Z",
+      decidedAtTo: "2026-05-15T12:30:00.000Z",
+      createdAtFrom: "2026-05-15T09:00:00.000Z",
+      createdAtTo: "2026-05-15T10:00:00.000Z",
+      cursor: {
+        createdAt: "2026-05-15T10:00:00.000Z",
+        id: "appr_cursor",
+      },
+    })
+
+    expect(predicate).toBeDefined()
+    const query = new PgDialect().sqlToQuery(predicate!)
+
+    expect(query.sql).toContain('"action_approvals"."requested_action_id" = $1')
+    expect(query.sql).toContain('"action_approvals"."status" in ($2, $3)')
+    expect(query.sql).toContain('"action_approvals"."requested_by_principal_id" = $4')
+    expect(query.sql).toContain('"action_approvals"."assigned_to_principal_id" = $5')
+    expect(query.sql).toContain('"action_approvals"."decided_by_principal_id" = $6')
+    expect(query.sql).toContain('"action_approvals"."delegated_from_principal_id" = $7')
+    expect(query.sql).toContain('"action_approvals"."policy_name" = $8')
+    expect(query.sql).toContain('"action_approvals"."policy_version" = $9')
+    expect(query.sql).toContain('"action_approvals"."risk_snapshot" in ($10, $11)')
+    expect(query.sql).toContain('"action_approvals"."reason_code" = $12')
+    expect(query.sql).toContain('"action_approvals"."expires_at" >= $13')
+    expect(query.sql).toContain('"action_approvals"."expires_at" <= $14')
+    expect(query.sql).toContain('"action_approvals"."decided_at" >= $15')
+    expect(query.sql).toContain('"action_approvals"."decided_at" <= $16')
+    expect(query.sql).toContain('"action_approvals"."created_at" >= $17')
+    expect(query.sql).toContain('"action_approvals"."created_at" <= $18')
+    expect(query.sql).toContain('"action_approvals"."created_at" < $19')
+    expect(query.sql).toContain('"action_approvals"."created_at" = $20')
+    expect(query.sql).toContain('"action_approvals"."id" < $21')
+    expect(query.params).toEqual([
+      "alge_requested",
+      "pending",
+      "expired",
+      "usr_requester",
+      "usr_approver",
+      "usr_decider",
+      "usr_delegate",
+      "booking-cancel-approval",
+      "v1",
+      "high",
+      "critical",
+      "paid_booking_cancel",
+      "2026-05-15T11:00:00.000Z",
+      "2026-05-15T12:00:00.000Z",
+      "2026-05-15T12:15:00.000Z",
+      "2026-05-15T12:30:00.000Z",
+      "2026-05-15T09:00:00.000Z",
+      "2026-05-15T10:00:00.000Z",
+      "2026-05-15T10:00:00.000Z",
+      "2026-05-15T10:00:00.000Z",
+      "appr_cursor",
+    ])
+  })
+
+  test("overfetches by one and returns the last visible approval as the next cursor", async () => {
+    const rows = [
+      makeApproval({ id: "appr_3", createdAt: new Date("2026-05-15T10:03:00.000Z") }),
+      makeApproval({ id: "appr_2", createdAt: new Date("2026-05-15T10:02:00.000Z") }),
+      makeApproval({ id: "appr_1", createdAt: new Date("2026-05-15T10:01:00.000Z") }),
+    ]
+    const { db, calls } = makeApprovalListDb(rows)
+
+    const result = await actionLedgerService.listApprovals(db, { limit: 2 })
+
+    expect(result.approvals.map((approval) => approval.id)).toEqual(["appr_3", "appr_2"])
+    expect(result.nextCursor).toEqual({
+      createdAt: "2026-05-15T10:02:00.000Z",
+      id: "appr_2",
+    })
+    expect(calls).toEqual([
+      { phase: "orderBy", argCount: 2 },
+      { phase: "limit", value: 3 },
+    ])
+  })
+})
+
 describe("actionLedgerService relay outbox lifecycle", () => {
   test("claims due relay outbox rows and maps SQL result rows", async () => {
     const claimed = makeRelayOutbox({
@@ -616,6 +711,27 @@ function makeRelayOutbox(
   }
 }
 
+function makeApproval(overrides: Partial<ActionApproval> = {}): ActionApproval {
+  return {
+    id: "appr_1",
+    requestedActionId: "alge_requested",
+    status: "pending",
+    requestedByPrincipalId: "usr_requester",
+    assignedToPrincipalId: "usr_approver",
+    decidedByPrincipalId: null,
+    delegatedFromPrincipalId: null,
+    policyName: "booking-cancel-approval",
+    policyVersion: "v1",
+    targetSnapshotRef: "blob://action-ledger/alge_requested/target",
+    riskSnapshot: "high",
+    reasonCode: "paid_booking_cancel",
+    expiresAt: new Date("2026-05-15T12:00:00.000Z"),
+    decidedAt: null,
+    createdAt: baseDate,
+    ...overrides,
+  }
+}
+
 function makeGetEntryDb(input: {
   entry?: ActionLedgerEntry
   mutationDetail?: ActionMutationDetail
@@ -706,6 +822,42 @@ function makeListDb(rows: ActionLedgerEntry[]) {
 }
 
 function makeRelayOutboxListDb(rows: ActionLedgerRelayOutbox[]) {
+  const calls: Array<{ phase: string; argCount?: number; value?: number }> = []
+  let limit = rows.length
+  const query = {
+    where() {
+      calls.push({ phase: "where" })
+      return query
+    },
+    orderBy(...args: unknown[]) {
+      calls.push({ phase: "orderBy", argCount: args.length })
+      return query
+    },
+    limit(value: number) {
+      calls.push({ phase: "limit", value })
+      limit = value
+      return Promise.resolve(rows.slice(0, limit))
+    },
+  }
+
+  const db = {
+    select() {
+      return {
+        from() {
+          return {
+            $dynamic() {
+              return query
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return { db, calls }
+}
+
+function makeApprovalListDb(rows: ActionApproval[]) {
   const calls: Array<{ phase: string; argCount?: number; value?: number }> = []
   let limit = rows.length
   const query = {
