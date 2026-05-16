@@ -1322,6 +1322,67 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(approvals).toHaveLength(1)
     })
 
+    it("rejects reused override approval idempotency keys with different command input", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-override")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const first = await agentApp.request(`/${booking.id}/override-status`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-override-conflict",
+        },
+        body: JSON.stringify({
+          status: "cancelled",
+          reason: "Supplier cancelled the booking",
+          note: "Initial override",
+        }),
+      })
+      expect(first.status).toBe(202)
+      const firstBody = await first.json()
+
+      const conflict = await agentApp.request(`/${booking.id}/override-status`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-override-conflict",
+        },
+        body: JSON.stringify({
+          status: "expired",
+          reason: "Hold expired before supplier confirmation",
+          note: "Different override",
+        }),
+      })
+
+      expect(conflict.status).toBe(409)
+      await expect(conflict.json()).resolves.toMatchObject({
+        error: "Action ledger idempotency key was reused with a different fingerprint",
+        existingActionId: firstBody.data.requestedAction.id,
+      })
+
+      const [entry] = await db.select().from(actionLedgerEntries)
+      expect(entry).toMatchObject({
+        actionName: "booking.status.override",
+        targetId: booking.id,
+        status: "awaiting_approval",
+        principalId: "agent-booking-override",
+      })
+
+      const approvals = await db.select().from(actionApprovals)
+      expect(approvals).toHaveLength(1)
+    })
+
     it("emits booking.confirmed with id + number + actor after confirm", async () => {
       const slot = await seedSlot()
       const reserveRes = await app.request("/reserve", {

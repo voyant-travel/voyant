@@ -1146,6 +1146,7 @@ export const bookingRoutes = new Hono<Env>()
       actionName: "booking.status.override",
       routeOrToolName: "bookings.override-status",
       bookingId,
+      commandInput: data,
     })
     if (!auth.allowed) return auth.response
 
