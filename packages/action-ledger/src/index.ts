@@ -24,6 +24,7 @@ export {
   type ActionLedgerGetResponse,
   type ActionLedgerListResponse,
   type ActionLedgerPayloadResponse,
+  type ActionLedgerRelayOutboxListResponse,
   type ActionLedgerRelayOutboxResponse,
   actionLedgerAdminRoutes,
   actionLedgerHonoModule,
@@ -65,10 +66,13 @@ export {
 export {
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerListCursor,
+  type ActionLedgerRelayOutboxListCursor,
   type AppendActionLedgerEntryInput,
   type AppendActionLedgerEntryResult,
   actionLedgerService,
   type GetActionLedgerEntryResult,
   type ListActionLedgerEntriesInput,
   type ListActionLedgerEntriesResult,
+  type ListActionLedgerRelayOutboxInput,
+  type ListActionLedgerRelayOutboxResult,
 } from "./service.js"

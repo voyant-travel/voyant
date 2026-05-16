@@ -1,5 +1,5 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { and, desc, eq, inArray, lt, or, type SQL } from "drizzle-orm"
+import { and, desc, eq, inArray, lt, lte, or, type SQL } from "drizzle-orm"
 
 import {
   type ActionLedgerEntry,
@@ -50,6 +50,11 @@ export interface ActionLedgerListCursor {
   id: string
 }
 
+export interface ActionLedgerRelayOutboxListCursor {
+  createdAt: string
+  id: string
+}
+
 export interface ListActionLedgerEntriesInput {
   actionName?: string | null
   actionKind?: ActionLedgerEntry["actionKind"]
@@ -83,6 +88,20 @@ export interface ListActionLedgerEntriesInput {
 export interface ListActionLedgerEntriesResult {
   entries: ActionLedgerEntry[]
   nextCursor: ActionLedgerListCursor | null
+}
+
+export interface ListActionLedgerRelayOutboxInput {
+  actionId?: string | null
+  organizationId?: string | null
+  relayStatus?: ActionLedgerRelayOutbox["relayStatus"] | ActionLedgerRelayOutbox["relayStatus"][]
+  dueBefore?: Date | string | null
+  cursor?: ActionLedgerRelayOutboxListCursor | null
+  limit?: number
+}
+
+export interface ListActionLedgerRelayOutboxResult {
+  rows: ActionLedgerRelayOutbox[]
+  nextCursor: ActionLedgerRelayOutboxListCursor | null
 }
 
 export interface GetActionLedgerEntryResult {
@@ -138,6 +157,32 @@ export const actionLedgerService = {
       nextCursor:
         rows.length > limit && entries.length > 0
           ? toActionLedgerListCursor(entries[entries.length - 1]!)
+          : null,
+    }
+  },
+
+  async listRelayOutbox(
+    db: AnyDrizzleDb,
+    input: ListActionLedgerRelayOutboxInput = {},
+  ): Promise<ListActionLedgerRelayOutboxResult> {
+    const limit = normalizeListLimit(input.limit)
+    const predicate = buildActionLedgerRelayOutboxPredicate(input)
+
+    let query = db.select().from(actionLedgerRelayOutbox).$dynamic()
+    if (predicate) {
+      query = query.where(predicate)
+    }
+
+    const rows = await query
+      .orderBy(desc(actionLedgerRelayOutbox.createdAt), desc(actionLedgerRelayOutbox.id))
+      .limit(limit + 1)
+
+    const visibleRows = rows.slice(0, limit)
+    return {
+      rows: visibleRows,
+      nextCursor:
+        rows.length > limit && visibleRows.length > 0
+          ? toActionLedgerRelayOutboxListCursor(visibleRows[visibleRows.length - 1]!)
           : null,
     }
   },
@@ -271,6 +316,15 @@ function toActionLedgerListCursor(entry: Pick<ActionLedgerEntry, "occurredAt" | 
   }
 }
 
+function toActionLedgerRelayOutboxListCursor(
+  row: Pick<ActionLedgerRelayOutbox, "createdAt" | "id">,
+) {
+  return {
+    createdAt: serializeCursorDate(row.createdAt),
+    id: row.id,
+  }
+}
+
 function serializeCursorDate(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) {
@@ -279,8 +333,8 @@ function serializeCursorDate(value: Date | string): string {
   return date.toISOString()
 }
 
-function parseCursorDate(value: string): Date {
-  const date = new Date(value)
+function parseCursorDate(value: Date | string): Date {
+  const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) {
     throw new Error("Action ledger cursor occurredAt must be a valid timestamp")
   }
@@ -309,6 +363,20 @@ function statusCondition(
   return eq(actionLedgerEntries.status, value)
 }
 
+function relayStatusCondition(
+  value:
+    | ActionLedgerRelayOutbox["relayStatus"]
+    | ActionLedgerRelayOutbox["relayStatus"][]
+    | undefined,
+): SQL | undefined {
+  if (value === undefined) return undefined
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined
+    return inArray(actionLedgerRelayOutbox.relayStatus, value)
+  }
+  return eq(actionLedgerRelayOutbox.relayStatus, value)
+}
+
 function buildCursorCondition(cursor: ActionLedgerListCursor): SQL {
   const occurredAt = parseCursorDate(cursor.occurredAt)
   const tieBreaker = and(
@@ -317,6 +385,42 @@ function buildCursorCondition(cursor: ActionLedgerListCursor): SQL {
   )
 
   return or(lt(actionLedgerEntries.occurredAt, occurredAt), tieBreaker) as SQL
+}
+
+function buildRelayOutboxCursorCondition(cursor: ActionLedgerRelayOutboxListCursor): SQL {
+  const createdAt = parseCursorDate(cursor.createdAt)
+  const tieBreaker = and(
+    eq(actionLedgerRelayOutbox.createdAt, createdAt),
+    lt(actionLedgerRelayOutbox.id, cursor.id),
+  )
+
+  return or(lt(actionLedgerRelayOutbox.createdAt, createdAt), tieBreaker) as SQL
+}
+
+function buildActionLedgerRelayOutboxPredicate(
+  input: ListActionLedgerRelayOutboxInput,
+): SQL | undefined {
+  const conditions: SQL[] = []
+
+  if (input.actionId) conditions.push(eq(actionLedgerRelayOutbox.actionId, input.actionId))
+  if (input.organizationId) {
+    conditions.push(eq(actionLedgerRelayOutbox.organizationId, input.organizationId))
+  }
+
+  const entryRelayStatusCondition = relayStatusCondition(input.relayStatus)
+  if (entryRelayStatusCondition) conditions.push(entryRelayStatusCondition)
+
+  if (input.dueBefore) {
+    conditions.push(lte(actionLedgerRelayOutbox.nextRetryAt, parseCursorDate(input.dueBefore)))
+  }
+
+  if (input.cursor) {
+    conditions.push(buildRelayOutboxCursorCondition(input.cursor))
+  }
+
+  if (conditions.length === 0) return undefined
+  if (conditions.length === 1) return conditions[0]
+  return and(...conditions)
 }
 
 function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput): SQL | undefined {
@@ -387,6 +491,8 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
 
 export const __test__ = {
   buildActionLedgerEntriesPredicate,
+  buildActionLedgerRelayOutboxPredicate,
   normalizeListLimit,
   toActionLedgerListCursor,
+  toActionLedgerRelayOutboxListCursor,
 }

@@ -41,6 +41,13 @@ const actionLedgerStatusValues = [
   "cancelled",
   "superseded",
 ] as const
+const actionLedgerRelayStatusValues = [
+  "pending",
+  "processing",
+  "succeeded",
+  "failed",
+  "dead_letter",
+] as const
 
 type NonEmptyEnumValues = readonly [string, ...string[]]
 
@@ -107,6 +114,39 @@ const actionLedgerEntryListQuerySchema = z
 
 type ActionLedgerEntryListQuery = z.infer<typeof actionLedgerEntryListQuerySchema>
 
+const actionLedgerRelayOutboxListQuerySchema = z
+  .object({
+    actionId: z.string().trim().min(1).optional(),
+    organizationId: z.string().trim().min(1).optional(),
+    relayStatus: commaSeparatedEnumList(actionLedgerRelayStatusValues),
+    dueBefore: z.string().datetime().optional(),
+    cursorCreatedAt: z.string().datetime().optional(),
+    cursorId: z.string().trim().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(200).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (Boolean(value.cursorCreatedAt) === Boolean(value.cursorId)) return
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: value.cursorCreatedAt ? ["cursorId"] : ["cursorCreatedAt"],
+      message: "cursorCreatedAt and cursorId must be provided together",
+    })
+  })
+  .transform(({ cursorCreatedAt, cursorId, dueBefore, ...query }) => ({
+    ...query,
+    dueBefore: dueBefore ? new Date(dueBefore) : undefined,
+    cursor:
+      cursorCreatedAt && cursorId
+        ? {
+            createdAt: cursorCreatedAt,
+            id: cursorId,
+          }
+        : undefined,
+  }))
+
+type ActionLedgerRelayOutboxListQuery = z.infer<typeof actionLedgerRelayOutboxListQuerySchema>
+
 type Env = {
   Variables: {
     db: AnyDrizzleDb
@@ -137,6 +177,16 @@ export type ActionLedgerEntryDetailResponse = ActionLedgerEntryResponse & {
 
 export interface ActionLedgerGetResponse {
   data: ActionLedgerEntryDetailResponse
+}
+
+export interface ActionLedgerRelayOutboxListResponse {
+  data: ActionLedgerRelayOutboxResponse[]
+  pageInfo: {
+    nextCursor: {
+      createdAt: string
+      id: string
+    } | null
+  }
 }
 
 export type ActionLedgerPayloadResponse = Omit<ActionLedgerPayload, "createdAt" | "expiresAt"> & {
@@ -217,6 +267,21 @@ async function listActionLedgerEntries(c: Context<Env>) {
   } satisfies ActionLedgerListResponse)
 }
 
+async function listActionLedgerRelayOutbox(c: Context<Env>) {
+  const query: ActionLedgerRelayOutboxListQuery = parseQuery(
+    c,
+    actionLedgerRelayOutboxListQuerySchema,
+  )
+  const result = await actionLedgerService.listRelayOutbox(c.get("db"), query)
+
+  return c.json({
+    data: result.rows.map(serializeActionLedgerRelayOutbox),
+    pageInfo: {
+      nextCursor: result.nextCursor,
+    },
+  } satisfies ActionLedgerRelayOutboxListResponse)
+}
+
 async function getActionLedgerEntry(c: Context<Env>) {
   const id = c.req.param("id")
   if (!id) {
@@ -237,6 +302,7 @@ async function getActionLedgerEntry(c: Context<Env>) {
 export const actionLedgerAdminRoutes = new Hono<Env>()
   .get("/", listActionLedgerEntries)
   .get("/entries", listActionLedgerEntries)
+  .get("/relay-outbox", listActionLedgerRelayOutbox)
   .get("/entries/:id", getActionLedgerEntry)
 
 export type ActionLedgerAdminRoutes = typeof actionLedgerAdminRoutes
@@ -252,6 +318,7 @@ export const actionLedgerHonoModule: HonoModule = {
 
 export const __test__ = {
   actionLedgerEntryListQuerySchema,
+  actionLedgerRelayOutboxListQuerySchema,
   serializeActionLedgerEntry,
   serializeActionLedgerEntryDetail,
 }
