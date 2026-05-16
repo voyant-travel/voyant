@@ -1250,10 +1250,17 @@ async function loadResourceCapacityViolations(
   if (entries.length === 0) return []
 
   const resourceIds = entries.map(([, resourceId]) => resourceId)
+  // Lock the targeted allocation_resources rows so concurrent
+  // assignments to the same resource serialise — otherwise two
+  // requests can both see one seat free and both write, leaving the
+  // resource over capacity. The caller is responsible for invoking
+  // this inside a transaction; outside one this lock degrades to a
+  // single-statement no-op which is the same race we had before.
   const resources = await db.execute(sql`
     SELECT id, kind, capacity, slot_id
     FROM allocation_resources
     WHERE id = ANY(${resourceIds}::text[])
+    FOR UPDATE
   `)
   const resourceList = resources as unknown as Array<{
     id: string
@@ -1329,6 +1336,39 @@ async function assertResourceCapacityForAllocations(
         .join(", ")}`,
     )
   }
+}
+
+/**
+ * Lock the targeted resource rows, validate, and write in one
+ * transaction so two concurrent assignments to the last seat in a
+ * resource cannot both pass a stale capacity check. When there are no
+ * allocations to enforce, we skip the wrapping transaction entirely —
+ * avoids the round trip for the common path and keeps the unit-test
+ * mocks (which don't stub `db.transaction`) working unchanged.
+ */
+async function persistTravelDetailsWithCapacityCheck(
+  db: PostgresJsDatabase,
+  travelerId: string,
+  input: UpsertBookingTravelerTravelDetailInput,
+  opts: { pii: BookingPiiService; actorId?: string | null },
+) {
+  const allocations = input.allocations
+  const hasAllocations =
+    allocations != null && Object.values(allocations).some((value) => Boolean(value))
+
+  if (!hasAllocations) {
+    return opts.pii.upsertTravelerTravelDetails(db, travelerId, input, opts.actorId)
+  }
+
+  return db.transaction(async (tx) => {
+    await assertResourceCapacityForAllocations(tx as PostgresJsDatabase, travelerId, allocations)
+    return opts.pii.upsertTravelerTravelDetails(
+      tx as PostgresJsDatabase,
+      travelerId,
+      input,
+      opts.actorId,
+    )
+  })
 }
 
 async function releaseAllocationCapacity(
@@ -4064,13 +4104,11 @@ export const bookingsService = {
       travelDetailInput = applyTravelDetailSnapshot(travelDetailInput, snapshot)
     }
 
-    await assertResourceCapacityForAllocations(db, traveler.id, travelDetailInput.allocations)
-
-    const travelDetails = await opts.pii.upsertTravelerTravelDetails(
+    const travelDetails = await persistTravelDetailsWithCapacityCheck(
       db,
       traveler.id,
       travelDetailInput,
-      opts.actorId,
+      opts,
     )
 
     return { traveler, travelDetails }
@@ -4109,13 +4147,11 @@ export const bookingsService = {
     }
 
     const travelDetailInput = pickTravelDetailFields(data)
-    await assertResourceCapacityForAllocations(db, traveler.id, travelDetailInput.allocations)
-
-    const travelDetails = await opts.pii.upsertTravelerTravelDetails(
+    const travelDetails = await persistTravelDetailsWithCapacityCheck(
       db,
       traveler.id,
       travelDetailInput,
-      opts.actorId,
+      opts,
     )
 
     return { traveler, travelDetails }

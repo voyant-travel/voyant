@@ -384,6 +384,11 @@ export async function validateSlotAllocationCapacity(
   if (byResource.size === 0) return []
 
   const resourceIds = [...byResource.keys()]
+  // Lock the targeted rows so a concurrent caller cannot pass the
+  // same check before this one persists. Callers must run inside a
+  // transaction for the lock to span until commit; outside one this
+  // is the same race as before, but the helper at least documents
+  // the contract.
   const resources = await executeRows<{
     id: string
     kind: string
@@ -395,6 +400,7 @@ export async function validateSlotAllocationCapacity(
       SELECT id, kind, capacity, slot_id
       FROM allocation_resources
       WHERE slot_id = ${slotId} AND id = ANY(${resourceIds}::text[])
+      FOR UPDATE
     `,
   )
   const resourceById = new Map(resources.map((r) => [r.id, r]))
