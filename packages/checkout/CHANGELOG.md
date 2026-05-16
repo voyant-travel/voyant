@@ -1,5 +1,16 @@
 # @voyantjs/checkout
 
+## 0.50.8
+
+### Patch Changes
+
+- Updated dependencies [f35014f]
+  - @voyantjs/bookings@0.50.8
+  - @voyantjs/core@0.50.8
+  - @voyantjs/finance@0.50.8
+  - @voyantjs/hono@0.50.8
+  - @voyantjs/notifications@0.50.8
+
 ## 0.50.7
 
 ### Patch Changes

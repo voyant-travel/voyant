@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflow-runs",
-  "version": "0.50.7",
+  "version": "0.50.8",
   "description": "Workflow run recording, admin routes, and rerun/resume dispatch primitives for Voyant operator apps.",
   "license": "Apache-2.0",
   "type": "module",
