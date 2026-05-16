@@ -1,3 +1,9 @@
+import {
+  type ActionLedgerRequestContextValues,
+  appendActionLedgerMutation,
+  type BuildActionLedgerMutationInput,
+  buildIdempotencyFingerprint,
+} from "@voyantjs/action-ledger"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
 import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
@@ -388,6 +394,8 @@ async function paginate<T extends object>(
  */
 export interface FinanceServiceRuntime {
   eventBus?: EventBus
+  actionLedgerContext?: ActionLedgerRequestContextValues
+  actionLedgerAuthorizationSource?: string | null
 }
 
 export interface BookingPaymentSchedulePaidEvent {
@@ -413,6 +421,74 @@ export interface PaymentCompletedEvent {
   amountCents: number
   currency: string
   provider: string | null
+}
+
+type PaymentSessionRecord = typeof paymentSessions.$inferSelect
+type CompletePaymentSessionLedgerInput = {
+  session: PaymentSessionRecord
+  status: CompletePaymentSessionInput["status"]
+  paymentId: string | null
+}
+
+export async function buildPaymentSessionCompletionActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: CompletePaymentSessionLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const target = getPaymentSessionCompletionLedgerTarget(input.session)
+  const idempotencyKey =
+    input.session.providerPaymentId ??
+    input.session.externalReference ??
+    input.session.idempotencyKey ??
+    null
+  const idempotencyFingerprint = idempotencyKey
+    ? await buildIdempotencyFingerprint({
+        actionName: "finance.payment_session.complete",
+        actionVersion: "v1",
+        targetType: target.type,
+        targetId: target.id,
+        commandInput: {
+          paymentSessionId: input.session.id,
+          status: input.status,
+          providerPaymentId: input.session.providerPaymentId,
+          externalReference: input.session.externalReference,
+          paymentId: input.paymentId,
+        },
+      })
+    : null
+
+  return {
+    context,
+    actionName: "finance.payment_session.complete",
+    actionVersion: "v1",
+    actionKind: "execute",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_session.complete",
+    authorizationSource: options.authorizationSource ?? "finance.payment_session.route",
+    idempotencyScope: idempotencyKey
+      ? `finance.payment_session:${input.session.id}:complete`
+      : null,
+    idempotencyKey,
+    idempotencyFingerprint,
+    mutationDetail: {
+      commandInputRef: `payment_session:${input.session.id}:complete`,
+      commandResultRef: input.paymentId ? `payment:${input.paymentId}` : null,
+      summary: `Payment session ${input.session.id} completed as ${input.status}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+function getPaymentSessionCompletionLedgerTarget(session: PaymentSessionRecord) {
+  if (session.bookingId) return { type: "booking", id: session.bookingId }
+  if (session.invoiceId) return { type: "invoice", id: session.invoiceId }
+  if (session.orderId) return { type: "order", id: session.orderId }
+  return { type: "payment_session", id: session.id }
 }
 
 export interface BindInvoiceRenditionInput {
@@ -1059,6 +1135,23 @@ export const financeService = {
         })
         .where(eq(paymentSessions.id, id))
         .returning()
+
+      if (updated && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildPaymentSessionCompletionActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              session: updated,
+              status: data.status,
+              paymentId,
+            },
+            {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            },
+          ),
+        )
+      }
 
       return {
         updated: updated ?? null,

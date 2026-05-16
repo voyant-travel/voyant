@@ -1,4 +1,5 @@
 import { parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
+import type { Context } from "hono"
 import { Hono } from "hono"
 
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
@@ -116,6 +117,36 @@ function getFinanceRouteRuntime(c: { var: { container?: { resolve: <T>(key: stri
   }
 }
 
+function getActionLedgerRequestContext(c: Context<Env>) {
+  const context = {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+
+  if (
+    context.userId ||
+    context.agentId ||
+    context.workflowPrincipalId ||
+    context.apiTokenId ||
+    context.isInternalRequest
+  ) {
+    return context
+  }
+
+  return undefined
+}
+
 export const financeRoutes = new Hono<Env>()
 
   // ========================================================================
@@ -186,7 +217,11 @@ export const financeRoutes = new Hono<Env>()
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, completePaymentSessionSchema),
-      { eventBus: runtime?.eventBus },
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_session.route",
+      },
     )
     if (!row) return c.json({ error: "Payment session not found" }, 404)
     return c.json({ data: row })

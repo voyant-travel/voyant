@@ -21,6 +21,7 @@
     "migrate:vouchers": "node --experimental-strip-types --experimental-transform-types scripts/migrate-vouchers.ts"
   },
   "dependencies": {
+    "@voyantjs/action-ledger": "workspace:*",
     "@voyantjs/bookings": "workspace:*",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",

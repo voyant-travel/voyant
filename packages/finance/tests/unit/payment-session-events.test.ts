@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildBookingPaymentSchedulePaidEvent,
   buildPaymentCompletedEvent,
+  buildPaymentSessionCompletionActionLedgerInput,
 } from "../../src/service.js"
 
 describe("payment session events", () => {
@@ -68,5 +69,47 @@ describe("payment session events", () => {
       currency: "USD",
       provider: "netopia",
     })
+  })
+
+  it("builds booking-targeted action ledger input for payment completions", async () => {
+    const ledgerInput = await buildPaymentSessionCompletionActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        session: {
+          id: "psess_123",
+          bookingId: "book_123",
+          invoiceId: "inv_123",
+          orderId: null,
+          providerPaymentId: "provider_payment_123",
+          externalReference: null,
+          idempotencyKey: null,
+        } as never,
+        status: "paid",
+        paymentId: "pay_123",
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_session.complete",
+      actionKind: "execute",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.payment_session.complete",
+      authorizationSource: "finance.payment_session.route",
+      idempotencyScope: "finance.payment_session:psess_123:complete",
+      idempotencyKey: "provider_payment_123",
+      mutationDetail: {
+        commandInputRef: "payment_session:psess_123:complete",
+        commandResultRef: "payment:pay_123",
+        summary: "Payment session psess_123 completed as paid",
+        reversalKind: "none",
+      },
+    })
+    expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
   })
 })

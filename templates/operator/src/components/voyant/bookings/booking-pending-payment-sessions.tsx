@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/component
 import { Loader2, Wallet } from "lucide-react"
 
 import { api } from "@/lib/api-client"
+import { queryKeys } from "@/lib/query-keys"
 
 interface PendingPaymentSession {
   id: string
@@ -79,6 +80,8 @@ export function BookingPendingPaymentSessions({
       // the operator sees the new status without a hard reload.
       void queryClient.invalidateQueries({ queryKey: ["public-booking-detail", bookingId] })
       void queryClient.invalidateQueries({ queryKey: ["public-booking-payments", bookingId] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bookings.actionLedger(bookingId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.actionLedger.all })
     },
   })
 
