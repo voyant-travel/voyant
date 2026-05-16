@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   buildBookingPaymentSchedulePaidEvent,
   buildCreditNoteCreationActionLedgerInput,
+  buildCreditNoteLineItemCreateActionLedgerInput,
+  buildCreditNoteUpdateActionLedgerInput,
   buildInvoiceDeleteActionLedgerInput,
   buildInvoiceIssuedActionLedgerInput,
   buildInvoiceLineItemCreateActionLedgerInput,
@@ -207,6 +209,93 @@ describe("payment session events", () => {
       },
     })
     expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds booking-targeted action ledger input for credit note updates", () => {
+    const ledgerInput = buildCreditNoteUpdateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          bookingId: "book_123",
+        } as never,
+        creditNote: {
+          id: "cn_123",
+          creditNoteNumber: "CN-2026-001",
+        } as never,
+        changes: {
+          status: "issued",
+          reason: "Customer refund updated",
+        },
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.credit_note.update",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.credit_note.update",
+      authorizationSource: "finance.credit_note.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "credit_note:cn_123:update",
+        commandResultRef: "credit_note:cn_123",
+        summary: "Credit note CN-2026-001 updated (reason, status)",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds booking-targeted action ledger input for credit note line item creation", () => {
+    const ledgerInput = buildCreditNoteLineItemCreateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          bookingId: "book_123",
+        } as never,
+        creditNote: {
+          id: "cn_123",
+          creditNoteNumber: "CN-2026-001",
+        } as never,
+        lineItem: {
+          id: "cnli_123",
+          creditNoteId: "cn_123",
+          description: "Refunded tour",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.credit_note_line_item.create",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.credit_note_line_item.create",
+      authorizationSource: "finance.credit_note_line_item.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "credit_note:cn_123:line_item",
+        commandResultRef: "credit_note_line_item:cnli_123",
+        summary: "Line item cnli_123 added to credit note CN-2026-001",
+        reversalKind: "none",
+      },
+    })
   })
 
   it("builds booking-targeted action ledger input for invoice issuance", async () => {

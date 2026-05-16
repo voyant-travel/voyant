@@ -1027,10 +1027,16 @@ export const financeRoutes = new Hono<Env>()
 
   // PATCH /invoices/:id/credit-notes/:creditNoteId — Update credit note
   .patch("/invoices/:id/credit-notes/:creditNoteId", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updateCreditNote(
       c.get("db"),
       c.req.param("creditNoteId"),
       await parseJsonBody(c, updateCreditNoteSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.credit_note.route",
+      },
     )
 
     if (!row) {
@@ -1053,10 +1059,16 @@ export const financeRoutes = new Hono<Env>()
 
   // POST /invoices/:id/credit-notes/:creditNoteId/line-items — Add credit note line item
   .post("/invoices/:id/credit-notes/:creditNoteId/line-items", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.createCreditNoteLineItem(
       c.get("db"),
       c.req.param("creditNoteId"),
       await parseJsonBody(c, insertCreditNoteLineItemSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.credit_note_line_item.route",
+      },
     )
 
     if (!row) {

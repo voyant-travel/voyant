@@ -456,6 +456,17 @@ type CreateCreditNoteLedgerInput = {
   invoice: InvoiceRecord
   creditNote: CreditNoteRecord
 }
+type CreditNoteUpdateLedgerInput = {
+  invoice: InvoiceRecord
+  creditNote: CreditNoteRecord
+  changes: UpdateCreditNoteInput
+}
+type CreditNoteLineItemRecord = typeof creditNoteLineItems.$inferSelect
+type CreditNoteLineItemCreateLedgerInput = {
+  invoice: InvoiceRecord
+  creditNote: CreditNoteRecord
+  lineItem: CreditNoteLineItemRecord
+}
 
 export async function buildPaymentSessionCompletionActionLedgerInput(
   context: ActionLedgerRequestContextValues,
@@ -834,6 +845,72 @@ export async function buildCreditNoteCreationActionLedgerInput(
       commandInputRef: `invoice:${input.invoice.id}:credit_note`,
       commandResultRef: `credit_note:${input.creditNote.id}`,
       summary: `Credit note ${input.creditNote.creditNoteNumber} created for invoice ${input.invoice.id}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildCreditNoteUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: CreditNoteUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.credit_note.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.credit_note.update",
+    authorizationSource: options.authorizationSource ?? "finance.credit_note.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `credit_note:${input.creditNote.id}:update`,
+      commandResultRef: `credit_note:${input.creditNote.id}`,
+      summary: `Credit note ${input.creditNote.creditNoteNumber} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildCreditNoteLineItemCreateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: CreditNoteLineItemCreateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+
+  return {
+    context,
+    actionName: "finance.credit_note_line_item.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.credit_note_line_item.create",
+    authorizationSource: options.authorizationSource ?? "finance.credit_note_line_item.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `credit_note:${input.creditNote.id}:line_item`,
+      commandResultRef: `credit_note_line_item:${input.lineItem.id}`,
+      summary: `Line item ${input.lineItem.id} added to credit note ${input.creditNote.creditNoteNumber}`,
       reversalKind: "none",
     },
   }
@@ -3228,14 +3305,51 @@ export const financeService = {
     db: PostgresJsDatabase,
     creditNoteId: string,
     data: UpdateCreditNoteInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(creditNotes)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(creditNotes.id, creditNoteId))
-      .returning()
+    const updateCreditNoteRow = async (writer: PostgresJsDatabase) => {
+      const [row] = await writer
+        .update(creditNotes)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(creditNotes.id, creditNoteId))
+        .returning()
 
-    return row ?? null
+      if (!row) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, row.invoiceId))
+        .limit(1)
+
+      return invoice ? { invoice, creditNote: row } : null
+    }
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const updated = await updateCreditNoteRow(tx)
+
+        if (updated) {
+          await appendActionLedgerMutation(
+            tx,
+            buildCreditNoteUpdateActionLedgerInput(
+              actionLedgerContext,
+              { ...updated, changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return result?.creditNote ?? null
+    }
+
+    return (await updateCreditNoteRow(db))?.creditNote ?? null
   },
 
   listCreditNoteLineItems(db: PostgresJsDatabase, creditNoteId: string) {
@@ -3250,23 +3364,58 @@ export const financeService = {
     db: PostgresJsDatabase,
     creditNoteId: string,
     data: CreateCreditNoteLineItemInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [creditNote] = await db
-      .select({ id: creditNotes.id })
-      .from(creditNotes)
-      .where(eq(creditNotes.id, creditNoteId))
-      .limit(1)
+    const createLineItem = async (writer: PostgresJsDatabase) => {
+      const [creditNote] = await writer
+        .select()
+        .from(creditNotes)
+        .where(eq(creditNotes.id, creditNoteId))
+        .limit(1)
 
-    if (!creditNote) {
-      return null
+      if (!creditNote) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, creditNote.invoiceId))
+        .limit(1)
+
+      if (!invoice) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(creditNoteLineItems)
+        .values({ ...data, creditNoteId })
+        .returning()
+
+      return row ? { invoice, creditNote, lineItem: row } : null
     }
 
-    const [row] = await db
-      .insert(creditNoteLineItems)
-      .values({ ...data, creditNoteId })
-      .returning()
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const created = await createLineItem(tx)
 
-    return row
+        if (created) {
+          await appendActionLedgerMutation(
+            tx,
+            buildCreditNoteLineItemCreateActionLedgerInput(actionLedgerContext, created, {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            }),
+          )
+        }
+
+        return created
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await createLineItem(db))?.lineItem ?? null
   },
 
   listNotes(db: PostgresJsDatabase, invoiceId: string) {
