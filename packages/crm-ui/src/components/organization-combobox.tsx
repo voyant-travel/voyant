@@ -27,6 +27,7 @@ function compact(parts: Array<string | null | undefined>) {
 function formatOrganizationSecondary(organization: OrganizationRecord) {
   return compact([
     organization.legalName,
+    organization.vatNumber,
     organization.website,
     organization.industry,
     organization.defaultCurrency,

@@ -2008,6 +2008,9 @@ importers:
       '@voyantjs/crm-react':
         specifier: workspace:*
         version: link:../crm-react
+      '@voyantjs/identity-react':
+        specifier: workspace:*
+        version: link:../identity-react
       '@voyantjs/ui':
         specifier: workspace:*
         version: link:../ui

@@ -2152,6 +2152,7 @@ export const financeService = {
         .insert(invoices)
         .values({
           invoiceNumber: data.invoiceNumber,
+          invoiceType: data.invoiceType,
           bookingId: booking.id,
           personId: booking.personId,
           organizationId: booking.organizationId,

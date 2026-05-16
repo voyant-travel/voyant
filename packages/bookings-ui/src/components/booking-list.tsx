@@ -34,6 +34,7 @@ import { BOOKING_STATUS_ALL, BookingListFiltersPopover } from "./booking-list-fi
 export interface BookingListProps {
   pageSize?: number
   onSelectBooking?: (booking: BookingRecord) => void
+  onCreateBooking?: () => void
 }
 
 type SortableField = Exclude<BookingsListSortField, "createdAt">
@@ -50,7 +51,11 @@ const SORTABLE_COLUMNS = {
 const SKELETON_ROW_COUNT = 6
 const TABLE_COLUMN_COUNT = 7
 
-export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps = {}) {
+export function BookingList({
+  pageSize = 25,
+  onSelectBooking,
+  onCreateBooking,
+}: BookingListProps = {}) {
   const [search, setSearch] = React.useState("")
   const [status, setStatus] = React.useState<string>(BOOKING_STATUS_ALL)
   const [productId, setProductId] = React.useState<string | null>(null)
@@ -216,6 +221,10 @@ export function BookingList({ pageSize = 25, onSelectBooking }: BookingListProps
         <div className="ml-auto">
           <Button
             onClick={() => {
+              if (onCreateBooking) {
+                onCreateBooking()
+                return
+              }
               setEditing(undefined)
               setDialogOpen(true)
             }}

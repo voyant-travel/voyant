@@ -29,6 +29,7 @@ export interface PriceBreakdownValue {
   priceOverrideReason: string
   isManualOverride: boolean
   requiresReason: boolean
+  lines: PriceBreakdownLine[]
 }
 
 export interface PriceBreakdownSectionProps {
@@ -253,11 +254,13 @@ export function PriceBreakdownSection({
       priceOverrideReason: overrideReason,
       isManualOverride,
       requiresReason,
+      lines,
     })
   }, [
     confirmedAmountCents,
     currency,
     isManualOverride,
+    lines,
     onChange,
     overrideReason,
     requiresReason,

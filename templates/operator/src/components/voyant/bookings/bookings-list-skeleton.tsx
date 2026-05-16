@@ -6,7 +6,7 @@ import { useAdminMessages } from "@/lib/admin-i18n"
 /**
  * Route-level placeholder for /bookings. Mirrors BookingsPage + BookingList:
  *   - Page title + description
- *   - Search input (left) + "Quick Book" + "New booking" buttons (right)
+ *   - Search input (left) + "New booking" button (right)
  *   - 5-column table: Booking # / Status / Sell Amount / Pax / Start Date
  *   - Pagination bar
  */

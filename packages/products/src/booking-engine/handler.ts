@@ -10,14 +10,14 @@
  *     `product_pax_pricing_tiers`.
  *   - `getProductContent` + `buildProductDraftShape` for the journey
  *     wizard's step descriptor.
- *   - An injected `quickCreateBooking` function for the commit path
+ *   - An injected `createBooking` function for the commit path
  *     — keeps `@voyantjs/products` from depending on
  *     `@voyantjs/finance` (no workspace cycle).
  *
  * Phase A scope (deliberately narrow):
  *   - Price = product.sellAmountCents × pax_count, no taxes / addons /
  *     accommodation / vouchers.
- *   - Commit goes through the bridge into `bookingsQuickCreate`'s input
+ *   - Commit goes through the bridge into `bookingsCreate`'s input
  *     shape — products-only, no extras / hospitality / cruises / encrypted
  *     travel details / snapshot graph.
  *
@@ -53,11 +53,11 @@ import { products } from "../schema-core.js"
 // ─────────────────────────────────────────────────────────────────
 
 /**
- * Subset of `bookingsQuickCreate`'s input the bridge builds.
- * Mirrors the schema in `service-bookings-quick-create.ts` — kept
+ * Subset of `bookingsCreate`'s input the bridge builds.
+ * Mirrors the schema in `service-booking-create.ts` — kept
  * structural here so we don't pull a dependency into products.
  */
-export interface QuickCreateBridgeInput {
+export interface BookingCreateBridgeInput {
   productId: string
   optionId?: string | null
   slotId?: string | null
@@ -105,20 +105,20 @@ export interface QuickCreateBridgeInput {
   }>
 }
 
-export interface QuickCreateBridgeResult {
+export interface BookingCreateBridgeResult {
   status: "ok" | "product_not_found" | string
   bookingId?: string
   bookingNumber?: string
 }
 
 /**
- * Caller-supplied bridge to `bookingsQuickCreate`. Templates wire
- * this up — `(input, opts) => quickCreateBooking(db as PostgresJsDatabase, input, opts)`.
+ * Caller-supplied bridge to `bookingsCreate`. Templates wire
+ * this up — `(input, opts) => createBooking(db as PostgresJsDatabase, input, opts)`.
  */
-export type QuickCreateBridge = (
-  input: QuickCreateBridgeInput,
+export type BookingCreateBridge = (
+  input: BookingCreateBridgeInput,
   options?: { userId?: string },
-) => Promise<QuickCreateBridgeResult>
+) => Promise<BookingCreateBridgeResult>
 
 // ─────────────────────────────────────────────────────────────────
 // Draft shape — what the wizard reads off the quote response
@@ -324,11 +324,11 @@ export interface AvailabilityHoldBridge {
 
 export interface CreateProductsBookingHandlerOptions extends OwnedProductsShapeLoaders {
   /**
-   * Caller-supplied bridge to `bookingsQuickCreate`. Wired by the
+   * Caller-supplied bridge to `bookingsCreate`. Wired by the
    * template at boot, since `@voyantjs/products` does not import
    * `@voyantjs/finance`.
    */
-  quickCreate: QuickCreateBridge
+  createBooking: BookingCreateBridge
   /**
    * Generator for booking numbers. Defaults to a timestamp-based
    * value if not supplied. Templates that have a sequence service
@@ -574,7 +574,7 @@ export function createProductsBookingHandler(
       // gross breakdown total when an included tax line is present.
       const sellAmountCentsOverride = resolveSellAmountCentsOverride(request.pricing)
 
-      const bridge = await options.quickCreate({
+      const bridge = await options.createBooking({
         productId: product.id,
         bookingNumber: generateNumber(),
         personId: extractPersonId(request.party),
@@ -742,13 +742,13 @@ function extractInternalNotes(party: Record<string, unknown> | undefined): strin
 
 function extractTaxLines(
   pricing: CommitOwnedRequest["pricing"],
-): QuickCreateBridgeInput["taxLines"] {
+): BookingCreateBridgeInput["taxLines"] {
   const breakdown = pricing?.breakdown
   if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return undefined
   const taxes = (breakdown as { taxes?: unknown }).taxes
   if (!Array.isArray(taxes)) return undefined
 
-  const lines: NonNullable<QuickCreateBridgeInput["taxLines"]> = []
+  const lines: NonNullable<BookingCreateBridgeInput["taxLines"]> = []
   for (const [index, tax] of taxes.entries()) {
     if (!tax || typeof tax !== "object" || Array.isArray(tax)) continue
     const row = tax as Record<string, unknown>

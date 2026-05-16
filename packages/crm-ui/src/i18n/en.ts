@@ -70,8 +70,16 @@ export const crmUiEn = {
     fields: {
       name: "Name",
       legalName: "Legal name",
+      vatNumber: "VAT number",
       website: "Website",
       industry: "Industry",
+      billingEmail: "Billing email",
+      billingAddressLine1: "Billing address line 1",
+      billingAddressLine2: "Billing address line 2",
+      billingCity: "Billing city",
+      billingRegion: "Billing region",
+      billingPostalCode: "Billing postal code",
+      billingCountry: "Billing country",
     },
     actions: {
       create: "Create organization",

@@ -17,8 +17,13 @@ export interface AvailabilityStartTimesListFilters extends PaginationFilters {
 
 export interface AvailabilitySlotsListFilters extends PaginationFilters {
   productId?: string | undefined
+  itineraryId?: string | undefined
+  optionId?: string | undefined
+  facilityId?: string | undefined
   availabilityRuleId?: string | undefined
   startTimeId?: string | undefined
+  dateLocal?: string | undefined
+  startsAtFrom?: string | undefined
   status?: string | undefined
 }
 
