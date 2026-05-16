@@ -530,14 +530,16 @@ Lifecycle requirements:
   code. Reusing the same key with a different fingerprint is a conflict.
 - Approved execution consumes the approval by referencing the approval id and
   the original requested action. For HTTP route integrations, the proving
-  contract is the `Action-Approval-Id` request header. Execution must validate
-  that the approval is approved, unexpired, linked to a requested action with
-  the expected action kind/status, owned by the current principal, and still
-  fingerprint-equivalent to the approved command.
+  contract is the `ACTION_LEDGER_APPROVAL_ID_HEADER` export from
+  `@voyantjs/action-ledger`. Execution must validate that the approval is
+  approved, unexpired, linked to a requested action with the expected action
+  kind/status, owned by the current principal, and still fingerprint-equivalent
+  to the approved command.
 - Approved execution entries must set `causation_action_id` to the requested
-  action id and `approval_id` to the approval id. A retry or duplicate execution
-  must be rejected once a succeeded execution exists for that causation and
-  approval pair.
+  action id and `approval_id` to the approval id. Integrations should stamp
+  these fields through `buildActionLedgerApprovedExecutionFields(...)`. A retry
+  or duplicate execution must be rejected once a succeeded execution exists for
+  that causation and approval pair.
 
 Delivery requirements:
 

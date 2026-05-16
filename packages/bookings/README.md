@@ -42,10 +42,13 @@ send `Idempotency-Key`; the key is fingerprinted with the command input and
 approval policy inputs, so replaying the key with different input returns a
 conflict.
 
-After an approval is approved, execute the same status mutation again with
-`Action-Approval-Id: <approval id>`. The route validates that the approval is
-approved, unexpired, linked to the same requested action and current principal,
-and command-equivalent to the original request before it mutates the booking.
+After an approval is approved, execute the same status mutation again with the
+`ACTION_LEDGER_APPROVAL_ID_HEADER` header from `@voyantjs/action-ledger`. The
+route validates that the approval is approved, unexpired, linked to the same
+requested action and current principal, and command-equivalent to the original
+request before it mutates the booking. Approved execution ledger fields are
+stamped through `buildActionLedgerApprovedExecutionFields(...)` so execution
+entries consistently link back to the requested action and approval.
 
 ## Entities
 
