@@ -981,6 +981,73 @@ describe("actionLedgerService approval lifecycle", () => {
 })
 
 describe("actionLedgerService.validateApprovedAction", () => {
+  test("rejects a missing approval", async () => {
+    const { db } = makeValidateApprovedActionDb({})
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: "appr_missing",
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "not_found",
+    })
+  })
+
+  test("rejects a non-approved approval", async () => {
+    const approval = makeApproval({
+      id: "appr_pending",
+      status: "pending",
+    })
+    const { db } = makeValidateApprovedActionDb({ approval })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "not_approved",
+      approval,
+      status: "pending",
+    })
+  })
+
+  test("rejects an expired approved approval", async () => {
+    const approval = makeApproval({
+      id: "appr_expired",
+      status: "approved",
+      expiresAt: new Date("2026-05-15T09:00:00.000Z"),
+    })
+    const { db } = makeValidateApprovedActionDb({ approval })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+        now: baseDate,
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "expired",
+      approval,
+    })
+  })
+
   test("accepts an approved requested action for the same principal and fingerprint", async () => {
     const requestedAction = makeEntry({
       id: "alge_requested",
@@ -1090,6 +1157,46 @@ describe("actionLedgerService.validateApprovedAction", () => {
     })
   })
 
+  test("rejects an approved action that is missing a command fingerprint", async () => {
+    const requestedAction = makeEntry({
+      id: "alge_requested",
+      actionName: "booking.status.cancel",
+      actionVersion: "v1",
+      actionKind: "update",
+      status: "awaiting_approval",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings.cancel",
+      approvalId: "appr_1",
+      idempotencyFingerprint: null,
+    })
+    const approval = makeApproval({
+      id: "appr_1",
+      requestedActionId: requestedAction.id,
+      status: "approved",
+    })
+    const { db } = makeValidateApprovedActionDb({
+      approval,
+      entry: requestedAction,
+    })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+        now: baseDate,
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "missing_fingerprint",
+      requestedAction,
+    })
+  })
+
   test("rejects an approved action when the command fingerprint changes", async () => {
     const requestedAction = makeEntry({
       id: "alge_requested",
@@ -1127,6 +1234,51 @@ describe("actionLedgerService.validateApprovedAction", () => {
     ).resolves.toMatchObject({
       ok: false,
       reason: "fingerprint_mismatch",
+    })
+  })
+
+  test("rejects an approved action for a different principal", async () => {
+    const requestedAction = makeEntry({
+      id: "alge_requested",
+      actionName: "booking.status.cancel",
+      actionVersion: "v1",
+      actionKind: "update",
+      status: "awaiting_approval",
+      principalType: "agent",
+      principalId: "agent_1",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings.cancel",
+      approvalId: "appr_1",
+      idempotencyFingerprint: "sha256:approved",
+    })
+    const approval = makeApproval({
+      id: "appr_1",
+      requestedActionId: requestedAction.id,
+      status: "approved",
+    })
+    const { db } = makeValidateApprovedActionDb({
+      approval,
+      entry: requestedAction,
+    })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: "booking.status.cancel",
+        actionVersion: "v1",
+        targetType: "booking",
+        targetId: "book_1",
+        routeOrToolName: "bookings.cancel",
+        principalType: "agent",
+        principalId: "agent_2",
+        idempotencyFingerprint: "sha256:approved",
+        now: baseDate,
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "principal_mismatch",
+      requestedAction,
     })
   })
 
