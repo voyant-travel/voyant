@@ -158,7 +158,7 @@ export interface OwnedBookingHandler {
 
   /**
    * Commit the draft to a booking row. Phase A handlers map the
-   * draft into `bookingsQuickCreate`'s input shape; later phases
+   * draft into `bookingsCreate`'s input shape; later phases
    * extend this to model extras, hospitality stays, encrypted
    * travel details, tax lines, snapshot graphs.
    */

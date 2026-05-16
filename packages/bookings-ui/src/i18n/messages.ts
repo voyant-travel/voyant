@@ -360,6 +360,12 @@ export type BookingsUiMessages = {
       noRoom: string
       remove: string
       empty: string
+      person: string
+      personSearchPlaceholder: string
+      personEmpty: string
+      createNewPerson: string
+      createPersonSheetTitle: string
+      addBillingPerson: string
     }
   }
   paymentScheduleSection: {
@@ -375,6 +381,10 @@ export type BookingsUiMessages = {
       secondInstallment: string
       preset5050: string
       unpaidHint: string
+      alreadyPaid: string
+      paymentDate: string
+      paymentMethod: string
+      paymentReference: string
     }
   }
   roomsStepperSection: {
@@ -400,6 +410,7 @@ export type BookingsUiMessages = {
       groupLabel: string
       groupLabelPlaceholder: string
       createAction: string
+      remove: string
     }
   }
   priceBreakdownSection: {
@@ -957,6 +968,11 @@ export type BookingsUiMessages = {
       travelerNoRoom: string
       travelerRemove: string
       travelerEmpty: string
+      travelerPerson: string
+      travelerPersonSearchPlaceholder: string
+      travelerPersonEmpty: string
+      createPersonSheetTitle: string
+      addBillingPersonAsTraveler: string
       roomsHeading: string
       roomsNoSlot: string
       roomsNoUnits: string
@@ -968,6 +984,7 @@ export type BookingsUiMessages = {
       sharedRoomSelectPlaceholder: string
       sharedRoomNoGroups: string
       sharedRoomCreateHint: string
+      sharedRoomRemove: string
       sharedRoomGeneratedLabelPrefix: string
       voucherHeading: string
       voucherCodePlaceholder: string
@@ -986,6 +1003,13 @@ export type BookingsUiMessages = {
       paymentSecondInstallment: string
       paymentPreset5050: string
       paymentUnpaidHint: string
+      paymentAlreadyPaid: string
+      paymentDate: string
+      paymentMethod: string
+      paymentReference: string
+      documentGenerationHeading: string
+      generateContractDocument: string
+      generateInvoiceDocument: string
       breakdownHeading: string
       breakdownTotal: string
       breakdownOnRequest: string

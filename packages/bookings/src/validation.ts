@@ -180,6 +180,18 @@ export const convertProductSchema = z
      */
     confirmedSellAmountCents: z.number().int().min(0).optional().nullable(),
     priceOverrideReason: z.string().trim().min(1).max(1000).optional().nullable(),
+    itemLines: z
+      .array(
+        z.object({
+          optionUnitId: z.string().min(1),
+          quantity: z.number().int().min(1),
+          title: z.string().min(1).max(255).optional().nullable(),
+          description: z.string().max(5000).optional().nullable(),
+          unitSellAmountCents: z.number().int().min(0).optional().nullable(),
+          totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+        }),
+      )
+      .optional(),
   })
   .superRefine((value, ctx) => {
     if (value.confirmedSellAmountCents == null) return

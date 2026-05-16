@@ -5,21 +5,21 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 
 import {
-  type QuickCreateBookingOutcome,
-  type QuickCreateBookingResult,
-  quickCreateBooking,
-  quickCreateBookingSubSchema,
-} from "./service-bookings-quick-create.js"
+  type BookingCreateOutcome,
+  type BookingCreateResult,
+  bookingCreateSubSchema,
+  createBooking,
+} from "./service-booking-create.js"
 
 // ---------- validation ----------
 
 /**
- * Sub-booking input. Takes the full quick-create payload minus `group
+ * Sub-booking input. Takes the full create payload minus `group
  * Membership` — dual-create owns the group lifecycle (one new group, both
  * bookings linked as members) so accepting a nested group override would
  * just be an opportunity for the caller to desync.
  */
-const dualSubBookingSchema = quickCreateBookingSubSchema
+const dualSubBookingSchema = bookingCreateSubSchema
 
 const dualCreateGroupSchema = z.object({
   kind: z.enum(["shared_room", "other"]).default("shared_room"),
@@ -53,8 +53,8 @@ export interface BookingDualCreatedEvent {
 // ---------- result shape ----------
 
 export interface DualCreateBookingResult {
-  primary: QuickCreateBookingResult
-  secondary: QuickCreateBookingResult
+  primary: BookingCreateResult
+  secondary: BookingCreateResult
   group: BookingGroup
   primaryMember: BookingGroupMember
   secondaryMember: BookingGroupMember
@@ -64,12 +64,12 @@ export type DualCreateBookingOutcome =
   | { status: "ok"; result: DualCreateBookingResult }
   | {
       status: "primary_failed" | "secondary_failed"
-      reason: Exclude<QuickCreateBookingOutcome, { status: "ok" }>
+      reason: Exclude<BookingCreateOutcome, { status: "ok" }>
     }
 
 /**
  * Thrown inside the outer tx to force drizzle to roll back both bookings +
- * the group when one of the inner quick-create calls returns non-ok.
+ * the group when one of the inner create calls returns non-ok.
  * Drizzle doesn't abort on a non-throwing tx callback, so we convert the
  * discriminated outcome into a throw here.
  */
@@ -95,7 +95,7 @@ class DualCreateAbort extends Error {
  *
  * Transaction shape:
  *  - Outer tx opens via `db.transaction`.
- *  - Inner: two savepoint-scoped `quickCreateBooking(tx, ...)` calls — the
+ *  - Inner: two savepoint-scoped `createBooking(tx, ...)` calls — the
  *    nested transactions drizzle opens use SAVEPOINTs, so partial failures
  *    surface up to this layer as non-ok outcomes.
  *  - If either fails, the outer tx throws `DualCreateAbort` so the whole
@@ -119,12 +119,12 @@ export async function dualCreateBooking(
   let result: DualCreateBookingResult
   try {
     result = await db.transaction(async (tx) => {
-      const primaryOutcome = await quickCreateBooking(tx, input.primary, { userId })
+      const primaryOutcome = await createBooking(tx, input.primary, { userId })
       if (primaryOutcome.status !== "ok") {
         throw new DualCreateAbort({ status: "primary_failed", reason: primaryOutcome })
       }
 
-      const secondaryOutcome = await quickCreateBooking(tx, input.secondary, { userId })
+      const secondaryOutcome = await createBooking(tx, input.secondary, { userId })
       if (secondaryOutcome.status !== "ok") {
         throw new DualCreateAbort({ status: "secondary_failed", reason: secondaryOutcome })
       }

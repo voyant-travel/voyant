@@ -6,6 +6,7 @@ import { BookingCreateForm } from "./booking-create-dialog.js"
 
 export interface BookingCreatePageProps {
   onCreated?: (booking: BookingRecord) => void
+  onCancel?: () => void
   /** When provided, pre-selects this product and hides the product picker. */
   defaultProductId?: string
 }
@@ -13,7 +14,11 @@ export interface BookingCreatePageProps {
 /**
  * Full-page booking create surface for route-based booking creation.
  */
-export function BookingCreatePage({ onCreated, defaultProductId }: BookingCreatePageProps) {
+export function BookingCreatePage({
+  onCreated,
+  onCancel,
+  defaultProductId,
+}: BookingCreatePageProps) {
   const messages = useBookingsUiMessagesOrDefault()
 
   return (
@@ -25,7 +30,11 @@ export function BookingCreatePage({ onCreated, defaultProductId }: BookingCreate
         <p className="text-sm text-muted-foreground">{messages.bookingCreatePage.description}</p>
       </header>
       <section className="flex flex-col gap-4">
-        <BookingCreateForm onCreated={onCreated} defaultProductId={defaultProductId} />
+        <BookingCreateForm
+          onCreated={onCreated}
+          onCancel={onCancel}
+          defaultProductId={defaultProductId}
+        />
       </section>
     </main>
   )

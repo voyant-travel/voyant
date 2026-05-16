@@ -14,11 +14,7 @@ import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
 import { extrasHonoModule } from "@voyantjs/extras"
-import {
-  bookingsQuickCreateExtension,
-  createFinanceHonoModule,
-  financeService,
-} from "@voyantjs/finance"
+import { bookingsCreateExtension, createFinanceHonoModule, financeService } from "@voyantjs/finance"
 import { bookingPaymentSchedules, invoices, paymentSessions } from "@voyantjs/finance/schema"
 import { createApp } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
@@ -824,7 +820,7 @@ export const app = createApp<CloudflareBindings>({
   ],
   extensions: [
     bookingsSupplierExtension,
-    bookingsQuickCreateExtension,
+    bookingsCreateExtension,
     productsBookingExtension,
     crmBookingExtension,
     transactionsBookingExtension,

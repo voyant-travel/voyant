@@ -335,7 +335,12 @@ export function OrganizationList({
                   onClick={() => handleEdit(organization)}
                   className="cursor-pointer"
                 >
-                  <TableCell className="font-medium">{organization.name}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{organization.name}</div>
+                    {organization.vatNumber ? (
+                      <div className="text-xs text-muted-foreground">{organization.vatNumber}</div>
+                    ) : null}
+                  </TableCell>
                   <TableCell>{organization.industry ?? messages.common.none}</TableCell>
                   <TableCell>
                     {organization.relation ? (

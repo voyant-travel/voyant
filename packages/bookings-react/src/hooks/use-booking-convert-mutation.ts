@@ -24,7 +24,7 @@ export interface ConvertProductToBookingInput {
 
 /**
  * Creates a draft booking from a product via POST /v1/bookings/from-product.
- * Purpose-built for the operator quick-book flow — the backend seeds items,
+ * Purpose-built for the operator booking-create flow — the backend seeds items,
  * dates, and pricing from the product definition.
  */
 export function useBookingConvertMutation() {

@@ -5,6 +5,14 @@ import {
   type OrganizationRecord,
   useOrganizationMutation,
 } from "@voyantjs/crm-react"
+import {
+  type AddressRecord,
+  type ContactPointRecord,
+  useAddresses,
+  useAddressMutation,
+  useContactPointMutation,
+  useContactPoints,
+} from "@voyantjs/identity-react"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
@@ -24,8 +32,16 @@ export interface OrganizationFormProps {
 interface FormState {
   name: string
   legalName: string
+  vatNumber: string
   website: string
   industry: string
+  billingEmail: string
+  billingAddressLine1: string
+  billingAddressLine2: string
+  billingCity: string
+  billingRegion: string
+  billingPostalCode: string
+  billingCountry: string
 }
 
 function initialState(mode: Mode): FormState {
@@ -34,16 +50,32 @@ function initialState(mode: Mode): FormState {
     return {
       name: org.name,
       legalName: org.legalName ?? "",
+      vatNumber: org.vatNumber ?? "",
       website: org.website ?? "",
       industry: org.industry ?? "",
+      billingEmail: "",
+      billingAddressLine1: "",
+      billingAddressLine2: "",
+      billingCity: "",
+      billingRegion: "",
+      billingPostalCode: "",
+      billingCountry: "",
     }
   }
 
   return {
     name: "",
     legalName: "",
+    vatNumber: "",
     website: "",
     industry: "",
+    billingEmail: "",
+    billingAddressLine1: "",
+    billingAddressLine2: "",
+    billingCity: "",
+    billingRegion: "",
+    billingPostalCode: "",
+    billingCountry: "",
   }
 }
 
@@ -51,18 +83,109 @@ function toPayload(state: FormState): CreateOrganizationInput {
   return {
     name: state.name.trim(),
     legalName: state.legalName.trim() || null,
+    vatNumber: state.vatNumber.trim() || null,
     website: state.website.trim() || null,
     industry: state.industry.trim() || null,
   }
+}
+
+function findBillingEmail(
+  points: ContactPointRecord[] | undefined,
+): ContactPointRecord | undefined {
+  return (
+    points?.find((point) => point.label === "billing") ?? points?.find((point) => point.isPrimary)
+  )
+}
+
+function findBillingAddress(addresses: AddressRecord[] | undefined): AddressRecord | undefined {
+  return (
+    addresses?.find((address) => address.label === "billing") ??
+    addresses?.find((address) => address.isPrimary)
+  )
+}
+
+function hasBillingAddress(state: FormState): boolean {
+  return [
+    state.billingAddressLine1,
+    state.billingAddressLine2,
+    state.billingCity,
+    state.billingRegion,
+    state.billingPostalCode,
+    state.billingCountry,
+  ].some((value) => Boolean(value.trim()))
+}
+
+function formatBillingAddress(state: FormState): string | null {
+  const fullText = [
+    state.billingAddressLine1,
+    state.billingAddressLine2,
+    state.billingCity,
+    state.billingRegion,
+    state.billingPostalCode,
+    state.billingCountry,
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(", ")
+  return fullText || null
 }
 
 export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationFormProps) {
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   const { create, update } = useOrganizationMutation()
+  const contactPointMutation = useContactPointMutation()
+  const addressMutation = useAddressMutation()
   const messages = useCrmUiMessagesOrDefault()
+  const editOrganizationId = mode.kind === "edit" ? mode.organization.id : undefined
 
-  const isSubmitting = create.isPending || update.isPending
+  const billingEmailQuery = useContactPoints({
+    entityType: "organization",
+    entityId: editOrganizationId,
+    kind: "email",
+    enabled: Boolean(editOrganizationId),
+  })
+  const billingAddressQuery = useAddresses({
+    entityType: "organization",
+    entityId: editOrganizationId,
+    label: "billing",
+    enabled: Boolean(editOrganizationId),
+  })
+
+  const existingBillingEmail = React.useMemo(
+    () => findBillingEmail(billingEmailQuery.data?.data),
+    [billingEmailQuery.data?.data],
+  )
+  const existingBillingAddress = React.useMemo(
+    () => findBillingAddress(billingAddressQuery.data?.data),
+    [billingAddressQuery.data?.data],
+  )
+
+  React.useEffect(() => {
+    if (!existingBillingEmail) return
+    setState((prev) => ({ ...prev, billingEmail: existingBillingEmail.value }))
+  }, [existingBillingEmail])
+
+  React.useEffect(() => {
+    if (!existingBillingAddress) return
+    setState((prev) => ({
+      ...prev,
+      billingAddressLine1: existingBillingAddress.line1 ?? "",
+      billingAddressLine2: existingBillingAddress.line2 ?? "",
+      billingCity: existingBillingAddress.city ?? "",
+      billingRegion: existingBillingAddress.region ?? "",
+      billingPostalCode: existingBillingAddress.postalCode ?? "",
+      billingCountry: existingBillingAddress.country ?? "",
+    }))
+  }, [existingBillingAddress])
+
+  const isSubmitting =
+    create.isPending ||
+    update.isPending ||
+    contactPointMutation.create.isPending ||
+    contactPointMutation.update.isPending ||
+    addressMutation.create.isPending ||
+    addressMutation.update.isPending
 
   const field =
     <K extends keyof FormState>(key: K) =>
@@ -86,6 +209,51 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
         mode.kind === "create"
           ? await create.mutateAsync(payload)
           : await update.mutateAsync({ id: mode.organization.id, input: payload })
+      const billingEmail = state.billingEmail.trim()
+      if (billingEmail) {
+        const input = {
+          entityType: "organization",
+          entityId: organization.id,
+          kind: "email" as const,
+          label: "billing",
+          value: billingEmail,
+          normalizedValue: billingEmail.toLowerCase(),
+          isPrimary: true,
+        }
+        if (existingBillingEmail) {
+          await contactPointMutation.update.mutateAsync({
+            id: existingBillingEmail.id,
+            input,
+          })
+        } else {
+          await contactPointMutation.create.mutateAsync(input)
+        }
+      }
+
+      if (hasBillingAddress(state)) {
+        const input = {
+          entityType: "organization",
+          entityId: organization.id,
+          label: "billing" as const,
+          fullText: formatBillingAddress(state),
+          line1: state.billingAddressLine1.trim() || null,
+          line2: state.billingAddressLine2.trim() || null,
+          city: state.billingCity.trim() || null,
+          region: state.billingRegion.trim() || null,
+          postalCode: state.billingPostalCode.trim() || null,
+          country: state.billingCountry.trim() || null,
+          isPrimary: true,
+        }
+        if (existingBillingAddress) {
+          await addressMutation.update.mutateAsync({
+            id: existingBillingAddress.id,
+            input,
+          })
+        } else {
+          await addressMutation.create.mutateAsync(input)
+        }
+      }
+
       onSuccess?.(organization)
     } catch (err) {
       setError(err instanceof Error ? err.message : messages.organizationForm.validation.saveFailed)
@@ -110,6 +278,16 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
           />
         </div>
         <div className="flex flex-col gap-1.5">
+          <Label htmlFor="organization-vat-number">
+            {messages.organizationForm.fields.vatNumber}
+          </Label>
+          <Input
+            id="organization-vat-number"
+            value={state.vatNumber}
+            onChange={field("vatNumber")}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="organization-website">{messages.organizationForm.fields.website}</Label>
           <Input
             id="organization-website"
@@ -121,6 +299,77 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="organization-industry">{messages.organizationForm.fields.industry}</Label>
           <Input id="organization-industry" value={state.industry} onChange={field("industry")} />
+        </div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <Label htmlFor="organization-billing-email">
+            {messages.organizationForm.fields.billingEmail}
+          </Label>
+          <Input
+            id="organization-billing-email"
+            type="email"
+            value={state.billingEmail}
+            onChange={field("billingEmail")}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <Label htmlFor="organization-billing-address-line-1">
+            {messages.organizationForm.fields.billingAddressLine1}
+          </Label>
+          <Input
+            id="organization-billing-address-line-1"
+            value={state.billingAddressLine1}
+            onChange={field("billingAddressLine1")}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <Label htmlFor="organization-billing-address-line-2">
+            {messages.organizationForm.fields.billingAddressLine2}
+          </Label>
+          <Input
+            id="organization-billing-address-line-2"
+            value={state.billingAddressLine2}
+            onChange={field("billingAddressLine2")}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="organization-billing-city">
+            {messages.organizationForm.fields.billingCity}
+          </Label>
+          <Input
+            id="organization-billing-city"
+            value={state.billingCity}
+            onChange={field("billingCity")}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="organization-billing-region">
+            {messages.organizationForm.fields.billingRegion}
+          </Label>
+          <Input
+            id="organization-billing-region"
+            value={state.billingRegion}
+            onChange={field("billingRegion")}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="organization-billing-postal-code">
+            {messages.organizationForm.fields.billingPostalCode}
+          </Label>
+          <Input
+            id="organization-billing-postal-code"
+            value={state.billingPostalCode}
+            onChange={field("billingPostalCode")}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="organization-billing-country">
+            {messages.organizationForm.fields.billingCountry}
+          </Label>
+          <Input
+            id="organization-billing-country"
+            value={state.billingCountry}
+            onChange={field("billingCountry")}
+          />
         </div>
       </div>
 

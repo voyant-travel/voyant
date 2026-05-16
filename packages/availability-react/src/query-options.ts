@@ -103,8 +103,13 @@ export function getSlotsQueryOptions(
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.productId) params.set("productId", filters.productId)
+      if (filters.itineraryId) params.set("itineraryId", filters.itineraryId)
+      if (filters.optionId) params.set("optionId", filters.optionId)
+      if (filters.facilityId) params.set("facilityId", filters.facilityId)
       if (filters.availabilityRuleId) params.set("availabilityRuleId", filters.availabilityRuleId)
       if (filters.startTimeId) params.set("startTimeId", filters.startTimeId)
+      if (filters.dateLocal) params.set("dateLocal", filters.dateLocal)
+      if (filters.startsAtFrom) params.set("startsAtFrom", filters.startsAtFrom)
       if (filters.status) params.set("status", filters.status)
       appendPagination(params, filters)
       const qs = params.toString()

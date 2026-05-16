@@ -1,15 +1,27 @@
 import { bookingGroupsService, bookingsService } from "@voyantjs/bookings"
 import type { Booking, BookingGroupMember, BookingTraveler } from "@voyantjs/bookings/schema"
-import { bookingTravelers } from "@voyantjs/bookings/schema"
+import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 
-import type { BookingPaymentSchedule, Voucher, VoucherRedemption } from "./schema.js"
+import type {
+  BookingPaymentSchedule,
+  Invoice,
+  Payment,
+  Voucher,
+  VoucherRedemption,
+} from "./schema.js"
 import { bookingPaymentSchedules, vouchers } from "./schema.js"
+import { financeService } from "./service.js"
+import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
 import { VoucherServiceError, vouchersService } from "./service-vouchers.js"
-import { paymentScheduleStatusSchema, paymentScheduleTypeSchema } from "./validation-shared.js"
+import {
+  paymentMethodSchema,
+  paymentScheduleStatusSchema,
+  paymentScheduleTypeSchema,
+} from "./validation-shared.js"
 
 // ---------- validation ----------
 
@@ -42,6 +54,22 @@ const paymentScheduleInputSchema = z.object({
   currency: z.string().min(3).max(3),
   amountCents: z.number().int().min(0),
   notes: z.string().optional().nullable(),
+})
+
+const documentGenerationInputSchema = z
+  .object({
+    contractDocument: z.boolean().default(false),
+    invoiceDocument: z.boolean().default(false),
+  })
+  .default({ contractDocument: false, invoiceDocument: false })
+
+const itemLineInputSchema = z.object({
+  optionUnitId: z.string().min(1),
+  quantity: z.number().int().min(1),
+  title: z.string().min(1).max(255).optional().nullable(),
+  description: z.string().max(5000).optional().nullable(),
+  unitSellAmountCents: z.number().int().min(0).optional().nullable(),
+  totalSellAmountCents: z.number().int().min(0).optional().nullable(),
 })
 
 const voucherRedemptionInputSchema = z.object({
@@ -94,7 +122,7 @@ function requirePriceOverrideReason(
   })
 }
 
-const quickCreateBookingBaseSchema = z.object({
+const bookingCreateBaseSchema = z.object({
   // Convert-product fields (mirrors convertProductSchema in bookings)
   productId: z.string().min(1),
   optionId: z.string().optional().nullable(),
@@ -116,35 +144,38 @@ const quickCreateBookingBaseSchema = z.object({
 
   // Orchestration fields
   travelers: z.array(travelerInputSchema).optional(),
+  itemLines: z.array(itemLineInputSchema).optional(),
   paymentSchedules: z.array(paymentScheduleInputSchema).optional(),
   voucherRedemption: voucherRedemptionInputSchema.optional(),
   groupMembership: groupMembershipInputSchema.optional(),
+  documentGeneration: documentGenerationInputSchema.optional(),
 })
 
-export const quickCreateBookingSchema = quickCreateBookingBaseSchema.superRefine(
-  requirePriceOverrideReason,
-)
+export const bookingCreateSchema = bookingCreateBaseSchema.superRefine(requirePriceOverrideReason)
 
-export const quickCreateBookingSubSchema = quickCreateBookingBaseSchema
+export const bookingCreateSubSchema = bookingCreateBaseSchema
   .omit({ groupMembership: true })
   .superRefine(requirePriceOverrideReason)
 
-export type QuickCreateBookingInput = z.infer<typeof quickCreateBookingSchema>
-export type QuickCreateTravelerInput = z.infer<typeof travelerInputSchema>
+export type BookingCreateInput = z.infer<typeof bookingCreateSchema>
+type BookingCreatePaymentScheduleInput = NonNullable<BookingCreateInput["paymentSchedules"]>[number]
+export type BookingCreateTravelerInput = z.infer<typeof travelerInputSchema>
 
 // ---------- runtime ----------
 
 /**
  * Fire-and-forget post-commit events. The orchestrator only knows about
- * `booking.quick-created` — downstream confirm/cancel lifecycle events stay
+ * `booking.created` — downstream confirm/cancel lifecycle events stay
  * with the booking service itself (the booking lands in `draft` status so no
  * `booking.confirmed` should fire here).
  */
-export interface BookingQuickCreateRuntime {
+export interface BookingCreateRuntime {
   eventBus?: EventBus
+  invoiceDocumentGenerator?: InvoiceDocumentGenerator
+  bindings?: Record<string, unknown>
 }
 
-export interface BookingQuickCreatedEvent {
+export interface BookingCreatedEvent {
   bookingId: string
   bookingNumber: string
   productId: string
@@ -152,13 +183,17 @@ export interface BookingQuickCreatedEvent {
   paymentScheduleCount: number
   voucherRedeemedCents: number | null
   groupId: string | null
+  documentGeneration: {
+    contractDocument: boolean
+    invoiceDocument: boolean
+  }
   createdByUserId: string | null
   occurredAt: Date
 }
 
 // ---------- result shape ----------
 
-export interface QuickCreateBookingResult {
+export interface BookingCreateResult {
   booking: Booking
   travelers: BookingTraveler[]
   paymentSchedules: BookingPaymentSchedule[]
@@ -170,10 +205,16 @@ export interface QuickCreateBookingResult {
     groupId: string
     member: BookingGroupMember
   } | null
+  invoice: Invoice | null
+  invoiceDocument:
+    | { status: "requested"; renditionId: string | null }
+    | { status: "generated"; renditionId: string }
+    | { status: "not_requested" | "not_available" | "failed" }
+  payments: Payment[]
 }
 
-export type QuickCreateBookingOutcome =
-  | { status: "ok"; result: QuickCreateBookingResult }
+export type BookingCreateOutcome =
+  | { status: "ok"; result: BookingCreateResult }
   | { status: "product_not_found" }
   | { status: "voucher_not_found" }
   | { status: "voucher_inactive" }
@@ -198,7 +239,7 @@ export type QuickCreateBookingOutcome =
  * from `@voyantjs/bookings` (invoices-from-bookings, voucher service, payment
  * schedules all sit here), so this is the one place that can compose the
  * three packages without creating a new workspace dep cycle. The route wires
- * it under `/v1/admin/bookings/quick-create` via a HonoExtension whose
+ * it under `/v1/admin/bookings/create` via a HonoExtension whose
  * `module` targets `"bookings"`.
  */
 /**
@@ -207,26 +248,60 @@ export type QuickCreateBookingOutcome =
  * error does — so the orchestrator uses this to unwind cleanly when a
  * downstream step discovers a precondition failure.
  */
-class QuickCreateAbort extends Error {
-  constructor(readonly outcome: Exclude<QuickCreateBookingOutcome, { status: "ok" }>) {
-    super(`quick-create aborted: ${outcome.status}`)
-    this.name = "QuickCreateAbort"
+class BookingCreateAbort extends Error {
+  constructor(readonly outcome: Exclude<BookingCreateOutcome, { status: "ok" }>) {
+    super(`create aborted: ${outcome.status}`)
+    this.name = "BookingCreateAbort"
   }
 }
 
-export async function quickCreateBooking(
+interface AlreadyPaidScheduleMetadata {
+  alreadyPaid?: boolean
+  paymentDate?: string | null
+  paymentMethod?: string | null
+  paymentReference?: string | null
+}
+
+function parseAlreadyPaidScheduleMetadata(notes: string | null | undefined) {
+  if (!notes) return null
+  try {
+    const parsed = JSON.parse(notes) as AlreadyPaidScheduleMetadata
+    return parsed && typeof parsed === "object" ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
+  const metadata = parseAlreadyPaidScheduleMetadata(schedule.notes)
+  return schedule.status === "paid" || metadata?.alreadyPaid === true
+}
+
+function generateInvoiceNumber(bookingNumber: string) {
+  return `INV-${bookingNumber}`.slice(0, 50)
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export async function createBooking(
   db: PostgresJsDatabase,
-  rawInput: QuickCreateBookingInput,
+  rawInput: BookingCreateInput,
   options: {
     userId?: string
-    runtime?: BookingQuickCreateRuntime
+    runtime?: BookingCreateRuntime
   } = {},
-): Promise<QuickCreateBookingOutcome> {
+): Promise<BookingCreateOutcome> {
   const { userId, runtime } = options
   // Parse through the schema so defaults (makeBookingPrimary, role,
   // participantType, etc.) are applied even when callers bypass validation —
   // unit tests and hand-written integrations commonly do.
-  const input = quickCreateBookingSchema.parse(rawInput)
+  const input = bookingCreateSchema.parse(rawInput)
+  const documentGeneration = input.documentGeneration ?? {
+    contractDocument: false,
+    invoiceDocument: false,
+  }
 
   // Validate voucher up-front so we can short-circuit before the tx starts.
   // This is a cheap read — the authoritative balance check still happens
@@ -251,7 +326,7 @@ export async function quickCreateBooking(
     }
   }
 
-  let result: QuickCreateBookingResult
+  let result: BookingCreateResult
   try {
     result = await db.transaction(async (tx) => {
       // 1. Booking from product
@@ -267,11 +342,12 @@ export async function quickCreateBooking(
         catalogSellAmountCents: input.catalogSellAmountCents ?? null,
         confirmedSellAmountCents: input.confirmedSellAmountCents ?? null,
         priceOverrideReason: input.priceOverrideReason ?? null,
+        itemLines: input.itemLines,
       })
       if (!booking) {
         // Caller gave us a product that doesn't resolve. Throw so drizzle
         // rolls back any writes the convert helper may have made.
-        throw new QuickCreateAbort({ status: "product_not_found" })
+        throw new BookingCreateAbort({ status: "product_not_found" })
       }
 
       // 2. Travelers. roomUnitId is accepted on the input but not persisted
@@ -320,7 +396,7 @@ export async function quickCreateBooking(
       // decrement + redemption-log insert share the savepoint. If anything
       // goes wrong (race with a concurrent redemption, mostly), the thrown
       // VoucherServiceError surfaces as the outcome below.
-      let voucherRedemption: QuickCreateBookingResult["voucherRedemption"] = null
+      let voucherRedemption: BookingCreateResult["voucherRedemption"] = null
       if (input.voucherRedemption) {
         const { voucher, redemption } = await vouchersService.redeem(
           tx,
@@ -338,7 +414,7 @@ export async function quickCreateBooking(
 
       // 5. Group membership (partaj). Either attach to an existing group or
       // spin up a new one with this booking as the primary.
-      let groupMembership: QuickCreateBookingResult["groupMembership"] = null
+      let groupMembership: BookingCreateResult["groupMembership"] = null
       if (input.groupMembership) {
         if (input.groupMembership.action === "create") {
           const group = await bookingGroupsService.createBookingGroup(tx, {
@@ -355,7 +431,7 @@ export async function quickCreateBooking(
           if (memberResult.status !== "ok") {
             // Shouldn't happen — we just created both rows — but throw so
             // the tx rolls back instead of leaving a half-created group.
-            throw new QuickCreateAbort({ status: "group_not_found" })
+            throw new BookingCreateAbort({ status: "group_not_found" })
           }
           groupMembership = { groupId: group.id, member: memberResult.member }
         } else {
@@ -368,16 +444,16 @@ export async function quickCreateBooking(
             },
           )
           if (memberResult.status === "group_not_found") {
-            throw new QuickCreateAbort({ status: "group_not_found" })
+            throw new BookingCreateAbort({ status: "group_not_found" })
           }
           if (memberResult.status === "booking_not_found") {
             // Same booking we just inserted. Pg transaction visibility should
             // prevent this; surface as group_not_found for the caller — we
             // can't tell them the booking we created doesn't exist.
-            throw new QuickCreateAbort({ status: "group_not_found" })
+            throw new BookingCreateAbort({ status: "group_not_found" })
           }
           if (memberResult.status === "already_in_group") {
-            throw new QuickCreateAbort({
+            throw new BookingCreateAbort({
               status: "booking_already_in_group",
               currentGroupId: memberResult.currentGroupId,
             })
@@ -395,10 +471,13 @@ export async function quickCreateBooking(
         paymentSchedules,
         voucherRedemption,
         groupMembership,
+        invoice: null,
+        invoiceDocument: { status: "not_requested" as const },
+        payments: [],
       }
     })
   } catch (error) {
-    if (error instanceof QuickCreateAbort) {
+    if (error instanceof BookingCreateAbort) {
       return error.outcome
     }
     if (error instanceof VoucherServiceError) {
@@ -411,11 +490,98 @@ export async function quickCreateBooking(
     throw error
   }
 
+  const paidSchedules = (input.paymentSchedules ?? []).filter(isAlreadyPaidSchedule)
+  const shouldCreateInvoice = documentGeneration.invoiceDocument || paidSchedules.length > 0
+
+  if (shouldCreateInvoice) {
+    const items = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, result.booking.id))
+
+    const issueDate = todayIsoDate()
+    const dueDate =
+      input.paymentSchedules?.find((schedule) => schedule.dueDate)?.dueDate ??
+      result.booking.endDate ??
+      issueDate
+
+    const invoice = await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: result.booking.id,
+        invoiceNumber: generateInvoiceNumber(result.booking.bookingNumber),
+        issueDate,
+        dueDate,
+        invoiceType: "invoice",
+        notes: "Generated from booking create.",
+      },
+      { booking: result.booking, items },
+    )
+
+    result = {
+      ...result,
+      invoice,
+    }
+
+    if (invoice) {
+      const payments: Payment[] = []
+      for (const schedule of paidSchedules) {
+        const metadata = parseAlreadyPaidScheduleMetadata(schedule.notes)
+        const methodResult = paymentMethodSchema.safeParse(
+          metadata?.paymentMethod ?? "bank_transfer",
+        )
+        const payment = await financeService.createPayment(db, invoice.id, {
+          amountCents: schedule.amountCents,
+          currency: schedule.currency,
+          paymentMethod: methodResult.success ? methodResult.data : "bank_transfer",
+          status: "completed",
+          referenceNumber: metadata?.paymentReference?.trim() || null,
+          paymentDate: metadata?.paymentDate || schedule.dueDate || issueDate,
+          notes: schedule.notes ?? null,
+        })
+        if (payment) payments.push(payment)
+      }
+
+      let invoiceDocument: BookingCreateResult["invoiceDocument"] = { status: "not_requested" }
+      if (documentGeneration.invoiceDocument) {
+        if (runtime?.invoiceDocumentGenerator) {
+          const generated = await financeDocumentsService.generateInvoiceDocument(
+            db,
+            invoice.id,
+            { format: "pdf", replaceExisting: true },
+            {
+              generator: runtime.invoiceDocumentGenerator,
+              eventBus: runtime.eventBus,
+              bindings: runtime.bindings,
+            },
+          )
+          invoiceDocument =
+            generated.status === "generated"
+              ? { status: "generated", renditionId: generated.rendition.id }
+              : { status: "failed" }
+        } else {
+          const requested = await financeService.renderInvoice(db, invoice.id, { format: "pdf" })
+          invoiceDocument =
+            requested.status === "requested"
+              ? { status: "requested", renditionId: requested.rendition?.id ?? null }
+              : { status: "failed" }
+        }
+      }
+
+      result = {
+        ...result,
+        invoice: await financeService.getInvoiceById(db, invoice.id),
+        invoiceDocument,
+        payments,
+      }
+    }
+  }
+
   // Post-commit event emission. Fire-and-forget (the eventBus contract
   // handles subscriber errors); callers that need strict delivery can
   // re-emit from their own subscriber chain.
   if (runtime?.eventBus) {
-    const event: BookingQuickCreatedEvent = {
+    const event: BookingCreatedEvent = {
       bookingId: result.booking.id,
       bookingNumber: result.booking.bookingNumber,
       productId: input.productId,
@@ -425,10 +591,19 @@ export async function quickCreateBooking(
         ? result.voucherRedemption.redemption.amountCents
         : null,
       groupId: result.groupMembership?.groupId ?? null,
+      documentGeneration,
       createdByUserId: userId ?? null,
       occurredAt: new Date(),
     }
-    await runtime.eventBus.emit("booking.quick-created", event)
+    await runtime.eventBus.emit("booking.created", event)
+    if (documentGeneration.contractDocument) {
+      await runtime.eventBus.emit("booking.contract_document.requested", {
+        bookingId: result.booking.id,
+        bookingNumber: result.booking.bookingNumber,
+        createdByUserId: userId ?? null,
+        occurredAt: new Date(),
+      })
+    }
   }
 
   return { status: "ok", result }

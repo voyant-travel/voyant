@@ -1,15 +1,18 @@
-import { bookingGroups, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
+import { bookingGroups, bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
   bookingPaymentSchedules,
+  invoiceRenditions,
+  invoices,
   paymentInstruments,
+  payments,
   voucherRedemptions,
   vouchers,
 } from "../../src/schema.js"
-import { quickCreateBooking } from "../../src/service-bookings-quick-create.js"
+import { createBooking } from "../../src/service-booking-create.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -18,6 +21,10 @@ async function resetTables(
   db: any,
 ) {
   const tableNames = [
+    "payments",
+    "invoice_renditions",
+    "invoice_line_items",
+    "invoices",
     "voucher_redemptions",
     "vouchers",
     "payment_instruments",
@@ -55,10 +62,10 @@ let productSeq = 0
 let bookingSeq = 0
 function nextBookingNumber() {
   bookingSeq += 1
-  return `BK-QC-${String(bookingSeq).padStart(5, "0")}`
+  return `BK-BC-${String(bookingSeq).padStart(5, "0")}`
 }
 
-describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
+describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
   let db: ReturnType<typeof import("@voyantjs/db/test-utils").createTestDb>
 
   beforeAll(async () => {
@@ -78,19 +85,19 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
 
   async function seedProduct() {
     productSeq += 1
-    // Raw SQL keeps this free of a cross-package schema import. The quick-
+    // Raw SQL keeps this free of a cross-package schema import. The booking-
     // create path only needs products + a default option + one option_unit;
     // we skip itinerary/day seeding because the orchestrator tolerates zero
     // day services (supplier statuses just stay empty).
-    const productId = `prod_qc_${productSeq}`
-    const optionId = `popt_qc_${productSeq}`
-    const unitId = `opun_qc_${productSeq}`
-    const itineraryId = `piti_qc_${productSeq}`
+    const productId = `prod_bc_${productSeq}`
+    const optionId = `popt_bc_${productSeq}`
+    const unitId = `opun_bc_${productSeq}`
+    const itineraryId = `piti_bc_${productSeq}`
     await db.execute(sql`
       INSERT INTO products (id, name, sell_currency, sell_amount_cents, cost_amount_cents, margin_percent, start_date, end_date, pax)
       VALUES (
         ${productId},
-        ${`Quick Create Product ${productSeq}`},
+        ${`Booking Create Product ${productSeq}`},
         'EUR',
         50000,
         30000,
@@ -114,7 +121,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     `)
     await db.execute(sql`
       INSERT INTO product_ticket_settings (id, product_id, fulfillment_mode, default_delivery_format, ticket_per_unit)
-      VALUES (${`ptix_qc_${productSeq}`}, ${productId}, 'per_item', 'qr_code', false)
+      VALUES (${`ptix_bc_${productSeq}`}, ${productId}, 'per_item', 'qr_code', false)
     `)
 
     return { productId, optionId, unitId }
@@ -131,7 +138,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     const [row] = await db
       .insert(vouchers)
       .values({
-        code: overrides.code ?? `QC-${productSeq}-${Date.now()}`,
+        code: overrides.code ?? `BC-${productSeq}-${Date.now()}`,
         currency: "EUR",
         initialAmountCents: overrides.remainingAmountCents ?? 20000,
         remainingAmountCents: overrides.remainingAmountCents ?? 20000,
@@ -157,7 +164,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
   it("creates booking + travelers + payment schedules atomically", async () => {
     const { productId } = await seedProduct()
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       travelers: [
@@ -216,11 +223,127 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     expect(scheduleRows).toHaveLength(2)
   })
 
+  it("creates an invoice and completed payment records for already-paid schedules", async () => {
+    const { productId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      paymentSchedules: [
+        {
+          scheduleType: "balance",
+          status: "paid",
+          dueDate: "2026-06-15",
+          currency: "EUR",
+          amountCents: 50000,
+          notes: JSON.stringify({
+            alreadyPaid: true,
+            paymentDate: "2026-06-10",
+            paymentMethod: "bank_transfer",
+            paymentReference: "BT-PAID-1",
+          }),
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(outcome.result.invoice?.bookingId).toBe(outcome.result.booking.id)
+    expect(outcome.result.invoiceDocument.status).toBe("not_requested")
+    expect(outcome.result.payments).toHaveLength(1)
+    expect(outcome.result.payments[0]?.status).toBe("completed")
+    expect(outcome.result.payments[0]?.referenceNumber).toBe("BT-PAID-1")
+
+    const invoiceRows = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.bookingId, outcome.result.booking.id))
+    expect(invoiceRows).toHaveLength(1)
+    expect(invoiceRows[0]?.status).toBe("paid")
+
+    const paymentRows = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.invoiceId, invoiceRows[0]!.id))
+    expect(paymentRows).toHaveLength(1)
+  })
+
+  it("requests an invoice rendition only when invoice document generation is enabled", async () => {
+    const { productId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      documentGeneration: {
+        contractDocument: false,
+        invoiceDocument: true,
+      },
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(outcome.result.invoice?.bookingId).toBe(outcome.result.booking.id)
+    expect(outcome.result.invoiceDocument.status).toBe("requested")
+
+    const renditionRows = await db
+      .select()
+      .from(invoiceRenditions)
+      .where(eq(invoiceRenditions.invoiceId, outcome.result.invoice!.id))
+    expect(renditionRows).toHaveLength(1)
+    expect(renditionRows[0]?.status).toBe("pending")
+  })
+
+  it("creates explicit booking item lines for multiple selected units", async () => {
+    const { productId, optionId, unitId } = await seedProduct()
+    const secondUnitId = `opun_bc_single_${productSeq}`
+    await db.execute(sql`
+      INSERT INTO option_units (id, option_id, name, unit_type, is_required, min_quantity, sort_order)
+      VALUES (${secondUnitId}, ${optionId}, 'Single room', 'room', false, 1, 1)
+    `)
+
+    const outcome = await createBooking(db, {
+      productId,
+      optionId,
+      bookingNumber: nextBookingNumber(),
+      catalogSellAmountCents: 30000,
+      confirmedSellAmountCents: 30000,
+      itemLines: [
+        {
+          optionUnitId: unitId,
+          quantity: 2,
+          title: "Double room",
+          unitSellAmountCents: 10000,
+          totalSellAmountCents: 20000,
+        },
+        {
+          optionUnitId: secondUnitId,
+          quantity: 1,
+          title: "Single room",
+          unitSellAmountCents: 10000,
+          totalSellAmountCents: 10000,
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const itemRows = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, outcome.result.booking.id))
+    expect(itemRows).toHaveLength(2)
+    expect(itemRows.map((item) => [item.optionUnitId, item.quantity])).toEqual([
+      [unitId, 2],
+      [secondUnitId, 1],
+    ])
+  })
+
   it("redeems voucher and decrements remaining balance", async () => {
     const { productId } = await seedProduct()
     const voucher = await seedVoucher({ remainingAmountCents: 25000 })
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       voucherRedemption: {
@@ -249,7 +372,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     const { productId } = await seedProduct()
     const voucher = await seedVoucher({ remainingAmountCents: 500 })
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       travelers: [{ firstName: "Will", lastName: "Rollback", participantType: "traveler" }],
@@ -277,7 +400,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
   it("returns voucher_not_found for unknown voucher id (no booking created)", async () => {
     const { productId } = await seedProduct()
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       voucherRedemption: { voucherId: "vchr_missing", amountCents: 1000 },
@@ -291,7 +414,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     const { productId } = await seedProduct()
     const voucher = await seedVoucher({ status: "void" })
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       voucherRedemption: { voucherId: voucher.id, amountCents: 1000 },
@@ -303,7 +426,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     const { productId } = await seedProduct()
     const voucher = await seedVoucher({ expiresAt: new Date("2020-01-01") })
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       voucherRedemption: { voucherId: voucher.id, amountCents: 1000 },
@@ -314,7 +437,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
   it("creates a new booking group and attaches the booking as primary", async () => {
     const { productId } = await seedProduct()
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       groupMembership: {
@@ -338,7 +461,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     const { productId } = await seedProduct()
     const group = await seedBookingGroup()
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       groupMembership: {
@@ -357,7 +480,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
   it("returns group_not_found for missing group (nothing written)", async () => {
     const { productId } = await seedProduct()
 
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       travelers: [{ firstName: "Orphan", lastName: "Ghost", participantType: "traveler" }],
@@ -370,7 +493,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
   })
 
   it("returns product_not_found for unknown productId", async () => {
-    const outcome = await quickCreateBooking(db, {
+    const outcome = await createBooking(db, {
       productId: "prod_nope",
       bookingNumber: nextBookingNumber(),
     })
@@ -379,15 +502,15 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     expect(await db.select().from(bookings)).toHaveLength(0)
   })
 
-  it("emits booking.quick-created event after commit when runtime provided", async () => {
+  it("emits booking.created event after commit when runtime provided", async () => {
     const { productId } = await seedProduct()
     const eventBus = createEventBus()
     const received: unknown[] = []
-    eventBus.subscribe("booking.quick-created", (event) => {
+    eventBus.subscribe("booking.created", (event) => {
       received.push(event)
     })
 
-    const outcome = await quickCreateBooking(
+    const outcome = await createBooking(
       db,
       {
         productId,
@@ -412,7 +535,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
         createdByUserId: string | null
       }
     }
-    expect(envelope.name).toBe("booking.quick-created")
+    expect(envelope.name).toBe("booking.created")
     expect(envelope.data.bookingId).toBe(outcome.result.booking.id)
     expect(envelope.data.travelerCount).toBe(1)
     expect(envelope.data.createdByUserId).toBe("usrp_tester")
@@ -424,7 +547,7 @@ describe.skipIf(!DB_AVAILABLE)("quickCreateBooking", () => {
     const { productId } = await seedProduct()
     const voucher = await seedVoucher({ remainingAmountCents: 20000 })
 
-    await quickCreateBooking(db, {
+    await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       voucherRedemption: { voucherId: voucher.id, amountCents: 5000 },

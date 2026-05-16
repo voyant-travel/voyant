@@ -4,8 +4,8 @@ import type { HonoExtension } from "@voyantjs/hono/module"
 import { Hono } from "hono"
 
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
+import { bookingCreateSchema, createBooking } from "./service-booking-create.js"
 import { dualCreateBooking, dualCreateBookingSchema } from "./service-bookings-dual-create.js"
-import { quickCreateBooking, quickCreateBookingSchema } from "./service-bookings-quick-create.js"
 
 function resolveRuntime(container: { resolve: <T>(key: string) => T }): FinanceRouteRuntime | null {
   try {
@@ -17,24 +17,29 @@ function resolveRuntime(container: { resolve: <T>(key: string) => T }): FinanceR
 
 /**
  * Mounted under `/v1/admin/bookings/*` via the extension's `module` target, so
- * the endpoint's public-facing path lands at `POST /v1/admin/bookings/quick-create`
+ * the endpoint's public-facing path lands at `POST /v1/admin/bookings/create`
  * even though the code lives in `@voyantjs/finance`. See the header comment in
- * service-bookings-quick-create.ts for why finance owns this orchestration.
+ * service-booking-create.ts for why finance owns this orchestration.
  */
-const quickCreateRoutes = new Hono<{
+const createBookingRoutes = new Hono<{
   Variables: {
     db: import("drizzle-orm/postgres-js").PostgresJsDatabase
     userId?: string
     container: { resolve: <T>(key: string) => T }
   }
 }>()
-  .post("/quick-create", async (c) => {
-    const input = await parseJsonBody(c, quickCreateBookingSchema)
+  .post("/create", async (c) => {
+    const input = await parseJsonBody(c, bookingCreateSchema)
     const runtime = resolveRuntime(c.var.container)
 
-    const outcome = await quickCreateBooking(c.get("db"), input, {
+    const outcome = await createBooking(c.get("db"), input, {
       userId: c.get("userId"),
-      runtime: runtime ? { eventBus: runtime.eventBus } : undefined,
+      runtime: runtime
+        ? {
+            eventBus: runtime.eventBus,
+            invoiceDocumentGenerator: runtime.invoiceDocumentGenerator,
+          }
+        : undefined,
     })
 
     switch (outcome.status) {
@@ -77,8 +82,8 @@ const quickCreateRoutes = new Hono<{
       return c.json({ data: outcome.result }, 201)
     }
 
-    // Both failure branches carry a nested quick-create reason. Map them to
-    // the same HTTP codes the single quick-create endpoint uses so callers
+    // Both failure branches carry a nested create reason. Map them to
+    // the same HTTP codes the single create endpoint uses so callers
     // can treat them uniformly, and surface which sub-booking tripped.
     const which = outcome.status === "primary_failed" ? "primary" : "secondary"
     const reason = outcome.reason
@@ -110,17 +115,17 @@ const quickCreateRoutes = new Hono<{
     }
   })
 
-const bookingsQuickCreateExtensionDef: Extension = {
-  name: "bookings-quick-create",
+const bookingsCreateExtensionDef: Extension = {
+  name: "bookings-create",
   module: "bookings",
 }
 
-export const bookingsQuickCreateExtension: HonoExtension = {
-  extension: bookingsQuickCreateExtensionDef,
+export const bookingsCreateExtension: HonoExtension = {
+  extension: bookingsCreateExtensionDef,
   // Mount on both surfaces to mirror bookings' own module routes. The legacy
   // `/v1/bookings/...` path is what existing bookings-react hooks hit; the
   // `/v1/admin/bookings/...` path is staff-guarded and the forward-looking
   // convention. Both serve the same handler.
-  adminRoutes: quickCreateRoutes,
-  routes: quickCreateRoutes,
+  adminRoutes: createBookingRoutes,
+  routes: createBookingRoutes,
 }

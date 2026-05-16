@@ -9,7 +9,7 @@
  */
 
 import { execSync } from "node:child_process"
-import { readdirSync, readFileSync, statSync } from "node:fs"
+import { readdirSync, readFileSync, rmSync, statSync } from "node:fs"
 import { cp, mkdir, readdir, rm, writeFile } from "node:fs/promises"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -37,6 +37,8 @@ function buildPackage(packageDir: string): string {
   const manifestPath = join(packageDir, "registry.json")
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { name: string }
   console.log(`[registry] building ${manifest.name} in ${packageDir}`)
+
+  rmSync(join(packageDir, "public/r"), { recursive: true, force: true })
 
   // shadcn build reads ./registry.json and writes to ./public/r/
   execSync(`pnpm dlx shadcn@${shadcnVersion} build`, {

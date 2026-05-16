@@ -868,7 +868,7 @@
       "name": "voyant-bookings-booking-create-dialog",
       "type": "registry:component",
       "title": "Booking Create Dialog",
-      "description": "Operator booking-create workflow composing every picker section (product, departure, rooms, person, shared-room, travelers, price breakdown, voucher, payment schedule) and submitting atomically via POST /v1/bookings/quick-create. Consumed by BookingDialog for the create branch; apps that need a bespoke flow can install the sections individually and assemble their own dialog.",
+      "description": "Operator booking-create workflow composing every picker section (product, departure, rooms, person, shared-room, travelers, price breakdown, voucher, payment schedule) and submitting atomically via POST /v1/bookings/create. Consumed by BookingDialog for the create branch; apps that need a bespoke flow can install the sections individually and assemble their own dialog.",
       "dependencies": [
         "@voyantjs/availability-react",
         "@voyantjs/bookings-react",

@@ -25,6 +25,7 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { productMatchesPickerSearch } from "./booking-create-utils.js"
 
 const OPTION_NONE = "__none__"
 
@@ -63,6 +64,7 @@ export function ProductPickerSection({
   labels,
 }: ProductPickerSectionProps) {
   const [productSearch, setProductSearch] = React.useState("")
+  const cachedProductsRef = React.useRef(new Map<string, ProductRecord>())
   const messages = useBookingsUiMessagesOrDefault()
   const merged = { ...messages.productPickerSection.labels, ...labels }
 
@@ -76,9 +78,10 @@ export function ProductPickerSection({
   })
 
   const products = React.useMemo(() => {
-    const map = new Map<string, ProductRecord>()
+    const map = new Map(cachedProductsRef.current)
     for (const product of productsData?.data ?? []) map.set(product.id, product)
     if (selectedProductQuery.data) map.set(selectedProductQuery.data.id, selectedProductQuery.data)
+    cachedProductsRef.current = map
     return Array.from(map.values())
   }, [productsData?.data, selectedProductQuery.data])
 
@@ -113,6 +116,7 @@ export function ProductPickerSection({
             inputValue={productInputValue}
             autoHighlight
             disabled={!enabled}
+            filter={(id, query) => productMatchesPickerSearch(productMap.get(id as string), query)}
             itemToStringValue={(id) => productMap.get(id as string)?.name ?? ""}
             onInputValueChange={(next) => {
               setProductInputValue(next)

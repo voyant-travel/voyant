@@ -27,6 +27,7 @@
   },
   "peerDependencies": {
     "@voyantjs/crm-react": "workspace:*",
+    "@voyantjs/identity-react": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "react": "^19.0.0",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@voyantjs/crm-react": "workspace:*",
     "@voyantjs/i18n": "workspace:*",
+    "@voyantjs/identity-react": "workspace:*",
     "@voyantjs/ui": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "@tanstack/react-query": "^5.96.2",

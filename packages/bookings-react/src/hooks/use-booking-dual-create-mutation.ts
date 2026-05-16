@@ -7,13 +7,13 @@ import { fetchWithValidation } from "../client.js"
 import { useVoyantBookingsContext } from "../provider.js"
 import { bookingsQueryKeys } from "../query-keys.js"
 import { bookingRecordSchema } from "../schemas.js"
-import type { QuickCreateBookingInput } from "./use-booking-quick-create-mutation.js"
+import type { BookingCreateInput } from "./use-booking-create-mutation.js"
 
 /**
- * Sub-booking payload for dual-create. Same shape as quickCreate input
+ * Sub-booking payload for dual-create. Same shape as createBooking input
  * minus `groupMembership` — the dual endpoint manages the group itself.
  */
-export type DualCreateSubBookingInput = Omit<QuickCreateBookingInput, "groupMembership">
+export type DualCreateSubBookingInput = Omit<BookingCreateInput, "groupMembership">
 
 export interface DualCreateGroupInput {
   kind?: "shared_room" | "other"
@@ -56,8 +56,8 @@ export type DualCreateBookingResult = z.infer<typeof dualCreateResultSchema>
 
 /**
  * Atomic dual-booking (partaj) create: calls `POST /v1/bookings/dual-create`
- * which wraps two quickCreate calls + one booking_group in a single
- * transaction. Use this over calling useBookingQuickCreateMutation twice
+ * which wraps two createBooking calls + one booking_group in a single
+ * transaction. Use this over calling useBookingCreateMutation twice
  * from a submit handler — a failure on the second call there would leave
  * the first booking orphaned.
  */

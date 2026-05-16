@@ -37,7 +37,11 @@ import { cruisesBookingService } from "@voyantjs/cruises"
 import { createCruiseBookingHandler } from "@voyantjs/cruises/booking-engine"
 import { getCruiseContent } from "@voyantjs/cruises/service-content"
 import { pricingService as cruisePricingService } from "@voyantjs/cruises/service-pricing"
-import { bookingItemTaxLines, bookingPaymentSchedules, quickCreateBooking } from "@voyantjs/finance"
+import {
+  bookingItemTaxLines,
+  bookingPaymentSchedules,
+  createBooking as createFinanceBooking,
+} from "@voyantjs/finance"
 import { hospitalityBookingsService } from "@voyantjs/hospitality"
 import { createHospitalityBookingHandler } from "@voyantjs/hospitality/booking-engine"
 import { getHospitalityContent } from "@voyantjs/hospitality/service-content"
@@ -135,22 +139,22 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
             })
           },
         },
-        // Bridge into bookingsQuickCreate. The handler builds the
+        // Bridge into bookingsCreate. The handler builds the
         // input shape; the bridge provides the transactional commit.
         // env is captured by the closure so the bridge can resolve
         // the per-request DB lazily.
-        async quickCreate(input, opts) {
+        async createBooking(input, opts) {
           // `withDbFromEnv` owns the per-call Pool — opens, runs the
-          // commit, closes in `finally`. `quickCreateBooking`'s
+          // commit, closes in `finally`. `createFinanceBooking`'s
           // signature still asks for postgres-js; force-cast here since
           // the runtime is neon-serverless on Workers and the drizzle
           // PgDatabase surface is identical across flavors for the
           // ops we use.
           return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
             const db = rawDb as unknown as PostgresJsDatabase
-            const outcome = await quickCreateBooking(db, input, opts)
+            const outcome = await createFinanceBooking(db, input, opts)
             if (outcome.status === "ok") {
-              await persistQuickCreateTaxLines(db, outcome.result.booking.id, input.taxLines)
+              await persistBookingCreateTaxLines(db, outcome.result.booking.id, input.taxLines)
               return {
                 status: "ok",
                 bookingId: outcome.result.booking.id,
@@ -506,7 +510,7 @@ export interface BookingEngineEnv {
   CATALOG_DEMO_API_URL?: string
 }
 
-async function persistQuickCreateTaxLines(
+async function persistBookingCreateTaxLines(
   db: PostgresJsDatabase,
   bookingId: string,
   taxLines:

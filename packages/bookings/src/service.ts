@@ -2192,6 +2192,20 @@ export const bookingsService = {
         }
       : null
 
+    const selectedUnits = option === null ? [] : units
+    const unitById = new Map(selectedUnits.map((unit) => [unit.id, unit]))
+    const requestedItemLines =
+      data.itemLines
+        ?.map((line) => {
+          const unit = unitById.get(line.optionUnitId)
+          if (!unit) return null
+          return { line, unit }
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null) ?? []
+    if (data.itemLines && requestedItemLines.length !== data.itemLines.length) {
+      return null
+    }
+
     const [booking] = await db
       .insert(bookings)
       .values({
@@ -2228,8 +2242,6 @@ export const bookingsService = {
       )
     }
 
-    const selectedUnits = option === null ? [] : units
-
     const unitsToSeed =
       selectedUnits.filter((unit) => unit.isRequired).length > 0
         ? selectedUnits.filter((unit) => unit.isRequired)
@@ -2250,64 +2262,88 @@ export const bookingsService = {
     // so checkout / payment / invoicing don't see a list-price item beneath
     // a discounted booking header.
     const itemRows =
-      unitsToSeed.length > 0
-        ? unitsToSeed.map((unit, index) => {
-            const quantity =
-              unit.unitType === "person" && product.pax
-                ? product.pax
-                : unit.minQuantity && unit.minQuantity > 0
-                  ? unit.minQuantity
-                  : 1
-            const singleSeedItem = unitsToSeed.length === 1 && index === 0
+      requestedItemLines.length > 0
+        ? requestedItemLines.map(({ line, unit }) => {
+            const totalSellAmountCents =
+              line.totalSellAmountCents ??
+              (line.unitSellAmountCents != null ? line.unitSellAmountCents * line.quantity : null)
             return {
               bookingId: booking.id,
-              title: unit.name,
-              description: unit.description,
+              title: line.title?.trim() || unit.name,
+              description: line.description ?? unit.description,
               itemType: "unit" as const,
               status: "draft" as const,
-              quantity,
+              quantity: line.quantity,
               sellCurrency: product.sellCurrency,
-              unitSellAmountCents:
-                singleSeedItem &&
-                effectiveSellAmountCents !== null &&
-                effectiveSellAmountCents !== undefined
-                  ? Math.floor(effectiveSellAmountCents / quantity)
-                  : null,
-              totalSellAmountCents: singleSeedItem ? (effectiveSellAmountCents ?? null) : null,
-              costCurrency: singleSeedItem ? product.sellCurrency : null,
-              unitCostAmountCents:
-                singleSeedItem &&
-                product.costAmountCents !== null &&
-                product.costAmountCents !== undefined
-                  ? Math.floor(product.costAmountCents / quantity)
-                  : null,
-              totalCostAmountCents: singleSeedItem ? (product.costAmountCents ?? null) : null,
+              unitSellAmountCents: line.unitSellAmountCents ?? null,
+              totalSellAmountCents,
+              costCurrency: null,
+              unitCostAmountCents: null,
+              totalCostAmountCents: null,
               productId: product.id,
               optionId: option?.id ?? null,
               optionUnitId: unit.id,
               ...slotFields,
             }
           })
-        : [
-            {
-              bookingId: booking.id,
-              title: option?.name ?? product.name,
-              description: product.description,
-              itemType: "unit" as const,
-              status: "draft" as const,
-              quantity: 1,
-              sellCurrency: product.sellCurrency,
-              unitSellAmountCents: effectiveSellAmountCents ?? null,
-              totalSellAmountCents: effectiveSellAmountCents ?? null,
-              costCurrency: product.sellCurrency,
-              unitCostAmountCents: product.costAmountCents ?? null,
-              totalCostAmountCents: product.costAmountCents ?? null,
-              productId: product.id,
-              optionId: option?.id ?? null,
-              optionUnitId: null,
-              ...slotFields,
-            },
-          ]
+        : unitsToSeed.length > 0
+          ? unitsToSeed.map((unit, index) => {
+              const quantity =
+                unit.unitType === "person" && product.pax
+                  ? product.pax
+                  : unit.minQuantity && unit.minQuantity > 0
+                    ? unit.minQuantity
+                    : 1
+              const singleSeedItem = unitsToSeed.length === 1 && index === 0
+              return {
+                bookingId: booking.id,
+                title: unit.name,
+                description: unit.description,
+                itemType: "unit" as const,
+                status: "draft" as const,
+                quantity,
+                sellCurrency: product.sellCurrency,
+                unitSellAmountCents:
+                  singleSeedItem &&
+                  effectiveSellAmountCents !== null &&
+                  effectiveSellAmountCents !== undefined
+                    ? Math.floor(effectiveSellAmountCents / quantity)
+                    : null,
+                totalSellAmountCents: singleSeedItem ? (effectiveSellAmountCents ?? null) : null,
+                costCurrency: singleSeedItem ? product.sellCurrency : null,
+                unitCostAmountCents:
+                  singleSeedItem &&
+                  product.costAmountCents !== null &&
+                  product.costAmountCents !== undefined
+                    ? Math.floor(product.costAmountCents / quantity)
+                    : null,
+                totalCostAmountCents: singleSeedItem ? (product.costAmountCents ?? null) : null,
+                productId: product.id,
+                optionId: option?.id ?? null,
+                optionUnitId: unit.id,
+                ...slotFields,
+              }
+            })
+          : [
+              {
+                bookingId: booking.id,
+                title: option?.name ?? product.name,
+                description: product.description,
+                itemType: "unit" as const,
+                status: "draft" as const,
+                quantity: 1,
+                sellCurrency: product.sellCurrency,
+                unitSellAmountCents: effectiveSellAmountCents ?? null,
+                totalSellAmountCents: effectiveSellAmountCents ?? null,
+                costCurrency: product.sellCurrency,
+                unitCostAmountCents: product.costAmountCents ?? null,
+                totalCostAmountCents: product.costAmountCents ?? null,
+                productId: product.id,
+                optionId: option?.id ?? null,
+                optionUnitId: null,
+                ...slotFields,
+              },
+            ]
 
     const insertedItems = await db.insert(bookingItems).values(itemRows).returning()
 

@@ -8,10 +8,16 @@ import { BookingList } from "./booking-list.js"
 export interface BookingsPageProps {
   pageSize?: number
   onBookingOpen?: (booking: BookingRecord) => void
+  onCreateBooking?: () => void
   className?: string
 }
 
-export function BookingsPage({ pageSize, onBookingOpen, className }: BookingsPageProps = {}) {
+export function BookingsPage({
+  pageSize,
+  onBookingOpen,
+  onCreateBooking,
+  className,
+}: BookingsPageProps = {}) {
   const messages = useBookingsUiMessagesOrDefault().bookingsPage
 
   return (
@@ -21,7 +27,11 @@ export function BookingsPage({ pageSize, onBookingOpen, className }: BookingsPag
         <p className="text-sm text-muted-foreground">{messages.description}</p>
       </div>
 
-      <BookingList pageSize={pageSize} onSelectBooking={onBookingOpen} />
+      <BookingList
+        pageSize={pageSize}
+        onSelectBooking={onBookingOpen}
+        onCreateBooking={onCreateBooking}
+      />
     </div>
   )
 }
