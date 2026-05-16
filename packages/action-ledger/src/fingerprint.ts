@@ -1,3 +1,8 @@
+import type {
+  ActionLedgerCapabilityApprovalPolicy,
+  ActionLedgerCapabilityRisk,
+} from "./capability.js"
+
 export function canonicalize(value: unknown): unknown {
   if (value === undefined) return null
   if (value === null || typeof value !== "object") return value
@@ -38,10 +43,10 @@ export interface BuildActionApprovalCommandFingerprintInput {
   targetType: string
   targetId: string
   commandInput?: unknown
-  approvalPolicy: string | null
-  capabilityId: string | null
-  capabilityVersion: string | null
-  evaluatedRisk: string | null
+  approvalPolicy: ActionLedgerCapabilityApprovalPolicy
+  capabilityId: string
+  capabilityVersion: string
+  evaluatedRisk: ActionLedgerCapabilityRisk
   reasonCode: string | null
 }
 
