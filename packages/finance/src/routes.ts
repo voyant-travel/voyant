@@ -168,11 +168,17 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/payment-sessions", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     return c.json(
       {
         data: await financeService.createPaymentSession(
           c.get("db"),
           await parseJsonBody(c, insertPaymentSessionSchema),
+          {
+            eventBus: runtime?.eventBus,
+            actionLedgerContext: getActionLedgerRequestContext(c),
+            actionLedgerAuthorizationSource: "finance.payment_session.route",
+          },
         ),
       },
       201,
@@ -186,33 +192,39 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .patch("/payment-sessions/:id", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updatePaymentSession(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updatePaymentSessionSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_session.route",
+      },
     )
     if (!row) return c.json({ error: "Payment session not found" }, 404)
     return c.json({ data: row })
   })
 
   .post("/payment-sessions/:id/requires-redirect", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.markPaymentSessionRequiresRedirect(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, markPaymentSessionRequiresRedirectSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_session.route",
+      },
     )
     if (!row) return c.json({ error: "Payment session not found" }, 404)
     return c.json({ data: row })
   })
 
   .post("/payment-sessions/:id/complete", async (c) => {
-    const runtime = (() => {
-      try {
-        return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
-      } catch {
-        return undefined
-      }
-    })()
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.completePaymentSession(
       c.get("db"),
       c.req.param("id"),
@@ -228,30 +240,48 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/payment-sessions/:id/fail", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.failPaymentSession(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, failPaymentSessionSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_session.route",
+      },
     )
     if (!row) return c.json({ error: "Payment session not found" }, 404)
     return c.json({ data: row })
   })
 
   .post("/payment-sessions/:id/cancel", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.cancelPaymentSession(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, cancelPaymentSessionSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_session.route",
+      },
     )
     if (!row) return c.json({ error: "Payment session not found" }, 404)
     return c.json({ data: row })
   })
 
   .post("/payment-sessions/:id/expire", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.expirePaymentSession(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, expirePaymentSessionSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_session.route",
+      },
     )
     if (!row) return c.json({ error: "Payment session not found" }, 404)
     return c.json({ data: row })
@@ -462,10 +492,16 @@ export const financeRoutes = new Hono<Env>()
 
   .post("/bookings/:bookingId/payment-schedules/:scheduleId/payment-session", async (c) => {
     try {
+      const runtime = getFinanceRouteRuntime(c)
       const row = await financeService.createPaymentSessionFromBookingSchedule(
         c.get("db"),
         c.req.param("scheduleId"),
         await parseJsonBody(c, createPaymentSessionFromScheduleSchema),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.payment_session.route",
+        },
       )
 
       if (!row) {
@@ -518,10 +554,16 @@ export const financeRoutes = new Hono<Env>()
 
   .post("/bookings/:bookingId/guarantees/:guaranteeId/payment-session", async (c) => {
     try {
+      const runtime = getFinanceRouteRuntime(c)
       const row = await financeService.createPaymentSessionFromBookingGuarantee(
         c.get("db"),
         c.req.param("guaranteeId"),
         await parseJsonBody(c, createPaymentSessionFromGuaranteeSchema),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.payment_session.route",
+        },
       )
 
       if (!row) {
@@ -878,10 +920,16 @@ export const financeRoutes = new Hono<Env>()
 
   .post("/invoices/:id/payment-session", async (c) => {
     try {
+      const runtime = getFinanceRouteRuntime(c)
       const row = await financeService.createPaymentSessionFromInvoice(
         c.get("db"),
         c.req.param("id"),
         await parseJsonBody(c, createPaymentSessionFromInvoiceSchema),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.payment_session.route",
+        },
       )
 
       if (!row) {

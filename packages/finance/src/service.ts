@@ -427,10 +427,33 @@ type PaymentSessionRecord = typeof paymentSessions.$inferSelect
 type InvoiceRecord = typeof invoices.$inferSelect
 type PaymentRecord = typeof payments.$inferSelect
 type CreditNoteRecord = typeof creditNotes.$inferSelect
+type CreatePaymentSessionLedgerInput = {
+  session: PaymentSessionRecord
+}
 type CompletePaymentSessionLedgerInput = {
   session: PaymentSessionRecord
   status: CompletePaymentSessionInput["status"]
   paymentId: string | null
+}
+type PaymentSessionUpdateLedgerInput = {
+  session: PaymentSessionRecord
+  changes: UpdatePaymentSessionInput
+}
+type PaymentSessionRedirectLedgerInput = {
+  session: PaymentSessionRecord
+  changes: MarkPaymentSessionRequiresRedirectInput
+}
+type PaymentSessionFailedLedgerInput = {
+  session: PaymentSessionRecord
+  changes: FailPaymentSessionInput
+}
+type PaymentSessionCancelledLedgerInput = {
+  session: PaymentSessionRecord
+  changes: CancelPaymentSessionInput
+}
+type PaymentSessionExpiredLedgerInput = {
+  session: PaymentSessionRecord
+  changes: ExpirePaymentSessionInput
 }
 type RecordPaymentLedgerInput = {
   invoice: InvoiceRecord
@@ -474,6 +497,61 @@ type SupplierPaymentCreateLedgerInput = {
 type SupplierPaymentUpdateLedgerInput = {
   payment: SupplierPaymentRecord
   changes: UpdateSupplierPaymentInput
+}
+
+export async function buildPaymentSessionCreateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: CreatePaymentSessionLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const target = getPaymentSessionLedgerTarget(input.session)
+  const idempotencyKey = input.session.idempotencyKey
+
+  return {
+    context,
+    actionName: "finance.payment_session.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_session.create",
+    authorizationSource: options.authorizationSource ?? "finance.payment_session.route",
+    idempotencyScope:
+      idempotencyKey && target.id
+        ? `finance.payment_session:${target.type}:${target.id}:create`
+        : null,
+    idempotencyKey,
+    idempotencyFingerprint:
+      idempotencyKey && target.id
+        ? await buildIdempotencyFingerprint({
+            actionName: "finance.payment_session.create",
+            actionVersion: "v1",
+            targetType: target.type,
+            targetId: target.id,
+            commandInput: {
+              paymentSessionId: input.session.id,
+              targetType: input.session.targetType,
+              targetId: input.session.targetId,
+              amountCents: input.session.amountCents,
+              currency: input.session.currency,
+              provider: input.session.provider,
+              idempotencyKey: input.session.idempotencyKey,
+            },
+          })
+        : null,
+    mutationDetail: {
+      commandInputRef: target.id
+        ? `${target.type}:${target.id}:payment_session`
+        : "payment_session:create",
+      commandResultRef: `payment_session:${input.session.id}`,
+      summary: `Payment session ${input.session.id} created for ${target.type} ${target.id ?? "unknown"}`,
+      reversalKind: "none",
+    },
+  }
 }
 
 export async function buildPaymentSessionCompletionActionLedgerInput(
@@ -531,10 +609,165 @@ export async function buildPaymentSessionCompletionActionLedgerInput(
 }
 
 function getPaymentSessionCompletionLedgerTarget(session: PaymentSessionRecord) {
+  return getPaymentSessionLedgerTarget(session)
+}
+
+function getPaymentSessionLedgerTarget(session: PaymentSessionRecord) {
   if (session.bookingId) return { type: "booking", id: session.bookingId }
   if (session.invoiceId) return { type: "invoice", id: session.invoiceId }
   if (session.orderId) return { type: "order", id: session.orderId }
+  if (session.targetId && session.targetType !== "other") {
+    return { type: session.targetType, id: session.targetId }
+  }
   return { type: "payment_session", id: session.id }
+}
+
+export function buildPaymentSessionUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentSessionUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getPaymentSessionLedgerTarget(input.session)
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.payment_session.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_session.update",
+    authorizationSource: options.authorizationSource ?? "finance.payment_session.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `payment_session:${input.session.id}:update`,
+      commandResultRef: `payment_session:${input.session.id}`,
+      summary: `Payment session ${input.session.id} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildPaymentSessionRequiresRedirectActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentSessionRedirectLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  return buildPaymentSessionStatusActionLedgerInput(context, {
+    session: input.session,
+    actionName: "finance.payment_session.requires_redirect",
+    actionKind: "update",
+    routeOrToolName: "finance.payment_session.requires_redirect",
+    commandInputRef: `payment_session:${input.session.id}:requires_redirect`,
+    commandResultRef: `payment_session:${input.session.id}`,
+    summary: `Payment session ${input.session.id} marked as requiring redirect`,
+    authorizationSource: options.authorizationSource ?? "finance.payment_session.route",
+  })
+}
+
+export function buildPaymentSessionFailedActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentSessionFailedLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  return buildPaymentSessionStatusActionLedgerInput(context, {
+    session: input.session,
+    actionName: "finance.payment_session.fail",
+    actionKind: "update",
+    routeOrToolName: "finance.payment_session.fail",
+    commandInputRef: `payment_session:${input.session.id}:fail`,
+    commandResultRef: `payment_session:${input.session.id}`,
+    summary: `Payment session ${input.session.id} marked as failed`,
+    authorizationSource: options.authorizationSource ?? "finance.payment_session.route",
+  })
+}
+
+export function buildPaymentSessionCancelledActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentSessionCancelledLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  return buildPaymentSessionStatusActionLedgerInput(context, {
+    session: input.session,
+    actionName: "finance.payment_session.cancel",
+    actionKind: "update",
+    routeOrToolName: "finance.payment_session.cancel",
+    commandInputRef: `payment_session:${input.session.id}:cancel`,
+    commandResultRef: `payment_session:${input.session.id}`,
+    summary: `Payment session ${input.session.id} marked as cancelled`,
+    authorizationSource: options.authorizationSource ?? "finance.payment_session.route",
+  })
+}
+
+export function buildPaymentSessionExpiredActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentSessionExpiredLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  return buildPaymentSessionStatusActionLedgerInput(context, {
+    session: input.session,
+    actionName: "finance.payment_session.expire",
+    actionKind: "update",
+    routeOrToolName: "finance.payment_session.expire",
+    commandInputRef: `payment_session:${input.session.id}:expire`,
+    commandResultRef: `payment_session:${input.session.id}`,
+    summary: `Payment session ${input.session.id} marked as expired`,
+    authorizationSource: options.authorizationSource ?? "finance.payment_session.route",
+  })
+}
+
+function buildPaymentSessionStatusActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: {
+    session: PaymentSessionRecord
+    actionName: string
+    actionKind: BuildActionLedgerMutationInput["actionKind"]
+    routeOrToolName: string
+    authorizationSource: string | null
+    commandInputRef: string
+    commandResultRef: string | null
+    summary: string
+  },
+): BuildActionLedgerMutationInput {
+  const target = getPaymentSessionLedgerTarget(input.session)
+
+  return {
+    context,
+    actionName: input.actionName,
+    actionVersion: "v1",
+    actionKind: input.actionKind,
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: input.routeOrToolName,
+    authorizationSource: input.authorizationSource,
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: input.commandInputRef,
+      commandResultRef: input.commandResultRef,
+      summary: input.summary,
+      reversalKind: "none",
+    },
+  }
 }
 
 export async function buildRecordPaymentActionLedgerInput(
@@ -1286,7 +1519,11 @@ export const financeService = {
     return row ?? null
   },
 
-  async createPaymentSession(db: PostgresJsDatabase, data: CreatePaymentSessionInput) {
+  async createPaymentSession(
+    db: PostgresJsDatabase,
+    data: CreatePaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
     if (data.idempotencyKey) {
       const [existing] = await db
         .select()
@@ -1300,52 +1537,105 @@ export const financeService = {
     }
 
     const target = derivePaymentSessionTarget(data)
-    const [row] = await db
-      .insert(paymentSessions)
-      .values({
-        ...data,
-        ...target,
-        paymentInstrumentId: data.paymentInstrumentId ?? null,
-        paymentAuthorizationId: data.paymentAuthorizationId ?? null,
-        paymentCaptureId: data.paymentCaptureId ?? null,
-        paymentId: data.paymentId ?? null,
-        completedAt: toTimestamp(data.completedAt),
-        failedAt: toTimestamp(data.failedAt),
-        cancelledAt: toTimestamp(data.cancelledAt),
-        expiredAt: toTimestamp(data.expiredAt),
-        expiresAt: toTimestamp(data.expiresAt),
-      })
-      .returning()
+    const createSession = (writer: PostgresJsDatabase) =>
+      writer
+        .insert(paymentSessions)
+        .values({
+          ...data,
+          ...target,
+          paymentInstrumentId: data.paymentInstrumentId ?? null,
+          paymentAuthorizationId: data.paymentAuthorizationId ?? null,
+          paymentCaptureId: data.paymentCaptureId ?? null,
+          paymentId: data.paymentId ?? null,
+          completedAt: toTimestamp(data.completedAt),
+          failedAt: toTimestamp(data.failedAt),
+          cancelledAt: toTimestamp(data.cancelledAt),
+          expiredAt: toTimestamp(data.expiredAt),
+          expiresAt: toTimestamp(data.expiresAt),
+        })
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createSession(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildPaymentSessionCreateActionLedgerInput(
+              actionLedgerContext,
+              { session: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await createSession(db)
     return row ?? null
   },
 
-  async updatePaymentSession(db: PostgresJsDatabase, id: string, data: UpdatePaymentSessionInput) {
+  async updatePaymentSession(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdatePaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
     const target = derivePaymentSessionTarget(data)
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        ...data,
-        ...target,
-        paymentInstrumentId:
-          data.paymentInstrumentId === undefined ? undefined : (data.paymentInstrumentId ?? null),
-        paymentAuthorizationId:
-          data.paymentAuthorizationId === undefined
-            ? undefined
-            : (data.paymentAuthorizationId ?? null),
-        paymentCaptureId:
-          data.paymentCaptureId === undefined ? undefined : (data.paymentCaptureId ?? null),
-        paymentId: data.paymentId === undefined ? undefined : (data.paymentId ?? null),
-        completedAt: data.completedAt === undefined ? undefined : toTimestamp(data.completedAt),
-        failedAt: data.failedAt === undefined ? undefined : toTimestamp(data.failedAt),
-        cancelledAt: data.cancelledAt === undefined ? undefined : toTimestamp(data.cancelledAt),
-        expiredAt: data.expiredAt === undefined ? undefined : toTimestamp(data.expiredAt),
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+    const updateSession = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          ...data,
+          ...target,
+          paymentInstrumentId:
+            data.paymentInstrumentId === undefined ? undefined : (data.paymentInstrumentId ?? null),
+          paymentAuthorizationId:
+            data.paymentAuthorizationId === undefined
+              ? undefined
+              : (data.paymentAuthorizationId ?? null),
+          paymentCaptureId:
+            data.paymentCaptureId === undefined ? undefined : (data.paymentCaptureId ?? null),
+          paymentId: data.paymentId === undefined ? undefined : (data.paymentId ?? null),
+          completedAt: data.completedAt === undefined ? undefined : toTimestamp(data.completedAt),
+          failedAt: data.failedAt === undefined ? undefined : toTimestamp(data.failedAt),
+          cancelledAt: data.cancelledAt === undefined ? undefined : toTimestamp(data.cancelledAt),
+          expiredAt: data.expiredAt === undefined ? undefined : toTimestamp(data.expiredAt),
+          expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateSession(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionUpdateActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updateSession(db)
     return row ?? null
   },
 
@@ -1353,84 +1643,196 @@ export const financeService = {
     db: PostgresJsDatabase,
     id: string,
     data: MarkPaymentSessionRequiresRedirectInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        status: "requires_redirect",
-        provider: data.provider ?? undefined,
-        providerSessionId: data.providerSessionId ?? undefined,
-        providerPaymentId: data.providerPaymentId ?? undefined,
-        externalReference: data.externalReference ?? undefined,
-        redirectUrl: data.redirectUrl,
-        returnUrl: data.returnUrl ?? undefined,
-        cancelUrl: data.cancelUrl ?? undefined,
-        callbackUrl: data.callbackUrl ?? undefined,
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-        providerPayload: data.providerPayload ?? undefined,
-        metadata: data.metadata ?? undefined,
-        notes: data.notes ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+    const markRequiresRedirect = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          status: "requires_redirect",
+          provider: data.provider ?? undefined,
+          providerSessionId: data.providerSessionId ?? undefined,
+          providerPaymentId: data.providerPaymentId ?? undefined,
+          externalReference: data.externalReference ?? undefined,
+          redirectUrl: data.redirectUrl,
+          returnUrl: data.returnUrl ?? undefined,
+          cancelUrl: data.cancelUrl ?? undefined,
+          callbackUrl: data.callbackUrl ?? undefined,
+          expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          providerPayload: data.providerPayload ?? undefined,
+          metadata: data.metadata ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await markRequiresRedirect(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionRequiresRedirectActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await markRequiresRedirect(db)
     return row ?? null
   },
 
-  async failPaymentSession(db: PostgresJsDatabase, id: string, data: FailPaymentSessionInput) {
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        status: "failed",
-        providerSessionId: data.providerSessionId ?? undefined,
-        providerPaymentId: data.providerPaymentId ?? undefined,
-        externalReference: data.externalReference ?? undefined,
-        failureCode: data.failureCode ?? undefined,
-        failureMessage: data.failureMessage ?? undefined,
-        failedAt: new Date(),
-        providerPayload: data.providerPayload ?? undefined,
-        metadata: data.metadata ?? undefined,
-        notes: data.notes ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+  async failPaymentSession(
+    db: PostgresJsDatabase,
+    id: string,
+    data: FailPaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const failSession = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          status: "failed",
+          providerSessionId: data.providerSessionId ?? undefined,
+          providerPaymentId: data.providerPaymentId ?? undefined,
+          externalReference: data.externalReference ?? undefined,
+          failureCode: data.failureCode ?? undefined,
+          failureMessage: data.failureMessage ?? undefined,
+          failedAt: new Date(),
+          providerPayload: data.providerPayload ?? undefined,
+          metadata: data.metadata ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await failSession(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionFailedActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await failSession(db)
     return row ?? null
   },
 
-  async cancelPaymentSession(db: PostgresJsDatabase, id: string, data: CancelPaymentSessionInput) {
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        status: "cancelled",
-        cancelledAt: data.cancelledAt ? toTimestamp(data.cancelledAt) : new Date(),
-        providerPayload: data.providerPayload ?? undefined,
-        metadata: data.metadata ?? undefined,
-        notes: data.notes ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+  async cancelPaymentSession(
+    db: PostgresJsDatabase,
+    id: string,
+    data: CancelPaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const cancelSession = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          status: "cancelled",
+          cancelledAt: data.cancelledAt ? toTimestamp(data.cancelledAt) : new Date(),
+          providerPayload: data.providerPayload ?? undefined,
+          metadata: data.metadata ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await cancelSession(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionCancelledActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await cancelSession(db)
     return row ?? null
   },
 
-  async expirePaymentSession(db: PostgresJsDatabase, id: string, data: ExpirePaymentSessionInput) {
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        status: "expired",
-        expiredAt: data.expiredAt ? toTimestamp(data.expiredAt) : new Date(),
-        providerPayload: data.providerPayload ?? undefined,
-        metadata: data.metadata ?? undefined,
-        notes: data.notes ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+  async expirePaymentSession(
+    db: PostgresJsDatabase,
+    id: string,
+    data: ExpirePaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const expireSession = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          status: "expired",
+          expiredAt: data.expiredAt ? toTimestamp(data.expiredAt) : new Date(),
+          providerPayload: data.providerPayload ?? undefined,
+          metadata: data.metadata ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await expireSession(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionExpiredActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await expireSession(db)
     return row ?? null
   },
 
@@ -2099,6 +2501,7 @@ export const financeService = {
     db: PostgresJsDatabase,
     scheduleId: string,
     data: CreatePaymentSessionFromScheduleInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
     const [schedule] = await db
       .select()
@@ -2118,40 +2521,45 @@ export const financeService = {
       throw new Error(`Cannot create payment session for schedule in status "${schedule.status}"`)
     }
 
-    return this.createPaymentSession(db, {
-      targetType: "booking_payment_schedule",
-      targetId: schedule.id,
-      bookingId: schedule.bookingId,
-      bookingPaymentScheduleId: schedule.id,
-      status: "pending",
-      provider: data.provider ?? null,
-      externalReference: data.externalReference ?? null,
-      idempotencyKey: data.idempotencyKey ?? null,
-      clientReference: data.clientReference ?? schedule.id,
-      currency: schedule.currency,
-      amountCents: schedule.amountCents,
-      paymentMethod: data.paymentMethod ?? null,
-      payerPersonId: data.payerPersonId ?? null,
-      payerOrganizationId: data.payerOrganizationId ?? null,
-      payerEmail: data.payerEmail ?? null,
-      payerName: data.payerName ?? null,
-      returnUrl: data.returnUrl ?? null,
-      cancelUrl: data.cancelUrl ?? null,
-      callbackUrl: data.callbackUrl ?? null,
-      expiresAt: data.expiresAt ?? null,
-      notes: data.notes ?? schedule.notes ?? null,
-      providerPayload: data.providerPayload ?? null,
-      metadata: data.metadata ?? {
-        scheduleType: schedule.scheduleType,
-        dueDate: schedule.dueDate,
+    return this.createPaymentSession(
+      db,
+      {
+        targetType: "booking_payment_schedule",
+        targetId: schedule.id,
+        bookingId: schedule.bookingId,
+        bookingPaymentScheduleId: schedule.id,
+        status: "pending",
+        provider: data.provider ?? null,
+        externalReference: data.externalReference ?? null,
+        idempotencyKey: data.idempotencyKey ?? null,
+        clientReference: data.clientReference ?? schedule.id,
+        currency: schedule.currency,
+        amountCents: schedule.amountCents,
+        paymentMethod: data.paymentMethod ?? null,
+        payerPersonId: data.payerPersonId ?? null,
+        payerOrganizationId: data.payerOrganizationId ?? null,
+        payerEmail: data.payerEmail ?? null,
+        payerName: data.payerName ?? null,
+        returnUrl: data.returnUrl ?? null,
+        cancelUrl: data.cancelUrl ?? null,
+        callbackUrl: data.callbackUrl ?? null,
+        expiresAt: data.expiresAt ?? null,
+        notes: data.notes ?? schedule.notes ?? null,
+        providerPayload: data.providerPayload ?? null,
+        metadata: data.metadata ?? {
+          scheduleType: schedule.scheduleType,
+          dueDate: schedule.dueDate,
+        },
       },
-    })
+      runtime,
+    )
   },
 
   async createPaymentSessionFromInvoice(
     db: PostgresJsDatabase,
     invoiceId: string,
     data: CreatePaymentSessionFromInvoiceInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
 
@@ -2167,35 +2575,39 @@ export const financeService = {
       throw new Error("Invoice must have an outstanding balance before creating a payment session")
     }
 
-    return this.createPaymentSession(db, {
-      targetType: "invoice",
-      targetId: invoice.id,
-      bookingId: invoice.bookingId,
-      invoiceId: invoice.id,
-      status: "pending",
-      provider: data.provider ?? null,
-      externalReference: data.externalReference ?? invoice.invoiceNumber,
-      idempotencyKey: data.idempotencyKey ?? null,
-      clientReference: data.clientReference ?? invoice.id,
-      currency: invoice.currency,
-      amountCents: invoice.balanceDueCents,
-      paymentMethod: data.paymentMethod ?? null,
-      payerPersonId: data.payerPersonId ?? invoice.personId ?? null,
-      payerOrganizationId: data.payerOrganizationId ?? invoice.organizationId ?? null,
-      payerEmail: data.payerEmail ?? null,
-      payerName: data.payerName ?? null,
-      returnUrl: data.returnUrl ?? null,
-      cancelUrl: data.cancelUrl ?? null,
-      callbackUrl: data.callbackUrl ?? null,
-      expiresAt: data.expiresAt ?? null,
-      notes: data.notes ?? invoice.notes ?? null,
-      providerPayload: data.providerPayload ?? null,
-      metadata: data.metadata ?? {
-        invoiceNumber: invoice.invoiceNumber,
-        invoiceType: invoice.invoiceType,
-        dueDate: invoice.dueDate,
+    return this.createPaymentSession(
+      db,
+      {
+        targetType: "invoice",
+        targetId: invoice.id,
+        bookingId: invoice.bookingId,
+        invoiceId: invoice.id,
+        status: "pending",
+        provider: data.provider ?? null,
+        externalReference: data.externalReference ?? invoice.invoiceNumber,
+        idempotencyKey: data.idempotencyKey ?? null,
+        clientReference: data.clientReference ?? invoice.id,
+        currency: invoice.currency,
+        amountCents: invoice.balanceDueCents,
+        paymentMethod: data.paymentMethod ?? null,
+        payerPersonId: data.payerPersonId ?? invoice.personId ?? null,
+        payerOrganizationId: data.payerOrganizationId ?? invoice.organizationId ?? null,
+        payerEmail: data.payerEmail ?? null,
+        payerName: data.payerName ?? null,
+        returnUrl: data.returnUrl ?? null,
+        cancelUrl: data.cancelUrl ?? null,
+        callbackUrl: data.callbackUrl ?? null,
+        expiresAt: data.expiresAt ?? null,
+        notes: data.notes ?? invoice.notes ?? null,
+        providerPayload: data.providerPayload ?? null,
+        metadata: data.metadata ?? {
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceType: invoice.invoiceType,
+          dueDate: invoice.dueDate,
+        },
       },
-    })
+      runtime,
+    )
   },
 
   listBookingGuarantees(db: PostgresJsDatabase, bookingId: string) {
@@ -2249,6 +2661,7 @@ export const financeService = {
     db: PostgresJsDatabase,
     guaranteeId: string,
     data: CreatePaymentSessionFromGuaranteeInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
     const [guarantee] = await db
       .select()
@@ -2276,35 +2689,39 @@ export const financeService = {
       )
     }
 
-    return this.createPaymentSession(db, {
-      targetType: "booking_guarantee",
-      targetId: guarantee.id,
-      bookingId: guarantee.bookingId,
-      bookingGuaranteeId: guarantee.id,
-      paymentInstrumentId: guarantee.paymentInstrumentId ?? null,
-      paymentAuthorizationId: guarantee.paymentAuthorizationId ?? null,
-      status: "pending",
-      provider: data.provider ?? guarantee.provider ?? null,
-      externalReference: data.externalReference ?? guarantee.referenceNumber ?? null,
-      idempotencyKey: data.idempotencyKey ?? null,
-      clientReference: data.clientReference ?? guarantee.id,
-      currency,
-      amountCents,
-      paymentMethod: data.paymentMethod ?? null,
-      payerPersonId: data.payerPersonId ?? null,
-      payerOrganizationId: data.payerOrganizationId ?? null,
-      payerEmail: data.payerEmail ?? null,
-      payerName: data.payerName ?? null,
-      returnUrl: data.returnUrl ?? null,
-      cancelUrl: data.cancelUrl ?? null,
-      callbackUrl: data.callbackUrl ?? null,
-      expiresAt: data.expiresAt ?? null,
-      notes: data.notes ?? guarantee.notes ?? null,
-      providerPayload: data.providerPayload ?? null,
-      metadata: data.metadata ?? {
-        guaranteeType: guarantee.guaranteeType,
+    return this.createPaymentSession(
+      db,
+      {
+        targetType: "booking_guarantee",
+        targetId: guarantee.id,
+        bookingId: guarantee.bookingId,
+        bookingGuaranteeId: guarantee.id,
+        paymentInstrumentId: guarantee.paymentInstrumentId ?? null,
+        paymentAuthorizationId: guarantee.paymentAuthorizationId ?? null,
+        status: "pending",
+        provider: data.provider ?? guarantee.provider ?? null,
+        externalReference: data.externalReference ?? guarantee.referenceNumber ?? null,
+        idempotencyKey: data.idempotencyKey ?? null,
+        clientReference: data.clientReference ?? guarantee.id,
+        currency,
+        amountCents,
+        paymentMethod: data.paymentMethod ?? null,
+        payerPersonId: data.payerPersonId ?? null,
+        payerOrganizationId: data.payerOrganizationId ?? null,
+        payerEmail: data.payerEmail ?? null,
+        payerName: data.payerName ?? null,
+        returnUrl: data.returnUrl ?? null,
+        cancelUrl: data.cancelUrl ?? null,
+        callbackUrl: data.callbackUrl ?? null,
+        expiresAt: data.expiresAt ?? null,
+        notes: data.notes ?? guarantee.notes ?? null,
+        providerPayload: data.providerPayload ?? null,
+        metadata: data.metadata ?? {
+          guaranteeType: guarantee.guaranteeType,
+        },
       },
-    })
+      runtime,
+    )
   },
 
   async updateBookingGuarantee(

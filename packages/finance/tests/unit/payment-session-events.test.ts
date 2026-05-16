@@ -13,6 +13,9 @@ import {
   buildInvoiceUpdateActionLedgerInput,
   buildPaymentCompletedEvent,
   buildPaymentSessionCompletionActionLedgerInput,
+  buildPaymentSessionCreateActionLedgerInput,
+  buildPaymentSessionFailedActionLedgerInput,
+  buildPaymentSessionUpdateActionLedgerInput,
   buildRecordPaymentActionLedgerInput,
   buildSupplierPaymentCreateActionLedgerInput,
   buildSupplierPaymentUpdateActionLedgerInput,
@@ -83,6 +86,49 @@ describe("payment session events", () => {
     })
   })
 
+  it("builds booking-targeted action ledger input for payment session creation", async () => {
+    const ledgerInput = await buildPaymentSessionCreateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        session: {
+          id: "psess_123",
+          targetType: "booking_payment_schedule",
+          targetId: "bps_123",
+          bookingId: "book_123",
+          invoiceId: null,
+          orderId: null,
+          amountCents: 25000,
+          currency: "USD",
+          provider: "netopia",
+          idempotencyKey: "session-create-123",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_session.create",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.payment_session.create",
+      authorizationSource: "finance.payment_session.route",
+      idempotencyScope: "finance.payment_session:booking:book_123:create",
+      idempotencyKey: "session-create-123",
+      mutationDetail: {
+        commandInputRef: "booking:book_123:payment_session",
+        commandResultRef: "payment_session:psess_123",
+        summary: "Payment session psess_123 created for booking book_123",
+        reversalKind: "none",
+      },
+    })
+    expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
   it("builds booking-targeted action ledger input for payment completions", async () => {
     const ledgerInput = await buildPaymentSessionCompletionActionLedgerInput(
       {
@@ -123,6 +169,92 @@ describe("payment session events", () => {
       },
     })
     expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds booking-targeted action ledger input for payment session updates", () => {
+    const ledgerInput = buildPaymentSessionUpdateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        session: {
+          id: "psess_123",
+          bookingId: "book_123",
+          invoiceId: null,
+          orderId: null,
+          targetType: "booking",
+          targetId: "book_123",
+        } as never,
+        changes: {
+          notes: "Retrying payment",
+          provider: "netopia",
+        },
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_session.update",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.payment_session.update",
+      authorizationSource: "finance.payment_session.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "payment_session:psess_123:update",
+        commandResultRef: "payment_session:psess_123",
+        summary: "Payment session psess_123 updated (notes, provider)",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds booking-targeted action ledger input for failed payment sessions", () => {
+    const ledgerInput = buildPaymentSessionFailedActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        session: {
+          id: "psess_123",
+          bookingId: "book_123",
+          invoiceId: null,
+          orderId: null,
+          targetType: "booking",
+          targetId: "book_123",
+        } as never,
+        changes: {
+          failureCode: "declined",
+          failureMessage: "Card declined",
+        },
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_session.fail",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.payment_session.fail",
+      authorizationSource: "finance.payment_session.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "payment_session:psess_123:fail",
+        commandResultRef: "payment_session:psess_123",
+        summary: "Payment session psess_123 marked as failed",
+        reversalKind: "none",
+      },
+    })
   })
 
   it("builds booking-targeted action ledger input for manual payment records", async () => {
