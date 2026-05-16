@@ -195,6 +195,11 @@ Implemented in `issue-933-cloud-auth-broker`:
   the same profile creation path. Future Cloud mirror provisioning should call
   this helper plus the documented Cloud provisioning hook rather than relying on
   consumer Better Auth `databaseHooks.user.create.*`.
+- IAM schema now has Cloud-linkage side tables for local mirror users and
+  sessions, plus a unique `(provider_id, account_id)` constraint on Better Auth
+  accounts. Operator and DMC migrations create those tables/indexes so future
+  exchange/revalidate code has a typed place to store WorkOS/platform linkage
+  without leaking it through Better Auth's session response.
 
 ### Broker Flow
 
