@@ -44,11 +44,38 @@ import {
   AvailabilityPickupPointsTab,
 } from "./availability-tabs-secondary"
 
-export function AvailabilityPage() {
+export type AvailabilityPageTab = "slots" | "rules" | "start-times" | "closeouts" | "pickup-points"
+
+export interface AvailabilityPageProps {
+  /** Initial product filter id. `null` / undefined → "all". */
+  initialProductId?: string | null
+  /** Initial active tab. Defaults to `"slots"`. */
+  initialTab?: AvailabilityPageTab
+  /** Notified whenever the product filter changes. Host can mirror to the URL. */
+  onProductFilterChange?: (productId: string | null) => void
+  /** Notified whenever the active tab changes. Host can mirror to the URL. */
+  onTabChange?: (tab: AvailabilityPageTab) => void
+}
+
+export function AvailabilityPage({
+  initialProductId,
+  initialTab,
+  onProductFilterChange,
+  onTabChange,
+}: AvailabilityPageProps = {}) {
   const messages = useAdminMessages()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
-  const [productFilter, setProductFilter] = useState("all")
+  const [productFilter, setProductFilterState] = useState(initialProductId ?? "all")
+  const [activeTab, setActiveTabState] = useState<AvailabilityPageTab>(initialTab ?? "slots")
+  const setProductFilter = (next: string) => {
+    setProductFilterState(next)
+    onProductFilterChange?.(next === "all" ? null : next)
+  }
+  const setActiveTab = (next: AvailabilityPageTab) => {
+    setActiveTabState(next)
+    onTabChange?.(next)
+  }
   const [bulkActionTarget, setBulkActionTarget] = useState<string | null>(null)
   const [ruleSelection, setRuleSelection] = useState<RowSelectionState>({})
   const [startTimeSelection, setStartTimeSelection] = useState<RowSelectionState>({})
@@ -311,6 +338,7 @@ export function AvailabilityPage() {
             onClearFilters={() => {
               setSearch("")
               setProductFilter("all")
+              setActiveTab("slots")
             }}
             onOpenSlot={(slotId) =>
               void navigate({ to: "/availability/$id", params: { id: slotId } })
@@ -320,7 +348,10 @@ export function AvailabilityPage() {
             }
           />
 
-          <Tabs defaultValue="slots">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as AvailabilityPageTab)}
+          >
             <TabsList variant="line">
               <TabsTrigger value="slots">{messages.availability.tabSlots}</TabsTrigger>
               <TabsTrigger value="rules">{messages.availability.tabRules}</TabsTrigger>
