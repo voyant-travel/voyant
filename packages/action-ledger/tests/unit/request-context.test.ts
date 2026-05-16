@@ -31,6 +31,7 @@ describe("mapActionLedgerRequestContext", () => {
       actorType: "staff",
       principalType: "user",
       principalId: "usr_1",
+      principalSubtype: null,
       sessionId: "sess_1",
       apiTokenId: null,
       internalRequest: false,
@@ -54,8 +55,47 @@ describe("mapActionLedgerRequestContext", () => {
       actorType: "staff",
       principalType: "api_key",
       principalId: "key_1",
+      principalSubtype: null,
       apiTokenId: "key_1",
       callerType: "api_key",
+    })
+  })
+
+  test("maps an agent request to an agent principal", () => {
+    expect(
+      mapActionLedgerRequestContext({
+        agentId: "agt_1",
+        callerType: "agent",
+        actor: "agent",
+        principalSubtype: "drafting_agent",
+        workflowRunId: "wf_run_1",
+      }),
+    ).toMatchObject({
+      actorType: "agent",
+      principalType: "agent",
+      principalId: "agt_1",
+      principalSubtype: "drafting_agent",
+      callerType: "agent",
+      workflowRunId: "wf_run_1",
+    })
+  })
+
+  test("maps a workflow request to a workflow principal", () => {
+    expect(
+      mapActionLedgerRequestContext({
+        callerType: "workflow",
+        actor: "system",
+        workflowRunId: "wf_run_1",
+        workflowStepId: "step_1",
+      }),
+    ).toMatchObject({
+      actorType: "system",
+      principalType: "workflow",
+      principalId: "wf_run_1",
+      principalSubtype: null,
+      callerType: "workflow",
+      workflowRunId: "wf_run_1",
+      workflowStepId: "step_1",
     })
   })
 
@@ -69,6 +109,7 @@ describe("mapActionLedgerRequestContext", () => {
     ).toMatchObject({
       principalType: "system",
       principalId: "internal_request",
+      principalSubtype: null,
       internalRequest: true,
       workflowRunId: "wf_run_1",
     })

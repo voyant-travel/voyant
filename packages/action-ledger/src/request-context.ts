@@ -12,6 +12,9 @@ import { actionLedgerService } from "./service.js"
 
 export interface ActionLedgerRequestContextValues {
   userId?: string | null
+  agentId?: string | null
+  workflowPrincipalId?: string | null
+  principalSubtype?: string | null
   sessionId?: string | null
   apiTokenId?: string | null
   apiKeyId?: string | null
@@ -28,6 +31,7 @@ export interface ActionLedgerActorFields {
   actorType: string | null
   principalType: ActionLedgerEntry["principalType"]
   principalId: string
+  principalSubtype: string | null
   sessionId: string | null
   apiTokenId: string | null
   internalRequest: boolean
@@ -131,6 +135,10 @@ export function mapActionLedgerRequestContext(
   const actor = normalizeNullableString(context.actor)
   const callerType = normalizeNullableString(context.callerType)
   const userId = normalizeNullableString(context.userId)
+  const agentId = normalizeNullableString(context.agentId)
+  const workflowRunId = normalizeNullableString(context.workflowRunId)
+  const workflowPrincipalId = normalizeNullableString(context.workflowPrincipalId) ?? workflowRunId
+  const principalSubtype = normalizeNullableString(context.principalSubtype)
   const sessionId = normalizeNullableString(context.sessionId)
   const apiTokenId = normalizeNullableString(context.apiTokenId ?? context.apiKeyId)
   const internalRequest = context.isInternalRequest === true || callerType === "internal"
@@ -140,12 +148,47 @@ export function mapActionLedgerRequestContext(
       actorType: actor,
       principalType: "api_key",
       principalId: apiTokenId,
+      principalSubtype,
       sessionId,
       apiTokenId,
       internalRequest,
       callerType,
       organizationId: normalizeNullableString(context.organizationId),
-      workflowRunId: normalizeNullableString(context.workflowRunId),
+      workflowRunId,
+      workflowStepId: normalizeNullableString(context.workflowStepId),
+      correlationId: normalizeNullableString(context.correlationId),
+    }
+  }
+
+  if (agentId && callerType === "agent") {
+    return {
+      actorType: actor,
+      principalType: "agent",
+      principalId: agentId,
+      principalSubtype,
+      sessionId,
+      apiTokenId,
+      internalRequest,
+      callerType,
+      organizationId: normalizeNullableString(context.organizationId),
+      workflowRunId,
+      workflowStepId: normalizeNullableString(context.workflowStepId),
+      correlationId: normalizeNullableString(context.correlationId),
+    }
+  }
+
+  if (workflowPrincipalId && callerType === "workflow") {
+    return {
+      actorType: actor,
+      principalType: "workflow",
+      principalId: workflowPrincipalId,
+      principalSubtype,
+      sessionId,
+      apiTokenId,
+      internalRequest,
+      callerType,
+      organizationId: normalizeNullableString(context.organizationId),
+      workflowRunId,
       workflowStepId: normalizeNullableString(context.workflowStepId),
       correlationId: normalizeNullableString(context.correlationId),
     }
@@ -156,12 +199,13 @@ export function mapActionLedgerRequestContext(
       actorType: actor,
       principalType: "system",
       principalId: userId ?? apiTokenId ?? options.fallbackPrincipalId ?? "internal_request",
+      principalSubtype,
       sessionId,
       apiTokenId,
       internalRequest,
       callerType,
       organizationId: normalizeNullableString(context.organizationId),
-      workflowRunId: normalizeNullableString(context.workflowRunId),
+      workflowRunId,
       workflowStepId: normalizeNullableString(context.workflowStepId),
       correlationId: normalizeNullableString(context.correlationId),
     }
@@ -171,12 +215,13 @@ export function mapActionLedgerRequestContext(
     actorType: actor,
     principalType: userId ? "user" : "system",
     principalId: userId ?? options.fallbackPrincipalId ?? "unknown_request",
+    principalSubtype,
     sessionId,
     apiTokenId,
     internalRequest,
     callerType,
     organizationId: normalizeNullableString(context.organizationId),
-    workflowRunId: normalizeNullableString(context.workflowRunId),
+    workflowRunId,
     workflowStepId: normalizeNullableString(context.workflowStepId),
     correlationId: normalizeNullableString(context.correlationId),
   }
