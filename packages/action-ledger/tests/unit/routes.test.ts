@@ -3,7 +3,11 @@ import { Hono } from "hono"
 import { afterEach, describe, expect, test, vi } from "vitest"
 
 import { __test__, actionLedgerAdminRoutes } from "../../src/routes.js"
-import type { ActionLedgerEntry } from "../../src/schema.js"
+import type {
+  ActionLedgerEntry,
+  ActionMutationDetail,
+  ActionSensitiveReadDetail,
+} from "../../src/schema.js"
 import { actionLedgerService } from "../../src/service.js"
 
 const baseDate = new Date("2026-05-15T10:00:00.000Z")
@@ -45,6 +49,37 @@ function makeEntry(overrides: Partial<ActionLedgerEntry> = {}): ActionLedgerEntr
     approvalId: null,
     amendsActionId: null,
     createdAt: baseDate,
+    ...overrides,
+  }
+}
+
+function makeMutationDetail(overrides: Partial<ActionMutationDetail> = {}): ActionMutationDetail {
+  return {
+    actionId: "alge_1",
+    commandInputRef: null,
+    commandResultRef: null,
+    summary: "Booking status changed from on_hold to confirmed",
+    reversalKind: "none",
+    reversalCommandId: null,
+    reversalCommandVersion: null,
+    reversalArgsRef: null,
+    reversalStateProjection: null,
+    reversalOutcomeProjection: null,
+    reversesActionId: null,
+    reversedByActionIdProjection: null,
+    ...overrides,
+  }
+}
+
+function makeSensitiveReadDetail(
+  overrides: Partial<ActionSensitiveReadDetail> = {},
+): ActionSensitiveReadDetail {
+  return {
+    actionId: "alge_1",
+    reasonCode: "travel_details_reveal",
+    disclosedFieldSet: ["passportNumber"],
+    disclosureSummary: "Travel document details disclosed",
+    decisionPolicy: "bookings-pii-scope-or-staff-v1",
     ...overrides,
   }
 }
@@ -129,5 +164,54 @@ describe("actionLedgerAdminRoutes", () => {
 
     expect(parsed.success).toBe(false)
     expect(parsed.error?.issues[0]?.path).toEqual(["cursorId"])
+  })
+
+  test("gets one entry with profile details", async () => {
+    const db = {} as AnyDrizzleDb
+    const spy = vi.spyOn(actionLedgerService, "getEntry").mockResolvedValue({
+      entry: makeEntry({
+        actionName: "booking.status.confirm",
+        actionKind: "update",
+        targetType: "booking",
+        targetId: "book_1",
+      }),
+      mutationDetail: makeMutationDetail(),
+      sensitiveReadDetail: makeSensitiveReadDetail(),
+    })
+
+    const app = makeApp(db)
+    const response = await app.request("/entries/alge_1")
+
+    expect(spy).toHaveBeenCalledWith(db, "alge_1")
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        id: "alge_1",
+        occurredAt: "2026-05-15T10:00:00.000Z",
+        createdAt: "2026-05-15T10:00:00.000Z",
+        mutationDetail: {
+          actionId: "alge_1",
+          summary: "Booking status changed from on_hold to confirmed",
+          reversalKind: "none",
+        },
+        sensitiveReadDetail: {
+          actionId: "alge_1",
+          reasonCode: "travel_details_reveal",
+          disclosedFieldSet: ["passportNumber"],
+        },
+      },
+    })
+  })
+
+  test("returns 404 when an entry is missing", async () => {
+    vi.spyOn(actionLedgerService, "getEntry").mockResolvedValue(null)
+
+    const app = makeApp({} as AnyDrizzleDb)
+    const response = await app.request("/entries/alge_missing")
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: "Action ledger entry not found",
+    })
   })
 })

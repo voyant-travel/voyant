@@ -3,6 +3,8 @@ import { and, desc, eq, inArray, lt, or, type SQL } from "drizzle-orm"
 
 import {
   type ActionLedgerEntry,
+  type ActionMutationDetail,
+  type ActionSensitiveReadDetail,
   actionLedgerEntries,
   actionLedgerRelayOutbox,
   actionMutationDetails,
@@ -66,6 +68,12 @@ export interface ListActionLedgerEntriesResult {
   nextCursor: ActionLedgerListCursor | null
 }
 
+export interface GetActionLedgerEntryResult {
+  entry: ActionLedgerEntry
+  mutationDetail: ActionMutationDetail | null
+  sensitiveReadDetail: ActionSensitiveReadDetail | null
+}
+
 export const actionLedgerService = {
   async appendEntry(
     db: AnyDrizzleDb,
@@ -112,6 +120,35 @@ export const actionLedgerService = {
         rows.length > limit && entries.length > 0
           ? toActionLedgerListCursor(entries[entries.length - 1]!)
           : null,
+    }
+  },
+
+  async getEntry(db: AnyDrizzleDb, id: string): Promise<GetActionLedgerEntryResult | null> {
+    const [entry] = await db
+      .select()
+      .from(actionLedgerEntries)
+      .where(eq(actionLedgerEntries.id, id))
+      .limit(1)
+
+    if (!entry) return null
+
+    const [[mutationDetail], [sensitiveReadDetail]] = await Promise.all([
+      db
+        .select()
+        .from(actionMutationDetails)
+        .where(eq(actionMutationDetails.actionId, id))
+        .limit(1),
+      db
+        .select()
+        .from(actionSensitiveReadDetails)
+        .where(eq(actionSensitiveReadDetails.actionId, id))
+        .limit(1),
+    ])
+
+    return {
+      entry,
+      mutationDetail: mutationDetail ?? null,
+      sensitiveReadDetail: sensitiveReadDetail ?? null,
     }
   },
 }

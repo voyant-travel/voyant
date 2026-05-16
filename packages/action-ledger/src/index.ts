@@ -19,7 +19,9 @@ export {
 } from "./request-context.js"
 export {
   type ActionLedgerAdminRoutes,
+  type ActionLedgerEntryDetailResponse,
   type ActionLedgerEntryResponse,
+  type ActionLedgerGetResponse,
   type ActionLedgerListResponse,
   actionLedgerAdminRoutes,
   actionLedgerHonoModule,
@@ -64,6 +66,7 @@ export {
   type AppendActionLedgerEntryInput,
   type AppendActionLedgerEntryResult,
   actionLedgerService,
+  type GetActionLedgerEntryResult,
   type ListActionLedgerEntriesInput,
   type ListActionLedgerEntriesResult,
 } from "./service.js"

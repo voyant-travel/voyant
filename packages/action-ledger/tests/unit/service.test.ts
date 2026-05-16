@@ -1,7 +1,12 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, test } from "vitest"
-import type { ActionLedgerEntry, NewActionLedgerEntry } from "../../src/schema.js"
+import type {
+  ActionLedgerEntry,
+  ActionMutationDetail,
+  ActionSensitiveReadDetail,
+  NewActionLedgerEntry,
+} from "../../src/schema.js"
 import {
   __test__,
   ActionLedgerIdempotencyConflictError,
@@ -145,6 +150,39 @@ describe("actionLedgerService.listEntries", () => {
   })
 })
 
+describe("actionLedgerService.getEntry", () => {
+  test("returns an entry with mutation and sensitive-read details", async () => {
+    const entry = makeEntry({
+      id: "alge_detail",
+      actionName: "booking.status.confirm",
+      actionKind: "update",
+      targetType: "booking",
+      targetId: "book_1",
+    })
+    const mutationDetail = makeMutationDetail({ actionId: entry.id })
+    const sensitiveReadDetail = makeSensitiveReadDetail({ actionId: entry.id })
+    const { db, calls } = makeGetEntryDb({ entry, mutationDetail, sensitiveReadDetail })
+
+    await expect(actionLedgerService.getEntry(db, entry.id)).resolves.toEqual({
+      entry,
+      mutationDetail,
+      sensitiveReadDetail,
+    })
+    expect(calls).toEqual([
+      "action_ledger_entries",
+      "action_mutation_details",
+      "action_sensitive_read_details",
+    ])
+  })
+
+  test("returns null when an entry is missing", async () => {
+    const { db, calls } = makeGetEntryDb({})
+
+    await expect(actionLedgerService.getEntry(db, "alge_missing")).resolves.toBeNull()
+    expect(calls).toEqual(["action_ledger_entries"])
+  })
+})
+
 describe("actionLedgerService.appendEntry", () => {
   test("throws a conflict when an idempotency key is replayed with a different fingerprint", async () => {
     const { db } = makeAppendDb()
@@ -177,6 +215,79 @@ describe("actionLedgerService.appendEntry", () => {
     })
   })
 })
+
+function makeMutationDetail(overrides: Partial<ActionMutationDetail> = {}): ActionMutationDetail {
+  return {
+    actionId: "alge_1",
+    commandInputRef: null,
+    commandResultRef: null,
+    summary: "Booking status changed from on_hold to confirmed",
+    reversalKind: "none",
+    reversalCommandId: null,
+    reversalCommandVersion: null,
+    reversalArgsRef: null,
+    reversalStateProjection: null,
+    reversalOutcomeProjection: null,
+    reversesActionId: null,
+    reversedByActionIdProjection: null,
+    ...overrides,
+  }
+}
+
+function makeSensitiveReadDetail(
+  overrides: Partial<ActionSensitiveReadDetail> = {},
+): ActionSensitiveReadDetail {
+  return {
+    actionId: "alge_1",
+    reasonCode: "travel_details_reveal",
+    disclosedFieldSet: ["passportNumber"],
+    disclosureSummary: "Travel document details disclosed",
+    decisionPolicy: "bookings-pii-scope-or-staff-v1",
+    ...overrides,
+  }
+}
+
+function makeGetEntryDb(input: {
+  entry?: ActionLedgerEntry
+  mutationDetail?: ActionMutationDetail
+  sensitiveReadDetail?: ActionSensitiveReadDetail
+}) {
+  const calls: string[] = []
+  const selectRows = [
+    input.entry ? [input.entry] : [],
+    input.mutationDetail ? [input.mutationDetail] : [],
+    input.sensitiveReadDetail ? [input.sensitiveReadDetail] : [],
+  ]
+  const callLabels = [
+    "action_ledger_entries",
+    "action_mutation_details",
+    "action_sensitive_read_details",
+  ]
+  let selectIndex = 0
+
+  const db = {
+    select() {
+      const index = selectIndex
+      selectIndex += 1
+      return {
+        from() {
+          return {
+            where() {
+              return {
+                limit() {
+                  calls.push(callLabels[index] ?? `select_${index}`)
+                  return Promise.resolve(selectRows[index] ?? [])
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return { db, calls }
+}
 
 function makeListDb(rows: ActionLedgerEntry[]) {
   const calls: Array<{ phase: string; argCount?: number; value?: number }> = []

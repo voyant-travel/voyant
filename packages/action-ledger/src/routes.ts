@@ -5,8 +5,12 @@ import type { HonoModule } from "@voyantjs/hono/module"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
 
-import type { ActionLedgerEntry } from "./schema.js"
-import { actionLedgerService } from "./service.js"
+import type {
+  ActionLedgerEntry,
+  ActionMutationDetail,
+  ActionSensitiveReadDetail,
+} from "./schema.js"
+import { actionLedgerService, type GetActionLedgerEntryResult } from "./service.js"
 
 const actionLedgerPrincipalTypeValues = ["user", "api_key", "agent", "workflow", "system"] as const
 const actionLedgerRiskValues = ["low", "medium", "high", "critical"] as const
@@ -98,6 +102,15 @@ export interface ActionLedgerListResponse {
   }
 }
 
+export type ActionLedgerEntryDetailResponse = ActionLedgerEntryResponse & {
+  mutationDetail: ActionMutationDetail | null
+  sensitiveReadDetail: ActionSensitiveReadDetail | null
+}
+
+export interface ActionLedgerGetResponse {
+  data: ActionLedgerEntryDetailResponse
+}
+
 function serializeDate(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) {
@@ -114,6 +127,16 @@ function serializeActionLedgerEntry(entry: ActionLedgerEntry): ActionLedgerEntry
   }
 }
 
+function serializeActionLedgerEntryDetail(
+  result: GetActionLedgerEntryResult,
+): ActionLedgerEntryDetailResponse {
+  return {
+    ...serializeActionLedgerEntry(result.entry),
+    mutationDetail: result.mutationDetail,
+    sensitiveReadDetail: result.sensitiveReadDetail,
+  }
+}
+
 async function listActionLedgerEntries(c: Context<Env>) {
   const query: ActionLedgerEntryListQuery = parseQuery(c, actionLedgerEntryListQuerySchema)
   const result = await actionLedgerService.listEntries(c.get("db"), query)
@@ -126,9 +149,27 @@ async function listActionLedgerEntries(c: Context<Env>) {
   } satisfies ActionLedgerListResponse)
 }
 
+async function getActionLedgerEntry(c: Context<Env>) {
+  const id = c.req.param("id")
+  if (!id) {
+    return c.json({ error: "Action ledger entry not found" }, 404)
+  }
+
+  const result = await actionLedgerService.getEntry(c.get("db"), id)
+
+  if (!result) {
+    return c.json({ error: "Action ledger entry not found" }, 404)
+  }
+
+  return c.json({
+    data: serializeActionLedgerEntryDetail(result),
+  } satisfies ActionLedgerGetResponse)
+}
+
 export const actionLedgerAdminRoutes = new Hono<Env>()
   .get("/", listActionLedgerEntries)
   .get("/entries", listActionLedgerEntries)
+  .get("/entries/:id", getActionLedgerEntry)
 
 export type ActionLedgerAdminRoutes = typeof actionLedgerAdminRoutes
 
@@ -144,4 +185,5 @@ export const actionLedgerHonoModule: HonoModule = {
 export const __test__ = {
   actionLedgerEntryListQuerySchema,
   serializeActionLedgerEntry,
+  serializeActionLedgerEntryDetail,
 }
