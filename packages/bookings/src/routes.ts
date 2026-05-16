@@ -486,6 +486,9 @@ function actionApprovalValidationResponse(
     case "principal_mismatch":
       return c.json({ error: "Action approval belongs to a different principal" }, 403)
   }
+
+  const exhaustiveReason: never = validation.reason
+  return c.json({ error: `Unhandled action approval validation failure: ${exhaustiveReason}` }, 500)
 }
 
 function bookingStatusMutationRuntime(
