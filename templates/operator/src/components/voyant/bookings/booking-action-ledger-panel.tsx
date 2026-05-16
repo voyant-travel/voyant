@@ -1,10 +1,11 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import type { ActionLedgerEntryResponse } from "@voyantjs/action-ledger"
 import { useLocale } from "@voyantjs/admin"
 import type { BookingActionLedgerListResponse } from "@voyantjs/bookings"
 import { Badge } from "@voyantjs/ui/components/badge"
+import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { ScrollText } from "lucide-react"
 import { useMemo } from "react"
@@ -17,6 +18,9 @@ export interface BookingActionLedgerPanelProps {
 
 type LedgerBadgeVariant = "default" | "secondary" | "outline" | "destructive"
 type BookingActionLedgerTraveler = BookingActionLedgerListResponse["travelers"][number]
+type BookingActionLedgerCursor = NonNullable<
+  BookingActionLedgerListResponse["pageInfo"]["nextCursor"]
+>
 
 const STATUS_VARIANT: Partial<Record<ActionLedgerEntryResponse["status"], LedgerBadgeVariant>> = {
   succeeded: "default",
@@ -43,13 +47,16 @@ const RISK_VARIANT: Partial<
 
 export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanelProps) {
   const { resolvedLocale } = useLocale()
-  const actionLedgerQuery = useQuery({
+  const actionLedgerQuery = useInfiniteQuery({
     queryKey: queryKeys.bookings.actionLedger(bookingId),
-    queryFn: () => getBookingActionLedger(bookingId),
+    queryFn: ({ pageParam }) => getBookingActionLedger(bookingId, pageParam),
+    initialPageParam: null as BookingActionLedgerCursor | null,
+    getNextPageParam: (lastPage) => lastPage.pageInfo.nextCursor,
   })
 
-  const entries = actionLedgerQuery.data?.data ?? []
-  const travelers = actionLedgerQuery.data?.travelers ?? []
+  const pages = actionLedgerQuery.data?.pages ?? []
+  const entries = pages.flatMap((page) => page.data)
+  const travelers = pages[0]?.travelers ?? []
   const travelersById = useMemo(
     () => new Map(travelers.map((traveler) => [traveler.id, traveler])),
     [travelers],
@@ -78,30 +85,45 @@ export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanel
             No central action ledger entries have been recorded for this booking yet.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="px-4 py-2 text-left font-medium">When</th>
-                  <th className="px-4 py-2 text-left font-medium">Action</th>
-                  <th className="px-4 py-2 text-left font-medium">Actor</th>
-                  <th className="px-4 py-2 text-left font-medium">Target</th>
-                  <th className="px-4 py-2 text-left font-medium">Risk</th>
-                  <th className="px-4 py-2 text-left font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry) => (
-                  <LedgerRow
-                    key={entry.id}
-                    entry={entry}
-                    traveler={travelersById.get(entry.targetId) ?? null}
-                    locale={resolvedLocale}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-muted-foreground">
+                    <th className="px-4 py-2 text-left font-medium">When</th>
+                    <th className="px-4 py-2 text-left font-medium">Action</th>
+                    <th className="px-4 py-2 text-left font-medium">Actor</th>
+                    <th className="px-4 py-2 text-left font-medium">Target</th>
+                    <th className="px-4 py-2 text-left font-medium">Risk</th>
+                    <th className="px-4 py-2 text-left font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((entry) => (
+                    <LedgerRow
+                      key={entry.id}
+                      entry={entry}
+                      traveler={travelersById.get(entry.targetId) ?? null}
+                      locale={resolvedLocale}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {actionLedgerQuery.hasNextPage ? (
+              <div className="border-t px-4 py-3 text-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={actionLedgerQuery.isFetchingNextPage}
+                  onClick={() => void actionLedgerQuery.fetchNextPage()}
+                >
+                  {actionLedgerQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+                </Button>
+              </div>
+            ) : null}
+          </>
         )}
       </CardContent>
     </Card>
@@ -150,9 +172,18 @@ function LedgerRow({
   )
 }
 
-async function getBookingActionLedger(bookingId: string): Promise<BookingActionLedgerListResponse> {
+async function getBookingActionLedger(
+  bookingId: string,
+  cursor: BookingActionLedgerCursor | null,
+): Promise<BookingActionLedgerListResponse> {
+  const search = new URLSearchParams({ limit: "50" })
+  if (cursor) {
+    search.set("cursorOccurredAt", cursor.occurredAt)
+    search.set("cursorId", cursor.id)
+  }
+
   return api.get<BookingActionLedgerListResponse>(
-    `/v1/admin/bookings/${bookingId}/action-ledger?limit=50`,
+    `/v1/admin/bookings/${bookingId}/action-ledger?${search}`,
   )
 }
 

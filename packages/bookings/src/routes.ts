@@ -136,9 +136,31 @@ const TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS = [
   "allocations",
 ]
 
-const bookingActionLedgerQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(200).optional(),
-})
+const bookingActionLedgerQuerySchema = z
+  .object({
+    cursorOccurredAt: z.string().datetime().optional(),
+    cursorId: z.string().trim().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(199).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (Boolean(value.cursorOccurredAt) === Boolean(value.cursorId)) return
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: value.cursorOccurredAt ? ["cursorId"] : ["cursorOccurredAt"],
+      message: "cursorOccurredAt and cursorId must be provided together",
+    })
+  })
+  .transform(({ cursorOccurredAt, cursorId, ...query }) => ({
+    ...query,
+    cursor:
+      cursorOccurredAt && cursorId
+        ? {
+            occurredAt: cursorOccurredAt,
+            id: cursorId,
+          }
+        : undefined,
+  }))
 
 interface BookingActionLedgerTravelerTarget {
   id: string
@@ -150,7 +172,10 @@ export interface BookingActionLedgerListResponse {
   data: ActionLedgerEntryResponse[]
   travelers: BookingActionLedgerTravelerTarget[]
   pageInfo: {
-    nextCursor: null
+    nextCursor: {
+      occurredAt: string
+      id: string
+    } | null
   }
 }
 
@@ -816,6 +841,13 @@ function serializeBookingActionLedgerEntry(entry: ActionLedgerEntry): ActionLedg
   }
 }
 
+function toBookingActionLedgerCursor(entry: Pick<ActionLedgerEntry, "occurredAt" | "id">) {
+  return {
+    occurredAt: serializeBookingActionLedgerDate(entry.occurredAt),
+    id: entry.id,
+  }
+}
+
 function sortBookingActionLedgerEntries(entries: ActionLedgerEntry[]) {
   return [...entries].sort((a, b) => {
     const occurredAtDelta = new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
@@ -832,6 +864,7 @@ async function listBookingActionLedger(c: Context<Env>) {
 
   const query = parseQuery(c, bookingActionLedgerQuerySchema)
   const limit = query.limit ?? 50
+  const queryLimit = limit + 1
 
   const booking = await bookingsService.getBookingById(c.get("db"), bookingId)
   if (!booking) {
@@ -852,14 +885,16 @@ async function listBookingActionLedger(c: Context<Env>) {
     actionLedgerService.listEntries(c.get("db"), {
       targetType: "booking",
       targetId: bookingId,
-      limit,
+      cursor: query.cursor,
+      limit: queryLimit,
     }),
     travelerIds.length > 0
       ? actionLedgerService.listEntries(c.get("db"), {
           targetType: "booking_traveler",
           targetIds: travelerIds,
           actionName: BOOKING_PII_READ_ACTION_NAME,
-          limit,
+          cursor: query.cursor,
+          limit: queryLimit,
         })
       : Promise.resolve({ entries: [], nextCursor: null }),
   ])
@@ -871,18 +906,23 @@ async function listBookingActionLedger(c: Context<Env>) {
   for (const entry of travelerEntriesResult.entries) {
     entriesById.set(entry.id, entry)
   }
+  const sortedEntries = sortBookingActionLedgerEntries([...entriesById.values()])
+  const pageEntries = sortedEntries.slice(0, limit)
+  const lastPageEntry = pageEntries.at(-1)
+  const nextCursor =
+    sortedEntries.length > limit && lastPageEntry
+      ? toBookingActionLedgerCursor(lastPageEntry)
+      : null
 
   return c.json({
-    data: sortBookingActionLedgerEntries([...entriesById.values()])
-      .slice(0, limit)
-      .map(serializeBookingActionLedgerEntry),
+    data: pageEntries.map(serializeBookingActionLedgerEntry),
     travelers: visibleTravelers.map((traveler) => ({
       id: traveler.id,
       firstName: traveler.firstName,
       lastName: traveler.lastName,
     })),
     pageInfo: {
-      nextCursor: null,
+      nextCursor,
     },
   } satisfies BookingActionLedgerListResponse)
 }
