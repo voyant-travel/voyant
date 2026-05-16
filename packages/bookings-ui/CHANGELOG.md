@@ -1,5 +1,23 @@
 # @voyantjs/bookings-ui
 
+## 0.50.7
+
+### Patch Changes
+
+- 7e4593e: Make the booking create flow usable for priced room/unit selections by keeping product combobox labels readable, falling back to product departures when option-filtered departures are empty, showing option units before departure selection, and surfacing booking total/scheduled/remaining payment amounts.
+  - @voyantjs/availability-react@0.50.7
+  - @voyantjs/bookings-react@0.50.7
+  - @voyantjs/catalog@0.50.7
+  - @voyantjs/catalog-react@0.50.7
+  - @voyantjs/crm-react@0.50.7
+  - @voyantjs/crm-ui@0.50.7
+  - @voyantjs/finance-react@0.50.7
+  - @voyantjs/i18n@0.50.7
+  - @voyantjs/legal-react@0.50.7
+  - @voyantjs/products-react@0.50.7
+  - @voyantjs/suppliers-react@0.50.7
+  - @voyantjs/ui@0.50.7
+
 ## 0.50.6
 
 ### Patch Changes

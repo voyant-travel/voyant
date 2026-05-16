@@ -1,5 +1,13 @@
 # @voyantjs/admin
 
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/i18n@0.50.7
+- @voyantjs/react@0.50.7
+- @voyantjs/ui@0.50.7
+
 ## 0.50.6
 
 ### Patch Changes
