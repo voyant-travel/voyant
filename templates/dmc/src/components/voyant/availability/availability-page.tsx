@@ -47,33 +47,50 @@ import {
 export type AvailabilityPageTab = "slots" | "rules" | "start-times" | "closeouts" | "pickup-points"
 
 export interface AvailabilityPageProps {
-  /** Initial product filter id. `null` / undefined → "all". */
-  initialProductId?: string | null
-  /** Initial active tab. Defaults to `"slots"`. */
-  initialTab?: AvailabilityPageTab
-  /** Notified whenever the product filter changes. Host can mirror to the URL. */
+  /**
+   * Product filter id. Pass `null` (or omit) for "all". When supplied
+   * with `onProductFilterChange`, becomes a fully controlled prop —
+   * the page reflects URL changes without remounting.
+   */
+  productId?: string | null
+  /** Active tab. Defaults to `"slots"` when omitted. */
+  tab?: AvailabilityPageTab
+  /** Fires when the product filter changes. */
   onProductFilterChange?: (productId: string | null) => void
-  /** Notified whenever the active tab changes. Host can mirror to the URL. */
+  /** Fires when the active tab changes. */
   onTabChange?: (tab: AvailabilityPageTab) => void
 }
 
 export function AvailabilityPage({
-  initialProductId,
-  initialTab,
+  productId: controlledProductId,
+  tab: controlledTab,
   onProductFilterChange,
   onTabChange,
 }: AvailabilityPageProps = {}) {
   const messages = useAdminMessages()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
-  const [productFilter, setProductFilterState] = useState(initialProductId ?? "all")
-  const [activeTab, setActiveTabState] = useState<AvailabilityPageTab>(initialTab ?? "slots")
+  // Filter + tab state can either be controlled by the host (URL-
+  // backed routes) or owned internally for standalone mounts. Codex
+  // flagged that a useState seed-from-prop pattern goes stale when
+  // the URL changes without unmounting — keeping a single source of
+  // truth per render avoids that drift.
+  const [internalProductFilter, setInternalProductFilter] = useState<string>(
+    controlledProductId ?? "all",
+  )
+  const [internalTab, setInternalTab] = useState<AvailabilityPageTab>(controlledTab ?? "slots")
+  const isProductFilterControlled = onProductFilterChange != null
+  const isTabControlled = onTabChange != null
+  const productFilter = isProductFilterControlled
+    ? (controlledProductId ?? "all")
+    : internalProductFilter
+  const activeTab = isTabControlled ? (controlledTab ?? "slots") : internalTab
   const setProductFilter = (next: string) => {
-    setProductFilterState(next)
+    if (!isProductFilterControlled) setInternalProductFilter(next)
     onProductFilterChange?.(next === "all" ? null : next)
   }
   const setActiveTab = (next: AvailabilityPageTab) => {
-    setActiveTabState(next)
+    if (!isTabControlled) setInternalTab(next)
     onTabChange?.(next)
   }
   const [bulkActionTarget, setBulkActionTarget] = useState<string | null>(null)

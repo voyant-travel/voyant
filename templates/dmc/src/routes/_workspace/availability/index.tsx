@@ -40,8 +40,8 @@ function RouteComponent() {
 
   return (
     <AvailabilityPage
-      initialProductId={productId ?? null}
-      initialTab={tab}
+      productId={productId ?? null}
+      tab={tab ?? "slots"}
       onProductFilterChange={(nextProductId) => {
         void navigate({
           search: (prev) => ({ ...prev, productId: nextProductId ?? undefined }),
