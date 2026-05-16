@@ -1431,6 +1431,8 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         status: "succeeded",
         causationActionId: requestedActionId,
         approvalId,
+        idempotencyScope: `${approvalId}:execution`,
+        idempotencyKey: approvalId,
         principalType: "agent",
         principalId: "agent-booking-cancel",
       })

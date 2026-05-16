@@ -216,6 +216,9 @@ export interface BookingServiceRuntime {
   actionLedgerAuthorizationSource?: string | null
   actionLedgerCausationActionId?: string | null
   actionLedgerApprovalId?: string | null
+  actionLedgerIdempotencyScope?: string | null
+  actionLedgerIdempotencyKey?: string | null
+  actionLedgerIdempotencyFingerprint?: string | null
   expirePaymentSessionsForBooking?: (
     db: PostgresJsDatabase,
     bookingId: string,
@@ -260,6 +263,9 @@ async function appendBookingStatusMutationLedger(
     authorizationSource: runtime.actionLedgerAuthorizationSource ?? "bookings.status.route",
     causationActionId: runtime.actionLedgerCausationActionId ?? null,
     approvalId: runtime.actionLedgerApprovalId ?? null,
+    idempotencyScope: runtime.actionLedgerIdempotencyScope ?? null,
+    idempotencyKey: runtime.actionLedgerIdempotencyKey ?? null,
+    idempotencyFingerprint: runtime.actionLedgerIdempotencyFingerprint ?? null,
     mutationDetail: {
       summary: `Booking status changed from ${input.fromStatus} to ${input.toStatus}`,
       reversalKind: "none",

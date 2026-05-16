@@ -103,6 +103,7 @@ const ACTION_APPROVAL_ID_HEADER = "action-approval-id"
 type ApprovedBookingStatusAction = {
   requestedActionId: string
   approvalId: string
+  idempotencyFingerprint: string
 }
 
 const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
@@ -513,6 +514,7 @@ async function resolveApprovedBookingStatusAction(
     action: {
       requestedActionId: requestedAction.id,
       approvalId: result.approval.id,
+      idempotencyFingerprint: requestedAction.idempotencyFingerprint,
     },
   }
 }
@@ -530,6 +532,11 @@ function bookingStatusMutationRuntime(
     actionLedgerAuthorizationSource: auth.access.authorizationSource,
     actionLedgerCausationActionId: auth.approvedAction?.requestedActionId ?? null,
     actionLedgerApprovalId: auth.approvedAction?.approvalId ?? null,
+    actionLedgerIdempotencyScope: auth.approvedAction
+      ? `${auth.approvedAction.approvalId}:execution`
+      : null,
+    actionLedgerIdempotencyKey: auth.approvedAction?.approvalId ?? null,
+    actionLedgerIdempotencyFingerprint: auth.approvedAction?.idempotencyFingerprint ?? null,
   }
 }
 
