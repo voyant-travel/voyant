@@ -211,8 +211,20 @@ Implemented in `issue-933-cloud-auth-broker`:
   configured. `/auth/cloud/callback` validates state and clears the state cookie,
   then still returns `501` because signed assertion exchange and Better
   Auth-backed local session issuance are intentionally not implemented yet.
+- `@voyantjs/auth/cloud-broker` also includes the server-to-server exchange
+  client and RS256/JWKS assertion verifier. Admin callbacks can now post the
+  one-time code plus nonce/callback binding to Cloud, authenticate with a
+  deployment client token, verify the returned assertion issuer/audience/
+  deployment/nonce/expiry, and still stop before local session issuance.
+- Operator and DMC callbacks call the exchange path when
+  `VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL`, `VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL`,
+  and `VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN` are present. They continue to
+  return `501` after a valid assertion until the Better Auth-backed session
+  issuance helper is implemented.
 - Template env docs now include the Cloud-injected broker settings:
   `VOYANT_CLOUD_ADMIN_AUTH_START_URL`, `VOYANT_CLOUD_DEPLOYMENT_ID`,
+  `VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL`, `VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL`,
+  `VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE`, `VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN`,
   `VOYANT_CLOUD_APP_ID`, and `VOYANT_CLOUD_ENVIRONMENT`.
 
 ### Broker Flow

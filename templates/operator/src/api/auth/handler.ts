@@ -9,6 +9,7 @@
 
 import {
   createCloudAdminAuthStart,
+  exchangeCloudAdminAuthCode,
   verifyCloudAdminAuthCallback,
 } from "@voyantjs/auth/cloud-broker"
 import { createBetterAuth, handleApiTokenManagementRequest } from "@voyantjs/auth/server"
@@ -139,6 +140,22 @@ function getCloudAuthStartConfig(env: CloudflareBindings) {
     cookieSecret: env.SESSION_CLAIMS_SECRET,
     appId: env.VOYANT_CLOUD_APP_ID?.trim() || undefined,
     environment: env.VOYANT_CLOUD_ENVIRONMENT?.trim() || undefined,
+  }
+}
+
+function getCloudAuthExchangeConfig(env: CloudflareBindings) {
+  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+  const exchangeUrl = env.VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL?.trim()
+  const assertionJwksUrl = env.VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL?.trim()
+  const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
+  if (!deploymentId || !exchangeUrl || !assertionJwksUrl || !clientToken) return null
+
+  return {
+    exchangeUrl,
+    deploymentId,
+    clientToken,
+    assertionJwksUrl,
+    assertionAudience: env.VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?.trim() || deploymentId,
   }
 }
 
@@ -452,14 +469,33 @@ auth.get("/auth/cloud/callback", async (c) => {
     )
   }
 
-  return c.json(
-    {
-      error: "Voyant Cloud auth exchange is not configured yet",
-      deploymentId: result.state.deploymentId,
-    },
-    501,
-    { "Set-Cookie": result.clearCookie },
-  )
+  const exchangeConfig = getCloudAuthExchangeConfig(c.env)
+  if (!exchangeConfig) {
+    return c.json({ error: "Voyant Cloud auth exchange is not configured yet" }, 501, {
+      "Set-Cookie": result.clearCookie,
+    })
+  }
+
+  try {
+    const assertion = await exchangeCloudAdminAuthCode({
+      code: result.code,
+      state: result.state,
+      config: exchangeConfig,
+    })
+    return c.json(
+      {
+        error: "Voyant Cloud auth session issuance is not configured yet",
+        deploymentId: assertion.deploymentId,
+      },
+      501,
+      { "Set-Cookie": result.clearCookie },
+    )
+  } catch (error) {
+    console.error("[auth/cloud/callback] Exchange error:", error)
+    return c.json({ error: "Voyant Cloud auth exchange failed" }, 401, {
+      "Set-Cookie": result.clearCookie,
+    })
+  }
 })
 
 auth.all("/auth/api-tokens", handleApiTokensFacade)

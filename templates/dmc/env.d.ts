@@ -17,6 +17,10 @@ interface CloudflareBindings {
   // Admin auth mode. Localhost/self-hosted deployments use local Better Auth
   // flows. Voyant Cloud deployments use Cloud as the exclusive identity broker.
   VOYANT_ADMIN_AUTH_MODE?: "local" | "voyant-cloud"
+  VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?: string
+  VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?: string
+  VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL?: string
+  VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL?: string
   VOYANT_CLOUD_ADMIN_AUTH_START_URL?: string
   VOYANT_CLOUD_APP_ID?: string
   VOYANT_CLOUD_DEPLOYMENT_ID?: string
