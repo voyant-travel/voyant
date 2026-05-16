@@ -109,6 +109,7 @@ export {
 } from "./schema.js"
 export {
   ActionApprovalDecisionConflictError,
+  ActionApprovalDecisionStatusError,
   type ActionApprovalListCursor,
   type ActionDelegationListCursor,
   ActionLedgerIdempotencyConflictError,

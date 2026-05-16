@@ -16,9 +16,11 @@ import { actionApprovals, actionLedgerEntries } from "../../src/schema.js"
 import {
   __test__,
   ActionApprovalDecisionConflictError,
+  ActionApprovalDecisionStatusError,
   ActionLedgerIdempotencyConflictError,
   type AppendActionLedgerEntryInput,
   actionLedgerService,
+  type DecideActionApprovalInput,
 } from "../../src/service.js"
 
 const baseDate = new Date("2026-05-15T10:00:00.000Z")
@@ -977,6 +979,37 @@ describe("actionLedgerService approval lifecycle", () => {
       approvalId: "appr_done",
       currentStatus: "approved",
     })
+  })
+
+  test("rejects non-terminal decision statuses before writing", async () => {
+    const pendingApproval = makeApproval({
+      id: "appr_pending",
+      requestedActionId: "alge_requested",
+      status: "pending",
+    })
+    const { db, entries, approvals } = makeApprovalLifecycleDb({
+      approvals: [pendingApproval],
+    })
+
+    const input = {
+      id: pendingApproval.id,
+      status: "pending",
+      decidedByPrincipalId: "usr_decider",
+      decisionAction: {
+        actionName: "action_approval.pending",
+        actionVersion: "v1",
+        principalType: "user",
+        principalId: "usr_decider",
+        internalRequest: false,
+      },
+    } as unknown as DecideActionApprovalInput
+
+    await expect(actionLedgerService.decideApproval(db, input)).rejects.toMatchObject({
+      name: ActionApprovalDecisionStatusError.name,
+      status: "pending",
+    })
+    expect(approvals[0]?.status).toBe("pending")
+    expect(entries).toHaveLength(0)
   })
 })
 

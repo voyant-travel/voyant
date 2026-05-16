@@ -48,6 +48,16 @@ export class ActionApprovalDecisionConflictError extends Error {
   }
 }
 
+export class ActionApprovalDecisionStatusError extends Error {
+  readonly status: string
+
+  constructor(status: string) {
+    super(`Action approval decision status must be terminal, received ${status}`)
+    this.name = "ActionApprovalDecisionStatusError"
+    this.status = status
+  }
+}
+
 export interface AppendActionLedgerEntryInput
   extends Omit<NewActionLedgerEntry, "id" | "createdAt" | "occurredAt"> {
   occurredAt?: Date
@@ -84,6 +94,16 @@ export interface RequestActionApprovalResult {
 }
 
 type ApprovalDecisionStatus = Exclude<ActionApproval["status"], "pending">
+
+const approvalDecisionStatusValues = [
+  "approved",
+  "denied",
+  "expired",
+  "cancelled",
+  "superseded",
+] as const satisfies readonly ApprovalDecisionStatus[]
+
+const approvalDecisionStatusSet = new Set<ActionApproval["status"]>(approvalDecisionStatusValues)
 
 export interface DecideActionApprovalInput {
   id: string
@@ -412,6 +432,8 @@ export const actionLedgerService = {
     db: AnyDrizzleDb,
     input: DecideActionApprovalInput,
   ): Promise<DecideActionApprovalResult | null> {
+    assertApprovalDecisionStatus(input.status)
+
     return withOptionalTransaction(db, async (tx) => {
       const approval = await findApprovalById(tx, input.id)
       if (!approval) return null
@@ -971,6 +993,11 @@ async function findApprovalById(db: AnyDrizzleDb, id: string): Promise<ActionApp
     .limit(1)
 
   return approval ?? null
+}
+
+function assertApprovalDecisionStatus(status: string): asserts status is ApprovalDecisionStatus {
+  if (approvalDecisionStatusSet.has(status as ActionApproval["status"])) return
+  throw new ActionApprovalDecisionStatusError(status)
 }
 
 function assertSameFingerprint(entry: ActionLedgerEntry, fingerprint: string | null): void {
