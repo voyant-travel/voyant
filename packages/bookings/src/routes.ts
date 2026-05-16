@@ -11,6 +11,7 @@ import {
   buildActionLedgerApprovedExecutionFields,
   evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
+  ledgerSensitiveRead,
   mapActionLedgerRequestContext,
   requestActionLedgerApproval,
 } from "@voyantjs/action-ledger"
@@ -1426,25 +1427,36 @@ export const bookingRoutes = new Hono<Env>()
       return handleKmsConfigError(c, error)
     }
 
+    travelDetails = await ledgerSensitiveRead(
+      c.get("db"),
+      (value: TravelerTravelDetails) => ({
+        context: getActionLedgerRequestContext(c),
+        actionName: BOOKING_PII_READ_ACTION_NAME,
+        actionVersion: BOOKING_PII_READ_ACTION_VERSION,
+        status: "succeeded",
+        evaluatedRisk: auth.access?.evaluatedRisk ?? "high",
+        targetType: "booking_traveler",
+        targetId: traveler.id,
+        routeOrToolName: "bookings.travelers.reveal",
+        capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+        capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+        authorizationSource: auth.access?.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
+        reasonCode: "traveler_reveal",
+        disclosedFieldSet: value
+          ? [...TRAVELER_IDENTITY_DISCLOSED_FIELDS, ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS]
+          : TRAVELER_IDENTITY_DISCLOSED_FIELDS,
+        disclosureSummary: "Traveler identity reveal",
+        decisionPolicy: BOOKING_PII_DECISION_POLICY,
+      }),
+      () => travelDetails,
+    )
+
     await logBookingPiiAccess(c, {
       bookingId,
       travelerId,
       action: "read",
       outcome: "allowed",
       reason: "traveler_reveal",
-    })
-
-    await logBookingPiiReadActionLedger(c, {
-      travelerId,
-      status: "succeeded",
-      reason: "traveler_reveal",
-      routeOrToolName: "bookings.travelers.reveal",
-      disclosedFieldSet: travelDetails
-        ? [...TRAVELER_IDENTITY_DISCLOSED_FIELDS, ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS]
-        : TRAVELER_IDENTITY_DISCLOSED_FIELDS,
-      disclosureSummary: "Traveler identity reveal",
-      authorizationSource: auth.access?.authorizationSource,
-      evaluatedRisk: auth.access?.evaluatedRisk,
     })
 
     return c.json({ data: { ...traveler, travelDetails } })
@@ -1494,6 +1506,30 @@ export const bookingRoutes = new Hono<Env>()
       return handleKmsConfigError(c, error)
     }
 
+    details = await ledgerSensitiveRead(
+      c.get("db"),
+      (value: TravelerTravelDetails) => ({
+        context: getActionLedgerRequestContext(c),
+        actionName: BOOKING_PII_READ_ACTION_NAME,
+        actionVersion: BOOKING_PII_READ_ACTION_VERSION,
+        status: value ? "succeeded" : "denied",
+        evaluatedRisk: auth.access?.evaluatedRisk ?? "high",
+        targetType: "booking_traveler",
+        targetId: traveler.id,
+        routeOrToolName: "bookings.travelers.travel-details",
+        capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+        capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+        authorizationSource: auth.access?.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
+        reasonCode: value ? "travel_details_reveal" : "travel_details_not_found",
+        disclosedFieldSet: value ? TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS : [],
+        disclosureSummary: value
+          ? "Traveler travel details reveal"
+          : "Booking traveler travel details not found",
+        decisionPolicy: BOOKING_PII_DECISION_POLICY,
+      }),
+      () => details,
+    )
+
     if (!details) {
       await logBookingPiiAccess(c, {
         bookingId: traveler.bookingId,
@@ -1502,28 +1538,8 @@ export const bookingRoutes = new Hono<Env>()
         outcome: "denied",
         reason: "travel_details_not_found",
       })
-      await logBookingPiiReadActionLedger(c, {
-        travelerId: traveler.id,
-        status: "denied",
-        reason: "travel_details_not_found",
-        routeOrToolName: "bookings.travelers.travel-details",
-        disclosureSummary: "Booking traveler travel details not found",
-        authorizationSource: auth.access?.authorizationSource,
-        evaluatedRisk: auth.access?.evaluatedRisk,
-      })
       return c.json({ error: "Traveler travel details not found" }, 404)
     }
-
-    await logBookingPiiReadActionLedger(c, {
-      travelerId: traveler.id,
-      status: "succeeded",
-      reason: "travel_details_reveal",
-      routeOrToolName: "bookings.travelers.travel-details",
-      disclosedFieldSet: TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
-      disclosureSummary: "Traveler travel details reveal",
-      authorizationSource: auth.access?.authorizationSource,
-      evaluatedRisk: auth.access?.evaluatedRisk,
-    })
 
     return c.json({ data: details })
   })

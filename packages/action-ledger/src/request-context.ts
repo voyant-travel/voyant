@@ -58,6 +58,10 @@ export interface BuildActionLedgerSensitiveReadInput
   decisionPolicy?: string | null
 }
 
+export type BuildActionLedgerSensitiveReadInputForValue<T> =
+  | BuildActionLedgerSensitiveReadInput
+  | ((value: T) => BuildActionLedgerSensitiveReadInput)
+
 export interface BuildActionLedgerMutationInput
   extends CommonActionLedgerRouteInput,
     ActionLedgerRequestMappingOptions {
@@ -291,11 +295,11 @@ export async function appendActionLedgerSensitiveRead(
 
 export async function ledgerSensitiveRead<T>(
   db: AnyDrizzleDb,
-  input: BuildActionLedgerSensitiveReadInput,
+  input: BuildActionLedgerSensitiveReadInputForValue<T>,
   read: () => T | Promise<T>,
 ): Promise<T> {
   const value = await read()
-  await appendActionLedgerSensitiveRead(db, input)
+  await appendActionLedgerSensitiveRead(db, typeof input === "function" ? input(value) : input)
   return value
 }
 

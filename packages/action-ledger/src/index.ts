@@ -42,6 +42,7 @@ export {
   type BuildActionLedgerApprovedExecutionFieldsInput,
   type BuildActionLedgerMutationInput,
   type BuildActionLedgerSensitiveReadInput,
+  type BuildActionLedgerSensitiveReadInputForValue,
   buildActionLedgerApprovalDecisionInput,
   buildActionLedgerApprovalRequestInput,
   buildActionLedgerApprovedExecutionFields,

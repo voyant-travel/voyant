@@ -373,6 +373,77 @@ describe("ledgerSensitiveRead", () => {
     expect(events).toEqual(["read", "append", "resolved"])
     expect(appendSpy).toHaveBeenCalledOnce()
   })
+
+  test("builds the sensitive-read ledger entry from the read value", async () => {
+    const appendSpy = vi
+      .spyOn(actionLedgerService, "appendEntry")
+      .mockResolvedValue({ entry: {} as never, replayed: false })
+
+    const result = await ledgerSensitiveRead(
+      {} as AnyDrizzleDb,
+      (value: { revealed: boolean }) => ({
+        context: {
+          userId: "usr_1",
+          callerType: "session",
+          actor: "staff",
+        },
+        actionName: "booking.pii.read",
+        targetType: "booking_traveler",
+        targetId: "bkpt_1",
+        routeOrToolName: "bookings.travel-details",
+        status: value.revealed ? "succeeded" : "denied",
+        reasonCode: value.revealed ? "travel_details_reveal" : "travel_details_not_found",
+      }),
+      async () => ({ revealed: false }),
+    )
+
+    expect(result).toEqual({ revealed: false })
+    expect(appendSpy).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        actionName: "booking.pii.read",
+        status: "denied",
+        sensitiveReadDetail: expect.objectContaining({
+          reasonCode: "travel_details_not_found",
+        }),
+      }),
+    )
+  })
+
+  test("rejects without resolving the read value when the ledger append fails", async () => {
+    const events: string[] = []
+    vi.spyOn(actionLedgerService, "appendEntry").mockImplementation(async () => {
+      events.push("append")
+      throw new Error("ledger unavailable")
+    })
+
+    await expect(
+      ledgerSensitiveRead(
+        {} as AnyDrizzleDb,
+        {
+          context: {
+            userId: "usr_1",
+            callerType: "session",
+            actor: "staff",
+          },
+          actionName: "booking.pii.read",
+          targetType: "booking_traveler",
+          targetId: "bkpt_1",
+          routeOrToolName: "bookings.travel-details",
+          reasonCode: "travel_details_reveal",
+        },
+        async () => {
+          events.push("read")
+          return "secret"
+        },
+      ).then((value) => {
+        events.push("resolved")
+        return value
+      }),
+    ).rejects.toThrow("ledger unavailable")
+
+    expect(events).toEqual(["read", "append"])
+  })
 })
 
 describe("approval request-context helpers", () => {
