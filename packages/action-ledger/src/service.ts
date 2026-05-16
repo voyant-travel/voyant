@@ -1,5 +1,5 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { and, desc, eq, inArray, lt, lte, or, type SQL } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, lt, lte, or, type SQL } from "drizzle-orm"
 
 import {
   type ActionLedgerEntry,
@@ -81,6 +81,8 @@ export interface ListActionLedgerEntriesInput {
   idempotencyKey?: string | null
   evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"] | ActionLedgerEntry["evaluatedRisk"][]
   status?: ActionLedgerEntry["status"] | ActionLedgerEntry["status"][]
+  occurredAtFrom?: Date | string | null
+  occurredAtTo?: Date | string | null
   cursor?: ActionLedgerListCursor | null
   limit?: number
 }
@@ -479,6 +481,13 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
 
   const entryStatusCondition = statusCondition(input.status)
   if (entryStatusCondition) conditions.push(entryStatusCondition)
+
+  if (input.occurredAtFrom) {
+    conditions.push(gte(actionLedgerEntries.occurredAt, parseCursorDate(input.occurredAtFrom)))
+  }
+  if (input.occurredAtTo) {
+    conditions.push(lte(actionLedgerEntries.occurredAt, parseCursorDate(input.occurredAtTo)))
+  }
 
   if (input.cursor) {
     conditions.push(buildCursorCondition(input.cursor))

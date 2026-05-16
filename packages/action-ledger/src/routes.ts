@@ -88,6 +88,8 @@ const actionLedgerEntryListQuerySchema = z
     idempotencyKey: z.string().trim().min(1).optional(),
     evaluatedRisk: commaSeparatedEnumList(actionLedgerRiskValues),
     status: commaSeparatedEnumList(actionLedgerStatusValues),
+    occurredAtFrom: z.string().datetime().optional(),
+    occurredAtTo: z.string().datetime().optional(),
     cursorOccurredAt: z.string().datetime().optional(),
     cursorId: z.string().trim().min(1).optional(),
     limit: z.coerce.number().int().min(1).max(200).optional(),
@@ -101,8 +103,10 @@ const actionLedgerEntryListQuerySchema = z
       message: "cursorOccurredAt and cursorId must be provided together",
     })
   })
-  .transform(({ cursorOccurredAt, cursorId, ...query }) => ({
+  .transform(({ cursorOccurredAt, cursorId, occurredAtFrom, occurredAtTo, ...query }) => ({
     ...query,
+    occurredAtFrom: occurredAtFrom ? new Date(occurredAtFrom) : undefined,
+    occurredAtTo: occurredAtTo ? new Date(occurredAtTo) : undefined,
     cursor:
       cursorOccurredAt && cursorId
         ? {

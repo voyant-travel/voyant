@@ -169,6 +169,20 @@ describe("actionLedgerService.listEntries", () => {
     ])
   })
 
+  test("composes occurred_at time-window filters", () => {
+    const predicate = __test__.buildActionLedgerEntriesPredicate({
+      occurredAtFrom: "2026-05-15T09:00:00.000Z",
+      occurredAtTo: "2026-05-15T10:00:00.000Z",
+    })
+
+    expect(predicate).toBeDefined()
+    const query = new PgDialect().sqlToQuery(predicate!)
+
+    expect(query.sql).toContain('"action_ledger_entries"."occurred_at" >= $1')
+    expect(query.sql).toContain('"action_ledger_entries"."occurred_at" <= $2')
+    expect(query.params).toEqual(["2026-05-15T09:00:00.000Z", "2026-05-15T10:00:00.000Z"])
+  })
+
   test("overfetches by one and returns the last visible row as the next cursor", async () => {
     const rows = [
       makeEntry({ id: "alge_3", occurredAt: new Date("2026-05-15T10:03:00.000Z") }),

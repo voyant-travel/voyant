@@ -152,7 +152,7 @@ describe("actionLedgerAdminRoutes", () => {
 
     const app = makeApp(db)
     const response = await app.request(
-      "/entries?actionName=booking.status.confirm&actionKind=update&actorType=staff&principalType=user&principalId=usr_1&apiTokenId=key_1&sessionId=sess_1&callerType=session&organizationId=org_1&targetType=booking&targetId=book_1&routeOrToolName=bookings.confirm&workflowRunId=wf_run_1&workflowStepId=wf_step_1&correlationId=corr_1&causationActionId=alge_parent&capabilityId=bookings%3Astatus%3Aconfirm&capabilityVersion=v1&authorizationSource=bookings.status.route&approvalId=appr_1&amendsActionId=alge_prior&idempotencyScope=booking&idempotencyKey=idem_1&evaluatedRisk=high,critical&status=succeeded,denied&cursorOccurredAt=2026-05-15T10%3A00%3A00.000Z&cursorId=alge_cursor&limit=25",
+      "/entries?actionName=booking.status.confirm&actionKind=update&actorType=staff&principalType=user&principalId=usr_1&apiTokenId=key_1&sessionId=sess_1&callerType=session&organizationId=org_1&targetType=booking&targetId=book_1&routeOrToolName=bookings.confirm&workflowRunId=wf_run_1&workflowStepId=wf_step_1&correlationId=corr_1&causationActionId=alge_parent&capabilityId=bookings%3Astatus%3Aconfirm&capabilityVersion=v1&authorizationSource=bookings.status.route&approvalId=appr_1&amendsActionId=alge_prior&idempotencyScope=booking&idempotencyKey=idem_1&evaluatedRisk=high,critical&status=succeeded,denied&occurredAtFrom=2026-05-15T09%3A00%3A00.000Z&occurredAtTo=2026-05-15T10%3A00%3A00.000Z&cursorOccurredAt=2026-05-15T10%3A00%3A00.000Z&cursorId=alge_cursor&limit=25",
     )
 
     expect(spy).toHaveBeenCalledWith(db, {
@@ -181,6 +181,8 @@ describe("actionLedgerAdminRoutes", () => {
       idempotencyKey: "idem_1",
       evaluatedRisk: ["high", "critical"],
       status: ["succeeded", "denied"],
+      occurredAtFrom: new Date("2026-05-15T09:00:00.000Z"),
+      occurredAtTo: new Date("2026-05-15T10:00:00.000Z"),
       cursor: {
         occurredAt: "2026-05-15T10:00:00.000Z",
         id: "alge_cursor",
