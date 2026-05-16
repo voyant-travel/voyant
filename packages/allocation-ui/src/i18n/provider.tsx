@@ -44,6 +44,7 @@ export type AllocationUiMessages = Record<string, unknown> & {
   assignTraveler: string
   assignTravelerSearch: string
   assignTravelerEmpty: string
+  resourceOtherGroup: string
   rooms: string
   resources: string
   vehicleSeats: string
@@ -133,6 +134,7 @@ export const allocationUiEn = {
   assignTraveler: "Assign",
   assignTravelerSearch: "Search traveler...",
   assignTravelerEmpty: "No unallocated travelers.",
+  resourceOtherGroup: "Other",
   rooms: "Rooms",
   resources: "Resources",
   vehicleSeats: "Vehicle seats",
@@ -222,6 +224,7 @@ export const allocationUiRo = {
   assignTraveler: "Aloca",
   assignTravelerSearch: "Cauta calator...",
   assignTravelerEmpty: "Nu exista calatori nealocati.",
+  resourceOtherGroup: "Altele",
   rooms: "Camere",
   resources: "Resurse",
   vehicleSeats: "Locuri vehicul",

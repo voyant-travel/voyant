@@ -486,9 +486,10 @@ export function SlotAllocationPage({
                   role="status"
                 >
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  {/* i18n-literal-ok numeric interpolation only */}
                   <span>
                     {messages.overCapacityWarning} {projectedSummary.resourceCapacity}/
-                    {projectedSummary.slotPax ?? "?"} ({messages.resourceCapacityOver}:{" "}
+                    {projectedSummary.slotPax ?? "—"} ({messages.resourceCapacityOver}:{" "}
                     {projectedSummary.delta})
                   </span>
                 </div>

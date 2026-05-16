@@ -254,6 +254,12 @@ export const adminAvailabilityMessages = {
           metaIdentifiersTitle: "Identifiers",
           metaLifecycleTitle: "Lifecycle",
         },
+        duration: {
+          nightSingular: "1 night",
+          nightsPlural: "{count} nights",
+          daySingular: "1 day",
+          daysPlural: "{count} days",
+        },
       },
       dialogs: {
         slot: {
@@ -631,6 +637,12 @@ export const adminAvailabilityMessages = {
           activityAuditTitle: "Jurnal de audit",
           metaIdentifiersTitle: "Identificatori",
           metaLifecycleTitle: "Ciclu de viata",
+        },
+        duration: {
+          nightSingular: "1 noapte",
+          nightsPlural: "{count} nopti",
+          daySingular: "1 zi",
+          daysPlural: "{count} zile",
         },
       },
       dialogs: {

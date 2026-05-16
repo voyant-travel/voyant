@@ -96,29 +96,32 @@ export function ResourceColumnsView({
             {messages.noResources}
           </div>
         ) : (
-          groupResourcesBySubType(resources).map((group) => (
-            <section key={group.key} aria-label={group.label} className="flex flex-col gap-2">
-              <header className="flex items-baseline justify-between gap-2 border-b pb-1">
-                <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-                  {group.label}
-                </h3>
-                <span className="text-xs text-muted-foreground">
-                  {group.count} · {messages.capacity.toLowerCase()} {group.capacity}
-                </span>
-              </header>
-              <ResourceGroupTable
-                kind={kind}
-                resources={group.resources}
-                occupants={occupants}
-                unallocated={occupants.unallocated}
-                sharingGroupLabels={sharingGroupLabels}
-                onAssignTraveler={onAssignTraveler}
-                onUnassignTraveler={onUnassignTraveler}
-                onRemoveResource={onRemoveResource}
-                onEditResource={onEditResource}
-              />
-            </section>
-          ))
+          groupResourcesBySubType(resources).map((group) => {
+            const groupLabel = group.label ?? messages.resourceOtherGroup
+            return (
+              <section key={group.key} aria-label={groupLabel} className="flex flex-col gap-2">
+                <header className="flex items-baseline justify-between gap-2 border-b pb-1">
+                  <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+                    {groupLabel}
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    {group.count} · {messages.capacity.toLowerCase()} {group.capacity}
+                  </span>
+                </header>
+                <ResourceGroupTable
+                  kind={kind}
+                  resources={group.resources}
+                  occupants={occupants}
+                  unallocated={occupants.unallocated}
+                  sharingGroupLabels={sharingGroupLabels}
+                  onAssignTraveler={onAssignTraveler}
+                  onUnassignTraveler={onUnassignTraveler}
+                  onRemoveResource={onRemoveResource}
+                  onEditResource={onEditResource}
+                />
+              </section>
+            )
+          })
         )}
       </div>
     </div>

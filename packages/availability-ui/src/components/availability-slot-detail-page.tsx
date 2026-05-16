@@ -204,7 +204,7 @@ export function AvailabilitySlotDetailPage({
 
   const productName = productQuery.data?.data.name ?? null
   const dateRangeLabel = formatSlotDateRange(slot, i18n.formatDateTime)
-  const nightsLabel = computeSlotNightsLabel(slot)
+  const nightsLabel = computeSlotNightsLabel(slot, detailMessages.duration)
   const titleText = productName ?? dateRangeLabel
 
   const pickupRows = slotPickupsQuery.data?.data ?? []
@@ -275,6 +275,7 @@ export function AvailabilitySlotDetailPage({
           pax: detailMessages.slot.initialPaxLabel,
           remainingPax: messages.remainingPaxLabel,
           product: messages.productLabel,
+          date: messages.dateLabel,
           notes: detailMessages.notesTitle,
         }}
       />
@@ -480,7 +481,13 @@ function KpiStrip({
   productName: string | null
   productId: string | null
   onOpenProduct?: (productId: string) => void
-  i18nLabels: { pax: string; remainingPax: string; product: string; notes: string }
+  i18nLabels: {
+    pax: string
+    remainingPax: string
+    product: string
+    date: string
+    notes: string
+  }
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -500,7 +507,7 @@ function KpiStrip({
           )
         }
       />
-      <KpiCell label="Date" value={slot.dateLocal} />
+      <KpiCell label={i18nLabels.date} value={slot.dateLocal} />
       <KpiCell label={i18nLabels.notes} value={slot.notes ?? "—"} muted={!slot.notes} />
     </div>
   )
@@ -635,15 +642,24 @@ function formatSlotDateRange(
   return `${startLocal} → ${endLocal}`
 }
 
-function computeSlotNightsLabel(slot: {
-  nights: number | null
-  days: number | null
-}): string | null {
+function computeSlotNightsLabel(
+  slot: { nights: number | null; days: number | null },
+  labels: {
+    nightSingular: string
+    nightsPlural: string
+    daySingular: string
+    daysPlural: string
+  },
+): string | null {
   if (slot.nights && slot.nights > 0) {
-    return slot.nights === 1 ? "1 night" : `${slot.nights} nights`
+    return slot.nights === 1
+      ? labels.nightSingular
+      : labels.nightsPlural.replace("{count}", String(slot.nights))
   }
   if (slot.days && slot.days > 0) {
-    return slot.days === 1 ? "1 day" : `${slot.days} days`
+    return slot.days === 1
+      ? labels.daySingular
+      : labels.daysPlural.replace("{count}", String(slot.days))
   }
   return null
 }

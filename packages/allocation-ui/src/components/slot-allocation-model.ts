@@ -188,14 +188,23 @@ export function kindLabel(kind: string, messages: AllocationUiMessages) {
  */
 export interface ResourceSubTypeGroup {
   key: string
-  label: string
+  /**
+   * Human-readable group label derived from the resource's refId or
+   * label prefix. `null` for the catch-all bucket (unlabeled, refId-
+   * less resources) — consumers should fall back to a localized
+   * "Other" string.
+   */
+  label: string | null
   resources: AllocationResource[]
   count: number
   capacity: number
 }
 
 export function groupResourcesBySubType(resources: AllocationResource[]): ResourceSubTypeGroup[] {
-  const buckets = new Map<string, { key: string; label: string; resources: AllocationResource[] }>()
+  const buckets = new Map<
+    string,
+    { key: string; label: string | null; resources: AllocationResource[] }
+  >()
   for (const resource of resources) {
     const { key, label } = resourceSubTypeKey(resource)
     const bucket = buckets.get(key) ?? { key, label, resources: [] }
@@ -210,17 +219,17 @@ export function groupResourcesBySubType(resources: AllocationResource[]): Resour
       count: bucket.resources.length,
       capacity: bucket.resources.reduce((sum, resource) => sum + resource.capacity, 0),
     }))
-    .sort((a, b) => a.label.localeCompare(b.label) || a.key.localeCompare(b.key))
+    .sort((a, b) => (a.label ?? "").localeCompare(b.label ?? "") || a.key.localeCompare(b.key))
 }
 
-function resourceSubTypeKey(resource: AllocationResource): { key: string; label: string } {
+function resourceSubTypeKey(resource: AllocationResource): { key: string; label: string | null } {
   if (resource.refId) return { key: `ref:${resource.refId}`, label: resource.refId }
   const label = (resource.label ?? "").trim()
   if (label.length > 0) {
     const prefix = label.match(/^[A-Za-z]+/)?.[0]
     if (prefix) return { key: `prefix:${prefix.toUpperCase()}`, label: prefix.toUpperCase() }
   }
-  return { key: "other", label: "Other" }
+  return { key: "other", label: null }
 }
 
 export interface ResourceCapacitySummary {

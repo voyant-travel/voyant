@@ -47,13 +47,14 @@ describe("groupResourcesBySubType", () => {
     expect(refKeys).toContain("ref:supplier-sgl")
   })
 
-  it("falls back to 'Other' for unlabeled, refId-less resources", () => {
+  it("returns null label for the catch-all bucket so callers can localize 'Other'", () => {
     const groups = groupResourcesBySubType([
       resource({ id: "1", label: null, capacity: 2 }),
       resource({ id: "2", label: "  ", capacity: 1 }),
     ])
     expect(groups).toHaveLength(1)
     expect(groups[0]?.key).toBe("other")
+    expect(groups[0]?.label).toBeNull()
     expect(groups[0]?.count).toBe(2)
   })
 })
