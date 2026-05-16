@@ -13,6 +13,7 @@ export const BOOKING_PII_READ_CAPABILITY = {
   approvalPolicy: "none",
   reversible: false,
   allowedActorTypes: ["staff", "system"],
+  requiredGrants: [{ resource: "bookings-pii", action: "read" }],
 } as const satisfies ActionLedgerCapabilityDefinition
 
 export const BOOKING_STATUS_CAPABILITIES = {
@@ -26,6 +27,7 @@ export const BOOKING_STATUS_CAPABILITIES = {
     approvalPolicy: "none",
     reversible: false,
     allowedActorTypes: ["staff", "system"],
+    requiredGrants: [{ resource: "bookings", action: "write" }],
   },
   expire: {
     id: "bookings:status:expire",
@@ -37,6 +39,7 @@ export const BOOKING_STATUS_CAPABILITIES = {
     approvalPolicy: "none",
     reversible: false,
     allowedActorTypes: ["staff", "system"],
+    requiredGrants: [{ resource: "bookings", action: "write" }],
   },
   cancel: {
     id: "bookings:status:cancel",
@@ -48,6 +51,7 @@ export const BOOKING_STATUS_CAPABILITIES = {
     approvalPolicy: "conditional",
     reversible: false,
     allowedActorTypes: ["staff", "system"],
+    requiredGrants: [{ resource: "bookings", action: "write" }],
   },
   start: {
     id: "bookings:status:start",
@@ -59,6 +63,7 @@ export const BOOKING_STATUS_CAPABILITIES = {
     approvalPolicy: "none",
     reversible: false,
     allowedActorTypes: ["staff", "system"],
+    requiredGrants: [{ resource: "bookings", action: "write" }],
   },
   complete: {
     id: "bookings:status:complete",
@@ -70,6 +75,7 @@ export const BOOKING_STATUS_CAPABILITIES = {
     approvalPolicy: "none",
     reversible: false,
     allowedActorTypes: ["staff", "system"],
+    requiredGrants: [{ resource: "bookings", action: "write" }],
   },
   override: {
     id: "bookings:status:override",
@@ -81,6 +87,7 @@ export const BOOKING_STATUS_CAPABILITIES = {
     approvalPolicy: "conditional",
     reversible: false,
     allowedActorTypes: ["staff", "system"],
+    requiredGrants: [{ resource: "bookings", action: "write" }],
   },
 } as const satisfies Record<string, ActionLedgerCapabilityDefinition>
 

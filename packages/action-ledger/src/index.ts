@@ -1,6 +1,9 @@
 export {
+  type ActionLedgerCapabilityAccessReason,
+  type ActionLedgerCapabilityAccessResult,
   type ActionLedgerCapabilityApprovalPolicy,
   type ActionLedgerCapabilityDefinition,
+  type ActionLedgerCapabilityGrant,
   type ActionLedgerCapabilityLedgerPolicy,
   type ActionLedgerCapabilityRegistry,
   ActionLedgerCapabilityRegistryError,
@@ -9,6 +12,8 @@ export {
   actionLedgerCapabilityKey,
   actionLedgerCapabilityLedgerPolicyValues,
   createActionLedgerCapabilityRegistry,
+  type EvaluateActionLedgerCapabilityAccessInput,
+  evaluateActionLedgerCapabilityAccess,
   evaluateActionLedgerCapabilityRisk,
   getActionLedgerCapability,
 } from "./capability.js"
