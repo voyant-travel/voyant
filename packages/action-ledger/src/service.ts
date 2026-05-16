@@ -165,6 +165,7 @@ export interface ListActionLedgerEntriesInput {
   organizationId?: string | null
   targetType?: string | null
   targetId?: string | null
+  targetIds?: string[] | null
   routeOrToolName?: string | null
   workflowRunId?: string | null
   workflowStepId?: string | null
@@ -1384,6 +1385,9 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
   }
   if (input.targetType) conditions.push(eq(actionLedgerEntries.targetType, input.targetType))
   if (input.targetId) conditions.push(eq(actionLedgerEntries.targetId, input.targetId))
+  if (input.targetIds && input.targetIds.length > 0) {
+    conditions.push(inArray(actionLedgerEntries.targetId, input.targetIds))
+  }
   if (input.routeOrToolName) {
     conditions.push(eq(actionLedgerEntries.routeOrToolName, input.routeOrToolName))
   }

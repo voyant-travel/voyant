@@ -264,6 +264,39 @@ describe("actionLedgerAdminRoutes", () => {
     expect(parsed.error?.issues[0]?.path).toEqual(["cursorId"])
   })
 
+  test("lists entries with multi-target filters", async () => {
+    const db = {} as AnyDrizzleDb
+    const spy = vi.spyOn(actionLedgerService, "listEntries").mockResolvedValue({
+      entries: [],
+      nextCursor: null,
+    })
+
+    const app = makeApp(db)
+    const response = await app.request(
+      "/entries?targetType=booking_traveler&targetIds=bkpt_1,bkpt_2&limit=25",
+    )
+
+    expect(spy).toHaveBeenCalledWith(db, {
+      targetType: "booking_traveler",
+      targetIds: ["bkpt_1", "bkpt_2"],
+      occurredAtFrom: undefined,
+      occurredAtTo: undefined,
+      cursor: undefined,
+      limit: 25,
+    })
+    expect(response.status).toBe(200)
+  })
+
+  test("rejects mixed single and multi-target filters", () => {
+    const parsed = __test__.actionLedgerEntryListQuerySchema.safeParse({
+      targetId: "bkpt_1",
+      targetIds: "bkpt_2",
+    })
+
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.path).toEqual(["targetIds"])
+  })
+
   test("lists relay outbox rows with health filters and cursor pagination", async () => {
     const db = {} as AnyDrizzleDb
     const spy = vi.spyOn(actionLedgerService, "listRelayOutbox").mockResolvedValue({

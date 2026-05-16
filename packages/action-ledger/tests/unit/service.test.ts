@@ -155,6 +155,20 @@ describe("actionLedgerService.listEntries", () => {
     ])
   })
 
+  test("composes a multi-target filter", () => {
+    const predicate = __test__.buildActionLedgerEntriesPredicate({
+      targetType: "booking_traveler",
+      targetIds: ["bkpt_1", "bkpt_2"],
+    })
+
+    expect(predicate).toBeDefined()
+    const query = new PgDialect().sqlToQuery(predicate!)
+
+    expect(query.sql).toContain('"action_ledger_entries"."target_type" = $1')
+    expect(query.sql).toContain('"action_ledger_entries"."target_id" in ($2, $3)')
+    expect(query.params).toEqual(["booking_traveler", "bkpt_1", "bkpt_2"])
+  })
+
   test("uses occurred_at plus id as the cursor tie-breaker", () => {
     const predicate = __test__.buildActionLedgerEntriesPredicate({
       cursor: {

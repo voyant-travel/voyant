@@ -88,6 +88,16 @@ function commaSeparatedEnumList<const TValues extends NonEmptyEnumValues>(values
   }, z.array(z.enum(values)).min(1).optional())
 }
 
+function commaSeparatedStringList() {
+  return z.preprocess((value) => {
+    if (typeof value !== "string") return value
+    return value
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+  }, z.array(z.string().trim().min(1)).min(1).optional())
+}
+
 const actionLedgerEntryListQuerySchema = z
   .object({
     actionName: z.string().trim().min(1).optional(),
@@ -101,6 +111,7 @@ const actionLedgerEntryListQuerySchema = z
     organizationId: z.string().trim().min(1).optional(),
     targetType: z.string().trim().min(1).optional(),
     targetId: z.string().trim().min(1).optional(),
+    targetIds: commaSeparatedStringList(),
     routeOrToolName: z.string().trim().min(1).optional(),
     workflowRunId: z.string().trim().min(1).optional(),
     workflowStepId: z.string().trim().min(1).optional(),
@@ -135,6 +146,15 @@ const actionLedgerEntryListQuerySchema = z
       code: z.ZodIssueCode.custom,
       path: value.cursorOccurredAt ? ["cursorId"] : ["cursorOccurredAt"],
       message: "cursorOccurredAt and cursorId must be provided together",
+    })
+  })
+  .superRefine((value, ctx) => {
+    if (!value.targetId || !value.targetIds) return
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["targetIds"],
+      message: "targetId and targetIds cannot be provided together",
     })
   })
   .transform(({ cursorOccurredAt, cursorId, occurredAtFrom, occurredAtTo, ...query }) => ({

@@ -847,32 +847,29 @@ async function listBookingActionLedger(c: Context<Env>) {
   })
   const visibleTravelers = reveal ? travelers : travelers.map((row) => redactTravelerIdentity(row))
 
-  const [bookingEntriesResult, travelerEntriesResults] = await Promise.all([
+  const travelerIds = travelers.map((traveler) => traveler.id)
+  const [bookingEntriesResult, travelerEntriesResult] = await Promise.all([
     actionLedgerService.listEntries(c.get("db"), {
       targetType: "booking",
       targetId: bookingId,
       limit,
     }),
-    Promise.all(
-      travelers.map((traveler) =>
-        actionLedgerService.listEntries(c.get("db"), {
+    travelerIds.length > 0
+      ? actionLedgerService.listEntries(c.get("db"), {
           targetType: "booking_traveler",
-          targetId: traveler.id,
+          targetIds: travelerIds,
           actionName: BOOKING_PII_READ_ACTION_NAME,
           limit,
-        }),
-      ),
-    ),
+        })
+      : Promise.resolve({ entries: [], nextCursor: null }),
   ])
 
   const entriesById = new Map<string, ActionLedgerEntry>()
   for (const entry of bookingEntriesResult.entries) {
     entriesById.set(entry.id, entry)
   }
-  for (const result of travelerEntriesResults) {
-    for (const entry of result.entries) {
-      entriesById.set(entry.id, entry)
-    }
+  for (const entry of travelerEntriesResult.entries) {
+    entriesById.set(entry.id, entry)
   }
 
   return c.json({
