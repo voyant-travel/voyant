@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest"
 import {
   buildBookingPaymentSchedulePaidEvent,
   buildCreditNoteCreationActionLedgerInput,
+  buildInvoiceDeleteActionLedgerInput,
   buildInvoiceIssuedActionLedgerInput,
+  buildInvoiceUpdateActionLedgerInput,
   buildPaymentCompletedEvent,
   buildPaymentSessionCompletionActionLedgerInput,
   buildRecordPaymentActionLedgerInput,
@@ -244,5 +246,81 @@ describe("payment session events", () => {
       },
     })
     expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds booking-targeted action ledger input for invoice updates", () => {
+    const ledgerInput = buildInvoiceUpdateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          invoiceNumber: "INV-2026-001",
+          bookingId: "book_123",
+        } as never,
+        changes: {
+          dueDate: "2026-06-01",
+          notes: "Updated payment terms",
+        },
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.invoice.update",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.invoice.update",
+      authorizationSource: "finance.invoice.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "invoice:inv_123:update",
+        commandResultRef: "invoice:inv_123",
+        summary: "Invoice INV-2026-001 updated (dueDate, notes)",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds booking-targeted action ledger input for draft invoice deletion", () => {
+    const ledgerInput = buildInvoiceDeleteActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        invoice: {
+          id: "inv_123",
+          invoiceNumber: "INV-2026-001",
+          bookingId: "book_123",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.invoice.delete",
+      actionKind: "delete",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: "book_123",
+      routeOrToolName: "finance.invoice.delete",
+      authorizationSource: "finance.invoice.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "invoice:inv_123:delete",
+        commandResultRef: null,
+        summary: "Draft invoice INV-2026-001 deleted",
+        reversalKind: "none",
+      },
+    })
   })
 })

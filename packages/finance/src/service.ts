@@ -439,6 +439,13 @@ type RecordPaymentLedgerInput = {
 type InvoiceIssuedLedgerInput = {
   invoice: InvoiceRecord
 }
+type InvoiceUpdateLedgerInput = {
+  invoice: InvoiceRecord
+  changes: UpdateInvoiceInput
+}
+type InvoiceDeleteLedgerInput = {
+  invoice: InvoiceRecord
+}
 type CreateCreditNoteLedgerInput = {
   invoice: InvoiceRecord
   creditNote: CreditNoteRecord
@@ -610,6 +617,72 @@ export async function buildInvoiceIssuedActionLedgerInput(
       commandInputRef: `booking:${input.invoice.bookingId}:invoice_issue`,
       commandResultRef: `invoice:${input.invoice.id}`,
       summary: `${invoiceTypeLabel} ${input.invoice.invoiceNumber} issued for booking ${input.invoice.bookingId}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildInvoiceUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: InvoiceUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.invoice.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.invoice.update",
+    authorizationSource: options.authorizationSource ?? "finance.invoice.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `invoice:${input.invoice.id}:update`,
+      commandResultRef: `invoice:${input.invoice.id}`,
+      summary: `Invoice ${input.invoice.invoiceNumber} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildInvoiceDeleteActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: InvoiceDeleteLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+
+  return {
+    context,
+    actionName: "finance.invoice.delete",
+    actionVersion: "v1",
+    actionKind: "delete",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.invoice.delete",
+    authorizationSource: options.authorizationSource ?? "finance.invoice.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `invoice:${input.invoice.id}:delete`,
+      commandResultRef: null,
+      summary: `Draft invoice ${input.invoice.invoiceNumber} deleted`,
       reversalKind: "none",
     },
   }
@@ -2466,17 +2539,70 @@ export const financeService = {
     return row ?? null
   },
 
-  async updateInvoice(db: PostgresJsDatabase, id: string, data: UpdateInvoiceInput) {
-    const [row] = await db
-      .update(invoices)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(invoices.id, id))
-      .returning()
+  async updateInvoice(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateInvoiceInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const updateInvoiceRow = (writer: PostgresJsDatabase) =>
+      writer
+        .update(invoices)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(invoices.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [row] = await updateInvoiceRow(tx)
+
+        if (row) {
+          await appendActionLedgerMutation(
+            tx,
+            buildInvoiceUpdateActionLedgerInput(
+              actionLedgerContext,
+              { invoice: row, changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return row ?? null
+      })
+    }
+
+    const [row] = await updateInvoiceRow(db)
     return row ?? null
   },
 
-  async deleteInvoice(db: PostgresJsDatabase, id: string) {
+  async deleteInvoice(db: PostgresJsDatabase, id: string, runtime: FinanceServiceRuntime = {}) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx.select().from(invoices).where(eq(invoices.id, id)).limit(1)
+
+        if (!existing) {
+          return { status: "not_found" as const }
+        }
+
+        if (existing.status !== "draft") {
+          return { status: "not_draft" as const }
+        }
+
+        await tx.delete(invoices).where(eq(invoices.id, id))
+        await appendActionLedgerMutation(
+          tx,
+          buildInvoiceDeleteActionLedgerInput(
+            actionLedgerContext,
+            { invoice: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+        return { status: "deleted" as const }
+      })
+    }
+
     const [existing] = await db
       .select({ id: invoices.id, status: invoices.status })
       .from(invoices)

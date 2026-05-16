@@ -825,10 +825,16 @@ export const financeRoutes = new Hono<Env>()
 
   // PATCH /invoices/:id — Update invoice
   .patch("/invoices/:id", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updateInvoice(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updateInvoiceSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.invoice.route",
+      },
     )
 
     if (!row) {
@@ -840,7 +846,12 @@ export const financeRoutes = new Hono<Env>()
 
   // DELETE /invoices/:id — Delete invoice (draft only)
   .delete("/invoices/:id", async (c) => {
-    const result = await financeService.deleteInvoice(c.get("db"), c.req.param("id"))
+    const runtime = getFinanceRouteRuntime(c)
+    const result = await financeService.deleteInvoice(c.get("db"), c.req.param("id"), {
+      eventBus: runtime?.eventBus,
+      actionLedgerContext: getActionLedgerRequestContext(c),
+      actionLedgerAuthorizationSource: "finance.invoice.route",
+    })
 
     if (result.status === "not_found") {
       return c.json({ error: "Invoice not found" }, 404)
