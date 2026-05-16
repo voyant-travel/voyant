@@ -1,4 +1,6 @@
 export {
+  type ActionLedgerApprovalRequirementReason,
+  type ActionLedgerApprovalRequirementResult,
   type ActionLedgerCapabilityAccessReason,
   type ActionLedgerCapabilityAccessResult,
   type ActionLedgerCapabilityApprovalPolicy,
@@ -12,7 +14,9 @@ export {
   actionLedgerCapabilityKey,
   actionLedgerCapabilityLedgerPolicyValues,
   createActionLedgerCapabilityRegistry,
+  type EvaluateActionLedgerApprovalRequirementInput,
   type EvaluateActionLedgerCapabilityAccessInput,
+  evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
   evaluateActionLedgerCapabilityRisk,
   getActionLedgerCapability,

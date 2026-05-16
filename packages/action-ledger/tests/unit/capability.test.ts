@@ -4,6 +4,7 @@ import {
   type ActionLedgerCapabilityDefinition,
   ActionLedgerCapabilityRegistryError,
   createActionLedgerCapabilityRegistry,
+  evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
   evaluateActionLedgerCapabilityRisk,
   getActionLedgerCapability,
@@ -186,6 +187,78 @@ describe("action ledger capability registry", () => {
     ).toMatchObject({
       allowed: true,
       evaluatedRisk: "high",
+    })
+  })
+
+  test("does not require approval when access is denied", () => {
+    const access = evaluateActionLedgerCapabilityAccess({
+      definition: {
+        ...capability,
+        approvalPolicy: "required",
+        allowedActorTypes: ["staff"],
+      },
+      actor: "customer",
+    })
+
+    expect(evaluateActionLedgerApprovalRequirement({ access })).toMatchObject({
+      required: false,
+      reason: "access_denied",
+      approvalPolicy: "required",
+      capabilityId: "bookings:status:cancel",
+    })
+  })
+
+  test("requires approval for required approval policies", () => {
+    const access = evaluateActionLedgerCapabilityAccess({
+      definition: {
+        ...capability,
+        approvalPolicy: "required",
+      },
+      actor: "staff",
+    })
+
+    expect(
+      evaluateActionLedgerApprovalRequirement({
+        access,
+        reasonCode: "paid_booking_cancel",
+      }),
+    ).toMatchObject({
+      required: true,
+      reason: "policy_required",
+      approvalPolicy: "required",
+      reasonCode: "paid_booking_cancel",
+    })
+  })
+
+  test("requires approval for conditional policies only when the caller supplies a matching condition", () => {
+    const access = evaluateActionLedgerCapabilityAccess({
+      definition: {
+        ...capability,
+        approvalPolicy: "conditional",
+      },
+      actor: "staff",
+    })
+
+    expect(
+      evaluateActionLedgerApprovalRequirement({
+        access,
+        conditionalApprovalRequired: false,
+      }),
+    ).toMatchObject({
+      required: false,
+      reason: "conditional_policy_not_required",
+    })
+
+    expect(
+      evaluateActionLedgerApprovalRequirement({
+        access,
+        conditionalApprovalRequired: true,
+        reasonCode: "ai_initiated_high_risk_mutation",
+      }),
+    ).toMatchObject({
+      required: true,
+      reason: "conditional_policy_required",
+      reasonCode: "ai_initiated_high_risk_mutation",
     })
   })
 })

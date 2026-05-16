@@ -77,6 +77,29 @@ export interface ActionLedgerCapabilityAccessResult {
   grant: ActionLedgerCapabilityGrant | null
 }
 
+export type ActionLedgerApprovalRequirementReason =
+  | "access_denied"
+  | "policy_none"
+  | "policy_required"
+  | "conditional_policy_required"
+  | "conditional_policy_not_required"
+
+export interface EvaluateActionLedgerApprovalRequirementInput {
+  access: ActionLedgerCapabilityAccessResult
+  conditionalApprovalRequired?: boolean | null
+  reasonCode?: string | null
+}
+
+export interface ActionLedgerApprovalRequirementResult {
+  required: boolean
+  reason: ActionLedgerApprovalRequirementReason
+  approvalPolicy: ActionLedgerCapabilityApprovalPolicy
+  capabilityId: string
+  capabilityVersion: string
+  evaluatedRisk: ActionLedgerCapabilityRisk
+  reasonCode: string | null
+}
+
 const riskRank: Record<ActionLedgerCapabilityRisk, number> = {
   low: 0,
   medium: 1,
@@ -196,6 +219,51 @@ export function evaluateActionLedgerCapabilityAccess<TContext = unknown>(
     reason: "actor_allowed",
     authorizationSource: "actor_context",
     grant: null,
+  }
+}
+
+export function evaluateActionLedgerApprovalRequirement(
+  input: EvaluateActionLedgerApprovalRequirementInput,
+): ActionLedgerApprovalRequirementResult {
+  const base = {
+    approvalPolicy: input.access.approvalPolicy,
+    capabilityId: input.access.capabilityId,
+    capabilityVersion: input.access.capabilityVersion,
+    evaluatedRisk: input.access.evaluatedRisk,
+    reasonCode: normalizeNullableString(input.reasonCode),
+  }
+
+  if (!input.access.allowed) {
+    return {
+      ...base,
+      required: false,
+      reason: "access_denied",
+    }
+  }
+
+  if (input.access.approvalPolicy === "required") {
+    return {
+      ...base,
+      required: true,
+      reason: "policy_required",
+    }
+  }
+
+  if (input.access.approvalPolicy === "conditional") {
+    return {
+      ...base,
+      required: input.conditionalApprovalRequired === true,
+      reason:
+        input.conditionalApprovalRequired === true
+          ? "conditional_policy_required"
+          : "conditional_policy_not_required",
+    }
+  }
+
+  return {
+    ...base,
+    required: false,
+    reason: "policy_none",
   }
 }
 
