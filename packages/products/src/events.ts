@@ -24,6 +24,7 @@ export interface ProductContentChangedEvent {
    */
   axis?:
     | "product"
+    | "itinerary"
     | "option"
     | "day"
     | "media"

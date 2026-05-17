@@ -2220,6 +2220,10 @@ export const productsService = {
       .orderBy(desc(productItineraries.isDefault), asc(productItineraries.sortOrder))
   },
 
+  getItineraryById(db: PostgresJsDatabase, itineraryId: string) {
+    return getItineraryById(db, itineraryId)
+  },
+
   async createItinerary(db: PostgresJsDatabase, productId: string, data: CreateItineraryInput) {
     const product = await ensureProductExists(db, productId)
     if (!product) {
@@ -2470,6 +2474,16 @@ export const productsService = {
       .orderBy(asc(productDays.dayNumber))
   },
 
+  async getDayForProductMutation(db: PostgresJsDatabase, dayId: string) {
+    const dayRef = await getDayById(db, dayId)
+    if (!dayRef) {
+      return null
+    }
+
+    const [row] = await db.select().from(productDays).where(eq(productDays.id, dayId)).limit(1)
+    return row ? { ...row, productId: dayRef.productId } : null
+  },
+
   async createDay(db: PostgresJsDatabase, productId: string, data: CreateDayInput) {
     const itinerary = await ensureDefaultItinerary(db, productId)
     return productsService.createItineraryDay(db, productId, itinerary.id, data)
@@ -2519,6 +2533,20 @@ export const productsService = {
       .from(productDayServices)
       .where(eq(productDayServices.dayId, dayId))
       .orderBy(asc(productDayServices.sortOrder))
+  },
+
+  async getDayServiceForProductMutation(db: PostgresJsDatabase, serviceId: string) {
+    const [row] = await db
+      .select()
+      .from(productDayServices)
+      .where(eq(productDayServices.id, serviceId))
+      .limit(1)
+    if (!row) {
+      return null
+    }
+
+    const dayRef = await getDayById(db, row.dayId)
+    return dayRef ? { ...row, productId: dayRef.productId } : null
   },
 
   async createDayService(

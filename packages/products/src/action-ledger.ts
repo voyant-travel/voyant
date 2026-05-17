@@ -17,6 +17,7 @@ import { productsService } from "./service.js"
 export const productActionLedgerQuerySchema = actionLedgerTargetTimelineQuerySchema
 
 export type ProductActionLedgerListResponse = ActionLedgerTargetTimelinePage
+export type ProductLedgerMutationAction = "create" | "update" | "delete" | "duplicate"
 
 export function getProductActionLedgerRequestContext(
   c: Context<Env>,
@@ -43,43 +44,57 @@ export function changedProductFields(
   before: Product | null,
   after: Product | null,
 ): string[] {
-  const fields = Object.keys(input).filter(
-    (field) => field !== "updatedAt" && field !== "createdAt",
-  )
-  if (!before || !after) return fields.sort()
-
-  return fields
-    .filter(
-      (field) => !productValuesEqual(before[field as keyof Product], after[field as keyof Product]),
-    )
-    .sort()
+  return changedMutationFields(input, before, after)
 }
 
-export function productMutationSummary(action: "create" | "update" | "delete", fields: string[]) {
-  if (action === "delete") return "Deleted product"
-  if (fields.length === 0) return action === "create" ? "Created product" : "Updated product"
+export function changedMutationFields(
+  input: object,
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): string[] {
+  const fields = Object.keys(input).filter((field) => !ignoredMutationFields.has(field))
+  if (!before || !after) return fields.sort()
+
+  return fields.filter((field) => !productValuesEqual(before[field], after[field])).sort()
+}
+
+export function productMutationSummary(
+  action: ProductLedgerMutationAction,
+  fields: string[],
+  subject = "product",
+) {
+  const formattedSubject = subject.trim() || "product"
+  if (action === "delete") return `Deleted ${formattedSubject}`
+  if (action === "duplicate") return `Duplicated ${formattedSubject}`
+  if (fields.length === 0)
+    return action === "create" ? `Created ${formattedSubject}` : `Updated ${formattedSubject}`
   const verb = action === "create" ? "Created" : "Updated"
-  return `${verb} product fields: ${fields.join(", ")}`
+  return `${verb} ${formattedSubject} fields: ${fields.join(", ")}`
 }
 
 export async function appendProductMutationLedgerEntry(
   c: Context<Env>,
   input: {
-    action: "create" | "update" | "delete"
+    action: ProductLedgerMutationAction
     productId: string
     changedFields: string[]
+    subject?: string
+    actionName?: string
+    routeOrToolName?: string
+    summary?: string
   },
 ) {
   return appendActionLedgerMutation(c.get("db"), {
     context: getProductActionLedgerRequestContext(c),
-    actionName: `product.${input.action}`,
-    actionKind: input.action === "delete" ? "delete" : input.action,
+    actionName: input.actionName ?? `product.${input.action}`,
+    actionKind: input.action === "duplicate" ? "create" : input.action,
     evaluatedRisk: "medium",
     targetType: "product",
     targetId: input.productId,
-    routeOrToolName: `products.${input.action}`,
+    routeOrToolName: input.routeOrToolName ?? `products.${input.action}`,
     mutationDetail: {
-      summary: productMutationSummary(input.action, input.changedFields),
+      summary:
+        input.summary ?? productMutationSummary(input.action, input.changedFields, input.subject),
       reversalKind: "none",
     },
   })
@@ -132,7 +147,10 @@ function productValuesEqual(left: unknown, right: unknown) {
   return JSON.stringify(left) === JSON.stringify(right)
 }
 
+const ignoredMutationFields = new Set(["updatedAt", "createdAt"])
+
 export const __test__ = {
+  changedMutationFields,
   changedProductFields,
   productMutationSummary,
   productActionLedgerQuerySchema,

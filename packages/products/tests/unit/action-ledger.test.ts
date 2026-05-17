@@ -76,6 +76,40 @@ describe("product action ledger helpers", () => {
     )
   })
 
+  it("diffs nested mutation fields without counting timestamps", () => {
+    const changed = __test__.changedMutationFields(
+      {
+        name: "Premium cabin",
+        sortOrder: 2,
+        updatedAt: new Date("2026-05-15T10:02:00.000Z"),
+      },
+      {
+        name: "Standard cabin",
+        sortOrder: 2,
+        updatedAt: new Date("2026-05-15T10:01:00.000Z"),
+      },
+      {
+        name: "Premium cabin",
+        sortOrder: 2,
+        updatedAt: new Date("2026-05-15T10:02:00.000Z"),
+      },
+    )
+
+    expect(changed).toEqual(["name"])
+  })
+
+  it("summarizes nested product content mutations", () => {
+    expect(__test__.productMutationSummary("update", ["name"], "product option")).toBe(
+      "Updated product option fields: name",
+    )
+    expect(__test__.productMutationSummary("delete", [], "product media")).toBe(
+      "Deleted product media",
+    )
+    expect(__test__.productMutationSummary("duplicate", [], "product itinerary")).toBe(
+      "Duplicated product itinerary",
+    )
+  })
+
   it("requires both cursor fields and transforms them into an action ledger cursor", () => {
     expect(
       __test__.productActionLedgerQuerySchema.safeParse({
