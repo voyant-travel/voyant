@@ -3084,121 +3084,190 @@ export const financeService = {
     db: PostgresJsDatabase,
     bookingId: string,
     data: ApplyDefaultBookingPaymentPlanInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+    const applyPlan = async (writer: PostgresJsDatabase) => {
+      const [booking] = await writer
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
 
-    if (!booking) {
-      return null
-    }
+      if (!booking) {
+        return null
+      }
 
-    const totalAmountCents = booking.sellAmountCents ?? 0
-    if (totalAmountCents <= 0) {
-      return []
-    }
+      const totalAmountCents = booking.sellAmountCents ?? 0
+      if (totalAmountCents <= 0) {
+        return {
+          createdSchedules: [],
+          deletedSchedules: [],
+          createdGuarantee: null,
+        }
+      }
 
-    const today = startOfUtcDay(new Date())
-    const depositDueDate = data.depositDueDate ? parseDateString(data.depositDueDate) : today
-    const startDate = booking.startDate ? parseDateString(booking.startDate) : null
-    const rawBalanceDueDate = startDate
-      ? new Date(startDate.getTime() - data.balanceDueDaysBeforeStart * 24 * 60 * 60 * 1000)
-      : today
-    const balanceDueDate = rawBalanceDueDate < today ? today : rawBalanceDueDate
+      const today = startOfUtcDay(new Date())
+      const depositDueDate = data.depositDueDate ? parseDateString(data.depositDueDate) : today
+      const startDate = booking.startDate ? parseDateString(booking.startDate) : null
+      const rawBalanceDueDate = startDate
+        ? new Date(startDate.getTime() - data.balanceDueDaysBeforeStart * 24 * 60 * 60 * 1000)
+        : today
+      const balanceDueDate = rawBalanceDueDate < today ? today : rawBalanceDueDate
 
-    let depositAmountCents = 0
-    if (data.depositMode === "fixed_amount") {
-      depositAmountCents = Math.min(totalAmountCents, data.depositValue)
-    } else if (data.depositMode === "percentage") {
-      depositAmountCents = Math.min(
-        totalAmountCents,
-        Math.round((totalAmountCents * data.depositValue) / 100),
-      )
-    }
-
-    if (data.clearExistingPending) {
-      await db
-        .delete(bookingPaymentSchedules)
-        .where(
-          and(
-            eq(bookingPaymentSchedules.bookingId, bookingId),
-            or(
-              eq(bookingPaymentSchedules.status, "pending"),
-              eq(bookingPaymentSchedules.status, "due"),
-            ),
-          ),
+      let depositAmountCents = 0
+      if (data.depositMode === "fixed_amount") {
+        depositAmountCents = Math.min(totalAmountCents, data.depositValue)
+      } else if (data.depositMode === "percentage") {
+        depositAmountCents = Math.min(
+          totalAmountCents,
+          Math.round((totalAmountCents * data.depositValue) / 100),
         )
-    }
+      }
 
-    const scheduleRows: CreateBookingPaymentScheduleInput[] = []
-    if (depositAmountCents > 0 && depositAmountCents < totalAmountCents) {
-      scheduleRows.push({
-        bookingItemId: null,
-        scheduleType: "deposit",
-        status: depositDueDate <= today ? "due" : "pending",
-        dueDate: toDateString(depositDueDate),
-        currency: booking.sellCurrency,
-        amountCents: depositAmountCents,
-        notes: data.notes ?? null,
-      })
-      scheduleRows.push({
-        bookingItemId: null,
-        scheduleType: "balance",
-        status: balanceDueDate <= today ? "due" : "pending",
-        dueDate: toDateString(balanceDueDate),
-        currency: booking.sellCurrency,
-        amountCents: Math.max(0, totalAmountCents - depositAmountCents),
-        notes: data.notes ?? null,
-      })
-    } else {
-      const singleDueDate = balanceDueDate <= today ? today : balanceDueDate
-      scheduleRows.push({
-        bookingItemId: null,
-        scheduleType: "balance",
-        status: singleDueDate <= today ? "due" : "pending",
-        dueDate: toDateString(singleDueDate),
-        currency: booking.sellCurrency,
-        amountCents: totalAmountCents,
-        notes: data.notes ?? null,
-      })
-    }
-
-    const createdSchedules = await db
-      .insert(bookingPaymentSchedules)
-      .values(
-        scheduleRows.map((row) => ({
-          ...row,
-          bookingId,
-          bookingItemId: row.bookingItemId ?? null,
-          notes: row.notes ?? null,
-        })),
+      const clearableScheduleWhere = and(
+        eq(bookingPaymentSchedules.bookingId, bookingId),
+        or(
+          eq(bookingPaymentSchedules.status, "pending"),
+          eq(bookingPaymentSchedules.status, "due"),
+        ),
       )
-      .returning()
 
-    if (data.createGuarantee) {
-      const depositSchedule = createdSchedules.find(
-        (schedule) => schedule.scheduleType === "deposit",
-      )
-      if (depositSchedule) {
-        await db.insert(bookingGuarantees).values({
-          bookingId,
-          bookingPaymentScheduleId: depositSchedule.id,
+      const deletedSchedules = data.clearExistingPending
+        ? await writer.select().from(bookingPaymentSchedules).where(clearableScheduleWhere)
+        : []
+
+      if (data.clearExistingPending) {
+        await writer.delete(bookingPaymentSchedules).where(clearableScheduleWhere)
+      }
+
+      const scheduleRows: CreateBookingPaymentScheduleInput[] = []
+      if (depositAmountCents > 0 && depositAmountCents < totalAmountCents) {
+        scheduleRows.push({
           bookingItemId: null,
-          guaranteeType: data.guaranteeType,
-          status: "pending",
-          paymentInstrumentId: null,
-          paymentAuthorizationId: null,
-          currency: depositSchedule.currency,
-          amountCents: depositSchedule.amountCents,
-          provider: null,
-          referenceNumber: null,
-          guaranteedAt: null,
-          expiresAt: null,
-          releasedAt: null,
+          scheduleType: "deposit",
+          status: depositDueDate <= today ? "due" : "pending",
+          dueDate: toDateString(depositDueDate),
+          currency: booking.sellCurrency,
+          amountCents: depositAmountCents,
+          notes: data.notes ?? null,
+        })
+        scheduleRows.push({
+          bookingItemId: null,
+          scheduleType: "balance",
+          status: balanceDueDate <= today ? "due" : "pending",
+          dueDate: toDateString(balanceDueDate),
+          currency: booking.sellCurrency,
+          amountCents: Math.max(0, totalAmountCents - depositAmountCents),
+          notes: data.notes ?? null,
+        })
+      } else {
+        const singleDueDate = balanceDueDate <= today ? today : balanceDueDate
+        scheduleRows.push({
+          bookingItemId: null,
+          scheduleType: "balance",
+          status: singleDueDate <= today ? "due" : "pending",
+          dueDate: toDateString(singleDueDate),
+          currency: booking.sellCurrency,
+          amountCents: totalAmountCents,
           notes: data.notes ?? null,
         })
       }
+
+      const createdSchedules = await writer
+        .insert(bookingPaymentSchedules)
+        .values(
+          scheduleRows.map((row) => ({
+            ...row,
+            bookingId,
+            bookingItemId: row.bookingItemId ?? null,
+            notes: row.notes ?? null,
+          })),
+        )
+        .returning()
+
+      let createdGuarantee: BookingGuaranteeRecord | null = null
+      if (data.createGuarantee) {
+        const depositSchedule = createdSchedules.find(
+          (schedule) => schedule.scheduleType === "deposit",
+        )
+        if (depositSchedule) {
+          const [guarantee] = await writer
+            .insert(bookingGuarantees)
+            .values({
+              bookingId,
+              bookingPaymentScheduleId: depositSchedule.id,
+              bookingItemId: null,
+              guaranteeType: data.guaranteeType,
+              status: "pending",
+              paymentInstrumentId: null,
+              paymentAuthorizationId: null,
+              currency: depositSchedule.currency,
+              amountCents: depositSchedule.amountCents,
+              provider: null,
+              referenceNumber: null,
+              guaranteedAt: null,
+              expiresAt: null,
+              releasedAt: null,
+              notes: data.notes ?? null,
+            })
+            .returning()
+          createdGuarantee = guarantee ?? null
+        }
+      }
+
+      return { createdSchedules, deletedSchedules, createdGuarantee }
     }
 
-    return createdSchedules
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const applied = await applyPlan(tx)
+
+        if (!applied) {
+          return null
+        }
+
+        for (const schedule of applied.deletedSchedules) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingPaymentScheduleDeleteActionLedgerInput(
+              actionLedgerContext,
+              { schedule },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        for (const schedule of applied.createdSchedules) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingPaymentScheduleCreateActionLedgerInput(
+              actionLedgerContext,
+              { schedule },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        if (applied.createdGuarantee) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildBookingGuaranteeCreateActionLedgerInput(
+              actionLedgerContext,
+              { guarantee: applied.createdGuarantee },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return applied.createdSchedules
+      })
+
+      return result
+    }
+
+    const result = await applyPlan(db)
+    return result?.createdSchedules ?? null
   },
 
   async updateBookingPaymentSchedule(

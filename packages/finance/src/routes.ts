@@ -503,10 +503,16 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/bookings/:bookingId/payment-schedules/default-plan", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const rows = await financeService.applyDefaultBookingPaymentPlan(
       c.get("db"),
       c.req.param("bookingId"),
       await parseJsonBody(c, applyDefaultBookingPaymentPlanSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.booking_payment_schedule.default_plan.route",
+      },
     )
 
     if (!rows) {
